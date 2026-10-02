@@ -30,6 +30,17 @@ a background isolate.
   `sha256:<hex>`), never by file name, and refuses a file that changes while it is
   read.
 
+- `prepareTelemetryImport` turns a list of recordings into the proposed runs of
+  one day: each file is size-checked, hashed, parsed, counted against the sample
+  budget, given its laps and hashed again, and is Ready, Duplicate or Error; one
+  bad file never stops the batch, and cancellation returns nothing. Budgets: 64
+  files, 128 MiB per file, 256 MiB per batch (every attempt counts), 16 million
+  retained samples. A VBO and an RCZ of the same drive are offered as a pair from
+  their GPS traces; `automaticVboPrimaries` groups a unique pair dated within 1 s
+  (VBO primary, RCZ alternative, channels never fused).
+  `nameRunsInRecordingOrder` names runs "Session N" by recording time, undated
+  last, and `ImportGeneration` keeps a stale result from being committed.
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -37,7 +48,7 @@ operations take a `CancellationCheck`.
 
 Both apps must read a file identically: the `.fetproject` fingerprint depends on
 channel names and sample counts. The behaviour follows FlappedEar Overlays'
-`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryFolderScan.cpp` and `TelemetrySource.cpp` (VBOOverlay `1a96ae3`), re-implemented in
+`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp` and `TelemetrySource.cpp` (VBOOverlay `1a96ae3`), re-implemented in
 Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 
 `test/parity/cpp_parity_test.dart` checks this file by file. The reference
