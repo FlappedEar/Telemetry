@@ -6,7 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../day/day_results_page.dart';
+import '../format.dart';
 import 'day_import_controller.dart';
+
+export '../format.dart' show displayTime;
 
 /// Opens the platform pickers. Replaced by a fake in widget tests.
 abstract interface class RecordingPickers {
@@ -35,18 +39,6 @@ final class PlatformRecordingPickers implements RecordingPickers {
   @override
   Future<String?> pickFolder() =>
       getDirectoryPath(confirmButtonText: 'Import this folder');
-}
-
-/// A time as the app shows it: "28.662 s" below a minute, "1:49.898" from one
-/// minute, "—" when there is no finite value. Rounded before minutes are
-/// split.
-String displayTime(double seconds) {
-  if (!seconds.isFinite || seconds < 0) return '—';
-  final milliseconds = (seconds * 1000).round();
-  if (milliseconds < 60000) {
-    return '${(milliseconds / 1000).toStringAsFixed(3)} s';
-  }
-  return formatLapTime(milliseconds / 1000, 3) ?? '—';
 }
 
 String _lapSummary(LapSession laps) {
@@ -253,12 +245,32 @@ class _DayImportPageState extends State<DayImportPage> {
           Text(message, style: TextStyle(color: theme.colorScheme.error)),
           ...notes(failedNotes),
         ];
-      case DayImportFinished(:final runs, notes: final finishedNotes):
+      case DayImportFinished(
+        :final runs,
+        :final analysis,
+        notes: final finishedNotes,
+      ):
         return [
           Text(
             '${runs.length} ${runs.length == 1 ? 'session' : 'sessions'} imported',
             style: theme.textTheme.titleMedium,
           ),
+          if (analysis != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        DayResultsPage(runs: runs, analysis: analysis),
+                  ),
+                ),
+                icon: const Icon(Icons.flag_outlined),
+                label: const Text('Show the day\'s results'),
+              ),
+            ),
+          ],
           for (final named in runs)
             ListTile(
               contentPadding: EdgeInsets.zero,

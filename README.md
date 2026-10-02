@@ -13,7 +13,13 @@ Early development. The app opens on **Import a day**: choose the day's VBO and
 RCZ recordings or a folder (optionally with subfolders), or drop them on the
 window on desktop. Recordings are prepared in a background isolate with progress
 and Cancel; each primary run is named "Session N" in recording-time order and
-shows its laps, and import notes list what was skipped, grouped or failed. The
+shows its laps, and import notes list what was skipped, grouped or failed.
+**Show the day's results** then leads with the best lap of the day ("Best day ·
+1:49.898 · Session 5 · LAP 2") and its GPS trace coloured by speed, each
+session's best lap, and every lap section in recording order with why a lap is
+not ranked. A lap opens on its own map, over the best lap in grey, and can be
+excluded from the ranking with a reason. The map draws the trace only, no map
+tiles, so it works offline at the track. The
 recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
