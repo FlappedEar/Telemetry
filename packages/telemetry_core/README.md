@@ -93,6 +93,16 @@ a background isolate.
   opens it. Overlays' discard tombstones are not ported: one app instance
   owns the file.
 
+- `buildProgressAxis` turns one reference-eligible lap trace into a ~2 m,
+  gate-anchored distance axis for its track (progress 0 at the start gate);
+  `computeTrackFeatures` gives smoothed heading and signed curvature along it.
+  `projectLapTrace` places a lap's GPS fixes on the axis with a bounded,
+  heading-checked local search, ending a segment at every gap or lost lock
+  instead of guessing; `timeAtProgress`, `progressAtTime` and
+  `computeDeltaSeries` read time and the delta between two laps by distance,
+  only where both laps are covered. `TelemetrySession.sampledSegments` gives a
+  channel's actual samples, split at gaps and reduced to bucket extremes.
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -109,6 +119,10 @@ Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 the fixtures in `test/fixtures`. Parsed values match exactly; values derived
 through trigonometry are compared to 1e-9 relative, because C libraries may
 differ in the last bit. See [tool/README.md](tool/README.md) to regenerate it.
+`test/parity/progress_parity_test.dart` does the same for the track-progress
+port (`TrackProgress.cpp` and `TelemetrySession::sampledSegments`, Overlays
+`d4d1039`) against `test/parity/progress_reference.json` from
+`tool/cpp_progress_dump`.
 
 Known, deliberate differences:
 
