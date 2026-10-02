@@ -21,37 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Installs the Flutter version pinned in pubspec.yaml from Google's release
-      # manifest and verifies the archive's SHA-256 before extracting it.
-      - name: Install pinned Flutter
-        run: |
-          version=$(sed -n 's/^  flutter: \([0-9][0-9.]*\)$/\1/p' pubspec.yaml)
-          test -n "$version" || { echo "No pinned Flutter version in pubspec.yaml"; exit 1; }
-          base=https://storage.googleapis.com/flutter_infra_release/releases
-          curl -sSfL "$base/releases_macos.json" -o releases.json
-          read -r archive sha256 < <(python3 - "$version" <<'PY'
-          import json, platform, sys
-          version = sys.argv[1]
-          arch = "arm64" if platform.machine() == "arm64" else "x64"
-          releases = json.load(open("releases.json"))["releases"]
-          match = [r for r in releases
-                   if r["version"] == version and r["channel"] == "stable"
-                   and r.get("dart_sdk_arch", "x64") == arch]
-          if not match:
-              sys.exit(f"Flutter {version} ({arch}) not found")
-          print(match[0]["archive"], match[0]["sha256"])
-          PY
-          )
-          curl -sSfL "$base/$archive" -o flutter.zip
-          echo "$sha256  flutter.zip" | shasum -a 256 -c -
-          unzip -q flutter.zip -d "$RUNNER_TEMP"
-          rm flutter.zip releases.json
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
-
-      - name: Flutter version
-        run: |
-          flutter --disable-analytics
-          flutter --version
+      # Installs the Flutter version pinned in pubspec.yaml and verifies the
+      # archive's SHA-256 (see .github/actions/setup-flutter).
+      - uses: ./.github/actions/setup-flutter
 
       - run: flutter pub get
       # Nested pure Dart packages need their dependencies before the root
@@ -106,3 +78,93 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: dart analyze --fatal-infos
       - run: dart test
+
+  # Builds the iOS app for the simulator and runs the integration tests on a
+  # booted iPhone simulator, so iOS native code is compiled and launched.
+  ios-simulator:
+    name: iOS simulator (build and integration test)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-flutter
+      - run: flutter pub get
+      - name: Build iOS (simulator, debug)
+        run: flutter build ios --simulator --debug
+      - name: Boot an iPhone simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          ios = sorted((r for r in devices if "iOS" in r), reverse=True,
+                       key=lambda r: [int(p) for p in r.rsplit("iOS-", 1)[1].split("-")])
+          for runtime in ios:
+              for d in devices[runtime]:
+                  if d["name"].startswith("iPhone"):
+                      print(d["udid"]); sys.exit()
+          sys.exit("No available iPhone simulator")
+          ')
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+      # A hung run stops after 15 minutes and prints the verbose tool log and
+      # the simulator's log for the app.
+      - name: Integration tests on the simulator
+        run: |
+          udid="${{ steps.simulator.outputs.udid }}"
+          # macOS has no timeout(1); perl's alarm does the same.
+          perl -e 'alarm shift; exec @ARGV' 900 flutter test integration_test -d "$udid" -v > integration.log 2>&1 || {
+            status=$?
+            tail -n 300 integration.log
+            xcrun simctl spawn "$udid" log show --last 15m --style compact \
+              --predicate 'process == "Runner"' | tail -n 200
+            exit $status
+          }
+          tail -n 40 integration.log
+
+  # Builds the Android APK and runs the integration tests on an Android
+  # emulator (x86_64, hardware accelerated with KVM).
+  android-emulator:
+    name: Android emulator (build and integration test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: ./.github/actions/setup-flutter
+      - run: flutter pub get
+      # The release APK is the one to sideload on a phone or tablet. It is
+      # signed with this runner's debug key (android/app/build.gradle.kts), so
+      # an APK from a later run can only replace it after an uninstall.
+      # MAPTILER_KEY gives the sideloaded app its satellite map tiles (FET-27).
+      - name: Build Android APK (release, sideloadable)
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flappedear-telemetry-android-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      # Apache-2.0, ReactiveCircus/android-emulator-runner.
+      - name: Integration tests on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          # A hung run stops after 15 minutes and prints the verbose tool log
+          # and the device log.
+          script: timeout 900 flutter test integration_test -d emulator-5554 -v > integration.log 2>&1 || { status=$?; tail -n 300 integration.log; adb logcat -d | tail -n 300; exit $status; }; tail -n 40 integration.log

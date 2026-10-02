@@ -1,0 +1,51 @@
+name: Install pinned Flutter
+description: >
+  Installs the Flutter version pinned in pubspec.yaml (environment: flutter)
+  from Google's release manifest, verifies the archive's SHA-256 and adds it
+  to PATH. Works on macOS and Linux runners.
+
+runs:
+  using: composite
+  steps:
+    - name: Install pinned Flutter
+      shell: bash
+      run: |
+        set -euo pipefail
+        version=$(sed -n 's/^  flutter: \([0-9][0-9.]*\)$/\1/p' pubspec.yaml)
+        test -n "$version" || { echo "No pinned Flutter version in pubspec.yaml"; exit 1; }
+        case "$RUNNER_OS" in
+          macOS) platform=macos ;;
+          Linux) platform=linux ;;
+          *) echo "Unsupported runner OS: $RUNNER_OS"; exit 1 ;;
+        esac
+        base=https://storage.googleapis.com/flutter_infra_release/releases
+        curl -sSfL "$base/releases_$platform.json" -o "$RUNNER_TEMP/releases.json"
+        read -r archive sha256 < <(python3 - "$version" "$RUNNER_TEMP/releases.json" <<'PY'
+        import json, platform, sys
+        version, manifest = sys.argv[1], sys.argv[2]
+        arch = "arm64" if platform.machine() in ("arm64", "aarch64") else "x64"
+        releases = json.load(open(manifest))["releases"]
+        match = [r for r in releases
+                 if r["version"] == version and r["channel"] == "stable"
+                 and r.get("dart_sdk_arch", "x64") == arch]
+        if not match:
+            sys.exit(f"Flutter {version} ({arch}) not found")
+        print(match[0]["archive"], match[0]["sha256"])
+        PY
+        )
+        file="$RUNNER_TEMP/$(basename "$archive")"
+        curl -sSfL "$base/$archive" -o "$file"
+        echo "$sha256  $file" | shasum -a 256 -c -
+        case "$file" in
+          *.zip) unzip -q "$file" -d "$RUNNER_TEMP" ;;
+          *.tar.xz) tar -xJf "$file" -C "$RUNNER_TEMP" ;;
+          *) echo "Unknown archive type: $file"; exit 1 ;;
+        esac
+        rm "$file" "$RUNNER_TEMP/releases.json"
+        echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+    - name: Flutter version
+      shell: bash
+      run: |
+        flutter --disable-analytics
+        flutter --version
