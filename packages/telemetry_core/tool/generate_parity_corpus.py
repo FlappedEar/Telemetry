@@ -57,6 +57,83 @@ def loop_rows(radius, speeds, rate_hz, clockwise=False, laps_extra=0.5, start_ti
     return rows
 
 
+def path_points(commands, step=0.1):
+    """Traces turtle commands from (0, -150) heading north, one point per `step`.
+
+    Each command is ("straight", metres) or ("arc", radius, degrees), positive
+    degrees turning left.
+    """
+    x, y, heading = 0.0, -150.0, math.pi / 2
+    points = [(x, y)]
+    for command in commands:
+        if command[0] == "straight":
+            steps = max(1, round(command[1] / step))
+            ds = command[1] / steps
+            for _ in range(steps):
+                x += ds * math.cos(heading)
+                y += ds * math.sin(heading)
+                points.append((x, y))
+        else:
+            radius, degrees = command[1], command[2]
+            arc = radius * math.radians(abs(degrees))
+            steps = max(1, round(arc / step))
+            turn = math.radians(degrees) / steps
+            ds = 2.0 * radius * math.sin(abs(turn) / 2)
+            for _ in range(steps):
+                # The chord of each small arc piece, at its mid heading.
+                heading += turn / 2
+                x += ds * math.cos(heading)
+                y += ds * math.sin(heading)
+                heading += turn / 2
+                points.append((x, y))
+    return points, (x, y, heading)
+
+
+def closed_track(commands):
+    """Closes `commands` (which must end heading west, left of x = -40) back to
+    the start with three left 90 degree turns and straights sized to fit."""
+    _, (x, y, heading) = path_points(commands)
+    assert abs(math.remainder(heading - math.pi, 2 * math.pi)) < 1e-9 and x < -40.0
+    south = y + 160.0
+    east = -x - 40.0
+    tail = [("arc", 40.0, 90.0), ("straight", south), ("arc", 40.0, 90.0),
+            ("straight", east), ("arc", 40.0, 90.0), ("straight", 50.0)]
+    points, (x, y, _) = path_points(commands + tail)
+    assert abs(x) < 1e-6 and abs(y + 150.0) < 1e-6, (x, y)
+    return points
+
+
+def track_rows(points, speeds, rate_hz, mirror=False, laps_extra=0.5):
+    """Drives the closed polyline `points` from its first point, one speed in m/s
+    per lap; with `mirror`, east is negated (every turn changes side)."""
+    cumulative = [0.0]
+    for (ax, ay), (bx, by) in zip(points, points[1:]):
+        cumulative.append(cumulative[-1] + math.hypot(bx - ax, by - ay))
+    length = cumulative[-1]
+    rows = []
+    t = 0.0
+    travelled = 0.0
+    index = 0
+    total = (len(speeds) + laps_extra) * length
+    while travelled < total:
+        lap = min(int(travelled / length), len(speeds) - 1)
+        s = travelled % length
+        if s < cumulative[index]:
+            index = 0
+        while cumulative[index + 1] < s:
+            index += 1
+        span = cumulative[index + 1] - cumulative[index]
+        ratio = (s - cumulative[index]) / span if span > 0 else 0.0
+        (ax, ay), (bx, by) = points[index], points[index + 1]
+        east = ax + (bx - ax) * ratio
+        north = ay + (by - ay) * ratio
+        lat, lon = to_degrees(-east if mirror else east, north)
+        rows.append((t, lat, lon, speeds[lap] * 3.6))
+        travelled += speeds[lap] / rate_hz
+        t += 1.0 / rate_hz
+    return rows
+
+
 def gate_line(name="Start", half=10.0, description="start"):
     lat_a, lon_a = to_degrees(-half, 0.0)
     lat_b, lon_b = to_degrees(half, 0.0)
@@ -92,6 +169,23 @@ def main():
     lap_file("laps_two_start_gates.vbo", clean, [gate_line(), gate_line(half=8.0)])
     lap_file("laps_no_start_gate.vbo", clean, [gate_line(name="Split", description="split")])
     lap_file("laps_long_trace.vbo", loop_rows(1000.0, [15.0, 15.5], 10), [gate_line()])
+
+    # Tracks with corners and straights, for segment proposals: a rounded rectangle, and
+    # a track with a kink, a short straight, an S-bend, two corners joined by a
+    # 10 m straight and a hairpin, also mirrored and with a GPS gap.
+    rectangle = closed_track([("straight", 300.0), ("arc", 50.0, 90.0), ("straight", 100.0)])
+    lap_file("segments_rectangle.vbo", track_rows(rectangle, [25.0, 24.0, 25.5], 10), [gate_line()])
+    mixed = closed_track([
+        ("straight", 250.0), ("arc", 200.0, -8.0), ("straight", 15.0), ("arc", 200.0, 8.0),
+        ("straight", 60.0), ("arc", 35.0, 90.0), ("straight", 30.0), ("arc", 30.0, -50.0),
+        ("arc", 30.0, 50.0), ("straight", 80.0), ("arc", 25.0, 30.0), ("straight", 10.0),
+        ("arc", 25.0, -30.0), ("straight", 60.0), ("arc", 15.0, 180.0), ("straight", 70.0),
+        ("arc", 15.0, -180.0), ("straight", 60.0),
+    ])
+    mixed_rows = track_rows(mixed, [22.0, 21.0, 22.5], 10)
+    lap_file("segments_mixed.vbo", mixed_rows, [gate_line()])
+    lap_file("segments_mixed_mirrored.vbo", track_rows(mixed, [22.0, 21.5], 10, mirror=True), [gate_line()])
+    lap_file("segments_mixed_gps_gap.vbo", mixed_rows, [gate_line()], drop=(76.5, 79.5))
 
     # Arc-minute coordinates declared in the header.
     arc = [(t, lat * 60.0, lon * 60.0, s) for t, lat, lon, s in clean]

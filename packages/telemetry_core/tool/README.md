@@ -64,6 +64,44 @@ FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Files
 without lap traces are left out. Regenerate it when Overlays changes this code;
 never edit the JSON by hand.
 
+## cpp_segments_dump
+
+Runs FlappedEar Overlays' own `TrackSegments`, `TrackSegmentProposals` and
+`TrackSegmentReview` over VBO files and fixed cases and writes the results as
+JSON. For every timed lap of each file with lap traces it follows
+`AnalysisController::computeSegmentReview` (axis from the lap's own trace
+around the start gate's midpoint, features with 6 m smoothing, the lap
+projected, `coverageGaps`, `proposeTrackSegments`) and then the automatic
+approval loop (KAN-136) twice, the second time over the first result; segment
+ids are random and left out. On the first reference-eligible lap's axis it
+also writes the proposals with each lap's coverage gaps and with eight option
+and gap variants. The cases section holds `validTrackSegments`,
+`progressRangesOverlap`, `withApprovedSegment` and `approvedSegmentation` with
+their inputs. `coverageGaps` and the approval loop are in Overlays' app
+sources, which need Qt Quick: CMake copies their text out of the checkout into
+the build directory at configure time, so the tool still runs Overlays' code
+and nothing of it is committed here.
+
+```bash
+cmake -S tool/cpp_segments_dump -B /tmp/segmentsbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/segmentsbuild
+/tmp/segmentsbuild/cpp_segments_dump test/parity/segments_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/segments_parity_test.dart
+```
+
+The committed `test/parity/segments_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. The
+corpus's `segments_*.vbo` tracks (a rounded rectangle, and a track with a kink,
+a short straight, an S-bend, two corners 10 m apart and two hairpins, also
+mirrored and with a GPS gap) were added for it; `cpp_reference.json` and
+`progress_reference.json` were regenerated with them and are unchanged for
+the other files. To check other recordings locally, write a reference for them
+and run the test with `FET_SEGMENTS_REFERENCE=<json>` and
+`FET_SEGMENTS_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the largest
+difference. Never edit the JSON by hand.
+
 ## cpp_project_check
 
 Opens `.fetproject` documents with FlappedEar Overlays' own C++ code and prints
@@ -85,4 +123,5 @@ FLAPPEDEAR_OVERLAYS_CHECK=/tmp/checkbuild/cpp_project_check \
 
 The test saves a synthetic day with a circuit name and an excluded lap and
 checks that Overlays reads all of it. It is skipped when the variable is not set.
-Last run against FlappedEar/Overlay `d4d1039`: passed.
+The test also checks that the chosen group's best lap got automatic segments,
+which Overlays accepts. Last run against FlappedEar/Overlay `d4d1039`: passed.

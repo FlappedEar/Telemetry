@@ -65,6 +65,16 @@ decision "copy", 2 October 2026):
   most 128 UTF-16 code units and no NUL. Qt's whitespace set (25 characters,
   listed in the vectors) is used, not Dart's `trim()`.
 
+## Track segments (FET-31)
+
+`track_segments.dart` follows Overlays' `TrackSegments.cpp` (`d4d1039`): the
+segment model a run stores in `trackSegments` (`TrackSegmentType`,
+`makeTrackSegment` with a fresh version 4 UUID and the run's
+`compatibility-v1` group as `trackConfigurationReference`), `validTrackSegment`
+and `validTrackSegments` (the checks `validateFetproject` uses for every run)
+and `trackSegmentSetRevision`. Proposals and approval are in
+`packages/telemetry_core`.
+
 ## Documents (FET-25)
 
 `decodeFetproject`, `readFetproject` and `validateFetproject` accept version 3

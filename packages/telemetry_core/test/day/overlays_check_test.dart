@@ -97,6 +97,13 @@ void main() {
             {'start': best.start, 'end': best.end, 'reason': 'Traffic'},
         ]);
       }
+      // The chosen group's best lap got automatic segments, which Overlays accepts.
+      final segmented = [
+        for (final run in (event['runs'] as List).cast<Map<String, Object?>>())
+          if (run['trackSegments'] case final List<Object?> segments when segments.isNotEmpty)
+            run['id'],
+      ];
+      expect(segmented, [regrouped.ranking!.bestOfDay!.runId]);
       expect((checked[other]!['trackConfiguration'] as Map)['layoutId'], 'Club');
       expect((checked[other]!['trackConfiguration'] as Map)['direction'], 'clockwise');
     },

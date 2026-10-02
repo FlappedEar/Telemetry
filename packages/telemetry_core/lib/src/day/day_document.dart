@@ -7,6 +7,7 @@ import 'dart:math';
 
 import 'package:fetproject/fetproject.dart' as fet;
 
+import '../analysis/automatic_segments.dart';
 import '../intake/import_plan.dart';
 import '../operation.dart';
 import '../source_fingerprint.dart';
@@ -110,6 +111,10 @@ Map<String, Object?> _unknownConfiguration(
 /// direction or the unknown configuration, and the detected route's
 /// provenance. Exclusions become lap references with this event's id.
 ///
+/// With [automaticSegments], the chosen group's best lap gets its segment
+/// proposals as approved `trackSegments` when no run has segments for the
+/// group yet ([automaticTrackSegments]); [random] mints their ids.
+///
 /// Reads each recording's first, middle and last 64 KiB for its fingerprint.
 Map<String, Object?> dayDocument({
   required String eventId,
@@ -120,6 +125,8 @@ Map<String, Object?> dayDocument({
   required String projectPath,
   Map<String, Object?>? previous,
   String previousPath = '',
+  bool automaticSegments = true,
+  Random? random,
 }) {
   final chosenGroup = analysis.chosenGroup;
   final document = _copy(previous);
@@ -199,6 +206,7 @@ Map<String, Object?> dayDocument({
   final allRuns = [
     for (final id in order) opened[id] ?? _rebaseRun(previousRuns[id]!, previousPath, projectPath),
   ];
+  if (automaticSegments) _approveAutomaticSegments(allRuns, opened, runs, analysis, random);
 
   final exclusionEntries = <Object?>[];
   if (event['lapExclusions'] case final List<Object?> stored) {
@@ -256,6 +264,40 @@ Map<String, Object?> dayDocument({
   document['event'] = event;
   document['documentState'] = nextDocumentState(_object(document['documentState']));
   return document;
+}
+
+/// Segments without manual review (Overlays KAN-136): when no run stores
+/// segments approved for the chosen group, the proposals of the group's best
+/// lap are approved into that lap's run. They are ordinary approved segments,
+/// kept on later saves like any others.
+void _approveAutomaticSegments(
+  List<Map<String, Object?>> allRuns,
+  Map<String, Map<String, Object?>> opened,
+  List<NamedRun> runs,
+  DayAnalysis analysis,
+  Random? random,
+) {
+  final group = analysis.chosenGroup;
+  final best = analysis.ranking?.bestOfDay;
+  if (group == null || !group.resolved || best == null) return;
+  final json = opened[best.runId];
+  if (json == null || !group.runIds.contains(best.runId)) return;
+  for (final named in runs) {
+    if (named.run.id != best.runId) continue;
+    final segments = automaticTrackSegments(
+      documentRuns: allRuns,
+      groupId: group.id,
+      storedSegments: json['trackSegments'],
+      session: named.run.telemetry,
+      laps: named.run.laps,
+      lapNumber: best.lapNumber,
+      startTime: best.start,
+      endTime: best.end,
+      random: random,
+    );
+    if (segments != null) json['trackSegments'] = segments;
+    return;
+  }
 }
 
 /// A random UUID (version 4) without braces, as Qt's
