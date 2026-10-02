@@ -19,7 +19,7 @@ runs:
           *) echo "Unsupported runner OS: $RUNNER_OS"; exit 1 ;;
         esac
         base=https://storage.googleapis.com/flutter_infra_release/releases
-        curl -sSfL "$base/releases_$platform.json" -o "$RUNNER_TEMP/releases.json"
+        curl -sSfL --retry 5 --retry-all-errors --connect-timeout 30 "$base/releases_$platform.json" -o "$RUNNER_TEMP/releases.json"
         read -r archive sha256 < <(python3 - "$version" "$RUNNER_TEMP/releases.json" <<'PY'
         import json, platform, sys
         version, manifest = sys.argv[1], sys.argv[2]
@@ -34,7 +34,7 @@ runs:
         PY
         )
         file="$RUNNER_TEMP/$(basename "$archive")"
-        curl -sSfL "$base/$archive" -o "$file"
+        curl -sSfL --retry 5 --retry-all-errors --connect-timeout 30 "$base/$archive" -o "$file"
         echo "$sha256  $file" | shasum -a 256 -c -
         case "$file" in
           *.zip) unzip -q "$file" -d "$RUNNER_TEMP" ;;
