@@ -38,6 +38,8 @@ dependencies:
   path_provider: ^2.1.5
   telemetry_core:
     path: packages/telemetry_core
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 
 dev_dependencies:
