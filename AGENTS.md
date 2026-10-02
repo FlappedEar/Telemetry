@@ -46,6 +46,12 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
   the old editor's data locations (listed in VBOOverlay
   `docs/application-identity.md`). Verify each platform's default directories
   before the first release.
+- **Names.** Users see "FlappedEar Telemetry" on every platform. The Windows
+  version resource keeps `CompanyName` `com.flappedear` and `ProductName`
+  `telemetry` on purpose: Flutter's default Windows storage directories are built
+  from those two values, and "FlappedEar" / "FlappedEar Telemetry" would resolve
+  to the old editor's `%LOCALAPPDATA%\FlappedEar\FlappedEar Telemetry`. Do not
+  change them without choosing an explicit storage directory first.
 - **Private recordings.** The real-day recordings live in the private repository
   `FlappedEar/refdata`. Never copy them into this repository or any public place:
   they contain GPS traces and heart rate. Synthetic fixtures may be copied.
