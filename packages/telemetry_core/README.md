@@ -89,10 +89,6 @@ differ in the last bit. See [tool/README.md](tool/README.md) to regenerate it.
 
 Known, deliberate differences:
 
-- **Metadata lines without a separator** are stored as `<section>.<n>`. Overlays
-  numbers them in Qt hash order, which Qt seeds per process, so its keys can
-  change from run to run. This package numbers them in file order. Metadata is
-  not part of the fingerprint.
 - **Decoded-memory budget.** Overlays' `maximumDecodedBytes` argument belongs to
   its desktop session cache. The phone budget is decided separately (KAN-129), so
   it is not ported.
