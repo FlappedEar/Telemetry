@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -10,6 +12,19 @@ typedef DocumentWriter = Future<void> Function(
   String path,
   Map<String, Object?> document,
 );
+
+/// Runs a theoretical-best calculation. Replaced in widget tests, which run
+/// it on the test's own thread.
+typedef TheoreticalBestRunner = Future<DayTheoreticalBest> Function(
+  DayTheoreticalBest Function() job,
+);
+
+/// In a background isolate, or directly under `flutter test`.
+Future<DayTheoreticalBest> defaultTheoreticalBestRunner(
+  DayTheoreticalBest Function() job,
+) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    ? Future.microtask(job)
+    : Isolate.run(job);
 
 /// The results of one imported day and the user's choices on them: the group
 /// shown and the laps excluded. Re-ranking keeps rows and routes, so it runs
@@ -28,7 +43,10 @@ final class DayResultsController extends ChangeNotifier {
     DocumentWriter? writer,
     this.recovery,
     bool recovered = false,
+    TheoreticalBestRunner? theoreticalBestRunner,
   }) : runs = List.unmodifiable(runs),
+       _theoreticalBestRunner =
+           theoreticalBestRunner ?? defaultTheoreticalBestRunner,
        _analysis = analysis,
        _groupId = analysis.chosenGroupId,
        eventId = eventId ?? newEventId(),
@@ -108,6 +126,12 @@ final class DayResultsController extends ChangeNotifier {
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
   Timer? _recoveryTimer;
+
+  final TheoreticalBestRunner _theoreticalBestRunner;
+  DayTheoreticalBest? _theoreticalBest;
+  bool _theoreticalBestLoading = false;
+  int _theoreticalBestGeneration = 0;
+  bool _disposed = false;
 
   // The last recovery write or clear queued (see [queueRecovery]).
   Future<void> _recoveryWork = Future.value();
@@ -256,8 +280,55 @@ final class DayResultsController extends ChangeNotifier {
     _rerank();
   }
 
+  /// The shown group's theoretical best, sector times and loss map; null
+  /// until [requestTheoreticalBest] has finished for the current laps.
+  DayTheoreticalBest? get theoreticalBest => _theoreticalBest;
+  bool get theoreticalBestLoading => _theoreticalBestLoading;
+
+  // Built outside the controller so the isolate's closure holds only its
+  // inputs.
+  static DayTheoreticalBest Function() _theoreticalBestJob(
+    DayAnalysis analysis,
+    Map<String, OutingRun> runs,
+    List<Object?> documentRuns,
+  ) =>
+      () => dayTheoreticalBest(analysis, runs, documentRuns: documentRuns);
+
+  /// Times every eligible lap of the shown group against its approved
+  /// segments (proposed from the best lap when the day has none yet), in the
+  /// background. A result for laps that changed meanwhile is dropped.
+  Future<void> requestTheoreticalBest() async {
+    if (_theoreticalBest != null || _theoreticalBestLoading) return;
+    final generation = ++_theoreticalBestGeneration;
+    _theoreticalBestLoading = true;
+    notifyListeners();
+    final event = _document?['event'];
+    final documentRuns = event is Map<String, Object?> && event['runs'] is List
+        ? event['runs'] as List<Object?>
+        : const <Object?>[];
+    DayTheoreticalBest result;
+    try {
+      result = await _theoreticalBestRunner(
+        _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
+      );
+    } on Exception catch (error) {
+      result = DayTheoreticalBest(
+        groupId: _analysis.chosenGroupId ?? '',
+        state: DayTheoreticalBestState.error,
+        message: '$error',
+      );
+    }
+    if (_disposed || generation != _theoreticalBestGeneration) return;
+    _theoreticalBest = result;
+    _theoreticalBestLoading = false;
+    notifyListeners();
+  }
+
   void _rerank() {
     _dirty = true;
+    _theoreticalBest = null;
+    _theoreticalBestLoading = false;
+    ++_theoreticalBestGeneration;
     _analysis = rerankDay(
       _analysis,
       exclusions: _exclusions,
@@ -329,6 +400,7 @@ final class DayResultsController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     // Changes made just before leaving the day are still kept.
     unawaited(flushRecovery());
     super.dispose();

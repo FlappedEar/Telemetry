@@ -18,7 +18,14 @@ shows its laps, and import notes list what was skipped, grouped or failed.
 1:49.898 · Session 5 · LAP 2") and its GPS trace coloured by speed, each
 session's best lap, and every lap section in recording order with why a lap is
 not ranked. A lap opens on its own map, over the best lap in grey, and can be
-excluded from the ranking with a reason. The trace is drawn over
+excluded from the ranking with a reason. Below it, **Theoretical best** times every
+ranked lap against the day's segments (proposed from the best lap when the
+day has none yet, as FlappedEar Overlays does): the best lap, the theoretical
+best (the fastest time of each segment) and the time available; a loss map,
+the best lap's trace with each segment coloured by the time the chosen lap
+loses there to the fastest time, with the segments listed largest loss first;
+and a sector table of every lap by segment, the fastest time of each segment
+highlighted. Tap a lap in the table to show its losses on the map. The trace is drawn over
 OpenStreetMap street tiles, or MapTiler satellite imagery when the build has a
 key; the layers button switches between them and the trace alone, which needs
 no network. Tiles already seen stay cached for the track. **Save** writes the day as a

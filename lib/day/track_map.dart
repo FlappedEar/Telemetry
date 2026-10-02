@@ -167,12 +167,17 @@ class TrackMap extends StatelessWidget {
     this.gate,
     this.semanticLabel = 'Track map',
     this.interactive = true,
+    this.pointColor,
   });
 
   final LapPath path;
   final LapPath? reference;
   final (Offset, Offset)? gate;
   final String semanticLabel;
+
+  /// The colour of the trace up to each fix, instead of its speed; null for
+  /// a fix leaves it in the neutral colour.
+  final Color? Function(PathPoint point)? pointColor;
 
   /// Whether the map pans, zooms and shows the layers button.
   final bool interactive;
@@ -197,6 +202,7 @@ class TrackMap extends StatelessWidget {
                         reference: reference,
                         gate: gate,
                         interactive: interactive,
+                        pointColor: pointColor,
                       ),
               ),
               if (interactive)
@@ -218,6 +224,7 @@ class TrackMap extends StatelessWidget {
         referenceColor: scheme.outlineVariant,
         noSpeedColor: scheme.onSurface,
         gateColor: scheme.error,
+        pointColor: pointColor,
       ),
       child: const SizedBox.expand(),
     );
@@ -265,6 +272,7 @@ class _TiledMap extends StatelessWidget {
     required this.reference,
     required this.gate,
     required this.interactive,
+    this.pointColor,
   });
 
   final TileSource tiles;
@@ -272,6 +280,7 @@ class _TiledMap extends StatelessWidget {
   final LapPath? reference;
   final (Offset, Offset)? gate;
   final bool interactive;
+  final Color? Function(PathPoint point)? pointColor;
 
   // Neighbouring fixes of one colour band share a polyline: a lap has
   // thousands of fixes but only a few dozen colour changes.
@@ -282,6 +291,7 @@ class _TiledMap extends StatelessWidget {
     final (low, high) = range ?? (0.0, 0.0);
     final spread = high - low;
     Color colorOf(PathPoint point) {
+      if (pointColor case final color?) return color(point) ?? noSpeedColor;
       final speed = point.speed;
       if (speed == null || !speed.isFinite) return noSpeedColor;
       final fraction = spread > 0 ? (speed - low) / spread : 0.5;
@@ -455,6 +465,7 @@ class _TrackPainter extends CustomPainter {
     required this.referenceColor,
     required this.noSpeedColor,
     required this.gateColor,
+    this.pointColor,
   }) : range = speedRange(path);
 
   final LapPath path;
@@ -463,6 +474,7 @@ class _TrackPainter extends CustomPainter {
   final Color referenceColor;
   final Color noSpeedColor;
   final Color gateColor;
+  final Color? Function(PathPoint point)? pointColor;
   final (double, double)? range;
 
   @override
@@ -524,7 +536,9 @@ class _TrackPainter extends CustomPainter {
     for (final segment in path.segments) {
       for (var i = 1; i < segment.length; ++i) {
         final speed = segment[i].speed;
-        linePaint.color = speed == null || !speed.isFinite
+        linePaint.color = pointColor != null
+            ? pointColor!(segment[i]) ?? noSpeedColor
+            : speed == null || !speed.isFinite
             ? noSpeedColor
             : speedColor(spread > 0 ? (speed - low) / spread : 0.5);
         canvas.drawLine(
@@ -588,7 +602,8 @@ class _TrackPainter extends CustomPainter {
       old.gate != gate ||
       old.referenceColor != referenceColor ||
       old.noSpeedColor != noSpeedColor ||
-      old.gateColor != gateColor;
+      old.gateColor != gateColor ||
+      old.pointColor != pointColor;
 }
 
 /// The speed scale under a map: slow and fast ends with their values.

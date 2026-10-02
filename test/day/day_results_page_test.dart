@@ -172,7 +172,7 @@ void main() {
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
