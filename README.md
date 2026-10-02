@@ -42,9 +42,20 @@ The shared `.fetproject` format lives in the pure Dart package
 `dart analyze` and `dart test` there. Run its `dart pub get` before the root
 `flutter analyze`, which covers the package too.
 
-CI (GitHub Actions, `.github/workflows/ci.yml`) runs analyze, tests and a macOS
-debug build on every pull request and on `main`. iOS simulator and Android
-emulator jobs come next.
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every pull request and
+on `main`:
+
+- analyze, tests and a macOS debug build;
+- an iOS simulator debug build, then `integration_test/` on a booted iPhone
+  simulator;
+- an Android debug APK, then `integration_test/` on an Android emulator
+  (API 34, x86_64).
+
+Run the integration tests locally on any connected device or simulator:
+
+```bash
+flutter test integration_test -d <device id>
+```
 
 ## Contributing
 
