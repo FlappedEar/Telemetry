@@ -3,11 +3,38 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry_core/telemetry_core.dart';
+
+/// Pickers that answer from fixed values.
+final class FakeDocuments implements DocumentPickers {
+  FakeDocuments({this.location, this.folder});
+
+  final String? location;
+  final String? folder;
+  final names = <String>[];
+
+  @override
+  Future<String?> saveLocation(String name) async {
+    names.add(name);
+    return location;
+  }
+
+  @override
+  Future<String?> pickDocument() async => null;
+
+  @override
+  Future<String?> pickFolder() async => folder;
+
+  @override
+  Future<List<String>> savedDays() async => const [];
+}
 
 /// A synthetic, undated recording driving a 100 m circle through a start
 /// line, one lap per speed (m/s), at 10 Hz. No real data.
@@ -173,6 +200,108 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('saves the day and opens it again with its exclusion', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    final path = '${directory.path}/Day.fetproject';
+    final saved = <Map<String, Object?>>[];
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      writer: (path, document) async => saved.add(document),
+    );
+    expect(controller.exclude(best, 'Traffic'), isTrue);
+    final documents = FakeDocuments(location: path);
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: documents,
+        ),
+      ),
+    );
+    expect(find.text('Day results'), findsOneWidget);
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(documents.names, ['Day']);
+    expect(find.text('Saved as Day.fetproject.'), findsOneWidget);
+    expect(find.text('Day'), findsOneWidget);
+    expect(saved, hasLength(1));
+
+    final opened = (await tester.runAsync(() async {
+      await saveDayDocument(path, saved.single);
+      return openDay(path);
+    }))!;
+    expect(opened.missing, isEmpty);
+    expect(opened.exclusions, {best.reference: 'Traffic'});
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.opened(day: opened, documents: documents),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Excluded: Traffic'), findsOneWidget);
+    expect(find.text('Day'), findsOneWidget);
+  });
+
+  testWidgets('lists the sessions whose recordings are missing', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    final path = '${directory.path}/Day.fetproject';
+    final opened = (await tester.runAsync(() async {
+      await saveDayDocument(
+        path,
+        dayDocument(
+          eventId: newEventId(),
+          name: 'Track day',
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          projectPath: path,
+        ),
+      );
+      File('${directory.path}/b.vbo').deleteSync();
+      return openDay(path);
+    }))!;
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.opened(day: opened, documents: FakeDocuments()),
+      ),
+    );
+    expect(find.text('1 session could not be opened'), findsOneWidget);
+    expect(find.textContaining('b.vbo · Recording not found.'), findsOneWidget);
+    expect(find.text('Find recordings in a folder…'), findsOneWidget);
+  });
+
+  test('finds missing recordings by file name in a folder', () {
+    Directory('${directory.path}/moved/deep').createSync(recursive: true);
+    File('${directory.path}/moved/deep/B.VBO').writeAsStringSync('');
+    expect(
+      findRecordings(directory.path, const [
+        MissingRecording(
+          runId: 'run-b',
+          name: 'Session 2',
+          path: 'b.vbo',
+          reason: 'Recording not found.',
+        ),
+      ]),
+      {'run-b': '${directory.path}/moved/deep/B.VBO'},
+    );
+    expect(documentFileName('Day 2026/09/27'), 'Day 2026-09-27.fetproject');
   });
 
   test('speed colours run from the slow end to the fast end of the ramp', () {

@@ -1,8 +1,12 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import 'day_results_controller.dart';
+import 'document_pickers.dart';
 import 'lap_page.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
@@ -11,20 +15,38 @@ import 'track_map.dart';
 /// Session 5 · LAP 2", the group compared, each session's best, and every
 /// lap section in recording order.
 class DayResultsPage extends StatefulWidget {
-  const DayResultsPage({super.key, required this.runs, required this.analysis});
+  /// A day just imported.
+  DayResultsPage({
+    super.key,
+    required List<NamedRun> runs,
+    required DayAnalysis analysis,
+    this.documents = const PlatformDocumentPickers(),
+  }) : _create = (() => DayResultsController(runs: runs, analysis: analysis));
 
-  final List<NamedRun> runs;
-  final DayAnalysis analysis;
+  /// A day opened from its document.
+  DayResultsPage.opened({
+    super.key,
+    required OpenedDay day,
+    this.documents = const PlatformDocumentPickers(),
+  }) : _create = (() => DayResultsController.opened(day));
+
+  /// A day held by [controller], which the page then owns.
+  DayResultsPage.controller({
+    super.key,
+    required DayResultsController controller,
+    this.documents = const PlatformDocumentPickers(),
+  }) : _create = (() => controller);
+
+  final DayResultsController Function() _create;
+  final DocumentPickers documents;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
 }
 
 class _DayResultsPageState extends State<DayResultsPage> {
-  late final DayResultsController _controller = DayResultsController(
-    runs: widget.runs,
-    analysis: widget.analysis,
-  );
+  late final DayResultsController _controller = widget._create();
+  bool _relinking = false;
 
   // The best lap's trace, recomputed only when the best lap changes.
   DayLapReference? _mapReference;
@@ -58,9 +80,98 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return _mapPath;
   }
 
+  void _tell(String message) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
+
+  Future<void> _save({bool choose = false}) async {
+    final path = choose || _controller.documentPath == null
+        ? await widget.documents.saveLocation(_controller.name)
+        : _controller.documentPath;
+    if (path == null || !mounted) return;
+    try {
+      await _controller.save(path);
+      if (mounted) _tell('Saved as ${p.basename(path)}.');
+    } on Exception catch (error) {
+      if (mounted) _tell('Not saved: $error');
+    }
+  }
+
+  // Built outside the state so the isolate's closure holds only its inputs.
+  static OpenedDay Function() _relinkJob(
+    String path,
+    String folder,
+    List<MissingRecording> missing,
+  ) =>
+      () => openDay(path, relinked: findRecordings(folder, missing));
+
+  /// Looks for the missing recordings in a folder the user picks and opens
+  /// the day again with the ones found.
+  Future<void> _findRecordings() async {
+    final path = _controller.documentPath;
+    if (path == null) return;
+    if (_controller.dirty) {
+      _tell('Save the day first, then find its recordings.');
+      return;
+    }
+    final folder = await widget.documents.pickFolder();
+    if (folder == null || !mounted) return;
+    setState(() => _relinking = true);
+    try {
+      final missing = _controller.missing;
+      final day = await Isolate.run(_relinkJob(path, folder, missing));
+      if (!mounted) return;
+      if (day.missing.length == missing.length) {
+        _tell('No missing recording was found in that folder.');
+        return;
+      }
+      if (day.analysis == null) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              DayResultsPage.opened(day: day, documents: widget.documents),
+        ),
+      );
+    } on Exception catch (error) {
+      if (mounted) _tell('The day could not be opened again: $error');
+    } finally {
+      if (mounted) setState(() => _relinking = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Day results')),
+    appBar: AppBar(
+      title: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) => Text(
+          _controller.documentPath == null
+              ? 'Day results'
+              : '${_controller.name}${_controller.dirty ? ' •' : ''}',
+        ),
+      ),
+      actions: [
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => IconButton(
+            tooltip: 'Save',
+            icon: const Icon(Icons.save_outlined),
+            onPressed: _controller.saving || !_controller.dirty
+                ? null
+                : () => _save(),
+          ),
+        ),
+        PopupMenuButton<void>(
+          tooltip: 'More',
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              onTap: () => _save(choose: true),
+              child: const Text('Save as…'),
+            ),
+          ],
+        ),
+      ],
+    ),
     body: ListenableBuilder(
       listenable: _controller,
       builder: (context, _) => LayoutBuilder(
@@ -105,7 +216,44 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final best = ranking?.bestOfDay;
     final resolved = analysis.groups.where((group) => group.resolved).toList();
     final path = best == null ? null : _bestPath(best);
+    final missing = _controller.missing;
     return [
+      if (missing.isNotEmpty) ...[
+        Card(
+          color: theme.colorScheme.errorContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  missing.length == 1
+                      ? '1 session could not be opened'
+                      : '${missing.length} sessions could not be opened',
+                  style: theme.textTheme.titleSmall,
+                ),
+                for (final recording in missing)
+                  Text(
+                    '${recording.name}: ${recording.path} · ${recording.reason}',
+                  ),
+                const SizedBox(height: 4),
+                const Text(
+                  'They stay in the day when it is saved, but are not shown.',
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _relinking ? null : _findRecordings,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: Text(
+                    _relinking ? 'Looking…' : 'Find recordings in a folder…',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
       Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
