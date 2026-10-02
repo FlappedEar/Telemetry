@@ -19,7 +19,12 @@ shows its laps, and import notes list what was skipped, grouped or failed.
 session's best lap, and every lap section in recording order with why a lap is
 not ranked. A lap opens on its own map, over the best lap in grey, and can be
 excluded from the ranking with a reason. The map draws the trace only, no map
-tiles, so it works offline at the track. The
+tiles, so it works offline at the track. **Save** writes the day as a
+`.fetproject` document FlappedEar Overlays can open (sessions, recordings,
+circuit names, excluded laps and the group shown); **Open a saved day** reads
+it back, and a session whose recording has moved or changed is listed with
+**Find recordings in a folder**. On desktop the system dialogs choose the file;
+on phones days are kept in the app. The
 recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).

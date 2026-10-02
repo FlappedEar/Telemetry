@@ -1,6 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+/// Saves a document. Replaced by a fake in widget tests.
+typedef DocumentWriter = Future<void> Function(
+  String path,
+  Map<String, Object?> document,
+);
+
 /// The results of one imported day and the user's choices on them: the group
 /// shown and the laps excluded. Re-ranking keeps rows and routes, so it runs
 /// on the interface thread.
@@ -8,14 +14,92 @@ final class DayResultsController extends ChangeNotifier {
   DayResultsController({
     required List<NamedRun> runs,
     required DayAnalysis analysis,
+    String? eventId,
+    String? name,
+    Map<DayLapReference, String> exclusions = const {},
+    this.missing = const [],
+    String? openedFrom,
+    Map<String, Object?>? openedDocument,
+    DocumentWriter? writer,
   }) : runs = List.unmodifiable(runs),
        _analysis = analysis,
-       _groupId = analysis.chosenGroupId;
+       _groupId = analysis.chosenGroupId,
+       eventId = eventId ?? newEventId(),
+       _name = name ?? defaultDayName(runs),
+       _exclusions = {...exclusions},
+       _documentPath = openedFrom,
+       _document = openedDocument,
+       _writer = writer ?? saveDayDocument;
+
+  /// A day opened from its document.
+  DayResultsController.opened(OpenedDay day, {DocumentWriter? writer})
+    : this(
+        runs: day.runs,
+        analysis: day.analysis!,
+        eventId: day.eventId,
+        name: day.name,
+        exclusions: day.exclusions,
+        missing: day.missing,
+        openedFrom: day.path,
+        openedDocument: day.document,
+        writer: writer,
+      );
 
   final List<NamedRun> runs;
   DayAnalysis _analysis;
   String? _groupId;
-  final Map<DayLapReference, String> _exclusions = {};
+  final Map<DayLapReference, String> _exclusions;
+
+  /// The event's identity, kept across saves.
+  final String eventId;
+
+  /// Runs of the opened document whose recordings could not be used. They
+  /// stay in the document when it is saved.
+  final List<MissingRecording> missing;
+  final DocumentWriter _writer;
+  String _name;
+  String? _documentPath;
+  Map<String, Object?>? _document;
+  bool _dirty = false;
+  bool _saving = false;
+
+  String get name => _name;
+
+  /// Where the day was last saved or opened from; null for a new day.
+  String? get documentPath => _documentPath;
+
+  /// Whether there are changes since the day was saved or opened.
+  bool get dirty => _dirty || _documentPath == null;
+  bool get saving => _saving;
+
+  /// Saves the day to [path]: the event, its runs and recordings, the
+  /// layouts set by the user and the excluded laps. Throws
+  /// [FetprojectError] when the document cannot be written; the previous
+  /// file is then left as it was.
+  Future<void> save(String path) async {
+    if (_saving) throw const FetprojectError('A save is already running.');
+    _saving = true;
+    notifyListeners();
+    try {
+      final document = dayDocument(
+        eventId: eventId,
+        name: _name,
+        runs: runs,
+        analysis: _analysis,
+        exclusions: _exclusions,
+        projectPath: path,
+        previous: _document,
+        previousPath: _documentPath ?? '',
+      );
+      await _writer(path, document);
+      _document = document;
+      _documentPath = path;
+      _dirty = false;
+    } finally {
+      _saving = false;
+      notifyListeners();
+    }
+  }
 
   DayAnalysis get analysis => _analysis;
   DayRanking? get ranking => _analysis.ranking;
@@ -118,6 +202,7 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   void _rerank() {
+    _dirty = true;
     _analysis = rerankDay(
       _analysis,
       exclusions: _exclusions,

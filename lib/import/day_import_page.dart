@@ -1,12 +1,15 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../day/day_results_page.dart';
+import '../day/document_pickers.dart';
 import '../format.dart';
 import 'day_import_controller.dart';
 
@@ -70,8 +73,11 @@ class DayImportPage extends StatefulWidget {
     super.key,
     this.controller,
     this.pickers = const PlatformRecordingPickers(),
+    this.documents = const PlatformDocumentPickers(),
     this.acceptsDrops,
   });
+
+  final DocumentPickers documents;
 
   /// Whether recordings and folders can be dropped on the window; by default
   /// on desktop only.
@@ -95,6 +101,7 @@ class _DayImportPageState extends State<DayImportPage> {
       widget.controller ?? DayImportController();
   bool _includeSubfolders = false;
   bool _dragging = false;
+  bool _opening = false;
 
   @override
   void dispose() {
@@ -117,6 +124,83 @@ class _DayImportPageState extends State<DayImportPage> {
 
   Future<void> _pickRecordings() async =>
       _start(await widget.pickers.pickRecordings());
+
+  // Built outside the state so the isolate's closure holds only the path.
+  static OpenedDay Function() _openJob(String path) =>
+      () => openDay(path);
+
+  /// The day to open: on phones from the days saved in the app, else from
+  /// the open dialog.
+  Future<String?> _chooseDocument() async {
+    final saved = await widget.documents.savedDays();
+    if (saved.isEmpty || !mounted) return widget.documents.pickDocument();
+    const other = '';
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Open a saved day'),
+        children: [
+          for (final path in saved)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, path),
+              child: Text(p.basenameWithoutExtension(path)),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, other),
+            child: const Text('Another file…'),
+          ),
+        ],
+      ),
+    );
+    if (choice == other) return widget.documents.pickDocument();
+    return choice;
+  }
+
+  Future<void> _openDay() async {
+    final path = await _chooseDocument();
+    if (path == null || !mounted) return;
+    setState(() => _opening = true);
+    try {
+      final day = await Isolate.run(_openJob(path));
+      if (!mounted) return;
+      if (day.analysis == null) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('${day.name} could not be opened'),
+            content: Text(
+              [
+                'None of its recordings could be used:',
+                for (final recording in day.missing)
+                  '${recording.name}: ${recording.path} · ${recording.reason}',
+              ].join('\n'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              DayResultsPage.opened(day: day, documents: widget.documents),
+        ),
+      );
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('The day could not be opened: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
 
   Future<void> _pickFolder() async {
     final folder = await widget.pickers.pickFolder();
@@ -188,6 +272,11 @@ class _DayImportPageState extends State<DayImportPage> {
             onPressed: enabled ? _pickFolder : null,
             icon: const Icon(Icons.folder_open_outlined),
             label: const Text('Choose a folder…'),
+          ),
+          OutlinedButton.icon(
+            onPressed: enabled && !_opening ? _openDay : null,
+            icon: const Icon(Icons.history),
+            label: Text(_opening ? 'Opening…' : 'Open a saved day…'),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -262,8 +351,11 @@ class _DayImportPageState extends State<DayImportPage> {
               child: FilledButton.icon(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) =>
-                        DayResultsPage(runs: runs, analysis: analysis),
+                    builder: (_) => DayResultsPage(
+                      runs: runs,
+                      analysis: analysis,
+                      documents: widget.documents,
+                    ),
                   ),
                 ),
                 icon: const Icon(Icons.flag_outlined),

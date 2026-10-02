@@ -70,6 +70,18 @@ a background isolate.
 - `lapPath` gives a lap section's GPS fixes in metres, with speed, split at
   every gap, for the track map (trace only, no tiles).
 
+- `dayDocument` writes a day as a version 3 `.fetproject` document: each
+  run's recording (relative path when close, content SHA-256, `telemetry-v1`
+  fingerprint from `telemetryFingerprint`), its manual layout and direction
+  or the unknown configuration with its gate revision, the detected route's
+  provenance, lap exclusions as full lap references, and the group shown as
+  `analysisDecisions.comparisonGroupId`. A document opened earlier keeps
+  everything this app does not manage, including runs whose recordings were
+  missing. `openDay` reads it back: it finds each recording (relative path
+  first, then absolute, or a relinked path), refuses a different recording by
+  content or fingerprint, applies exclusions whose recording and derivation key
+  still match, and analyses the day.
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -93,12 +105,13 @@ Known, deliberate differences:
   its desktop session cache. The phone budget is decided separately (KAN-129), so
   it is not ported.
 - **Day lap references** (`OutingLaps.cpp`, VBOOverlay `ca2bde5`) carry the run,
-  the content SHA-256, the type and the exact bounds. The document fields
-  `eventId`, `sourceId` and `derivationKey` are added when lap references are
-  written to `.fetproject` (FET-7), so the `invalid-reference` check belongs
-  there too. Progression across runs is not ported yet (FET-5).
-- **Detected layout ids** are new on every analysis: reusing an id saved in a
-  document (Overlays' `inference` provenance) comes with documents (FET-7).
+  the content SHA-256, the type and the exact bounds; `dayDocument` adds
+  `eventId`, `sourceId` and `derivationKey` when it writes them, and `openDay`
+  applies only references whose content and derivation key still match. Progression across runs is not ported yet (FET-5).
+- **Detected layout ids** are computed again on opening rather than read from
+  the saved `trackInference` provenance. The id is derived from the cluster's
+  first run and its content, so it is the same as long as the routes group the
+  same way.
 - **The group shown first** is the one with the most eligible laps. Overlays
   takes the first resolved group in id order, which is arbitrary; on a day with
   one group both choose the same.
