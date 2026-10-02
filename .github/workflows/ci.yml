@@ -138,8 +138,15 @@ jobs:
       - uses: ./.github/actions/setup-flutter
       - run: flutter pub get
       # The release APK is the one to sideload on a phone or tablet. It is
-      # signed with this runner's debug key (android/app/build.gradle.kts), so
-      # an APK from a later run can only replace it after an uninstall.
+      # signed with the debug key (android/app/build.gradle.kts). The key is
+      # kept in the Actions cache, so APKs from later main builds install as
+      # updates and keep the app's data; the key never enters the repository.
+      # Caches from main are shared with pull requests; a cache unused for
+      # seven days expires, and the next build makes a new key.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
       # MAPTILER_KEY gives the sideloaded app its satellite map tiles (FET-27).
       - name: Build Android APK (release, sideloadable)
         env:
