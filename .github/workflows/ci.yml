@@ -54,7 +54,17 @@ jobs:
           flutter --version
 
       - run: flutter pub get
+      # Nested pure Dart packages need their dependencies before the root
+      # analysis, which covers them too.
+      - name: Packages - pub get
+        working-directory: packages/fetproject
+        run: dart pub get
       - run: flutter analyze
       - run: flutter test
+      - name: Packages - analyze and test
+        working-directory: packages/fetproject
+        run: |
+          dart analyze --fatal-infos
+          dart test
       - name: Build macOS (debug)
         run: flutter build macos --debug

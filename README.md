@@ -37,6 +37,11 @@ flutter test
 flutter run -d macos
 ```
 
+The shared `.fetproject` format lives in the pure Dart package
+[`packages/fetproject`](packages/fetproject/README.md); run `dart pub get`,
+`dart analyze` and `dart test` there. Run its `dart pub get` before the root
+`flutter analyze`, which covers the package too.
+
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs analyze, tests and a macOS
 debug build on every pull request and on `main`. iOS simulator and Android
 emulator jobs come next.
