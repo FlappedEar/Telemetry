@@ -8,8 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../day/day_results_controller.dart';
 import '../day/day_results_page.dart';
 import '../day/document_pickers.dart';
+import '../day/recovery_store.dart';
 import '../format.dart';
 import 'day_import_controller.dart';
 
@@ -67,6 +69,14 @@ String _lapSummary(LapSession laps) {
   }
 }
 
+/// [time] as local "2026-10-03 06:30".
+String _when(DateTime time) {
+  final local = time.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${local.year}-${two(local.month)}-${two(local.day)} '
+      '${two(local.hour)}:${two(local.minute)}';
+}
+
 /// Import a day: pick recordings or a folder, or drop them on the window.
 class DayImportPage extends StatefulWidget {
   const DayImportPage({
@@ -74,10 +84,14 @@ class DayImportPage extends StatefulWidget {
     this.controller,
     this.pickers = const PlatformRecordingPickers(),
     this.documents = const PlatformDocumentPickers(),
+    this.recovery = const PlatformRecoveryStore(),
     this.acceptsDrops,
   });
 
   final DocumentPickers documents;
+
+  /// Keeps the day being worked on until it is saved.
+  final RecoveryStore recovery;
 
   /// Whether recordings and folders can be dropped on the window; by default
   /// on desktop only.
@@ -102,6 +116,114 @@ class _DayImportPageState extends State<DayImportPage> {
   bool _includeSubfolders = false;
   bool _dragging = false;
   bool _opening = false;
+
+  /// An unsaved day kept from before, offered for restoring.
+  DayRecovery? _recovered;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRecovery();
+  }
+
+  Future<void> _checkRecovery() async {
+    final recovered = await queueRecovery(widget.recovery.load);
+    if (mounted) setState(() => _recovered = recovered);
+  }
+
+  /// Shows [page], then checks again for an unsaved day left behind.
+  Future<void> _show(Widget page) async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => page));
+    await _checkRecovery();
+  }
+
+  // Built outside the state so the isolate's closure holds only the snapshot.
+  static OpenedDay Function() _recoverJob(DayRecovery recovery) =>
+      () => openRecoveredDay(recovery);
+
+  Future<void> _restore(DayRecovery recovery) async {
+    setState(() => _opening = true);
+    try {
+      final day = await Isolate.run(_recoverJob(recovery));
+      if (!mounted) return;
+      if (day.analysis == null) {
+        await _cannotOpen(day);
+        return;
+      }
+      await _show(
+        DayResultsPage.controller(
+          controller: DayResultsController.recovered(
+            day,
+            recovery,
+            recovery: widget.recovery,
+          ),
+          documents: widget.documents,
+          recovery: widget.recovery,
+        ),
+      );
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('The day could not be restored: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  Future<void> _discard(DayRecovery recovery) async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Discard the changes to ${recovery.name}?'),
+        content: const Text(
+          'The unsaved changes are lost. Recordings and saved days are not touched.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    if (discard != true) return;
+    try {
+      await queueRecovery(widget.recovery.clear);
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Not discarded: $error')));
+      }
+    }
+    await _checkRecovery();
+  }
+
+  Future<void> _cannotOpen(OpenedDay day) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('${day.name} could not be opened'),
+      content: Text(
+        [
+          'None of its recordings could be used:',
+          for (final recording in day.missing)
+            '${recording.name}: ${recording.path} · ${recording.reason}',
+        ].join('\n'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
 
   @override
   void dispose() {
@@ -164,31 +286,14 @@ class _DayImportPageState extends State<DayImportPage> {
       final day = await Isolate.run(_openJob(path));
       if (!mounted) return;
       if (day.analysis == null) {
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('${day.name} could not be opened'),
-            content: Text(
-              [
-                'None of its recordings could be used:',
-                for (final recording in day.missing)
-                  '${recording.name}: ${recording.path} · ${recording.reason}',
-              ].join('\n'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
+        await _cannotOpen(day);
         return;
       }
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              DayResultsPage.opened(day: day, documents: widget.documents),
+      await _show(
+        DayResultsPage.opened(
+          day: day,
+          documents: widget.documents,
+          recovery: widget.recovery,
         ),
       );
     } on Exception catch (error) {
@@ -250,7 +355,44 @@ class _DayImportPageState extends State<DayImportPage> {
 
   List<Widget> _choices(BuildContext context) {
     final enabled = !_controller.isWorking;
+    final recovered = _recovered;
     return [
+      if (recovered != null) ...[
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${recovered.name} has unsaved changes from '
+                  '${_when(recovered.timestamp)}.',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  children: [
+                    FilledButton.tonal(
+                      onPressed: enabled && !_opening
+                          ? () => _restore(recovered)
+                          : null,
+                      child: const Text('Restore'),
+                    ),
+                    TextButton(
+                      onPressed: enabled && !_opening
+                          ? () => _discard(recovered)
+                          : null,
+                      child: const Text('Discard…'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       Text(
         _acceptsDrops
             ? 'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.'
@@ -349,13 +491,12 @@ class _DayImportPageState extends State<DayImportPage> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => DayResultsPage(
-                      runs: runs,
-                      analysis: analysis,
-                      documents: widget.documents,
-                    ),
+                onPressed: () => _show(
+                  DayResultsPage(
+                    runs: runs,
+                    analysis: analysis,
+                    documents: widget.documents,
+                    recovery: widget.recovery,
                   ),
                 ),
                 icon: const Icon(Icons.flag_outlined),

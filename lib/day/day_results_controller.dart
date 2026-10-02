@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
+
+import 'recovery_store.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
 typedef DocumentWriter = Future<void> Function(
@@ -20,7 +24,10 @@ final class DayResultsController extends ChangeNotifier {
     this.missing = const [],
     String? openedFrom,
     Map<String, Object?>? openedDocument,
+    String? documentBase,
     DocumentWriter? writer,
+    this.recovery,
+    bool recovered = false,
   }) : runs = List.unmodifiable(runs),
        _analysis = analysis,
        _groupId = analysis.chosenGroupId,
@@ -29,21 +36,53 @@ final class DayResultsController extends ChangeNotifier {
        _exclusions = {...exclusions},
        _documentPath = openedFrom,
        _document = openedDocument,
-       _writer = writer ?? saveDayDocument;
+       _documentBase = documentBase ?? openedFrom ?? '',
+       _writer = writer ?? saveDayDocument,
+       _dirty = recovered {
+    _scheduleRecovery();
+  }
 
   /// A day opened from its document.
-  DayResultsController.opened(OpenedDay day, {DocumentWriter? writer})
-    : this(
-        runs: day.runs,
-        analysis: day.analysis!,
-        eventId: day.eventId,
-        name: day.name,
-        exclusions: day.exclusions,
-        missing: day.missing,
-        openedFrom: day.path,
-        openedDocument: day.document,
-        writer: writer,
-      );
+  DayResultsController.opened(
+    OpenedDay day, {
+    DocumentWriter? writer,
+    RecoveryStore? recovery,
+  }) : this(
+         runs: day.runs,
+         analysis: day.analysis!,
+         eventId: day.eventId,
+         name: day.name,
+         exclusions: day.exclusions,
+         missing: day.missing,
+         openedFrom: day.path,
+         openedDocument: day.document,
+         writer: writer,
+         recovery: recovery,
+       );
+
+  /// An unsaved day restored from [recovery]'s snapshot: it has changes
+  /// until saved, and saving it again goes where it was last saved.
+  DayResultsController.recovered(
+    OpenedDay day,
+    DayRecovery snapshot, {
+    DocumentWriter? writer,
+    RecoveryStore? recovery,
+  }) : this(
+         runs: day.runs,
+         analysis: day.analysis!,
+         eventId: day.eventId,
+         name: day.name,
+         exclusions: day.exclusions,
+         missing: day.missing,
+         openedFrom: snapshot.originalPath.isEmpty
+             ? null
+             : snapshot.originalPath,
+         openedDocument: day.document,
+         documentBase: snapshot.basePath,
+         writer: writer,
+         recovery: recovery,
+         recovered: true,
+       );
 
   final List<NamedRun> runs;
   DayAnalysis _analysis;
@@ -60,8 +99,21 @@ final class DayResultsController extends ChangeNotifier {
   String _name;
   String? _documentPath;
   Map<String, Object?>? _document;
-  bool _dirty = false;
+
+  // The path [_document]'s relative paths are relative to.
+  String _documentBase;
+  bool _dirty;
   bool _saving = false;
+
+  /// Keeps the day while it has unsaved changes; none when null.
+  final RecoveryStore? recovery;
+  Timer? _recoveryTimer;
+
+  // The last recovery write or clear queued (see [queueRecovery]).
+  Future<void> _recoveryWork = Future.value();
+
+  /// How long changes wait before the unsaved day is written for recovery.
+  static const recoveryDelay = Duration(milliseconds: 500);
 
   String get name => _name;
 
@@ -89,12 +141,15 @@ final class DayResultsController extends ChangeNotifier {
         exclusions: _exclusions,
         projectPath: path,
         previous: _document,
-        previousPath: _documentPath ?? '',
+        previousPath: _documentBase,
       );
       await _writer(path, document);
       _document = document;
       _documentPath = path;
+      _documentBase = path;
       _dirty = false;
+      _recoveryTimer?.cancel();
+      _enqueueRecovery(() => recovery?.clear());
     } finally {
       _saving = false;
       notifyListeners();
@@ -208,7 +263,75 @@ final class DayResultsController extends ChangeNotifier {
       exclusions: _exclusions,
       preferredGroupId: _groupId,
     );
+    _scheduleRecovery();
     notifyListeners();
+  }
+
+  /// Writes the unsaved day for recovery shortly, once changes settle.
+  void _scheduleRecovery() {
+    if (recovery == null || !dirty) return;
+    _recoveryTimer?.cancel();
+    _recoveryTimer = Timer(recoveryDelay, _writeRecovery);
+  }
+
+  void _enqueueRecovery(Future<void>? Function() operation) {
+    _recoveryWork = queueRecovery(() async {
+      try {
+        await operation();
+      } on Exception catch (error) {
+        debugPrint('Recovery snapshot not updated: $error');
+      }
+    });
+  }
+
+  void _writeRecovery() {
+    final store = recovery;
+    if (store == null || !dirty) return;
+    // The document is built now, from the state the user sees.
+    final runsNow = runs;
+    final analysisNow = _analysis;
+    final exclusionsNow = {..._exclusions};
+    final previous = _document;
+    final previousBase = _documentBase;
+    final original = _documentPath ?? '';
+    _enqueueRecovery(() async {
+      final path = await store.path();
+      if (path == null) return;
+      final base = original.isEmpty ? path : original;
+      await store.write(
+        DayRecovery(
+          document: dayDocument(
+            eventId: eventId,
+            name: _name,
+            runs: runsNow,
+            analysis: analysisNow,
+            exclusions: exclusionsNow,
+            projectPath: base,
+            previous: previous,
+            previousPath: previousBase,
+          ),
+          originalPath: original,
+          basePath: base,
+          timestamp: DateTime.now(),
+        ),
+      );
+    });
+  }
+
+  /// Finishes recovery writes still waiting; for tests and app exit.
+  Future<void> flushRecovery() {
+    if (_recoveryTimer?.isActive ?? false) {
+      _recoveryTimer!.cancel();
+      _writeRecovery();
+    }
+    return _recoveryWork;
+  }
+
+  @override
+  void dispose() {
+    // Changes made just before leaving the day are still kept.
+    unawaited(flushRecovery());
+    super.dispose();
   }
 
   /// Why [row] is not ranked in the shown group; empty when it is ranked.

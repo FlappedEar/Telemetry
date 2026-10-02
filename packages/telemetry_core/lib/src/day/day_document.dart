@@ -370,8 +370,16 @@ OpenedDay openDay(
   String path, {
   Map<String, String> relinked = const {},
   CancellationCheck? cancelled,
+}) => openDayDocument(readDayDocument(path), path, relinked: relinked, cancelled: cancelled);
+
+/// Opens a day from its already validated [document], whose relative
+/// recording paths are relative to [path] (see [openDay]).
+OpenedDay openDayDocument(
+  Map<String, Object?> document,
+  String path, {
+  Map<String, String> relinked = const {},
+  CancellationCheck? cancelled,
 }) {
-  final document = readDayDocument(path);
   final event = document['event'] as Map<String, Object?>;
   final runs = [for (final value in event['runs'] as List) value as Map<String, Object?>];
   final missing = <MissingRecording>[];

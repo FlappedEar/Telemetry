@@ -8,6 +8,7 @@ import '../format.dart';
 import 'day_results_controller.dart';
 import 'document_pickers.dart';
 import 'lap_page.dart';
+import 'recovery_store.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
 
@@ -21,24 +22,34 @@ class DayResultsPage extends StatefulWidget {
     required List<NamedRun> runs,
     required DayAnalysis analysis,
     this.documents = const PlatformDocumentPickers(),
-  }) : _create = (() => DayResultsController(runs: runs, analysis: analysis));
+    this.recovery,
+  }) : _create = (() => DayResultsController(
+         runs: runs,
+         analysis: analysis,
+         recovery: recovery,
+       ));
 
   /// A day opened from its document.
   DayResultsPage.opened({
     super.key,
     required OpenedDay day,
     this.documents = const PlatformDocumentPickers(),
-  }) : _create = (() => DayResultsController.opened(day));
+    this.recovery,
+  }) : _create = (() => DayResultsController.opened(day, recovery: recovery));
 
   /// A day held by [controller], which the page then owns.
   DayResultsPage.controller({
     super.key,
     required DayResultsController controller,
     this.documents = const PlatformDocumentPickers(),
+    this.recovery,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
   final DocumentPickers documents;
+
+  /// Keeps the day while it has unsaved changes; none when null.
+  final RecoveryStore? recovery;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
@@ -128,8 +139,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
       if (day.analysis == null) return;
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              DayResultsPage.opened(day: day, documents: widget.documents),
+          builder: (_) => DayResultsPage.opened(
+            day: day,
+            documents: widget.documents,
+            recovery: widget.recovery,
+          ),
         ),
       );
     } on Exception catch (error) {
