@@ -9,7 +9,13 @@ The app is free for users.
 
 ## Status
 
-Early bootstrap: the app is the Flutter starter screen. Milestones are tracked in
+Early development. The app opens on **Import a day**: choose the day's VBO and
+RCZ recordings or a folder (optionally with subfolders), or drop them on the
+window on desktop. Recordings are prepared in a background isolate with progress
+and Cancel; each primary run is named "Session N" in recording-time order and
+shows its laps, and import notes list what was skipped, grouped or failed. The
+recording model, parsers, lap timing and day import plan live in
+[`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
 
 ## Platforms
