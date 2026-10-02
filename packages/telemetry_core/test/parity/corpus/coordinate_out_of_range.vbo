@@ -1,0 +1,9 @@
+[header]
+coordinate units = degrees
+[column names]
+time latitude longitude
+[data]
+0 91 21
+1 -90 180
+2 90 -181
+3 45 45

@@ -1,0 +1,9 @@
+[header]
+coordinate units = degrees
+[column names]
+time, 'Lat' , "Longitude",speed,, speed ,Accelerator Pedal,throttle
+[data]
+0.0, 52.0, 21.0, 10 ,1,2, 0, 15
+0.5,52.0001,21.0001,  11,1,2,5,16 
+1.0 , 52.0002 , 21.0002 , 12 , 1 , 2 , 50 , 17, 99
+1.5,52.0003

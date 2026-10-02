@@ -58,3 +58,25 @@ jobs:
       - run: flutter test
       - name: Build macOS (debug)
         run: flutter build macos --debug
+
+  telemetry-core:
+    name: telemetry_core (Dart, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: packages/telemetry_core
+    steps:
+      - uses: actions/checkout@v4
+      # The Dart SDK that ships with the Flutter version pinned in pubspec.yaml.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.13.5
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos
+      - run: dart test
