@@ -123,6 +123,58 @@ void main() {
     },
   );
 
+  testWidgets('names the circuit of a session and its route', (tester) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    expect(
+      find.textContaining('Group 1 · Detected route · Counterclockwise'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Session 1').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Circuit of Session 1'), findsOneWidget);
+    expect(
+      find.textContaining('Also for the sessions on the same route: Session 2'),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(TextField), 'Club');
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Group 1 · Club · Counterclockwise'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Club · Counterclockwise · set by you'),
+      findsNWidgets(2),
+    );
+
+    await tester.tap(find.text('Session 2').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use the detected route'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Club · Counterclockwise · set by you'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        'Detected route · Counterclockwise · inferred from GPS',
+      ),
+      findsOneWidget,
+    );
+  });
+
   test('speed colours run from the slow end to the fast end of the ramp', () {
     expect(speedColor(0), speedRamp.first);
     expect(speedColor(1), speedRamp.last);

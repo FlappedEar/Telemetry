@@ -4,6 +4,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import 'day_results_controller.dart';
 import 'lap_page.dart';
+import 'track_dialog.dart';
 import 'track_map.dart';
 
 /// The day at a glance, led by the best lap: "Best day · 1:49.898 ·
@@ -217,6 +218,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
             'Its circuit could not be identified, so its laps are not compared.',
           ),
         ),
+      const SizedBox(height: 12),
+      Text('Circuits', style: theme.textTheme.titleSmall),
+      for (final named in _controller.runs)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(named.name),
+          subtitle: Text(_circuitText(named.run.id)),
+          trailing: const Icon(Icons.edit_outlined),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (_) =>
+                TrackDialog(controller: _controller, runId: named.run.id),
+          ),
+        ),
       if (analysis.messages.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text('Notes', style: theme.textTheme.titleSmall),
@@ -227,6 +242,25 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
       ],
     ];
+  }
+
+  String _circuitText(String runId) {
+    final analysis = _controller.analysis;
+    final configuration =
+        analysis.configurations[runId] ?? const TrackConfiguration();
+    final manual = _controller.manualTrack(runId) != null;
+    String? groupLabel;
+    for (final group in analysis.groups) {
+      if (group.runIds.contains(runId)) groupLabel = group.label;
+    }
+    final layout = configuration.layoutId == null
+        ? 'Not identified'
+        : configuration.detectedRoute
+        ? 'Detected route'
+        : configuration.layoutId!;
+    final direction = configuration.direction?.label ?? 'direction unknown';
+    return '$layout · $direction · ${manual ? 'set by you' : 'inferred from GPS'}'
+        '${groupLabel == null ? '' : ' · ${groupLabel.split(' · ').first}'}';
   }
 
   String _runName(String runId) {

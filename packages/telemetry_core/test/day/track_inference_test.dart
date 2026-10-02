@@ -125,6 +125,40 @@ void main() {
       ]);
     });
 
+    test('regroupDay applies and removes a manual layout without re-inferring', () {
+      final day = analyzeDay([
+        run('run:1', circuitSession(speeds: [30, 30, 30])),
+        run('run:2', circuitSession(speeds: [31, 31])),
+      ]);
+      expect(day.groups, hasLength(1));
+      final named = regroupDay(
+        day,
+        manualTracks: {
+          'run:1': const TrackConfiguration(
+            layoutId: 'Club',
+            direction: TrackDirection.counterclockwise,
+          ),
+          'run:2': const TrackConfiguration(
+            layoutId: 'Club',
+            direction: TrackDirection.counterclockwise,
+          ),
+        },
+      );
+      expect(named.groups.map((group) => group.label), ['Group 1 · Club · Counterclockwise']);
+      expect(named.ranking!.eligibleLapCount, 5);
+      final split = regroupDay(
+        named,
+        manualTracks: {
+          'run:1': const TrackConfiguration(layoutId: 'Club', direction: TrackDirection.clockwise),
+        },
+      );
+      expect(split.groups, hasLength(2));
+      expect(split.manualTracks.keys, ['run:1']);
+      final back = regroupDay(split, manualTracks: const {});
+      expect(back.groups.single.label, day.groups.single.label);
+      expect(back.ranking!.bestOfDay!.reference, day.ranking!.bestOfDay!.reference);
+    });
+
     test('a run without laps is unresolved and says why', () {
       final day = analyzeDay([
         run('run:1', circuitSession(speeds: [30])),

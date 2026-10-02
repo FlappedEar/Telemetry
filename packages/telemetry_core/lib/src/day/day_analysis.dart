@@ -85,7 +85,13 @@ final class DayAnalysis {
     required List<DayGroup> groups,
     required this.chosenGroupId,
     required List<DayMessage> messages,
-  }) : rows = List.unmodifiable(rows),
+    List<TrackGroupingSource> sources = const [],
+    List<DayMessage> runMessages = const [],
+    Map<String, TrackConfiguration> manualTracks = const {},
+  }) : sources = List.unmodifiable(sources),
+       runMessages = List.unmodifiable(runMessages),
+       manualTracks = Map.unmodifiable(manualTracks),
+       rows = List.unmodifiable(rows),
        configurations = Map.unmodifiable(configurations),
        inferences = Map.unmodifiable(inferences),
        groups = List.unmodifiable(groups),
@@ -100,6 +106,16 @@ final class DayAnalysis {
   /// The group whose ranking leads the results; null when none is resolved.
   final String? chosenGroupId;
   final List<DayMessage> messages;
+
+  /// Each run's content and gate revision, without the user's layout:
+  /// what [regroupDay] groups again.
+  final List<TrackGroupingSource> sources;
+
+  /// Messages that do not depend on grouping.
+  final List<DayMessage> runMessages;
+
+  /// The user's layout name and direction per run.
+  final Map<String, TrackConfiguration> manualTracks;
 
   DayGroup? get chosenGroup {
     for (final group in groups) {
@@ -173,12 +189,7 @@ DayAnalysis analyzeDay(
         TrackGroupingSource(
           runId: run.runId,
           contentSha256: run.contentSha256,
-          manual: run.manual,
-          configuration: TrackConfiguration(
-            layoutId: run.layoutName,
-            direction: run.direction,
-            gateRevision: sessionGateRevision(run.session),
-          ),
+          configuration: TrackConfiguration(gateRevision: sessionGateRevision(run.session)),
         ),
       );
       if (run.session.metadata['firstTimestampMilliseconds'] == null) {
@@ -194,9 +205,6 @@ DayAnalysis analyzeDay(
           DayMessage(run.runId, 'No reliable start/finish passes; lap type is unknown.'),
         );
       }
-      if (!inference.supported && !run.manual) {
-        messages.add(DayMessage(run.runId, inference.reason));
-      }
       rows.addAll(runRows);
     } on OperationCancelled {
       rethrow;
@@ -205,10 +213,79 @@ DayAnalysis analyzeDay(
     }
   }
   throwIfCancelled(cancelled);
+  return _group(
+    sortDayLaps(rows),
+    inferences,
+    sources,
+    messages,
+    {
+      for (final run in runs)
+        if (run.manual)
+          run.runId: TrackConfiguration(layoutId: run.layoutName, direction: run.direction),
+    },
+    exclusions,
+    preferredGroupId,
+    cancelled,
+  );
+}
+
+/// [day] grouped again with the user's layout name and direction per run in
+/// [manualTracks] (a run left out uses its detected route). Rows and routes
+/// are kept, so this is cheap enough for the interface thread.
+DayAnalysis regroupDay(
+  DayAnalysis day, {
+  required Map<String, TrackConfiguration> manualTracks,
+  Map<DayLapReference, String> exclusions = const {},
+  String? preferredGroupId,
+}) => _group(
+  [for (final row in day.rows) row.offRoute ? row.copyWith(offRoute: false) : row],
+  day.inferences,
+  day.sources,
+  day.runMessages,
+  manualTracks,
+  exclusions,
+  preferredGroupId,
+  null,
+);
+
+DayAnalysis _group(
+  List<DayLapRow> rows,
+  Map<String, TrackInference> inferences,
+  List<TrackGroupingSource> baseSources,
+  List<DayMessage> runMessages,
+  Map<String, TrackConfiguration> manualTracks,
+  Map<DayLapReference, String> exclusions,
+  String? preferredGroupId,
+  CancellationCheck? cancelled,
+) {
+  final sources = [
+    for (final source in baseSources)
+      if (manualTracks[source.runId] case final manual?)
+        TrackGroupingSource(
+          runId: source.runId,
+          contentSha256: source.contentSha256,
+          manual: true,
+          configuration: TrackConfiguration(
+            layoutId: manual.layoutId,
+            direction: manual.direction,
+            gateRevision: source.configuration.gateRevision,
+          ),
+        )
+      else
+        source,
+  ];
+  final messages = [...runMessages];
+  for (final source in sources) {
+    final inference = inferences[source.runId];
+    if (!source.manual && inference != null && !inference.supported) {
+      messages.add(DayMessage(source.runId, inference.reason));
+    }
+  }
   final grouped = groupInferredTracks(
     {
       for (final source in sources)
-        if (!source.manual) source.runId: inferences[source.runId]!,
+        if (!source.manual && inferences[source.runId] != null)
+          source.runId: inferences[source.runId]!,
     },
     sources,
     cancelled: cancelled,
@@ -230,13 +307,16 @@ DayAnalysis analyzeDay(
         row,
   ];
   return _assemble(
-    sortDayLaps(marked),
+    marked,
     grouped.configurations,
     inferences,
     messages,
     exclusions,
     preferredGroupId,
     cancelled,
+    sources: baseSources,
+    runMessages: runMessages,
+    manualTracks: manualTracks,
   );
 }
 
@@ -255,6 +335,9 @@ DayAnalysis rerankDay(
   exclusions,
   preferredGroupId,
   null,
+  sources: day.sources,
+  runMessages: day.runMessages,
+  manualTracks: day.manualTracks,
 );
 
 DayAnalysis _assemble(
@@ -264,8 +347,11 @@ DayAnalysis _assemble(
   List<DayMessage> messages,
   Map<DayLapReference, String> exclusions,
   String? preferredGroupId,
-  CancellationCheck? cancelled,
-) {
+  CancellationCheck? cancelled, {
+  List<TrackGroupingSource> sources = const [],
+  List<DayMessage> runMessages = const [],
+  Map<String, TrackConfiguration> manualTracks = const {},
+}) {
   final groups = _groups(sorted, configurations, exclusions, cancelled);
   String? chosen;
   if (preferredGroupId != null &&
@@ -287,6 +373,9 @@ DayAnalysis _assemble(
     groups: groups,
     chosenGroupId: chosen,
     messages: messages,
+    sources: sources,
+    runMessages: runMessages,
+    manualTracks: manualTracks,
   );
 }
 
