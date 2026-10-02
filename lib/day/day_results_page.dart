@@ -9,6 +9,7 @@ import 'day_results_controller.dart';
 import 'document_pickers.dart';
 import 'lap_page.dart';
 import 'recovery_store.dart';
+import 'theoretical_best_card.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
 
@@ -349,6 +350,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
           '${group.label} · ${group.eligibleLapCount} of ${group.lapCount} laps ranked',
           style: theme.textTheme.bodyMedium,
         ),
+      if (best != null) ...[
+        const SizedBox(height: 12),
+        _theoreticalBest(path, wide),
+      ],
       if (ranking != null && ranking.runs.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text('Best lap of each session', style: theme.textTheme.titleSmall),
@@ -405,6 +410,22 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
       ],
     ];
+  }
+
+  Widget _theoreticalBest(LapPath? path, bool wide) {
+    final result = _controller.theoreticalBest;
+    if (result == null && !_controller.theoreticalBestLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.requestTheoreticalBest();
+      });
+    }
+    return TheoreticalBestCard(
+      result: result,
+      loading: _controller.theoreticalBestLoading,
+      path: path,
+      gate: _mapGate,
+      wide: wide,
+    );
   }
 
   String _circuitText(String runId) {

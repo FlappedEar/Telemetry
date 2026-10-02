@@ -1,7 +1,8 @@
 // Port of the approval part of FlappedEar Overlays
 // native/src/telemetry/TrackSegmentReview.{h,cpp} (revision d4d1039, FET-31):
 // the approved segments of one track configuration, and adding one approved
-// segment to a run's stored `trackSegments`.
+// segment to a run's stored `trackSegments`, and the stamp a segment result
+// carries (`SegmentationResultStamp`).
 import 'dart:math' as math;
 
 import 'package:fetproject/fetproject.dart'
@@ -162,3 +163,40 @@ List<Map<String, Object?>>? withoutApprovedSegment(Object? storedSegments, Strin
   }
   return removed ? result : null;
 }
+
+/// Which approved segments and which calculation a segment result comes from,
+/// so a result is never shown against segments it was not computed for.
+final class SegmentationResultStamp {
+  const SegmentationResultStamp({
+    this.trackConfigurationReference = '',
+    this.revision = '',
+    this.calculationAlgorithm = '',
+  });
+
+  final String trackConfigurationReference;
+  final String revision;
+  final String calculationAlgorithm;
+}
+
+/// The stamp of a result computed by [calculationAlgorithm] against [approved].
+SegmentationResultStamp segmentationResultStamp(
+  ApprovedSegmentation approved, [
+  String calculationAlgorithm = '',
+]) => SegmentationResultStamp(
+  trackConfigurationReference: approved.trackConfigurationReference,
+  revision: approved.revision,
+  calculationAlgorithm: calculationAlgorithm,
+);
+
+/// Whether [stamp] is a result of [calculationAlgorithm] for the current
+/// [approved] segments.
+bool segmentationResultCurrent(
+  SegmentationResultStamp stamp,
+  ApprovedSegmentation approved, [
+  String calculationAlgorithm = '',
+]) =>
+    approved.valid &&
+    stamp.revision.isNotEmpty &&
+    stamp.revision == approved.revision &&
+    stamp.trackConfigurationReference == approved.trackConfigurationReference &&
+    stamp.calculationAlgorithm == calculationAlgorithm;
