@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:isolate';
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -25,19 +24,47 @@ abstract interface class RecordingPickers {
   Future<String?> pickFolder();
 }
 
+/// The picker filter for VBO and RCZ recordings on [platform].
+///
+/// iOS filters by uniform type identifier only, and a .vbo or .rcz file can
+/// carry a type declared by another app (RaceChrono), so iOS shows every
+/// file; the scan reports what is not a recording. Elsewhere the filter is by
+/// extension.
+XTypeGroup recordingTypeGroup(TargetPlatform platform) =>
+    platform == TargetPlatform.iOS
+    ? const XTypeGroup(
+        label: 'VBO and RCZ recordings',
+        uniformTypeIdentifiers: ['public.data'],
+      )
+    : const XTypeGroup(
+        label: 'VBO and RCZ recordings',
+        extensions: ['vbo', 'rcz', 'VBO', 'RCZ'],
+      );
+
+/// Desktops accept dropped recordings and offer a folder picker. Phones and
+/// tablets pick recordings only: on iOS file_selector has no folder picker,
+/// and on Android it returns a storage path the app may not be allowed to
+/// read.
+bool isDesktopPlatform(TargetPlatform platform) =>
+    !kIsWeb &&
+    switch (platform) {
+      TargetPlatform.macOS ||
+      TargetPlatform.windows ||
+      TargetPlatform.linux => true,
+      _ => false,
+    };
+
 /// file_selector pickers. On macOS the sandbox grants read access to what the
-/// user picks or drops, and nothing else.
+/// user picks or drops, and nothing else. On iOS the picker copies the chosen
+/// files into the app's temporary folder.
 final class PlatformRecordingPickers implements RecordingPickers {
   const PlatformRecordingPickers();
 
-  static const _recordings = XTypeGroup(
-    label: 'VBO and RCZ recordings',
-    extensions: ['vbo', 'rcz', 'VBO', 'RCZ'],
-  );
-
   @override
   Future<List<String>> pickRecordings() async => [
-    for (final file in await openFiles(acceptedTypeGroups: [_recordings]))
+    for (final file in await openFiles(
+      acceptedTypeGroups: [recordingTypeGroup(defaultTargetPlatform)],
+    ))
       file.path,
   ];
 
@@ -86,12 +113,16 @@ class DayImportPage extends StatefulWidget {
     this.documents = const PlatformDocumentPickers(),
     this.recovery = const PlatformRecoveryStore(),
     this.acceptsDrops,
+    this.picksFolders,
   });
 
   final DocumentPickers documents;
 
   /// Keeps the day being worked on until it is saved.
   final RecoveryStore recovery;
+
+  /// Whether "Choose a folder…" is offered; by default on desktop only.
+  final bool? picksFolders;
 
   /// Whether recordings and folders can be dropped on the window; by default
   /// on desktop only.
@@ -106,10 +137,11 @@ class DayImportPage extends StatefulWidget {
 }
 
 class _DayImportPageState extends State<DayImportPage> {
-  static bool get _isDesktop =>
-      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+  static bool get _isDesktop => isDesktopPlatform(defaultTargetPlatform);
 
   bool get _acceptsDrops => widget.acceptsDrops ?? _isDesktop;
+
+  bool get _picksFolders => widget.picksFolders ?? _isDesktop;
 
   late final DayImportController _controller =
       widget.controller ?? DayImportController();
@@ -396,7 +428,9 @@ class _DayImportPageState extends State<DayImportPage> {
       Text(
         _acceptsDrops
             ? 'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.'
-            : 'Choose the day\'s VBO and RCZ recordings or a folder.',
+            : _picksFolders
+            ? 'Choose the day\'s VBO and RCZ recordings or a folder.'
+            : 'Choose the day\'s VBO and RCZ recordings.',
         style: Theme.of(context).textTheme.bodyLarge,
       ),
       const SizedBox(height: 12),
@@ -410,29 +444,31 @@ class _DayImportPageState extends State<DayImportPage> {
             icon: const Icon(Icons.insert_drive_file_outlined),
             label: const Text('Choose recordings…'),
           ),
-          OutlinedButton.icon(
-            onPressed: enabled ? _pickFolder : null,
-            icon: const Icon(Icons.folder_open_outlined),
-            label: const Text('Choose a folder…'),
-          ),
+          if (_picksFolders)
+            OutlinedButton.icon(
+              onPressed: enabled ? _pickFolder : null,
+              icon: const Icon(Icons.folder_open_outlined),
+              label: const Text('Choose a folder…'),
+            ),
           OutlinedButton.icon(
             onPressed: enabled && !_opening ? _openDay : null,
             icon: const Icon(Icons.history),
             label: Text(_opening ? 'Opening…' : 'Open a saved day…'),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Checkbox(
-                value: _includeSubfolders,
-                onChanged: enabled
-                    ? (value) =>
-                          setState(() => _includeSubfolders = value ?? false)
-                    : null,
-              ),
-              const Text('Include subfolders'),
-            ],
-          ),
+          if (_picksFolders)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Checkbox(
+                  value: _includeSubfolders,
+                  onChanged: enabled
+                      ? (value) =>
+                            setState(() => _includeSubfolders = value ?? false)
+                      : null,
+                ),
+                const Text('Include subfolders'),
+              ],
+            ),
         ],
       ),
     ];

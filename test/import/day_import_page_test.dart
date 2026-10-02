@@ -104,11 +104,71 @@ void main() {
     return path;
   }
 
-  Future<void> show(WidgetTester tester) => tester.pumpWidget(
-    TelemetryApp(
-      home: DayImportPage(controller: controller, pickers: pickers),
-    ),
+  /// Desktop choices by default; [picksFolders] null follows the platform.
+  Future<void> show(WidgetTester tester, {bool? picksFolders = true}) =>
+      tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            controller: controller,
+            pickers: pickers,
+            picksFolders: picksFolders,
+          ),
+        ),
+      );
+
+  testWidgets(
+    'phones and tablets offer recordings only, not a folder',
+    (tester) async {
+      final vbo = write('a.vbo', _datedVbo(hour: 9));
+      pickers.recordings = [vbo];
+      await show(tester, picksFolders: null);
+
+      expect(
+        find.text('Choose the day\'s VBO and RCZ recordings.'),
+        findsOneWidget,
+      );
+      expect(find.text('Choose a folder…'), findsNothing);
+      expect(find.text('Include subfolders'), findsNothing);
+
+      await tester.tap(find.text('Choose recordings…'));
+      await tester.pump();
+      expect(controller.isWorking, isTrue);
+      importer.jobs.single.finish();
+      await tester.pumpAndSettle();
+      expect(find.text('1 session imported'), findsOneWidget);
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.iOS,
+      TargetPlatform.android,
+    }),
   );
+
+  testWidgets(
+    'desktops offer a folder too',
+    (tester) async {
+      await show(tester, picksFolders: null);
+      expect(find.text('Choose a folder…'), findsOneWidget);
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+    }),
+  );
+
+  test('iOS picks by type identifier, other platforms by extension', () {
+    // file_selector on iOS refuses a group without type identifiers.
+    final ios = recordingTypeGroup(TargetPlatform.iOS);
+    expect(ios.uniformTypeIdentifiers, isNotEmpty);
+    for (final platform in [
+      TargetPlatform.android,
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+    ]) {
+      final group = recordingTypeGroup(platform);
+      expect(group.extensions, containsAll(['vbo', 'rcz']));
+      expect(group.uniformTypeIdentifiers, isNull);
+    }
+  });
 
   testWidgets('imports picked recordings as sessions in recording order', (
     tester,
