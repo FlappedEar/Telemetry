@@ -40,6 +40,22 @@ recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
 
+## Phones and tablets
+
+On a phone or tablet, **Choose recordings…** picks VBO and RCZ files (there is
+no folder picker). Recordings can also be sent from another app: in
+RaceChrono, export a session and choose **FlappedEar Telemetry** in the share
+sheet. The app copies the shared files into its own storage and imports them
+on **Import a day**.
+
+To install on Android without a store, download the
+`flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
+install `app-release.apk` (allow installs from the browser or file manager).
+Use builds from `main`: they share one signing key kept in the Actions cache,
+so a newer APK installs over the old one and keeps the app's days. If that
+cache expires (seven days without a build), the key changes and Android
+refuses the update; days would then have to be saved elsewhere first.
+
 ## Platforms
 
 | Platform | Minimum |
