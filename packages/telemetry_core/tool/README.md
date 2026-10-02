@@ -34,3 +34,26 @@ The committed reference was generated from FlappedEar/Overlay `d4d1039` with Qt 
 g++ 13.3 on Ubuntu 24.04. When Overlays changes its parser or lap timing,
 regenerate it and fix the Dart side until `dart test test/parity` passes; never
 edit the JSON by hand.
+
+## cpp_project_check
+
+Opens `.fetproject` documents with FlappedEar Overlays' own C++ code and prints
+what Overlays sees: whether the document is valid, each run's recording
+(resolved path, `telemetry-v1` fingerprint match, content SHA-256), lap
+derivation key and track configuration, the laps its exclusions apply to with
+Overlays' own lap timing, and whether an Overlays re-save keeps the event
+unchanged. It compiles Overlays' `project/` and `telemetry/` sources from a
+read-only checkout against Qt 6.8 Core, like `cpp_reference_dump` above. Not
+part of the app or of CI.
+
+```bash
+cmake -S tool/cpp_project_check -B /tmp/checkbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/checkbuild
+FLAPPEDEAR_OVERLAYS_CHECK=/tmp/checkbuild/cpp_project_check \
+  dart test test/day/overlays_check_test.dart
+```
+
+The test saves a synthetic day with a circuit name and an excluded lap and
+checks that Overlays reads all of it. It is skipped when the variable is not set.
+Last run against FlappedEar/Overlay `d4d1039`: passed.

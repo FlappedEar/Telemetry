@@ -254,7 +254,46 @@ Map<String, Object?> dayDocument({
   }
   document['version'] = 3;
   document['event'] = event;
+  document['documentState'] = nextDocumentState(_object(document['documentState']));
   return document;
+}
+
+/// A random UUID (version 4) without braces, as Qt's
+/// `QUuid::createUuid().toString(QUuid::WithoutBraces)` writes it.
+String newDocumentId([Random? random]) {
+  final source = random ?? Random.secure();
+  final bytes = [for (var i = 0; i < 16; ++i) source.nextInt(256)];
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = [for (final byte in bytes) byte.toRadixString(16).padLeft(2, '0')].join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-'
+      '${hex.substring(16, 20)}-${hex.substring(20)}';
+}
+
+final _maximumRevision = BigInt.parse('18446744073709551615');
+
+/// The `documentState` of the next save after [previous]: the same `id`
+/// (a new one when it is missing or malformed, as Overlays does) and
+/// `savedRevision` one higher, so Overlays treats its own older recovery
+/// snapshot of this document as stale. Other keys are kept.
+Map<String, Object?> nextDocumentState(Map<String, Object?>? previous) {
+  final state = _copy(previous);
+  final id = state['id'];
+  final revision = state['savedRevision'];
+  final parsed = revision is String && RegExp(r'^[0-9]{1,20}$').hasMatch(revision)
+      ? BigInt.parse(revision)
+      : null;
+  if (id is! String ||
+      id.isEmpty ||
+      id.length > 128 ||
+      parsed == null ||
+      parsed > _maximumRevision) {
+    state['id'] = newDocumentId();
+    state['savedRevision'] = '1';
+  } else {
+    state['savedRevision'] = (parsed < _maximumRevision ? parsed + BigInt.one : parsed).toString();
+  }
+  return state;
 }
 
 Map<String, Object?> _primaryEntry(

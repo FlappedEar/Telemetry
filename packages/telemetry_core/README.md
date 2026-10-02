@@ -81,7 +81,11 @@ a background isolate.
   first, then absolute, or a relinked path), refuses a different recording by
   content or fingerprint, applies exclusions whose recording and derivation key
   still match, and analyses the day. `openDayDocument` does the same for a
-  document already in memory.
+  document already in memory. Each save keeps Overlays' `documentState.id`
+  and raises `documentState.savedRevision` by one (`nextDocumentState`), so
+  Overlays treats its own older recovery snapshot of the document as stale.
+  `test/day/overlays_check_test.dart` opens a saved day with Overlays' C++
+  code (see [tool/README.md](tool/README.md)).
 - `writeDayRecovery` and `readDayRecovery` keep an unsaved day for recovery
   (after Overlays' `ProjectRecoveryStore`): this app's own file, wrapping the
   version 3 document with where the day was last saved, the path its
