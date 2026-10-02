@@ -109,8 +109,17 @@ jobs:
           java-version: 17
       - uses: ./.github/actions/setup-flutter
       - run: flutter pub get
-      - name: Build Android APK (debug)
-        run: flutter build apk --debug
+      # The release APK is the one to sideload on a phone or tablet. It is
+      # signed with this runner's debug key (android/app/build.gradle.kts), so
+      # an APK from a later run can only replace it after an uninstall.
+      - name: Build Android APK (release, sideloadable)
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flappedear-telemetry-android-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
