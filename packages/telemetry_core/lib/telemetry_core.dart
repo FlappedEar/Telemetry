@@ -1,6 +1,9 @@
 /// Recording model, VBO parser and lap timing for FlappedEar Telemetry.
 library;
 
+export 'src/day/compatibility.dart';
+export 'src/day/day_laps.dart';
+export 'src/day/day_ranking.dart';
 export 'src/geometry.dart'
     show
         CoordinateAxis,

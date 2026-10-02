@@ -9,6 +9,8 @@ environment:
   sdk: ^3.13.5
 dependencies:
   crypto: ^3.0.7
+  fetproject:
+    path: ../fetproject
   path: ^1.9.1
 
 dev_dependencies:
