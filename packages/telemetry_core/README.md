@@ -117,6 +117,26 @@ a background isolate.
   (`automaticTrackSegments`; `automaticSegments: false` turns it off). They are
   then kept on every later save. A run that still stores segments of another
   configuration gets none, as in Overlays.
+- `computeLapSectorTimes` times every approved segment of one lap from its
+  projection on the shared axis (gate boundaries use the lap's own start and
+  end, a segment across the gate is timed within the lap, a gap inside a
+  segment leaves it untimed), and says whether the segments tile the lap.
+  `computeTheoreticalBest` takes each segment's fastest time and the lap that
+  set it; `computeTimeLossObservations` and `rankTimeLosses` give each lap's
+  loss windows against a reference (a straight after a corner is the corner's
+  continuation); `summarizeConsistency` and `computeSectorConsistency` give
+  the median and interquartile range. `calculateOutingTheoreticalBest` times
+  a population on one axis from the canonical run's fastest lap
+  (`canonicalSegmentation`: the first run by id with segments for the group),
+  and `publishTheoreticalBest` gives what Overlays' theoretical-best dialog
+  shows (best lap, theoretical best, time available, segments by loss, the
+  map). Corner metrics are not ported.
+- `dayTheoreticalBest` does it for one group of a day: its eligible laps in
+  recording order with their sector times and their loss to the fastest time
+  of every segment (`DayLapSectors.lossSeconds`), the theoretical best and
+  the time available, the largest time losses, and the segment at any time of
+  a lap (`segmentAtTime`). It uses the document's segments, or proposes them
+  from the best lap as saving the day would.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.

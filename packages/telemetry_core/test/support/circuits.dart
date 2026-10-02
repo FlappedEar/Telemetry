@@ -78,3 +78,95 @@ TelemetrySession circuitSession({
     sampleCount: times.length,
   );
 }
+
+/// A synthetic recording driving a rounded rectangle (300 m by 150 m, 30 m
+/// corners, about 811 m) counter-clockwise through the gate at the origin,
+/// heading north, sampled at 10 Hz: one lap per entry in [speeds], each
+/// giving the speed (m/s) at a distance along the lap (0 at the gate). It
+/// has four corners and four straights, so it gets segment proposals.
+TelemetrySession rectangleSession(
+  List<double Function(double distance)> speeds, {
+  int? firstTimestampMilliseconds,
+  GeoCoordinate centre = const GeoCoordinate(_lat0, _lon0),
+}) {
+  const width = 300.0, height = 150.0, radius = 30.0;
+  // The outline from the gate, 0.5 m apart.
+  final outline = <(double, double)>[];
+  void straight(double x0, double y0, double x1, double y1) {
+    final length = math.sqrt(math.pow(x1 - x0, 2) + math.pow(y1 - y0, 2));
+    final steps = (length / 0.5).round();
+    for (var i = 0; i < steps; ++i) {
+      outline.add((x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps));
+    }
+  }
+
+  void corner(double cx, double cy, double from) {
+    final steps = (math.pi / 2 * radius / 0.5).round();
+    for (var i = 0; i < steps; ++i) {
+      final a = from + math.pi / 2 * i / steps;
+      outline.add((cx + radius * math.cos(a), cy + radius * math.sin(a)));
+    }
+  }
+
+  const halfHeight = height / 2 - radius;
+  const left = -width + radius, right = -radius;
+  straight(0, 0, 0, halfHeight);
+  corner(right, halfHeight, 0);
+  straight(right, height / 2, left, height / 2);
+  corner(left, halfHeight, math.pi / 2);
+  straight(-width, halfHeight, -width, -halfHeight);
+  corner(left, -halfHeight, math.pi);
+  straight(left, -height / 2, right, -height / 2);
+  corner(right, -halfHeight, 3 * math.pi / 2);
+  straight(0, -halfHeight, 0, 0);
+  final perimeter = outline.length * 0.5;
+  (double, double) at(double distance) {
+    final wrapped = distance % perimeter;
+    final index = (wrapped / 0.5).floor() % outline.length;
+    final next = (index + 1) % outline.length;
+    final fraction = wrapped / 0.5 - (wrapped / 0.5).floor();
+    return (
+      outline[index].$1 + (outline[next].$1 - outline[index].$1) * fraction,
+      outline[index].$2 + (outline[next].$2 - outline[index].$2) * fraction,
+    );
+  }
+
+  final times = <double>[], latitudes = <double>[], longitudes = <double>[];
+  final speedValues = <double>[];
+  var distance = -20.0, t = 0.0;
+  final end = (speeds.length + 0.3) * perimeter;
+  while (distance < end) {
+    final lap = math.max(0, math.min(distance ~/ perimeter, speeds.length - 1));
+    final speed = speeds[lap](distance - lap * perimeter);
+    final (east, north) = at(distance);
+    final coordinate = _toDegrees(east, north, centre);
+    times.add(t);
+    latitudes.add(coordinate.latitudeDegrees);
+    longitudes.add(coordinate.longitudeDegrees);
+    speedValues.add(speed * 3.6);
+    distance += speed / 10.0;
+    t += 0.1;
+  }
+  TelemetryChannel channel(String name, List<double> values) => TelemetryChannel(
+    name: name,
+    timestamps: Float64List.fromList(times),
+    values: Float32List.fromList(values),
+  );
+  return TelemetrySession(
+    duration: times.last,
+    startTime: 0,
+    metadata: {
+      if (firstTimestampMilliseconds != null)
+        'firstTimestampMilliseconds': '$firstTimestampMilliseconds',
+    },
+    channels: {
+      'latitude': channel('latitude', latitudes),
+      'longitude': channel('longitude', longitudes),
+      'velocity': channel('velocity', speedValues),
+    },
+    aliases: const {'latitude': 'latitude', 'longitude': 'longitude', 'speed': 'velocity'},
+    warnings: const [],
+    timingGates: [circuitGate(centre: centre)],
+    sampleCount: times.length,
+  );
+}

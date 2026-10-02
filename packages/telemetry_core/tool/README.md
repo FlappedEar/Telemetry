@@ -125,3 +125,44 @@ The test saves a synthetic day with a circuit name and an excluded lap and
 checks that Overlays reads all of it. It is skipped when the variable is not set.
 The test also checks that the chosen group's best lap got automatic segments,
 which Overlays accepts. Last run against FlappedEar/Overlay `d4d1039`: passed.
+
+## cpp_theoretical_best_dump
+
+Runs FlappedEar Overlays' own `SectorTiming`, `TheoreticalBest`, `TimeLoss`,
+`Consistency` and `OutingTheoreticalBestResults` (`publishTheoreticalBest`,
+`publishTimeLossRanking`) over VBO files and fixed cases and writes the
+results as JSON. Each file becomes a day of two runs (its odd and its even
+reference-eligible laps). The fastest lap's segment proposals are approved
+into its run with ids `s0`, `s1`, ..., and also shifted 37 m (the last one
+crossing the gate) and thinned to every other segment. For each set it picks
+the canonical run as `requestOutingTheoreticalBest` does and follows the loop
+of `calculateOutingTheoreticalBest` with the sessions in memory (one axis
+from the canonical run's fastest lap, every lap projected and timed; the
+corner metrics are left out), and writes every lap's sector times, the
+theoretical best, the published theoretical best (map thinned to part sizes,
+end points and every 50th outline point), both time-loss rankings, one lap's
+loss windows and sector comparisons. The cases section times hand-made
+projections (wrapping segments, gaps, gate tolerance, other revisions).
+
+```bash
+cmake -S tool/cpp_theoretical_best_dump -B /tmp/tbbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/tbbuild
+/tmp/tbbuild/cpp_theoretical_best_dump test/parity/theoretical_best_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/theoretical_best_parity_test.dart
+```
+
+`--day <day.json> <output.json>` runs the same calculation for a real day
+described in a file: `runs` (`runId`, VBO `file`), the eligible laps
+(`population`: `runId`, `lapNumber`, `start`, `end`), each run's stored
+`segments` (with the tool's configuration reference) and the `actualBest`
+(`runId`, `lapNumber`). Use it locally to compare a day's theoretical best
+with the app's; never commit its input or output.
+
+The committed `test/parity/theoretical_best_reference.json` was generated
+from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04.
+To check other recordings locally, run the test with
+`FET_TB_REFERENCE=<json>` and `FET_TB_DIRS=<dir>[:<dir>]`;
+`FET_PARITY_REPORT=1` prints the largest difference. Never edit the JSON by
+hand.
