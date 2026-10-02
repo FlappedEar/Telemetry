@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/import/incoming_recordings.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -44,6 +45,13 @@ final class _FakeImporter implements DayImporter {
     jobs.add(job);
     return job;
   }
+}
+
+final class _FakeIncoming implements IncomingRecordings {
+  final controller = StreamController<List<String>>.broadcast();
+
+  @override
+  Stream<List<String>> get received => controller.stream;
 }
 
 final class _FakePickers implements RecordingPickers {
@@ -154,6 +162,68 @@ void main() {
       TargetPlatform.windows,
     }),
   );
+
+  testWidgets('recordings shared from another app are imported', (
+    tester,
+  ) async {
+    final incoming = _FakeIncoming();
+    final vbo = write('shared.vbo', _datedVbo(hour: 9));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayImportPage(
+          controller: controller,
+          pickers: pickers,
+          incoming: incoming,
+        ),
+      ),
+    );
+
+    incoming.controller.add([vbo]);
+    await tester.pump();
+    expect(importer.jobs.single.request.paths, [vbo]);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    expect(find.text('1 session imported'), findsOneWidget);
+
+    // Leaving the page stops listening.
+    await tester.pumpWidget(const SizedBox());
+    expect(incoming.controller.hasListener, isFalse);
+  });
+
+  testWidgets('a share while a day is open imports behind it and says so', (
+    tester,
+  ) async {
+    final incoming = _FakeIncoming();
+    final vbo = write('shared.vbo', _datedVbo(hour: 9));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayImportPage(
+          controller: controller,
+          pickers: pickers,
+          incoming: incoming,
+        ),
+      ),
+    );
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: Text('An open day')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    incoming.controller.add([vbo]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(importer.jobs.single.request.paths, [vbo]);
+    expect(find.text('An open day'), findsOneWidget);
+    expect(
+      find.text(
+        'Importing the shared recordings. Go back to Import a day to see them.',
+      ),
+      findsOneWidget,
+    );
+  });
 
   test('iOS picks by type identifier, other platforms by extension', () {
     // file_selector on iOS refuses a group without type identifiers.

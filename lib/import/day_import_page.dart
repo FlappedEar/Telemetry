@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:isolate';
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -13,6 +14,7 @@ import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
 import '../format.dart';
 import 'day_import_controller.dart';
+import 'incoming_recordings.dart';
 
 export '../format.dart' show displayTime;
 
@@ -114,12 +116,16 @@ class DayImportPage extends StatefulWidget {
     this.recovery = const PlatformRecoveryStore(),
     this.acceptsDrops,
     this.picksFolders,
+    this.incoming,
   });
 
   final DocumentPickers documents;
 
   /// Keeps the day being worked on until it is saved.
   final RecoveryStore recovery;
+
+  /// Recordings shared from another app; by default the iOS and Android host.
+  final IncomingRecordings? incoming;
 
   /// Whether "Choose a folder…" is offered; by default on desktop only.
   final bool? picksFolders;
@@ -151,10 +157,14 @@ class _DayImportPageState extends State<DayImportPage> {
 
   /// An unsaved day kept from before, offered for restoring.
   DayRecovery? _recovered;
+  late final StreamSubscription<List<String>> _incoming;
 
   @override
   void initState() {
     super.initState();
+    _incoming = (widget.incoming ?? PlatformIncomingRecordings.instance)
+        .received
+        .listen(_receive);
     _checkRecovery();
   }
 
@@ -259,8 +269,27 @@ class _DayImportPageState extends State<DayImportPage> {
 
   @override
   void dispose() {
+    _incoming.cancel();
     if (widget.controller == null) _controller.dispose();
     super.dispose();
+  }
+
+  /// Recordings shared from another app start an import here, also while a
+  /// day is open on top of this page; nothing on that page is closed.
+  void _receive(List<String> paths) {
+    if (!mounted) return;
+    final behind = ModalRoute.of(context)?.isCurrent == false;
+    final started = !_controller.isWorking;
+    _start(paths);
+    if (behind && started) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Importing the shared recordings. Go back to Import a day to see them.',
+          ),
+        ),
+      );
+    }
   }
 
   void _start(List<String> paths) {
