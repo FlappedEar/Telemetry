@@ -85,7 +85,8 @@ void main() {
     expect(opened.analysis!.ranking!.bestOfDay!.reference, analysis.ranking!.bestOfDay!.reference);
     expect(opened.analysis!.ranking!.bestOfDay!.reference, isNot(best.reference));
 
-    // Saving the opened day again gives the same document.
+    // Saving the opened day again gives the same document, one saved
+    // revision later.
     final again = dayDocument(
       eventId: opened.eventId,
       name: opened.name,
@@ -96,7 +97,13 @@ void main() {
       previous: opened.document,
       previousPath: path,
     );
-    expect(fet.qtCompactJson(again), fet.qtCompactJson(opened.document));
+    final state = opened.document['documentState'] as Map;
+    expect(state['savedRevision'], '1');
+    expect(again['documentState'], {'id': state['id'], 'savedRevision': '2'});
+    expect(
+      fet.qtCompactJson({...again, 'documentState': state}),
+      fet.qtCompactJson(opened.document),
+    );
   });
 
   test('opens the rest of the day when a recording is missing or changed', () async {
@@ -169,5 +176,29 @@ void main() {
   test('names a day after its first dated recording', () {
     expect(defaultDayName(const []), 'Day');
     expect(newEventId(), matches(RegExp(r'^[0-9a-f]{32}$')));
+  });
+
+  test('continues the document identity and saved revision', () {
+    final uuid = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$');
+    final first = nextDocumentState(null);
+    expect(first['id'], matches(uuid));
+    expect(first['savedRevision'], '1');
+    final second = nextDocumentState({...first, 'extra': true});
+    expect(second, {'id': first['id'], 'savedRevision': '2', 'extra': true});
+    expect(nextDocumentState({'id': 'overlays-id', 'savedRevision': '41'})['savedRevision'], '42');
+    expect(
+      nextDocumentState({'id': 'x', 'savedRevision': '18446744073709551615'})['savedRevision'],
+      '18446744073709551615',
+    );
+    for (final malformed in [
+      {'id': '', 'savedRevision': '3'},
+      {'id': 'x', 'savedRevision': 3},
+      {'id': 'x', 'savedRevision': '18446744073709551616'},
+      {'id': 'x' * 129, 'savedRevision': '3'},
+    ]) {
+      final state = nextDocumentState(malformed);
+      expect(state['id'], matches(uuid));
+      expect(state['savedRevision'], '1');
+    }
   });
 }
