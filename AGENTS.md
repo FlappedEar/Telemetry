@@ -1,0 +1,129 @@
+# AGENTS.md
+
+Rules for anyone, human or agent, who changes this repository.
+
+FlappedEar Telemetry is the track-day analysis app for macOS, Windows, iOS and
+Android, written in Flutter. The brand is written **FlappedEar**, without a space.
+
+## Where things come from
+
+- **Blank page.** This repository shares no code with
+  [`arekkozuch/VBOOverlay`](https://github.com/arekkozuch/VBOOverlay) (FlappedEar
+  Overlays). That repository is cross-reference material for behaviour, data and
+  decisions only. Do not copy its code and do not add a code dependency between
+  the two repositories.
+- **Handover.** The architect handover is
+  [`docs/telemetry-handover.md`](https://github.com/arekkozuch/VBOOverlay/blob/main/docs/telemetry-handover.md)
+  in VBOOverlay (reference revision `0ec7416`). When a rule here and the handover
+  disagree, ask the owner.
+- **Tracking.** Work is tracked in the Jira space
+  [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
+
+## Process
+
+- One active Jira task at a time, a focused commit, and recorded build and test
+  evidence before the task is marked done. Jira content is in English.
+- Every change goes through a pull request. CI must be green on the PR head and on
+  the resulting `main` revision; earlier CI results are not evidence for new code.
+- Documentation is part of every iteration.
+- Never claim that something works without running it. If a check could not be
+  run, say so and say why.
+- Report results from real recordings separately from synthetic tests.
+- No secrets, API keys, user paths, generated media or build output in Git.
+- Check the current version, maintenance and licence of every new dependency
+  before adding it, and record the check in the PR. Add no unrelated dependencies.
+- Do not implement roadmap features that were not requested.
+- No licence file until the owner chooses one.
+
+## Product rules
+
+- **No video.** Telemetry never has video, video sync or overlays. Those belong to
+  FlappedEar Overlays.
+- **No data loss.** This holds for every migration and for all project data.
+- **Identity.** The bundle and application identifier is
+  `com.flappedear.telemetry`. The old desktop editor used the same identifier and
+  the storage name "FlappedEar Telemetry". The app must never read, write or delete
+  the old editor's data locations (listed in VBOOverlay
+  `docs/application-identity.md`). Verify each platform's default directories
+  before the first release.
+- **Private recordings.** The real-day recordings live in the private repository
+  `FlappedEar/refdata`. Never copy them into this repository or any public place:
+  they contain GPS traces and heart rate. Synthetic fixtures may be copied.
+
+## The shared `.fetproject` format
+
+Both apps read and write one `.fetproject` format, and it stays compatible in both
+directions (KAN-170). A document written by either app must open in the other and
+survive a re-save without losing anything.
+
+- Keep every field Overlays owns unchanged: `scene.widgets`, `analysis.channels`,
+  and each run's `sync` and `sources.video`.
+- Open objects keep unknown keys. Never add keys to closed objects.
+- Keep `documentState.id`, and continue `savedRevision` from the loaded value.
+- Schema changes are agreed with the owner first.
+
+The handover section "The shared contract: `.fetproject`" is the detailed reference.
+
+## Invariants
+
+These are carried over from the handover, section "Invariants to carry over". They
+apply whatever the app's architecture.
+
+**Parsing and data**
+
+- Bound untrusted input (recordings, JSON documents, metadata) before large
+  allocations or recursion.
+- Test every parser change, including malformed input.
+- Parser output timestamps are strictly monotonic.
+- Public boundaries never expose `NaN` or infinity. Values outside the range and
+  missing values are "no data"; gaps are never bridged.
+- Heart rate comes from the imported VBO/RCZ recording; there is no separate
+  heart-rate source.
+- Never invent brake telemetry, and never substitute another channel silently.
+- Analysis never depends on video or frame rate; all timing is time based.
+
+**Documents**
+
+- Saves are atomic. New, open and quit respect unsaved changes. Opening validates
+  and commits a document as one transaction.
+- A document and its recordings are separate. A missing or moved recording never
+  prevents a valid document from opening. Relative references are preferred, and a
+  recording is never accepted only because its pathname matches.
+- The saved document is the authoritative clean state. Recovery data is separate,
+  represents unsaved changes, and is never silently marked clean. Discard removes
+  it. Recovery is offered only when it is newer than the saved document.
+
+**Background work**
+
+- Results of background parsing and analysis are guarded by a generation number
+  and the source identity; a stale result never changes committed state.
+- Long operations are cooperatively cancellable. Generation checks and
+  cancellation are both required.
+
+**Display**
+
+- Static geometry, such as the track map, is not rebuilt on cursor or time
+  updates. Moving markers update separately.
+- A chart distinguishes "no data in this range" from a failure. Series keep their
+  segments, so telemetry gaps stay visibly disconnected.
+
+## How results are presented
+
+From the handover, section "How results are presented".
+
+- Lead with the result: the best lap and where the time is, on the track map.
+- Names, not files: "Session 3 · LAP 2". Runs are named "Session N" in
+  recording-time order.
+- Mobile is touch-first: no hover, no tooltips, large targets.
+- Times from one minute read `m:ss.mmm` ("1:49.898"); below a minute "28.662 s";
+  a non-finite value is "—". Round before splitting minutes, so a time never reads
+  "x:60".
+- A missing result says why and is never shown as zero.
+- Typical means the median, spread means the interquartile range, and at least
+  three laps are needed. No percentage scores.
+- Results are observations, not causes or driving instructions.
+- Measured and inferred values are labelled.
+- Δ is A − B; a positive value means A is behind. A is green `#55e6a5`, B is
+  orange `#d95926`.
+- Longitudinal G: braking points upward in charts; acceleration points upward in
+  G-G and on the map.
