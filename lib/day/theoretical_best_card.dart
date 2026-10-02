@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import 'corner_details.dart';
 import 'track_map.dart';
 
 /// The colour of a loss of [fraction] (0 to 1) of the largest: one hue, dim
@@ -185,6 +186,11 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         const SizedBox(height: 8),
         _LossLegend(maximum: _maximumLoss(lap)),
         const SizedBox(height: 8),
+        if (result.corners.isNotEmpty)
+          Text(
+            'Tap a corner for its speeds, braking and pickup against the best lap.',
+            style: theme.textTheme.bodySmall,
+          ),
         ..._losses(context, result, lap),
       ],
       const SizedBox(height: 16),
@@ -229,7 +235,6 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     DayTheoreticalBest result,
     DayLapSectors lap,
   ) {
-    final theme = Theme.of(context);
     final maximum = _maximumLoss(lap);
     final order = List.generate(result.segments.length, (index) => index)
       ..sort((a, b) {
@@ -238,45 +243,76 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         return left != right ? right.compareTo(left) : a.compareTo(b);
       });
     return [
-      for (final index in order)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Container(
-                width: 6,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: lap.lossSeconds[index] == null
-                      ? theme.colorScheme.outline
-                      : lossColor(lap.lossSeconds[index]! / maximum),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(result.segments[index].name),
-                    Text(
-                      _lossDetail(result, lap, index),
-                      style: theme.textTheme.bodySmall,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                lap.lossSeconds[index] == null
-                    ? '—'
-                    : '+${lap.lossSeconds[index]!.toStringAsFixed(3)} s',
-                style: theme.textTheme.titleSmall,
-              ),
-            ],
-          ),
-        ),
+      for (final index in order) _lossRow(context, result, lap, index, maximum),
     ];
+  }
+
+  // One segment's loss; a corner also shows its minimum speed and braking
+  // point against the best lap, and opens its details when tapped.
+  Widget _lossRow(
+    BuildContext context,
+    DayTheoreticalBest result,
+    DayLapSectors lap,
+    int index,
+    double maximum,
+  ) {
+    final theme = Theme.of(context);
+    final corner = result.cornerAt(index);
+    final comparison = corner?.compare(lap.lap.reference);
+    final summary = comparison == null ? null : cornerSummary(comparison);
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 36,
+            decoration: BoxDecoration(
+              color: lap.lossSeconds[index] == null
+                  ? theme.colorScheme.outline
+                  : lossColor(lap.lossSeconds[index]! / maximum),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(result.segments[index].name),
+                Text(
+                  _lossDetail(result, lap, index),
+                  style: theme.textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (summary != null && summary.isNotEmpty)
+                  Text(
+                    summary,
+                    key: ValueKey('cornerSummary ${corner!.name}'),
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            lap.lossSeconds[index] == null
+                ? '—'
+                : '+${lap.lossSeconds[index]!.toStringAsFixed(3)} s',
+            style: theme.textTheme.titleSmall,
+          ),
+          if (comparison != null)
+            Icon(Icons.chevron_right, color: theme.colorScheme.outline),
+        ],
+      ),
+    );
+    if (corner == null || comparison == null) return row;
+    return InkWell(
+      key: ValueKey('lossRow ${corner.name}'),
+      onTap: () => showCornerDetails(context, corner, lap.lap.reference),
+      child: row,
+    );
   }
 
   String _lossDetail(DayTheoreticalBest result, DayLapSectors lap, int index) {

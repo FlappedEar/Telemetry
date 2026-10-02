@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/corner_details.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/theoretical_best_card.dart';
 import 'package:telemetry/day/track_map.dart';
@@ -147,6 +148,156 @@ void main() {
       expect(bestLap.totalLossSeconds, closeTo(result.availableSeconds!, 1e-9));
     },
   );
+
+  testWidgets(
+    'a corner shows its speeds, braking and pickup against the best lap on a phone',
+    (tester) async {
+      final path = '${directory.path}/pedals.vbo';
+      File(path).writeAsStringSync(
+        rectangleVbo([
+          rectangleBrakingLap(250, 18),
+          rectangleBrakingLap(270, 20),
+          rectangleBrakingLap(240, 17, hold: 350),
+        ], pedals: true),
+      );
+      final outcome = runDayImport((paths: [path], includeSubfolders: false));
+      final result = dayTheoreticalBest(
+        outcome.analysis!,
+        outingRuns(outcome.runs),
+      );
+      expect(result.state, DayTheoreticalBestState.ready);
+      final corner = result.corners.firstWhere((c) => c.name == 'Corner 2');
+      final best = result.bestLap!;
+      expect(best.lapNumber, 2);
+      final first = result.laps.firstWhere((lap) => lap.lap.lapNumber == 1);
+      final comparison = corner.compare(first.lap.reference)!;
+      final firstMinimum = comparison.metrics.speeds.minimum.value!;
+      final bestMinimum = comparison.bestLapMetrics!.speeds.minimum.value!;
+
+      // A Pixel 7 screen.
+      await tester.binding.setSurfaceSize(const Size(412, 915));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(children: [TheoreticalBestCard(result: result)]),
+          ),
+        ),
+      );
+      final page = find.byType(Scrollable).first;
+      // The best lap is chosen first; choose lap 1 in the sector table.
+      final row = find.byKey(ValueKey('sectorRow ${first.lap.displayName}'));
+      await tester.scrollUntilVisible(row, 200, scrollable: page);
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pump();
+
+      final summary = find.byKey(const ValueKey('cornerSummary Corner 2'));
+      await tester.scrollUntilVisible(summary, -200, scrollable: page);
+      final line = tester.widget<Text>(summary).data!;
+      expect(line, contains('Min ${firstMinimum.toStringAsFixed(1)}'));
+      expect(line, contains('best lap ${bestMinimum.toStringAsFixed(1)}'));
+      expect(line, contains('m earlier'));
+      // Straights have no corner details.
+      expect(find.byKey(const ValueKey('lossRow Straight 1')), findsNothing);
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('lossRow Corner 2')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('lossRow Corner 2')));
+      await tester.pumpAndSettle();
+      final details = find.byType(CornerDetails);
+      expect(details, findsOneWidget);
+      String rowText(String key) => tester
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byKey(ValueKey(key)),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((text) => text.data)
+          .join(' | ');
+      expect(
+        rowText('cornerMinimumSpeed'),
+        contains(
+          '${firstMinimum.toStringAsFixed(1)} | ${bestMinimum.toStringAsFixed(1)} | −'
+          '${(bestMinimum - firstMinimum).toStringAsFixed(1)}',
+        ),
+      );
+      final before = comparison.metrics.braking.distanceBeforeEntryMeters!;
+      final delta = comparison.braking.brakingPointDeltaMeters!;
+      expect(
+        rowText('cornerBrakingPoint'),
+        allOf(
+          contains('${before.round()} m'),
+          contains('${delta.abs().round()} m earlier'),
+          contains('From the brake channel'),
+        ),
+      );
+      // Lap 1 never lifts below 10 % in the corner; the best lap does.
+      final bestPickup =
+          comparison.bestLapMetrics!.exit.pickup.progressMeters! -
+          corner.startProgressMeters;
+      expect(
+        rowText('cornerPickup'),
+        allOf(
+          contains('— | ${bestPickup.round()} m | —'),
+          contains('no lift before the pickup'),
+        ),
+      );
+      expect(
+        rowText('cornerBest Earliest throttle pickup'),
+        contains(comparison.earliestPickup!.lap.displayName),
+      );
+      expect(
+        rowText('cornerBest Highest minimum speed'),
+        contains(best.displayName),
+      );
+      expect(
+        rowText('cornerBest Latest braking point'),
+        contains(best.displayName),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('a corner of the best lap and a corner without pedals', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final result = dayTheoreticalBest(
+      outcome.analysis!,
+      outingRuns(outcome.runs),
+    );
+    final corner = result.corners.first;
+    final best = corner.compare(result.bestLap!.reference)!;
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: CornerDetails(corner: corner, comparison: best),
+          ),
+        ),
+      ),
+    );
+    expect(find.textContaining('the best lap'), findsWidgets);
+    expect(find.text('This lap'), findsNothing);
+    expect(
+      find.textContaining('no brake or deceleration channel'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('no throttle or acceleration channel'),
+      findsOneWidget,
+    );
+    expect(cornerReasonText('noBrakingDetected'), 'no braking detected');
+    expect(cornerReasonText('somethingNew'), 'somethingNew');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('says why there is no theoretical best', (tester) async {
     await tester.pumpWidget(
