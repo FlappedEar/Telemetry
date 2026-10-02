@@ -35,6 +35,35 @@ g++ 13.3 on Ubuntu 24.04. When Overlays changes its parser or lap timing,
 regenerate it and fix the Dart side until `dart test test/parity` passes; never
 edit the JSON by hand.
 
+## cpp_progress_dump
+
+Runs FlappedEar Overlays' own `TrackProgress` (`buildProgressAxis`,
+`computeTrackFeatures`, `projectLapTrace`, `timeAtProgress`, `progressAtTime`,
+`computeDeltaSeries`) and `TelemetrySession::sampledSegments` over VBO files and
+writes a summary as JSON. For each file with lap traces it builds the axis from
+the first reference-eligible lap trace around the start gate's midpoint (the
+origin `LapTiming` uses for lap traces), and writes the axis length, spacing and
+every 50th point, track features with 15 m smoothing (every 50th), every timed
+lap's projection (segment sizes, first and last sample, every 25th sample, time
+at 0, 100 and 500 m, progress at four times), the delta series of the first lap
+against the fastest at 5 m steps (counts, ends, every 50th point), and three
+`sampledSegments` calls (every 10th point). It compiles six files from a
+read-only Overlay checkout against Qt 6.8 Core, like `cpp_reference_dump`.
+
+```bash
+cmake -S tool/cpp_progress_dump -B /tmp/progressbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/progressbuild
+/tmp/progressbuild/cpp_progress_dump test/parity/progress_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/progress_parity_test.dart
+```
+
+The committed `test/parity/progress_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Files
+without lap traces are left out. Regenerate it when Overlays changes this code;
+never edit the JSON by hand.
+
 ## cpp_project_check
 
 Opens `.fetproject` documents with FlappedEar Overlays' own C++ code and prints
