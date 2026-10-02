@@ -41,6 +41,83 @@ a background isolate.
   `nameRunsInRecordingOrder` names runs "Session N" by recording time, undated
   last, and `ImportGeneration` keeps a stale result from being committed.
 
+- `dayLapRows` lists one run's OUT, LAP n and IN sections (UNKNOWN when the
+  recording has no accepted gate pass), with the clock from the recording;
+  `sortDayLaps` orders a day's rows by that clock, undated runs last in import
+  order. A lap is identified by `DayLapReference`: its exact bounds in one
+  recording's content (SHA-256), never its number.
+- `rankDayLaps` ranks the timed laps of one compatibility group
+  (`TrackConfiguration.compatibilityGroupId`, the `compatibility-v1` id from
+  `packages/fetproject`): best of the day, each run's best with linearly
+  interpolated quartiles, ties, and every lap left out with its `LapIssue`s
+  (unresolved layout, direction or gates, incomplete or invalid GPS, user
+  exclusion, off the recorded route, changed source). Ties order by duration,
+  clock, run, start and end. `eligibleDayLaps` is the same eligibility rule for
+  later consumers.
+
+- `inferTrack` finds the route a recording's complete laps follow (closed
+  within 25 m, 100–30,000 m, resampled to 256 points; clockwise when the signed
+  area is negative) and the laps on it; a lap more than 12 m off the other
+  laps' line is off the route. `groupInferredTracks` groups runs whose routes
+  match (same direction, length within 5 %, cross-track at most 25 m and 10 m
+  RMS), complete-link, under a `gps-route-v1:` layout. A manual layout always
+  wins.
+- `analyzeDay` derives a whole day from its runs: rows, configurations (with
+  the `gates-v1` revision of each recording's gates), groups labelled
+  "Group 1 · Detected route · Clockwise", the ranking of every group, the
+  group shown first (the one with the most eligible laps unless one is
+  preferred), and messages. One failing run never stops the others.
+- `lapPath` gives a lap section's GPS fixes in metres, with speed, split at
+  every gap, for the track map (trace only, no tiles).
+
+- `dayDocument` writes a day as a version 3 `.fetproject` document: each
+  run's recording (relative path when close, content SHA-256, `telemetry-v1`
+  fingerprint from `telemetryFingerprint`), its manual layout and direction
+  or the unknown configuration with its gate revision, the detected route's
+  provenance, lap exclusions as full lap references, and the group shown as
+  `analysisDecisions.comparisonGroupId`. A document opened earlier keeps
+  everything this app does not manage, including runs whose recordings were
+  missing. `openDay` reads it back: it finds each recording (relative path
+  first, then absolute, or a relinked path), refuses a different recording by
+  content or fingerprint, applies exclusions whose recording and derivation key
+  still match, and analyses the day. `openDayDocument` does the same for a
+  document already in memory. Each save keeps Overlays' `documentState.id`
+  and raises `documentState.savedRevision` by one (`nextDocumentState`), so
+  Overlays treats its own older recovery snapshot of the document as stale.
+  `test/day/overlays_check_test.dart` opens a saved day with Overlays' C++
+  code (see [tool/README.md](tool/README.md)).
+- `writeDayRecovery` and `readDayRecovery` keep an unsaved day for recovery
+  (after Overlays' `ProjectRecoveryStore`): this app's own file, wrapping the
+  version 3 document with where the day was last saved, the path its
+  relative recording paths are relative to, and the time. `openRecoveredDay`
+  opens it. Overlays' discard tombstones are not ported: one app instance
+  owns the file.
+
+- `buildProgressAxis` turns one reference-eligible lap trace into a ~2 m,
+  gate-anchored distance axis for its track (progress 0 at the start gate);
+  `computeTrackFeatures` gives smoothed heading and signed curvature along it.
+  `projectLapTrace` places a lap's GPS fixes on the axis with a bounded,
+  heading-checked local search, ending a segment at every gap or lost lock
+  instead of guessing; `timeAtProgress`, `progressAtTime` and
+  `computeDeltaSeries` read time and the delta between two laps by distance,
+  only where both laps are covered. `TelemetrySession.sampledSegments` gives a
+  channel's actual samples, split at gaps and reduced to bucket extremes.
+- `proposeTrackSegments` splits a progress axis into alternating corner and
+  straight proposals from its smoothed curvature (kinks fold into the straight,
+  corners with no 20 m straight between them form one chain, short straights
+  and GPS gaps mark boundaries uncertain). `computeSegmentReview` runs it for
+  one timed lap as Overlays does (axis from the lap's own trace, 6 m smoothing,
+  the lap's `coverageGaps`). `approvedSegmentation`, `progressRangesOverlap`,
+  `withApprovedSegment` and `withoutApprovedSegment` handle the approved
+  segments a run stores in `trackSegments`; the segment model itself
+  (`makeTrackSegment`, `validTrackSegment(s)`) is in `packages/fetproject`.
+- Segments are automatic, with no manual approval (Overlays KAN-136):
+  `dayDocument` approves every proposal of the chosen group's best lap into
+  that lap's run when no run of the document has segments for the group
+  (`automaticTrackSegments`; `automaticSegments: false` turns it off). They are
+  then kept on every later save. A run that still stores segments of another
+  configuration gets none, as in Overlays.
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -48,7 +125,7 @@ operations take a `CancellationCheck`.
 
 Both apps must read a file identically: the `.fetproject` fingerprint depends on
 channel names and sample counts. The behaviour follows FlappedEar Overlays'
-`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp` and `TelemetrySource.cpp` (VBOOverlay `1a96ae3`), re-implemented in
+`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp`, `TelemetrySource.cpp`, `OutingLaps.cpp`, `TrackInference.cpp` and `OutingLapDerivation.cpp` (VBOOverlay `1a96ae3`), re-implemented in
 Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 
 `test/parity/cpp_parity_test.dart` checks this file by file. The reference
@@ -57,16 +134,31 @@ Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 the fixtures in `test/fixtures`. Parsed values match exactly; values derived
 through trigonometry are compared to 1e-9 relative, because C libraries may
 differ in the last bit. See [tool/README.md](tool/README.md) to regenerate it.
+`test/parity/progress_parity_test.dart` does the same for the track-progress
+port (`TrackProgress.cpp` and `TelemetrySession::sampledSegments`, Overlays
+`d4d1039`) against `test/parity/progress_reference.json` from
+`tool/cpp_progress_dump`.
+`test/parity/segments_parity_test.dart` does the same for the segment port
+(`TrackSegments.cpp`, `TrackSegmentProposals.cpp`, `TrackSegmentReview.cpp`
+and the review and automatic-approval steps of Overlays' app, `d4d1039`)
+against `test/parity/segments_reference.json` from `tool/cpp_segments_dump`.
 
 Known, deliberate differences:
 
-- **Metadata lines without a separator** are stored as `<section>.<n>`. Overlays
-  numbers them in Qt hash order, which Qt seeds per process, so its keys can
-  change from run to run. This package numbers them in file order. Metadata is
-  not part of the fingerprint.
 - **Decoded-memory budget.** Overlays' `maximumDecodedBytes` argument belongs to
   its desktop session cache. The phone budget is decided separately (KAN-129), so
   it is not ported.
+- **Day lap references** (`OutingLaps.cpp`, VBOOverlay `ca2bde5`) carry the run,
+  the content SHA-256, the type and the exact bounds; `dayDocument` adds
+  `eventId`, `sourceId` and `derivationKey` when it writes them, and `openDay`
+  applies only references whose content and derivation key still match. Progression across runs is not ported yet (FET-5).
+- **Detected layout ids** are computed again on opening rather than read from
+  the saved `trackInference` provenance. The id is derived from the cluster's
+  first run and its content, so it is the same as long as the routes group the
+  same way.
+- **The group shown first** is the one with the most eligible laps. Overlays
+  takes the first resolved group in id order, which is arbitrary; on a day with
+  one group both choose the same.
 - **`timingGateRevision`** (`gates-v1`) is not here; it belongs with the other
   document ids.
 

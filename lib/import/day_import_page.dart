@@ -1,12 +1,21 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../day/day_results_controller.dart';
+import '../day/day_results_page.dart';
+import '../day/document_pickers.dart';
+import '../day/recovery_store.dart';
+import '../format.dart';
 import 'day_import_controller.dart';
+
+export '../format.dart' show displayTime;
 
 /// Opens the platform pickers. Replaced by a fake in widget tests.
 abstract interface class RecordingPickers {
@@ -37,18 +46,6 @@ final class PlatformRecordingPickers implements RecordingPickers {
       getDirectoryPath(confirmButtonText: 'Import this folder');
 }
 
-/// A time as the app shows it: "28.662 s" below a minute, "1:49.898" from one
-/// minute, "—" when there is no finite value. Rounded before minutes are
-/// split.
-String displayTime(double seconds) {
-  if (!seconds.isFinite || seconds < 0) return '—';
-  final milliseconds = (seconds * 1000).round();
-  if (milliseconds < 60000) {
-    return '${(milliseconds / 1000).toStringAsFixed(3)} s';
-  }
-  return formatLapTime(milliseconds / 1000, 3) ?? '—';
-}
-
 String _lapSummary(LapSession laps) {
   switch (laps.status) {
     case LapSessionStatus.available:
@@ -72,14 +69,29 @@ String _lapSummary(LapSession laps) {
   }
 }
 
+/// [time] as local "2026-10-03 06:30".
+String _when(DateTime time) {
+  final local = time.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${local.year}-${two(local.month)}-${two(local.day)} '
+      '${two(local.hour)}:${two(local.minute)}';
+}
+
 /// Import a day: pick recordings or a folder, or drop them on the window.
 class DayImportPage extends StatefulWidget {
   const DayImportPage({
     super.key,
     this.controller,
     this.pickers = const PlatformRecordingPickers(),
+    this.documents = const PlatformDocumentPickers(),
+    this.recovery = const PlatformRecoveryStore(),
     this.acceptsDrops,
   });
+
+  final DocumentPickers documents;
+
+  /// Keeps the day being worked on until it is saved.
+  final RecoveryStore recovery;
 
   /// Whether recordings and folders can be dropped on the window; by default
   /// on desktop only.
@@ -103,6 +115,115 @@ class _DayImportPageState extends State<DayImportPage> {
       widget.controller ?? DayImportController();
   bool _includeSubfolders = false;
   bool _dragging = false;
+  bool _opening = false;
+
+  /// An unsaved day kept from before, offered for restoring.
+  DayRecovery? _recovered;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRecovery();
+  }
+
+  Future<void> _checkRecovery() async {
+    final recovered = await queueRecovery(widget.recovery.load);
+    if (mounted) setState(() => _recovered = recovered);
+  }
+
+  /// Shows [page], then checks again for an unsaved day left behind.
+  Future<void> _show(Widget page) async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => page));
+    await _checkRecovery();
+  }
+
+  // Built outside the state so the isolate's closure holds only the snapshot.
+  static OpenedDay Function() _recoverJob(DayRecovery recovery) =>
+      () => openRecoveredDay(recovery);
+
+  Future<void> _restore(DayRecovery recovery) async {
+    setState(() => _opening = true);
+    try {
+      final day = await Isolate.run(_recoverJob(recovery));
+      if (!mounted) return;
+      if (day.analysis == null) {
+        await _cannotOpen(day);
+        return;
+      }
+      await _show(
+        DayResultsPage.controller(
+          controller: DayResultsController.recovered(
+            day,
+            recovery,
+            recovery: widget.recovery,
+          ),
+          documents: widget.documents,
+          recovery: widget.recovery,
+        ),
+      );
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('The day could not be restored: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  Future<void> _discard(DayRecovery recovery) async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Discard the changes to ${recovery.name}?'),
+        content: const Text(
+          'The unsaved changes are lost. Recordings and saved days are not touched.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    if (discard != true) return;
+    try {
+      await queueRecovery(widget.recovery.clear);
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Not discarded: $error')));
+      }
+    }
+    await _checkRecovery();
+  }
+
+  Future<void> _cannotOpen(OpenedDay day) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('${day.name} could not be opened'),
+      content: Text(
+        [
+          'None of its recordings could be used:',
+          for (final recording in day.missing)
+            '${recording.name}: ${recording.path} · ${recording.reason}',
+        ].join('\n'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
 
   @override
   void dispose() {
@@ -125,6 +246,66 @@ class _DayImportPageState extends State<DayImportPage> {
 
   Future<void> _pickRecordings() async =>
       _start(await widget.pickers.pickRecordings());
+
+  // Built outside the state so the isolate's closure holds only the path.
+  static OpenedDay Function() _openJob(String path) =>
+      () => openDay(path);
+
+  /// The day to open: on phones from the days saved in the app, else from
+  /// the open dialog.
+  Future<String?> _chooseDocument() async {
+    final saved = await widget.documents.savedDays();
+    if (saved.isEmpty || !mounted) return widget.documents.pickDocument();
+    const other = '';
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Open a saved day'),
+        children: [
+          for (final path in saved)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, path),
+              child: Text(p.basenameWithoutExtension(path)),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, other),
+            child: const Text('Another file…'),
+          ),
+        ],
+      ),
+    );
+    if (choice == other) return widget.documents.pickDocument();
+    return choice;
+  }
+
+  Future<void> _openDay() async {
+    final path = await _chooseDocument();
+    if (path == null || !mounted) return;
+    setState(() => _opening = true);
+    try {
+      final day = await Isolate.run(_openJob(path));
+      if (!mounted) return;
+      if (day.analysis == null) {
+        await _cannotOpen(day);
+        return;
+      }
+      await _show(
+        DayResultsPage.opened(
+          day: day,
+          documents: widget.documents,
+          recovery: widget.recovery,
+        ),
+      );
+    } on Exception catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('The day could not be opened: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
 
   Future<void> _pickFolder() async {
     final folder = await widget.pickers.pickFolder();
@@ -174,7 +355,44 @@ class _DayImportPageState extends State<DayImportPage> {
 
   List<Widget> _choices(BuildContext context) {
     final enabled = !_controller.isWorking;
+    final recovered = _recovered;
     return [
+      if (recovered != null) ...[
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${recovered.name} has unsaved changes from '
+                  '${_when(recovered.timestamp)}.',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  children: [
+                    FilledButton.tonal(
+                      onPressed: enabled && !_opening
+                          ? () => _restore(recovered)
+                          : null,
+                      child: const Text('Restore'),
+                    ),
+                    TextButton(
+                      onPressed: enabled && !_opening
+                          ? () => _discard(recovered)
+                          : null,
+                      child: const Text('Discard…'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       Text(
         _acceptsDrops
             ? 'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.'
@@ -196,6 +414,11 @@ class _DayImportPageState extends State<DayImportPage> {
             onPressed: enabled ? _pickFolder : null,
             icon: const Icon(Icons.folder_open_outlined),
             label: const Text('Choose a folder…'),
+          ),
+          OutlinedButton.icon(
+            onPressed: enabled && !_opening ? _openDay : null,
+            icon: const Icon(Icons.history),
+            label: Text(_opening ? 'Opening…' : 'Open a saved day…'),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -253,12 +476,34 @@ class _DayImportPageState extends State<DayImportPage> {
           Text(message, style: TextStyle(color: theme.colorScheme.error)),
           ...notes(failedNotes),
         ];
-      case DayImportFinished(:final runs, notes: final finishedNotes):
+      case DayImportFinished(
+        :final runs,
+        :final analysis,
+        notes: final finishedNotes,
+      ):
         return [
           Text(
             '${runs.length} ${runs.length == 1 ? 'session' : 'sessions'} imported',
             style: theme.textTheme.titleMedium,
           ),
+          if (analysis != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () => _show(
+                  DayResultsPage(
+                    runs: runs,
+                    analysis: analysis,
+                    documents: widget.documents,
+                    recovery: widget.recovery,
+                  ),
+                ),
+                icon: const Icon(Icons.flag_outlined),
+                label: const Text('Show the day\'s results'),
+              ),
+            ),
+          ],
           for (final named in runs)
             ListTile(
               contentPadding: EdgeInsets.zero,

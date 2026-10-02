@@ -65,6 +65,16 @@ MetricPoint projectCoordinate(GeoCoordinate coordinate, GeoCoordinate origin) {
   );
 }
 
+/// The inverse of [projectCoordinate]: [east] and [north] metres around
+/// [origin] back in degrees.
+GeoCoordinate unprojectCoordinate(double east, double north, GeoCoordinate origin) => GeoCoordinate(
+  origin.latitudeDegrees + north / earthRadiusMeters / radiansPerDegree,
+  origin.longitudeDegrees +
+      east /
+          (earthRadiusMeters * math.cos(origin.latitudeDegrees * radiansPerDegree)) /
+          radiansPerDegree,
+);
+
 /// Euclidean length of (x, y), without intermediate overflow.
 double hypot(double x, double y) {
   final a = x.abs();

@@ -65,6 +65,47 @@ decision "copy", 2 October 2026):
   most 128 UTF-16 code units and no NUL. Qt's whitespace set (25 characters,
   listed in the vectors) is used, not Dart's `trim()`.
 
+## Track segments (FET-31)
+
+`track_segments.dart` follows Overlays' `TrackSegments.cpp` (`d4d1039`): the
+segment model a run stores in `trackSegments` (`TrackSegmentType`,
+`makeTrackSegment` with a fresh version 4 UUID and the run's
+`compatibility-v1` group as `trackConfigurationReference`), `validTrackSegment`
+and `validTrackSegments` (the checks `validateFetproject` uses for every run)
+and `trackSegmentSetRevision`. Proposals and approval are in
+`packages/telemetry_core`.
+
+## Documents (FET-25)
+
+`decodeFetproject`, `readFetproject` and `validateFetproject` accept version 3
+(event) documents under Overlays' rules: `ProjectLimits::validateProject` (4 MiB,
+JSON depth 32, strings of 4096 UTF-16 units, widget and cue bounds; the scene
+may be absent) and `EventProjectCodec::validate` (runs, sources, sync, track
+configuration bound to the primary recording's fingerprint, segments, segment
+review, inference provenance, fusion, video chapters, analysis decisions and
+lap exclusions). A version 2 single-recording project is refused with a
+reason (plan decision 10). Unknown keys are kept: the document is a plain JSON
+map.
+
+`writeFetproject` validates, writes indented JSON (Qt's layout, keys in code
+point order) to a temporary file in the same folder, flushes it and renames
+it over the document, so a failed save leaves the old document whole.
+
+`SourceReference` ports `ProjectSourceReferenceCodec`: a relative path is
+saved only when the recording is at most two folders above the document, and
+`resolve` refuses a relative path that climbs further. `forSave` and
+`rebaseReference` move references on Save As. `sampledSha256` hashes the
+first, middle and last 64 KiB; `telemetryFingerprint` (in `telemetry_core`)
+builds the `telemetry-v1` fingerprint from it and the parsed session.
+
+Matched as found: where Overlays checks a value only with a regular expression
+(a lap reference's digests, a track configuration's gate revision, a segment's
+or review's configuration reference), a value ending in `\n` passes, as
+PCRE2's `$` allows. Where it also checks the length, it does not.
+
+Not ported yet: recovery snapshots (`ProjectRecoveryStore`) and the editor
+projection Overlays uses for its single-run editor.
+
 ## Development
 
 ```bash

@@ -13,7 +13,22 @@ Early development. The app opens on **Import a day**: choose the day's VBO and
 RCZ recordings or a folder (optionally with subfolders), or drop them on the
 window on desktop. Recordings are prepared in a background isolate with progress
 and Cancel; each primary run is named "Session N" in recording-time order and
-shows its laps, and import notes list what was skipped, grouped or failed. The
+shows its laps, and import notes list what was skipped, grouped or failed.
+**Show the day's results** then leads with the best lap of the day ("Best day ·
+1:49.898 · Session 5 · LAP 2") and its GPS trace coloured by speed, each
+session's best lap, and every lap section in recording order with why a lap is
+not ranked. A lap opens on its own map, over the best lap in grey, and can be
+excluded from the ranking with a reason. The trace is drawn over
+OpenStreetMap street tiles, or MapTiler satellite imagery when the build has a
+key; the layers button switches between them and the trace alone, which needs
+no network. Tiles already seen stay cached for the track. **Save** writes the day as a
+`.fetproject` document FlappedEar Overlays can open (sessions, recordings,
+circuit names, excluded laps and the group shown); **Open a saved day** reads
+it back, and a session whose recording has moved or changed is listed with
+**Find recordings in a folder**. On desktop the system dialogs choose the file;
+on phones days are kept in the app. A day with unsaved changes is kept in
+the app's own folder as you work, so after a crash or a closed app the import
+screen offers to **Restore** or **Discard** it. The
 recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
@@ -30,6 +45,22 @@ the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
 macOS is the active development platform.
 
 Application identifier: `com.flappedear.telemetry`.
+
+## Maps
+
+Street tiles come from OpenStreetMap under its
+[tile usage policy](https://operations.osmfoundation.org/policies/tiles/): the
+app identifies itself as `com.flappedear.telemetry`, shows the attribution and
+caches tiles. Satellite tiles come from MapTiler and need a key at build time,
+which is never committed:
+
+```bash
+flutter run --dart-define=MAPTILER_KEY=your-key
+```
+
+CI reads it from the repository secret `MAPTILER_KEY`. Without a key the app
+offers streets and the trace only. Another provider is another `TileSource` in
+`lib/day/track_map.dart`.
 
 ## Development
 

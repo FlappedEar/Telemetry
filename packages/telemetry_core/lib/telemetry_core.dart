@@ -1,6 +1,21 @@
 /// Recording model, VBO parser and lap timing for FlappedEar Telemetry.
 library;
 
+export 'src/analysis/automatic_segments.dart';
+export 'src/analysis/track_progress.dart';
+export 'src/analysis/track_segment_proposals.dart';
+export 'src/analysis/track_segment_review.dart';
+export 'src/day/compatibility.dart';
+export 'src/day/day_analysis.dart';
+export 'src/day/day_document.dart';
+export 'src/day/day_recovery.dart';
+
+export 'package:fetproject/fetproject.dart' show FetprojectError;
+
+export 'src/day/day_laps.dart';
+export 'src/day/day_ranking.dart';
+export 'src/day/lap_path.dart';
+export 'src/day/track_inference.dart';
 export 'src/geometry.dart'
     show
         CoordinateAxis,
@@ -9,7 +24,8 @@ export 'src/geometry.dart'
         MetricPoint,
         isValidCoordinate,
         normalizeCoordinateDegrees,
-        projectCoordinate;
+        projectCoordinate,
+        unprojectCoordinate;
 export 'src/intake/folder_scan.dart';
 export 'src/intake/import_plan.dart';
 export 'src/intake/recording_source.dart';
@@ -19,9 +35,10 @@ export 'src/laps/lap_session.dart';
 export 'src/laps/lap_time_format.dart';
 export 'src/operation.dart';
 export 'src/rcz/rcz_archive.dart' show RczFormatError;
+export 'src/source_fingerprint.dart';
 export 'src/rcz/rcz_parser.dart' show RczParser, rczAccelerationNote;
 export 'src/telemetry_session.dart'
-    show InterpolationMode, TelemetryChannel, TelemetrySession, telemetryGapThreshold;
+    show InterpolationMode, SamplePoint, TelemetryChannel, TelemetrySession, telemetryGapThreshold;
 export 'src/timing_gate.dart';
 export 'src/vbo/vbo_file.dart';
 export 'src/vbo/vbo_limits.dart';

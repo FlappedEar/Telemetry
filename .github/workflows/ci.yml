@@ -38,8 +38,24 @@ jobs:
         run: |
           dart analyze --fatal-infos
           dart test
+      # Satellite tiles need the MapTiler key, given to builds with
+      # --dart-define and never stored in the repository. This only reports
+      # whether the key works; without it the app shows street tiles.
+      - name: Check the MapTiler key
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: |
+          if [ -z "$MAPTILER_KEY" ]; then
+            echo "::warning::MAPTILER_KEY is not available to this run; builds show street tiles only."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://api.maptiler.com/maps/satellite/256/2/2/1.jpg?key=$MAPTILER_KEY")
+          echo "MapTiler satellite tile: HTTP $code"
+          [ "$code" = 200 ] || echo "::warning::The MapTiler satellite tile request returned HTTP $code."
       - name: Build macOS (debug)
-        run: flutter build macos --debug
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: flutter build macos --debug --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
 
   telemetry-core:
     name: telemetry_core (Dart, ${{ matrix.os }})

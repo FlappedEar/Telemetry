@@ -8,12 +8,33 @@ typedef DayImportRequest = ({List<String> paths, bool includeSubfolders});
 
 /// The scan and the prepared plan for one request.
 final class DayImportOutcome {
-  const DayImportOutcome({required this.scan, this.plan});
+  const DayImportOutcome({
+    required this.scan,
+    this.plan,
+    this.runs = const [],
+    this.analysis,
+  });
 
   final TelemetryFolderScan scan;
 
   /// Null when the scan found nothing to import.
   final TelemetryImportPlan? plan;
+
+  /// The primary runs, named "Session N" in recording order.
+  final List<NamedRun> runs;
+
+  /// The day's laps, groups and ranking; null without runs.
+  final DayAnalysis? analysis;
+}
+
+/// The runs a plan imports: one per drive, the VBO when a VBO and an RCZ of
+/// the same drive were recorded.
+List<TelemetryRunProposal> primaryRuns(TelemetryImportPlan plan) {
+  final groups = automaticVboPrimaries(plan);
+  return [
+    for (final run in plan.runs)
+      if (groups[run.id] == run.id) run,
+  ];
 }
 
 /// A running import. [result] completes with [OperationCancelled] after
@@ -32,8 +53,8 @@ abstract interface class DayImporter {
   );
 }
 
-/// Scans and prepares a day synchronously: the work done in the background
-/// isolate.
+/// Scans, prepares and analyses a day synchronously: the work done in the
+/// background isolate.
 DayImportOutcome runDayImport(
   DayImportRequest request, {
   CancellationCheck? cancelled,
@@ -51,7 +72,25 @@ DayImportOutcome runDayImport(
     cancelled: cancelled,
     progress: progress,
   );
-  return DayImportOutcome(scan: scan, plan: plan);
+  final runs = nameRunsInRecordingOrder(primaryRuns(plan));
+  final analysis = runs.isEmpty
+      ? null
+      : analyzeDay([
+          for (final named in runs)
+            DayRunInput(
+              runId: named.run.id,
+              name: named.name,
+              contentSha256: named.run.contentSha256,
+              session: named.run.telemetry,
+              laps: named.run.laps,
+            ),
+        ], cancelled: cancelled);
+  return DayImportOutcome(
+    scan: scan,
+    plan: plan,
+    runs: runs,
+    analysis: analysis,
+  );
 }
 
 /// Runs each import in its own isolate, off the interface thread. Cancel
