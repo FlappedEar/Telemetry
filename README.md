@@ -44,8 +44,10 @@ on **Import a day**.
 To install on Android without a store, download the
 `flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
 install `app-release.apk` (allow installs from the browser or file manager).
-CI signs it with a key that changes per run, so uninstall the previous build
-before installing a newer one.
+Use builds from `main`: they share one signing key kept in the Actions cache,
+so a newer APK installs over the old one and keeps the app's days. If that
+cache expires (seven days without a build), the key changes and Android
+refuses the update; days would then have to be saved elsewhere first.
 
 ## Platforms
 
