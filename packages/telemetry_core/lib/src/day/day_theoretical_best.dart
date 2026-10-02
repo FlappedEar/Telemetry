@@ -15,6 +15,7 @@ import '../analysis/track_progress.dart';
 import '../intake/import_plan.dart';
 import '../operation.dart';
 import 'day_analysis.dart';
+import 'day_corners.dart';
 import 'day_laps.dart';
 
 /// Whether a group's theoretical best was calculated.
@@ -76,7 +77,9 @@ final class DayTheoreticalBest {
     List<DayLapSectors> laps = const [],
     this.bestLap,
     this.automaticSegments = false,
-  }) : laps = List.unmodifiable(laps);
+    List<DayCorner> corners = const [],
+  }) : laps = List.unmodifiable(laps),
+       corners = List.unmodifiable(corners);
 
   final String groupId;
   final DayTheoreticalBestState state;
@@ -97,6 +100,19 @@ final class DayTheoreticalBest {
   /// The segments were proposed from the best lap now because the day has
   /// none for this group yet; saving the day approves the same proposals.
   final bool automaticSegments;
+
+  /// Each corner segment's speeds, braking and pickup on every lap, in
+  /// approved order.
+  final List<DayCorner> corners;
+
+  /// The corner at segment [index] of [segments], or null for a straight or
+  /// sector.
+  DayCorner? cornerAt(int index) {
+    for (final corner in corners) {
+      if (corner.segmentIndex == index) return corner;
+    }
+    return null;
+  }
 
   /// The approved segments, in approved order, with their fastest times.
   List<TheoreticalBestRow> get segments => summary?.sectors ?? const [];
@@ -289,6 +305,7 @@ DayTheoreticalBest dayTheoreticalBest(
     laps: [for (final row in rows) ?timed[row.reference]],
     bestLap: best,
     automaticSegments: automatic,
+    corners: dayCorners(computed, rows, best),
   );
 }
 

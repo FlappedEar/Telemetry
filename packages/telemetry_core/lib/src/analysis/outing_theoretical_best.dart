@@ -5,15 +5,21 @@
 //
 // Overlays loads and verifies each recording from the project
 // (`loadOutingLapDetail`); here the caller passes the sessions it already
-// holds. The corner metrics (KAN-63: speeds, braking point, pickup, line) are
-// not ported.
+// holds. Each corner's metrics (KAN-63: speeds, braking point, pickup, line)
+// are kept in full for every lap, not only the observations Overlays keeps.
 import 'dart:math' as math;
+
+import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
 import '../geometry.dart';
 import '../laps/lap_session.dart';
 import '../operation.dart';
 import '../telemetry_session.dart';
+import 'braking_metrics.dart';
 import 'consistency.dart';
+import 'corner_speeds.dart';
+import 'driving_variability.dart';
+import 'exit_metrics.dart';
 import 'sector_timing.dart';
 import 'theoretical_best.dart';
 import 'time_loss.dart';
@@ -47,6 +53,24 @@ final class OutingRun {
   final LapSession laps;
 }
 
+/// The Corner Analyzer's metrics of one corner on one lap, measured on the
+/// shared axis, and the observation Overlays summarizes from them.
+final class CornerLapMetrics {
+  const CornerLapMetrics({
+    required this.lapReference,
+    required this.speeds,
+    required this.braking,
+    required this.exit,
+    required this.observation,
+  });
+
+  final Object? lapReference;
+  final CornerSpeeds speeds;
+  final BrakingMetrics braking;
+  final ExitMetrics exit;
+  final CornerLapObservation observation;
+}
+
 /// The day's theoretical best and what is measured on its shared axis.
 final class OutingTheoreticalBest {
   OutingTheoreticalBest({
@@ -60,11 +84,16 @@ final class OutingTheoreticalBest {
     this.axis = const ProgressAxis(),
     List<List<ProgressSegment>> traces = const [],
     List<String> runIds = const [],
+    Map<String, List<CornerLapMetrics>> cornerMetrics = const {},
   }) : best = best ?? TheoreticalBestLap(),
        approved = approved ?? ApprovedSegmentation(trackConfigurationReference: ''),
        population = List.unmodifiable(population),
        traces = List.unmodifiable(traces),
-       runIds = List.unmodifiable(runIds);
+       runIds = List.unmodifiable(runIds),
+       cornerMetrics = Map.unmodifiable({
+         for (final entry in cornerMetrics.entries)
+           entry.key: List<CornerLapMetrics>.unmodifiable(entry.value),
+       });
 
   /// Set when the calculation failed or was cancelled.
   final String error;
@@ -88,12 +117,94 @@ final class OutingTheoreticalBest {
 
   /// Drawn as the track map.
   final ProgressAxis axis;
+
+  /// Each corner segment's metrics on every lap of [population], in the same
+  /// order, by segment id.
+  final Map<String, List<CornerLapMetrics>> cornerMetrics;
+
+  /// Each corner's observations, as Overlays keeps them (KAN-63).
+  Map<String, List<CornerLapObservation>> get cornerObservations => {
+    for (final entry in cornerMetrics.entries)
+      entry.key: [for (final lap in entry.value) lap.observation],
+  };
+}
+
+/// The Corner Analyzer's metrics of corner [segmentId] (from [start] to
+/// [end]) on one lap, as `calculateOutingTheoreticalBest` measures them.
+CornerLapMetrics measureCornerLap(
+  ProgressAxis axis,
+  TrackFeatures features,
+  ApprovedSegmentation approved,
+  String segmentId,
+  double start,
+  double end,
+  List<ProgressSegment> trace,
+  TelemetrySession session,
+  double lapStart,
+  double lapEnd,
+  Object? lapReference,
+) {
+  final observation = CornerLapObservation(lapReference: lapReference);
+  final speeds = computeCornerSpeeds(axis, features, approved, segmentId, trace, session);
+  if (speeds.valid) {
+    observation
+      ..apexSpeed = speeds.apex.value
+      ..minimumSpeed = speeds.minimum.value
+      ..exitSpeed = speeds.exit.value;
+  }
+  final braking = computeBrakingMetrics(
+    axis.lengthMeters,
+    approved,
+    segmentId,
+    trace,
+    session,
+    lapStart,
+    lapEnd,
+  );
+  if (braking.valid && braking.brakingPointMeters != null) {
+    observation
+      ..brakingPointMeters = braking.brakingPointMeters
+      ..brakingProvenance = braking.provenance;
+  }
+  final exit = computeExitMetrics(axis.lengthMeters, approved, segmentId, trace, session, lapEnd);
+  if (exit.valid && exit.pickup.progressMeters != null) {
+    observation
+      ..pickupMeters = exit.pickup.progressMeters
+      ..pickupProvenance = exit.pickup.provenance;
+  }
+  // Line at the geometric apex when one exists, else mid-corner (a chain of
+  // corners has several apexes).
+  final middle = end >= start
+      ? (start + end) / 2.0
+      : (start + (end + axis.lengthMeters - start) / 2.0).remainder(axis.lengthMeters);
+  final at = speeds.valid && speeds.apex.value != null ? speeds.apex.progressMeters : middle;
+  final time = timeAtProgress(trace, at);
+  if (time != null) {
+    final latitude = session.valueAt('latitude', time);
+    final longitude = session.valueAt('longitude', time);
+    if (latitude != null && longitude != null) {
+      observation.lineOffsetMeters = lateralOffsetMeters(
+        axis,
+        at,
+        projectCoordinate(GeoCoordinate(latitude, longitude), axis.origin),
+      );
+    }
+    observation.gpsAccuracyMeters = session.valueAt('accuracy', time);
+  }
+  return CornerLapMetrics(
+    lapReference: lapReference,
+    speeds: speeds,
+    braking: braking,
+    exit: exit,
+    observation: observation,
+  );
 }
 
 /// Times every lap of [population] on one axis built from the canonical
 /// run's fastest lap, against [approved] (the canonical run's approved
-/// segments): sector times, the theoretical best and the actual best
-/// ([actualBestReference]) on the same axis. A lap whose run is not in
+/// segments): sector times, the theoretical best, the actual best
+/// ([actualBestReference]) on the same axis and each corner's speeds, braking,
+/// pickup and line ([OutingTheoreticalBest.cornerMetrics]). A lap whose run is not in
 /// [runs] contributes nothing. Never throws: failures and cancellation are
 /// reported in [OutingTheoreticalBest.error].
 OutingTheoreticalBest calculateOutingTheoreticalBest(
@@ -146,6 +257,17 @@ OutingTheoreticalBest calculateOutingTheoreticalBest(
         "The shared track axis could not be built from the canonical run's GPS trace.",
       );
     }
+    final features = computeTrackFeatures(axis, segmentReviewSmoothingMeters);
+    final corners = <(String, double, double)>[
+      for (final segment in approved.segments)
+        if (segment['type'] == trackSegmentTypeName(TrackSegmentType.corner))
+          (
+            segment['id'] is String ? segment['id'] as String : '',
+            (segment['startProgressMeters'] as num?)?.toDouble() ?? 0.0,
+            (segment['endProgressMeters'] as num?)?.toDouble() ?? 0.0,
+          ),
+    ];
+    final cornerMetrics = <String, List<CornerLapMetrics>>{};
     final times = <LapSectorTimes>[];
     final timed = <TimedLapSectors>[];
     final traces = <List<ProgressSegment>>[];
@@ -174,6 +296,24 @@ OutingTheoreticalBest calculateOutingTheoreticalBest(
       timed.add(TimedLapSectors(result, lap.start));
       traces.add(projected);
       runIds.add(lap.runId);
+      for (final (segmentId, start, end) in corners) {
+        throwIfCancelled(cancelled);
+        (cornerMetrics[segmentId] ??= []).add(
+          measureCornerLap(
+            axis,
+            features,
+            approved,
+            segmentId,
+            start,
+            end,
+            projected,
+            run.session,
+            lap.start,
+            lap.end,
+            lap.reference,
+          ),
+        );
+      }
       if (actualBestReference != null && lap.reference == actualBestReference) actualBest = result;
     }
     return OutingTheoreticalBest(
@@ -186,6 +326,7 @@ OutingTheoreticalBest calculateOutingTheoreticalBest(
       approved: approved,
       axisLengthMeters: axis.lengthMeters,
       axis: axis,
+      cornerMetrics: cornerMetrics,
     );
   } on OperationCancelled {
     return OutingTheoreticalBest(
@@ -231,6 +372,7 @@ final class TheoreticalBestRow {
     this.actualSeconds,
     this.lossSeconds,
     this.consistency = const ConsistencySummary(),
+    this.variability,
     List<List<MapPoint>> parts = const [],
   }) : parts = List.unmodifiable(parts);
 
@@ -257,6 +399,9 @@ final class TheoreticalBestRow {
 
   /// How repeatable this segment is across the population.
   final ConsistencySummary consistency;
+
+  /// How repeatable braking, speeds, pickup and line are, for a corner.
+  final CornerVariability? variability;
 
   /// The segment's line on the map: one part, or two when it crosses the gate.
   final List<List<MapPoint>> parts;
@@ -330,6 +475,7 @@ TheoreticalBestSummary publishTheoreticalBest(OutingTheoreticalBest computed) {
     );
   }
   final consistency = computeSectorConsistency(computed.approved, computed.population);
+  final observations = computed.cornerObservations;
 
   // The map: north up, fitted to a unit square with the aspect ratio kept.
   final axis = computed.axis;
@@ -390,6 +536,13 @@ TheoreticalBestSummary publishTheoreticalBest(OutingTheoreticalBest computed) {
             ? actualSeconds - sector.seconds!
             : null,
         consistency: summary,
+        variability: observations[sector.segmentId] == null
+            ? null
+            : summarizeCornerVariability(
+                sector.segmentId,
+                sector.name,
+                observations[sector.segmentId]!,
+              ),
         parts: !hasMap
             ? const []
             : end >= start

@@ -130,13 +130,25 @@ a background isolate.
   (`canonicalSegmentation`: the first run by id with segments for the group),
   and `publishTheoreticalBest` gives what Overlays' theoretical-best dialog
   shows (best lap, theoretical best, time available, segments by loss, the
-  map). Corner metrics are not ported.
+  map), with each corner's repeatability (`summarizeCornerVariability`).
+- The Corner Analyzer (Overlays `d4d1039`): `proposeCornerGeometryPhases`
+  (entry, apex and exit from curvature), `computeCornerSpeeds` (entry, apex,
+  minimum and exit speed), `detectBrakingOnsets` and `computeBrakingMetrics`
+  (braking point from the brake channel, or inferred from longitudinal G only
+  without one; braking time, distance and deceleration),
+  `computeExitMetrics` (throttle pickup from the throttle channel, or inferred
+  from acceleration, and exit speed downstream) and their `compare*`
+  functions, which never compare values measured differently.
+  `calculateOutingTheoreticalBest` measures them for every lap and corner
+  (`cornerMetrics`).
 - `dayTheoreticalBest` does it for one group of a day: its eligible laps in
   recording order with their sector times and their loss to the fastest time
   of every segment (`DayLapSectors.lossSeconds`), the theoretical best and
   the time available, the largest time losses, and the segment at any time of
   a lap (`segmentAtTime`). It uses the document's segments, or proposes them
-  from the best lap as saving the day would.
+  from the best lap as saving the day would. `corners` holds each corner
+  segment with every lap's figures; `DayCorner.compare` sets one lap against
+  the best lap and the best value of the group's laps.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -162,6 +174,10 @@ port (`TrackProgress.cpp` and `TelemetrySession::sampledSegments`, Overlays
 (`TrackSegments.cpp`, `TrackSegmentProposals.cpp`, `TrackSegmentReview.cpp`
 and the review and automatic-approval steps of Overlays' app, `d4d1039`)
 against `test/parity/segments_reference.json` from `tool/cpp_segments_dump`.
+`test/parity/corner_metrics_parity_test.dart` does the same for the Corner
+Analyzer port (`CornerPhases`, `CornerSpeeds`, `BrakingOnset`,
+`BrakingMetrics`, `ExitMetrics`, `DrivingVariability`, `d4d1039`) against
+`test/parity/corner_metrics_reference.json` from `tool/cpp_corner_metrics_dump`.
 
 Known, deliberate differences:
 

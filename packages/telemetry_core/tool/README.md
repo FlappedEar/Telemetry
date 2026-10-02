@@ -166,3 +166,46 @@ To check other recordings locally, run the test with
 `FET_TB_REFERENCE=<json>` and `FET_TB_DIRS=<dir>[:<dir>]`;
 `FET_PARITY_REPORT=1` prints the largest difference. Never edit the JSON by
 hand.
+
+## cpp_corner_metrics_dump
+
+Runs FlappedEar Overlays' own Corner Analyzer (`CornerPhases`,
+`CornerSpeeds`, `BrakingOnset`, `BrakingMetrics`, `ExitMetrics`,
+`DrivingVariability` and the variability of `publishTheoreticalBest`) over
+VBO files and fixed cases and writes the results as JSON. Each file becomes
+the same day of two runs with the same three segment sets as in
+`cpp_theoretical_best_dump`. For each set it follows the loop of
+`calculateOutingTheoreticalBest` and writes the geometric phases of every
+segment, every lap's `computeCornerSpeeds`, `computeBrakingMetrics` and
+`computeExitMetrics` of every corner in full, the KAN-63 observations (in
+segment order), the published variability and each lap compared with the
+best lap; the shared axis is written in full so the Dart side can measure on
+exactly the same axis. The cases section runs the onset detector and the
+braking and exit metrics on hand-made sessions and projections (channels
+measured, inferred, missing, with a gap, NaN and unit mismatches), and
+`lateralOffsetMeters` and `summarizeCornerVariability` on fixed inputs.
+
+```bash
+cmake -S tool/cpp_corner_metrics_dump -B /tmp/cornerbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/cornerbuild
+/tmp/cornerbuild/cpp_corner_metrics_dump test/parity/corner_metrics_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/corner_metrics_parity_test.dart
+```
+
+`--day <day.json> <output.json>` does the same for a real day described as
+for `cpp_theoretical_best_dump`; never commit its input or output.
+
+The committed `test/parity/corner_metrics_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. The
+corpus's `corners_*.vbo` laps (the mixed track driven with braking before
+and acceleration after each corner: throttle, brake, longitudinal G and GPS
+accuracy with a brake spike; longitudinal G only; and with a GPS gap and
+missing brake data) were added for it;
+`cpp_reference.json`, `progress_reference.json`, `segments_reference.json`
+and `theoretical_best_reference.json` were regenerated with them and are
+unchanged for the other files. To check other recordings locally, run the
+test with `FET_CORNER_REFERENCE=<json>` and `FET_CORNER_DIRS=<dir>[:<dir>]`;
+`FET_PARITY_REPORT=1` prints the largest difference. Never edit the JSON by
+hand.
