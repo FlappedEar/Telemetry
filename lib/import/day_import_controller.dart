@@ -22,10 +22,17 @@ final class DayImportWorking extends DayImportState {
 }
 
 final class DayImportFinished extends DayImportState {
-  const DayImportFinished({required this.runs, required this.notes});
+  const DayImportFinished({
+    required this.runs,
+    required this.notes,
+    this.analysis,
+  });
 
   /// Primary runs, named "Session N" in recording order.
   final List<NamedRun> runs;
+
+  /// The day's laps, groups and ranking.
+  final DayAnalysis? analysis;
 
   /// What was skipped, grouped or failed, for the user.
   final List<String> notes;
@@ -131,10 +138,7 @@ DayImportState _finished(DayImportOutcome outcome) {
     }
   }
   final groups = automaticVboPrimaries(plan);
-  final primaries = [
-    for (final run in plan.runs)
-      if (groups[run.id] == run.id) run,
-  ];
+  final primaries = primaryRuns(plan);
   for (final run in plan.runs) {
     final primary = groups[run.id];
     if (primary != null && primary != run.id) {
@@ -151,7 +155,10 @@ DayImportState _finished(DayImportOutcome outcome) {
     );
   }
   return DayImportFinished(
-    runs: nameRunsInRecordingOrder(primaries),
+    runs: outcome.runs.isNotEmpty
+        ? outcome.runs
+        : nameRunsInRecordingOrder(primaries),
     notes: notes,
+    analysis: outcome.analysis,
   );
 }
