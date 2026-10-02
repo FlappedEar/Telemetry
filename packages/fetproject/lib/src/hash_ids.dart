@@ -75,7 +75,7 @@ String? gatesV1Revision(
 bool _knownLayout(Map<String, Object?> configuration) {
   final value = configuration['layoutId'];
   return value is String &&
-      _qtTrimmed(value).isNotEmpty &&
+      qtTrimmed(value).isNotEmpty &&
       value.length <= 128 &&
       !value.contains('\u0000');
 }
@@ -153,9 +153,9 @@ String lapDerivationV1Key(Map<String, Object?> run) => _sha256({
 String lapReferenceKey(Map<String, Object?> reference) =>
     qtCompactJson(reference);
 
-// QString::trimmed(): removes leading and trailing characters for which
-// QChar::isSpace() is true.
-String _qtTrimmed(String value) {
+/// [value] as Qt's `QString::trimmed()` returns it: without leading and
+/// trailing characters for which `QChar::isSpace()` is true.
+String qtTrimmed(String value) {
   var start = 0;
   var end = value.length;
   while (start < end && _qtIsSpace(value.codeUnitAt(start))) {
