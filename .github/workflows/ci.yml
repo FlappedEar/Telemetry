@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-and-test:
+    name: Analyze and test (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs the Flutter version pinned in pubspec.yaml from Google's release
+      # manifest and verifies the archive's SHA-256 before extracting it.
+      - name: Install pinned Flutter
+        run: |
+          version=$(sed -n 's/^  flutter: \([0-9][0-9.]*\)$/\1/p' pubspec.yaml)
+          test -n "$version" || { echo "No pinned Flutter version in pubspec.yaml"; exit 1; }
+          base=https://storage.googleapis.com/flutter_infra_release/releases
+          curl -sSfL "$base/releases_macos.json" -o releases.json
+          read -r archive sha256 < <(python3 - "$version" <<'PY'
+          import json, platform, sys
+          version = sys.argv[1]
+          arch = "arm64" if platform.machine() == "arm64" else "x64"
+          releases = json.load(open("releases.json"))["releases"]
+          match = [r for r in releases
+                   if r["version"] == version and r["channel"] == "stable"
+                   and r.get("dart_sdk_arch", "x64") == arch]
+          if not match:
+              sys.exit(f"Flutter {version} ({arch}) not found")
+          print(match[0]["archive"], match[0]["sha256"])
+          PY
+          )
+          curl -sSfL "$base/$archive" -o flutter.zip
+          echo "$sha256  flutter.zip" | shasum -a 256 -c -
+          unzip -q flutter.zip -d "$RUNNER_TEMP"
+          rm flutter.zip releases.json
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Flutter version
+        run: |
+          flutter --disable-analytics
+          flutter --version
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Build macOS (debug)
+        run: flutter build macos --debug

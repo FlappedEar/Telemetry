@@ -9,9 +9,8 @@ The app is free for users.
 
 ## Status
 
-Early bootstrap. The Flutter project and CI are being set up in
-[FET-11](https://kozucharkadiusz.atlassian.net/browse/FET-11). Milestones are
-tracked in the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
+Early bootstrap: the app is the Flutter starter screen. Milestones are tracked in
+the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
 
 ## Platforms
 
@@ -25,6 +24,22 @@ tracked in the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET
 macOS is the active development platform.
 
 Application identifier: `com.flappedear.telemetry`.
+
+## Development
+
+Flutter is pinned to **3.47.6** (stable, Dart 3.13.5) in `pubspec.yaml`
+(`environment: flutter`). CI installs exactly that version.
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d macos
+```
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs analyze, tests and a macOS
+debug build on every pull request and on `main`. iOS simulator and Android
+emulator jobs come next.
 
 ## Contributing
 
