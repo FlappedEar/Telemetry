@@ -55,6 +55,21 @@ a background isolate.
   clock, run, start and end. `eligibleDayLaps` is the same eligibility rule for
   later consumers.
 
+- `inferTrack` finds the route a recording's complete laps follow (closed
+  within 25 m, 100–30,000 m, resampled to 256 points; clockwise when the signed
+  area is negative) and the laps on it; a lap more than 12 m off the other
+  laps' line is off the route. `groupInferredTracks` groups runs whose routes
+  match (same direction, length within 5 %, cross-track at most 25 m and 10 m
+  RMS), complete-link, under a `gps-route-v1:` layout. A manual layout always
+  wins.
+- `analyzeDay` derives a whole day from its runs: rows, configurations (with
+  the `gates-v1` revision of each recording's gates), groups labelled
+  "Group 1 · Detected route · Clockwise", the ranking of every group, the
+  group shown first (the one with the most eligible laps unless one is
+  preferred), and messages. One failing run never stops the others.
+- `lapPath` gives a lap section's GPS fixes in metres, with speed, split at
+  every gap, for the track map (trace only, no tiles).
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -62,7 +77,7 @@ operations take a `CancellationCheck`.
 
 Both apps must read a file identically: the `.fetproject` fingerprint depends on
 channel names and sample counts. The behaviour follows FlappedEar Overlays'
-`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp`, `TelemetrySource.cpp` and `OutingLaps.cpp` (VBOOverlay `1a96ae3`), re-implemented in
+`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp`, `TelemetrySource.cpp`, `OutingLaps.cpp`, `TrackInference.cpp` and `OutingLapDerivation.cpp` (VBOOverlay `1a96ae3`), re-implemented in
 Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 
 `test/parity/cpp_parity_test.dart` checks this file by file. The reference
@@ -86,6 +101,11 @@ Known, deliberate differences:
   `eventId`, `sourceId` and `derivationKey` are added when lap references are
   written to `.fetproject` (FET-7), so the `invalid-reference` check belongs
   there too. Progression across runs is not ported yet (FET-5).
+- **Detected layout ids** are new on every analysis: reusing an id saved in a
+  document (Overlays' `inference` provenance) comes with documents (FET-7).
+- **The group shown first** is the one with the most eligible laps. Overlays
+  takes the first resolved group in id order, which is arbitrary; on a day with
+  one group both choose the same.
 - **`timingGateRevision`** (`gates-v1`) is not here; it belongs with the other
   document ids.
 
