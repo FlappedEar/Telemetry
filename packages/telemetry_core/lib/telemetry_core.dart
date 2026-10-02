@@ -1,7 +1,10 @@
 /// Recording model, VBO parser and lap timing for FlappedEar Telemetry.
 library;
 
+export 'src/analysis/automatic_segments.dart';
 export 'src/analysis/track_progress.dart';
+export 'src/analysis/track_segment_proposals.dart';
+export 'src/analysis/track_segment_review.dart';
 export 'src/day/compatibility.dart';
 export 'src/day/day_analysis.dart';
 export 'src/day/day_document.dart';

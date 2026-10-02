@@ -7,6 +7,7 @@ import 'dart:io';
 import 'hash_ids.dart';
 import 'qt_json.dart';
 import 'source_reference.dart';
+import 'track_segments.dart';
 
 /// Largest document or recovery snapshot, in bytes.
 const int maximumProjectBytes = 4 * 1024 * 1024;
@@ -21,7 +22,6 @@ const int maximumSourcesPerRun = 8;
 const int maximumTelemetrySources = 128;
 const int maximumLapExclusions = 20000;
 const int maximumExclusionReasonCharacters = 256;
-const int maximumTrackSegments = 64;
 const int maximumSegmentReviewDecisions = 64;
 const int maximumComparisonChannels = 4;
 const double maximumComparisonRangeMeters = 1000000.0;
@@ -339,49 +339,6 @@ bool _validFusion(Map<String, Object?> run) {
   return true;
 }
 
-bool _validSegment(Map<String, Object?> segment) {
-  if (segment.length != 6 ||
-      !_isText(segment['id'], 128) ||
-      !const ['sector', 'corner', 'straight'].contains(segment['type']) ||
-      !_isText(segment['name'], 160)) {
-    return false;
-  }
-  final start = segment['startProgressMeters'],
-      end = segment['endProgressMeters'];
-  if (!_isNumber(start) || !_isNumber(end)) return false;
-  final a = _number(start), b = _number(end);
-  if (!a.isFinite ||
-      !b.isFinite ||
-      a < 0 ||
-      a > 1e6 ||
-      b < 0 ||
-      b > 1e6 ||
-      a == b) {
-    return false;
-  }
-  final reference = segment['trackConfigurationReference'];
-  return reference is String && _compatibilityOrNewline.hasMatch(reference);
-}
-
-bool _validSegments(Object? value, {required bool present}) {
-  if (!present || value == null) return true;
-  if (value is! List || value.length > maximumTrackSegments) return false;
-  final ids = <Object?>{};
-  var previousStart = -1.0;
-  for (var index = 0; index < value.length; ++index) {
-    final segment = _object(value[index]);
-    if (segment == null || !_validSegment(segment) || !ids.add(segment['id'])) {
-      return false;
-    }
-    final start = _number(segment['startProgressMeters']);
-    final end = _number(segment['endProgressMeters']);
-    if (start < previousStart) return false;
-    previousStart = start;
-    if (end < start && index != value.length - 1) return false;
-  }
-  return true;
-}
-
 bool _validReview(Object? value, {required bool present}) {
   if (!present || value == null) return true;
   final review = _object(value);
@@ -623,10 +580,7 @@ String? _validateEvent(Map<String, Object?> project) {
     if (!_validConfiguration(run)) {
       return 'Track configuration or its primary source binding is invalid.';
     }
-    if (!_validSegments(
-      run['trackSegments'],
-      present: run.containsKey('trackSegments'),
-    )) {
+    if (!validTrackSegments(run['trackSegments'])) {
       return 'Track segments are invalid, out of order, or exceed the bound.';
     }
     if (!_validReview(

@@ -102,6 +102,21 @@ a background isolate.
   `computeDeltaSeries` read time and the delta between two laps by distance,
   only where both laps are covered. `TelemetrySession.sampledSegments` gives a
   channel's actual samples, split at gaps and reduced to bucket extremes.
+- `proposeTrackSegments` splits a progress axis into alternating corner and
+  straight proposals from its smoothed curvature (kinks fold into the straight,
+  corners with no 20 m straight between them form one chain, short straights
+  and GPS gaps mark boundaries uncertain). `computeSegmentReview` runs it for
+  one timed lap as Overlays does (axis from the lap's own trace, 6 m smoothing,
+  the lap's `coverageGaps`). `approvedSegmentation`, `progressRangesOverlap`,
+  `withApprovedSegment` and `withoutApprovedSegment` handle the approved
+  segments a run stores in `trackSegments`; the segment model itself
+  (`makeTrackSegment`, `validTrackSegment(s)`) is in `packages/fetproject`.
+- Segments are automatic, with no manual approval (Overlays KAN-136):
+  `dayDocument` approves every proposal of the chosen group's best lap into
+  that lap's run when no run of the document has segments for the group
+  (`automaticTrackSegments`; `automaticSegments: false` turns it off). They are
+  then kept on every later save. A run that still stores segments of another
+  configuration gets none, as in Overlays.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -123,6 +138,10 @@ differ in the last bit. See [tool/README.md](tool/README.md) to regenerate it.
 port (`TrackProgress.cpp` and `TelemetrySession::sampledSegments`, Overlays
 `d4d1039`) against `test/parity/progress_reference.json` from
 `tool/cpp_progress_dump`.
+`test/parity/segments_parity_test.dart` does the same for the segment port
+(`TrackSegments.cpp`, `TrackSegmentProposals.cpp`, `TrackSegmentReview.cpp`
+and the review and automatic-approval steps of Overlays' app, `d4d1039`)
+against `test/parity/segments_reference.json` from `tool/cpp_segments_dump`.
 
 Known, deliberate differences:
 
