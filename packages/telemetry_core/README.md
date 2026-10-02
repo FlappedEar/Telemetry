@@ -14,6 +14,14 @@ a background isolate.
   gate and the laps between them, with reference eligibility, ranking and lap
   traces. `formatLapTime` formats a lap time without ever showing `x:60`.
 
+- `scanTelemetryFolder` and `scanTelemetrySources` turn a chosen folder, or any mix
+  of dropped or shared files and folders, into the list of VBO and RCZ recordings
+  to import, with notes on what was skipped. Links are never followed, dot files
+  and macOS `._` sidecars are skipped, and depth, entry and file counts are bounded.
+- `contentSha256` gives a recording's identity by content (`recordingSourceId`:
+  `sha256:<hex>`), never by file name, and refuses a file that changes while it is
+  read.
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -21,7 +29,7 @@ operations take a `CancellationCheck`.
 
 Both apps must read a file identically: the `.fetproject` fingerprint depends on
 channel names and sample counts. The behaviour follows FlappedEar Overlays'
-`VboParser.cpp` and `LapTiming.cpp` (VBOOverlay `1a96ae3`), re-implemented in
+`VboParser.cpp`, `LapTiming.cpp`, `TelemetryFolderScan.cpp` and `TelemetrySource.cpp` (VBOOverlay `1a96ae3`), re-implemented in
 Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 
 `test/parity/cpp_parity_test.dart` checks this file by file. The reference

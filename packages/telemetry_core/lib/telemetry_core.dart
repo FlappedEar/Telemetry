@@ -10,6 +10,8 @@ export 'src/geometry.dart'
         isValidCoordinate,
         normalizeCoordinateDegrees,
         projectCoordinate;
+export 'src/intake/folder_scan.dart';
+export 'src/intake/recording_source.dart';
 export 'src/laps/lap_detection.dart' show deriveSourceLapSession, detectLaps;
 export 'src/laps/lap_ranking.dart' show eligibleLapIndices, rankLaps, recomputeLapRanking;
 export 'src/laps/lap_session.dart';
