@@ -4,6 +4,7 @@ library;
 export 'src/day/compatibility.dart';
 export 'src/day/day_analysis.dart';
 export 'src/day/day_document.dart';
+export 'src/day/day_recovery.dart';
 
 export 'package:fetproject/fetproject.dart' show FetprojectError;
 

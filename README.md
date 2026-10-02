@@ -26,7 +26,9 @@ no network. Tiles already seen stay cached for the track. **Save** writes the da
 circuit names, excluded laps and the group shown); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
 **Find recordings in a folder**. On desktop the system dialogs choose the file;
-on phones days are kept in the app. The
+on phones days are kept in the app. A day with unsaved changes is kept in
+the app's own folder as you work, so after a crash or a closed app the import
+screen offers to **Restore** or **Discard** it. The
 recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).

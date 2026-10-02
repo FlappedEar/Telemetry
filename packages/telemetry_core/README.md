@@ -80,7 +80,14 @@ a background isolate.
   missing. `openDay` reads it back: it finds each recording (relative path
   first, then absolute, or a relinked path), refuses a different recording by
   content or fingerprint, applies exclusions whose recording and derivation key
-  still match, and analyses the day.
+  still match, and analyses the day. `openDayDocument` does the same for a
+  document already in memory.
+- `writeDayRecovery` and `readDayRecovery` keep an unsaved day for recovery
+  (after Overlays' `ProjectRecoveryStore`): this app's own file, wrapping the
+  version 3 document with where the day was last saved, the path its
+  relative recording paths are relative to, and the time. `openRecoveredDay`
+  opens it. Overlays' discard tombstones are not ported: one app instance
+  owns the file.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
