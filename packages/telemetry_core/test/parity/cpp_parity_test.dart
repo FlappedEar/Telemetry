@@ -15,8 +15,6 @@ import 'dart:io';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
-final _generatedKey = RegExp(r'^(.*)\.\d+$');
-
 void main() {
   final reference =
       jsonDecode(File('test/parity/cpp_reference.json').readAsStringSync()) as Map<String, dynamic>;
@@ -105,20 +103,10 @@ void _expectSession(TelemetrySession session, Map<String, dynamic> expected) {
   }
 }
 
-/// Keys the parser generates as `<section>.<n>` for lines without a separator
-/// follow the C++ hash order, which Qt seeds per process. They are compared
-/// as (section, value) pairs; every other key exactly.
+/// Metadata, including the `<section>.<n>` keys generated for lines without a
+/// separator, matches exactly: both sides build it in file section order.
 void _expectMetadata(Map<String, String> actual, Map<String, String> expected) {
-  List<String> generated(Map<String, String> map) => [
-    for (final MapEntry(:key, :value) in map.entries)
-      if (_generatedKey.firstMatch(key) case final match?) '${match[1]}=$value',
-  ]..sort();
-  Map<String, String> named(Map<String, String> map) => {
-    for (final e in map.entries)
-      if (!_generatedKey.hasMatch(e.key)) e.key: e.value,
-  };
-  expect(named(actual), named(expected));
-  expect(generated(actual), generated(expected));
+  expect(actual, expected);
 }
 
 void _expectLaps(LapSession laps, Map<String, dynamic> expected) {
