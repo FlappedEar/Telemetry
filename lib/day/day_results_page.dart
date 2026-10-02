@@ -285,6 +285,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                       height: wide ? 360 : 240,
                       child: IgnorePointer(
                         child: TrackMap(
+                          interactive: false,
                           path: path,
                           gate: _mapGate,
                           semanticLabel:

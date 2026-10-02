@@ -19,7 +19,8 @@ export 'src/geometry.dart'
         MetricPoint,
         isValidCoordinate,
         normalizeCoordinateDegrees,
-        projectCoordinate;
+        projectCoordinate,
+        unprojectCoordinate;
 export 'src/intake/folder_scan.dart';
 export 'src/intake/import_plan.dart';
 export 'src/intake/recording_source.dart';

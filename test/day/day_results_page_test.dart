@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
@@ -11,6 +14,20 @@ import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
+
+/// Transparent tiles, without network.
+final class _BlankTiles extends TileProvider {
+  // A 1x1 transparent PNG.
+  static final _png = Uint8List.fromList(
+    base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    ),
+  );
+
+  @override
+  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
+      MemoryImage(_png);
+}
 
 /// Pickers that answer from fixed values.
 final class FakeDocuments implements DocumentPickers {
@@ -302,6 +319,48 @@ void main() {
       {'run-b': '${directory.path}/moved/deep/B.VBO'},
     );
     expect(documentFileName('Day 2026/09/27'), 'Day 2026-09-27.fetproject');
+  });
+
+  testWidgets('draws the trace over street tiles with attribution', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    mapBackground.value = MapBackground.streets;
+    debugTileProvider = _BlankTiles.new;
+    addTearDown(() {
+      mapBackground.value = MapBackground.none;
+      debugTileProvider = null;
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.tap(find.text('Tap to open the lap.'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FlutterMap), findsOneWidget);
+    expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+    await tester.tap(find.byTooltip('Map background'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Trace only'));
+    await tester.pumpAndSettle();
+    expect(mapBackground.value, MapBackground.none);
+    expect(find.byType(FlutterMap), findsNothing);
+  });
+
+  test('maps metres around the origin back to degrees', () {
+    const origin = GeoCoordinate(52.0, 21.0);
+    final point = pathLatLng(origin, 100, -50);
+    final metric = projectCoordinate(
+      GeoCoordinate(point.latitude, point.longitude),
+      origin,
+    );
+    expect(metric.eastMeters, closeTo(100, 1e-6));
+    expect(metric.northMeters, closeTo(-50, 1e-6));
   });
 
   test('speed colours run from the slow end to the fast end of the ramp', () {
