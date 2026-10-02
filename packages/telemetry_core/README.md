@@ -41,6 +41,20 @@ a background isolate.
   `nameRunsInRecordingOrder` names runs "Session N" by recording time, undated
   last, and `ImportGeneration` keeps a stale result from being committed.
 
+- `dayLapRows` lists one run's OUT, LAP n and IN sections (UNKNOWN when the
+  recording has no accepted gate pass), with the clock from the recording;
+  `sortDayLaps` orders a day's rows by that clock, undated runs last in import
+  order. A lap is identified by `DayLapReference`: its exact bounds in one
+  recording's content (SHA-256), never its number.
+- `rankDayLaps` ranks the timed laps of one compatibility group
+  (`TrackConfiguration.compatibilityGroupId`, the `compatibility-v1` id from
+  `packages/fetproject`): best of the day, each run's best with linearly
+  interpolated quartiles, ties, and every lap left out with its `LapIssue`s
+  (unresolved layout, direction or gates, incomplete or invalid GPS, user
+  exclusion, off the recorded route, changed source). Ties order by duration,
+  clock, run, start and end. `eligibleDayLaps` is the same eligibility rule for
+  later consumers.
+
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
 
@@ -48,7 +62,7 @@ operations take a `CancellationCheck`.
 
 Both apps must read a file identically: the `.fetproject` fingerprint depends on
 channel names and sample counts. The behaviour follows FlappedEar Overlays'
-`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp` and `TelemetrySource.cpp` (VBOOverlay `1a96ae3`), re-implemented in
+`VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp`, `TelemetrySource.cpp` and `OutingLaps.cpp` (VBOOverlay `1a96ae3`), re-implemented in
 Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 
 `test/parity/cpp_parity_test.dart` checks this file by file. The reference
@@ -67,6 +81,11 @@ Known, deliberate differences:
 - **Decoded-memory budget.** Overlays' `maximumDecodedBytes` argument belongs to
   its desktop session cache. The phone budget is decided separately (KAN-129), so
   it is not ported.
+- **Day lap references** (`OutingLaps.cpp`, VBOOverlay `ca2bde5`) carry the run,
+  the content SHA-256, the type and the exact bounds. The document fields
+  `eventId`, `sourceId` and `derivationKey` are added when lap references are
+  written to `.fetproject` (FET-7), so the `invalid-reference` check belongs
+  there too. Progression across runs is not ported yet (FET-5).
 - **`timingGateRevision`** (`gates-v1`) is not here; it belongs with the other
   document ids.
 
