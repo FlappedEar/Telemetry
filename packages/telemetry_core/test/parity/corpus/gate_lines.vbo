@@ -1,0 +1,16 @@
+[header]
+coordinate units = degrees
+[laptiming]
+Start 21 52 21 52.0002 main straight
+Split 21.001 52 21.001 52.0002
+Finish 21.002 52 21.002 52.0002
+Start 21 52 21
+Start 21 52 21 52
+Start 21 52 x 52.0002
+Start 21 95 21 52.0002
+split 21 52 21 52.0002   
+[column names]
+time latitude longitude
+[data]
+0 52 21
+1 52.0001 21

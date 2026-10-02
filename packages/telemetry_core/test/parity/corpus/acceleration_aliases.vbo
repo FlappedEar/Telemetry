@@ -1,0 +1,5 @@
+[column names]
+time latacc longacc latacc-calc LongAcc-Calc heart_rate Engine Speed g_x
+[data]
+0 0 0 0.1 0.2 120 3000 1
+1 0 0 0.2 0.3 121 3100 1

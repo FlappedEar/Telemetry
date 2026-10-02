@@ -1,0 +1,12 @@
+[column names]
+timestamp a b
+[data]
+10.0 1 2
+10.5 1 2
+10.5 9 9
+10.2 8 8
+abc 7 7
+11 1
+11.5 1 2 3 4
+1e1 5 5
+12.0 nan inf

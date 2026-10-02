@@ -1,0 +1,3 @@
+# Parity inputs are byte-exact test data: no line-ending conversion.
+*.vbo -text
+test/parity/cpp_reference.json -text -diff linguist-generated

@@ -1,0 +1,19 @@
+; comment
+# another
+loose line
+[Header]
+vehicle: Test Car
+driver = A  B
+no separator here
+[HEADER]
+vehicle = Second
+[session data]
+key: value
+  [ Column Names ]  
+time x x x (2) 
+[DATA]
+0 1 2 3 4
+1 1 2 3 4
+[header]
+gpsCoordinateUnit = forged
+timingGateFormat = forged
