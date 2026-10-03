@@ -716,13 +716,23 @@ DayLapReference? _appliedLapReference(
 /// The comparison [document] (a validated day) saves in its
 /// `analysisDecisions`, with its laps as laps of the opened [runs]: a lap
 /// whose run is not opened, or whose recording or derivation changed, is
-/// null.
+/// null. A run whose primary is not the one [document] saves ("Make
+/// primary" since, FET-57) is matched as it is saved with that primary
+/// (as [recordingExclusions] matches it), so a pair of its laps applies
+/// again as soon as it switches back.
 ComparisonDecisions documentComparison(Map<String, Object?> document, List<NamedRun> runs) {
   final event = _object(document['event']) ?? const <String, Object?>{};
   final decisions = _object(event['analysisDecisions']) ?? const <String, Object?>{};
+  final current = {for (final named in runs) named.run.id: named.run};
   final byId = <Object?, Map<String, Object?>>{
     for (final run in ((event['runs'] as List?) ?? const []).whereType<Map<String, Object?>>())
-      run['id']: run,
+      run['id']: switch (current[run['id']]) {
+        final recording? when recording.sourceId != run['primaryTelemetrySourceId'] => _asPrimary(
+          run,
+          recording,
+        ),
+        _ => run,
+      },
   };
   final loaded = {for (final named in runs) named.run.id: named.run.contentSha256};
   final slots = decisions['comparisonSlots'];

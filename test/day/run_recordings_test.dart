@@ -467,6 +467,46 @@ void main() {
     },
   );
 
+  test('after switching back in the session, the VBO\'s saved exclusion and '
+      'pair apply at once', () async {
+    final (controller, runId) = await fusedDay();
+    final laps = controller.analysis.rows
+        .where((row) => row.type == LapSectionType.lap && row.referenceEligible)
+        .toList();
+    expect(controller.exclude(laps[0], 'Traffic'), isTrue);
+    controller.rememberComparisonPair(laps[1], laps[2]);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    (DayLapReference, DayLapReference)? pairOf(DayResultsController c) {
+      final pair = c.savedComparisonPair;
+      return pair == null ? null : (pair.$1.reference, pair.$2.reference);
+    }
+
+    expect(pairOf(controller), (laps[1].reference, laps[2].reference));
+
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.rcz);
+    expect(controller.exclusions, isEmpty);
+    expect(controller.savedComparisonPair, isNull);
+    await controller.save(path);
+
+    // Back on the VBO, without saving: both apply again.
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    expect(controller.dirty, isTrue);
+    expect(controller.exclusions, {laps[0].reference: 'Traffic'});
+    expect(
+      controller.issues(
+        controller.analysis.rows.firstWhere(
+          (row) => row.reference == laps[0].reference,
+        ),
+      ),
+      isNotEmpty,
+      reason: 'the lap is excluded from the ranking again',
+    );
+    expect(pairOf(controller), (laps[1].reference, laps[2].reference));
+  });
+
   testWidgets('the session shows its recordings\' actions, the clock check '
       'and the primary change', (tester) async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
@@ -536,4 +576,61 @@ void main() {
     // The page disposes the day's controller.
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('Accept is disabled while recordings are being added', (
+    tester,
+  ) async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = runDayImport((paths: [vbo, rcz], includeSubfolders: false));
+    final runId = both.runs.single.run.id;
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+      appender: _HangingAppender(),
+    );
+    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Check clock'));
+    await tester.tap(find.text('Check clock'));
+    await tester.pumpAndSettle();
+    FilledButton accept() =>
+        tester.widget<FilledButton>(find.byKey(ValueKey('acceptClock $runId')));
+    expect(accept().onPressed, isNotNull);
+
+    final addition = controller.addRecordings(['${directory.path}/more.vbo']);
+    await tester.pump();
+    expect(controller.adding, isTrue);
+    expect(accept().onPressed, isNull);
+
+    controller.cancelAdding();
+    await tester.runAsync(() => addition);
+    await tester.pumpAndSettle();
+    expect(controller.adding, isFalse);
+    expect(accept().onPressed, isNotNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+}
+
+/// Additions that never finish until cancelled.
+final class _HangingAppender implements DayAppender {
+  @override
+  DayAppendJob start(DayAppendRequest request, void Function(int, int) _) =>
+      _HangingJob();
+}
+
+final class _HangingJob implements DayAppendJob {
+  final _done = Completer<DayAppendOutcome>();
+
+  @override
+  Future<DayAppendOutcome> get result => _done.future;
+
+  @override
+  void cancel() {
+    if (!_done.isCompleted) _done.completeError(const OperationCancelled());
+  }
 }
