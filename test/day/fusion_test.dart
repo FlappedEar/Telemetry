@@ -653,7 +653,12 @@ void main() {
     await opened.fusionsSettled;
     final fusion = opened.fusion(runId)!;
     expect(fusion.fused, isTrue, reason: 'B is the source');
-    expect(fusion.alternative!.sourcePath, b);
+    // Compared resolved: the macOS temp folder is reached through a link
+    // (/var is /private/var), and the reopened path is the resolved one.
+    expect(
+      File(fusion.alternative!.sourcePath).resolveSymbolicLinksSync(),
+      File(b).resolveSymbolicLinksSync(),
+    );
   });
 
   test('an RCZ whose alignment job crashed is said not combined, and still '
