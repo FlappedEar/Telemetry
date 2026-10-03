@@ -64,7 +64,12 @@ void main() {
       final every = expected.publishedTimeLosses(allLaps: true);
       expect(losses.losses, isNotEmpty);
       expect(every.losses.length, greaterThan(losses.losses.length));
-      final page = find.byType(Scrollable).first;
+      final page = find
+          .descendant(
+            of: find.byKey(const ValueKey('dayResultsSummary')),
+            matching: find.byType(Scrollable),
+          )
+          .first;
       final summary = find.byKey(const ValueKey('timeLossSummary'));
       await tester.scrollUntilVisible(summary, 300, scrollable: page);
       expect(
@@ -158,7 +163,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       final expected = controller.theoreticalBest!;
-      final page = find.byType(Scrollable).first;
+      final page = find
+          .descendant(
+            of: find.byKey(const ValueKey('dayResultsSummary')),
+            matching: find.byType(Scrollable),
+          )
+          .first;
       final day = find.byKey(const ValueKey('lapConsistency day'));
       await tester.scrollUntilVisible(day, 300, scrollable: page);
       expect(
@@ -211,7 +221,12 @@ void main() {
     final sections = expected.sectionProgression([
       for (final run in progression.runs) run.run,
     ]);
-    final page = find.byType(Scrollable).first;
+    final page = find
+        .descendant(
+          of: find.byKey(const ValueKey('dayResultsSummary')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
     final view = find.byKey(const ValueKey('progressionView'));
     await tester.scrollUntilVisible(view, 300, scrollable: page);
     for (final run in progression.runs) {
