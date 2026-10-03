@@ -17,6 +17,7 @@ import '../../packages/telemetry_core/test/rcz/rcz_fixture.dart';
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
 import 'rectangle_vbo.dart';
 import 'recovery_test.dart' show FileRecoveryStore;
+import '../support/temp_directory.dart';
 
 /// Prepares additions on the test's own thread.
 final class _SyncAppender implements DayAppender {
@@ -82,7 +83,7 @@ void main() {
   setUp(
     () => directory = Directory.systemTemp.createTempSync('add_recordings'),
   );
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   String write(String name, List<double> speeds) {
     final path = '${directory.path}/$name';

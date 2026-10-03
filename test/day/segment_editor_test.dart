@@ -12,11 +12,12 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import 'recovery_test.dart' show FileRecoveryStore;
 import 'rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('segments'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   DayImportOutcome importDay() {
     final files = {

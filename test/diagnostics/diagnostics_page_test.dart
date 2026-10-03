@@ -11,6 +11,7 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 
 import '../day/rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 /// Runs the real import synchronously.
 final class _Job implements DayImportJob {
@@ -37,7 +38,7 @@ const _mib = 1024 * 1024;
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('diagnostics'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   List<String> writeDay() => [
     for (final (name, speeds) in [
