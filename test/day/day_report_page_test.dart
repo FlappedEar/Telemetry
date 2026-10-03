@@ -260,6 +260,12 @@ void main() {
       find.byKey(const ValueKey('dayReportFocusObservation0')),
       findsOneWidget,
     );
+    // The focus kind is a label, so it is grey, not an accent colour.
+    final kind = find.byKey(const ValueKey('dayReportFocusKind0'));
+    expect(
+      tester.widget<Text>(kind).style?.color,
+      Theme.of(tester.element(kind)).colorScheme.onSurfaceVariant,
+    );
     final list = find.byType(Scrollable).first;
     for (final key in [
       'dayReportLosses',

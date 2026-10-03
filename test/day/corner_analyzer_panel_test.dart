@@ -105,6 +105,12 @@ void main() {
       textOf(tester, const ValueKey('cornerAnalyzerNote')),
       startsWith('Segments proposed from '),
     );
+    // The note is information, so it is grey, not an accent colour.
+    final note = find.byKey(const ValueKey('cornerAnalyzerNote'));
+    expect(
+      tester.widget<Text>(note).style?.color,
+      Theme.of(tester.element(note)).colorScheme.onSurfaceVariant,
+    );
     final view = controller.cornerAnalyzer(
       page.a,
       page.b,

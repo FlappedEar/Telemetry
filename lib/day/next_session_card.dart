@@ -242,13 +242,13 @@ class NextSessionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.tertiaryContainer,
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   l10n.coachLabel,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onTertiaryContainer,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -373,7 +373,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
           Text(
             '${l10n.coachLabel} · ${l10n.coachKind(finding.kind)}',
             style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.tertiary,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
