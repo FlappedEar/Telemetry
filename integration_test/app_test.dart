@@ -181,10 +181,9 @@ void main() {
 
       await tester.pumpWidget(const TelemetryApp());
       await tester.pumpAndSettle();
-      // The CI script polls for this file (the test runner holds back
-      // printed output until a test ends, so it cannot watch for a print).
+      // The CI script polls for this file: print inside a test goes to the
+      // test runner on the host, not to the device's log.
       File(p.join(fixtures.path, 'ready')).writeAsStringSync('');
-      debugPrint('FET_WAITING_FOR_SHARE');
       // A share with no day in progress is imported and opened as today's
       // day straight away, so the day page is what appears.
       await waitFor(

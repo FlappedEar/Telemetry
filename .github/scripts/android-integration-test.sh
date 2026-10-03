@@ -38,6 +38,10 @@ share_when_asked() {
 for attempt in 1 2; do
   status=0
   adb logcat -c
+  # A killed attempt leaves its ready file behind, and a reinstall keeps the
+  # cache: remove it so this attempt's share waits for its own test.
+  adb shell run-as com.flappedear.telemetry \
+    rm -f cache/share-fixtures/ready 2>/dev/null || true
   timeout 900 flutter test integration_test -d emulator-5554 -v \
     --dart-define=SHARE_TEST=true > integration.log 2>&1 &
   test_pid=$!
@@ -51,7 +55,7 @@ for attempt in 1 2; do
   fi
   if [ "$attempt" -eq 1 ] && [ "$status" -eq 124 ] \
     && grep -q 'now awaiting test result' integration.log \
-    && ! grep -q 'FET_WAITING_FOR_SHARE' integration.log; then
+    && ! grep -q 'Sending ACTION_SEND' share.log; then
     echo "::warning::The app connected but sent no test result (attempt $attempt); running it again."
     adb logcat -d | grep -i -E 'flutter|impeller|splash' | tail -n 60
     continue
