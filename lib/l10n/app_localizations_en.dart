@@ -62,6 +62,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackDialogUseDetected => 'Use the detected route';
 
   @override
+  String get routeReasonTooFewLaps =>
+      'Not enough repeated, complete GPS laps to identify a route automatically.';
+
+  @override
+  String get routeReasonConflictingLaps =>
+      'Complete laps follow conflicting routes; review this recording\'s layout.';
+
+  @override
+  String get routeReasonSeveralGroups =>
+      'GPS route matches more than one incompatible group; review this recording\'s layout.';
+
+  @override
   String get cancel => 'Cancel';
 
   @override

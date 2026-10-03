@@ -22,7 +22,7 @@ Locale resolveAppLocale(List<Locale>? preferred) {
   return supportedLocales.first;
 }
 
-/// Makes [locale] the language of numbers and dates formatted without a
+/// Makes [locale] the language of dates formatted without a
 /// [BuildContext] (format.dart). Called by the app when its language is
 /// chosen.
 void useFormattingLocale(Locale locale) {
@@ -45,5 +45,22 @@ extension TrackDirectionText on AppLocalizations {
   String directionInSentence(TrackDirection direction) => switch (direction) {
     TrackDirection.clockwise => directionClockwiseInSentence,
     TrackDirection.counterclockwise => directionCounterclockwiseInSentence,
+  };
+}
+
+extension RouteReasonText on AppLocalizations {
+  /// A reason from `telemetry_core` route detection in the app's language;
+  /// a reason the app does not know yet is shown as written.
+  String routeReason(String reason) => switch (reason) {
+    'Not enough repeated, complete GPS laps to identify a route '
+        'automatically.' =>
+      routeReasonTooFewLaps,
+    "Complete laps follow conflicting routes; review this recording's "
+        'layout.' =>
+      routeReasonConflictingLaps,
+    'GPS route matches more than one incompatible group; review this '
+        "recording's layout." =>
+      routeReasonSeveralGroups,
+    _ => reason,
   };
 }

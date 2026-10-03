@@ -1,56 +1,113 @@
 {
   "@@locale": "en",
   "appTitle": "FlappedEar Telemetry",
-  "@appTitle": {"description": "The app's name, shown in the task switcher and window title. Not translated."},
-
+  "@appTitle": {
+    "description": "The app's name, shown in the task switcher and window title. Not translated."
+  },
   "directionClockwise": "Clockwise",
-  "@directionClockwise": {"description": "A circuit driven clockwise; button label."},
+  "@directionClockwise": {
+    "description": "A circuit driven clockwise; button label."
+  },
   "directionCounterclockwise": "Counterclockwise",
-  "@directionCounterclockwise": {"description": "A circuit driven counterclockwise; button label."},
+  "@directionCounterclockwise": {
+    "description": "A circuit driven counterclockwise; button label."
+  },
   "directionClockwiseInSentence": "clockwise",
-  "@directionClockwiseInSentence": {"description": "Clockwise, inside a sentence such as 'Detected route: 1,830 m, clockwise'."},
+  "@directionClockwiseInSentence": {
+    "description": "Clockwise, inside a sentence such as 'Detected route: 1,830 m, clockwise'."
+  },
   "directionCounterclockwiseInSentence": "counterclockwise",
-  "@directionCounterclockwiseInSentence": {"description": "Counterclockwise, inside a sentence such as 'Detected route: 1,830 m, counterclockwise'."},
-
+  "@directionCounterclockwiseInSentence": {
+    "description": "Counterclockwise, inside a sentence such as 'Detected route: 1,830 m, counterclockwise'."
+  },
   "trackDialogTitle": "Circuit of {session}",
   "@trackDialogTitle": {
     "description": "Title of the dialog that corrects a session's circuit.",
-    "placeholders": {"session": {"type": "String", "example": "Session 2"}}
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
   },
   "trackDialogNoRoute": "No route was detected: {reason}",
   "@trackDialogNoRoute": {
     "description": "The circuit could not be found from GPS; reason explains why.",
-    "placeholders": {"reason": {"type": "String", "example": "no laps"}}
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "no laps"
+      }
+    }
   },
   "trackDialogNoLaps": "no laps",
-  "@trackDialogNoLaps": {"description": "Reason shown when a session has no laps."},
+  "@trackDialogNoLaps": {
+    "description": "Reason shown when a session has no laps."
+  },
   "trackDialogDetectedRoute": "Detected route: {length} m, {direction} (inferred from GPS).",
   "@trackDialogDetectedRoute": {
     "description": "The circuit found from GPS: its length in metres and direction.",
     "placeholders": {
-      "length": {"type": "String", "example": "1830"},
-      "direction": {"type": "String", "example": "clockwise"}
+      "length": {
+        "type": "String",
+        "example": "1830"
+      },
+      "direction": {
+        "type": "String",
+        "example": "clockwise"
+      }
     }
   },
   "trackDialogWholeTrace": "Whole GPS trace of {session}",
   "@trackDialogWholeTrace": {
     "description": "Screen reader label of the map showing a session's GPS trace.",
-    "placeholders": {"session": {"type": "String", "example": "Session 2"}}
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
   },
   "trackDialogLayoutName": "Layout name",
-  "@trackDialogLayoutName": {"description": "Text field label: the circuit layout's name."},
+  "@trackDialogLayoutName": {
+    "description": "Text field label: the circuit layout's name."
+  },
   "trackDialogLayoutHint": "Jastrząb full circuit",
-  "@trackDialogLayoutHint": {"description": "Example layout name in the empty text field."},
+  "@trackDialogLayoutHint": {
+    "description": "Example layout name in the empty text field."
+  },
   "trackDialogSameRoute": "Also for the sessions on the same route: {sessions}",
   "@trackDialogSameRoute": {
     "description": "Checkbox: apply the change to other sessions on the same route.",
-    "placeholders": {"sessions": {"type": "String", "example": "Session 1, Session 3"}}
+    "placeholders": {
+      "sessions": {
+        "type": "String",
+        "example": "Session 1, Session 3"
+      }
+    }
   },
   "trackDialogUseDetected": "Use the detected route",
-  "@trackDialogUseDetected": {"description": "Button: drop the manual circuit and use the one found from GPS."},
-
+  "@trackDialogUseDetected": {
+    "description": "Button: drop the manual circuit and use the one found from GPS."
+  },
+  "routeReasonTooFewLaps": "Not enough repeated, complete GPS laps to identify a route automatically.",
+  "@routeReasonTooFewLaps": {
+    "description": "Why no circuit was found from GPS: too few complete laps."
+  },
+  "routeReasonConflictingLaps": "Complete laps follow conflicting routes; review this recording's layout.",
+  "@routeReasonConflictingLaps": {
+    "description": "Why no circuit was found from GPS: the laps disagree."
+  },
+  "routeReasonSeveralGroups": "GPS route matches more than one incompatible group; review this recording's layout.",
+  "@routeReasonSeveralGroups": {
+    "description": "Why no circuit was found from GPS: the route fits several different circuits."
+  },
   "cancel": "Cancel",
-  "@cancel": {"description": "Button that closes a dialog without changes."},
+  "@cancel": {
+    "description": "Button that closes a dialog without changes."
+  },
   "save": "Save",
-  "@save": {"description": "Button that keeps a dialog's changes."}
+  "@save": {
+    "description": "Button that keeps a dialog's changes."
+  }
 }

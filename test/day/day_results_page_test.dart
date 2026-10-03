@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/document_pickers.dart';
@@ -172,6 +173,7 @@ void main() {
   );
 
   testWidgets('the circuit dialog speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
     final outcome = importDay({
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],

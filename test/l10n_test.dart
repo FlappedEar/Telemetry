@@ -89,6 +89,25 @@ void main() {
     }
   });
 
+  test('every route reason from telemetry_core has a translation', () {
+    // The reasons route detection writes, read from its source so a new or
+    // reworded reason fails here instead of showing English in Polish.
+    final source = File(
+      'packages/telemetry_core/lib/src/day/track_inference.dart',
+    ).readAsStringSync().replaceAll(RegExp(r'''['"]\s*\n\s*['"]'''), '');
+    final reasons = {
+      for (final match in RegExp(
+        r'''(?:reason:|reasons\[id\] =)\s*(['"])(.+?)\1[,;]''',
+      ).allMatches(source))
+        match.group(2)!,
+    };
+    expect(reasons, hasLength(3));
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    for (final reason in reasons) {
+      expect(polish.routeReason(reason), isNot(reason), reason: reason);
+    }
+  });
+
   group('numbers and dates', () {
     String all(BuildContext context) => [
       displayTime(109.898),

@@ -160,8 +160,9 @@ From the handover, section "How results are presented".
 The app speaks English and Polish and follows the device language, falling back
 to English (`lib/l10n.dart`).
 
-- Every text a user sees comes from `lib/l10n/app_en.arb`, with a description,
-  and has its Polish in `app_pl.arb`. `flutter pub get` generates
+- New and translated text comes from `lib/l10n/app_en.arb`, with a
+  description, and has its Polish in `app_pl.arb`; screens move over one at a
+  time until every visible text does. `flutter pub get` generates
   `lib/l10n/app_localizations*.dart`; commit them. `test/l10n_test.dart` checks
   that both files have the same keys and placeholders.
 - Read text with `context.l10n`. Format numbers with `fixed`, times with

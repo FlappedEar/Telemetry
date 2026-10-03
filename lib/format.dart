@@ -30,7 +30,7 @@ String displayDelta(double seconds) {
   return '$sign${fixed(milliseconds.abs() / 1000, 3)} s';
 }
 
-/// A local date and time in the app's language: "3 Oct 2026, 06:30" in
+/// A local date and time in the app's language: "Oct 3, 2026, 06:30" in
 /// English, "3 paź 2026, 06:30" in Polish.
 String displayDateTime(DateTime time) {
   final local = time.toLocal();

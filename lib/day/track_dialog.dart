@@ -80,7 +80,9 @@ class _TrackDialogState extends State<TrackDialog> {
               Text(
                 inference?.route == null
                     ? l10n.trackDialogNoRoute(
-                        inference?.reason ?? l10n.trackDialogNoLaps,
+                        inference == null || inference.reason.isEmpty
+                            ? l10n.trackDialogNoLaps
+                            : l10n.routeReason(inference.reason),
                       )
                     : l10n.trackDialogDetectedRoute(
                         fixed(inference!.route!.lengthMeters, 0),

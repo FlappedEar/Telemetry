@@ -64,6 +64,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get trackDialogUseDetected => 'Użyj wykrytej trasy';
 
   @override
+  String get routeReasonTooFewLaps =>
+      'Za mało powtarzalnych, pełnych okrążeń GPS, aby automatycznie rozpoznać trasę.';
+
+  @override
+  String get routeReasonConflictingLaps =>
+      'Pełne okrążenia prowadzą różnymi trasami; sprawdź konfigurację toru w tym nagraniu.';
+
+  @override
+  String get routeReasonSeveralGroups =>
+      'Trasa GPS pasuje do kilku niezgodnych grup; sprawdź konfigurację toru w tym nagraniu.';
+
+  @override
   String get cancel => 'Anuluj';
 
   @override

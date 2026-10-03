@@ -182,6 +182,24 @@ abstract class AppLocalizations {
   /// **'Use the detected route'**
   String get trackDialogUseDetected;
 
+  /// Why no circuit was found from GPS: too few complete laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough repeated, complete GPS laps to identify a route automatically.'**
+  String get routeReasonTooFewLaps;
+
+  /// Why no circuit was found from GPS: the laps disagree.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete laps follow conflicting routes; review this recording\'s layout.'**
+  String get routeReasonConflictingLaps;
+
+  /// Why no circuit was found from GPS: the route fits several different circuits.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS route matches more than one incompatible group; review this recording\'s layout.'**
+  String get routeReasonSeveralGroups;
+
   /// Button that closes a dialog without changes.
   ///
   /// In en, this message translates to:

@@ -25,12 +25,14 @@ class TelemetryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Every speed label follows the setting at once. Numbers and dates
+      // Every speed label follows the setting at once. Dates
       // formatted without a context follow the app's language.
       builder: (context, child) {
         useFormattingLocale(Localizations.localeOf(context));
         return SpeedUnitScope(child: child ?? const SizedBox.shrink());
       },
+      // The name is the same in every language.
+      title: 'FlappedEar Telemetry',
       onGenerateTitle: (context) => context.l10n.appTitle,
       locale: locale,
       supportedLocales: supportedLocales,
