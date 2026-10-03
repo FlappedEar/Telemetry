@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +7,7 @@ import 'package:telemetry/diagnostics/app_errors.dart';
 import 'package:telemetry/diagnostics/diagnostics_page.dart';
 import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry_core/telemetry_core.dart';
 
 void main() {
   group('AppErrors', () {
@@ -27,12 +30,29 @@ void main() {
       ]);
       expect(errors.dropped, 1);
       expect(errors.records.first.details, contains('#0 main (file.dart:1)'));
-      expect(errors.report(), startsWith('(1 earlier errors not kept)'));
+      expect(errors.report(), startsWith('(1 earlier error not kept)'));
       expect(errors.report(), contains('2026-10-04T06:00:00.000Z'));
 
       errors.clear();
       expect(errors.records, isEmpty);
       expect(errors.dropped, 0);
+    });
+
+    test('counts a repeated error instead of pushing out the first', () {
+      var now = DateTime.utc(2026, 10, 4, 6);
+      final errors = AppErrors(capacity: 2, clock: () => now);
+      errors.record(StateError('root cause'), StackTrace.fromString('#0 a'));
+      for (var i = 0; i < 50; ++i) {
+        now = now.add(const Duration(seconds: 1));
+        errors.record(StateError('repeating'), StackTrace.fromString('#0 b'));
+      }
+      expect(errors.records.map((record) => record.summary), [
+        'Bad state: root cause',
+        'Bad state: repeating',
+      ]);
+      expect(errors.records.last.count, 50);
+      expect(errors.dropped, 0);
+      expect(errors.report(), contains('(50 times, last 2026-10-04T06:00:50'));
     });
 
     test('cuts a very long message to one line of 300 characters', () {
@@ -78,6 +98,96 @@ void main() {
     expect(errors.records.last.summary, 'while painting: Bad state: drawn');
     expect(errors.records, hasLength(2));
     await tester.pumpAndSettle(const Duration(seconds: 10));
+  });
+
+  test('keeps the defects telemetry_core caught, with their traces', () {
+    final errors = AppErrors();
+    final reporter = AppErrorReporter(
+      errors,
+      GlobalKey<ScaffoldMessengerState>(),
+    );
+    reporter.coreDefects(
+      plan: TelemetryImportPlan(
+        runs: [],
+        files: const [
+          TelemetryImportFileResult(
+            requestedPath: '/day/a.vbo',
+            status: TelemetryImportFileStatus.error,
+            message: '${unexpectedFileError}RangeError: index 9',
+            detail: '#0 parse (vbo_parser.dart:1)',
+          ),
+          TelemetryImportFileResult(
+            requestedPath: '/day/b.vbo',
+            status: TelemetryImportFileStatus.error,
+            message: 'Telemetry file is empty.',
+          ),
+        ],
+        possibleSameRuns: [],
+      ),
+      messages: const [
+        DayMessage(
+          'run:1',
+          '${unexpectedRunError}Null check operator',
+          detail: '#0 laps (day_laps.dart:2)',
+        ),
+        DayMessage(
+          'run:2',
+          'No reliable start/finish passes; lap type is unknown.',
+        ),
+      ],
+      notes: ['c.vbo: ${unexpectedFileError}TypeError'],
+    );
+    expect(errors.records.map((record) => record.summary), [
+      'Adding recordings: c.vbo: ${unexpectedFileError}TypeError',
+      'Reading a.vbo: RangeError: index 9',
+      'Analysing run run:1: Null check operator',
+    ]);
+    expect(errors.records[1].details, contains('vbo_parser.dart:1'));
+    expect(errors.records[2].details, contains('day_laps.dart:2'));
+  });
+
+  testWidgets('installErrorHandlers keeps the previous handler', (
+    tester,
+  ) async {
+    final flutterHandler = FlutterError.onError;
+    final platformHandler = PlatformDispatcher.instance.onError;
+    final errors = AppErrors();
+    final passedOn = <FlutterErrorDetails>[];
+    try {
+      FlutterError.onError = passedOn.add;
+      installErrorHandlers(
+        reporter: AppErrorReporter(errors, GlobalKey<ScaffoldMessengerState>()),
+      );
+      FlutterError.onError!(
+        FlutterErrorDetails(
+          exception: StateError('drawn'),
+          context: ErrorDescription('while painting'),
+        ),
+      );
+      expect(
+        PlatformDispatcher.instance.onError!(
+          StateError('lost'),
+          StackTrace.empty,
+        ),
+        isTrue,
+      );
+    } finally {
+      FlutterError.onError = flutterHandler;
+      PlatformDispatcher.instance.onError = platformHandler;
+    }
+    expect(passedOn, hasLength(1));
+    expect(errors.records.map((record) => record.summary), [
+      'while painting: Bad state: drawn',
+      'Bad state: lost',
+    ]);
+  });
+
+  test('defects are named in the app language', () {
+    final pl = lookupAppLocalizations(const Locale('pl'));
+    expect(
+      pl.dayNote('${unexpectedRunError}boom'),
+      'Nieoczekiwany błąd podczas analizy tej sesji: boom',
+    );
   });
 
   group('FailedPart', () {

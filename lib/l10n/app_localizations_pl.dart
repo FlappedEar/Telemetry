@@ -4157,4 +4157,19 @@ class AppLocalizationsPl extends AppLocalizations {
   String diagnosticsErrorsDropped(int count) {
     return 'Wcześniejsze błędy, których nie zachowano: $count';
   }
+
+  @override
+  String importUnexpectedError(String error) {
+    return 'Nieoczekiwany błąd podczas odczytu tego pliku: $error';
+  }
+
+  @override
+  String noteUnexpectedError(String error) {
+    return 'Nieoczekiwany błąd podczas analizy tej sesji: $error';
+  }
+
+  @override
+  String diagnosticsErrorCount(int count) {
+    return 'Liczba wystąpień: $count';
+  }
 }

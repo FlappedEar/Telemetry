@@ -6180,8 +6180,26 @@ abstract class AppLocalizations {
   /// Line under the diagnostics page's errors when older ones were dropped.
   ///
   /// In en, this message translates to:
-  /// **'{count} earlier errors not kept'**
+  /// **'{count, plural, =1{1 earlier error not kept} other{{count} earlier errors not kept}}'**
   String diagnosticsErrorsDropped(int count);
+
+  /// A file of an import hit a defect in the app (not a bad recording); error is the technical message, in English. Details are in Diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpected error while reading this file: {error}'**
+  String importUnexpectedError(String error);
+
+  /// A session's analysis hit a defect in the app; error is the technical message, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpected error while analysing this session: {error}'**
+  String noteUnexpectedError(String error);
+
+  /// After an error on the diagnostics page when it happened more than once.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} times'**
+  String diagnosticsErrorCount(int count);
 }
 
 class _AppLocalizationsDelegate

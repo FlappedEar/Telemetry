@@ -165,7 +165,12 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
-                subtitle: Text(displayDateTime(record.time)),
+                subtitle: Text(
+                  record.count > 1
+                      ? '${displayDateTime(record.time)} · '
+                            '${l10n.diagnosticsErrorCount(record.count)}'
+                      : displayDateTime(record.time),
+                ),
               ),
             if (errors.dropped > 0)
               ListTile(

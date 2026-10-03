@@ -187,6 +187,11 @@ extension ImportMessageText on AppLocalizations {
 
   String? _importMessage(String message) {
     int number(Match match, int group) => int.parse(match.group(group)!);
+    if (message.startsWith(unexpectedFileError)) {
+      return importUnexpectedError(
+        message.substring(unexpectedFileError.length),
+      );
+    }
     const failed = 'The import failed: ';
     if (message.startsWith(failed)) {
       return importPageImportFailed(

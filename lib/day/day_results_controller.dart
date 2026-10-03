@@ -1460,6 +1460,10 @@ final class DayResultsController extends ChangeNotifier {
     if (prepared is DayAddition) return prepared;
     final outcome = prepared as DayAppendOutcome;
     final part = outcome.part;
+    appErrorReporter.coreDefects(
+      messages: part?.messages ?? const [],
+      notes: outcome.notes,
+    );
     if (_disposed) {
       return const DayAddition(
         notes: [],
@@ -2597,15 +2601,10 @@ final class DayResultsController extends ChangeNotifier {
     _recoveryWork = queueRecovery(() async {
       try {
         await operation();
-      } on Exception catch (error, stack) {
+      } on Object catch (error, stack) {
         debugPrint('Recovery snapshot not updated: $error');
-        // Listed in Diagnostics: the day is not protected until a write
-        // succeeds.
-        appErrors.record(
-          error,
-          stack,
-          context: 'Recovery snapshot not updated',
-        );
+        // The day is not protected until a write succeeds: say so.
+        reportError(error, stack, context: 'Recovery snapshot not updated');
       }
     });
   }

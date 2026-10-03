@@ -1002,5 +1002,8 @@
   "diagnosticsNoErrors": "Brak błędów od uruchomienia aplikacji.",
   "diagnosticsCopyErrors": "Kopiuj błędy",
   "diagnosticsErrorsCopied": "Skopiowano błędy. Wklej je do zgłoszenia błędu.",
-  "diagnosticsErrorsDropped": "Wcześniejsze błędy, których nie zachowano: {count}"
+  "diagnosticsErrorsDropped": "Wcześniejsze błędy, których nie zachowano: {count}",
+  "importUnexpectedError": "Nieoczekiwany błąd podczas odczytu tego pliku: {error}",
+  "noteUnexpectedError": "Nieoczekiwany błąd podczas analizy tej sesji: {error}",
+  "diagnosticsErrorCount": "Liczba wystąpień: {count}"
 }

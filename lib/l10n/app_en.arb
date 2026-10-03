@@ -6048,9 +6048,36 @@
   "@diagnosticsErrorsCopied": {
     "description": "Message after the errors were copied to the clipboard."
   },
-  "diagnosticsErrorsDropped": "{count} earlier errors not kept",
+  "diagnosticsErrorsDropped": "{count, plural, =1{1 earlier error not kept} other{{count} earlier errors not kept}}",
   "@diagnosticsErrorsDropped": {
     "description": "Line under the diagnostics page's errors when older ones were dropped.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importUnexpectedError": "Unexpected error while reading this file: {error}",
+  "@importUnexpectedError": {
+    "description": "A file of an import hit a defect in the app (not a bad recording); error is the technical message, in English. Details are in Diagnostics.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noteUnexpectedError": "Unexpected error while analysing this session: {error}",
+  "@noteUnexpectedError": {
+    "description": "A session's analysis hit a defect in the app; error is the technical message, in English.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsErrorCount": "{count} times",
+  "@diagnosticsErrorCount": {
+    "description": "After an error on the diagnostics page when it happened more than once.",
     "placeholders": {
       "count": {
         "type": "int"

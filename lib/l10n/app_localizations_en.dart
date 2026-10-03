@@ -4077,6 +4077,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsErrorsDropped(int count) {
-    return '$count earlier errors not kept';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count earlier errors not kept',
+      one: '1 earlier error not kept',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importUnexpectedError(String error) {
+    return 'Unexpected error while reading this file: $error';
+  }
+
+  @override
+  String noteUnexpectedError(String error) {
+    return 'Unexpected error while analysing this session: $error';
+  }
+
+  @override
+  String diagnosticsErrorCount(int count) {
+    return '$count times';
   }
 }

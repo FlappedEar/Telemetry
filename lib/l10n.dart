@@ -124,6 +124,9 @@ extension DayNoteText on AppLocalizations {
         'recordings in import order.' =>
       noteUndated,
     'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
+    _ when text.startsWith(unexpectedRunError) => noteUnexpectedError(
+      text.substring(unexpectedRunError.length),
+    ),
     _ => routeReason(text),
   };
 
