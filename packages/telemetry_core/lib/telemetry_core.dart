@@ -2,7 +2,13 @@
 library;
 
 export 'src/analysis/automatic_segments.dart';
+export 'src/analysis/braking_metrics.dart';
+export 'src/analysis/braking_onset.dart';
 export 'src/analysis/consistency.dart';
+export 'src/analysis/corner_phases.dart';
+export 'src/analysis/corner_speeds.dart';
+export 'src/analysis/driving_variability.dart';
+export 'src/analysis/exit_metrics.dart';
 export 'src/analysis/outing_theoretical_best.dart';
 export 'src/analysis/sector_timing.dart';
 export 'src/analysis/theoretical_best.dart';
@@ -12,6 +18,7 @@ export 'src/analysis/track_segment_proposals.dart';
 export 'src/analysis/track_segment_review.dart';
 export 'src/day/compatibility.dart';
 export 'src/day/day_analysis.dart';
+export 'src/day/day_corners.dart';
 export 'src/day/day_document.dart';
 export 'src/day/day_recovery.dart';
 export 'src/day/day_theoretical_best.dart';

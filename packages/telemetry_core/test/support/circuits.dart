@@ -83,11 +83,15 @@ TelemetrySession circuitSession({
 /// corners, about 811 m) counter-clockwise through the gate at the origin,
 /// heading north, sampled at 10 Hz: one lap per entry in [speeds], each
 /// giving the speed (m/s) at a distance along the lap (0 at the gate). It
-/// has four corners and four straights, so it gets segment proposals.
+/// has four corners and four straights, so it gets segment proposals. With
+/// [pedals] it also records throttle and brake (%) and longitudinal G from
+/// the change of speed: braking when slowing by more than 0.4 m/s², full
+/// throttle when gaining more than 0.3 m/s², part throttle otherwise.
 TelemetrySession rectangleSession(
   List<double Function(double distance)> speeds, {
   int? firstTimestampMilliseconds,
   GeoCoordinate centre = const GeoCoordinate(_lat0, _lon0),
+  bool pedals = false,
 }) {
   const width = 300.0, height = 150.0, radius = 30.0;
   // The outline from the gate, 0.5 m apart.
@@ -152,6 +156,24 @@ TelemetrySession rectangleSession(
     timestamps: Float64List.fromList(times),
     values: Float32List.fromList(values),
   );
+  final throttle = <double>[], brake = <double>[], longitudinal = <double>[];
+  if (pedals) {
+    for (var i = 0; i < times.length; ++i) {
+      final before = speedValues[math.max(0, i - 1)] / 3.6;
+      final after = speedValues[math.min(times.length - 1, i + 1)] / 3.6;
+      final acceleration =
+          (after - before) / (times[math.min(times.length - 1, i + 1)] - times[math.max(0, i - 1)]);
+      longitudinal.add(acceleration / 9.81);
+      brake.add(acceleration < -0.4 ? math.min(100.0, -acceleration * 12.0) : 0.0);
+      throttle.add(
+        acceleration < -0.4
+            ? 0.0
+            : acceleration > 0.3
+            ? 100.0
+            : 15.0,
+      );
+    }
+  }
   return TelemetrySession(
     duration: times.last,
     startTime: 0,
@@ -163,8 +185,22 @@ TelemetrySession rectangleSession(
       'latitude': channel('latitude', latitudes),
       'longitude': channel('longitude', longitudes),
       'velocity': channel('velocity', speedValues),
+      if (pedals) ...{
+        'throttle': channel('throttle', throttle),
+        'brake': channel('brake', brake),
+        'longacc': channel('longacc', longitudinal),
+      },
     },
-    aliases: const {'latitude': 'latitude', 'longitude': 'longitude', 'speed': 'velocity'},
+    aliases: {
+      'latitude': 'latitude',
+      'longitude': 'longitude',
+      'speed': 'velocity',
+      if (pedals) ...{
+        'throttle': 'throttle',
+        'brake': 'brake',
+        'longitudinalAcceleration': 'longacc',
+      },
+    },
     warnings: const [],
     timingGates: [circuitGate(centre: centre)],
     sampleCount: times.length,
