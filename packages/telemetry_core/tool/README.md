@@ -380,3 +380,51 @@ of values compared, the mismatches and the largest difference.
 The committed `test/parity/comparison_reference.json` was generated from
 FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
 other references are unchanged. Never edit the JSON by hand.
+
+## cpp_corner_analyzer_dump
+
+Runs FlappedEar Overlays' own Corner Analyzer of two compared laps
+(`comparisonSharedSegmentation`, `comparisonApprovedSegments`,
+`comparisonSegmentMetrics`, `comparisonTimeLossObservations` and
+`comparisonHeartRate` of `AnalysisControllerCornerAnalyzer.cpp` and
+`AnalysisControllerChannelSummaries.cpp`; app member functions, so the tool
+repeats their lines over Overlays' `TrackProgress`, `SectorTiming`,
+`TimeLoss`, `CornerPhases`, `CornerSpeeds`, `BrakingMetrics`, `ExitMetrics`
+and `ChannelSummary`) over VBO files and fixed cases and writes the results as
+JSON. Pairs are chosen as in `cpp_comparison_dump`, with a few more across
+corpus files of one track. Each pair is analysed with three segment sets
+approved on both laps: the automatic proposals of the file's fastest lap
+(ids `s0`, `s1`, ...), the same shifted 37 m and every other one. For every
+segment it writes the row, the A/B/Δ metrics, the heart rate over the
+segment and the per-lap figures behind them (segment speeds, the corner's
+geometric phases, corner speeds, braking and exit metrics in full), then an
+unknown segment's metrics and the time-loss observations; the shared axis is
+written in full so the Dart side measures on exactly the same axis. The cases
+section holds `comparisonSharedSegmentation` on fixed stored segments (same,
+different, canonical, other configuration, empty, malformed and missing, with
+and without the theoretical best's group) and hand-made pairs on a 2 km
+circle: sessions with measured, inferred, undeclared, mismatched and missing
+channels, heart rate with zeros, a glitch and NaN, projections with a gap and
+a late end, a partition and a set across the gate, and heart rate over six
+ranges (one across start/finish, one outside the axis, one empty).
+
+```bash
+cmake -S tool/cpp_corner_analyzer_dump -B /tmp/analyzerbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/analyzerbuild
+/tmp/analyzerbuild/cpp_corner_analyzer_dump test/parity/corner_analyzer_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/corner_analyzer_parity_test.dart
+```
+
+`--day <day.json> <output.json>` analyses chosen laps of a real day: `runs`
+(`runId`, VBO `file`), `pairs` (`a` and `b`, each a `runId` and `lapNumber`)
+and `segmentsFrom` (the `runId` and `lapNumber` whose automatic proposals
+give the segment sets). Use it locally only; never commit its input or
+output. Run the test against it with `FET_ANALYZER_REFERENCE=<json>` and
+`FET_ANALYZER_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the number of
+values compared, the mismatches and the largest difference.
+
+The committed `test/parity/corner_analyzer_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+other references are unchanged. Never edit the JSON by hand.
