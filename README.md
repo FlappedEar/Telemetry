@@ -187,11 +187,13 @@ To install on Android without a store, download the
 `flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
 install `app-release.apk` (allow installs from the browser or file manager).
 Use builds from `main`: they share one signing key kept in the Actions cache,
-so a newer APK installs over the old one and keeps the app's days. If that
-cache expires (seven days without a build), the key changes and Android
-refuses the update; days would then have to be saved elsewhere first. The
-job prints the key's SHA-256 ("Check the APK's signing key") and warns when it
-had to make a new one. APKs built before 2026-10-03 were each signed with a
+so a newer APK installs over the old one and keeps the app's days. GitHub
+removes a cache nobody uses for seven days, so the "Keep the Android signing
+key" workflow (`signing-key.yml`) restores it every three days and fails if it
+is gone. On `main`, CI fails when the APK is not signed with the release key
+(SHA-256 `7315a93d…cc4f`, pinned in `ci.yml` and `release.yml`), which also
+keeps a newly made key out of the cache; pull requests only warn. The job
+prints the key's SHA-256 ("Check the APK's signing key"). APKs built before 2026-10-03 were each signed with a
 different key and do not update; uninstall such a build once before
 installing a newer one.
 
