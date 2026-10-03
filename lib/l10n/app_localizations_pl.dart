@@ -792,7 +792,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String recordingsPrimaryMissing(String format) {
-    return 'Pliku $format nie ma już tam, skąd go wczytano. Znajdź go, a potem ustaw jako główny.';
+    return 'Pliku $format nie ma już tam, skąd go wczytano. Przywróć go tam, a potem ustaw jako główny.';
   }
 
   @override
@@ -816,4 +816,12 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get recordingsBusyLeave =>
       'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji.';
+
+  @override
+  String get recordingsUnsaved =>
+      'Zapisz dzień przed zmianą głównego nagrania.';
+
+  @override
+  String get recordingsBusyAdd =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.';
 }

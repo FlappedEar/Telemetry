@@ -127,6 +127,12 @@ void main() {
     );
     await controller.requestTheoreticalBest();
     expect(controller.theoreticalBest, isNotNull);
+    // Only a saved day changes its primary.
+    await controller.makePrimary(runId);
+    expect(controller.recordingsProblem(runId), RecordingsProblem.unsaved);
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
 
     final changing = controller.makePrimary(runId);
     expect(controller.primaryChanging(runId), isTrue);
@@ -159,7 +165,6 @@ void main() {
     expect(controller.session(runId), same(rcz.telemetry));
     expect(controller.dirty, isTrue);
 
-    final path = '${directory.path}/Day.fetproject';
     await controller.save(path);
     final saved = _runJson(path);
     expect(saved['primaryTelemetrySourceId'], rcz.sourceId);
@@ -269,6 +274,7 @@ void main() {
       'says why', () async {
     final (controller, runId) = await fusedDay();
     final rcz = controller.fusion(runId)!.alternative!;
+    await controller.save('${directory.path}/Day.fetproject');
     final file = File(rcz.sourcePath);
     final bytes = file.readAsBytesSync();
     file.writeAsBytesSync([...bytes.reversed]);
@@ -328,6 +334,7 @@ void main() {
       [for (final named in day.runs) controller.fusion(named.run.id)?.fused],
       [true, true],
     );
+    await controller.save('${directory.path}/Day.fetproject');
     hold = true;
     final [first, second] = [for (final named in day.runs) named.run.id];
     final check = controller.checkClock(first);
@@ -345,6 +352,120 @@ void main() {
     expect(controller.clockCheck(first), isNotNull);
     expect(controller.runs.last.run.format, RecordingFormat.rcz);
   });
+
+  test('B1: a lap included again before the switch is not excluded after '
+      'it', () async {
+    final (controller, runId) = await fusedDay();
+    final lap = controller.analysis.rows.firstWhere(
+      (row) => row.type == LapSectionType.lap && row.referenceEligible,
+    );
+    expect(controller.exclude(lap, 'Traffic'), isTrue);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    controller.include(lap);
+    // Unsaved: refused, nothing changes.
+    await controller.makePrimary(runId);
+    expect(controller.recordingsProblem(runId), RecordingsProblem.unsaved);
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    await controller.save(path);
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.rcz);
+    await controller.save(path);
+    await controller.makePrimary(runId);
+    expect(controller.exclusions, isEmpty);
+    await controller.save(path);
+    expect(
+      (readDayDocument(path)['event'] as Map).containsKey('lapExclusions'),
+      isFalse,
+    );
+    final reopened = DayResultsController.opened(openDay(path));
+    addTearDown(reopened.dispose);
+    expect(reopened.exclusions, isEmpty);
+  });
+
+  test('B2: with a layout set on the VBO, its exclusion no longer applies '
+      'after switching back, in the session as in the file', () async {
+    final (controller, runId) = await fusedDay();
+    expect(
+      controller.setTrack([runId], 'Short', TrackDirection.clockwise),
+      isTrue,
+    );
+    final laps = controller.analysis.rows
+        .where((row) => row.type == LapSectionType.lap && row.referenceEligible)
+        .toList();
+    expect(controller.exclude(laps[0], 'Traffic'), isTrue);
+    controller.rememberComparisonPair(laps[1], laps[2]);
+    // An unsaved choice is never written with another lap derivation: the
+    // switch waits for the save.
+    await controller.makePrimary(runId);
+    expect(controller.recordingsProblem(runId), RecordingsProblem.unsaved);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    final stored = (readDayDocument(path)['event'] as Map)['lapExclusions'];
+
+    await controller.makePrimary(runId);
+    expect(controller.exclusions, isEmpty);
+    await controller.save(path);
+    // The VBO's exclusion and pair are kept as stored.
+    final event = readDayDocument(path)['event'] as Map;
+    expect(event['lapExclusions'], stored);
+    expect(
+      ((event['analysisDecisions'] as Map)['comparisonSlots'] as List).first,
+      isNotNull,
+    );
+
+    // Back on the VBO the layout is gone: its laps are named with another
+    // lap derivation, so the exclusion does not apply, here or reopened.
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    expect(controller.analysis.manualTracks, isEmpty);
+    expect(controller.exclusions, isEmpty);
+    await controller.save(path);
+    final reopened = DayResultsController.opened(openDay(path));
+    addTearDown(reopened.dispose);
+    expect(reopened.exclusions, controller.exclusions);
+    expect(reopened.savedComparisonPair, isNull);
+  });
+
+  test(
+    'closing the day while a primary change waits for a slot stops it',
+    () async {
+      final previous = DayResultsController.fusionSlots;
+      DayResultsController.fusionSlots = 1;
+      addTearDown(() => DayResultsController.fusionSlots = previous);
+      final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
+      final (vbo2, rcz2) = writeFusionPair(
+        directory.path,
+        name: 'second',
+        speeds: const [31, 28, 30, 27, 33, 29],
+      );
+      final day = runDayImport((
+        paths: [vbo1, rcz1, vbo2, rcz2],
+        includeSubfolders: false,
+      ));
+      var hold = false;
+      final controller = DayResultsController(
+        runs: day.runs,
+        analysis: day.analysis!,
+        alternatives: day.alternatives,
+        fusionRunner: (job) =>
+            _GatedTask(hold ? Completer<void>().future : Future.value(), job),
+      );
+      await controller.fusionsSettled;
+      await controller.save('${directory.path}/Day.fetproject');
+      hold = true;
+      final [first, second] = [for (final named in day.runs) named.run.id];
+      final check = controller.checkClock(first);
+      final change = controller.makePrimary(second);
+      await pumpEventQueue();
+      expect(controller.primaryChanging(second), isTrue);
+      controller.dispose();
+      // Both end without a result instead of waiting forever.
+      await change.timeout(const Duration(seconds: 5));
+      expect(controller.runs.last.run.format, RecordingFormat.vbo);
+      unawaited(check);
+    },
+  );
 
   testWidgets('the session shows its recordings\' actions, the clock check '
       'and the primary change', (tester) async {
@@ -389,6 +510,19 @@ void main() {
     );
     expect(find.byKey(ValueKey('dontCombine $runId')), findsNothing);
 
+    // The refusal is unsaved: the primary changes only on a saved day.
+    await tester.ensureVisible(find.text('Make RCZ primary'));
+    await tester.tap(find.text('Make RCZ primary'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Save the day before changing the primary recording.'),
+      findsOneWidget,
+    );
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    await tester.runAsync(
+      () => controller.save('${directory.path}/Day.fetproject'),
+    );
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Make RCZ primary'));
     await tester.tap(find.text('Make RCZ primary'));
     await tester.pumpAndSettle();

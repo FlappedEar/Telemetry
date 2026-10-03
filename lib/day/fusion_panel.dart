@@ -68,6 +68,7 @@ class SessionFusion extends StatelessWidget {
                 RecordingsProblem.primaryFailed => l10n.recordingsPrimaryFailed(
                   alternative,
                 ),
+                RecordingsProblem.unsaved => l10n.recordingsUnsaved,
               },
               key: ValueKey('recordingsProblem $runId'),
               style: theme.textTheme.bodySmall?.copyWith(
@@ -297,7 +298,9 @@ class _ClockReview extends StatelessWidget {
             children: [
               FilledButton(
                 key: ValueKey('acceptClock $runId'),
-                onPressed: check.fused
+                // Not while recordings are added: the check may not be of
+                // the recording the session ends up with.
+                onPressed: controller.clockAcceptable(runId)
                     ? () => controller.acceptClock(runId)
                     : null,
                 child: Text(l10n.clockAccept),

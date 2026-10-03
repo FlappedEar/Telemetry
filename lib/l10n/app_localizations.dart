@@ -1250,7 +1250,7 @@ abstract class AppLocalizations {
   /// Under a session: Make primary was refused because the other recording's file is gone; nothing changed.
   ///
   /// In en, this message translates to:
-  /// **'The {format} is no longer where it was read from. Find it, then make it primary.'**
+  /// **'The {format} is no longer where it was read from. Put it back there, then make it primary.'**
   String recordingsPrimaryMissing(String format);
 
   /// Under a session: Make primary was refused because the other recording's file now has other content; nothing changed.
@@ -1282,6 +1282,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wait until the session\'s recordings are checked or changed.'**
   String get recordingsBusyLeave;
+
+  /// Under a session: Make primary was refused because the day has unsaved changes; the user saves first.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the day before changing the primary recording.'**
+  String get recordingsUnsaved;
+
+  /// Add recordings was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed, then add recordings.'**
+  String get recordingsBusyAdd;
 }
 
 class _AppLocalizationsDelegate

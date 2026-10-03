@@ -225,6 +225,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Future<void> _addRecordings() async {
     final paths = await widget.pickers.pickRecordings();
     if (paths.isEmpty || !mounted) return;
+    // A session's clock check or primary change finishes first.
+    if (_controller.recordingsBusy) {
+      _tell(context.l10n.recordingsBusyAdd);
+      return;
+    }
     await _controller.addRecordings(paths);
   }
 
@@ -622,7 +627,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
               key: const ValueKey('addRecordings'),
               tooltip: 'Add recordings',
               icon: const Icon(Icons.playlist_add),
-              onPressed: _controller.adding || _controller.saving || _relinking
+              onPressed:
+                  _controller.adding ||
+                      _controller.saving ||
+                      _relinking ||
+                      _controller.recordingsBusy
                   ? null
                   : _addRecordings,
             ),

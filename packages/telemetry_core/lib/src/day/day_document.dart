@@ -340,44 +340,36 @@ Map<String, Object?> dayDocument({
   }
   if (automaticSegments) _approveAutomaticSegments(allRuns, opened, runs, analysis, random);
 
-  // A lap reference of [reference]'s run as the document names it: of the
-  // run's current recording, or of the other recording it keeps beside it
-  // (a lap of the primary before "Make primary", FET-57), named as that
-  // recording's laps are when it is the primary again. Null when it is of
-  // neither.
+  // A lap reference of the session, as the document names it: only laps of
+  // the run's current recording are written from the session. References
+  // of another recording are the document's own, kept as stored below.
   final current = {for (final named in runs) named.run.id: named.run};
   Map<String, Object?>? referenceJson(DayLapReference reference) {
     final run = opened[reference.runId];
     final recording = current[reference.runId];
-    if (run == null || recording == null || reference.type != LapSectionType.lap) return null;
-    if (reference.sourceRevision == recording.contentSha256) {
-      return _lapReferenceJson(eventId, run, reference);
+    if (run == null ||
+        recording == null ||
+        reference.type != LapSectionType.lap ||
+        reference.sourceRevision != recording.contentSha256) {
+      return null;
     }
-    final other = fusions[reference.runId]?.alternative;
-    if (other == null || other.contentSha256 != reference.sourceRevision) return null;
-    return _lapReferenceJson(eventId, _asPrimary(run, other), reference);
+    return _lapReferenceJson(eventId, run, reference);
   }
 
   final exclusionEntries = <Object?>[];
-  final kept = <String>{};
   if (event['lapExclusions'] case final List<Object?> stored) {
     // Exclusions of runs that were not opened stay as they were, and so do
-    // those of a recording an opened run does not read now or of another
-    // lap derivation (as Overlays keeps them): they apply again when that
-    // recording is the run's primary again. The others are written from
-    // [exclusions].
+    // those of a recording an opened run does not read now (as Overlays
+    // keeps them across "Make primary"): they apply again when that
+    // recording is the run's primary again with the same lap derivation.
+    // Those of the run's current recording are written from [exclusions].
     for (final value in stored) {
       final reference = _object(_object(value)?['reference']);
       final runId = reference?['runId'];
-      final run = opened[runId];
-      final applies =
-          run != null &&
-          reference?['sourceRevision'] == current[runId]?.contentSha256 &&
-          reference?['derivationKey'] == fet.lapDerivationV1Key(run);
-      if (!applies) {
-        exclusionEntries.add(value);
-        if (reference != null) kept.add(_lapIdentity(reference));
-      }
+      final ofCurrent =
+          opened.containsKey(runId) &&
+          reference?['sourceRevision'] == current[runId]?.contentSha256;
+      if (!ofCurrent) exclusionEntries.add(value);
     }
   }
   final sorted = exclusions.entries.toList()
@@ -387,8 +379,7 @@ Map<String, Object?> dayDocument({
     });
   for (final MapEntry(key: reference, value: reason) in sorted) {
     final json = referenceJson(reference);
-    // A lap kept as stored is not written twice.
-    if (json == null || kept.contains(_lapIdentity(json))) continue;
+    if (json == null) continue;
     exclusionEntries.add({'reference': json, 'reason': reason});
   }
 
@@ -493,16 +484,6 @@ Map<DayLapReference, String> recordingExclusions(
   }
   return result;
 }
-
-/// The lap a document's lap reference names, whatever lap derivation it
-/// was named with: its run, recording, type and times.
-String _lapIdentity(Map<String, Object?> reference) => fet.qtCompactJson([
-  reference['runId'],
-  reference['sourceRevision'],
-  reference['type'],
-  reference['startTime'],
-  reference['endTime'],
-]);
 
 /// [reference] as a document's lap reference (`source-laps-v1`) of [run].
 Map<String, Object?> _lapReferenceJson(

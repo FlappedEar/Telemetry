@@ -114,7 +114,7 @@
 </ul>
 <p>Then choose:</p>
 <ul>
-  <li><strong>Accept and combine</strong> (only when the clocks line up) combines the RCZ with the measured offset. Your choices for channels the two disagree on are kept.</li>
+  <li><strong>Accept and combine</strong> (only when the clocks line up, and not while recordings are being added) combines the RCZ with the measured offset. Your choices for channels the two disagree on are kept.</li>
   <li><strong>Refuse</strong> keeps the RCZ beside the session without combining it: the session's charts and cards use its primary recording only, and the row says <em>Its RCZ is kept beside it and not combined until the day is opened again</em>.</li>
 </ul>
 <p><strong>Don't combine</strong>, under a combined session, refuses straight away, without a new check.</p>
@@ -125,10 +125,10 @@
 <ul>
   <li>While the RCZ is read, the row says <em>Reading the RCZ as this session's recording…</em>. The day's laps, groups and ranking are then worked out again with the session's laps from the RCZ, and every result is calculated again from them.</li>
   <li>The other recording is kept beside the session and not combined (<em>Its VBO is kept beside it and not combined</em>). The day keeps it this way when it is opened again.</li>
-  <li>A circuit layout you set for the session is not carried over: the new recording starts with its detected route. Laps you excluded in the old recording do not apply to the new one; they are kept in the day and apply again when you switch back.</li>
+  <li>A circuit layout you set for the session is not carried over: the new recording starts with its detected route. Laps you excluded and the laps you compared in the old recording do not apply to the new one. They stay in the day file and apply again when you switch back, as long as that recording's laps are worked out the same way: a circuit layout you had set for it is not restored, so after switching back with a layout lost, they no longer apply.</li>
 </ul>
-<p>The day then has changes until you save it. Before the switch, the app checks that the other recording's file is still where it was read from and holds the same recording; if not, nothing changes and the row says so, for example <em>The RCZ file has changed since it was read. Open the day again, then make it primary.</em></p>
-<p>While a clock is checked or a primary recording is changed, <strong>Find recordings</strong>, <strong>Retry recordings</strong> and leaving the day wait for it: the app says <em>Wait until the session's recordings are checked or changed</em>.</p>
+<p>The primary recording changes only on a saved day: with unsaved changes the row says <em>Save the day before changing the primary recording.</em> The day then has changes until you save it. Before the switch, the app checks that the other recording's file is still where it was read from and holds the same recording; if not, nothing changes and the row says so, for example <em>The RCZ file has changed since it was read. Open the day again, then make it primary.</em></p>
+<p>While a clock is checked or a primary recording is changed, <strong>Add recordings</strong>, <strong>Find recordings</strong>, <strong>Retry recordings</strong> and leaving the day wait for it: the app says <em>Wait until the session's recordings are checked or changed</em>.</p>
 
 <h2 id="notes">Notes</h2>
 <p>At the bottom, <strong>Notes</strong> lists messages from the analysis, each starting with the session it is about. Sessions whose circuit could not be identified are listed under their own heading; their laps are not compared.</p>

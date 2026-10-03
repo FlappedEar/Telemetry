@@ -1231,7 +1231,7 @@
   "@recordingsClockFailed": {
     "description": "Under a session: its clock check failed; nothing changed."
   },
-  "recordingsPrimaryMissing": "The {format} is no longer where it was read from. Find it, then make it primary.",
+  "recordingsPrimaryMissing": "The {format} is no longer where it was read from. Put it back there, then make it primary.",
   "@recordingsPrimaryMissing": {
     "description": "Under a session: Make primary was refused because the other recording's file is gone; nothing changed.",
     "placeholders": {
@@ -1272,5 +1272,13 @@
   "recordingsBusyLeave": "Wait until the session's recordings are checked or changed.",
   "@recordingsBusyLeave": {
     "description": "Leaving the day was refused because a clock check or a primary change is running."
+  },
+  "recordingsUnsaved": "Save the day before changing the primary recording.",
+  "@recordingsUnsaved": {
+    "description": "Under a session: Make primary was refused because the day has unsaved changes; the user saves first."
+  },
+  "recordingsBusyAdd": "Wait until the session's recordings are checked or changed, then add recordings.",
+  "@recordingsBusyAdd": {
+    "description": "Add recordings was refused because a clock check or a primary change is running."
   }
 }

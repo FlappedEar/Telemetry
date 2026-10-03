@@ -89,6 +89,9 @@ enum RecordingsProblem {
 
   /// The other recording could not be read as the session.
   primaryFailed,
+
+  /// The day has unsaved changes: the primary changes only on a saved day.
+  unsaved,
 }
 
 /// Starts a [FusionJob]. Replaced in widget tests, which run it on the
@@ -865,6 +868,17 @@ final class DayResultsController extends ChangeNotifier {
     _settleFusions();
   }
 
+  /// Whether [runId]'s waiting clock check can be accepted now
+  /// ([acceptClock]): its clocks line up, and no recording is being added.
+  bool clockAcceptable(String runId) {
+    final waiting = _clockChecks[runId];
+    return waiting != null &&
+        waiting.check.fused &&
+        !adding &&
+        _recordingsIdle(runId) &&
+        identical(_fusions[runId], waiting.base);
+  }
+
   /// Accepts [runId]'s clock check: when its clocks line up, the other
   /// recording is fused with the measured clock, as Overlays approves a
   /// fusion; saved with the day. Nothing happens when the run's fusion or
@@ -957,6 +971,15 @@ final class DayResultsController extends ChangeNotifier {
     if (named == null || alternative == null || !recordingsEditable(runId)) {
       return;
     }
+    // Lap choices are the saved document's when the primary changes, so
+    // the session and the file name the same laps (Overlays commits them
+    // at once).
+    if (dirty || _saving) {
+      _recordingsProblems[runId] = RecordingsProblem.unsaved;
+      notifyListeners();
+      return;
+    }
+    final revision = _revision;
     final generation = _nextRecordingGeneration(runId);
     _fusionTasks.remove(runId)?.cancel();
     _recordingsProblems.remove(runId);
@@ -1004,6 +1027,13 @@ final class DayResultsController extends ChangeNotifier {
       _settleFusions();
       return;
     }
+    if (part != null && (_revision != revision || dirty || _saving)) {
+      // The day changed meanwhile: its unsaved choices would not carry over.
+      _recordingsProblems[runId] = RecordingsProblem.unsaved;
+      notifyListeners();
+      _settleFusions();
+      return;
+    }
     if (part == null) {
       _recordingsProblems[runId] = switch (prepared.problem) {
         NewPrimaryProblem.missing => RecordingsProblem.primaryMissing,
@@ -1021,15 +1051,17 @@ final class DayResultsController extends ChangeNotifier {
       primary: primary,
       alternative: named.run,
     );
-    // Laps of the new primary the day excluded when it was the primary
-    // before are excluded again; the old primary's stay, for switching back.
-    for (final MapEntry(:key, :value) in recordingExclusions(
-      _document,
-      runId,
-      primary,
-    ).entries) {
-      _exclusions.putIfAbsent(key, () => value);
-    }
+    // The run's lap choices are rebuilt from the saved document: the
+    // exclusions it keeps for the new primary's laps that still apply (the
+    // same content and lap derivation). Those of the old primary stay in
+    // the document as stored, for switching back. The comparison pair
+    // saved stays as stored too; it applies while its laps do.
+    _exclusions.removeWhere((reference, _) => reference.runId == runId);
+    _exclusions.addAll(recordingExclusions(_document, runId, primary));
+    _comparisonChoice = ComparisonDecisions(
+      range: _comparisonChoice.range,
+      channels: _comparisonChoice.channels,
+    );
     final manual = {..._analysis.manualTracks}..remove(runId);
     _analysis = replaceDayRun(
       _analysis,

@@ -189,10 +189,12 @@
   "clockRefuseNote": "Odrzucenie zachowuje {alternative} obok sesji bez łączenia; jej analiza korzysta wtedy tylko z {primary}.",
   "clockReopenNote": "Ta sesja korzysta z VBO i zachowuje RCZ, a plik dnia nie zapamiętuje odrzucenia dla takiej sesji: po ponownym otwarciu dnia {alternative} zostanie znów dopasowany i połączony.",
   "recordingsClockFailed": "Nie udało się porównać zegarów. Spróbuj ponownie.",
-  "recordingsPrimaryMissing": "Pliku {format} nie ma już tam, skąd go wczytano. Znajdź go, a potem ustaw jako główny.",
+  "recordingsPrimaryMissing": "Pliku {format} nie ma już tam, skąd go wczytano. Przywróć go tam, a potem ustaw jako główny.",
   "recordingsPrimaryChanged": "Plik {format} zmienił się od wczytania. Otwórz dzień ponownie, a potem ustaw go jako główny.",
   "recordingsPrimaryFailed": "Nie udało się wczytać {format} jako nagrania tej sesji.",
   "recordingsBusyFind": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem znajdź pozostałe.",
   "recordingsBusyRetry": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem spróbuj ponownie.",
-  "recordingsBusyLeave": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji."
+  "recordingsBusyLeave": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji.",
+  "recordingsUnsaved": "Zapisz dzień przed zmianą głównego nagrania.",
+  "recordingsBusyAdd": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania."
 }

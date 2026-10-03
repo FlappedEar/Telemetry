@@ -774,7 +774,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String recordingsPrimaryMissing(String format) {
-    return 'The $format is no longer where it was read from. Find it, then make it primary.';
+    return 'The $format is no longer where it was read from. Put it back there, then make it primary.';
   }
 
   @override
@@ -798,4 +798,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recordingsBusyLeave =>
       'Wait until the session\'s recordings are checked or changed.';
+
+  @override
+  String get recordingsUnsaved =>
+      'Save the day before changing the primary recording.';
+
+  @override
+  String get recordingsBusyAdd =>
+      'Wait until the session\'s recordings are checked or changed, then add recordings.';
 }
