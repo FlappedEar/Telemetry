@@ -11,7 +11,8 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
   [`arekkozuch/VBOOverlay`](https://github.com/arekkozuch/VBOOverlay) (FlappedEar
   Overlays). That repository is cross-reference material for behaviour, data and
   decisions only. Do not copy its code and do not add a code dependency between
-  the two repositories.
+  the two repositories: port the behaviour to Dart instead (the owner holds the
+  rights to both, and ports are intended).
 - **Handover.** The architect handover is
   [`docs/telemetry-handover.md`](https://github.com/arekkozuch/VBOOverlay/blob/main/docs/telemetry-handover.md)
   in VBOOverlay (reference revision `0ec7416`). When a rule here and the handover
@@ -33,7 +34,8 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
 - Check the current version, maintenance and licence of every new dependency
   before adding it, and record the check in the PR. Add no unrelated dependencies.
 - Do not implement roadmap features that were not requested.
-- No licence file until the owner chooses one.
+- The repository is under the Apache License 2.0 (`LICENSE`). Every new
+  dependency must be compatible with it.
 
 ## The user guide
 
