@@ -287,3 +287,50 @@ other references are unchanged. To check other recordings locally, run the
 test with `FET_PROGRESSION_REFERENCE=<json>` and
 `FET_PROGRESSION_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the
 largest difference. Never edit the JSON by hand.
+
+## cpp_dayreport_dump
+
+Runs FlappedEar Overlays' own `ChannelSummary`, `TemperatureAssociation`,
+`summarizeOutingChannels`, `FocusAreas`, `DayReport` and
+`buildOutingDayReport` over VBO files and fixed cases and writes the results
+as JSON. Each file with laps becomes the day of two runs of
+`cpp_theoretical_best_dump` (on one track configuration, half of the laps
+excluded by the user), timed against the fastest lap's proposals, the same
+shifted 37 m and every other one, as `AnalysisController::computeOutingDayReport`
+does: ranking, progression, lap consistency, theoretical best with corner
+observations, time losses, section progression, channel summaries and the
+focus inputs, assembled into the day report; it also writes the selected
+focus areas, the channel summaries and the temperature associations of
+`AnalysisController::outingTemperatureAssociations` (an app member function,
+so the tool repeats its lines). The first file also gets reports in every
+other state (loading, not calculated, failed, unavailable, stale, without
+focus inputs, without a group, every lap's losses). Overlays'
+`loadOutingLapDetail` reads recordings from a project; the tool defines it
+over the sessions it holds in memory. The cases section holds channel
+summaries, combinations, placeholders and cooling of a hand-made session,
+rank correlations, associations and strong acceleration, focus areas of
+hand-made and generated inputs, built and validated report documents, and a
+hand-made day of four runs with temperatures (placeholder zeros, a glitch, a
+gap), heart rate and longitudinal acceleration, one run without a recording
+and one without those channels.
+
+```bash
+cmake -S tool/cpp_dayreport_dump -B /tmp/dayreportbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/dayreportbuild
+/tmp/dayreportbuild/cpp_dayreport_dump test/parity/dayreport_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/dayreport_parity_test.dart
+```
+
+`--day <day.json> <output.json>` does the same for a real day described as
+for `cpp_progression_dump`, optionally with each run's `sourceRevision`, the
+group's `trackConfiguration` and `groupLabel`, and the segments'
+`configuration` reference; never commit its input or output.
+
+The committed `test/parity/dayreport_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+other references are unchanged. To check other recordings locally, run the
+test with `FET_DAYREPORT_REFERENCE=<json>` and
+`FET_DAYREPORT_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the
+largest difference. Never edit the JSON by hand.

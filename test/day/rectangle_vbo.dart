@@ -6,11 +6,13 @@ import 'dart:math' as math;
 /// distance along the lap. It has four corners and four straights, so the
 /// day gets segments. With [pedals] it also records brake and throttle (%)
 /// from the change of speed: braking when slowing by more than 0.4 m/s²,
-/// full throttle when gaining more than 0.3 m/s², 15 % otherwise. No real
-/// data.
+/// full throttle when gaining more than 0.3 m/s², 15 % otherwise. With
+/// [car] it also records an oil temperature (°C, warming up, then cooling
+/// through the last lap) and the driver's heart rate (bpm). No real data.
 String rectangleVbo(
   List<double Function(double distance)> laps, {
   bool pedals = false,
+  bool car = false,
 }) {
   const lat0 = 52.0, lon0 = 21.0;
   const metersPerDegree = 6371000.0 * math.pi / 180.0;
@@ -56,6 +58,7 @@ String rectangleVbo(
   }
 
   var distance = -20.0, t = 0.0;
+  double? coolingFrom;
   while (distance < (laps.length + 0.3) * perimeter) {
     final speed = speedAt(distance);
     final wrapped = distance % perimeter;
@@ -77,9 +80,18 @@ String rectangleVbo(
       pedalColumns =
           ' ${brake.toStringAsFixed(1)} ${throttle.toStringAsFixed(1)}';
     }
+    var carColumns = '';
+    if (car) {
+      // Cooling from the start of the last lap, at 0.5 °C/s.
+      if (distance > (laps.length - 1) * perimeter) coolingFrom ??= t;
+      final warm = 90 + 14 * (1 - math.exp(-(coolingFrom ?? t) / 40));
+      final oil = warm - 0.5 * (t - (coolingFrom ?? t));
+      final heart = 130 + 12 * math.sin(t / 15);
+      carColumns = ' ${oil.toStringAsFixed(1)} ${heart.toStringAsFixed(0)}';
+    }
     rows.writeln(
       '${t.toStringAsFixed(2)} ${coordinate(east, north)} '
-      '${(speed * 3.6).toStringAsFixed(2)}$pedalColumns',
+      '${(speed * 3.6).toStringAsFixed(2)}$pedalColumns$carColumns',
     );
     distance += speed / 10;
     t += 0.1;
@@ -87,7 +99,8 @@ String rectangleVbo(
   return '[header]\ncoordinate units = degrees\n[laptiming]\n'
       'Start ${gateA[1]} ${gateA[0]} ${gateB[1]} ${gateB[0]} start\n'
       '[column names]\ntime latitude longitude velocity'
-      '${pedals ? ' brake throttle' : ''}\n[data]\n$rows';
+      '${pedals ? ' brake throttle' : ''}${car ? ' oil_temp heart_rate' : ''}'
+      '\n[data]\n$rows';
 }
 
 /// A lap at [straight] m/s, slowed to [slow] m/s from [from] to [to] metres.

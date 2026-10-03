@@ -5,9 +5,12 @@ import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import 'channel_cards.dart';
 import 'consistency_card.dart';
 import 'day_results_controller.dart';
+import 'day_report_page.dart';
 import 'document_pickers.dart';
+import 'focus_areas_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
@@ -78,6 +81,21 @@ class _DayResultsPageState extends State<DayResultsPage> {
   void _open(DayLapRow row) => Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => LapPage(controller: _controller, row: row),
+    ),
+  );
+
+  void _openReport() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) => DayReportPage(
+          report: _controller.dayReportDocument,
+          onOpenLap: (reference) {
+            final row = _controller.lapRow(reference);
+            if (row != null) _open(row);
+          },
+        ),
+      ),
     ),
   );
 
@@ -191,6 +209,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   ? null
                   : () => _save(),
             ),
+          ),
+          IconButton(
+            key: const ValueKey('openDayReport'),
+            tooltip: 'Day report',
+            icon: const Icon(Icons.summarize_outlined),
+            onPressed: _openReport,
           ),
           PopupMenuButton<void>(
             tooltip: 'More',
@@ -402,6 +426,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
           onOpenLap: _open,
         ),
         const SizedBox(height: 12),
+        FocusAreasCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          areas: _controller.focusAreas,
+          lapLabel: _controller.lapLabel,
+          path: path,
+          gate: _mapGate,
+          wide: wide,
+          onOpenLap: _open,
+        ),
+        const SizedBox(height: 12),
         ConsistencyCard(
           laps: _controller.lapConsistency,
           result: _controller.theoreticalBest,
@@ -415,6 +450,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
           onOpenLap: _open,
         ),
       ],
+      const SizedBox(height: 12),
+      ..._channelCards(),
       if (ranking != null && ranking.runs.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text('Best lap of each session', style: theme.textTheme.titleSmall),
@@ -470,6 +507,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
             child: Text('${_runName(message.runId)}${message.text}'),
           ),
       ],
+    ];
+  }
+
+  // The car's temperatures and the driver's heart rate, summarized once
+  // for the day in the background.
+  List<Widget> _channelCards() {
+    final channels = _controller.channelSummaries;
+    final loading = _controller.channelSummariesLoading;
+    if (channels == null && !loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.requestChannelSummaries();
+      });
+    }
+    return [
+      CarCard(
+        channels: channels,
+        associations: _controller.temperatureAssociations,
+        loading: loading,
+      ),
+      const SizedBox(height: 12),
+      DriverCard(channels: channels, loading: loading, onOpenLap: _open),
     ];
   }
 
