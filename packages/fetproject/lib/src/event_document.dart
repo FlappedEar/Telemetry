@@ -676,7 +676,7 @@ Future<Map<String, Object?>> readFetproject(String path) async {
 /// not its folder, so there the temporary file failed with "Cannot open
 /// file" and nothing saved. The in-place write is read back; when it fails
 /// or reads back differently, the previous document is written back if it
-/// can be, and the save fails.
+/// can be, and the save fails ([writeDocumentInPlace]).
 Future<void> writeFetproject(String path, Map<String, Object?> project) async {
   if (path.isEmpty) throw const FetprojectError('Project path is empty.');
   final error = validateFetproject(project);
@@ -695,7 +695,7 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
     await temporary.rename(path);
   } on FileSystemException catch (failure) {
     if (_permissionDenied(failure) && !await temporary.exists()) {
-      return _writeInPlace(path, bytes);
+      return writeDocumentInPlace(path, bytes);
     }
     try {
       if (await temporary.exists()) await temporary.delete();
@@ -708,36 +708,71 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
 
 /// Writes [bytes] over [path] and reads them back. On a failure (a full
 /// disk partway, say) the previous content is written back when possible,
-/// so a failed save does not leave a cut document behind.
-Future<void> _writeInPlace(String path, List<int> bytes) async {
+/// so a failed save does not leave a cut document behind; the error says
+/// whether the previous document is unchanged or the file may be
+/// incomplete. Not exported: `writeFetproject` uses it where the folder
+/// refuses a temporary file. [write] stands in for the file write in tests.
+Future<void> writeDocumentInPlace(
+  String path,
+  List<int> bytes, {
+  Future<void> Function(File file, List<int> bytes)? write,
+}) async {
   final file = File(path);
+  final writeBytes =
+      write ??
+      (File file, List<int> bytes) => file.writeAsBytes(bytes, flush: true);
+  // The previous document, when it can be read and is not larger than a
+  // document may be (a large file chosen in Save As is not kept).
   List<int>? previous;
   try {
-    previous = await file.readAsBytes();
+    if (await file.length() <= maximumProjectBytes) {
+      previous = await file.readAsBytes();
+    }
   } on FileSystemException {
-    previous = null; // Nothing to keep: a new document, or not readable.
+    previous = null; // A new document, or not readable.
   }
   try {
-    await file.writeAsBytes(bytes, flush: true);
-    if (!_sameBytes(await file.readAsBytes(), bytes)) {
-      throw const FileSystemException(
-        'The saved document reads back differently',
-      );
-    }
+    await writeBytes(file, bytes);
   } on FileSystemException catch (failure) {
-    var kept = false;
-    if (previous != null) {
-      try {
-        await file.writeAsBytes(previous, flush: true);
-        kept = _sameBytes(await file.readAsBytes(), previous);
-      } on FileSystemException {
-        kept = false;
-      }
-    }
     throw FetprojectError(
       'Could not save the project: ${failure.message}'
-      '${kept ? '; the previously saved version is unchanged' : ''}',
+      '${await _restore(file, previous, writeBytes) ? '; the previously saved version is unchanged' : '; the file may be incomplete'}',
     );
+  }
+  final List<int> written;
+  try {
+    written = await file.readAsBytes();
+  } on FileSystemException {
+    // Writable but not readable: the write itself succeeded.
+    return;
+  }
+  if (!_sameBytes(written, bytes)) {
+    throw FetprojectError(
+      'Could not save the project: the saved document reads back differently'
+      '${await _restore(file, previous, writeBytes) ? '; the previously saved version is unchanged' : '; the file may be incomplete'}',
+    );
+  }
+}
+
+/// Writes [previous] back over [file] when there is one; whether [file]
+/// now holds exactly [previous] (also when the failed write never touched
+/// it).
+Future<bool> _restore(
+  File file,
+  List<int>? previous,
+  Future<void> Function(File file, List<int> bytes) write,
+) async {
+  if (previous == null) return false;
+  try {
+    if (_sameBytes(await file.readAsBytes(), previous)) return true;
+  } on FileSystemException {
+    // Not readable now: try writing it back.
+  }
+  try {
+    await write(file, previous);
+    return _sameBytes(await file.readAsBytes(), previous);
+  } on FileSystemException {
+    return false;
   }
 }
 
