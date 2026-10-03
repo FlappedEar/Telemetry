@@ -40,6 +40,8 @@ import java.util.concurrent.Executors
  * first where the provider reports one, and the copy stops at the limit
  * regardless), one share or pick copies at most [MAXIMUM_BATCH_BYTES] and
  * [MAXIMUM_BATCH_FILES] files, and the user is told once what was left out.
+ * A picked file that is not a recording is passed on as an empty file of the
+ * same name, which is all the import needs to report it.
  */
 class MainActivity : FlutterActivity() {
     private val copier = Executors.newSingleThreadExecutor()
