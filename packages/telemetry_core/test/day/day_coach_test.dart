@@ -12,6 +12,12 @@ const _revision = 'a000000000000000000000000000000000000000000000000000000000000
 double Function(double) _lap(double slow) =>
     (d) => d >= 20 && d <= 120 ? slow + (30 - slow) * (d - 70).abs() / 50 : 30.0;
 
+// The same lap slowing in the first and the second corner.
+double Function(double) _twoCorners(double slow) {
+  final first = _lap(slow);
+  return (d) => d >= 307 && d <= 407 ? slow + (30 - slow) * (d - 357).abs() / 50 : first(d);
+}
+
 DayRunInput _run(String id, TelemetrySession session) => DayRunInput(
   runId: id,
   name: 'Session ${id.substring(id.length - 1)}',
@@ -56,12 +62,14 @@ DayCoach _coach(
   bool pedals = true,
   void Function(String runId, TelemetrySession session)? edit,
   String runId = 'run2',
+  double Function(double) Function(double slow) shape = _lap,
+  bool coachedRecording = true,
 }) {
   final runs = [
     _run(
       'run1',
       rectangleSession(
-        [for (final slow in earlier) _lap(slow)],
+        [for (final slow in earlier) shape(slow)],
         firstTimestampMilliseconds: 1000,
         pedals: pedals,
       ),
@@ -69,7 +77,7 @@ DayCoach _coach(
     _run(
       'run2',
       rectangleSession(
-        [for (final slow in latest) _lap(slow)],
+        [for (final slow in latest) shape(slow)],
         firstTimestampMilliseconds: 4000000,
         pedals: pedals,
       ),
@@ -82,7 +90,10 @@ DayCoach _coach(
   final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
   final result = dayTheoreticalBest(analysis, outing, random: Random(1));
   expect(result.state, DayTheoreticalBestState.ready);
-  return dayCoach(result, {for (final run in runs) run.runId: run.session}, runId: runId);
+  return dayCoach(result, {
+    for (final run in runs)
+      run.runId: run.runId == 'run2' && !coachedRecording ? null : run.session,
+  }, runId: runId);
 }
 
 void main() {
@@ -193,6 +204,46 @@ void main() {
     expect(finding.repeated, isFalse);
     expect(finding.evidence.first.detail, startsWith('One affected lap'));
     expect(coach.plan.any((item) => item.finding == finding), isFalse);
+  });
+
+  test('improvements in two corners: one is kept in the plan', () {
+    final coach = _coach([20, 20.5], [15, 16, 17], shape: _twoCorners);
+    expect(coach.findings.where((f) => f.kind == CoachKind.improving), hasLength(2));
+    expect(coach.plan.where((item) => !item.finding.kind.corrective), hasLength(1));
+  });
+
+  test('a coast that starts before the approach counts for its part inside it', () {
+    void coasts(String runId, TelemetrySession session) {
+      // The faster laps coast from before the approach of the second corner,
+      // the latest about as long inside it.
+      final (from, to) = runId == 'run1' ? (150.0, 215.0) : (180.0, 225.0);
+      _edit(session, 'throttle', 0, (d) => d >= from && d < to);
+      _edit(session, 'brake', 0, (d) => d >= from && d < to);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], shape: _twoCorners, edit: coasts);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+  });
+
+  test('an earlier lift before the same braking point as faster laps', () {
+    void lifts(String runId, TelemetrySession session) {
+      final lift = runId == 'run1' ? 288.0 : 258.0;
+      _edit(session, 'throttle', 100, (d) => d >= 200 && d < lift);
+      _edit(session, 'throttle', 0, (d) => d >= lift && d < 307);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], shape: _twoCorners, edit: lifts);
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.earlyLift);
+    expect(finding.affectedLaps, hasLength(3));
+    expect(finding.evidence.first.key, CoachMetric.liftPoint);
+    expect(finding.evidence.first.observed, lessThan(finding.evidence.first.reference - 8));
+    expect(finding.evidence.map((e) => e.key), contains(CoachMetric.brakingStart));
+  });
+
+  test('a session whose recording is missing says so', () {
+    final coach = _coach([20, 20.5], [15, 15.2, 15.1], coachedRecording: false);
+    expect(coach.findings, isEmpty);
+    expect(coach.reason, CoachReason.noRecording);
   });
 
   test('needs the theoretical best', () {

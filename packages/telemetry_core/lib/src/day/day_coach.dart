@@ -25,6 +25,7 @@
 import 'dart:math' as math;
 
 import '../analysis/coasting_analysis.dart';
+import '../analysis/corner_speeds.dart' show CornerSpeeds;
 import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
 import '../analysis/exit_metrics.dart' show exitFollowsGap, exitTruncated;
 import '../analysis/track_progress.dart';
@@ -79,12 +80,21 @@ enum CoachReason {
   /// The group has no approved corner.
   noCorners,
 
+  /// The session coached has no recording to measure (moved or missing).
+  noRecording,
+
+  /// No lap of the session coached could be measured through a corner.
+  noCornerMeasurements,
+
   /// No lap of the session coached has a faster lap to compare with.
   noFasterLap,
 
   /// Neither throttle nor brake is recorded, so only speeds can be compared,
   /// and they show no pattern.
   noPedals,
+
+  /// Faster laps were compared, and they show no pattern.
+  noPattern,
 
   /// Patterns were found, but none is repeated and confident enough.
   belowThreshold,
@@ -231,6 +241,14 @@ final class DayCoach {
     CoachReason.noSegments => 'The coach needs the day\'s segments and sector times first.',
     CoachReason.noLapInGroup => 'This session has no timed lap in the group compared.',
     CoachReason.noCorners => 'The group compared has no approved corner.',
+    CoachReason.noRecording =>
+      'This session\'s recording is not available, so it cannot be coached. Find it '
+          'from the day page.',
+    CoachReason.noCornerMeasurements =>
+      'No lap of this session could be measured through a corner.',
+    CoachReason.noPattern =>
+      'Compared with your faster laps, no pattern stands out. Keep building '
+          'consistent laps.',
     CoachReason.noFasterLap =>
       'No lap of this session has a faster lap of the day to compare with.',
     CoachReason.noPedals =>
@@ -382,7 +400,7 @@ DayCoach dayCoach(
   if (result.corners.isEmpty) {
     return DayCoach(runId: coached, reason: CoachReason.noCorners);
   }
-  var pedals = false, faster = false;
+  var pedals = false, faster = false, measured = false;
 
   // Each lap's coasting, once, by its approved segments.
   final coasting = <DayLapReference, CoastingSummary>{};
@@ -425,7 +443,7 @@ DayCoach dayCoach(
               slowPoint != null &&
               end > start &&
               // Within the position resolution of the slow point counts.
-              rise.progressMeters! >= slowPoint - math.max(3.0, speeds.meanSampleSpacingMeters) &&
+              rise.progressMeters! >= slowPoint - _slowPointTolerance(speeds) &&
               !rise.limitations.contains(exitTruncated) &&
               !rise.limitations.contains(exitFollowsGap)
           ? rise.progressMeters
@@ -446,14 +464,17 @@ DayCoach dayCoach(
       }
       double? coastSeconds, coastMeters;
       final summary = coastingOf(lap);
-      // An approach reaching back past start/finish starts at the lap's start.
-      final windowStart =
-          timeAtProgress(trace, math.max(0.0, start - coachApproachMeters)) ?? lap.start;
+      // An approach reaching back past start/finish starts at the lap's start;
+      // a gap in the trace leaves the coast unknown.
+      final windowStart = start - coachApproachMeters <= 0
+          ? lap.start
+          : timeAtProgress(trace, start - coachApproachMeters);
       final windowEnd = timeAtProgress(trace, end);
       if (summary != null &&
           summary.valid &&
           summary.provenance == drivingStateMeasured &&
           end > start &&
+          windowStart != null &&
           windowEnd != null &&
           windowEnd > windowStart &&
           _covered(summary.known, windowStart, windowEnd) >= 0.9 * (windowEnd - windowStart)) {
@@ -461,12 +482,16 @@ DayCoach dayCoach(
         // coasting rather than a gap in the data.
         coastSeconds = 0.0;
         coastMeters = 0.0;
+        // Each episode counts for its part inside the window, its distance in
+        // proportion.
         for (final episode in summary.episodes) {
-          final at = episode.startProgressMeters;
-          if (at == null || at < start - coachApproachMeters || at > end) continue;
-          if (episode.seconds > coastSeconds!) {
-            coastSeconds = episode.seconds;
-            coastMeters = episode.meters;
+          final from = math.max(episode.startTime, windowStart);
+          final to = math.min(episode.endTime, windowEnd);
+          if (to <= from) continue;
+          final inside = to - from;
+          if (inside > coastSeconds!) {
+            coastSeconds = inside;
+            coastMeters = episode.seconds > 0 ? episode.meters * inside / episode.seconds : 0.0;
           }
         }
       }
@@ -486,6 +511,7 @@ DayCoach dayCoach(
         ),
       );
     }
+    if (passages.any((p) => p.lap.runId == coached)) measured = true;
     if (passages.length < 2) continue;
     if (_hasFasterLap(passages, coached)) faster = true;
     for (final kind in CoachKind.values) {
@@ -505,12 +531,24 @@ DayCoach dayCoach(
         ? CoachReason.ready
         : findings.isNotEmpty
         ? CoachReason.belowThreshold
+        : sessions[coached] == null
+        ? CoachReason.noRecording
+        : !measured
+        ? CoachReason.noCornerMeasurements
         : !faster
         ? CoachReason.noFasterLap
         : !pedals
         ? CoachReason.noPedals
-        : CoachReason.belowThreshold,
+        : CoachReason.noPattern,
   );
+}
+
+/// How far before the slow point a throttle return still counts as after
+/// it: the speed minimum lags the pickup by up to half a second, and never
+/// less than the position resolution.
+double _slowPointTolerance(CornerSpeeds speeds) {
+  final minimum = _metersPerSecond(speeds.minimum.value, speeds.unit) ?? 0.0;
+  return math.max(math.max(3.0, speeds.meanSampleSpacingMeters), minimum * 0.5);
 }
 
 /// Seconds of [known] inside [from]..[to].
@@ -636,7 +674,9 @@ CoachFinding? _corrective(
     }
   }
   referenceLaps.sort((a, b) => a.start.compareTo(b.start));
-  final spacing = observations.map((o) => o.current.spacing).reduce(math.max);
+  final spacing = [
+    for (final o in observations) ...[o.current.spacing, ...o.references.map((r) => r.spacing)],
+  ].reduce((a, b) => !(a > 0) || !(b > 0) ? 0.0 : math.max(a, b));
   var confidence =
       0.48 + math.min(observations.length, 3) * 0.09 + (referenceLaps.length >= 2 ? 0.08 : 0.03);
   // An unknown spacing counts as sparse.
@@ -798,10 +838,9 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
   );
 }
 
-/// DrivingCoach's plan, with this app's rule that a pattern needs at least
-/// three laps: findings at or above [coachPlanConfidence], a change only when
-/// repeated over two or more laps of the session and seen on three laps with
-/// its references, an
+/// DrivingCoach's plan, with this app's rule that a typical value needs at
+/// least three laps: findings at or above [coachPlanConfidence], a change
+/// only when seen on three or more laps of the session, an
 /// improvement suppressing changes in its segment, repeated patterns first,
 /// then confidence and the observed segment-time gap; one item per segment,
 /// at most two changes and one improvement kept when there is one.
@@ -810,8 +849,7 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
       .where(
         (f) =>
             f.confidence >= coachPlanConfidence &&
-            (!f.kind.corrective ||
-                (f.repeated && f.affectedLaps.length + f.evidence.first.referenceLaps.length >= 3)),
+            (!f.kind.corrective || f.affectedLaps.length >= 3),
       )
       .toList();
   final improving = {
@@ -844,6 +882,7 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
     if (chosen.any((f) => f.segmentId == finding.segmentId)) continue;
     final changes = chosen.where((f) => f.kind.corrective).length;
     if (finding.kind.corrective && changes >= 2) continue;
+    if (!finding.kind.corrective && chosen.any((f) => !f.kind.corrective)) continue;
     chosen.add(finding);
   }
   chosen.sort((a, b) => eligible.indexOf(a).compareTo(eligible.indexOf(b)));
