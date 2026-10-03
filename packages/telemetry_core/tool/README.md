@@ -428,3 +428,52 @@ values compared, the mismatches and the largest difference.
 The committed `test/parity/corner_analyzer_reference.json` was generated from
 FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
 other references are unchanged. Never edit the JSON by hand.
+
+## cpp_driving_dump
+
+Runs FlappedEar Overlays' own `GgPairs`, `DrivingStates` and
+`CoastingAnalysis` with the G-G and trail-braking functions of its app
+(`comparisonGgScatter` and `comparisonTrailBraking` of
+`AnalysisControllerCornerAnalyzer.cpp`; app member functions, so the tool
+repeats their lines) over VBO files and fixed cases and writes the results
+as JSON. For every timed lap and the whole recording of each file it writes
+the G-G pairs, peaks and thinned points, the driving states (also with
+inference disabled), braking while cornering with its distance, and coasting
+without and with a lap trace and four fixed approved segments (the last
+across start/finish). Pairs of laps are chosen as in `cpp_comparison_dump`;
+for each, the G-G scatter over six ranges, trail braking over five (one
+across start/finish) and both laps' driving states and coasting over two, as
+`comparisonDrivingStates` computes them. The cases section runs the
+hand-made sessions of `GgPairsTests.cpp` and `DrivingStatesTests.cpp` (and a
+few more) with several options. G-G points are written every 4th
+(`strides`), with the last.
+
+The synthetic recordings of `test/parity/driving` are written by
+`tool/generate_driving_corpus.py` (the corner track of the main corpus with
+lateral G); they are kept out of `test/parity/corpus` so the other
+references stay unchanged.
+
+```bash
+python3 tool/generate_driving_corpus.py
+cmake -S tool/cpp_driving_dump -B /tmp/drivingbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/drivingbuild
+/tmp/drivingbuild/cpp_driving_dump test/parity/driving_reference.json \
+  test/parity/driving/*.vbo test/parity/corpus/corners_*.vbo \
+  test/parity/corpus/acceleration_aliases.vbo test/parity/corpus/laps_clean.vbo \
+  test/fixtures/*.vbo
+dart test test/parity/driving_parity_test.dart
+```
+
+`--day <day.json> <output.json>` checks a real day, writing every point:
+`runs` (`runId`, VBO `file`) and optionally `pairs` (`a` and `b`, each a
+`runId` and `lapNumber`); without `pairs`, each run's own pairs and its first
+eligible lap against the next run's are compared. Use it locally only;
+never commit its input or output. Run the test against it with
+`FET_DRIVING_REFERENCE=<json>` and `FET_DRIVING_DIRS=<dir>[:<dir>]`;
+`FET_PARITY_REPORT=1` prints the number of values compared, the mismatches
+and the largest difference.
+
+The committed `test/parity/driving_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+other references are unchanged. Never edit the JSON by hand.

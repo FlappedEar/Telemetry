@@ -4,6 +4,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import 'comparison_page.dart';
 import 'day_results_controller.dart';
+import 'lap_coasting_panel.dart';
 import 'telemetry_chart.dart';
 import 'track_map.dart';
 
@@ -358,7 +359,10 @@ class _LapPageState extends State<LapPage> {
                 title: Text('Show the best lap (${best.displayName}) in grey'),
               ),
           ];
-          final charts = _charts(context);
+          final charts = [
+            ..._charts(context),
+            ?lapCoastingPanel(controller, row, _window),
+          ];
           return LayoutBuilder(
             builder: (context, constraints) {
               final height = constraints.maxHeight;

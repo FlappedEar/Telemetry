@@ -19,6 +19,7 @@ import 'package:fetproject/fetproject.dart'
         validTrackSegment,
         validTrackSegments;
 
+import '../geometry.dart' show hypot;
 import 'track_segment_proposals.dart';
 import 'track_segment_review.dart';
 
@@ -344,7 +345,7 @@ ProgressPick pickProgressAt(
       lengthMeters <= 0.0) {
     return (progressMeters: null, reason: 'noTrace');
   }
-  double distanceTo(ProgressMapPoint sample) => _hypot(sample.x - x, sample.y - y);
+  double distanceTo(ProgressMapPoint sample) => hypot(sample.x - x, sample.y - y);
   var nearest = 0;
   var nearestDistance = double.infinity;
   for (var index = 0; index < trace.length; ++index) {
@@ -364,13 +365,4 @@ ProgressPick pickProgressAt(
     }
   }
   return (progressMeters: progress, reason: '');
-}
-
-// std::hypot: scaled so it neither overflows nor underflows.
-double _hypot(double a, double b) {
-  final x = a.abs(), y = b.abs();
-  final high = math.max(x, y), low = math.min(x, y);
-  if (high == 0.0 || high.isInfinite) return high;
-  final ratio = low / high;
-  return high * math.sqrt(1.0 + ratio * ratio);
 }
