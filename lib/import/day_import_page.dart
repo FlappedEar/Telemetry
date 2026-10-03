@@ -5,6 +5,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -30,8 +31,8 @@ abstract interface class RecordingPickers {
 ///
 /// iOS filters by uniform type identifier only, and a .vbo or .rcz file can
 /// carry a type declared by another app (RaceChrono), so iOS shows every
-/// file; the scan reports what is not a recording. Elsewhere the filter is by
-/// extension.
+/// file; the scan reports what is not a recording. Desktops filter by
+/// extension. Android does not use this, see [PlatformRecordingPickers].
 XTypeGroup recordingTypeGroup(TargetPlatform platform) =>
     platform == TargetPlatform.iOS
     ? const XTypeGroup(
@@ -56,19 +57,36 @@ bool isDesktopPlatform(TargetPlatform platform) =>
       _ => false,
     };
 
-/// file_selector pickers. On macOS the sandbox grants read access to what the
-/// user picks or drops, and nothing else. On iOS the picker copies the chosen
-/// files into the app's temporary folder.
+/// The Android host's file picker; see MainActivity.kt.
+const androidPickerChannel = MethodChannel(
+  'com.flappedear.telemetry/recording_picker',
+);
+
+/// file_selector pickers, except for recordings on Android. On macOS the
+/// sandbox grants read access to what the user picks or drops, and nothing
+/// else. On iOS the picker copies the chosen files into the app's temporary
+/// folder.
+///
+/// On Android file_selector names its copy after the type the provider
+/// reports, and a .vbo file is reported as application/octet-stream, so it
+/// arrived as a .bin file that was not imported. The host's own picker keeps
+/// each file's name.
 final class PlatformRecordingPickers implements RecordingPickers {
   const PlatformRecordingPickers();
 
   @override
-  Future<List<String>> pickRecordings() async => [
-    for (final file in await openFiles(
-      acceptedTypeGroups: [recordingTypeGroup(defaultTargetPlatform)],
-    ))
-      file.path,
-  ];
+  Future<List<String>> pickRecordings() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final paths = await androidPickerChannel.invokeListMethod<String>('pick');
+      return paths ?? const [];
+    }
+    return [
+      for (final file in await openFiles(
+        acceptedTypeGroups: [recordingTypeGroup(defaultTargetPlatform)],
+      ))
+        file.path,
+    ];
+  }
 
   @override
   Future<String?> pickFolder() =>
