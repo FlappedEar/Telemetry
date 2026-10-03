@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n.dart';
+import '../format.dart';
 import 'app_diagnostics.dart';
+import 'app_errors.dart';
 
 /// "1.84 s", or "120 ms" below a second.
 String diagnosticDuration(Duration duration) {
@@ -37,11 +40,15 @@ class DiagnosticsPage extends StatefulWidget {
   const DiagnosticsPage({
     super.key,
     this.diagnostics,
+    this.errors,
     this.memory = readProcessMemory,
   });
 
   /// The app's figures ([appDiagnostics]) when null.
   final AppDiagnostics? diagnostics;
+
+  /// The app's errors ([appErrors]) when null.
+  final AppErrors? errors;
 
   /// Replaced in widget tests.
   final MemoryReading Function() memory;
@@ -75,6 +82,8 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
     final l10n = context.l10n;
     final diagnostics = widget.diagnostics ?? appDiagnostics;
     final last = diagnostics.lastImport;
+    final errors = widget.errors ?? appErrors;
+    final records = errors.records;
     Widget heading(String text) => Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(text, style: theme.textTheme.titleMedium),
@@ -141,6 +150,53 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
               style: theme.textTheme.bodySmall,
             ),
           ),
+          heading(l10n.diagnosticsErrors),
+          if (records.isEmpty)
+            ListTile(
+              key: const ValueKey('diagnosticsNoErrors'),
+              title: Text(l10n.diagnosticsNoErrors),
+            )
+          else ...[
+            for (final record in records.reversed)
+              ListTile(
+                dense: true,
+                title: Text(
+                  record.summary,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  record.count > 1
+                      ? '${displayDateTime(record.time)} · '
+                            '${l10n.diagnosticsErrorCount(record.count)}'
+                      : displayDateTime(record.time),
+                ),
+              ),
+            if (errors.dropped > 0)
+              ListTile(
+                dense: true,
+                title: Text(l10n.diagnosticsErrorsDropped(errors.dropped)),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: OutlinedButton(
+                  key: const ValueKey('copyErrors'),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await Clipboard.setData(
+                      ClipboardData(text: errors.report()),
+                    );
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(l10n.diagnosticsErrorsCopied)),
+                    );
+                  },
+                  child: Text(l10n.diagnosticsCopyErrors),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/app_diagnostics.dart';
+import '../diagnostics/app_errors.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
@@ -1459,6 +1460,10 @@ final class DayResultsController extends ChangeNotifier {
     if (prepared is DayAddition) return prepared;
     final outcome = prepared as DayAppendOutcome;
     final part = outcome.part;
+    appErrorReporter.coreDefects(
+      messages: part?.messages ?? const [],
+      notes: outcome.notes,
+    );
     if (_disposed) {
       return const DayAddition(
         notes: [],
@@ -2596,8 +2601,10 @@ final class DayResultsController extends ChangeNotifier {
     _recoveryWork = queueRecovery(() async {
       try {
         await operation();
-      } on Exception catch (error) {
+      } on Object catch (error, stack) {
         debugPrint('Recovery snapshot not updated: $error');
+        // The day is not protected until a write succeeds: say so.
+        reportError(error, stack, context: 'Recovery snapshot not updated');
       }
     });
   }

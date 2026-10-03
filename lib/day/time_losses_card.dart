@@ -44,7 +44,7 @@ String timeLossReasonText(String reason) => _english.timeLossReason(reason);
 String timeLossWindowName(PublishedTimeLoss loss) =>
     _english.timeLossWindow(loss);
 
-final _lapLabel = RegExp(r'^(.+) · LAP (\d+)$');
+final _lapLabel = RegExp(r'^(.+) · LAP (\d{1,9})$');
 
 extension TimeLossText on AppLocalizations {
   /// A segment name proposed by `telemetry_core` ("Corner 1", "Straight 2",

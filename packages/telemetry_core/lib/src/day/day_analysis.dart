@@ -45,11 +45,19 @@ final class DayRunInput {
 
 /// A message about one run (or the whole day when [runId] is empty).
 final class DayMessage {
-  const DayMessage(this.runId, this.text);
+  const DayMessage(this.runId, this.text, {this.detail = ''});
 
   final String runId;
   final String text;
+
+  /// For a defect ([unexpectedRunError]): its stack trace, for a bug
+  /// report; empty otherwise.
+  final String detail;
 }
+
+/// How [DayMessage.text] starts when a session's analysis hit a defect (an
+/// [Error]); the error follows.
+const unexpectedRunError = 'Unexpected error while analysing this session: ';
 
 /// Runs whose laps can be compared, with their ranking.
 final class DayGroup {
@@ -258,6 +266,9 @@ DayRunsPart analyzeDayRuns(
       rethrow;
     } on Exception catch (error) {
       messages.add(DayMessage(run.runId, '$error'));
+    } on Error catch (error, stack) {
+      // A defect in one run's analysis leaves the other runs of the day.
+      messages.add(DayMessage(run.runId, '$unexpectedRunError$error', detail: '$stack'));
     }
   }
   throwIfCancelled(cancelled);

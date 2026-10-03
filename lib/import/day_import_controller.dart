@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/app_diagnostics.dart';
+import '../diagnostics/app_errors.dart';
 import 'import_runner.dart';
 
 /// Where an import stands.
@@ -91,14 +92,20 @@ final class DayImportController extends ChangeNotifier {
     job.result.then(
       (outcome) {
         if (!_generation.isCurrent(ticket)) return;
+        appErrorReporter.coreDefects(
+          plan: outcome.plan,
+          messages: outcome.analysis?.messages ?? const [],
+        );
         final state = _finished(outcome);
         if (state is DayImportFinished) {
           _record(outcome, state.runs, clock.elapsed);
         }
         _set(state);
       },
-      onError: (Object error) {
+      onError: (Object error, StackTrace stack) {
         if (!_generation.isCurrent(ticket)) return;
+        // A defect, not a bad recording: kept for a bug report.
+        if (error is Error) reportError(error, stack, context: 'Importing');
         _set(
           error is OperationCancelled
               ? const DayImportCancelled()

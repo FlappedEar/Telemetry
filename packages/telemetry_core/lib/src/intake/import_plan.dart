@@ -67,6 +67,7 @@ final class TelemetryImportFileResult {
     required this.status,
     this.runId = '',
     this.message = '',
+    this.detail = '',
   });
 
   final String requestedPath;
@@ -75,7 +76,15 @@ final class TelemetryImportFileResult {
   /// The retained proposal for ready and duplicate files; empty for errors.
   final String runId;
   final String message;
+
+  /// For a defect ([unexpectedFileError]): its stack trace, for a bug
+  /// report; empty otherwise.
+  final String detail;
 }
+
+/// How [TelemetryImportFileResult.message] starts when reading the file hit
+/// a defect (an [Error]) rather than a bad recording; the error follows.
+const unexpectedFileError = 'Unexpected error while reading this file: ';
 
 /// Two recordings of different formats whose GPS traces agree. Evidence, not
 /// proof: it does not establish a common date or clock by itself.
@@ -247,6 +256,15 @@ TelemetryImportPlan prepareTelemetryImport(
       result = _error(path, error.osError?.message ?? error.message);
     } on Exception catch (error) {
       result = _error(path, error.toString());
+    } on Error catch (error, stack) {
+      // A defect while reading one file (a bug, not a bad recording) marks
+      // that file and leaves the others of the import alone.
+      result = TelemetryImportFileResult(
+        requestedPath: path,
+        status: TelemetryImportFileStatus.error,
+        message: '$unexpectedFileError$error',
+        detail: '$stack',
+      );
     }
     files.add(result);
     progress?.call(files.length, paths.length);

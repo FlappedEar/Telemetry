@@ -4126,4 +4126,44 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get speedLegendNoSpeed =>
       'Nie zapisano prędkości; ślad jest w jednym kolorze.';
+
+  @override
+  String get appErrorNotice =>
+      'Coś poszło nie tak. Szczegóły są w Diagnostyce.';
+
+  @override
+  String get appErrorPart => 'Nie udało się wyświetlić tej części.';
+
+  @override
+  String get diagnosticsErrors => 'Błędy';
+
+  @override
+  String get diagnosticsNoErrors => 'Brak błędów od uruchomienia aplikacji.';
+
+  @override
+  String get diagnosticsCopyErrors => 'Kopiuj błędy';
+
+  @override
+  String get diagnosticsErrorsCopied =>
+      'Skopiowano błędy. Wklej je do zgłoszenia błędu.';
+
+  @override
+  String diagnosticsErrorsDropped(int count) {
+    return 'Wcześniejsze błędy, których nie zachowano: $count';
+  }
+
+  @override
+  String importUnexpectedError(String error) {
+    return 'Nieoczekiwany błąd podczas odczytu tego pliku: $error';
+  }
+
+  @override
+  String noteUnexpectedError(String error) {
+    return 'Nieoczekiwany błąd podczas analizy tej sesji: $error';
+  }
+
+  @override
+  String diagnosticsErrorCount(int count) {
+    return 'Liczba wystąpień: $count';
+  }
 }

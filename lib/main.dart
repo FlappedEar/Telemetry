@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'diagnostics/app_errors.dart';
 import 'import/day_import_page.dart';
 import 'l10n.dart';
 import 'ui/theme.dart';
@@ -9,6 +10,7 @@ import 'units.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installErrorHandlers();
   await loadSettings();
   LicenseRegistry.addLicense(_fontLicenses);
   runApp(const TelemetryApp());
@@ -40,6 +42,8 @@ class TelemetryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // Unexpected errors say so from any page (installErrorHandlers).
+      scaffoldMessengerKey: appMessengerKey,
       // Every speed label follows the setting at once. Dates
       // formatted without a context follow the app's language.
       builder: (context, child) {

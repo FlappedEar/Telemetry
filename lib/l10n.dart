@@ -71,7 +71,7 @@ extension RouteReasonText on AppLocalizations {
   };
 }
 
-final _sessionName = RegExp(r'^Session (\d+)$');
+final _sessionName = RegExp(r'^Session (\d{1,9})$');
 
 extension SessionNameText on AppLocalizations {
   /// A run name from `telemetry_core` ("Session 2") in the app's language
@@ -124,6 +124,9 @@ extension DayNoteText on AppLocalizations {
         'recordings in import order.' =>
       noteUndated,
     'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
+    _ when text.startsWith(unexpectedRunError) => noteUnexpectedError(
+      text.substring(unexpectedRunError.length),
+    ),
     _ => routeReason(text),
   };
 
