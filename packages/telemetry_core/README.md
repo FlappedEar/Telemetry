@@ -183,6 +183,25 @@ a background isolate.
   `compareLoss` and `sectionProgression` do it for a group of a day;
   `progressionRunInfo` reads the notes, conditions and setup changes a
   document records for a run.
+- Channel summaries, temperature associations, focus areas and the day
+  report (Overlays `ChannelSummary`, `TemperatureAssociation`,
+  `OutingChannelSummaries`, `FocusAreas`, `DayReport`, `OutingDayReport` and
+  the day-report and association steps of its app, `d4d1039`):
+  `summarizeChannel` gives a channel's time-weighted mean, extrema and
+  coverage over an interval, never bridging a recording gap and leaving out
+  implausible readings and placeholder zeros (counted);
+  `findCoolingIntervals` finds continuously recorded cooling;
+  `spearmanCorrelation` and `associateTemperature` describe how a
+  temperature moved with a lap metric and with the order of laps, and
+  `lapStrongAcceleration` gives a lap's strong acceleration.
+  `selectFocusAreas` picks at most three areas to inspect next, each an
+  observation with its numbers apart from a hypothesis that claims no cause.
+  `buildDayReport` and `validateDayReport` write and check the
+  `flappedear.day-report` document. For a day, `summarizeDayChannels`
+  summarizes every run and section, `dayTemperatureAssociations` the
+  group's eligible laps, `dayFocusAreas` the theoretical best, and
+  `dayReport` assembles the report from what was computed, with
+  `dayDecisionsKey` marking results computed under other decisions stale.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -221,6 +240,13 @@ progression, lap consistency and time-loss and section presentation
 (`OutingLaps.cpp`, `Consistency.cpp`, `OutingTheoreticalBestResults.cpp` and
 the lap consistency of Overlays' app, `d4d1039`) against
 `test/parity/progression_reference.json` from `tool/cpp_progression_dump`.
+`test/parity/dayreport_parity_test.dart` does the same for channel
+summaries, temperature associations, focus areas and the day report
+(`ChannelSummary.cpp`, `TemperatureAssociation.cpp`,
+`OutingChannelSummaries.cpp`, `FocusAreas.cpp`, `DayReport.cpp`,
+`OutingDayReport.cpp` and the day-report and association steps of Overlays'
+app, `d4d1039`) against `test/parity/dayreport_reference.json` from
+`tool/cpp_dayreport_dump`, comparing whole documents.
 
 Known, deliberate differences:
 
@@ -244,6 +270,17 @@ Known, deliberate differences:
   (`noReferenceLap`) for the app to word.
 - **Section progression laps** with exactly equal times keep their
   population order; Overlays' `std::sort` leaves it unspecified.
+- **Day-report decisions key.** `dayDecisionsKey` hashes the group, the
+  approved segments, the eligible and excluded laps and the best lap
+  (SHA-256 of their JSON); Overlays hashes its own project state. Both are
+  opaque and only compared for equality.
+- **Channel summaries** read the recordings the day already holds; Overlays
+  loads and verifies each one from the project (`loadOutingLapDetail`). A
+  run without a recording says "Recording unavailable.".
+- **Focus areas and time losses** with exactly equal values keep their input
+  order; Overlays' `std::sort` leaves it unspecified.
+- **While the day's laps are derived again**, the report names no group, as
+  Overlays' ranking does while it loads.
 - **`timingGateRevision`** (`gates-v1`) is not here; it belongs with the other
   document ids.
 
