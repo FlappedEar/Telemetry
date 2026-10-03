@@ -384,5 +384,32 @@ void main() {
       expect(opened.comparison.slots, pair);
       expect(((readDayDocument(path)['event'] as Map)['lapExclusions'] as List), hasLength(1));
     });
+
+    test('documentComparison matches a switched run as saved with its new primary', () async {
+      final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+      final day = importDay([vbo, rcz]);
+      final runId = day.runs.single.run.id;
+      final laps = day.analysis.rows
+          .where((row) => row.type == LapSectionType.lap && row.referenceEligible)
+          .toList();
+      final pair = [laps[1].reference, laps[2].reference];
+      final path = p.join(root, 'day.fetproject');
+      var opened = await saveAndOpen(path, day.runs, day.analysis, day.fusions, slots: pair);
+      final (rczRuns, rczAnalysis, rczFusions, _) = switched(
+        opened,
+        day.fusions[runId]!.alternative!,
+      );
+      // The document still saves the VBO as primary: a pair of its laps is
+      // not one of the RCZ's.
+      expect(documentComparison(opened.document, rczRuns).slots, [null, null]);
+
+      opened = await saveAndOpen(path, rczRuns, rczAnalysis, rczFusions, previous: opened);
+      expect(opened.runs.single.run.format, RecordingFormat.rcz);
+      expect(documentComparison(opened.document, opened.runs).slots, [null, null]);
+      // The VBO primary again, before saving: the document saves the RCZ,
+      // yet the pair of the VBO's laps applies.
+      final (vboRuns, _, _, _) = switched(opened, fuseOpenedDay(opened)[runId]!.alternative!);
+      expect(documentComparison(opened.document, vboRuns).slots, pair);
+    });
   });
 }

@@ -190,6 +190,48 @@ void main() {
     });
   });
 
+  test('a fused day saved and opened again has no changes, so its primary '
+      'can be changed at once', () async {
+    final (controller, runId) = await fusedDay();
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    expect(_runJson(path)['fusion'], isA<Map>());
+
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    await opened.fusionsSettled;
+    // The saved decision applied as saved changes nothing.
+    expect(opened.fusion(runId)!.fused, isTrue);
+    expect(opened.fusion(runId)!.fromDocument, isTrue);
+    expect(opened.dirty, isFalse);
+    expect(opened.recordingsEditable(runId), isTrue);
+    await opened.makePrimary(runId);
+    expect(opened.recordingsProblem(runId), isNull);
+    expect(opened.runs.single.run.format, RecordingFormat.rcz);
+  });
+
+  test('a day saved before its recordings were combined decides it on '
+      'opening: a change', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = runDayImport((paths: [vbo, rcz], includeSubfolders: false));
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+    );
+    addTearDown(controller.dispose);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    expect(_runJson(path).containsKey('fusion'), isFalse);
+
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    expect(opened.dirty, isFalse);
+    await opened.fusionsSettled;
+    expect(opened.fusion(both.runs.single.run.id)!.fused, isTrue);
+    expect(opened.dirty, isTrue);
+  });
+
   test('an exclusion and the comparison pair of the VBO come back when it '
       'is the primary again', () async {
     final (controller, runId) = await fusedDay();
