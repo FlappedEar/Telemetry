@@ -7,6 +7,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../units.dart';
+
 /// Where a day's map is centred: the middle of [session]'s start/finish
 /// line, east-positive, or null when the recording has none.
 GeoCoordinate? mapOrigin(TelemetrySession session) {
@@ -786,7 +788,8 @@ class SpeedLegend extends StatelessWidget {
         style: theme.textTheme.bodySmall,
       );
     }
-    final unit = path.speedUnit.isEmpty ? '' : ' ${path.speedUnit}';
+    final label = speedUnitOf(context, path.speedUnit);
+    final unit = label.isEmpty ? '' : ' $label';
     return Row(
       children: [
         Text(

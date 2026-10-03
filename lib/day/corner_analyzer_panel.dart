@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../units.dart';
 import 'comparison_page.dart';
 import 'corner_details.dart' show cornerReasonText, lapAColor, lapBColor;
 import 'day_results_controller.dart';
@@ -72,7 +73,7 @@ String? cornerAnalyzerSummary(SegmentAnalysis analysis) {
   final faster = delta < 0 ? 'A' : 'B';
   final time = '${delta.abs().toStringAsFixed(3)} s';
   final corner = analysis.corner;
-  final unit = corner?.unit ?? analysis.speeds.unit;
+  final unit = speedUnitLabel(corner?.unit ?? analysis.speeds.unit);
   final speeds = corner != null
       ? [
           ('entry speed', corner.entry.delta.value),
@@ -388,10 +389,12 @@ class AnalyzerTable extends StatelessWidget {
   final SegmentAnalysis analysis;
   final ComparisonHeartRate? heartRate;
 
-  List<_Group> _groups() {
+  List<_Group> _groups(BuildContext context) {
     final segment = analysis.segment;
     final corner = analysis.corner;
-    final speedUnit = _unit(corner?.unit ?? analysis.speeds.unit);
+    final speedUnit = _unit(
+      speedUnitOf(context, corner?.unit ?? analysis.speeds.unit),
+    );
     String speed(double v) => '${v.toStringAsFixed(1)}$speedUnit';
     String speedDelta(double d) => _signed(d, 1, speedUnit);
     String meters(double v) => '${v.round()} m';
@@ -556,7 +559,7 @@ class AnalyzerTable extends StatelessWidget {
     final small = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final groups = _groups();
+    final groups = _groups(context);
 
     Widget cell(
       String key,
@@ -679,9 +682,10 @@ class AnalyzerTable extends StatelessWidget {
       ),
     );
     // A unit the recording does not declare is said once, at its group.
-    final speedUnitMissing = (analysis.corner?.unit ?? analysis.speeds.unit)
-        .trim()
-        .isEmpty;
+    final speedUnitMissing = speedUnitOf(
+      context,
+      analysis.corner?.unit ?? analysis.speeds.unit,
+    ).isEmpty;
     final decelerationUnitMissing = (analysis.brakingMetrics ?? const []).every(
       (lap) => lap.decelerationUnit.trim().isEmpty,
     );
@@ -873,10 +877,12 @@ class SegmentSpeedChart extends StatelessWidget {
         comparison.channelSeries(slot, 'speed', start, end, 300),
     ];
     final hasData = series.any((series) => series.hasData);
-    final unit = series
-        .firstWhere((series) => series.hasData, orElse: () => series.first)
-        .unit
-        .trim();
+    final unit = speedUnitOf(
+      context,
+      series
+          .firstWhere((series) => series.hasData, orElse: () => series.first)
+          .unit,
+    ).trim();
     final segment = analysis.segment;
     final apex = analysis.phases?.apex;
     final apexes = apex == null
