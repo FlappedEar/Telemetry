@@ -478,4 +478,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Last comparison';
+
+  @override
+  String get sessionDetailsHeading => 'Session details';
+
+  @override
+  String get sessionDetailsNone => 'No conditions, setup changes or notes';
+
+  @override
+  String sessionDetailsTitle(String session) {
+    return 'Details of $session';
+  }
+
+  @override
+  String get sessionDetailsName => 'Name';
+
+  @override
+  String get sessionDetailsNameRequired => 'A session needs a name.';
+
+  @override
+  String get sessionDetailsConditions => 'Conditions';
+
+  @override
+  String get sessionDetailsConditionsHint => 'Dry, 18 °C';
+
+  @override
+  String get sessionDetailsSetup => 'Setup changes';
+
+  @override
+  String get sessionDetailsSetupHint => 'Tyres +0.1 bar';
+
+  @override
+  String get sessionDetailsNotes => 'Notes';
+
+  @override
+  String get sessionDetailsSaved =>
+      'Kept in the day\'s file, which FlappedEar Overlays reads too.';
+
+  @override
+  String get detailsInvalid => 'This text cannot be saved.';
+
+  @override
+  String get renameDayMenu => 'Rename day…';
+
+  @override
+  String get renameDayTitle => 'Rename day';
+
+  @override
+  String get renameDayName => 'Day name';
+
+  @override
+  String get renameDayRequired => 'A day needs a name.';
 }

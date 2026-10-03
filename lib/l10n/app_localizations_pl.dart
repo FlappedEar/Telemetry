@@ -491,4 +491,56 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Ostatnie porównanie';
+
+  @override
+  String get sessionDetailsHeading => 'Szczegóły sesji';
+
+  @override
+  String get sessionDetailsNone =>
+      'Brak warunków, zmian w ustawieniach i notatek';
+
+  @override
+  String sessionDetailsTitle(String session) {
+    return 'Szczegóły: $session';
+  }
+
+  @override
+  String get sessionDetailsName => 'Nazwa';
+
+  @override
+  String get sessionDetailsNameRequired => 'Sesja musi mieć nazwę.';
+
+  @override
+  String get sessionDetailsConditions => 'Warunki';
+
+  @override
+  String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
+
+  @override
+  String get sessionDetailsSetup => 'Zmiany w ustawieniach';
+
+  @override
+  String get sessionDetailsSetupHint => 'Opony +0.1 bar';
+
+  @override
+  String get sessionDetailsNotes => 'Notatki';
+
+  @override
+  String get sessionDetailsSaved =>
+      'Zapisywane w pliku dnia, który czyta też FlappedEar Overlays.';
+
+  @override
+  String get detailsInvalid => 'Tego tekstu nie można zapisać.';
+
+  @override
+  String get renameDayMenu => 'Zmień nazwę dnia…';
+
+  @override
+  String get renameDayTitle => 'Zmiana nazwy dnia';
+
+  @override
+  String get renameDayName => 'Nazwa dnia';
+
+  @override
+  String get renameDayRequired => 'Dzień musi mieć nazwę.';
 }

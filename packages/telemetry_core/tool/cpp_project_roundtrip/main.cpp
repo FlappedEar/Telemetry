@@ -17,6 +17,11 @@
 //       TelemetryAppTests add it, and Overlays opens and saves the day again.
 //   cpp_project_roundtrip resave <project> [<target>]
 //       Overlays opens the day and saves it, at <target> when given (Save As).
+//   cpp_project_roundtrip metadata <project> <target> <run> <name> <notes> <conditions> <setupChanges>
+//       Overlays opens the day, edits the name, notes, conditions and setup
+//       changes of the run at index <run> (AnalysisController::updateRunMetadata,
+//       as its session details editor does) and saves the day at <target>.
+//       Prints inspect of the saved day.
 //   cpp_project_roundtrip inspect <project>...
 //       What Overlays sees in each day: validity, identity, runs with their
 //       metadata and approved segments, every lap section with its group and
@@ -616,6 +621,24 @@ void compare(const QString &path, const QString &a, const QString &b, double sta
     settle(*controller);
 }
 
+void editMetadata(const QStringList &arguments, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    open(*controller, arguments[1]);
+    auto &analysis = *controller->analysis();
+    bool ok = false;
+    const int index = arguments[3].toInt(&ok);
+    const auto runs = controller->document()->eventRuns();
+    if (!ok || index < 0 || index >= runs.size()) fail(QStringLiteral("No run %1.").arg(arguments[3]));
+    const auto runId = runs[index].toMap().value("id").toString();
+    const auto token = analysis.runMetadata(runId).value("editToken").toString();
+    if (!analysis.updateRunMetadata(runId, token, arguments[4], arguments[5], arguments[6], arguments[7]))
+        fail(QStringLiteral("Overlays refused the run's metadata."));
+    settle(*controller);
+    save(*controller, arguments[2]);
+    settle(*controller);
+}
+
 void print(const QJsonValue &value)
 {
     const QByteArray json = value.isArray() ? QJsonDocument(value.toArray()).toJson(QJsonDocument::Indented)
@@ -635,7 +658,7 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QStringLiteral("cpp_project_roundtrip"));
     QSettings().clear();
     const QStringList arguments = application.arguments().mid(1);
-    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect|import|attach|fuse|compare ..."));
+    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|attach|fuse|compare ..."));
     QTemporaryDir scratch;
     if (!scratch.isValid()) fail(QStringLiteral("No temporary folder."));
     const QString command = arguments.first();
@@ -670,12 +693,15 @@ int main(int argc, char **argv)
         compare(arguments[1], arguments[2], arguments[3], arguments[4].toDouble(), arguments[5].toDouble(),
                 arguments.mid(6), scratch);
         print(inspect(arguments[1], scratch));
+    } else if (command == "metadata" && arguments.size() == 8) {
+        editMetadata(arguments, scratch);
+        print(inspect(arguments[2], scratch));
     } else if (command == "inspect") {
         QJsonArray results;
         for (const auto &path : arguments.mid(1)) results.append(inspect(path, scratch));
         print(results);
     } else {
-        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect|import|attach|fuse|compare ..."));
+        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|attach|fuse|compare ..."));
     }
     QSettings().clear();
     return 0;

@@ -44,6 +44,7 @@ export 'src/day/day_relink.dart';
 export 'src/day/day_report.dart';
 export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';
+export 'src/day/run_metadata.dart';
 
 export 'package:fetproject/fetproject.dart' show FetprojectError;
 
