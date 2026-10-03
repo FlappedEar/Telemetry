@@ -78,8 +78,11 @@ that access before opening a day; recordings chosen before this existed are
 found once with **Find recordings in a folder…**. Days saved by either app open in the
 other with their segments, lap exclusions, notes and the group shown. On desktop the system dialogs choose the file;
 on phones days are kept in the app. A day with unsaved changes is kept in
-the app's own folder as you work, so after a crash or a closed app the import
-screen offers to **Restore** or **Discard** it. The
+the app's own folder as you work, and after a crash or a closed app the import
+screen offers to **Restore** or **Discard** it. This recovery is best effort:
+changes are written half a second after they settle, and at once when the app
+leaves the foreground or is asked to quit, so a crash or a forced stop right
+after a change can lose that last change. Saving is the only guarantee. The
 recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
