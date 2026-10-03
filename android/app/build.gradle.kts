@@ -47,3 +47,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // JVM unit tests of the native file copy (android/app/src/test).
+    testImplementation("junit:junit:4.13.2")
+}
