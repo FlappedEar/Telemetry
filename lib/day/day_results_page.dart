@@ -875,24 +875,52 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ? 'No start/finish pass'
             : 'Not timed',
     ];
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: bestOfDay
-          ? Icon(Icons.emoji_events, color: theme.colorScheme.primary)
-          : bestOfRun
-          ? const Icon(Icons.star_outline)
-          : const SizedBox(width: 24),
-      title: Text(row.displayName),
-      subtitle: marks.isEmpty ? null : Text(marks.join(' · ')),
-      trailing: Text(
-        displayTime(row.durationSeconds),
-        style: timed && issues.isEmpty
-            ? theme.textTheme.titleMedium
-            : theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+    // As on a timing screen: purple marks the best of the day, green the
+    // best of its session, on the edge and in the time.
+    final colors = FetColors.of(context);
+    final ranked = timed && issues.isEmpty;
+    final mark = bestOfDay
+        ? colors.dayBest
+        : bestOfRun
+        ? colors.gain
+        : null;
+    final best = _controller.ranking?.bestOfDay;
+    final delta = ranked && best != null && !bestOfDay
+        ? row.durationSeconds - best.durationSeconds
+        : null;
+    final timeStyle = theme.textTheme.titleMedium?.copyWith(
+      fontFamily: FetTheme.mono,
+      fontWeight: mark == null ? FontWeight.w500 : FontWeight.w700,
+      color: !ranked ? theme.colorScheme.outline : mark,
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: mark ?? Colors.transparent, width: 3),
+        ),
       ),
-      onTap: () => _open(row),
+      child: ListTile(
+        contentPadding: const EdgeInsets.only(left: 12),
+        title: Text(row.displayName),
+        subtitle: marks.isEmpty ? null : Text(marks.join(' · ')),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(displayTime(row.durationSeconds), style: timeStyle),
+            if (delta != null)
+              Text(
+                displayDelta(delta),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontFamily: FetTheme.mono,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        onTap: () => _open(row),
+      ),
     );
   }
 }
