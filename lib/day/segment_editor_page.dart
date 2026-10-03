@@ -318,14 +318,15 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
 
   Color _segmentColor(BuildContext context, int index, bool selected) {
     final scheme = Theme.of(context).colorScheme;
-    if (selected) return const Color(0xffffb300);
+    // Blue stands out from the amber and green of the other segments.
+    if (selected) return scheme.secondary;
     return index.isEven ? scheme.primary : scheme.tertiary;
   }
 
-  // Text on [_segmentColor], readable in both themes.
+  // Text on [_segmentColor].
   Color _segmentInk(BuildContext context, int index, bool selected) {
     final scheme = Theme.of(context).colorScheme;
-    if (selected) return Colors.black;
+    if (selected) return scheme.onSecondary;
     return index.isEven ? scheme.onPrimary : scheme.onTertiary;
   }
 
@@ -371,7 +372,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
             MapMark(
               point.eastMeters,
               point.northMeters,
-              const Color(0xffffb300),
+              Theme.of(context).colorScheme.onSurface,
               radius: 7,
             ),
           );

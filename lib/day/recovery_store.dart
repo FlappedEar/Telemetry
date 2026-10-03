@@ -63,11 +63,18 @@ final class PlatformRecoveryStore implements RecoveryStore {
 }
 
 Future<void> _queue = Future.value();
+int _queued = 0;
 
 /// Runs [operation] after every recovery operation queued before it, so a
-/// write and a later clear or load always happen in that order.
+/// write and a later clear or load always happen in that order. With none
+/// waiting it starts at once, never waiting on an earlier, finished one.
 Future<T> queueRecovery<T>(Future<T> Function() operation) {
-  final result = _queue.then((_) => operation());
-  _queue = result.then((_) {}, onError: (Object _) {});
+  final result = _queued == 0
+      ? Future.sync(operation)
+      : _queue.then((_) => operation());
+  ++_queued;
+  _queue = result
+      .then((_) {}, onError: (Object _) {})
+      .whenComplete(() => --_queued);
   return result;
 }

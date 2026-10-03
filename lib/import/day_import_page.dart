@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -18,6 +19,7 @@ import '../format.dart';
 import '../settings_dialog.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
+import 'import_runner.dart' show DayAppender, IsolateDayAppender;
 import 'incoming_recordings.dart';
 
 export '../format.dart' show displayTime;
@@ -146,7 +148,11 @@ class DayImportPage extends StatefulWidget {
     this.picksFolders,
     this.incoming,
     this.fileAccess = const PlatformFileAccess(),
+    this.appender = const IsolateDayAppender(),
   });
+
+  /// Prepares recordings added to an open day.
+  final DayAppender appender;
 
   final DocumentPickers documents;
 
@@ -197,7 +203,63 @@ class _DayImportPageState extends State<DayImportPage> {
     _incoming = (widget.incoming ?? PlatformIncomingRecordings.instance)
         .received
         .listen(_receive);
+    _controller.addListener(_imported);
     _checkRecovery();
+  }
+
+  /// Whether the import running was started by recordings shared from
+  /// another app; its day then opens by itself.
+  bool _showWhenImported = false;
+
+  /// Recordings shared and imported here whose day has not been shown,
+  /// such as when another day's unsaved work waits to be restored.
+  List<String> _unopenedShares = const [];
+
+  /// Shows the day of a finished import. The import is then forgotten, so
+  /// the day is not built afresh from it later, without what was added or
+  /// changed since.
+  DayResultsController _showImported(
+    List<NamedRun> runs,
+    DayAnalysis analysis,
+  ) {
+    final day = DayResultsController(
+      runs: runs,
+      analysis: analysis,
+      recovery: widget.recovery,
+      appender: widget.appender,
+    );
+    _controller.clearFinished();
+    _unopenedShares = const [];
+    unawaited(_show(day));
+    return day;
+  }
+
+  /// Recordings shared while an import ran; they go to its day when it
+  /// opens by itself, otherwise they are received once it ends.
+  List<String>? _afterImport;
+
+  void _imported() {
+    if (_controller.isWorking || !mounted) return;
+    // A share import that was cancelled or failed is not tried again with
+    // the next share.
+    if (_controller.state is DayImportCancelled ||
+        _controller.state is DayImportFailed) {
+      _unopenedShares = const [];
+    }
+    final pending = _afterImport ?? const <String>[];
+    _afterImport = null;
+    final show = _showWhenImported;
+    _showWhenImported = false;
+    if (show) {
+      if (_controller.state
+          case DayImportFinished(:final runs, :final analysis?)
+          when ModalRoute.of(context)?.isCurrent ?? false) {
+        final day = _showImported(runs, analysis);
+        if (pending.isNotEmpty) _addTo(day, pending);
+        return;
+      }
+    }
+    if (pending.isNotEmpty) _receive(pending);
   }
 
   Future<void> _checkRecovery() async {
@@ -205,10 +267,40 @@ class _DayImportPageState extends State<DayImportPage> {
     if (mounted) setState(() => _recovered = recovered);
   }
 
-  /// Shows [page], then checks again for an unsaved day left behind.
-  Future<void> _show(Widget page) async {
-    await Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => page));
+  /// The day shown on top of this page, which recordings shared to the app
+  /// are added to; null while none is.
+  DayResultsController? _shownDay;
+
+  /// Shows the day of [controller], then checks again for an unsaved day
+  /// left behind.
+  Future<void> _show(DayResultsController controller) async {
+    // A day opened again with its recordings found elsewhere is shown in
+    // its place, and takes the recordings shared from then on.
+    DayResultsController? next = controller;
+    while (next != null && mounted) {
+      final shown = next!;
+      next = null;
+      _shownDay = shown;
+      try {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DayResultsPage.controller(
+              controller: shown,
+              documents: widget.documents,
+              pickers: widget.pickers,
+              recovery: widget.recovery,
+              replace: (day) => next = day,
+            ),
+          ),
+        );
+      } finally {
+        if (identical(_shownDay, shown)) _shownDay = null;
+      }
+    }
+    if (!mounted) {
+      next?.dispose();
+      return;
+    }
     await _checkRecovery();
   }
 
@@ -216,9 +308,18 @@ class _DayImportPageState extends State<DayImportPage> {
   static OpenedDay Function() _recoverJob(DayRecovery recovery) =>
       () => openRecoveredDay(recovery);
 
-  Future<void> _restore(DayRecovery recovery) async {
+  Future<void> _restore(DayRecovery _) async {
+    _waiting = [];
     setState(() => _opening = true);
     try {
+      // The snapshot as it is now: the day closed last may have written a
+      // newer one after this card was shown.
+      final recovery = await queueRecovery(widget.recovery.load);
+      if (recovery == null) {
+        // Saved meanwhile: there is nothing left to restore.
+        await _checkRecovery();
+        return;
+      }
       await widget.fileAccess.restore();
       final day = await Isolate.run(_recoverJob(recovery));
       if (!mounted) return;
@@ -226,15 +327,12 @@ class _DayImportPageState extends State<DayImportPage> {
         await _cannotOpen(day, searchable: false);
         return;
       }
-      await _show(
-        DayResultsPage.controller(
-          controller: DayResultsController.recovered(
-            day,
-            recovery,
-            recovery: widget.recovery,
-          ),
-          documents: widget.documents,
+      await _showOpened(
+        DayResultsController.recovered(
+          day,
+          recovery,
           recovery: widget.recovery,
+          appender: widget.appender,
         ),
       );
     } on Exception catch (error) {
@@ -244,7 +342,7 @@ class _DayImportPageState extends State<DayImportPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _opening = false);
+      _openingDone();
     }
   }
 
@@ -318,26 +416,194 @@ class _DayImportPageState extends State<DayImportPage> {
   @override
   void dispose() {
     _incoming.cancel();
+    _controller.removeListener(_imported);
     if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
 
-  /// Recordings shared from another app start an import here, also while a
-  /// day is open on top of this page; nothing on that page is closed.
+  /// Recordings shared from another app are added to the day open on top of
+  /// this page, as its next sessions; the day page says what was added.
+  /// Without an open day they start an import here.
   void _receive(List<String> paths) {
     if (!mounted) return;
-    final behind = ModalRoute.of(context)?.isCurrent == false;
-    final started = !_controller.isWorking;
-    _start(paths);
-    if (behind && started) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Importing the shared recordings. Go back to Import a day to see them.',
-          ),
-        ),
-      );
+    final day = _shownDay;
+    if (day != null) {
+      _addTo(day, paths);
+      return;
     }
+    final waiting = _waiting;
+    if (waiting != null) {
+      waiting.addAll(paths);
+      return;
+    }
+    final behind = ModalRoute.of(context)?.isCurrent == false;
+    // Also with a dialog or another page over this one: today's day is
+    // continued, and shown over them.
+    if (!_controller.isWorking && !_opening) {
+      unawaited(_continueToday(paths));
+      return;
+    }
+    if (_controller.isWorking) {
+      // Not refused: they follow the import running now.
+      (_afterImport ??= []).addAll(paths);
+      return;
+    }
+    _start(paths);
+    if (behind) _tellImportingBehind();
+  }
+
+  void _tellImportingBehind() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Importing the shared recordings. Go back to Import a day to see them.',
+        ),
+      ),
+    );
+  }
+
+  /// Adds shared [paths] to [day]; when the day is closed before they are
+  /// added, they are received again here, so none is dropped.
+  void _addTo(DayResultsController day, List<String> paths) {
+    unawaited(
+      day.addRecordings(paths).then((addition) {
+        if (addition.closed && mounted) _receive(paths);
+      }),
+    );
+  }
+
+  /// Shared recordings that arrived while a day was being opened; null when
+  /// none is.
+  List<String>? _waiting;
+
+  /// Shows a day the user opened or restored, with the recordings shared
+  /// while it was opened added to it.
+  Future<void> _showOpened(DayResultsController controller) {
+    final waiting = _waiting;
+    _waiting = null;
+    final shown = _show(controller);
+    if (waiting != null && waiting.isNotEmpty) {
+      _addTo(controller, waiting);
+    }
+    return shown;
+  }
+
+  /// Ends opening a day; recordings shared meanwhile that no day took are
+  /// imported here.
+  void _openingDone() {
+    final waiting = _waiting;
+    _waiting = null;
+    if (!mounted) return;
+    setState(() => _opening = false);
+    if (waiting != null && waiting.isNotEmpty) _receive(waiting);
+  }
+
+  /// Adds recordings shared while no day is shown to today's day, as the
+  /// driver does after each session even when the system closed the app in
+  /// between: the unsaved day kept for recovery, else the day saved last in
+  /// the app, when every recording started on its date. The day then opens
+  /// and says what was added. Otherwise the recordings start an import.
+  Future<void> _continueToday(List<String> paths) async {
+    final waiting = _waiting = [];
+    setState(() => _opening = true);
+    DayResultsController? today;
+    var snapshotLeft = true;
+    try {
+      (day: today, :snapshotLeft) = await _todayWith(paths);
+    } finally {
+      _waiting = null;
+      if (mounted) setState(() => _opening = false);
+    }
+    if (!mounted) {
+      today?.dispose();
+      return;
+    }
+    if (today == null) {
+      // Opening the imported day would replace an unsaved day kept for
+      // recovery: the import stays here, next to the offer to restore it.
+      _showWhenImported = !_controller.isWorking && !snapshotLeft;
+      final behind = ModalRoute.of(context)?.isCurrent == false;
+      final started = !_controller.isWorking;
+      // Shares imported here and not opened stay one day: a later share is
+      // imported together with them, not instead of them.
+      final all = [..._unopenedShares, ...paths, ...waiting];
+      // Until their day is shown (cleared then), also when it cannot open by
+      // itself because another page is on top.
+      _unopenedShares = all;
+      _start(all);
+      if (behind && started) _tellImportingBehind();
+      return;
+    }
+    final shown = _show(today);
+    if (waiting.isNotEmpty) _addTo(today, waiting);
+    await shown;
+  }
+
+  // Only a day worked on in the last day can be today's: older ones are not
+  // opened (reading all their recordings) just to be refused.
+  static bool _recent(DateTime time) =>
+      DateTime.now().difference(time) < const Duration(hours: 24);
+
+  /// The first day that takes [paths] as recordings of its date, with them
+  /// added; null when none does. [snapshotLeft] says an unsaved day kept for
+  /// recovery was not that day: it is left for the user to restore, so no
+  /// other day is opened, which would replace it.
+  Future<({DayResultsController? day, bool snapshotLeft})> _todayWith(
+    List<String> paths,
+  ) async {
+    final recovery = await queueRecovery(widget.recovery.load);
+    if (recovery != null) {
+      if (!_recent(recovery.timestamp)) return (day: null, snapshotLeft: true);
+      final day = await _added(paths, () async {
+        await widget.fileAccess.restore();
+        final day = await Isolate.run(_recoverJob(recovery));
+        return day.analysis == null
+            ? null
+            : DayResultsController.recovered(
+                day,
+                recovery,
+                recovery: widget.recovery,
+                appender: widget.appender,
+              );
+      });
+      return (day: day, snapshotLeft: day == null);
+    }
+    final day = await _added(paths, () async {
+      final saved = await widget.documents.savedDays();
+      if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
+        return null;
+      }
+      await widget.fileAccess.restore();
+      final day = await Isolate.run(_openJob(saved.first));
+      return day.analysis == null
+          ? null
+          : DayResultsController.opened(
+              day,
+              recovery: widget.recovery,
+              appender: widget.appender,
+            );
+    });
+    return (day: day, snapshotLeft: false);
+  }
+
+  /// The day [open] gives with [paths] added as recordings of its date;
+  /// null when it gives none or does not take them. A day not taken is
+  /// discarded as it was: its recovery snapshot is not written again.
+  Future<DayResultsController?> _added(
+    List<String> paths,
+    Future<DayResultsController?> Function() open,
+  ) async {
+    DayResultsController? day;
+    try {
+      day = await open();
+      if (day == null) return null;
+      final addition = await day.addRecordings(paths, sameDayOnly: true);
+      if (!addition.otherDay && addition.error.isEmpty) return day;
+    } on Exception catch (error) {
+      debugPrint('Today\'s day not continued: $error');
+    }
+    day?.discard();
+    return null;
   }
 
   void _start(List<String> paths) {
@@ -353,8 +619,11 @@ class _DayImportPageState extends State<DayImportPage> {
     }
   }
 
-  Future<void> _pickRecordings() async =>
-      _start(await widget.pickers.pickRecordings());
+  Future<void> _pickRecordings() async {
+    final paths = await widget.pickers.pickRecordings();
+    if (paths.isNotEmpty) _unopenedShares = const [];
+    _start(paths);
+  }
 
   // Built outside the state so the isolate's closure holds only the path.
   static OpenedDay Function() _openJob(String path) =>
@@ -398,6 +667,16 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _openDay() async {
     final path = await _chooseDocument();
     if (path == null || !mounted) return;
+    if (_opening || _shownDay != null) {
+      // A shared recording opened a day while the choice was made.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Another day is being opened. Try again after it.'),
+        ),
+      );
+      return;
+    }
+    _waiting = [];
     setState(() => _opening = true);
     try {
       await widget.fileAccess.restore();
@@ -413,11 +692,11 @@ class _DayImportPageState extends State<DayImportPage> {
         day = await Isolate.run(_relinkJob(path, folder, day.missing));
         if (!mounted) return;
       }
-      await _show(
-        DayResultsPage.opened(
-          day: day,
-          documents: widget.documents,
+      await _showOpened(
+        DayResultsController.opened(
+          day,
           recovery: widget.recovery,
+          appender: widget.appender,
         ),
       );
     } on Exception catch (error) {
@@ -427,13 +706,15 @@ class _DayImportPageState extends State<DayImportPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _opening = false);
+      _openingDone();
     }
   }
 
   Future<void> _pickFolder() async {
     final folder = await widget.pickers.pickFolder();
-    if (folder != null) _start([folder]);
+    if (folder == null) return;
+    _unopenedShares = const [];
+    _start([folder]);
   }
 
   @override
@@ -447,7 +728,7 @@ class _DayImportPageState extends State<DayImportPage> {
             color: !_dragging
                 ? Colors.transparent
                 : _controller.isWorking
-                ? Colors.amber
+                ? Theme.of(context).colorScheme.onSurfaceVariant
                 : Theme.of(context).colorScheme.primary,
           ),
         ),
@@ -537,7 +818,7 @@ class _DayImportPageState extends State<DayImportPage> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FilledButton.icon(
-            onPressed: enabled ? _pickRecordings : null,
+            onPressed: enabled && !_opening ? _pickRecordings : null,
             icon: const Icon(Icons.insert_drive_file_outlined),
             label: const Text('Choose recordings…'),
           ),
@@ -624,14 +905,7 @@ class _DayImportPageState extends State<DayImportPage> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                onPressed: () => _show(
-                  DayResultsPage(
-                    runs: runs,
-                    analysis: analysis,
-                    documents: widget.documents,
-                    recovery: widget.recovery,
-                  ),
-                ),
+                onPressed: () => _showImported(runs, analysis),
                 icon: const Icon(Icons.flag_outlined),
                 label: const Text('Show the day\'s results'),
               ),
