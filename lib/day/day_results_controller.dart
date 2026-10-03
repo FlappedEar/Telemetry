@@ -82,8 +82,10 @@ abstract interface class FusionTask {
 /// The reason of a run's fusion when aligning its new recording failed
 /// (the job stopped with an error): the recording stays saved, and the day
 /// opened again tries once more, as it fuses a VBO session's RCZ by itself.
-/// Other recordings paired in a review are kept beside the session instead
-/// (see [DayResultsController.save]).
+/// Other recordings paired in a review are not tried again: an RCZ
+/// session's VBO is kept beside it, and any other pair (two VBOs, say)
+/// stays in the file with the session but is not shown, as the day opened
+/// again does with them (see [DayResultsController.save]).
 const fusionFailedReason = 'Aligning failed.';
 
 /// What reading a session's other recording as its primary gave: its part
@@ -366,14 +368,32 @@ final class DayResultsController extends ChangeNotifier {
 
   /// Whether [recording], saved as [primary]'s source without a `fusion`
   /// decision, is aligned and fused by itself when the day opens again:
-  /// only a VBO session's RCZ (FET-57). Any other pair, which only a review
-  /// makes, is kept beside the session or left in the document.
+  /// only a VBO session's RCZ (FET-57). Of any other pair, which only a
+  /// review makes, the day opened again keeps an RCZ session's VBO beside
+  /// it ([_keptBesideWhenOpened]); anything else stays in the document with
+  /// the session and is not shown.
   static bool _fusedWhenOpened(
     TelemetryRunProposal primary,
     TelemetryRunProposal recording,
   ) =>
       primary.format == RecordingFormat.vbo &&
       recording.format == RecordingFormat.rcz;
+
+  /// Whether [recording], saved as [primary]'s source without a `fusion`
+  /// decision, is kept beside the session, not fused, when the day opens
+  /// again: an RCZ session's VBO (FET-57).
+  static bool _keptBesideWhenOpened(
+    TelemetryRunProposal primary,
+    TelemetryRunProposal recording,
+  ) =>
+      primary.format == RecordingFormat.rcz &&
+      recording.format == RecordingFormat.vbo;
+
+  /// Whether a save is waiting until a recording paired in a review is
+  /// lined up with its session (see [save]): the day is not left meanwhile,
+  /// or the file would not say how the pair is fused.
+  bool get savingWaitsForRecordings => _saveWaiting;
+  bool _saveWaiting = false;
 
   // Whether a recording paired in a review is still being aligned with a
   // session the day opened again would not fuse it with: saved now, the
@@ -678,9 +698,12 @@ final class DayResultsController extends ChangeNotifier {
     // Without a result (the job failed, or the run's recording is not the
     // one it was started for), a recording that was added is still saved
     // as the run's source. A VBO session's RCZ stays in
-    // [_pendingRecordings], so the day opened again tries once more; any
-    // other recording paired in a review is kept beside the session, not
-    // fused, as the day opened again shows it ("Check clock" tries again).
+    // [_pendingRecordings], so the day opened again tries once more. Any
+    // other pair, which only a review makes, is shown as the day opened
+    // again will show it, so the session and the file agree: an RCZ
+    // session's VBO is kept beside it, not fused ("Check clock" tries
+    // again); anything else (two VBOs, say) stays in [_pendingRecordings],
+    // saved with the session as its source, and is not shown.
     final named = _named(runId);
     final recording = _pendingRecordings[runId];
     if (result == null &&
@@ -699,11 +722,15 @@ final class DayResultsController extends ChangeNotifier {
           reason: fusionFailedReason,
         );
       } else {
-        _fusions[runId] = RunFusion.primaryOnly(
-          primary: primary,
-          alternative: recording,
-        );
-        _pendingRecordings.remove(runId);
+        if (_keptBesideWhenOpened(primary, recording)) {
+          _fusions[runId] = RunFusion.primaryOnly(
+            primary: primary,
+            alternative: recording,
+          );
+          _pendingRecordings.remove(runId);
+        } else {
+          _fusions.remove(runId);
+        }
         // A save made meanwhile left the day unsaved: saved again.
         _revision++;
         _dirty = true;
@@ -1290,7 +1317,18 @@ final class DayResultsController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
     try {
       // Taken at once otherwise: changes made from here on are not saved.
-      if (settle && _reviewedPairingPending) await _reviewedPairingsSettled();
+      // The page is not left while the save waits; a day closed meanwhile
+      // all the same (the app quitting) is written as it is, without the
+      // pair's fusion, rather than not at all.
+      if (settle && _reviewedPairingPending) {
+        _saveWaiting = true;
+        if (!_disposed) notifyListeners();
+        try {
+          await _reviewedPairingsSettled();
+        } finally {
+          _saveWaiting = false;
+        }
+      }
       final pairingPending = _reviewedPairingPending;
       final revision = _revision;
       final metadataNow = {..._metadataEdits};
@@ -1558,7 +1596,8 @@ final class DayResultsController extends ChangeNotifier {
   /// With [review] and [choices] (FET-58), the recordings are added as the
   /// user chose in [review] instead of the automatic grouping; nothing is
   /// added when the day or the recordings changed since
-  /// ([DayAddition.reviewChanged]).
+  /// ([DayAddition.reviewChanged]), or when [choices] are ones the review
+  /// does not accept ([DayAddition.choicesRefused]).
   Future<DayAddition> addRecordings(
     List<String> paths, {
     bool sameDayOnly = false,
@@ -1657,7 +1696,7 @@ final class DayResultsController extends ChangeNotifier {
             null) {
       // Choices the review would not have confirmed (the page checks them
       // the same way): nothing is added.
-      return const DayAddition(notes: [], reviewChanged: true);
+      return const DayAddition(notes: [], choicesRefused: true);
     }
     final names = {for (final named in _runs) named.run.id: named.name};
     final request = (
@@ -3072,7 +3111,13 @@ final class DayAddition {
     this.otherDay = false,
     this.closed = false,
     this.reviewChanged = false,
+    this.choicesRefused = false,
   });
+
+  /// Nothing was added: the choices it was asked with are ones the review
+  /// does not accept ([checkImportChoices]), such as every file skipped
+  /// (FET-58).
+  final bool choicesRefused;
 
   /// Nothing was added: the day or the recordings changed after the review
   /// they were added with (FET-58).
@@ -3111,6 +3156,7 @@ final class DayAddition {
     otherDay: otherDay,
     closed: closed,
     reviewChanged: reviewChanged,
+    choicesRefused: choicesRefused,
   );
 
   /// What was skipped, already in the day or failed.

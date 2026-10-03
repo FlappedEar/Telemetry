@@ -4182,6 +4182,14 @@
   "@reviewProblemNothing": {
     "description": "Why the import review cannot be confirmed: every file is skipped."
   },
+  "reviewChoicesRefused": "These choices cannot be added, so nothing was added. Review the recordings again.",
+  "@reviewChoicesRefused": {
+    "description": "Said when recordings were to be added to a day with choices the review does not accept (for example every file skipped)."
+  },
+  "waitUntilRecordingsSaved": "Wait until the recordings are lined up and the day is saved.",
+  "@waitUntilRecordingsSaved": {
+    "description": "Said when leaving a day while its save waits for two recordings paired in the review to be lined up."
+  },
   "reviewChanged": "The recordings changed after the review, so nothing was imported. Review them again.",
   "@reviewChanged": {
     "description": "An import or addition after a review found other recordings than the ones reviewed (a file changed or a folder has other files)."

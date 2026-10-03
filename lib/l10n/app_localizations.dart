@@ -4104,6 +4104,18 @@ abstract class AppLocalizations {
   /// **'Choose at least one file to import.'**
   String get reviewProblemNothing;
 
+  /// Said when recordings were to be added to a day with choices the review does not accept (for example every file skipped).
+  ///
+  /// In en, this message translates to:
+  /// **'These choices cannot be added, so nothing was added. Review the recordings again.'**
+  String get reviewChoicesRefused;
+
+  /// Said when leaving a day while its save waits for two recordings paired in the review to be lined up.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the recordings are lined up and the day is saved.'**
+  String get waitUntilRecordingsSaved;
+
   /// An import or addition after a review found other recordings than the ones reviewed (a file changed or a folder has other files).
   ///
   /// In en, this message translates to:

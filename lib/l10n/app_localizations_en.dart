@@ -2780,6 +2780,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewProblemNothing => 'Choose at least one file to import.';
 
   @override
+  String get reviewChoicesRefused =>
+      'These choices cannot be added, so nothing was added. Review the recordings again.';
+
+  @override
+  String get waitUntilRecordingsSaved =>
+      'Wait until the recordings are lined up and the day is saved.';
+
+  @override
   String get reviewChanged =>
       'The recordings changed after the review, so nothing was imported. Review them again.';
 

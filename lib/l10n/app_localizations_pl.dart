@@ -2839,6 +2839,14 @@ class AppLocalizationsPl extends AppLocalizations {
       'Wybierz co najmniej jeden plik do importu.';
 
   @override
+  String get reviewChoicesRefused =>
+      'Tych wyborów nie można dodać, więc niczego nie dodano. Przejrzyj nagrania ponownie.';
+
+  @override
+  String get waitUntilRecordingsSaved =>
+      'Poczekaj, aż nagrania zostaną dopasowane, a dzień zapisany.';
+
+  @override
   String get reviewChanged =>
       'Nagrania zmieniły się po przeglądzie, więc niczego nie zaimportowano. Przejrzyj je ponownie.';
 

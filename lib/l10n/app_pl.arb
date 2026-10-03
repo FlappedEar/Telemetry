@@ -659,6 +659,8 @@
   "reviewProblemTarget": "Plik należy do tej samej sesji co plik, który nie jest importowany jako osobna sesja.",
   "reviewProblemTooMany": "Sesja może mieć najwyżej jedno dodatkowe nagranie.",
   "reviewProblemNothing": "Wybierz co najmniej jeden plik do importu.",
+  "reviewChoicesRefused": "Tych wyborów nie można dodać, więc niczego nie dodano. Przejrzyj nagrania ponownie.",
+  "waitUntilRecordingsSaved": "Poczekaj, aż nagrania zostaną dopasowane, a dzień zapisany.",
   "reviewChanged": "Nagrania zmieniły się po przeglądzie, więc niczego nie zaimportowano. Przejrzyj je ponownie.",
   "reviewPreparing": "Przygotowywanie przeglądu…",
   "importBusy": "Najpierw dokończ bieżący import. Niczego nie zaimportowano."

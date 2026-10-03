@@ -177,6 +177,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final lines = [
       if (addition.reviewChanged)
         l10n.reviewChanged
+      else if (addition.choicesRefused)
+        l10n.reviewChoicesRefused
       else if (addition.error.isNotEmpty)
         l10n.additionError(addition.error)
       else if (added.isEmpty &&
@@ -844,12 +846,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, child) => PopScope(
-        canPop: !_controller.adding && !_controller.recordingsBusy,
+        canPop:
+            !_controller.adding &&
+            !_controller.recordingsBusy &&
+            !_controller.savingWaitsForRecordings,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
           _tell(
             _controller.adding
                 ? context.l10n.waitUntilSessionAdded
+                : _controller.savingWaitsForRecordings
+                ? context.l10n.waitUntilRecordingsSaved
                 : context.l10n.recordingsBusyLeave,
           );
         },

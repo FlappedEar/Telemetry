@@ -348,7 +348,8 @@ void main() {
           review: review,
           choices: choices,
         );
-        expect(addition.reviewChanged, isTrue, reason: '$choices');
+        expect(addition.choicesRefused, isTrue, reason: '$choices');
+        expect(addition.reviewChanged, isFalse, reason: '$choices');
       }
       expect(appender.requests, isEmpty);
       expect(day.runs.map((named) => named.run.id), [session]);
@@ -435,6 +436,211 @@ void main() {
         expect(p.basename(reopened.alternative!.sourcePath), 'drive.vbo');
       },
     );
+  });
+
+  group('saving a day whose recordings are being lined up', () {
+    late _HeldFusions held;
+    late List<Map<String, Object?>> written;
+    setUp(() {
+      held = _HeldFusions();
+      written = [];
+    });
+
+    /// The single run of [document].
+    Map<String, Object?> runOf(Map<String, Object?> document) =>
+        ((document['event']! as Map)['runs']! as List).single
+            as Map<String, Object?>;
+
+    int sources(Map<String, Object?> document) =>
+        ((runOf(document)['sources']! as Map)['telemetry']! as List).length;
+
+    DayResultsController importDay(
+      ImportChoices Function(Map<String, String>) choose,
+    ) {
+      final request = (paths: [vbo, rcz, other], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      final outcome = runDayImport(request, choices: choose(id));
+      return DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        appender: _Appender(),
+        preparer: _Preparer(),
+        fusionRunner: held.call,
+        writer: (path, document) async => written.add(document),
+      );
+    }
+
+    test('a VBO session\'s RCZ is saved at once, without waiting, and '
+        'fused after', () async {
+      final day = importDay(
+        (id) => {
+          id['drive.vbo']!: id['drive.vbo']!,
+          id['drive.rcz']!: id['drive.vbo']!,
+          id['other.vbo']!: skipRecording,
+        },
+      );
+      addTearDown(day.dispose);
+      await day.save('day.fetproject');
+      expect(written, hasLength(1));
+      expect(runOf(written.single).containsKey('fusion'), isFalse);
+      expect(sources(written.single), 2);
+      expect(day.dirty, isFalse);
+      expect(day.savingWaitsForRecordings, isFalse);
+      held.tasks.single.run();
+      await day.fusionsSettled;
+      // Fused now: a change, saved with the day the next time.
+      expect(day.dirty, isTrue);
+    });
+
+    test(
+      'two saves asked for meanwhile both wait and record the fusion',
+      () async {
+        final day = importDay(
+          (id) => {
+            id['drive.rcz']!: id['drive.rcz']!,
+            id['drive.vbo']!: id['drive.rcz']!,
+            id['other.vbo']!: skipRecording,
+          },
+        );
+        addTearDown(day.dispose);
+        final first = day.save('day.fetproject');
+        final second = day.save('copy.fetproject');
+        await pumpEventQueue();
+        expect(written, isEmpty);
+        expect(day.savingWaitsForRecordings, isTrue);
+        held.tasks.single.run();
+        await Future.wait([first, second]);
+        expect(written, hasLength(2));
+        for (final document in written) {
+          expect(runOf(document)['fusion'], isA<Map<String, Object?>>());
+        }
+        expect(day.documentPath, 'copy.fetproject');
+        expect(day.dirty, isFalse);
+        expect(day.savingWaitsForRecordings, isFalse);
+      },
+    );
+
+    test('two VBOs whose lining up fails stay in the file, not shown, as '
+        'the day opened again shows them', () async {
+      final request = (paths: [vbo, other], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      final runId = id['drive.vbo']!;
+      final outcome = runDayImport(
+        request,
+        choices: {runId: runId, id['other.vbo']!: runId},
+      );
+      final day = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        fusionRunner: held.call,
+      );
+      addTearDown(day.dispose);
+      final path = p.join(directory.path, 'day.fetproject');
+      final saving = day.save(path);
+      await pumpEventQueue();
+      held.tasks.single.fail();
+      await saving;
+      expect(day.fusion(runId), isNull);
+      expect(day.fusionPending(runId), isNull);
+      expect(day.dirty, isFalse);
+      final saved = readDayDocument(path);
+      expect(sources(saved), 2);
+      expect(runOf(saved).containsKey('fusion'), isFalse);
+
+      final opened = DayResultsController.opened(openDay(path));
+      addTearDown(opened.dispose);
+      await opened.fusionsSettled;
+      expect(opened.fusion(runId), isNull);
+      expect(opened.fusionPending(runId), isNull);
+    });
+
+    test('the save right after an addition writes at once, and again once '
+        'the recordings are lined up', () async {
+      final first = runDayImport((paths: [rcz], includeSubfolders: false));
+      final day = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _Appender(),
+        preparer: _Preparer(),
+        fusionRunner: held.call,
+        writer: (path, document) async => written.add(document),
+      );
+      addTearDown(day.dispose);
+      final sessionId = day.runs.single.run.id;
+      await day.save('day.fetproject');
+      expect(written, hasLength(1));
+
+      final review = (await day.reviewAddition([vbo]))!;
+      final id = ids(review.plan!);
+      final addition = await day.addRecordings(
+        [vbo],
+        review: review,
+        choices: {id['drive.vbo']!: sessionId},
+      );
+      expect(addition.combined, ['Session 1']);
+      expect(addition.savedTo, 'day.fetproject');
+      // Written without waiting, the VBO with its session; still unsaved.
+      expect(written, hasLength(2));
+      expect(sources(written.last), 2);
+      expect(runOf(written.last).containsKey('fusion'), isFalse);
+      expect(day.dirty, isTrue);
+      expect(day.fusionPending(sessionId), 'VBO');
+
+      held.tasks.single.run();
+      await day.fusionsSettled;
+      expect(written, hasLength(3));
+      expect(runOf(written.last)['fusion'], isA<Map<String, Object?>>());
+      expect(day.dirty, isFalse);
+    });
+
+    testWidgets('the day is not left while a save waits', (tester) async {
+      final day = importDay(
+        (id) => {
+          id['drive.rcz']!: id['drive.rcz']!,
+          id['drive.vbo']!: id['drive.rcz']!,
+          id['other.vbo']!: skipRecording,
+        },
+      );
+      await tester.binding.setSurfaceSize(const Size(400, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        const TelemetryApp(home: Scaffold(body: Text('Import a day'))),
+      );
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                DayResultsPage.controller(controller: day, pickers: _Pickers()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final saving = day.save('day.fetproject');
+      await tester.pump();
+      expect(day.savingWaitsForRecordings, isTrue);
+      await navigator.maybePop();
+      await tester.pump();
+      expect(
+        find.text(
+          'Wait until the recordings are lined up and the day is saved.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Import a day'), findsNothing);
+      expect(written, isEmpty);
+
+      held.tasks.single.run();
+      await tester.pump();
+      await saving;
+      expect(written, hasLength(1));
+      expect(day.savingWaitsForRecordings, isFalse);
+      await navigator.maybePop();
+      await tester.pumpAndSettle();
+      expect(find.text('Import a day'), findsOneWidget);
+    });
   });
 
   group('the review page', () {
