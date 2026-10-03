@@ -199,6 +199,55 @@ void main() {
     expect(find.text('speed mph'), findsOneWidget);
   });
 
+  testWidgets('settings open the licences with the app and map credits', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open-source licences'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LicensePage), findsOneWidget);
+    expect(find.textContaining('Apache License 2.0'), findsOneWidget);
+    expect(
+      find.textContaining('© OpenStreetMap contributors (ODbL)'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('© MapTiler'), findsOneWidget);
+  });
+
+  testWidgets('the licences entry is translated', (tester) async {
+    await pumpApp(tester, locale: const Locale('pl'));
+    await tester.tap(find.byTooltip('Ustawienia'));
+    await tester.pumpAndSettle();
+    expect(find.text('O aplikacji'), findsOneWidget);
+    await tester.tap(find.text('Licencje open source'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('współtwórcy OpenStreetMap'), findsOneWidget);
+  });
+
+  testWidgets('the settings dialog fits a small phone held sideways', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(740, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    declaredSpeedUnits = const ['km/h', ''];
+    await pumpApp(tester);
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.text('Open-source licences'),
+      50,
+      scrollable: find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('Open-source licences').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('the settings dialog counts recordings without a unit', (
     tester,
   ) async {

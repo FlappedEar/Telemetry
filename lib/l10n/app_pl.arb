@@ -29,5 +29,8 @@
   "settingsSomeUnlabelled": "{count, plural, =1{1 z jego nagrań nie podaje jednostki prędkości.} few{{count} z jego nagrań nie podają jednostki prędkości.} other{{count} z jego nagrań nie podaje jednostki prędkości.}}",
   "close": "Zamknij",
   "cancel": "Anuluj",
-  "save": "Zapisz"
+  "save": "Zapisz",
+  "settingsAbout": "O aplikacji",
+  "settingsLicences": "Licencje open source",
+  "licencesLegalese": "FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler."
 }

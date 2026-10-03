@@ -171,5 +171,17 @@
   "save": "Save",
   "@save": {
     "description": "Button that keeps a dialog's changes."
+  },
+  "settingsAbout": "About",
+  "@settingsAbout": {
+    "description": "Heading of the Settings dialog's section about the app."
+  },
+  "settingsLicences": "Open-source licences",
+  "@settingsLicences": {
+    "description": "Button in Settings that opens the licences of the app and the software it uses."
+  },
+  "licencesLegalese": "FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.",
+  "@licencesLegalese": {
+    "description": "Shown at the top of the licences page: the app's own licence and the map credits. Keep 'Apache License 2.0', 'OpenStreetMap', 'ODbL' and 'MapTiler' as written."
   }
 }

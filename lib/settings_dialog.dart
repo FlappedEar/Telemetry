@@ -18,7 +18,8 @@ class SettingsButton extends StatelessWidget {
   );
 }
 
-/// The app's settings: the unit assumed for unlabelled speeds.
+/// The app's settings: the unit assumed for unlabelled speeds, and the
+/// licences of the app and the software it uses.
 class SettingsDialog extends StatelessWidget {
   const SettingsDialog({super.key});
 
@@ -35,53 +36,72 @@ class SettingsDialog extends StatelessWidget {
       title: Text(l10n.settings),
       content: ValueListenableBuilder(
         valueListenable: speedUnitSetting,
-        builder: (context, setting, _) => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.settingsSpeedUnitHeading,
-              style: theme.textTheme.titleSmall,
-            ),
-            const SizedBox(height: 4),
-            Text(l10n.settingsSpeedUnitHelp, style: theme.textTheme.bodySmall),
-            const SizedBox(height: 8),
-            SegmentedButton<SpeedUnitSetting>(
-              key: const ValueKey('speedUnitSetting'),
-              showSelectedIcon: false,
-              segments: [
-                for (final value in SpeedUnitSetting.values)
-                  ButtonSegment(
-                    value: value,
-                    label: Text(
-                      value == SpeedUnitSetting.automatic
-                          ? l10n.speedUnitNone
-                          : value.label,
+        builder: (context, setting, _) => SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.settingsSpeedUnitHeading,
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.settingsSpeedUnitHelp,
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<SpeedUnitSetting>(
+                key: const ValueKey('speedUnitSetting'),
+                showSelectedIcon: false,
+                segments: [
+                  for (final value in SpeedUnitSetting.values)
+                    ButtonSegment(
+                      value: value,
+                      label: Text(
+                        value == SpeedUnitSetting.automatic
+                            ? l10n.speedUnitNone
+                            : value.label,
+                      ),
                     ),
-                  ),
-              ],
-              selected: {setting},
-              onSelectionChanged: (choice) =>
-                  speedUnitSetting.value = choice.first,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              key: const ValueKey('speedUnitDetected'),
-              declaredSpeedUnits.isEmpty
-                  ? l10n.settingsNoDayOpen
-                  : [
-                      if (declared.isNotEmpty)
-                        l10n.settingsDeclaredUnits(
-                          declared.join(l10n.unitsAnd),
-                        ),
-                      if (unlabelled > 0)
-                        unlabelled == declaredSpeedUnits.length
-                            ? l10n.settingsAllUnlabelled
-                            : l10n.settingsSomeUnlabelled(unlabelled),
-                    ].join(' '),
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+                ],
+                selected: {setting},
+                onSelectionChanged: (choice) =>
+                    speedUnitSetting.value = choice.first,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                key: const ValueKey('speedUnitDetected'),
+                declaredSpeedUnits.isEmpty
+                    ? l10n.settingsNoDayOpen
+                    : [
+                        if (declared.isNotEmpty)
+                          l10n.settingsDeclaredUnits(
+                            declared.join(l10n.unitsAnd),
+                          ),
+                        if (unlabelled > 0)
+                          unlabelled == declaredSpeedUnits.length
+                              ? l10n.settingsAllUnlabelled
+                              : l10n.settingsSomeUnlabelled(unlabelled),
+                      ].join(' '),
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.settingsAbout,
+                style: theme.textTheme.titleSmall,
+              ),
+              TextButton(
+                key: const ValueKey('openLicences'),
+                onPressed: () => showLicensePage(
+                  context: context,
+                  applicationName: context.l10n.appTitle,
+                  applicationLegalese: context.l10n.licencesLegalese,
+                ),
+                child: Text(context.l10n.settingsLicences),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [

@@ -125,4 +125,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get save => 'Save';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsLicences => 'Open-source licences';
+
+  @override
+  String get licencesLegalese =>
+      'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.';
 }
