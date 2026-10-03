@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/app_diagnostics.dart';
 import 'recovery_store.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
@@ -59,7 +60,9 @@ final class DayResultsController extends ChangeNotifier {
     TheoreticalBestRunner? theoreticalBestRunner,
     ChannelSummariesRunner? channelSummariesRunner,
     bool changed = false,
+    AppDiagnostics? diagnostics,
   }) : runs = List.unmodifiable(runs),
+       diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
            channelSummariesRunner ?? defaultChannelSummariesRunner,
        _theoreticalBestRunner =
@@ -122,6 +125,9 @@ final class DayResultsController extends ChangeNotifier {
        );
 
   final List<NamedRun> runs;
+
+  /// Where background calculation times go.
+  final AppDiagnostics diagnostics;
   DayAnalysis _analysis;
   String? _groupId;
 
@@ -487,10 +493,12 @@ final class DayResultsController extends ChangeNotifier {
     final documentRuns = _documentRuns;
     _theoreticalKey = decisionsKey;
     DayTheoreticalBest result;
+    final clock = Stopwatch()..start();
     try {
       result = await _theoreticalBestRunner(
         _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
       );
+      diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
     } on Exception catch (error) {
       result = DayTheoreticalBest(
         groupId: _analysis.chosenGroupId ?? '',
@@ -582,12 +590,14 @@ final class DayResultsController extends ChangeNotifier {
     _channelSummariesLoading = true;
     notifyListeners();
     DayChannelSummaries result;
+    final clock = Stopwatch()..start();
     try {
       result = await _channelSummariesRunner(
         _channelSummariesJob(_analysis.rows, {
           for (final named in runs) named.run.id: named.run.telemetry,
         }),
       );
+      diagnostics.recordStep(DiagnosticSteps.channelSummaries, clock.elapsed);
     } on Exception catch (error) {
       result = DayChannelSummaries(error: '$error');
     }

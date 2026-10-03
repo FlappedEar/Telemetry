@@ -13,6 +13,7 @@ import '../day/day_results_controller.dart';
 import '../day/day_results_page.dart';
 import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
+import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
@@ -460,7 +461,10 @@ class _DayImportPageState extends State<DayImportPage> {
       ),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Import a day')),
+      appBar: AppBar(
+        title: const Text('Import a day'),
+        actions: const [DiagnosticsMenu()],
+      ),
       body: !_acceptsDrops
           ? content
           : DropTarget(
