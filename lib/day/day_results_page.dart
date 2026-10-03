@@ -5,6 +5,8 @@ import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../import/day_import_page.dart'
+    show PlatformRecordingPickers, RecordingPickers;
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -31,6 +33,7 @@ class DayResultsPage extends StatefulWidget {
     required List<NamedRun> runs,
     required DayAnalysis analysis,
     this.documents = const PlatformDocumentPickers(),
+    this.pickers = const PlatformRecordingPickers(),
     this.recovery,
   }) : _create = (() => DayResultsController(
          runs: runs,
@@ -43,6 +46,7 @@ class DayResultsPage extends StatefulWidget {
     super.key,
     required OpenedDay day,
     this.documents = const PlatformDocumentPickers(),
+    this.pickers = const PlatformRecordingPickers(),
     this.recovery,
   }) : _create = (() => DayResultsController.opened(day, recovery: recovery));
 
@@ -51,11 +55,15 @@ class DayResultsPage extends StatefulWidget {
     super.key,
     required DayResultsController controller,
     this.documents = const PlatformDocumentPickers(),
+    this.pickers = const PlatformRecordingPickers(),
     this.recovery,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
   final DocumentPickers documents;
+
+  /// Chooses recordings to add to the day.
+  final RecordingPickers pickers;
 
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
@@ -73,10 +81,48 @@ class _DayResultsPageState extends State<DayResultsPage> {
   LapPath? _mapPath;
   (Offset, Offset)? _mapGate;
 
+  DayAddition? _reported;
+
+  @override
+  void initState() {
+    super.initState();
+    _reported = _controller.lastAddition;
+    _controller.addListener(_reportAddition);
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_reportAddition);
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Says what the last addition of recordings did, from this page or a
+  /// recording shared to the app while the day is open.
+  void _reportAddition() {
+    final addition = _controller.lastAddition;
+    if (addition == null || identical(addition, _reported) || !mounted) return;
+    _reported = addition;
+    final added = addition.added;
+    final lines = [
+      if (addition.error.isNotEmpty)
+        addition.error
+      else if (added.isEmpty)
+        'Nothing was added.'
+      else
+        '${added.join(', ')} added to the day.',
+      if (addition.savedTo != null)
+        'Saved as ${p.basename(addition.savedTo!)}.',
+      if (addition.saveError.isNotEmpty) 'Not saved: ${addition.saveError}',
+      ...addition.notes,
+    ];
+    _tell(lines.join('\n'));
+  }
+
+  Future<void> _addRecordings() async {
+    final paths = await widget.pickers.pickRecordings();
+    if (paths.isEmpty || !mounted) return;
+    await _controller.addRecordings(paths);
   }
 
   void _open(DayLapRow row) => Navigator.of(context).push(
@@ -243,6 +289,52 @@ class _DayResultsPageState extends State<DayResultsPage> {
     builder: (context, constraints) => _page(context, constraints.maxWidth),
   );
 
+  Widget _body(BuildContext context, bool wide, double mapHeight) {
+    final summary = _summary(context, wide, mapHeight);
+    final laps = _lapList(context);
+    if (!wide) {
+      return TabBarView(
+        children: [
+          _KeepAlive(
+            child: ListView(
+              key: const ValueKey('dayResultsSummary'),
+              padding: const EdgeInsets.all(16),
+              children: summary,
+            ),
+          ),
+          _KeepAlive(
+            child: ListView(
+              key: const ValueKey('dayResultsLaps'),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              children: laps,
+            ),
+          ),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 5,
+          child: ListView(
+            key: const ValueKey('dayResultsSummary'),
+            padding: const EdgeInsets.all(16),
+            children: summary,
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: ListView(
+            key: const ValueKey('dayResultsLaps'),
+            padding: const EdgeInsets.all(16),
+            children: laps,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _page(BuildContext context, double width) {
     final wide = width >= _twoPaneWidth;
     // The trace keeps a similar shape from a small phone to a tablet in
@@ -267,6 +359,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
               onPressed: _controller.saving || !_controller.dirty
                   ? null
                   : () => _save(),
+            ),
+          ),
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) => IconButton(
+              key: const ValueKey('addRecordings'),
+              tooltip: 'Add recordings',
+              icon: const Icon(Icons.playlist_add),
+              onPressed: _controller.adding || _controller.saving
+                  ? null
+                  : _addRecordings,
             ),
           ),
           IconButton(
@@ -296,51 +399,16 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       body: ListenableBuilder(
         listenable: _controller,
-        builder: (context, _) {
-          final summary = _summary(context, wide, mapHeight);
-          final laps = _lapList(context);
-          if (!wide) {
-            return TabBarView(
-              children: [
-                _KeepAlive(
-                  child: ListView(
-                    key: const ValueKey('dayResultsSummary'),
-                    padding: const EdgeInsets.all(16),
-                    children: summary,
-                  ),
-                ),
-                _KeepAlive(
-                  child: ListView(
-                    key: const ValueKey('dayResultsLaps'),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    children: laps,
-                  ),
-                ),
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 5,
-                child: ListView(
-                  key: const ValueKey('dayResultsSummary'),
-                  padding: const EdgeInsets.all(16),
-                  children: summary,
-                ),
+        builder: (context, _) => Column(
+          children: [
+            if (_controller.adding)
+              const LinearProgressIndicator(
+                key: ValueKey('addingRecordings'),
+                semanticsLabel: 'Adding recordings',
               ),
-              Expanded(
-                flex: 4,
-                child: ListView(
-                  key: const ValueKey('dayResultsLaps'),
-                  padding: const EdgeInsets.all(16),
-                  children: laps,
-                ),
-              ),
-            ],
-          );
-        },
+            Expanded(child: _body(context, wide, mapHeight)),
+          ],
+        ),
       ),
     );
     return wide ? scaffold : DefaultTabController(length: 2, child: scaffold);

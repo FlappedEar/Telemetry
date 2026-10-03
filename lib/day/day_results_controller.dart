@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../import/import_runner.dart';
 import 'recovery_store.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
@@ -58,8 +59,10 @@ final class DayResultsController extends ChangeNotifier {
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
     ChannelSummariesRunner? channelSummariesRunner,
+    DayAppender? appender,
     bool changed = false,
-  }) : runs = List.unmodifiable(runs),
+  }) : _runs = [...runs],
+       _appender = appender ?? const IsolateDayAppender(),
        _channelSummariesRunner =
            channelSummariesRunner ?? defaultChannelSummariesRunner,
        _theoreticalBestRunner =
@@ -83,7 +86,9 @@ final class DayResultsController extends ChangeNotifier {
     OpenedDay day, {
     DocumentWriter? writer,
     RecoveryStore? recovery,
+    DayAppender? appender,
   }) : this(
+         appender: appender,
          runs: day.runs,
          analysis: day.analysis!,
          eventId: day.eventId,
@@ -104,7 +109,9 @@ final class DayResultsController extends ChangeNotifier {
     DayRecovery snapshot, {
     DocumentWriter? writer,
     RecoveryStore? recovery,
+    DayAppender? appender,
   }) : this(
+         appender: appender,
          runs: day.runs,
          analysis: day.analysis!,
          eventId: day.eventId,
@@ -121,7 +128,10 @@ final class DayResultsController extends ChangeNotifier {
          recovered: true,
        );
 
-  final List<NamedRun> runs;
+  final List<NamedRun> _runs;
+
+  /// The day's runs whose recordings were read, in the order added.
+  List<NamedRun> get runs => List.unmodifiable(_runs);
   DayAnalysis _analysis;
   String? _groupId;
 
@@ -181,6 +191,7 @@ final class DayResultsController extends ChangeNotifier {
   Future<void> save(String path) async {
     if (_saving) throw const FetprojectError('A save is already running.');
     _saving = true;
+    final done = _saveDone = Completer<void>();
     notifyListeners();
     try {
       final document = dayDocument(
@@ -208,9 +219,127 @@ final class DayResultsController extends ChangeNotifier {
       _enqueueRecovery(() => recovery?.clear());
     } finally {
       _saving = false;
+      done.complete();
       notifyListeners();
     }
   }
+
+  // Completes when the running save has finished.
+  Completer<void>? _saveDone;
+
+  final DayAppender _appender;
+  DayAppendJob? _appendJob;
+
+  /// Whether recordings are being added to the day, or wait to be.
+  bool get adding => _waitingAdditions > 0;
+  int _waitingAdditions = 0;
+  // Completes when the last addition asked for has finished; null when
+  // none has been asked for.
+  Future<void>? _additions;
+
+  /// Adds the recordings at [paths] that are not in the day yet as its next
+  /// sessions. Only they are read; the day is grouped and ranked again with
+  /// the user's layouts, exclusions and chosen group, and a day that has
+  /// been saved is saved again where it was. Additions run one after
+  /// another, in the order asked.
+  Future<DayAddition> addRecordings(List<String> paths) async {
+    if (paths.isEmpty || _disposed) return const DayAddition(notes: []);
+    ++_waitingAdditions;
+    notifyListeners();
+    final previous = _additions;
+    final done = Completer<void>();
+    _additions = done.future;
+    DayAddition addition;
+    try {
+      if (previous != null) await previous;
+      addition = _disposed
+          ? const DayAddition(notes: [], error: 'The day was closed.')
+          : await _add(paths);
+    } finally {
+      --_waitingAdditions;
+      done.complete();
+    }
+    if (!_disposed) {
+      _lastAddition = addition;
+      notifyListeners();
+    }
+    return addition;
+  }
+
+  Future<DayAddition> _add(List<String> paths) async {
+    final job = _appender.start((
+      paths: List.of(paths),
+      runIds: {
+        for (final named in _runs) named.run.id,
+        for (final recording in missing) recording.runId,
+      },
+      runCount: _runs.length + missing.length,
+      rowCount: _analysis.rows.length,
+    ), (_, _) {});
+    _appendJob = job;
+    DayAppendOutcome outcome;
+    try {
+      outcome = await job.result;
+    } on OperationCancelled {
+      return const DayAddition(notes: [], error: 'Adding was cancelled.');
+    } on Object catch (error) {
+      return DayAddition(notes: const [], error: 'Nothing was added: $error');
+    } finally {
+      if (identical(_appendJob, job)) _appendJob = null;
+      if (!_disposed) notifyListeners();
+    }
+    final part = outcome.part;
+    if (_disposed || part == null || outcome.runs.isEmpty) {
+      return DayAddition(notes: outcome.notes, error: outcome.error);
+    }
+    try {
+      _analysis = extendDay(
+        _analysis,
+        part,
+        manualTracks: _analysis.manualTracks,
+        exclusions: _exclusions,
+        preferredGroupId: _groupChosen ? _groupId : null,
+      );
+    } on Exception catch (error) {
+      return DayAddition(
+        notes: outcome.notes,
+        error: 'Nothing was added: $error',
+      );
+    }
+    _runs.addAll(outcome.runs);
+    if (!_groupChosen) _groupId = _analysis.chosenGroupId;
+    _dirty = true;
+    _resetTheoreticalBest();
+    _resetChannelSummaries();
+    _scheduleRecovery();
+    notifyListeners();
+    var saveError = '';
+    final path = _documentPath;
+    if (path != null) {
+      try {
+        while (_saving) {
+          await _saveDone?.future;
+        }
+        await save(path);
+      } on Exception catch (error) {
+        saveError = '$error';
+      }
+    }
+    return DayAddition(
+      added: [for (final named in outcome.runs) named.name],
+      notes: outcome.notes,
+      savedTo: path != null && saveError.isEmpty ? path : null,
+      saveError: saveError,
+    );
+  }
+
+  /// The last addition that finished, for the page to report; null before
+  /// the first.
+  DayAddition? get lastAddition => _lastAddition;
+  DayAddition? _lastAddition;
+
+  /// Stops adding recordings; nothing from it is kept.
+  void cancelAdding() => _appendJob?.cancel();
 
   DayAnalysis get analysis => _analysis;
   DayRanking? get ranking => _analysis.ranking;
@@ -563,6 +692,13 @@ final class DayResultsController extends ChangeNotifier {
   final ChannelSummariesRunner _channelSummariesRunner;
   DayChannelSummaries? _channelSummaries;
   bool _channelSummariesLoading = false;
+  int _channelSummariesGeneration = 0;
+
+  void _resetChannelSummaries() {
+    _channelSummaries = null;
+    _channelSummariesLoading = false;
+    ++_channelSummariesGeneration;
+  }
 
   /// The recorded temperatures and heart rate of every run and section;
   /// null until [requestChannelSummaries] has finished. They do not depend
@@ -579,6 +715,7 @@ final class DayResultsController extends ChangeNotifier {
   /// Summarizes the recorded channels of every run in the background.
   Future<void> requestChannelSummaries() async {
     if (_channelSummaries != null || _channelSummariesLoading) return;
+    final generation = ++_channelSummariesGeneration;
     _channelSummariesLoading = true;
     notifyListeners();
     DayChannelSummaries result;
@@ -591,7 +728,7 @@ final class DayResultsController extends ChangeNotifier {
     } on Exception catch (error) {
       result = DayChannelSummaries(error: '$error');
     }
-    if (_disposed) return;
+    if (_disposed || generation != _channelSummariesGeneration) return;
     _channelSummaries = result;
     _channelSummariesLoading = false;
     notifyListeners();
@@ -813,6 +950,7 @@ final class DayResultsController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     // Changes made just before leaving the day are still kept.
+    _appendJob?.cancel();
     unawaited(flushRecovery());
     super.dispose();
   }
@@ -864,4 +1002,29 @@ final class DayCornerAnalyzer {
 
   /// The laps share no segments, but the theoretical best's would apply.
   final bool theoreticalBestAvailable;
+}
+
+/// What adding recordings to a day did.
+final class DayAddition {
+  const DayAddition({
+    this.added = const [],
+    required this.notes,
+    this.error = '',
+    this.savedTo,
+    this.saveError = '',
+  });
+
+  /// The new sessions' names, "Session 4".
+  final List<String> added;
+
+  /// What was skipped, already in the day or failed.
+  final List<String> notes;
+
+  /// Why nothing was added; empty otherwise.
+  final String error;
+
+  /// Where the day was saved again with the new sessions; null when it has
+  /// not been saved yet, or the save failed ([saveError]).
+  final String? savedTo;
+  final String saveError;
 }

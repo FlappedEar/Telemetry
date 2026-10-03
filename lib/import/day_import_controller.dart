@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'import_runner.dart';
@@ -116,38 +115,15 @@ final class DayImportController extends ChangeNotifier {
 }
 
 DayImportState _finished(DayImportOutcome outcome) {
-  final notes = [...outcome.scan.notes];
   final plan = outcome.plan;
   if (plan == null) {
-    return DayImportFailed(message: outcome.scan.error, notes: notes);
+    return DayImportFailed(
+      message: outcome.scan.error,
+      notes: outcome.scan.notes,
+    );
   }
-  final names = {
-    for (final run in plan.runs) run.id: p.basename(run.sourcePath),
-  };
-  for (final file in plan.files) {
-    final name = p.basename(file.requestedPath);
-    switch (file.status) {
-      case TelemetryImportFileStatus.ready:
-        break;
-      case TelemetryImportFileStatus.duplicate:
-        notes.add(
-          '$name: same content as ${names[file.runId]}; imported once.',
-        );
-      case TelemetryImportFileStatus.error:
-        notes.add('$name: ${file.message}');
-    }
-  }
-  final groups = automaticVboPrimaries(plan);
+  final notes = importPlanNotes(outcome.scan, plan);
   final primaries = primaryRuns(plan);
-  for (final run in plan.runs) {
-    final primary = groups[run.id];
-    if (primary != null && primary != run.id) {
-      notes.add(
-        '${names[run.id]}: the same drive as ${names[primary]}; kept as its alternative '
-        'source, channels are not combined.',
-      );
-    }
-  }
   if (primaries.isEmpty) {
     return DayImportFailed(
       message: 'No recording could be imported.',

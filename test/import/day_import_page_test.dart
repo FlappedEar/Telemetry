@@ -48,6 +48,23 @@ final class _FakeImporter implements DayImporter {
   }
 }
 
+/// Prepares additions to a day on the test's own thread.
+final class _SyncAppender implements DayAppender {
+  @override
+  DayAppendJob start(DayAppendRequest request, void Function(int, int) _) =>
+      _SyncAppendJob(runDayAppend(request));
+}
+
+final class _SyncAppendJob implements DayAppendJob {
+  _SyncAppendJob(DayAppendOutcome outcome) : result = Future.value(outcome);
+
+  @override
+  final Future<DayAppendOutcome> result;
+
+  @override
+  void cancel() {}
+}
+
 final class _FakeIncoming implements IncomingRecordings {
   final controller = StreamController<List<String>>.broadcast();
 
@@ -224,6 +241,42 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a share while a day is shown adds it to that day', (
+    tester,
+  ) async {
+    final incoming = _FakeIncoming();
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    final shared = write('shared.vbo', _datedVbo(hour: 11, speed: 80));
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayImportPage(
+          controller: controller,
+          pickers: pickers,
+          incoming: incoming,
+          appender: _SyncAppender(),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Choose recordings…'));
+    await tester.pump();
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show the day\'s results'));
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      incoming.controller.add([shared]);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+    // No second import: the day itself took the recording.
+    expect(importer.jobs, hasLength(1));
+    expect(find.text('Session 2 added to the day.'), findsOneWidget);
+    expect(find.text('Day results'), findsOneWidget);
   });
 
   test('iOS picks by type identifier, desktops by extension', () {

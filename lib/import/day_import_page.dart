@@ -16,6 +16,7 @@ import '../day/recovery_store.dart';
 import '../format.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
+import 'import_runner.dart' show DayAppender, IsolateDayAppender;
 import 'incoming_recordings.dart';
 
 export '../format.dart' show displayTime;
@@ -144,7 +145,11 @@ class DayImportPage extends StatefulWidget {
     this.picksFolders,
     this.incoming,
     this.fileAccess = const PlatformFileAccess(),
+    this.appender = const IsolateDayAppender(),
   });
+
+  /// Prepares recordings added to an open day.
+  final DayAppender appender;
 
   final DocumentPickers documents;
 
@@ -203,10 +208,28 @@ class _DayImportPageState extends State<DayImportPage> {
     if (mounted) setState(() => _recovered = recovered);
   }
 
-  /// Shows [page], then checks again for an unsaved day left behind.
-  Future<void> _show(Widget page) async {
-    await Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => page));
+  /// The day shown on top of this page, which recordings shared to the app
+  /// are added to; null while none is.
+  DayResultsController? _shownDay;
+
+  /// Shows the day of [controller], then checks again for an unsaved day
+  /// left behind.
+  Future<void> _show(DayResultsController controller) async {
+    _shownDay = controller;
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => DayResultsPage.controller(
+            controller: controller,
+            documents: widget.documents,
+            pickers: widget.pickers,
+            recovery: widget.recovery,
+          ),
+        ),
+      );
+    } finally {
+      if (identical(_shownDay, controller)) _shownDay = null;
+    }
     await _checkRecovery();
   }
 
@@ -225,14 +248,11 @@ class _DayImportPageState extends State<DayImportPage> {
         return;
       }
       await _show(
-        DayResultsPage.controller(
-          controller: DayResultsController.recovered(
-            day,
-            recovery,
-            recovery: widget.recovery,
-          ),
-          documents: widget.documents,
+        DayResultsController.recovered(
+          day,
+          recovery,
           recovery: widget.recovery,
+          appender: widget.appender,
         ),
       );
     } on Exception catch (error) {
@@ -320,10 +340,16 @@ class _DayImportPageState extends State<DayImportPage> {
     super.dispose();
   }
 
-  /// Recordings shared from another app start an import here, also while a
-  /// day is open on top of this page; nothing on that page is closed.
+  /// Recordings shared from another app are added to the day open on top of
+  /// this page, as its next sessions; the day page says what was added.
+  /// Without an open day they start an import here.
   void _receive(List<String> paths) {
     if (!mounted) return;
+    final day = _shownDay;
+    if (day != null) {
+      unawaited(day.addRecordings(paths));
+      return;
+    }
     final behind = ModalRoute.of(context)?.isCurrent == false;
     final started = !_controller.isWorking;
     _start(paths);
@@ -411,13 +437,7 @@ class _DayImportPageState extends State<DayImportPage> {
         day = await Isolate.run(_relinkJob(path, folder, day.missing));
         if (!mounted) return;
       }
-      await _show(
-        DayResultsPage.opened(
-          day: day,
-          documents: widget.documents,
-          recovery: widget.recovery,
-        ),
-      );
+      await _show(DayResultsController.opened(day, recovery: widget.recovery));
     } on Exception catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -620,11 +640,11 @@ class _DayImportPageState extends State<DayImportPage> {
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
                 onPressed: () => _show(
-                  DayResultsPage(
+                  DayResultsController(
                     runs: runs,
                     analysis: analysis,
-                    documents: widget.documents,
                     recovery: widget.recovery,
+                    appender: widget.appender,
                   ),
                 ),
                 icon: const Icon(Icons.flag_outlined),
