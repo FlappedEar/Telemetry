@@ -318,6 +318,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Wyniki dnia'), findsOneWidget);
     expect(find.text('Najlepsze okrążenie każdej sesji'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Tory'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Tory'), findsOneWidget);
     expect(find.textContaining('OKR. '), findsWidgets);
 
