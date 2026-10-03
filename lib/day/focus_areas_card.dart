@@ -365,6 +365,9 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
                           widget.result.segments[_segment].startProgressMeters,
                           widget.result.segments[_segment].endProgressMeters,
                         ),
+                  segmentId: _segment < 0
+                      ? null
+                      : widget.result.segments[_segment].segmentId,
                 ),
               ),
             ),
