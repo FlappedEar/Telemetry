@@ -9,6 +9,7 @@ import 'day_results_controller.dart';
 import 'document_pickers.dart';
 import 'lap_page.dart';
 import 'recovery_store.dart';
+import 'segment_editor_page.dart';
 import 'theoretical_best_card.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
@@ -425,6 +426,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
       path: path,
       gate: _mapGate,
       wide: wide,
+      onEditSegments: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SegmentEditorPage(
+            controller: _controller,
+            path: path,
+            gate: _mapGate,
+          ),
+        ),
+      ),
     );
   }
 

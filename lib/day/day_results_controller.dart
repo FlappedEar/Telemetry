@@ -127,6 +127,9 @@ final class DayResultsController extends ChangeNotifier {
   final RecoveryStore? recovery;
   Timer? _recoveryTimer;
 
+  /// The user's unsaved corrections to the segments.
+  final DaySegmentEdits _segmentEdits = DaySegmentEdits();
+
   final TheoreticalBestRunner _theoreticalBestRunner;
   DayTheoreticalBest? _theoreticalBest;
   bool _theoreticalBestLoading = false;
@@ -166,12 +169,17 @@ final class DayResultsController extends ChangeNotifier {
         projectPath: path,
         previous: _document,
         previousPath: _documentBase,
+        trackSegments: _segmentEdits.runs,
       );
       await _writer(path, document);
       _document = document;
       _documentPath = path;
       _documentBase = path;
       _dirty = false;
+      _segmentEdits.clear();
+      // Automatic segments were approved by the save with their own ids:
+      // edits start from the saved ones.
+      if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
       _recoveryTimer?.cancel();
       _enqueueRecovery(() => recovery?.clear());
     } finally {
@@ -302,10 +310,7 @@ final class DayResultsController extends ChangeNotifier {
     final generation = ++_theoreticalBestGeneration;
     _theoreticalBestLoading = true;
     notifyListeners();
-    final event = _document?['event'];
-    final documentRuns = event is Map<String, Object?> && event['runs'] is List
-        ? event['runs'] as List<Object?>
-        : const <Object?>[];
+    final documentRuns = _documentRuns;
     DayTheoreticalBest result;
     try {
       result = await _theoreticalBestRunner(
@@ -324,11 +329,110 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _rerank() {
-    _dirty = true;
+  void _resetTheoreticalBest() {
     _theoreticalBest = null;
     _theoreticalBestLoading = false;
     ++_theoreticalBestGeneration;
+  }
+
+  // The runs of the document the day was last saved or opened as.
+  List<Object?> get _savedRuns {
+    final event = _document?['event'];
+    return event is Map<String, Object?> && event['runs'] is List
+        ? event['runs'] as List<Object?>
+        : const <Object?>[];
+  }
+
+  // The document's runs with the unsaved segment edits.
+  List<Object?> get _documentRuns => _segmentEdits.applyTo(_savedRuns);
+
+  /// Whether an edit of the segments can be undone or redone.
+  bool get canUndoSegmentEdit => _segmentEdits.canUndo;
+  bool get canRedoSegmentEdit => _segmentEdits.canRedo;
+
+  // Applies one segment edit: the day changes and the theoretical best,
+  // losses and corner details are calculated again.
+  String _segmentEdit(String Function(DayTheoreticalBest result) edit) {
+    final result = _theoreticalBest;
+    if (_saving) return 'The day is being saved.';
+    if (result == null || _theoreticalBestLoading) {
+      return 'The segments can be edited once the theoretical best is calculated.';
+    }
+    final error = edit(result);
+    if (error.isEmpty) _segmentsChanged();
+    return error;
+  }
+
+  void _segmentsChanged() {
+    _dirty = true;
+    _resetTheoreticalBest();
+    _scheduleRecovery();
+    notifyListeners();
+  }
+
+  /// Renames, retypes or moves approved segment [id]; with
+  /// [keepAdjacentJoined] a neighbour sharing a moved boundary moves too.
+  /// Returns why not, or an empty string.
+  String editSegment(
+    String id, {
+    required String name,
+    required String type,
+    required double startMeters,
+    required double endMeters,
+    bool keepAdjacentJoined = true,
+  }) => _segmentEdit(
+    (result) => _segmentEdits.edit(
+      result,
+      id,
+      name: name,
+      type: type,
+      startMeters: startMeters,
+      endMeters: endMeters,
+      keepAdjacentJoined: keepAdjacentJoined,
+    ),
+  );
+
+  /// Splits segment [id] at [atMeters] on the shared axis.
+  String splitSegment(String id, double atMeters) =>
+      _segmentEdit((result) => _segmentEdits.split(result, id, atMeters));
+
+  /// Merges segment [id] with [otherId], which shares a boundary with it.
+  String mergeSegments(String id, String otherId) =>
+      _segmentEdit((result) => _segmentEdits.merge(result, id, otherId));
+
+  /// Removes segment [id]; the last one stays.
+  String removeSegment(String id) =>
+      _segmentEdit((result) => _segmentEdits.remove(result, id));
+
+  /// Goes back to the best lap's automatic segments.
+  String restoreAutomaticSegments() => _segmentEdit((result) {
+    final saved = _savedRuns;
+    return _segmentEdits.restoreAutomatic(saved, result.groupId)
+        ? ''
+        : 'The segments are already the automatic ones.';
+  });
+
+  String _segmentHistory({required bool undo}) {
+    if (_saving) return 'The day is being saved.';
+    final saved = _savedRuns;
+    final error = undo ? _segmentEdits.undo(saved) : _segmentEdits.redo(saved);
+    if (error.isEmpty) {
+      _segmentsChanged();
+    } else {
+      notifyListeners();
+    }
+    return error;
+  }
+
+  /// Undoes the last segment edit.
+  String undoSegmentEdit() => _segmentHistory(undo: true);
+
+  /// Redoes the last undone segment edit.
+  String redoSegmentEdit() => _segmentHistory(undo: false);
+
+  void _rerank() {
+    _dirty = true;
+    _resetTheoreticalBest();
     _analysis = rerankDay(
       _analysis,
       exclusions: _exclusions,
@@ -362,6 +466,7 @@ final class DayResultsController extends ChangeNotifier {
     final runsNow = runs;
     final analysisNow = _analysis;
     final exclusionsNow = {..._exclusions};
+    final segmentsNow = _segmentEdits.runs;
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -380,6 +485,7 @@ final class DayResultsController extends ChangeNotifier {
             projectPath: base,
             previous: previous,
             previousPath: previousBase,
+            trackSegments: segmentsNow,
           ),
           originalPath: original,
           basePath: base,

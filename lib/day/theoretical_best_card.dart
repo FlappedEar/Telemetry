@@ -39,7 +39,11 @@ class TheoreticalBestCard extends StatefulWidget {
     this.path,
     this.gate,
     this.wide = false,
+    this.onEditSegments,
   });
+
+  /// Opens the segment editor; no button when null.
+  final VoidCallback? onEditSegments;
 
   /// Null while it is calculated for the first time.
   final DayTheoreticalBest? result;
@@ -142,9 +146,23 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         'The fastest time of each of the ${result.segments.length} segments '
         'across ${result.laps.length} laps. It combines parts of different '
         'laps, so it does not show that the whole lap can be driven that fast.'
-        '${result.automaticSegments ? ' Segments proposed from the best lap; saving the day keeps them.' : ''}',
+        '${result.automaticSegments
+            ? ' Segments proposed from the best lap; saving the day keeps them.'
+            : result.segmentsAutomatic
+            ? ''
+            : ' The segments include your corrections.'}',
         style: theme.textTheme.bodySmall,
       ),
+      if (widget.onEditSegments != null)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const ValueKey('editSegments'),
+            icon: const Icon(Icons.edit_road),
+            label: const Text('Edit segments'),
+            onPressed: widget.onEditSegments,
+          ),
+        ),
       if (lap != null) ...[
         const SizedBox(height: 16),
         Text('Where the time goes', style: theme.textTheme.titleSmall),
