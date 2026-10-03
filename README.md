@@ -285,8 +285,16 @@ on `main`:
 - an Android debug APK, then `integration_test/` on an Android emulator
   (API 34, x86_64, OpenGL ES on SwiftShader with guest Vulkan turned off),
   through `.github/scripts/android-integration-test.sh`. A run whose app never
-  reports a result is stopped after 8 minutes and run once more, with a
+  reports a result is stopped after 15 minutes and run once more, with a
   warning in the job summary.
+
+The integration tests run the app on the device with its real storage,
+background isolates and saved-days folder: the app starts; a synthetic VBO is
+imported, its results shown, the day saved, the app's widgets started again
+from scratch and the saved day reopened with the same best lap; and on
+Android a real `ACTION_SEND` share, sent by the script through a debug-only
+content provider, is imported and opens as the day. They do not drive the system file picker or
+restart the app's process, and on iOS no share is sent.
 
 Run the integration tests locally on any connected device or simulator:
 
