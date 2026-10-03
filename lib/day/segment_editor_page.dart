@@ -322,7 +322,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
             MapMark(
               point.eastMeters,
               point.northMeters,
-              const Color(0xffffb300),
+              Theme.of(context).colorScheme.onSurface,
               radius: 7,
             ),
           );

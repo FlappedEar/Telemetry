@@ -251,9 +251,10 @@ abstract final class FetTheme {
   }
 }
 
-/// Lap and timing colours. Your lap is FlappedEar amber and the reference
-/// lap blue on every map and chart; time lost is red and time gained green;
-/// purple marks the fastest of the day, as on a timing screen.
+/// Lap and timing colours: your lap FlappedEar amber and the reference lap
+/// blue, time lost red and time gained green, and purple for the fastest of
+/// the day, as on a timing screen. Maps and charts adopt them screen by
+/// screen.
 @immutable
 class FetColors extends ThemeExtension<FetColors> {
   const FetColors({
