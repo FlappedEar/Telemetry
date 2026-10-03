@@ -11,7 +11,8 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        version=$(sed -n 's/^  flutter: \([0-9][0-9.]*\)$/\1/p' pubspec.yaml)
+        # Windows checkouts can have CRLF line endings.
+        version=$(tr -d '\r' < pubspec.yaml | sed -n 's/^  flutter: \([0-9][0-9.]*\)$/\1/p')
         test -n "$version" || { echo "No pinned Flutter version in pubspec.yaml"; exit 1; }
         case "$RUNNER_OS" in
           macOS) platform=macos ;;
@@ -21,7 +22,13 @@ runs:
         esac
         base=https://storage.googleapis.com/flutter_infra_release/releases
         curl -sSfL --retry 5 --retry-all-errors --connect-timeout 30 "$base/releases_$platform.json" -o "$RUNNER_TEMP/releases.json"
-        python=$(command -v python3 || command -v python)
+        # Windows can have a python3 stub that runs nothing, so each
+        # candidate must actually start.
+        python=
+        for candidate in python3 python; do
+          if "$candidate" -c 'import sys' >/dev/null 2>&1; then python=$candidate; break; fi
+        done
+        test -n "$python" || { echo "No working Python found"; exit 1; }
         read -r archive sha256 < <("$python" - "$version" "$RUNNER_TEMP/releases.json" <<'PY'
         import json, platform, sys
         version, manifest = sys.argv[1], sys.argv[2]
@@ -35,6 +42,8 @@ runs:
         print(match[0]["archive"], match[0]["sha256"])
         PY
         )
+        sha256=${sha256%$'\r'}
+        test -n "$sha256" || { echo "Could not read the Flutter release manifest"; exit 1; }
         file="$RUNNER_TEMP/$(basename "$archive")"
         curl -sSfL --retry 5 --retry-all-errors --connect-timeout 30 "$base/$archive" -o "$file"
         if command -v shasum >/dev/null; then
@@ -43,7 +52,9 @@ runs:
           echo "$sha256  $file" | sha256sum -c -
         fi
         case "$file" in
-          *.zip) unzip -q "$file" -d "$RUNNER_TEMP" ;;
+          *.zip)
+            if command -v unzip >/dev/null; then unzip -q "$file" -d "$RUNNER_TEMP"
+            else 7z x -bd -o"$RUNNER_TEMP" "$file" >/dev/null; fi ;;
           *.tar.xz) tar -xJf "$file" -C "$RUNNER_TEMP" ;;
           *) echo "Unknown archive type: $file"; exit 1 ;;
         esac
