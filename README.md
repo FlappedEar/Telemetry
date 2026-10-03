@@ -135,14 +135,15 @@ installing a newer one.
 ## Look
 
 `lib/ui/theme.dart` holds the whole look: a dark track-day dashboard of flat
-charcoal panels, after the design language of Track Titan. Your lap is always
-FlappedEar amber (the logo's colour) and the reference lap always blue, on
-maps, charts and lap bars; time lost is red and time gained green. Text is
+charcoal panels, after the design language of Track Titan, with FlappedEar
+amber (the logo's colour) as the accent. `FetColors` names the lap colours:
+your lap amber, the reference lap blue, time lost red and time gained green;
+charts and maps move to them screen by screen. Text is
 Sora with tabular digits, so times line up; lap times in large type use
 JetBrains Mono. Both fonts are bundled under `assets/fonts/` with their
-licences (SIL Open Font License 1.1), so the app needs no network for them.
-Screens use the theme's colour roles, text styles and `FetColors` rather than
-their own colours.
+licences (SIL Open Font License 1.1), so the app needs no network for them;
+the licence texts ship in the app and show on its licence page. Screens use
+the theme's colour roles and text styles rather than their own colours.
 
 The app icon is the FlappedEar ears from the Overlays logo over two laps'
 speed traces, amber and blue, on charcoal; the launch screen shows the ears

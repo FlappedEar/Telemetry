@@ -72,6 +72,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # The font licences ship with the app and show on the licence page.
+  assets:
+    - assets/fonts/OFL-Sora.txt
+    - assets/fonts/OFL-JetBrainsMono.txt
+
   # Sora and JetBrains Mono, SIL Open Font License 1.1: assets/fonts/OFL-*.txt.
   fonts:
     - family: Sora

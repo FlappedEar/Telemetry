@@ -48,7 +48,7 @@ GeoCoordinate? mapOrigin(TelemetrySession session) {
   return null;
 }
 
-/// Speed colours, slow to fast. Every stop keeps at least 4:1 contrast with
+/// Speed colours, slow to fast. Every stop keeps at least 5:1 contrast with
 /// the app's charcoal panels, so the slow end stays visible on the dark
 /// theme, and the ramp avoids the amber and blue of the two compared laps.
 const List<Color> speedRamp = [

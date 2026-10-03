@@ -446,7 +446,7 @@ class _DayImportPageState extends State<DayImportPage> {
             color: !_dragging
                 ? Colors.transparent
                 : _controller.isWorking
-                ? Colors.amber
+                ? Theme.of(context).colorScheme.outline
                 : Theme.of(context).colorScheme.primary,
           ),
         ),

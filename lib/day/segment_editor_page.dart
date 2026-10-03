@@ -275,7 +275,8 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
 
   Color _segmentColor(BuildContext context, int index, bool selected) {
     final scheme = Theme.of(context).colorScheme;
-    if (selected) return const Color(0xffffb300);
+    // Blue stands out from the amber and green of the other segments.
+    if (selected) return scheme.secondary;
     return index.isEven ? scheme.primary : scheme.tertiary;
   }
 
@@ -378,7 +379,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           shortSegmentName(segment.name),
           maxLines: 1,
           overflow: TextOverflow.clip,
-          style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.surface,
+          ),
         ),
       ),
       title: Text(segment.name, overflow: TextOverflow.ellipsis),
