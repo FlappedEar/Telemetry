@@ -3542,6 +3542,514 @@
   "@taskStoppedUnexpectedly": {
     "description": "Why background work (such as reading the recordings again) failed when it ended without a result."
   },
+  "segmentReviewOpen": "Review proposals",
+  "@segmentReviewOpen": {
+    "description": "Button in the segment editor that opens the optional review of the automatic segment proposals."
+  },
+  "segmentReviewTitle": "Segment proposals",
+  "@segmentReviewTitle": {
+    "description": "Title of the segment proposal review screen."
+  },
+  "segmentReviewUndo": "Undo",
+  "@segmentReviewUndo": {
+    "description": "Undoes the last change of the segments or of a review decision."
+  },
+  "segmentReviewRedo": "Redo",
+  "@segmentReviewRedo": {
+    "description": "Redoes the last undone change of the segments or of a review decision."
+  },
+  "segmentReviewIntro": "Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.",
+  "@segmentReviewIntro": {
+    "description": "Explains that the review is optional and what rejecting does."
+  },
+  "segmentReviewSummary": "{count, plural, =1{1 proposal from {lap}} other{{count} proposals from {lap}}}",
+  "@segmentReviewSummary": {
+    "description": "How many proposals there are and the lap they were made from.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      },
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "segmentReviewApproveAll": "Approve all",
+  "@segmentReviewApproveAll": {
+    "description": "Approves every open proposal (rejected ones stay out)."
+  },
+  "segmentReviewRecompute": "Recompute",
+  "@segmentReviewRecompute": {
+    "description": "Computes the proposals again from the lap."
+  },
+  "segmentReviewApproved": "{count, plural, =1{1 proposal approved} other{{count} proposals approved}}",
+  "@segmentReviewApproved": {
+    "description": "Shown after Approve all.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "segmentReviewNoneApproved": "No proposal could be approved.",
+  "@segmentReviewNoneApproved": {
+    "description": "Approve all found nothing it could approve."
+  },
+  "segmentReviewReject": "Reject",
+  "@segmentReviewReject": {
+    "description": "Rejects this proposal."
+  },
+  "segmentReviewRestore": "Restore",
+  "@segmentReviewRestore": {
+    "description": "Takes back the rejection of this proposal."
+  },
+  "segmentReviewStateProposed": "Proposed",
+  "@segmentReviewStateProposed": {
+    "description": "State of a proposal awaiting a decision."
+  },
+  "segmentReviewStateApproved": "Approved",
+  "@segmentReviewStateApproved": {
+    "description": "State of a proposal that is an approved segment."
+  },
+  "segmentReviewStateRejected": "Rejected",
+  "@segmentReviewStateRejected": {
+    "description": "State of a proposal the driver rejected."
+  },
+  "segmentReviewStateSuperseded": "Overlaps approved",
+  "@segmentReviewStateSuperseded": {
+    "description": "State of a proposal that overlaps an approved segment that came from an edit."
+  },
+  "segmentReviewCorner": "Corner",
+  "@segmentReviewCorner": {
+    "description": "Segment type."
+  },
+  "segmentReviewStraight": "Straight",
+  "@segmentReviewStraight": {
+    "description": "Segment type."
+  },
+  "segmentReviewSector": "Sector",
+  "@segmentReviewSector": {
+    "description": "Segment type."
+  },
+  "segmentReviewTurnLeft": "{degrees}° left",
+  "@segmentReviewTurnLeft": {
+    "description": "A corner's total heading change, turning left.",
+    "placeholders": {
+      "degrees": {
+        "type": "String",
+        "example": "92"
+      }
+    }
+  },
+  "segmentReviewTurnRight": "{degrees}° right",
+  "@segmentReviewTurnRight": {
+    "description": "A corner's total heading change, turning right.",
+    "placeholders": {
+      "degrees": {
+        "type": "String",
+        "example": "92"
+      }
+    }
+  },
+  "segmentReviewBounds": "{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)",
+  "@segmentReviewBounds": {
+    "description": "A proposal's start and end in metres from the line with their tolerance, and its length.",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "120.0"
+      },
+      "startTolerance": {
+        "type": "String",
+        "example": "8"
+      },
+      "end": {
+        "type": "String",
+        "example": "210.0"
+      },
+      "endTolerance": {
+        "type": "String",
+        "example": "8"
+      },
+      "length": {
+        "type": "String",
+        "example": "90.0"
+      }
+    }
+  },
+  "segmentReviewCrossesLine": "Crosses start/finish",
+  "@segmentReviewCrossesLine": {
+    "description": "The proposal runs across the start/finish line."
+  },
+  "segmentReviewStartUncertain": "Start uncertain: {reasons}",
+  "@segmentReviewStartUncertain": {
+    "description": "Why the proposal's start is uncertain.",
+    "placeholders": {
+      "reasons": {
+        "type": "String",
+        "example": "Short straight"
+      }
+    }
+  },
+  "segmentReviewEndUncertain": "End uncertain: {reasons}",
+  "@segmentReviewEndUncertain": {
+    "description": "Why the proposal's end is uncertain.",
+    "placeholders": {
+      "reasons": {
+        "type": "String",
+        "example": "Short straight"
+      }
+    }
+  },
+  "segmentReviewConnectedCorners": "Corners connect without a straight",
+  "@segmentReviewConnectedCorners": {
+    "description": "Uncertainty: no straight between two corners."
+  },
+  "segmentReviewShortStraight": "Short straight",
+  "@segmentReviewShortStraight": {
+    "description": "Uncertainty: the straight next to this boundary is short."
+  },
+  "segmentReviewGpsGap": "Near a GPS gap in this lap",
+  "@segmentReviewGpsGap": {
+    "description": "Uncertainty: the lap has no GPS near this boundary."
+  },
+  "segmentReviewApex": "Geometric apex {at} m ±{tolerance} m",
+  "@segmentReviewApex": {
+    "description": "Where the corner turns most, from the track's shape (not from speed).",
+    "placeholders": {
+      "at": {
+        "type": "String",
+        "example": "160.0"
+      },
+      "tolerance": {
+        "type": "String",
+        "example": "4"
+      }
+    }
+  },
+  "segmentReviewApexMultiple": "Multiple apexes — review manually",
+  "@segmentReviewApexMultiple": {
+    "description": "The corner has more than one apex, so none is proposed."
+  },
+  "segmentReviewApexCrossesGate": "Corner crosses the timing gate",
+  "@segmentReviewApexCrossesGate": {
+    "description": "No apex: the corner runs across the timing gate."
+  },
+  "segmentReviewApexUnresolved": "Apex unresolved",
+  "@segmentReviewApexUnresolved": {
+    "description": "No apex could be found for this corner."
+  },
+  "segmentReviewWaiting": "Timing every lap on one track axis…",
+  "@segmentReviewWaiting": {
+    "description": "Shown while the theoretical best is calculated before the review."
+  },
+  "segmentReviewComputing": "Finding corners and straights…",
+  "@segmentReviewComputing": {
+    "description": "Shown while the proposals are computed."
+  },
+  "segmentReviewNoLap": "The lap the segments are measured on is not available.",
+  "@segmentReviewNoLap": {
+    "description": "No proposals: the lap or its recording is missing."
+  },
+  "segmentReviewNoAxis": "This lap's GPS trace cannot be made into a track axis.",
+  "@segmentReviewNoAxis": {
+    "description": "No proposals: the lap's GPS trace is unusable."
+  },
+  "segmentReviewContinuousCorner": "No automatic proposal: this lap turns continuously, with no straight between corners.",
+  "@segmentReviewContinuousCorner": {
+    "description": "No proposals: unsplittable geometry."
+  },
+  "segmentReviewNoCorners": "No automatic proposal: no corner was detected on this lap.",
+  "@segmentReviewNoCorners": {
+    "description": "No proposals: no corners."
+  },
+  "segmentReviewTooMany": "No automatic proposal: the lap would split into more than {count} segments.",
+  "@segmentReviewTooMany": {
+    "description": "No proposals: too many segments.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "segmentReviewFailed": "The proposals could not be computed.",
+  "@segmentReviewFailed": {
+    "description": "The proposals failed."
+  },
+  "segmentReviewSaving": "The day is being saved. Try again in a moment.",
+  "@segmentReviewSaving": {
+    "description": "A review action, undo or redo was not done because the day is being saved."
+  },
+  "segmentReviewSegmentsUnavailable": "The segments can be changed once the theoretical best is calculated.",
+  "@segmentReviewSegmentsUnavailable": {
+    "description": "A change was not done because the theoretical best is not calculated yet."
+  },
+  "segmentReviewNotReady": "The proposals are not ready yet.",
+  "@segmentReviewNotReady": {
+    "description": "A review action was not done because the proposals are still being computed."
+  },
+  "segmentReviewNoLongerAvailable": "This proposal is no longer available.",
+  "@segmentReviewNoLongerAvailable": {
+    "description": "The proposal changed before the action was done."
+  },
+  "segmentReviewNotOpen": "Only open proposals can be rejected.",
+  "@segmentReviewNotOpen": {
+    "description": "Rejecting was refused: the proposal is approved or overlaps an approved segment."
+  },
+  "segmentReviewNotStored": "The rejection cannot be stored.",
+  "@segmentReviewNotStored": {
+    "description": "The rejection could not be written in the day's document."
+  },
+  "segmentReviewNothingToUndo": "Nothing to undo.",
+  "@segmentReviewNothingToUndo": {
+    "description": "Undo found no change to undo."
+  },
+  "segmentReviewNothingToRedo": "Nothing to redo.",
+  "@segmentReviewNothingToRedo": {
+    "description": "Redo found no change to redo."
+  },
+  "segmentReviewHistoryCleared": "The segments changed outside this editor, so the edit history was cleared.",
+  "@segmentReviewHistoryCleared": {
+    "description": "Undo or redo was refused because the segments changed elsewhere; the history was cleared."
+  },
+  "segmentReviewUncertainOther": "Uncertain boundary",
+  "@segmentReviewUncertainOther": {
+    "description": "An uncertainty reason this version of the app does not know."
+  },
+  "recordingsKeptApart": "Its {format} is kept beside it and not combined",
+  "@recordingsKeptApart": {
+    "description": "Quiet line under a session whose other recording (such as its RCZ, or its VBO after the RCZ was made primary) is kept beside it without being combined: the session's analysis uses its own recording only.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsKeptApartUntilReopened": "Its {format} is kept beside it and not combined until the day is opened again",
+  "@recordingsKeptApartUntilReopened": {
+    "description": "Like recordingsKeptApart, for a VBO session whose RCZ the user refused: the day's file cannot store that choice, so the RCZ is lined up and combined again automatically when the day is opened again.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsCheckClock": "Check clock",
+  "@recordingsCheckClock": {
+    "description": "Button under a session with two recordings (a VBO and an RCZ): measures again how the other recording's clock lines up with the session's, to accept or refuse."
+  },
+  "recordingsMakePrimary": "Make {format} primary",
+  "@recordingsMakePrimary": {
+    "description": "Button under a session with two recordings: the other recording (such as the RCZ) becomes the session's primary recording; its laps and results are calculated again from it.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsDontCombine": "Don't combine",
+  "@recordingsDontCombine": {
+    "description": "Button under a session combined with its other recording: keep the other recording beside it without combining it (refuse the alignment)."
+  },
+  "recordingsChangingPrimary": "Reading the {format} as this session's recording…",
+  "@recordingsChangingPrimary": {
+    "description": "Quiet line under a session while its other recording (such as the RCZ) is being read as its primary recording in the background.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "clockChecking": "Comparing the clocks of the {primary} and the {alternative}…",
+  "@clockChecking": {
+    "description": "Quiet line under a session while the clocks of its two recordings are being compared in the background.",
+    "placeholders": {
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "clockAligned": "The clocks line up.",
+  "@clockAligned": {
+    "description": "Result of a session's clock check: the other recording's clock lines up with the session's recording."
+  },
+  "clockNotAligned": "The clocks cannot be lined up: {reason}.",
+  "@clockNotAligned": {
+    "description": "Result of a session's clock check when the recordings could not be lined up in time; reason is one of the fusionReason texts.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "their speed traces do not line up clearly"
+      }
+    }
+  },
+  "clockMeasured": "Measured from the speed traces: {primary} time = {alternative} time {offset} ± {uncertainty}",
+  "@clockMeasured": {
+    "description": "The clock offset measured between a session's two recordings. offset is signed, such as +0.10 s; uncertainty such as 0.02 s.",
+    "placeholders": {
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "offset": {
+        "type": "String",
+        "example": "+0.10 s"
+      },
+      "uncertainty": {
+        "type": "String",
+        "example": "0.02 s"
+      }
+    }
+  },
+  "clockDrift": "Clock drift: {ppm} ppm",
+  "@clockDrift": {
+    "description": "How fast the two recordings' clocks drift apart, in parts per million, as measured.",
+    "placeholders": {
+      "ppm": {
+        "type": "String",
+        "example": "12"
+      }
+    }
+  },
+  "clockCorrelation": "Speed correlation {correlation} over {overlap} of overlap; {used} of {windows} stretches agree",
+  "@clockCorrelation": {
+    "description": "Evidence of a clock check: how closely the two speed traces match, over how long both recordings run, and how many stretches of that overlap give the same offset.",
+    "placeholders": {
+      "correlation": {
+        "type": "String",
+        "example": "0.987"
+      },
+      "overlap": {
+        "type": "String",
+        "example": "640 s"
+      },
+      "used": {
+        "type": "int",
+        "example": "5"
+      },
+      "windows": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "clockDeclared": "The loggers' clocks say {offset}",
+  "@clockDeclared": {
+    "description": "Evidence of a clock check: the offset the two loggers' own start times give, such as +0.10 s.",
+    "placeholders": {
+      "offset": {
+        "type": "String",
+        "example": "+0.10 s"
+      }
+    }
+  },
+  "clockNoDeclared": "The loggers do not both state a start time",
+  "@clockNoDeclared": {
+    "description": "Evidence of a clock check: at least one recording has no start time of its own."
+  },
+  "clockAccept": "Accept and combine",
+  "@clockAccept": {
+    "description": "Button after a clock check whose clocks line up: combine the other recording with the session using the measured offset."
+  },
+  "clockRefuse": "Refuse",
+  "@clockRefuse": {
+    "description": "Button after a clock check: do not use the measured alignment; the other recording is kept beside the session without combining it."
+  },
+  "clockRefuseNote": "Refusing keeps the {alternative} beside the session without combining it; its analysis then uses the {primary} only.",
+  "@clockRefuseNote": {
+    "description": "Explains the Refuse button of a clock check.",
+    "placeholders": {
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "clockReopenNote": "This session reads its VBO and keeps its RCZ, and the day's file cannot keep a refusal for such a session: when the day is opened again, the {alternative} is lined up and combined again.",
+  "@clockReopenNote": {
+    "description": "Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.",
+    "placeholders": {
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsClockFailed": "The clocks could not be compared. Try again.",
+  "@recordingsClockFailed": {
+    "description": "Under a session: its clock check failed; nothing changed."
+  },
+  "recordingsPrimaryMissing": "The {format} is no longer where it was read from. Put it back there, then make it primary.",
+  "@recordingsPrimaryMissing": {
+    "description": "Under a session: Make primary was refused because the other recording's file is gone; nothing changed.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsPrimaryChanged": "The {format} file has changed since it was read. Open the day again, then make it primary.",
+  "@recordingsPrimaryChanged": {
+    "description": "Under a session: Make primary was refused because the other recording's file now has other content; nothing changed.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsPrimaryFailed": "The {format} could not be read as this session's recording.",
+  "@recordingsPrimaryFailed": {
+    "description": "Under a session: Make primary failed while reading the other recording; nothing changed.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsBusyFind": "Wait until the session's recordings are checked or changed, then find the others.",
+  "@recordingsBusyFind": {
+    "description": "Find recordings was refused because a clock check or a primary change is running."
+  },
+  "recordingsBusyRetry": "Wait until the session's recordings are checked or changed, then retry.",
+  "@recordingsBusyRetry": {
+    "description": "Retry recordings was refused because a clock check or a primary change is running."
+  },
+  "recordingsBusyLeave": "Wait until the session's recordings are checked or changed.",
+  "@recordingsBusyLeave": {
+    "description": "Leaving the day was refused because a clock check or a primary change is running."
+  },
+  "recordingsUnsaved": "Save the day before changing the primary recording.",
+  "@recordingsUnsaved": {
+    "description": "Under a session: Make primary was refused because the day has unsaved changes; the user saves first."
+  },
+  "recordingsBusyAdd": "Wait until the session's recordings are checked or changed, then add recordings.",
+  "@recordingsBusyAdd": {
+    "description": "Add recordings was refused because a clock check or a primary change is running."
+  },
   "reviewImportTitle": "Review the import",
   "@reviewImportTitle": {
     "description": "Title of the page that lists every recording found before an import or an addition to a day is committed."

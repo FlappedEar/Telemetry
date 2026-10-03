@@ -166,6 +166,19 @@ void main() {
     );
     result = calculate();
     expect(edits.remove(result, idAt(result.segments.length - 1)), isEmpty);
+    // The removed segment's proposal is open again: rejected in the review
+    // (FET-56), stored in the run's trackSegmentReview.
+    result = calculate();
+    final review = dayProposalReview(
+      result,
+      segmentReviewLap(result),
+      outingRuns(runs)[result.segmentRunId],
+    );
+    final open = review
+        .items(result.runSegments, null)
+        .indexWhere((item) => item.state == SegmentReviewState.proposed);
+    expect(open, isNonNegative);
+    expect(edits.setRejected(result, review, const [], open), isNull);
 
     final path = p.join(root, 'edited.fetproject');
     final document = dayDocument(
@@ -175,6 +188,7 @@ void main() {
       analysis: analysis,
       projectPath: path,
       trackSegments: edits.runs,
+      trackSegmentReviews: edits.reviews,
     );
     await saveDayDocument(path, document);
     final [checked] = check([path]);
@@ -193,6 +207,10 @@ void main() {
       });
     }
     expect(saved[result.segmentRunId], edits.runs[result.segmentRunId]);
+    final reviewed = (checked['runs'] as List).cast<Map<String, Object?>>().firstWhere(
+      (run) => run['runId'] == result.segmentRunId,
+    );
+    expect(reviewed['trackSegmentReview'], {'valid': true, 'rejected': 1});
   }, skip: checker == null ? 'Set FLAPPEDEAR_OVERLAYS_CHECK to tool/cpp_project_check' : false);
 
   test(

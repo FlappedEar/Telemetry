@@ -43,6 +43,18 @@
 //       approveRunFusion; a rule is primaryOnly, fillGaps or
 //       preferAlternative; "*=<rule>" gives every other conflicting channel
 //       that rule), and saves the day.
+//   cpp_project_roundtrip primary <project> <run>
+//       Overlays makes the run's other recording its primary, as Run
+//       details' "Make primary" does (KAN-90: setRunPrimarySource), and
+//       saves the day.
+//   cpp_project_roundtrip unfuse <project> <run>
+//       Overlays removes the run's fusion, as Run details' "Remove fusion"
+//       does (KAN-103: removeRunFusion), and saves the day.
+//   cpp_project_roundtrip clock <project> <run>
+//       Overlays compares the clocks of the run's other recording and its
+//       primary, as Run details' "Check clock" does (KAN-101:
+//       checkRunRecordingAlignment), and prints the alignment. Nothing is
+//       saved.
 //   cpp_project_roundtrip review <project> <name> <recording>=<choice>...
 //   cpp_project_roundtrip review-append <project> <recording>=<choice>...
 //       Overlays' advanced import review (BatchImportDialog: beginBatchImport,
@@ -656,6 +668,65 @@ QJsonObject fuse(const QString &path, const QString &run, const QStringList &rul
             {"preview", QJsonObject::fromVariantMap(review.value("preview").toMap())}};
 }
 
+// The id of [run]'s recording that is not its primary.
+QString otherRecording(DocumentController &document, const QString &runId)
+{
+    QString sourceId;
+    for (const auto &value : document.runRecordings(runId))
+        if (!value.toMap().value("primary").toBool()) sourceId = value.toMap().value("sourceId").toString();
+    if (sourceId.isEmpty()) fail(QStringLiteral("The run has no other recording."));
+    return sourceId;
+}
+
+// Overlays makes [run]'s other recording its primary and saves the day.
+QJsonObject makePrimary(const QString &path, const QString &run, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &document = *controller->document();
+    open(*controller, path);
+    const auto runId = runIdOf(document, run);
+    const auto sourceId = otherRecording(document, runId);
+    if (!document.setRunPrimarySource(runId, sourceId))
+        fail(QStringLiteral("Overlays refused the primary: %1").arg(document.runRecordingReview().value("message").toString()));
+    if (!waitFor([&] { return reviewState(document) != "switching"; }, 120'000) || !reviewState(document).isEmpty())
+        fail(QStringLiteral("Overlays did not change the primary: %1").arg(document.runRecordingReview().value("message").toString()));
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+    return {{"runId", runId}, {"primarySourceId", sourceId}};
+}
+
+// Overlays removes [run]'s fusion and saves the day.
+QJsonObject unfuse(const QString &path, const QString &run, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &document = *controller->document();
+    open(*controller, path);
+    const auto runId = runIdOf(document, run);
+    if (!document.removeRunFusion(runId)) fail(QStringLiteral("Overlays refused to remove the fusion."));
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+    return {{"runId", runId}};
+}
+
+// Overlays compares the clock of [run]'s other recording with its primary's.
+QJsonObject checkClock(const QString &path, const QString &run, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &document = *controller->document();
+    open(*controller, path);
+    const auto runId = runIdOf(document, run);
+    const auto sourceId = otherRecording(document, runId);
+    if (!document.checkRunRecordingAlignment(runId, sourceId))
+        fail(QStringLiteral("Overlays refused the clock check: %1").arg(document.runRecordingReview().value("message").toString()));
+    if (!waitFor([&] { return reviewState(document) == "alignment" || reviewState(document) == "error"; }, 120'000)
+        || reviewState(document) != "alignment")
+        fail(QStringLiteral("Overlays did not compare the clocks: %1").arg(document.runRecordingReview().value("message").toString()));
+    return {{"runId", runId}, {"sourceId", sourceId},
+            {"alignment", QJsonObject::fromVariantMap(document.runRecordingReview().value("alignment").toMap())}};
+}
+
 // Overlays compares laps [a] and [b] ("Session 1 · LAP 3"), shows
 // [start]..[end] meters and the charts [channels], as its comparison view
 // saves them, and saves the day.
@@ -720,7 +791,7 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QStringLiteral("cpp_project_roundtrip"));
     QSettings().clear();
     const QStringList arguments = application.arguments().mid(1);
-    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|review|review-append|attach|fuse|compare ..."));
+    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|review|review-append|attach|fuse|primary|unfuse|clock|compare ..."));
     QTemporaryDir scratch;
     if (!scratch.isValid()) fail(QStringLiteral("No temporary folder."));
     const QString command = arguments.first();
@@ -770,6 +841,16 @@ int main(int argc, char **argv)
         auto result = fuse(arguments[1], arguments[2], arguments.mid(3), scratch);
         result.insert("inspected", inspect(arguments[1], scratch));
         print(result);
+    } else if (command == "primary" && arguments.size() == 3) {
+        auto result = makePrimary(arguments[1], arguments[2], scratch);
+        result.insert("inspected", inspect(arguments[1], scratch));
+        print(result);
+    } else if (command == "unfuse" && arguments.size() == 3) {
+        auto result = unfuse(arguments[1], arguments[2], scratch);
+        result.insert("inspected", inspect(arguments[1], scratch));
+        print(result);
+    } else if (command == "clock" && arguments.size() == 3) {
+        print(checkClock(arguments[1], arguments[2], scratch));
     } else if (command == "compare" && arguments.size() >= 6) {
         compare(arguments[1], arguments[2], arguments[3], arguments[4].toDouble(), arguments[5].toDouble(),
                 arguments.mid(6), scratch);
@@ -782,7 +863,7 @@ int main(int argc, char **argv)
         for (const auto &path : arguments.mid(1)) results.append(inspect(path, scratch));
         print(results);
     } else {
-        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|review|review-append|attach|fuse|compare ..."));
+        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|review|review-append|attach|fuse|primary|unfuse|clock|compare ..."));
     }
     QSettings().clear();
     return 0;

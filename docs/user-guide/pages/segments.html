@@ -13,6 +13,7 @@
 <ul>
   <li>The best lap's map with the segment boundaries as dots, beside the list when the window is wider than it is tall and at least 600 points wide (for example a phone held sideways). The selected segment is blue, with its boundaries as white dots; changes you have not applied yet show as orange dots.</li>
   <li><strong>Automatic segments</strong> or <strong>Edited segments</strong>, the theoretical best and the number of segments.</li>
+  <li><strong>Review proposals</strong>, which opens the optional <a href="#review">review of the automatic proposals</a>.</li>
   <li>The segments in lap order: short name (C1, S1…), name, type, start and end in metres from the line, length, and fastest time.</li>
 </ul>
 
@@ -37,6 +38,27 @@
   <li>Tap <strong>Apply</strong> (or <strong>Split here</strong>). Like any change, it can be undone.</li>
 </ol>
 <p>A tap more than about 3% of the track's size away from the line says <em>Tap on the lap's track line.</em> Where another part of the track passes close by, such as a crossing or a parallel straight, the app cannot tell which one you meant and says <em>Another part of the track passes close by here. Set the distance with the buttons instead.</em> A split point must lie inside the segment. These are the same rules as in FlappedEar Overlays. On a phone, one finger taps and two fingers still zoom and move the map.</p>
+
+<h2 id="review">Reviewing the proposals</h2>
+<figure>
+  <img src="assets/screens/segment-review.png" alt="Segment proposals: each automatic corner and straight with its state, turn, start and end with their tolerance, and a corner's geometric apex" width="1280" height="800" loading="lazy">
+</figure>
+<p>Segments are approved automatically, so you never have to review them: the results, and the next session you add, use them straight away. In the editor, <strong>Review proposals</strong> shows the corners and straights the app proposed from the lap the segments are measured on (normally the best lap), as FlappedEar Overlays does. For each proposal you see:</p>
+<ul>
+  <li>Its state: <strong>Approved</strong> (it is one of the segments), <strong>Proposed</strong> (open, for example after you removed that segment), <strong>Rejected</strong>, or <strong>Overlaps approved</strong> (a segment you edited covers part of it).</li>
+  <li>Its name and type; for a corner, how far it turns and which way, for example <em>Corner · 92° left</em>.</li>
+  <li>Its start and end in metres from the line, each with its tolerance (±), and its length. <em>Crosses start/finish</em> marks one that runs across the line.</li>
+  <li>Uncertainty notes for a start or end that is less clear: <em>Short straight</em>, <em>Corners connect without a straight</em> or <em>Near a GPS gap in this lap</em>.</li>
+  <li>For a corner, its <em>Geometric apex</em>, where the track's shape turns most (not where you were slowest), or why there is none, such as <em>Multiple apexes — review manually</em>.</li>
+</ul>
+<p>What you can do:</p>
+<ul>
+  <li><strong>Reject</strong> an open proposal, and <strong>Restore</strong> it again. A rejection does not change the segments; it is saved with the day, as FlappedEar Overlays saves it.</li>
+  <li><strong>Approve all</strong> makes every open proposal a segment, whatever its uncertainty; rejected ones stay out. Every lap is timed again.</li>
+  <li><strong>Recompute</strong> works out the proposals again from the lap.</li>
+</ul>
+<p>Every change can be undone with <strong>Undo</strong> and <strong>Redo</strong> in the toolbar, here or in the editor: they share one history.</p>
+<p>After <strong>Restore automatic</strong> in the editor, a proposal you rejected is approved again with the others; its rejection shows again if you later remove that segment.</p>
 
 <h2 id="keep">Keeping your segments</h2>
 <p>Save the day to keep the segments. Your corrections are saved with the day and are never replaced by automatic segments. <strong>Restore automatic</strong> goes back to the proposed segments after asking.</p>
