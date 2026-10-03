@@ -187,7 +187,7 @@ jobs:
       # kept in the Actions cache, so APKs from later main builds install as
       # updates and keep the app's data; the key never enters the repository.
       # Caches from main are shared with pull requests; a cache unused for
-      # seven days expires, and the next build makes a new key.
+      # seven days expires, so signing-key.yml restores it every day.
       - uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
@@ -243,6 +243,18 @@ jobs:
             echo "::error::The APK is signed with '$actual', not the cached key $expected."
             exit 1
           }
+          # On main the key must be the one installed apps have (release.yml
+          # pins the same certificate). Failing here also stops the cache
+          # from saving a newly made key, so a lost key stays visible instead
+          # of being replaced for good.
+          release_cert=7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+          if [ "$actual" != "$release_cert" ]; then
+            if [ "$GITHUB_REF" = refs/heads/main ]; then
+              echo "::error::The APK is signed with $actual, not the release key $release_cert. Installed apps could not update to it."
+              exit 1
+            fi
+            echo "::warning::This APK is signed with $actual, not the release key; it does not install over the released app."
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: flappedear-telemetry-android-${{ github.sha }}
