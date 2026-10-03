@@ -16,7 +16,16 @@ import '../rcz/rcz_fixture.dart';
 final _variantsPerFile = int.tryParse(Platform.environment['FUZZ_VARIANTS'] ?? '') ?? 24;
 final _seed = int.tryParse(Platform.environment['FUZZ_SEED'] ?? '') ?? 20261004;
 
-const _zipLayer = ['ZIP', 'Archive', 'archive', 'Truncated', 'compressed member', 'Decompression'];
+const _zipLayer = [
+  'Missing ',
+  'exceeds its size limit',
+  'ZIP',
+  'Archive',
+  'archive',
+  'Truncated',
+  'compressed member',
+  'Decompression',
+];
 
 const _sources = [
   'test/parity/corpus/laps_clean.vbo',
