@@ -4,4 +4,12 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <application>
+        <!-- Serves test recordings for the ACTION_SEND integration test
+             (TestShareProvider.kt). Debug builds only. -->
+        <provider
+            android:name=".TestShareProvider"
+            android:authorities="com.flappedear.telemetry.testshare"
+            android:exported="false" />
+    </application>
 </manifest>

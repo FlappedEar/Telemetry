@@ -9,6 +9,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
+import 'apple_map.dart';
 import 'corner_analyzer_panel.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
@@ -1073,7 +1074,9 @@ class _TiledOverlayMap extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             maxZoom: 18,
           ),
-          maxZoom: 21,
+          maxZoom: mapMaxZoom(tiles),
+          minZoom: mapMinZoom(tiles),
+          cameraConstraint: mapCameraConstraint(tiles),
           interactionOptions: interaction,
         ),
         children: [

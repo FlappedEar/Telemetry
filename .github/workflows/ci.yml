@@ -110,12 +110,10 @@ jobs:
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
-      # A hung run stops after 15 minutes and prints the verbose tool log and
-      # the simulator's log for the app.
       # flutter test starts reading the simulator log only after it launches
       # the app, so it can miss the line with the Dart VM service URL and wait
       # for it forever ("Waiting for VM Service port to be available"). That
-      # attempt is stopped after 10 minutes and run once more; any other
+      # attempt is stopped after 15 minutes and run once more; any other
       # failure, including a failing test, fails the step at once. On failure
       # the verbose tool log and the simulator's log for the app are printed.
       - name: Integration tests on the simulator
@@ -124,7 +122,7 @@ jobs:
           for attempt in 1 2; do
             # macOS has no timeout(1); perl's alarm does the same.
             status=0
-            perl -e 'alarm shift; exec @ARGV' 600 flutter test integration_test -d "$udid" -v > integration.log 2>&1 || status=$?
+            perl -e 'alarm shift; exec @ARGV' 900 flutter test integration_test -d "$udid" -v > integration.log 2>&1 || status=$?
             if [ "$status" -eq 0 ]; then
               tail -n 40 integration.log
               exit 0
@@ -146,9 +144,13 @@ jobs:
   android-emulator:
     name: Android emulator (build and integration test)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The build and unit tests, then up to two 15-minute test attempts.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The APK's build number is the commit count (see below).
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -182,10 +184,15 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
       # MAPTILER_KEY gives the sideloaded app its satellite map tiles (FET-27).
+      # The build number (Android versionCode) is the commit count, as in
+      # release.yml, so a later build from main or a release installs over an
+      # earlier one and Android never sees a downgrade.
       - name: Build Android APK (release, sideloadable)
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
-        run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+        run: |
+          flutter build apk --release --build-number="$(git rev-list --count HEAD)" \
+            --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
       # JVM unit tests of the native code (android/app/src/test), such as the
       # bounded copy of shared and picked files. The APK build made gradlew.
       - name: Android unit tests

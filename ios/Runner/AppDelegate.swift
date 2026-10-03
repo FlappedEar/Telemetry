@@ -15,6 +15,9 @@ import UIKit
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "IncomingRecordingsPlugin") {
       IncomingRecordingsPlugin.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppleMapPlugin") {
+      AppleMapPlugin.register(with: registrar)
+    }
   }
 }
 
