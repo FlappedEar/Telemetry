@@ -2404,4 +2404,206 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get taskStoppedUnexpectedly => 'Praca nieoczekiwanie się przerwała.';
+
+  @override
+  String get segmentReviewOpen => 'Przejrzyj propozycje';
+
+  @override
+  String get segmentReviewTitle => 'Propozycje odcinków';
+
+  @override
+  String get segmentReviewUndo => 'Cofnij';
+
+  @override
+  String get segmentReviewRedo => 'Ponów';
+
+  @override
+  String get segmentReviewIntro =>
+      'Odcinki są zatwierdzane automatycznie, więc ten przegląd jest opcjonalny. Odrzucona propozycja jest pomijana przez Zatwierdź wszystkie i zapisuje się z dniem.';
+
+  @override
+  String segmentReviewSummary(int count, String lap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count propozycji z $lap',
+      many: '$count propozycji z $lap',
+      few: '$count propozycje z $lap',
+      one: '1 propozycja z $lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewApproveAll => 'Zatwierdź wszystkie';
+
+  @override
+  String get segmentReviewRecompute => 'Przelicz';
+
+  @override
+  String segmentReviewApproved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Zatwierdzono $count propozycji',
+      many: 'Zatwierdzono $count propozycji',
+      few: 'Zatwierdzono $count propozycje',
+      one: 'Zatwierdzono 1 propozycję',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewNoneApproved =>
+      'Nie udało się zatwierdzić żadnej propozycji.';
+
+  @override
+  String get segmentReviewReject => 'Odrzuć';
+
+  @override
+  String get segmentReviewRestore => 'Przywróć';
+
+  @override
+  String get segmentReviewStateProposed => 'Proponowana';
+
+  @override
+  String get segmentReviewStateApproved => 'Zatwierdzona';
+
+  @override
+  String get segmentReviewStateRejected => 'Odrzucona';
+
+  @override
+  String get segmentReviewStateSuperseded => 'Nachodzi na zatwierdzony odcinek';
+
+  @override
+  String get segmentReviewCorner => 'Zakręt';
+
+  @override
+  String get segmentReviewStraight => 'Prosta';
+
+  @override
+  String get segmentReviewSector => 'Sektor';
+
+  @override
+  String segmentReviewTurnLeft(String degrees) {
+    return '$degrees° w lewo';
+  }
+
+  @override
+  String segmentReviewTurnRight(String degrees) {
+    return '$degrees° w prawo';
+  }
+
+  @override
+  String segmentReviewBounds(
+    String start,
+    String startTolerance,
+    String end,
+    String endTolerance,
+    String length,
+  ) {
+    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
+  }
+
+  @override
+  String get segmentReviewCrossesLine => 'Przecina linię startu/mety';
+
+  @override
+  String segmentReviewStartUncertain(String reasons) {
+    return 'Niepewny początek: $reasons';
+  }
+
+  @override
+  String segmentReviewEndUncertain(String reasons) {
+    return 'Niepewny koniec: $reasons';
+  }
+
+  @override
+  String get segmentReviewConnectedCorners => 'Zakręty łączą się bez prostej';
+
+  @override
+  String get segmentReviewShortStraight => 'Krótka prosta';
+
+  @override
+  String get segmentReviewGpsGap => 'W pobliżu luki GPS na tym okrążeniu';
+
+  @override
+  String segmentReviewApex(String at, String tolerance) {
+    return 'Geometryczny wierzchołek $at m ±$tolerance m';
+  }
+
+  @override
+  String get segmentReviewApexMultiple =>
+      'Kilka wierzchołków — sprawdź ręcznie';
+
+  @override
+  String get segmentReviewApexCrossesGate =>
+      'Zakręt przecina bramkę pomiaru czasu';
+
+  @override
+  String get segmentReviewApexUnresolved => 'Nie wyznaczono wierzchołka';
+
+  @override
+  String get segmentReviewWaiting =>
+      'Mierzenie czasu każdego okrążenia na jednej osi toru…';
+
+  @override
+  String get segmentReviewComputing => 'Wyszukiwanie zakrętów i prostych…';
+
+  @override
+  String get segmentReviewNoLap =>
+      'Okrążenie, na którym mierzone są odcinki, jest niedostępne.';
+
+  @override
+  String get segmentReviewNoAxis =>
+      'Ze śladu GPS tego okrążenia nie da się zbudować osi toru.';
+
+  @override
+  String get segmentReviewContinuousCorner =>
+      'Brak automatycznej propozycji: to okrążenie skręca bez przerwy, bez prostej między zakrętami.';
+
+  @override
+  String get segmentReviewNoCorners =>
+      'Brak automatycznej propozycji: na tym okrążeniu nie wykryto zakrętu.';
+
+  @override
+  String segmentReviewTooMany(int count) {
+    return 'Brak automatycznej propozycji: okrążenie podzieliłoby się na więcej niż $count odcinków.';
+  }
+
+  @override
+  String get segmentReviewFailed => 'Nie udało się obliczyć propozycji.';
+
+  @override
+  String get segmentReviewSaving => 'Dzień jest zapisywany. Spróbuj za chwilę.';
+
+  @override
+  String get segmentReviewSegmentsUnavailable =>
+      'Odcinki można zmienić, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+
+  @override
+  String get segmentReviewNotReady => 'Propozycje nie są jeszcze gotowe.';
+
+  @override
+  String get segmentReviewNoLongerAvailable =>
+      'Ta propozycja nie jest już dostępna.';
+
+  @override
+  String get segmentReviewNotOpen => 'Odrzucić można tylko otwarte propozycje.';
+
+  @override
+  String get segmentReviewNotStored => 'Nie można zapisać odrzucenia.';
+
+  @override
+  String get segmentReviewNothingToUndo => 'Nie ma czego cofnąć.';
+
+  @override
+  String get segmentReviewNothingToRedo => 'Nie ma czego ponowić.';
+
+  @override
+  String get segmentReviewHistoryCleared =>
+      'Odcinki zmieniły się poza tym edytorem, więc historię zmian wyczyszczono.';
+
+  @override
+  String get segmentReviewUncertainOther => 'Niepewna granica';
 }

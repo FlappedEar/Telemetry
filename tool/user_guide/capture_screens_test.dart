@@ -367,6 +367,15 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('pick end')));
     await tester.pumpAndSettle();
     await shot(tester, 'segment-pick');
+    // The optional review of the automatic proposals.
+    await tester.tap(find.byKey(const ValueKey('pick end')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('reviewProposals')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('reviewProposals')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'segment-review');
+    await back(tester);
 
     // The day report.
     await back(tester);

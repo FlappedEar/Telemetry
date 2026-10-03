@@ -3487,6 +3487,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The work stopped unexpectedly.'**
   String get taskStoppedUnexpectedly;
+
+  /// Button in the segment editor that opens the optional review of the automatic segment proposals.
+  ///
+  /// In en, this message translates to:
+  /// **'Review proposals'**
+  String get segmentReviewOpen;
+
+  /// Title of the segment proposal review screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment proposals'**
+  String get segmentReviewTitle;
+
+  /// Undoes the last change of the segments or of a review decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get segmentReviewUndo;
+
+  /// Redoes the last undone change of the segments or of a review decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get segmentReviewRedo;
+
+  /// Explains that the review is optional and what rejecting does.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.'**
+  String get segmentReviewIntro;
+
+  /// How many proposals there are and the lap they were made from.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 proposal from {lap}} other{{count} proposals from {lap}}}'**
+  String segmentReviewSummary(int count, String lap);
+
+  /// Approves every open proposal (rejected ones stay out).
+  ///
+  /// In en, this message translates to:
+  /// **'Approve all'**
+  String get segmentReviewApproveAll;
+
+  /// Computes the proposals again from the lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Recompute'**
+  String get segmentReviewRecompute;
+
+  /// Shown after Approve all.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 proposal approved} other{{count} proposals approved}}'**
+  String segmentReviewApproved(int count);
+
+  /// Approve all found nothing it could approve.
+  ///
+  /// In en, this message translates to:
+  /// **'No proposal could be approved.'**
+  String get segmentReviewNoneApproved;
+
+  /// Rejects this proposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get segmentReviewReject;
+
+  /// Takes back the rejection of this proposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get segmentReviewRestore;
+
+  /// State of a proposal awaiting a decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed'**
+  String get segmentReviewStateProposed;
+
+  /// State of a proposal that is an approved segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get segmentReviewStateApproved;
+
+  /// State of a proposal the driver rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get segmentReviewStateRejected;
+
+  /// State of a proposal that overlaps an approved segment that came from an edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Overlaps approved'**
+  String get segmentReviewStateSuperseded;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get segmentReviewCorner;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight'**
+  String get segmentReviewStraight;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Sector'**
+  String get segmentReviewSector;
+
+  /// A corner's total heading change, turning left.
+  ///
+  /// In en, this message translates to:
+  /// **'{degrees}° left'**
+  String segmentReviewTurnLeft(String degrees);
+
+  /// A corner's total heading change, turning right.
+  ///
+  /// In en, this message translates to:
+  /// **'{degrees}° right'**
+  String segmentReviewTurnRight(String degrees);
+
+  /// A proposal's start and end in metres from the line with their tolerance, and its length.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)'**
+  String segmentReviewBounds(
+    String start,
+    String startTolerance,
+    String end,
+    String endTolerance,
+    String length,
+  );
+
+  /// The proposal runs across the start/finish line.
+  ///
+  /// In en, this message translates to:
+  /// **'Crosses start/finish'**
+  String get segmentReviewCrossesLine;
+
+  /// Why the proposal's start is uncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Start uncertain: {reasons}'**
+  String segmentReviewStartUncertain(String reasons);
+
+  /// Why the proposal's end is uncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'End uncertain: {reasons}'**
+  String segmentReviewEndUncertain(String reasons);
+
+  /// Uncertainty: no straight between two corners.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners connect without a straight'**
+  String get segmentReviewConnectedCorners;
+
+  /// Uncertainty: the straight next to this boundary is short.
+  ///
+  /// In en, this message translates to:
+  /// **'Short straight'**
+  String get segmentReviewShortStraight;
+
+  /// Uncertainty: the lap has no GPS near this boundary.
+  ///
+  /// In en, this message translates to:
+  /// **'Near a GPS gap in this lap'**
+  String get segmentReviewGpsGap;
+
+  /// Where the corner turns most, from the track's shape (not from speed).
+  ///
+  /// In en, this message translates to:
+  /// **'Geometric apex {at} m ±{tolerance} m'**
+  String segmentReviewApex(String at, String tolerance);
+
+  /// The corner has more than one apex, so none is proposed.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple apexes — review manually'**
+  String get segmentReviewApexMultiple;
+
+  /// No apex: the corner runs across the timing gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner crosses the timing gate'**
+  String get segmentReviewApexCrossesGate;
+
+  /// No apex could be found for this corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex unresolved'**
+  String get segmentReviewApexUnresolved;
+
+  /// Shown while the theoretical best is calculated before the review.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing every lap on one track axis…'**
+  String get segmentReviewWaiting;
+
+  /// Shown while the proposals are computed.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding corners and straights…'**
+  String get segmentReviewComputing;
+
+  /// No proposals: the lap or its recording is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'The lap the segments are measured on is not available.'**
+  String get segmentReviewNoLap;
+
+  /// No proposals: the lap's GPS trace is unusable.
+  ///
+  /// In en, this message translates to:
+  /// **'This lap\'s GPS trace cannot be made into a track axis.'**
+  String get segmentReviewNoAxis;
+
+  /// No proposals: unsplittable geometry.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic proposal: this lap turns continuously, with no straight between corners.'**
+  String get segmentReviewContinuousCorner;
+
+  /// No proposals: no corners.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic proposal: no corner was detected on this lap.'**
+  String get segmentReviewNoCorners;
+
+  /// No proposals: too many segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic proposal: the lap would split into more than {count} segments.'**
+  String segmentReviewTooMany(int count);
+
+  /// The proposals failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The proposals could not be computed.'**
+  String get segmentReviewFailed;
+
+  /// A review action, undo or redo was not done because the day is being saved.
+  ///
+  /// In en, this message translates to:
+  /// **'The day is being saved. Try again in a moment.'**
+  String get segmentReviewSaving;
+
+  /// A change was not done because the theoretical best is not calculated yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments can be changed once the theoretical best is calculated.'**
+  String get segmentReviewSegmentsUnavailable;
+
+  /// A review action was not done because the proposals are still being computed.
+  ///
+  /// In en, this message translates to:
+  /// **'The proposals are not ready yet.'**
+  String get segmentReviewNotReady;
+
+  /// The proposal changed before the action was done.
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal is no longer available.'**
+  String get segmentReviewNoLongerAvailable;
+
+  /// Rejecting was refused: the proposal is approved or overlaps an approved segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Only open proposals can be rejected.'**
+  String get segmentReviewNotOpen;
+
+  /// The rejection could not be written in the day's document.
+  ///
+  /// In en, this message translates to:
+  /// **'The rejection cannot be stored.'**
+  String get segmentReviewNotStored;
+
+  /// Undo found no change to undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to undo.'**
+  String get segmentReviewNothingToUndo;
+
+  /// Redo found no change to redo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to redo.'**
+  String get segmentReviewNothingToRedo;
+
+  /// Undo or redo was refused because the segments changed elsewhere; the history was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments changed outside this editor, so the edit history was cleared.'**
+  String get segmentReviewHistoryCleared;
+
+  /// An uncertainty reason this version of the app does not know.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncertain boundary'**
+  String get segmentReviewUncertainOther;
 }
 
 class _AppLocalizationsDelegate

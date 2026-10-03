@@ -174,7 +174,8 @@ difference. Never edit the JSON by hand.
 
 Opens `.fetproject` documents with FlappedEar Overlays' own C++ code and prints
 what Overlays sees: whether the document is valid, each run's approved
-segments (valid, count and revision), each run's recording
+segments (valid, count and revision), its segment review's rejections (valid,
+count), each run's recording
 (resolved path, `telemetry-v1` fingerprint match, content SHA-256), lap
 derivation key and track configuration, its source-fusion decision as Run
 details judges it, the laps its exclusions apply to with
@@ -195,9 +196,10 @@ The test saves a synthetic day with a circuit name and an excluded lap and
 checks that Overlays reads all of it. It is skipped when the variable is not set.
 The test also checks that the chosen group's best lap got automatic segments,
 which Overlays accepts, and saves a day whose segments were split, merged,
-moved, renamed and removed (`DaySegmentEdits`): Overlays reads the same
-segment revision and keeps them on re-save. A third test saves a synthetic
-VBO/RCZ pair fused automatically with a channel rule (FET-51): Overlays
+moved, renamed and removed (`DaySegmentEdits`), with the removed segment's
+proposal rejected in the segment review (FET-56): Overlays reads the same
+segment revision and a valid `trackSegmentReview`, and keeps them on re-save.
+A third test saves a synthetic VBO/RCZ pair fused automatically with a channel rule (FET-51): Overlays
 validates the run's `fusion` decision, applies it ("applied": both recordings'
 content revisions match), keeps it on re-save, and reports a decision bound to
 other content as "needsRevalidation". Last run against FlappedEar/Overlay
