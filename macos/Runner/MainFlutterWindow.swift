@@ -12,6 +12,7 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
     fileAccess.register(with: flutterViewController.engine.binaryMessenger)
+    AppleMapPlugin.register(with: flutterViewController.registrar(forPlugin: "AppleMapPlugin"))
 
     super.awakeFromNib()
   }

@@ -336,4 +336,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String coachWhyMap(String segment) {
     return 'Ślad najlepszego okrążenia z wyróżnionym: $segment';
   }
+
+  @override
+  String get appleMapLegal => 'Informacje prawne';
 }

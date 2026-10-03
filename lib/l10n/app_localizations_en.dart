@@ -331,4 +331,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String coachWhyMap(String segment) {
     return 'Best lap trace with $segment highlighted';
   }
+
+  @override
+  String get appleMapLegal => 'Legal';
 }

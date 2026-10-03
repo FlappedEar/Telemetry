@@ -503,5 +503,9 @@
         "example": "Corner 4"
       }
     }
+  },
+  "appleMapLegal": "Legal",
+  "@appleMapLegal": {
+    "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
   }
 }
