@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -392,6 +393,62 @@ void main() {
       }
     });
 
+    testWidgets('another day\'s unsaved work is not replaced by today\'s', (
+      tester,
+    ) async {
+      final incoming = _FakeIncoming();
+      // Today's day, saved in the app.
+      final saved = '${directory.path}/Today.fetproject';
+      await tester.runAsync(() async {
+        final outcome = runDayImport((
+          paths: [write('a.vbo', _datedVbo(hour: 10))],
+          includeSubfolders: false,
+        ));
+        final day = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+        );
+        await day.save(saved);
+        day.dispose();
+        // Then an older day changed and left unsaved.
+        await keepUnsaved(write('x.vbo', _datedVbo(hour: 9, day: 5)));
+      });
+      final before = await tester.runAsync(store.load);
+      await tester.binding.setSurfaceSize(const Size(400, 3000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            controller: controller,
+            pickers: pickers,
+            incoming: incoming,
+            recovery: store,
+            appender: _SyncAppender(),
+            documents: _SavedDays([saved]),
+          ),
+        ),
+      );
+      final shared = write('b.vbo', _datedVbo(hour: 12, speed: 80));
+      incoming.controller.add([shared]);
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      // Imported here, next to the offer to restore the other day.
+      expect(importer.jobs.single.request.paths, [shared]);
+      for (var i = 0; i < 10; ++i) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+      final after = await tester.runAsync(store.load);
+      expect(after!.timestamp, before!.timestamp);
+      expect(
+        (after.document['event'] as Map)['id'],
+        (before.document['event'] as Map)['id'],
+      );
+      final runs = (readDayDocument(saved)['event'] as Map)['runs'] as List;
+      expect(runs, hasLength(1));
+    });
+
     testWidgets('a recording of another date starts its own day', (
       tester,
     ) async {
@@ -585,4 +642,23 @@ void main() {
     expect(displayTime(59.9996), '1:00.000');
     expect(displayTime(double.nan), '—');
   });
+}
+
+/// Answers with fixed saved days, newest first.
+final class _SavedDays implements DocumentPickers {
+  _SavedDays(this.days);
+
+  final List<String> days;
+
+  @override
+  Future<String?> saveLocation(String name) async => null;
+
+  @override
+  Future<String?> pickDocument() async => null;
+
+  @override
+  Future<String?> pickFolder() async => null;
+
+  @override
+  Future<List<String>> savedDays() async => days;
 }

@@ -13,6 +13,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../../packages/telemetry_core/test/rcz/rcz_fixture.dart';
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
+import 'rectangle_vbo.dart';
 
 /// Prepares additions on the test's own thread.
 final class _SyncAppender implements DayAppender {
@@ -33,6 +34,23 @@ final class _SyncJob implements DayAppendJob {
 
   @override
   void cancel() {}
+}
+
+/// An addition that finishes only when cancelled.
+final class _PendingAppender implements DayAppender {
+  @override
+  DayAppendJob start(DayAppendRequest request, void Function(int, int) _) =>
+      _PendingJob();
+}
+
+final class _PendingJob implements DayAppendJob {
+  final _completer = Completer<DayAppendOutcome>();
+
+  @override
+  Future<DayAppendOutcome> get result => _completer.future;
+
+  @override
+  void cancel() => _completer.completeError(const OperationCancelled());
 }
 
 final class _FakePickers implements RecordingPickers {
@@ -167,6 +185,36 @@ void main() {
     expect(opened.analysis.groups.single.runIds, hasLength(3));
   });
 
+  test('a reopened day keeps the group it was saved with', () async {
+    final a = write('a.vbo', [30, 28, 31, 30]);
+    final r = '${directory.path}/r.vbo';
+    File(r).writeAsStringSync(rectangleVbo([(_) => 20, (_) => 21]));
+    final first = runDayImport((paths: [a, r], includeSubfolders: false));
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+    );
+    expect(controller.analysis.groups, hasLength(2));
+    final other = controller.analysis.groups.firstWhere(
+      (group) => group.id != controller.analysis.chosenGroupId,
+    );
+    controller.chooseGroup(other.id);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+
+    final opened = DayResultsController.opened(
+      openDay(path),
+      appender: _SyncAppender(),
+    );
+    expect(opened.analysis.chosenGroupId, other.id);
+    final b = write('b.vbo', [29, 33, 30]);
+    expect((await opened.addRecordings([b])).added, ['Session 3']);
+    expect(opened.analysis.chosenGroupId, other.id);
+    final saved = (readDayDocument(path)['event'] as Map)['analysisDecisions'];
+    expect((saved as Map)['comparisonGroupId'], other.id);
+  });
+
   test('a session added while the day is being saved is not lost', () async {
     final a = write('a.vbo', [30, 28, 31]);
     final b = write('b.vbo', [29, 33]);
@@ -197,6 +245,51 @@ void main() {
     expect(controller.dirty, isFalse);
     final runs = (readDayDocument(path)['event'] as Map)['runs'] as List;
     expect(runs, hasLength(2));
+  });
+
+  test(
+    'closing the day while adding says the recordings were not added',
+    () async {
+      final a = write('a.vbo', [30, 28, 31]);
+      final first = runDayImport((paths: [a], includeSubfolders: false));
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _PendingAppender(),
+      );
+      final adding = controller.addRecordings([
+        write('b.vbo', [29, 33]),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      controller.dispose();
+      final addition = await adding;
+      expect(addition.closed, isTrue);
+      expect(addition.added, isEmpty);
+    },
+  );
+
+  test('a save asked for while another runs follows it', () async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final gate = Completer<void>();
+    final written = <String>[];
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      writer: (path, document) async {
+        if (written.isEmpty) await gate.future;
+        await saveDayDocument(path, document);
+        written.add(path);
+      },
+    );
+    final one = '${directory.path}/One.fetproject';
+    final two = '${directory.path}/Two.fetproject';
+    final firstSave = controller.save(one);
+    final second = controller.save(two);
+    gate.complete();
+    await Future.wait([firstSave, second]);
+    expect(written, [one, two]);
+    expect(controller.documentPath, two);
   });
 
   test('the RCZ of a session already in the day is not added again', () async {

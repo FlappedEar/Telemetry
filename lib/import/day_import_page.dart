@@ -240,20 +240,32 @@ class _DayImportPageState extends State<DayImportPage> {
   /// Shows the day of [controller], then checks again for an unsaved day
   /// left behind.
   Future<void> _show(DayResultsController controller) async {
-    _shownDay = controller;
-    try {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => DayResultsPage.controller(
-            controller: controller,
-            documents: widget.documents,
-            pickers: widget.pickers,
-            recovery: widget.recovery,
+    // A day opened again with its recordings found elsewhere is shown in
+    // its place, and takes the recordings shared from then on.
+    DayResultsController? next = controller;
+    while (next != null && mounted) {
+      final shown = next!;
+      next = null;
+      _shownDay = shown;
+      try {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DayResultsPage.controller(
+              controller: shown,
+              documents: widget.documents,
+              pickers: widget.pickers,
+              recovery: widget.recovery,
+              replace: (day) => next = day,
+            ),
           ),
-        ),
-      );
-    } finally {
-      if (identical(_shownDay, controller)) _shownDay = null;
+        );
+      } finally {
+        if (identical(_shownDay, shown)) _shownDay = null;
+      }
+    }
+    if (!mounted) {
+      next?.dispose();
+      return;
     }
     await _checkRecovery();
   }
@@ -374,7 +386,7 @@ class _DayImportPageState extends State<DayImportPage> {
     if (!mounted) return;
     final day = _shownDay;
     if (day != null) {
-      unawaited(day.addRecordings(paths));
+      _addTo(day, paths);
       return;
     }
     final waiting = _waiting;
@@ -400,6 +412,16 @@ class _DayImportPageState extends State<DayImportPage> {
     }
   }
 
+  /// Adds shared [paths] to [day]; when the day is closed before they are
+  /// added, they are received again here, so none is dropped.
+  void _addTo(DayResultsController day, List<String> paths) {
+    unawaited(
+      day.addRecordings(paths).then((addition) {
+        if (addition.closed && mounted) _receive(paths);
+      }),
+    );
+  }
+
   /// Shared recordings that arrived while a day was being opened; null when
   /// none is.
   List<String>? _waiting;
@@ -411,7 +433,7 @@ class _DayImportPageState extends State<DayImportPage> {
     _waiting = null;
     final shown = _show(controller);
     if (waiting != null && waiting.isNotEmpty) {
-      unawaited(controller.addRecordings(waiting));
+      _addTo(controller, waiting);
     }
     return shown;
   }
@@ -435,8 +457,9 @@ class _DayImportPageState extends State<DayImportPage> {
     final waiting = _waiting = [];
     setState(() => _opening = true);
     DayResultsController? today;
+    var snapshotLeft = true;
     try {
-      today = await _todayWith(paths);
+      (day: today, :snapshotLeft) = await _todayWith(paths);
     } finally {
       _waiting = null;
       if (mounted) setState(() => _opening = false);
@@ -446,12 +469,14 @@ class _DayImportPageState extends State<DayImportPage> {
       return;
     }
     if (today == null) {
-      _showWhenImported = !_controller.isWorking;
+      // Opening the imported day would replace an unsaved day kept for
+      // recovery: the import stays here, next to the offer to restore it.
+      _showWhenImported = !_controller.isWorking && !snapshotLeft;
       _start([...paths, ...waiting]);
       return;
     }
     final shown = _show(today);
-    if (waiting.isNotEmpty) unawaited(today.addRecordings(waiting));
+    if (waiting.isNotEmpty) _addTo(today, waiting);
     await shown;
   }
 
@@ -461,12 +486,16 @@ class _DayImportPageState extends State<DayImportPage> {
       DateTime.now().difference(time) < const Duration(hours: 24);
 
   /// The first day that takes [paths] as recordings of its date, with them
-  /// added; null when none does.
-  Future<DayResultsController?> _todayWith(List<String> paths) async {
-    final candidates = <Future<DayResultsController?> Function()>[
-      () async {
-        final recovery = await queueRecovery(widget.recovery.load);
-        if (recovery == null || !_recent(recovery.timestamp)) return null;
+  /// added; null when none does. [snapshotLeft] says an unsaved day kept for
+  /// recovery was not that day: it is left for the user to restore, so no
+  /// other day is opened, which would replace it.
+  Future<({DayResultsController? day, bool snapshotLeft})> _todayWith(
+    List<String> paths,
+  ) async {
+    final recovery = await queueRecovery(widget.recovery.load);
+    if (recovery != null) {
+      if (!_recent(recovery.timestamp)) return (day: null, snapshotLeft: true);
+      final day = await _added(paths, () async {
         await widget.fileAccess.restore();
         final day = await Isolate.run(_recoverJob(recovery));
         return day.analysis == null
@@ -477,35 +506,44 @@ class _DayImportPageState extends State<DayImportPage> {
                 recovery: widget.recovery,
                 appender: widget.appender,
               );
-      },
-      () async {
-        final saved = await widget.documents.savedDays();
-        if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
-          return null;
-        }
-        await widget.fileAccess.restore();
-        final day = await Isolate.run(_openJob(saved.first));
-        return day.analysis == null
-            ? null
-            : DayResultsController.opened(
-                day,
-                recovery: widget.recovery,
-                appender: widget.appender,
-              );
-      },
-    ];
-    for (final candidate in candidates) {
-      DayResultsController? day;
-      try {
-        day = await candidate();
-        if (day == null) continue;
-        final addition = await day.addRecordings(paths, sameDayOnly: true);
-        if (!addition.otherDay && addition.error.isEmpty) return day;
-      } on Exception catch (error) {
-        debugPrint('Today\'s day not continued: $error');
-      }
-      day?.dispose();
+      });
+      return (day: day, snapshotLeft: day == null);
     }
+    final day = await _added(paths, () async {
+      final saved = await widget.documents.savedDays();
+      if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
+        return null;
+      }
+      await widget.fileAccess.restore();
+      final day = await Isolate.run(_openJob(saved.first));
+      return day.analysis == null
+          ? null
+          : DayResultsController.opened(
+              day,
+              recovery: widget.recovery,
+              appender: widget.appender,
+            );
+    });
+    return (day: day, snapshotLeft: false);
+  }
+
+  /// The day [open] gives with [paths] added as recordings of its date;
+  /// null when it gives none or does not take them. A day not taken is
+  /// discarded as it was: its recovery snapshot is not written again.
+  Future<DayResultsController?> _added(
+    List<String> paths,
+    Future<DayResultsController?> Function() open,
+  ) async {
+    DayResultsController? day;
+    try {
+      day = await open();
+      if (day == null) return null;
+      final addition = await day.addRecordings(paths, sameDayOnly: true);
+      if (!addition.otherDay && addition.error.isEmpty) return day;
+    } on Exception catch (error) {
+      debugPrint('Today\'s day not continued: $error');
+    }
+    day?.discard();
     return null;
   }
 

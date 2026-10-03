@@ -81,7 +81,9 @@ final class DayResultsController extends ChangeNotifier {
     detectedSpeedUnit = commonSpeedUnit([
       for (final run in runs) run.run.telemetry,
     ]);
-    _scheduleRecovery();
+    // A restored day is what its snapshot holds: written again only when it
+    // changes, so a day restored and not taken leaves the snapshot as it was.
+    if (!recovered) _scheduleRecovery();
   }
 
   /// A day opened from its document. A day whose recordings were found in
@@ -193,7 +195,11 @@ final class DayResultsController extends ChangeNotifier {
   /// [FetprojectError] when the document cannot be written; the previous
   /// file is then left as it was.
   Future<void> save(String path) async {
-    if (_saving) throw const FetprojectError('A save is already running.');
+    // One save at a time: a save asked for while another runs, such as
+    // Save as… during the save after adding a session, follows it.
+    while (_saving) {
+      await _saveDone?.future;
+    }
     _saving = true;
     final done = _saveDone = Completer<void>();
     notifyListeners();
@@ -249,13 +255,26 @@ final class DayResultsController extends ChangeNotifier {
     try {
       return await job.result;
     } on OperationCancelled {
-      return const DayAddition(notes: [], error: 'Adding was cancelled.');
+      return DayAddition(
+        notes: const [],
+        error: 'Adding was cancelled.',
+        closed: _disposed,
+      );
     } on Object catch (error) {
       return DayAddition(notes: const [], error: 'Nothing was added: $error');
     } finally {
       if (identical(_appendJob, job)) _appendJob = null;
       if (!_disposed) notifyListeners();
     }
+  }
+
+  /// The group the day's document saved as shown, which leads when the day
+  /// is opened again, as it does here: an added session does not change it.
+  String? get _savedGroupId {
+    final event = _document?['event'];
+    final decisions = event is Map ? event['analysisDecisions'] : null;
+    final group = decisions is Map ? decisions['comparisonGroupId'] : null;
+    return group is String ? group : null;
   }
 
   /// The new [runs] that are another format of one of the day's sessions,
@@ -281,6 +300,9 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   final DayAppender _appender;
+
+  /// Prepares the recordings added to the day.
+  DayAppender get appender => _appender;
   DayAppendJob? _appendJob;
 
   /// Whether recordings are being added to the day, or wait to be.
@@ -301,7 +323,14 @@ final class DayResultsController extends ChangeNotifier {
     List<String> paths, {
     bool sameDayOnly = false,
   }) async {
-    if (paths.isEmpty || _disposed) return const DayAddition(notes: []);
+    if (paths.isEmpty) return const DayAddition(notes: []);
+    if (_disposed) {
+      return const DayAddition(
+        notes: [],
+        error: 'The day was closed.',
+        closed: true,
+      );
+    }
     ++_waitingAdditions;
     notifyListeners();
     final previous = _additions;
@@ -310,9 +339,7 @@ final class DayResultsController extends ChangeNotifier {
     DayAddition addition;
     try {
       if (previous != null) await previous;
-      addition = _disposed
-          ? const DayAddition(notes: [], error: 'The day was closed.')
-          : await _add(paths, sameDayOnly: sameDayOnly);
+      addition = await _add(paths, sameDayOnly: sameDayOnly);
     } finally {
       --_waitingAdditions;
       done.complete();
@@ -328,6 +355,13 @@ final class DayResultsController extends ChangeNotifier {
     List<String> paths, {
     required bool sameDayOnly,
   }) async {
+    if (_disposed) {
+      return const DayAddition(
+        notes: [],
+        error: 'The day was closed.',
+        closed: true,
+      );
+    }
     int? sameDayAs;
     if (sameDayOnly) {
       for (final named in _runs) {
@@ -370,7 +404,14 @@ final class DayResultsController extends ChangeNotifier {
     if (prepared is DayAddition) return prepared;
     final outcome = prepared as DayAppendOutcome;
     final part = outcome.part;
-    if (_disposed || part == null || outcome.runs.isEmpty) {
+    if (_disposed) {
+      return const DayAddition(
+        notes: [],
+        error: 'The day was closed.',
+        closed: true,
+      );
+    }
+    if (part == null || outcome.runs.isEmpty) {
       return DayAddition(
         notes: outcome.notes,
         error: outcome.error,
@@ -383,7 +424,7 @@ final class DayResultsController extends ChangeNotifier {
         part,
         manualTracks: _analysis.manualTracks,
         exclusions: _exclusions,
-        preferredGroupId: _groupChosen ? _groupId : null,
+        preferredGroupId: _groupChosen ? _groupId : _savedGroupId,
       );
     } on Exception catch (error) {
       return DayAddition(
@@ -1034,6 +1075,14 @@ final class DayResultsController extends ChangeNotifier {
     return _recoveryWork;
   }
 
+  /// Disposes a day that was never shown without writing its recovery
+  /// snapshot, so the snapshot it may have been restored from stays as it
+  /// was.
+  void discard() {
+    _recoveryTimer?.cancel();
+    dispose();
+  }
+
   @override
   void dispose() {
     _disposed = true;
@@ -1101,11 +1150,15 @@ final class DayAddition {
     this.savedTo,
     this.saveError = '',
     this.otherDay = false,
+    this.closed = false,
   });
 
   /// Nothing was added: the recordings are from another day than this one
   /// (asked with `sameDayOnly`).
   final bool otherDay;
+
+  /// Nothing was added because the day was closed first.
+  final bool closed;
 
   /// The new sessions' names, "Session 4".
   final List<String> added;

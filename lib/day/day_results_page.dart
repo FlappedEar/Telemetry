@@ -36,7 +36,8 @@ class DayResultsPage extends StatefulWidget {
     this.documents = const PlatformDocumentPickers(),
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
-  }) : _create = (() => DayResultsController(
+  }) : replace = null,
+       _create = (() => DayResultsController(
          runs: runs,
          analysis: analysis,
          recovery: recovery,
@@ -49,15 +50,20 @@ class DayResultsPage extends StatefulWidget {
     this.documents = const PlatformDocumentPickers(),
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
-  }) : _create = (() => DayResultsController.opened(day, recovery: recovery));
+  }) : replace = null,
+       _create = (() => DayResultsController.opened(day, recovery: recovery));
 
-  /// A day held by [controller], which the page then owns.
+  /// A day held by [controller], which the page then owns. With [replace],
+  /// a day opened again with its recordings found elsewhere goes to
+  /// [replace] as this page closes, for the caller to show; otherwise this
+  /// page is replaced by one of that day.
   DayResultsPage.controller({
     super.key,
     required DayResultsController controller,
     this.documents = const PlatformDocumentPickers(),
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
+    this.replace,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
@@ -68,6 +74,10 @@ class DayResultsPage extends StatefulWidget {
 
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
+
+  /// Takes the day opened again in place of this one; see
+  /// [DayResultsPage.controller].
+  final ValueChanged<DayResultsController>? replace;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
@@ -270,6 +280,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
         return;
       }
       if (day.analysis == null) return;
+      final replace = widget.replace;
+      if (replace != null) {
+        replace(
+          DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: _controller.appender,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           builder: (_) => DayResultsPage.opened(
