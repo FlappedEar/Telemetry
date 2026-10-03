@@ -1,7 +1,9 @@
 // The track day rehearsed on real recordings (FET-47): the day's first VBO
 // opens a day, then each later VBO is added one at a time, as at the track,
 // and the coach's plan, its timing and the process memory are printed after
-// each. Set FLAPPEDEAR_REAL_DAY to a folder of one day's VBO files; nothing
+// each. The first file is imported on the test's own thread, the others
+// through the day's appender as at the track, so the first "add" is not
+// comparable; memory is this machine's. Set FLAPPEDEAR_REAL_DAY to a folder of one day's VBO files; nothing
 // from the recordings is copied or kept. Skipped otherwise.
 import 'dart:io';
 
@@ -59,7 +61,7 @@ void main() {
                 '${item.finding.affectedLaps.length} laps: '
                 '${[for (final e in item.finding.evidence) '${e.metric} ${e.observed.toStringAsFixed(1)} vs ${e.reference.toStringAsFixed(1)} ${e.unit}'].join('; ')}\n'
                 '    laps ${[for (final lap in item.finding.affectedLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}'
-                ' against ${[for (final lap in item.finding.evidence.first.referenceLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}',
+                '${item.finding.kind.corrective ? ' against' : ', from'} ${[for (final lap in item.finding.evidence.first.referenceLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}',
         ];
         // ignore: avoid_print
         print(lines.join('\n'));
@@ -74,6 +76,7 @@ void main() {
         final addition = await controller.addRecordings([path]);
         final add = clock.elapsed;
         expect(addition.error, isEmpty);
+        expect(addition.added, isNotEmpty);
         clock.reset();
         await coached();
         report(addition.added.join(', '), add, clock.elapsed);

@@ -362,11 +362,16 @@ final class DayResultsController extends ChangeNotifier {
   /// been saved is saved again where it was. Additions run one after
   /// another, in the order asked. With [sameDayOnly], nothing is added
   /// unless every new recording started on the day's date
-  /// ([DayAddition.otherDay]).
+  /// ([DayAddition.otherDay]). [since], when given, runs from when the
+  /// recordings arrived (a share opening the day first), for the
+  /// diagnostics; else the time is measured from this call, waiting for
+  /// earlier additions included.
   Future<DayAddition> addRecordings(
     List<String> paths, {
     bool sameDayOnly = false,
+    Stopwatch? since,
   }) async {
+    final clock = since ?? (Stopwatch()..start());
     if (paths.isEmpty) return const DayAddition(notes: []);
     if (_disposed) {
       return const DayAddition(
@@ -383,7 +388,7 @@ final class DayResultsController extends ChangeNotifier {
     DayAddition addition;
     try {
       if (previous != null) await previous;
-      addition = await _add(paths, sameDayOnly: sameDayOnly);
+      addition = await _add(paths, sameDayOnly: sameDayOnly, clock: clock);
     } finally {
       --_waitingAdditions;
       done.complete();
@@ -398,8 +403,8 @@ final class DayResultsController extends ChangeNotifier {
   Future<DayAddition> _add(
     List<String> paths, {
     required bool sameDayOnly,
+    required Stopwatch clock,
   }) async {
-    final clock = Stopwatch()..start();
     if (_disposed) {
       return const DayAddition(
         notes: [],
@@ -841,7 +846,9 @@ final class DayResultsController extends ChangeNotifier {
       _theoreticalBest?.state == DayTheoreticalBestState.error;
 
   /// Running from the start of the last addition until the coach's plan
-  /// for it; null once measured.
+  /// for it, a save of automatic segments and its recalculation included;
+  /// null once measured, or when it failed or the user changed the day
+  /// meanwhile.
   Stopwatch? _additionClock;
 
   /// Why the coach could not run; empty when it ran.
@@ -899,6 +906,7 @@ final class DayResultsController extends ChangeNotifier {
     if (result.state == DayTheoreticalBestState.error) {
       // The coach needs the sector times, which failed (see
       // [coachWithoutTheoreticalBest]).
+      _additionClock = null;
       _coach = null;
       _coachError = '';
       _coachLoading = false;
@@ -1111,6 +1119,8 @@ final class DayResultsController extends ChangeNotifier {
   void _segmentsChanged() {
     _revision++;
     _dirty = true;
+    // The user's change ends the measurement of the last addition.
+    _additionClock = null;
     _resetTheoreticalBest();
     _scheduleRecovery();
     notifyListeners();
@@ -1179,6 +1189,8 @@ final class DayResultsController extends ChangeNotifier {
   void _rerank() {
     _revision++;
     _dirty = true;
+    // The user's change ends the measurement of the last addition.
+    _additionClock = null;
     _resetTheoreticalBest();
     _analysis = rerankDay(
       _analysis,

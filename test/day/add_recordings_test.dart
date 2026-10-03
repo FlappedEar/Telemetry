@@ -69,6 +69,14 @@ final class _FakePickers implements RecordingPickers {
 }
 
 // Recordings here are synthetic (circuitVbo): no real data.
+/// Asks for the theoretical best and waits for the coach after it.
+Future<void> coached(DayResultsController controller) async {
+  await controller.requestTheoreticalBest();
+  while (controller.coachLoading) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 void main() {
   late Directory directory;
   setUp(
@@ -641,4 +649,62 @@ void main() {
       );
     },
   );
+
+  test('a change before the coach ends the timing of an addition', () async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final b = write('b.vbo', [29, 33]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final diagnostics = AppDiagnostics();
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      diagnostics: diagnostics,
+      coachRunner: (job) async => job(),
+    );
+    addTearDown(controller.dispose);
+    List<String> names() => [for (final step in diagnostics.steps) step.name];
+
+    // A lap excluded before the coach ran: the coach's time is not the
+    // addition's.
+    expect((await controller.addRecordings([b])).added, ['Session 2']);
+    expect(names(), contains(DiagnosticSteps.addSession));
+    final lap = controller.analysis.rows.firstWhere(
+      (row) => row.type == LapSectionType.lap,
+    );
+    expect(controller.exclude(lap, 'test'), isTrue);
+    await coached(controller);
+    expect(names(), contains(DiagnosticSteps.coach));
+    expect(names(), isNot(contains(DiagnosticSteps.addToCoach)));
+  });
+
+  test('the timing of an addition runs from when it was asked', () async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final b = write('b.vbo', [29, 33]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final diagnostics = AppDiagnostics();
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      diagnostics: diagnostics,
+      coachRunner: (job) async => job(),
+    );
+    addTearDown(controller.dispose);
+    // A share that waited 300 ms to open the day first.
+    final since = Stopwatch()..start();
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    await controller.addRecordings([b], since: since);
+    await coached(controller);
+    Duration step(String name) =>
+        diagnostics.steps.firstWhere((step) => step.name == name).duration;
+    expect(
+      step(DiagnosticSteps.addSession),
+      greaterThanOrEqualTo(const Duration(milliseconds: 300)),
+    );
+    expect(
+      step(DiagnosticSteps.addToCoach),
+      greaterThanOrEqualTo(step(DiagnosticSteps.addSession)),
+    );
+  });
 }

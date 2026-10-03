@@ -12,8 +12,14 @@ abstract final class DiagnosticSteps {
   static const importTotal = 'Import, start to results';
   static const theoreticalBest = 'Theoretical best and segments';
   static const channelSummaries = 'Channel summaries';
+
+  /// From the share (or Add recordings) until the session is in the day,
+  /// opening today's day and waiting for earlier additions included, its
+  /// save not.
   static const addSession = 'Add a session';
   static const coach = 'Coach';
+
+  /// From the same start until the Next session card has the coach's plan.
   static const addToCoach = 'Add a session, to the coach';
 }
 
