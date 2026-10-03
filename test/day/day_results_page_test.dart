@@ -117,6 +117,9 @@ void main() {
     expect(find.text(best.displayName), findsWidgets);
     expect(find.byType(TrackMap), findsOneWidget);
     expect(find.text('Best lap of each session'), findsOneWidget);
+    // On a phone the laps are the second tab.
+    await tester.tap(find.widgetWithText(Tab, 'Laps'));
+    await tester.pumpAndSettle();
     expect(find.text('Best of the day'), findsOneWidget);
     // OUT, 3 laps, IN; OUT, 2 laps, IN.
     expect(find.textContaining(' · OUT'), findsNWidgets(2));

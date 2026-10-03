@@ -154,50 +154,82 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
+  /// Two panes from this width; below it the summary and the laps are tabs.
+  static const _twoPaneWidth = 900.0;
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => Text(
-          _controller.documentPath == null
-              ? 'Day results'
-              : '${_controller.name}${_controller.dirty ? ' •' : ''}',
-        ),
-      ),
-      actions: [
-        ListenableBuilder(
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _page(context, constraints.maxWidth),
+  );
+
+  Widget _page(BuildContext context, double width) {
+    final wide = width >= _twoPaneWidth;
+    // The trace keeps a similar shape from a small phone to a tablet in
+    // portrait: about 0.6 of the card's width.
+    final mapHeight = wide ? 360.0 : ((width - 64) * 0.6).clamp(200.0, 420.0);
+    final scaffold = Scaffold(
+      appBar: AppBar(
+        title: ListenableBuilder(
           listenable: _controller,
-          builder: (context, _) => IconButton(
-            tooltip: 'Save',
-            icon: const Icon(Icons.save_outlined),
-            onPressed: _controller.saving || !_controller.dirty
-                ? null
-                : () => _save(),
+          builder: (context, _) => Text(
+            _controller.documentPath == null
+                ? 'Day results'
+                : '${_controller.name}${_controller.dirty ? ' •' : ''}',
           ),
         ),
-        PopupMenuButton<void>(
-          tooltip: 'More',
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              onTap: () => _save(choose: true),
-              child: const Text('Save as…'),
+        actions: [
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) => IconButton(
+              tooltip: 'Save',
+              icon: const Icon(Icons.save_outlined),
+              onPressed: _controller.saving || !_controller.dirty
+                  ? null
+                  : () => _save(),
             ),
-          ],
-        ),
-      ],
-    ),
-    body: ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) => LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          final summary = _summary(context, wide);
+          ),
+          PopupMenuButton<void>(
+            tooltip: 'More',
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                onTap: () => _save(choose: true),
+                child: const Text('Save as…'),
+              ),
+            ],
+          ),
+        ],
+        bottom: wide
+            ? null
+            : const TabBar(
+                tabs: [
+                  Tab(text: 'Results'),
+                  Tab(text: 'Laps'),
+                ],
+              ),
+      ),
+      body: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) {
+          final summary = _summary(context, wide, mapHeight);
           final laps = _lapList(context);
           if (!wide) {
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [...summary, const SizedBox(height: 16), ...laps],
+            return TabBarView(
+              children: [
+                _KeepAlive(
+                  child: ListView(
+                    key: const ValueKey('dayResultsSummary'),
+                    padding: const EdgeInsets.all(16),
+                    children: summary,
+                  ),
+                ),
+                _KeepAlive(
+                  child: ListView(
+                    key: const ValueKey('dayResultsLaps'),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    children: laps,
+                  ),
+                ),
+              ],
             );
           }
           return Row(
@@ -206,6 +238,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               Expanded(
                 flex: 5,
                 child: ListView(
+                  key: const ValueKey('dayResultsSummary'),
                   padding: const EdgeInsets.all(16),
                   children: summary,
                 ),
@@ -213,6 +246,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               Expanded(
                 flex: 4,
                 child: ListView(
+                  key: const ValueKey('dayResultsLaps'),
                   padding: const EdgeInsets.all(16),
                   children: laps,
                 ),
@@ -221,10 +255,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           );
         },
       ),
-    ),
-  );
+    );
+    return wide ? scaffold : DefaultTabController(length: 2, child: scaffold);
+  }
 
-  List<Widget> _summary(BuildContext context, bool wide) {
+  List<Widget> _summary(BuildContext context, bool wide, double mapHeight) {
     final theme = Theme.of(context);
     final analysis = _controller.analysis;
     final ranking = _controller.ranking;
@@ -297,7 +332,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   if (path != null && !path.isEmpty) ...[
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: wide ? 360 : 240,
+                      height: mapHeight,
                       child: IgnorePointer(
                         child: TrackMap(
                           interactive: false,
@@ -508,5 +543,28 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       onTap: () => _open(row),
     );
+  }
+}
+
+/// Keeps a tab's scroll position and state, such as the lap chosen in the
+/// theoretical best, while the other tab is shown.
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

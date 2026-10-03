@@ -48,6 +48,13 @@ RaceChrono, export a session and choose **FlappedEar Telemetry** in the share
 sheet. The app copies the shared files into its own storage and imports them
 on **Import a day**.
 
+Below 900 logical pixels of width (a phone, or a tablet in portrait) the day
+page shows **Results** and **Laps** as two tabs; wider screens show them side
+by side. A lap's trace fills the rest of a tall screen and scrolls on a short
+one, such as a phone held sideways. `test/layout/screen_sizes_test.dart` opens
+every screen at small phone, Pixel and tablet sizes in both orientations and
+fails on any overflow.
+
 To install on Android without a store, download the
 `flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
 install `app-release.apk` (allow installs from the browser or file manager).
