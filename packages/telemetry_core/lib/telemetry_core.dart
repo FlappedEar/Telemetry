@@ -50,6 +50,9 @@ export 'src/day/day_progression.dart';
 export 'src/day/day_ranking.dart';
 export 'src/day/lap_path.dart';
 export 'src/day/track_inference.dart';
+export 'src/fusion/channel_fusion.dart';
+export 'src/fusion/recording_alignment.dart';
+export 'src/fusion/telemetry_sync_engine.dart';
 export 'src/geometry.dart'
     show
         CoordinateAxis,

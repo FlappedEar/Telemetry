@@ -96,12 +96,14 @@ pedal or sensor, calculated by the logger from GPS, or inferred from
 longitudinal G, which happens only when the recording has no such pedal
 channel.
 
-Speeds are labelled km/h or mph from the recordings: RCZ declares its unit,
-and a RaceChrono VBO names it in its header (`velocity kmh`), which the parser
-keeps as header metadata. **Settings** (the gear in the toolbar) chooses
-**Automatic**, **km/h** or **mph**. It changes only the label; values are
-always shown as recorded, never converted, so every calculation and the
-parity with FlappedEar Overlays are unchanged.
+Speeds carry the unit their recording declares: RCZ declares its unit, and a
+RaceChrono VBO names it in its header (`velocity kmh`), which the parser keeps
+as header metadata. A declared unit is always shown as declared. **Settings**
+(the gear in the toolbar) chooses the **unit for unlabelled speeds** (**None**,
+**km/h** or **mph**), used only for recordings that declare none. Values are
+never converted, so every calculation and the parity with FlappedEar Overlays
+are unchanged. A day whose recordings end up with different units, or with no
+unit, shows speeds without one rather than a wrong label.
 
 ## Phones and tablets
 

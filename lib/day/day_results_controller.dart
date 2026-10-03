@@ -81,9 +81,8 @@ final class DayResultsController extends ChangeNotifier {
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayDocument,
        _dirty = recovered || changed {
-    detectedSpeedUnit = commonSpeedUnit([
-      for (final run in runs) run.run.telemetry,
-    ]);
+    declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
+    _declaredSpeedUnits = declaredSpeedUnits;
     // A restored day is what its snapshot holds: written again only when it
     // changes, so a day restored and not taken leaves the snapshot as it was.
     if (!recovered) _scheduleRecovery();
@@ -180,6 +179,10 @@ final class DayResultsController extends ChangeNotifier {
   bool _theoreticalBestLoading = false;
   int _theoreticalBestGeneration = 0;
   bool _disposed = false;
+
+  // This day's [declaredSpeedUnits], cleared when it closes unless another
+  // day has opened since.
+  late List<String> _declaredSpeedUnits;
 
   // The last recovery write or clear queued (see [queueRecovery]).
   Future<void> _recoveryWork = Future.value();
@@ -453,6 +456,11 @@ final class DayResultsController extends ChangeNotifier {
       );
     }
     _runs.addAll(outcome.runs);
+    // The new session's speed unit counts as much as the others'.
+    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
+      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
+      _declaredSpeedUnits = declaredSpeedUnits;
+    }
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
     ++_addedSessions;
@@ -1121,6 +1129,9 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
+      declareDaySpeedUnits(const []);
+    }
     // Changes made just before leaving the day are still kept.
     _appendJob?.cancel();
     unawaited(flushRecovery());
