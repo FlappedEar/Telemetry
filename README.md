@@ -119,8 +119,24 @@ by side. A lap's trace keeps a readable height, with its charts below, and
 scrolls on a short screen, such as a phone held sideways; a comparison shows
 its map and its charts side by side on a wide screen and one under the other
 on a phone. `test/layout/screen_sizes_test.dart` opens
-every screen at small phone, Pixel and tablet sizes in both orientations and
-fails on any overflow.
+every screen at small phone, Pixel and tablet sizes in both orientations, at
+the normal text size and at 1.3 times it, and fails on any overflow.
+
+The screens are made for fingers: nothing depends on hovering, and every
+button, row and strip is at least 48 dp square with a label for screen
+readers. One finger always scrolls the page; maps zoom and move with two
+fingers (a double tap also zooms the tiled map), so a map never traps the
+scroll. On a chart, a tap or a sideways drag moves the cursor and an upward or
+downward drag scrolls the page. Wide tables, such as sector times and the
+times by segment, keep the lap or segment column in place and scroll the rest
+sideways. Lap A and B text uses a darker shade of their colours on a light
+background so it stays readable; the lines keep the colours. The lap chosen
+on a card, a table's mode and the Corner Analyzer's segment and zoom are kept
+while the card is scrolled out of view, and back closes a sheet or dialog
+before the page. `test/layout/touch_test.dart` checks tap targets and labels
+on every screen at both text sizes (the Diagnostics menu entry too), the
+two-finger and double-tap gestures on the plain and tiled maps of a lap and a
+comparison, chart drags and back.
 
 To install on Android without a store, download the
 `flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and

@@ -7,6 +7,7 @@ import '../format.dart';
 import '../units.dart';
 import 'corner_details.dart';
 import 'time_losses_card.dart' show CompareLaps, lapStretch;
+import 'touch.dart';
 import 'track_map.dart';
 
 /// The colour of a loss of [fraction] (0 to 1) of the largest: one hue, dim
@@ -66,7 +67,14 @@ class TheoreticalBestCard extends StatefulWidget {
 }
 
 class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
-  DayLapReference? _selected;
+  // Kept for the page: the list rebuilds the card when it scrolls back.
+  late DayLapReference? _selected = readPageState(context, _storage);
+  static const _storage = 'theoreticalBestLap';
+
+  void _choose(DayLapReference? reference) {
+    setState(() => _selected = reference);
+    writePageState(context, _storage, reference);
+  }
 
   // The segment of each fix of the best lap's trace, by its time.
   DayTheoreticalBest? _indexedResult;
@@ -188,7 +196,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                 ),
               ),
           ],
-          onChanged: (reference) => setState(() => _selected = reference),
+          onChanged: _choose,
         ),
         if (path != null && !path.isEmpty) ...[
           const SizedBox(height: 8),
@@ -235,7 +243,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
       _SectorTable(
         result: result,
         selected: lap?.lap.reference,
-        onSelect: (reference) => setState(() => _selected = reference),
+        onSelect: _choose,
       ),
     ];
   }
@@ -295,7 +303,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     speedUnitOf(context); // The summary's speeds follow the setting.
     final summary = comparison == null ? null : cornerSummary(comparison);
     final row = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      // 36 + 12: a 48 dp row to tap.
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Container(
@@ -314,27 +323,29 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(segment.name),
+                // Wraps at 360 dp: the lap that set the time matters.
                 Text(
                   _lossDetail(result, lap, index),
                   style: theme.textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (summary != null && summary.isNotEmpty)
                   Text(
                     summary,
                     key: ValueKey('cornerSummary ${corner!.name}'),
                     style: theme.textTheme.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             lap.lossSeconds[index] == null
                 ? '—'
                 : '+${lap.lossSeconds[index]!.toStringAsFixed(3)} s',
-            style: theme.textTheme.titleSmall,
+            textAlign: TextAlign.end,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
           if (analyze != null)
             IconButton(
@@ -486,7 +497,8 @@ class _LossLegend extends StatelessWidget {
   }
 }
 
-/// Laps by segments, scrolling sideways on a phone.
+/// Laps by segments: the lap column stays while the segments scroll
+/// sideways on a phone.
 class _SectorTable extends StatelessWidget {
   const _SectorTable({
     required this.result,
@@ -498,133 +510,85 @@ class _SectorTable extends StatelessWidget {
   final DayLapReference? selected;
   final ValueChanged<DayLapReference> onSelect;
 
-  static const _lapWidth = 136.0, _timeWidth = 76.0, _cellWidth = 62.0;
+  static const _lapWidth = 112.0, _timeWidth = 80.0, _cellWidth = 64.0;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final segments = result.segments;
-    final numbers = theme.textTheme.bodySmall?.copyWith(
+    final numbers = theme.textTheme.bodyMedium?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    Widget cell(
-      String text,
-      double width, {
-      TextStyle? style,
-      Color? color,
-      Alignment alignment = Alignment.centerRight,
-    }) => Container(
-      width: width,
-      height: 36,
-      color: color,
-      alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Text(
-        text,
-        style: style,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    final label = theme.textTheme.labelMedium;
+    Widget name(String text, {TextStyle? style}) => TableCellText(
+      text,
+      style: style ?? theme.textTheme.bodyMedium,
+      alignment: Alignment.centerLeft,
+      maxLines: 2,
+    );
+    return StickyTable(
+      key: const ValueKey('sectorTable'),
+      firstWidth: _lapWidth,
+      cellWidths: [_timeWidth, for (final _ in segments) _cellWidth],
+      headerHeight: 44,
+      header: StickyRow(
+        first: name('Lap', style: label),
+        cells: [
+          TableCellText('Time', style: label),
+          // The full name, on two lines: there is no hover to explain a
+          // short one.
+          for (final segment in segments)
+            TableCellText(segment.name, style: label, maxLines: 2),
+        ],
       ),
-    );
-
-    final header = Row(
-      children: [
-        cell(
-          'Lap',
-          _lapWidth,
-          style: theme.textTheme.labelMedium,
-          alignment: Alignment.centerLeft,
-        ),
-        cell('Time', _timeWidth, style: theme.textTheme.labelMedium),
-        for (final segment in segments)
-          Tooltip(
-            message: segment.name,
-            child: cell(
-              shortSegmentName(segment.name),
-              _cellWidth,
-              style: theme.textTheme.labelMedium,
-            ),
-          ),
-      ],
-    );
-    final rows = [
-      for (final lap in result.laps)
-        InkWell(
-          key: ValueKey('sectorRow ${lap.lap.displayName}'),
-          onTap: () => onSelect(lap.lap.reference),
-          child: Container(
+      rows: [
+        for (final lap in result.laps)
+          StickyRow(
+            key: ValueKey('sectorRow ${lap.lap.displayName}'),
+            onTap: () => onSelect(lap.lap.reference),
             color: lap.lap.reference == selected
                 ? scheme.secondaryContainer
                 : null,
-            child: Row(
-              children: [
-                cell(
-                  '${lap.lap.displayName}${lap.bestOfDay ? ' ★' : ''}',
-                  _lapWidth,
-                  style: theme.textTheme.bodySmall,
-                  alignment: Alignment.centerLeft,
-                ),
-                cell(
-                  displayTime(lap.lap.durationSeconds),
-                  _timeWidth,
-                  style: numbers,
-                ),
-                for (var i = 0; i < segments.length; ++i)
-                  _fastest(lap, i)
-                      ? cell(
-                          lap.seconds(i)!.toStringAsFixed(3),
-                          _cellWidth,
-                          style: numbers?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: scheme.onPrimaryContainer,
-                          ),
-                          color: scheme.primaryContainer,
-                        )
-                      : cell(
-                          lap.seconds(i)?.toStringAsFixed(3) ?? '—',
-                          _cellWidth,
-                          style: numbers,
-                        ),
-              ],
+            first: name(
+              '${lap.lap.displayName}${lap.bestOfDay ? ' · best' : ''}',
             ),
-          ),
-        ),
-    ];
-    final fastest = Row(
-      children: [
-        cell(
-          'Fastest',
-          _lapWidth,
-          style: theme.textTheme.labelMedium,
-          alignment: Alignment.centerLeft,
-        ),
-        cell(
-          result.theoreticalBestSeconds == null
-              ? '—'
-              : displayTime(result.theoreticalBestSeconds!),
-          _timeWidth,
-          style: numbers?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        for (final segment in segments)
-          cell(
-            segment.seconds?.toStringAsFixed(3) ?? '—',
-            _cellWidth,
-            style: numbers?.copyWith(fontWeight: FontWeight.bold),
+            cells: [
+              TableCellText(
+                displayTime(lap.lap.durationSeconds),
+                style: numbers,
+              ),
+              for (var i = 0; i < segments.length; ++i)
+                _fastest(lap, i)
+                    ? TableCellText(
+                        lap.seconds(i)!.toStringAsFixed(3),
+                        style: numbers?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: scheme.onPrimaryContainer,
+                        ),
+                        color: scheme.primaryContainer,
+                      )
+                    : TableCellText(
+                        lap.seconds(i)?.toStringAsFixed(3) ?? '—',
+                        style: numbers,
+                      ),
+            ],
           ),
       ],
-    );
-    return SingleChildScrollView(
-      key: const ValueKey('sectorTable'),
-      scrollDirection: Axis.horizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          header,
-          const Divider(height: 1),
-          ...rows,
-          const Divider(height: 1),
-          fastest,
+      footer: StickyRow(
+        first: name('Fastest', style: label),
+        cells: [
+          TableCellText(
+            result.theoreticalBestSeconds == null
+                ? '—'
+                : displayTime(result.theoreticalBestSeconds!),
+            style: numbers?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          for (final segment in segments)
+            TableCellText(
+              segment.seconds?.toStringAsFixed(3) ?? '—',
+              style: numbers?.copyWith(fontWeight: FontWeight.bold),
+            ),
         ],
       ),
     );
