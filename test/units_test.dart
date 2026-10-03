@@ -12,6 +12,7 @@ import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'day/day_results_page_test.dart' show FakeDocuments, circuitVbo;
+import 'support/temp_directory.dart';
 
 /// A tiny synthetic VBO whose header declares [velocityHeader].
 TelemetrySession vbo(Directory directory, String velocityHeader) {
@@ -31,7 +32,7 @@ void main() {
     speedUnitSetting.value = SpeedUnitSetting.automatic;
     declareDaySpeedUnits(const []);
   });
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   test('reads the speed unit from the VBO header, as a label only', () {
     final kmh = vbo(directory, 'velocity kmh');

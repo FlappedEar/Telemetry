@@ -4,22 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../support/temp_directory.dart';
+
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('import_runner'));
-  // On Windows a cancelled job's killed isolate can still hold a recording
-  // open for a moment, and an open file cannot be deleted there.
-  tearDown(() async {
-    for (var attempt = 1; ; attempt++) {
-      try {
-        directory.deleteSync(recursive: true);
-        return;
-      } on FileSystemException {
-        if (attempt == 20) rethrow;
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-      }
-    }
-  });
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   const vbo =
       '[header]\ncoordinate units = degrees\n[column names]\ntime latitude longitude velocity\n'

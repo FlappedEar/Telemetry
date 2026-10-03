@@ -11,6 +11,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
+import '../support/temp_directory.dart';
 
 // Its own file and one widget test: recovery work is queued app-wide, and
 // work queued under another test's fake clock never finishes.
@@ -35,7 +36,7 @@ final class MemoryRecoveryStore implements RecoveryStore {
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('lifecycle'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   DayImportOutcome importDay() {
     final path = '${directory.path}/a.vbo';

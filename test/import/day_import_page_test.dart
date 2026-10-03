@@ -14,6 +14,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../day/recovery_test.dart' show FileRecoveryStore;
+import '../support/temp_directory.dart';
 
 /// A job the test finishes by hand.
 final class _FakeJob implements DayImportJob {
@@ -126,7 +127,7 @@ void main() {
   });
   tearDown(() {
     controller.dispose();
-    directory.deleteSync(recursive: true);
+    deleteTemporaryDirectory(directory);
   });
 
   String write(String name, String text) {

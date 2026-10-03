@@ -12,6 +12,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
+import '../support/temp_directory.dart';
 
 /// The recovery file in a test folder.
 final class FileRecoveryStore implements RecoveryStore {
@@ -39,7 +40,7 @@ void main() {
     directory = Directory.systemTemp.createTempSync('day_recovery');
     store = FileRecoveryStore('${directory.path}/support/day-recovery.json');
   });
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   DayImportOutcome importDay() {
     final path = '${directory.path}/a.vbo';
