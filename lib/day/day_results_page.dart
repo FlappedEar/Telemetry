@@ -252,6 +252,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Future<void> _findRecordings() async {
     final path = _controller.documentPath;
     if (path == null) return;
+    if (_controller.adding) {
+      _tell('Wait until the recordings are added, then find the others.');
+      return;
+    }
     if (_controller.dirty) {
       _tell('Save the day first, then find its recordings.');
       return;
@@ -261,10 +265,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
     setState(() => _relinking = true);
     try {
       final missing = _controller.missing;
+      final sessions = _controller.runs.length;
       final (day, search) = await Isolate.run(
         _relinkJob(path, folder, missing),
       );
       if (!mounted) return;
+      // The day is opened again from its saved document: a recording added
+      // meanwhile, such as a shared one, would not be in it.
+      if (_controller.adding ||
+          _controller.dirty ||
+          _controller.runs.length != sessions) {
+        _tell('Recordings were added meanwhile. Find the recordings again.');
+        return;
+      }
       if (day.missing.length == missing.length) {
         final names = [
           for (final recording in missing)
@@ -396,7 +409,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               key: const ValueKey('addRecordings'),
               tooltip: 'Add recordings',
               icon: const Icon(Icons.playlist_add),
-              onPressed: _controller.adding || _controller.saving
+              onPressed: _controller.adding || _controller.saving || _relinking
                   ? null
                   : _addRecordings,
             ),

@@ -211,22 +211,32 @@ class _DayImportPageState extends State<DayImportPage> {
   /// another app; its day then opens by itself.
   bool _showWhenImported = false;
 
+  /// Recordings shared while an import ran; they go to its day when it
+  /// opens by itself, otherwise they are received once it ends.
+  List<String>? _afterImport;
+
   void _imported() {
-    if (!_showWhenImported || _controller.isWorking || !mounted) return;
+    if (_controller.isWorking || !mounted) return;
+    final pending = _afterImport ?? const <String>[];
+    _afterImport = null;
+    final show = _showWhenImported;
     _showWhenImported = false;
-    if (_controller.state case DayImportFinished(:final runs, :final analysis?)
-        when ModalRoute.of(context)?.isCurrent ?? false) {
-      unawaited(
-        _show(
-          DayResultsController(
-            runs: runs,
-            analysis: analysis,
-            recovery: widget.recovery,
-            appender: widget.appender,
-          ),
-        ),
-      );
+    if (show) {
+      if (_controller.state
+          case DayImportFinished(:final runs, :final analysis?)
+          when ModalRoute.of(context)?.isCurrent ?? false) {
+        final day = DayResultsController(
+          runs: runs,
+          analysis: analysis,
+          recovery: widget.recovery,
+          appender: widget.appender,
+        );
+        unawaited(_show(day));
+        if (pending.isNotEmpty) _addTo(day, pending);
+        return;
+      }
     }
+    if (pending.isNotEmpty) _receive(pending);
   }
 
   Future<void> _checkRecovery() async {
@@ -400,9 +410,13 @@ class _DayImportPageState extends State<DayImportPage> {
       unawaited(_continueToday(paths));
       return;
     }
-    final started = !_controller.isWorking;
+    if (_controller.isWorking) {
+      // Not refused: they follow the import running now.
+      (_afterImport ??= []).addAll(paths);
+      return;
+    }
     _start(paths);
-    if (behind && started) {
+    if (behind) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -746,7 +760,7 @@ class _DayImportPageState extends State<DayImportPage> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FilledButton.icon(
-            onPressed: enabled ? _pickRecordings : null,
+            onPressed: enabled && !_opening ? _pickRecordings : null,
             icon: const Icon(Icons.insert_drive_file_outlined),
             label: const Text('Choose recordings…'),
           ),

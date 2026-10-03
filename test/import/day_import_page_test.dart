@@ -219,6 +219,45 @@ void main() {
     expect(incoming.controller.hasListener, isFalse);
   });
 
+  testWidgets('a recording shared during that import goes to its day', (
+    tester,
+  ) async {
+    final incoming = _FakeIncoming();
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayImportPage(
+          controller: controller,
+          pickers: pickers,
+          incoming: incoming,
+          appender: _SyncAppender(),
+        ),
+      ),
+    );
+    final first = write('first.vbo', _datedVbo(hour: 9));
+    incoming.controller.add([first]);
+    await tester.pump();
+    await tester.pump();
+    expect(importer.jobs.single.request.paths, [first]);
+    // The next session is shared while the first one is still imported.
+    incoming.controller.add([write('second.vbo', _datedVbo(hour: 11))]);
+    await tester.pump();
+    expect(importer.jobs, hasLength(1));
+    expect(find.textContaining('Nothing was imported'), findsNothing);
+    importer.jobs.single.finish();
+    for (var i = 0; i < 20; ++i) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    expect(find.text('Session 2 added to the day.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('a share while a day is open imports behind it and says so', (
     tester,
   ) async {

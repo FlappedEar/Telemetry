@@ -462,6 +462,39 @@ void main() {
     },
   );
 
+  testWidgets('a recording added while finding recordings is kept', (
+    tester,
+  ) async {
+    final (_, opened) = await savedDayMissingB(tester, 'archive/b.vbo');
+    final controller = DayResultsController.opened(
+      opened,
+      appender: _AppendHere(),
+    );
+    final c = '${directory.path}/c.vbo';
+    File(c).writeAsStringSync(circuitVbo([31, 30, 32]));
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: FakeDocuments(folder: '${directory.path}/archive'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Find recordings in a folder…'));
+    await tester.pump();
+    // Shared while the day's recordings are searched for.
+    final addition = await tester.runAsync(() => controller.addRecordings([c]));
+    expect(addition!.added, ['Session 3']);
+    await waitFor(tester, () => find.byType(SnackBar).evaluate().isNotEmpty);
+    expect(
+      find.text('Recordings were added meanwhile. Find the recordings again.'),
+      findsOneWidget,
+    );
+    expect(controller.runs, hasLength(2));
+  });
+
   testWidgets('refuses a different recording with the missing one\'s name', (
     tester,
   ) async {
@@ -548,4 +581,21 @@ void main() {
     expect(speedColor(1), speedRamp.last);
     expect(speedColor(-3), speedRamp.first);
   });
+}
+
+/// Prepares additions on the test's own thread.
+final class _AppendHere implements DayAppender {
+  @override
+  DayAppendJob start(DayAppendRequest request, void Function(int, int) _) =>
+      _AppendedJob(runDayAppend(request));
+}
+
+final class _AppendedJob implements DayAppendJob {
+  _AppendedJob(DayAppendOutcome outcome) : result = Future.value(outcome);
+
+  @override
+  final Future<DayAppendOutcome> result;
+
+  @override
+  void cancel() {}
 }
