@@ -132,6 +132,12 @@ void main() {
     await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
     await tester.pumpAndSettle();
     expect(find.text('Best of the day'), findsOneWidget);
+    // Every other ranked lap shows its gap to the best of the day.
+    final second = outcome.analysis!.ranking!.eligibleLaps[1];
+    expect(
+      find.text(displayDelta(second.durationSeconds - best.durationSeconds)),
+      findsOneWidget,
+    );
     // OUT, 3 laps, IN; OUT, 2 laps, IN.
     expect(find.textContaining(' · OUT'), findsNWidgets(2));
     expect(find.textContaining(' · IN'), findsNWidgets(2));
