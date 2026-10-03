@@ -148,6 +148,9 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The APK's build number is the commit count (see below).
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -181,10 +184,15 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
       # MAPTILER_KEY gives the sideloaded app its satellite map tiles (FET-27).
+      # The build number (Android versionCode) is the commit count, as in
+      # release.yml, so a later build from main or a release installs over an
+      # earlier one and Android never sees a downgrade.
       - name: Build Android APK (release, sideloadable)
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
-        run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+        run: |
+          flutter build apk --release --build-number="$(git rev-list --count HEAD)" \
+            --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
       # JVM unit tests of the native code (android/app/src/test), such as the
       # bounded copy of shared and picked files. The APK build made gradlew.
       - name: Android unit tests
