@@ -127,23 +127,19 @@ class _LapPageState extends State<LapPage> {
               ),
             ],
           ];
-          final map = <Widget>[
-            Expanded(
-              child: _path.isEmpty
-                  ? const Center(
-                      child: Text('No GPS recorded for this section.'),
-                    )
-                  : Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: TrackMap(
-                        path: _path,
-                        reference: bestPath,
-                        gate: _gate,
-                        semanticLabel:
-                            'Trace of ${row.displayName}, coloured by speed',
-                      ),
-                    ),
-            ),
+          final trace = _path.isEmpty
+              ? const Center(child: Text('No GPS recorded for this section.'))
+              : Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: TrackMap(
+                    path: _path,
+                    reference: bestPath,
+                    gate: _gate,
+                    semanticLabel:
+                        'Trace of ${row.displayName}, coloured by speed',
+                  ),
+                );
+          final legend = <Widget>[
             const SizedBox(height: 8),
             Row(
               children: [
@@ -170,17 +166,45 @@ class _LapPageState extends State<LapPage> {
                     children: [
                       SizedBox(width: 300, child: ListView(children: summary)),
                       const SizedBox(width: 16),
-                      Expanded(child: Column(children: map)),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(child: trace),
+                            ...legend,
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 );
               }
-              return Padding(
+              // A tall phone gives the map the rest of the screen; a short
+              // one (a small phone sideways, or with large text) scrolls.
+              if (constraints.maxHeight >= 600) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...summary,
+                      const SizedBox(height: 12),
+                      Expanded(child: trace),
+                      ...legend,
+                    ],
+                  ),
+                );
+              }
+              return ListView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [...summary, const SizedBox(height: 12), ...map],
-                ),
+                children: [
+                  ...summary,
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: (constraints.maxHeight - 48).clamp(220.0, 420.0),
+                    child: trace,
+                  ),
+                  ...legend,
+                ],
               );
             },
           );
