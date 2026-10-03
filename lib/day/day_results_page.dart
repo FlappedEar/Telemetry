@@ -280,9 +280,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
             onPressed: _openReport,
           ),
           PopupMenuButton<void>(
+            key: const ValueKey('moreMenu'),
             tooltip: 'More',
             itemBuilder: (context) => [
               PopupMenuItem(
+                height: kMinInteractiveDimension,
                 onTap: () => _save(choose: true),
                 child: const Text('Save as…'),
               ),

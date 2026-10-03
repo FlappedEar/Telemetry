@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:telemetry/day/comparison_page.dart';
@@ -13,9 +14,12 @@ import 'package:telemetry/day/telemetry_chart.dart';
 import 'package:telemetry/day/touch.dart';
 import 'package:telemetry/day/track_dialog.dart';
 import 'package:telemetry/day/track_map.dart';
+import 'package:telemetry/diagnostics/diagnostics_page.dart';
+import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 
+import '../day/blank_tiles.dart';
 import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
 
@@ -267,6 +271,28 @@ void main() {
           await tester.pumpAndSettle();
           expect(find.byType(TrackDialog), findsOneWidget);
           await checkScreen(tester);
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+
+          // The More menu, and the diagnostics page it opens.
+          await tester.tap(find.byKey(const ValueKey('moreMenu')));
+          await tester.pumpAndSettle();
+          await checkScreen(tester);
+          await tester.tap(find.byKey(const ValueKey('openDiagnostics')));
+          await tester.pumpAndSettle();
+          expect(find.byType(DiagnosticsPage), findsOneWidget);
+          await checkList(tester, firstList());
+        });
+
+        testWidgets('the import page and its menu have 48 dp targets with '
+            'labels', (tester) async {
+          await show(tester, size, textScale);
+          await tester.pumpWidget(const TelemetryApp(home: DayImportPage()));
+          await tester.pumpAndSettle();
+          await checkScreen(tester);
+          await tester.tap(find.byKey(const ValueKey('moreMenu')));
+          await tester.pumpAndSettle();
+          await checkScreen(tester);
         });
 
         testWidgets('the lap page and the comparison have 48 dp targets '
@@ -400,6 +426,103 @@ void main() {
       expect(after.x, greaterThan(before.x));
       expect(page.pixels, 0);
     });
+
+    // The maps people see draw over tiles: the lap's map and the
+    // comparison's, each tried with one finger, two fingers and a double tap.
+    for (final comparison in const [false, true]) {
+      testWidgets('over tiles, one finger scrolls the '
+          '${comparison ? 'comparison' : 'lap'} page past the map; two '
+          'fingers and a double tap zoom it', (tester) async {
+        await show(tester, const Size(412, 915), 1);
+        mapBackground.value = MapBackground.streets;
+        debugTileProvider = BlankTiles.new;
+        addTearDown(() {
+          mapBackground.value = MapBackground.none;
+          debugTileProvider = null;
+        });
+        final controller = (await tester.runAsync(day))!;
+        addTearDown(controller.dispose);
+        final best = controller.analysis.ranking!.bestOfDay!;
+        final other = controller
+            .comparisonCandidates(best)
+            .firstWhere((row) => row.reference != best.reference);
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: comparison
+                ? ComparisonPage(controller: controller, a: other, b: best)
+                : LapPage(controller: controller, row: best),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final map = find.byType(FlutterMap);
+        expect(map, findsOneWidget);
+        await tester.ensureVisible(map);
+        await tester.pumpAndSettle();
+        final page = tester
+            .state<ScrollableState>(
+              find.ancestor(of: map, matching: find.byType(Scrollable)).first,
+            )
+            .position;
+        MapCamera camera() =>
+            MapCamera.of(tester.element(find.byType(MapAttribution)));
+        final start = camera();
+
+        // One finger, up or down on the map: the page scrolls, the map
+        // stays where it was.
+        final scrolled = page.pixels;
+        final room = page.maxScrollExtent - scrolled;
+        await tester.dragFrom(
+          tester.getCenter(map),
+          Offset(0, room > 100 ? -150 : 150),
+        );
+        await tester.pumpAndSettle();
+        expect((page.pixels - scrolled).abs(), greaterThan(80));
+        expect(camera().zoom, start.zoom);
+        expect(camera().center, start.center);
+        await tester.ensureVisible(map);
+        await tester.pumpAndSettle();
+
+        // Two fingers apart: the map zooms and the page stays.
+        final top = page.pixels;
+        final centre = tester.getCenter(map);
+        final first = await tester.startGesture(centre - const Offset(30, 0));
+        final second = await tester.startGesture(centre + const Offset(30, 0));
+        for (var step = 1; step <= 10; ++step) {
+          await first.moveBy(const Offset(-8, -6));
+          await second.moveBy(const Offset(8, -6));
+          await tester.pump();
+        }
+        await first.up();
+        await second.up();
+        await tester.pumpAndSettle();
+        final pinched = camera().zoom;
+        expect(pinched, greaterThan(start.zoom + 1));
+        expect(page.pixels, top);
+
+        // Two fingers together move it.
+        final moved = camera().center;
+        final third = await tester.startGesture(centre - const Offset(20, 0));
+        final fourth = await tester.startGesture(centre + const Offset(20, 0));
+        for (var step = 1; step <= 5; ++step) {
+          await third.moveBy(const Offset(10, 0));
+          await fourth.moveBy(const Offset(10, 0));
+          await tester.pump();
+        }
+        await third.up();
+        await fourth.up();
+        await tester.pumpAndSettle();
+        expect(camera().center.longitude, lessThan(moved.longitude));
+        expect(camera().zoom, closeTo(pinched, 1e-6));
+        expect(page.pixels, top);
+
+        // A double tap zooms in further.
+        await tester.tapAt(centre);
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tapAt(centre);
+        await tester.pumpAndSettle();
+        expect(camera().zoom, greaterThan(pinched + 0.5));
+      });
+    }
 
     testWidgets('a drag up a chart scrolls the page and leaves the cursor; '
         'a sideways drag or a tap moves it', (tester) async {

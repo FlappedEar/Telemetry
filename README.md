@@ -132,7 +132,9 @@ background so it stays readable; the lines keep the colours. The lap chosen
 on a card, a table's mode and the Corner Analyzer's segment and zoom are kept
 while the card is scrolled out of view, and back closes a sheet or dialog
 before the page. `test/layout/touch_test.dart` checks tap targets and labels
-on every screen at both text sizes, the two-finger map, chart drags and back.
+on every screen at both text sizes (the Diagnostics menu entry too), the
+two-finger and double-tap gestures on the plain and tiled maps of a lap and a
+comparison, chart drags and back.
 
 To install on Android without a store, download the
 `flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
