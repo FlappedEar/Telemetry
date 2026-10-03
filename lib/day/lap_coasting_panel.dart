@@ -9,6 +9,7 @@ import 'driving_panels.dart'
         coastingSummaryText,
         inferredColor;
 import 'telemetry_chart.dart';
+import 'touch.dart';
 
 /// The lap page's coasting panel, or null without the lap's recording.
 Widget? lapCoastingPanel(
@@ -146,7 +147,7 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                 key: const ValueKey('lapCoastingProvenance'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: summary.provenance == drivingStateInferred
-                      ? inferredColor
+                      ? readableOn(context, inferredColor)
                       : null,
                 ),
               ),
@@ -201,7 +202,7 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                     key: ValueKey('lapCoastingEpisode $index'),
                     onTap: () => widget.window.cursor.value = episode.startTime,
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 44),
+                      constraints: const BoxConstraints(minHeight: 48),
                       child: Row(
                         children: [
                           const Icon(Icons.my_location, size: 18),
