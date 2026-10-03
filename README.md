@@ -18,7 +18,18 @@ shows its laps, and import notes list what was skipped, grouped or failed.
 1:49.898 · Session 5 · LAP 2") and its GPS trace coloured by speed, each
 session's best lap, and every lap section in recording order with why a lap is
 not ranked. A lap opens on its own map, over the best lap in grey, and can be
-excluded from the ranking with a reason. Below it, **Theoretical best** times every
+excluded from the ranking with a reason; under the map, its channels (speed,
+lateral and longitudinal G, throttle or brake when recorded, or any other
+channel, up to four) are charted on a time axis: drag across a chart to move a
+cursor, shown on the map, and zoom around it. **Compare with…** (on a lap, or
+**Compare two laps** above the lap list) puts two laps of one group side by
+side on a shared track-position axis, as FlappedEar Overlays does: A green, B
+orange, the Δ time (A − B, positive when A is behind) and the channels of both
+laps, braking drawn upward, and both lines on one map, optionally coloured by
+speed, the Δ time, G, the pedals or a recorded temperature (never invented
+when a lap did not record it). Swap the laps, change either, or set B to the
+best of A's session or of the day; a time loss or a focus area opens its two
+laps there, zoomed to its segment. Below it, **Theoretical best** times every
 ranked lap against the day's segments (proposed from the best lap when the
 day has none yet, as FlappedEar Overlays does): the best lap, the theoretical
 best (the fastest time of each segment) and the time available; a loss map,
@@ -50,8 +61,10 @@ on **Import a day**.
 
 Below 900 logical pixels of width (a phone, or a tablet in portrait) the day
 page shows **Results** and **Laps** as two tabs; wider screens show them side
-by side. A lap's trace fills the rest of a tall screen and scrolls on a short
-one, such as a phone held sideways. `test/layout/screen_sizes_test.dart` opens
+by side. A lap's trace keeps a readable height, with its charts below, and
+scrolls on a short screen, such as a phone held sideways; a comparison shows
+its map and its charts side by side on a wide screen and one under the other
+on a phone. `test/layout/screen_sizes_test.dart` opens
 every screen at small phone, Pixel and tablet sizes in both orientations and
 fails on any overflow.
 

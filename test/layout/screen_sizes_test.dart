@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/channel_cards.dart';
+import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/corner_details.dart';
 import 'package:telemetry/day/day_report_page.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/focus_areas_card.dart';
 import 'package:telemetry/day/lap_page.dart';
+import 'package:telemetry/day/telemetry_chart.dart';
 import 'package:telemetry/day/track_dialog.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_page.dart';
@@ -177,6 +179,41 @@ void main() {
         );
         await scrollThrough(tester);
         expect(tester.takeException(), isNull, reason: 'lap scrolled');
+        // The lap's charts are there, under the map.
+        expect(find.byType(TelemetryChart), findsWidgets);
+
+        // The lap against the next fastest, from the lap page.
+        final compare = find.byKey(const ValueKey('lapCompare'));
+        await tester.dragUntilVisible(
+          compare,
+          find.byType(Scrollable).hitTestable().first,
+          const Offset(0, 300),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(compare);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'lap picker');
+        final partner = find.byWidgetPredicate(
+          (widget) =>
+              widget.key is ValueKey<String> &&
+              (widget.key! as ValueKey<String>).value.startsWith(
+                'suggestedLap ',
+              ),
+        );
+        await tester.tap(partner);
+        await tester.pumpAndSettle();
+        expect(find.byType(ComparisonPage), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: 'comparison');
+        final overlay = find.byKey(const ValueKey('comparisonMap'));
+        await tester.dragUntilVisible(
+          overlay,
+          find.byKey(const ValueKey('comparisonSummary')),
+          const Offset(0, -200),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.getSize(overlay).height, greaterThanOrEqualTo(180));
+        await scrollThrough(tester);
+        expect(tester.takeException(), isNull, reason: 'comparison scrolled');
       });
 
       testWidgets('the day report, a focus area and a channel fit', (
@@ -213,6 +250,20 @@ void main() {
         expect(tester.takeException(), isNull, reason: 'focus area');
         await scrollThrough(tester);
         expect(tester.takeException(), isNull, reason: 'focus scrolled');
+        // Its two laps compared, through its segment.
+        final compare = find.byKey(const ValueKey('focusCompare'));
+        await tester.dragUntilVisible(
+          compare,
+          find.byType(Scrollable).hitTestable().first,
+          const Offset(0, -200),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(compare);
+        await tester.pumpAndSettle();
+        expect(find.byType(ComparisonPage), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: 'focus comparison');
+        await tester.pageBack();
+        await tester.pumpAndSettle();
         await tester.pageBack();
         await tester.pumpAndSettle();
         await open(find.byKey(const ValueKey('carChannel oil_temp')));

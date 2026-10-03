@@ -192,12 +192,17 @@ class TrackMap extends StatelessWidget {
     this.interactive = true,
     this.pointColor,
     this.marks = const [],
+    this.movingMarks,
   });
 
   final LapPath path;
   final LapPath? reference;
   final (Offset, Offset)? gate;
   final String semanticLabel;
+
+  /// Points that move, such as a chart cursor's position: only this layer
+  /// repaints when they change, never the trace.
+  final ValueListenable<List<MapMark>>? movingMarks;
 
   /// Points drawn over the trace, last on top.
   final List<MapMark> marks;
@@ -231,6 +236,7 @@ class TrackMap extends StatelessWidget {
                         interactive: interactive,
                         pointColor: pointColor,
                         marks: marks,
+                        movingMarks: movingMarks,
                       ),
               ),
               if (interactive)
@@ -257,12 +263,26 @@ class TrackMap extends StatelessWidget {
       ),
       child: const SizedBox.expand(),
     );
+    final moving = movingMarks;
+    final layers = moving == null
+        ? RepaintBoundary(child: painter)
+        : Stack(
+            children: [
+              Positioned.fill(child: RepaintBoundary(child: painter)),
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _MovingMarksPainter(
+                    path: path,
+                    reference: reference,
+                    marks: moving,
+                  ),
+                ),
+              ),
+            ],
+          );
     return interactive
-        ? InteractiveViewer(
-            maxScale: 12,
-            child: RepaintBoundary(child: painter),
-          )
-        : RepaintBoundary(child: painter);
+        ? InteractiveViewer(maxScale: 12, child: layers)
+        : layers;
   }
 }
 
@@ -303,9 +323,11 @@ class _TiledMap extends StatelessWidget {
     required this.interactive,
     this.pointColor,
     this.marks = const [],
+    this.movingMarks,
   });
 
   final List<MapMark> marks;
+  final ValueListenable<List<MapMark>>? movingMarks;
   final TileSource tiles;
   final LapPath path;
   final LapPath? reference;
@@ -465,6 +487,22 @@ class _TiledMap extends StatelessWidget {
                 ),
             ],
           ),
+        if (movingMarks case final moving?)
+          ValueListenableBuilder(
+            valueListenable: moving,
+            builder: (context, marks, _) => CircleLayer(
+              circles: [
+                for (final mark in marks)
+                  CircleMarker(
+                    point: pathLatLng(path.origin, mark.east, mark.north),
+                    radius: mark.radius,
+                    color: mark.color,
+                    borderColor: Colors.black87,
+                    borderStrokeWidth: 2,
+                  ),
+              ],
+            ),
+          ),
         if (start != null && heading != null)
           MarkerLayer(
             markers: [
@@ -501,6 +539,86 @@ class _TiledMap extends StatelessWidget {
   }
 }
 
+// The bounding box of a path's fixes, computed once per path.
+final Expando<Rect> _bounds = Expando('track map bounds');
+
+Rect? _pathBounds(LapPath path) {
+  final cached = _bounds[path];
+  if (cached != null) return cached;
+  var minX = double.infinity, minY = double.infinity;
+  var maxX = -double.infinity, maxY = -double.infinity;
+  for (final segment in path.segments) {
+    for (final point in segment) {
+      minX = math.min(minX, point.eastMeters);
+      maxX = math.max(maxX, point.eastMeters);
+      minY = math.min(minY, point.northMeters);
+      maxY = math.max(maxY, point.northMeters);
+    }
+  }
+  if (!minX.isFinite) return null;
+  return _bounds[path] = Rect.fromLTRB(minX, minY, maxX, maxY);
+}
+
+/// Where a point [east]/[north] metres around the origin lands on a plain
+/// map of [size] showing [path] and [reference]; null when there is nothing
+/// to fit.
+Offset Function(double east, double north)? _mapFit(
+  LapPath path,
+  LapPath? reference,
+  Size size,
+) {
+  final own = _pathBounds(path);
+  final other = reference == null ? null : _pathBounds(reference);
+  final box = own == null
+      ? other
+      : other == null
+      ? own
+      : own.expandToInclude(other);
+  if (box == null || size.isEmpty) return null;
+  const padding = 16.0;
+  final spanX = math.max(box.width, 1.0), spanY = math.max(box.height, 1.0);
+  final scale = math.min(
+    (size.width - 2 * padding) / spanX,
+    (size.height - 2 * padding) / spanY,
+  );
+  if (!scale.isFinite || scale <= 0) return null;
+  final dx = (size.width - spanX * scale) / 2,
+      dy = (size.height - spanY * scale) / 2;
+  return (east, north) => Offset(
+    dx + (east - box.left) * scale,
+    size.height - dy - (north - box.top) * scale,
+  );
+}
+
+class _MovingMarksPainter extends CustomPainter {
+  _MovingMarksPainter({
+    required this.path,
+    required this.reference,
+    required this.marks,
+  }) : super(repaint: marks);
+
+  final LapPath path;
+  final LapPath? reference;
+  final ValueListenable<List<MapMark>> marks;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (marks.value.isEmpty) return;
+    final at = _mapFit(path, reference, size);
+    if (at == null) return;
+    for (final mark in marks.value) {
+      final centre = at(mark.east, mark.north);
+      canvas
+        ..drawCircle(centre, mark.radius + 2, Paint()..color = Colors.black87)
+        ..drawCircle(centre, mark.radius, Paint()..color = mark.color);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MovingMarksPainter old) =>
+      old.path != path || old.reference != reference || old.marks != marks;
+}
+
 class _TrackPainter extends CustomPainter {
   _TrackPainter({
     required this.path,
@@ -526,37 +644,8 @@ class _TrackPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    var minX = double.infinity, minY = double.infinity;
-    var maxX = -double.infinity, maxY = -double.infinity;
-    void include(double x, double y) {
-      minX = math.min(minX, x);
-      maxX = math.max(maxX, x);
-      minY = math.min(minY, y);
-      maxY = math.max(maxY, y);
-    }
-
-    for (final candidate in [path, ?reference]) {
-      for (final segment in candidate.segments) {
-        for (final point in segment) {
-          include(point.eastMeters, point.northMeters);
-        }
-      }
-    }
-    if (!minX.isFinite || size.isEmpty) return;
-    const padding = 16.0;
-    final spanX = math.max(maxX - minX, 1.0),
-        spanY = math.max(maxY - minY, 1.0);
-    final scale = math.min(
-      (size.width - 2 * padding) / spanX,
-      (size.height - 2 * padding) / spanY,
-    );
-    if (!scale.isFinite || scale <= 0) return;
-    final dx = (size.width - spanX * scale) / 2,
-        dy = (size.height - spanY * scale) / 2;
-    Offset at(double east, double north) => Offset(
-      dx + (east - minX) * scale,
-      size.height - dy - (north - minY) * scale,
-    );
+    final at = _mapFit(path, reference, size);
+    if (at == null) return;
 
     final referencePaint = Paint()
       ..color = referenceColor

@@ -2,16 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import 'comparison_page.dart';
 import 'day_results_controller.dart';
+import 'telemetry_chart.dart';
 import 'track_map.dart';
 
-/// One lap section: its time, where it stands in the day, and its trace on
-/// the map coloured by speed, over the best lap of the day in grey.
+/// The channels last chosen for a lap's charts, kept while the app runs.
+final ValueNotifier<List<String>?> rememberedLapChannels = ValueNotifier(null);
+
+/// One lap section: its time, where it stands in the day, its trace on the
+/// map coloured by speed, over the best lap of the day in grey, and its
+/// channels on a time axis. A drag on a chart moves a cursor, shown on the
+/// map.
 class LapPage extends StatefulWidget {
-  const LapPage({super.key, required this.controller, required this.row});
+  const LapPage({
+    super.key,
+    required this.controller,
+    required this.row,
+    this.initialCursor,
+  });
 
   final DayResultsController controller;
   final DayLapRow row;
+
+  /// Where the cursor starts, in recording time; the lap's start when null.
+  final double? initialCursor;
 
   @override
   State<LapPage> createState() => _LapPageState();
@@ -27,10 +42,28 @@ class _LapPageState extends State<LapPage> {
   DayLapReference? _bestReference;
   LapPath? _bestPath;
 
+  late final TelemetrySession? _session;
+  late final ChartWindow _window = ChartWindow(
+    widget.row.start,
+    widget.row.end,
+    cursor: widget.initialCursor,
+  );
+  final ValueNotifier<List<MapMark>> _cursorMarks = ValueNotifier(const []);
+  late List<String> _channels;
+
+  // Series of the range shown, and each channel's value axis over the lap.
+  (double, double)? _seriesRange;
+  final Map<String, ChartSeries> _series = {};
+  final Map<String, (double, double)> _axes = {};
+
   @override
   void initState() {
     super.initState();
-    final session = widget.controller.session(widget.row.runId);
+    final session = _session = widget.controller.session(widget.row.runId);
+    _channels = session == null
+        ? const []
+        : lapChartChannels(session, remembered: rememberedLapChannels.value);
+    _window.cursor.addListener(_moveMark);
     _origin = session == null ? null : mapOrigin(session);
     _path = session == null
         ? LapPath(origin: const GeoCoordinate(0, 0), segments: const [])
@@ -38,6 +71,164 @@ class _LapPageState extends State<LapPage> {
     _gate = session == null || _origin == null
         ? null
         : mapGate(session, _origin);
+    _moveMark();
+  }
+
+  @override
+  void dispose() {
+    _window.cursor.removeListener(_moveMark);
+    _window.dispose();
+    _cursorMarks.dispose();
+    super.dispose();
+  }
+
+  // The cursor's place on the trace, between the two fixes around it; none
+  // in a GPS gap, which is never bridged.
+  void _moveMark() {
+    final time = _window.cursor.value;
+    for (final segment in _path.segments) {
+      if (segment.isEmpty ||
+          time < segment.first.telemetryTime ||
+          time > segment.last.telemetryTime) {
+        continue;
+      }
+      var low = 0, high = segment.length - 1;
+      while (high - low > 1) {
+        final middle = (low + high) ~/ 2;
+        segment[middle].telemetryTime <= time ? low = middle : high = middle;
+      }
+      final a = segment[low], b = segment[high];
+      final span = b.telemetryTime - a.telemetryTime;
+      final t = span > 0 ? (time - a.telemetryTime) / span : 0.0;
+      _cursorMarks.value = [
+        MapMark(
+          a.eastMeters + (b.eastMeters - a.eastMeters) * t,
+          a.northMeters + (b.northMeters - a.northMeters) * t,
+          Colors.white,
+          radius: 7,
+        ),
+      ];
+      return;
+    }
+    _cursorMarks.value = const [];
+  }
+
+  // Channels a chart can show: everything recorded but the position.
+  List<String> get _chartable {
+    final session = _session;
+    if (session == null) return const [];
+    final position = {
+      session.aliases['latitude'] ?? 'latitude',
+      session.aliases['longitude'] ?? 'longitude',
+    };
+    return [
+      for (final name in session.channelNames())
+        if (!position.contains(name)) name,
+    ];
+  }
+
+  void _setChannels(List<String> channels) {
+    setState(() => _channels = channels);
+    rememberedLapChannels.value = List.unmodifiable(channels);
+  }
+
+  ChartSeries _seriesOf(String channel, (double, double) range) {
+    if (_seriesRange != range) {
+      _seriesRange = range;
+      _series.clear();
+    }
+    return _series[channel] ??= timeSeries(
+      _session!,
+      channel,
+      range.$1,
+      range.$2,
+      600,
+    );
+  }
+
+  (double, double) _axisOf(String channel) => _axes[channel] ??= chartValueAxis(
+    [timeSeries(_session!, channel, widget.row.start, widget.row.end, 300)],
+  );
+
+  String _axisText(double time) =>
+      '${(time - widget.row.start).toStringAsFixed(1)} s';
+
+  List<Widget> _charts(BuildContext context) {
+    final session = _session;
+    final theme = Theme.of(context);
+    if (session == null || !(widget.row.end > widget.row.start)) {
+      return const [];
+    }
+    return [
+      const SizedBox(height: 16),
+      Text('Channels', style: theme.textTheme.titleMedium),
+      Text(
+        'Drag across a chart to move the cursor; the white dot shows it on '
+        'the map.',
+        style: theme.textTheme.bodySmall,
+      ),
+      ChartWindowControls(window: _window, axisText: _axisText),
+      ValueListenableBuilder(
+        valueListenable: _window.range,
+        builder: (context, range, _) => Column(
+          children: [
+            for (final channel in _channels)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TelemetryChart(
+                  key: ValueKey('lapChart $channel'),
+                  title: channel,
+                  lines: [
+                    ChartLine(
+                      '',
+                      _seriesOf(channel, range),
+                      theme.colorScheme.primary,
+                    ),
+                  ],
+                  start: range.$1,
+                  end: range.$2,
+                  cursor: _window.cursor,
+                  onCursor: (value) => _window.cursor.value = value,
+                  valueAxis: _axisOf(channel),
+                  onRemove: () => _setChannels([
+                    for (final shown in _channels)
+                      if (shown != channel) shown,
+                  ]),
+                ),
+              ),
+          ],
+        ),
+      ),
+      if (_channels.isEmpty)
+        Text('No channel shown.', style: theme.textTheme.bodySmall),
+      AddChannelButton(
+        channels: _chartable,
+        shown: _channels,
+        onAdd: (channel) => _setChannels([..._channels, channel]),
+      ),
+    ];
+  }
+
+  Future<void> _compare() async {
+    final controller = widget.controller;
+    final row = widget.row;
+    final partner = controller.comparisonPartner(row);
+    final other = await pickComparisonLap(
+      context,
+      title: 'Compare ${row.displayName} with',
+      candidates: [
+        for (final candidate in controller.comparisonCandidates(row))
+          if (candidate.reference != row.reference) candidate,
+      ],
+      suggested: partner,
+    );
+    if (other == null || !mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ComparisonPage(controller: controller, a: row, b: other),
+      ),
+    );
   }
 
   LapPath? _best() {
@@ -80,6 +271,9 @@ class _LapPageState extends State<LapPage> {
           final issues = controller.issues(row);
           final reason = controller.exclusionReason(row);
           final bestPath = _showBest ? _best() : null;
+          final comparable = controller
+              .comparisonCandidates(row)
+              .any((candidate) => candidate.reference == row.reference);
           final summary = <Widget>[
             Text(
               displayTime(row.durationSeconds),
@@ -123,6 +317,13 @@ class _LapPageState extends State<LapPage> {
                       icon: const Icon(Icons.undo),
                       label: const Text('Include in ranking'),
                     ),
+                  if (comparable)
+                    OutlinedButton.icon(
+                      key: const ValueKey('lapCompare'),
+                      onPressed: _compare,
+                      icon: const Icon(Icons.compare_arrows),
+                      label: const Text('Compare with…'),
+                    ),
                 ],
               ),
             ],
@@ -135,6 +336,7 @@ class _LapPageState extends State<LapPage> {
                     path: _path,
                     reference: bestPath,
                     gate: _gate,
+                    movingMarks: _cursorMarks,
                     semanticLabel:
                         'Trace of ${row.displayName}, coloured by speed',
                   ),
@@ -156,8 +358,10 @@ class _LapPageState extends State<LapPage> {
                 title: Text('Show the best lap (${best.displayName}) in grey'),
               ),
           ];
+          final charts = _charts(context);
           return LayoutBuilder(
             builder: (context, constraints) {
+              final height = constraints.maxHeight;
               if (constraints.maxWidth >= 800) {
                 return Padding(
                   padding: const EdgeInsets.all(16),
@@ -167,10 +371,14 @@ class _LapPageState extends State<LapPage> {
                       SizedBox(width: 300, child: ListView(children: summary)),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Column(
+                        child: ListView(
                           children: [
-                            Expanded(child: trace),
+                            SizedBox(
+                              height: (height * 0.55).clamp(240.0, 560.0),
+                              child: trace,
+                            ),
                             ...legend,
+                            ...charts,
                           ],
                         ),
                       ),
@@ -178,32 +386,22 @@ class _LapPageState extends State<LapPage> {
                   ),
                 );
               }
-              // A tall phone gives the map the rest of the screen; a short
-              // one (a small phone sideways, or with large text) scrolls.
-              if (constraints.maxHeight >= 600) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...summary,
-                      const SizedBox(height: 12),
-                      Expanded(child: trace),
-                      ...legend,
-                    ],
-                  ),
-                );
-              }
+              // The map keeps a readable size, the charts follow it; a
+              // short screen (a small phone sideways, or with large text)
+              // gives the map most of its height.
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
                   ...summary,
                   const SizedBox(height: 12),
                   SizedBox(
-                    height: (constraints.maxHeight - 48).clamp(220.0, 420.0),
+                    height: height >= 600
+                        ? (height * 0.45).clamp(220.0, 420.0)
+                        : (height - 48).clamp(220.0, 420.0),
                     child: trace,
                   ),
                   ...legend,
+                  ...charts,
                 ],
               );
             },

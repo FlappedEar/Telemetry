@@ -5,6 +5,28 @@ import '../format.dart';
 import 'theoretical_best_card.dart' show lossColor;
 import 'track_map.dart';
 
+/// Opens lap [a] against lap [b], showing [focus] of lap A first (its
+/// recording times) when given.
+typedef CompareLaps = void Function(
+  DayLapRow a,
+  DayLapRow b,
+  (double, double)? focus,
+);
+
+/// [lap]'s recording times from [startMeters] to [endMeters] on the day's
+/// shared axis, or null for a stretch across the line or without coverage.
+(double, double)? lapStretch(
+  DayTheoreticalBest result,
+  DayLapRow lap,
+  double startMeters,
+  double endMeters,
+) {
+  if (!(endMeters > startMeters)) return null;
+  final start = result.timeAt(lap, startMeters);
+  final end = result.timeAt(lap, endMeters);
+  return start == null || end == null || !(end > start) ? null : (start, end);
+}
+
 /// Readable text for why a time-loss list is unavailable.
 String timeLossReasonText(String reason) => switch (reason) {
   timeLossNoReference =>
@@ -37,6 +59,7 @@ class TimeLossesCard extends StatefulWidget {
     this.gate,
     this.wide = false,
     this.onOpenLap,
+    this.onCompare,
   });
 
   /// Null while the theoretical best is calculated for the first time.
@@ -50,6 +73,7 @@ class TimeLossesCard extends StatefulWidget {
 
   /// Opens a lap from a comparison; no button when null.
   final void Function(DayLapRow lap)? onOpenLap;
+  final CompareLaps? onCompare;
 
   @override
   State<TimeLossesCard> createState() => _TimeLossesCardState();
@@ -156,6 +180,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
             gate: widget.gate,
             wide: widget.wide,
             onOpenLap: widget.onOpenLap,
+            onCompare: widget.onCompare,
           ),
         ),
       ),
@@ -211,6 +236,7 @@ class TimeLossPage extends StatefulWidget {
     this.gate,
     this.wide = false,
     this.onOpenLap,
+    this.onCompare,
   });
 
   final DayTheoreticalBest result;
@@ -221,6 +247,7 @@ class TimeLossPage extends StatefulWidget {
   final (Offset, Offset)? gate;
   final bool wide;
   final void Function(DayLapRow lap)? onOpenLap;
+  final CompareLaps? onCompare;
 
   @override
   State<TimeLossPage> createState() => _TimeLossPageState();
@@ -364,6 +391,25 @@ class _TimeLossPageState extends State<TimeLossPage> {
                 icon: const Icon(Icons.map_outlined),
                 label: Text('Open ${lap.displayName}'),
                 onPressed: () => widget.onOpenLap!(lap),
+              ),
+            ),
+          if (widget.onCompare != null && lap != null && reference != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey('lossCompare'),
+                icon: const Icon(Icons.compare_arrows),
+                label: Text('Compare with ${reference.displayName}'),
+                onPressed: () => widget.onCompare!(
+                  lap,
+                  reference,
+                  lapStretch(
+                    widget.result,
+                    lap,
+                    window.startProgressMeters,
+                    window.endProgressMeters,
+                  ),
+                ),
               ),
             ),
         ],
