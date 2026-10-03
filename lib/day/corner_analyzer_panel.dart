@@ -361,6 +361,9 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
           for (final slot in const [0, 1])
             TextButton.icon(
               key: ValueKey('cornerAnalyzerOpenLap${slot == 0 ? 'A' : 'B'}'),
+              style: TextButton.styleFrom(
+                foregroundColor: slot == 0 ? lapAColor : lapBColor,
+              ),
               icon: const Icon(Icons.open_in_new),
               label: Text('Lap ${slot == 0 ? 'A' : 'B'} here'),
               onPressed: () => _panel.openLap(slot, segment.startMeters),

@@ -628,6 +628,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
           for (final slot in const [0, 1])
             TextButton.icon(
               key: ValueKey('comparisonOpenLap${slot == 0 ? 'A' : 'B'}'),
+              style: TextButton.styleFrom(
+                foregroundColor: slot == 0 ? lapAColor : lapBColor,
+              ),
               icon: const Icon(Icons.open_in_new),
               label: Text('Open lap ${slot == 0 ? 'A' : 'B'} here'),
               onPressed: () => _openLap(slot),
