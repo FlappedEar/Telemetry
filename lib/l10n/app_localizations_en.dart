@@ -2349,4 +2349,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Last comparison';
+
+  @override
+  String get taskStopped => 'The work stopped.';
+
+  @override
+  String get taskStoppedUnexpectedly => 'The work stopped unexpectedly.';
 }

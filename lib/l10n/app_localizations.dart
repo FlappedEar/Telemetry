@@ -3475,6 +3475,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last comparison'**
   String get lapsLastComparison;
+
+  /// Why background work (such as reading the recordings again) failed when it gave no reason.
+  ///
+  /// In en, this message translates to:
+  /// **'The work stopped.'**
+  String get taskStopped;
+
+  /// Why background work (such as reading the recordings again) failed when it ended without a result.
+  ///
+  /// In en, this message translates to:
+  /// **'The work stopped unexpectedly.'**
+  String get taskStoppedUnexpectedly;
 }
 
 class _AppLocalizationsDelegate

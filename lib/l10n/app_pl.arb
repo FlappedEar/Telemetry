@@ -556,5 +556,7 @@
   "retryRecordingsFailed": "Nie udało się ponownie otworzyć dnia: {reason}",
   "retryRecordingsChangedMeanwhile": "W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań.",
   "lapsCompareTwo": "Porównaj dwa okrążenia",
-  "lapsLastComparison": "Ostatnie porównanie"
+  "lapsLastComparison": "Ostatnie porównanie",
+  "taskStopped": "Praca została przerwana.",
+  "taskStoppedUnexpectedly": "Praca nieoczekiwanie się przerwała."
 }

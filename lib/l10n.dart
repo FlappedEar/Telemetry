@@ -132,6 +132,14 @@ extension DayNoteText on AppLocalizations {
     _ => error,
   };
 
+  /// Why background work failed (`BackgroundTaskFailed.message`); a
+  /// message the app does not know, such as an error, is shown as written.
+  String taskFailure(String message) => switch (message) {
+    'The work stopped.' => taskStopped,
+    'The work stopped unexpectedly.' => taskStoppedUnexpectedly,
+    _ => message,
+  };
+
   /// Why a session of a saved day could not be opened
   /// (`MissingRecording.reason`); any other reason, such as a read error,
   /// is shown as written.

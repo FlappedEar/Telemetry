@@ -3533,5 +3533,13 @@
   "lapsLastComparison": "Last comparison",
   "@lapsLastComparison": {
     "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
+  },
+  "taskStopped": "The work stopped.",
+  "taskStoppedUnexpectedly": "The work stopped unexpectedly.",
+  "@taskStopped": {
+    "description": "Why background work (such as reading the recordings again) failed when it gave no reason."
+  },
+  "@taskStoppedUnexpectedly": {
+    "description": "Why background work (such as reading the recordings again) failed when it ended without a result."
   }
 }

@@ -2398,4 +2398,10 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Ostatnie porównanie';
+
+  @override
+  String get taskStopped => 'Praca została przerwana.';
+
+  @override
+  String get taskStoppedUnexpectedly => 'Praca nieoczekiwanie się przerwała.';
 }

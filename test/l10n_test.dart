@@ -107,6 +107,21 @@ void main() {
     expect(polish.missingReason('Read error.'), 'Read error.');
   });
 
+  test('background work failures are translated', () {
+    final source = File('lib/day/background_task.dart').readAsStringSync();
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    final english = lookupAppLocalizations(const Locale('en'));
+    for (final message in [
+      'The work stopped.',
+      'The work stopped unexpectedly.',
+    ]) {
+      expect(source, contains("'$message'"));
+      expect(polish.taskFailure(message), isNot(message));
+      expect(english.taskFailure(message), message);
+    }
+    expect(polish.taskFailure('Disk full.'), 'Disk full.');
+  });
+
   test('errors from adding recordings are translated', () {
     final source = File('lib/day/day_results_controller.dart')
         .readAsStringSync();

@@ -344,6 +344,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
       else
         for (final (row, variability) in corners)
           _VariabilityTile(
+            id: row.name,
             name: l10n.tbSegmentName(row.name),
             variability: variability,
           ),
@@ -608,8 +609,14 @@ List<String> variabilityLines(
 
 /// One corner's variability, folded to its name and first line.
 class _VariabilityTile extends StatelessWidget {
-  const _VariabilityTile({required this.name, required this.variability});
+  const _VariabilityTile({
+    required this.id,
+    required this.name,
+    required this.variability,
+  });
 
+  /// The segment's stored name, for the key; [name] is the one shown.
+  final String id;
   final String name;
   final CornerVariability variability;
 
@@ -619,7 +626,7 @@ class _VariabilityTile extends StatelessWidget {
     final l10n = context.l10n;
     final lines = variabilityLines(l10n, variability, speedUnitOf(context));
     return ExpansionTile(
-      key: ValueKey('variability $name'),
+      key: ValueKey('variability $id'),
       tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(bottom: 8),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,

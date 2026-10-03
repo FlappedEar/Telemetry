@@ -506,7 +506,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       return;
     } on BackgroundTaskFailed catch (error) {
       if (mounted && generation == _retryGeneration) {
-        _tell(l10n.retryRecordingsFailed(error.message));
+        _tell(l10n.retryRecordingsFailed(l10n.taskFailure(error.message)));
       }
     } finally {
       if (identical(_retryTask, task)) _retryTask = null;
