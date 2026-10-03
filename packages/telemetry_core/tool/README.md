@@ -238,11 +238,42 @@ Commands (each prints JSON):
   once more. Prints `inspect` of the result.
 - `resave <project> [<target>]`: Overlays opens the day and saves it (Save
   As to `<target>`). Prints `inspect` of the day as opened and as saved.
+- `metadata <project> <target> <run> <name> <notes> <conditions> <setupChanges>`:
+  Overlays opens the day, edits the run at index `<run>` with its own
+  `AnalysisController::updateRunMetadata` (as its session details editor
+  does) and saves the day at `<target>`. Prints `inspect` of the result.
 - `inspect <project>...`: what Overlays sees: validity, `documentState`,
   each run's name, notes, conditions, setup changes and approved segments
   (count, names, revision), every lap section ("Session 2 · LAP 3", times,
   group, exclusion and reason), the group shown and the day report's best
-  lap, theoretical best and number of eligible laps.
+  lap, theoretical best and number of eligible laps, and the comparison
+  Overlays restores (FET-53): each slot's lap and state, whether the pair
+  is ready, and the saved range and charts. Each run also lists its
+  recordings (source id, format, primary, available) and, with a `fusion`
+  decision, what Overlays does with it (FET-55): `state` as Run details
+  shows it ("applied" or "needsRevalidation"), the `decision`, whether the
+  analysis applies it, the fused session as Overlays' analysis loads it
+  (`loadOutingLapDetail`: every channel's name, unit, sample count and
+  FNV-1a digest, as `cpp_fusion_dump` writes them) and the `origins`, the
+  channels taken from the alternative with their rule (`fuseChannels` with
+  the decision's clock and rules).
+- `import <project> <name> <recording>...`: Overlays imports the recordings
+  as a day and saves it, nothing else. Prints `inspect`.
+- `attach <project> <run> <recording>`: Overlays adds the recording to the
+  run (its id or 1-based position) as an alternative, as Run details does
+  (KAN-90: `attachRunRecording`, the match evidence, `confirmRunRecording`),
+  and saves the day. Prints the evidence and `inspect`.
+- `compare <project> <lap A> <lap B> <start> <end> [<channel>...]`:
+  Overlays compares the two laps ("Session 1 · LAP 3", `selectComparisonLap`),
+  then saves the range in meters and the charts as its comparison view does
+  (`persistComparisonRange`, `persistComparisonChannels`), and saves the
+  day. Prints `inspect`.
+- `fuse <project> <run> [<channel key>=<rule>...]`: Overlays reviews fusing
+  the run's alternative recording (KAN-103: `reviewRunFusion`) and approves
+  it with the rules (`approveRunFusion`; `primaryOnly`, `fillGaps` or
+  `preferAlternative`; `*=<rule>` for every other conflicting channel, as
+  Overlays needs a rule for each), and saves the day. Prints the alignment,
+  the review's channels and conflicts, and `inspect`.
 
 `test/day/overlays_roundtrip_test.dart` (skipped unless
 `FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) runs both directions on the shared
@@ -258,15 +289,46 @@ fixtures' recordings:
   defaults (so no closed object gains a key) and keeps `documentState`.
   Telemetry opens it again with the same day and results, and its next save
   keeps everything Overlays wrote, with `savedRevision` one higher.
+- **Session details** (FET-52). The same edits of a session's name, notes,
+  conditions and setup changes (spaces around a name, texts with spaces, a
+  blank text on a record without it, a cleared text, Polish text and symbols)
+  made in Telemetry and by Overlays' `updateRunMetadata` on the same day give
+  the same document, and each app sees the other's edit, laps named after
+  it. A day Telemetry renamed opens in Overlays with its name, and Overlays'
+  save keeps it.
 - **Overlays → Telemetry → Overlays.** `create` builds a day; Telemetry
   opens it with the same sessions, laps, exclusions, group, segments and
   results, and its save equals Overlays' document but for `savedRevision`
   (one higher, the same `id`) and the order of `lapExclusions`. Overlays
   inspects it and sees the same day.
 
+`test/day/overlays_comparison_roundtrip_test.dart` (also skipped unless
+`FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) checks the comparison decisions
+(FET-53) on the shared recordings: a day Overlays imported without choosing
+a group has no `analysisDecisions` and stays "automatic" after Telemetry
+saves it; the pair, range and charts Telemetry saves are the comparison
+Overlays restores (both slots ready) and keeps on its save; and the
+comparison Overlays sets up (`compare`) opens in Telemetry with the same
+laps, range and charts, survives Telemetry's save unchanged, and Overlays
+restores it again.
+
 `FET_ROUNDTRIP_RECORDINGS=<folder>` runs both on other recordings (VBO, or
 RCZ with `FET_ROUNDTRIP_EXTENSION=.rcz`), for example a real day; never commit
 their output. `FET_PARITY_REPORT=1` prints counts.
+
+`test/day/overlays_fusion_roundtrip_test.dart` (also skipped unless
+`FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) checks a fusion Overlays decided
+(FET-55): Overlays imports the synthetic VBO of `writeFusionPair`
+(`test/support/fusion_pair.dart`), attaches its RCZ and approves the fusion
+with `sats=preferAlternative`. Telemetry opens the day with the same
+sessions and laps and applies the decision without aligning again: the same
+clock and rules, the same origins (`rpm-obd` added, `sats`
+preferAlternative) and bit-identical fused channels. Telemetry's re-save is
+Overlays' document with `savedRevision` one higher (and the group still
+"automatic" in Overlays). Overlays inspects Telemetry's save with the same decision
+applied. `FET_FUSION_ROUNDTRIP_DAY=<folder>` does the same for every VBO/RCZ
+pair of a folder (each conflicting channel `primaryOnly`), for example a
+real day; it prints counts only.
 
 The committed day in `../fetproject/test/fixtures/roundtrip` was built by
 `create` from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on

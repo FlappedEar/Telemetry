@@ -6,6 +6,7 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/corner_details.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/theoretical_best_card.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/format.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -105,6 +106,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: Scaffold(
             body: ListView(
               children: [TheoreticalBestCard(result: result, path: path)],
@@ -180,6 +182,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: Scaffold(
             body: ListView(children: [TheoreticalBestCard(result: result)]),
           ),
@@ -278,6 +281,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: SingleChildScrollView(
             child: CornerDetails(corner: corner, comparison: best),
@@ -303,6 +307,7 @@ void main() {
   testWidgets('says why there is no theoretical best', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: Column(
             children: [

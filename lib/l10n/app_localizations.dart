@@ -782,6 +782,347 @@ abstract class AppLocalizations {
   /// **'Legal'**
   String get appleMapLegal;
 
+  /// Button: place this segment boundary by tapping the track on the map.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick on map'**
+  String get segmentPickOnMap;
+
+  /// The pick button while waiting for a tap on the map; pressing it again cancels.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map… (cancel)'**
+  String get segmentPickActive;
+
+  /// Shown on the map while it waits for the segment's start.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the track line to place the start'**
+  String get segmentPickBannerStart;
+
+  /// Shown on the map while it waits for the segment's end.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the track line to place the end'**
+  String get segmentPickBannerEnd;
+
+  /// Shown on the map while it waits for where to split the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the track line to place the split'**
+  String get segmentPickBannerSplit;
+
+  /// A tap near a crossing or a parallel stretch of track: the place along the lap is unclear.
+  ///
+  /// In en, this message translates to:
+  /// **'Another part of the track passes close by here. Set the distance with the buttons instead.'**
+  String get segmentPickAmbiguous;
+
+  /// A tap too far from the lap's trace.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap on the lap\'s track line.'**
+  String get segmentPickFar;
+
+  /// The best lap has no trace to pick a place on.
+  ///
+  /// In en, this message translates to:
+  /// **'The lap trace is not available for picking.'**
+  String get segmentPickNoTrace;
+
+  /// The place tapped for a split is outside the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a point inside this segment to split it.'**
+  String get segmentPickOutside;
+
+  /// Heading of the theoretical best card's per-corner variability list.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap to lap in each corner'**
+  String get variabilityHeading;
+
+  /// Explains the corner variability list.
+  ///
+  /// In en, this message translates to:
+  /// **'How much each corner changes from lap to lap over the group\'s laps: typical is the median, spread the middle half of the laps (interquartile range), from at least 3 laps. Observations, not causes.'**
+  String get variabilityIntro;
+
+  /// No corner has variability results.
+  ///
+  /// In en, this message translates to:
+  /// **'No corner was measured on enough laps.'**
+  String get variabilityNone;
+
+  /// A corner without any measured metric.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured on these laps.'**
+  String get variabilityNotMeasured;
+
+  /// How many laps a figure is from.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
+  String variabilityLaps(int count);
+
+  /// A braking point or throttle pickup read from the recorded brake or throttle.
+  ///
+  /// In en, this message translates to:
+  /// **'measured'**
+  String get variabilityMeasured;
+
+  /// A braking point or throttle pickup inferred from speed.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred'**
+  String get variabilityInferred;
+
+  /// A position metric's spread across laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: spread {spread} · {tail}'**
+  String variabilitySpread(String label, String spread, String tail);
+
+  /// A speed's typical value and spread across laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: typical {typical} · spread {spread} · {tail}'**
+  String variabilityTypical(
+    String label,
+    String typical,
+    String spread,
+    String tail,
+  );
+
+  /// Fewer than three laps measured this metric.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: too few laps ({tail})'**
+  String variabilityTooFew(String label, String tail);
+
+  /// Label: where braking starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point'**
+  String get variabilityBraking;
+
+  /// Label: speed at the corner's apex.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex speed'**
+  String get variabilityApex;
+
+  /// Label: the lowest speed in the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum speed'**
+  String get variabilityMinimum;
+
+  /// Label: speed at the corner's exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit speed'**
+  String get variabilityExit;
+
+  /// Label: where the driver goes back on the throttle.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup'**
+  String get variabilityPickup;
+
+  /// How far apart the laps' lines are at the apex.
+  ///
+  /// In en, this message translates to:
+  /// **'Line: spread {spread} m · {accuracy}'**
+  String variabilityLine(String spread, String accuracy);
+
+  /// The recording's typical GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS accuracy about {meters} m'**
+  String variabilityGpsAccuracy(String meters);
+
+  /// The recording does not state its GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS accuracy not recorded'**
+  String get variabilityGpsUnknown;
+
+  /// Appended when the line spread is no larger than the GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **' · not distinguishable from GPS error'**
+  String get variabilityLineUnresolved;
+
+  /// Button: run the theoretical best calculation again after it failed or had nothing to use.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate again'**
+  String get calculateAgain;
+
+  /// Button: open the sessions' recordings again from where the day says they are.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry recordings'**
+  String get retryRecordings;
+
+  /// The retry button while the recordings are read again.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening…'**
+  String get retryRecordingsLooking;
+
+  /// The day has unsaved changes, so it cannot be opened again from its file.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the day first, then try the recordings again.'**
+  String get retryRecordingsSaveFirst;
+
+  /// Retrying found no more recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'The recordings are still not where the day says.'**
+  String get retryRecordingsStill;
+
+  /// Heading of the day page's list of sessions with their conditions, setup changes and notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Session details'**
+  String get sessionDetailsHeading;
+
+  /// Shown under a session that has no conditions, setup changes or notes.
+  ///
+  /// In en, this message translates to:
+  /// **'No conditions, setup changes or notes'**
+  String get sessionDetailsNone;
+
+  /// Title of the dialog that edits a session's name, conditions, setup changes and notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of {session}'**
+  String sessionDetailsTitle(String session);
+
+  /// Text field label: the session's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sessionDetailsName;
+
+  /// Shown under an empty session name.
+  ///
+  /// In en, this message translates to:
+  /// **'A session needs a name.'**
+  String get sessionDetailsNameRequired;
+
+  /// Text field label and list label: the weather and track conditions of a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get sessionDetailsConditions;
+
+  /// Example conditions in the empty text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Dry, 18 °C'**
+  String get sessionDetailsConditionsHint;
+
+  /// Text field label and list label: what was changed on the car before the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup changes'**
+  String get sessionDetailsSetup;
+
+  /// Example setup change in the empty text field. Keep the decimal point.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres +0.1 bar'**
+  String get sessionDetailsSetupHint;
+
+  /// Text field label and list label: the driver's notes on a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get sessionDetailsNotes;
+
+  /// Explains where a session's details are kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in the day\'s file, which FlappedEar Overlays reads too.'**
+  String get sessionDetailsSaved;
+
+  /// Shown when an entered name or text contains characters that cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'This text cannot be saved.'**
+  String get detailsInvalid;
+
+  /// Menu item that opens the dialog renaming the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename day…'**
+  String get renameDayMenu;
+
+  /// Title of the dialog that renames the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename day'**
+  String get renameDayTitle;
+
+  /// Text field label: the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Day name'**
+  String get renameDayName;
+
+  /// Shown under an empty day name.
+  ///
+  /// In en, this message translates to:
+  /// **'A day needs a name.'**
+  String get renameDayRequired;
+
+  /// Retrying while recordings are still being added.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the recordings are added, then retry.'**
+  String get retryRecordingsWaitAdding;
+
+  /// Recordings were added to the day while it was being opened again.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings were added meanwhile. Retry the recordings again.'**
+  String get retryRecordingsAddedMeanwhile;
+
+  /// Retrying opened none of the day's recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'None of the day\'s recordings could be opened, so the day stays as it is.'**
+  String get retryRecordingsNone;
+
+  /// Retrying could not read the day's document; reason is the error, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be opened again: {reason}'**
+  String retryRecordingsFailed(String reason);
+
+  /// The day was edited while its recordings were being read again.
+  ///
+  /// In en, this message translates to:
+  /// **'The day was changed meanwhile. Save it, then retry the recordings.'**
+  String get retryRecordingsChangedMeanwhile;
+
+  /// Button above the lap list that asks for lap A, then lap B, and compares them.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare two laps'**
+  String get lapsCompareTwo;
+
+  /// Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day).
+  ///
+  /// In en, this message translates to:
+  /// **'Last comparison'**
+  String get lapsLastComparison;
+
   /// Section of the day page with the best lap and the analysis; bottom bar and side rail label.
   ///
   /// In en, this message translates to:

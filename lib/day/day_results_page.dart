@@ -13,6 +13,7 @@ import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
 import '../l10n.dart';
 import '../settings_dialog.dart';
+import 'background_task.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -27,6 +28,7 @@ import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
 import 'segment_editor_page.dart';
+import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
 import '../ui/theme.dart';
@@ -99,6 +101,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
   // The section shown: on a phone the bottom bar's Day, Laps or Compare; on a
   // wide screen the rail's Day (summary and laps side by side) or Compare.
   _Section _section = _Section.day;
+  // Reading the recordings again ("Retry recordings"): the running task and
+  // its generation, so a result after the page moved on is dropped.
+  BackgroundTask<OpenedDay>? _retryTask;
+  int _retryGeneration = 0;
 
   // The best lap's trace, recomputed only when the best lap changes.
   DayLapReference? _mapReference;
@@ -142,6 +148,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   @override
   void dispose() {
+    ++_retryGeneration;
+    _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _lifecycle.dispose();
     _summaryScroll.dispose();
@@ -427,6 +435,87 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
+  /// Opens the day again from its saved document with the recordings where
+  /// it says they are, as Overlays' "Retry recordings" reads them again: a
+  /// drive that was not connected, say. Recordings found are checked by
+  /// their content like any opened day's; the day is shown again when more
+  /// of them open, or to line up its RCZs again. Cancelled when the page
+  /// closes.
+  Future<void> _retryRecordings() async {
+    final path = _controller.documentPath;
+    if (path == null) return;
+    final l10n = context.l10n;
+    if (_controller.adding) {
+      _tell(l10n.retryRecordingsWaitAdding);
+      return;
+    }
+    if (_controller.dirty) {
+      _tell(l10n.retryRecordingsSaveFirst);
+      return;
+    }
+    final generation = ++_retryGeneration;
+    final missing = _controller.missing.length;
+    final sessions = _controller.runs.length;
+    final shown = {for (final named in _controller.runs) named.run.id};
+    final alternatives = _controller.missingAlternatives
+        .where((recording) => shown.contains(recording.runId))
+        .length;
+    setState(() => _relinking = true);
+    final task = _retryTask = runInBackground(reopenDay, path);
+    try {
+      final day = await task.result;
+      if (!mounted || generation != _retryGeneration) return;
+      if (_controller.adding || _controller.runs.length != sessions) {
+        _tell(l10n.retryRecordingsAddedMeanwhile);
+        return;
+      }
+      if (_controller.dirty) {
+        _tell(l10n.retryRecordingsChangedMeanwhile);
+        return;
+      }
+      if (day.missing.length >= missing && alternatives == 0) {
+        _tell(l10n.retryRecordingsStill);
+        return;
+      }
+      if (day.analysis == null) {
+        _tell(l10n.retryRecordingsNone);
+        return;
+      }
+      final replace = widget.replace;
+      if (replace != null) {
+        replace(
+          DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: _controller.appender,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => DayResultsPage.opened(
+            day: day,
+            documents: widget.documents,
+            recovery: widget.recovery,
+          ),
+        ),
+      );
+    } on OperationCancelled {
+      return;
+    } on BackgroundTaskFailed catch (error) {
+      if (mounted && generation == _retryGeneration) {
+        _tell(l10n.retryRecordingsFailed(error.message));
+      }
+    } finally {
+      if (identical(_retryTask, task)) _retryTask = null;
+      if (mounted && generation == _retryGeneration) {
+        setState(() => _relinking = false);
+      }
+    }
+  }
+
   /// Two panes and a side rail from this width; below it the summary, the
   /// laps and Compare are sections of a bottom bar.
   static const _twoPaneWidth = 900.0;
@@ -583,6 +672,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onTap: () => _save(choose: true),
                 child: const Text('Save as…'),
               ),
+              PopupMenuItem(
+                key: const ValueKey('renameDay'),
+                height: kMinInteractiveDimension,
+                onTap: () => showDialog<void>(
+                  context: this.context,
+                  builder: (_) => RenameDayDialog(controller: _controller),
+                ),
+                child: Text(context.l10n.renameDayMenu),
+              ),
               diagnosticsMenuItem(context),
             ],
           ),
@@ -708,12 +806,31 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     ),
                 ],
                 const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _relinking ? null : _findRecordings,
-                  icon: const Icon(Icons.folder_open_outlined),
-                  label: Text(
-                    _relinking ? 'Looking…' : 'Find recordings in a folder…',
-                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _relinking ? null : _findRecordings,
+                      icon: const Icon(Icons.folder_open_outlined),
+                      label: Text(
+                        _relinking
+                            ? 'Looking…'
+                            : 'Find recordings in a folder…',
+                      ),
+                    ),
+                    if (_controller.documentPath != null)
+                      OutlinedButton.icon(
+                        key: const ValueKey('retryRecordings'),
+                        onPressed: _relinking ? null : _retryRecordings,
+                        icon: const Icon(Icons.refresh),
+                        label: Text(
+                          _retryTask != null
+                              ? l10n.retryRecordingsLooking
+                              : l10n.retryRecordings,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -861,6 +978,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           wide: wide,
           onOpenLap: _open,
           onCompare: _compare,
+          onRetry: _controller.retryTheoreticalBest,
         ),
         const SizedBox(height: 12),
         ConsistencyCard(
@@ -908,6 +1026,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
           title: Text(group.label),
           subtitle: const Text(
             'Its circuit could not be identified, so its laps are not compared.',
+          ),
+        ),
+      const SizedBox(height: 12),
+      Text(
+        context.l10n.sessionDetailsHeading,
+        style: theme.textTheme.titleSmall,
+      ),
+      for (final named in _controller.runs)
+        ListTile(
+          key: ValueKey('sessionDetails ${named.run.id}'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(context.l10n.session(named.name)),
+          subtitle: Text(
+            _detailsText(named.run.id),
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: const Icon(Icons.edit_note),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (_) => SessionDetailsDialog(
+              controller: _controller,
+              runId: named.run.id,
+            ),
           ),
         ),
       const SizedBox(height: 12),
@@ -979,6 +1121,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       gate: _mapGate,
       wide: wide,
       onAnalyze: _compare,
+      onRetry: _controller.retryTheoreticalBest,
       onEditSegments: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => SegmentEditorPage(
@@ -1008,6 +1151,21 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final direction = configuration.direction?.label ?? 'direction unknown';
     return '$layout · $direction · ${manual ? 'set by you' : 'inferred from GPS'}'
         '${groupLabel == null ? '' : ' · ${groupLabel.split(' · ').first}'}';
+  }
+
+  // A session's conditions, setup changes and notes on one line each.
+  String _detailsText(String runId) {
+    final l10n = context.l10n;
+    final details = _controller.runMetadata(runId);
+    final lines = [
+      for (final (label, text) in [
+        (l10n.sessionDetailsConditions, details.conditions),
+        (l10n.sessionDetailsSetup, details.setupChanges),
+        (l10n.sessionDetailsNotes, details.notes),
+      ])
+        if (text.trim().isNotEmpty) '$label: ${text.trim()}',
+    ];
+    return lines.isEmpty ? l10n.sessionDetailsNone : lines.join('\n');
   }
 
   String _runName(String runId) {
@@ -1123,11 +1281,23 @@ class _DayResultsPageState extends State<DayResultsPage> {
         children: [
           Text('Laps', style: theme.textTheme.titleSmall),
           if (_controller.comparisonCandidates().length >= 2)
-            TextButton.icon(
-              key: const ValueKey('lapsCompare'),
-              onPressed: _pickComparison,
-              icon: const Icon(Icons.compare_arrows),
-              label: const Text('Compare two laps'),
+            Wrap(
+              children: [
+                // The comparison saved with the day, as it was left.
+                if (_controller.savedComparisonPair case (final a, final b))
+                  TextButton.icon(
+                    key: const ValueKey('lapsLastComparison'),
+                    onPressed: () => _compare(a, b, null),
+                    icon: const Icon(Icons.history),
+                    label: Text(context.l10n.lapsLastComparison),
+                  ),
+                TextButton.icon(
+                  key: const ValueKey('lapsCompare'),
+                  onPressed: _pickComparison,
+                  icon: const Icon(Icons.compare_arrows),
+                  label: Text(context.l10n.lapsCompareTwo),
+                ),
+              ],
             ),
         ],
       ),
@@ -1278,3 +1448,9 @@ class _HeadlineBar extends StatelessWidget {
     );
   }
 }
+
+/// The day saved at [path] opened again, as [DayResultsPage]'s "Retry
+/// recordings" runs it in the background: top-level, so that nothing of
+/// the page goes with it to the other isolate.
+OpenedDay reopenDay(String path, CancellationCheck cancelled) =>
+    openDay(path, cancelled: cancelled);

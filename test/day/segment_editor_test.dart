@@ -258,4 +258,141 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('a boundary is picked on the map by touch, applied and undone', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('editSegments')),
+      300,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('dayResultsSummary')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('editSegments')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('editSegments')));
+    await tester.pumpAndSettle();
+
+    final before = controller.theoreticalBest!;
+    final best = before.bestLap!;
+    final id1 = before.approvedSegment(1)!['id']! as String;
+    final segment = before.segments[1];
+    await tester.tap(find.byKey(ValueKey('segment $id1')));
+    await tester.pumpAndSettle();
+
+    // The fix of the best lap three quarters into the segment.
+    final mapFinder = find.byKey(const ValueKey('segmentMap'));
+    final path = tester.widget<TrackMap>(mapFinder).path;
+    final target =
+        segment.startProgressMeters +
+        0.75 * (segment.endProgressMeters - segment.startProgressMeters);
+    PathPoint? chosen;
+    double? chosenProgress;
+    for (final part in path.segments) {
+      for (final point in part) {
+        final at = before.progressAt(best, point.telemetryTime);
+        if (at != null &&
+            (chosenProgress == null ||
+                (at - target).abs() < (chosenProgress - target).abs())) {
+          chosen = point;
+          chosenProgress = at;
+        }
+      }
+    }
+    // Where the plain map draws it (track_map.dart's fit, 16 px padding).
+    final box = tester.getRect(mapFinder);
+    var minX = double.infinity, minY = double.infinity;
+    var maxX = -double.infinity, maxY = -double.infinity;
+    for (final part in path.segments) {
+      for (final point in part) {
+        if (point.eastMeters < minX) minX = point.eastMeters;
+        if (point.eastMeters > maxX) maxX = point.eastMeters;
+        if (point.northMeters < minY) minY = point.northMeters;
+        if (point.northMeters > maxY) maxY = point.northMeters;
+      }
+    }
+    final spanX = maxX - minX, spanY = maxY - minY;
+    final scale = [
+      (box.width - 32) / spanX,
+      (box.height - 32) / spanY,
+    ].reduce((a, b) => a < b ? a : b);
+    final at = Offset(
+      box.left +
+          (box.width - spanX * scale) / 2 +
+          (chosen!.eastMeters - minX) * scale,
+      box.bottom -
+          (box.height - spanY * scale) / 2 -
+          (chosen.northMeters - minY) * scale,
+    );
+
+    Future<void> tapKey(String key) async {
+      await tester.ensureVisible(find.byKey(ValueKey(key)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ValueKey(key)));
+      await tester.pumpAndSettle();
+    }
+
+    // Started and cancelled.
+    await tapKey('pick end');
+    expect(find.text('Tap the track line to place the end'), findsOneWidget);
+    await tapKey('pick end');
+    expect(find.byKey(const ValueKey('segmentPickBanner')), findsNothing);
+
+    // Off the track: said, and still waiting.
+    await tapKey('pick end');
+    await tester.tapAt(Offset(box.left + 4, box.bottom - 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Tap on the lap\'s track line.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('segmentPickBanner')), findsOneWidget);
+
+    // On the track: the end moves there, to 0.1 m, shown before it applies.
+    await tester.tapAt(at);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('segmentPickBanner')), findsNothing);
+    final picked = double.parse(chosenProgress!.toStringAsFixed(1));
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('segmentEnd value'))).data,
+      '${picked.toStringAsFixed(1)} m',
+    );
+    expect(
+      controller.theoreticalBest!.segments[1].endProgressMeters,
+      segment.endProgressMeters,
+    );
+    await tapKey('applySegment');
+    expect(
+      controller.theoreticalBest!.segments[1].endProgressMeters,
+      closeTo(picked, 1e-9),
+    );
+    expect(controller.dirty, isTrue);
+
+    // Undone like any edit.
+    await tester.tap(find.byKey(const ValueKey('undoSegmentEdit')));
+    await tester.pumpAndSettle();
+    expect(
+      controller.theoreticalBest!.segments[1].endProgressMeters,
+      segment.endProgressMeters,
+    );
+    await tester.tap(find.byKey(const ValueKey('redoSegmentEdit')));
+    await tester.pumpAndSettle();
+    expect(
+      controller.theoreticalBest!.segments[1].endProgressMeters,
+      closeTo(picked, 1e-9),
+    );
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

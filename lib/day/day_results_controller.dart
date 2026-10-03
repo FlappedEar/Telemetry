@@ -723,9 +723,18 @@ final class DayResultsController extends ChangeNotifier {
   DayAnalysis _analysis;
   String? _groupId;
 
-  // Whether the user chose the group shown (a saved group the day cannot
-  // show is otherwise kept in the document).
+  // Whether the group shown was picked for the day (by the user, or to follow
+  // a session whose layout the user set) rather than the default.
   bool _groupChosen = false;
+
+  // Whether the user chose the group in the group picker: only then is it
+  // saved (FET-53), as Overlays saves it only from its group picker, so a
+  // day whose group was never chosen stays "automatic" in Overlays.
+  bool _groupDecided = false;
+
+  // The comparison set up in this app since the day was opened (FET-53);
+  // its null fields keep the document's.
+  ComparisonDecisions _comparisonChoice = const ComparisonDecisions();
   final Map<DayLapReference, String> _exclusions;
 
   /// The event's identity, kept across saves.
@@ -799,6 +808,7 @@ final class DayResultsController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
     try {
       final revision = _revision;
+      final metadataNow = {..._metadataEdits};
       final document = dayDocument(
         eventId: eventId,
         name: _name,
@@ -809,12 +819,18 @@ final class DayResultsController extends ChangeNotifier {
         previous: _document,
         previousPath: _documentBase,
         trackSegments: _segmentEdits.runs,
-        groupChosen: _groupChosen,
+        groupChosen: _groupDecided,
+        comparison: _comparisonChoice,
         fusions: _fusions,
         pendingAlternatives: _pendingRecordings,
+        runMetadata: metadataNow,
       );
       await _writer(path, document);
       _document = document;
+      // The details saved are in the document now; later edits stay.
+      for (final MapEntry(:key, :value) in metadataNow.entries) {
+        if (_metadataEdits[key] == value) _metadataEdits.remove(key);
+      }
       _documentPath = path;
       _documentBase = path;
       // Segment edits wait while saving, so the saved ones are all of them.
@@ -1179,6 +1195,69 @@ final class DayResultsController extends ChangeNotifier {
     return null;
   }
 
+  /// The comparison saved with the day, with what was set up since: laps
+  /// of this day (null when not one of its laps), range and charts.
+  ComparisonDecisions get savedComparison {
+    final document = _document;
+    final saved = document == null
+        ? const ComparisonDecisions()
+        : documentComparison(document, _runs);
+    return saved.overriddenBy(_comparisonChoice);
+  }
+
+  /// The saved pair (A, B) when both are still eligible laps of one group,
+  /// or null.
+  (DayLapRow, DayLapRow)? get savedComparisonPair {
+    final slots = savedComparison.slots;
+    if (slots == null || slots.length != 2) return null;
+    DayLapRow? rowOf(DayLapReference? reference) {
+      if (reference == null) return null;
+      for (final row in _analysis.rows) {
+        if (row.reference == reference) return row;
+      }
+      return null;
+    }
+
+    final a = rowOf(slots[0]), b = rowOf(slots[1]);
+    if (a == null || b == null || a.reference == b.reference) return null;
+    return comparable(a, b) ? (a, b) : null;
+  }
+
+  // Records a change of the comparison decisions: saved with the day.
+  void _chooseComparison(ComparisonDecisions choice) {
+    final before = savedComparison;
+    final after = before.overriddenBy(choice);
+    bool sameList<T>(List<T>? x, List<T>? y) =>
+        x == null ? y == null : y != null && listEquals(x, y);
+    if (sameList(before.slots, after.slots) &&
+        before.range == after.range &&
+        sameList(before.channels, after.channels)) {
+      return;
+    }
+    _comparisonChoice = _comparisonChoice.overriddenBy(choice);
+    _revision++;
+    _dirty = true;
+    _scheduleRecovery();
+    notifyListeners();
+  }
+
+  /// The comparison page shows [a] against [b]: saved as the day's
+  /// comparison (Overlays' `comparisonSlots`).
+  void rememberComparisonPair(DayLapRow a, DayLapRow b) =>
+      _chooseComparison(ComparisonDecisions(slots: [a.reference, b.reference]));
+
+  /// The comparison shows [start]..[end] meters of its axis.
+  void rememberComparisonRange(double start, double end) {
+    if (!ComparisonDecisions.validRange((start, end))) return;
+    _chooseComparison(ComparisonDecisions(range: (start, end)));
+  }
+
+  /// The comparison shows the charts [channels].
+  void rememberComparisonChannels(List<String> channels) {
+    if (!ComparisonDecisions.validChannels(channels)) return;
+    _chooseComparison(ComparisonDecisions(channels: [...channels]));
+  }
+
   /// The laps [row] can be compared with: the eligible laps of its group.
   List<DayLapRow> comparisonCandidates([DayLapRow? row]) =>
       dayComparisonCandidates(_analysis, row);
@@ -1301,9 +1380,22 @@ final class DayResultsController extends ChangeNotifier {
 
   /// Shows [groupId]'s ranking first.
   void chooseGroup(String groupId) {
-    if (groupId == _analysis.chosenGroupId) return;
+    if (groupId == _analysis.chosenGroupId) {
+      // Picking the group already shown is still a choice, saved as
+      // Overlays saves it, unless the day already saves that group.
+      if (_groupDecided || _savedGroupId == groupId) return;
+      _groupId = groupId;
+      _groupChosen = true;
+      _groupDecided = true;
+      _revision++;
+      _dirty = true;
+      _scheduleRecovery();
+      notifyListeners();
+      return;
+    }
     _groupId = groupId;
     _groupChosen = true;
+    _groupDecided = true;
     _rerank();
   }
 
@@ -1406,7 +1498,98 @@ final class DayResultsController extends ChangeNotifier {
   /// The day's runs with the notes, conditions and setup changes the
   /// document records for them.
   List<ProgressionRunInfo> get progressionRuns =>
-      progressionRunInfo(runs, documentRuns: _savedRuns);
+      progressionRunInfo(runs, documentRuns: _metadataRuns);
+
+  // The document's runs with the unsaved edits of their details.
+  List<Object?> get _metadataRuns =>
+      applyRunMetadataEdits(_savedRuns, _metadataEdits);
+
+  // The user's unsaved edits of sessions' details, by run id.
+  final Map<String, RunMetadata> _metadataEdits = {};
+
+  /// [runId]'s name, notes, conditions and setup changes as the user sees
+  /// them, unsaved edits included.
+  RunMetadata runMetadata(String runId) {
+    final edited = _metadataEdits[runId];
+    if (edited != null) return edited;
+    final named = _named(runId);
+    for (final value in _savedRuns) {
+      if (value case final Map<String, Object?> run when run['id'] == runId) {
+        final stored = RunMetadata.fromRun(run);
+        return RunMetadata(
+          name: named?.name ?? stored.name,
+          notes: stored.notes,
+          conditions: stored.conditions,
+          setupChanges: stored.setupChanges,
+        );
+      }
+    }
+    return RunMetadata(name: named?.name ?? '');
+  }
+
+  /// Edits [runId]'s name, notes, conditions and setup changes, as
+  /// FlappedEar Overlays edits them ([applyRunMetadata]): the day then has
+  /// unsaved changes. Returns why not ([runMetadataProblem]), or null.
+  String? updateRunMetadata(String runId, RunMetadata metadata) {
+    final named = _named(runId);
+    if (named == null) return 'The session is not in this day.';
+    final problem = runMetadataProblem(metadata);
+    if (problem != null) return problem;
+    final current = runMetadata(runId);
+    final run = <String, Object?>{
+      'name': current.name,
+      for (final MapEntry(:key, :value) in {
+        'notes': current.notes,
+        'conditions': current.conditions,
+        'setupChanges': current.setupChanges,
+      }.entries)
+        if (value.isNotEmpty) key: value,
+    };
+    if (!applyRunMetadata(run, metadata)) return null;
+    final name = metadata.name.trim();
+    _metadataEdits[runId] = RunMetadata(
+      name: name,
+      notes: metadata.notes,
+      conditions: metadata.conditions,
+      setupChanges: metadata.setupChanges,
+    );
+    if (name != named.name) {
+      _runs[_runs.indexOf(named)] = (run: named.run, name: name);
+      _channelRuns = null;
+      _analysis = renameDayRun(
+        _analysis,
+        runId,
+        name,
+        exclusions: _exclusions,
+        preferredGroupId: _groupId,
+      );
+      // Their results name the session.
+      _resetTheoreticalBest();
+      _resetChannelSummaries();
+    }
+    _explainedFor = null;
+    _detailsChanged();
+    return null;
+  }
+
+  /// Renames the day (the document's event name, which Overlays shows too).
+  /// Returns why not ([dayNameProblem]), or null.
+  String? renameDay(String name) {
+    final problem = dayNameProblem(name);
+    if (problem != null) return problem;
+    final trimmed = name.trim();
+    if (trimmed == _name) return null;
+    _name = trimmed;
+    _detailsChanged();
+    return null;
+  }
+
+  void _detailsChanged() {
+    _revision++;
+    _dirty = true;
+    _scheduleRecovery();
+    notifyListeners();
+  }
 
   /// The shown group's runs in recording order with their best laps.
   DayProgression get progression {
@@ -1463,6 +1646,23 @@ final class DayResultsController extends ChangeNotifier {
     _theoreticalBestLoading = false;
     notifyListeners();
     unawaited(_requestCoach(result, generation));
+  }
+
+  /// Calculates the theoretical best again when it failed or had nothing to
+  /// use (Overlays' "Calculate again"). A result still on its way for the
+  /// earlier request is dropped by its generation. Returns whether it
+  /// started.
+  bool retryTheoreticalBest() {
+    final result = _theoreticalBest;
+    if (_disposed ||
+        _theoreticalBestLoading ||
+        result == null ||
+        !offersCalculateAgain(result)) {
+      return false;
+    }
+    _resetTheoreticalBest();
+    unawaited(requestTheoreticalBest());
+    return true;
   }
 
   /// The coach's plan for the next session after the day's latest session,
@@ -1855,9 +2055,11 @@ final class DayResultsController extends ChangeNotifier {
     final analysisNow = _analysis;
     final exclusionsNow = {..._exclusions};
     final segmentsNow = _segmentEdits.runs;
-    final groupChosenNow = _groupChosen;
+    final groupChosenNow = _groupDecided;
+    final comparisonNow = _comparisonChoice;
     final fusionsNow = {..._fusions};
     final pendingNow = {..._pendingRecordings};
+    final metadataNow = {..._metadataEdits};
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -1878,8 +2080,10 @@ final class DayResultsController extends ChangeNotifier {
             previousPath: previousBase,
             trackSegments: segmentsNow,
             groupChosen: groupChosenNow,
+            comparison: comparisonNow,
             fusions: fusionsNow,
             pendingAlternatives: pendingNow,
+            runMetadata: metadataNow,
           ),
           originalPath: original,
           basePath: base,
@@ -2039,3 +2243,10 @@ final class DayAddition {
   final String? savedTo;
   final String saveError;
 }
+
+/// Whether [result] offers "Calculate again": as in Overlays, only when
+/// it is unavailable or the calculation failed.
+bool offersCalculateAgain(DayTheoreticalBest result) => switch (result.state) {
+  DayTheoreticalBestState.unavailable || DayTheoreticalBestState.error => true,
+  DayTheoreticalBestState.ready => false,
+};

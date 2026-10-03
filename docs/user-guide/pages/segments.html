@@ -20,12 +20,23 @@
 <p>Tap a segment to select it. Then:</p>
 <ul>
   <li><strong>Name</strong> and type (<strong>Corner</strong>, <strong>Straight</strong>, <strong>Sector</strong>).</li>
-  <li><strong>Start</strong> and <strong>End</strong>: nudge by −10, −1, +1 or +10 m. <strong>Move the neighbouring segment too</strong> keeps the next segment attached (on by default). Then <strong>Apply</strong>, or <strong>Reset</strong>.</li>
-  <li><strong>Split here</strong>: set the point with the slider.</li>
+  <li><strong>Start</strong> and <strong>End</strong>: nudge by −10, −1, +1 or +10 m, or tap <strong>Pick on map</strong> under one and then tap the track line on the map (see <a href="#pick">Placing a boundary on the map</a>). <strong>Move the neighbouring segment too</strong> keeps the next segment attached (on by default). Then <strong>Apply</strong>, or <strong>Reset</strong>.</li>
+  <li><strong>Split here</strong>: set the point with the slider, or with <strong>Pick on map</strong>.</li>
   <li><strong>Merge with</strong> the next segment.</li>
   <li><strong>Remove</strong>.</li>
 </ul>
 <p>Every change times all laps again. <strong>Undo</strong> and <strong>Redo</strong> are in the toolbar.</p>
+
+<h2 id="pick">Placing a boundary on the map</h2>
+<figure>
+  <img src="assets/screens/segment-pick.png" alt="Segment editor waiting for a tap on the track line to place the end of the selected segment" width="1280" height="800" loading="lazy">
+</figure>
+<ol class="steps">
+  <li>Tap <strong>Pick on map</strong> under <strong>Start</strong>, <strong>End</strong> or the split slider. The map says <em>Tap the track line to place the start</em> (or the end, or the split), and the button reads <strong>Tap the map… (cancel)</strong>; tap it again to stop.</li>
+  <li>Tap or click the lap's line where the boundary goes. The nearest point of the best lap is used, to 0.1 m, and shows as an orange dot.</li>
+  <li>Tap <strong>Apply</strong> (or <strong>Split here</strong>). Like any change, it can be undone.</li>
+</ol>
+<p>A tap more than about 3% of the track's size away from the line says <em>Tap on the lap's track line.</em> Where another part of the track passes close by, such as a crossing or a parallel straight, the app cannot tell which one you meant and says <em>Another part of the track passes close by here. Set the distance with the buttons instead.</em> A split point must lie inside the segment. These are the same rules as in FlappedEar Overlays. On a phone, one finger taps and two fingers still zoom and move the map.</p>
 
 <h2 id="keep">Keeping your segments</h2>
 <p>Save the day to keep the segments. Your corrections are saved with the day and are never replaced by automatic segments. <strong>Restore automatic</strong> goes back to the proposed segments after asking.</p>

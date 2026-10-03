@@ -17,10 +17,32 @@
 //       TelemetryAppTests add it, and Overlays opens and saves the day again.
 //   cpp_project_roundtrip resave <project> [<target>]
 //       Overlays opens the day and saves it, at <target> when given (Save As).
+//   cpp_project_roundtrip metadata <project> <target> <run> <name> <notes> <conditions> <setupChanges>
+//       Overlays opens the day, edits the name, notes, conditions and setup
+//       changes of the run at index <run> (AnalysisController::updateRunMetadata,
+//       as its session details editor does) and saves the day at <target>.
+//       Prints inspect of the saved day.
 //   cpp_project_roundtrip inspect <project>...
 //       What Overlays sees in each day: validity, identity, runs with their
 //       metadata and approved segments, every lap section with its group and
-//       exclusion, the group shown and the day report's headline results.
+//       exclusion, the group shown and the day report's headline results. A
+//       run with a `fusion` decision also gets what Overlays applies (FET-55).
+//   cpp_project_roundtrip import <project> <name> <recording>...
+//       Overlays imports the recordings as a day and saves it, nothing else.
+//   cpp_project_roundtrip attach <project> <run> <recording>
+//       Overlays adds the recording to the run (its id or 1-based position)
+//       as an alternative, as Run details does (KAN-90: attachRunRecording,
+//       the match evidence, confirmRunRecording), and saves the day.
+//   cpp_project_roundtrip compare <project> <lap A> <lap B> <start> <end> [<channel>...]
+//       Overlays compares the two laps ("Session 1 · LAP 3"), shows
+//       <start>..<end> meters and the charts, as its comparison view saves
+//       them (FET-53), and saves the day.
+//   cpp_project_roundtrip fuse <project> <run> [<channel key>=<rule>...]
+//       Overlays reviews fusing the run's alternative recording into it and
+//       approves the fusion with the given rules (KAN-103: reviewRunFusion,
+//       approveRunFusion; a rule is primaryOnly, fillGaps or
+//       preferAlternative; "*=<rule>" gives every other conflicting channel
+//       that rule), and saves the day.
 //
 // Nothing is copied from Overlays: its sources are compiled from a read-only
 // checkout (see CMakeLists.txt).
@@ -30,6 +52,9 @@
 #include "project/EventProjectCodec.h"
 #include "project/ProjectLimits.h"
 #include "project/ProjectSourceReference.h"
+#include "telemetry/ChannelFusion.h"
+#include "telemetry/OutingLapLoader.h"
+#include "telemetry/TelemetrySessionCache.h"
 #include "telemetry/TelemetrySource.h"
 #include "telemetry/TrackSegments.h"
 
@@ -46,6 +71,8 @@
 #include <QTemporaryDir>
 #include <QThread>
 #include <QUrl>
+#include <QtEndian>
+#include <algorithm>
 #include <cstdio>
 #include <exception>
 #include <functional>
@@ -145,6 +172,132 @@ bool reportSettled(const QVariantMap &report)
     return true;
 }
 
+// 64-bit FNV-1a over the little-endian bytes of every timestamp (double),
+// then every value (float), as cpp_fusion_dump writes a channel.
+QString channelDigest(const TelemetryChannel &channel)
+{
+    quint64 hash = 0xcbf29ce484222325ULL;
+    const auto feed = [&hash](const uchar *bytes, int count) {
+        for (int i = 0; i < count; ++i) hash = (hash ^ bytes[i]) * 0x100000001b3ULL;
+    };
+    for (const double time : channel.timestamps) {
+        uchar bytes[8];
+        qToLittleEndian(time, bytes);
+        feed(bytes, 8);
+    }
+    for (const float value : channel.values) {
+        uchar bytes[4];
+        qToLittleEndian(value, bytes);
+        feed(bytes, 4);
+    }
+    return QStringLiteral("%1").arg(hash, 16, 16, QLatin1Char('0'));
+}
+
+QString resolvedSource(const QJsonObject &run, const QString &sourceId, const QString &projectPath)
+{
+    for (const auto &value : run.value("sources").toObject().value("telemetry").toArray()) {
+        const auto source = value.toObject();
+        if (source.value("id").toString() != sourceId) continue;
+        const auto json = source.value("reference").toObject();
+        return ProjectSourceReferenceCodec::resolve({json.value("relativePath").toString(),
+            json.value("absolutePath").toString(), json.value("fingerprint").toObject()}, projectPath);
+    }
+    return {};
+}
+
+// What Overlays does with a run's `fusion` decision (KAN-103): whether Run
+// details shows it applied, the decision itself, and the run's session as
+// Overlays' analysis loads it (loadOutingLapDetail with the descriptor
+// outingLapSources gives, which carries the decision only while it is bound
+// to both recordings): every channel's name, unit, sample count and digest.
+// "origins" are the channels that take samples from the alternative, by name,
+// with their rule: Overlays' fuseChannels with the decision's clock and
+// rules, as loadOutingLapDetail calls it.
+QJsonObject inspectFusion(TelemetryController &controller, const QJsonObject &run)
+{
+    auto &document = *controller.document();
+    auto &analysis = *controller.analysis();
+    const auto runId = run.value("id").toString();
+    const auto decision = run.value("fusion").toObject();
+    QJsonObject result{{"decision", decision}};
+    for (const auto &value : document.runRecordings(runId)) {
+        const auto row = value.toMap();
+        if (row.contains("fusion")) result.insert("state", row.value("fusion").toString());
+    }
+    QJsonObject descriptor;
+    for (const auto &value : analysis.outingLapSources())
+        if (value.toObject().value("runId").toString() == runId) descriptor = value.toObject();
+    result.insert("applied", descriptor.contains("fusion"));
+    if (!descriptor.contains("fusion")) return result;
+    QVariantMap lap;
+    for (const auto &value : analysis.outingLaps())
+        if (value.toMap().value("runId").toString() == runId) { lap = value.toMap(); break; }
+    if (lap.isEmpty()) fail(QStringLiteral("The fused run has no lap section."));
+    const auto detail = loadOutingLapDetail(descriptor, document.documentPath(), lap, 0,
+        std::make_shared<std::atomic_bool>(false), std::make_shared<TelemetrySessionCache>());
+    if (!detail.session) fail(QStringLiteral("Overlays could not load the fused run: %1").arg(detail.error));
+    QJsonObject channels;
+    for (auto it = detail.session->channels.cbegin(); it != detail.session->channels.cend(); ++it)
+        channels.insert(it.key(), QJsonObject{{"name", it->name}, {"unit", it->unit},
+            {"count", it->timestamps.size()}, {"digest", channelDigest(*it)}});
+    result.insert("channels", channels);
+
+    const auto projectPath = document.documentPath();
+    const auto primaryId = run.value("primaryTelemetrySourceId").toString();
+    const auto alternativeId = decision.value("alternativeSourceId").toString();
+    const auto primary = TelemetrySource::load(resolvedSource(run, primaryId, projectPath));
+    const auto alternative = TelemetrySource::load(resolvedSource(run, alternativeId, projectPath));
+    FusionPolicy policy;
+    for (const auto &value : decision.value("rules").toArray()) {
+        const auto rule = value.toObject().value("rule").toString();
+        policy.rules.insert(value.toObject().value("key").toString(), {alternativeId,
+            rule == QLatin1String("fillGaps") ? FusionRule::FillGaps
+            : rule == QLatin1String("preferAlternative") ? FusionRule::PreferAlternative : FusionRule::PrimaryOnly});
+    }
+    const auto clock = decision.value("clock").toObject();
+    const auto fused = fuseChannels(primary, primaryId, {{alternativeId, &alternative,
+        {clock.value("offsetSeconds").toDouble(), clock.value("driftPpm").toDouble()}, QStringLiteral("aligned")}}, policy);
+    QJsonObject origins;
+    for (const auto &channel : fused.channels)
+        if (channel.rule == QLatin1String("added") || channel.rule == QLatin1String("fillGaps")
+            || channel.rule == QLatin1String("preferAlternative"))
+            origins.insert(channel.name, channel.rule);
+    result.insert("origins", origins);
+    return result;
+}
+
+QString lapLabel(const QVariantMap &row)
+{
+    return QStringLiteral("%1 · %2 %3").arg(row.value("runName").toString(), row.value("type").toString())
+        .arg(row.value("lapNumber").toInt());
+}
+
+// The comparison Overlays restores from the day (KAN-41): each slot's lap
+// ("Session 1 · LAP 3", empty when the slot is empty) and state, and the
+// saved range and charts, as its comparison view reads them.
+QJsonObject inspectComparison(AnalysisController &analysis)
+{
+    if (!waitFor([&] {
+            for (const auto &value : analysis.comparisonSlots())
+                if (value.toMap().value("state").toString() == "loading") return false;
+            return true;
+        }, 120'000))
+        fail(QStringLiteral("The comparison did not load."));
+    QJsonArray slotList;
+    for (const auto &value : analysis.comparisonSlots()) {
+        const auto slot = value.toMap();
+        const auto row = slot.value("lap").toMap();
+        slotList.append(QJsonObject{{"lap", row.isEmpty() ? QString() : lapLabel(row)},
+                                 {"state", slot.value("state").toString()}});
+    }
+    const auto range = analysis.comparisonPersistedRangeMeters();
+    return {{"slots", slotList}, {"pairReady", analysis.comparisonPairReady()},
+            {"range", range.isEmpty() ? QJsonValue(QJsonValue::Null)
+                                      : QJsonValue(QJsonArray{range.value("startMeters").toDouble(),
+                                                              range.value("endMeters").toDouble()})},
+            {"channels", QJsonArray::fromStringList(analysis.comparisonPersistedChannels())}};
+}
+
 QJsonObject inspectOpened(TelemetryController &controller, const QString &path)
 {
     auto &document = *controller.document();
@@ -171,6 +324,15 @@ QJsonObject inspectOpened(TelemetryController &controller, const QString &path)
                 {"revision", segments.isEmpty() ? QString() : trackSegmentSetRevision(segments)}}}};
         for (const auto *key : {"notes", "conditions", "setupChanges"})
             item.insert(key, QJsonValue::fromVariant(metadata.value(key)));
+        QJsonArray recordings;
+        for (const auto &recording : document.runRecordings(run.value("id").toString())) {
+            const auto row = recording.toMap();
+            recordings.append(QJsonObject{{"sourceId", row.value("sourceId").toString()},
+                {"format", row.value("format").toString()}, {"primary", row.value("primary").toBool()},
+                {"available", row.value("available").toBool()}});
+        }
+        item.insert("recordings", recordings);
+        if (run.contains("fusion")) item.insert("fusion", inspectFusion(controller, run));
         runs.append(item);
     }
     result.insert("runs", runs);
@@ -188,6 +350,7 @@ QJsonObject inspectOpened(TelemetryController &controller, const QString &path)
             {"bestOfDay", row.value("bestOfDay").toBool()}});
     }
     result.insert("laps", laps);
+    result.insert("comparison", inspectComparison(analysis));
     analysis.requestOutingDayReport();
     if (!waitFor([&] { return reportSettled(analysis.outingDayReport()); }, 600'000))
         fail(QStringLiteral("The day report did not settle for %1").arg(path));
@@ -335,6 +498,147 @@ void create(const QString &path, const QString &name, const QStringList &recordi
     settle(*controller);
 }
 
+// Overlays imports [recordings] as a day and saves it at [path].
+void importDay(const QString &path, const QString &name, const QStringList &recordings, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &document = *controller->document();
+    int committed = 0;
+    QObject::connect(&document, &DocumentController::batchImportCommitted, [&committed] { ++committed; });
+    QList<QUrl> urls;
+    for (const auto &recording : recordings) urls.append(QUrl::fromLocalFile(QFileInfo(recording).absoluteFilePath()));
+    if (!document.importAnalysisRuns(name, urls)) fail(QStringLiteral("Overlays refused the import: %1").arg(document.batchImportError()));
+    if (!waitFor([&] { return committed > 0 || !document.batchImportError().isEmpty(); }, 120'000) || committed == 0)
+        fail(QStringLiteral("Overlays did not import the day: %1").arg(document.batchImportError()));
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+}
+
+// The id of [run]: a run id of the day, or its 1-based position.
+QString runIdOf(DocumentController &document, const QString &run)
+{
+    const auto runs = document.eventRuns();
+    bool number = false;
+    const int position = run.toInt(&number);
+    if (number && position >= 1 && position <= runs.size()) return runs[position - 1].toMap().value("id").toString();
+    for (const auto &value : runs)
+        if (value.toMap().value("id").toString() == run) return run;
+    fail(QStringLiteral("No run %1 in the day.").arg(run));
+}
+
+QString reviewState(DocumentController &document) { return document.runRecordingReview().value("state").toString(); }
+
+// Overlays attaches [recording] to [run] as an alternative and saves the day.
+QJsonObject attach(const QString &path, const QString &run, const QString &recording, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &document = *controller->document();
+    open(*controller, path);
+    const auto runId = runIdOf(document, run);
+    if (!document.attachRunRecording(runId, QUrl::fromLocalFile(QFileInfo(recording).absoluteFilePath())))
+        fail(QStringLiteral("Overlays refused to attach: %1").arg(document.runRecordingReview().value("message").toString()));
+    if (!waitFor([&] { return reviewState(document) == "review" || reviewState(document) == "error"; }, 120'000)
+        || reviewState(document) != "review")
+        fail(QStringLiteral("Overlays did not offer the recording: %1").arg(document.runRecordingReview().value("message").toString()));
+    const auto evidence = QJsonObject::fromVariantMap(document.runRecordingReview().value("evidence").toMap());
+    if (!document.confirmRunRecording()) fail(QStringLiteral("Overlays refused to confirm the recording."));
+    if (!waitFor([&] { return reviewState(document) != "attaching"; }, 120'000) || !reviewState(document).isEmpty())
+        fail(QStringLiteral("Overlays did not add the recording: %1").arg(document.runRecordingReview().value("message").toString()));
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+    return {{"runId", runId}, {"evidence", evidence}};
+}
+
+// Overlays reviews fusing [run]'s alternative recording, approves it with
+// [rules] ("key=rule") and saves the day.
+QJsonObject fuse(const QString &path, const QString &run, const QStringList &rules, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &document = *controller->document();
+    open(*controller, path);
+    const auto runId = runIdOf(document, run);
+    QString alternativeId;
+    for (const auto &value : document.runRecordings(runId))
+        if (!value.toMap().value("primary").toBool()) alternativeId = value.toMap().value("sourceId").toString();
+    if (alternativeId.isEmpty()) fail(QStringLiteral("The run has no alternative recording."));
+    if (!document.reviewRunFusion(runId, alternativeId))
+        fail(QStringLiteral("Overlays refused the review: %1").arg(document.runRecordingReview().value("message").toString()));
+    if (!waitFor([&] { return reviewState(document) == "fusionReview" || reviewState(document) == "error"; }, 120'000)
+        || reviewState(document) != "fusionReview")
+        fail(QStringLiteral("Overlays did not review the fusion: %1").arg(document.runRecordingReview().value("message").toString()));
+    const auto review = document.runRecordingReview();
+    QVariantMap chosen;
+    for (const auto &rule : rules) {
+        const auto parts = rule.split(QLatin1Char('='));
+        if (parts.size() != 2) fail(QStringLiteral("A rule is <channel key>=<rule>: %1").arg(rule));
+        chosen.insert(parts[0], parts[1]);
+    }
+    // "*=<rule>": that rule for every other conflicting channel.
+    if (chosen.contains(QStringLiteral("*"))) {
+        const auto rule = chosen.take(QStringLiteral("*"));
+        for (const auto &key : review.value("preview").toMap().value("conflicts").toStringList())
+            if (!chosen.contains(key)) chosen.insert(key, rule);
+    }
+    if (!document.approveRunFusion(chosen))
+        fail(QStringLiteral("Overlays refused to approve the fusion (approvable %1, conflicts %2): %3")
+                 .arg(review.value("preview").toMap().value("approvable").toBool())
+                 .arg(review.value("preview").toMap().value("conflicts").toStringList().join(QLatin1Char(',')),
+                      document.runRecordingReview().value("message").toString()));
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+    return {{"runId", runId}, {"alternativeSourceId", alternativeId},
+            {"alignment", QJsonObject::fromVariantMap(review.value("alignment").toMap())},
+            {"preview", QJsonObject::fromVariantMap(review.value("preview").toMap())}};
+}
+
+// Overlays compares laps [a] and [b] ("Session 1 · LAP 3"), shows
+// [start]..[end] meters and the charts [channels], as its comparison view
+// saves them, and saves the day.
+void compare(const QString &path, const QString &a, const QString &b, double start, double end,
+             const QStringList &channels, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &analysis = *controller->analysis();
+    open(*controller, path);
+    const auto rowOf = [&](const QString &label) {
+        const auto row = lapRow(analysis, [&](const QVariantMap &candidate) { return lapLabel(candidate) == label; });
+        if (row.isEmpty()) fail(QStringLiteral("No lap %1.").arg(label));
+        return row.value("reference").toMap();
+    };
+    analysis.clearComparisonLap(0);
+    analysis.clearComparisonLap(1);
+    if (!analysis.selectComparisonLap(0, rowOf(a)) || !analysis.selectComparisonLap(1, rowOf(b)))
+        fail(QStringLiteral("Overlays refused the pair."));
+    if (!waitFor([&] { return analysis.comparisonPairReady(); }, 120'000)) fail(QStringLiteral("The pair did not load."));
+    settle(*controller);
+    analysis.persistComparisonRange(start, end);
+    analysis.persistComparisonChannels(channels);
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+}
+
+void editMetadata(const QStringList &arguments, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    open(*controller, arguments[1]);
+    auto &analysis = *controller->analysis();
+    bool ok = false;
+    const int index = arguments[3].toInt(&ok);
+    const auto runs = controller->document()->eventRuns();
+    if (!ok || index < 0 || index >= runs.size()) fail(QStringLiteral("No run %1.").arg(arguments[3]));
+    const auto runId = runs[index].toMap().value("id").toString();
+    const auto token = analysis.runMetadata(runId).value("editToken").toString();
+    if (!analysis.updateRunMetadata(runId, token, arguments[4], arguments[5], arguments[6], arguments[7]))
+        fail(QStringLiteral("Overlays refused the run's metadata."));
+    settle(*controller);
+    save(*controller, arguments[2]);
+    settle(*controller);
+}
+
 void print(const QJsonValue &value)
 {
     const QByteArray json = value.isArray() ? QJsonDocument(value.toArray()).toJson(QJsonDocument::Indented)
@@ -354,7 +658,7 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QStringLiteral("cpp_project_roundtrip"));
     QSettings().clear();
     const QStringList arguments = application.arguments().mid(1);
-    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect ..."));
+    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|attach|fuse|compare ..."));
     QTemporaryDir scratch;
     if (!scratch.isValid()) fail(QStringLiteral("No temporary folder."));
     const QString command = arguments.first();
@@ -374,12 +678,30 @@ int main(int argc, char **argv)
             settle(*controller);
         }
         print(QJsonObject{{"opened", before}, {"saved", inspect(target, scratch)}});
+    } else if (command == "import" && arguments.size() >= 4) {
+        importDay(arguments[1], arguments[2], arguments.mid(3), scratch);
+        print(inspect(arguments[1], scratch));
+    } else if (command == "attach" && arguments.size() == 4) {
+        auto result = attach(arguments[1], arguments[2], arguments[3], scratch);
+        result.insert("inspected", inspect(arguments[1], scratch));
+        print(result);
+    } else if (command == "fuse" && arguments.size() >= 3) {
+        auto result = fuse(arguments[1], arguments[2], arguments.mid(3), scratch);
+        result.insert("inspected", inspect(arguments[1], scratch));
+        print(result);
+    } else if (command == "compare" && arguments.size() >= 6) {
+        compare(arguments[1], arguments[2], arguments[3], arguments[4].toDouble(), arguments[5].toDouble(),
+                arguments.mid(6), scratch);
+        print(inspect(arguments[1], scratch));
+    } else if (command == "metadata" && arguments.size() == 8) {
+        editMetadata(arguments, scratch);
+        print(inspect(arguments[2], scratch));
     } else if (command == "inspect") {
         QJsonArray results;
         for (const auto &path : arguments.mid(1)) results.append(inspect(path, scratch));
         print(results);
     } else {
-        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect ..."));
+        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|attach|fuse|compare ..."));
     }
     QSettings().clear();
     return 0;

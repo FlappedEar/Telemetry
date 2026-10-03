@@ -474,6 +474,213 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appleMapLegal => 'Legal';
 
   @override
+  String get segmentPickOnMap => 'Pick on map';
+
+  @override
+  String get segmentPickActive => 'Tap the map… (cancel)';
+
+  @override
+  String get segmentPickBannerStart => 'Tap the track line to place the start';
+
+  @override
+  String get segmentPickBannerEnd => 'Tap the track line to place the end';
+
+  @override
+  String get segmentPickBannerSplit => 'Tap the track line to place the split';
+
+  @override
+  String get segmentPickAmbiguous =>
+      'Another part of the track passes close by here. Set the distance with the buttons instead.';
+
+  @override
+  String get segmentPickFar => 'Tap on the lap\'s track line.';
+
+  @override
+  String get segmentPickNoTrace =>
+      'The lap trace is not available for picking.';
+
+  @override
+  String get segmentPickOutside =>
+      'Pick a point inside this segment to split it.';
+
+  @override
+  String get variabilityHeading => 'Lap to lap in each corner';
+
+  @override
+  String get variabilityIntro =>
+      'How much each corner changes from lap to lap over the group\'s laps: typical is the median, spread the middle half of the laps (interquartile range), from at least 3 laps. Observations, not causes.';
+
+  @override
+  String get variabilityNone => 'No corner was measured on enough laps.';
+
+  @override
+  String get variabilityNotMeasured => 'Not measured on these laps.';
+
+  @override
+  String variabilityLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get variabilityMeasured => 'measured';
+
+  @override
+  String get variabilityInferred => 'inferred';
+
+  @override
+  String variabilitySpread(String label, String spread, String tail) {
+    return '$label: spread $spread · $tail';
+  }
+
+  @override
+  String variabilityTypical(
+    String label,
+    String typical,
+    String spread,
+    String tail,
+  ) {
+    return '$label: typical $typical · spread $spread · $tail';
+  }
+
+  @override
+  String variabilityTooFew(String label, String tail) {
+    return '$label: too few laps ($tail)';
+  }
+
+  @override
+  String get variabilityBraking => 'Braking point';
+
+  @override
+  String get variabilityApex => 'Apex speed';
+
+  @override
+  String get variabilityMinimum => 'Minimum speed';
+
+  @override
+  String get variabilityExit => 'Exit speed';
+
+  @override
+  String get variabilityPickup => 'Throttle pickup';
+
+  @override
+  String variabilityLine(String spread, String accuracy) {
+    return 'Line: spread $spread m · $accuracy';
+  }
+
+  @override
+  String variabilityGpsAccuracy(String meters) {
+    return 'GPS accuracy about $meters m';
+  }
+
+  @override
+  String get variabilityGpsUnknown => 'GPS accuracy not recorded';
+
+  @override
+  String get variabilityLineUnresolved =>
+      ' · not distinguishable from GPS error';
+
+  @override
+  String get calculateAgain => 'Calculate again';
+
+  @override
+  String get retryRecordings => 'Retry recordings';
+
+  @override
+  String get retryRecordingsLooking => 'Opening…';
+
+  @override
+  String get retryRecordingsSaveFirst =>
+      'Save the day first, then try the recordings again.';
+
+  @override
+  String get retryRecordingsStill =>
+      'The recordings are still not where the day says.';
+
+  @override
+  String get sessionDetailsHeading => 'Session details';
+
+  @override
+  String get sessionDetailsNone => 'No conditions, setup changes or notes';
+
+  @override
+  String sessionDetailsTitle(String session) {
+    return 'Details of $session';
+  }
+
+  @override
+  String get sessionDetailsName => 'Name';
+
+  @override
+  String get sessionDetailsNameRequired => 'A session needs a name.';
+
+  @override
+  String get sessionDetailsConditions => 'Conditions';
+
+  @override
+  String get sessionDetailsConditionsHint => 'Dry, 18 °C';
+
+  @override
+  String get sessionDetailsSetup => 'Setup changes';
+
+  @override
+  String get sessionDetailsSetupHint => 'Tyres +0.1 bar';
+
+  @override
+  String get sessionDetailsNotes => 'Notes';
+
+  @override
+  String get sessionDetailsSaved =>
+      'Kept in the day\'s file, which FlappedEar Overlays reads too.';
+
+  @override
+  String get detailsInvalid => 'This text cannot be saved.';
+
+  @override
+  String get renameDayMenu => 'Rename day…';
+
+  @override
+  String get renameDayTitle => 'Rename day';
+
+  @override
+  String get renameDayName => 'Day name';
+
+  @override
+  String get renameDayRequired => 'A day needs a name.';
+
+  @override
+  String get retryRecordingsWaitAdding =>
+      'Wait until the recordings are added, then retry.';
+
+  @override
+  String get retryRecordingsAddedMeanwhile =>
+      'Recordings were added meanwhile. Retry the recordings again.';
+
+  @override
+  String get retryRecordingsNone =>
+      'None of the day\'s recordings could be opened, so the day stays as it is.';
+
+  @override
+  String retryRecordingsFailed(String reason) {
+    return 'The day could not be opened again: $reason';
+  }
+
+  @override
+  String get retryRecordingsChangedMeanwhile =>
+      'The day was changed meanwhile. Save it, then retry the recordings.';
+
+  @override
+  String get lapsCompareTwo => 'Compare two laps';
+
+  @override
+  String get lapsLastComparison => 'Last comparison';
+
+  @override
   String get daySectionDay => 'Day';
 
   @override

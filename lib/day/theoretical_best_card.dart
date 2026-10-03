@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import 'day_results_controller.dart' show offersCalculateAgain;
 import '../format.dart';
+import '../l10n.dart';
 import '../units.dart';
 import 'corner_details.dart';
 import 'time_losses_card.dart' show CompareLaps, lapStretch;
@@ -44,7 +46,12 @@ class TheoreticalBestCard extends StatefulWidget {
     this.wide = false,
     this.onEditSegments,
     this.onAnalyze,
+    this.onRetry,
   });
+
+  /// Calculates again after a failure or with nothing to use, as Overlays'
+  /// "Calculate again"; no button when null.
+  final VoidCallback? onRetry;
 
   /// Opens the segment editor; no button when null.
   final VoidCallback? onEditSegments;
@@ -64,6 +71,25 @@ class TheoreticalBestCard extends StatefulWidget {
 
   @override
   State<TheoreticalBestCard> createState() => _TheoreticalBestCardState();
+}
+
+/// Overlays' "Calculate again" under a theoretical best that failed or had
+/// nothing to use.
+class CalculateAgainButton extends StatelessWidget {
+  const CalculateAgainButton(this.onPressed, {super.key});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: OutlinedButton.icon(
+      key: const ValueKey('calculateAgain'),
+      onPressed: onPressed,
+      icon: const Icon(Icons.refresh),
+      label: Text(context.l10n.calculateAgain),
+    ),
+  );
 }
 
 class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
@@ -132,12 +158,15 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
               const LinearProgressIndicator(),
               const SizedBox(height: 8),
               const Text('Timing every lap on one track axis…'),
-            ] else if (result.state != DayTheoreticalBestState.ready)
+            ] else if (result.state != DayTheoreticalBestState.ready) ...[
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(result.message),
-              )
-            else
+              ),
+              if (widget.onRetry case final retry?
+                  when offersCalculateAgain(result))
+                CalculateAgainButton(retry),
+            ] else
               ..._ready(context, result),
           ],
         ),
@@ -245,6 +274,34 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         selected: lap?.lap.reference,
         onSelect: _choose,
       ),
+      ..._variability(context, result),
+    ];
+  }
+
+  // Each corner's braking, speeds, pickup and line from lap to lap, as
+  // Overlays lists them (driving_variability.dart).
+  List<Widget> _variability(BuildContext context, DayTheoreticalBest result) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final corners = [
+      for (final row in result.segments)
+        if (row.variability case final variability?) (row, variability),
+    ];
+    return [
+      const SizedBox(height: 16),
+      Text(l10n.variabilityHeading, style: theme.textTheme.titleSmall),
+      Text(l10n.variabilityIntro, style: theme.textTheme.bodySmall),
+      if (corners.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            l10n.variabilityNone,
+            key: const ValueKey('noVariability'),
+          ),
+        )
+      else
+        for (final (row, variability) in corners)
+          _VariabilityTile(name: row.name, variability: variability),
     ];
   }
 
@@ -413,6 +470,114 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     }
     return 'Fastest ${displayTime(segment.seconds!)} · '
         '${_lapName(result, segment.sourceLapReference)}';
+  }
+}
+
+/// The lines of one corner's [CornerVariability], as Overlays writes them:
+/// a metric measured on no lap is left out, one on fewer than three laps
+/// says so, and braking points and pickups say whether they were measured or
+/// inferred.
+List<String> variabilityLines(
+  AppLocalizations l10n,
+  CornerVariability variability,
+  String speedUnit,
+) {
+  final unit = speedUnit.trim().isEmpty ? '' : ' ${speedUnit.trim()}';
+  String? spread(String label, ConsistencySummary summary, String provenance) {
+    if (summary.count == 0) return null;
+    final tail = '${l10n.variabilityLaps(summary.count)} · $provenance';
+    if (!summary.available) return l10n.variabilityTooFew(label, tail);
+    return l10n.variabilitySpread(
+      label,
+      '${fixed(summary.interquartileRange!, 1)} m',
+      tail,
+    );
+  }
+
+  String? speed(String label, ConsistencySummary summary) {
+    if (summary.count == 0) return null;
+    final tail = l10n.variabilityLaps(summary.count);
+    if (!summary.available) return l10n.variabilityTooFew(label, tail);
+    return l10n.variabilityTypical(
+      label,
+      '${fixed(summary.median!, 1)}$unit',
+      '${fixed(summary.interquartileRange!, 1)}$unit',
+      tail,
+    );
+  }
+
+  final line = variability.lineOffset;
+  final accuracy = variability.typicalGpsAccuracyMeters;
+  return [
+    ?spread(
+      l10n.variabilityBraking,
+      variability.brakingPointMeasured,
+      l10n.variabilityMeasured,
+    ),
+    ?spread(
+      l10n.variabilityBraking,
+      variability.brakingPointInferred,
+      l10n.variabilityInferred,
+    ),
+    ?speed(l10n.variabilityApex, variability.apexSpeed),
+    ?speed(l10n.variabilityMinimum, variability.minimumSpeed),
+    ?speed(l10n.variabilityExit, variability.exitSpeed),
+    ?spread(
+      l10n.variabilityPickup,
+      variability.pickupMeasured,
+      l10n.variabilityMeasured,
+    ),
+    ?spread(
+      l10n.variabilityPickup,
+      variability.pickupInferred,
+      l10n.variabilityInferred,
+    ),
+    if (line.available)
+      l10n.variabilityLine(
+            fixed(line.interquartileRange!, 1),
+            accuracy == null
+                ? l10n.variabilityGpsUnknown
+                : l10n.variabilityGpsAccuracy(
+                    fixed(accuracy, accuracy < 1 ? 2 : 1),
+                  ),
+          ) +
+          (variability.lineSpreadResolvable
+              ? ''
+              : l10n.variabilityLineUnresolved),
+  ];
+}
+
+/// One corner's variability, folded to its name and first line.
+class _VariabilityTile extends StatelessWidget {
+  const _VariabilityTile({required this.name, required this.variability});
+
+  final String name;
+  final CornerVariability variability;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final lines = variabilityLines(l10n, variability, speedUnitOf(context));
+    return ExpansionTile(
+      key: ValueKey('variability $name'),
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 8),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      expandedAlignment: Alignment.centerLeft,
+      title: Text(name),
+      subtitle: Text(
+        lines.isEmpty ? l10n.variabilityNotMeasured : lines.first,
+        style: theme.textTheme.bodySmall,
+      ),
+      children: [
+        for (final line in lines.skip(1))
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(line, style: theme.textTheme.bodySmall),
+          ),
+      ],
+    );
   }
 }
 

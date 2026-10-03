@@ -241,12 +241,17 @@ class TrackMap extends StatelessWidget {
     this.pointColor,
     this.marks = const [],
     this.movingMarks,
+    this.onTapMeters,
   });
 
   final LapPath path;
   final LapPath? reference;
   final (Offset, Offset)? gate;
   final String semanticLabel;
+
+  /// Called with the place tapped or clicked, in metres east and north of
+  /// the path's origin; the map takes no taps when null.
+  final void Function(double east, double north)? onTapMeters;
 
   /// Points that move, such as a chart cursor's position: only this layer
   /// repaints when they change, never the trace.
@@ -285,6 +290,7 @@ class TrackMap extends StatelessWidget {
                         pointColor: pointColor,
                         marks: marks,
                         movingMarks: movingMarks,
+                        onTapMeters: onTapMeters,
                       ),
               ),
               if (interactive)
@@ -316,17 +322,35 @@ class TrackMap extends StatelessWidget {
       child: const SizedBox.expand(),
     );
     final moving = movingMarks;
-    final layers = moving == null
+    final onTap = onTapMeters;
+    // Inside the pinch zoom, so a tap lands where the trace is drawn.
+    final drawn = onTap == null
         ? RepaintBoundary(child: painter)
+        : LayoutBuilder(
+            builder: (context, constraints) => GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) {
+                final at = _mapUnfit(path, reference, constraints.biggest);
+                if (at == null) return;
+                final (east, north) = at(details.localPosition);
+                onTap(east, north);
+              },
+              child: RepaintBoundary(child: painter),
+            ),
+          );
+    final layers = moving == null
+        ? drawn
         : Stack(
             children: [
-              Positioned.fill(child: RepaintBoundary(child: painter)),
+              Positioned.fill(child: drawn),
               Positioned.fill(
-                child: CustomPaint(
-                  painter: _MovingMarksPainter(
-                    path: path,
-                    reference: reference,
-                    marks: moving,
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _MovingMarksPainter(
+                      path: path,
+                      reference: reference,
+                      marks: moving,
+                    ),
                   ),
                 ),
               ),
@@ -452,8 +476,10 @@ class _TiledMap extends StatelessWidget {
     this.pointColor,
     this.marks = const [],
     this.movingMarks,
+    this.onTapMeters,
   });
 
+  final void Function(double east, double north)? onTapMeters;
   final List<MapMark> marks;
   final ValueListenable<List<MapMark>>? movingMarks;
   final TileSource tiles;
@@ -568,6 +594,16 @@ class _TiledMap extends StatelessWidget {
           minZoom: mapMinZoom(tiles),
           cameraConstraint: mapCameraConstraint(tiles),
           interactionOptions: interaction,
+          onTap: switch (onTapMeters) {
+            final onTap? => (_, point) {
+              final at = projectCoordinate(
+                GeoCoordinate(point.latitude, point.longitude),
+                path.origin,
+              );
+              onTap(at.eastMeters, at.northMeters);
+            },
+            null => null,
+          },
         ),
         children: [
           mapTileLayer(tiles),
@@ -705,6 +741,22 @@ Offset Function(double east, double north)? _mapFit(
     dx + (east - box.left) * scale,
     size.height - dy - (north - box.top) * scale,
   );
+}
+
+/// The inverse of [_mapFit]: metres east and north of the origin at a
+/// point of a plain map of [size].
+(double, double) Function(Offset point)? _mapUnfit(
+  LapPath path,
+  LapPath? reference,
+  Size size,
+) {
+  final fit = _mapFit(path, reference, size);
+  if (fit == null) return null;
+  final origin = fit(0, 0), unit = fit(1, 1);
+  final scale = unit.dx - origin.dx;
+  if (!(scale > 0)) return null;
+  return (point) =>
+      ((point.dx - origin.dx) / scale, (origin.dy - point.dy) / scale);
 }
 
 class _MovingMarksPainter extends CustomPainter {

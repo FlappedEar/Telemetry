@@ -13,6 +13,7 @@
 </ul>
 <p>It combines parts of different laps, so it does not show that the whole lap can be driven that fast. While it is being worked out, the card says <em>Timing every lap on one track axis…</em>.</p>
 <p><strong>Edit segments</strong> opens the <a href="segments.html">segment editor</a>.</p>
+<p>When there is no theoretical best, the card says why. If the calculation failed, or there was nothing to calculate from, <strong>Calculate again</strong> runs it once more; the Time losses card and the segment editor offer it too.</p>
 
 <h2 id="where">Where the time goes</h2>
 <figure>
@@ -33,6 +34,18 @@
   <img src="assets/screens/sector-times.png" alt="Sector times table with one row per lap and one column per segment, the fastest of each highlighted" width="1280" height="800" loading="lazy">
 </figure>
 <p>Every lap by segment, with each segment's full name above its column. The fastest time of each segment is highlighted, the best lap of the day is marked <em>· best</em> after its name, and the last row, <strong>Fastest</strong>, adds up to the theoretical best. Tap a lap to show its losses on the map above. On a phone the table scrolls sideways while the lap column stays in place.</p>
+
+<h2 id="variability">Lap to lap in each corner</h2>
+<figure>
+  <img src="assets/screens/corner-variability.png" alt="Lap to lap in each corner: one row per corner with its braking point spread, the first opened to show apex, minimum and exit speed, throttle pickup and line" width="1280" height="800" loading="lazy">
+</figure>
+<p>Under the sector table, each corner lists how much it changes from lap to lap over the group's laps. Tap a corner to see all its lines:</p>
+<ul>
+  <li><strong>Braking point</strong> and <strong>Throttle pickup</strong>: the spread in metres, each marked <em>measured</em> (from the recorded brake or throttle) or <em>inferred</em> (from speed). The two are never mixed.</li>
+  <li><strong>Apex speed</strong>, <strong>Minimum speed</strong>, <strong>Exit speed</strong>: the typical speed and its spread.</li>
+  <li><strong>Line</strong>: how far apart the laps' lines are at the apex, next to the recording's GPS accuracy; <em>not distinguishable from GPS error</em> when the spread is no larger than that accuracy.</li>
+</ul>
+<p>Typical is the median and spread the middle half of the laps (interquartile range). Each figure needs at least 3 laps; with fewer the line says <em>too few laps</em>, and a figure no lap measured is left out. A corner with none says <em>Not measured on these laps.</em> These are observations of what changed, not their causes.</p>
 
 <h2 id="time-losses">Time losses</h2>
 <figure>

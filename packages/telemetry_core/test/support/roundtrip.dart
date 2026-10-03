@@ -103,7 +103,13 @@ Map<String, Object?> overlaysView(Map<String, Object?> inspected) {
     'eventId': inspected['eventId'],
     'eventName': inspected['eventName'],
     'comparisonGroupId': inspected['comparisonGroupId'],
-    'runs': inspected['runs'],
+    'runs': [
+      for (final run in (inspected['runs']! as List).cast<Map<String, Object?>>())
+        {
+          for (final key in ['id', 'name', 'notes', 'conditions', 'setupChanges', 'trackSegments'])
+            key: run[key],
+        },
+    ],
     'laps': [
       for (final lap in (inspected['laps']! as List).cast<Map<String, Object?>>())
         {
