@@ -2277,5 +2277,81 @@
         "example": "file not found"
       }
     }
+  },
+  "diagnosticsTitle": "Diagnostics",
+  "@diagnosticsTitle": {
+    "description": "Title of the diagnostics page and its entry in the overflow menu."
+  },
+  "diagnosticsRefresh": "Refresh",
+  "@diagnosticsRefresh": {
+    "description": "Tooltip of the diagnostics page button that reads the figures again."
+  },
+  "diagnosticsLastImport": "Last import",
+  "@diagnosticsLastImport": {
+    "description": "Heading of the diagnostics page section about the last import."
+  },
+  "diagnosticsNoImport": "No day imported since the app started.",
+  "@diagnosticsNoImport": {
+    "description": "Diagnostics page, shown when no day was imported yet."
+  },
+  "diagnosticsRecordingsRead": "Recordings read",
+  "@diagnosticsRecordingsRead": {
+    "description": "Diagnostics row: how many recordings the last import read."
+  },
+  "diagnosticsSessions": "Sessions",
+  "@diagnosticsSessions": {
+    "description": "Diagnostics row: how many sessions the imported day has."
+  },
+  "diagnosticsSamples": "Samples",
+  "@diagnosticsSamples": {
+    "description": "Diagnostics row: how many samples (rows of the recordings) the sessions have."
+  },
+  "diagnosticsChannelValues": "Channel values",
+  "@diagnosticsChannelValues": {
+    "description": "Diagnostics row: how many values of all channels the sessions have."
+  },
+  "diagnosticsMemory": "Memory",
+  "@diagnosticsMemory": {
+    "description": "Heading of the diagnostics page section about the app's memory."
+  },
+  "diagnosticsCurrentMemory": "Current",
+  "@diagnosticsCurrentMemory": {
+    "description": "Diagnostics row: the app's memory now."
+  },
+  "diagnosticsPeakMemory": "Peak",
+  "@diagnosticsPeakMemory": {
+    "description": "Diagnostics row: the app's highest memory since it started."
+  },
+  "diagnosticsNotAvailable": "Not available",
+  "@diagnosticsNotAvailable": {
+    "description": "Diagnostics value when the system does not report the memory."
+  },
+  "diagnosticsMemoryNote": "Resident memory of the app as the system reports it; the peak is since the app started. Times are wall time on this device.",
+  "@diagnosticsMemoryNote": {
+    "description": "Explanation under the diagnostics page's memory figures."
+  },
+  "diagnosticsStepScan": "Find recordings",
+  "@diagnosticsStepScan": {
+    "description": "Diagnostics step: finding the recordings to import."
+  },
+  "diagnosticsStepParse": "Parse and import",
+  "@diagnosticsStepParse": {
+    "description": "Diagnostics step: reading and importing the recordings."
+  },
+  "diagnosticsStepAnalysis": "Day analysis",
+  "@diagnosticsStepAnalysis": {
+    "description": "Diagnostics step: analysing the day."
+  },
+  "diagnosticsStepImportTotal": "Import, start to results",
+  "@diagnosticsStepImportTotal": {
+    "description": "Diagnostics step: the whole import, from start until the results show."
+  },
+  "diagnosticsStepTheoreticalBest": "Theoretical best and segments",
+  "@diagnosticsStepTheoreticalBest": {
+    "description": "Diagnostics step: computing the theoretical best lap and its segments."
+  },
+  "diagnosticsStepChannelSummaries": "Channel summaries",
+  "@diagnosticsStepChannelSummaries": {
+    "description": "Diagnostics step: summarising the channels (temperatures, heart rate) of the day."
   }
 }

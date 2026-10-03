@@ -1524,4 +1524,64 @@ class AppLocalizationsPl extends AppLocalizations {
   String nothingAddedError(String error) {
     return 'Nic nie dodano: $error';
   }
+
+  @override
+  String get diagnosticsTitle => 'Diagnostyka';
+
+  @override
+  String get diagnosticsRefresh => 'Odśwież';
+
+  @override
+  String get diagnosticsLastImport => 'Ostatni import';
+
+  @override
+  String get diagnosticsNoImport =>
+      'Od uruchomienia aplikacji nie zaimportowano żadnego dnia.';
+
+  @override
+  String get diagnosticsRecordingsRead => 'Odczytane nagrania';
+
+  @override
+  String get diagnosticsSessions => 'Sesje';
+
+  @override
+  String get diagnosticsSamples => 'Próbki';
+
+  @override
+  String get diagnosticsChannelValues => 'Wartości kanałów';
+
+  @override
+  String get diagnosticsMemory => 'Pamięć';
+
+  @override
+  String get diagnosticsCurrentMemory => 'Bieżąca';
+
+  @override
+  String get diagnosticsPeakMemory => 'Szczytowa';
+
+  @override
+  String get diagnosticsNotAvailable => 'Niedostępne';
+
+  @override
+  String get diagnosticsMemoryNote =>
+      'Pamięć rezydentna aplikacji według systemu; szczytowa liczona od uruchomienia aplikacji. Czasy to rzeczywisty czas na tym urządzeniu.';
+
+  @override
+  String get diagnosticsStepScan => 'Wyszukiwanie nagrań';
+
+  @override
+  String get diagnosticsStepParse => 'Odczyt i import';
+
+  @override
+  String get diagnosticsStepAnalysis => 'Analiza dnia';
+
+  @override
+  String get diagnosticsStepImportTotal => 'Import, od startu do wyników';
+
+  @override
+  String get diagnosticsStepTheoreticalBest =>
+      'Teoretycznie najlepsze i segmenty';
+
+  @override
+  String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
 }

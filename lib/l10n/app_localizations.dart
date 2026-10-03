@@ -2216,6 +2216,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing was added: {error}'**
   String nothingAddedError(String error);
+
+  /// Title of the diagnostics page and its entry in the overflow menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get diagnosticsTitle;
+
+  /// Tooltip of the diagnostics page button that reads the figures again.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get diagnosticsRefresh;
+
+  /// Heading of the diagnostics page section about the last import.
+  ///
+  /// In en, this message translates to:
+  /// **'Last import'**
+  String get diagnosticsLastImport;
+
+  /// Diagnostics page, shown when no day was imported yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No day imported since the app started.'**
+  String get diagnosticsNoImport;
+
+  /// Diagnostics row: how many recordings the last import read.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings read'**
+  String get diagnosticsRecordingsRead;
+
+  /// Diagnostics row: how many sessions the imported day has.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get diagnosticsSessions;
+
+  /// Diagnostics row: how many samples (rows of the recordings) the sessions have.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples'**
+  String get diagnosticsSamples;
+
+  /// Diagnostics row: how many values of all channels the sessions have.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel values'**
+  String get diagnosticsChannelValues;
+
+  /// Heading of the diagnostics page section about the app's memory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get diagnosticsMemory;
+
+  /// Diagnostics row: the app's memory now.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get diagnosticsCurrentMemory;
+
+  /// Diagnostics row: the app's highest memory since it started.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get diagnosticsPeakMemory;
+
+  /// Diagnostics value when the system does not report the memory.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get diagnosticsNotAvailable;
+
+  /// Explanation under the diagnostics page's memory figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Resident memory of the app as the system reports it; the peak is since the app started. Times are wall time on this device.'**
+  String get diagnosticsMemoryNote;
+
+  /// Diagnostics step: finding the recordings to import.
+  ///
+  /// In en, this message translates to:
+  /// **'Find recordings'**
+  String get diagnosticsStepScan;
+
+  /// Diagnostics step: reading and importing the recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Parse and import'**
+  String get diagnosticsStepParse;
+
+  /// Diagnostics step: analysing the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Day analysis'**
+  String get diagnosticsStepAnalysis;
+
+  /// Diagnostics step: the whole import, from start until the results show.
+  ///
+  /// In en, this message translates to:
+  /// **'Import, start to results'**
+  String get diagnosticsStepImportTotal;
+
+  /// Diagnostics step: computing the theoretical best lap and its segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best and segments'**
+  String get diagnosticsStepTheoreticalBest;
+
+  /// Diagnostics step: summarising the channels (temperatures, heart rate) of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel summaries'**
+  String get diagnosticsStepChannelSummaries;
 }
 
 class _AppLocalizationsDelegate

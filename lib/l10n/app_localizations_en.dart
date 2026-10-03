@@ -1508,4 +1508,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String nothingAddedError(String error) {
     return 'Nothing was added: $error';
   }
+
+  @override
+  String get diagnosticsTitle => 'Diagnostics';
+
+  @override
+  String get diagnosticsRefresh => 'Refresh';
+
+  @override
+  String get diagnosticsLastImport => 'Last import';
+
+  @override
+  String get diagnosticsNoImport => 'No day imported since the app started.';
+
+  @override
+  String get diagnosticsRecordingsRead => 'Recordings read';
+
+  @override
+  String get diagnosticsSessions => 'Sessions';
+
+  @override
+  String get diagnosticsSamples => 'Samples';
+
+  @override
+  String get diagnosticsChannelValues => 'Channel values';
+
+  @override
+  String get diagnosticsMemory => 'Memory';
+
+  @override
+  String get diagnosticsCurrentMemory => 'Current';
+
+  @override
+  String get diagnosticsPeakMemory => 'Peak';
+
+  @override
+  String get diagnosticsNotAvailable => 'Not available';
+
+  @override
+  String get diagnosticsMemoryNote =>
+      'Resident memory of the app as the system reports it; the peak is since the app started. Times are wall time on this device.';
+
+  @override
+  String get diagnosticsStepScan => 'Find recordings';
+
+  @override
+  String get diagnosticsStepParse => 'Parse and import';
+
+  @override
+  String get diagnosticsStepAnalysis => 'Day analysis';
+
+  @override
+  String get diagnosticsStepImportTotal => 'Import, start to results';
+
+  @override
+  String get diagnosticsStepTheoreticalBest => 'Theoretical best and segments';
+
+  @override
+  String get diagnosticsStepChannelSummaries => 'Channel summaries';
 }
