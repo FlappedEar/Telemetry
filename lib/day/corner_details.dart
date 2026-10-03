@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../l10n.dart';
 import '../units.dart';
 
 /// Why a corner figure is missing, in a short plain phrase (lower case, to
@@ -62,6 +63,14 @@ String _meters(double? value) =>
 String _beforeEntry(double value) => value.round() >= 0
     ? '${value.round()} m before'
     : '${-value.round()} m into the corner';
+
+// [_position] in the app's language.
+String _positionText(AppLocalizations l10n, double delta) {
+  if (!delta.isFinite) return '—';
+  final metres = delta.abs().round();
+  if (metres == 0) return l10n.cornerSamePosition;
+  return delta > 0 ? l10n.cornerLater(metres) : l10n.cornerEarlier(metres);
+}
 
 /// Lap A (this lap) and lap B (the best lap), as Overlays colours them.
 const Color lapAColor = Color(0xFF55E6A5), lapBColor = Color(0xFFD95926);
@@ -413,7 +422,7 @@ Future<void> showCornerDetails(
 
 /// One line for a corner's row: the lap's minimum speed and braking point
 /// against the best lap.
-String cornerSummary(DayCornerComparison comparison) {
+String cornerSummary(AppLocalizations l10n, DayCornerComparison comparison) {
   final own = comparison.metrics;
   final best = comparison.bestLapMetrics;
   final isBest = comparison.bestLap?.reference == comparison.lap.reference;
@@ -422,17 +431,23 @@ String cornerSummary(DayCornerComparison comparison) {
   final minimum = own.speeds.minimum.value;
   if (minimum != null) {
     final bestMinimum = best?.speeds.minimum.value;
+    final speed = '${_speed(minimum)}${unit.isEmpty ? '' : ' $unit'}';
     parts.add(
-      'Min ${_speed(minimum)}${unit.isEmpty ? '' : ' $unit'}'
-      '${isBest || bestMinimum == null || comparison.speeds.minimumDelta == null ? '' : ' (best lap ${_speed(bestMinimum)})'}',
+      isBest || bestMinimum == null || comparison.speeds.minimumDelta == null
+          ? l10n.cornerSummaryMin(speed)
+          : l10n.cornerSummaryMinWithBest(speed, _speed(bestMinimum)),
     );
   }
   final before = own.braking.distanceBeforeEntryMeters;
   if (before != null) {
     final delta = comparison.braking.brakingPointDeltaMeters;
+    final where = before.round() >= 0
+        ? l10n.cornerBeforeEntry(before.round())
+        : l10n.cornerIntoCorner(-before.round());
     parts.add(
-      'brakes ${_beforeEntry(before)}'
-      '${isBest || delta == null ? '' : ' (${_position(delta)})'}',
+      isBest || delta == null
+          ? l10n.cornerSummaryBrakes(where)
+          : l10n.cornerSummaryBrakesWithBest(where, _positionText(l10n, delta)),
     );
   }
   return parts.join(' · ');

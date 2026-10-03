@@ -31,6 +31,53 @@ String shortSegmentName(String name) {
   return '${match.group(1)!.toUpperCase()}${match.group(2)}';
 }
 
+final _automaticSegmentName = RegExp(r'^(Corners?|Straight) (\d+(?:–\d+)?)$');
+
+// A split segment's name, "Corner 3 (2)" (`splitSegmentName`).
+final _splitSegmentName = RegExp(r'^(.+) \((\d+)\)$');
+
+/// The theoretical best's texts from `telemetry_core` in the app's language.
+extension TheoreticalBestText on AppLocalizations {
+  /// An automatic segment name ("Corner 3", "Corners 3–4", "Straight 2"),
+  /// also when split ("Corner 3 (2)"), in the app's language; a name the
+  /// user gave is shown as written.
+  String tbSegmentName(String name) {
+    final split = _splitSegmentName.firstMatch(name);
+    if (split != null) {
+      final base = tbSegmentName(split.group(1)!);
+      if (base != split.group(1)) return '$base (${split.group(2)})';
+    }
+    final match = _automaticSegmentName.firstMatch(name);
+    if (match == null) return name;
+    final number = match.group(2)!;
+    return switch (match.group(1)) {
+      'Corner' => tbSegmentCorner(number),
+      'Corners' => tbSegmentCorners(number),
+      _ => tbSegmentStraight(number),
+    };
+  }
+
+  /// Why there is no theoretical best, or no total or segment time
+  /// (`DayTheoreticalBest.message`, a segment's `unavailableReason`); a
+  /// message the app does not know, such as an error, is shown as written.
+  String tbMessage(String message) => switch (message) {
+    'Confirm a compatible track configuration before calculating a '
+        'theoretical best.' =>
+      tbNoConfiguration,
+    'No eligible laps in this group to calculate a theoretical best from.' =>
+      tbNoEligibleLaps,
+    'No run in this group has an approved segment review yet. '
+        'Approve segments for at least one run first.' =>
+      tbNoApprovedRun,
+    'No approved segments to measure sectors against.' => tbNoApprovedSegments,
+    'At least one sector has no fully covered time on any eligible lap, so '
+        'no total is shown.' =>
+      tbIncompleteCoverage,
+    'Theoretical best calculation was cancelled.' => tbCancelled,
+    _ => message,
+  };
+}
+
 /// A group's theoretical best: the best lap, the theoretical best and the
 /// time available; a loss map (the best lap's trace, each segment coloured
 /// by the time the chosen lap loses there to the fastest time); where that
@@ -135,16 +182,21 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     return _segmentOfFix;
   }
 
-  String _lapName(DayTheoreticalBest result, Object? reference) {
+  String _lapName(
+    AppLocalizations l10n,
+    DayTheoreticalBest result,
+    Object? reference,
+  ) {
     for (final lap in result.laps) {
-      if (lap.lap.reference == reference) return lap.lap.displayName;
+      if (lap.lap.reference == reference) return l10n.lap(lap.lap);
     }
-    return 'lap unavailable';
+    return l10n.tbLapUnavailable;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final result = widget.result;
     return Card(
       child: Padding(
@@ -152,16 +204,16 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Theoretical best', style: theme.textTheme.labelLarge),
+            Text(l10n.theoreticalBestLabel, style: theme.textTheme.labelLarge),
             if (widget.loading || result == null) ...[
               const SizedBox(height: 8),
               const LinearProgressIndicator(),
               const SizedBox(height: 8),
-              const Text('Timing every lap on one track axis…'),
+              Text(l10n.tbTiming),
             ] else if (result.state != DayTheoreticalBestState.ready) ...[
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(result.message),
+                child: Text(l10n.tbMessage(result.message)),
               ),
               if (widget.onRetry case final retry?
                   when offersCalculateAgain(result))
@@ -176,6 +228,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
 
   List<Widget> _ready(BuildContext context, DayTheoreticalBest result) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final lap = _selectedLap(result);
     final path = widget.path;
     return [
@@ -183,18 +236,16 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
       _Headline(result: result),
       if (result.message.isNotEmpty) ...[
         const SizedBox(height: 4),
-        Text(result.message),
+        Text(l10n.tbMessage(result.message)),
       ],
       const SizedBox(height: 4),
       Text(
-        'The fastest time of each of the ${result.segments.length} segments '
-        'across ${result.laps.length} laps. It combines parts of different '
-        'laps, so it does not show that the whole lap can be driven that fast.'
+        '${l10n.tbIntro(result.segments.length, result.laps.length)}'
         '${result.automaticSegments
-            ? ' Segments proposed from the best lap; saving the day keeps them.'
+            ? ' ${l10n.tbSegmentsProposed}'
             : result.segmentsAutomatic
             ? ''
-            : ' The segments include your corrections.'}',
+            : ' ${l10n.tbSegmentsCorrected}'}',
         style: theme.textTheme.bodySmall,
       ),
       if (widget.onEditSegments != null)
@@ -203,13 +254,13 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
           child: TextButton.icon(
             key: const ValueKey('editSegments'),
             icon: const Icon(Icons.edit_road),
-            label: const Text('Edit segments'),
+            label: Text(l10n.tbEditSegments),
             onPressed: widget.onEditSegments,
           ),
         ),
       if (lap != null) ...[
         const SizedBox(height: 16),
-        Text('Where the time goes', style: theme.textTheme.titleSmall),
+        Text(l10n.tbWhereTimeGoes, style: theme.textTheme.titleSmall),
         DropdownButton<DayLapReference>(
           key: const ValueKey('lossLap'),
           isExpanded: true,
@@ -219,8 +270,12 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
               DropdownMenuItem(
                 value: candidate.lap.reference,
                 child: Text(
-                  '${candidate.lap.displayName} · ${displayTime(candidate.lap.durationSeconds)}'
-                  '${candidate.bestOfDay ? ' · best' : ''}',
+                  _markBest(
+                    l10n,
+                    '${l10n.lap(candidate.lap)} · '
+                    '${displayTime(candidate.lap.durationSeconds)}',
+                    candidate.bestOfDay,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -238,9 +293,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                 path: path,
                 gate: widget.gate,
                 pointColor: _lossColors(result, lap, path),
-                semanticLabel:
-                    'Best lap trace, each segment coloured by the time '
-                    '${lap.lap.displayName} loses there',
+                semanticLabel: l10n.tbMapLabel(l10n.lap(lap.lap)),
               ),
             ),
           ),
@@ -249,25 +302,14 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         _LossLegend(maximum: _maximumLoss(lap)),
         const SizedBox(height: 8),
         if (result.corners.isNotEmpty)
-          Text(
-            'Tap a corner for its speeds, braking and pickup against the best lap.',
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(l10n.tbTapCorner, style: theme.textTheme.bodySmall),
         if (widget.onAnalyze != null)
-          Text(
-            'The compare button opens this lap against the best lap through '
-            'the segment in the Corner Analyzer.',
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(l10n.tbCompareHint, style: theme.textTheme.bodySmall),
         ..._losses(context, result, lap),
       ],
       const SizedBox(height: 16),
-      Text('Sector times', style: theme.textTheme.titleSmall),
-      Text(
-        'The fastest time of each segment is highlighted. Tap a lap to show '
-        'its losses on the map.',
-        style: theme.textTheme.bodySmall,
-      ),
+      Text(l10n.tbSectorTimes, style: theme.textTheme.titleSmall),
+      Text(l10n.tbSectorHint, style: theme.textTheme.bodySmall),
       const SizedBox(height: 8),
       _SectorTable(
         result: result,
@@ -301,7 +343,11 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         )
       else
         for (final (row, variability) in corners)
-          _VariabilityTile(name: row.name, variability: variability),
+          _VariabilityTile(
+            id: row.name,
+            name: l10n.tbSegmentName(row.name),
+            variability: variability,
+          ),
     ];
   }
 
@@ -353,12 +399,13 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     double maximum,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final segment = result.segments[index];
     final analyze = _analyze(result, lap, index);
     final corner = result.cornerAt(index);
     final comparison = corner?.compare(lap.lap.reference);
     speedUnitOf(context); // The summary's speeds follow the setting.
-    final summary = comparison == null ? null : cornerSummary(comparison);
+    final summary = comparison == null ? null : cornerSummary(l10n, comparison);
     final row = Padding(
       // 36 + 12: a 48 dp row to tap.
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -379,10 +426,10 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(segment.name),
+                Text(l10n.tbSegmentName(segment.name)),
                 // Wraps at 360 dp: the lap that set the time matters.
                 Text(
-                  _lossDetail(result, lap, index),
+                  _lossDetail(l10n, result, lap, index),
                   style: theme.textTheme.bodySmall,
                 ),
                 if (summary != null && summary.isNotEmpty)
@@ -407,7 +454,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
           if (analyze != null)
             IconButton(
               key: ValueKey('lossAnalyze ${segment.name}'),
-              tooltip: 'Open in the Corner Analyzer',
+              tooltip: l10n.tbOpenInAnalyzer,
               icon: const Icon(Icons.compare_arrows),
               onPressed: analyze,
             )
@@ -459,19 +506,32 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     );
   }
 
-  String _lossDetail(DayTheoreticalBest result, DayLapSectors lap, int index) {
+  String _lossDetail(
+    AppLocalizations l10n,
+    DayTheoreticalBest result,
+    DayLapSectors lap,
+    int index,
+  ) {
     final segment = result.segments[index];
-    if (segment.seconds == null) return segment.unavailableReason;
+    if (segment.seconds == null) {
+      return l10n.tbMessage(segment.unavailableReason);
+    }
     if (lap.lossSeconds[index] == null) {
-      return 'Not fully covered on this lap · fastest ${displayTime(segment.seconds!)}';
+      return l10n.tbNotCovered(displayTime(segment.seconds!));
     }
     if (segment.sourceLapReference == lap.lap.reference) {
-      return 'Fastest here · ${displayTime(segment.seconds!)}';
+      return l10n.tbFastestHere(displayTime(segment.seconds!));
     }
-    return 'Fastest ${displayTime(segment.seconds!)} · '
-        '${_lapName(result, segment.sourceLapReference)}';
+    return l10n.tbFastestBy(
+      displayTime(segment.seconds!),
+      _lapName(l10n, result, segment.sourceLapReference),
+    );
   }
 }
+
+/// [text], marked as the best lap when [best].
+String _markBest(AppLocalizations l10n, String text, bool best) =>
+    best ? l10n.tbMarkedBest(text) : text;
 
 /// The lines of one corner's [CornerVariability], as Overlays writes them:
 /// a metric measured on no lap is left out, one on fewer than three laps
@@ -549,8 +609,14 @@ List<String> variabilityLines(
 
 /// One corner's variability, folded to its name and first line.
 class _VariabilityTile extends StatelessWidget {
-  const _VariabilityTile({required this.name, required this.variability});
+  const _VariabilityTile({
+    required this.id,
+    required this.name,
+    required this.variability,
+  });
 
+  /// The segment's stored name, for the key; [name] is the one shown.
+  final String id;
   final String name;
   final CornerVariability variability;
 
@@ -560,7 +626,7 @@ class _VariabilityTile extends StatelessWidget {
     final l10n = context.l10n;
     final lines = variabilityLines(l10n, variability, speedUnitOf(context));
     return ExpansionTile(
-      key: ValueKey('variability $name'),
+      key: ValueKey('variability $id'),
       tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(bottom: 8),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
@@ -589,6 +655,7 @@ class _Headline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final best = result.bestLapSeconds;
     final total = result.theoreticalBestSeconds;
     final available = result.availableSeconds;
@@ -612,19 +679,19 @@ class _Headline extends StatelessWidget {
       children: [
         stat(
           result.summary?.actualBest?.coversWholeLap ?? true
-              ? 'Best lap'
-              : 'Best lap, same segments',
+              ? l10n.tbBestLap
+              : l10n.tbBestLapSameSegments,
           best == null ? '—' : displayTime(best),
           const ValueKey('bestLapTime'),
         ),
         stat(
-          'Theoretical best',
+          l10n.theoreticalBestLabel,
           total == null ? '—' : displayTime(total),
           const ValueKey('theoreticalBestTime'),
           theme.colorScheme.primary,
         ),
         stat(
-          'Available',
+          l10n.tbAvailable,
           available == null ? '—' : '${available.toStringAsFixed(3)} s',
           const ValueKey('availableTime'),
           theme.colorScheme.tertiary,
@@ -680,6 +747,7 @@ class _SectorTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final scheme = theme.colorScheme;
     final segments = result.segments;
     final numbers = theme.textTheme.bodyMedium?.copyWith(
@@ -698,13 +766,17 @@ class _SectorTable extends StatelessWidget {
       cellWidths: [_timeWidth, for (final _ in segments) _cellWidth],
       headerHeight: 44,
       header: StickyRow(
-        first: name('Lap', style: label),
+        first: name(l10n.tbLapColumn, style: label),
         cells: [
-          TableCellText('Time', style: label),
+          TableCellText(l10n.tbTimeColumn, style: label),
           // The full name, on two lines: there is no hover to explain a
           // short one.
           for (final segment in segments)
-            TableCellText(segment.name, style: label, maxLines: 2),
+            TableCellText(
+              l10n.tbSegmentName(segment.name),
+              style: label,
+              maxLines: 2,
+            ),
         ],
       ),
       rows: [
@@ -715,9 +787,7 @@ class _SectorTable extends StatelessWidget {
             color: lap.lap.reference == selected
                 ? scheme.secondaryContainer
                 : null,
-            first: name(
-              '${lap.lap.displayName}${lap.bestOfDay ? ' · best' : ''}',
-            ),
+            first: name(_markBest(l10n, l10n.lap(lap.lap), lap.bestOfDay)),
             cells: [
               TableCellText(
                 displayTime(lap.lap.durationSeconds),
@@ -741,7 +811,7 @@ class _SectorTable extends StatelessWidget {
           ),
       ],
       footer: StickyRow(
-        first: name('Fastest', style: label),
+        first: name(l10n.tbFastestRow, style: label),
         cells: [
           TableCellText(
             result.theoreticalBestSeconds == null

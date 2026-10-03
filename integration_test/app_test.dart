@@ -55,19 +55,17 @@ Future<void> clearRecovery() async {
 }
 
 /// The best lap's time on the day page, under "Best day".
-String bestLapTime(WidgetTester tester) {
-  final card = find.ancestor(
-    of: find.text('Best day'),
-    matching: find.byType(Column),
-  );
-  final texts = tester
-      .widgetList<Text>(
-        find.descendant(of: card.first, matching: find.byType(Text)),
-      )
-      .map((text) => text.data ?? '')
-      .toList();
-  return texts[texts.indexOf('Best day') + 1];
-}
+// The time is the last text on the Best day bar, after its label and the
+// lap's name.
+String bestLapTime(WidgetTester tester) => tester
+    .widgetList<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('dayBestBar')),
+        matching: find.byType(Text),
+      ),
+    )
+    .last
+    .data!;
 
 // Runs on a real iOS simulator and Android emulator in CI, with the app's
 // real storage, background isolates, recovery and saved-days folder: the app

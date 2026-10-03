@@ -155,6 +155,16 @@ abstract final class FetTheme {
           ),
         ),
       ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: scheme.surface,
+        indicatorColor: Colors.transparent,
+        selectedIconTheme: const IconThemeData(color: amber),
+        unselectedIconTheme: IconThemeData(color: scheme.onSurfaceVariant),
+        selectedLabelTextStyle: text.labelMedium?.copyWith(color: amber),
+        unselectedLabelTextStyle: text.labelMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+      ),
       listTileTheme: ListTileThemeData(
         titleTextStyle: text.bodyLarge,
         subtitleTextStyle: text.bodySmall?.copyWith(

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/channel_cards.dart';
 import 'package:telemetry/day/day_report_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
@@ -128,6 +129,64 @@ void main() {
     await tester.tap(lapChip);
     await tester.pumpAndSettle();
     expect(find.byType(LapPage), findsOneWidget);
+  });
+
+  testWidgets('the car and driver cards speak Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage.controller(controller: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final oil = find.byKey(const ValueKey('carChannel oil_temp'));
+    await reveal(tester, oil);
+    expect(find.text('Samochód'), findsOneWidget);
+    expect(find.text('Car'), findsNothing);
+    expect(
+      find.descendant(
+        of: oil,
+        matching: find.textContaining('Olej · oil_temp'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: oil,
+        matching: find.textContaining('Sesja 1: średnio '),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('carAssociation oil_temp')))
+          .data,
+      startsWith('Czas okrążenia: '),
+    );
+    final heart = find.byKey(
+      ValueKey('heartRate ${controller.channelSummaries!.runs.first.runId}'),
+    );
+    await reveal(tester, heart);
+    expect(find.text('Kierowca'), findsOneWidget);
+    expect(find.text('Driver'), findsNothing);
+    expect(find.textContaining('OKR. '), findsWidgets);
+
+    await tester.scrollUntilVisible(oil, -200, scrollable: summary());
+    await tester.ensureVisible(oil);
+    await tester.pumpAndSettle();
+    await tester.tap(oil);
+    await tester.pumpAndSettle();
+    expect(find.text('Związek z osiągami na okrążeniu'), findsOneWidget);
+    expect(find.textContaining('Chłodzenie: '), findsWidgets);
+    expect(find.text('With lap performance'), findsNothing);
   });
 
   testWidgets('without channels the cards say so', (tester) async {
@@ -265,5 +324,63 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining(' 0 s'), findsNothing);
+  });
+
+  testWidgets('the day report speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final controller = await open(tester, importDay());
+    final report = controller.dayReportDocument;
+    await tester.binding.setSurfaceSize(const Size(412, 6000));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayReportPage(report: report),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Raport dnia'), findsOneWidget);
+    expect(find.text('Day report'), findsNothing);
+    expect(find.textContaining('Grupa 1 · '), findsOneWidget);
+    expect(find.text('Najlepsze okrążenie i co zostało'), findsOneWidget);
+    expect(find.text('Best lap and what is left'), findsNothing);
+    expect(find.textContaining('· OKR. '), findsWidgets);
+    expect(find.textContaining('Zmierzono: '), findsWidgets);
+    expect(find.textContaining('Observed: '), findsNothing);
+    expect(find.textContaining('Your best lap'), findsNothing);
+    expect(find.text('Największe straty czasu'), findsOneWidget);
+    expect(find.textContaining('Względem Sesja '), findsOneWidget);
+    expect(find.text('Sesje'), findsOneWidget);
+    expect(find.textContaining('kwalifikuj'), findsWidgets);
+    expect(find.text('Powtarzalność'), findsOneWidget);
+    expect(find.textContaining('Typowe okrążenie '), findsOneWidget);
+    expect(find.textContaining('Olej · maksimum'), findsOneWidget);
+    expect(find.text('Tętno'), findsOneWidget);
+    expect(find.textContaining(' bpm'), findsWidgets);
+    expect(find.textContaining('laps'), findsNothing);
+
+    // A result not calculated yet says why in Polish.
+    final outcome = importDay();
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayReportPage(
+          report: dayReport(
+            analysis: outcome.analysis!,
+            eventId: 'event',
+            runs: const [],
+            channelsLoading: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('dayReportTheoreticalNote')))
+          .data,
+      'Jeszcze nie obliczono.',
+    );
+    expect(find.text('Obliczanie…'), findsWidgets);
+    expect(find.text('Calculating…'), findsNothing);
   });
 }
