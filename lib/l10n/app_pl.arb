@@ -46,5 +46,6 @@
   "fusionChannelSpeed": "Prędkość",
   "fusionChannelLatitude": "Szerokość geograficzna",
   "fusionChannelLongitude": "Długość geograficzna",
-  "fusionChannelSatellites": "Satelity"
+  "fusionChannelSatellites": "Satelity",
+  "fusionRelinkDifferent": "Nie użyto, to inne nagranie: {files}."
 }

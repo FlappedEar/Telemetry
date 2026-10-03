@@ -45,15 +45,113 @@ Future<DayChannelSummaries> defaultChannelSummariesRunner(
     : Isolate.run(job);
 
 /// Aligns and fuses a run's alternative recording, or fuses it again with
-/// a changed rule. Replaced in widget tests, which run it on the test's own
-/// thread.
-typedef FusionRunner = Future<RunFusion?> Function(RunFusion? Function() job);
+/// a changed rule; stops at [cancelled] with [OperationCancelled].
+typedef FusionJob = RunFusion? Function(CancellationCheck cancelled);
 
-/// In a background isolate, or directly under `flutter test`.
-Future<RunFusion?> defaultFusionRunner(RunFusion? Function() job) =>
+/// A running [FusionJob]. [result] completes with [OperationCancelled]
+/// after [cancel].
+abstract interface class FusionTask {
+  Future<RunFusion?> get result;
+  void cancel();
+}
+
+/// Starts a [FusionJob]. Replaced in widget tests, which run it on the
+/// test's own thread.
+typedef FusionRunner = FusionTask Function(FusionJob job);
+
+/// In a background isolate, stopped at once when cancelled; directly under
+/// `flutter test`, stopped at its next cancellation check.
+FusionTask defaultFusionRunner(FusionJob job) =>
     !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
-    ? Future.microtask(job)
-    : Isolate.run(job);
+    ? _InlineFusionTask(job)
+    : isolateFusionRunner(job);
+
+/// Runs [job] in its own isolate, killed when cancelled.
+FusionTask isolateFusionRunner(FusionJob job) => _IsolateFusionTask(job);
+
+final class _InlineFusionTask implements FusionTask {
+  _InlineFusionTask(FusionJob job) {
+    result = Future.microtask(() => job(() => _cancelled));
+  }
+
+  bool _cancelled = false;
+
+  @override
+  late final Future<RunFusion?> result;
+
+  @override
+  void cancel() => _cancelled = true;
+}
+
+/// What a fusion isolate sends back.
+final class _FusionResult {
+  const _FusionResult(this.fusion);
+  final RunFusion? fusion;
+}
+
+final class _IsolateFusionTask implements FusionTask {
+  _IsolateFusionTask(FusionJob job) {
+    _port.listen((message) {
+      switch (message) {
+        case _FusionResult(:final fusion):
+          _finish(() => _done.complete(fusion));
+        case [Object? error, Object? stack]:
+          _finish(
+            () => _done.completeError(
+              error ?? 'Not combined.',
+              stack is String ? StackTrace.fromString(stack) : null,
+            ),
+          );
+        default:
+          _finish(
+            () => _done.completeError(
+              StateError('The alignment stopped unexpectedly.'),
+            ),
+          );
+      }
+    });
+    Isolate.spawn(
+      _entry,
+      (_port.sendPort, job),
+      onError: _port.sendPort,
+      onExit: _port.sendPort,
+      debugName: 'fusion',
+    ).then(
+      (isolate) {
+        _isolate = isolate;
+        if (_cancelled) isolate.kill(priority: Isolate.immediate);
+      },
+      onError: (Object error, StackTrace stack) =>
+          _finish(() => _done.completeError(error, stack)),
+    );
+  }
+
+  final _port = ReceivePort();
+  final _done = Completer<RunFusion?>();
+  Isolate? _isolate;
+  bool _cancelled = false;
+
+  @override
+  Future<RunFusion?> get result => _done.future;
+
+  @override
+  void cancel() {
+    _cancelled = true;
+    _isolate?.kill(priority: Isolate.immediate);
+    _finish(() => _done.completeError(const OperationCancelled()));
+  }
+
+  void _finish(void Function() complete) {
+    if (_done.isCompleted) return;
+    _port.close();
+    complete();
+  }
+
+  static void _entry((SendPort, FusionJob) message) {
+    final (port, job) = message;
+    Isolate.exit(port, _FusionResult(job(() => false)));
+  }
+}
 
 /// The results of one imported day and the user's choices on them: the group
 /// shown and the laps excluded. Re-ranking keeps rows and routes, so it runs
@@ -191,12 +289,22 @@ final class DayResultsController extends ChangeNotifier {
   // Runs whose alternative recording is being aligned and fused, with its
   // format.
   final Map<String, RecordingFormat?> _fusionPending = {};
+
+  // Recordings added as runs' alternatives (by an import or an addition)
+  // that are not fused yet: saved as the runs' sources meanwhile, so the
+  // day opened again aligns them.
+  final Map<String, TelemetryRunProposal> _pendingRecordings = {};
+
+  // The background work running for each run, stopped when the day closes
+  // or a newer request for the run supersedes it.
+  final Map<String, FusionTask> _fusionTasks = {};
   final List<Future<void> Function()> _fusionQueue = [];
   int _fusionsRunning = 0;
   Completer<void>? _fusionsSettled;
 
-  // How many runs are aligned at once: each isolate holds both recordings.
-  static final int _fusionSlots = kIsWeb
+  /// How many runs are aligned at once: each isolate holds both recordings.
+  @visibleForTesting
+  static int fusionSlots = kIsWeb
       ? 1
       : max(1, min(3, Platform.numberOfProcessors - 1));
 
@@ -320,22 +428,51 @@ final class DayResultsController extends ChangeNotifier {
 
   // Built outside the controller so the isolate's closure holds only its
   // inputs.
-  static RunFusion? Function() _fusionJob(
+  static FusionJob _fusionJob(
     RunFusion fusion,
     TelemetryRunProposal primary,
     String key,
     FusionRule rule,
   ) =>
-      () => withFusionRule(fusion, primary, key, rule);
+      (cancelled) =>
+          withFusionRule(fusion, primary, key, rule, cancelled: cancelled);
 
-  static RunFusion? Function() _resolveJob(
+  static FusionJob _resolveJob(
     TelemetryRunProposal primary,
     TelemetryRunProposal? recording,
     DocumentAlternative? reference,
+    Map<String, Object?>? decision,
   ) =>
-      () => recording != null
-      ? fuseRunRecordings(primary, recording)
-      : resolveDocumentAlternative(primary, reference!);
+      (cancelled) => recording != null
+      ? fuseWithDecision(primary, recording, decision, cancelled: cancelled)
+      : resolveDocumentAlternative(primary, reference!, cancelled: cancelled);
+
+  /// [runId]'s fusion decision as last saved or made: what an RCZ added
+  /// to the session again starts from, keeping the user's rules.
+  Map<String, Object?>? _decisionOf(String runId) {
+    if (_fusions[runId]?.decision case final decision?) return decision;
+    final event = _document?['event'];
+    final runs = event is Map ? event['runs'] : null;
+    for (final run in runs is List ? runs : const []) {
+      if (run is Map && run['id'] == runId && run['fusion'] is Map) {
+        return (run['fusion'] as Map).cast<String, Object?>();
+      }
+    }
+    return _documentAlternatives[runId]?.decision;
+  }
+
+  /// Runs [job] for [runId] in the background; a newer request for the run
+  /// stops it.
+  Future<RunFusion?> _runFusionTask(String runId, FusionJob job) async {
+    _fusionTasks.remove(runId)?.cancel();
+    final task = _fusionRunner(job);
+    _fusionTasks[runId] = task;
+    try {
+      return await task.result;
+    } finally {
+      if (identical(_fusionTasks[runId], task)) _fusionTasks.remove(runId);
+    }
+  }
 
   /// Aligns and fuses [runId]'s alternative recording in the background:
   /// [recording] already read (an import or an addition), or the document's
@@ -353,6 +490,9 @@ final class DayResultsController extends ChangeNotifier {
     if (named == null || _disposed) return;
     final generation = (_fusionGenerations[runId] ?? 0) + 1;
     _fusionGenerations[runId] = generation;
+    // What ran for the run before is superseded.
+    _fusionTasks.remove(runId)?.cancel();
+    if (recording != null) _pendingRecordings[runId] = recording;
     if (reference != null && reference.path.isEmpty) {
       // Nothing to read: known at once, and nothing changes.
       _fusionPending.remove(runId);
@@ -368,14 +508,19 @@ final class DayResultsController extends ChangeNotifier {
     }
     _fusionPending[runId] = recording?.format ?? reference?.format;
     final primary = named.run;
+    final decision = recording == null ? null : _decisionOf(runId);
     _fusionQueue.add(() async {
+      // Not started once the day closed or a newer request superseded it.
       if (_disposed || _fusionGenerations[runId] != generation) return;
       final clock = Stopwatch()..start();
       RunFusion? result;
       try {
-        result = await _fusionRunner(
-          _resolveJob(primary, recording, reference),
+        result = await _runFusionTask(
+          runId,
+          _resolveJob(primary, recording, reference, decision),
         );
+      } on OperationCancelled {
+        return;
       } on Object catch (error) {
         debugPrint('Not combined: $error');
       }
@@ -393,7 +538,7 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   void _runFusions() {
-    while (_fusionsRunning < _fusionSlots && _fusionQueue.isNotEmpty) {
+    while (_fusionsRunning < fusionSlots && _fusionQueue.isNotEmpty) {
       final job = _fusionQueue.removeAt(0);
       ++_fusionsRunning;
       unawaited(
@@ -424,6 +569,7 @@ final class DayResultsController extends ChangeNotifier {
         named.run.contentSha256 == primary.contentSha256) {
       diagnostics.recordStep(DiagnosticSteps.fusion, elapsed);
       _fusions[runId] = result;
+      if (result.alternative != null) _pendingRecordings.remove(runId);
       _fusionsChanged();
       // A decision applied as saved changes nothing. A new recording, a new
       // decision or a source entry to update is a change of the day.
@@ -481,7 +627,12 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
     RunFusion? result;
     try {
-      result = await _fusionRunner(_fusionJob(fusion, named.run, key, rule));
+      result = await _runFusionTask(
+        runId,
+        _fusionJob(fusion, named.run, key, rule),
+      );
+    } on OperationCancelled {
+      // Superseded, or the day closed.
     } on Object catch (error) {
       debugPrint('Fusion not changed: $error');
     } finally {
@@ -606,6 +757,7 @@ final class DayResultsController extends ChangeNotifier {
         trackSegments: _segmentEdits.runs,
         groupChosen: _groupChosen,
         fusions: _fusions,
+        pendingAlternatives: _pendingRecordings,
       );
       await _writer(path, document);
       _document = document;
@@ -1522,6 +1674,7 @@ final class DayResultsController extends ChangeNotifier {
     final segmentsNow = _segmentEdits.runs;
     final groupChosenNow = _groupChosen;
     final fusionsNow = {..._fusions};
+    final pendingNow = {..._pendingRecordings};
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -1543,6 +1696,7 @@ final class DayResultsController extends ChangeNotifier {
             trackSegments: segmentsNow,
             groupChosen: groupChosenNow,
             fusions: fusionsNow,
+            pendingAlternatives: pendingNow,
           ),
           originalPath: original,
           basePath: base,
@@ -1572,8 +1726,12 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    // Alignments not started are dropped; running ones are not applied.
+    // Alignments not started are dropped; running ones are stopped.
     _fusionQueue.clear();
+    for (final task in _fusionTasks.values) {
+      task.cancel();
+    }
+    _fusionTasks.clear();
     final settled = _fusionsSettled;
     _fusionsSettled = null;
     settled?.complete();

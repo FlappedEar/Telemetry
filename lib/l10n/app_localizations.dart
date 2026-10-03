@@ -379,6 +379,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Satellites'**
   String get fusionChannelSatellites;
+
+  /// After Find recordings in a folder: a session's RCZ found there only by its file name is another drive's recording, so it was not used. files is the file name or names.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used, a different recording: {files}.'**
+  String fusionRelinkDifferent(String files);
 }
 
 class _AppLocalizationsDelegate

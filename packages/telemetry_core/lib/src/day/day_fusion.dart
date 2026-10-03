@@ -376,6 +376,26 @@ RunFusion keepFusionChoices(
   );
 }
 
+/// Fuses [alternative] into [primary] with the run's earlier [decision]:
+/// applied without aligning again while it is bound to both recordings
+/// ([fusionDecisionApplies]); otherwise aligned afresh, keeping its rules
+/// for channels both still measure when it names this source
+/// ([keepFusionChoices]).
+RunFusion fuseWithDecision(
+  TelemetryRunProposal primary,
+  TelemetryRunProposal alternative,
+  Map<String, Object?>? decision, {
+  CancellationCheck? cancelled,
+}) {
+  if (decision != null && fusionDecisionApplies(decision, primary, alternative)) {
+    return applyFusionDecision(decision, primary, alternative, cancelled: cancelled);
+  }
+  final aligned = fuseRunRecordings(primary, alternative, cancelled: cancelled);
+  return decision != null && decision['alternativeSourceId'] == alternative.sourceId
+      ? keepFusionChoices(aligned, primary, decision, cancelled: cancelled)
+      : aligned;
+}
+
 /// [fusion] again with [rule] for channel [key]; null when [fusion] is not
 /// fused.
 RunFusion? withFusionRule(

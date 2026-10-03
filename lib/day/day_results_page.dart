@@ -277,26 +277,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   // Built outside the state so the isolate's closure holds only its inputs.
-  static (OpenedDay, RecordingSearch) Function() _relinkJob(
+  static RelinkedDay Function() _relinkJob(
     String path,
     String folder,
     List<MissingRecording> missing,
     List<MissingRecording> alternatives,
-  ) => () {
-    final search = findMovedRecordings(
-      folder,
-      missing,
-      missingAlternatives: alternatives,
-    );
-    return (
-      openDay(
-        path,
-        relinked: search.found,
-        relinkedAlternatives: search.alternatives,
-      ),
-      search,
-    );
-  };
+  ) =>
+      () => relinkDay(path, folder, missing, missingAlternatives: alternatives);
 
   /// Looks for the missing recordings in a folder the user picks, by their
   /// content as Overlays relinks them (a file only named like one is not
@@ -322,7 +309,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       final missing = _controller.missing;
       final alternatives = _controller.missingAlternatives;
       final sessions = _controller.runs.length;
-      final (day, search) = await Isolate.run(
+      final (:day, :search, :differentAlternatives) = await Isolate.run(
         _relinkJob(path, folder, missing, alternatives),
       );
       if (!mounted) return;
@@ -334,7 +321,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
         _tell('Recordings were added meanwhile. Find the recordings again.');
         return;
       }
-      if (day.missing.length == missing.length && search.alternatives.isEmpty) {
+      // An RCZ found only by its name that is not the same drive: said, not
+      // used.
+      final differentRcz = [
+        for (final file in differentAlternatives.values) p.basename(file),
+      ];
+      if (differentRcz.isNotEmpty) {
+        _tell(context.l10n.fusionRelinkDifferent(differentRcz.join(', ')));
+      }
+      final used = {
+        for (final runId in search.alternatives.keys)
+          if (!differentAlternatives.containsKey(runId)) runId,
+      };
+      if (day.missing.length == missing.length && used.isEmpty) {
+        if (differentRcz.isNotEmpty && search.found.isEmpty) return;
         final names = [
           for (final recording in missing)
             if (search.different.containsKey(recording.runId))

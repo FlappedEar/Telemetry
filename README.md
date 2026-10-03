@@ -124,7 +124,9 @@ changes until saved. Otherwise it is "a different recording" and the session
 uses its VBO alone. An RCZ the document stores no SHA-256 or fingerprint for
 is likewise used only when it is the same drive, never by its path alone. A day gets unsaved changes from this only
 when it produces a new decision or updates the RCZ's entry, never just by
-opening.
+opening. An RCZ still being aligned when the day is saved is written as the
+run's source (keeping any earlier decision), so it is aligned when the day
+opens again; closing the day stops the alignment.
 
 Speeds carry the unit their recording declares: RCZ declares its unit, and a
 RaceChrono VBO names it in its header (`velocity kmh`), which the parser keeps

@@ -637,18 +637,13 @@ class _DayImportPageState extends State<DayImportPage> {
     String folder,
     List<MissingRecording> missing,
     List<MissingRecording> alternatives,
-  ) => () {
-    final search = findMovedRecordings(
-      folder,
-      missing,
-      missingAlternatives: alternatives,
-    );
-    return openDay(
-      path,
-      relinked: search.found,
-      relinkedAlternatives: search.alternatives,
-    );
-  };
+  ) =>
+      () => relinkDay(
+        path,
+        folder,
+        missing,
+        missingAlternatives: alternatives,
+      ).day;
 
   /// The day to open: on phones from the days saved in the app, else from
   /// the open dialog.

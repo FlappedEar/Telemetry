@@ -36,20 +36,45 @@ final class _SyncJob implements DayAppendJob {
 
 /// Holds each background fusion until the test lets it run.
 final class _HeldFusions {
-  final jobs = <(RunFusion? Function(), Completer<RunFusion?>)>[];
+  final jobs = <_HeldTask>[];
 
-  Future<RunFusion?> call(RunFusion? Function() job) {
-    final done = Completer<RunFusion?>();
-    jobs.add((job, done));
-    return done.future;
+  FusionTask call(FusionJob job) {
+    final task = _HeldTask(job);
+    jobs.add(task);
+    return task;
   }
 
   /// Runs the [index]th job held; [settle] lets its result be applied
   /// (widget tests pump instead).
   Future<void> release(int index, {bool settle = true}) async {
-    final (job, done) = jobs[index];
-    done.complete(job());
+    jobs[index].run();
     if (settle) await pumpEventQueue();
+  }
+}
+
+final class _HeldTask implements FusionTask {
+  _HeldTask(this.job);
+
+  final FusionJob job;
+  final _done = Completer<RunFusion?>();
+  bool cancelled = false;
+
+  void run() {
+    if (_done.isCompleted) return;
+    try {
+      _done.complete(job(() => cancelled));
+    } on Object catch (error) {
+      _done.completeError(error);
+    }
+  }
+
+  @override
+  Future<RunFusion?> get result => _done.future;
+
+  @override
+  void cancel() {
+    cancelled = true;
+    if (!_done.isCompleted) _done.completeError(const OperationCancelled());
   }
 }
 
@@ -451,6 +476,7 @@ void main() {
       // Added again before the first finished: only the latest counts.
       await controller.addRecordings([rcz]);
       expect(held.jobs, hasLength(2));
+      expect(held.jobs[0].cancelled, isTrue, reason: 'superseded: stopped');
       await held.release(0);
       expect(controller.fusion(runId), isNull);
       expect(controller.fusionPending(runId), 'RCZ');
@@ -466,8 +492,93 @@ void main() {
       );
       await closed.addRecordings([rcz]);
       closed.dispose();
+      expect(held.jobs[2].cancelled, isTrue, reason: 'stopped on close');
       await held.release(2);
       expect(closed.fusion(runId), isNull);
+    },
+  );
+
+  test('queued alignments do not start once the day closes', () async {
+    final slots = DayResultsController.fusionSlots;
+    DayResultsController.fusionSlots = 1;
+    addTearDown(() => DayResultsController.fusionSlots = slots);
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final other = Directory('${directory.path}/other')..createSync();
+    final (vbo2, rcz2) = writeFusionPair(
+      other.path,
+      name: 'other',
+      speeds: const [31, 26, 30, 28, 33, 27, 29, 25, 32, 30],
+    );
+    final both = importDay([vbo, rcz, vbo2, rcz2]);
+    expect(both.alternatives, hasLength(2));
+    final held = _HeldFusions();
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+      fusionRunner: held.call,
+    );
+    await pumpEventQueue();
+    expect(held.jobs, hasLength(1), reason: 'one at a time');
+    controller.dispose();
+    expect(held.jobs.single.cancelled, isTrue);
+    await pumpEventQueue();
+    expect(held.jobs, hasLength(1), reason: 'the queued one never started');
+  });
+
+  test('a day saved while its RCZ is lined up keeps the RCZ', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = importDay([vbo, rcz]);
+    final runId = both.runs.single.run.id;
+    final held = _HeldFusions();
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+      fusionRunner: held.call,
+    );
+    final path = '${directory.path}/Day.fetproject';
+    expect(controller.fusionPending(runId), 'RCZ');
+    await controller.save(path);
+    controller.dispose();
+    final run = _runJson(path);
+    expect((run['sources'] as Map)['telemetry'] as List, hasLength(2));
+    expect(run['fusion'], isNull, reason: 'nothing decided yet');
+
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    await opened.fusionsSettled;
+    expect(opened.fusion(runId)!.fused, isTrue, reason: 'aligned on opening');
+  });
+
+  test(
+    'an RCZ added to a saved day is in the file before it is lined up',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final first = importDay([vbo]);
+      final runId = first.runs.single.run.id;
+      final held = _HeldFusions();
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+        fusionRunner: held.call,
+      );
+      final path = '${directory.path}/Day.fetproject';
+      await controller.save(path);
+      final addition = await controller.addRecordings([rcz]);
+      expect(addition.savedTo, path);
+      // Closed before the alignment ends.
+      controller.dispose();
+      expect(
+        (_runJson(path)['sources'] as Map)['telemetry'] as List,
+        hasLength(2),
+      );
+
+      final opened = DayResultsController.opened(openDay(path));
+      addTearDown(opened.dispose);
+      await opened.fusionsSettled;
+      expect(opened.fusion(runId)!.fused, isTrue);
     },
   );
 
@@ -544,6 +655,45 @@ void main() {
       );
     },
   );
+
+  test('an RCZ of the same drive added again keeps the rules chosen', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = importDay([vbo, rcz]);
+    final runId = both.runs.single.run.id;
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+    );
+    addTearDown(controller.dispose);
+    await controller.fusionsSettled;
+    await controller.setFusionRule(runId, 'sats', FusionRule.fillGaps);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    File(rcz).deleteSync();
+    // The same drive exported again, other content.
+    final again = Directory('${directory.path}/again')..createSync();
+    final (_, other) = writeFusionPair(
+      again.path,
+      satellites: true,
+      satelliteDifference: 6,
+    );
+
+    final opened = DayResultsController.opened(
+      openDay(path),
+      appender: _SyncAppender(),
+    );
+    addTearDown(opened.dispose);
+    await opened.fusionsSettled;
+    expect(opened.fusion(runId)!.state, RunFusionState.unavailable);
+    final addition = await opened.addRecordings([other]);
+    expect(addition.combined, ['Session 1']);
+    await opened.fusionsSettled;
+    final fusion = opened.fusion(runId)!;
+    expect(fusion.fused, isTrue);
+    expect(fusion.fromDocument, isFalse, reason: 'aligned afresh');
+    expect(fusion.ruleOf('sats'), FusionRule.fillGaps, reason: 'kept');
+  });
 
   test('an RCZ written again for the same drive is aligned afresh', () async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
@@ -901,6 +1051,73 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'an RCZ found only by its name that is another drive is not used',
+    (tester) async {
+      final recordings = Directory('${directory.path}/recordings')
+        ..createSync();
+      final (vbo, rcz) = writeFusionPair(recordings.path, satellites: true);
+      final path = '${directory.path}/Day.fetproject';
+      final day = (await tester.runAsync(() async {
+        final both = importDay([vbo, rcz]);
+        final controller = DayResultsController(
+          runs: both.runs,
+          analysis: both.analysis!,
+          alternatives: both.alternatives,
+        );
+        await controller.fusionsSettled;
+        await controller.save(path);
+        controller.dispose();
+        File(rcz).deleteSync();
+        // Another drive's RCZ, named like the missing one.
+        final archive = Directory('${directory.path}/archive')..createSync();
+        final scratch = Directory('${directory.path}/scratch')..createSync();
+        final (_, other) = writeFusionPair(
+          scratch.path,
+          speeds: const [31, 26, 30, 28, 33, 27, 29, 25, 32, 30],
+        );
+        File(other).copySync('${archive.path}/drive.rcz');
+        final day = DayResultsController.opened(openDay(path));
+        await day.fusionsSettled;
+        return day;
+      }))!;
+      DayResultsController? replaced;
+      await tester.binding.setSurfaceSize(const Size(400, 8000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: day,
+            documents: _Documents('${directory.path}/archive'),
+            replace: (controller) => replaced = controller,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('The RCZ of 1 session could not be used'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Find recordings in a folder…'));
+      await waitFor(
+        tester,
+        () => find
+            .text('Not used, a different recording: drive.rcz.')
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(
+        find.text('Not used, a different recording: drive.rcz.'),
+        findsOneWidget,
+      );
+      expect(replaced, isNull, reason: 'nothing else was found');
+      expect(
+        find.text('The RCZ of 1 session could not be used'),
+        findsOneWidget,
+      );
+    },
+  );
 
   for (final scale in const [1.0, 1.3]) {
     testWidgets(

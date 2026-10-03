@@ -329,5 +329,15 @@
   "fusionChannelSatellites": "Satellites",
   "@fusionChannelSatellites": {
     "description": "A channel both recordings of a session measured: the number of GPS satellites."
+  },
+  "fusionRelinkDifferent": "Not used, a different recording: {files}.",
+  "@fusionRelinkDifferent": {
+    "description": "After Find recordings in a folder: a session's RCZ found there only by its file name is another drive's recording, so it was not used. files is the file name or names.",
+    "placeholders": {
+      "files": {
+        "type": "String",
+        "example": "drive.rcz"
+      }
+    }
   }
 }

@@ -9,7 +9,7 @@
   <li>Laps you excluded, with their reasons.</li>
   <li>The group of laps shown.</li>
   <li>The segments: the automatic ones become the day's approved segments when you save, and your edits are kept.</li>
-  <li>The RCZ kept with a session's VBO and how the two were combined: their clock offset and your choice for channels they disagree on (see <a href="day.html#combined">VBO and RCZ of one session</a>). This is tied to the content of both recordings. When the day opens, its results show from the VBOs at once and each RCZ is read in the background: while both are unchanged, the saved choice is applied as it is. If the file at the RCZ's place now holds other content, the app checks whether it is still the same drive as the VBO (the same check as when importing both): if it is, the two are lined up again (your choices for channels they still both record are kept), the day remembers the new file and has changes until you save; if not, it is a different recording and that session uses its VBO alone. An RCZ that cannot be found does not stop the day from opening either; that session uses its VBO alone until you <a href="#find">find it</a>.</li>
+  <li>The RCZ kept with a session's VBO and how the two were combined: their clock offset and your choice for channels they disagree on (see <a href="day.html#combined">VBO and RCZ of one session</a>). This is tied to the content of both recordings. When the day opens, its results show from the VBOs at once and each RCZ is read in the background: while both are unchanged, the saved choice is applied as it is. If the file at the RCZ's place now holds other content, the app checks whether it is still the same drive as the VBO (the same check as when importing both): if it is, the two are lined up again (your choices for channels they still both record are kept), the day remembers the new file and has changes until you save; if not, it is a different recording and that session uses its VBO alone. An RCZ that cannot be found does not stop the day from opening either; that session uses its VBO alone until you <a href="#find">find it</a>. A day saved or closed while an RCZ is still being lined up keeps that RCZ, and lines it up when it opens again.</li>
 </ul>
 <p>The day is named <em>Day YYYY-MM-DD</em> from its first dated recording. There is no way to rename it in the app yet; the file name on a Mac or PC is yours to choose.</p>
 
@@ -35,11 +35,11 @@
 </ul>
 
 <h2 id="find">Find recordings in a folder</h2>
-<p>If a recording was moved, renamed or deleted, the day still opens. A red card lists each session that could not be opened, and those sessions stay in the day when you save it. A session's RCZ that is missing or is another recording is listed on such a card too (<em>The RCZ of 1 session could not be used</em>).</p>
+<p>If a recording was moved, renamed or deleted, the day still opens. A red card lists each session that could not be opened, and those sessions stay in the day when you save it. A session's RCZ that is missing or is another recording is listed too (<em>The RCZ of 1 session could not be used</em>): on the red card when sessions are missing as well, otherwise on a card of its own in a quieter colour, with the same button.</p>
 <ol class="steps">
   <li>Save the day first if it has changes.</li>
   <li>Tap <strong>Find recordings in a folder…</strong> and choose the folder that holds the recordings now.</li>
-  <li>The app recognises each recording by its content, so a renamed file is found. A different recording that only has the same name is never used. A session's RCZ is looked for at the same time; an RCZ with the same name but other content is used only when it is the same drive as the session's VBO, and is then lined up again.</li>
+  <li>The app recognises each recording by its content, so a renamed file is found. A different recording that only has the same name is never used. A session's RCZ is looked for at the same time; an RCZ with the same name but other content is used only when it is the same drive as the session's VBO, and is then lined up again. Otherwise the app says <em>Not used, a different recording: drive.rcz.</em></li>
   <li>Tap <strong>Save</strong> to keep the new locations.</li>
 </ol>
 <p>If none of a day's recordings can be used, the app says <em>&lt;day&gt; could not be opened</em>, lists them, and offers <strong>Find recordings in a folder…</strong> there too.</p>

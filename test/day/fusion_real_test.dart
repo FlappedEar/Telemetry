@@ -6,7 +6,6 @@
 library;
 
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,7 +45,7 @@ void main() {
       ];
       final plain = runDayImport((paths: vbos, includeSubfolders: false));
       // In background isolates, as the app runs it.
-      Future<RunFusion?> runner(RunFusion? Function() job) => Isolate.run(job);
+      const runner = isolateFusionRunner;
       final importing = Stopwatch()..start();
       final both = runDayImport((paths: [day], includeSubfolders: false));
       final alone = DayResultsController(

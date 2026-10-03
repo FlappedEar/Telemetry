@@ -129,6 +129,9 @@ Map<String, Object?> _unknownConfiguration(
 /// decision. A run whose alternative could not be aligned or used keeps the
 /// document's decision as it was (no longer bound to its recordings, so not
 /// applied), and a run without one keeps its sources as they were.
+/// [pendingAlternatives] are alternative recordings not fused yet, by run
+/// id: each is written as a source, so the day opened again aligns it, and
+/// the run's decision stays as it was.
 ///
 /// Reads each recording's first, middle and last 64 KiB for its fingerprint.
 Map<String, Object?> dayDocument({
@@ -144,6 +147,7 @@ Map<String, Object?> dayDocument({
   bool automaticSegments = true,
   bool groupChosen = false,
   Map<String, RunFusion> fusions = const {},
+  Map<String, TelemetryRunProposal> pendingAlternatives = const {},
   Random? random,
 }) {
   final chosenGroup = analysis.chosenGroup;
@@ -171,7 +175,7 @@ Map<String, Object?> dayDocument({
     final telemetry = <Object?>[];
     var primaryWritten = false;
     final fusion = fusions[run.id];
-    final alternative = fusion?.alternative;
+    final alternative = fusion?.alternative ?? pendingAlternatives[run.id];
     var alternativeWritten = alternative == null;
     for (final value in (sources['telemetry'] as List?) ?? const []) {
       final source = _object(value);
@@ -887,17 +891,7 @@ RunFusion resolveDocumentAlternative(
     telemetry: loaded.telemetry,
     laps: loaded.laps,
   );
-  final decision = alternative.decision;
-  final RunFusion fusion;
-  if (decision != null && fusionDecisionApplies(decision, primary, recording)) {
-    fusion = applyFusionDecision(decision, primary, recording, cancelled: cancelled);
-  } else {
-    // Aligned afresh, keeping the user's choices for channels that remain.
-    final aligned = fuseRunRecordings(primary, recording, cancelled: cancelled);
-    fusion = decision != null && decision['alternativeSourceId'] == alternative.sourceId
-        ? keepFusionChoices(aligned, primary, decision, cancelled: cancelled)
-        : aligned;
-  }
+  final fusion = fuseWithDecision(primary, recording, alternative.decision, cancelled: cancelled);
   return changed || alternative.relinked ? fusion.withDocumentChanged() : fusion;
 }
 

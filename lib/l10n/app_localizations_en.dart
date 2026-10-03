@@ -202,4 +202,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fusionChannelSatellites => 'Satellites';
+
+  @override
+  String fusionRelinkDifferent(String files) {
+    return 'Not used, a different recording: $files.';
+  }
 }
