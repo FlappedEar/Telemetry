@@ -399,6 +399,7 @@ final class DayResultsController extends ChangeNotifier {
     List<String> paths, {
     required bool sameDayOnly,
   }) async {
+    final clock = Stopwatch()..start();
     if (_disposed) {
       return const DayAddition(
         notes: [],
@@ -491,6 +492,9 @@ final class DayResultsController extends ChangeNotifier {
     // kept for recovery now, so a share into a saved day does not replace
     // the unsaved day the recovery slot may hold.
     if (_documentPath == null && !_saving) _scheduleRecovery();
+    diagnostics.recordStep(DiagnosticSteps.addSession, clock.elapsed);
+    // Measured on to the coach's plan for it (see _requestCoach).
+    _additionClock = clock;
     notifyListeners();
     var saveError = '';
     // A save running now may have been asked for a new file: the day is
@@ -836,6 +840,10 @@ final class DayResultsController extends ChangeNotifier {
   bool get coachWithoutTheoreticalBest =>
       _theoreticalBest?.state == DayTheoreticalBestState.error;
 
+  /// Running from the start of the last addition until the coach's plan
+  /// for it; null once measured.
+  Stopwatch? _additionClock;
+
   /// Why the coach could not run; empty when it ran.
   String get coachError => _coachError;
   String _coachError = '';
@@ -901,6 +909,7 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
     DayCoach? coach;
     var error = '';
+    final clock = Stopwatch()..start();
     try {
       coach = await _coachRunner(
         _coachJob(result, {
@@ -911,6 +920,13 @@ final class DayResultsController extends ChangeNotifier {
       error = '$failure';
     }
     if (_disposed || generation != _theoreticalBestGeneration) return;
+    if (coach != null) {
+      diagnostics.recordStep(DiagnosticSteps.coach, clock.elapsed);
+      if (_additionClock case final added?) {
+        diagnostics.recordStep(DiagnosticSteps.addToCoach, added.elapsed);
+      }
+    }
+    _additionClock = null;
     _coach = coach;
     _coachError = error;
     _coachLoading = false;

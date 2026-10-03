@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/diagnostics/app_diagnostics.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -575,6 +576,7 @@ void main() {
   testWidgets(
     'after an addition the page moves to the Next session card for it',
     (tester) async {
+      final diagnostics = AppDiagnostics();
       final a = write('a.vbo', [30, 28, 31]);
       final b = write('b.vbo', [29, 33]);
       final first = runDayImport((paths: [a], includeSubfolders: false));
@@ -583,6 +585,7 @@ void main() {
         analysis: first.analysis!,
         appender: _SyncAppender(),
         coachRunner: (job) async => job(),
+        diagnostics: diagnostics,
       );
       await tester.binding.setSurfaceSize(const Size(412, 915));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -621,6 +624,15 @@ void main() {
       expect(card.hitTestable(), findsOneWidget);
       final top = tester.getTopLeft(card).dy;
       expect(top, inInclusiveRange(0, 915 - 100));
+      // The diagnostics page shows how long it took, for the phone.
+      expect(
+        [for (final step in diagnostics.steps) step.name],
+        containsAll([
+          DiagnosticSteps.addSession,
+          DiagnosticSteps.coach,
+          DiagnosticSteps.addToCoach,
+        ]),
+      );
       // Neither has a recording time, so the one added last is coached.
       expect(controller.latestRunName, 'Session 2');
       expect(
