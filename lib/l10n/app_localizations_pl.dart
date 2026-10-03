@@ -119,4 +119,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String compareLapB(String time) {
     return 'B $time';
   }
+
+  @override
+  String get dayBestLabel => 'Najlepsze okrążenie dnia';
+
+  @override
+  String get theoreticalBestLabel => 'Teoretycznie najlepsze';
+
+  @override
+  String get theoreticalBestHint => 'Najszybszy czas każdego segmentu';
 }

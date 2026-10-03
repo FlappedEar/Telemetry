@@ -167,5 +167,17 @@
         "example": "1:49.898"
       }
     }
+  },
+  "dayBestLabel": "Best day",
+  "@dayBestLabel": {
+    "description": "Label of the day's best lap, at the top of the day page."
+  },
+  "theoreticalBestLabel": "Theoretical best",
+  "@theoreticalBestLabel": {
+    "description": "Label of the theoretical best: the fastest time of each segment added up."
+  },
+  "theoreticalBestHint": "Fastest of every segment",
+  "@theoreticalBestHint": {
+    "description": "Under the theoretical best label: what it is made of."
   }
 }

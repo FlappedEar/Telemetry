@@ -117,8 +117,15 @@ void main() {
         home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
       ),
     );
-    expect(find.text('Best day'), findsOneWidget);
-    expect(find.text(best.displayName), findsWidgets);
+    // The best lap leads, as a bar with its name and time.
+    final bar = find.byKey(const ValueKey('dayBestBar'));
+    for (final text in [
+      'Best day',
+      best.displayName,
+      displayTime(best.durationSeconds),
+    ]) {
+      expect(find.descendant(of: bar, matching: find.text(text)), findsOne);
+    }
     expect(find.byType(TrackMap), findsOneWidget);
     expect(find.text('Best lap of each session'), findsOneWidget);
     // On a phone the laps are the second tab.

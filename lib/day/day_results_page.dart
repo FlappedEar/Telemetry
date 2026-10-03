@@ -424,6 +424,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   List<Widget> _summary(BuildContext context, bool wide, double mapHeight) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final colors = FetColors.of(context);
     final analysis = _controller.analysis;
     final ranking = _controller.ranking;
     final best = ranking?.bestOfDay;
@@ -467,6 +469,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
         const SizedBox(height: 12),
       ],
+      if (best != null) ...[
+        _HeadlineBar(
+          key: const ValueKey('dayBestBar'),
+          label: l10n.dayBestLabel,
+          title: best.displayName,
+          time: displayTime(best.durationSeconds),
+          color: colors.you,
+          onColor: colors.onLap,
+          onTap: () => _open(best),
+        ),
+        if (_controller.theoreticalBest?.theoreticalBestSeconds
+            case final seconds?) ...[
+          const SizedBox(height: 4),
+          _HeadlineBar(
+            key: const ValueKey('dayTheoreticalBar'),
+            label: l10n.theoreticalBestLabel,
+            title: l10n.theoreticalBestHint,
+            time: displayTime(seconds),
+            color: colors.reference,
+            onColor: colors.onLap,
+          ),
+        ],
+        const SizedBox(height: 8),
+      ],
       Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -476,24 +502,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Best day', style: theme.textTheme.labelLarge),
-                if (best == null)
+                if (best == null) ...[
+                  Text(l10n.dayBestLabel, style: theme.textTheme.labelLarge),
                   Text(
                     _noBestReason(analysis, ranking),
                     style: theme.textTheme.titleMedium,
-                  )
-                else ...[
-                  Text(
-                    displayTime(best.durationSeconds),
-                    style: theme.textTheme.displaySmall,
                   ),
-                  Text(best.displayName, style: theme.textTheme.titleMedium),
+                ] else ...[
                   if (ranking!.tieCount > 1)
                     Text(
                       '${ranking.tieCount} laps share this time; the earliest is shown.',
                     ),
                   if (path != null && !path.isEmpty) ...[
-                    const SizedBox(height: 12),
                     SizedBox(
                       height: mapHeight,
                       child: IgnorePointer(
@@ -878,3 +898,75 @@ class _DayResultsPageState extends State<DayResultsPage> {
 }
 
 enum _Section { day, laps, compare }
+
+/// A headline result as a filled bar, as on a timing screen: a small label
+/// and a name on the left, the time large on the right.
+class _HeadlineBar extends StatelessWidget {
+  const _HeadlineBar({
+    super.key,
+    required this.label,
+    required this.title,
+    required this.time,
+    required this.color,
+    required this.onColor,
+    this.onTap,
+  });
+
+  final String label;
+  final String title;
+  final String time;
+  final Color color;
+  final Color onColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Material(
+      color: color,
+      borderRadius: const BorderRadius.all(Radius.circular(4)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: text.labelSmall?.copyWith(
+                          color: onColor.withValues(alpha: 0.75),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      Text(
+                        title,
+                        style: text.titleSmall?.copyWith(color: onColor),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  time,
+                  style: text.headlineSmall?.copyWith(
+                    fontFamily: FetTheme.mono,
+                    fontWeight: FontWeight.w700,
+                    color: onColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

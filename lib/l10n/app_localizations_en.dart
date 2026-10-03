@@ -116,4 +116,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String compareLapB(String time) {
     return 'B $time';
   }
+
+  @override
+  String get dayBestLabel => 'Best day';
+
+  @override
+  String get theoreticalBestLabel => 'Theoretical best';
+
+  @override
+  String get theoreticalBestHint => 'Fastest of every segment';
 }

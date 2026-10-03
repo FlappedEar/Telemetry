@@ -28,5 +28,8 @@
   "comparePickTwoLaps": "Wybierz dwa okrążenia",
   "compareAgainstBest": "Względem najlepszego okrążenia dnia",
   "compareLapA": "A {time}",
-  "compareLapB": "B {time}"
+  "compareLapB": "B {time}",
+  "dayBestLabel": "Najlepsze okrążenie dnia",
+  "theoreticalBestLabel": "Teoretycznie najlepsze",
+  "theoreticalBestHint": "Najszybszy czas każdego segmentu"
 }

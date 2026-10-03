@@ -243,6 +243,11 @@ void main() {
       // Back on the results, the card shows the recalculated result.
       await tester.pageBack();
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('theoreticalBestTime')),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byKey(const ValueKey('theoreticalBestTime')), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

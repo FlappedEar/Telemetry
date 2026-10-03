@@ -271,6 +271,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'B {time}'**
   String compareLapB(String time);
+
+  /// Label of the day's best lap, at the top of the day page.
+  ///
+  /// In en, this message translates to:
+  /// **'Best day'**
+  String get dayBestLabel;
+
+  /// Label of the theoretical best: the fastest time of each segment added up.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best'**
+  String get theoreticalBestLabel;
+
+  /// Under the theoretical best label: what it is made of.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest of every segment'**
+  String get theoreticalBestHint;
 }
 
 class _AppLocalizationsDelegate
