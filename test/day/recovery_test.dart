@@ -127,9 +127,13 @@ void main() {
         'Traffic',
       ], reason: 'the exclusion survives in recovery');
 
-      // Saving again writes the exclusion and only then marks the day clean.
-      blocked = Completer<void>()..complete();
-      await controller.save(path);
+      // Saving again writes the exclusion and only then marks the day clean;
+      // repeating the same exclusion while it saves changes nothing.
+      blocked = Completer<void>();
+      final again = controller.save(path);
+      expect(controller.exclude(row, 'Traffic'), isTrue);
+      blocked.complete();
+      await again;
       await controller.flushRecovery();
       expect(controller.dirty, isFalse);
       expect(openDayDocument(written.last, path).exclusions.values, [

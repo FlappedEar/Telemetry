@@ -386,6 +386,8 @@ final class DayResultsController extends ChangeNotifier {
         trimmed.length > 256) {
       return false;
     }
+    // The same reason again changes nothing, so the day stays as it was.
+    if (_exclusions[row.reference] == trimmed) return true;
     _exclusions[row.reference] = trimmed;
     _rerank();
     return true;
