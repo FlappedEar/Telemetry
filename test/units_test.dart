@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -143,17 +144,18 @@ void main() {
     expect(declaredSpeedUnits, isEmpty);
   });
 
-  Future<void> pumpApp(WidgetTester tester) => tester.pumpWidget(
-    MaterialApp(
-      builder: (context, child) => SpeedUnitScope(child: child!),
-      home: Scaffold(
-        appBar: AppBar(actions: const [SettingsButton()]),
-        body: Builder(
-          builder: (context) => Text('speed ${speedUnitOf(context)}'),
+  Future<void> pumpApp(WidgetTester tester, {Locale? locale}) =>
+      tester.pumpWidget(
+        TelemetryApp(
+          locale: locale,
+          home: Scaffold(
+            appBar: AppBar(actions: const [SettingsButton()]),
+            body: Builder(
+              builder: (context) => Text('speed ${speedUnitOf(context)}'),
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   Future<void> chooseInSettings(WidgetTester tester, String label) async {
     await tester.tap(find.byTooltip('Settings'));
@@ -195,5 +197,41 @@ void main() {
     await tester.pumpAndSettle();
     await chooseInSettings(tester, 'mph');
     expect(find.text('speed mph'), findsOneWidget);
+  });
+
+  testWidgets('the settings dialog counts recordings without a unit', (
+    tester,
+  ) async {
+    declaredSpeedUnits = const ['km/h', ''];
+    await pumpApp(tester);
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        "The open day's recordings declare km/h. "
+        '1 of its recordings does not say its speed unit.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the settings dialog speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    declaredSpeedUnits = const ['km/h', 'mph', '', ''];
+    await pumpApp(tester, locale: const Locale('pl'));
+    await tester.tap(find.byTooltip('Ustawienia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Jednostka dla prędkości bez oznaczenia'), findsOneWidget);
+    expect(
+      find.text(
+        'Nagrania otwartego dnia podają km/h i mph. '
+        '2 z jego nagrań nie podają jednostki prędkości.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Brak'), findsOneWidget);
+    await tester.tap(find.text('Zamknij'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsDialog), findsNothing);
   });
 }

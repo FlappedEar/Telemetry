@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'l10n.dart';
 import 'units.dart';
 
 /// The settings button for an app bar.
@@ -8,7 +9,7 @@ class SettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-    tooltip: 'Settings',
+    tooltip: context.l10n.settings,
     icon: const Icon(Icons.settings_outlined),
     onPressed: () => showDialog<void>(
       context: context,
@@ -24,13 +25,14 @@ class SettingsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final declared = {
       for (final unit in declaredSpeedUnits)
         if (unit.isNotEmpty) unit,
     };
     final unlabelled = declaredSpeedUnits.where((unit) => unit.isEmpty).length;
     return AlertDialog(
-      title: const Text('Settings'),
+      title: Text(l10n.settings),
       content: ValueListenableBuilder(
         valueListenable: speedUnitSetting,
         builder: (context, setting, _) => Column(
@@ -38,23 +40,25 @@ class SettingsDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Unit for unlabelled speeds',
+              l10n.settingsSpeedUnitHeading,
               style: theme.textTheme.titleSmall,
             ),
             const SizedBox(height: 4),
-            Text(
-              'Used only for recordings that do not say their speed unit. A '
-              'unit a recording declares is always shown as declared. '
-              'Values are never converted.',
-              style: theme.textTheme.bodySmall,
-            ),
+            Text(l10n.settingsSpeedUnitHelp, style: theme.textTheme.bodySmall),
             const SizedBox(height: 8),
             SegmentedButton<SpeedUnitSetting>(
               key: const ValueKey('speedUnitSetting'),
               showSelectedIcon: false,
               segments: [
                 for (final value in SpeedUnitSetting.values)
-                  ButtonSegment(value: value, label: Text(value.label)),
+                  ButtonSegment(
+                    value: value,
+                    label: Text(
+                      value == SpeedUnitSetting.automatic
+                          ? l10n.speedUnitNone
+                          : value.label,
+                    ),
+                  ),
               ],
               selected: {setting},
               onSelectionChanged: (choice) =>
@@ -64,16 +68,16 @@ class SettingsDialog extends StatelessWidget {
             Text(
               key: const ValueKey('speedUnitDetected'),
               declaredSpeedUnits.isEmpty
-                  ? 'No day open yet.'
+                  ? l10n.settingsNoDayOpen
                   : [
                       if (declared.isNotEmpty)
-                        'The open day\'s recordings declare '
-                            '${declared.join(' and ')}.',
+                        l10n.settingsDeclaredUnits(
+                          declared.join(l10n.unitsAnd),
+                        ),
                       if (unlabelled > 0)
                         unlabelled == declaredSpeedUnits.length
-                            ? 'Its recordings do not say their speed unit.'
-                            : '$unlabelled of its recordings do not say '
-                                  'their speed unit.',
+                            ? l10n.settingsAllUnlabelled
+                            : l10n.settingsSomeUnlabelled(unlabelled),
                     ].join(' '),
               style: theme.textTheme.bodySmall,
             ),
@@ -83,7 +87,7 @@ class SettingsDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(l10n.close),
         ),
       ],
     );

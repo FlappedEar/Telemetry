@@ -112,6 +112,58 @@
       }
     }
   },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings button tooltip and dialog title."
+  },
+  "settingsSpeedUnitHeading": "Unit for unlabelled speeds",
+  "@settingsSpeedUnitHeading": {
+    "description": "Heading of the speed unit setting."
+  },
+  "settingsSpeedUnitHelp": "Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.",
+  "@settingsSpeedUnitHelp": {
+    "description": "Explains the speed unit setting."
+  },
+  "speedUnitNone": "None",
+  "@speedUnitNone": {
+    "description": "Speed unit setting: assume no unit for unlabelled speeds."
+  },
+  "settingsNoDayOpen": "No day open yet.",
+  "@settingsNoDayOpen": {
+    "description": "Shown in settings when no track day is open."
+  },
+  "settingsDeclaredUnits": "The open day's recordings declare {units}.",
+  "@settingsDeclaredUnits": {
+    "description": "The speed units the open day's recordings declare.",
+    "placeholders": {
+      "units": {
+        "type": "String",
+        "example": "km/h and mph"
+      }
+    }
+  },
+  "unitsAnd": " and ",
+  "@unitsAnd": {
+    "description": "Joins two speed units: 'km/h and mph'. Keep the spaces."
+  },
+  "settingsAllUnlabelled": "Its recordings do not say their speed unit.",
+  "@settingsAllUnlabelled": {
+    "description": "None of the open day's recordings declares a speed unit."
+  },
+  "settingsSomeUnlabelled": "{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}",
+  "@settingsSomeUnlabelled": {
+    "description": "Some of the open day's recordings declare no speed unit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Button that closes a dialog."
+  },
   "cancel": "Cancel",
   "@cancel": {
     "description": "Button that closes a dialog without changes."
