@@ -9,6 +9,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../diagnostics/app_diagnostics.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
+import 'background_task.dart';
 import 'channel_sources.dart';
 import 'recovery_store.dart';
 
@@ -345,6 +346,8 @@ final class DayResultsController extends ChangeNotifier {
   bool get _fusionsIdle =>
       _fusionPending.isEmpty &&
       _fusionUpdating.isEmpty &&
+      _clocksChecking.isEmpty &&
+      _primaryChanging.isEmpty &&
       _savingAfterFusion == 0;
 
   // Saves after an addition's alternative recording was fused, running.
@@ -706,6 +709,224 @@ final class DayResultsController extends ChangeNotifier {
     }
     notifyListeners();
     _settleFusions();
+  }
+
+  // Runs whose clocks are being compared (FET-57), with that check's
+  // generation, and the checks done that wait for the user to accept or
+  // refuse them.
+  final Map<String, int> _clocksChecking = {};
+  final Map<String, RunFusion> _clockChecks = {};
+
+  // Runs whose primary recording is being changed, with that change's
+  // generation, and the background work reading the new one.
+  final Map<String, int> _primaryChanging = {};
+  final Map<String, BackgroundTask<DayRunsPart>> _primaryTasks = {};
+
+  /// Whether [runId]'s clocks are being compared ([checkClock]).
+  bool clockChecking(String runId) => _clocksChecking.containsKey(runId);
+
+  /// The clock check of [runId] waiting to be accepted ([acceptClock]) or
+  /// refused ([refuseClock]); null when there is none.
+  RunFusion? clockCheck(String runId) => _clockChecks[runId];
+
+  /// Whether [runId]'s primary recording is being changed ([makePrimary]).
+  bool primaryChanging(String runId) => _primaryChanging.containsKey(runId);
+
+  /// Whether [runId]'s recordings can be changed now: it has another
+  /// recording that was read, and nothing runs for it or adds to the day.
+  bool recordingsEditable(String runId) =>
+      !_disposed &&
+      _fusions[runId]?.alternative != null &&
+      !_fusionPending.containsKey(runId) &&
+      !_fusionUpdating.containsKey(runId) &&
+      !_clocksChecking.containsKey(runId) &&
+      !_primaryChanging.containsKey(runId) &&
+      !adding;
+
+  /// A new generation for [runId]'s recordings: a fusion, rule change or
+  /// check still running for the run is not used.
+  int _nextRecordingGeneration(String runId) =>
+      _fusionGenerations[runId] = (_fusionGenerations[runId] ?? 0) + 1;
+
+  static FusionJob _clockJob(
+    TelemetryRunProposal primary,
+    TelemetryRunProposal alternative,
+    Map<String, Object?>? decision,
+  ) =>
+      (cancelled) =>
+          checkRunClock(primary, alternative, decision, cancelled: cancelled);
+
+  /// Compares the clocks of [runId]'s recordings again in the background
+  /// (FET-57, Overlays' "Check clock"): the measured offset waits in
+  /// [clockCheck] for the user to accept or refuse it. Nothing changes
+  /// until then.
+  Future<void> checkClock(String runId) async {
+    final fusion = _fusions[runId];
+    final named = _named(runId);
+    final alternative = fusion?.alternative;
+    if (named == null || alternative == null || !recordingsEditable(runId)) {
+      return;
+    }
+    final generation = _nextRecordingGeneration(runId);
+    _clocksChecking[runId] = generation;
+    _clockChecks.remove(runId);
+    notifyListeners();
+    RunFusion? result;
+    try {
+      result = await _runFusionTask(
+        runId,
+        _clockJob(named.run, alternative, _decisionOf(runId)),
+      );
+    } on OperationCancelled {
+      // Superseded, or the day closed.
+    } on Object catch (error) {
+      debugPrint('Clocks not compared: $error');
+    } finally {
+      if (_clocksChecking[runId] == generation) _clocksChecking.remove(runId);
+    }
+    if (_disposed) return;
+    if (result != null &&
+        _fusionGenerations[runId] == generation &&
+        identical(_fusions[runId], fusion) &&
+        identical(_named(runId), named)) {
+      _clockChecks[runId] = result;
+    }
+    notifyListeners();
+    _settleFusions();
+  }
+
+  /// Accepts [runId]'s clock check: when its clocks line up, the other
+  /// recording is fused with the measured clock, as Overlays approves a
+  /// fusion; saved with the day.
+  void acceptClock(String runId) {
+    final check = _clockChecks[runId];
+    if (check == null || !check.fused || _disposed) return;
+    final named = _named(runId);
+    if (named == null || named.run.sourceId != check.primarySourceId) return;
+    _clockChecks.remove(runId);
+    _nextRecordingGeneration(runId);
+    _fusions[runId] = check;
+    _recordingsChanged();
+  }
+
+  /// Refuses [runId]'s clock alignment: the other recording is kept beside
+  /// the primary and not fused, and the run's analysis reads the primary
+  /// only. Saved as Overlays saves a removed fusion: the run has no
+  /// `fusion` decision.
+  void refuseClock(String runId) {
+    final fusion = _fusions[runId];
+    final named = _named(runId);
+    final alternative = fusion?.alternative;
+    if (named == null || alternative == null || _disposed) return;
+    final check = _clockChecks.remove(runId);
+    if (fusion!.state == RunFusionState.primaryOnly) {
+      notifyListeners();
+      return;
+    }
+    _nextRecordingGeneration(runId);
+    _fusionTasks.remove(runId)?.cancel();
+    _fusions[runId] = RunFusion.primaryOnly(
+      primary: named.run,
+      alternative: alternative,
+      alignment: check?.alignment ?? fusion.alignment,
+    );
+    _recordingsChanged();
+  }
+
+  // A run's recordings changed how the run is analysed: what reads
+  // channels is calculated again, and the day is saved with it.
+  void _recordingsChanged() {
+    _fusionsChanged();
+    _revision++;
+    _dirty = true;
+    _scheduleRecovery();
+    notifyListeners();
+    _settleFusions();
+  }
+
+  static DayRunsPart _primaryJob(
+    (TelemetryRunProposal, String, int) argument,
+    CancellationCheck cancelled,
+  ) => analyzeNewPrimary(
+    argument.$1,
+    argument.$2,
+    otherRows: argument.$3,
+    cancelled: cancelled,
+  );
+
+  /// Makes [runId]'s other recording its primary (FET-57, Overlays' "Make
+  /// primary"): its laps are derived again in the background and the day
+  /// is grouped and ranked again; every result is calculated again. The
+  /// recording it replaces is kept beside it, not fused, and a layout set
+  /// for the run is not kept, as in Overlays. Saved with the day.
+  Future<void> makePrimary(String runId) async {
+    final fusion = _fusions[runId];
+    final named = _named(runId);
+    final alternative = fusion?.alternative;
+    if (named == null || alternative == null || !recordingsEditable(runId)) {
+      return;
+    }
+    final generation = _nextRecordingGeneration(runId);
+    _fusionTasks.remove(runId)?.cancel();
+    _clockChecks.remove(runId);
+    _primaryChanging[runId] = generation;
+    notifyListeners();
+    final primary = runFromRecording(named.run, alternative);
+    final otherRows = _analysis.rows.where((row) => row.runId != runId).length;
+    final task = runInBackground(_primaryJob, (primary, named.name, otherRows));
+    _primaryTasks[runId] = task;
+    DayRunsPart? part;
+    try {
+      part = await task.result;
+    } on OperationCancelled {
+      // The day closed.
+    } on Object catch (error) {
+      debugPrint('Primary not changed: $error');
+    } finally {
+      if (identical(_primaryTasks[runId], task)) _primaryTasks.remove(runId);
+      if (_primaryChanging[runId] == generation) _primaryChanging.remove(runId);
+    }
+    if (_disposed) return;
+    final current = _named(runId);
+    if (part == null ||
+        _fusionGenerations[runId] != generation ||
+        !identical(current, named) ||
+        !identical(_fusions[runId], fusion)) {
+      notifyListeners();
+      _settleFusions();
+      return;
+    }
+    final index = _runs.indexOf(named);
+    _runs[index] = (run: primary, name: named.name);
+    _pendingRecordings.remove(runId);
+    _fusions[runId] = RunFusion.primaryOnly(
+      primary: primary,
+      alternative: named.run,
+    );
+    final manual = {..._analysis.manualTracks}..remove(runId);
+    _analysis = replaceDayRun(
+      _analysis,
+      runId,
+      part,
+      sourceOrder: runSourceOrder(_analysis, runId, index),
+      manualTracks: manual,
+      exclusions: _exclusions,
+      preferredGroupId: _groupChosen ? _groupId : _savedGroupId,
+    );
+    if (!_groupChosen ||
+        !_analysis.groups.any((group) => group.id == _groupId)) {
+      _groupId = _analysis.chosenGroupId;
+    }
+    _channelRuns = null;
+    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
+      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
+      _declaredSpeedUnits = declaredSpeedUnits;
+    }
+    _explainedFor = null;
+    _additionClock = null;
+    _resetTheoreticalBest();
+    _resetChannelSummaries();
+    _recordingsChanged();
   }
 
   // The fused sessions changed: what reads channels is calculated again.
@@ -2119,6 +2340,10 @@ final class DayResultsController extends ChangeNotifier {
       task.cancel();
     }
     _fusionTasks.clear();
+    for (final task in _primaryTasks.values) {
+      task.cancel();
+    }
+    _primaryTasks.clear();
     final settled = _fusionsSettled;
     _fusionsSettled = null;
     settled?.complete();

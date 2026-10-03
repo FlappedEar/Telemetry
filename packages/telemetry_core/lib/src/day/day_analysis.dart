@@ -301,6 +301,61 @@ DayAnalysis extendDay(
   );
 }
 
+/// [day] with run [runId]'s lap rows, route and messages replaced by
+/// [replacement]'s (the same run read from another recording: a new primary,
+/// FET-57), grouped and ranked again with the user's [manualTracks],
+/// [exclusions] and [preferredGroupId]. Every other run is kept as it was,
+/// in its place; [replacement]'s rows keep the run's place in the day's
+/// order ([DayLapRow.sourceOrder]).
+DayAnalysis replaceDayRun(
+  DayAnalysis day,
+  String runId,
+  DayRunsPart replacement, {
+  required int sourceOrder,
+  Map<String, TrackConfiguration> manualTracks = const {},
+  Map<DayLapReference, String> exclusions = const {},
+  String? preferredGroupId,
+  CancellationCheck? cancelled,
+}) {
+  if (replacement.sources.any((source) => source.runId != runId) ||
+      replacement.rows.any((row) => row.runId != runId)) {
+    throw ArgumentError.value(runId, 'replacement', 'Not only run $runId');
+  }
+  final sources = <TrackGroupingSource>[];
+  var placed = false;
+  for (final source in day.sources) {
+    if (source.runId != runId) {
+      sources.add(source);
+    } else if (!placed) {
+      sources.addAll(replacement.sources);
+      placed = true;
+    }
+  }
+  if (!placed) sources.addAll(replacement.sources);
+  return _group(
+    sortDayLaps([
+      for (final row in day.rows)
+        if (row.runId != runId) row.offRoute ? row.copyWith(offRoute: false) : row,
+      for (final row in replacement.rows) row.copyWith(sourceOrder: sourceOrder),
+    ]),
+    {
+      for (final MapEntry(:key, :value) in day.inferences.entries)
+        if (key != runId) key: value,
+      ...replacement.inferences,
+    },
+    sources,
+    [
+      for (final message in day.runMessages)
+        if (message.runId != runId) message,
+      ...replacement.messages,
+    ],
+    manualTracks,
+    exclusions,
+    preferredGroupId,
+    cancelled,
+  );
+}
+
 /// [day] grouped again with the user's layout name and direction per run in
 /// [manualTracks] (a run left out uses its detected route). Rows and routes
 /// are kept, so this is cheap enough for the interface thread.

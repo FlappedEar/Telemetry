@@ -11,6 +11,10 @@ import 'day_results_controller.dart';
 /// recordings disagree on, a choice between them. While it is being aligned
 /// in the background, a line saying so. Nothing when the session has no
 /// other recording.
+///
+/// Below it, the session's recordings (FET-57): "Check clock" measures how
+/// the two clocks line up, to accept (combine) or refuse (keep apart), and
+/// "Make … primary" reads the session from the other recording.
 class SessionFusion extends StatelessWidget {
   const SessionFusion({
     super.key,
@@ -36,16 +40,88 @@ class SessionFusion extends StatelessWidget {
     }
     if (fusion == null) return const SizedBox.shrink();
     final alternative = fusion.alternativeFormat?.name.toUpperCase() ?? '';
+    var primary = '';
+    for (final named in controller.runs) {
+      if (named.run.id == runId) primary = named.run.format.name.toUpperCase();
+    }
+    if (controller.primaryChanging(runId)) {
+      return Text(
+        l10n.recordingsChangingPrimary(alternative),
+        key: ValueKey('primaryChanging $runId'),
+        style: theme.textTheme.bodySmall,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _state(context, fusion, primary, alternative),
+        if (controller.clockChecking(runId))
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              l10n.clockChecking(primary, alternative),
+              key: ValueKey('clockChecking $runId'),
+              style: theme.textTheme.bodySmall,
+            ),
+          )
+        else if (controller.clockCheck(runId) case final check?)
+          _ClockReview(
+            controller: controller,
+            runId: runId,
+            check: check,
+            primary: primary,
+            alternative: alternative,
+          )
+        else if (controller.recordingsEditable(runId))
+          Wrap(
+            spacing: 4,
+            children: [
+              TextButton(
+                key: ValueKey('checkClock $runId'),
+                onPressed: () => controller.checkClock(runId),
+                child: Text(l10n.recordingsCheckClock),
+              ),
+              if (fusion.fused)
+                TextButton(
+                  key: ValueKey('dontCombine $runId'),
+                  onPressed: () => controller.refuseClock(runId),
+                  child: Text(l10n.recordingsDontCombine),
+                ),
+              TextButton(
+                key: ValueKey('makePrimary $runId'),
+                onPressed: () => controller.makePrimary(runId),
+                child: Text(l10n.recordingsMakePrimary(alternative)),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  // What the other recording does for the session now.
+  Widget _state(
+    BuildContext context,
+    RunFusion fusion,
+    String primary,
+    String alternative,
+  ) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    if (fusion.state == RunFusionState.primaryOnly) {
+      return Text(
+        _combinedWhenReopened(primary, alternative)
+            ? l10n.recordingsKeptApartUntilReopened(alternative)
+            : l10n.recordingsKeptApart(alternative),
+        key: ValueKey('fusionKeptApart $runId'),
+        style: theme.textTheme.bodySmall,
+      );
+    }
     if (!fusion.fused) {
       return Text(
         l10n.fusionNotCombined(alternative, l10n.fusionReason(fusion)),
         key: ValueKey('fusionNotCombined $runId'),
         style: theme.textTheme.bodySmall,
       );
-    }
-    var primary = '';
-    for (final named in controller.runs) {
-      if (named.run.id == runId) primary = named.run.format.name.toUpperCase();
     }
     final added = fusion.channelOrigins.values
         .where((rule) => rule == 'added')
@@ -115,6 +191,106 @@ class SessionFusion extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Whether the day's file cannot keep a VBO session's RCZ apart: it is
+/// lined up and combined again when the day is opened (FET-51), as the file
+/// has no place for a refusal.
+bool _combinedWhenReopened(String primary, String alternative) =>
+    primary == RecordingFormat.vbo.name.toUpperCase() &&
+    alternative == RecordingFormat.rcz.name.toUpperCase();
+
+/// A clock check of a session's recordings, measured and waiting for the
+/// user: what was measured, and accept (only when the clocks line up) or
+/// refuse.
+class _ClockReview extends StatelessWidget {
+  const _ClockReview({
+    required this.controller,
+    required this.runId,
+    required this.check,
+    required this.primary,
+    required this.alternative,
+  });
+
+  final DayResultsController controller;
+  final String runId;
+  final RunFusion check;
+  final String primary;
+  final String alternative;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final alignment = check.alignment;
+    final lines = <String>[
+      check.fused
+          ? l10n.clockAligned
+          : l10n.clockNotAligned(l10n.fusionReason(check)),
+      if (alignment?.offset case final offset?)
+        l10n.clockMeasured(
+          primary,
+          alternative,
+          _offset(offset),
+          '${fixed(alignment!.uncertaintySeconds ?? 0, 2)} s',
+        ),
+      if (alignment?.driftPpm case final drift?)
+        l10n.clockDrift(fixed(drift, 0)),
+      if (alignment != null && alignment.correlation > -1)
+        l10n.clockCorrelation(
+          fixed(alignment.correlation, 3),
+          '${fixed(alignment.overlapSeconds, 0)} s',
+          alignment.usedWindows,
+          alignment.windows.length,
+        ),
+      if (alignment != null)
+        alignment.declaredOffset == null
+            ? l10n.clockNoDeclared
+            : l10n.clockDeclared(_offset(alignment.declaredOffset!)),
+    ];
+    final reopened = _combinedWhenReopened(primary, alternative);
+    return Padding(
+      key: ValueKey('clockReview $runId'),
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final line in lines)
+            Text(line, style: theme.textTheme.bodySmall),
+          const SizedBox(height: 4),
+          Text(
+            l10n.clockRefuseNote(primary, alternative),
+            style: theme.textTheme.bodySmall,
+          ),
+          if (reopened)
+            Text(
+              l10n.clockReopenNote(alternative),
+              key: ValueKey('clockReopenNote $runId'),
+              style: theme.textTheme.bodySmall,
+            ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              FilledButton(
+                key: ValueKey('acceptClock $runId'),
+                onPressed: check.fused
+                    ? () => controller.acceptClock(runId)
+                    : null,
+                child: Text(l10n.clockAccept),
+              ),
+              OutlinedButton(
+                key: ValueKey('refuseClock $runId'),
+                onPressed: () => controller.refuseClock(runId),
+                child: Text(l10n.clockRefuse),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

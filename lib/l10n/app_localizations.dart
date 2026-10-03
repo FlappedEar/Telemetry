@@ -1122,6 +1122,124 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last comparison'**
   String get lapsLastComparison;
+
+  /// Quiet line under a session whose other recording (such as its RCZ, or its VBO after the RCZ was made primary) is kept beside it without being combined: the session's analysis uses its own recording only.
+  ///
+  /// In en, this message translates to:
+  /// **'Its {format} is kept beside it and not combined'**
+  String recordingsKeptApart(String format);
+
+  /// Like recordingsKeptApart, for a VBO session whose RCZ the user refused: the day's file cannot store that choice, so the RCZ is lined up and combined again automatically when the day is opened again.
+  ///
+  /// In en, this message translates to:
+  /// **'Its {format} is kept beside it and not combined until the day is opened again'**
+  String recordingsKeptApartUntilReopened(String format);
+
+  /// Button under a session with two recordings (a VBO and an RCZ): measures again how the other recording's clock lines up with the session's, to accept or refuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Check clock'**
+  String get recordingsCheckClock;
+
+  /// Button under a session with two recordings: the other recording (such as the RCZ) becomes the session's primary recording; its laps and results are calculated again from it.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {format} primary'**
+  String recordingsMakePrimary(String format);
+
+  /// Button under a session combined with its other recording: keep the other recording beside it without combining it (refuse the alignment).
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t combine'**
+  String get recordingsDontCombine;
+
+  /// Quiet line under a session while its other recording (such as the RCZ) is being read as its primary recording in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the {format} as this session\'s recording…'**
+  String recordingsChangingPrimary(String format);
+
+  /// Quiet line under a session while the clocks of its two recordings are being compared in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparing the clocks of the {primary} and the {alternative}…'**
+  String clockChecking(String primary, String alternative);
+
+  /// Result of a session's clock check: the other recording's clock lines up with the session's recording.
+  ///
+  /// In en, this message translates to:
+  /// **'The clocks line up.'**
+  String get clockAligned;
+
+  /// Result of a session's clock check when the recordings could not be lined up in time; reason is one of the fusionReason texts.
+  ///
+  /// In en, this message translates to:
+  /// **'The clocks cannot be lined up: {reason}.'**
+  String clockNotAligned(String reason);
+
+  /// The clock offset measured between a session's two recordings. offset is signed, such as +0.10 s; uncertainty such as 0.02 s.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured from the speed traces: {primary} time = {alternative} time {offset} ± {uncertainty}'**
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  );
+
+  /// How fast the two recordings' clocks drift apart, in parts per million, as measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock drift: {ppm} ppm'**
+  String clockDrift(String ppm);
+
+  /// Evidence of a clock check: how closely the two speed traces match, over how long both recordings run, and how many stretches of that overlap give the same offset.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed correlation {correlation} over {overlap} of overlap; {used} of {windows} stretches agree'**
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  );
+
+  /// Evidence of a clock check: the offset the two loggers' own start times give, such as +0.10 s.
+  ///
+  /// In en, this message translates to:
+  /// **'The loggers\' clocks say {offset}'**
+  String clockDeclared(String offset);
+
+  /// Evidence of a clock check: at least one recording has no start time of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'The loggers do not both state a start time'**
+  String get clockNoDeclared;
+
+  /// Button after a clock check whose clocks line up: combine the other recording with the session using the measured offset.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept and combine'**
+  String get clockAccept;
+
+  /// Button after a clock check: do not use the measured alignment; the other recording is kept beside the session without combining it.
+  ///
+  /// In en, this message translates to:
+  /// **'Refuse'**
+  String get clockRefuse;
+
+  /// Explains the Refuse button of a clock check.
+  ///
+  /// In en, this message translates to:
+  /// **'Refusing keeps the {alternative} beside the session without combining it; its analysis then uses the {primary} only.'**
+  String clockRefuseNote(String primary, String alternative);
+
+  /// Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.
+  ///
+  /// In en, this message translates to:
+  /// **'The day\'s file cannot keep a refusal: when the day is opened again, the {alternative} is lined up and combined again.'**
+  String clockReopenNote(String alternative);
 }
 
 class _AppLocalizationsDelegate

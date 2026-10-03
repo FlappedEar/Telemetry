@@ -102,8 +102,32 @@
   <li>If lining up an RCZ you just added fails, the app says <em>RCZ added to Session 2, but it could not be combined; it is kept and tried again when the day opens.</em> and the row says <em>Not combined with its RCZ: lining them up failed</em>.</li>
   <li>When the clocks cannot be lined up, nothing is combined and the row says why in one line, for example <em>Not combined with its RCZ: their speed traces do not line up clearly</em>.</li>
 </ul>
-<p>Laps, lap times and the ranking always come from the VBO alone, as does the theoretical best; the combined channels are used by lap charts, comparisons and the Car and Driver cards. Otherwise a session whose RCZ added nothing and agrees with its VBO looks as before.</p>
+<p>Laps, lap times and the ranking always come from the session's primary recording alone (the VBO, unless you <a href="#primary">make the RCZ primary</a>), as does the theoretical best; the combined channels are used by lap charts, comparisons and the Car and Driver cards. Otherwise a session whose RCZ added nothing and agrees with its VBO looks as before.</p>
 <p>When a saved day's RCZ is not where the day says, or the file there is another recording, a card lists it (<em>The RCZ of 1 session could not be used</em>) with <strong>Find recordings in a folder…</strong>; the session uses its VBO alone until then.</p>
+
+<h4 id="clock">Checking the clock</h4>
+<p>Under a session with both recordings, <strong>Check clock</strong> lines up the two clocks again and shows what was measured, before anything changes (the row says <em>Comparing the clocks of the VBO and the RCZ…</em> meanwhile):</p>
+<ul>
+  <li>whether the clocks line up (<em>The clocks line up.</em>), or why not, for example <em>The clocks cannot be lined up: their speed traces do not line up clearly.</em>;</li>
+  <li>the measured offset, for example <em>Measured from the speed traces: VBO time = RCZ time +0.10 ± 0.02 s</em>, and the clock drift when one can be measured;</li>
+  <li>how well the speed traces match over the time both recorded, and what the loggers' own start times say.</li>
+</ul>
+<p>Then choose:</p>
+<ul>
+  <li><strong>Accept and combine</strong> (only when the clocks line up) combines the RCZ with the measured offset. Your choices for channels the two disagree on are kept.</li>
+  <li><strong>Refuse</strong> keeps the RCZ beside the session without combining it: the session's charts and cards use its primary recording only, and the row says <em>Its RCZ is kept beside it and not combined until the day is opened again</em>.</li>
+</ul>
+<p><strong>Don't combine</strong>, under a combined session, refuses straight away, without a new check.</p>
+<div class="note"><p>A refusal lasts until the day is opened again. The day file, which FlappedEar Overlays reads too, saves a refused RCZ as Overlays saves a removed fusion: as a recording kept with the session and not combined. It has no place to record that you refused it, so when the day opens again the app lines up that RCZ and combines it again by itself. Check the clock again and refuse it again if you need to.</p></div>
+
+<h4 id="primary">Choosing the primary recording</h4>
+<p>A session's primary recording gives its laps, lap times and ranking. It is the VBO when both were imported. <strong>Make RCZ primary</strong> under the session makes the RCZ its primary recording instead, as Overlays' Run details does (<strong>Make VBO primary</strong> switches back):</p>
+<ul>
+  <li>While the RCZ is read, the row says <em>Reading the RCZ as this session's recording…</em>. The day's laps, groups and ranking are then worked out again with the session's laps from the RCZ, and every result is calculated again from them.</li>
+  <li>The other recording is kept beside the session and not combined (<em>Its VBO is kept beside it and not combined</em>). The day keeps it this way when it is opened again.</li>
+  <li>A circuit layout you set for the session is not carried over: the new recording starts with its detected route. Laps you excluded in the old recording do not apply to the new one.</li>
+</ul>
+<p>The day then has changes until you save it.</p>
 
 <h2 id="notes">Notes</h2>
 <p>At the bottom, <strong>Notes</strong> lists messages from the analysis, each starting with the session it is about. Sessions whose circuit could not be identified are listed under their own heading; their laps are not compared.</p>

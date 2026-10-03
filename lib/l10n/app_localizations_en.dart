@@ -679,4 +679,92 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Last comparison';
+
+  @override
+  String recordingsKeptApart(String format) {
+    return 'Its $format is kept beside it and not combined';
+  }
+
+  @override
+  String recordingsKeptApartUntilReopened(String format) {
+    return 'Its $format is kept beside it and not combined until the day is opened again';
+  }
+
+  @override
+  String get recordingsCheckClock => 'Check clock';
+
+  @override
+  String recordingsMakePrimary(String format) {
+    return 'Make $format primary';
+  }
+
+  @override
+  String get recordingsDontCombine => 'Don\'t combine';
+
+  @override
+  String recordingsChangingPrimary(String format) {
+    return 'Reading the $format as this session\'s recording…';
+  }
+
+  @override
+  String clockChecking(String primary, String alternative) {
+    return 'Comparing the clocks of the $primary and the $alternative…';
+  }
+
+  @override
+  String get clockAligned => 'The clocks line up.';
+
+  @override
+  String clockNotAligned(String reason) {
+    return 'The clocks cannot be lined up: $reason.';
+  }
+
+  @override
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  ) {
+    return 'Measured from the speed traces: $primary time = $alternative time $offset ± $uncertainty';
+  }
+
+  @override
+  String clockDrift(String ppm) {
+    return 'Clock drift: $ppm ppm';
+  }
+
+  @override
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  ) {
+    return 'Speed correlation $correlation over $overlap of overlap; $used of $windows stretches agree';
+  }
+
+  @override
+  String clockDeclared(String offset) {
+    return 'The loggers\' clocks say $offset';
+  }
+
+  @override
+  String get clockNoDeclared => 'The loggers do not both state a start time';
+
+  @override
+  String get clockAccept => 'Accept and combine';
+
+  @override
+  String get clockRefuse => 'Refuse';
+
+  @override
+  String clockRefuseNote(String primary, String alternative) {
+    return 'Refusing keeps the $alternative beside the session without combining it; its analysis then uses the $primary only.';
+  }
+
+  @override
+  String clockReopenNote(String alternative) {
+    return 'The day\'s file cannot keep a refusal: when the day is opened again, the $alternative is lined up and combined again.';
+  }
 }

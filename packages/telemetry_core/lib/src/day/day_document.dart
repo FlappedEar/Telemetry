@@ -185,7 +185,9 @@ final class ComparisonDecisions {
 /// written as a source of its run, and a fused run gets its `fusion`
 /// decision. A run whose alternative could not be aligned or used keeps the
 /// document's decision as it was (no longer bound to its recordings, so not
-/// applied), and a run without one keeps its sources as they were.
+/// applied), a run whose alternative the user keeps apart
+/// ([RunFusionState.primaryOnly]) has its decision removed, and a run
+/// without one keeps its sources as they were.
 /// [pendingAlternatives] are alternative recordings not fused yet, by run
 /// id: each is written as a source, so the day opened again aligns it, and
 /// the run's decision stays as it was.
@@ -287,6 +289,9 @@ Map<String, Object?> dayDocument({
     sources['telemetry'] = telemetry;
     if (fusion?.decision case final decision? when alternativeWritten && pending == null) {
       json['fusion'] = decision;
+    } else if (fusion?.state == RunFusionState.primaryOnly && pending == null) {
+      // Refused, or the primary changed: no fusion, as Overlays removes it.
+      json.remove('fusion');
     }
     if (_object(sources['video']) case final video?) {
       sources['video'] = _rebaseVideo(video, previousPath, projectPath);
@@ -887,6 +892,7 @@ final class DocumentAlternative {
     this.fingerprint = const {},
     this.decision,
     this.relinked = false,
+    this.automatic = true,
   });
 
   final String runId;
@@ -914,6 +920,11 @@ final class DocumentAlternative {
   /// [path] was found somewhere else than the document says.
   final bool relinked;
 
+  /// Without a [decision], whether it is aligned and fused when the day
+  /// opens: the RCZ of a VBO run is (FET-51); the VBO of an RCZ run, as a
+  /// run has after "Make primary" (FET-57), is only kept beside it.
+  final bool automatic;
+
   /// The format its name says, or null.
   RecordingFormat? get format => recordingFormatOf(displayPath);
 
@@ -930,8 +941,10 @@ final class DocumentAlternative {
 }
 
 /// The alternative recording of each run of [runs] that has one: the source
-/// its `fusion` decision names, else the first RCZ source of a VBO run.
-/// [relinked] overrides where it is, by run id. Nothing is read.
+/// its `fusion` decision names, else the first RCZ source of a VBO run
+/// ([DocumentAlternative.automatic]), else the first VBO source of an RCZ
+/// run (kept beside it, not fused). [relinked] overrides where it is, by run
+/// id. Nothing is read.
 Map<String, DocumentAlternative> _openAlternatives(
   List<Map<String, Object?>> runs,
   String path,
@@ -945,24 +958,28 @@ Map<String, DocumentAlternative> _openAlternatives(
     if (primary == null || telemetry is! List) continue;
     String displayPath(Map<String, Object?> source) =>
         fet.SourceReference.fromJson(_object(source['reference']) ?? const {}).displayPath;
-    final vbo = recordingFormatOf(displayPath(primary)) == RecordingFormat.vbo;
+    final primaryFormat = recordingFormatOf(displayPath(primary));
+    final vbo = primaryFormat == RecordingFormat.vbo;
+    final rcz = primaryFormat == RecordingFormat.rcz;
     final decision = _object(run['fusion']);
     Map<String, Object?>? source;
+    Map<String, Object?>? kept;
     for (final value in telemetry) {
       final candidate = _object(value);
       final id = candidate?['id'];
       if (candidate == null || id == primary['id'] || id is! String) continue;
       if (_object(candidate['reference']) == null) continue;
+      final format = recordingFormatOf(displayPath(candidate));
       final chosen = decision != null && decision['alternativeSourceId'] == id;
-      final automatic =
-          decision == null &&
-          vbo &&
-          recordingFormatOf(displayPath(candidate)) == RecordingFormat.rcz;
+      final automatic = decision == null && vbo && format == RecordingFormat.rcz;
       if (chosen || (automatic && source == null)) {
         source = candidate;
         if (chosen) break;
       }
+      if (decision == null && rcz && format == RecordingFormat.vbo) kept ??= candidate;
     }
+    final automatic = source != null;
+    source ??= kept;
     if (source == null) continue;
     final reference = fet.SourceReference.fromJson(_object(source['reference'])!);
     final stored = reference.resolve(path);
@@ -976,6 +993,7 @@ Map<String, DocumentAlternative> _openAlternatives(
       fingerprint: _object(_object(source['reference'])?['fingerprint']) ?? const {},
       decision: decision,
       relinked: file.isNotEmpty && file != stored,
+      automatic: automatic,
     );
   }
   return result;
@@ -990,7 +1008,9 @@ Map<String, DocumentAlternative> _openAlternatives(
 /// decision's rules for channels both still measure ([keepFusionChoices]),
 /// and its source entry is updated when the day is saved
 /// ([RunFusion.documentChanged]); otherwise it is "a different recording" and
-/// nothing is fused. A source with neither a content SHA-256 nor a
+/// nothing is fused. An alternative that is not [DocumentAlternative.automatic]
+/// and has no decision is checked and kept beside the primary
+/// ([RunFusionState.primaryOnly]), not aligned. A source with neither a content SHA-256 nor a
 /// fingerprint is used only when it is the same drive, never by its path
 /// alone. Takes seconds: run it in
 /// the background.
@@ -1039,7 +1059,9 @@ RunFusion resolveDocumentAlternative(
     telemetry: loaded.telemetry,
     laps: loaded.laps,
   );
-  final fusion = fuseWithDecision(primary, recording, alternative.decision, cancelled: cancelled);
+  final fusion = alternative.decision == null && !alternative.automatic
+      ? RunFusion.primaryOnly(primary: primary, alternative: recording)
+      : fuseWithDecision(primary, recording, alternative.decision, cancelled: cancelled);
   return changed || alternative.relinked ? fusion.withDocumentChanged() : fusion;
 }
 

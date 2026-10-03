@@ -697,4 +697,92 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Ostatnie porównanie';
+
+  @override
+  String recordingsKeptApart(String format) {
+    return 'Plik $format jest zachowany obok i nie jest łączony';
+  }
+
+  @override
+  String recordingsKeptApartUntilReopened(String format) {
+    return 'Plik $format jest zachowany obok i nie jest łączony do ponownego otwarcia dnia';
+  }
+
+  @override
+  String get recordingsCheckClock => 'Sprawdź zegar';
+
+  @override
+  String recordingsMakePrimary(String format) {
+    return 'Ustaw $format jako główny';
+  }
+
+  @override
+  String get recordingsDontCombine => 'Nie łącz';
+
+  @override
+  String recordingsChangingPrimary(String format) {
+    return 'Wczytywanie $format jako nagrania tej sesji…';
+  }
+
+  @override
+  String clockChecking(String primary, String alternative) {
+    return 'Porównywanie zegarów $primary i $alternative…';
+  }
+
+  @override
+  String get clockAligned => 'Zegary są zgrane.';
+
+  @override
+  String clockNotAligned(String reason) {
+    return 'Nie da się zgrać zegarów: $reason.';
+  }
+
+  @override
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  ) {
+    return 'Zmierzono z przebiegów prędkości: czas $primary = czas $alternative $offset ± $uncertainty';
+  }
+
+  @override
+  String clockDrift(String ppm) {
+    return 'Dryf zegara: $ppm ppm';
+  }
+
+  @override
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  ) {
+    return 'Korelacja prędkości $correlation na $overlap wspólnego zapisu; zgodne odcinki: $used z $windows';
+  }
+
+  @override
+  String clockDeclared(String offset) {
+    return 'Zegary rejestratorów podają $offset';
+  }
+
+  @override
+  String get clockNoDeclared => 'Nie oba rejestratory podają czas startu';
+
+  @override
+  String get clockAccept => 'Akceptuj i połącz';
+
+  @override
+  String get clockRefuse => 'Odrzuć';
+
+  @override
+  String clockRefuseNote(String primary, String alternative) {
+    return 'Odrzucenie zachowuje $alternative obok sesji bez łączenia; jej analiza korzysta wtedy tylko z $primary.';
+  }
+
+  @override
+  String clockReopenNote(String alternative) {
+    return 'Plik dnia nie zapamiętuje odrzucenia: po ponownym otwarciu dnia $alternative zostanie znów dopasowany i połączony.';
+  }
 }
