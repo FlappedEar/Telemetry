@@ -32,6 +32,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # The version flutter_localizations pins; gen_l10n needs it directly.
+  intl: any
   desktop_drop: ^0.8.4
   file_selector: ^1.1.0
   path: ^1.9.1
@@ -61,6 +65,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # Generates lib/l10n/app_localizations*.dart from the ARB files (l10n.yaml).
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
