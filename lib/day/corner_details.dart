@@ -375,6 +375,12 @@ Future<void> showCornerDetails(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    // A strip of the page stays visible above a long sheet, so a tap there
+    // closes it on a small phone too.
+    constraints: BoxConstraints(
+      maxWidth: 640,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+    ),
     builder: (context) => SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
