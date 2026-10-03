@@ -263,6 +263,24 @@ a background isolate.
   and in total. `comparisonGgScatter`, `comparisonTrailBraking` and
   `comparisonDrivingStates` compute them for both laps of a `LapComparison`
   over a range of its axis.
+- Recording alignment and channel fusion (Overlays `TelemetrySyncEngine`,
+  `RecordingAlignment` and `ChannelFusion`, `d4d1039`):
+  `synchronizeTelemetry` finds the offset between two speed traces (a 1 Hz
+  search ranked by significance, refined at 10 Hz). `alignRecordings`
+  (`recording-alignment-v1`) describes how an alternative recording lines up
+  with a run's primary: the declared offset from the loggers' start
+  timestamps, the measured offset and drift from windows along the overlap,
+  their uncertainty, and a status (aligned, ambiguous, conflicting,
+  insufficient) with its reason; a match that repeats a lap away is decided
+  only by an agreeing declared clock. Nothing is applied to either recording.
+  `fuseChannels` (`channel-fusion-v1`) brings an aligned alternative's
+  channels onto the primary clock: a channel only the alternative has is
+  added, one both have keeps the primary unless a `FusionPolicy` rule
+  (`primaryOnly`, `fillGaps`, `preferAlternative`) says otherwise, a
+  disagreement without a rule is reported as unresolved
+  (`fusionConflictTolerance`), units must match exactly and samples are
+  never resampled; every output segment keeps its source and clock.
+  `fusedSession` gives the primary session with the fusion applied.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -324,6 +342,11 @@ states and coasting (`GgPairs.cpp`, `DrivingStates.cpp`,
 `d4d1039`) against `test/parity/driving_reference.json` from
 `tool/cpp_driving_dump`, over the synthetic recordings of
 `test/parity/driving` (`tool/generate_driving_corpus.py`).
+`test/parity/fusion_parity_test.dart` does the same for recording alignment
+and channel fusion (`TelemetrySyncEngine.cpp`, `RecordingAlignment.cpp` and
+`ChannelFusion.cpp`, `d4d1039`) against `test/parity/fusion_reference.json`
+from `tool/cpp_fusion_dump`, over synthetic sessions built identically on
+both sides; every value is equal, with no tolerance.
 
 Known, deliberate differences:
 
@@ -371,6 +394,16 @@ Known, deliberate differences:
   state's time, braking while cornering and coasting of both laps over the
   shown range) is Telemetry's own; Overlays shows trail braking per segment
   and coasting for one lap only. It uses the same ported functions.
+- **Sync ranking key.** The coarse sync search ranks offsets by
+  `atanh(r) * sqrt(n - 3)`. The port reproduces glibc's generic `atanh`;
+  on x86-64 CPUs with FMA, glibc uses an FMA build of `log1p` that can differ
+  in the last bit, so Overlays itself can rank two offsets within one ULP of
+  each other differently by CPU. The parity cases and the real day give the
+  same results with both builds.
+- **Fusion unit comparison.** Units are compared trimmed and case-folded
+  per character; Qt's `QString::trimmed` and case-insensitive comparison can
+  differ from Dart's `trim` and this folding for rare characters (for
+  example U+FEFF, which Dart trims and Qt keeps).
 - **Start/finish seam.** A lap's last projected sample can sit exactly where
   the axis wraps; Overlays and this port may then place it at the axis
   length or at 0 (a last-digit difference in the projection's distance
@@ -391,3 +424,7 @@ Real recordings are private (`FlappedEar/refdata`) and never committed. Point
 `FLAPPEDEAR_REAL_VBO` at one to run `test/real_vbo_test.dart`; report its result
 separately from the synthetic tests. `FLAPPEDEAR_REAL_RCZ` does the same for
 `test/rcz/rcz_parser_test.dart`; it prints summary figures only.
+`FET_FUSION_DAY` names a folder of a real day for
+`test/fusion/real_fusion_test.dart`, which aligns and fuses each VBO and RCZ
+pair of the import plan and prints summary figures only (see
+[tool/README.md](tool/README.md) to compare it with Overlays' C++).
