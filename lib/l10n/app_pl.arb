@@ -113,5 +113,21 @@
   "settingsAllUnlabelled": "Jego nagrania nie podają jednostki prędkości.",
   "settingsSomeUnlabelled": "{count, plural, =1{1 z jego nagrań nie podaje jednostki prędkości.} few{{count} z jego nagrań nie podają jednostki prędkości.} other{{count} z jego nagrań nie podaje jednostki prędkości.}}",
   "close": "Zamknij",
-  "appleMapLegal": "Informacje prawne"
+  "appleMapLegal": "Informacje prawne",
+  "sessionDetailsHeading": "Szczegóły sesji",
+  "sessionDetailsNone": "Brak warunków, zmian w ustawieniach i notatek",
+  "sessionDetailsTitle": "Szczegóły: {session}",
+  "sessionDetailsName": "Nazwa",
+  "sessionDetailsNameRequired": "Sesja musi mieć nazwę.",
+  "sessionDetailsConditions": "Warunki",
+  "sessionDetailsConditionsHint": "Sucho, 18 °C",
+  "sessionDetailsSetup": "Zmiany w ustawieniach",
+  "sessionDetailsSetupHint": "Opony +0.1 bar",
+  "sessionDetailsNotes": "Notatki",
+  "sessionDetailsSaved": "Zapisywane w pliku dnia, który czyta też FlappedEar Overlays.",
+  "detailsInvalid": "Tego tekstu nie można zapisać.",
+  "renameDayMenu": "Zmień nazwę dnia…",
+  "renameDayTitle": "Zmiana nazwy dnia",
+  "renameDayName": "Nazwa dnia",
+  "renameDayRequired": "Dzień musi mieć nazwę."
 }

@@ -238,6 +238,10 @@ Commands (each prints JSON):
   once more. Prints `inspect` of the result.
 - `resave <project> [<target>]`: Overlays opens the day and saves it (Save
   As to `<target>`). Prints `inspect` of the day as opened and as saved.
+- `metadata <project> <target> <run> <name> <notes> <conditions> <setupChanges>`:
+  Overlays opens the day, edits the run at index `<run>` with its own
+  `AnalysisController::updateRunMetadata` (as its session details editor
+  does) and saves the day at `<target>`. Prints `inspect` of the result.
 - `inspect <project>...`: what Overlays sees: validity, `documentState`,
   each run's name, notes, conditions, setup changes and approved segments
   (count, names, revision), every lap section ("Session 2 · LAP 3", times,
@@ -258,6 +262,13 @@ fixtures' recordings:
   defaults (so no closed object gains a key) and keeps `documentState`.
   Telemetry opens it again with the same day and results, and its next save
   keeps everything Overlays wrote, with `savedRevision` one higher.
+- **Session details** (FET-52). The same edits of a session's name, notes,
+  conditions and setup changes (spaces around a name, texts with spaces, a
+  blank text on a record without it, a cleared text, Polish text and symbols)
+  made in Telemetry and by Overlays' `updateRunMetadata` on the same day give
+  the same document, and each app sees the other's edit, laps named after
+  it. A day Telemetry renamed opens in Overlays with its name, and Overlays'
+  save keeps it.
 - **Overlays → Telemetry → Overlays.** `create` builds a day; Telemetry
   opens it with the same sessions, laps, exclusions, group, segments and
   results, and its save equals Overlays' document but for `savedRevision`

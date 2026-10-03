@@ -781,6 +781,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Legal'**
   String get appleMapLegal;
+
+  /// Heading of the day page's list of sessions with their conditions, setup changes and notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Session details'**
+  String get sessionDetailsHeading;
+
+  /// Shown under a session that has no conditions, setup changes or notes.
+  ///
+  /// In en, this message translates to:
+  /// **'No conditions, setup changes or notes'**
+  String get sessionDetailsNone;
+
+  /// Title of the dialog that edits a session's name, conditions, setup changes and notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of {session}'**
+  String sessionDetailsTitle(String session);
+
+  /// Text field label: the session's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sessionDetailsName;
+
+  /// Shown under an empty session name.
+  ///
+  /// In en, this message translates to:
+  /// **'A session needs a name.'**
+  String get sessionDetailsNameRequired;
+
+  /// Text field label and list label: the weather and track conditions of a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get sessionDetailsConditions;
+
+  /// Example conditions in the empty text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Dry, 18 °C'**
+  String get sessionDetailsConditionsHint;
+
+  /// Text field label and list label: what was changed on the car before the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup changes'**
+  String get sessionDetailsSetup;
+
+  /// Example setup change in the empty text field. Keep the decimal point.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres +0.1 bar'**
+  String get sessionDetailsSetupHint;
+
+  /// Text field label and list label: the driver's notes on a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get sessionDetailsNotes;
+
+  /// Explains where a session's details are kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in the day\'s file, which FlappedEar Overlays reads too.'**
+  String get sessionDetailsSaved;
+
+  /// Shown when an entered name or text contains characters that cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'This text cannot be saved.'**
+  String get detailsInvalid;
+
+  /// Menu item that opens the dialog renaming the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename day…'**
+  String get renameDayMenu;
+
+  /// Title of the dialog that renames the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename day'**
+  String get renameDayTitle;
+
+  /// Text field label: the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Day name'**
+  String get renameDayName;
+
+  /// Shown under an empty day name.
+  ///
+  /// In en, this message translates to:
+  /// **'A day needs a name.'**
+  String get renameDayRequired;
 }
 
 class _AppLocalizationsDelegate
