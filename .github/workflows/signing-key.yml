@@ -4,10 +4,12 @@ name: Keep the Android signing key
 # see ci.yml and release.yml). GitHub removes a cache that nobody has used for
 # seven days; CI would then make a new key, and phones with the app installed
 # would refuse every later APK as an update. Restoring the cache counts as a
-# use, so this restores it every three days, whether or not main builds.
+# use, so this restores it every day, whether or not main builds. GitHub
+# turns scheduled workflows off after 60 days without repository activity;
+# turn it back on in the Actions tab if that happens.
 on:
   schedule:
-    - cron: '17 3 */3 * *'
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:

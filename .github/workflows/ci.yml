@@ -187,7 +187,7 @@ jobs:
       # kept in the Actions cache, so APKs from later main builds install as
       # updates and keep the app's data; the key never enters the repository.
       # Caches from main are shared with pull requests; a cache unused for
-      # seven days expires, so signing-key.yml restores it every three days.
+      # seven days expires, so signing-key.yml restores it every day.
       - uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
