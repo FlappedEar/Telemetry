@@ -233,6 +233,22 @@ a background isolate.
   implausible reading or a placeholder zero, and never inventing a channel).
   `dayComparisonCandidates`, `dayLapsComparable`, `dayBestComparisonLap` and
   `dayComparisonLap` choose the laps on a day. Video is not ported.
+- G-G, driving states and coasting (Overlays `GgPairs`, `DrivingStates`,
+  `CoastingAnalysis` and the `comparisonGgScatter`, `comparisonTrailBraking`
+  and `outingLapCoasting` functions of its app, `d4d1039`): `buildGgPairs`
+  pairs longitudinal and lateral G on the longitudinal clock (lateral
+  interpolated only within its gap threshold, m/s² converted, other units
+  refused, beyond ±4 g excluded and counted), `computeGgPeaks` gives the
+  observed lateral, braking, acceleration and combined peaks from every pair
+  and `decimateGgPoints` thins the points to draw, keeping the peaks.
+  `classifyDrivingStates` finds braking, accelerating, cornering and coasting
+  intervals with their provenance: measured from the pedals, calculated from
+  a "-calc" channel, or inferred from longitudinal G only when the recording
+  has no such pedal channel; a gap is unknown, never bridged.
+  `summarizeCoasting` gives a lap's coasting by episode, by approved segment
+  and in total. `comparisonGgScatter`, `comparisonTrailBraking` and
+  `comparisonDrivingStates` compute them for both laps of a `LapComparison`
+  over a range of its axis.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -288,6 +304,12 @@ Analyzer of two compared laps (`comparisonSegmentMetrics`,
 observations of Overlays' app, `d4d1039`) against
 `test/parity/corner_analyzer_reference.json` from
 `tool/cpp_corner_analyzer_dump`.
+`test/parity/driving_parity_test.dart` does the same for G-G, driving
+states and coasting (`GgPairs.cpp`, `DrivingStates.cpp`,
+`CoastingAnalysis.cpp` and the matching functions of Overlays' app,
+`d4d1039`) against `test/parity/driving_reference.json` from
+`tool/cpp_driving_dump`, over the synthetic recordings of
+`test/parity/driving` (`tool/generate_driving_corpus.py`).
 
 Known, deliberate differences:
 
@@ -331,6 +353,15 @@ Known, deliberate differences:
 - **A comparison** is built from the two laps' recordings the day already
   holds; Overlays loads and verifies each lap from the project
   (`loadOutingLapDetail`) and keeps its pair in the document.
+- **Driving states of a comparison.** `comparisonDrivingStates` (every
+  state's time, braking while cornering and coasting of both laps over the
+  shown range) is Telemetry's own; Overlays shows trail braking per segment
+  and coasting for one lap only. It uses the same ported functions.
+- **Start/finish seam.** A lap's last projected sample can sit exactly where
+  the axis wraps; Overlays and this port may then place it at the axis
+  length or at 0 (a last-digit difference in the projection's distance
+  arithmetic). Positions derived from that one sample can differ; times and
+  every value of the states themselves do not.
 
 ## Development
 
