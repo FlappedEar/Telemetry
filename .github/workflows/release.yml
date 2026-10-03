@@ -190,6 +190,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Only the release notes are needed from the repository.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: docs/release-notes
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -221,9 +225,17 @@ jobs:
           (cd dist && shasum -a 256 FlappedEar-Telemetry-* > SHA256SUMS.txt)
           prerelease=
           case "$VERSION" in 0.*) prerelease=--prerelease ;; esac
+          # The written notes for this version (docs/release-notes/vX.Y.Z.md)
+          # come first when there are any; GitHub's list of merged pull
+          # requests follows either way.
+          notes="docs/release-notes/v$VERSION.md"
+          {
+            if [ -f "$notes" ]; then cat "$notes"; echo; fi
+            echo "Install steps: https://flappedear.github.io/Telemetry/install.html"
+          } > "$RUNNER_TEMP/notes.md"
           gh release create "$tag" dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "FlappedEar Telemetry $VERSION" \
             --generate-notes $prerelease \
-            --notes "Install steps: https://flappedear.github.io/Telemetry/install.html"
+            --notes-file "$RUNNER_TEMP/notes.md"
