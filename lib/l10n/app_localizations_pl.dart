@@ -487,10 +487,137 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appleMapLegal => 'Informacje prawne';
 
   @override
-  String get lapsCompareTwo => 'Porównaj dwa okrążenia';
+  String get segmentPickOnMap => 'Wskaż na mapie';
 
   @override
-  String get lapsLastComparison => 'Ostatnie porównanie';
+  String get segmentPickActive => 'Dotknij mapy… (anuluj)';
+
+  @override
+  String get segmentPickBannerStart =>
+      'Dotknij linii toru, aby ustawić początek';
+
+  @override
+  String get segmentPickBannerEnd => 'Dotknij linii toru, aby ustawić koniec';
+
+  @override
+  String get segmentPickBannerSplit =>
+      'Dotknij linii toru, aby wskazać miejsce podziału';
+
+  @override
+  String get segmentPickAmbiguous =>
+      'W pobliżu przebiega inny fragment toru. Ustaw odległość przyciskami.';
+
+  @override
+  String get segmentPickFar => 'Dotknij linii przejazdu okrążenia.';
+
+  @override
+  String get segmentPickNoTrace =>
+      'Ślad okrążenia nie jest dostępny do wskazywania.';
+
+  @override
+  String get segmentPickOutside =>
+      'Aby podzielić segment, wskaż punkt wewnątrz niego.';
+
+  @override
+  String get variabilityHeading => 'Powtarzalność w zakrętach';
+
+  @override
+  String get variabilityIntro =>
+      'Jak bardzo każdy zakręt zmienia się z okrążenia na okrążenie w okrążeniach grupy: typowa to mediana, rozrzut to środkowa połowa okrążeń (rozstęp ćwiartkowy), z co najmniej 3 okrążeń. To obserwacje, nie przyczyny.';
+
+  @override
+  String get variabilityNone =>
+      'Żaden zakręt nie został zmierzony na wystarczającej liczbie okrążeń.';
+
+  @override
+  String get variabilityNotMeasured => 'Nie zmierzono na tych okrążeniach.';
+
+  @override
+  String variabilityLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia',
+      many: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get variabilityMeasured => 'zmierzony';
+
+  @override
+  String get variabilityInferred => 'wywnioskowany';
+
+  @override
+  String variabilitySpread(String label, String spread, String tail) {
+    return '$label: rozrzut $spread · $tail';
+  }
+
+  @override
+  String variabilityTypical(
+    String label,
+    String typical,
+    String spread,
+    String tail,
+  ) {
+    return '$label: typowa $typical · rozrzut $spread · $tail';
+  }
+
+  @override
+  String variabilityTooFew(String label, String tail) {
+    return '$label: za mało okrążeń ($tail)';
+  }
+
+  @override
+  String get variabilityBraking => 'Punkt hamowania';
+
+  @override
+  String get variabilityApex => 'Prędkość na wierzchołku';
+
+  @override
+  String get variabilityMinimum => 'Prędkość minimalna';
+
+  @override
+  String get variabilityExit => 'Prędkość na wyjściu';
+
+  @override
+  String get variabilityPickup => 'Powrót do gazu';
+
+  @override
+  String variabilityLine(String spread, String accuracy) {
+    return 'Linia: rozrzut $spread m · $accuracy';
+  }
+
+  @override
+  String variabilityGpsAccuracy(String meters) {
+    return 'dokładność GPS około $meters m';
+  }
+
+  @override
+  String get variabilityGpsUnknown => 'dokładność GPS nie jest zapisana';
+
+  @override
+  String get variabilityLineUnresolved => ' · nie do odróżnienia od błędu GPS';
+
+  @override
+  String get calculateAgain => 'Oblicz ponownie';
+
+  @override
+  String get retryRecordings => 'Ponów odczyt nagrań';
+
+  @override
+  String get retryRecordingsLooking => 'Otwieranie…';
+
+  @override
+  String get retryRecordingsSaveFirst =>
+      'Najpierw zapisz dzień, potem ponów odczyt nagrań.';
+
+  @override
+  String get retryRecordingsStill =>
+      'Nagrania nadal nie są tam, gdzie wskazuje dzień.';
 
   @override
   String get sessionDetailsHeading => 'Szczegóły sesji';
@@ -543,4 +670,31 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get renameDayRequired => 'Dzień musi mieć nazwę.';
+
+  @override
+  String get retryRecordingsWaitAdding =>
+      'Poczekaj, aż nagrania zostaną dodane, i spróbuj ponownie.';
+
+  @override
+  String get retryRecordingsAddedMeanwhile =>
+      'W międzyczasie dodano nagrania. Ponów odczyt nagrań jeszcze raz.';
+
+  @override
+  String get retryRecordingsNone =>
+      'Nie udało się otworzyć żadnego nagrania dnia, więc dzień pozostaje bez zmian.';
+
+  @override
+  String retryRecordingsFailed(String reason) {
+    return 'Nie udało się ponownie otworzyć dnia: $reason';
+  }
+
+  @override
+  String get retryRecordingsChangedMeanwhile =>
+      'W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań.';
+
+  @override
+  String get lapsCompareTwo => 'Porównaj dwa okrążenia';
+
+  @override
+  String get lapsLastComparison => 'Ostatnie porównanie';
 }

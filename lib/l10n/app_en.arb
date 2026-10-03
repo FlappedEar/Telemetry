@@ -752,13 +752,201 @@
   "@appleMapLegal": {
     "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
   },
-  "lapsCompareTwo": "Compare two laps",
-  "@lapsCompareTwo": {
-    "description": "Button above the lap list that asks for lap A, then lap B, and compares them."
+  "segmentPickOnMap": "Pick on map",
+  "@segmentPickOnMap": {
+    "description": "Button: place this segment boundary by tapping the track on the map."
   },
-  "lapsLastComparison": "Last comparison",
-  "@lapsLastComparison": {
-    "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
+  "segmentPickActive": "Tap the map… (cancel)",
+  "@segmentPickActive": {
+    "description": "The pick button while waiting for a tap on the map; pressing it again cancels."
+  },
+  "segmentPickBannerStart": "Tap the track line to place the start",
+  "@segmentPickBannerStart": {
+    "description": "Shown on the map while it waits for the segment's start."
+  },
+  "segmentPickBannerEnd": "Tap the track line to place the end",
+  "@segmentPickBannerEnd": {
+    "description": "Shown on the map while it waits for the segment's end."
+  },
+  "segmentPickBannerSplit": "Tap the track line to place the split",
+  "@segmentPickBannerSplit": {
+    "description": "Shown on the map while it waits for where to split the segment."
+  },
+  "segmentPickAmbiguous": "Another part of the track passes close by here. Set the distance with the buttons instead.",
+  "@segmentPickAmbiguous": {
+    "description": "A tap near a crossing or a parallel stretch of track: the place along the lap is unclear."
+  },
+  "segmentPickFar": "Tap on the lap's track line.",
+  "@segmentPickFar": {
+    "description": "A tap too far from the lap's trace."
+  },
+  "segmentPickNoTrace": "The lap trace is not available for picking.",
+  "@segmentPickNoTrace": {
+    "description": "The best lap has no trace to pick a place on."
+  },
+  "segmentPickOutside": "Pick a point inside this segment to split it.",
+  "@segmentPickOutside": {
+    "description": "The place tapped for a split is outside the segment."
+  },
+  "variabilityHeading": "Lap to lap in each corner",
+  "@variabilityHeading": {
+    "description": "Heading of the theoretical best card's per-corner variability list."
+  },
+  "variabilityIntro": "How much each corner changes from lap to lap over the group's laps: typical is the median, spread the middle half of the laps (interquartile range), from at least 3 laps. Observations, not causes.",
+  "@variabilityIntro": {
+    "description": "Explains the corner variability list."
+  },
+  "variabilityNone": "No corner was measured on enough laps.",
+  "@variabilityNone": {
+    "description": "No corner has variability results."
+  },
+  "variabilityNotMeasured": "Not measured on these laps.",
+  "@variabilityNotMeasured": {
+    "description": "A corner without any measured metric."
+  },
+  "variabilityLaps": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@variabilityLaps": {
+    "description": "How many laps a figure is from.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "variabilityMeasured": "measured",
+  "@variabilityMeasured": {
+    "description": "A braking point or throttle pickup read from the recorded brake or throttle."
+  },
+  "variabilityInferred": "inferred",
+  "@variabilityInferred": {
+    "description": "A braking point or throttle pickup inferred from speed."
+  },
+  "variabilitySpread": "{label}: spread {spread} · {tail}",
+  "@variabilitySpread": {
+    "description": "A position metric's spread across laps.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Braking point"
+      },
+      "spread": {
+        "type": "String",
+        "example": "4.2 m"
+      },
+      "tail": {
+        "type": "String",
+        "example": "6 laps · measured"
+      }
+    }
+  },
+  "variabilityTypical": "{label}: typical {typical} · spread {spread} · {tail}",
+  "@variabilityTypical": {
+    "description": "A speed's typical value and spread across laps.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Minimum speed"
+      },
+      "typical": {
+        "type": "String",
+        "example": "72.4 km/h"
+      },
+      "spread": {
+        "type": "String",
+        "example": "1.8 km/h"
+      },
+      "tail": {
+        "type": "String",
+        "example": "6 laps"
+      }
+    }
+  },
+  "variabilityTooFew": "{label}: too few laps ({tail})",
+  "@variabilityTooFew": {
+    "description": "Fewer than three laps measured this metric.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Apex speed"
+      },
+      "tail": {
+        "type": "String",
+        "example": "2 laps"
+      }
+    }
+  },
+  "variabilityBraking": "Braking point",
+  "@variabilityBraking": {
+    "description": "Label: where braking starts."
+  },
+  "variabilityApex": "Apex speed",
+  "@variabilityApex": {
+    "description": "Label: speed at the corner's apex."
+  },
+  "variabilityMinimum": "Minimum speed",
+  "@variabilityMinimum": {
+    "description": "Label: the lowest speed in the corner."
+  },
+  "variabilityExit": "Exit speed",
+  "@variabilityExit": {
+    "description": "Label: speed at the corner's exit."
+  },
+  "variabilityPickup": "Throttle pickup",
+  "@variabilityPickup": {
+    "description": "Label: where the driver goes back on the throttle."
+  },
+  "variabilityLine": "Line: spread {spread} m · {accuracy}",
+  "@variabilityLine": {
+    "description": "How far apart the laps' lines are at the apex.",
+    "placeholders": {
+      "spread": {
+        "type": "String",
+        "example": "1.4"
+      },
+      "accuracy": {
+        "type": "String",
+        "example": "GPS accuracy about 0.8 m"
+      }
+    }
+  },
+  "variabilityGpsAccuracy": "GPS accuracy about {meters} m",
+  "@variabilityGpsAccuracy": {
+    "description": "The recording's typical GPS accuracy.",
+    "placeholders": {
+      "meters": {
+        "type": "String",
+        "example": "0.8"
+      }
+    }
+  },
+  "variabilityGpsUnknown": "GPS accuracy not recorded",
+  "@variabilityGpsUnknown": {
+    "description": "The recording does not state its GPS accuracy."
+  },
+  "variabilityLineUnresolved": " · not distinguishable from GPS error",
+  "@variabilityLineUnresolved": {
+    "description": "Appended when the line spread is no larger than the GPS accuracy."
+  },
+  "calculateAgain": "Calculate again",
+  "@calculateAgain": {
+    "description": "Button: run the theoretical best calculation again after it failed or had nothing to use."
+  },
+  "retryRecordings": "Retry recordings",
+  "@retryRecordings": {
+    "description": "Button: open the sessions' recordings again from where the day says they are."
+  },
+  "retryRecordingsLooking": "Opening…",
+  "@retryRecordingsLooking": {
+    "description": "The retry button while the recordings are read again."
+  },
+  "retryRecordingsSaveFirst": "Save the day first, then try the recordings again.",
+  "@retryRecordingsSaveFirst": {
+    "description": "The day has unsaved changes, so it cannot be opened again from its file."
+  },
+  "retryRecordingsStill": "The recordings are still not where the day says.",
+  "@retryRecordingsStill": {
+    "description": "Retrying found no more recordings."
   },
   "sessionDetailsHeading": "Session details",
   "@sessionDetailsHeading": {
@@ -829,5 +1017,38 @@
   "renameDayRequired": "A day needs a name.",
   "@renameDayRequired": {
     "description": "Shown under an empty day name."
+  },
+  "retryRecordingsWaitAdding": "Wait until the recordings are added, then retry.",
+  "@retryRecordingsWaitAdding": {
+    "description": "Retrying while recordings are still being added."
+  },
+  "retryRecordingsAddedMeanwhile": "Recordings were added meanwhile. Retry the recordings again.",
+  "@retryRecordingsAddedMeanwhile": {
+    "description": "Recordings were added to the day while it was being opened again."
+  },
+  "retryRecordingsNone": "None of the day's recordings could be opened, so the day stays as it is.",
+  "@retryRecordingsNone": {
+    "description": "Retrying opened none of the day's recordings."
+  },
+  "retryRecordingsFailed": "The day could not be opened again: {reason}",
+  "@retryRecordingsFailed": {
+    "description": "Retrying could not read the day's document; reason is the error, in English.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "retryRecordingsChangedMeanwhile": "The day was changed meanwhile. Save it, then retry the recordings.",
+  "@retryRecordingsChangedMeanwhile": {
+    "description": "The day was edited while its recordings were being read again."
+  },
+  "lapsCompareTwo": "Compare two laps",
+  "@lapsCompareTwo": {
+    "description": "Button above the lap list that asks for lap A, then lap B, and compares them."
+  },
+  "lapsLastComparison": "Last comparison",
+  "@lapsLastComparison": {
+    "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
   }
 }

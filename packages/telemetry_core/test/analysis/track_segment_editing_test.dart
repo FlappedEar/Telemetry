@@ -326,4 +326,35 @@ void main() {
     expect(withoutOtherConfigurations([a, o], reference), [a]);
     expect(withoutOtherConfigurations(null, reference), isEmpty);
   });
+
+  test('pickBoundaryAt uses Overlays\' tolerances in metres', () {
+    // A 100 m circle: 628 m of lap, a 200 m map, so 6 m to the line.
+    final trace = [
+      for (var at = 0.0; at < 2 * pi * 100; at += 1)
+        ProgressMapPoint(at, 100 * cos(at / 100), 100 * sin(at / 100)),
+    ];
+    final length = 2 * pi * 100;
+    final near = pickBoundaryAt(trace, 105, 0, mapScaleMeters: 200, lengthMeters: length);
+    expect(near.reason, isEmpty);
+    expect(near.progressMeters, 0);
+    final quarter = pickBoundaryAt(trace, 0, 95, mapScaleMeters: 200, lengthMeters: length);
+    expect(quarter.progressMeters, closeTo(157, 1));
+    expect(
+      pickBoundaryAt(trace, 107, 0, mapScaleMeters: 200, lengthMeters: length).reason,
+      'farFromTrack',
+    );
+    // The middle of the circle is 100 m from every sample.
+    expect(
+      pickBoundaryAt(trace, 0, 0, mapScaleMeters: 20000, lengthMeters: length).reason,
+      'ambiguous',
+    );
+    expect(
+      pickBoundaryAt(const [], 0, 0, mapScaleMeters: 200, lengthMeters: length).reason,
+      'noTrace',
+    );
+    expect(
+      pickBoundaryAt(trace, 0, 0, mapScaleMeters: double.nan, lengthMeters: length).reason,
+      'noTrace',
+    );
+  });
 }

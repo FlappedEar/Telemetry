@@ -366,3 +366,38 @@ ProgressPick pickProgressAt(
   }
   return (progressMeters: progress, reason: '');
 }
+
+/// Overlays' tolerances for placing a boundary on the map
+/// (`AnalysisController::segmentReviewProgressAt`), in units of the map's
+/// scale: within 3% of it; ambiguous when another branch of the track 30 m
+/// or more away along the lap is within 1% of that distance.
+const double boundaryPickDistance = 0.03;
+const double boundaryPickAmbiguity = 0.01;
+const double boundaryPickSeparationMeters = 30.0;
+
+/// Track progress at ([eastMeters], [northMeters]) on the map, as Overlays
+/// picks a segment boundary: [trace] holds the lap's samples in metres, and
+/// [mapScaleMeters] is the larger side of the session's GPS extent, by which
+/// Overlays normalizes its map (at least 1 m). See [pickProgressAt].
+ProgressPick pickBoundaryAt(
+  List<ProgressMapPoint> trace,
+  double eastMeters,
+  double northMeters, {
+  required double mapScaleMeters,
+  required double lengthMeters,
+}) {
+  if (!mapScaleMeters.isFinite) return (progressMeters: null, reason: 'noTrace');
+  final scale = math.max(1.0, mapScaleMeters);
+  return pickProgressAt(
+    [
+      for (final sample in trace)
+        ProgressMapPoint(sample.progressMeters, sample.x / scale, sample.y / scale),
+    ],
+    eastMeters / scale,
+    northMeters / scale,
+    boundaryPickDistance,
+    boundaryPickAmbiguity,
+    boundaryPickSeparationMeters,
+    lengthMeters,
+  );
+}
