@@ -1764,7 +1764,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportHeartRateSummary(String mean, String minimum, String maximum) {
-    return 'średnio $mean ud./min · $minimum – $maximum';
+    return 'średnio $mean bpm · $minimum – $maximum';
   }
 
   @override
@@ -1798,7 +1798,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get segmentEditorAutomatic => 'Segmenty automatyczne';
 
   @override
-  String get segmentEditorEdited => 'Segmenty poprawione';
+  String get segmentEditorEdited => 'Poprawione segmenty';
 
   @override
   String segmentEditorSummary(String time, int count) {
@@ -1882,7 +1882,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorSplitAt(String meters) {
-    return 'Podział na $meters m';
+    return 'Podział w punkcie $meters m';
   }
 
   @override

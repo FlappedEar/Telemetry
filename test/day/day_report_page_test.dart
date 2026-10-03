@@ -354,7 +354,7 @@ void main() {
     expect(find.textContaining('Typowe okrążenie '), findsOneWidget);
     expect(find.textContaining('Olej · maksimum'), findsOneWidget);
     expect(find.text('Tętno'), findsOneWidget);
-    expect(find.textContaining('ud./min'), findsWidgets);
+    expect(find.textContaining(' bpm'), findsWidgets);
     expect(find.textContaining('laps'), findsNothing);
 
     // A result not calculated yet says why in Polish.
