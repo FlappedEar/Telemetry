@@ -46,10 +46,7 @@ class ConsistencyCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(label, overflow: TextOverflow.ellipsis),
-          ),
+          Expanded(flex: 2, child: Text(label)),
           const SizedBox(width: 8),
           Flexible(
             flex: 3,

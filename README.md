@@ -96,12 +96,14 @@ pedal or sensor, calculated by the logger from GPS, or inferred from
 longitudinal G, which happens only when the recording has no such pedal
 channel.
 
-Speeds are labelled km/h or mph from the recordings: RCZ declares its unit,
-and a RaceChrono VBO names it in its header (`velocity kmh`), which the parser
-keeps as header metadata. **Settings** (the gear in the toolbar) chooses
-**Automatic**, **km/h** or **mph**. It changes only the label; values are
-always shown as recorded, never converted, so every calculation and the
-parity with FlappedEar Overlays are unchanged.
+Speeds carry the unit their recording declares: RCZ declares its unit, and a
+RaceChrono VBO names it in its header (`velocity kmh`), which the parser keeps
+as header metadata. A declared unit is always shown as declared. **Settings**
+(the gear in the toolbar) chooses the **unit for unlabelled speeds** (**None**,
+**km/h** or **mph**), used only for recordings that declare none. Values are
+never converted, so every calculation and the parity with FlappedEar Overlays
+are unchanged. A day whose recordings end up with different units, or with no
+unit, shows speeds without one rather than a wrong label.
 
 ## Phones and tablets
 
@@ -117,8 +119,24 @@ by side. A lap's trace keeps a readable height, with its charts below, and
 scrolls on a short screen, such as a phone held sideways; a comparison shows
 its map and its charts side by side on a wide screen and one under the other
 on a phone. `test/layout/screen_sizes_test.dart` opens
-every screen at small phone, Pixel and tablet sizes in both orientations and
-fails on any overflow.
+every screen at small phone, Pixel and tablet sizes in both orientations, at
+the normal text size and at 1.3 times it, and fails on any overflow.
+
+The screens are made for fingers: nothing depends on hovering, and every
+button, row and strip is at least 48 dp square with a label for screen
+readers. One finger always scrolls the page; maps zoom and move with two
+fingers (a double tap also zooms the tiled map), so a map never traps the
+scroll. On a chart, a tap or a sideways drag moves the cursor and an upward or
+downward drag scrolls the page. Wide tables, such as sector times and the
+times by segment, keep the lap or segment column in place and scroll the rest
+sideways. Lap A and B text uses a darker shade of their colours on a light
+background so it stays readable; the lines keep the colours. The lap chosen
+on a card, a table's mode and the Corner Analyzer's segment and zoom are kept
+while the card is scrolled out of view, and back closes a sheet or dialog
+before the page. `test/layout/touch_test.dart` checks tap targets and labels
+on every screen at both text sizes (the Diagnostics menu entry too), the
+two-finger and double-tap gestures on the plain and tiled maps of a lap and a
+comparison, chart drags and back.
 
 To install on Android without a store, download the
 `flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
@@ -131,6 +149,18 @@ job prints the key's SHA-256 ("Check the APK's signing key") and warns when it
 had to make a new one. APKs built before 2026-10-03 were each signed with a
 different key and do not update; uninstall such a build once before
 installing a newer one.
+
+### Measuring a day on the phone
+
+**Diagnostics**, in the **More** menu of **Import a day** and of the day page,
+shows how long the last import took step by step (finding the recordings,
+parse and import, day analysis, start to results, then the theoretical best
+and the channel summaries once they have been calculated), how many
+recordings, sessions and samples it read, and the app's current and peak
+resident memory as the system reports it ("Not available" where it does not).
+Nothing is stored or sent. The same steps can be measured on a computer, on
+any folder or a synthetic day, with `packages/telemetry_core/tool/day_benchmark.dart`
+(see [its notes](packages/telemetry_core/tool/README.md#day_benchmarkdart)).
 
 ## Platforms
 

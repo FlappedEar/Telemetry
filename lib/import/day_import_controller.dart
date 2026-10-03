@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/app_diagnostics.dart';
 import 'import_runner.dart';
 
 /// Where an import stands.
@@ -52,9 +53,15 @@ final class DayImportCancelled extends DayImportState {
 /// committed only while its generation is current, so a cancelled or
 /// superseded import never changes what is shown.
 final class DayImportController extends ChangeNotifier {
-  DayImportController({this.importer = const IsolateDayImporter()});
+  DayImportController({
+    this.importer = const IsolateDayImporter(),
+    AppDiagnostics? diagnostics,
+  }) : diagnostics = diagnostics ?? appDiagnostics;
 
   final DayImporter importer;
+
+  /// Where a finished import's times and counts go.
+  final AppDiagnostics diagnostics;
   final ImportGeneration _generation = ImportGeneration();
   DayImportJob? _job;
   DayImportState _state = const DayImportIdle();
@@ -67,6 +74,7 @@ final class DayImportController extends ChangeNotifier {
   bool start(List<String> paths, {required bool includeSubfolders}) {
     if (isWorking || paths.isEmpty) return false;
     final ticket = _generation.begin(paths);
+    final clock = Stopwatch()..start();
     _set(const DayImportWorking());
     final job = importer.start(
       (paths: List.of(paths), includeSubfolders: includeSubfolders),
@@ -79,7 +87,12 @@ final class DayImportController extends ChangeNotifier {
     _job = job;
     job.result.then(
       (outcome) {
-        if (_generation.isCurrent(ticket)) _set(_finished(outcome));
+        if (!_generation.isCurrent(ticket)) return;
+        final state = _finished(outcome);
+        if (state is DayImportFinished) {
+          _record(outcome, state.runs, clock.elapsed);
+        }
+        _set(state);
       },
       onError: (Object error) {
         if (!_generation.isCurrent(ticket)) return;
@@ -107,6 +120,29 @@ final class DayImportController extends ChangeNotifier {
     _generation.invalidate();
     _job?.cancel();
     super.dispose();
+  }
+
+  void _record(DayImportOutcome outcome, List<NamedRun> runs, Duration total) {
+    var samples = 0, channelSamples = 0;
+    for (final named in runs) {
+      final session = named.run.telemetry;
+      samples += session.sampleCount;
+      for (final channel in session.channels.values) {
+        channelSamples += channel.sampleCount;
+      }
+    }
+    diagnostics.recordImport(
+      ImportDiagnostics(
+        steps: [
+          ...outcome.steps,
+          (name: DiagnosticSteps.importTotal, duration: total),
+        ],
+        recordings: outcome.plan?.runs.length ?? 0,
+        sessions: runs.length,
+        samples: samples,
+        channelSamples: channelSamples,
+      ),
+    );
   }
 
   void _set(DayImportState state) {

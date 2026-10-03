@@ -10,6 +10,39 @@ cases. No real recording, GPS trace or heart rate.
 python3 tool/generate_parity_corpus.py
 ```
 
+## day_benchmark.dart
+
+Measures one day of recordings step by step, as the app runs them (FET-41):
+parse and import, day analysis, theoretical best and segments, one A/B
+comparison (the group's best lap against the next fastest, as the comparison
+page first draws it), the Corner Analyzer on the theoretical best's segments,
+the channel summaries and the day report. For each step it prints the wall
+time, the peak and final resident set (RSS) of the process and, when the VM
+service can run, the peak and final heap. Import, analysis, the theoretical
+best and the channel summaries run in background isolates as in the app, so
+copies into and out of isolates are part of their figures; `--one-isolate`
+runs everything on one isolate, for profiling the analysis code alone.
+
+It prints figures only (times, MiB and counts) and a SHA-256 "result digest"
+of the results: laps, ranking, comparison series, Corner Analyzer metrics,
+channel summaries and the day report. Two runs with the same digest gave
+identical results, so a performance change can be checked on real recordings
+without printing anything from them.
+
+```bash
+# A synthetic day (no recordings needed); this is what CI runs.
+dart run tool/day_benchmark.dart --synthetic=6 --laps=12
+
+# Any folder or files, for example a real day. Compile it ahead of time for
+# figures close to the phone's (an AOT executable has no VM service, so the
+# heap is not sampled; RSS is).
+dart compile exe tool/day_benchmark.dart -o /tmp/day_benchmark
+/tmp/day_benchmark --runs=2 --json=/tmp/day.json <folder>
+```
+
+`test/tool/day_benchmark_test.dart` only checks that it runs on a synthetic
+day and that one isolate gives the same digest; it checks no timing.
+
 ## cpp_reference_dump
 
 A small C++ program that runs FlappedEar Overlays' own `VboParser` and
@@ -579,5 +612,64 @@ never commit its input or output. Run the test against it with
 and the largest difference.
 
 The committed `test/parity/driving_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+other references are unchanged. Never edit the JSON by hand.
+
+## cpp_fusion_dump
+
+Runs FlappedEar Overlays' own `TelemetrySyncEngine`, `RecordingAlignment`
+(`recording-alignment-v1`) and `ChannelFusion` (`channel-fusion-v1`) over
+fixed synthetic cases and writes the results as JSON: `synchronize` on four
+pairs and the confidence levels; `alignRecordings` on a clean offset (with
+and without a declared clock, and negative), a lap-away match measured only
+and resolved by the declared clock, an agreeing and a conflicting declared
+clock, drift (positive, negative, implausible, three windows), a clock step,
+periodic, flat and unrelated traces, no speed, insufficient overlap and too
+few samples; `fuseChannels` and `fusedSession` on the sessions of
+`ChannelFusionTests.cpp` under no rule, `primaryOnly`, `fillGaps` and
+`preferAlternative` (with drift and a fractional offset), unresolved
+conflicts, refused sources, unit mismatches and case, two alternatives,
+alias and name clashes, temperatures and missing values; and
+`fusionConflictTolerance` for fixed units. `inputs` holds a digest of every
+input session. The synthetic traces use a sine made of `+ - * /` and
+`floor` only, so the Dart test builds bit-identical inputs on any platform.
+A channel's samples are written as a digest (FNV-1a over the bytes of every
+timestamp and value) and every 25th sample.
+
+Overlays ranks the coarse offsets by `std::atanh`. On x86-64 CPUs with FMA,
+glibc 2.39 switches `log1p` (which `atanh` calls) to an FMA build that differs
+from the generic one in the last bit for about one argument in 10 000; the
+Dart port (`lib/src/fusion/atanh.dart`) reproduces the generic build. Generate
+the reference with the generic build, as below; the committed reference is
+byte-identical with and without the FMA build.
+
+```bash
+cmake -S tool/cpp_fusion_dump -B /tmp/fusionbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/fusionbuild
+GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA \
+  /tmp/fusionbuild/cpp_fusion_dump test/parity/fusion_reference.json
+dart test test/parity/fusion_parity_test.dart
+```
+
+`--pairs <pairs.json> <output.json>` checks real recordings:
+`{"pairs": [{"primary": <VBO path>, "alternative": <RCZ path>}]}`, each
+parsed with Overlays' `VboParser` and `RczParser`, aligned, and fused (when
+there is a measured offset) with no rules and with `fillGaps` for every
+channel both recorded. `test/fusion/real_fusion_test.dart` finds the pairs
+of a folder with the import plan (`automaticVboPrimaries`), writes them for
+the tool and compares the tool's output; it prints summary figures only.
+Use it locally only; never commit its input or output.
+
+```bash
+FET_FUSION_DAY=<folder> FET_FUSION_PAIRS_OUT=/tmp/pairs.json \
+  dart test test/fusion/real_fusion_test.dart -r expanded
+GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA \
+  /tmp/fusionbuild/cpp_fusion_dump --pairs /tmp/pairs.json /tmp/fusion_day.json
+FET_FUSION_DAY=<folder> FET_FUSION_REFERENCE=/tmp/fusion_day.json \
+  dart test test/fusion/real_fusion_test.dart -r expanded
+```
+
+The committed `test/parity/fusion_reference.json` was generated from
 FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
 other references are unchanged. Never edit the JSON by hand.

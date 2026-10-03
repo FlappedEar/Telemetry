@@ -9,6 +9,7 @@ import 'comparison_page.dart';
 import 'corner_details.dart' show cornerReasonText, lapAColor, lapBColor;
 import 'day_results_controller.dart';
 import 'telemetry_chart.dart' show ChartWindow;
+import 'touch.dart';
 
 /// The Corner Analyzer under a comparison's charts (registered in
 /// [comparisonPanels]).
@@ -107,8 +108,32 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
 
   ComparisonPanelContext get _panel => widget.panel;
 
+  // The segment chosen is kept for the page: on a phone the list rebuilds
+  // the panel when it scrolls back, which must not choose (and zoom to) the
+  // segment it was opened on again.
+  static const _storage = 'cornerAnalyzerSegment';
+
+  @override
+  void initState() {
+    super.initState();
+    final kept = readPageState<(Object, Object, String?)>(context, _storage);
+    if (kept != null &&
+        kept.$1 == _panel.a.reference &&
+        kept.$2 == _panel.b.reference) {
+      _selected = kept.$3;
+      _focusApplied = true;
+    }
+  }
+
+  void _remember() => writePageState(context, _storage, (
+    _panel.a.reference,
+    _panel.b.reference,
+    _selected,
+  ));
+
   void _select(ComparisonSegment segment, {bool scroll = false}) {
     setState(() => _selected = segment.id);
+    _remember();
     _show(segment);
     if (scroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -572,11 +597,17 @@ class AnalyzerTable extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
-            text,
-            key: ValueKey('cornerAnalyzer $key'),
-            style: style ?? numbers,
-            textAlign: TextAlign.end,
+          // A number stays on one line, a little smaller if a phone's
+          // column is too narrow for large text.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              text,
+              key: ValueKey('cornerAnalyzer $key'),
+              style: style ?? numbers,
+              textAlign: TextAlign.end,
+            ),
           ),
           if (note.isNotEmpty)
             Text(
@@ -974,46 +1005,53 @@ class SegmentSpeedChart extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        SizedBox(
-          height: height,
-          child: LayoutBuilder(
-            builder: (context, constraints) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: (details) =>
-                  move(details.localPosition.dx, constraints.maxWidth),
-              onHorizontalDragUpdate: (details) =>
-                  move(details.localPosition.dx, constraints.maxWidth),
-              child: ValueListenableBuilder<double>(
-                valueListenable: window.cursor,
-                builder: (context, cursor, _) => CustomPaint(
-                  key: const ValueKey('cornerAnalyzerChartPlot'),
-                  size: Size(constraints.maxWidth, height),
-                  painter: SegmentSpeedPainter(
-                    start: start,
-                    end: end,
-                    segmentStart: segment.startMeters,
-                    segmentEnd: segment.endMeters,
-                    series: series,
-                    markers: markers,
-                    minimumSpeeds: [
-                      for (final slot in const [0, 1])
-                        analysis.cornerSpeeds?[slot].minimum.value,
-                    ],
-                    apexes: apexes,
-                    boundaryNames: corner
-                        ? const ('Entry', 'Exit')
-                        : const ('Start', 'End'),
-                    unit: unit,
-                    cursor: cursor,
-                    cursorColor: theme.colorScheme.tertiary,
-                    grid: theme.colorScheme.outlineVariant.withValues(
-                      alpha: 0.5,
+        Semantics(
+          label: 'Speed through ${segment.name} chart',
+          child: SizedBox(
+            height: height,
+            child: LayoutBuilder(
+              // Sideways drags and taps move the cursor; upward and downward
+              // drags scroll the page.
+              builder: (context, constraints) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (details) =>
+                    move(details.localPosition.dx, constraints.maxWidth),
+                onHorizontalDragStart: (details) =>
+                    move(details.localPosition.dx, constraints.maxWidth),
+                onHorizontalDragUpdate: (details) =>
+                    move(details.localPosition.dx, constraints.maxWidth),
+                child: ValueListenableBuilder<double>(
+                  valueListenable: window.cursor,
+                  builder: (context, cursor, _) => CustomPaint(
+                    key: const ValueKey('cornerAnalyzerChartPlot'),
+                    size: Size(constraints.maxWidth, height),
+                    painter: SegmentSpeedPainter(
+                      start: start,
+                      end: end,
+                      segmentStart: segment.startMeters,
+                      segmentEnd: segment.endMeters,
+                      series: series,
+                      markers: markers,
+                      minimumSpeeds: [
+                        for (final slot in const [0, 1])
+                          analysis.cornerSpeeds?[slot].minimum.value,
+                      ],
+                      apexes: apexes,
+                      boundaryNames: corner
+                          ? const ('Entry', 'Exit')
+                          : const ('Start', 'End'),
+                      unit: unit,
+                      cursor: cursor,
+                      cursorColor: theme.colorScheme.tertiary,
+                      grid: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.5,
+                      ),
+                      boundary: theme.colorScheme.outline,
+                      shade: theme.colorScheme.primary.withValues(alpha: 0.10),
+                      ink: theme.colorScheme.onSurfaceVariant,
+                      surface: theme.colorScheme.surfaceContainerLow,
+                      textStyle: painterStyle,
                     ),
-                    boundary: theme.colorScheme.outline,
-                    shade: theme.colorScheme.primary.withValues(alpha: 0.10),
-                    ink: theme.colorScheme.onSurfaceVariant,
-                    surface: theme.colorScheme.surfaceContainerLow,
-                    textStyle: painterStyle,
                   ),
                 ),
               ),
