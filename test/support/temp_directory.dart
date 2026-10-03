@@ -2,14 +2,19 @@ import 'dart:io';
 
 /// Deletes a test's temporary folder.
 ///
-/// On Windows a file that the test's background work (an import isolate, a
-/// recovery write) still has open cannot be deleted. The folder is then left
-/// for the runner's temp cleanup instead of failing a test whose checks have
-/// already passed. Every other platform still fails on a delete error.
+/// On Windows a file still open cannot be deleted, for example a recording
+/// that a cancelled import isolate is closing as it stops. The delete is
+/// retried for up to two seconds, then fails: a file that stays open is a
+/// leak worth seeing. The wait is a blocking sleep, so it also works in a
+/// widget test's fake clock.
 void deleteTemporaryDirectory(Directory directory) {
-  try {
-    directory.deleteSync(recursive: true);
-  } on FileSystemException {
-    if (!Platform.isWindows) rethrow;
+  for (var attempt = 1; ; attempt++) {
+    try {
+      directory.deleteSync(recursive: true);
+      return;
+    } on FileSystemException {
+      if (!Platform.isWindows || attempt == 20) rethrow;
+      sleep(const Duration(milliseconds: 100));
+    }
   }
 }

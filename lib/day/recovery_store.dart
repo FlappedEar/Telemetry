@@ -65,6 +65,12 @@ final class PlatformRecoveryStore implements RecoveryStore {
 Future<void> _queue = Future.value();
 int _queued = 0;
 
+/// Whether no queued recovery operation is still running. Tests wait for
+/// this before they end: a write left running would hold its file open and
+/// keep the next test's recovery work waiting behind it.
+@visibleForTesting
+bool get recoveryQueueIdle => _queued == 0;
+
 /// Runs [operation] after every recovery operation queued before it, so a
 /// write and a later clear or load always happen in that order. With none
 /// waiting it starts at once, never waiting on an earlier, finished one.
