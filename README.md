@@ -241,3 +241,5 @@ Read [AGENTS.md](AGENTS.md) first. It holds the engineering rules, the shared
 data is © OpenStreetMap contributors under the
 [ODbL](https://www.openstreetmap.org/copyright), and MapTiler imagery is
 © [MapTiler](https://www.maptiler.com/copyright/).
+In the app, **Settings** → **Open-source licences** shows the app's licence,
+the map credits and the licences of every package it uses.
