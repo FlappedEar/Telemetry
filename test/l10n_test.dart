@@ -106,10 +106,10 @@ void main() {
       );
     });
 
-    testWidgets('Polish uses a decimal comma', (tester) async {
+    testWidgets('Polish also uses a decimal point', (tester) async {
       await tester.pumpWidget(probe(all, locale: const Locale('pl')));
       expect(
-        find.text('1:49,898 | 28,662 s | −1,340 s | 12,5 | Zgodnie z zegarem'),
+        find.text('1:49.898 | 28.662 s | −1.340 s | 12.5 | Zgodnie z zegarem'),
         findsOneWidget,
       );
     });

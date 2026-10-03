@@ -1,36 +1,21 @@
 import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
-String? _separatorLocale;
-String _separator = '.';
-
-/// The decimal separator of the app's language: "." in English, "," in
-/// Polish.
-String get decimalSeparator {
-  final locale = Intl.getCurrentLocale();
-  if (locale != _separatorLocale) {
-    _separatorLocale = locale;
-    _separator = NumberFormat.decimalPattern(locale).symbols.DECIMAL_SEP;
-  }
-  return _separator;
-}
-
-/// [value] with [digits] decimals in the app's language: "12.5" in
-/// English, "12,5" in Polish. No grouping, so digits stay aligned.
-String fixed(double value, int digits) =>
-    value.toStringAsFixed(digits).replaceFirst('.', decimalSeparator);
+/// [value] with [digits] decimals: "12.5". Every language, Polish included,
+/// uses a decimal point (the owner's choice, 2026-10-03), and there is no
+/// grouping, so digits stay aligned.
+String fixed(double value, int digits) => value.toStringAsFixed(digits);
 
 /// A time as the app shows it: "28.662 s" below a minute, "1:49.898" from one
 /// minute, "—" when there is no finite value. Rounded before minutes are
-/// split. Polish uses a decimal comma: "1:49,898".
+/// split.
 String displayTime(double seconds) {
   if (!seconds.isFinite || seconds < 0) return '—';
   final milliseconds = (seconds * 1000).round();
   if (milliseconds < 60000) {
     return '${fixed(milliseconds / 1000, 3)} s';
   }
-  final time = formatLapTime(milliseconds / 1000, 3);
-  return time == null ? '—' : time.replaceFirst('.', decimalSeparator);
+  return formatLapTime(milliseconds / 1000, 3) ?? '—';
 }
 
 /// A signed difference in seconds: "+0.412 s", "−1.340 s", "—".
