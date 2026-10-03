@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../ui/theme.dart';
 import '../units.dart';
 import 'apple_map.dart';
 import 'corner_analyzer_panel.dart';
@@ -503,7 +504,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                   selectedBackgroundColor: _layerSlot == 0
                       ? lapAColor
                       : lapBColor,
-                  selectedForegroundColor: const Color(0xFF111214),
+                  selectedForegroundColor: FetColors.of(context).onLap,
                 ),
                 segments: const [
                   ButtonSegment(value: 0, label: Text('A')),
@@ -747,15 +748,30 @@ class _ComparisonPageState extends State<ComparisonPage> {
   }
 }
 
-/// Sequential: one blue hue, dim to bright. Diverging: amber, grey at zero,
-/// blue, symmetric around zero so zero is always neutral. For Δ time (A − B)
-/// that is lap A's colour where A is ahead and lap B's where B is ahead.
-const List<Color> sequentialLayerStops = [Color(0xFF28527A), Color(0xFFE3F4FF)];
+/// Map layer scales. None of them uses lap A's amber or lap B's blue, except
+/// Δ time, whose ends are the laps themselves.
+///
+/// Sequential (speed, throttle, brake): purple, dim, to mint, bright.
+const List<Color> sequentialLayerStops = [Color(0xFF4A2A7A), Color(0xFFB8F5E0)];
+
+/// Diverging (lateral and longitudinal G): magenta, grey at zero, teal,
+/// symmetric around zero so zero is always neutral.
 const List<Color> divergingLayerStops = [
-  Color(0xFFFCB203),
+  Color(0xFFE05BD8),
   Color(0xFF8B95A1),
-  Color(0xFF3D8BFF),
+  Color(0xFF2FD6A8),
 ];
+
+/// Δ time (A − B): lap A's colour where A is ahead, grey at zero, lap B's
+/// where B is ahead.
+const List<Color> deltaLayerStops = [lapAColor, Color(0xFF8B95A1), lapBColor];
+
+/// The colour stops of [layer]'s scale.
+List<Color> mapLayerStops(ComparisonMapLayer layer) => layer.id == 'delta'
+    ? deltaLayerStops
+    : layer.diverging
+    ? divergingLayerStops
+    : sequentialLayerStops;
 
 /// The colour scale of [layer]: its low and high ends.
 (double, double) mapLayerRange(ComparisonMapLayer layer) {
@@ -770,16 +786,11 @@ const List<Color> divergingLayerStops = [
 Color mapLayerColor(ComparisonMapLayer layer, double value) {
   final (low, high) = mapLayerRange(layer);
   final t = ((value - low) / (high - low)).clamp(0.0, 1.0);
-  if (!layer.diverging) {
-    return Color.lerp(sequentialLayerStops[0], sequentialLayerStops[1], t)!;
-  }
+  final stops = mapLayerStops(layer);
+  if (!layer.diverging) return Color.lerp(stops[0], stops[1], t)!;
   return t < 0.5
-      ? Color.lerp(divergingLayerStops[0], divergingLayerStops[1], t * 2)!
-      : Color.lerp(
-          divergingLayerStops[1],
-          divergingLayerStops[2],
-          (t - 0.5) * 2,
-        )!;
+      ? Color.lerp(stops[0], stops[1], t * 2)!
+      : Color.lerp(stops[1], stops[2], (t - 0.5) * 2)!;
 }
 
 String mapLayerValueText(ComparisonMapLayer layer, double value) {
@@ -803,7 +814,7 @@ class _LayerLegend extends StatelessWidget {
     final theme = Theme.of(context);
     final (low, high) = mapLayerRange(layer);
     final unit = displayUnitOf(context, layer.channel, layer.unit);
-    final stops = layer.diverging ? divergingLayerStops : sequentialLayerStops;
+    final stops = mapLayerStops(layer);
     String end(double value, String label) =>
         '${mapLayerValueText(layer, value)}'
         '${layer.diverging && label.isNotEmpty ? ' $label' : ''}';

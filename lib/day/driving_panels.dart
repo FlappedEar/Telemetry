@@ -28,11 +28,12 @@ final List<ComparisonPanelBuilder> drivingComparisonPanels = [
 const List<Color> _lapColors = [lapAColor, lapBColor];
 const List<String> _lapNames = ['A', 'B'];
 
-/// Lane colours of the driving-state strips.
+/// Lane colours of the driving-state strips: none is lap A's amber or lap
+/// B's blue, since the strips are drawn for both laps.
 const Color brakingStateColor = Color(0xFFE53935);
 const Color acceleratingStateColor = Color(0xFF00897B);
-const Color corneringStateColor = Color(0xFF1E88E5);
-const Color coastingStateColor = Color(0xFFFB8C00);
+const Color corneringStateColor = Color(0xFF4DD0E1);
+const Color coastingStateColor = Color(0xFFC0CA33);
 const Color trailBrakingStateColor = Color(0xFF8E24AA);
 
 /// The pink of an inferred value's label: neither lap A's amber nor lap B's

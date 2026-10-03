@@ -634,6 +634,29 @@ void main() {
     // The single Δ line is neither lap's colour.
     expect(deltaLineColor, isNot(anyOf(lapAColorForTest, lapBColorForTest)));
   });
+
+  test('the other map layers use neither lap\'s colour', () {
+    for (final layer in const [
+      ComparisonMapLayer(
+        id: 'lateralG',
+        scale: 'diverging',
+        trace: MapLayerTrace(minimum: -1, maximum: 1),
+      ),
+      ComparisonMapLayer(
+        id: 'speed',
+        scale: 'sequential',
+        trace: MapLayerTrace(minimum: 0, maximum: 1),
+      ),
+    ]) {
+      for (final value in [-1.0, 0.0, 0.5, 1.0]) {
+        expect(
+          mapLayerColor(layer, value),
+          isNot(anyOf(lapAColorForTest, lapBColorForTest)),
+          reason: '${layer.id} at $value',
+        );
+      }
+    }
+  });
 }
 
 const lapAColorForTest = Color(0xFFFCB203);

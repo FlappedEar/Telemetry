@@ -733,7 +733,7 @@ class AnalyzerTable extends StatelessWidget {
                 name.toUpperCase(),
                 key: ValueKey('cornerAnalyzerGroup $name'),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 0.8,
                 ),
               ),
