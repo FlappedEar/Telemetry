@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/document_pickers.dart';
@@ -170,6 +171,41 @@ void main() {
       expect(best.reference, isNot(second.reference));
     },
   );
+
+  testWidgets('the circuit dialog speaks Polish on a phone', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(360, 6000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.tap(find.text('Session 1').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Sesja 1'), findsOneWidget);
+    expect(
+      find.textContaining('przeciwnie do ruchu wskazówek zegara'),
+      findsOneWidget,
+    );
+    expect(find.text('Przeciwnie do ruchu wskazówek zegara'), findsOneWidget);
+    expect(
+      find.text('Także dla sesji na tej samej trasie: Sesja 2'),
+      findsOneWidget,
+    );
+    expect(find.text('Zapisz'), findsOneWidget);
+    expect(find.text('Anuluj'), findsOneWidget);
+    // On a narrow phone the long direction labels are stacked.
+    final directions = tester.widget<SegmentedButton<TrackDirection>>(
+      find.byType(SegmentedButton<TrackDirection>),
+    );
+    expect(directions.direction, Axis.vertical);
+  });
 
   testWidgets('names the circuit of a session and its route', (tester) async {
     final outcome = importDay({
