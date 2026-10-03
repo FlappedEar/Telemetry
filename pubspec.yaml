@@ -60,6 +60,11 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Generate the app icons and launch screens from assets/branding; see
+  # flutter_launcher_icons.yaml and flutter_native_splash.yaml.
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -72,6 +77,31 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # The font licences ship with the app and show on the licence page.
+  assets:
+    - assets/fonts/OFL-Sora.txt
+    - assets/fonts/OFL-JetBrainsMono.txt
+
+  # Sora and JetBrains Mono, SIL Open Font License 1.1: assets/fonts/OFL-*.txt.
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora-400.ttf
+        - asset: assets/fonts/Sora-500.ttf
+          weight: 500
+        - asset: assets/fonts/Sora-600.ttf
+          weight: 600
+        - asset: assets/fonts/Sora-700.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-500.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-600.ttf
+          weight: 600
+        - asset: assets/fonts/JetBrainsMono-700.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:
