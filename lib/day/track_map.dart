@@ -50,14 +50,15 @@ GeoCoordinate? mapOrigin(TelemetrySession session) {
   return null;
 }
 
-/// Speed colours, slow to fast (a viridis-like ramp, readable in light and
-/// dark themes and distinct from the A/B comparison colours).
+/// Speed colours, slow to fast. Every stop keeps at least 5:1 contrast with
+/// the app's charcoal panels, so the slow end stays visible on the dark
+/// theme, and the ramp avoids the amber and blue of the two compared laps.
 const List<Color> speedRamp = [
-  Color(0xff440154),
-  Color(0xff3b528b),
-  Color(0xff21918c),
-  Color(0xff5ec962),
-  Color(0xfffde725),
+  Color(0xff8a7dff),
+  Color(0xff4fb3ff),
+  Color(0xff2fd6a8),
+  Color(0xffb5e550),
+  Color(0xffffe45c),
 ];
 
 Color speedColor(double fraction) {

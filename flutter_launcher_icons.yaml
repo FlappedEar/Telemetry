@@ -1,0 +1,19 @@
+# App icons for every platform, from assets/branding (FlappedEar ears over two
+# speed traces). Regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/branding/icon-full.png"
+  android: true
+  min_sdk_android: 26
+  adaptive_icon_background: "#111214"
+  adaptive_icon_foreground: "assets/branding/icon-adaptive-fg.png"
+  adaptive_icon_monochrome: "assets/branding/icon-adaptive-fg.png"
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#111214"
+  macos:
+    generate: true
+    image_path: "assets/branding/icon-macos.png"
+  windows:
+    generate: true
+    image_path: "assets/branding/icon-full.png"
+    icon_size: 256

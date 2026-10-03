@@ -10,9 +10,10 @@
 // the made-up day of demo_day.dart is used, for trying the tool out.
 //
 // The pictures land in docs/user-guide/assets/screens/. Text is drawn with
-// Roboto and icons with Material Icons from the Flutter SDK, so they look like
-// the app on Android rather than the test font's boxes. Maps show the street
-// background's controls and attribution over plain grey tiles (no network).
+// the app's bundled Sora and JetBrains Mono and icons with Material Icons from
+// the Flutter SDK, so they look like the app rather than the test font's
+// boxes. Maps show the street background's controls and attribution over
+// plain grey tiles (no network).
 import 'dart:convert';
 import 'dart:io';
 
@@ -28,6 +29,7 @@ import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/ui/theme.dart';
 
 import 'demo_day.dart';
 
@@ -91,22 +93,25 @@ Future<void> _loadFonts() async {
           .parent
           .path;
   final fonts = '$sdk/bin/cache/artifacts/material_fonts';
-  Future<void> load(String family, List<String> files) async {
+  Future<void> load(String family, List<String> paths) async {
     final loader = FontLoader(family);
-    for (final file in files) {
-      final bytes = File('$fonts/$file').readAsBytesSync();
+    for (final path in paths) {
+      final bytes = File(path).readAsBytesSync();
       loader.addFont(Future.value(ByteData.sublistView(bytes)));
     }
     await loader.load();
   }
 
-  await load('Roboto', [
-    'Roboto-Regular.ttf',
-    'Roboto-Medium.ttf',
-    'Roboto-Bold.ttf',
-    'Roboto-Italic.ttf',
-  ]);
-  await load('MaterialIcons', ['MaterialIcons-Regular.otf']);
+  List<String> bundled(String family) => [
+    for (final file in Directory('assets/fonts').listSync())
+      if (file.path.endsWith('.ttf') &&
+          file.uri.pathSegments.last.startsWith('$family-'))
+        file.path,
+  ];
+
+  await load(FetTheme.sans, bundled('Sora'));
+  await load(FetTheme.mono, bundled('JetBrainsMono'));
+  await load('MaterialIcons', ['$fonts/MaterialIcons-Regular.otf']);
 }
 
 void main() {
@@ -270,6 +275,22 @@ void main() {
     await shot(tester, 'day-wide');
     final summary = list('dayResultsSummary');
 
+    // The coach's card and its first item's measured values.
+    await scrollIn(tester, summary, find.text('Next session'));
+    await shot(tester, 'next-session');
+    final why = find.byKey(const ValueKey('coachWhy 0'));
+    if (why.evaluate().isNotEmpty) {
+      await tester.ensureVisible(why);
+      await tester.pumpAndSettle();
+      await tester.tap(why);
+      await tester.pumpAndSettle();
+      await shot(tester, 'coach-why');
+      await back(tester);
+    }
+    // The observations, under the coach's card.
+    await scrollIn(tester, summary, find.text('Where to look next'));
+    await shot(tester, 'where-to-look-next');
+
     await scrollIn(tester, summary, find.text('Theoretical best'));
     await shot(tester, 'theoretical-best');
     await scrollIn(tester, summary, find.text('Where the time goes'));
@@ -278,8 +299,6 @@ void main() {
     await shot(tester, 'sector-times');
     await scrollIn(tester, summary, find.text('Time losses'));
     await shot(tester, 'time-losses');
-    await scrollIn(tester, summary, find.text('Where to look next'));
-    await shot(tester, 'where-to-look-next');
     await scrollIn(tester, summary, find.text('Consistency'));
     await shot(tester, 'consistency');
     await scrollIn(tester, summary, find.text('Progression'));

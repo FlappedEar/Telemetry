@@ -33,6 +33,7 @@ export 'src/analysis/track_segment_review.dart';
 export 'src/day/compatibility.dart';
 export 'src/day/day_analysis.dart';
 export 'src/day/day_channel_summaries.dart';
+export 'src/day/day_coach.dart';
 export 'src/day/day_comparison.dart';
 export 'src/day/day_corner_analyzer.dart';
 export 'src/day/day_corners.dart';
