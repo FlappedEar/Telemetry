@@ -466,6 +466,32 @@ Map<String, String> automaticVboPrimaries(TelemetryImportPlan plan) {
   return groups;
 }
 
+/// Whether [a] and [b] are one drive recorded as a VBO and an RCZ, by the
+/// rules of [automaticVboPrimaries]: used when a recording is added to a day
+/// that already has the other one.
+bool sameDriveInOtherFormat(
+  TelemetryRunProposal a,
+  TelemetryRunProposal b, {
+  CancellationCheck? cancelled,
+}) {
+  if (a.format == b.format || a.id == b.id) return false;
+  final first = recordingTimestamp(a.telemetry), second = recordingTimestamp(b.telemetry);
+  // The cheap checks first: most pairs are told apart by their clocks.
+  if (first == null ||
+      second == null ||
+      (first - second).abs() > 1000 ||
+      (a.telemetry.duration - b.telemetry.duration).abs() > 2) {
+    return false;
+  }
+  final plan = TelemetryImportPlan(
+    runs: [a, b],
+    files: const [],
+    possibleSameRuns: _findPossibleMatches([a, b], cancelled),
+  );
+  final groups = automaticVboPrimaries(plan);
+  return groups[a.id] != a.id || groups[b.id] != b.id;
+}
+
 /// A primary run and the name it gets.
 typedef NamedRun = ({TelemetryRunProposal run, String name});
 
