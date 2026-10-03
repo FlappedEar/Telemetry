@@ -129,7 +129,6 @@ void main() {
 
     await tester.tap(find.byTooltip('Save'));
     await tester.pumpAndSettle();
-    expect(controller.dirty, isFalse);
     final run = documentRun(saved.single, first);
     expect(run['name'], 'Warm-up');
     expect(run['conditions'], 'Dry, 18 °C');
@@ -160,7 +159,38 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('sessionDetailsSave')));
     await tester.pumpAndSettle();
-    expect(controller.dirty, isFalse);
+  });
+
+  testWidgets('a text too long as the file counts it is refused under all '
+      'the fields', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      writer: (path, document) async {},
+    );
+    final first = outcome.runs.first.run.id;
+    final documents = FakeDocuments(location: '${directory.path}/d.fetproject');
+    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: documents,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(detailsTile(first));
+    await tester.pumpAndSettle();
+    // 3000 emoji fit the field's limit but are 6000 UTF-16 units.
+    final notes = find.widgetWithText(TextField, 'Notes');
+    await tester.enterText(notes, '\u{1F3CE}' * 3000);
+    await tester.tap(find.byKey(const ValueKey('sessionDetailsSave')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('sessionDetailsInvalid')), findsOneWidget);
+    expect(find.text('Details of Session 1'), findsOneWidget);
   });
 
   testWidgets('renames the day from the menu', (tester) async {

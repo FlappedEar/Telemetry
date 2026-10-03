@@ -108,11 +108,7 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   labelText: l10n.sessionDetailsName,
-                  errorText: blank
-                      ? l10n.sessionDetailsNameRequired
-                      : _invalid
-                      ? l10n.detailsInvalid
-                      : null,
+                  errorText: blank ? l10n.sessionDetailsNameRequired : null,
                 ),
                 onChanged: (_) => setState(() => _invalid = false),
               ),
@@ -132,6 +128,18 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
               const SizedBox(height: 12),
               _field(_notes, l10n.sessionDetailsNotes, maxLines: 6),
               const SizedBox(height: 12),
+              // Any field can be refused (too long once counted as the file
+              // stores it), so the message sits under all of them.
+              if (_invalid) ...[
+                Text(
+                  l10n.detailsInvalid,
+                  key: const ValueKey('sessionDetailsInvalid'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(l10n.sessionDetailsSaved, style: theme.textTheme.bodySmall),
             ],
           ),
