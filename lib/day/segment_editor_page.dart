@@ -19,19 +19,24 @@ String segmentTypeLabel(AppLocalizations l10n, String type) => switch (type) {
   _ => l10n.segmentEditorTypeSector,
 };
 
-// A split segment's name, "Corner 3 (2)" (`splitSegmentName`).
-final _splitName = RegExp(r'^(.+) \((\d+)\)$');
-
 /// A segment's name in the app's language: an automatic name, also when
 /// split ("Corner 3 (2)"), is translated; a name the user gave is shown as
 /// written.
-String _segmentName(AppLocalizations l10n, String name) {
-  final split = _splitName.firstMatch(name);
-  if (split != null) {
-    final base = l10n.tbSegmentName(split.group(1)!);
-    if (base != split.group(1)) return '$base (${split.group(2)})';
-  }
-  return l10n.tbSegmentName(name);
+String _segmentName(AppLocalizations l10n, String name) =>
+    l10n.tbSegmentName(name);
+
+final _translatedShort = RegExp(r'^(\p{L})\p{L}*\s+(.+)$', unicode: true);
+
+/// [shortSegmentName] of a segment's name as shown: a translated automatic
+/// name keeps its first letter in any language ("Z3" for "Zakręt 3"); a
+/// name the user gave is shortened exactly as before.
+String _shortName(AppLocalizations l10n, String stored) {
+  final shown = _segmentName(l10n, stored);
+  if (shown == stored) return shortSegmentName(stored);
+  final match = _translatedShort.firstMatch(shown);
+  return match == null
+      ? shown
+      : '${match.group(1)!.toUpperCase()}${match.group(2)}';
 }
 
 final _wouldBeEmpty = RegExp(r'^“(.*)” would become empty\.$');
@@ -529,7 +534,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
-          shortSegmentName(name),
+          _shortName(l10n, segment.name),
           maxLines: 1,
           overflow: TextOverflow.clip,
           style: theme.textTheme.labelSmall?.copyWith(
@@ -843,7 +848,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
                 onPressed: _changed
                     ? () {
                         setState(() {
-                          _name.text = _shownName;
+                          _name.text = _seededName;
                           _type = _segment.type;
                           _start = _segment.startProgressMeters;
                           _end = _segment.endProgressMeters;
@@ -895,9 +900,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
                   next == null
                       ? l10n.segmentEditorMergeWithNext
                       : l10n.segmentEditorMergeWith(
-                          shortSegmentName(
-                            _segmentName(l10n, result.segments[next].name),
-                          ),
+                          _shortName(l10n, result.segments[next].name),
                         ),
                 ),
                 onPressed: widget.busy || nextId == null

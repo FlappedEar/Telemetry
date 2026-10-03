@@ -164,7 +164,7 @@ void main() {
     expect(find.text('Diagnostyka'), findsOneWidget);
     expect(find.text('Ostatni import'), findsOneWidget);
     expect(find.text('Wyszukiwanie nagrań'), findsOneWidget);
-    expect(find.text('Teoretycznie najlepsze i segmenty'), findsOneWidget);
+    expect(find.text('Segmenty i czas teoretyczny'), findsOneWidget);
     expect(find.text('Pamięć'), findsOneWidget);
     expect(find.text('Niedostępne'), findsOneWidget);
     expect(find.text('96.0 MiB'), findsOneWidget);

@@ -365,7 +365,7 @@
   "diagnosticsStepParse": "Odczyt i import",
   "diagnosticsStepAnalysis": "Analiza dnia",
   "diagnosticsStepImportTotal": "Import, od startu do wyników",
-  "diagnosticsStepTheoreticalBest": "Teoretycznie najlepsze i segmenty",
+  "diagnosticsStepTheoreticalBest": "Segmenty i czas teoretyczny",
   "diagnosticsStepChannelSummaries": "Podsumowania kanałów",
   "reportGroupNone": "Wybierz grupę zgodnych okrążeń na stronie wyników.",
   "reportCalculating": "Obliczanie…",
@@ -395,7 +395,7 @@
   "reportSameAsPrevious": "tak samo jak w poprzedniej sesji",
   "reportFasterThanPrevious": "{seconds} s szybciej niż w poprzedniej sesji",
   "reportSlowerThanPrevious": "{seconds} s wolniej niż w poprzedniej sesji",
-  "reportEligibleLaps": "{eligible} z {count, plural, =1{1 okrążenia} other{{count} okrążeń}} kwalifikuje się",
+  "reportEligibleLaps": "{eligible} z {count, plural, =1{1 okrążenia} other{{count} okrążeń}} {eligible, plural, few{kwalifikują się} other{kwalifikuje się}}",
   "reportMedian": "mediana {time}",
   "reportConsistencyDay": "Typowe okrążenie {time} · środkowa połowa w granicach {spread} s · {count, plural, =1{1 okrążenie} few{{count} okrążenia} other{{count} okrążeń}}",
   "reportConsistencyTooFew": "{minimum, plural, =1{Mniej niż 1 kwalifikujące się okrążenie; brak rozrzutu.} few{Mniej niż {minimum} kwalifikujące się okrążenia; brak rozrzutu.} other{Mniej niż {minimum} kwalifikujących się okrążeń; brak rozrzutu.}}",
@@ -432,7 +432,7 @@
   "segmentEditorKeepJoined": "Przesuń też sąsiedni segment",
   "segmentEditorApply": "Zastosuj",
   "segmentEditorReset": "Resetuj",
-  "segmentEditorSplitAt": "Podział w {meters} m",
+  "segmentEditorSplitAt": "Podział na {meters} m",
   "segmentEditorSplitHere": "Podziel tutaj",
   "segmentEditorMergeWithNext": "Połącz z następnym",
   "segmentEditorMergeWith": "Połącz z {segment}",
@@ -462,5 +462,6 @@
   "segmentEditorErrorMergeWholeLap": "Połączenie objęłoby całe okrążenie; segment musi mieć różny początek i koniec.",
   "segmentEditorErrorName": "Wpisz nazwę (1–160 znaków).",
   "segmentEditorErrorBounds": "Granice muszą leżeć między 0 a {length} m.",
-  "segmentEditorErrorEmpty": "Segment nie może być pusty."
+  "segmentEditorErrorEmpty": "Segment nie może być pusty.",
+  "reportStale": "Ustawienia analizy zmieniły się po obliczeniu tego wyniku."
 }

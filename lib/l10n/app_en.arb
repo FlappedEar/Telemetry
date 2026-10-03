@@ -2951,5 +2951,9 @@
   "segmentEditorErrorEmpty": "A segment cannot be empty.",
   "@segmentEditorErrorEmpty": {
     "description": "Why a segment edit is refused."
+  },
+  "reportStale": "The analysis decisions changed after this result was computed.",
+  "@reportStale": {
+    "description": "A day report result computed before the analysis decisions changed."
   }
 }

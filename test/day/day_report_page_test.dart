@@ -349,7 +349,7 @@ void main() {
     expect(find.text('Największe straty czasu'), findsOneWidget);
     expect(find.textContaining('Względem Sesja '), findsOneWidget);
     expect(find.text('Sesje'), findsOneWidget);
-    expect(find.textContaining('kwalifikuje się'), findsWidgets);
+    expect(find.textContaining('kwalifikuj'), findsWidgets);
     expect(find.text('Powtarzalność'), findsOneWidget);
     expect(find.textContaining('Typowe okrążenie '), findsOneWidget);
     expect(find.textContaining('Olej · maksimum'), findsOneWidget);

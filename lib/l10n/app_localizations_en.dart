@@ -1974,4 +1974,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get segmentEditorErrorEmpty => 'A segment cannot be empty.';
+
+  @override
+  String get reportStale =>
+      'The analysis decisions changed after this result was computed.';
 }

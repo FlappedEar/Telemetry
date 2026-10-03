@@ -1579,8 +1579,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get diagnosticsStepImportTotal => 'Import, od startu do wyników';
 
   @override
-  String get diagnosticsStepTheoreticalBest =>
-      'Teoretycznie najlepsze i segmenty';
+  String get diagnosticsStepTheoreticalBest => 'Segmenty i czas teoretyczny';
 
   @override
   String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
@@ -1701,7 +1700,13 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count okrążeń',
       one: '1 okrążenia',
     );
-    return '$eligible z $_temp0 kwalifikuje się';
+    String _temp1 = intl.Intl.pluralLogic(
+      eligible,
+      locale: localeName,
+      other: 'kwalifikuje się',
+      few: 'kwalifikują się',
+    );
+    return '$eligible z $_temp0 $_temp1';
   }
 
   @override
@@ -1877,7 +1882,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorSplitAt(String meters) {
-    return 'Podział w $meters m';
+    return 'Podział na $meters m';
   }
 
   @override
@@ -2002,4 +2007,8 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentEditorErrorEmpty => 'Segment nie może być pusty.';
+
+  @override
+  String get reportStale =>
+      'Ustawienia analizy zmieniły się po obliczeniu tego wyniku.';
 }

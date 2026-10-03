@@ -2906,6 +2906,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A segment cannot be empty.'**
   String get segmentEditorErrorEmpty;
+
+  /// A day report result computed before the analysis decisions changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis decisions changed after this result was computed.'**
+  String get reportStale;
 }
 
 class _AppLocalizationsDelegate

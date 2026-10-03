@@ -25,18 +25,27 @@ Color lossColor(double fraction) {
 
 /// "C1" for "Corner 1", "S2" for "Straight 2", "C3–4" for "Corners 3–4".
 String shortSegmentName(String name) {
-  final match = RegExp(r'^(\S)\S*\s+(.+)$').firstMatch(name.trim());
+  final match = RegExp(r'^(\w)\w*\s+(.+)$').firstMatch(name.trim());
   if (match == null) return name;
   return '${match.group(1)!.toUpperCase()}${match.group(2)}';
 }
 
 final _automaticSegmentName = RegExp(r'^(Corners?|Straight) (\d+(?:–\d+)?)$');
 
+// A split segment's name, "Corner 3 (2)" (`splitSegmentName`).
+final _splitSegmentName = RegExp(r'^(.+) \((\d+)\)$');
+
 /// The theoretical best's texts from `telemetry_core` in the app's language.
 extension TheoreticalBestText on AppLocalizations {
-  /// An automatic segment name ("Corner 3", "Corners 3–4", "Straight 2") in
-  /// the app's language; a name the user gave is shown as written.
+  /// An automatic segment name ("Corner 3", "Corners 3–4", "Straight 2"),
+  /// also when split ("Corner 3 (2)"), in the app's language; a name the
+  /// user gave is shown as written.
   String tbSegmentName(String name) {
+    final split = _splitSegmentName.firstMatch(name);
+    if (split != null) {
+      final base = tbSegmentName(split.group(1)!);
+      if (base != split.group(1)) return '$base (${split.group(2)})';
+    }
     final match = _automaticSegmentName.firstMatch(name);
     if (match == null) return name;
     final number = match.group(2)!;

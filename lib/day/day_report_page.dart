@@ -26,6 +26,8 @@ String reportMissingText(AppLocalizations l10n, Map<String, Object?> result) {
 String _reason(AppLocalizations l10n, String reason) => switch (reason) {
   'Not calculated yet.' => l10n.reportNotCalculated,
   'Not in this report.' => l10n.reportNotInReport,
+  'The analysis decisions changed after this result was computed.' =>
+    l10n.reportStale,
   'Choose a compatibility group.' => l10n.reportChooseGroup,
   'No eligible lap in this group.' => l10n.reportNoEligibleLap,
   'No session in this group.' => l10n.reportNoSession,
@@ -448,7 +450,7 @@ class DayReportPage extends StatelessWidget {
             '${l10n.session('${run['runName']}')} · '
                 '${run['bestSeconds'] == null ? l10n.reportNoEligibleLapShort : l10n.reportSessionBest(_time(run['bestSeconds']))}'
                 '${_number(run['bestDeltaPreviousSeconds']) == null ? '' : ' · ${delta(_number(run['bestDeltaPreviousSeconds'])!)}'}',
-            '${l10n.reportEligibleLaps(run['eligibleLapCount'] as int? ?? 0, run['lapCount'] as int? ?? 0)}'
+            '${l10n.reportEligibleLaps((run['eligibleLapCount'] as num?)?.toInt() ?? 0, (run['lapCount'] as num?)?.toInt() ?? 0)}'
                 '${run['distribution'] is Map ? ' · ${l10n.reportMedian(_time((run['distribution'] as Map)['median']))}' : ''}',
             reference: run['evidenceIndex'] is int
                 ? _evidence(result, run['evidenceIndex'] as int)
@@ -479,10 +481,11 @@ class DayReportPage extends StatelessWidget {
                   _time(day['median']),
                   (_number(day['interquartileRange']) ?? double.nan)
                       .toStringAsFixed(3),
-                  day['count'] as int? ?? 0,
+                  (day['count'] as num?)?.toInt() ?? 0,
                 )
               : l10n.reportConsistencyTooFew(
-                  range['minimumSamples'] as int? ?? minimumConsistencySamples,
+                  (range['minimumSamples'] as num?)?.toInt() ??
+                      minimumConsistencySamples,
                 ),
           key: const ValueKey('dayReportConsistencyDay'),
         ),
