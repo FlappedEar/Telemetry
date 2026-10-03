@@ -211,8 +211,8 @@ class _DayImportPageState extends State<DayImportPage> {
   /// another app; its day then opens by itself.
   bool _showWhenImported = false;
 
-  /// Recordings shared and imported here without their day being opened,
-  /// because another day's unsaved work waits to be restored.
+  /// Recordings shared and imported here whose day has not been shown,
+  /// such as when another day's unsaved work waits to be restored.
   List<String> _unopenedShares = const [];
 
   /// Shows the day of a finished import. The import is then forgotten, so
@@ -302,10 +302,13 @@ class _DayImportPageState extends State<DayImportPage> {
   static OpenedDay Function() _recoverJob(DayRecovery recovery) =>
       () => openRecoveredDay(recovery);
 
-  Future<void> _restore(DayRecovery recovery) async {
+  Future<void> _restore(DayRecovery shown) async {
     _waiting = [];
     setState(() => _opening = true);
     try {
+      // The snapshot as it is now: the day closed last may have written a
+      // newer one after this card was shown.
+      final recovery = await queueRecovery(widget.recovery.load) ?? shown;
       await widget.fileAccess.restore();
       final day = await Isolate.run(_recoverJob(recovery));
       if (!mounted) return;
@@ -513,7 +516,9 @@ class _DayImportPageState extends State<DayImportPage> {
       // Shares imported here and not opened stay one day: a later share is
       // imported together with them, not instead of them.
       final all = [..._unopenedShares, ...paths, ...waiting];
-      _unopenedShares = snapshotLeft ? all : const [];
+      // Until their day is shown (cleared then), also when it cannot open by
+      // itself because another page is on top.
+      _unopenedShares = all;
       _start(all);
       if (behind && started) _tellImportingBehind();
       return;
@@ -651,6 +656,15 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _openDay() async {
     final path = await _chooseDocument();
     if (path == null || !mounted) return;
+    if (_opening || _shownDay != null) {
+      // A shared recording opened a day while the choice was made.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Another day is being opened. Try again after it.'),
+        ),
+      );
+      return;
+    }
     _waiting = [];
     setState(() => _opening = true);
     try {

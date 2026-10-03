@@ -424,13 +424,6 @@ final class DayResultsController extends ChangeNotifier {
     if (prepared is DayAddition) return prepared;
     final outcome = prepared as DayAppendOutcome;
     final part = outcome.part;
-    if (_disposed) {
-      return const DayAddition(
-        notes: [],
-        error: 'The day was closed.',
-        closed: true,
-      );
-    }
     if (part == null || outcome.runs.isEmpty) {
       return DayAddition(
         notes: outcome.notes,
@@ -461,8 +454,8 @@ final class DayResultsController extends ChangeNotifier {
     // A day with a file is saved again below; only a day without one is
     // kept for recovery now, so a share into a saved day does not replace
     // the unsaved day the recovery slot may hold.
-    if (_documentPath == null && !_saving) _scheduleRecovery();
-    notifyListeners();
+    if (_documentPath == null && !_saving && !_disposed) _scheduleRecovery();
+    if (!_disposed) notifyListeners();
     var saveError = '';
     // A save running now may have been asked for a new file: the day is
     // saved where that save leaves it.
@@ -1121,8 +1114,9 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    // Changes made just before leaving the day are still kept.
-    _appendJob?.cancel();
+    // Changes made just before leaving the day are still kept. An addition
+    // being prepared is finished: the day is then saved again, or kept for
+    // recovery.
     unawaited(flushRecovery());
     super.dispose();
   }
