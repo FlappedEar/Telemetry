@@ -3,7 +3,9 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import 'day_results_controller.dart' show offersCalculateAgain;
 import '../format.dart';
-import 'theoretical_best_card.dart' show CalculateAgainButton, lossColor;
+import '../l10n.dart';
+import 'theoretical_best_card.dart'
+    show CalculateAgainButton, TheoreticalBestText, lossColor;
 import 'track_map.dart';
 import 'touch.dart';
 
@@ -32,24 +34,60 @@ typedef CompareLaps = void Function(
   return start == null || end == null || !(end > start) ? null : (start, end);
 }
 
-/// Readable text for why a time-loss list is unavailable.
-String timeLossReasonText(String reason) => switch (reason) {
-  timeLossNoReference =>
-    'The best lap could not be timed against the segments.',
-  _ => reason,
-};
+final _english = lookupAppLocalizations(const Locale('en'));
 
-/// "Straight 2 · after Corner 1" for a straight right after a corner.
+/// Readable text for why a time-loss list is unavailable, in English.
+String timeLossReasonText(String reason) => _english.timeLossReason(reason);
+
+/// "Straight 2 · after Corner 1" for a straight right after a corner, in
+/// English.
 String timeLossWindowName(PublishedTimeLoss loss) =>
-    loss.window.role == timeLossRoleContinuation
-    ? '${loss.window.name} · after ${loss.cornerName.isEmpty ? 'the corner' : loss.cornerName}'
-    : loss.window.name;
+    _english.timeLossWindow(loss);
 
-String _lapName(DayTheoreticalBest result, Object? reference) {
-  for (final lap in result.laps) {
-    if (lap.lap.reference == reference) return lap.lap.displayName;
+final _lapLabel = RegExp(r'^(.+) · LAP (\d+)$');
+
+extension TimeLossText on AppLocalizations {
+  /// A segment name proposed by `telemetry_core` ("Corner 1", "Straight 2",
+  /// "Corners 3–5") in the app's language; a name the user gave is shown
+  /// as written.
+  String timeLossSegment(String name) => tbSegmentName(name);
+
+  /// A lap label written by the day's analysis ("Session 3 · LAP 2") in the
+  /// app's language; any other label is shown as written.
+  String timeLossLapLabel(String label) {
+    final match = _lapLabel.firstMatch(label);
+    return match == null
+        ? label
+        : lapName(session(match.group(1)!), int.parse(match.group(2)!));
   }
-  return 'Lap unavailable';
+
+  /// Why a time-loss list is unavailable; a reason the app does not know is
+  /// shown as written.
+  String timeLossReason(String reason) => switch (reason) {
+    timeLossNoReference => timeLossReasonNoReference,
+    timeLossBestLapUntimedMessage => timeLossReasonBestLapUntimed,
+    _ => reason,
+  };
+
+  /// "Straight 2 · after Corner 1" for a straight right after a corner.
+  String timeLossWindow(PublishedTimeLoss loss) {
+    final name = timeLossSegment(loss.window.name);
+    if (loss.window.role != timeLossRoleContinuation) return name;
+    return loss.cornerName.isEmpty
+        ? timeLossSegmentAfterTheCorner(name)
+        : timeLossSegmentAfterCorner(name, timeLossSegment(loss.cornerName));
+  }
+}
+
+String _lapName(
+  AppLocalizations l10n,
+  DayTheoreticalBest result,
+  Object? reference,
+) {
+  for (final lap in result.laps) {
+    if (lap.lap.reference == reference) return l10n.lap(lap.lap);
+  }
+  return l10n.timeLossLapUnavailable;
 }
 
 /// The day's largest observed time losses (Overlays' "Largest time
@@ -103,6 +141,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final result = widget.result;
     return Card(
       child: Padding(
@@ -110,12 +149,12 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Time losses', style: theme.textTheme.labelLarge),
+            Text(l10n.timeLossTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             if (widget.loading || result == null)
-              const Text('Measured with the theoretical best…')
+              Text(l10n.timeLossLoading)
             else if (result.state != DayTheoreticalBestState.ready) ...[
-              Text(result.message),
+              Text(l10n.tbMessage(result.message)),
               if (widget.onRetry case final retry?
                   when offersCalculateAgain(result))
                 CalculateAgainButton(retry),
@@ -129,6 +168,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
 
   List<Widget> _ready(BuildContext context, DayTheoreticalBest result) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final summary = result.publishedTimeLosses(allLaps: _allLaps);
     final losses = summary.losses;
     final shown = _expanded ? losses : losses.take(_shown).toList();
@@ -136,9 +176,12 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
       SegmentedButton<bool>(
         key: const ValueKey('timeLossScope'),
         showSelectedIcon: false,
-        segments: const [
-          ButtonSegment(value: false, label: Text("Each session's best")),
-          ButtonSegment(value: true, label: Text('Every lap')),
+        segments: [
+          ButtonSegment(
+            value: false,
+            label: Text(l10n.timeLossScopeSessionBest),
+          ),
+          ButtonSegment(value: true, label: Text(l10n.timeLossScopeEveryLap)),
         ],
         selected: {_allLaps},
         onSelectionChanged: (selection) => setState(() {
@@ -149,27 +192,22 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
       ),
       const SizedBox(height: 8),
       if (!summary.available)
-        Text(timeLossReasonText(summary.message))
+        Text(l10n.timeLossReason(summary.message))
       else ...[
         Text(
-          'Against ${_lapName(result, summary.referenceLap)} · '
-          '${summary.comparedLapCount} ${summary.comparedLapCount == 1 ? 'lap' : 'laps'} compared · '
-          '${summary.observationCount} ${summary.observationCount == 1 ? 'loss' : 'losses'} observed'
-          '${summary.untimedWindowCount > 0 ? ' · ${summary.untimedWindowCount} not fully covered left out' : ''}',
+          [
+            l10n.timeLossAgainst(_lapName(l10n, result, summary.referenceLap)),
+            l10n.timeLossLapsCompared(summary.comparedLapCount),
+            l10n.timeLossLossesObserved(summary.observationCount),
+            if (summary.untimedWindowCount > 0)
+              l10n.timeLossUntimedLeftOut(summary.untimedWindowCount),
+          ].join(' · '),
           key: const ValueKey('timeLossSummary'),
         ),
         const SizedBox(height: 4),
-        Text(
-          'Each loss is the extra time one lap took through one segment '
-          'compared with the best lap, both timed on one track axis. A '
-          'straight right after a corner is its own segment, so time lost on '
-          'the exit is not counted in the corner. An observed loss is not a '
-          'guaranteed or necessarily safe gain.',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(l10n.timeLossExplanation, style: theme.textTheme.bodySmall),
         const SizedBox(height: 8),
-        if (losses.isEmpty)
-          const Text('No lap lost time to the best lap in any timed segment.'),
+        if (losses.isEmpty) Text(l10n.timeLossNone),
         for (var i = 0; i < shown.length; ++i)
           _lossRow(context, result, shown[i], i),
         if (losses.length > _shown && !_expanded)
@@ -179,7 +217,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
               _expanded = true;
               _remember();
             }),
-            child: Text('Show all ${losses.length}'),
+            child: Text(l10n.timeLossShowAll(losses.length)),
           ),
       ],
     ];
@@ -192,6 +230,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
     int index,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return InkWell(
       key: ValueKey('timeLoss $index'),
       onTap: () => Navigator.of(context).push(
@@ -225,9 +264,9 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Wraps rather than cut "after Corner 4" at 360 dp.
-                  Text(timeLossWindowName(loss)),
+                  Text(l10n.timeLossWindow(loss)),
                   Text(
-                    _lapName(result, loss.lapReference),
+                    _lapName(l10n, result, loss.lapReference),
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -305,6 +344,7 @@ class _TimeLossPageState extends State<TimeLossPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final loss = widget.loss;
     final window = loss.window;
     final comparison = widget.result.compareLoss(loss);
@@ -328,16 +368,21 @@ class _TimeLossPageState extends State<TimeLossPage> {
         ),
       ],
     );
+    final segment = l10n.timeLossSegment(window.name);
     final atStart = window.cumulativeAtStartSeconds,
         atEnd = window.cumulativeAtEndSeconds;
     return Scaffold(
-      appBar: AppBar(title: Text(timeLossWindowName(loss))),
+      appBar: AppBar(title: Text(l10n.timeLossWindow(loss))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '${lap?.displayName ?? 'Lap unavailable'} against the best lap, '
-            '${reference?.displayName ?? 'unavailable'}',
+            l10n.timeLossAgainstBestLap(
+              lap == null ? l10n.timeLossLapUnavailable : l10n.lap(lap),
+              reference == null
+                  ? l10n.timeLossUnavailable
+                  : l10n.lap(reference),
+            ),
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
@@ -346,17 +391,17 @@ class _TimeLossPageState extends State<TimeLossPage> {
             runSpacing: 8,
             children: [
               stat(
-                'This lap',
+                l10n.timeLossThisLap,
                 time(comparison?.lapSeconds),
                 const ValueKey('lossLapTime'),
               ),
               stat(
-                'Best lap',
+                l10n.timeLossBestLap,
                 time(comparison?.referenceSeconds),
                 const ValueKey('lossReferenceTime'),
               ),
               stat(
-                'Difference',
+                l10n.timeLossDifference,
                 comparison?.differenceSeconds == null
                     ? '—'
                     : displayDelta(comparison!.differenceSeconds!),
@@ -366,20 +411,19 @@ class _TimeLossPageState extends State<TimeLossPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Through ${window.name}, from ${window.startProgressMeters.round()} m to '
-            '${window.endProgressMeters.round()} m after the line.',
+            l10n.timeLossThrough(
+              segment,
+              window.startProgressMeters.round(),
+              window.endProgressMeters.round(),
+            ),
           ),
           if (atStart != null && atEnd != null)
             Text(
-              'Gap to the best lap: ${displayDelta(atStart)} at the start of the segment, '
-              '${displayDelta(atEnd)} at its end.',
+              l10n.timeLossGap(displayDelta(atStart), displayDelta(atEnd)),
               key: const ValueKey('lossGap'),
             ),
           if (loss.loss.coverageLap < 1 || loss.loss.coverageReference < 1)
-            Text(
-              'Part of the segment has no GPS on one of the laps.',
-              style: theme.textTheme.bodySmall,
-            ),
+            Text(l10n.timeLossNoGps, style: theme.textTheme.bodySmall),
           if (path != null && !path.isEmpty) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -394,25 +438,20 @@ class _TimeLossPageState extends State<TimeLossPage> {
                       _inSegment[point.telemetryTime] ?? false
                       ? highlight
                       : neutral,
-                  semanticLabel:
-                      'Best lap trace with ${window.name} highlighted',
+                  semanticLabel: l10n.timeLossMapLabel(segment),
                 ),
               ),
             ),
           ],
           const SizedBox(height: 12),
-          Text(
-            'An observed difference between two laps, not a guaranteed or '
-            'necessarily safe gain.',
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(l10n.timeLossDisclaimer, style: theme.textTheme.bodySmall),
           if (widget.onOpenLap != null && lap != null)
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 key: const ValueKey('lossOpenLap'),
                 icon: const Icon(Icons.map_outlined),
-                label: Text('Open ${lap.displayName}'),
+                label: Text(l10n.timeLossOpenLap(l10n.lap(lap))),
                 onPressed: () => widget.onOpenLap!(lap),
               ),
             ),
@@ -422,7 +461,7 @@ class _TimeLossPageState extends State<TimeLossPage> {
               child: TextButton.icon(
                 key: const ValueKey('lossCompare'),
                 icon: const Icon(Icons.compare_arrows),
-                label: Text('Compare with ${reference.displayName}'),
+                label: Text(l10n.timeLossCompareWith(l10n.lap(reference))),
                 onPressed: () => widget.onCompare!(
                   lap,
                   reference,

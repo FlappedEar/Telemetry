@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import '../ui/theme.dart';
 import '../units.dart';
 import 'apple_map.dart';
@@ -80,11 +81,12 @@ Future<DayLapRow?> pickComparisonLap(
   context: context,
   builder: (context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     Widget option(DayLapRow row, {bool best = false}) => ListTile(
       key: ValueKey('${best ? 'suggestedLap' : 'pickLap'} ${row.displayName}'),
       leading: best ? const Icon(Icons.emoji_events_outlined) : null,
-      title: Text(row.displayName),
-      subtitle: best ? const Text('Suggested: the fastest') : null,
+      title: Text(l10n.lap(row)),
+      subtitle: best ? Text(l10n.suggestedFastest) : null,
       trailing: Text(
         displayTime(row.durationSeconds),
         style: theme.textTheme.titleSmall,
@@ -95,9 +97,9 @@ Future<DayLapRow?> pickComparisonLap(
       title: Text(title),
       children: [
         if (candidates.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Text('No other ranked lap of this group to compare with.'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Text(l10n.noOtherRankedLap),
           ),
         if (suggested != null) option(suggested, best: true),
         for (final row in candidates) option(row),
@@ -300,7 +302,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
     final current = slot == 0 ? _a : _b, other = slot == 0 ? _b : _a;
     final picked = await pickComparisonLap(
       context,
-      title: 'Lap ${slot == 0 ? 'A' : 'B'}',
+      title: slot == 0 ? context.l10n.pickLapA : context.l10n.lapB,
       candidates: [
         for (final row in controller.comparisonCandidates(other))
           if (row.reference != other.reference &&
