@@ -3653,4 +3653,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPageShowResults => 'Show the day\'s results';
+
+  @override
+  String get importPageRecordingTypes => 'VBO and RCZ recordings';
+
+  @override
+  String get importPageImportThisFolder => 'Import this folder';
+
+  @override
+  String get importPageChooseFile =>
+      'Choose a VBO or RaceChrono RCZ telemetry file.';
+
+  @override
+  String get importPageNotRegularFile =>
+      'Telemetry source is not an existing regular file.';
+
+  @override
+  String get importPageTooManyFiles =>
+      'Too many files in one import; select a smaller batch.';
+
+  @override
+  String get importPagePathTooLong => 'Telemetry source path is too long.';
+
+  @override
+  String get importPageFileSize =>
+      'Telemetry file is empty or exceeds the per-file import limit.';
+
+  @override
+  String get importPageBatchBytes =>
+      'Batch input-byte limit exceeded; import fewer recordings.';
+
+  @override
+  String get importPageIdenticalContent =>
+      'Identical file content already present in this batch.';
+
+  @override
+  String get importPageSourceChanged =>
+      'Telemetry source changed during import; retry with a stable file.';
+
+  @override
+  String get importPageInvalidTimeRange =>
+      'Telemetry source has an invalid time range.';
+
+  @override
+  String get importPageMismatchedChannels =>
+      'Telemetry source has mismatched channel timestamps and values.';
+
+  @override
+  String get importPageBatchSamples =>
+      'Batch decoded-sample limit exceeded; import fewer recordings.';
+
+  @override
+  String get importPageGroupingLimit =>
+      'Source grouping exceeds the import limit.';
 }

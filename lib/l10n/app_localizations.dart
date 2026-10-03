@@ -5530,6 +5530,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show the day\'s results'**
   String get importPageShowResults;
+
+  /// The file type shown in the file picker when choosing recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO and RCZ recordings'**
+  String get importPageRecordingTypes;
+
+  /// The folder picker's confirm button.
+  ///
+  /// In en, this message translates to:
+  /// **'Import this folder'**
+  String get importPageImportThisFolder;
+
+  /// A picked file is not a recording the app reads.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a VBO or RaceChrono RCZ telemetry file.'**
+  String get importPageChooseFile;
+
+  /// A picked recording is missing or is not a regular file.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source is not an existing regular file.'**
+  String get importPageNotRegularFile;
+
+  /// An import was refused because it had too many files.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many files in one import; select a smaller batch.'**
+  String get importPageTooManyFiles;
+
+  /// A recording path is longer than the app accepts.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source path is too long.'**
+  String get importPagePathTooLong;
+
+  /// A recording is empty or too large.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry file is empty or exceeds the per-file import limit.'**
+  String get importPageFileSize;
+
+  /// The files of one import are too large together.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch input-byte limit exceeded; import fewer recordings.'**
+  String get importPageBatchBytes;
+
+  /// A recording is a copy of another file of the same import.
+  ///
+  /// In en, this message translates to:
+  /// **'Identical file content already present in this batch.'**
+  String get importPageIdenticalContent;
+
+  /// A recording changed while it was being read.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source changed during import; retry with a stable file.'**
+  String get importPageSourceChanged;
+
+  /// A recording whose times are not valid.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source has an invalid time range.'**
+  String get importPageInvalidTimeRange;
+
+  /// A recording whose channel times and values do not match.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source has mismatched channel timestamps and values.'**
+  String get importPageMismatchedChannels;
+
+  /// The recordings of one import hold too many samples together.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch decoded-sample limit exceeded; import fewer recordings.'**
+  String get importPageBatchSamples;
+
+  /// The recordings of one import could not be grouped within the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Source grouping exceeds the import limit.'**
+  String get importPageGroupingLimit;
 }
 
 class _AppLocalizationsDelegate

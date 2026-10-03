@@ -22,6 +22,7 @@ void main() {
     const runner = 'lib/import/import_runner.dart';
     const controller = 'lib/import/day_import_controller.dart';
     const scan = 'packages/telemetry_core/lib/src/intake/folder_scan.dart';
+    const plan = 'packages/telemetry_core/lib/src/intake/import_plan.dart';
     final texts = <(String, String, String)>[
       (controller, "'The import failed: \$error'", 'The import failed: boom'),
       (controller, "'No recording could be imported.'", ''),
@@ -112,6 +113,66 @@ void main() {
         "'\$name: not a VBO or RCZ recording; not imported.'",
         'notes.txt: not a VBO or RCZ recording; not imported.',
       ),
+      (
+        plan,
+        "'Choose a VBO or RaceChrono RCZ telemetry file.'",
+        'a.vbo: Choose a VBO or RaceChrono RCZ telemetry file.',
+      ),
+      (
+        plan,
+        "'Telemetry source is not an existing regular file.'",
+        'a.vbo: Telemetry source is not an existing regular file.',
+      ),
+      (
+        plan,
+        "'Too many files in one import; select a smaller batch.'",
+        'a.vbo: Too many files in one import; select a smaller batch.',
+      ),
+      (
+        plan,
+        "'Telemetry source path is too long.'",
+        'a.vbo: Telemetry source path is too long.',
+      ),
+      (
+        plan,
+        "'Telemetry file is empty or exceeds the per-file import limit.'",
+        'a.vbo: Telemetry file is empty or exceeds the per-file import limit.',
+      ),
+      (
+        plan,
+        "'Batch input-byte limit exceeded; import fewer recordings.'",
+        'a.vbo: Batch input-byte limit exceeded; import fewer recordings.',
+      ),
+      (
+        plan,
+        "'Identical file content already present in this batch.'",
+        'a.vbo: Identical file content already present in this batch.',
+      ),
+      (
+        plan,
+        "'Telemetry source changed during import; retry with a stable file.'",
+        'a.vbo: Telemetry source changed during import; retry with a stable file.',
+      ),
+      (
+        plan,
+        "'Telemetry source has an invalid time range.'",
+        'a.vbo: Telemetry source has an invalid time range.',
+      ),
+      (
+        plan,
+        "'Telemetry source has mismatched channel timestamps and values.'",
+        'a.vbo: Telemetry source has mismatched channel timestamps and values.',
+      ),
+      (
+        plan,
+        "'Batch decoded-sample limit exceeded; import fewer recordings.'",
+        'a.vbo: Batch decoded-sample limit exceeded; import fewer recordings.',
+      ),
+      (
+        plan,
+        "'Source grouping exceeds the import limit.'",
+        'a.vbo: Source grouping exceeds the import limit.',
+      ),
     ];
     final sources = <String, String>{};
     for (final (path, literal, sample) in texts) {
@@ -131,6 +192,11 @@ void main() {
       polish.importMessage('a: b.vbo: not found; not imported.'),
       'a: b.vbo: nie znaleziono; nie zaimportowano.',
     );
+    // Adding to a day words it apart; not half translated.
+    const appended =
+        'a.rcz: the same drive as Session 2 in the other format; kept as its '
+        'alternative source.';
+    expect(polish.importMessage(appended), appended);
     expect(
       polish.importMessage('broken.vbo: Unsupported format'),
       'broken.vbo: Unsupported format',

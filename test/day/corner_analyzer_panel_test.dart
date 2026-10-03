@@ -422,7 +422,7 @@ void main() {
         'shift by a few metres on these laps.',
         const [],
       ),
-      startsWith('Segmenty zatwierdzone w: Sesja 2,'),
+      startsWith('Segmenty zatwierdzone dla: Sesja 2,'),
     );
   });
 

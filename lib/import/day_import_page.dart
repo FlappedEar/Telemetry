@@ -39,16 +39,14 @@ abstract interface class RecordingPickers {
 /// carry a type declared by another app (RaceChrono), so iOS shows every
 /// file; the scan reports what is not a recording. Desktops filter by
 /// extension. Android does not use this, see [PlatformRecordingPickers].
-XTypeGroup recordingTypeGroup(TargetPlatform platform) =>
-    platform == TargetPlatform.iOS
-    ? const XTypeGroup(
-        label: 'VBO and RCZ recordings',
-        uniformTypeIdentifiers: ['public.data'],
-      )
-    : const XTypeGroup(
-        label: 'VBO and RCZ recordings',
-        extensions: ['vbo', 'rcz', 'VBO', 'RCZ'],
-      );
+///
+/// [label] is the filter's name in the picker.
+XTypeGroup recordingTypeGroup(
+  TargetPlatform platform, {
+  String label = 'VBO and RCZ recordings',
+}) => platform == TargetPlatform.iOS
+    ? XTypeGroup(label: label, uniformTypeIdentifiers: const ['public.data'])
+    : XTypeGroup(label: label, extensions: const ['vbo', 'rcz', 'VBO', 'RCZ']);
 
 /// Desktops accept dropped recordings and offer a folder picker. Phones and
 /// tablets pick recordings only: on iOS file_selector has no folder picker,
@@ -88,7 +86,12 @@ final class PlatformRecordingPickers implements RecordingPickers {
     }
     final paths = [
       for (final file in await openFiles(
-        acceptedTypeGroups: [recordingTypeGroup(defaultTargetPlatform)],
+        acceptedTypeGroups: [
+          recordingTypeGroup(
+            defaultTargetPlatform,
+            label: deviceL10n().importPageRecordingTypes,
+          ),
+        ],
       ))
         file.path,
     ];
@@ -99,7 +102,7 @@ final class PlatformRecordingPickers implements RecordingPickers {
   @override
   Future<String?> pickFolder() async {
     final folder = await getDirectoryPath(
-      confirmButtonText: 'Import this folder',
+      confirmButtonText: deviceL10n().importPageImportThisFolder,
     );
     if (folder != null) await const PlatformFileAccess().remember([folder]);
     return folder;
@@ -154,8 +157,11 @@ final _others = RegExp(
   r'imported\.$',
 );
 final _sameContent = RegExp(r'^same content as (.+); imported once\.$');
+// Not the note of adding to a day, "... as Session 2 in the other format;
+// kept as ...".
 final _sameDrive = RegExp(
-  r'^the same drive as (.+); kept as its alternative source\.$',
+  r'^the same drive as ((?:(?! in the other format;).)+); kept as its '
+  r'alternative source\.$',
 );
 
 /// The import's errors and notes in the app's language.
@@ -227,6 +233,27 @@ extension ImportMessageText on AppLocalizations {
         importPageMetadataFile,
       'a link; not followed.' => importPageFileLink,
       'not a VBO or RCZ recording; not imported.' => importPageNotRecording,
+      'Choose a VBO or RaceChrono RCZ telemetry file.' => importPageChooseFile,
+      'Telemetry source is not an existing regular file.' =>
+        importPageNotRegularFile,
+      'Too many files in one import; select a smaller batch.' =>
+        importPageTooManyFiles,
+      'Telemetry source path is too long.' => importPagePathTooLong,
+      'Telemetry file is empty or exceeds the per-file import limit.' =>
+        importPageFileSize,
+      'Batch input-byte limit exceeded; import fewer recordings.' =>
+        importPageBatchBytes,
+      'Identical file content already present in this batch.' =>
+        importPageIdenticalContent,
+      'Telemetry source changed during import; retry with a stable file.' =>
+        importPageSourceChanged,
+      'Telemetry source has an invalid time range.' =>
+        importPageInvalidTimeRange,
+      'Telemetry source has mismatched channel timestamps and values.' =>
+        importPageMismatchedChannels,
+      'Batch decoded-sample limit exceeded; import fewer recordings.' =>
+        importPageBatchSamples,
+      'Source grouping exceeds the import limit.' => importPageGroupingLimit,
       _ => null,
     };
   }

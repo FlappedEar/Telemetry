@@ -3025,7 +3025,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'nie znaleziono segmentu na tym okrążeniu';
 
   @override
-  String get cornerDetailsReasonNotRecorded => 'nie nagrano';
+  String get cornerDetailsReasonNotRecorded => 'nie zapisano';
 
   @override
   String get cornerDetailsReasonNoValidSamples => 'brak poprawnych próbek';
@@ -3174,7 +3174,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerAnalyzerNoteApproved(String session) {
-    return 'Segmenty zatwierdzone w: $session, jak w sektorowym teoretycznie najlepszym. Granice to odległości wzdłuż osi tamtej sesji, więc na tych okrążeniach mogą przesunąć się o kilka metrów.';
+    return 'Segmenty zatwierdzone dla: $session, jak w sektorowym teoretycznie najlepszym. Granice to odległości wzdłuż osi tamtej sesji, więc na tych okrążeniach mogą przesunąć się o kilka metrów.';
   }
 
   @override
@@ -3725,4 +3725,57 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageShowResults => 'Pokaż wyniki dnia';
+
+  @override
+  String get importPageRecordingTypes => 'Nagrania VBO i RCZ';
+
+  @override
+  String get importPageImportThisFolder => 'Importuj ten folder';
+
+  @override
+  String get importPageChooseFile =>
+      'Wybierz plik telemetrii VBO lub RaceChrono RCZ.';
+
+  @override
+  String get importPageNotRegularFile =>
+      'Wybrany plik nie istnieje albo nie jest zwykłym plikiem.';
+
+  @override
+  String get importPageTooManyFiles =>
+      'Za dużo plików w jednym imporcie; wybierz mniej.';
+
+  @override
+  String get importPagePathTooLong => 'Ścieżka do nagrania jest za długa.';
+
+  @override
+  String get importPageFileSize =>
+      'Plik nagrania jest pusty albo przekracza limit rozmiaru pliku.';
+
+  @override
+  String get importPageBatchBytes =>
+      'Przekroczono limit rozmiaru importu; zaimportuj mniej nagrań.';
+
+  @override
+  String get importPageIdenticalContent =>
+      'Plik o tej samej zawartości jest już w tym imporcie.';
+
+  @override
+  String get importPageSourceChanged =>
+      'Nagranie zmieniło się podczas importu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
+
+  @override
+  String get importPageInvalidTimeRange =>
+      'Nagranie ma nieprawidłowy zakres czasu.';
+
+  @override
+  String get importPageMismatchedChannels =>
+      'W nagraniu znaczniki czasu kanałów nie pasują do wartości.';
+
+  @override
+  String get importPageBatchSamples =>
+      'Przekroczono limit liczby próbek w imporcie; zaimportuj mniej nagrań.';
+
+  @override
+  String get importPageGroupingLimit =>
+      'Grupowanie nagrań przekracza limit importu.';
 }

@@ -5427,5 +5427,61 @@
   "importPageShowResults": "Show the day's results",
   "@importPageShowResults": {
     "description": "Button: open the imported day."
+  },
+  "importPageRecordingTypes": "VBO and RCZ recordings",
+  "@importPageRecordingTypes": {
+    "description": "The file type shown in the file picker when choosing recordings."
+  },
+  "importPageImportThisFolder": "Import this folder",
+  "@importPageImportThisFolder": {
+    "description": "The folder picker's confirm button."
+  },
+  "importPageChooseFile": "Choose a VBO or RaceChrono RCZ telemetry file.",
+  "@importPageChooseFile": {
+    "description": "A picked file is not a recording the app reads."
+  },
+  "importPageNotRegularFile": "Telemetry source is not an existing regular file.",
+  "@importPageNotRegularFile": {
+    "description": "A picked recording is missing or is not a regular file."
+  },
+  "importPageTooManyFiles": "Too many files in one import; select a smaller batch.",
+  "@importPageTooManyFiles": {
+    "description": "An import was refused because it had too many files."
+  },
+  "importPagePathTooLong": "Telemetry source path is too long.",
+  "@importPagePathTooLong": {
+    "description": "A recording path is longer than the app accepts."
+  },
+  "importPageFileSize": "Telemetry file is empty or exceeds the per-file import limit.",
+  "@importPageFileSize": {
+    "description": "A recording is empty or too large."
+  },
+  "importPageBatchBytes": "Batch input-byte limit exceeded; import fewer recordings.",
+  "@importPageBatchBytes": {
+    "description": "The files of one import are too large together."
+  },
+  "importPageIdenticalContent": "Identical file content already present in this batch.",
+  "@importPageIdenticalContent": {
+    "description": "A recording is a copy of another file of the same import."
+  },
+  "importPageSourceChanged": "Telemetry source changed during import; retry with a stable file.",
+  "@importPageSourceChanged": {
+    "description": "A recording changed while it was being read."
+  },
+  "importPageInvalidTimeRange": "Telemetry source has an invalid time range.",
+  "@importPageInvalidTimeRange": {
+    "description": "A recording whose times are not valid."
+  },
+  "importPageMismatchedChannels": "Telemetry source has mismatched channel timestamps and values.",
+  "@importPageMismatchedChannels": {
+    "description": "A recording whose channel times and values do not match."
+  },
+  "importPageBatchSamples": "Batch decoded-sample limit exceeded; import fewer recordings.",
+  "@importPageBatchSamples": {
+    "description": "The recordings of one import hold too many samples together."
+  },
+  "importPageGroupingLimit": "Source grouping exceeds the import limit.",
+  "@importPageGroupingLimit": {
+    "description": "The recordings of one import could not be grouped within the limit."
   }
 }
