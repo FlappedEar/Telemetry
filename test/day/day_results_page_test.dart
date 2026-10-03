@@ -250,8 +250,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Not ranked: excluded (“Traffic”)'), findsOneWidget);
       expect(find.text('Include in ranking'), findsOneWidget);
+      // The best of the day is now the second lap, in the blue bar.
       expect(
-        find.textContaining('to the best of the day (${second.displayName})'),
+        find.descendant(
+          of: find.byKey(const ValueKey('lapBestBar')),
+          matching: find.text(second.displayName),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          '${displayDelta(best.durationSeconds - second.durationSeconds)} '
+          'to the best of the day',
+        ),
         findsOneWidget,
       );
 

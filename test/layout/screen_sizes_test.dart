@@ -424,6 +424,31 @@ void main() {
           final other = controller
               .comparisonCandidates(best)
               .firstWhere((row) => row.reference != best.reference);
+          // Another lap: its two time bars and the gap, the tallest summary.
+          await tester.pumpWidget(
+            TelemetryApp(
+              // A new page, not the best lap's state with another row.
+              home: LapPage(
+                key: const ValueKey('other lap'),
+                controller: controller,
+                row: other,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('lapBestBar')), findsOneWidget);
+          expect(tester.takeException(), isNull, reason: 'other lap');
+          await tester.scrollUntilVisible(
+            find.byType(TrackMap),
+            200,
+            scrollable: find.byType(Scrollable).first,
+          );
+          expect(
+            tester.getSize(find.byType(TrackMap)).height,
+            greaterThanOrEqualTo(200),
+          );
+          await scrollThrough(tester);
+          expect(tester.takeException(), isNull, reason: 'other lap scrolled');
           await tester.pumpWidget(
             TelemetryApp(
               home: ComparisonPage(controller: controller, a: other, b: best),

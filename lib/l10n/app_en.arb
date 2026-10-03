@@ -558,7 +558,7 @@
   },
   "dayBestLabel": "Best day",
   "@dayBestLabel": {
-    "description": "Label of the day's best lap, at the top of the day page."
+    "description": "Label of the day's best lap, at the top of the day page and on the lap page's blue bar."
   },
   "theoreticalBestLabel": "Theoretical best",
   "@theoreticalBestLabel": {
@@ -3560,25 +3560,11 @@
   },
   "lapPageBestOfDay": "Best lap of the day",
   "@lapPageBestOfDay": {
-    "description": "Under the time of the day's best lap."
-  },
-  "lapPageToBestOfDay": "{delta} to the best of the day ({lap})",
-  "@lapPageToBestOfDay": {
-    "description": "How far a lap is from the best lap of the day.",
-    "placeholders": {
-      "delta": {
-        "type": "String",
-        "example": "+1.234"
-      },
-      "lap": {
-        "type": "String",
-        "example": "Session 2 · LAP 3"
-      }
-    }
+    "description": "Label of the lap page's time bar on the day's best lap."
   },
   "lapPageBestOfSession": "Best lap of {session}",
   "@lapPageBestOfSession": {
-    "description": "Under the time of a session's best lap.",
+    "description": "Label of the lap page's time bar on a session's best lap.",
     "placeholders": {
       "session": {
         "type": "String",
@@ -5069,19 +5055,6 @@
       }
     }
   },
-  "importPageLapsWithBest": "{count, plural, =1{1 lap · best {time}} other{{count} laps · best {time}}}",
-  "@importPageLapsWithBest": {
-    "description": "An imported session's timed laps and its fastest lap time.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "time": {
-        "type": "String",
-        "example": "1:23.456"
-      }
-    }
-  },
   "importPageNoGate": "No laps: the recording has no start/finish line.",
   "@importPageNoGate": {
     "description": "Why an imported session has no laps."
@@ -5991,6 +5964,24 @@
   "recordingsBusyAdd": "Wait until the session's recordings are checked or changed, then add recordings.",
   "@recordingsBusyAdd": {
     "description": "Add recordings was refused because a clock check or a primary change is running."
+  },
+  "lapPageThisLap": "This lap",
+  "@lapPageThisLap": {
+    "description": "Label of the lap page's time bar when the lap is not a best lap."
+  },
+  "lapPageGapToBest": "{delta} to the best of the day",
+  "@lapPageGapToBest": {
+    "description": "Under the lap page's two time bars: how far this lap is from the best lap of the day.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "+1.234 s"
+      }
+    }
+  },
+  "importPageBest": "Best",
+  "@importPageBest": {
+    "description": "Above an imported session's best lap time (its best ranked lap, or its fastest lap when the day does not rank it), in the list of imported sessions."
   },
   "mapBackgroundMenu": "Map background",
   "@mapBackgroundMenu": {

@@ -662,7 +662,7 @@ abstract class AppLocalizations {
   /// **'B {time}'**
   String compareLapB(String time);
 
-  /// Label of the day's best lap, at the top of the day page.
+  /// Label of the day's best lap, at the top of the day page and on the lap page's blue bar.
   ///
   /// In en, this message translates to:
   /// **'Best day'**
@@ -3512,19 +3512,13 @@ abstract class AppLocalizations {
   /// **'No channel shown.'**
   String get lapPageNoChannel;
 
-  /// Under the time of the day's best lap.
+  /// Label of the lap page's time bar on the day's best lap.
   ///
   /// In en, this message translates to:
   /// **'Best lap of the day'**
   String get lapPageBestOfDay;
 
-  /// How far a lap is from the best lap of the day.
-  ///
-  /// In en, this message translates to:
-  /// **'{delta} to the best of the day ({lap})'**
-  String lapPageToBestOfDay(String delta, String lap);
-
-  /// Under the time of a session's best lap.
+  /// Label of the lap page's time bar on a session's best lap.
   ///
   /// In en, this message translates to:
   /// **'Best lap of {session}'**
@@ -5171,12 +5165,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
   String importPageLaps(int count);
 
-  /// An imported session's timed laps and its fastest lap time.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 lap · best {time}} other{{count} laps · best {time}}}'**
-  String importPageLapsWithBest(int count, String time);
-
   /// Why an imported session has no laps.
   ///
   /// In en, this message translates to:
@@ -6092,6 +6080,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wait until the session\'s recordings are checked or changed, then add recordings.'**
   String get recordingsBusyAdd;
+
+  /// Label of the lap page's time bar when the lap is not a best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'This lap'**
+  String get lapPageThisLap;
+
+  /// Under the lap page's two time bars: how far this lap is from the best lap of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'{delta} to the best of the day'**
+  String lapPageGapToBest(String delta);
+
+  /// Above an imported session's best lap time (its best ranked lap, or its fastest lap when the day does not rank it), in the list of imported sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Best'**
+  String get importPageBest;
 
   /// Tooltip of the button that chooses the map background.
   ///

@@ -2374,11 +2374,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lapPageBestOfDay => 'Best lap of the day';
 
   @override
-  String lapPageToBestOfDay(String delta, String lap) {
-    return '$delta to the best of the day ($lap)';
-  }
-
-  @override
   String lapPageBestOfSession(String session) {
     return 'Best lap of $session';
   }
@@ -3399,17 +3394,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String importPageLapsWithBest(int count, String time) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count laps · best $time',
-      one: '1 lap · best $time',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get importPageNoGate =>
       'No laps: the recording has no start/finish line.';
 
@@ -4029,6 +4013,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recordingsBusyAdd =>
       'Wait until the session\'s recordings are checked or changed, then add recordings.';
+
+  @override
+  String get lapPageThisLap => 'This lap';
+
+  @override
+  String lapPageGapToBest(String delta) {
+    return '$delta to the best of the day';
+  }
+
+  @override
+  String get importPageBest => 'Best';
 
   @override
   String get mapBackgroundMenu => 'Map background';

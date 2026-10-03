@@ -13,8 +13,10 @@ import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/import/incoming_recordings.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/ui/theme.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../day/day_results_page_test.dart' show circuitVbo;
 import '../day/recovery_test.dart' show FileRecoveryStore;
 import '../support/temp_directory.dart';
 
@@ -641,7 +643,8 @@ void main() {
     await tester.pump();
     expect(find.text('Zaimportowano 1 sesję'), findsOneWidget);
     expect(find.text('Sesja 1'), findsOneWidget);
-    expect(find.text('3 okrążenia · najlepsze 4.000 s'), findsOneWidget);
+    expect(find.text('3 okrążenia'), findsOneWidget);
+    expect(find.text('Najlepsze'), findsOneWidget);
     expect(find.text('Uwagi do importu'), findsOneWidget);
     expect(
       find.text('copy.vbo: ta sama zawartość co laps.vbo; zaimportowano raz.'),
@@ -662,8 +665,56 @@ void main() {
     await tester.pump();
     importer.jobs.single.finish();
     await tester.pump();
-    expect(find.text('Session 1'), findsOneWidget);
-    expect(find.text('3 laps · best 4.000 s'), findsOneWidget);
+    final row = find.byKey(const ValueKey('importSession Session 1'));
+    Finder inRow(String text) =>
+        find.descendant(of: row, matching: find.text(text));
+    expect(inRow('Session 1'), findsOneWidget);
+    expect(inRow('3 laps'), findsOneWidget);
+    expect(inRow('Best'), findsOneWidget);
+    expect(inRow('4.000 s'), findsOneWidget);
+  });
+
+  testWidgets('only the session of the best lap of the day is purple, and '
+      'a session without laps shows no best', (tester) async {
+    pickers.recordings = [
+      write('a.vbo', circuitVbo([30, 28, 31])),
+      write('b.vbo', circuitVbo([29, 32])),
+      write('nogate.vbo', _datedVbo(hour: 9)),
+    ];
+    await show(tester);
+    await tester.tap(find.text('Choose recordings…'));
+    await tester.pump();
+    importer.jobs.single.finish();
+    await tester.pump();
+    final finished = controller.state as DayImportFinished;
+    final ranking = finished.analysis!.ranking!;
+    final sessions = find.byKey(const ValueKey('importSessions'));
+    final purple = tester
+        .widgetList<Text>(
+          find.descendant(of: sessions, matching: find.byType(Text)),
+        )
+        .where((text) => text.style?.color == FetColors.dark.dayBest)
+        .toList();
+    expect(purple, hasLength(1));
+    expect(purple.single.data, displayTime(ranking.bestOfDay!.durationSeconds));
+    expect(purple.single.style?.fontWeight, FontWeight.w700);
+    // Each ranked session shows its best ranked lap; the recording without
+    // a start/finish line shows why, and no best.
+    for (final run in ranking.runs) {
+      final name = finished.runs.firstWhere((n) => n.run.id == run.runId).name;
+      expect(
+        find.descendant(
+          of: find.byKey(ValueKey('importSession $name')),
+          matching: find.text(displayTime(run.bestLap!.durationSeconds)),
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.descendant(of: sessions, matching: find.text('Best')),
+      findsNWidgets(ranking.runs.length),
+    );
+    expect(finished.runs, hasLength(ranking.runs.length + 1));
   });
 
   testWidgets('a folder is imported with or without subfolders', (
