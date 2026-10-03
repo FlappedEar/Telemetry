@@ -211,6 +211,29 @@ class _DayImportPageState extends State<DayImportPage> {
   /// another app; its day then opens by itself.
   bool _showWhenImported = false;
 
+  /// Recordings shared and imported here without their day being opened,
+  /// because another day's unsaved work waits to be restored.
+  List<String> _unopenedShares = const [];
+
+  /// Shows the day of a finished import. The import is then forgotten, so
+  /// the day is not built afresh from it later, without what was added or
+  /// changed since.
+  DayResultsController _showImported(
+    List<NamedRun> runs,
+    DayAnalysis analysis,
+  ) {
+    final day = DayResultsController(
+      runs: runs,
+      analysis: analysis,
+      recovery: widget.recovery,
+      appender: widget.appender,
+    );
+    _controller.clearFinished();
+    _unopenedShares = const [];
+    unawaited(_show(day));
+    return day;
+  }
+
   /// Recordings shared while an import ran; they go to its day when it
   /// opens by itself, otherwise they are received once it ends.
   List<String>? _afterImport;
@@ -225,13 +248,7 @@ class _DayImportPageState extends State<DayImportPage> {
       if (_controller.state
           case DayImportFinished(:final runs, :final analysis?)
           when ModalRoute.of(context)?.isCurrent ?? false) {
-        final day = DayResultsController(
-          runs: runs,
-          analysis: analysis,
-          recovery: widget.recovery,
-          appender: widget.appender,
-        );
-        unawaited(_show(day));
+        final day = _showImported(runs, analysis);
         if (pending.isNotEmpty) _addTo(day, pending);
         return;
       }
@@ -406,7 +423,9 @@ class _DayImportPageState extends State<DayImportPage> {
       return;
     }
     final behind = ModalRoute.of(context)?.isCurrent == false;
-    if (!behind && !_controller.isWorking && !_opening) {
+    // Also with a dialog or another page over this one: today's day is
+    // continued, and shown over them.
+    if (!_controller.isWorking && !_opening) {
       unawaited(_continueToday(paths));
       return;
     }
@@ -416,15 +435,17 @@ class _DayImportPageState extends State<DayImportPage> {
       return;
     }
     _start(paths);
-    if (behind) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Importing the shared recordings. Go back to Import a day to see them.',
-          ),
+    if (behind) _tellImportingBehind();
+  }
+
+  void _tellImportingBehind() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Importing the shared recordings. Go back to Import a day to see them.',
         ),
-      );
-    }
+      ),
+    );
   }
 
   /// Adds shared [paths] to [day]; when the day is closed before they are
@@ -487,7 +508,14 @@ class _DayImportPageState extends State<DayImportPage> {
       // Opening the imported day would replace an unsaved day kept for
       // recovery: the import stays here, next to the offer to restore it.
       _showWhenImported = !_controller.isWorking && !snapshotLeft;
-      _start([...paths, ...waiting]);
+      final behind = ModalRoute.of(context)?.isCurrent == false;
+      final started = !_controller.isWorking;
+      // Shares imported here and not opened stay one day: a later share is
+      // imported together with them, not instead of them.
+      final all = [..._unopenedShares, ...paths, ...waiting];
+      _unopenedShares = snapshotLeft ? all : const [];
+      _start(all);
+      if (behind && started) _tellImportingBehind();
       return;
     }
     final shown = _show(today);
@@ -575,8 +603,11 @@ class _DayImportPageState extends State<DayImportPage> {
     }
   }
 
-  Future<void> _pickRecordings() async =>
-      _start(await widget.pickers.pickRecordings());
+  Future<void> _pickRecordings() async {
+    final paths = await widget.pickers.pickRecordings();
+    if (paths.isNotEmpty) _unopenedShares = const [];
+    _start(paths);
+  }
 
   // Built outside the state so the isolate's closure holds only the path.
   static OpenedDay Function() _openJob(String path) =>
@@ -656,7 +687,9 @@ class _DayImportPageState extends State<DayImportPage> {
 
   Future<void> _pickFolder() async {
     final folder = await widget.pickers.pickFolder();
-    if (folder != null) _start([folder]);
+    if (folder == null) return;
+    _unopenedShares = const [];
+    _start([folder]);
   }
 
   @override
@@ -847,14 +880,7 @@ class _DayImportPageState extends State<DayImportPage> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                onPressed: () => _show(
-                  DayResultsController(
-                    runs: runs,
-                    analysis: analysis,
-                    recovery: widget.recovery,
-                    appender: widget.appender,
-                  ),
-                ),
+                onPressed: () => _showImported(runs, analysis),
                 icon: const Icon(Icons.flag_outlined),
                 label: const Text('Show the day\'s results'),
               ),

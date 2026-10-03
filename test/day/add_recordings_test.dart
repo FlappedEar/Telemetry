@@ -14,6 +14,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../../packages/telemetry_core/test/rcz/rcz_fixture.dart';
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
 import 'rectangle_vbo.dart';
+import 'recovery_test.dart' show FileRecoveryStore;
 
 /// Prepares additions on the test's own thread.
 final class _SyncAppender implements DayAppender {
@@ -213,6 +214,57 @@ void main() {
     expect(opened.analysis.chosenGroupId, other.id);
     final saved = (readDayDocument(path)['event'] as Map)['analysisDecisions'];
     expect((saved as Map)['comparisonGroupId'], other.id);
+  });
+
+  test('adding to a saved day leaves another day\'s unsaved work', () async {
+    final store = FileRecoveryStore('${directory.path}/day-recovery.json');
+    // Day A, changed and not saved: the app keeps it for recovery.
+    final other = runDayImport((
+      paths: [
+        write('x.vbo', [31, 31, 31]),
+      ],
+      includeSubfolders: false,
+    ));
+    final unsaved = DayResultsController(
+      runs: other.runs,
+      analysis: other.analysis!,
+      recovery: store,
+    );
+    await unsaved.flushRecovery();
+    unsaved.dispose();
+    final kept = (await store.load())!;
+
+    // Day B, saved, gets a shared recording.
+    final first = runDayImport((
+      paths: [
+        write('a.vbo', [30, 28, 31]),
+      ],
+      includeSubfolders: false,
+    ));
+    final path = '${directory.path}/B.fetproject';
+    final saved = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+    );
+    await saved.save(path);
+    saved.dispose();
+    final day = DayResultsController.opened(
+      openDay(path),
+      recovery: store,
+      appender: _SyncAppender(),
+    );
+    final addition = await day.addRecordings([
+      write('b.vbo', [29, 33]),
+    ]);
+    expect(addition.savedTo, path);
+    await day.flushRecovery();
+    day.dispose();
+    final after = (await store.load())!;
+    expect(
+      (after.document['event'] as Map)['id'],
+      (kept.document['event'] as Map)['id'],
+    );
+    expect(after.timestamp, kept.timestamp);
   });
 
   test('a session added while the day is being saved is not lost', () async {

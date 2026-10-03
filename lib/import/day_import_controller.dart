@@ -105,6 +105,14 @@ final class DayImportController extends ChangeNotifier {
     return true;
   }
 
+  /// Forgets a finished import once its day has been shown: from then on
+  /// the day lives in its controller, its recovery snapshot or its saved
+  /// document, and a fresh day built from this result would replace it.
+  void clearFinished() {
+    if (_state is! DayImportFinished) return;
+    _set(const DayImportIdle());
+  }
+
   /// Stops the running import; nothing from it is kept.
   void cancel() {
     if (!isWorking) return;

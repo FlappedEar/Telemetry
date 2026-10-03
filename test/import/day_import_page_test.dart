@@ -212,7 +212,9 @@ void main() {
     expect(find.text('Day results'), findsOneWidget);
     Navigator.of(tester.element(find.text('Day results'))).pop();
     await tester.pumpAndSettle();
-    expect(find.text('1 session imported'), findsOneWidget);
+    // The day was handed over: it is not built afresh from the import,
+    // which would leave out what was added to it.
+    expect(find.text('1 session imported'), findsNothing);
 
     // Leaving the page stops listening.
     await tester.pumpWidget(const SizedBox());
@@ -486,6 +488,14 @@ void main() {
       );
       final runs = (readDayDocument(saved)['event'] as Map)['runs'] as List;
       expect(runs, hasLength(1));
+
+      // The next share is imported with the first, as one day.
+      importer.jobs.single.finish();
+      await tester.pump();
+      final next = write('c.vbo', _datedVbo(hour: 14, speed: 75));
+      incoming.controller.add([next]);
+      await pumpUntil(tester, () => importer.jobs.length == 2);
+      expect(importer.jobs.last.request.paths, [shared, next]);
     });
 
     testWidgets('a recording of another date starts its own day', (

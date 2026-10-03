@@ -208,7 +208,7 @@ final class DayResultsController extends ChangeNotifier {
     }
     _saving = true;
     final done = _saveDone = Completer<void>();
-    notifyListeners();
+    if (!_disposed) notifyListeners();
     final added = _addedSessions;
     try {
       final document = dayDocument(
@@ -237,17 +237,31 @@ final class DayResultsController extends ChangeNotifier {
       if (complete) {
         _dirty = false;
         _recoveryTimer?.cancel();
-        _enqueueRecovery(() => recovery?.clear());
+        _enqueueRecovery(() => _clearOwnRecovery(recovery, eventId));
       }
     } finally {
       _saving = false;
       done.complete();
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
   // Completes when the running save has finished.
   Completer<void>? _saveDone;
+
+  // Clears the recovery slot when it holds this day: a save never removes
+  // another day's unsaved work.
+  static Future<void> _clearOwnRecovery(
+    RecoveryStore? store,
+    String eventId,
+  ) async {
+    if (store == null) return;
+    final kept = await store.load();
+    final event = kept?.document['event'];
+    if (kept == null || (event is Map && event['id'] == eventId)) {
+      await store.clear();
+    }
+  }
 
   // Counts the sessions added, so a save knows whether one came while it
   // was writing.
@@ -444,7 +458,10 @@ final class DayResultsController extends ChangeNotifier {
     ++_addedSessions;
     _resetTheoreticalBest();
     _resetChannelSummaries();
-    _scheduleRecovery();
+    // A day with a file is saved again below; only a day without one is
+    // kept for recovery now, so a share into a saved day does not replace
+    // the unsaved day the recovery slot may hold.
+    if (_documentPath == null && !_saving) _scheduleRecovery();
     notifyListeners();
     var saveError = '';
     // A save running now may have been asked for a new file: the day is
@@ -452,12 +469,20 @@ final class DayResultsController extends ChangeNotifier {
     while (_saving) {
       await _saveDone?.future;
     }
-    final path = _disposed ? null : _documentPath;
+    final path = _documentPath;
     if (path != null && _dirty) {
       try {
         await save(path);
       } on Exception catch (error) {
         saveError = '$error';
+      }
+    }
+    // Not saved: kept for recovery, also when the day was closed meanwhile.
+    if (_dirty && (path == null || saveError.isNotEmpty)) {
+      if (_disposed) {
+        _writeRecovery();
+      } else {
+        _scheduleRecovery();
       }
     }
     return DayAddition(
