@@ -221,7 +221,8 @@ final class DayResultsController extends ChangeNotifier {
   /// Saves the day to [path]: the event, its runs and recordings, the
   /// layouts set by the user and the excluded laps. Throws
   /// [FetprojectError] when the document cannot be written; the previous
-  /// file is then left as it was.
+  /// file is then left as it was, except where only the file itself may be
+  /// written, such as in the macOS sandbox (see `writeFetproject`).
   Future<void> save(String path) async {
     // One save at a time: a save asked for while another runs, such as
     // Save as… during the save after adding a session, follows it.

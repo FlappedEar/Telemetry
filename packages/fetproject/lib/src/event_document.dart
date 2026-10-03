@@ -671,9 +671,10 @@ Future<Map<String, Object?>> readFetproject(String path) async {
 /// save leaves the previous document whole.
 ///
 /// Where the folder refuses the temporary file but [path] itself may be
-/// written, [path] is written in place. The macOS sandbox grants the app
-/// only the file chosen in the save or open panel, not its folder, so there
-/// the temporary file failed with "Cannot open file" and nothing saved.
+/// written, [path] is written in place, which is not atomic: a failure
+/// partway can leave it incomplete. The macOS sandbox grants the app only
+/// the file chosen in the save or open panel, not its folder, so there the
+/// temporary file failed with "Cannot open file" and nothing saved.
 Future<void> writeFetproject(String path, Map<String, Object?> project) async {
   if (path.isEmpty) throw const FetprojectError('Project path is empty.');
   final error = validateFetproject(project);
