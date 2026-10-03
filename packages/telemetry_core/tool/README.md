@@ -165,6 +165,110 @@ moved, renamed and removed (`DaySegmentEdits`): Overlays reads the same
 segment revision and keeps them on re-save. Last run against
 FlappedEar/Overlay `d4d1039`: passed.
 
+## cpp_project_roundtrip
+
+Drives FlappedEar Overlays' own document and analysis controllers headless,
+as Overlays' `TelemetryAppTests` do: `TelemetryController` with its
+`DocumentController` and `AnalysisController`, automatic segments on as in
+the Overlays app. It compiles every file of Overlays' `project/` and
+`telemetry/` sources and the controllers of `app/` (Overlays'
+`flappedear_telemetry_core` and `flappedear_telemetry_app`) from a read-only
+checkout against Qt 6.8 Core and Concurrent and the system zlib. Not part of
+the app or of CI.
+
+```bash
+cmake -S tool/cpp_project_roundtrip -B /tmp/rtbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/rtbuild -j4
+FLAPPEDEAR_OVERLAYS_ROUNDTRIP=/tmp/rtbuild/cpp_project_roundtrip \
+  dart test test/day/overlays_roundtrip_test.dart
+```
+
+Commands (each prints JSON):
+
+- `fingerprint <recording>...`: Overlays' `telemetry-v1` fingerprint of
+  each VBO or RCZ recording (`TelemetrySource::load`,
+  `ProjectSourceReferenceCodec::telemetryFingerprint`), or Overlays' error.
+- `create <project> <name> <recording>...`: Overlays imports the
+  recordings as a day ("Session N"), approves the best lap's segments
+  automatically, renames one segment and merges two in the segment review,
+  excludes a lap ("Traffic"), writes notes, conditions and setup changes on
+  the first session, saves the group shown, the comparison pair, range and
+  channels, and saves the day. The overlay editor's state (a session's sync
+  and video, the chart channels, the widget scene) is then added as
+  Overlays' `TelemetryAppTests` add it, and Overlays opens and saves the day
+  once more. Prints `inspect` of the result.
+- `resave <project> [<target>]`: Overlays opens the day and saves it (Save
+  As to `<target>`). Prints `inspect` of the day as opened and as saved.
+- `inspect <project>...`: what Overlays sees: validity, `documentState`,
+  each run's name, notes, conditions, setup changes and approved segments
+  (count, names, revision), every lap section ("Session 2 · LAP 3", times,
+  group, exclusion and reason), the group shown and the day report's best
+  lap, theoretical best and number of eligible laps.
+
+`test/day/overlays_roundtrip_test.dart` (skipped unless
+`FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) runs both directions on the shared
+fixtures' recordings:
+
+- **Telemetry → Overlays → Telemetry.** Telemetry saves a day with edited
+  segments (renamed, split, merged), an exclusion and the group shown, then
+  with notes, conditions and unknown keys in open objects (top level,
+  `documentState`, event, `analysisDecisions`, run, source, reference) that
+  were already in the document. Overlays opens it and reports the same
+  sessions, laps, exclusions, group, segments and results; its save differs
+  from Telemetry's only by its own `mapSettings` and `exportSettings`
+  defaults (so no closed object gains a key) and keeps `documentState`.
+  Telemetry opens it again with the same day and results, and its next save
+  keeps everything Overlays wrote, with `savedRevision` one higher.
+- **Overlays → Telemetry → Overlays.** `create` builds a day; Telemetry
+  opens it with the same sessions, laps, exclusions, group, segments and
+  results, and its save equals Overlays' document but for `savedRevision`
+  (one higher, the same `id`) and the order of `lapExclusions`. Overlays
+  inspects it and sees the same day.
+
+`FET_ROUNDTRIP_RECORDINGS=<folder>` runs both on other recordings (VBO, or
+RCZ with `FET_ROUNDTRIP_EXTENSION=.rcz`), for example a real day; never commit
+their output. `FET_PARITY_REPORT=1` prints counts.
+
+The committed day in `../fetproject/test/fixtures/roundtrip` was built by
+`create` from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on
+Ubuntu 24.04, in `/tmp/flappedear-roundtrip` (its absolute paths), from the
+recordings `tool/generate_roundtrip_fixtures.py` writes:
+
+```bash
+python3 tool/generate_roundtrip_fixtures.py
+mkdir -p /tmp/flappedear-roundtrip/recordings
+cp ../fetproject/test/fixtures/roundtrip/recordings/*.vbo /tmp/flappedear-roundtrip/recordings/
+cd /tmp/flappedear-roundtrip && /tmp/rtbuild/cpp_project_roundtrip create \
+  overlays-day.fetproject "Synthetic day" recordings/morning.vbo \
+  recordings/midday.vbo recordings/afternoon.vbo > overlays-day.inspected.json
+```
+
+then copy `overlays-day.fetproject` and `overlays-day.inspected.json` there.
+`test/day/overlays_fixture_test.dart` (pure Dart, in CI) opens it and checks
+Telemetry sees what Overlays reported, and that Telemetry's re-save keeps
+every field. Never edit either file by hand.
+
+`test/parity/fingerprint_reference.json` is `fingerprint` over every
+recording of `test/parity/corpus`, `test/parity/driving`,
+`test/parity/rcz_corpus` (synthetic RCZ archives written by
+`dart run test/parity/write_rcz_corpus.dart`), `test/fixtures` and the shared
+round-trip recordings, run from this package:
+
+```bash
+/tmp/rtbuild/cpp_project_roundtrip fingerprint test/parity/corpus/*.vbo \
+  test/parity/driving/*.vbo test/fixtures/*.vbo test/parity/rcz_corpus/*.rcz \
+  ../fetproject/test/fixtures/roundtrip/recordings/*.vbo \
+  > test/parity/fingerprint_reference.json
+dart test test/parity/fingerprint_parity_test.dart
+```
+
+`FET_FINGERPRINT_REFERENCE=<json>` checks another reference, for example one
+made locally for private recordings (never committed).
+
+Last run against FlappedEar/Overlay `d4d1039`: all passed (see the FET-40
+pull request for the counts on the real day).
+
 ## cpp_theoretical_best_dump
 
 Runs FlappedEar Overlays' own `SectorTiming`, `TheoreticalBest`, `TimeLoss`,
