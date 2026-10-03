@@ -480,6 +480,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
               key: const ValueKey('dayResultsSummary'),
               controller: _summaryScroll,
               padding: const EdgeInsets.all(16),
+              // As on a phone: the Next session card is built from the top.
+              scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
               children: summary,
             ),
           ),
