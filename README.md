@@ -62,6 +62,18 @@ recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
 
+Under a comparison's charts, for the stretch shown (the whole lap or the
+zoomed part), **G-G** plots both laps' lateral against longitudinal G with
+their observed peaks and sample counts, **Driving states** shows when each lap
+brakes, brakes while cornering, corners, accelerates and coasts, as strips
+along the track and as shares of the lap's time, and **Coasting** gives each
+lap's coasting time, distance and episodes (select one to move the cursor
+there); a lap's page shows its own coasting, by segment once the day's
+segments are calculated. Every value says whether it was measured from a
+pedal or sensor, calculated by the logger from GPS, or inferred from
+longitudinal G, which happens only when the recording has no such pedal
+channel.
+
 ## Phones and tablets
 
 On a phone or tablet, **Choose recordings…** picks VBO and RCZ files (there is

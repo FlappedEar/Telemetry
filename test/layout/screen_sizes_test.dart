@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/channel_cards.dart';
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/corner_details.dart';
+import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_report_page.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/focus_areas_card.dart';
@@ -16,6 +17,7 @@ import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 
+import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
 
 /// Logical sizes of the devices the app is tested on.
@@ -353,6 +355,76 @@ void main() {
         expect(tester.takeException(), isNull, reason: 'day report');
         await scrollThrough(tester);
         expect(tester.takeException(), isNull, reason: 'report scrolled');
+      });
+
+      testWidgets('the G-G, driving-state and coasting panels fit', (
+        tester,
+      ) async {
+        final paths = <String>[];
+        for (final name in const ['a.vbo', 'b.vbo']) {
+          final path = '${directory.path}/$name';
+          final laps = [
+            rectangleBrakingLap(250, 15),
+            rectangleBrakingLap(260, 14),
+          ];
+          File(path).writeAsStringSync(
+            withAcceleration(rectangleVbo(laps, pedals: true), liftOff: true),
+          );
+          paths.add(path);
+        }
+        final outcome = runDayImport((paths: paths, includeSubfolders: false));
+        final controller = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          theoreticalBestRunner: (job) async => job(),
+        );
+        await controller.requestTheoreticalBest();
+        final best = outcome.analysis!.ranking!.bestOfDay!;
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: LapPage(controller: controller, row: best),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await scrollThrough(tester);
+        expect(find.byKey(const ValueKey('lapCoastingPanel')), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: 'lap coasting');
+        final other = controller
+            .comparisonCandidates(best)
+            .firstWhere((row) => row.reference != best.reference);
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: ComparisonPage(controller: controller, a: other, b: best),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final charts = find
+            .descendant(
+              of: find.byKey(
+                ValueKey(
+                  size.width >= 900 ? 'comparisonCharts' : 'comparisonSummary',
+                ),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        for (final key in const [
+          'ggPanel',
+          'drivingStatesPanel',
+          'comparisonCoastingPanel',
+        ]) {
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey(key)),
+            200,
+            scrollable: charts,
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: key);
+        }
+        await scrollThrough(tester);
+        expect(tester.takeException(), isNull, reason: 'driving panels');
       });
     });
   }

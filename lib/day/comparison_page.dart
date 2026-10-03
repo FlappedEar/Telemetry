@@ -8,6 +8,7 @@ import '../format.dart';
 import 'corner_analyzer_panel.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
+import 'driving_panels.dart';
 import 'lap_page.dart';
 import 'telemetry_chart.dart';
 
@@ -56,7 +57,10 @@ typedef ComparisonPanelBuilder = Widget? Function(
 );
 
 /// The extra panels of every comparison page, in order.
-final List<ComparisonPanelBuilder> comparisonPanels = [cornerAnalyzerPanel];
+final List<ComparisonPanelBuilder> comparisonPanels = [
+  cornerAnalyzerPanel,
+  ...drivingComparisonPanels,
+];
 
 /// Asks for a lap of [candidates]; [suggested] is offered first.
 Future<DayLapRow?> pickComparisonLap(
