@@ -1671,6 +1671,461 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Comparing the slowest and the fastest example through {segment} may show what differs; a higher minimum speed is not by itself better.'**
   String focusHypothesisMinimumSpeedSpread(String segment);
+
+  /// Heading of the card showing how the day went session by session.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression'**
+  String get progressionTitle;
+
+  /// Progression view: one entry per session.
+  ///
+  /// In en, this message translates to:
+  /// **'By session'**
+  String get progressionBySession;
+
+  /// Progression view: a table of segments by session.
+  ///
+  /// In en, this message translates to:
+  /// **'By segment'**
+  String get progressionBySegment;
+
+  /// Explains the progression by session.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions in recording order; sessions without a recording time follow in import order. The bar runs from the quickest to the slowest ranked lap on one time scale, the middle half boxed and the typical lap marked.'**
+  String get progressionSessionsIntro;
+
+  /// Progression card without sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No session to compare.'**
+  String get progressionNoSession;
+
+  /// A session whose recording has no date and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording time unavailable'**
+  String get progressionRecordingTimeUnavailable;
+
+  /// When a session was recorded, from the recording's clock.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} UTC on {date}'**
+  String progressionRecordingClock(String time, String date);
+
+  /// A session without laps.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded laps'**
+  String get progressionNoRecordedLaps;
+
+  /// A session none of whose laps is ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{No ranked lap · 0 of 1 lap} other{No ranked lap · 0 of {count} laps}}'**
+  String progressionNoRankedLap(int count);
+
+  /// How many of a session's laps are ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{eligible} of 1 lap ranked} other{{eligible} of {count} laps ranked}}'**
+  String progressionLapsRanked(int count, int eligible);
+
+  /// A session's typical (median) lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical {time}'**
+  String progressionTypical(String time);
+
+  /// Why a session has no typical lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Typical lap needs at least 1 ranked lap} other{Typical lap needs at least {count} ranked laps}}'**
+  String progressionTypicalNeedsLaps(int count);
+
+  /// A session's best lap compared with the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {delta} against {session}'**
+  String progressionBestAgainst(String delta, String session);
+
+  /// The conditions the driver noted for a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions: {conditions}'**
+  String progressionConditions(String conditions);
+
+  /// The setup changes the driver noted for a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup: {setup}'**
+  String progressionSetup(String setup);
+
+  /// The driver's notes for a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes: {notes}'**
+  String progressionNotes(String notes);
+
+  /// A session's best lap, as on a timing screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: LAP {number}'**
+  String progressionBestLap(int number);
+
+  /// The progression by segment while the theoretical best is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured with the theoretical best…'**
+  String get progressionMeasuring;
+
+  /// Explains the progression by segment.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Each segment\'s typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than 1 lap: no statistics. Tap a cell for its laps.} other{Each segment\'s typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than {count} laps: no statistics. Tap a cell for its laps.}}'**
+  String progressionSegmentsIntro(int count);
+
+  /// A lap of a segment cell that can no longer be found.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap unavailable'**
+  String get progressionLapUnavailable;
+
+  /// Progression by segment without timed segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No session has timed segments.'**
+  String get progressionNoTimedSegments;
+
+  /// A segment's spread (interquartile range) in a session.
+  ///
+  /// In en, this message translates to:
+  /// **'spread {seconds} s'**
+  String progressionSpread(String seconds);
+
+  /// A segment cell with too few laps for statistics.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
+  String progressionLapCount(int count);
+
+  /// An oil temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Oil'**
+  String get channelOil;
+
+  /// A coolant temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coolant'**
+  String get channelCoolant;
+
+  /// An intake air temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Intake air'**
+  String get channelIntakeAir;
+
+  /// A gearbox temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gearbox'**
+  String get channelGearbox;
+
+  /// An exhaust gas temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exhaust'**
+  String get channelExhaust;
+
+  /// An ambient temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambient'**
+  String get channelAmbient;
+
+  /// A channel missing from a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded'**
+  String get channelNotRecorded;
+
+  /// A channel without a usable reading.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid samples'**
+  String get channelNoValidSamples;
+
+  /// A channel's mean, range and how much of the time it was recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'mean {mean} · {minimum} – {maximum} · {coverage}% covered'**
+  String channelSummary(
+    String mean,
+    String minimum,
+    String maximum,
+    int coverage,
+  );
+
+  /// Readings of a channel left out as implausible.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} implausible left out'**
+  String channelImplausibleLeftOut(int count);
+
+  /// Section of a recording before the first start/finish pass.
+  ///
+  /// In en, this message translates to:
+  /// **'out lap'**
+  String get channelOutLap;
+
+  /// Section of a recording after the last start/finish pass.
+  ///
+  /// In en, this message translates to:
+  /// **'in lap'**
+  String get channelInLap;
+
+  /// A timed lap as a section of a recording.
+  ///
+  /// In en, this message translates to:
+  /// **'lap {number}'**
+  String channelLapSection(int number);
+
+  /// A section of a recording of unknown type.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown section'**
+  String get channelUnknownSection;
+
+  /// No cooling in a channel.
+  ///
+  /// In en, this message translates to:
+  /// **'none recorded'**
+  String get channelCoolingNone;
+
+  /// A continuously recorded temperature drop and how long it took.
+  ///
+  /// In en, this message translates to:
+  /// **'−{drop} in {duration}'**
+  String channelCoolingDrop(String drop, String duration);
+
+  /// A session's cooling of a temperature channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooling: {cooling}'**
+  String channelCooling(String cooling);
+
+  /// Lap time as a metric associated with a temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap time'**
+  String get channelLapTime;
+
+  /// Strong acceleration as a metric associated with a temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration'**
+  String get channelStrongAcceleration;
+
+  /// No association: nothing varied.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{metric}: the temperature (or the metric) did not vary over 1 lap.} other{{metric}: the temperature (or the metric) did not vary over {count} laps.}}'**
+  String channelAssociationNoSpread(String metric, int count);
+
+  /// No association: too few laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{metric}: 1 comparable lap with this temperature; at least {minimum} are needed.} other{{metric}: {count} comparable laps with this temperature; at least {minimum} are needed.}}'**
+  String channelAssociationTooFew(String metric, int count, int minimum);
+
+  /// A temperature's rank correlation with a metric over the compared laps. Never a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{metric}: ρ {rho} · {strength} · 1 lap — {meaning}} other{{metric}: ρ {rho} · {strength} · {count} laps — {meaning}}}'**
+  String channelAssociation(
+    String metric,
+    String rho,
+    String strength,
+    int count,
+    String meaning,
+  );
+
+  /// Strength of a correlation.
+  ///
+  /// In en, this message translates to:
+  /// **'weak'**
+  String get channelStrengthWeak;
+
+  /// Strength of a correlation.
+  ///
+  /// In en, this message translates to:
+  /// **'moderate'**
+  String get channelStrengthModerate;
+
+  /// Strength of a correlation.
+  ///
+  /// In en, this message translates to:
+  /// **'strong'**
+  String get channelStrengthStrong;
+
+  /// What a weak correlation means.
+  ///
+  /// In en, this message translates to:
+  /// **'little association'**
+  String get channelMeaningLittle;
+
+  /// What a correlation of temperature with lap time means.
+  ///
+  /// In en, this message translates to:
+  /// **'hotter laps were quicker'**
+  String get channelMeaningQuicker;
+
+  /// What a correlation of temperature with lap time means.
+  ///
+  /// In en, this message translates to:
+  /// **'hotter laps were slower'**
+  String get channelMeaningSlower;
+
+  /// What a correlation of temperature with acceleration means.
+  ///
+  /// In en, this message translates to:
+  /// **'hotter laps accelerated harder'**
+  String get channelMeaningHarder;
+
+  /// What a correlation of temperature with acceleration means.
+  ///
+  /// In en, this message translates to:
+  /// **'hotter laps accelerated less'**
+  String get channelMeaningLess;
+
+  /// Heading of the card with the car's recorded temperatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get channelCarTitle;
+
+  /// Car card while temperatures are read.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading each session\'s recorded temperatures…'**
+  String get channelCarReading;
+
+  /// Car card without temperature channels.
+  ///
+  /// In en, this message translates to:
+  /// **'None of the recordings contain a temperature channel.'**
+  String get channelCarNoChannels;
+
+  /// Explains the car card.
+  ///
+  /// In en, this message translates to:
+  /// **'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.'**
+  String get channelCarIntro;
+
+  /// A channel whose recording gives no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'units not declared by the recording'**
+  String get channelUnitsNotDeclared;
+
+  /// Why a temperature association is not a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'The temperature also changed through the day, so this cannot be told apart from everything else that changed: the driver, tyres, track and fuel.'**
+  String get channelConfounded;
+
+  /// Heart rate page intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed values from the recording, not an assessment.'**
+  String get channelHeartRateIntro;
+
+  /// Channel page intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Every recorded section of each session.'**
+  String get channelEverySectionIntro;
+
+  /// Heading of a temperature's association with lap performance.
+  ///
+  /// In en, this message translates to:
+  /// **'With lap performance'**
+  String get channelWithLapPerformance;
+
+  /// Why a temperature association is not a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'The temperature also rose through the day (ρ {rho} with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.'**
+  String channelConfoundedRose(String rho);
+
+  /// Why a temperature association is not a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'The temperature also fell through the day (ρ {rho} with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.'**
+  String channelConfoundedFell(String rho);
+
+  /// How a temperature association is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Spearman rank correlation over the day\'s compared laps whose sensor covered at least {coverage}% of the lap. {lowCoverage} left out for low coverage, {notRecorded} without a valid reading. It describes how the two moved together on this day; it does not establish a critical temperature or a cause.'**
+  String channelSpearman(int coverage, int lowCoverage, int notRecorded);
+
+  /// Heading of the card with the driver's heart rate.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver'**
+  String get channelDriverTitle;
+
+  /// Driver card while heart rate is read.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading each session\'s recorded heart rate…'**
+  String get channelDriverReading;
+
+  /// Driver card without heart rate.
+  ///
+  /// In en, this message translates to:
+  /// **'No heart rate recorded.'**
+  String get channelDriverNoHeartRate;
+
+  /// Explains the driver card.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate from the recordings: observed values, not an assessment. Per lap: mean bpm; tap a lap to open it.'**
+  String get channelDriverIntro;
+
+  /// Title of the heart rate page.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate'**
+  String get channelHeartRate;
+
+  /// Button opening the heart rate of every section.
+  ///
+  /// In en, this message translates to:
+  /// **'Every section…'**
+  String get channelEverySection;
+
+  /// A lap's mean heart rate, as on a timing screen.
+  ///
+  /// In en, this message translates to:
+  /// **'LAP {number} · {mean}'**
+  String channelLapMean(int number, String mean);
+
+  /// A session whose recording cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording unavailable.'**
+  String get channelRecordingUnavailable;
+
+  /// Channel summaries stopped before they finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel summaries were cancelled.'**
+  String get channelSummariesCancelled;
 }
 
 class _AppLocalizationsDelegate

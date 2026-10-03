@@ -1114,4 +1114,355 @@ class AppLocalizationsPl extends AppLocalizations {
   String focusHypothesisMinimumSpeedSpread(String segment) {
     return 'Porównanie najwolniejszego i najszybszego przykładu na odcinku $segment może pokazać, co się różni; wyższa prędkość minimalna sama w sobie nie jest lepsza.';
   }
+
+  @override
+  String get progressionTitle => 'Postęp';
+
+  @override
+  String get progressionBySession => 'Według sesji';
+
+  @override
+  String get progressionBySegment => 'Według segmentów';
+
+  @override
+  String get progressionSessionsIntro =>
+      'Sesje w kolejności nagrania; sesje bez czasu nagrania są na końcu, w kolejności dodania. Pasek biegnie od najszybszego do najwolniejszego sklasyfikowanego okrążenia na jednej skali czasu; środkowa połowa jest zaznaczona prostokątem, a typowe okrążenie kreską.';
+
+  @override
+  String get progressionNoSession => 'Brak sesji do porównania.';
+
+  @override
+  String get progressionRecordingTimeUnavailable => 'Brak czasu nagrania';
+
+  @override
+  String progressionRecordingClock(String time, String date) {
+    return '$time UTC, $date';
+  }
+
+  @override
+  String get progressionNoRecordedLaps => 'Brak nagranych okrążeń';
+
+  @override
+  String progressionNoRankedLap(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Brak sklasyfikowanego okrążenia · 0 z $count okrążeń',
+      one: 'Brak sklasyfikowanego okrążenia · 0 z 1 okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String progressionLapsRanked(int count, int eligible) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'sklasyfikowano $eligible z $count okrążeń',
+      one: 'sklasyfikowano $eligible z 1 okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String progressionTypical(String time) {
+    return 'Typowo $time';
+  }
+
+  @override
+  String progressionTypicalNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Typowe okrążenie wymaga co najmniej $count sklasyfikowanych okrążeń',
+      one: 'Typowe okrążenie wymaga co najmniej 1 sklasyfikowanego okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String progressionBestAgainst(String delta, String session) {
+    return 'Najlepsze $delta w porównaniu z: $session';
+  }
+
+  @override
+  String progressionConditions(String conditions) {
+    return 'Warunki: $conditions';
+  }
+
+  @override
+  String progressionSetup(String setup) {
+    return 'Ustawienia: $setup';
+  }
+
+  @override
+  String progressionNotes(String notes) {
+    return 'Uwagi: $notes';
+  }
+
+  @override
+  String progressionBestLap(int number) {
+    return 'Najlepsze: OKR. $number';
+  }
+
+  @override
+  String get progressionMeasuring => 'Liczone razem z teoretycznie najlepszym…';
+
+  @override
+  String progressionSegmentsIntro(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego segmentu w każdej sesji. Najszybszy typowy czas segmentu jest wyróżniony. Mniej niż $count okrążeń: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+      few:
+          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego segmentu w każdej sesji. Najszybszy typowy czas segmentu jest wyróżniony. Mniej niż $count okrążenia: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+      one: 'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego segmentu w każdej sesji. Najszybszy typowy czas segmentu jest wyróżniony. Mniej niż 1 okrążenie: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get progressionLapUnavailable => 'Okrążenie niedostępne';
+
+  @override
+  String get progressionNoTimedSegments =>
+      'Żadna sesja nie ma zmierzonych segmentów.';
+
+  @override
+  String progressionSpread(String seconds) {
+    return 'rozrzut $seconds s';
+  }
+
+  @override
+  String progressionLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelOil => 'Olej';
+
+  @override
+  String get channelCoolant => 'Płyn chłodzący';
+
+  @override
+  String get channelIntakeAir => 'Powietrze dolotowe';
+
+  @override
+  String get channelGearbox => 'Skrzynia biegów';
+
+  @override
+  String get channelExhaust => 'Spaliny';
+
+  @override
+  String get channelAmbient => 'Otoczenie';
+
+  @override
+  String get channelNotRecorded => 'Nie nagrano';
+
+  @override
+  String get channelNoValidSamples => 'Brak poprawnych próbek';
+
+  @override
+  String channelSummary(
+    String mean,
+    String minimum,
+    String maximum,
+    int coverage,
+  ) {
+    return 'średnio $mean · $minimum – $maximum · pokrycie $coverage%';
+  }
+
+  @override
+  String channelImplausibleLeftOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nieprawdopodobnych odczytów pominiętych',
+      few: '$count nieprawdopodobne odczyty pominięte',
+      one: '1 nieprawdopodobny odczyt pominięty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelOutLap => 'wyjazd';
+
+  @override
+  String get channelInLap => 'zjazd';
+
+  @override
+  String channelLapSection(int number) {
+    return 'okr. $number';
+  }
+
+  @override
+  String get channelUnknownSection => 'nieznany odcinek';
+
+  @override
+  String get channelCoolingNone => 'brak';
+
+  @override
+  String channelCoolingDrop(String drop, String duration) {
+    return '−$drop w $duration';
+  }
+
+  @override
+  String channelCooling(String cooling) {
+    return 'Chłodzenie: $cooling';
+  }
+
+  @override
+  String get channelLapTime => 'Czas okrążenia';
+
+  @override
+  String get channelStrongAcceleration => 'Mocne przyspieszanie';
+
+  @override
+  String channelAssociationNoSpread(String metric, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$metric: temperatura (lub miara) nie zmieniała się w $count okrążeniach.',
+      one: '$metric: temperatura (lub miara) nie zmieniała się w 1 okrążeniu.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String channelAssociationTooFew(String metric, int count, int minimum) {
+    return '$metric: porównywalne okrążenia z tą temperaturą: $count; potrzeba co najmniej $minimum.';
+  }
+
+  @override
+  String channelAssociation(
+    String metric,
+    String rho,
+    String strength,
+    int count,
+    String meaning,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$metric: ρ $rho · $strength · $count okrążeń — $meaning',
+      few: '$metric: ρ $rho · $strength · $count okrążenia — $meaning',
+      one: '$metric: ρ $rho · $strength · 1 okrążenie — $meaning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelStrengthWeak => 'słaba';
+
+  @override
+  String get channelStrengthModerate => 'umiarkowana';
+
+  @override
+  String get channelStrengthStrong => 'silna';
+
+  @override
+  String get channelMeaningLittle => 'niewielki związek';
+
+  @override
+  String get channelMeaningQuicker => 'cieplejsze okrążenia były szybsze';
+
+  @override
+  String get channelMeaningSlower => 'cieplejsze okrążenia były wolniejsze';
+
+  @override
+  String get channelMeaningHarder =>
+      'na cieplejszych okrążeniach przyspieszanie było mocniejsze';
+
+  @override
+  String get channelMeaningLess =>
+      'na cieplejszych okrążeniach przyspieszanie było słabsze';
+
+  @override
+  String get channelCarTitle => 'Samochód';
+
+  @override
+  String get channelCarReading =>
+      'Odczytywanie temperatur nagranych w każdej sesji…';
+
+  @override
+  String get channelCarNoChannels =>
+      'Żadne nagranie nie zawiera kanału temperatury.';
+
+  @override
+  String get channelCarIntro =>
+      'Każda sesja osobno, w kolejności nagrania. Przerwy w nagraniu nigdy nie są uzupełniane; nieprawdopodobne odczyty i zastępcze zera są pomijane i liczone. Chłodzenie to ciągle nagrany spadek o co najmniej 5° w ciągu co najmniej 30 s.';
+
+  @override
+  String get channelUnitsNotDeclared => 'nagranie nie podaje jednostki';
+
+  @override
+  String get channelConfounded =>
+      'Temperatura zmieniała się też w ciągu dnia, więc nie da się tego oddzielić od wszystkiego innego, co się zmieniło: kierowcy, opon, toru i paliwa.';
+
+  @override
+  String get channelHeartRateIntro =>
+      'Zaobserwowane wartości z nagrania, nie ocena.';
+
+  @override
+  String get channelEverySectionIntro => 'Każdy nagrany odcinek każdej sesji.';
+
+  @override
+  String get channelWithLapPerformance => 'Związek z osiągami na okrążeniu';
+
+  @override
+  String channelConfoundedRose(String rho) {
+    return 'Temperatura rosła też w ciągu dnia (ρ $rho z kolejnością okrążeń), więc nie da się tego oddzielić od wszystkiego innego, co zmieniło się w ciągu dnia: kierowcy, opon, toru i paliwa.';
+  }
+
+  @override
+  String channelConfoundedFell(String rho) {
+    return 'Temperatura spadała też w ciągu dnia (ρ $rho z kolejnością okrążeń), więc nie da się tego oddzielić od wszystkiego innego, co zmieniło się w ciągu dnia: kierowcy, opon, toru i paliwa.';
+  }
+
+  @override
+  String channelSpearman(int coverage, int lowCoverage, int notRecorded) {
+    return 'Korelacja rang Spearmana dla porównywanych okrążeń dnia, w których czujnik objął co najmniej $coverage% okrążenia. Pominięte z powodu niskiego pokrycia: $lowCoverage, bez poprawnego odczytu: $notRecorded. Opisuje, jak obie wielkości zmieniały się razem tego dnia; nie wyznacza temperatury krytycznej ani przyczyny.';
+  }
+
+  @override
+  String get channelDriverTitle => 'Kierowca';
+
+  @override
+  String get channelDriverReading =>
+      'Odczytywanie tętna nagranego w każdej sesji…';
+
+  @override
+  String get channelDriverNoHeartRate => 'Nie nagrano tętna.';
+
+  @override
+  String get channelDriverIntro =>
+      'Tętno z nagrań: zaobserwowane wartości, nie ocena. Dla okrążenia: średnie bpm; dotknij okrążenia, aby je otworzyć.';
+
+  @override
+  String get channelHeartRate => 'Tętno';
+
+  @override
+  String get channelEverySection => 'Każdy odcinek…';
+
+  @override
+  String channelLapMean(int number, String mean) {
+    return 'OKR. $number · $mean';
+  }
+
+  @override
+  String get channelRecordingUnavailable => 'Nagranie niedostępne.';
+
+  @override
+  String get channelSummariesCancelled =>
+      'Obliczanie podsumowań kanałów anulowano.';
 }

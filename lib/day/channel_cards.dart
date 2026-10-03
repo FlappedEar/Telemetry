@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../l10n.dart';
+
 /// "Oil" for an oil temperature channel; other names as recorded.
 String readableChannel(String name) {
   final lower = name.toLowerCase();
@@ -12,6 +14,26 @@ String readableChannel(String name) {
   if (lower.contains('ambient')) return 'Ambient';
   return name;
 }
+
+/// [readableChannel] in the app's language: "Olej".
+String channelLabel(AppLocalizations l10n, String name) =>
+    switch (readableChannel(name)) {
+      'Oil' => l10n.channelOil,
+      'Coolant' => l10n.channelCoolant,
+      'Intake air' => l10n.channelIntakeAir,
+      'Gearbox' => l10n.channelGearbox,
+      'Exhaust' => l10n.channelExhaust,
+      'Ambient' => l10n.channelAmbient,
+      final other => other,
+    };
+
+/// A reason or error from `telemetry_core` channel summaries in the app's
+/// language; one the app does not know is shown as written.
+String _channelReason(AppLocalizations l10n, String reason) => switch (reason) {
+  channelRecordingUnavailable => l10n.channelRecordingUnavailable,
+  'Channel summaries were cancelled.' => l10n.channelSummariesCancelled,
+  _ => reason,
+};
 
 /// The unit as shown: "°C" for a recording's "C".
 String unitText(String unit) => switch (unit.trim()) {
@@ -28,13 +50,22 @@ String channelValueText(double? value, String unit) {
 
 /// "mean 104 °C · 98 – 112 · 97% covered", "No valid samples" or "Not
 /// recorded".
-String channelSummaryText(ChannelSummary? summary, String unit) {
-  if (summary == null) return 'Not recorded';
-  if (!summary.valid) return 'No valid samples';
-  return 'mean ${channelValueText(summary.mean, unit)} · '
-      '${channelValueText(summary.minimum, '')} – ${channelValueText(summary.maximum, unit)} · '
-      '${(summary.coverage * 100).round()}% covered'
-      '${summary.excludedArtifacts > 0 ? ' · ${summary.excludedArtifacts} implausible left out' : ''}';
+String channelSummaryText(
+  AppLocalizations l10n,
+  ChannelSummary? summary,
+  String unit,
+) {
+  if (summary == null) return l10n.channelNotRecorded;
+  if (!summary.valid) return l10n.channelNoValidSamples;
+  return l10n.channelSummary(
+        channelValueText(summary.mean, unit),
+        channelValueText(summary.minimum, ''),
+        channelValueText(summary.maximum, unit),
+        (summary.coverage * 100).round(),
+      ) +
+      (summary.excludedArtifacts > 0
+          ? ' · ${l10n.channelImplausibleLeftOut(summary.excludedArtifacts)}'
+          : '');
 }
 
 String _clockText(double seconds) {
@@ -42,47 +73,68 @@ String _clockText(double seconds) {
   return '${whole ~/ 60}:${(whole % 60).toString().padLeft(2, '0')}';
 }
 
-String _sectionText(DayLapRow? row) => switch (row?.type) {
-  LapSectionType.outLap => 'out lap',
-  LapSectionType.inLap => 'in lap',
-  LapSectionType.lap => 'lap ${row!.lapNumber}',
-  _ => 'unknown section',
-};
+String _sectionText(AppLocalizations l10n, DayLapRow? row) =>
+    switch (row?.type) {
+      LapSectionType.outLap => l10n.channelOutLap,
+      LapSectionType.inLap => l10n.channelInLap,
+      LapSectionType.lap => l10n.channelLapSection(row!.lapNumber),
+      _ => l10n.channelUnknownSection,
+    };
 
 /// "−12 °C in 1:40 (in lap) · …", or "none recorded".
-String coolingText(RunChannel channel) {
-  if (channel.cooling.isEmpty) return 'none recorded';
+String coolingText(AppLocalizations l10n, RunChannel channel) {
+  if (channel.cooling.isEmpty) return l10n.channelCoolingNone;
   return [
     for (final cooling in channel.cooling)
-      '−${channelValueText(cooling.interval.drop, channel.unit)} in '
-          '${_clockText(cooling.interval.seconds)}'
-          '${cooling.section == null ? '' : ' (${_sectionText(cooling.section)})'}',
+      l10n.channelCoolingDrop(
+            channelValueText(cooling.interval.drop, channel.unit),
+            _clockText(cooling.interval.seconds),
+          ) +
+          (cooling.section == null
+              ? ''
+              : ' (${_sectionText(l10n, cooling.section)})'),
   ].join(' · ');
 }
 
 /// One line per metric: the coefficient, its strength, the laps behind it
 /// and what the sign means in these laps. Never a cause.
-String associationText(String metric, RankCorrelation correlation) {
-  final label = metric == 'lapTime' ? 'Lap time' : 'Strong acceleration';
+String associationText(
+  AppLocalizations l10n,
+  String metric,
+  RankCorrelation correlation,
+) {
+  final label = metric == 'lapTime'
+      ? l10n.channelLapTime
+      : l10n.channelStrongAcceleration;
   final rho = correlation.coefficient;
   if (rho == null) {
     if (correlation.unavailableReason == associationNoSpread) {
-      return '$label: the temperature (or the metric) did not vary over '
-          '${correlation.count} laps.';
+      return l10n.channelAssociationNoSpread(label, correlation.count);
     }
-    return '$label: ${correlation.count} comparable laps with this '
-        'temperature; at least $minimumAssociationSamples are needed.';
+    return l10n.channelAssociationTooFew(
+      label,
+      correlation.count,
+      minimumAssociationSamples,
+    );
   }
   final strength = associationStrength(rho);
   final meaning = strength == 'weak'
-      ? 'little association'
+      ? l10n.channelMeaningLittle
       : metric == 'lapTime'
-      ? (rho < 0 ? 'hotter laps were quicker' : 'hotter laps were slower')
-      : (rho > 0
-            ? 'hotter laps accelerated harder'
-            : 'hotter laps accelerated less');
-  return '$label: ρ ${rho > 0 ? '+' : ''}${rho.toStringAsFixed(2)} · '
-      '$strength · ${correlation.count} laps — $meaning';
+      ? (rho < 0 ? l10n.channelMeaningQuicker : l10n.channelMeaningSlower)
+      : (rho > 0 ? l10n.channelMeaningHarder : l10n.channelMeaningLess);
+  return l10n.channelAssociation(
+    label,
+    '${rho > 0 ? '+' : ''}${rho.toStringAsFixed(2)}',
+    switch (strength) {
+      'weak' => l10n.channelStrengthWeak,
+      'moderate' => l10n.channelStrengthModerate,
+      'strong' => l10n.channelStrengthStrong,
+      final other => other,
+    },
+    correlation.count,
+    meaning,
+  );
 }
 
 /// The day's recorded temperatures (Overlays' "Car"): each channel per
@@ -104,6 +156,7 @@ class CarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final channels = this.channels;
     final names = channels?.temperatureChannels ?? const <String>[];
     return Card(
@@ -112,26 +165,19 @@ class CarCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Car', style: theme.textTheme.labelLarge),
+            Text(l10n.channelCarTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             if (loading || channels == null)
-              const Text("Reading each session's recorded temperatures…")
+              Text(l10n.channelCarReading)
             else if (channels.error.isNotEmpty)
-              Text(channels.error)
+              Text(_channelReason(l10n, channels.error))
             else if (names.isEmpty)
-              const Text(
-                'None of the recordings contain a temperature channel.',
-                key: ValueKey('carNoChannels'),
+              Text(
+                l10n.channelCarNoChannels,
+                key: const ValueKey('carNoChannels'),
               )
             else ...[
-              Text(
-                'Each session on its own, in recording order. Gaps in a '
-                'recording are never bridged; implausible readings and '
-                'placeholder zeros are left out and counted. Cooling is a '
-                'continuously recorded drop of at least 5° over at least '
-                '30 s.',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text(l10n.channelCarIntro, style: theme.textTheme.bodySmall),
               for (final name in names)
                 _channel(context, channels, name, associations?.channel(name)),
             ],
@@ -148,6 +194,7 @@ class CarCard extends StatelessWidget {
     ChannelAssociation? association,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     String unit = '';
     for (final run in channels.runs) {
       final channel = run.channel(name);
@@ -158,7 +205,7 @@ class CarCard extends StatelessWidget {
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ChannelPage(
-            title: readableChannel(name),
+            title: channelLabel(l10n, name),
             channel: name,
             channels: channels,
             association: association,
@@ -174,25 +221,23 @@ class CarCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${readableChannel(name)} · $name'
-                    '${unit.isEmpty ? ' · units not declared by the recording' : ''}',
+                    '${channelLabel(l10n, name)} · $name'
+                    '${unit.isEmpty ? ' · ${l10n.channelUnitsNotDeclared}' : ''}',
                     style: theme.textTheme.titleSmall,
                   ),
                   for (final run in channels.runs)
                     Text(
-                      '${run.runName}: ${run.unavailableReason.isNotEmpty ? run.unavailableReason : channelSummaryText(run.channel(name)?.run, unit)}',
+                      '${l10n.session(run.runName)}: ${run.unavailableReason.isNotEmpty ? _channelReason(l10n, run.unavailableReason) : channelSummaryText(l10n, run.channel(name)?.run, unit)}',
                       style: theme.textTheme.bodySmall,
                     ),
                   if (association != null) ...[
                     Text(
-                      associationText('lapTime', association.lapTime),
+                      associationText(l10n, 'lapTime', association.lapTime),
                       key: ValueKey('carAssociation $name'),
                     ),
                     if (association.confoundedByOrder)
                       Text(
-                        'The temperature also changed through the day, so this '
-                        'cannot be told apart from everything else that changed: '
-                        'the driver, tyres, track and fuel.',
+                        l10n.channelConfounded,
                         style: theme.textTheme.bodySmall,
                       ),
                   ],
@@ -230,6 +275,7 @@ class ChannelPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final association = this.association;
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -238,33 +284,38 @@ class ChannelPage extends StatelessWidget {
         children: [
           Text(
             heartRate
-                ? 'Observed values from the recording, not an assessment.'
-                : 'Every recorded section of each session.',
+                ? l10n.channelHeartRateIntro
+                : l10n.channelEverySectionIntro,
             style: theme.textTheme.bodySmall,
           ),
           for (final run in channels.runs) ..._run(context, run),
           if (association != null) ...[
             const SizedBox(height: 16),
-            Text('With lap performance', style: theme.textTheme.titleSmall),
-            Text(associationText('lapTime', association.lapTime)),
-            Text(associationText('acceleration', association.acceleration)),
+            Text(
+              l10n.channelWithLapPerformance,
+              style: theme.textTheme.titleSmall,
+            ),
+            Text(associationText(l10n, 'lapTime', association.lapTime)),
+            Text(
+              associationText(l10n, 'acceleration', association.acceleration),
+            ),
             if (association.confoundedByOrder)
               Text(
-                'The temperature also ${(association.order.coefficient ?? 0) > 0 ? 'rose' : 'fell'} '
-                'through the day (ρ ${association.order.coefficient!.toStringAsFixed(2)} '
-                'with the order of laps), so this cannot be told apart from '
-                'everything else that changed over the day: the driver, tyres, '
-                'track and fuel.',
+                (association.order.coefficient ?? 0) > 0
+                    ? l10n.channelConfoundedRose(
+                        association.order.coefficient!.toStringAsFixed(2),
+                      )
+                    : l10n.channelConfoundedFell(
+                        association.order.coefficient!.toStringAsFixed(2),
+                      ),
               ),
             const SizedBox(height: 4),
             Text(
-              "Spearman rank correlation over the day's compared laps whose "
-              'sensor covered at least '
-              '${(minimumAssociationCoverage * 100).round()}% of the lap. '
-              '${association.lowCoverageLaps} left out for low coverage, '
-              '${association.notRecordedLaps} without a valid reading. It '
-              'describes how the two moved together on this day; it does not '
-              'establish a critical temperature or a cause.',
+              l10n.channelSpearman(
+                (minimumAssociationCoverage * 100).round(),
+                association.lowCoverageLaps,
+                association.notRecordedLaps,
+              ),
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -275,23 +326,24 @@ class ChannelPage extends StatelessWidget {
 
   List<Widget> _run(BuildContext context, RunChannelSummaries run) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final recorded = heartRate ? run.heartRate : run.channel(channel);
     return [
       const SizedBox(height: 12),
-      Text(run.runName, style: theme.textTheme.titleSmall),
+      Text(l10n.session(run.runName), style: theme.textTheme.titleSmall),
       if (run.unavailableReason.isNotEmpty)
-        Text(run.unavailableReason)
+        Text(_channelReason(l10n, run.unavailableReason))
       else if (recorded == null)
-        const Text('Not recorded')
+        Text(l10n.channelNotRecorded)
       else ...[
-        Text(channelSummaryText(recorded.run, recorded.unit)),
-        if (!heartRate) Text('Cooling: ${coolingText(recorded)}'),
+        Text(channelSummaryText(l10n, recorded.run, recorded.unit)),
+        if (!heartRate) Text(l10n.channelCooling(coolingText(l10n, recorded))),
         for (final section in recorded.sections)
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Text(
-              '${section.row.displayName.split(' · ').last}: '
-              '${channelSummaryText(section.summary, recorded.unit)}',
+              '${l10n.lap(section.row).split(' · ').last}: '
+              '${channelSummaryText(l10n, section.summary, recorded.unit)}',
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -319,6 +371,7 @@ class DriverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final channels = this.channels;
     return Card(
       child: Padding(
@@ -326,23 +379,19 @@ class DriverCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Driver', style: theme.textTheme.labelLarge),
+            Text(l10n.channelDriverTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             if (loading || channels == null)
-              const Text("Reading each session's recorded heart rate…")
+              Text(l10n.channelDriverReading)
             else if (channels.error.isNotEmpty)
-              Text(channels.error)
+              Text(_channelReason(l10n, channels.error))
             else if (!channels.hasHeartRate)
-              const Text(
-                'No heart rate recorded.',
-                key: ValueKey('driverNoHeartRate'),
+              Text(
+                l10n.channelDriverNoHeartRate,
+                key: const ValueKey('driverNoHeartRate'),
               )
             else ...[
-              Text(
-                'Heart rate from the recordings: observed values, not an '
-                'assessment. Per lap: mean bpm; tap a lap to open it.',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text(l10n.channelDriverIntro, style: theme.textTheme.bodySmall),
               for (final run in channels.runs) ..._run(context, run),
               Align(
                 alignment: Alignment.centerLeft,
@@ -351,14 +400,14 @@ class DriverCard extends StatelessWidget {
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => ChannelPage(
-                        title: 'Heart rate',
+                        title: l10n.channelHeartRate,
                         channel: '',
                         channels: channels,
                         heartRate: true,
                       ),
                     ),
                   ),
-                  child: const Text('Every section…'),
+                  child: Text(l10n.channelEverySection),
                 ),
               ),
             ],
@@ -370,14 +419,15 @@ class DriverCard extends StatelessWidget {
 
   List<Widget> _run(BuildContext context, RunChannelSummaries run) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final heart = run.heartRate;
     return [
       const SizedBox(height: 8),
-      Text(run.runName, style: theme.textTheme.titleSmall),
+      Text(l10n.session(run.runName), style: theme.textTheme.titleSmall),
       Text(
         run.unavailableReason.isNotEmpty
-            ? run.unavailableReason
-            : channelSummaryText(heart?.run, heart?.unit ?? 'bpm'),
+            ? _channelReason(l10n, run.unavailableReason)
+            : channelSummaryText(l10n, heart?.run, heart?.unit ?? 'bpm'),
         key: ValueKey('heartRate ${run.runId}'),
       ),
       if (heart != null)
@@ -389,8 +439,12 @@ class DriverCard extends StatelessWidget {
               if (section.row.type == LapSectionType.lap)
                 ActionChip(
                   label: Text(
-                    'LAP ${section.row.lapNumber} · '
-                    '${section.summary.valid ? section.summary.mean!.toStringAsFixed(0) : '—'}',
+                    l10n.channelLapMean(
+                      section.row.lapNumber,
+                      section.summary.valid
+                          ? section.summary.mean!.toStringAsFixed(0)
+                          : '—',
+                    ),
                   ),
                   onPressed: onOpenLap == null
                       ? null

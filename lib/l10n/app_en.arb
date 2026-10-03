@@ -1689,5 +1689,497 @@
         "example": "Corner 1"
       }
     }
+  },
+  "progressionTitle": "Progression",
+  "@progressionTitle": {
+    "description": "Heading of the card showing how the day went session by session."
+  },
+  "progressionBySession": "By session",
+  "@progressionBySession": {
+    "description": "Progression view: one entry per session."
+  },
+  "progressionBySegment": "By segment",
+  "@progressionBySegment": {
+    "description": "Progression view: a table of segments by session."
+  },
+  "progressionSessionsIntro": "Sessions in recording order; sessions without a recording time follow in import order. The bar runs from the quickest to the slowest ranked lap on one time scale, the middle half boxed and the typical lap marked.",
+  "@progressionSessionsIntro": {
+    "description": "Explains the progression by session."
+  },
+  "progressionNoSession": "No session to compare.",
+  "@progressionNoSession": {
+    "description": "Progression card without sessions."
+  },
+  "progressionRecordingTimeUnavailable": "Recording time unavailable",
+  "@progressionRecordingTimeUnavailable": {
+    "description": "A session whose recording has no date and time."
+  },
+  "progressionRecordingClock": "{time} UTC on {date}",
+  "@progressionRecordingClock": {
+    "description": "When a session was recorded, from the recording's clock.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "11:20:05"
+      },
+      "date": {
+        "type": "String",
+        "example": "19 Aug 2026"
+      }
+    }
+  },
+  "progressionNoRecordedLaps": "No recorded laps",
+  "@progressionNoRecordedLaps": {
+    "description": "A session without laps."
+  },
+  "progressionNoRankedLap": "{count, plural, =1{No ranked lap · 0 of 1 lap} other{No ranked lap · 0 of {count} laps}}",
+  "@progressionNoRankedLap": {
+    "description": "A session none of whose laps is ranked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionLapsRanked": "{count, plural, =1{{eligible} of 1 lap ranked} other{{eligible} of {count} laps ranked}}",
+  "@progressionLapsRanked": {
+    "description": "How many of a session's laps are ranked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "eligible": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionTypical": "Typical {time}",
+  "@progressionTypical": {
+    "description": "A session's typical (median) lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      }
+    }
+  },
+  "progressionTypicalNeedsLaps": "{count, plural, =1{Typical lap needs at least 1 ranked lap} other{Typical lap needs at least {count} ranked laps}}",
+  "@progressionTypicalNeedsLaps": {
+    "description": "Why a session has no typical lap.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionBestAgainst": "Best {delta} against {session}",
+  "@progressionBestAgainst": {
+    "description": "A session's best lap compared with the previous session's.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "−0.412 s"
+      },
+      "session": {
+        "type": "String",
+        "example": "Session 1"
+      }
+    }
+  },
+  "progressionConditions": "Conditions: {conditions}",
+  "@progressionConditions": {
+    "description": "The conditions the driver noted for a session.",
+    "placeholders": {
+      "conditions": {
+        "type": "String"
+      }
+    }
+  },
+  "progressionSetup": "Setup: {setup}",
+  "@progressionSetup": {
+    "description": "The setup changes the driver noted for a session.",
+    "placeholders": {
+      "setup": {
+        "type": "String"
+      }
+    }
+  },
+  "progressionNotes": "Notes: {notes}",
+  "@progressionNotes": {
+    "description": "The driver's notes for a session.",
+    "placeholders": {
+      "notes": {
+        "type": "String"
+      }
+    }
+  },
+  "progressionBestLap": "Best: LAP {number}",
+  "@progressionBestLap": {
+    "description": "A session's best lap, as on a timing screen.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionMeasuring": "Measured with the theoretical best…",
+  "@progressionMeasuring": {
+    "description": "The progression by segment while the theoretical best is calculated."
+  },
+  "progressionSegmentsIntro": "{count, plural, =1{Each segment's typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than 1 lap: no statistics. Tap a cell for its laps.} other{Each segment's typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than {count} laps: no statistics. Tap a cell for its laps.}}",
+  "@progressionSegmentsIntro": {
+    "description": "Explains the progression by segment.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionLapUnavailable": "Lap unavailable",
+  "@progressionLapUnavailable": {
+    "description": "A lap of a segment cell that can no longer be found."
+  },
+  "progressionNoTimedSegments": "No session has timed segments.",
+  "@progressionNoTimedSegments": {
+    "description": "Progression by segment without timed segments."
+  },
+  "progressionSpread": "spread {seconds} s",
+  "@progressionSpread": {
+    "description": "A segment's spread (interquartile range) in a session.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.123"
+      }
+    }
+  },
+  "progressionLapCount": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@progressionLapCount": {
+    "description": "A segment cell with too few laps for statistics.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelOil": "Oil",
+  "@channelOil": {
+    "description": "An oil temperature channel."
+  },
+  "channelCoolant": "Coolant",
+  "@channelCoolant": {
+    "description": "A coolant temperature channel."
+  },
+  "channelIntakeAir": "Intake air",
+  "@channelIntakeAir": {
+    "description": "An intake air temperature channel."
+  },
+  "channelGearbox": "Gearbox",
+  "@channelGearbox": {
+    "description": "A gearbox temperature channel."
+  },
+  "channelExhaust": "Exhaust",
+  "@channelExhaust": {
+    "description": "An exhaust gas temperature channel."
+  },
+  "channelAmbient": "Ambient",
+  "@channelAmbient": {
+    "description": "An ambient temperature channel."
+  },
+  "channelNotRecorded": "Not recorded",
+  "@channelNotRecorded": {
+    "description": "A channel missing from a session."
+  },
+  "channelNoValidSamples": "No valid samples",
+  "@channelNoValidSamples": {
+    "description": "A channel without a usable reading."
+  },
+  "channelSummary": "mean {mean} · {minimum} – {maximum} · {coverage}% covered",
+  "@channelSummary": {
+    "description": "A channel's mean, range and how much of the time it was recorded.",
+    "placeholders": {
+      "mean": {
+        "type": "String",
+        "example": "104 °C"
+      },
+      "minimum": {
+        "type": "String",
+        "example": "98"
+      },
+      "maximum": {
+        "type": "String",
+        "example": "112 °C"
+      },
+      "coverage": {
+        "type": "int"
+      }
+    }
+  },
+  "channelImplausibleLeftOut": "{count} implausible left out",
+  "@channelImplausibleLeftOut": {
+    "description": "Readings of a channel left out as implausible.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelOutLap": "out lap",
+  "@channelOutLap": {
+    "description": "Section of a recording before the first start/finish pass."
+  },
+  "channelInLap": "in lap",
+  "@channelInLap": {
+    "description": "Section of a recording after the last start/finish pass."
+  },
+  "channelLapSection": "lap {number}",
+  "@channelLapSection": {
+    "description": "A timed lap as a section of a recording.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "channelUnknownSection": "unknown section",
+  "@channelUnknownSection": {
+    "description": "A section of a recording of unknown type."
+  },
+  "channelCoolingNone": "none recorded",
+  "@channelCoolingNone": {
+    "description": "No cooling in a channel."
+  },
+  "channelCoolingDrop": "−{drop} in {duration}",
+  "@channelCoolingDrop": {
+    "description": "A continuously recorded temperature drop and how long it took.",
+    "placeholders": {
+      "drop": {
+        "type": "String",
+        "example": "12 °C"
+      },
+      "duration": {
+        "type": "String",
+        "example": "1:40"
+      }
+    }
+  },
+  "channelCooling": "Cooling: {cooling}",
+  "@channelCooling": {
+    "description": "A session's cooling of a temperature channel.",
+    "placeholders": {
+      "cooling": {
+        "type": "String"
+      }
+    }
+  },
+  "channelLapTime": "Lap time",
+  "@channelLapTime": {
+    "description": "Lap time as a metric associated with a temperature."
+  },
+  "channelStrongAcceleration": "Strong acceleration",
+  "@channelStrongAcceleration": {
+    "description": "Strong acceleration as a metric associated with a temperature."
+  },
+  "channelAssociationNoSpread": "{count, plural, =1{{metric}: the temperature (or the metric) did not vary over 1 lap.} other{{metric}: the temperature (or the metric) did not vary over {count} laps.}}",
+  "@channelAssociationNoSpread": {
+    "description": "No association: nothing varied.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lap time"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelAssociationTooFew": "{count, plural, =1{{metric}: 1 comparable lap with this temperature; at least {minimum} are needed.} other{{metric}: {count} comparable laps with this temperature; at least {minimum} are needed.}}",
+  "@channelAssociationTooFew": {
+    "description": "No association: too few laps.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lap time"
+      },
+      "count": {
+        "type": "int"
+      },
+      "minimum": {
+        "type": "int"
+      }
+    }
+  },
+  "channelAssociation": "{count, plural, =1{{metric}: ρ {rho} · {strength} · 1 lap — {meaning}} other{{metric}: ρ {rho} · {strength} · {count} laps — {meaning}}}",
+  "@channelAssociation": {
+    "description": "A temperature's rank correlation with a metric over the compared laps. Never a cause.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lap time"
+      },
+      "rho": {
+        "type": "String",
+        "example": "+0.45"
+      },
+      "strength": {
+        "type": "String",
+        "example": "moderate"
+      },
+      "count": {
+        "type": "int"
+      },
+      "meaning": {
+        "type": "String",
+        "example": "hotter laps were slower"
+      }
+    }
+  },
+  "channelStrengthWeak": "weak",
+  "@channelStrengthWeak": {
+    "description": "Strength of a correlation."
+  },
+  "channelStrengthModerate": "moderate",
+  "@channelStrengthModerate": {
+    "description": "Strength of a correlation."
+  },
+  "channelStrengthStrong": "strong",
+  "@channelStrengthStrong": {
+    "description": "Strength of a correlation."
+  },
+  "channelMeaningLittle": "little association",
+  "@channelMeaningLittle": {
+    "description": "What a weak correlation means."
+  },
+  "channelMeaningQuicker": "hotter laps were quicker",
+  "@channelMeaningQuicker": {
+    "description": "What a correlation of temperature with lap time means."
+  },
+  "channelMeaningSlower": "hotter laps were slower",
+  "@channelMeaningSlower": {
+    "description": "What a correlation of temperature with lap time means."
+  },
+  "channelMeaningHarder": "hotter laps accelerated harder",
+  "@channelMeaningHarder": {
+    "description": "What a correlation of temperature with acceleration means."
+  },
+  "channelMeaningLess": "hotter laps accelerated less",
+  "@channelMeaningLess": {
+    "description": "What a correlation of temperature with acceleration means."
+  },
+  "channelCarTitle": "Car",
+  "@channelCarTitle": {
+    "description": "Heading of the card with the car's recorded temperatures."
+  },
+  "channelCarReading": "Reading each session's recorded temperatures…",
+  "@channelCarReading": {
+    "description": "Car card while temperatures are read."
+  },
+  "channelCarNoChannels": "None of the recordings contain a temperature channel.",
+  "@channelCarNoChannels": {
+    "description": "Car card without temperature channels."
+  },
+  "channelCarIntro": "Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.",
+  "@channelCarIntro": {
+    "description": "Explains the car card."
+  },
+  "channelUnitsNotDeclared": "units not declared by the recording",
+  "@channelUnitsNotDeclared": {
+    "description": "A channel whose recording gives no unit."
+  },
+  "channelConfounded": "The temperature also changed through the day, so this cannot be told apart from everything else that changed: the driver, tyres, track and fuel.",
+  "@channelConfounded": {
+    "description": "Why a temperature association is not a cause."
+  },
+  "channelHeartRateIntro": "Observed values from the recording, not an assessment.",
+  "@channelHeartRateIntro": {
+    "description": "Heart rate page intro."
+  },
+  "channelEverySectionIntro": "Every recorded section of each session.",
+  "@channelEverySectionIntro": {
+    "description": "Channel page intro."
+  },
+  "channelWithLapPerformance": "With lap performance",
+  "@channelWithLapPerformance": {
+    "description": "Heading of a temperature's association with lap performance."
+  },
+  "channelConfoundedRose": "The temperature also rose through the day (ρ {rho} with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.",
+  "@channelConfoundedRose": {
+    "description": "Why a temperature association is not a cause.",
+    "placeholders": {
+      "rho": {
+        "type": "String",
+        "example": "0.72"
+      }
+    }
+  },
+  "channelConfoundedFell": "The temperature also fell through the day (ρ {rho} with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.",
+  "@channelConfoundedFell": {
+    "description": "Why a temperature association is not a cause.",
+    "placeholders": {
+      "rho": {
+        "type": "String",
+        "example": "-0.72"
+      }
+    }
+  },
+  "channelSpearman": "Spearman rank correlation over the day's compared laps whose sensor covered at least {coverage}% of the lap. {lowCoverage} left out for low coverage, {notRecorded} without a valid reading. It describes how the two moved together on this day; it does not establish a critical temperature or a cause.",
+  "@channelSpearman": {
+    "description": "How a temperature association is calculated.",
+    "placeholders": {
+      "coverage": {
+        "type": "int"
+      },
+      "lowCoverage": {
+        "type": "int"
+      },
+      "notRecorded": {
+        "type": "int"
+      }
+    }
+  },
+  "channelDriverTitle": "Driver",
+  "@channelDriverTitle": {
+    "description": "Heading of the card with the driver's heart rate."
+  },
+  "channelDriverReading": "Reading each session's recorded heart rate…",
+  "@channelDriverReading": {
+    "description": "Driver card while heart rate is read."
+  },
+  "channelDriverNoHeartRate": "No heart rate recorded.",
+  "@channelDriverNoHeartRate": {
+    "description": "Driver card without heart rate."
+  },
+  "channelDriverIntro": "Heart rate from the recordings: observed values, not an assessment. Per lap: mean bpm; tap a lap to open it.",
+  "@channelDriverIntro": {
+    "description": "Explains the driver card."
+  },
+  "channelHeartRate": "Heart rate",
+  "@channelHeartRate": {
+    "description": "Title of the heart rate page."
+  },
+  "channelEverySection": "Every section…",
+  "@channelEverySection": {
+    "description": "Button opening the heart rate of every section."
+  },
+  "channelLapMean": "LAP {number} · {mean}",
+  "@channelLapMean": {
+    "description": "A lap's mean heart rate, as on a timing screen.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "mean": {
+        "type": "String",
+        "example": "142"
+      }
+    }
+  },
+  "channelRecordingUnavailable": "Recording unavailable.",
+  "@channelRecordingUnavailable": {
+    "description": "A session whose recording cannot be read."
+  },
+  "channelSummariesCancelled": "Channel summaries were cancelled.",
+  "@channelSummariesCancelled": {
+    "description": "Channel summaries stopped before they finished."
   }
 }

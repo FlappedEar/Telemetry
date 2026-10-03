@@ -1103,4 +1103,349 @@ class AppLocalizationsEn extends AppLocalizations {
   String focusHypothesisMinimumSpeedSpread(String segment) {
     return 'Comparing the slowest and the fastest example through $segment may show what differs; a higher minimum speed is not by itself better.';
   }
+
+  @override
+  String get progressionTitle => 'Progression';
+
+  @override
+  String get progressionBySession => 'By session';
+
+  @override
+  String get progressionBySegment => 'By segment';
+
+  @override
+  String get progressionSessionsIntro =>
+      'Sessions in recording order; sessions without a recording time follow in import order. The bar runs from the quickest to the slowest ranked lap on one time scale, the middle half boxed and the typical lap marked.';
+
+  @override
+  String get progressionNoSession => 'No session to compare.';
+
+  @override
+  String get progressionRecordingTimeUnavailable =>
+      'Recording time unavailable';
+
+  @override
+  String progressionRecordingClock(String time, String date) {
+    return '$time UTC on $date';
+  }
+
+  @override
+  String get progressionNoRecordedLaps => 'No recorded laps';
+
+  @override
+  String progressionNoRankedLap(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'No ranked lap · 0 of $count laps',
+      one: 'No ranked lap · 0 of 1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String progressionLapsRanked(int count, int eligible) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$eligible of $count laps ranked',
+      one: '$eligible of 1 lap ranked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String progressionTypical(String time) {
+    return 'Typical $time';
+  }
+
+  @override
+  String progressionTypicalNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Typical lap needs at least $count ranked laps',
+      one: 'Typical lap needs at least 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String progressionBestAgainst(String delta, String session) {
+    return 'Best $delta against $session';
+  }
+
+  @override
+  String progressionConditions(String conditions) {
+    return 'Conditions: $conditions';
+  }
+
+  @override
+  String progressionSetup(String setup) {
+    return 'Setup: $setup';
+  }
+
+  @override
+  String progressionNotes(String notes) {
+    return 'Notes: $notes';
+  }
+
+  @override
+  String progressionBestLap(int number) {
+    return 'Best: LAP $number';
+  }
+
+  @override
+  String get progressionMeasuring => 'Measured with the theoretical best…';
+
+  @override
+  String progressionSegmentsIntro(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Each segment\'s typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than $count laps: no statistics. Tap a cell for its laps.',
+      one: 'Each segment\'s typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than 1 lap: no statistics. Tap a cell for its laps.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get progressionLapUnavailable => 'Lap unavailable';
+
+  @override
+  String get progressionNoTimedSegments => 'No session has timed segments.';
+
+  @override
+  String progressionSpread(String seconds) {
+    return 'spread $seconds s';
+  }
+
+  @override
+  String progressionLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelOil => 'Oil';
+
+  @override
+  String get channelCoolant => 'Coolant';
+
+  @override
+  String get channelIntakeAir => 'Intake air';
+
+  @override
+  String get channelGearbox => 'Gearbox';
+
+  @override
+  String get channelExhaust => 'Exhaust';
+
+  @override
+  String get channelAmbient => 'Ambient';
+
+  @override
+  String get channelNotRecorded => 'Not recorded';
+
+  @override
+  String get channelNoValidSamples => 'No valid samples';
+
+  @override
+  String channelSummary(
+    String mean,
+    String minimum,
+    String maximum,
+    int coverage,
+  ) {
+    return 'mean $mean · $minimum – $maximum · $coverage% covered';
+  }
+
+  @override
+  String channelImplausibleLeftOut(int count) {
+    return '$count implausible left out';
+  }
+
+  @override
+  String get channelOutLap => 'out lap';
+
+  @override
+  String get channelInLap => 'in lap';
+
+  @override
+  String channelLapSection(int number) {
+    return 'lap $number';
+  }
+
+  @override
+  String get channelUnknownSection => 'unknown section';
+
+  @override
+  String get channelCoolingNone => 'none recorded';
+
+  @override
+  String channelCoolingDrop(String drop, String duration) {
+    return '−$drop in $duration';
+  }
+
+  @override
+  String channelCooling(String cooling) {
+    return 'Cooling: $cooling';
+  }
+
+  @override
+  String get channelLapTime => 'Lap time';
+
+  @override
+  String get channelStrongAcceleration => 'Strong acceleration';
+
+  @override
+  String channelAssociationNoSpread(String metric, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$metric: the temperature (or the metric) did not vary over $count laps.',
+      one: '$metric: the temperature (or the metric) did not vary over 1 lap.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String channelAssociationTooFew(String metric, int count, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$metric: $count comparable laps with this temperature; at least $minimum are needed.',
+      one:
+          '$metric: 1 comparable lap with this temperature; at least $minimum are needed.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String channelAssociation(
+    String metric,
+    String rho,
+    String strength,
+    int count,
+    String meaning,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$metric: ρ $rho · $strength · $count laps — $meaning',
+      one: '$metric: ρ $rho · $strength · 1 lap — $meaning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelStrengthWeak => 'weak';
+
+  @override
+  String get channelStrengthModerate => 'moderate';
+
+  @override
+  String get channelStrengthStrong => 'strong';
+
+  @override
+  String get channelMeaningLittle => 'little association';
+
+  @override
+  String get channelMeaningQuicker => 'hotter laps were quicker';
+
+  @override
+  String get channelMeaningSlower => 'hotter laps were slower';
+
+  @override
+  String get channelMeaningHarder => 'hotter laps accelerated harder';
+
+  @override
+  String get channelMeaningLess => 'hotter laps accelerated less';
+
+  @override
+  String get channelCarTitle => 'Car';
+
+  @override
+  String get channelCarReading =>
+      'Reading each session\'s recorded temperatures…';
+
+  @override
+  String get channelCarNoChannels =>
+      'None of the recordings contain a temperature channel.';
+
+  @override
+  String get channelCarIntro =>
+      'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.';
+
+  @override
+  String get channelUnitsNotDeclared => 'units not declared by the recording';
+
+  @override
+  String get channelConfounded =>
+      'The temperature also changed through the day, so this cannot be told apart from everything else that changed: the driver, tyres, track and fuel.';
+
+  @override
+  String get channelHeartRateIntro =>
+      'Observed values from the recording, not an assessment.';
+
+  @override
+  String get channelEverySectionIntro =>
+      'Every recorded section of each session.';
+
+  @override
+  String get channelWithLapPerformance => 'With lap performance';
+
+  @override
+  String channelConfoundedRose(String rho) {
+    return 'The temperature also rose through the day (ρ $rho with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.';
+  }
+
+  @override
+  String channelConfoundedFell(String rho) {
+    return 'The temperature also fell through the day (ρ $rho with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.';
+  }
+
+  @override
+  String channelSpearman(int coverage, int lowCoverage, int notRecorded) {
+    return 'Spearman rank correlation over the day\'s compared laps whose sensor covered at least $coverage% of the lap. $lowCoverage left out for low coverage, $notRecorded without a valid reading. It describes how the two moved together on this day; it does not establish a critical temperature or a cause.';
+  }
+
+  @override
+  String get channelDriverTitle => 'Driver';
+
+  @override
+  String get channelDriverReading =>
+      'Reading each session\'s recorded heart rate…';
+
+  @override
+  String get channelDriverNoHeartRate => 'No heart rate recorded.';
+
+  @override
+  String get channelDriverIntro =>
+      'Heart rate from the recordings: observed values, not an assessment. Per lap: mean bpm; tap a lap to open it.';
+
+  @override
+  String get channelHeartRate => 'Heart rate';
+
+  @override
+  String get channelEverySection => 'Every section…';
+
+  @override
+  String channelLapMean(int number, String mean) {
+    return 'LAP $number · $mean';
+  }
+
+  @override
+  String get channelRecordingUnavailable => 'Recording unavailable.';
+
+  @override
+  String get channelSummariesCancelled => 'Channel summaries were cancelled.';
 }
