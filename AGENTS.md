@@ -150,7 +150,11 @@ From the handover, section "How results are presented".
 - A missing result says why and is never shown as zero.
 - Typical means the median, spread means the interquartile range, and at least
   three laps are needed. No percentage scores.
-- Results are observations, not causes or driving instructions.
+- Results are observations, not causes or driving instructions. The one
+  exception is the coach between sessions (`day_coach.dart`, FET-45): the owner
+  chose "both, labelled" (2026-10-03), so each coach item shows the measured
+  observation and, labelled apart from it, what to try next. Coach findings
+  are patterns that suggest an opportunity, never a promised gain.
 - Measured and inferred values are labelled.
 - Δ is A − B; a positive value means A is behind. A is green `#55e6a5`, B is
   orange `#d95926`.

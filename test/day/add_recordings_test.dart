@@ -578,4 +578,62 @@ void main() {
     expect(find.text('Session 2 added to the day.'), findsOneWidget);
     expect(controller.runs, hasLength(2));
   });
+
+  testWidgets(
+    'after an addition the page moves to the Next session card for it',
+    (tester) async {
+      final a = write('a.vbo', [30, 28, 31]);
+      final b = write('b.vbo', [29, 33]);
+      final first = runDayImport((paths: [a], includeSubfolders: false));
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+        coachRunner: (job) async => job(),
+      );
+      await tester.binding.setSurfaceSize(const Size(412, 915));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+            pickers: _FakePickers([b]),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final card = find.byKey(const ValueKey('nextSessionCard'));
+      // Far down the Results tab, where the card is no longer built, and
+      // then on the Laps tab.
+      final summary = find
+          .descendant(
+            of: find.byKey(const ValueKey('dayResultsSummary')),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      for (var i = 0; i < 20; ++i) {
+        await tester.drag(summary, const Offset(0, -1500));
+        await tester.pumpAndSettle();
+      }
+      expect(card, findsNothing);
+      await tester.tap(find.text('Laps'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const ValueKey('addRecordings')));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Session 2 added to the day.'), findsOneWidget);
+      expect(card.hitTestable(), findsOneWidget);
+      final top = tester.getTopLeft(card).dy;
+      expect(top, inInclusiveRange(0, 915 - 100));
+      // Neither has a recording time, so the one added last is coached.
+      expect(controller.latestRunName, 'Session 2');
+      expect(
+        find.text("Coaching Session 2 against the day's faster laps"),
+        findsOneWidget,
+      );
+    },
+  );
 }

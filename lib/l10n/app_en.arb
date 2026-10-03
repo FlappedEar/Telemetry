@@ -132,6 +132,326 @@
   "@licencesLegalese": {
     "description": "Shown at the top of the licences page: the app's own licence and the map credits. Keep 'Apache License 2.0', 'OpenStreetMap', 'ODbL' and 'MapTiler' as written."
   },
+  "coachTitle": "Next session",
+  "@coachTitle": {
+    "description": "Heading of the coach card on the day page."
+  },
+  "coachSubtitle": "Coaching {session} against the day's faster laps",
+  "@coachSubtitle": {
+    "description": "Under the coach card's heading: the session coached.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachLoading": "Prepared after the theoretical best…",
+  "@coachLoading": {
+    "description": "While the coach's plan is being prepared."
+  },
+  "coachFailed": "The coach could not run: {error}",
+  "@coachFailed": {
+    "description": "When the coach failed; the error is technical text.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "out of memory"
+      }
+    }
+  },
+  "coachNoTheoreticalBest": "The coach needs the theoretical best, which could not be computed.",
+  "@coachNoTheoreticalBest": {
+    "description": "When the theoretical best failed, so the coach cannot run."
+  },
+  "coachSpeedHidden": "Speeds are not shown: the recordings' speed units differ, or the coach converted them to km/h, and speeds are never shown converted or mixed.",
+  "@coachSpeedHidden": {
+    "description": "Under coach items when speeds are hidden: the recordings' units disagree or the coach converted them; values are never shown converted."
+  },
+  "coachLabel": "Coach suggestion",
+  "@coachLabel": {
+    "description": "Label on each coach item, marking it as a suggestion from the coach rules, unlike the measured observations elsewhere on the page."
+  },
+  "coachMeasuredLabel": "Measured",
+  "@coachMeasuredLabel": {
+    "description": "Label before what was measured, in a coach item."
+  },
+  "coachTryLabel": "Try",
+  "@coachTryLabel": {
+    "description": "Label before what to try next, in a coach item."
+  },
+  "coachKeepLabel": "Keep",
+  "@coachKeepLabel": {
+    "description": "Label before what to keep doing, in an improvement item."
+  },
+  "coachWhy": "Why?",
+  "@coachWhy": {
+    "description": "Button opening the measured values behind a coach item."
+  },
+  "coachFooter": "Coach suggestions follow DrivingCoach's rules and suggest an opportunity, not a promised gain. The areas below are observations.",
+  "@coachFooter": {
+    "description": "Note under the coach items. DrivingCoach is a name; do not translate."
+  },
+  "coachKindEarlyLift": "Try a later lift",
+  "@coachKindEarlyLift": {
+    "description": "Coach item title: lifting off the throttle earlier than on faster laps."
+  },
+  "coachKindExcessiveCoasting": "Reduce coasting",
+  "@coachKindExcessiveCoasting": {
+    "description": "Coach item title: time with neither pedal pressed."
+  },
+  "coachKindLowMinimumSpeed": "Keep more speed through the slow point",
+  "@coachKindLowMinimumSpeed": {
+    "description": "Coach item title: lower minimum speed than on faster laps."
+  },
+  "coachKindLateThrottle": "Return to throttle sooner",
+  "@coachKindLateThrottle": {
+    "description": "Coach item title: throttle back on later than on faster laps."
+  },
+  "coachKindImproving": "Keep current approach",
+  "@coachKindImproving": {
+    "description": "Coach item title: an improvement over the last laps to keep."
+  },
+  "coachItemTitle": "{segment} · {label}",
+  "@coachItemTitle": {
+    "description": "A coach item's heading: the corner and what to do.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 4"
+      },
+      "label": {
+        "type": "String",
+        "example": "Reduce coasting"
+      }
+    }
+  },
+  "coachActionEarlyLift": "Try a slightly later lift within the approach you have already repeated successfully. Keep the braking point unchanged.",
+  "@coachActionEarlyLift": {
+    "description": "What to try for an early lift."
+  },
+  "coachActionExcessiveCoasting": "Reduce the gap with neither pedal engaged. Focus on smoother pedal transitions. Keep the braking point unchanged.",
+  "@coachActionExcessiveCoasting": {
+    "description": "What to try for too much coasting."
+  },
+  "coachActionLowMinimumSpeed": "Repeat the line and approach from your faster laps, aiming for a smoother minimum-speed phase. Keep the exit as your check.",
+  "@coachActionLowMinimumSpeed": {
+    "description": "What to try for a low minimum speed."
+  },
+  "coachActionLateThrottle": "Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.",
+  "@coachActionLateThrottle": {
+    "description": "What to try for a late throttle return."
+  },
+  "coachActionImproving": "Keep the approach from your latest laps. Repeat it before making another change.",
+  "@coachActionImproving": {
+    "description": "What to keep for an improvement."
+  },
+  "coachMeasuredOne": "{metric}: {observed} on this session's laps, {reference} on your faster lap.",
+  "@coachMeasuredOne": {
+    "description": "What was measured, compared with one faster lap.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Minimum speed"
+      },
+      "observed": {
+        "type": "String",
+        "example": "46.9 km/h"
+      },
+      "reference": {
+        "type": "String",
+        "example": "53.7 km/h"
+      }
+    }
+  },
+  "coachMeasuredMany": "{metric}: {observed} on this session's laps, {reference} on your faster laps.",
+  "@coachMeasuredMany": {
+    "description": "What was measured, compared with several faster laps (their median).",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Minimum speed"
+      },
+      "observed": {
+        "type": "String",
+        "example": "46.9 km/h"
+      },
+      "reference": {
+        "type": "String",
+        "example": "53.7 km/h"
+      }
+    }
+  },
+  "coachMeasuredImproving": "{metric} improved on three laps in a row, from {before} to {after}, without losing exit speed.",
+  "@coachMeasuredImproving": {
+    "description": "What was measured for an improvement.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Minimum speed"
+      },
+      "before": {
+        "type": "String",
+        "example": "40.0 km/h"
+      },
+      "after": {
+        "type": "String",
+        "example": "50.1 km/h"
+      }
+    }
+  },
+  "coachMetricLiftPoint": "Lift point",
+  "@coachMetricLiftPoint": {
+    "description": "Where the driver lifts off the throttle, in metres along the lap."
+  },
+  "coachMetricLongestCoast": "Longest coast",
+  "@coachMetricLongestCoast": {
+    "description": "The longest time with neither pedal pressed."
+  },
+  "coachMetricMinimumSpeed": "Minimum speed",
+  "@coachMetricMinimumSpeed": {
+    "description": "The lowest speed through a corner."
+  },
+  "coachMetricThrottleReturn": "Throttle return",
+  "@coachMetricThrottleReturn": {
+    "description": "Where the throttle is applied again after the slow point, in metres along the lap."
+  },
+  "coachMetricSegmentTime": "Segment time",
+  "@coachMetricSegmentTime": {
+    "description": "The time through the corner's segment."
+  },
+  "coachMetricExitSpeed": "Exit speed",
+  "@coachMetricExitSpeed": {
+    "description": "The speed at the corner's exit."
+  },
+  "coachMetricBrakingStart": "Braking start",
+  "@coachMetricBrakingStart": {
+    "description": "Where braking starts, in metres along the lap."
+  },
+  "coachMetricCoastDistance": "Coast distance",
+  "@coachMetricCoastDistance": {
+    "description": "The distance driven with neither pedal pressed."
+  },
+  "coachReasonReady": "Choose one focus at a time for your next run.",
+  "@coachReasonReady": {
+    "description": "Above the coach items."
+  },
+  "coachReasonNoSegments": "The coach needs the day's segments and sector times first.",
+  "@coachReasonNoSegments": {
+    "description": "Why there is no plan."
+  },
+  "coachReasonNoLapInGroup": "{session} has no timed lap in the laps compared.",
+  "@coachReasonNoLapInGroup": {
+    "description": "Why there is no plan.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachReasonNoCorners": "The laps compared have no approved corner.",
+  "@coachReasonNoCorners": {
+    "description": "Why there is no plan."
+  },
+  "coachReasonNoRecording": "The recording of {session} is not available, so it cannot be coached.",
+  "@coachReasonNoRecording": {
+    "description": "Why there is no plan.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachReasonNoCornerMeasurements": "No lap of {session} could be measured through a corner.",
+  "@coachReasonNoCornerMeasurements": {
+    "description": "Why there is no plan.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachReasonNoFasterLap": "No lap of {session} has a faster lap of the day to compare with.",
+  "@coachReasonNoFasterLap": {
+    "description": "Why there is no plan.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachReasonNoPedals": "Throttle and brake are not recorded, so lift, coasting and throttle return cannot be compared, and the speeds show no repeated pattern.",
+  "@coachReasonNoPedals": {
+    "description": "Why there is no plan."
+  },
+  "coachReasonNoPattern": "Compared with your faster laps, no pattern stands out.",
+  "@coachReasonNoPattern": {
+    "description": "Why there is no plan."
+  },
+  "coachReasonTooFewLaps": "A pattern was seen on fewer than three laps of {session}, too few to plan from.",
+  "@coachReasonTooFewLaps": {
+    "description": "Why there is no plan.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachReasonBelowThreshold": "No repeated pattern is clear enough to suggest a change.",
+  "@coachReasonBelowThreshold": {
+    "description": "Why there is no plan."
+  },
+  "coachWhyAffected": "This session's laps",
+  "@coachWhyAffected": {
+    "description": "Heading of the laps the pattern was seen on."
+  },
+  "coachWhyFaster": "Faster laps compared",
+  "@coachWhyFaster": {
+    "description": "Heading of the faster laps used as reference."
+  },
+  "coachWhyBefore": "First of the three laps",
+  "@coachWhyBefore": {
+    "description": "Heading of the lap an improvement started from."
+  },
+  "coachWhyValues": "{observed} against {reference}",
+  "@coachWhyValues": {
+    "description": "One measured value of this session against the faster laps'.",
+    "placeholders": {
+      "observed": {
+        "type": "String",
+        "example": "46.9 km/h"
+      },
+      "reference": {
+        "type": "String",
+        "example": "53.7 km/h"
+      }
+    }
+  },
+  "coachWhySupport": "Support {score} of 0.9. A conservative score for how well the laps back the pattern, not a probability.",
+  "@coachWhySupport": {
+    "description": "The finding's confidence score.",
+    "placeholders": {
+      "score": {
+        "type": "String",
+        "example": "0.78"
+      }
+    }
+  },
+  "coachWhyMap": "Best lap trace with {segment} highlighted",
+  "@coachWhyMap": {
+    "description": "Screen-reader label of the map.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 4"
+      }
+    }
+  },
   "channelFromSource": "from {format}",
   "@channelFromSource": {
     "description": "Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.",
