@@ -1291,6 +1291,386 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
   String consistencyLapCount(int count);
+
+  /// Heading of the card listing the day's largest time losses.
+  ///
+  /// In en, this message translates to:
+  /// **'Time losses'**
+  String get timeLossTitle;
+
+  /// Shown on the time-loss card while the theoretical best is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured with the theoretical best…'**
+  String get timeLossLoading;
+
+  /// Choice: compare only each session's best lap with the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Each session\'s best'**
+  String get timeLossScopeSessionBest;
+
+  /// Choice: compare every lap with the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Every lap'**
+  String get timeLossScopeEveryLap;
+
+  /// First part of the time-loss summary: the lap every loss is measured against.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {lap}'**
+  String timeLossAgainst(String lap);
+
+  /// Part of the time-loss summary: how many laps were compared with the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap compared} other{{count} laps compared}}'**
+  String timeLossLapsCompared(int count);
+
+  /// Part of the time-loss summary: how many time losses were found.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 loss observed} other{{count} losses observed}}'**
+  String timeLossLossesObserved(int count);
+
+  /// Part of the time-loss summary: segments left out because a lap has no complete time through them.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} not fully covered left out'**
+  String timeLossUntimedLeftOut(int count);
+
+  /// Explains what a time loss is, under the time-loss summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Each loss is the extra time one lap took through one segment compared with the best lap, both timed on one track axis. A straight right after a corner is its own segment, so time lost on the exit is not counted in the corner. An observed loss is not a guaranteed or necessarily safe gain.'**
+  String get timeLossExplanation;
+
+  /// Shown when no lap lost time anywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap lost time to the best lap in any timed segment.'**
+  String get timeLossNone;
+
+  /// Button that shows every time loss instead of the first ones.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count}'**
+  String timeLossShowAll(int count);
+
+  /// Why there is no time-loss list: the best lap has no time on the segments.
+  ///
+  /// In en, this message translates to:
+  /// **'The best lap could not be timed against the segments.'**
+  String get timeLossReasonNoReference;
+
+  /// Why there are no time losses or focus areas: the group's best lap has no time on the approved segments.
+  ///
+  /// In en, this message translates to:
+  /// **'The group\'s best lap could not be timed against the approved segments.'**
+  String get timeLossReasonBestLapUntimed;
+
+  /// Name of a straight right after a corner, measured on its own.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment} · after {corner}'**
+  String timeLossSegmentAfterCorner(String segment, String corner);
+
+  /// Name of a straight right after a corner whose name is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment} · after the corner'**
+  String timeLossSegmentAfterTheCorner(String segment);
+
+  /// Name of a numbered straight segment of the track.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight {number}'**
+  String timeLossSegmentStraight(String number);
+
+  /// Name of a numbered corner segment of the track.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner {number}'**
+  String timeLossSegmentCorner(String number);
+
+  /// Name of a segment of several linked corners.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners {first}–{last}'**
+  String timeLossSegmentCorners(String first, String last);
+
+  /// In place of a lap's name when the lap cannot be found.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap unavailable'**
+  String get timeLossLapUnavailable;
+
+  /// Heading of one opened time loss: the lap that lost time and the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} against the best lap, {best}'**
+  String timeLossAgainstBestLap(String lap, String best);
+
+  /// In place of a lap's name inside a sentence when the lap cannot be found.
+  ///
+  /// In en, this message translates to:
+  /// **'unavailable'**
+  String get timeLossUnavailable;
+
+  /// Label of this lap's time through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'This lap'**
+  String get timeLossThisLap;
+
+  /// Label of the best lap's time through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get timeLossBestLap;
+
+  /// Label of the time difference between the two laps through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference'**
+  String get timeLossDifference;
+
+  /// Where the segment of a time loss is on the track.
+  ///
+  /// In en, this message translates to:
+  /// **'Through {segment}, from {start} m to {end} m after the line.'**
+  String timeLossThrough(String segment, int start, int end);
+
+  /// The running gap to the best lap at both ends of the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Gap to the best lap: {start} at the start of the segment, {end} at its end.'**
+  String timeLossGap(String start, String end);
+
+  /// Warning that the comparison is incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of the segment has no GPS on one of the laps.'**
+  String get timeLossNoGps;
+
+  /// Accessibility label of the map showing the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with {segment} highlighted'**
+  String timeLossMapLabel(String segment);
+
+  /// Caution under an opened time loss.
+  ///
+  /// In en, this message translates to:
+  /// **'An observed difference between two laps, not a guaranteed or necessarily safe gain.'**
+  String get timeLossDisclaimer;
+
+  /// Button that opens a lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {lap}'**
+  String timeLossOpenLap(String lap);
+
+  /// Button that compares the lap with the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with {lap}'**
+  String timeLossCompareWith(String lap);
+
+  /// Heading of the card of focus areas: where the driver may find time.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to look next'**
+  String get focusTitle;
+
+  /// Shown on the focus-area card while the theoretical best is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected with the theoretical best…'**
+  String get focusLoading;
+
+  /// Shown when there is no focus area.
+  ///
+  /// In en, this message translates to:
+  /// **'No loss, sector gap or spread is large enough to single out.'**
+  String get focusNone;
+
+  /// Explains how a focus area reads.
+  ///
+  /// In en, this message translates to:
+  /// **'Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.'**
+  String get focusIntro;
+
+  /// Kind of focus area: the best lap was slower through a sector than another lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap against the fastest sector'**
+  String get focusKindSectorGap;
+
+  /// Kind of focus area: time lost in the same segment on several laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeated loss'**
+  String get focusKindRepeatedLoss;
+
+  /// Kind of focus area: the braking point varies from lap to lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking-point spread'**
+  String get focusKindBrakingSpread;
+
+  /// Kind of focus area: the lowest speed in a corner varies from lap to lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest-speed spread'**
+  String get focusKindMinimumSpeedSpread;
+
+  /// What a focus area measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed: {text}'**
+  String focusObserved(String text);
+
+  /// What may be worth checking in a focus area; never a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'Hypothesis: {text}'**
+  String focusHypothesis(String text);
+
+  /// The two laps a focus area suggests comparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare {lap} with {other}'**
+  String focusCompareLaps(String lap, String other);
+
+  /// In place of a lap's name inside a sentence when the lap cannot be found.
+  ///
+  /// In en, this message translates to:
+  /// **'a lap unavailable'**
+  String get focusLapUnavailable;
+
+  /// Heading of the two laps' measurements through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Through {segment}'**
+  String focusThrough(String segment);
+
+  /// A lap has no time through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'not timed'**
+  String get focusNotTimed;
+
+  /// A lap's braking point could not be measured.
+  ///
+  /// In en, this message translates to:
+  /// **'braking point not measured'**
+  String get focusBrakingNotMeasured;
+
+  /// Where braking starts on a lap, in meters along the lap.
+  ///
+  /// In en, this message translates to:
+  /// **'braking starts at {meters} m'**
+  String focusBrakingStarts(int meters);
+
+  /// A lap's lowest speed could not be measured.
+  ///
+  /// In en, this message translates to:
+  /// **'lowest speed not measured'**
+  String get focusLowestSpeedNotMeasured;
+
+  /// A lap's lowest speed through the corner, with its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'lowest speed {speed}'**
+  String focusLowestSpeed(String speed);
+
+  /// Caution under an opened focus area.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured on these laps only. It does not say which way is faster or safe.'**
+  String get focusDisclaimer;
+
+  /// Button that compares the focus area's two laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare laps A and B'**
+  String get focusCompareAB;
+
+  /// What a sector-gap focus area measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.'**
+  String focusObservationSectorGap(
+    String bestLap,
+    String gap,
+    String segment,
+    String sourceLap,
+  );
+
+  /// What a sector-gap focus area suggests checking; never a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparing the two laps through {segment} may show where the time went: where braking starts, the lowest speed, and when the throttle comes back.'**
+  String focusHypothesisSectorGap(String segment);
+
+  /// What a repeated-loss focus area measured.
+  ///
+  /// In en, this message translates to:
+  /// **'In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).'**
+  String focusObservationRepeatedLoss(
+    String count,
+    String total,
+    String segment,
+    String reference,
+    String median,
+  );
+
+  /// What a repeated-loss focus area suggests checking; never a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'Because it repeats, comparing a typical lap with {reference} through {segment} may show a pattern rather than a one-off.'**
+  String focusHypothesisRepeatedLoss(String reference, String segment);
+
+  /// What a braking-spread focus area measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).'**
+  String focusObservationBrakingSpread(
+    String segment,
+    String spread,
+    String count,
+  );
+
+  /// What a braking-spread focus area suggests checking; never a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'A more repeatable braking reference for {segment} may be worth checking. This does not show whether earlier or later braking is faster or safe; compare the earliest and the latest example.'**
+  String focusHypothesisBrakingSpread(String segment);
+
+  /// What a lowest-speed-spread focus area measured; the speeds carry their unit when recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'The lowest speed through {segment} varies by {spread} across the middle half of {count} laps (median {median}).'**
+  String focusObservationMinimumSpeedSpread(
+    String segment,
+    String spread,
+    String count,
+    String median,
+  );
+
+  /// Added after a lowest-speed spread when the recording gives no speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Speeds are in the recording\'s own units.'**
+  String get focusObservationRecordingUnits;
+
+  /// What a lowest-speed-spread focus area suggests checking; never a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparing the slowest and the fastest example through {segment} may show what differs; a higher minimum speed is not by itself better.'**
+  String focusHypothesisMinimumSpeedSpread(String segment);
 }
 
 class _AppLocalizationsDelegate

@@ -821,4 +821,286 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get timeLossTitle => 'Time losses';
+
+  @override
+  String get timeLossLoading => 'Measured with the theoretical best…';
+
+  @override
+  String get timeLossScopeSessionBest => 'Each session\'s best';
+
+  @override
+  String get timeLossScopeEveryLap => 'Every lap';
+
+  @override
+  String timeLossAgainst(String lap) {
+    return 'Against $lap';
+  }
+
+  @override
+  String timeLossLapsCompared(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps compared',
+      one: '1 lap compared',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeLossLossesObserved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count losses observed',
+      one: '1 loss observed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeLossUntimedLeftOut(int count) {
+    return '$count not fully covered left out';
+  }
+
+  @override
+  String get timeLossExplanation =>
+      'Each loss is the extra time one lap took through one segment compared with the best lap, both timed on one track axis. A straight right after a corner is its own segment, so time lost on the exit is not counted in the corner. An observed loss is not a guaranteed or necessarily safe gain.';
+
+  @override
+  String get timeLossNone =>
+      'No lap lost time to the best lap in any timed segment.';
+
+  @override
+  String timeLossShowAll(int count) {
+    return 'Show all $count';
+  }
+
+  @override
+  String get timeLossReasonNoReference =>
+      'The best lap could not be timed against the segments.';
+
+  @override
+  String get timeLossReasonBestLapUntimed =>
+      'The group\'s best lap could not be timed against the approved segments.';
+
+  @override
+  String timeLossSegmentAfterCorner(String segment, String corner) {
+    return '$segment · after $corner';
+  }
+
+  @override
+  String timeLossSegmentAfterTheCorner(String segment) {
+    return '$segment · after the corner';
+  }
+
+  @override
+  String timeLossSegmentStraight(String number) {
+    return 'Straight $number';
+  }
+
+  @override
+  String timeLossSegmentCorner(String number) {
+    return 'Corner $number';
+  }
+
+  @override
+  String timeLossSegmentCorners(String first, String last) {
+    return 'Corners $first–$last';
+  }
+
+  @override
+  String get timeLossLapUnavailable => 'Lap unavailable';
+
+  @override
+  String timeLossAgainstBestLap(String lap, String best) {
+    return '$lap against the best lap, $best';
+  }
+
+  @override
+  String get timeLossUnavailable => 'unavailable';
+
+  @override
+  String get timeLossThisLap => 'This lap';
+
+  @override
+  String get timeLossBestLap => 'Best lap';
+
+  @override
+  String get timeLossDifference => 'Difference';
+
+  @override
+  String timeLossThrough(String segment, int start, int end) {
+    return 'Through $segment, from $start m to $end m after the line.';
+  }
+
+  @override
+  String timeLossGap(String start, String end) {
+    return 'Gap to the best lap: $start at the start of the segment, $end at its end.';
+  }
+
+  @override
+  String get timeLossNoGps =>
+      'Part of the segment has no GPS on one of the laps.';
+
+  @override
+  String timeLossMapLabel(String segment) {
+    return 'Best lap trace with $segment highlighted';
+  }
+
+  @override
+  String get timeLossDisclaimer =>
+      'An observed difference between two laps, not a guaranteed or necessarily safe gain.';
+
+  @override
+  String timeLossOpenLap(String lap) {
+    return 'Open $lap';
+  }
+
+  @override
+  String timeLossCompareWith(String lap) {
+    return 'Compare with $lap';
+  }
+
+  @override
+  String get focusTitle => 'Where to look next';
+
+  @override
+  String get focusLoading => 'Selected with the theoretical best…';
+
+  @override
+  String get focusNone =>
+      'No loss, sector gap or spread is large enough to single out.';
+
+  @override
+  String get focusIntro =>
+      'Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.';
+
+  @override
+  String get focusKindSectorGap => 'Best lap against the fastest sector';
+
+  @override
+  String get focusKindRepeatedLoss => 'Repeated loss';
+
+  @override
+  String get focusKindBrakingSpread => 'Braking-point spread';
+
+  @override
+  String get focusKindMinimumSpeedSpread => 'Lowest-speed spread';
+
+  @override
+  String focusObserved(String text) {
+    return 'Observed: $text';
+  }
+
+  @override
+  String focusHypothesis(String text) {
+    return 'Hypothesis: $text';
+  }
+
+  @override
+  String focusCompareLaps(String lap, String other) {
+    return 'Compare $lap with $other';
+  }
+
+  @override
+  String get focusLapUnavailable => 'a lap unavailable';
+
+  @override
+  String focusThrough(String segment) {
+    return 'Through $segment';
+  }
+
+  @override
+  String get focusNotTimed => 'not timed';
+
+  @override
+  String get focusBrakingNotMeasured => 'braking point not measured';
+
+  @override
+  String focusBrakingStarts(int meters) {
+    return 'braking starts at $meters m';
+  }
+
+  @override
+  String get focusLowestSpeedNotMeasured => 'lowest speed not measured';
+
+  @override
+  String focusLowestSpeed(String speed) {
+    return 'lowest speed $speed';
+  }
+
+  @override
+  String get focusDisclaimer =>
+      'Measured on these laps only. It does not say which way is faster or safe.';
+
+  @override
+  String get focusCompareAB => 'Compare laps A and B';
+
+  @override
+  String focusObservationSectorGap(
+    String bestLap,
+    String gap,
+    String segment,
+    String sourceLap,
+  ) {
+    return 'Your best lap ($bestLap) was $gap s slower through $segment than $sourceLap, the fastest recorded there.';
+  }
+
+  @override
+  String focusHypothesisSectorGap(String segment) {
+    return 'Comparing the two laps through $segment may show where the time went: where braking starts, the lowest speed, and when the throttle comes back.';
+  }
+
+  @override
+  String focusObservationRepeatedLoss(
+    String count,
+    String total,
+    String segment,
+    String reference,
+    String median,
+  ) {
+    return 'In $count of $total compared laps you lost time through $segment against $reference (median $median s).';
+  }
+
+  @override
+  String focusHypothesisRepeatedLoss(String reference, String segment) {
+    return 'Because it repeats, comparing a typical lap with $reference through $segment may show a pattern rather than a one-off.';
+  }
+
+  @override
+  String focusObservationBrakingSpread(
+    String segment,
+    String spread,
+    String count,
+  ) {
+    return 'Where braking starts for $segment varies by $spread m across the middle half of $count laps (measured from the brake signal).';
+  }
+
+  @override
+  String focusHypothesisBrakingSpread(String segment) {
+    return 'A more repeatable braking reference for $segment may be worth checking. This does not show whether earlier or later braking is faster or safe; compare the earliest and the latest example.';
+  }
+
+  @override
+  String focusObservationMinimumSpeedSpread(
+    String segment,
+    String spread,
+    String count,
+    String median,
+  ) {
+    return 'The lowest speed through $segment varies by $spread across the middle half of $count laps (median $median).';
+  }
+
+  @override
+  String get focusObservationRecordingUnits =>
+      'Speeds are in the recording\'s own units.';
+
+  @override
+  String focusHypothesisMinimumSpeedSpread(String segment) {
+    return 'Comparing the slowest and the fastest example through $segment may show what differs; a higher minimum speed is not by itself better.';
+  }
 }

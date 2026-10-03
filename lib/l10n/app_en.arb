@@ -1198,5 +1198,496 @@
         "type": "int"
       }
     }
+  },
+  "timeLossTitle": "Time losses",
+  "@timeLossTitle": {
+    "description": "Heading of the card listing the day's largest time losses."
+  },
+  "timeLossLoading": "Measured with the theoretical best…",
+  "@timeLossLoading": {
+    "description": "Shown on the time-loss card while the theoretical best is calculated."
+  },
+  "timeLossScopeSessionBest": "Each session's best",
+  "@timeLossScopeSessionBest": {
+    "description": "Choice: compare only each session's best lap with the best lap."
+  },
+  "timeLossScopeEveryLap": "Every lap",
+  "@timeLossScopeEveryLap": {
+    "description": "Choice: compare every lap with the best lap."
+  },
+  "timeLossAgainst": "Against {lap}",
+  "@timeLossAgainst": {
+    "description": "First part of the time-loss summary: the lap every loss is measured against.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "timeLossLapsCompared": "{count, plural, =1{1 lap compared} other{{count} laps compared}}",
+  "@timeLossLapsCompared": {
+    "description": "Part of the time-loss summary: how many laps were compared with the best lap.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossLossesObserved": "{count, plural, =1{1 loss observed} other{{count} losses observed}}",
+  "@timeLossLossesObserved": {
+    "description": "Part of the time-loss summary: how many time losses were found.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossUntimedLeftOut": "{count} not fully covered left out",
+  "@timeLossUntimedLeftOut": {
+    "description": "Part of the time-loss summary: segments left out because a lap has no complete time through them.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossExplanation": "Each loss is the extra time one lap took through one segment compared with the best lap, both timed on one track axis. A straight right after a corner is its own segment, so time lost on the exit is not counted in the corner. An observed loss is not a guaranteed or necessarily safe gain.",
+  "@timeLossExplanation": {
+    "description": "Explains what a time loss is, under the time-loss summary."
+  },
+  "timeLossNone": "No lap lost time to the best lap in any timed segment.",
+  "@timeLossNone": {
+    "description": "Shown when no lap lost time anywhere."
+  },
+  "timeLossShowAll": "Show all {count}",
+  "@timeLossShowAll": {
+    "description": "Button that shows every time loss instead of the first ones.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossReasonNoReference": "The best lap could not be timed against the segments.",
+  "@timeLossReasonNoReference": {
+    "description": "Why there is no time-loss list: the best lap has no time on the segments."
+  },
+  "timeLossReasonBestLapUntimed": "The group's best lap could not be timed against the approved segments.",
+  "@timeLossReasonBestLapUntimed": {
+    "description": "Why there are no time losses or focus areas: the group's best lap has no time on the approved segments."
+  },
+  "timeLossSegmentAfterCorner": "{segment} · after {corner}",
+  "@timeLossSegmentAfterCorner": {
+    "description": "Name of a straight right after a corner, measured on its own.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Straight 2"
+      },
+      "corner": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "timeLossSegmentAfterTheCorner": "{segment} · after the corner",
+  "@timeLossSegmentAfterTheCorner": {
+    "description": "Name of a straight right after a corner whose name is unknown.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Straight 2"
+      }
+    }
+  },
+  "timeLossSegmentStraight": "Straight {number}",
+  "@timeLossSegmentStraight": {
+    "description": "Name of a numbered straight segment of the track.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "2"
+      }
+    }
+  },
+  "timeLossSegmentCorner": "Corner {number}",
+  "@timeLossSegmentCorner": {
+    "description": "Name of a numbered corner segment of the track.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "1"
+      }
+    }
+  },
+  "timeLossSegmentCorners": "Corners {first}–{last}",
+  "@timeLossSegmentCorners": {
+    "description": "Name of a segment of several linked corners.",
+    "placeholders": {
+      "first": {
+        "type": "String",
+        "example": "3"
+      },
+      "last": {
+        "type": "String",
+        "example": "5"
+      }
+    }
+  },
+  "timeLossLapUnavailable": "Lap unavailable",
+  "@timeLossLapUnavailable": {
+    "description": "In place of a lap's name when the lap cannot be found."
+  },
+  "timeLossAgainstBestLap": "{lap} against the best lap, {best}",
+  "@timeLossAgainstBestLap": {
+    "description": "Heading of one opened time loss: the lap that lost time and the best lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "best": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "timeLossUnavailable": "unavailable",
+  "@timeLossUnavailable": {
+    "description": "In place of a lap's name inside a sentence when the lap cannot be found."
+  },
+  "timeLossThisLap": "This lap",
+  "@timeLossThisLap": {
+    "description": "Label of this lap's time through the segment."
+  },
+  "timeLossBestLap": "Best lap",
+  "@timeLossBestLap": {
+    "description": "Label of the best lap's time through the segment."
+  },
+  "timeLossDifference": "Difference",
+  "@timeLossDifference": {
+    "description": "Label of the time difference between the two laps through the segment."
+  },
+  "timeLossThrough": "Through {segment}, from {start} m to {end} m after the line.",
+  "@timeLossThrough": {
+    "description": "Where the segment of a time loss is on the track.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossGap": "Gap to the best lap: {start} at the start of the segment, {end} at its end.",
+  "@timeLossGap": {
+    "description": "The running gap to the best lap at both ends of the segment.",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "+0.120"
+      },
+      "end": {
+        "type": "String",
+        "example": "+0.310"
+      }
+    }
+  },
+  "timeLossNoGps": "Part of the segment has no GPS on one of the laps.",
+  "@timeLossNoGps": {
+    "description": "Warning that the comparison is incomplete."
+  },
+  "timeLossMapLabel": "Best lap trace with {segment} highlighted",
+  "@timeLossMapLabel": {
+    "description": "Accessibility label of the map showing the segment.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "timeLossDisclaimer": "An observed difference between two laps, not a guaranteed or necessarily safe gain.",
+  "@timeLossDisclaimer": {
+    "description": "Caution under an opened time loss."
+  },
+  "timeLossOpenLap": "Open {lap}",
+  "@timeLossOpenLap": {
+    "description": "Button that opens a lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "timeLossCompareWith": "Compare with {lap}",
+  "@timeLossCompareWith": {
+    "description": "Button that compares the lap with the best lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "focusTitle": "Where to look next",
+  "@focusTitle": {
+    "description": "Heading of the card of focus areas: where the driver may find time."
+  },
+  "focusLoading": "Selected with the theoretical best…",
+  "@focusLoading": {
+    "description": "Shown on the focus-area card while the theoretical best is calculated."
+  },
+  "focusNone": "No loss, sector gap or spread is large enough to single out.",
+  "@focusNone": {
+    "description": "Shown when there is no focus area."
+  },
+  "focusIntro": "Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.",
+  "@focusIntro": {
+    "description": "Explains how a focus area reads."
+  },
+  "focusKindSectorGap": "Best lap against the fastest sector",
+  "@focusKindSectorGap": {
+    "description": "Kind of focus area: the best lap was slower through a sector than another lap."
+  },
+  "focusKindRepeatedLoss": "Repeated loss",
+  "@focusKindRepeatedLoss": {
+    "description": "Kind of focus area: time lost in the same segment on several laps."
+  },
+  "focusKindBrakingSpread": "Braking-point spread",
+  "@focusKindBrakingSpread": {
+    "description": "Kind of focus area: the braking point varies from lap to lap."
+  },
+  "focusKindMinimumSpeedSpread": "Lowest-speed spread",
+  "@focusKindMinimumSpeedSpread": {
+    "description": "Kind of focus area: the lowest speed in a corner varies from lap to lap."
+  },
+  "focusObserved": "Observed: {text}",
+  "@focusObserved": {
+    "description": "What a focus area measured.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "focusHypothesis": "Hypothesis: {text}",
+  "@focusHypothesis": {
+    "description": "What may be worth checking in a focus area; never a cause.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "focusCompareLaps": "Compare {lap} with {other}",
+  "@focusCompareLaps": {
+    "description": "The two laps a focus area suggests comparing.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "other": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "focusLapUnavailable": "a lap unavailable",
+  "@focusLapUnavailable": {
+    "description": "In place of a lap's name inside a sentence when the lap cannot be found."
+  },
+  "focusThrough": "Through {segment}",
+  "@focusThrough": {
+    "description": "Heading of the two laps' measurements through the segment.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusNotTimed": "not timed",
+  "@focusNotTimed": {
+    "description": "A lap has no time through the segment."
+  },
+  "focusBrakingNotMeasured": "braking point not measured",
+  "@focusBrakingNotMeasured": {
+    "description": "A lap's braking point could not be measured."
+  },
+  "focusBrakingStarts": "braking starts at {meters} m",
+  "@focusBrakingStarts": {
+    "description": "Where braking starts on a lap, in meters along the lap.",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "focusLowestSpeedNotMeasured": "lowest speed not measured",
+  "@focusLowestSpeedNotMeasured": {
+    "description": "A lap's lowest speed could not be measured."
+  },
+  "focusLowestSpeed": "lowest speed {speed}",
+  "@focusLowestSpeed": {
+    "description": "A lap's lowest speed through the corner, with its unit.",
+    "placeholders": {
+      "speed": {
+        "type": "String",
+        "example": "62.4 km/h"
+      }
+    }
+  },
+  "focusDisclaimer": "Measured on these laps only. It does not say which way is faster or safe.",
+  "@focusDisclaimer": {
+    "description": "Caution under an opened focus area."
+  },
+  "focusCompareAB": "Compare laps A and B",
+  "@focusCompareAB": {
+    "description": "Button that compares the focus area's two laps."
+  },
+  "focusObservationSectorGap": "Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.",
+  "@focusObservationSectorGap": {
+    "description": "What a sector-gap focus area measured.",
+    "placeholders": {
+      "bestLap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "gap": {
+        "type": "String",
+        "example": "0.120"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "sourceLap": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "focusHypothesisSectorGap": "Comparing the two laps through {segment} may show where the time went: where braking starts, the lowest speed, and when the throttle comes back.",
+  "@focusHypothesisSectorGap": {
+    "description": "What a sector-gap focus area suggests checking; never a cause.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusObservationRepeatedLoss": "In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).",
+  "@focusObservationRepeatedLoss": {
+    "description": "What a repeated-loss focus area measured.",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "3"
+      },
+      "total": {
+        "type": "String",
+        "example": "5"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "reference": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      },
+      "median": {
+        "type": "String",
+        "example": "0.080"
+      }
+    }
+  },
+  "focusHypothesisRepeatedLoss": "Because it repeats, comparing a typical lap with {reference} through {segment} may show a pattern rather than a one-off.",
+  "@focusHypothesisRepeatedLoss": {
+    "description": "What a repeated-loss focus area suggests checking; never a cause.",
+    "placeholders": {
+      "reference": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusObservationBrakingSpread": "Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).",
+  "@focusObservationBrakingSpread": {
+    "description": "What a braking-spread focus area measured.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "spread": {
+        "type": "String",
+        "example": "12.5"
+      },
+      "count": {
+        "type": "String",
+        "example": "6"
+      }
+    }
+  },
+  "focusHypothesisBrakingSpread": "A more repeatable braking reference for {segment} may be worth checking. This does not show whether earlier or later braking is faster or safe; compare the earliest and the latest example.",
+  "@focusHypothesisBrakingSpread": {
+    "description": "What a braking-spread focus area suggests checking; never a cause.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusObservationMinimumSpeedSpread": "The lowest speed through {segment} varies by {spread} across the middle half of {count} laps (median {median}).",
+  "@focusObservationMinimumSpeedSpread": {
+    "description": "What a lowest-speed-spread focus area measured; the speeds carry their unit when recorded.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "spread": {
+        "type": "String",
+        "example": "4.2 km/h"
+      },
+      "count": {
+        "type": "String",
+        "example": "6"
+      },
+      "median": {
+        "type": "String",
+        "example": "61.0 km/h"
+      }
+    }
+  },
+  "focusObservationRecordingUnits": "Speeds are in the recording's own units.",
+  "@focusObservationRecordingUnits": {
+    "description": "Added after a lowest-speed spread when the recording gives no speed unit."
+  },
+  "focusHypothesisMinimumSpeedSpread": "Comparing the slowest and the fastest example through {segment} may show what differs; a higher minimum speed is not by itself better.",
+  "@focusHypothesisMinimumSpeedSpread": {
+    "description": "What a lowest-speed-spread focus area suggests checking; never a cause.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
   }
 }

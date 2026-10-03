@@ -831,4 +831,287 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get timeLossTitle => 'Straty czasu';
+
+  @override
+  String get timeLossLoading => 'Liczone razem z teoretycznie najlepszym…';
+
+  @override
+  String get timeLossScopeSessionBest => 'Najlepsze każdej sesji';
+
+  @override
+  String get timeLossScopeEveryLap => 'Każde okrążenie';
+
+  @override
+  String timeLossAgainst(String lap) {
+    return 'Względem: $lap';
+  }
+
+  @override
+  String timeLossLapsCompared(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń porównanych',
+      few: '$count okrążenia porównane',
+      one: '1 okrążenie porównane',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeLossLossesObserved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zaobserwowanych strat',
+      few: '$count zaobserwowane straty',
+      one: '1 zaobserwowana strata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timeLossUntimedLeftOut(int count) {
+    return 'pominięte bez pełnego pomiaru: $count';
+  }
+
+  @override
+  String get timeLossExplanation =>
+      'Każda strata to dodatkowy czas, jaki jedno okrążenie potrzebowało na jeden segment w porównaniu z najlepszym okrążeniem; oba mierzone na jednej osi toru. Prosta tuż za zakrętem jest osobnym segmentem, więc czas stracony na wyjściu nie jest liczony w zakręcie. Zaobserwowana strata to nie gwarantowany ani koniecznie bezpieczny zysk.';
+
+  @override
+  String get timeLossNone =>
+      'Żadne okrążenie nie straciło czasu do najlepszego okrążenia w żadnym zmierzonym segmencie.';
+
+  @override
+  String timeLossShowAll(int count) {
+    return 'Pokaż wszystkie ($count)';
+  }
+
+  @override
+  String get timeLossReasonNoReference =>
+      'Najlepszego okrążenia nie udało się zmierzyć na segmentach.';
+
+  @override
+  String get timeLossReasonBestLapUntimed =>
+      'Najlepszego okrążenia grupy nie udało się zmierzyć na zatwierdzonych segmentach.';
+
+  @override
+  String timeLossSegmentAfterCorner(String segment, String corner) {
+    return '$segment · za: $corner';
+  }
+
+  @override
+  String timeLossSegmentAfterTheCorner(String segment) {
+    return '$segment · za zakrętem';
+  }
+
+  @override
+  String timeLossSegmentStraight(String number) {
+    return 'Prosta $number';
+  }
+
+  @override
+  String timeLossSegmentCorner(String number) {
+    return 'Zakręt $number';
+  }
+
+  @override
+  String timeLossSegmentCorners(String first, String last) {
+    return 'Zakręty $first–$last';
+  }
+
+  @override
+  String get timeLossLapUnavailable => 'Okrążenie niedostępne';
+
+  @override
+  String timeLossAgainstBestLap(String lap, String best) {
+    return '$lap względem najlepszego okrążenia, $best';
+  }
+
+  @override
+  String get timeLossUnavailable => 'niedostępne';
+
+  @override
+  String get timeLossThisLap => 'To okrążenie';
+
+  @override
+  String get timeLossBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String get timeLossDifference => 'Różnica';
+
+  @override
+  String timeLossThrough(String segment, int start, int end) {
+    return '$segment: od $start m do $end m za linią start/meta.';
+  }
+
+  @override
+  String timeLossGap(String start, String end) {
+    return 'Różnica do najlepszego okrążenia: $start na początku segmentu, $end na jego końcu.';
+  }
+
+  @override
+  String get timeLossNoGps => 'Na jednym z okrążeń część segmentu nie ma GPS.';
+
+  @override
+  String timeLossMapLabel(String segment) {
+    return 'Ślad najlepszego okrążenia z wyróżnionym segmentem $segment';
+  }
+
+  @override
+  String get timeLossDisclaimer =>
+      'Zaobserwowana różnica między dwoma okrążeniami, a nie gwarantowany ani koniecznie bezpieczny zysk.';
+
+  @override
+  String timeLossOpenLap(String lap) {
+    return 'Otwórz $lap';
+  }
+
+  @override
+  String timeLossCompareWith(String lap) {
+    return 'Porównaj z $lap';
+  }
+
+  @override
+  String get focusTitle => 'Co sprawdzić dalej';
+
+  @override
+  String get focusLoading => 'Wybierane razem z teoretycznie najlepszym…';
+
+  @override
+  String get focusNone =>
+      'Żadna strata, różnica w sektorze ani rozrzut nie są na tyle duże, by je wyróżnić.';
+
+  @override
+  String get focusIntro =>
+      'Każdy obszar zaczyna się od tego, co zmierzono. Linia pod spodem to hipoteza do sprawdzenia na okrążeniach, a nie przyczyna ani instrukcja.';
+
+  @override
+  String get focusKindSectorGap => 'Najlepsze okrążenie a najszybszy sektor';
+
+  @override
+  String get focusKindRepeatedLoss => 'Powtarzająca się strata';
+
+  @override
+  String get focusKindBrakingSpread => 'Rozrzut punktu hamowania';
+
+  @override
+  String get focusKindMinimumSpeedSpread => 'Rozrzut prędkości minimalnej';
+
+  @override
+  String focusObserved(String text) {
+    return 'Zmierzono: $text';
+  }
+
+  @override
+  String focusHypothesis(String text) {
+    return 'Hipoteza: $text';
+  }
+
+  @override
+  String focusCompareLaps(String lap, String other) {
+    return 'Porównaj $lap z $other';
+  }
+
+  @override
+  String get focusLapUnavailable => 'niedostępne okrążenie';
+
+  @override
+  String focusThrough(String segment) {
+    return 'Odcinek: $segment';
+  }
+
+  @override
+  String get focusNotTimed => 'bez czasu';
+
+  @override
+  String get focusBrakingNotMeasured => 'punkt hamowania niezmierzony';
+
+  @override
+  String focusBrakingStarts(int meters) {
+    return 'hamowanie zaczyna się na $meters m';
+  }
+
+  @override
+  String get focusLowestSpeedNotMeasured => 'prędkość minimalna niezmierzona';
+
+  @override
+  String focusLowestSpeed(String speed) {
+    return 'prędkość minimalna $speed';
+  }
+
+  @override
+  String get focusDisclaimer =>
+      'Zmierzone tylko na tych okrążeniach. Nie mówi, który sposób jest szybszy ani bezpieczny.';
+
+  @override
+  String get focusCompareAB => 'Porównaj okrążenia A i B';
+
+  @override
+  String focusObservationSectorGap(
+    String bestLap,
+    String gap,
+    String segment,
+    String sourceLap,
+  ) {
+    return 'Twoje najlepsze okrążenie ($bestLap) było o $gap s wolniejsze na odcinku $segment niż $sourceLap, najszybsze zarejestrowane tam.';
+  }
+
+  @override
+  String focusHypothesisSectorGap(String segment) {
+    return 'Porównanie obu okrążeń na odcinku $segment może pokazać, gdzie uciekł czas: gdzie zaczyna się hamowanie, jaka jest prędkość minimalna i kiedy wraca gaz.';
+  }
+
+  @override
+  String focusObservationRepeatedLoss(
+    String count,
+    String total,
+    String segment,
+    String reference,
+    String median,
+  ) {
+    return 'Na $count z $total porównanych okrążeń straciłeś czas na odcinku $segment względem $reference (mediana $median s).';
+  }
+
+  @override
+  String focusHypothesisRepeatedLoss(String reference, String segment) {
+    return 'Ponieważ to się powtarza, porównanie typowego okrążenia z $reference na odcinku $segment może pokazać wzorzec, a nie jednorazowy przypadek.';
+  }
+
+  @override
+  String focusObservationBrakingSpread(
+    String segment,
+    String spread,
+    String count,
+  ) {
+    return 'Punkt hamowania na odcinku $segment zmienia się o $spread m w środkowej połowie z $count okrążeń (zmierzony z sygnału hamulca).';
+  }
+
+  @override
+  String focusHypothesisBrakingSpread(String segment) {
+    return 'Warto sprawdzić bardziej powtarzalny punkt odniesienia do hamowania na odcinku $segment. To nie pokazuje, czy wcześniejsze czy późniejsze hamowanie jest szybsze lub bezpieczne; porównaj najwcześniejszy i najpóźniejszy przykład.';
+  }
+
+  @override
+  String focusObservationMinimumSpeedSpread(
+    String segment,
+    String spread,
+    String count,
+    String median,
+  ) {
+    return 'Prędkość minimalna na odcinku $segment zmienia się o $spread w środkowej połowie z $count okrążeń (mediana $median).';
+  }
+
+  @override
+  String get focusObservationRecordingUnits =>
+      'Prędkości są w jednostkach z nagrania.';
+
+  @override
+  String focusHypothesisMinimumSpeedSpread(String segment) {
+    return 'Porównanie najwolniejszego i najszybszego przykładu na odcinku $segment może pokazać, co się różni; wyższa prędkość minimalna sama w sobie nie jest lepsza.';
+  }
 }

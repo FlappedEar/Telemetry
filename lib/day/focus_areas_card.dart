@@ -2,22 +2,134 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import '../units.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
-import 'time_losses_card.dart' show CompareLaps, lapStretch;
+import 'time_losses_card.dart' show CompareLaps, TimeLossText, lapStretch;
 import 'track_map.dart';
 
-/// The heading of a focus area's kind.
-String focusKindText(FocusAreaKind kind) => switch (kind) {
-  FocusAreaKind.sectorGap => 'Best lap against the fastest sector',
-  FocusAreaKind.repeatedLoss => 'Repeated loss',
-  FocusAreaKind.brakingSpread => 'Braking-point spread',
-  FocusAreaKind.minimumSpeedSpread => 'Lowest-speed spread',
-};
+final _english = lookupAppLocalizations(const Locale('en'));
 
-/// Readable text for why there is no focus area.
-const String noFocusAreaText =
-    'No loss, sector gap or spread is large enough to single out.';
+/// The heading of a focus area's kind, in English.
+String focusKindText(FocusAreaKind kind) => _english.focusAreaKind(kind);
+
+typedef _FocusTexts = ({String observation, String hypothesis});
+
+extension FocusAreaText on AppLocalizations {
+  /// The heading of a focus area's kind.
+  String focusAreaKind(FocusAreaKind kind) => switch (kind) {
+    FocusAreaKind.sectorGap => focusKindSectorGap,
+    FocusAreaKind.repeatedLoss => focusKindRepeatedLoss,
+    FocusAreaKind.brakingSpread => focusKindBrakingSpread,
+    FocusAreaKind.minimumSpeedSpread => focusKindMinimumSpeedSpread,
+  };
+
+  /// What [area] measured, in the app's language; as written by
+  /// `telemetry_core` when the app does not recognise the text.
+  String focusAreaObservation(FocusArea area) =>
+      _focusTexts(this, area)?.observation ?? area.observation;
+
+  /// What [area] suggests checking, in the app's language; as written by
+  /// `telemetry_core` when the app does not recognise the text.
+  String focusAreaHypothesis(FocusArea area) =>
+      _focusTexts(this, area)?.hypothesis ?? area.hypothesis;
+}
+
+// [area]'s observation and hypothesis in [l10n]'s language, rebuilt from the
+// numbers and names in the English texts of `telemetry_core`. Null when the
+// texts are not the ones this app knows: the English rebuilt from the same
+// parts must equal them.
+_FocusTexts? _focusTexts(AppLocalizations l10n, FocusArea area) {
+  final texts = _focusTextsIn(l10n, area, translate: true);
+  final english = _focusTextsIn(_english, area, translate: false);
+  if (texts == null ||
+      english == null ||
+      english.observation != area.observation ||
+      english.hypothesis != area.hypothesis) {
+    return null;
+  }
+  return texts;
+}
+
+_FocusTexts? _focusTextsIn(
+  AppLocalizations l10n,
+  FocusArea area, {
+  required bool translate,
+}) {
+  final name = RegExp.escape(area.name);
+  final segment = translate ? l10n.timeLossSegment(area.name) : area.name;
+  String lap(String label) => translate ? l10n.timeLossLapLabel(label) : label;
+  RegExpMatch? match(String pattern) =>
+      RegExp(pattern).firstMatch(area.observation);
+  switch (area.kind) {
+    case FocusAreaKind.sectorGap:
+      final m = match(
+        r'^Your best lap \((.*)\) was (\S+) s slower through '
+        '$name'
+        r' than (.*), the fastest recorded there\.$',
+      );
+      if (m == null) return null;
+      return (
+        observation: l10n.focusObservationSectorGap(
+          lap(m[1]!),
+          m[2]!,
+          segment,
+          lap(m[3]!),
+        ),
+        hypothesis: l10n.focusHypothesisSectorGap(segment),
+      );
+    case FocusAreaKind.repeatedLoss:
+      final m = match(
+        r'^In (\d+) of (\d+) compared laps you lost time through '
+        '$name'
+        r' against (.*) \(median (\S+) s\)\.$',
+      );
+      if (m == null) return null;
+      final reference = lap(m[3]!);
+      return (
+        observation: l10n.focusObservationRepeatedLoss(
+          m[1]!,
+          m[2]!,
+          segment,
+          reference,
+          m[4]!,
+        ),
+        hypothesis: l10n.focusHypothesisRepeatedLoss(reference, segment),
+      );
+    case FocusAreaKind.brakingSpread:
+      final m = match(
+        r'^Where braking starts for '
+        '$name'
+        r' varies by (\S+) m across the middle half of (\d+) laps '
+        r'\(measured from the brake signal\)\.$',
+      );
+      if (m == null) return null;
+      return (
+        observation: l10n.focusObservationBrakingSpread(segment, m[1]!, m[2]!),
+        hypothesis: l10n.focusHypothesisBrakingSpread(segment),
+      );
+    case FocusAreaKind.minimumSpeedSpread:
+      final m = match(
+        r'^The lowest speed through '
+        '$name'
+        r' varies by (\S+?)(| \S.*?) across the middle half of (\d+) laps '
+        r"\(median (\S+?)\2\)\.( Speeds are in the recording's own units\.)?$",
+      );
+      if (m == null) return null;
+      final observation = l10n.focusObservationMinimumSpeedSpread(
+        segment,
+        '${m[1]}${m[2]}',
+        m[3]!,
+        '${m[4]}${m[2]}',
+      );
+      return (
+        observation: m[5] == null
+            ? observation
+            : '$observation ${l10n.focusObservationRecordingUnits}',
+        hypothesis: l10n.focusHypothesisMinimumSpeedSpread(segment),
+      );
+  }
+}
 
 /// Where to look next (Overlays' focus areas): at most three areas selected
 /// from measured losses, sector gaps and corner spreads. Each shows what was
@@ -53,6 +165,7 @@ class FocusAreasCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final result = this.result;
     return Card(
       child: Padding(
@@ -60,23 +173,18 @@ class FocusAreasCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Where to look next', style: theme.textTheme.labelLarge),
+            Text(l10n.focusTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             if (loading || result == null)
-              const Text('Selected with the theoretical best…')
+              Text(l10n.focusLoading)
             else if (result.state != DayTheoreticalBestState.ready)
               Text(result.message)
             else if (result.computed?.actualBest == null)
-              const Text(timeLossBestLapUntimedMessage)
+              Text(l10n.timeLossReasonBestLapUntimed)
             else if (areas.isEmpty)
-              const Text(noFocusAreaText, key: ValueKey('focusAreasNone'))
+              Text(l10n.focusNone, key: const ValueKey('focusAreasNone'))
             else ...[
-              Text(
-                'Each starts with what was measured. The line under it is a '
-                'hypothesis to check in the laps, not a cause or an '
-                'instruction.',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text(l10n.focusIntro, style: theme.textTheme.bodySmall),
               for (var i = 0; i < areas.length; ++i)
                 _area(context, result, areas[i], i),
             ],
@@ -93,6 +201,7 @@ class FocusAreasCard extends StatelessWidget {
     int index,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return InkWell(
       key: ValueKey('focusArea $index'),
       onTap: () => Navigator.of(context).push(
@@ -118,23 +227,27 @@ class FocusAreasCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${focusKindText(area.kind)} · ${area.name}',
+                    '${l10n.focusAreaKind(area.kind)} · '
+                    '${l10n.timeLossSegment(area.name)}',
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text('Observed: ${area.observation}'),
+                  Text(l10n.focusObserved(l10n.focusAreaObservation(area))),
                   const SizedBox(height: 2),
                   Text(
-                    'Hypothesis: ${area.hypothesis}',
+                    l10n.focusHypothesis(l10n.focusAreaHypothesis(area)),
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontStyle: FontStyle.italic,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Compare ${_label(area.lap)} with ${_label(area.against)}',
+                    l10n.focusCompareLaps(
+                      _label(l10n, area.lap),
+                      _label(l10n, area.against),
+                    ),
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -147,9 +260,11 @@ class FocusAreasCard extends StatelessWidget {
     );
   }
 
-  String _label(Object? reference) {
+  String _label(AppLocalizations l10n, Object? reference) {
     final label = lapLabel(reference);
-    return label.isEmpty ? 'a lap unavailable' : label;
+    return label.isEmpty
+        ? l10n.focusLapUnavailable
+        : l10n.timeLossLapLabel(label);
   }
 }
 
@@ -221,18 +336,18 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
 
   // What the area measured on one lap: its time through the segment, and
   // for a corner spread its braking point or lowest speed.
-  String _measure(Object? reference) {
+  String _measure(AppLocalizations l10n, Object? reference) {
     final lap = _lap(reference);
     final seconds = lap == null || _segment < 0 ? null : lap.seconds(_segment);
-    final parts = [seconds == null ? 'not timed' : displayTime(seconds)];
+    final parts = [seconds == null ? l10n.focusNotTimed : displayTime(seconds)];
     final observation = _observation(reference);
     switch (widget.area.kind) {
       case FocusAreaKind.brakingSpread:
         final meters = observation?.brakingPointMeters;
         parts.add(
           meters == null
-              ? 'braking point not measured'
-              : 'braking starts at ${meters.round()} m',
+              ? l10n.focusBrakingNotMeasured
+              : l10n.focusBrakingStarts(meters.round()),
         );
       case FocusAreaKind.minimumSpeedSpread:
         final speed = observation?.minimumSpeed;
@@ -240,8 +355,8 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
         final unit = label.isEmpty ? '' : ' $label';
         parts.add(
           speed == null
-              ? 'lowest speed not measured'
-              : 'lowest speed ${speed.toStringAsFixed(1)}$unit',
+              ? l10n.focusLowestSpeedNotMeasured
+              : l10n.focusLowestSpeed('${speed.toStringAsFixed(1)}$unit'),
         );
       case FocusAreaKind.sectorGap || FocusAreaKind.repeatedLoss:
         break;
@@ -252,9 +367,18 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final area = widget.area;
     final path = widget.path;
+    final segment = l10n.timeLossSegment(area.name);
     final first = _lap(area.lap)?.lap, second = _lap(area.against)?.lap;
+    String label(Object? reference) {
+      final label = widget.lapLabel(reference);
+      return label.isEmpty
+          ? l10n.timeLossUnavailable
+          : l10n.timeLossLapLabel(label);
+    }
+
     Widget lapRow(String role, Object? reference, Color color, Key key) => Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -267,42 +391,42 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$role · ${widget.lapLabel(reference).isEmpty ? 'unavailable' : widget.lapLabel(reference)}',
+                '$role · ${label(reference)}',
                 style: theme.textTheme.titleSmall,
               ),
-              Text(_measure(reference), key: key),
+              Text(_measure(l10n, reference), key: key),
             ],
           ),
         ),
       ],
     );
     return Scaffold(
-      appBar: AppBar(title: Text(area.name)),
+      appBar: AppBar(title: Text(segment)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            focusKindText(area.kind),
+            l10n.focusAreaKind(area.kind),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.primary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Observed: ${area.observation}',
+            l10n.focusObserved(l10n.focusAreaObservation(area)),
             style: theme.textTheme.titleMedium,
             key: const ValueKey('focusObservation'),
           ),
           const SizedBox(height: 8),
           Text(
-            'Hypothesis: ${area.hypothesis}',
+            l10n.focusHypothesis(l10n.focusAreaHypothesis(area)),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontStyle: FontStyle.italic,
             ),
             key: const ValueKey('focusHypothesis'),
           ),
           const SizedBox(height: 16),
-          Text('Through ${area.name}', style: theme.textTheme.labelLarge),
+          Text(l10n.focusThrough(segment), style: theme.textTheme.labelLarge),
           const SizedBox(height: 4),
           lapRow('A', area.lap, lapAColor, const ValueKey('focusLapA')),
           const SizedBox(height: 8),
@@ -321,17 +445,13 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
                       _inSegment[point.telemetryTime] ?? false
                       ? lapAColor
                       : theme.colorScheme.outlineVariant,
-                  semanticLabel: 'Best lap trace with ${area.name} highlighted',
+                  semanticLabel: l10n.timeLossMapLabel(segment),
                 ),
               ),
             ),
           ],
           const SizedBox(height: 12),
-          Text(
-            'Measured on these laps only. It does not say which way is faster '
-            'or safe.',
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(l10n.focusDisclaimer, style: theme.textTheme.bodySmall),
           if (widget.onOpenLap != null)
             Wrap(
               spacing: 8,
@@ -341,7 +461,7 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
                     TextButton.icon(
                       key: ValueKey('focusOpenLap$key'),
                       icon: const Icon(Icons.map_outlined),
-                      label: Text('Open ${lap.displayName}'),
+                      label: Text(l10n.timeLossOpenLap(l10n.lap(lap))),
                       onPressed: () => widget.onOpenLap!(lap),
                     ),
               ],
@@ -355,7 +475,7 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
               child: TextButton.icon(
                 key: const ValueKey('focusCompare'),
                 icon: const Icon(Icons.compare_arrows),
-                label: const Text('Compare laps A and B'),
+                label: Text(l10n.focusCompareAB),
                 onPressed: () => widget.onCompare!(
                   first,
                   second,
