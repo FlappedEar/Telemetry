@@ -40,7 +40,9 @@ void main() {
         final analysis = analyzeDay(day);
         final outing = {for (final run in day) run.runId: OutingRun(run.session, run.laps)};
         final best = dayTheoreticalBest(analysis, outing, random: Random(1));
-        final coach = dayCoach(best, {for (final run in day) run.runId: run.session});
+        final coach = dayCoach(best, {
+          for (final run in day) run.runId: run.session,
+        }, runId: day.last.runId);
         print(
           'After ${day.last.name}: ${coach.findings.length} findings, '
           '${coach.plan.length} planned. ${coach.message}',

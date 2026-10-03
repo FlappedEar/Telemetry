@@ -25,7 +25,8 @@
 import 'dart:math' as math;
 
 import '../analysis/coasting_analysis.dart';
-import '../analysis/driving_states.dart' show drivingStateMeasured;
+import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
+import '../analysis/exit_metrics.dart' show exitFollowsGap, exitTruncated;
 import '../analysis/track_progress.dart';
 import '../telemetry_session.dart';
 import 'day_corners.dart';
@@ -52,9 +53,47 @@ enum CoachKind {
   bool get corrective => this != improving;
 }
 
+/// What a [CoachEvidence] measures, for the app to name in its language.
+enum CoachMetric {
+  liftPoint,
+  longestCoast,
+  minimumSpeed,
+  throttleReturn,
+  segmentTime,
+  exitSpeed,
+  brakingStart,
+  coastDistance,
+}
+
+/// Why the plan is what it is, for the app to say in its language.
+enum CoachReason {
+  /// The plan has items.
+  ready,
+
+  /// The day's segments and sector times are not ready.
+  noSegments,
+
+  /// The session coached has no eligible lap in the group compared.
+  noLapInGroup,
+
+  /// The group has no approved corner.
+  noCorners,
+
+  /// No lap of the session coached has a faster lap to compare with.
+  noFasterLap,
+
+  /// Neither throttle nor brake is recorded, so only speeds can be compared,
+  /// and they show no pattern.
+  noPedals,
+
+  /// Patterns were found, but none is repeated and confident enough.
+  belowThreshold,
+}
+
 /// One measured comparison behind a finding.
 final class CoachEvidence {
   CoachEvidence({
+    required this.key,
     required this.metric,
     required this.observed,
     required this.reference,
@@ -63,10 +102,12 @@ final class CoachEvidence {
     required this.detail,
   }) : referenceLaps = List.unmodifiable(referenceLaps);
 
-  /// "Minimum speed", "Throttle return"...
+  final CoachMetric key;
+
+  /// "Minimum speed", "Throttle return"... (English; the app maps [key]).
   final String metric;
 
-  /// The median over the affected laps.
+  /// The median over the affected laps (the value itself for one lap).
   final double observed;
 
   /// The median over the faster laps (for [CoachKind.improving], the first
@@ -167,7 +208,7 @@ final class DayCoach {
     this.runId = '',
     List<CoachFinding> findings = const [],
     List<CoachItem> plan = const [],
-    this.message = '',
+    required this.reason,
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan);
 
@@ -181,8 +222,24 @@ final class DayCoach {
   /// and one improvement to keep when there is one.
   final List<CoachItem> plan;
 
-  /// Why the plan is empty, or how to use it.
-  final String message;
+  final CoachReason reason;
+
+  /// Why the plan is empty, or how to use it (English; the app maps
+  /// [reason]).
+  String get message => switch (reason) {
+    CoachReason.ready => 'Choose one focus at a time for your next run.',
+    CoachReason.noSegments => 'The coach needs the day\'s segments and sector times first.',
+    CoachReason.noLapInGroup => 'This session has no timed lap in the group compared.',
+    CoachReason.noCorners => 'The group compared has no approved corner.',
+    CoachReason.noFasterLap =>
+      'No lap of this session has a faster lap of the day to compare with.',
+    CoachReason.noPedals =>
+      'Throttle and brake are not recorded, so lift, coasting and throttle return '
+          'cannot be compared, and the speeds show no repeated pattern.',
+    CoachReason.belowThreshold =>
+      'No repeated pattern clears the confidence threshold. Repeat a consistent '
+          'run to build a stronger comparison.',
+  };
 }
 
 /// One lap through one corner, as the rules read it.
@@ -298,17 +355,17 @@ double? _liftProgress(
   return result;
 }
 
-/// What the coach suggests for the next session after session [runId] (by
-/// default the group's latest), from [result]'s laps and corners and the
-/// day's recordings in [sessions] by run id.
+/// What the coach suggests for the next session after session [runId] (the
+/// day's latest), from [result]'s laps and corners and the day's recordings
+/// in [sessions] by run id.
 DayCoach dayCoach(
   DayTheoreticalBest result,
   Map<String, TelemetrySession?> sessions, {
-  String? runId,
+  required String runId,
 }) {
   final computed = result.computed;
   if (result.state != DayTheoreticalBestState.ready || computed == null) {
-    return DayCoach(message: 'The coach needs the day\'s segments and sector times first.');
+    return DayCoach(runId: runId, reason: CoachReason.noSegments);
   }
   // The group's laps in recording order, with their traces on the axis.
   final laps = [for (final sectors in result.laps) sectors.lap];
@@ -318,10 +375,14 @@ DayCoach dayCoach(
     final reference = computed.population[i].times.lapReference;
     if (reference is DayLapReference) traces[reference] = computed.traces[i];
   }
-  final coached = runId ?? (laps.isEmpty ? '' : laps.last.runId);
+  final coached = runId;
   if (!laps.any((lap) => lap.runId == coached)) {
-    return DayCoach(message: 'This session has no timed lap in the group compared.');
+    return DayCoach(runId: coached, reason: CoachReason.noLapInGroup);
   }
+  if (result.corners.isEmpty) {
+    return DayCoach(runId: coached, reason: CoachReason.noCorners);
+  }
+  var pedals = false, faster = false;
 
   // Each lap's coasting, once, by its approved segments.
   final coasting = <DayLapReference, CoastingSummary>{};
@@ -354,9 +415,26 @@ DayCoach dayCoach(
       final braking = metrics.braking.method == 'measuredBrake'
           ? metrics.braking.brakingPointMeters
           : null;
-      final pickup = metrics.exit.pickup.method == 'measuredThrottle'
-          ? metrics.exit.pickup.progressMeters
+      // The first sustained throttle rise at or after the slow point, not cut
+      // off by the segment's end or following a gap in the data.
+      final rise = metrics.exit.pickup;
+      final slowPoint = speeds.minimum.value == null ? null : speeds.minimum.progressMeters;
+      final pickup =
+          rise.method == 'measuredThrottle' &&
+              rise.progressMeters != null &&
+              slowPoint != null &&
+              end > start &&
+              // Within the position resolution of the slow point counts.
+              rise.progressMeters! >= slowPoint - math.max(3.0, speeds.meanSampleSpacingMeters) &&
+              !rise.limitations.contains(exitTruncated) &&
+              !rise.limitations.contains(exitFollowsGap)
+          ? rise.progressMeters
           : null;
+      if (lap.runId == coached &&
+          (session.channels.containsKey(session.aliases['throttle'] ?? '') ||
+              session.channels.containsKey(session.aliases['brake'] ?? ''))) {
+        pedals = true;
+      }
       double? lift;
       final from = start - coachApproachMeters;
       if (braking != null && end > start && from >= 0) {
@@ -368,10 +446,19 @@ DayCoach dayCoach(
       }
       double? coastSeconds, coastMeters;
       final summary = coastingOf(lap);
+      // An approach reaching back past start/finish starts at the lap's start.
+      final windowStart =
+          timeAtProgress(trace, math.max(0.0, start - coachApproachMeters)) ?? lap.start;
+      final windowEnd = timeAtProgress(trace, end);
       if (summary != null &&
           summary.valid &&
           summary.provenance == drivingStateMeasured &&
-          end > start) {
+          end > start &&
+          windowEnd != null &&
+          windowEnd > windowStart &&
+          _covered(summary.known, windowStart, windowEnd) >= 0.9 * (windowEnd - windowStart)) {
+        // The pedals were known through the window, so no episode means no
+        // coasting rather than a gap in the data.
         coastSeconds = 0.0;
         coastMeters = 0.0;
         for (final episode in summary.episodes) {
@@ -400,6 +487,7 @@ DayCoach dayCoach(
       );
     }
     if (passages.length < 2) continue;
+    if (_hasFasterLap(passages, coached)) faster = true;
     for (final kind in CoachKind.values) {
       if (!kind.corrective) continue;
       final finding = _corrective(kind, corner, passages, coached);
@@ -413,12 +501,35 @@ DayCoach dayCoach(
     runId: coached,
     findings: findings,
     plan: plan,
-    message: plan.isEmpty
-        ? 'No repeated pattern clears the confidence threshold. Repeat a consistent '
-              'run to build a stronger comparison.'
-        : 'Choose one focus at a time for your next run.',
+    reason: plan.isNotEmpty
+        ? CoachReason.ready
+        : findings.isNotEmpty
+        ? CoachReason.belowThreshold
+        : !faster
+        ? CoachReason.noFasterLap
+        : !pedals
+        ? CoachReason.noPedals
+        : CoachReason.belowThreshold,
   );
 }
+
+/// Seconds of [known] inside [from]..[to].
+double _covered(List<DrivingStateInterval> known, double from, double to) {
+  var seconds = 0.0;
+  for (final interval in known) {
+    final a = math.max(from, interval.start), b = math.min(to, interval.end);
+    if (b > a) seconds += b - a;
+  }
+  return seconds;
+}
+
+/// A faster lap, with a faster passage, as [_corrective] compares.
+bool _isFaster(_Passage reference, _Passage current) =>
+    reference.lapSeconds < current.lapSeconds - 0.1 && reference.seconds < current.seconds - 0.05;
+
+bool _hasFasterLap(List<_Passage> passages, String coached) => passages.any(
+  (current) => current.lap.runId == coached && passages.any((p) => _isFaster(p, current)),
+);
 
 typedef _Observation = ({
   _Passage current,
@@ -435,15 +546,11 @@ CoachFinding? _corrective(
 ) {
   final observations = <_Observation>[];
   var metric = '', unit = '';
+  var key = CoachMetric.segmentTime;
   for (final current in passages) {
     if (current.lap.runId != coached) continue;
-    final faster =
-        passages
-            .where(
-              (p) => p.lapSeconds < current.lapSeconds - 0.1 && p.seconds < current.seconds - 0.05,
-            )
-            .toList()
-          ..sort((a, b) => a.seconds.compareTo(b.seconds));
+    final faster = passages.where((p) => _isFaster(p, current)).toList()
+      ..sort((a, b) => a.seconds.compareTo(b.seconds));
     final references = faster.take(2).toList();
     if (references.isEmpty) continue;
     final resolution = references.map((r) => r.spacing).fold(current.spacing, math.max);
@@ -456,6 +563,7 @@ CoachFinding? _corrective(
         if (lift == null || braking == null || braking - lift < 5) continue;
         observed = lift;
         metric = 'Lift point';
+        key = CoachMetric.liftPoint;
         unit = 'm';
         for (final r in references) {
           if (r.lift == null ||
@@ -471,6 +579,7 @@ CoachFinding? _corrective(
       case CoachKind.excessiveCoasting:
         final coast = current.coastSeconds;
         metric = 'Longest coast';
+        key = CoachMetric.longestCoast;
         unit = 's';
         if (coast == null || coast < 0.7 || current.coastMeters! < threshold) continue;
         observed = coast;
@@ -479,6 +588,7 @@ CoachFinding? _corrective(
       case CoachKind.lowMinimumSpeed:
         final minimum = current.minimum, exit = current.exit;
         metric = 'Minimum speed';
+        key = CoachMetric.minimumSpeed;
         unit = 'km/h';
         if (minimum == null ||
             exit == null ||
@@ -496,6 +606,7 @@ CoachFinding? _corrective(
       case CoachKind.lateThrottle:
         final pickup = current.pickup;
         metric = 'Throttle return';
+        key = CoachMetric.throttleReturn;
         unit = 'm';
         if (pickup == null || references.length < 2 || references.any((r) => r.pickup == null)) {
           continue;
@@ -528,8 +639,9 @@ CoachFinding? _corrective(
   final spacing = observations.map((o) => o.current.spacing).reduce(math.max);
   var confidence =
       0.48 + math.min(observations.length, 3) * 0.09 + (referenceLaps.length >= 2 ? 0.08 : 0.03);
-  if (spacing > 5) confidence -= 0.08;
-  if (spacing > 10) confidence -= 0.12;
+  // An unknown spacing counts as sparse.
+  if (!(spacing > 0) || spacing > 5) confidence -= 0.08;
+  if (!(spacing > 0) || spacing > 10) confidence -= 0.12;
   // This app's coasting does not check longitudinal G.
   if (kind == CoachKind.excessiveCoasting) confidence -= 0.05;
 
@@ -539,17 +651,20 @@ CoachFinding? _corrective(
       _median(observations.map((o) => _median(o.references.map(read))));
   final evidence = [
     CoachEvidence(
+      key: key,
       metric: metric,
       observed: _median(observations.map((o) => o.observed)),
       reference: _median(observations.map((o) => o.reference)),
       unit: unit,
       referenceLaps: referenceLaps,
       detail:
-          'Median across affected laps; every comparison uses a faster lap and a faster '
+          '${observations.length == 1 ? 'One affected lap' : 'Median across ${observations.length} affected laps'}; '
+          'every comparison uses a faster lap and a faster '
           'passage through this segment. Positions are along the lap from start/finish on '
           'the day\'s shared axis.',
     ),
     CoachEvidence(
+      key: CoachMetric.segmentTime,
       metric: 'Segment time',
       observed: medianOf((p) => p.seconds),
       reference: referenceOf((p) => p.seconds),
@@ -561,6 +676,7 @@ CoachFinding? _corrective(
       (o) => o.current.exit != null && o.references.every((r) => r.exit != null),
     ))
       CoachEvidence(
+        key: CoachMetric.exitSpeed,
         metric: 'Exit speed',
         observed: medianOf((p) => p.exit! * 3.6),
         reference: referenceOf((p) => p.exit! * 3.6),
@@ -570,6 +686,7 @@ CoachFinding? _corrective(
       ),
     if (kind == CoachKind.earlyLift)
       CoachEvidence(
+        key: CoachMetric.brakingStart,
         metric: 'Braking start',
         observed: medianOf((p) => p.braking!),
         reference: referenceOf((p) => p.braking!),
@@ -579,6 +696,7 @@ CoachFinding? _corrective(
       ),
     if (kind == CoachKind.excessiveCoasting)
       CoachEvidence(
+        key: CoachMetric.coastDistance,
         metric: 'Coast distance',
         observed: medianOf((p) => p.coastMeters!),
         reference: referenceOf((p) => p.coastMeters!),
@@ -620,6 +738,7 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
     return null;
   }
   String metric, unit;
+  CoachMetric key;
   double before, after;
   final (ma, mb, mc) = (a.minimum, b.minimum, c.minimum);
   final (pa, pb, pc) = (a.pickup, b.pickup, c.pickup);
@@ -630,6 +749,7 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
       mc - mb >= 0.4 &&
       mc - ma >= 1.4) {
     metric = 'Minimum speed';
+    key = CoachMetric.minimumSpeed;
     unit = 'km/h';
     before = ma * 3.6;
     after = mc * 3.6;
@@ -640,6 +760,7 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
       pb - pc >= 4 &&
       pa - pc >= math.max(8.0, c.spacing * 2)) {
     metric = 'Throttle return';
+    key = CoachMetric.throttleReturn;
     unit = 'm';
     before = pa;
     after = pc;
@@ -650,9 +771,10 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
     kind: CoachKind.improving,
     segmentId: corner.segmentId,
     segmentName: corner.name,
-    confidence: c.spacing > 5 ? 0.69 : 0.79,
+    confidence: !(c.spacing > 0) || c.spacing > 5 ? 0.69 : 0.79,
     evidence: [
       CoachEvidence(
+        key: key,
         metric: metric,
         observed: after,
         reference: before,
@@ -663,6 +785,7 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
             'decreased.',
       ),
       CoachEvidence(
+        key: CoachMetric.exitSpeed,
         metric: 'Exit speed',
         observed: c.exit! * 3.6,
         reference: a.exit! * 3.6,
@@ -675,12 +798,22 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
   );
 }
 
-/// DrivingCoach's plan: findings at or above [coachPlanConfidence], an
+/// DrivingCoach's plan, with this app's rule that a pattern needs at least
+/// three laps: findings at or above [coachPlanConfidence], a change only when
+/// repeated over two or more laps of the session and seen on three laps with
+/// its references, an
 /// improvement suppressing changes in its segment, repeated patterns first,
 /// then confidence and the observed segment-time gap; one item per segment,
 /// at most two changes and one improvement kept when there is one.
 List<CoachItem> _plan(List<CoachFinding> findings) {
-  final eligible = findings.where((f) => f.confidence >= coachPlanConfidence).toList();
+  final eligible = findings
+      .where(
+        (f) =>
+            f.confidence >= coachPlanConfidence &&
+            (!f.kind.corrective ||
+                (f.repeated && f.affectedLaps.length + f.evidence.first.referenceLaps.length >= 3)),
+      )
+      .toList();
   final improving = {
     for (final f in eligible)
       if (!f.kind.corrective) f.segmentId,
@@ -688,7 +821,7 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
   eligible.removeWhere((f) => f.kind.corrective && improving.contains(f.segmentId));
   double gap(CoachFinding f) {
     for (final e in f.evidence) {
-      if (e.metric == 'Segment time') return e.observed - e.reference;
+      if (e.key == CoachMetric.segmentTime) return e.observed - e.reference;
     }
     return 0.0;
   }
