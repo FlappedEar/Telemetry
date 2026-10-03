@@ -578,6 +578,38 @@ void main() {
           ? 'Needs folder permissions that bind this user'
           : false,
     );
+
+    test(
+      'a refused in-place write fails and leaves the saved document',
+      () async {
+        final path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        final before = File(path).readAsStringSync();
+        final renamed = project();
+        event(renamed)['name'] = 'Renamed day';
+        await Process.run('chmod', ['444', path]);
+        await Process.run('chmod', ['555', directory.path]);
+        addTearDown(() async {
+          await Process.run('chmod', ['755', directory.path]);
+          await Process.run('chmod', ['644', path]);
+        });
+        await expectLater(
+          writeFetproject(path, renamed),
+          throwsA(
+            isA<FetprojectError>().having(
+              (error) => error.message,
+              'message',
+              startsWith('Could not save the project'),
+            ),
+          ),
+        );
+        expect(File(path).readAsStringSync(), before);
+        expect(directory.listSync(), hasLength(1));
+      },
+      skip: Platform.isWindows || _isRoot()
+          ? 'Needs folder permissions that bind this user'
+          : false,
+    );
   });
 }
 
