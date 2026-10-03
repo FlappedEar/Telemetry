@@ -19,5 +19,8 @@
   "routeReasonSeveralGroups": "Trasa GPS pasuje do kilku niezgodnych grup; sprawdź konfigurację toru w tym nagraniu.",
   "sessionName": "Sesja {number}",
   "cancel": "Anuluj",
-  "save": "Zapisz"
+  "save": "Zapisz",
+  "settingsAbout": "O aplikacji",
+  "settingsLicences": "Licencje open source",
+  "licencesLegalese": "FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler."
 }
