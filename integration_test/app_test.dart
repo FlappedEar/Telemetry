@@ -1,11 +1,71 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:telemetry/day/document_pickers.dart';
+import 'package:telemetry/day/track_map.dart';
+import 'package:telemetry/import/day_import_page.dart';
+import 'package:telemetry/main.dart';
 import 'package:telemetry/main.dart' as app;
 
-// Runs on a real iOS simulator and Android emulator in CI: the app starts on
-// the device and shows its first screen.
+import '../test/day/blank_tiles.dart';
+import '../test/day/day_results_page_test.dart' show circuitVbo;
+
+/// Hands the import the recording already copied into the app, as the host
+/// pickers do after the system picker returns.
+final class _Picked implements RecordingPickers {
+  const _Picked(this.paths);
+
+  final List<String> paths;
+
+  @override
+  Future<List<String>> pickRecordings() async => paths;
+
+  @override
+  Future<String?> pickFolder() async => null;
+}
+
+/// Pumps until [finder] finds something; the import and opening run in
+/// background isolates in real time on the device.
+Future<void> waitFor(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 90),
+}) async {
+  final end = DateTime.now().add(timeout);
+  while (finder.evaluate().isEmpty) {
+    if (DateTime.now().isAfter(end)) {
+      throw TestFailure('Timed out waiting for $finder');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await tester.pump();
+  }
+}
+
+/// The best lap's time on the day page, under "Best day".
+String bestLapTime(WidgetTester tester) {
+  final card = find.ancestor(
+    of: find.text('Best day'),
+    matching: find.byType(Column),
+  );
+  final texts = tester
+      .widgetList<Text>(
+        find.descendant(of: card.first, matching: find.byType(Text)),
+      )
+      .map((text) => text.data ?? '')
+      .toList();
+  return texts[texts.indexOf('Best day') + 1];
+}
+
+// Runs on a real iOS simulator and Android emulator in CI, with the app's
+// real storage, background isolates, recovery and saved-days folder: the app
+// starts; a recording is imported, its results shown, the day saved, the
+// app's widgets built again from nothing (the process keeps running) and the
+// saved day reopened with the same results; and on Android a recording shared to the app with ACTION_SEND
+// (sent by .github/scripts/android-integration-test.sh) is imported.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -21,4 +81,101 @@ void main() {
     expect(materialApp.title, 'FlappedEar Telemetry');
     expect(find.byType(Scaffold), findsWidgets);
   }, timeout: const Timeout(Duration(minutes: 3)));
+
+  testWidgets('import, save, start again and reopen a day', (tester) async {
+    final support = await getApplicationSupportDirectory();
+    final recordings = Directory(p.join(support.path, 'integration-test'))
+      ..createSync(recursive: true);
+    final recording = File(p.join(recordings.path, 'session.vbo'))
+      ..writeAsStringSync(circuitVbo([30, 28, 31]));
+    final before = (await const PlatformDocumentPickers().savedDays()).toSet();
+    // Map tiles stay off the network: blank tiles, as in the widget tests.
+    debugTileProvider = BlankTiles.new;
+    addTearDown(() async {
+      debugTileProvider = null;
+      for (final path in await const PlatformDocumentPickers().savedDays()) {
+        if (!before.contains(path)) File(path).deleteSync();
+      }
+      recordings.deleteSync(recursive: true);
+    });
+
+    await tester.pumpWidget(
+      TelemetryApp(home: DayImportPage(pickers: _Picked([recording.path]))),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose recordings…'));
+    await waitFor(tester, find.text('Show the day\'s results'));
+    expect(find.text('1 session imported'), findsOneWidget);
+
+    await tester.tap(find.text('Show the day\'s results'));
+    await waitFor(tester, find.text('Best day'));
+    await tester.pumpAndSettle();
+    final best = bestLapTime(tester);
+    // "22.440 s" under a minute, "1:49.898" above.
+    expect(best, matches(RegExp(r'^(\d+:\d\d\.\d{3}|\d+\.\d{3} s)$')));
+
+    await tester.tap(find.byTooltip('Save'));
+    await waitFor(tester, find.textContaining('Saved as'));
+    final saved = (await const PlatformDocumentPickers().savedDays())
+        .where((path) => !before.contains(path))
+        .toList();
+    expect(saved, hasLength(1));
+    final name = p.basenameWithoutExtension(saved.single);
+
+    // Start again: a new widget tree with the default pickers and stores,
+    // as after a relaunch; only what is on the device's storage carries over.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const TelemetryApp());
+    await tester.pumpAndSettle();
+    await waitFor(tester, find.text('Open a saved day…'));
+    // The import page reads the recovery file in the background: give it
+    // time to show a banner if there were one to show.
+    for (var i = 0; i < 10; ++i) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await tester.pump();
+    }
+    expect(find.textContaining('has unsaved changes'), findsNothing);
+
+    await tester.tap(find.text('Open a saved day…'));
+    await waitFor(tester, find.text(name));
+    await tester.tap(find.text(name));
+    await waitFor(tester, find.text('Best day'));
+    await tester.pumpAndSettle();
+    expect(bestLapTime(tester), best);
+    expect(find.textContaining('could not be opened'), findsNothing);
+  }, timeout: const Timeout(Duration(minutes: 4)));
+
+  // The CI script sends the share once this test prints that it is waiting;
+  // see android/app/src/debug (TestShareProvider) for the file it shares.
+  testWidgets(
+    'a recording shared with ACTION_SEND is imported',
+    (tester) async {
+      final fixtures = Directory(
+        p.join((await getTemporaryDirectory()).path, 'share-fixtures'),
+      )..createSync(recursive: true);
+      // MainActivity copies shares to files/incoming (the support folder).
+      final incoming = Directory(
+        p.join((await getApplicationSupportDirectory()).path, 'incoming'),
+      );
+      addTearDown(() {
+        fixtures.deleteSync(recursive: true);
+        if (incoming.existsSync()) incoming.deleteSync(recursive: true);
+      });
+      File(p.join(fixtures.path, 'shared.vbo'))
+          .writeAsStringSync(circuitVbo([30, 29]));
+
+      await tester.pumpWidget(const TelemetryApp());
+      await tester.pumpAndSettle();
+      debugPrint('FET_WAITING_FOR_SHARE');
+      await waitFor(
+        tester,
+        find.text('1 session imported'),
+        timeout: const Duration(minutes: 2),
+      );
+      expect(find.text('Show the day\'s results'), findsOneWidget);
+    },
+    skip: !Platform.isAndroid || !const bool.fromEnvironment('SHARE_TEST'),
+    timeout: const Timeout(Duration(minutes: 3)),
+  );
 }
