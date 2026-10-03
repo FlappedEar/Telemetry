@@ -174,15 +174,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   // Built outside the state so the isolate's closure holds only its inputs.
-  static OpenedDay Function() _relinkJob(
+  static (OpenedDay, RecordingSearch) Function() _relinkJob(
     String path,
     String folder,
     List<MissingRecording> missing,
-  ) =>
-      () => openDay(path, relinked: findRecordings(folder, missing));
+  ) => () {
+    final search = findMovedRecordings(folder, missing);
+    return (openDay(path, relinked: search.found), search);
+  };
 
-  /// Looks for the missing recordings in a folder the user picks and opens
-  /// the day again with the ones found.
+  /// Looks for the missing recordings in a folder the user picks, by their
+  /// content as Overlays relinks them (a file only named like one is not
+  /// used), and opens the day again with the ones found. The day then has
+  /// changes: saving writes where the recordings are now.
   Future<void> _findRecordings() async {
     final path = _controller.documentPath;
     if (path == null) return;
@@ -195,10 +199,23 @@ class _DayResultsPageState extends State<DayResultsPage> {
     setState(() => _relinking = true);
     try {
       final missing = _controller.missing;
-      final day = await Isolate.run(_relinkJob(path, folder, missing));
+      final (day, search) = await Isolate.run(
+        _relinkJob(path, folder, missing),
+      );
       if (!mounted) return;
       if (day.missing.length == missing.length) {
-        _tell('No missing recording was found in that folder.');
+        final names = [
+          for (final recording in missing)
+            if (search.different.containsKey(recording.runId))
+              p.basename(search.different[recording.runId]!),
+        ];
+        _tell(
+          names.isEmpty
+              ? 'No missing recording was found in that folder.'
+              : '${names.join(', ')} in that folder '
+                    '${names.length == 1 ? 'is a different recording' : 'are different recordings'}'
+                    ' and ${names.length == 1 ? 'was' : 'were'} not used.',
+        );
         return;
       }
       if (day.analysis == null) return;

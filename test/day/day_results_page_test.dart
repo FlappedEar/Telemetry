@@ -307,21 +307,129 @@ void main() {
     expect(find.text('Find recordings in a folder…'), findsOneWidget);
   });
 
-  test('finds missing recordings by file name in a folder', () {
-    Directory('${directory.path}/moved/deep').createSync(recursive: true);
-    File('${directory.path}/moved/deep/B.VBO').writeAsStringSync('');
-    expect(
-      findRecordings(directory.path, const [
-        MissingRecording(
-          runId: 'run-b',
-          name: 'Session 2',
-          path: 'b.vbo',
-          reason: 'Recording not found.',
-        ),
-      ]),
-      {'run-b': '${directory.path}/moved/deep/B.VBO'},
-    );
+  test('names a day file without characters file systems refuse', () {
     expect(documentFileName('Day 2026/09/27'), 'Day 2026-09-27.fetproject');
+  });
+
+  /// A saved two-session day whose second recording was then moved to
+  /// [moveTo] (relative to the test folder), opened again.
+  Future<(String, OpenedDay)> savedDayMissingB(
+    WidgetTester tester,
+    String moveTo,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    final path = '${directory.path}/Day.fetproject';
+    final opened = (await tester.runAsync(() async {
+      await saveDayDocument(
+        path,
+        dayDocument(
+          eventId: newEventId(),
+          name: 'Track day',
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          projectPath: path,
+        ),
+      );
+      final target = File('${directory.path}/$moveTo');
+      target.parent.createSync(recursive: true);
+      File('${directory.path}/b.vbo').renameSync(target.path);
+      return openDay(path);
+    }))!;
+    return (path, opened);
+  }
+
+  // Lets the search's isolate and file work finish between frames.
+  Future<void> waitFor(WidgetTester tester, bool Function() done) async {
+    await tester.runAsync(() async {
+      for (var i = 0; i < 200 && !done(); ++i) {
+        await Future<void>.delayed(const Duration(milliseconds: 25));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'finds a moved and renamed recording by its content, and saves where it is now',
+    (tester) async {
+      final (path, opened) = await savedDayMissingB(
+        tester,
+        'archive/deep/renamed.vbo',
+      );
+      // A different recording named like the missing one is not used.
+      File('${directory.path}/archive/b.vbo')
+          .writeAsStringSync(circuitVbo([31, 30]));
+      await tester.binding.setSurfaceSize(const Size(1200, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.opened(
+            day: opened,
+            documents: FakeDocuments(folder: '${directory.path}/archive'),
+          ),
+        ),
+      );
+      expect(find.text('Track day'), findsOneWidget);
+      await tester.tap(find.text('Find recordings in a folder…'));
+      await waitFor(
+        tester,
+        () => find.text('1 session could not be opened').evaluate().isEmpty,
+      );
+      expect(find.text('1 session could not be opened'), findsNothing);
+      expect(find.textContaining('Session 2 · LAP'), findsWidgets);
+      // Found somewhere new: the day has changes until saved.
+      expect(find.text('Track day •'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Save'));
+      await waitFor(tester, () => find.text('Track day').evaluate().isNotEmpty);
+      expect(find.text('Track day'), findsOneWidget);
+      final saved = (await tester.runAsync(() async => readDayDocument(path)))!;
+      final references = [
+        for (final run in (saved['event']! as Map)['runs']! as List)
+          (((run as Map)['sources']! as Map)['telemetry']! as List).first
+              as Map,
+      ];
+      expect(
+        [
+          for (final source in references)
+            (source['reference']! as Map)['relativePath'],
+        ],
+        ['a.vbo', 'archive/deep/renamed.vbo'],
+      );
+    },
+  );
+
+  testWidgets('refuses a different recording with the missing one\'s name', (
+    tester,
+  ) async {
+    final (_, opened) = await savedDayMissingB(tester, 'gone/b.vbo');
+    File('${directory.path}/gone/b.vbo').deleteSync();
+    File('${directory.path}/elsewhere/b.vbo').createSync(recursive: true);
+    File('${directory.path}/elsewhere/b.vbo')
+        .writeAsStringSync(circuitVbo([29, 33]));
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.opened(
+          day: opened,
+          documents: FakeDocuments(folder: '${directory.path}/elsewhere'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Find recordings in a folder…'));
+    await waitFor(tester, () => find.byType(SnackBar).evaluate().isNotEmpty);
+    expect(
+      find.text(
+        'b.vbo in that folder is a different recording and was not used.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('1 session could not be opened'), findsOneWidget);
+    expect(find.text('Track day'), findsOneWidget);
   });
 
   testWidgets('draws the trace over street tiles with attribution', (

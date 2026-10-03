@@ -58,6 +58,7 @@ final class DayResultsController extends ChangeNotifier {
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
     ChannelSummariesRunner? channelSummariesRunner,
+    bool changed = false,
   }) : runs = List.unmodifiable(runs),
        _channelSummariesRunner =
            channelSummariesRunner ?? defaultChannelSummariesRunner,
@@ -72,11 +73,12 @@ final class DayResultsController extends ChangeNotifier {
        _document = openedDocument,
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayDocument,
-       _dirty = recovered {
+       _dirty = recovered || changed {
     _scheduleRecovery();
   }
 
-  /// A day opened from its document.
+  /// A day opened from its document. A day whose recordings were found in
+  /// a new place has changes until saved.
   DayResultsController.opened(
     OpenedDay day, {
     DocumentWriter? writer,
@@ -92,6 +94,7 @@ final class DayResultsController extends ChangeNotifier {
          openedDocument: day.document,
          writer: writer,
          recovery: recovery,
+         changed: day.relinked.isNotEmpty,
        );
 
   /// An unsaved day restored from [recovery]'s snapshot: it has changes
@@ -121,6 +124,10 @@ final class DayResultsController extends ChangeNotifier {
   final List<NamedRun> runs;
   DayAnalysis _analysis;
   String? _groupId;
+
+  // Whether the user chose the group shown (a saved group the day cannot
+  // show is otherwise kept in the document).
+  bool _groupChosen = false;
   final Map<DayLapReference, String> _exclusions;
 
   /// The event's identity, kept across saves.
@@ -186,6 +193,7 @@ final class DayResultsController extends ChangeNotifier {
         previous: _document,
         previousPath: _documentBase,
         trackSegments: _segmentEdits.runs,
+        groupChosen: _groupChosen,
       );
       await _writer(path, document);
       _document = document;
@@ -339,6 +347,7 @@ final class DayResultsController extends ChangeNotifier {
   void chooseGroup(String groupId) {
     if (groupId == _analysis.chosenGroupId) return;
     _groupId = groupId;
+    _groupChosen = true;
     _rerank();
   }
 
@@ -420,6 +429,7 @@ final class DayResultsController extends ChangeNotifier {
     );
     final follow = _analysis.configurations[followRunId]?.compatibilityGroupId;
     _groupId = follow ?? _analysis.chosenGroupId;
+    _groupChosen = true;
     _rerank();
   }
 
@@ -760,6 +770,7 @@ final class DayResultsController extends ChangeNotifier {
     final analysisNow = _analysis;
     final exclusionsNow = {..._exclusions};
     final segmentsNow = _segmentEdits.runs;
+    final groupChosenNow = _groupChosen;
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -779,6 +790,7 @@ final class DayResultsController extends ChangeNotifier {
             previous: previous,
             previousPath: previousBase,
             trackSegments: segmentsNow,
+            groupChosen: groupChosenNow,
           ),
           originalPath: original,
           basePath: base,
