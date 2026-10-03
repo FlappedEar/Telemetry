@@ -14,6 +14,7 @@ export 'src/analysis/sector_timing.dart';
 export 'src/analysis/theoretical_best.dart';
 export 'src/analysis/time_loss.dart';
 export 'src/analysis/track_progress.dart';
+export 'src/analysis/track_segment_editing.dart';
 export 'src/analysis/track_segment_proposals.dart';
 export 'src/analysis/track_segment_review.dart';
 export 'src/day/compatibility.dart';
@@ -21,6 +22,7 @@ export 'src/day/day_analysis.dart';
 export 'src/day/day_corners.dart';
 export 'src/day/day_document.dart';
 export 'src/day/day_recovery.dart';
+export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';
 
 export 'package:fetproject/fetproject.dart' show FetprojectError;
