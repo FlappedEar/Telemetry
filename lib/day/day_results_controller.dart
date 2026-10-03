@@ -813,7 +813,7 @@ final class DayResultsController extends ChangeNotifier {
         _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
       );
       diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
-    } on Exception catch (error) {
+    } on Object catch (error) {
       result = DayTheoreticalBest(
         groupId: _analysis.chosenGroupId ?? '',
         state: DayTheoreticalBestState.error,
@@ -857,20 +857,18 @@ final class DayResultsController extends ChangeNotifier {
     return latest.run.id;
   }
 
-  /// The label for the coach's speeds, which the coach reports in km/h:
-  /// the day's speed unit (see [speedUnitLabel]), empty when nothing says.
-  /// Null when a recording's speed channel declares another unit, as the
-  /// coach's values are then converted and are not shown.
-  String? get coachSpeedUnit {
+  /// Whether the coach's speeds are converted values: a recording's speed
+  /// channel declares a unit other than km/h, which the coach converts to
+  /// km/h. Speeds are then not shown (see [coachSpeedLabel]).
+  bool get coachSpeedsConverted {
     for (final named in _runs) {
       final session = named.run.telemetry;
-      for (final MapEntry(:key, :value) in session.channels.entries) {
-        if (!isSpeedChannel(key) && key != session.aliases['speed']) continue;
-        final own = value.unit.trim();
-        if (own.isNotEmpty && normalizedSpeedUnit(own) != 'km/h') return null;
+      final own = session.channels[session.aliases['speed'] ?? '']?.unit.trim();
+      if (own != null && own.isNotEmpty && normalizedSpeedUnit(own) != 'km/h') {
+        return true;
       }
     }
-    return speedUnitLabel();
+    return false;
   }
 
   /// The name of [latestRunId]: "Session 4".

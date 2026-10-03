@@ -687,7 +687,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           path: path,
           gate: _mapGate,
           wide: wide,
-          speedUnit: _controller.coachSpeedUnit,
+          speedsConverted: _controller.coachSpeedsConverted,
           withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
         ),
         const SizedBox(height: 12),

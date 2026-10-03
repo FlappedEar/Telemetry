@@ -3,6 +3,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../units.dart';
 import 'corner_details.dart' show lapAColor;
 import 'track_map.dart';
 
@@ -73,12 +74,26 @@ extension CoachText on AppLocalizations {
   }
 }
 
+/// The label for the coach's speeds in [context], following the unit
+/// setting: the day's speed unit, empty when nothing says. The coach reports
+/// speeds in km/h, which are the recorded numbers when every speed channel
+/// is in km/h or declares no unit. Null, so speeds are not shown, when they
+/// are converted ([converted]) or when the recordings' units disagree, as
+/// the coach would then compare numbers in different units.
+String? coachSpeedLabel(BuildContext context, {required bool converted}) {
+  final label = speedUnitOf(context);
+  if (converted) return null;
+  if (label.isEmpty && declaredSpeedUnits.any((unit) => unit.isNotEmpty)) {
+    return null;
+  }
+  return label;
+}
+
 /// A coach value with its unit: positions in whole metres, the rest with
-/// one decimal ("46.9 km/h", "3.3 s", "412 m"). The coach reports speeds
-/// in km/h; they are labelled [speedUnit], the day's own unit (unlabelled
-/// when it is empty), and not shown when it is null because the recordings
-/// declare another unit and the values were converted.
-String coachValue(double value, String unit, [String? speedUnit = 'km/h']) {
+/// one decimal ("46.9 km/h", "3.3 s", "412 m"). Speeds are labelled
+/// [speedUnit] (unlabelled when it is empty) and not shown when it is null
+/// (see [coachSpeedLabel]).
+String coachValue(double value, String unit, String? speedUnit) {
   if (!value.isFinite) return '—';
   if (unit == 'm') return '${value.round()} m';
   if (unit == 'km/h') {
@@ -110,7 +125,7 @@ class NextSessionCard extends StatelessWidget {
     this.path,
     this.gate,
     this.wide = false,
-    this.speedUnit = 'km/h',
+    this.speedsConverted = false,
     this.withoutTheoreticalBest = false,
   });
 
@@ -129,8 +144,8 @@ class NextSessionCard extends StatelessWidget {
   final (Offset, Offset)? gate;
   final bool wide;
 
-  /// The label for speeds (see [coachValue]).
-  final String? speedUnit;
+  /// Whether the coach's speeds are converted (see [coachSpeedLabel]).
+  final bool speedsConverted;
 
   /// The theoretical best failed, so the coach cannot run.
   final bool withoutTheoreticalBest;
@@ -140,6 +155,7 @@ class NextSessionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final coach = this.coach;
+    final speedUnit = coachSpeedLabel(context, converted: speedsConverted);
     return Card(
       key: const ValueKey('nextSessionCard'),
       child: Padding(
@@ -169,7 +185,7 @@ class NextSessionCard extends StatelessWidget {
                 key: const ValueKey('coachReason'),
               ),
               for (var i = 0; i < coach.plan.length; ++i)
-                _item(context, coach.plan[i].finding, i),
+                _item(context, coach.plan[i].finding, i, speedUnit),
               if (speedUnit == null &&
                   coach.plan.any((item) => _hasSpeed(item.finding))) ...[
                 const SizedBox(height: 8),
@@ -190,7 +206,12 @@ class NextSessionCard extends StatelessWidget {
     );
   }
 
-  Widget _item(BuildContext context, CoachFinding finding, int index) {
+  Widget _item(
+    BuildContext context,
+    CoachFinding finding,
+    int index,
+    String? speedUnit,
+  ) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final keep = !finding.kind.corrective;
@@ -265,7 +286,7 @@ class NextSessionCard extends StatelessWidget {
                       path: path,
                       gate: gate,
                       wide: wide,
-                      speedUnit: speedUnit,
+                      speedsConverted: speedsConverted,
                     ),
                   ),
                 ),
@@ -289,7 +310,7 @@ class CoachItemPage extends StatefulWidget {
     this.path,
     this.gate,
     this.wide = false,
-    this.speedUnit = 'km/h',
+    this.speedsConverted = false,
   });
 
   final CoachFinding finding;
@@ -299,8 +320,8 @@ class CoachItemPage extends StatefulWidget {
   final (Offset, Offset)? gate;
   final bool wide;
 
-  /// The label for speeds (see [coachValue]).
-  final String? speedUnit;
+  /// Whether the coach's speeds are converted (see [coachSpeedLabel]).
+  final bool speedsConverted;
 
   @override
   State<CoachItemPage> createState() => _CoachItemPageState();
@@ -339,6 +360,10 @@ class _CoachItemPageState extends State<CoachItemPage> {
     final finding = widget.finding;
     final path = widget.path;
     final keep = !finding.kind.corrective;
+    final speedUnit = coachSpeedLabel(
+      context,
+      converted: widget.speedsConverted,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(finding.segmentName)),
       body: ListView(
@@ -352,7 +377,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            l10n.coachMeasured(finding, widget.speedUnit),
+            l10n.coachMeasured(finding, speedUnit),
             style: theme.textTheme.titleMedium,
             key: const ValueKey('coachWhyMeasured'),
           ),
@@ -364,20 +389,12 @@ class _CoachItemPageState extends State<CoachItemPage> {
               title: Text(l10n.coachMetric(evidence.key)),
               subtitle: Text(
                 l10n.coachWhyValues(
-                  coachValue(
-                    evidence.observed,
-                    evidence.unit,
-                    widget.speedUnit,
-                  ),
-                  coachValue(
-                    evidence.reference,
-                    evidence.unit,
-                    widget.speedUnit,
-                  ),
+                  coachValue(evidence.observed, evidence.unit, speedUnit),
+                  coachValue(evidence.reference, evidence.unit, speedUnit),
                 ),
               ),
             ),
-          if (widget.speedUnit == null && _hasSpeed(finding))
+          if (speedUnit == null && _hasSpeed(finding))
             Text(l10n.coachSpeedHidden, style: theme.textTheme.bodySmall),
           const SizedBox(height: 8),
           Text(l10n.coachWhyAffected, style: theme.textTheme.labelLarge),

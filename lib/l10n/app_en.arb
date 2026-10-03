@@ -164,9 +164,9 @@
   "@coachNoTheoreticalBest": {
     "description": "When the theoretical best failed, so the coach cannot run."
   },
-  "coachSpeedHidden": "Speeds are not shown: a recording declares a speed unit other than km/h, and the coach converts speeds to km/h.",
+  "coachSpeedHidden": "Speeds are not shown: the recordings' speed units differ, or the coach converted them to km/h, and speeds are never shown converted or mixed.",
   "@coachSpeedHidden": {
-    "description": "Under coach items when speeds are hidden because the recordings use another unit and values are never shown converted."
+    "description": "Under coach items when speeds are hidden: the recordings' units disagree or the coach converted them; values are never shown converted."
   },
   "coachLabel": "Coach suggestion",
   "@coachLabel": {

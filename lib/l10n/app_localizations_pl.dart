@@ -119,7 +119,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachSpeedHidden =>
-      'Prędkości nie są pokazane: nagranie deklaruje inną jednostkę prędkości niż km/h, a trener przelicza prędkości na km/h.';
+      'Prędkości nie są pokazane: jednostki prędkości w nagraniach się różnią lub trener przeliczył je na km/h, a prędkości nigdy nie są pokazywane po przeliczeniu ani w różnych jednostkach naraz.';
 
   @override
   String get coachLabel => 'Sugestia trenera';

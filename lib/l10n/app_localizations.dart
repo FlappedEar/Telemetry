@@ -266,10 +266,10 @@ abstract class AppLocalizations {
   /// **'The coach needs the theoretical best, which could not be computed.'**
   String get coachNoTheoreticalBest;
 
-  /// Under coach items when speeds are hidden because the recordings use another unit and values are never shown converted.
+  /// Under coach items when speeds are hidden: the recordings' units disagree or the coach converted them; values are never shown converted.
   ///
   /// In en, this message translates to:
-  /// **'Speeds are not shown: a recording declares a speed unit other than km/h, and the coach converts speeds to km/h.'**
+  /// **'Speeds are not shown: the recordings\' speed units differ, or the coach converted them to km/h, and speeds are never shown converted or mixed.'**
   String get coachSpeedHidden;
 
   /// Label on each coach item, marking it as a suggestion from the coach rules, unlike the measured observations elsewhere on the page.

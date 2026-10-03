@@ -24,7 +24,8 @@ void main() {
   });
 
   /// [header] is a VBO header line such as `velocity mph`.
-  DayImportOutcome importDay({String header = ''}) {
+  /// [mixed], when set, is the second recording's header line instead.
+  DayImportOutcome importDay({String header = '', String mixed = ''}) {
     final files = {
       'a.vbo': [
         rectangleLap(30, 50, 120, 20),
@@ -37,12 +38,13 @@ void main() {
     files.forEach((name, laps) {
       final path = '${directory.path}/$name';
       final vbo = rectangleVbo(laps);
+      final line = name == 'b.vbo' && mixed.isNotEmpty ? mixed : header;
       File(path).writeAsStringSync(
-        header.isEmpty
+        line.isEmpty
             ? vbo
             : vbo.replaceFirst(
                 '[header]\n',
-                '[header]\ntime\nlatitude\nlongitude\n$header\n',
+                '[header]\ntime\nlatitude\nlongitude\n$line\n',
               ),
       );
       paths.add(path);
@@ -117,13 +119,14 @@ void main() {
     Size size = const Size(412, 915),
     double textScale = 1.0,
     String header = 'velocity kmh',
+    String mixed = '',
     List<NamedRun> Function(List<NamedRun> runs)? editRuns,
     CoachRunner? coachRunner,
     TheoreticalBestRunner? theoreticalBestRunner,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final outcome = importDay(header: header);
+    final outcome = importDay(header: header, mixed: mixed);
     late DayResultsController controller;
     controller = DayResultsController(
       runs: editRuns == null ? outcome.runs : editRuns(outcome.runs),
@@ -344,7 +347,7 @@ void main() {
       tester,
       editRuns: (runs) => [inMph(runs.first), ...runs.skip(1)],
     );
-    expect(controller.coachSpeedUnit, isNull);
+    expect(controller.coachSpeedsConverted, isTrue);
     expect(
       measured(tester, 1),
       'Measured: Minimum speed: — on this session\'s laps, — on your faster lap.',
@@ -395,5 +398,28 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('speeds of a day in mph and km/h are not shown', (tester) async {
+    await show(tester, header: 'velocity kmh', mixed: 'velocity mph');
+    expect(measured(tester, 1), contains('— on this session'));
+    expect(find.byKey(const ValueKey('coachSpeedHidden')), findsOneWidget);
+  });
+
+  testWidgets('the label follows the unit setting while the day is open', (
+    tester,
+  ) async {
+    await show(tester, header: '');
+    expect(measured(tester, 1), contains('46.9 on this session'));
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    await tester.pumpAndSettle();
+    expect(measured(tester, 1), contains('46.9 mph on this session'));
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    await tester.pumpAndSettle();
+    expect(find.text('46.9 mph against 53.7 mph'), findsOneWidget);
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+    await tester.pumpAndSettle();
+    expect(find.text('46.9 km/h against 53.7 km/h'), findsOneWidget);
   });
 }

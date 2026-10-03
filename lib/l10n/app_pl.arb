@@ -28,7 +28,7 @@
   "coachLoading": "Przygotowywane po idealnym okrążeniu…",
   "coachFailed": "Nie udało się uruchomić trenera: {error}",
   "coachNoTheoreticalBest": "Trener potrzebuje idealnego okrążenia, którego nie udało się obliczyć.",
-  "coachSpeedHidden": "Prędkości nie są pokazane: nagranie deklaruje inną jednostkę prędkości niż km/h, a trener przelicza prędkości na km/h.",
+  "coachSpeedHidden": "Prędkości nie są pokazane: jednostki prędkości w nagraniach się różnią lub trener przeliczył je na km/h, a prędkości nigdy nie są pokazywane po przeliczeniu ani w różnych jednostkach naraz.",
   "coachLabel": "Sugestia trenera",
   "coachMeasuredLabel": "Zmierzono",
   "coachTryLabel": "Spróbuj",

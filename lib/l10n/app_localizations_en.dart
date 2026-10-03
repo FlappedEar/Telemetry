@@ -116,7 +116,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachSpeedHidden =>
-      'Speeds are not shown: a recording declares a speed unit other than km/h, and the coach converts speeds to km/h.';
+      'Speeds are not shown: the recordings\' speed units differ, or the coach converted them to km/h, and speeds are never shown converted or mixed.';
 
   @override
   String get coachLabel => 'Coach suggestion';
