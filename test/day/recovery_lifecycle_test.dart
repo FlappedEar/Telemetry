@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,5 +113,17 @@ void main() {
         reason: 'nothing left to write',
       );
     }
+
+    // A desktop quit waits for the write and then lets the app exit.
+    expect(controller.exclude(rows[2], 'Quit'), isTrue);
+    await tester.pump(const Duration(milliseconds: 10));
+    final exit = tester.binding.handleRequestAppExit();
+    await tester.pump();
+    expect(await exit, AppExitResponse.exit);
+    expect(memory.written, hasLength(4));
+    expect(
+      openRecoveredDay(memory.written.last).exclusions.values,
+      contains('Quit'),
+    );
   });
 }
