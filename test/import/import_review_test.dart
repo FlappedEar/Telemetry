@@ -440,7 +440,7 @@ void main() {
     Future<(DayResultsController, _Appender)> showDay(
       WidgetTester tester,
       _Pickers pickers, {
-      void Function(List<String>, ImportChoices)? startNewDay,
+      bool Function(List<String>, ImportChoices)? startNewDay,
     }) async {
       final first = runDayImport((paths: [vbo], includeSubfolders: false));
       final appender = _Appender();
@@ -500,10 +500,15 @@ void main() {
     ) async {
       final pickers = _Pickers()..recordings = [rcz, other];
       final started = <(List<String>, ImportChoices)>[];
+      // The first start is refused, as while another import runs.
+      var accept = false;
       final (day, appender) = await showDay(
         tester,
         pickers,
-        startNewDay: (paths, choices) => started.add((paths, choices)),
+        startNewDay: (paths, choices) {
+          started.add((paths, choices));
+          return accept;
+        },
       );
       // An unsaved day is not left for a new one.
       expect(day.dirty, isTrue);
@@ -533,6 +538,22 @@ void main() {
       // As without review: the RCZ is a session of its own in a new day.
       expect(find.text('Same run as Session 1'), findsNothing);
       expect(find.text('2 new sessions'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('confirmReview')));
+      await tester.pumpAndSettle();
+      // Refused: the day stays open and says why; nothing was added.
+      expect(started, hasLength(1));
+      expect(
+        find.text('Finish the current import first. Nothing was imported.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('moreMenu')), findsOneWidget);
+      expect(appender.requests, isEmpty);
+      started.clear();
+      accept = true;
+
+      await openReview(tester);
+      await tester.tap(find.text('Start a new day'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('confirmReview')));
       await tester.pumpAndSettle();
       expect(started.single.$1, [rcz, other]);

@@ -2844,4 +2844,8 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get reviewPreparing => 'Przygotowywanie przeglądu…';
+
+  @override
+  String get importBusy =>
+      'Najpierw dokończ bieżący import. Niczego nie zaimportowano.';
 }

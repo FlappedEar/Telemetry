@@ -660,5 +660,6 @@
   "reviewProblemTooMany": "Sesja może mieć najwyżej jedno dodatkowe nagranie.",
   "reviewProblemNothing": "Wybierz co najmniej jeden plik do importu.",
   "reviewChanged": "Nagrania zmieniły się po przeglądzie, więc niczego nie zaimportowano. Przejrzyj je ponownie.",
-  "reviewPreparing": "Przygotowywanie przeglądu…"
+  "reviewPreparing": "Przygotowywanie przeglądu…",
+  "importBusy": "Najpierw dokończ bieżący import. Niczego nie zaimportowano."
 }

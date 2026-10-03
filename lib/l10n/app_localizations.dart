@@ -4115,6 +4115,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preparing the review…'**
   String get reviewPreparing;
+
+  /// An import was asked for while another runs or waits for its review; nothing was imported.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the current import first. Nothing was imported.'**
+  String get importBusy;
 }
 
 class _AppLocalizationsDelegate

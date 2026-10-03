@@ -301,22 +301,17 @@ class _DayImportPageState extends State<DayImportPage> {
     }
   }
 
-  /// Imports [paths], reviewed on a day shown here, as a new day, which
-  /// opens by itself when imported.
-  void _startNewDay(List<String> paths, ImportChoices choices) {
-    if (!mounted) return;
-    _unopenedShares = const [];
-    if (_controller.start(paths, includeSubfolders: false, choices: choices)) {
-      _showWhenImported = true;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Finish the current import first. Nothing was imported.',
-          ),
-        ),
-      );
+  /// Starts importing [paths], reviewed on a day shown here, as a new day,
+  /// which opens by itself when imported. Returns false, changing nothing,
+  /// while another import runs or waits for its review.
+  bool _startNewDay(List<String> paths, ImportChoices choices) {
+    if (!mounted ||
+        !_controller.start(paths, includeSubfolders: false, choices: choices)) {
+      return false;
     }
+    _unopenedShares = const [];
+    _showWhenImported = true;
+    return true;
   }
 
   Future<void> _checkRecovery() async {
@@ -679,13 +674,8 @@ class _DayImportPageState extends State<DayImportPage> {
         ? _controller.review(paths, includeSubfolders: _includeSubfolders)
         : _controller.start(paths, includeSubfolders: _includeSubfolders);
     if (!started) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Finish the current import first. Nothing was imported.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.importBusy)));
     }
   }
 

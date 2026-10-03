@@ -94,10 +94,10 @@ class DayResultsPage extends StatefulWidget {
   /// [DayResultsPage.controller].
   final ValueChanged<DayResultsController>? replace;
 
-  /// Imports recordings reviewed while this day was shown as a new day
-  /// instead (FET-58), after this page closes: "Start a new day" in the
-  /// review. Not offered when null.
-  final void Function(List<String> paths, ImportChoices choices)? startNewDay;
+  /// Starts importing recordings reviewed while this day was shown as a new
+  /// day instead (FET-58): "Start a new day" in the review. Returns whether
+  /// it started; only then does this page close. Not offered when null.
+  final bool Function(List<String> paths, ImportChoices choices)? startNewDay;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
@@ -292,8 +292,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
         _tell(context.l10n.reviewNewDayNeedsSave);
         return;
       }
-      Navigator.of(context).pop();
-      startNewDay(paths, result.choices);
+      // Started first, closed after: a refused start leaves the day open.
+      if (startNewDay(paths, result.choices)) {
+        Navigator.of(context).pop();
+      } else {
+        _tell(context.l10n.importBusy);
+      }
       return;
     }
     await _controller.addRecordings(

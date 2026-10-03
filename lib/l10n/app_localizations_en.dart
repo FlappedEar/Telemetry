@@ -2785,4 +2785,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewPreparing => 'Preparing the review…';
+
+  @override
+  String get importBusy =>
+      'Finish the current import first. Nothing was imported.';
 }

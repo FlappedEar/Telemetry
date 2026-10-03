@@ -4189,5 +4189,9 @@
   "reviewPreparing": "Preparing the review…",
   "@reviewPreparing": {
     "description": "Shown on a day while the recordings chosen for 'Add and review recordings…' are read."
+  },
+  "importBusy": "Finish the current import first. Nothing was imported.",
+  "@importBusy": {
+    "description": "An import was asked for while another runs or waits for its review; nothing was imported."
   }
 }
