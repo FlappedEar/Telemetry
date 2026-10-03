@@ -114,6 +114,8 @@
   "settingsSomeUnlabelled": "{count, plural, =1{1 z jego nagrań nie podaje jednostki prędkości.} few{{count} z jego nagrań nie podają jednostki prędkości.} other{{count} z jego nagrań nie podaje jednostki prędkości.}}",
   "close": "Zamknij",
   "appleMapLegal": "Informacje prawne",
+  "lapsCompareTwo": "Porównaj dwa okrążenia",
+  "lapsLastComparison": "Ostatnie porównanie",
   "sessionDetailsHeading": "Szczegóły sesji",
   "sessionDetailsNone": "Brak warunków, zmian w ustawieniach i notatek",
   "sessionDetailsTitle": "Szczegóły: {session}",

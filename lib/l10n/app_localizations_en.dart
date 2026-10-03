@@ -474,6 +474,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appleMapLegal => 'Legal';
 
   @override
+  String get lapsCompareTwo => 'Compare two laps';
+
+  @override
+  String get lapsLastComparison => 'Last comparison';
+
+  @override
   String get sessionDetailsHeading => 'Session details';
 
   @override

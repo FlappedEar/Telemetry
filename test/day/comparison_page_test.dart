@@ -319,6 +319,141 @@ void main() {
     );
   });
 
+  testWidgets('the comparison is saved with the day and opens as it was left', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = controller.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    expect(controller.savedComparisonPair, isNull);
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: ComparisonPage(controller: controller, a: a, b: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // The pair, then a zoom once it settles, and the charts shown.
+    expect(controller.savedComparison.slots, [a.reference, best.reference]);
+    final whole = textOf(tester, const ValueKey('chartRange'));
+    await tester.tap(find.byKey(const ValueKey('chartZoomIn')));
+    await tester.pump(const Duration(milliseconds: 400));
+    final zoomed = textOf(tester, const ValueKey('chartRange'));
+    expect(zoomed, isNot(whole));
+    final range = controller.savedComparison.range!;
+    expect(range.$1, greaterThanOrEqualTo(0));
+    expect(
+      range.$2 - range.$1,
+      lessThan(controller.comparison(a, best)!.axisLengthMeters),
+    );
+    controller.rememberComparisonChannels(const [deltaTimeChannel, 'velocity']);
+    final path = '${directory.path}/Compared.fetproject';
+    await tester.runAsync(() => controller.save(path));
+
+    final opened = DayResultsController.opened(
+      (await tester.runAsync(() async => openDay(path)))!,
+    );
+    final (savedA, savedB) = opened.savedComparisonPair!;
+    expect((savedA.reference, savedB.reference), (a.reference, best.reference));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: opened)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('lapsLastComparison')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ComparisonPage), findsOneWidget);
+    expect(
+      textOf(tester, const ValueKey('comparisonLapDelta')),
+      'Lap Δ ${displayDelta(a.durationSeconds - best.durationSeconds)}',
+    );
+    expect(textOf(tester, const ValueKey('chartRange')), zoomed);
+    expect(
+      find.byKey(const ValueKey('comparisonChart Δ time')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('comparisonChart velocity')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('comparisonChart throttle')),
+      findsNothing,
+    );
+    // Opening the comparison left as saved changes nothing.
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(opened.dirty, isFalse);
+  });
+
+  testWidgets('a zoom left just before going back is saved', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = controller.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            key: const ValueKey('openComparison'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ComparisonPage(controller: controller, a: a, b: best),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('openComparison')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('chartZoomIn')));
+    await tester.pump();
+    expect(controller.savedComparison.range, isNull);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final length = controller.comparison(a, best)!.axisLengthMeters;
+    final range = controller.savedComparison.range!;
+    expect(range.$2 - range.$1, closeTo(length / 2, 1e-6));
+    expect(tester.takeException(), isNull);
+  });
+
+  test('picking the group already shown saves it', () async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    Object? saved() =>
+        ((readDayDocument(path)['event'] as Map)['analysisDecisions']
+            as Map?)?['comparisonGroupId'];
+    expect(saved(), isNull);
+    expect(controller.dirty, isFalse);
+    controller.chooseGroup(controller.analysis.chosenGroupId!);
+    expect(controller.dirty, isTrue);
+    await controller.save(path);
+    expect(saved(), controller.analysis.chosenGroupId);
+    // Picking it again changes nothing.
+    controller.chooseGroup(controller.analysis.chosenGroupId!);
+    expect(controller.dirty, isFalse);
+  });
+
   testWidgets('the comparison map draws both laps over map tiles', (
     tester,
   ) async {

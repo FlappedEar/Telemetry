@@ -106,6 +106,117 @@ void main() {
     );
   });
 
+  group('comparison decisions (FET-53)', () {
+    Map<String, Object?> decisionsOf(Map<String, Object?> document) =>
+        ((document['event'] as Map)['analysisDecisions'] as Map? ?? const {})
+            .cast<String, Object?>();
+
+    test('the group is saved only when the user chose it', () async {
+      final day = importDay([
+        write('a.vbo', circuitVbo([30, 28, 31])),
+      ]);
+      final path = p.join(root, 'day.fetproject');
+      Map<String, Object?> save({Map<String, Object?>? previous, bool groupChosen = false}) =>
+          dayDocument(
+            eventId: 'event',
+            name: 'Day',
+            runs: day.runs,
+            analysis: day.analysis,
+            projectPath: path,
+            previous: previous,
+            previousPath: path,
+            groupChosen: groupChosen,
+          );
+      // Never chosen: no decision, also on a save of a day saved so.
+      final automatic = save();
+      expect((automatic['event'] as Map).containsKey('analysisDecisions'), isFalse);
+      expect((save(previous: automatic)['event'] as Map).containsKey('analysisDecisions'), isFalse);
+      // Chosen: saved, and kept by later saves.
+      final chosen = save(previous: automatic, groupChosen: true);
+      expect(decisionsOf(chosen)['comparisonGroupId'], day.analysis.chosenGroupId);
+      expect(decisionsOf(save(previous: chosen))['comparisonGroupId'], day.analysis.chosenGroupId);
+    });
+
+    test('saves the pair, range and charts and opens them again', () async {
+      final a = write('recordings/a.vbo', circuitVbo([30, 28, 31]));
+      final b = write('recordings/b.vbo', circuitVbo([29, 32, 27]));
+      final day = importDay([a, b]);
+      final laps = day.analysis.ranking!.eligibleLaps;
+      final path = p.join(root, 'day.fetproject');
+      final document = dayDocument(
+        eventId: newEventId(),
+        name: 'Compared',
+        runs: day.runs,
+        analysis: day.analysis,
+        projectPath: path,
+        comparison: ComparisonDecisions(
+          slots: [laps[0].reference, laps[1].reference],
+          range: (12.5, 240.0),
+          channels: const ['Δ time', 'velocity'],
+        ),
+      );
+      expect(fet.validateFetproject(document), isNull);
+      final decisions = decisionsOf(document);
+      expect(decisions.containsKey('comparisonGroupId'), isFalse);
+      final slots = decisions['comparisonSlots'] as List;
+      expect((slots.first as Map)['runId'], laps[0].runId);
+      expect((slots.first as Map)['type'], 'LAP');
+      expect(decisions['comparisonRange'], {'startMeters': 12.5, 'endMeters': 240.0});
+      expect(decisions['comparisonChannels'], ['Δ time', 'velocity']);
+      // Keys of another version are kept.
+      decisions['futureDecision'] = {'kept': true};
+      (document['event'] as Map)['analysisDecisions'] = decisions;
+      await saveDayDocument(path, document);
+
+      final opened = openDay(path);
+      expect(opened.comparison.slots, [laps[0].reference, laps[1].reference]);
+      expect(opened.comparison.range, (12.5, 240.0));
+      expect(opened.comparison.channels, ['Δ time', 'velocity']);
+      // Saved again without changes: the same decisions.
+      final again = dayDocument(
+        eventId: opened.eventId,
+        name: opened.name,
+        runs: opened.runs,
+        analysis: opened.analysis!,
+        projectPath: path,
+        previous: opened.document,
+        previousPath: path,
+      );
+      expect(decisionsOf(again), decisions);
+      // An invalid range or channel list is not written.
+      final refused = dayDocument(
+        eventId: opened.eventId,
+        name: opened.name,
+        runs: opened.runs,
+        analysis: opened.analysis!,
+        projectPath: path,
+        previous: opened.document,
+        previousPath: path,
+        comparison: const ComparisonDecisions(range: (50, 10), channels: ['a', 'b', 'c', 'd', 'e']),
+      );
+      expect(decisionsOf(refused), decisions);
+      // Channel names Overlays' validText refuses are never written.
+      for (final channels in [
+        ['velocity', '  '],
+        ['velocity', 'a\u0000b'],
+        ['velocity', 'velocity'],
+        ['x' * (fet.maximumIdCharacters + 1)],
+      ]) {
+        expect(ComparisonDecisions.validChannels(channels), isFalse, reason: '$channels');
+      }
+      expect(ComparisonDecisions.validChannels(const ['Δ time', 'velocity']), isTrue);
+
+      // A lap of a changed recording is not one of the day's: read as no lap,
+      // and kept in the document as it was.
+      File(b).writeAsStringSync(circuitVbo([31, 30]));
+      final changed = openDay(path);
+      final bRun = day.runs.firstWhere((named) => named.run.sourcePath == b).run.id;
+      expect(changed.comparison.slots, [
+        for (final lap in [laps[0], laps[1]]) lap.runId == bRun ? null : lap.reference,
+      ]);
+    });
+  });
+
   test('opens the rest of the day when a recording is missing or changed', () async {
     final a = write('a.vbo', circuitVbo([30, 28, 31]));
     final b = write('b.vbo', circuitVbo([29, 32]));

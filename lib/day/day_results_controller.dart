@@ -723,9 +723,18 @@ final class DayResultsController extends ChangeNotifier {
   DayAnalysis _analysis;
   String? _groupId;
 
-  // Whether the user chose the group shown (a saved group the day cannot
-  // show is otherwise kept in the document).
+  // Whether the group shown was picked for the day (by the user, or to follow
+  // a session whose layout the user set) rather than the default.
   bool _groupChosen = false;
+
+  // Whether the user chose the group in the group picker: only then is it
+  // saved (FET-53), as Overlays saves it only from its group picker, so a
+  // day whose group was never chosen stays "automatic" in Overlays.
+  bool _groupDecided = false;
+
+  // The comparison set up in this app since the day was opened (FET-53);
+  // its null fields keep the document's.
+  ComparisonDecisions _comparisonChoice = const ComparisonDecisions();
   final Map<DayLapReference, String> _exclusions;
 
   /// The event's identity, kept across saves.
@@ -810,7 +819,8 @@ final class DayResultsController extends ChangeNotifier {
         previous: _document,
         previousPath: _documentBase,
         trackSegments: _segmentEdits.runs,
-        groupChosen: _groupChosen,
+        groupChosen: _groupDecided,
+        comparison: _comparisonChoice,
         fusions: _fusions,
         pendingAlternatives: _pendingRecordings,
         runMetadata: metadataNow,
@@ -1185,6 +1195,69 @@ final class DayResultsController extends ChangeNotifier {
     return null;
   }
 
+  /// The comparison saved with the day, with what was set up since: laps
+  /// of this day (null when not one of its laps), range and charts.
+  ComparisonDecisions get savedComparison {
+    final document = _document;
+    final saved = document == null
+        ? const ComparisonDecisions()
+        : documentComparison(document, _runs);
+    return saved.overriddenBy(_comparisonChoice);
+  }
+
+  /// The saved pair (A, B) when both are still eligible laps of one group,
+  /// or null.
+  (DayLapRow, DayLapRow)? get savedComparisonPair {
+    final slots = savedComparison.slots;
+    if (slots == null || slots.length != 2) return null;
+    DayLapRow? rowOf(DayLapReference? reference) {
+      if (reference == null) return null;
+      for (final row in _analysis.rows) {
+        if (row.reference == reference) return row;
+      }
+      return null;
+    }
+
+    final a = rowOf(slots[0]), b = rowOf(slots[1]);
+    if (a == null || b == null || a.reference == b.reference) return null;
+    return comparable(a, b) ? (a, b) : null;
+  }
+
+  // Records a change of the comparison decisions: saved with the day.
+  void _chooseComparison(ComparisonDecisions choice) {
+    final before = savedComparison;
+    final after = before.overriddenBy(choice);
+    bool sameList<T>(List<T>? x, List<T>? y) =>
+        x == null ? y == null : y != null && listEquals(x, y);
+    if (sameList(before.slots, after.slots) &&
+        before.range == after.range &&
+        sameList(before.channels, after.channels)) {
+      return;
+    }
+    _comparisonChoice = _comparisonChoice.overriddenBy(choice);
+    _revision++;
+    _dirty = true;
+    _scheduleRecovery();
+    notifyListeners();
+  }
+
+  /// The comparison page shows [a] against [b]: saved as the day's
+  /// comparison (Overlays' `comparisonSlots`).
+  void rememberComparisonPair(DayLapRow a, DayLapRow b) =>
+      _chooseComparison(ComparisonDecisions(slots: [a.reference, b.reference]));
+
+  /// The comparison shows [start]..[end] meters of its axis.
+  void rememberComparisonRange(double start, double end) {
+    if (!ComparisonDecisions.validRange((start, end))) return;
+    _chooseComparison(ComparisonDecisions(range: (start, end)));
+  }
+
+  /// The comparison shows the charts [channels].
+  void rememberComparisonChannels(List<String> channels) {
+    if (!ComparisonDecisions.validChannels(channels)) return;
+    _chooseComparison(ComparisonDecisions(channels: [...channels]));
+  }
+
   /// The laps [row] can be compared with: the eligible laps of its group.
   List<DayLapRow> comparisonCandidates([DayLapRow? row]) =>
       dayComparisonCandidates(_analysis, row);
@@ -1307,9 +1380,22 @@ final class DayResultsController extends ChangeNotifier {
 
   /// Shows [groupId]'s ranking first.
   void chooseGroup(String groupId) {
-    if (groupId == _analysis.chosenGroupId) return;
+    if (groupId == _analysis.chosenGroupId) {
+      // Picking the group already shown is still a choice, saved as
+      // Overlays saves it, unless the day already saves that group.
+      if (_groupDecided || _savedGroupId == groupId) return;
+      _groupId = groupId;
+      _groupChosen = true;
+      _groupDecided = true;
+      _revision++;
+      _dirty = true;
+      _scheduleRecovery();
+      notifyListeners();
+      return;
+    }
     _groupId = groupId;
     _groupChosen = true;
+    _groupDecided = true;
     _rerank();
   }
 
@@ -1952,7 +2038,8 @@ final class DayResultsController extends ChangeNotifier {
     final analysisNow = _analysis;
     final exclusionsNow = {..._exclusions};
     final segmentsNow = _segmentEdits.runs;
-    final groupChosenNow = _groupChosen;
+    final groupChosenNow = _groupDecided;
+    final comparisonNow = _comparisonChoice;
     final fusionsNow = {..._fusions};
     final pendingNow = {..._pendingRecordings};
     final metadataNow = {..._metadataEdits};
@@ -1976,6 +2063,7 @@ final class DayResultsController extends ChangeNotifier {
             previousPath: previousBase,
             trackSegments: segmentsNow,
             groupChosen: groupChosenNow,
+            comparison: comparisonNow,
             fusions: fusionsNow,
             pendingAlternatives: pendingNow,
             runMetadata: metadataNow,

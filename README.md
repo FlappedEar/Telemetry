@@ -66,7 +66,7 @@ satellite imagery when the build has a key; the layers button switches
 between them, on every map at once. Tiles already seen stay cached for the
 track. **Save** writes the day as a
 `.fetproject` document FlappedEar Overlays can open (sessions, recordings,
-circuit names, excluded laps and the group shown); **Open a saved day** reads
+circuit names, excluded laps, the group chosen and the last comparison); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
 **Find recordings in a folder**, which finds each recording by its content
 (even renamed), never uses a different recording that only has its name, and
@@ -76,7 +76,7 @@ app read a chosen or dropped file only until it quits, so the app keeps a
 security-scoped bookmark of every recording and folder chosen and restores
 that access before opening a day; recordings chosen before this existed are
 found once with **Find recordings in a folder…**. Days saved by either app open in the
-other with their segments, lap exclusions, notes and the group shown. On desktop the system dialogs choose the file;
+other with their segments, lap exclusions, notes, the group chosen and the last comparison. On desktop the system dialogs choose the file;
 on phones days are kept in the app. A day with unsaved changes is kept in
 the app's own folder as you work, and after a crash or a closed app the import
 screen offers to **Restore** or **Discard** it. This recovery is best effort:
@@ -302,6 +302,25 @@ Run the integration tests locally on any connected device or simulator:
 ```bash
 flutter test integration_test -d <device id>
 ```
+
+### Checks on a real day
+
+The real-recording tests and the parity checks against FlappedEar Overlays'
+C++ are skipped in CI: they need private recordings and an Overlays checkout.
+`tool/real_day_parity.dart` runs all of them on one day's folder of VBO and
+RCZ files, building the C++ tools of
+[`packages/telemetry_core/tool`](packages/telemetry_core/tool/README.md) and
+writing their references to a temporary folder, and prints PASS, FAIL or SKIP
+with test counts per check:
+
+```bash
+FET_REAL_DAY=<day folder> VBOOVERLAY_DIR=<Overlay checkout> \
+  QT_PREFIX=<Qt 6.8 prefix> dart run tool/real_day_parity.dart
+```
+
+`--verbose` adds the figures the tests print, `--only=<name>,...` runs some
+checks, `--keep` keeps the references and logs (private: never commit them).
+Report its results separately from the synthetic tests.
 
 ## Contributing
 

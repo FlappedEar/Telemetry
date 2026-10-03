@@ -752,6 +752,14 @@
   "@appleMapLegal": {
     "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
   },
+  "lapsCompareTwo": "Compare two laps",
+  "@lapsCompareTwo": {
+    "description": "Button above the lap list that asks for lap A, then lap B, and compares them."
+  },
+  "lapsLastComparison": "Last comparison",
+  "@lapsLastComparison": {
+    "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
+  },
   "sessionDetailsHeading": "Session details",
   "@sessionDetailsHeading": {
     "description": "Heading of the day page's list of sessions with their conditions, setup changes and notes."
