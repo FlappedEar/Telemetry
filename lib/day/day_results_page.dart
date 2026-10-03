@@ -5,12 +5,15 @@ import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import 'consistency_card.dart';
 import 'day_results_controller.dart';
 import 'document_pickers.dart';
 import 'lap_page.dart';
+import 'progression_card.dart';
 import 'recovery_store.dart';
 import 'segment_editor_page.dart';
 import 'theoretical_best_card.dart';
+import 'time_losses_card.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
 
@@ -389,6 +392,28 @@ class _DayResultsPageState extends State<DayResultsPage> {
       if (best != null) ...[
         const SizedBox(height: 12),
         _theoreticalBest(path, wide),
+        const SizedBox(height: 12),
+        TimeLossesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          path: path,
+          gate: _mapGate,
+          wide: wide,
+          onOpenLap: _open,
+        ),
+        const SizedBox(height: 12),
+        ConsistencyCard(
+          laps: _controller.lapConsistency,
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+        ),
+        const SizedBox(height: 12),
+        ProgressionCard(
+          progression: _controller.progression,
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          onOpenLap: _open,
+        ),
       ],
       if (ranking != null && ranking.runs.isNotEmpty) ...[
         const SizedBox(height: 12),

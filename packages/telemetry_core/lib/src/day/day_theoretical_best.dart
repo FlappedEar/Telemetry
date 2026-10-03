@@ -8,6 +8,7 @@
 import 'dart:math' as math;
 
 import '../analysis/automatic_segments.dart';
+import '../analysis/outing_results.dart';
 import '../analysis/outing_theoretical_best.dart';
 import '../analysis/sector_timing.dart';
 import '../analysis/time_loss.dart';
@@ -197,6 +198,30 @@ final class DayTheoreticalBest {
   TimeLossRanking timeLosses({bool allLaps = false}) => computed == null
       ? TimeLossRanking(unavailableReason: timeLossNoReference)
       : rankOutingTimeLosses(computed!, allLaps: allLaps);
+
+  /// The largest losses as the time-loss list shows them (each run's best
+  /// lap, or with [allLaps] every lap, against the group's best lap).
+  TimeLossSummary publishedTimeLosses({bool allLaps = false}) {
+    final computed = this.computed;
+    if (computed == null || state != DayTheoreticalBestState.ready) {
+      return TimeLossSummary(available: false, message: message);
+    }
+    return publishTimeLossRanking(computed, allLaps: allLaps);
+  }
+
+  /// [loss]'s lap and the group's best lap through its segment.
+  TimeLossComparison? compareLoss(PublishedTimeLoss loss) {
+    final computed = this.computed;
+    return computed == null ? null : compareTimeLoss(computed, loss);
+  }
+
+  /// Each segment's median and spread per run, the runs in [order] (the
+  /// progression's order).
+  SectionProgression sectionProgression(List<ProgressionRunInfo> order) {
+    final computed = this.computed;
+    if (computed == null || state != DayTheoreticalBestState.ready) return SectionProgression();
+    return publishSectorProgression(computed, order);
+  }
 
   /// The approved segment (index in [segments]) at [progressMeters] on the
   /// shared axis, or null in a gap between segments.

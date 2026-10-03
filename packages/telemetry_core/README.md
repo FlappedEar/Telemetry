@@ -167,6 +167,22 @@ a background isolate.
   `corners` holds each corner
   segment with every lap's figures; `DayCorner.compare` sets one lap against
   the best lap and the best value of the group's laps.
+- Progression and consistency (Overlays `summarizeOutingProgression`,
+  `outingLapConsistency`, `publishTimeLossRanking` and
+  `publishSectorProgression`, `d4d1039`): `summarizeDayProgression` lists a
+  group's runs by recording clock (undated runs after them, in the day's
+  order) with each run's best lap, quartiles, left-out laps and its best
+  against the run listed before it, never across a run without an eligible
+  lap; `summarizeLapConsistency` gives the median and interquartile range of
+  the eligible lap times over the day and per run (none below three laps).
+  `publishTimeLossRanking` gives the largest losses (each run's best lap, or
+  every lap) with corner names, `compareTimeLoss` the two laps' times through
+  a loss's segment, and `publishSectorProgression` each segment's median and
+  spread per run with the laps behind it. `dayProgression`,
+  `dayLapConsistency`, `DayTheoreticalBest.publishedTimeLosses`,
+  `compareLoss` and `sectionProgression` do it for a group of a day;
+  `progressionRunInfo` reads the notes, conditions and setup changes a
+  document records for a run.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -200,6 +216,11 @@ editing (`TrackSegmentEditing.cpp` and the rest of `TrackSegmentReview.cpp`,
 Analyzer port (`CornerPhases`, `CornerSpeeds`, `BrakingOnset`,
 `BrakingMetrics`, `ExitMetrics`, `DrivingVariability`, `d4d1039`) against
 `test/parity/corner_metrics_reference.json` from `tool/cpp_corner_metrics_dump`.
+`test/parity/progression_parity_test.dart` does the same for the ranking,
+progression, lap consistency and time-loss and section presentation
+(`OutingLaps.cpp`, `Consistency.cpp`, `OutingTheoreticalBestResults.cpp` and
+the lap consistency of Overlays' app, `d4d1039`) against
+`test/parity/progression_reference.json` from `tool/cpp_progression_dump`.
 
 Known, deliberate differences:
 
@@ -209,7 +230,7 @@ Known, deliberate differences:
 - **Day lap references** (`OutingLaps.cpp`, VBOOverlay `ca2bde5`) carry the run,
   the content SHA-256, the type and the exact bounds; `dayDocument` adds
   `eventId`, `sourceId` and `derivationKey` when it writes them, and `openDay`
-  applies only references whose content and derivation key still match. Progression across runs is not ported yet (FET-5).
+  applies only references whose content and derivation key still match.
 - **Detected layout ids** are computed again on opening rather than read from
   the saved `trackInference` provenance. The id is derived from the cluster's
   first run and its content, so it is the same as long as the routes group the
@@ -217,6 +238,12 @@ Known, deliberate differences:
 - **The group shown first** is the one with the most eligible laps. Overlays
   takes the first resolved group in id order, which is arbitrary; on a day with
   one group both choose the same.
+- **Progression** has no group label or formatted clock: the app writes
+  its own, and an undated run says so instead of "Time unavailable · import
+  order". A time-loss list that is unavailable keeps Overlays' reason code
+  (`noReferenceLap`) for the app to word.
+- **Section progression laps** with exactly equal times keep their
+  population order; Overlays' `std::sort` leaves it unspecified.
 - **`timingGateRevision`** (`gates-v1`) is not here; it belongs with the other
   document ids.
 
