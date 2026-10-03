@@ -274,6 +274,23 @@ void main() {
     expect(coach.findings.where((f) => f.kind == CoachKind.earlyLift), isEmpty);
   });
 
+  test('a lift with the pedals overlapping at the brake is not early', () {
+    void lifts(String runId, TelemetrySession session) {
+      if (runId == 'run1') {
+        _edit(session, 'throttle', 100, (d) => d >= 150 && d < 288);
+        _edit(session, 'throttle', 0, (d) => d >= 288 && d < 307);
+      } else {
+        _edit(session, 'throttle', 100, (d) => d >= 150 && d < 200);
+        _edit(session, 'throttle', 0, (d) => d >= 200 && d < 215);
+        _edit(session, 'throttle', 50, (d) => d >= 215 && d < 307);
+        _edit(session, 'throttle', 0, (d) => d >= 307 && d < 330);
+      }
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], shape: _twoCorners, edit: lifts);
+    expect(coach.findings.where((f) => f.kind == CoachKind.earlyLift), isEmpty);
+  });
+
   test('three corners to change: two in the plan, in different segments', () {
     final coach = _coach([20, 20.5], [15, 15.2, 15.1], shape: _threeCorners);
     final changes = coach.findings.where((f) => f.kind == CoachKind.lowMinimumSpeed);

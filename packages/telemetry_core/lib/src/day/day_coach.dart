@@ -251,8 +251,8 @@ final class DayCoach {
     CoachReason.noCornerMeasurements =>
       'No lap of this session could be measured through a corner.',
     CoachReason.tooFewLaps =>
-      'A pattern was seen on fewer than three laps of this session. Drive a few '
-          'more laps to confirm it.',
+      'A pattern was seen on fewer than three laps of this session, too few to '
+          'plan from.',
     CoachReason.noPattern =>
       'Compared with your faster laps, no pattern stands out. Keep building '
           'consistent laps.',
@@ -330,7 +330,8 @@ double _median(Iterable<double> values) {
 }
 
 /// The last sustained release of the throttle (from at least 20 % to at
-/// most 8 % for 0.2 s and 3 m) starting between [fromTime] and [toTime], as a
+/// most 8 % for 0.2 s and 3 m) starting between [fromTime] and 0.3 s after
+/// [toTime], as a
 /// position on [trace]; null without a throttle channel or a release.
 double? _liftProgress(
   TelemetrySession session,
@@ -354,9 +355,10 @@ double? _liftProgress(
   for (var i = 0; i < times.length; ++i) {
     final t = times[i];
     if (t < fromTime) continue;
-    // A release must start by [toTime]; its confirmation may run past it, so
-    // a lift right at the brake point is seen.
-    if (t > toTime && (releasedAt == null || t > toTime + 0.5)) break;
+    // A release may start up to 0.3 s after [toTime] (pedals overlapping at
+    // the brake) and its confirmation may run past that, so a lift at the
+    // brake point is seen rather than an earlier one.
+    if (t > toTime + 0.3 && (releasedAt == null || t > toTime + 0.8)) break;
     final value = values[i];
     if (!value.isFinite) {
       established = false;
