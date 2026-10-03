@@ -96,6 +96,9 @@ enum CoachReason {
   /// Faster laps were compared, and they show no pattern.
   noPattern,
 
+  /// A confident pattern was seen, but on fewer than three laps.
+  tooFewLaps,
+
   /// Patterns were found, but none is repeated and confident enough.
   belowThreshold,
 }
@@ -206,7 +209,8 @@ final class CoachItem {
     }
     return 'Your ${finding.repeated ? 'repeated' : 'single-lap'} pattern suggests an '
         'opportunity: ${metric.metric.toLowerCase()} was ${value(metric.observed)}, '
-        'compared with ${value(metric.reference)} on faster laps.';
+        'compared with ${value(metric.reference)} on '
+        '${metric.referenceLaps.length == 1 ? 'your faster lap' : 'faster laps'}.';
   }
 
   String get action => finding.action;
@@ -246,6 +250,9 @@ final class DayCoach {
           'from the day page.',
     CoachReason.noCornerMeasurements =>
       'No lap of this session could be measured through a corner.',
+    CoachReason.tooFewLaps =>
+      'A pattern was seen on fewer than three laps of this session. Drive a few '
+          'more laps to confirm it.',
     CoachReason.noPattern =>
       'Compared with your faster laps, no pattern stands out. Keep building '
           'consistent laps.',
@@ -323,7 +330,7 @@ double _median(Iterable<double> values) {
 }
 
 /// The last sustained release of the throttle (from at least 20 % to at
-/// most 8 % for 0.2 s and 3 m) between [fromTime] and [toTime], as a
+/// most 8 % for 0.2 s and 3 m) starting between [fromTime] and [toTime], as a
 /// position on [trace]; null without a throttle channel or a release.
 double? _liftProgress(
   TelemetrySession session,
@@ -347,7 +354,9 @@ double? _liftProgress(
   for (var i = 0; i < times.length; ++i) {
     final t = times[i];
     if (t < fromTime) continue;
-    if (t > toTime) break;
+    // A release must start by [toTime]; its confirmation may run past it, so
+    // a lift right at the brake point is seen.
+    if (t > toTime && (releasedAt == null || t > toTime + 0.5)) break;
     final value = values[i];
     if (!value.isFinite) {
       established = false;
@@ -529,6 +538,13 @@ DayCoach dayCoach(
     plan: plan,
     reason: plan.isNotEmpty
         ? CoachReason.ready
+        : findings.any(
+            (f) =>
+                f.kind.corrective &&
+                f.confidence >= coachPlanConfidence &&
+                f.affectedLaps.length < 3,
+          )
+        ? CoachReason.tooFewLaps
         : findings.isNotEmpty
         ? CoachReason.belowThreshold
         : sessions[coached] == null
@@ -699,6 +715,7 @@ CoachFinding? _corrective(
       referenceLaps: referenceLaps,
       detail:
           '${observations.length == 1 ? 'One affected lap' : 'Median across ${observations.length} affected laps'}; '
+          '${referenceLaps.length == 1 ? 'compared with one faster lap' : 'median of the faster laps'}; '
           'every comparison uses a faster lap and a faster '
           'passage through this segment. Positions are along the lap from start/finish on '
           'the day\'s shared axis.',

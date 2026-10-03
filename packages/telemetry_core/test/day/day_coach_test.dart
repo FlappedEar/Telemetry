@@ -18,6 +18,12 @@ double Function(double) _twoCorners(double slow) {
   return (d) => d >= 307 && d <= 407 ? slow + (30 - slow) * (d - 357).abs() / 50 : first(d);
 }
 
+// The same lap slowing in the first three corners.
+double Function(double) _threeCorners(double slow) {
+  final two = _twoCorners(slow);
+  return (d) => d >= 443 && d <= 543 ? slow + (30 - slow) * (d - 493).abs() / 50 : two(d);
+}
+
 DayRunInput _run(String id, TelemetrySession session) => DayRunInput(
   runId: id,
   name: 'Session ${id.substring(id.length - 1)}',
@@ -238,6 +244,52 @@ void main() {
     expect(finding.evidence.first.key, CoachMetric.liftPoint);
     expect(finding.evidence.first.observed, lessThan(finding.evidence.first.reference - 8));
     expect(finding.evidence.map((e) => e.key), contains(CoachMetric.brakingStart));
+  });
+
+  test('a long coast mostly before the approach counts only inside it', () {
+    void coast(String runId, TelemetrySession session) {
+      if (runId != 'run2') return;
+      _edit(session, 'throttle', 0, (d) => d >= 100 && d < 190);
+      _edit(session, 'brake', 0, (d) => d >= 100 && d < 190);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], shape: _twoCorners, edit: coast);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+  });
+
+  test('a lift right at the brake point, after an earlier breath, is not early', () {
+    void lifts(String runId, TelemetrySession session) {
+      if (runId == 'run1') {
+        _edit(session, 'throttle', 100, (d) => d >= 150 && d < 288);
+        _edit(session, 'throttle', 0, (d) => d >= 288 && d < 307);
+      } else {
+        _edit(session, 'throttle', 100, (d) => d >= 150 && d < 200);
+        _edit(session, 'throttle', 0, (d) => d >= 200 && d < 215);
+        _edit(session, 'throttle', 100, (d) => d >= 215 && d < 301);
+        _edit(session, 'throttle', 0, (d) => d >= 301 && d < 307);
+      }
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], shape: _twoCorners, edit: lifts);
+    expect(coach.findings.where((f) => f.kind == CoachKind.earlyLift), isEmpty);
+  });
+
+  test('three corners to change: two in the plan, in different segments', () {
+    final coach = _coach([20, 20.5], [15, 15.2, 15.1], shape: _threeCorners);
+    final changes = coach.findings.where((f) => f.kind == CoachKind.lowMinimumSpeed);
+    expect(changes.map((f) => f.segmentId).toSet().length, greaterThanOrEqualTo(3));
+    final planned = coach.plan.where((item) => item.finding.kind.corrective).toList();
+    expect(planned, hasLength(2));
+    expect(planned.map((item) => item.finding.segmentId).toSet(), hasLength(2));
+  });
+
+  test('a confident pattern on two laps asks for more laps', () {
+    final coach = _coach([20, 20.5], [15, 15.2, 20.6]);
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+    expect(finding.affectedLaps, hasLength(2));
+    expect(finding.confidence, greaterThanOrEqualTo(coachPlanConfidence));
+    expect(coach.plan, isEmpty);
+    expect(coach.reason, CoachReason.tooFewLaps);
   });
 
   test('a session whose recording is missing says so', () {
