@@ -75,9 +75,9 @@ final class DayResultsController extends ChangeNotifier {
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayDocument,
        _dirty = recovered || changed {
-    detectedSpeedUnit = commonSpeedUnit([
-      for (final run in runs) run.run.telemetry,
-    ]);
+    declaredSpeedUnits = [
+      for (final run in runs) sessionSpeedUnit(run.run.telemetry),
+    ];
     _scheduleRecovery();
   }
 

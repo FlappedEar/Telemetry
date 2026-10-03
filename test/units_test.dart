@@ -22,7 +22,7 @@ void main() {
   setUp(() {
     directory = Directory.systemTemp.createTempSync('units');
     speedUnitSetting.value = SpeedUnitSetting.automatic;
-    detectedSpeedUnit = '';
+    declaredSpeedUnits = const [];
   });
   tearDown(() => directory.deleteSync(recursive: true));
 
@@ -35,43 +35,101 @@ void main() {
     expect(sessionSpeedUnit(none), '');
     // The recorded channel keeps no unit: values are never converted.
     expect(kmh.channels[kmh.aliases['speed']]!.unit, '');
-    expect(commonSpeedUnit([kmh, kmh]), 'km/h');
-    expect(commonSpeedUnit([kmh, mph]), '');
-    expect(commonSpeedUnit([kmh, none]), '');
   });
 
-  test('the setting overrides the detected and the recorded unit', () {
-    detectedSpeedUnit = 'km/h';
-    expect(speedUnitLabel(), 'km/h');
-    expect(speedUnitLabel('mph'), 'mph');
-    expect(speedUnitLabel('kmh'), 'km/h');
-    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
-    expect(speedUnitLabel(), 'mph');
-    expect(speedUnitLabel('km/h'), 'mph');
-    expect(displayUnit('velocity-obd', ''), 'mph');
+  test('a declared unit is never overridden by the setting', () {
+    declaredSpeedUnits = const ['km/h'];
+    for (final setting in SpeedUnitSetting.values) {
+      speedUnitSetting.value = setting;
+      expect(speedUnitLabel(), 'km/h', reason: '$setting');
+      expect(speedUnitLabel('km/h'), 'km/h', reason: '$setting');
+      expect(speedUnitLabel('kmh'), 'km/h', reason: '$setting');
+      expect(speedUnitLabel('mph'), 'mph', reason: '$setting');
+      expect(displayUnit('velocity-obd', ''), 'km/h', reason: '$setting');
+    }
     expect(displayUnit('coolant_temp-obd', '°C'), '°C');
   });
 
-  testWidgets('the settings dialog changes the label', (tester) async {
-    detectedSpeedUnit = 'km/h';
-    await tester.pumpWidget(
-      MaterialApp(
-        builder: (context, child) => SpeedUnitScope(child: child!),
-        home: Scaffold(
-          appBar: AppBar(actions: const [SettingsButton()]),
-          body: Builder(builder: (context) => Text(speedUnitOf(context))),
+  test('the setting is assumed only for unlabelled speeds', () {
+    declaredSpeedUnits = const [''];
+    expect(speedUnitLabel(), '');
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    expect(speedUnitLabel(), 'mph');
+    expect(displayUnit('velocity', ''), 'mph');
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+    expect(speedUnitLabel(), 'km/h');
+    // A channel's own unit still wins over the assumption.
+    expect(speedUnitLabel('mph'), 'mph');
+  });
+
+  test('a day mixing units shows none rather than a wrong one', () {
+    // km/h declared, one recording unlabelled.
+    declaredSpeedUnits = const ['km/h', ''];
+    expect(speedUnitLabel(), '');
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    expect(speedUnitLabel(), '');
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+    expect(speedUnitLabel(), 'km/h');
+    // Recordings declaring different units.
+    declaredSpeedUnits = const ['km/h', 'mph'];
+    for (final setting in SpeedUnitSetting.values) {
+      speedUnitSetting.value = setting;
+      expect(speedUnitLabel(), '', reason: '$setting');
+    }
+    expect(daySpeedUnit(const [], 'mph'), '');
+  });
+
+  Future<void> pumpApp(WidgetTester tester) => tester.pumpWidget(
+    MaterialApp(
+      builder: (context, child) => SpeedUnitScope(child: child!),
+      home: Scaffold(
+        appBar: AppBar(actions: const [SettingsButton()]),
+        body: Builder(
+          builder: (context) => Text('speed ${speedUnitOf(context)}'),
         ),
       ),
-    );
-    expect(find.text('km/h'), findsOneWidget);
+    ),
+  );
+
+  Future<void> chooseInSettings(WidgetTester tester, String label) async {
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Automatic: km/h'), findsOneWidget);
-    await tester.tap(find.text('mph'));
+    await tester.tap(find.text(label));
     await tester.pumpAndSettle();
-    expect(speedUnitSetting.value, SpeedUnitSetting.milesPerHour);
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
-    expect(find.text('mph'), findsOneWidget);
+  }
+
+  testWidgets('choosing mph keeps a day recorded in km/h in km/h', (
+    tester,
+  ) async {
+    declaredSpeedUnits = const ['km/h'];
+    await pumpApp(tester);
+    expect(find.text('speed km/h'), findsOneWidget);
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('declare km/h'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    await chooseInSettings(tester, 'mph');
+    expect(speedUnitSetting.value, SpeedUnitSetting.milesPerHour);
+    expect(find.text('speed km/h'), findsOneWidget);
+    expect(find.text('speed mph'), findsNothing);
+  });
+
+  testWidgets('the settings dialog labels unlabelled speeds', (tester) async {
+    declaredSpeedUnits = const [''];
+    await pumpApp(tester);
+    expect(find.text('speed '), findsOneWidget);
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Its recordings do not say their speed unit.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    await chooseInSettings(tester, 'mph');
+    expect(find.text('speed mph'), findsOneWidget);
   });
 }
