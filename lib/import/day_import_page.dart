@@ -16,6 +16,7 @@ import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
+import '../l10n.dart';
 import '../settings_dialog.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
@@ -632,18 +633,13 @@ class _DayImportPageState extends State<DayImportPage> {
       () => openDay(path);
 
   // Built outside the state so the isolate's closure holds only its inputs.
-  static OpenedDay Function() _relinkJob(
+  static RelinkedDay Function() _relinkJob(
     String path,
     String folder,
     List<MissingRecording> missing,
     List<MissingRecording> alternatives,
   ) =>
-      () => relinkDay(
-        path,
-        folder,
-        missing,
-        missingAlternatives: alternatives,
-      ).day;
+      () => relinkDay(path, folder, missing, missingAlternatives: alternatives);
 
   /// The day to open: on phones from the days saved in the app, else from
   /// the open dialog.
@@ -697,10 +693,25 @@ class _DayImportPageState extends State<DayImportPage> {
         if (!await _cannotOpen(day) || !mounted) return;
         final folder = await widget.documents.pickFolder();
         if (folder == null || !mounted) return;
-        day = await Isolate.run(
+        final relinked = await Isolate.run(
           _relinkJob(path, folder, day.missing, day.missingAlternatives),
         );
         if (!mounted) return;
+        day = relinked.day;
+        // An RCZ found only by its name that is another drive: not used.
+        final different = [
+          for (final file in relinked.differentAlternatives.values)
+            p.basename(file),
+        ];
+        if (different.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.l10n.fusionRelinkDifferent(different.join(', ')),
+              ),
+            ),
+          );
+        }
       }
       await _showOpened(
         DayResultsController.opened(

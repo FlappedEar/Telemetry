@@ -326,29 +326,33 @@ class _DayResultsPageState extends State<DayResultsPage> {
       final differentRcz = [
         for (final file in differentAlternatives.values) p.basename(file),
       ];
-      if (differentRcz.isNotEmpty) {
-        _tell(context.l10n.fusionRelinkDifferent(differentRcz.join(', ')));
-      }
+      final rczMessage = differentRcz.isEmpty
+          ? null
+          : context.l10n.fusionRelinkDifferent(differentRcz.join(', '));
       final used = {
         for (final runId in search.alternatives.keys)
           if (!differentAlternatives.containsKey(runId)) runId,
       };
       if (day.missing.length == missing.length && used.isEmpty) {
-        if (differentRcz.isNotEmpty && search.found.isEmpty) return;
         final names = [
           for (final recording in missing)
             if (search.different.containsKey(recording.runId))
               p.basename(search.different[recording.runId]!),
         ];
         _tell(
-          names.isEmpty
-              ? 'No missing recording was found in that folder.'
-              : '${names.join(', ')} in that folder '
-                    '${names.length == 1 ? 'is a different recording' : 'are different recordings'}'
-                    ' and ${names.length == 1 ? 'was' : 'were'} not used.',
+          [
+            if (names.isNotEmpty)
+              '${names.join(', ')} in that folder '
+                  '${names.length == 1 ? 'is a different recording' : 'are different recordings'}'
+                  ' and ${names.length == 1 ? 'was' : 'were'} not used.',
+            ?rczMessage,
+            if (names.isEmpty && rczMessage == null)
+              'No missing recording was found in that folder.',
+          ].join('\n'),
         );
         return;
       }
+      if (rczMessage != null) _tell(rczMessage);
       if (day.analysis == null) return;
       final replace = widget.replace;
       if (replace != null) {

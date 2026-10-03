@@ -582,6 +582,141 @@ void main() {
     },
   );
 
+  test('an RCZ added to a session whose RCZ could not be aligned replaces it '
+      'in the file at once', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final plan = prepareTelemetryImport([vbo, rcz]);
+    final primary = plan.runs.firstWhere(
+      (run) => run.format == RecordingFormat.vbo,
+    );
+    final a = plan.runs.firstWhere((run) => run.format == RecordingFormat.rcz);
+    // A that cannot be aligned: its clock says 40 s later.
+    final shifted = TelemetryRunProposal(
+      id: a.id,
+      sourceId: a.sourceId,
+      sourcePath: a.sourcePath,
+      format: a.format,
+      contentSha256: a.contentSha256,
+      laps: a.laps,
+      telemetry: TelemetrySession(
+        duration: a.telemetry.duration,
+        startTime: a.telemetry.startTime,
+        metadata: {
+          ...a.telemetry.metadata,
+          'firstTimestampMilliseconds': '${fusionPairOrigin + 40100}',
+        },
+        channels: a.telemetry.channels,
+        aliases: a.telemetry.aliases,
+        warnings: a.telemetry.warnings,
+        timingGates: a.telemetry.timingGates,
+        sampleCount: a.telemetry.sampleCount,
+      ),
+    );
+    final notAligned = fuseRunRecordings(primary, shifted);
+    expect(notAligned.fused, isFalse);
+    expect(notAligned.alternative, isNotNull);
+    final alone = importDay([vbo]);
+    final runId = alone.runs.single.run.id;
+    final held = _HeldFusions();
+    final controller = DayResultsController(
+      runs: alone.runs,
+      analysis: alone.analysis!,
+      fusions: {runId: notAligned},
+      appender: _SyncAppender(),
+      fusionRunner: held.call,
+    );
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    // B: the same drive exported again.
+    final again = Directory('${directory.path}/again')..createSync();
+    final (_, b) = writeFusionPair(
+      again.path,
+      satellites: true,
+      satelliteDifference: 6,
+    );
+    final addition = await controller.addRecordings([b]);
+    expect(addition.combined, ['Session 1']);
+    expect(addition.savedTo, path);
+    controller.dispose(); // before B is lined up
+    final sources = ((_runJson(path)['sources'] as Map)['telemetry'] as List)
+        .cast<Map<String, Object?>>();
+    expect(sources, hasLength(2), reason: 'B takes A\'s entry');
+    expect(sources.last['id'], a.sourceId);
+    expect(
+      (sources.last['reference'] as Map)['relativePath'],
+      'again/drive.rcz',
+    );
+    expect(_runJson(path)['fusion'], isNull);
+
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    await opened.fusionsSettled;
+    final fusion = opened.fusion(runId)!;
+    expect(fusion.fused, isTrue, reason: 'B is the source');
+    expect(fusion.alternative!.sourcePath, b);
+  });
+
+  test('an RCZ whose alignment failed is still saved, to try again', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final first = importDay([vbo]);
+    final runId = first.runs.single.run.id;
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      fusionRunner: (_) => throw StateError('out of memory'),
+    );
+    addTearDown(controller.dispose);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    await controller.addRecordings([rcz]);
+    await controller.fusionsSettled;
+    expect(controller.fusion(runId), isNull);
+    expect(controller.fusionPending(runId), isNull);
+    // Saved again later, it is still the session's source.
+    await controller.save(path);
+    final sources = (_runJson(path)['sources'] as Map)['telemetry'] as List;
+    expect(sources, hasLength(2));
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    await opened.fusionsSettled;
+    expect(opened.fusion(runId)!.fused, isTrue, reason: 'tried again');
+  });
+
+  group('a fusion isolate', () {
+    test('returns its result', () async {
+      final (vbo, rcz) = writeFusionPair(directory.path);
+      final plan = prepareTelemetryImport([vbo, rcz]);
+      final primary = plan.runs.firstWhere(
+        (run) => run.format == RecordingFormat.vbo,
+      );
+      final alternative = plan.runs.firstWhere(
+        (run) => run.format == RecordingFormat.rcz,
+      );
+      final task = isolateFusionRunner(
+        (cancelled) =>
+            fuseRunRecordings(primary, alternative, cancelled: cancelled),
+      );
+      expect((await task.result)!.fused, isTrue);
+    });
+
+    test('cancelled before it has started, stops with OperationCancelled', () {
+      final task = isolateFusionRunner((_) => null);
+      task.cancel();
+      expect(task.result, throwsA(isA<OperationCancelled>()));
+    });
+
+    test('an error inside it reaches the caller as an error', () {
+      final task = isolateFusionRunner(
+        (_) => throw StateError('broken recording'),
+      );
+      expect(
+        task.result,
+        throwsA(predicate((error) => '$error'.contains('broken recording'))),
+      );
+    });
+  });
+
   test('an RCZ added to a saved VBO session is combined and saved', () async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final first = importDay([vbo]);

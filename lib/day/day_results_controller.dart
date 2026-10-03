@@ -563,6 +563,10 @@ final class DayResultsController extends ChangeNotifier {
     // used.
     if (_disposed || _fusionGenerations[runId] != generation) return;
     _fusionPending.remove(runId);
+    // Without a result (the job failed, or the run's recording is not the
+    // one it was started for), a recording that was added stays in
+    // [_pendingRecordings]: saved as the run's source, so the day opened
+    // again tries once more.
     final named = _named(runId);
     if (result != null &&
         named != null &&

@@ -175,7 +175,10 @@ Map<String, Object?> dayDocument({
     final telemetry = <Object?>[];
     var primaryWritten = false;
     final fusion = fusions[run.id];
-    final alternative = fusion?.alternative ?? pendingAlternatives[run.id];
+    // An RCZ added and not aligned yet replaces the one the run's fusion
+    // could use.
+    final pending = pendingAlternatives[run.id];
+    final alternative = pending ?? fusion?.alternative;
     var alternativeWritten = alternative == null;
     for (final value in (sources['telemetry'] as List?) ?? const []) {
       final source = _object(value);
@@ -219,7 +222,7 @@ Map<String, Object?> dayDocument({
       alternativeWritten = true;
     }
     sources['telemetry'] = telemetry;
-    if (fusion?.decision case final decision? when alternativeWritten) {
+    if (fusion?.decision case final decision? when alternativeWritten && pending == null) {
       json['fusion'] = decision;
     }
     if (_object(sources['video']) case final video?) {
