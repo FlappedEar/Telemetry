@@ -216,6 +216,47 @@ final class DayResultsController extends ChangeNotifier {
     return null;
   }
 
+  /// The laps [row] can be compared with: the eligible laps of its group.
+  List<DayLapRow> comparisonCandidates([DayLapRow? row]) =>
+      dayComparisonCandidates(_analysis, row);
+
+  /// Whether [a] and [b] are two eligible laps of one group.
+  bool comparable(DayLapRow a, DayLapRow b) =>
+      dayLapsComparable(_analysis, a, b);
+
+  /// The best lap to compare [row] with: the best of the group, or of its
+  /// session with [sameRun]; when that is [row] itself, the next fastest.
+  DayLapRow? comparisonPartner(DayLapRow row, {bool sameRun = false}) {
+    final best = dayBestComparisonLap(_analysis, row, sameRun: sameRun);
+    if (best != null && best.reference != row.reference) return best;
+    final others = [
+      for (final candidate in comparisonCandidates(row))
+        if (candidate.reference != row.reference &&
+            (!sameRun || candidate.runId == row.runId))
+          candidate,
+    ]..sort((x, y) => x.durationSeconds.compareTo(y.durationSeconds));
+    return others.firstOrNull;
+  }
+
+  // The last comparisons built, kept while their pages are open.
+  final _comparisons = <(DayLapReference, DayLapReference), LapComparison>{};
+
+  /// [a] against [b] on a shared track-position axis, built once per pair
+  /// from the day's recordings; null when either is not a timed lap here.
+  LapComparison? comparison(DayLapRow a, DayLapRow b) {
+    final key = (a.reference, b.reference);
+    final cached = _comparisons.remove(key);
+    if (cached != null) return _comparisons[key] = cached;
+    final lapA = dayComparisonLap(runs, a), lapB = dayComparisonLap(runs, b);
+    if (lapA == null || lapB == null) return null;
+    final built = LapComparison(lapA, lapB);
+    _comparisons[key] = built;
+    while (_comparisons.length > 4) {
+      _comparisons.remove(_comparisons.keys.first);
+    }
+    return built;
+  }
+
   /// Shows [groupId]'s ranking first.
   void chooseGroup(String groupId) {
     if (groupId == _analysis.chosenGroupId) return;

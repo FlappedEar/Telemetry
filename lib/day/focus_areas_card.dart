@@ -3,6 +3,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
+import 'time_losses_card.dart' show CompareLaps, lapStretch;
 import 'track_map.dart';
 
 /// The heading of a focus area's kind.
@@ -32,6 +33,7 @@ class FocusAreasCard extends StatelessWidget {
     this.gate,
     this.wide = false,
     this.onOpenLap,
+    this.onCompare,
   });
 
   /// Null while the theoretical best is calculated for the first time.
@@ -45,6 +47,7 @@ class FocusAreasCard extends StatelessWidget {
   final (Offset, Offset)? gate;
   final bool wide;
   final void Function(DayLapRow lap)? onOpenLap;
+  final CompareLaps? onCompare;
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +104,7 @@ class FocusAreasCard extends StatelessWidget {
             gate: gate,
             wide: wide,
             onOpenLap: onOpenLap,
+            onCompare: onCompare,
           ),
         ),
       ),
@@ -160,6 +164,7 @@ class FocusAreaPage extends StatefulWidget {
     this.gate,
     this.wide = false,
     this.onOpenLap,
+    this.onCompare,
   });
 
   final DayTheoreticalBest result;
@@ -171,6 +176,7 @@ class FocusAreaPage extends StatefulWidget {
   final (Offset, Offset)? gate;
   final bool wide;
   final void Function(DayLapRow lap)? onOpenLap;
+  final CompareLaps? onCompare;
 
   @override
   State<FocusAreaPage> createState() => _FocusAreaPageState();
@@ -337,6 +343,30 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
                       onPressed: () => widget.onOpenLap!(lap),
                     ),
               ],
+            ),
+          if (widget.onCompare != null &&
+              first != null &&
+              second != null &&
+              first.reference != second.reference)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey('focusCompare'),
+                icon: const Icon(Icons.compare_arrows),
+                label: const Text('Compare laps A and B'),
+                onPressed: () => widget.onCompare!(
+                  first,
+                  second,
+                  _segment < 0
+                      ? null
+                      : lapStretch(
+                          widget.result,
+                          first,
+                          widget.result.segments[_segment].startProgressMeters,
+                          widget.result.segments[_segment].endProgressMeters,
+                        ),
+                ),
+              ),
             ),
         ],
       ),

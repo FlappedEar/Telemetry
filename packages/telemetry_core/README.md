@@ -202,6 +202,23 @@ a background isolate.
   group's eligible laps, `dayFocusAreas` the theoretical best, and
   `dayReport` assembles the report from what was computed, with
   `dayDecisionsKey` marking results computed under other decisions stale.
+- Lap detail and A/B comparison (Overlays `MapLayers`, `TrackGeometry` and
+  the comparison, map-layer and lap-chart functions of its app, `d4d1039`):
+  `timeSeries` gives a channel's samples over a lap on a time axis for a chart
+  (`ChartSeries`: runs never joined across a gap, the range, the unit, whether
+  braking is drawn upward, and why there is nothing when something is wrong),
+  and `lapChartChannels` the channels a lap's charts show first.
+  `LapComparison` compares two laps of one group on a track-position axis
+  built from lap A's own trace: the channels both recorded, `deltaSeries`
+  (Δ time, A − B, positive when A is behind) and `channelSeries` by position,
+  each lap's time and map position at a position, both traces on one map
+  normalization (`sharedMapGeometry`, `mapTrace`, `mapPointAt`), and
+  `mapLayer`, one lap's line coloured by speed, the Δ time, lateral or
+  longitudinal G, throttle, the measured brake or a recorded temperature
+  (`channelAlongProgress` and `placeOnMap`, never bridging a gap, an
+  implausible reading or a placeholder zero, and never inventing a channel).
+  `dayComparisonCandidates`, `dayLapsComparable`, `dayBestComparisonLap` and
+  `dayComparisonLap` choose the laps on a day. Video is not ported.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.
@@ -247,6 +264,10 @@ summaries, temperature associations, focus areas and the day report
 `OutingDayReport.cpp` and the day-report and association steps of Overlays'
 app, `d4d1039`) against `test/parity/dayreport_reference.json` from
 `tool/cpp_dayreport_dump`, comparing whole documents.
+`test/parity/comparison_parity_test.dart` does the same for the lap detail
+and A/B comparison (`MapLayers.cpp`, `TrackGeometry.cpp` and the comparison,
+map-layer and lap-chart functions of Overlays' app, `d4d1039`) against
+`test/parity/comparison_reference.json` from `tool/cpp_comparison_dump`.
 
 Known, deliberate differences:
 
@@ -283,6 +304,13 @@ Known, deliberate differences:
   Overlays' ranking does while it loads.
 - **`timingGateRevision`** (`gates-v1`) is not here; it belongs with the other
   document ids.
+- **Lap chart channels.** Without a remembered choice, `lapChartChannels`
+  adds the throttle (or else the brake) as a fourth chart when recorded;
+  Overlays shows speed, lateral and longitudinal G and the pedals only when
+  added (`includePedals: false` is its rule).
+- **A comparison** is built from the two laps' recordings the day already
+  holds; Overlays loads and verifies each lap from the project
+  (`loadOutingLapDetail`) and keeps its pair in the document.
 
 ## Development
 

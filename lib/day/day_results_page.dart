@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import 'channel_cards.dart';
+import 'comparison_page.dart';
 import 'consistency_card.dart';
 import 'day_results_controller.dart';
 import 'day_report_page.dart';
@@ -83,6 +84,35 @@ class _DayResultsPageState extends State<DayResultsPage> {
       builder: (_) => LapPage(controller: _controller, row: row),
     ),
   );
+
+  Future<void> _compare(DayLapRow a, DayLapRow b, [(double, double)? focus]) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              ComparisonPage(controller: _controller, a: a, b: b, focus: focus),
+        ),
+      );
+
+  /// Asks for lap A, then lap B of its group, and compares them.
+  Future<void> _pickComparison() async {
+    final a = await pickComparisonLap(
+      context,
+      title: 'Lap A',
+      candidates: _controller.comparisonCandidates(),
+    );
+    if (a == null || !mounted) return;
+    final b = await pickComparisonLap(
+      context,
+      title: 'Compare ${a.displayName} with',
+      candidates: [
+        for (final row in _controller.comparisonCandidates(a))
+          if (row.reference != a.reference) row,
+      ],
+      suggested: _controller.comparisonPartner(a),
+    );
+    if (b == null || !mounted) return;
+    await _compare(a, b);
+  }
 
   void _openReport() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -424,6 +454,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           gate: _mapGate,
           wide: wide,
           onOpenLap: _open,
+          onCompare: _compare,
         ),
         const SizedBox(height: 12),
         FocusAreasCard(
@@ -435,6 +466,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           gate: _mapGate,
           wide: wide,
           onOpenLap: _open,
+          onCompare: _compare,
         ),
         const SizedBox(height: 12),
         ConsistencyCard(
@@ -592,7 +624,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
   List<Widget> _lapList(BuildContext context) {
     final theme = Theme.of(context);
     return [
-      Text('Laps', style: theme.textTheme.titleSmall),
+      Row(
+        children: [
+          Expanded(child: Text('Laps', style: theme.textTheme.titleSmall)),
+          if (_controller.comparisonCandidates().length >= 2)
+            TextButton.icon(
+              key: const ValueKey('lapsCompare'),
+              onPressed: _pickComparison,
+              icon: const Icon(Icons.compare_arrows),
+              label: const Text('Compare two laps'),
+            ),
+        ],
+      ),
       for (final row in _controller.analysis.rows) _lapTile(context, row),
     ];
   }
