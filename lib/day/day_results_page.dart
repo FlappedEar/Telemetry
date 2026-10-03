@@ -227,6 +227,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Future<void> _addRecordings() async {
     final paths = await widget.pickers.pickRecordings();
     if (paths.isEmpty || !mounted) return;
+    // A session's clock check or primary change finishes first.
+    if (_controller.recordingsBusy) {
+      _tell(context.l10n.recordingsBusyAdd);
+      return;
+    }
     await _controller.addRecordings(paths);
   }
 
@@ -352,6 +357,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
       _tell(context.l10n.waitThenFindRecordings);
       return;
     }
+    if (_controller.recordingsBusy) {
+      _tell(context.l10n.recordingsBusyFind);
+      return;
+    }
     if (_controller.dirty) {
       _tell(context.l10n.saveThenFindRecordings);
       return;
@@ -373,6 +382,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           _controller.dirty ||
           _controller.runs.length != sessions) {
         _tell(context.l10n.recordingsAddedMeanwhile);
+        return;
+      }
+      // A session's recordings being checked or changed would be dropped.
+      if (_controller.recordingsBusy) {
+        _tell(context.l10n.recordingsBusyFind);
         return;
       }
       // An RCZ found only by its name that is not the same drive: said, not
@@ -448,6 +462,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
       _tell(l10n.retryRecordingsWaitAdding);
       return;
     }
+    if (_controller.recordingsBusy) {
+      _tell(l10n.recordingsBusyRetry);
+      return;
+    }
     if (_controller.dirty) {
       _tell(l10n.retryRecordingsSaveFirst);
       return;
@@ -470,6 +488,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
       }
       if (_controller.dirty) {
         _tell(l10n.retryRecordingsChangedMeanwhile);
+        return;
+      }
+      // A session's recordings being checked or changed would be dropped.
+      if (_controller.recordingsBusy) {
+        _tell(l10n.recordingsBusyRetry);
         return;
       }
       if (day.missing.length >= missing && alternatives == 0) {
@@ -651,7 +674,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
               key: const ValueKey('addRecordings'),
               tooltip: context.l10n.addRecordings,
               icon: const Icon(Icons.playlist_add),
-              onPressed: _controller.adding || _controller.saving || _relinking
+              onPressed:
+                  _controller.adding ||
+                      _controller.saving ||
+                      _relinking ||
+                      _controller.recordingsBusy
                   ? null
                   : _addRecordings,
             ),
@@ -728,9 +755,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, child) => PopScope(
-        canPop: !_controller.adding,
+        canPop: !_controller.adding && !_controller.recordingsBusy,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) _tell(context.l10n.waitUntilSessionAdded);
+          if (didPop) return;
+          _tell(
+            _controller.adding
+                ? context.l10n.waitUntilSessionAdded
+                : context.l10n.recordingsBusyLeave,
+          );
         },
         child: child!,
       ),

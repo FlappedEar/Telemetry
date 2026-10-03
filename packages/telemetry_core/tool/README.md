@@ -276,6 +276,18 @@ Commands (each prints JSON):
   `preferAlternative`; `*=<rule>` for every other conflicting channel, as
   Overlays needs a rule for each), and saves the day. Prints the alignment,
   the review's channels and conflicts, and `inspect`.
+- `primary <project> <run>`: Overlays makes the run's other recording its
+  primary, as Run details' "Make primary" does (KAN-90:
+  `setRunPrimarySource`), and saves the day. Prints the new primary source
+  id and `inspect`.
+- `unfuse <project> <run>`: Overlays removes the run's fusion, as Run
+  details' "Remove fusion" does (KAN-103: `removeRunFusion`), and saves the
+  day. Prints `inspect`.
+- `clock <project> <run>`: Overlays compares the clocks of the run's other
+  recording and its primary, as Run details' "Check clock" does (KAN-101:
+  `checkRunRecordingAlignment`), and prints the alignment (status, reason,
+  offset, uncertainty, drift, correlation, windows, declared offset).
+  Nothing is saved.
 
 `test/day/overlays_roundtrip_test.dart` (skipped unless
 `FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) runs both directions on the shared
@@ -331,6 +343,17 @@ Overlays' document with `savedRevision` one higher (and the group still
 applied. `FET_FUSION_ROUNDTRIP_DAY=<folder>` does the same for every VBO/RCZ
 pair of a folder (each conflicting channel `primaryOnly`), for example a
 real day; it prints counts only.
+
+`test/day/overlays_primary_roundtrip_test.dart` (also skipped unless
+`FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) checks a run's recordings (FET-57)
+on the same synthetic pair, fused by Overlays: a primary Overlays made
+(`primary`) opens in Telemetry with the RCZ as the run and the VBO kept
+beside it, and Telemetry's re-save is Overlays' document; Telemetry making
+the RCZ primary on a copy of the day writes the document Overlays' `primary`
+writes, and Overlays sees the same day in it; Telemetry refusing the
+alignment writes the document Overlays' `unfuse` writes; and Telemetry's
+clock check measures what Overlays' `clock` measures, and accepting it saves
+the decision Overlays approved.
 
 The committed day in `../fetproject/test/fixtures/roundtrip` was built by
 `create` from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on

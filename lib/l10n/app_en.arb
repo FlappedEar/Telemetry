@@ -3819,5 +3819,235 @@
   "segmentReviewUncertainOther": "Uncertain boundary",
   "@segmentReviewUncertainOther": {
     "description": "An uncertainty reason this version of the app does not know."
+  },
+  "recordingsKeptApart": "Its {format} is kept beside it and not combined",
+  "@recordingsKeptApart": {
+    "description": "Quiet line under a session whose other recording (such as its RCZ, or its VBO after the RCZ was made primary) is kept beside it without being combined: the session's analysis uses its own recording only.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsKeptApartUntilReopened": "Its {format} is kept beside it and not combined until the day is opened again",
+  "@recordingsKeptApartUntilReopened": {
+    "description": "Like recordingsKeptApart, for a VBO session whose RCZ the user refused: the day's file cannot store that choice, so the RCZ is lined up and combined again automatically when the day is opened again.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsCheckClock": "Check clock",
+  "@recordingsCheckClock": {
+    "description": "Button under a session with two recordings (a VBO and an RCZ): measures again how the other recording's clock lines up with the session's, to accept or refuse."
+  },
+  "recordingsMakePrimary": "Make {format} primary",
+  "@recordingsMakePrimary": {
+    "description": "Button under a session with two recordings: the other recording (such as the RCZ) becomes the session's primary recording; its laps and results are calculated again from it.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsDontCombine": "Don't combine",
+  "@recordingsDontCombine": {
+    "description": "Button under a session combined with its other recording: keep the other recording beside it without combining it (refuse the alignment)."
+  },
+  "recordingsChangingPrimary": "Reading the {format} as this session's recording…",
+  "@recordingsChangingPrimary": {
+    "description": "Quiet line under a session while its other recording (such as the RCZ) is being read as its primary recording in the background.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "clockChecking": "Comparing the clocks of the {primary} and the {alternative}…",
+  "@clockChecking": {
+    "description": "Quiet line under a session while the clocks of its two recordings are being compared in the background.",
+    "placeholders": {
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "clockAligned": "The clocks line up.",
+  "@clockAligned": {
+    "description": "Result of a session's clock check: the other recording's clock lines up with the session's recording."
+  },
+  "clockNotAligned": "The clocks cannot be lined up: {reason}.",
+  "@clockNotAligned": {
+    "description": "Result of a session's clock check when the recordings could not be lined up in time; reason is one of the fusionReason texts.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "their speed traces do not line up clearly"
+      }
+    }
+  },
+  "clockMeasured": "Measured from the speed traces: {primary} time = {alternative} time {offset} ± {uncertainty}",
+  "@clockMeasured": {
+    "description": "The clock offset measured between a session's two recordings. offset is signed, such as +0.10 s; uncertainty such as 0.02 s.",
+    "placeholders": {
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "offset": {
+        "type": "String",
+        "example": "+0.10 s"
+      },
+      "uncertainty": {
+        "type": "String",
+        "example": "0.02 s"
+      }
+    }
+  },
+  "clockDrift": "Clock drift: {ppm} ppm",
+  "@clockDrift": {
+    "description": "How fast the two recordings' clocks drift apart, in parts per million, as measured.",
+    "placeholders": {
+      "ppm": {
+        "type": "String",
+        "example": "12"
+      }
+    }
+  },
+  "clockCorrelation": "Speed correlation {correlation} over {overlap} of overlap; {used} of {windows} stretches agree",
+  "@clockCorrelation": {
+    "description": "Evidence of a clock check: how closely the two speed traces match, over how long both recordings run, and how many stretches of that overlap give the same offset.",
+    "placeholders": {
+      "correlation": {
+        "type": "String",
+        "example": "0.987"
+      },
+      "overlap": {
+        "type": "String",
+        "example": "640 s"
+      },
+      "used": {
+        "type": "int",
+        "example": "5"
+      },
+      "windows": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "clockDeclared": "The loggers' clocks say {offset}",
+  "@clockDeclared": {
+    "description": "Evidence of a clock check: the offset the two loggers' own start times give, such as +0.10 s.",
+    "placeholders": {
+      "offset": {
+        "type": "String",
+        "example": "+0.10 s"
+      }
+    }
+  },
+  "clockNoDeclared": "The loggers do not both state a start time",
+  "@clockNoDeclared": {
+    "description": "Evidence of a clock check: at least one recording has no start time of its own."
+  },
+  "clockAccept": "Accept and combine",
+  "@clockAccept": {
+    "description": "Button after a clock check whose clocks line up: combine the other recording with the session using the measured offset."
+  },
+  "clockRefuse": "Refuse",
+  "@clockRefuse": {
+    "description": "Button after a clock check: do not use the measured alignment; the other recording is kept beside the session without combining it."
+  },
+  "clockRefuseNote": "Refusing keeps the {alternative} beside the session without combining it; its analysis then uses the {primary} only.",
+  "@clockRefuseNote": {
+    "description": "Explains the Refuse button of a clock check.",
+    "placeholders": {
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "clockReopenNote": "This session reads its VBO and keeps its RCZ, and the day's file cannot keep a refusal for such a session: when the day is opened again, the {alternative} is lined up and combined again.",
+  "@clockReopenNote": {
+    "description": "Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.",
+    "placeholders": {
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsClockFailed": "The clocks could not be compared. Try again.",
+  "@recordingsClockFailed": {
+    "description": "Under a session: its clock check failed; nothing changed."
+  },
+  "recordingsPrimaryMissing": "The {format} is no longer where it was read from. Put it back there, then make it primary.",
+  "@recordingsPrimaryMissing": {
+    "description": "Under a session: Make primary was refused because the other recording's file is gone; nothing changed.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsPrimaryChanged": "The {format} file has changed since it was read. Open the day again, then make it primary.",
+  "@recordingsPrimaryChanged": {
+    "description": "Under a session: Make primary was refused because the other recording's file now has other content; nothing changed.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsPrimaryFailed": "The {format} could not be read as this session's recording.",
+  "@recordingsPrimaryFailed": {
+    "description": "Under a session: Make primary failed while reading the other recording; nothing changed.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "recordingsBusyFind": "Wait until the session's recordings are checked or changed, then find the others.",
+  "@recordingsBusyFind": {
+    "description": "Find recordings was refused because a clock check or a primary change is running."
+  },
+  "recordingsBusyRetry": "Wait until the session's recordings are checked or changed, then retry.",
+  "@recordingsBusyRetry": {
+    "description": "Retry recordings was refused because a clock check or a primary change is running."
+  },
+  "recordingsBusyLeave": "Wait until the session's recordings are checked or changed.",
+  "@recordingsBusyLeave": {
+    "description": "Leaving the day was refused because a clock check or a primary change is running."
+  },
+  "recordingsUnsaved": "Save the day before changing the primary recording.",
+  "@recordingsUnsaved": {
+    "description": "Under a session: Make primary was refused because the day has unsaved changes; the user saves first."
+  },
+  "recordingsBusyAdd": "Wait until the session's recordings are checked or changed, then add recordings.",
+  "@recordingsBusyAdd": {
+    "description": "Add recordings was refused because a clock check or a primary change is running."
   }
 }

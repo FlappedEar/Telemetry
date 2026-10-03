@@ -2551,4 +2551,131 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get segmentReviewUncertainOther => 'Uncertain boundary';
+
+  @override
+  String recordingsKeptApart(String format) {
+    return 'Its $format is kept beside it and not combined';
+  }
+
+  @override
+  String recordingsKeptApartUntilReopened(String format) {
+    return 'Its $format is kept beside it and not combined until the day is opened again';
+  }
+
+  @override
+  String get recordingsCheckClock => 'Check clock';
+
+  @override
+  String recordingsMakePrimary(String format) {
+    return 'Make $format primary';
+  }
+
+  @override
+  String get recordingsDontCombine => 'Don\'t combine';
+
+  @override
+  String recordingsChangingPrimary(String format) {
+    return 'Reading the $format as this session\'s recording…';
+  }
+
+  @override
+  String clockChecking(String primary, String alternative) {
+    return 'Comparing the clocks of the $primary and the $alternative…';
+  }
+
+  @override
+  String get clockAligned => 'The clocks line up.';
+
+  @override
+  String clockNotAligned(String reason) {
+    return 'The clocks cannot be lined up: $reason.';
+  }
+
+  @override
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  ) {
+    return 'Measured from the speed traces: $primary time = $alternative time $offset ± $uncertainty';
+  }
+
+  @override
+  String clockDrift(String ppm) {
+    return 'Clock drift: $ppm ppm';
+  }
+
+  @override
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  ) {
+    return 'Speed correlation $correlation over $overlap of overlap; $used of $windows stretches agree';
+  }
+
+  @override
+  String clockDeclared(String offset) {
+    return 'The loggers\' clocks say $offset';
+  }
+
+  @override
+  String get clockNoDeclared => 'The loggers do not both state a start time';
+
+  @override
+  String get clockAccept => 'Accept and combine';
+
+  @override
+  String get clockRefuse => 'Refuse';
+
+  @override
+  String clockRefuseNote(String primary, String alternative) {
+    return 'Refusing keeps the $alternative beside the session without combining it; its analysis then uses the $primary only.';
+  }
+
+  @override
+  String clockReopenNote(String alternative) {
+    return 'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the $alternative is lined up and combined again.';
+  }
+
+  @override
+  String get recordingsClockFailed =>
+      'The clocks could not be compared. Try again.';
+
+  @override
+  String recordingsPrimaryMissing(String format) {
+    return 'The $format is no longer where it was read from. Put it back there, then make it primary.';
+  }
+
+  @override
+  String recordingsPrimaryChanged(String format) {
+    return 'The $format file has changed since it was read. Open the day again, then make it primary.';
+  }
+
+  @override
+  String recordingsPrimaryFailed(String format) {
+    return 'The $format could not be read as this session\'s recording.';
+  }
+
+  @override
+  String get recordingsBusyFind =>
+      'Wait until the session\'s recordings are checked or changed, then find the others.';
+
+  @override
+  String get recordingsBusyRetry =>
+      'Wait until the session\'s recordings are checked or changed, then retry.';
+
+  @override
+  String get recordingsBusyLeave =>
+      'Wait until the session\'s recordings are checked or changed.';
+
+  @override
+  String get recordingsUnsaved =>
+      'Save the day before changing the primary recording.';
+
+  @override
+  String get recordingsBusyAdd =>
+      'Wait until the session\'s recordings are checked or changed, then add recordings.';
 }
