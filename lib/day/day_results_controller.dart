@@ -849,7 +849,8 @@ final class DayResultsController extends ChangeNotifier {
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits(const []);
     }
-    // Changes made just before leaving the day are still kept.
+    // Changes made just before leaving the day are still written; best
+    // effort, as the app may end before the write finishes.
     unawaited(flushRecovery());
     super.dispose();
   }
