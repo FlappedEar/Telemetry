@@ -1571,4 +1571,491 @@ class AppLocalizationsPl extends AppLocalizations {
   String nothingAddedError(String error) {
     return 'Nic nie dodano: $error';
   }
+
+  @override
+  String get diagnosticsTitle => 'Diagnostyka';
+
+  @override
+  String get diagnosticsRefresh => 'Odśwież';
+
+  @override
+  String get diagnosticsLastImport => 'Ostatni import';
+
+  @override
+  String get diagnosticsNoImport =>
+      'Od uruchomienia aplikacji nie zaimportowano żadnego dnia.';
+
+  @override
+  String get diagnosticsRecordingsRead => 'Odczytane nagrania';
+
+  @override
+  String get diagnosticsSessions => 'Sesje';
+
+  @override
+  String get diagnosticsSamples => 'Próbki';
+
+  @override
+  String get diagnosticsChannelValues => 'Wartości kanałów';
+
+  @override
+  String get diagnosticsMemory => 'Pamięć';
+
+  @override
+  String get diagnosticsCurrentMemory => 'Bieżąca';
+
+  @override
+  String get diagnosticsPeakMemory => 'Szczytowa';
+
+  @override
+  String get diagnosticsNotAvailable => 'Niedostępne';
+
+  @override
+  String get diagnosticsMemoryNote =>
+      'Pamięć rezydentna aplikacji według systemu; szczytowa liczona od uruchomienia aplikacji. Czasy to rzeczywisty czas na tym urządzeniu.';
+
+  @override
+  String get diagnosticsStepScan => 'Wyszukiwanie nagrań';
+
+  @override
+  String get diagnosticsStepParse => 'Odczyt i import';
+
+  @override
+  String get diagnosticsStepAnalysis => 'Analiza dnia';
+
+  @override
+  String get diagnosticsStepImportTotal => 'Import, od startu do wyników';
+
+  @override
+  String get diagnosticsStepTheoreticalBest => 'Segmenty i czas teoretyczny';
+
+  @override
+  String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
+
+  @override
+  String get reportGroupNone =>
+      'Wybierz grupę zgodnych okrążeń na stronie wyników.';
+
+  @override
+  String get reportCalculating => 'Obliczanie…';
+
+  @override
+  String get reportNotCalculated => 'Jeszcze nie obliczono.';
+
+  @override
+  String get reportOutOfDate => 'Nieaktualne po zmianie analizy.';
+
+  @override
+  String get reportUnavailable => 'Niedostępne.';
+
+  @override
+  String get reportNotInReport => 'Brak w tym raporcie.';
+
+  @override
+  String get reportChooseGroup => 'Wybierz grupę zgodności.';
+
+  @override
+  String get reportNoEligibleLap =>
+      'W tej grupie nie ma kwalifikującego się okrążenia.';
+
+  @override
+  String get reportNoSession => 'W tej grupie nie ma sesji.';
+
+  @override
+  String get reportNoEligibleLaps =>
+      'Brak kwalifikujących się okrążeń do podsumowania.';
+
+  @override
+  String get reportNoHeartRate => 'Nie nagrano tętna.';
+
+  @override
+  String get reportNoTemperature => 'Nie nagrano temperatury.';
+
+  @override
+  String get reportBestTitle => 'Najlepsze okrążenie i co zostało';
+
+  @override
+  String get reportBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String get reportTheoreticalBest => 'Teoretycznie najlepsze';
+
+  @override
+  String reportTheoreticalAvailable(String seconds) {
+    return '$seconds s rezerwy na zatwierdzonych segmentach';
+  }
+
+  @override
+  String get reportTheoreticalNoTotal =>
+      'Część segmentów nie ma zmierzonego okrążenia; brak sumy.';
+
+  @override
+  String get reportOpenBestLap => 'Otwórz najlepsze okrążenie';
+
+  @override
+  String get reportFocusIntro =>
+      'Każda pozycja zaczyna się od tego, co zmierzono. Wiersz pod spodem to hipoteza do sprawdzenia na okrążeniach, a nie przyczyna ani polecenie.';
+
+  @override
+  String reportFocusCompare(String lap, String other, String segment) {
+    return 'Porównaj $lap z $other ($segment)';
+  }
+
+  @override
+  String get reportLossesTitle => 'Największe straty czasu';
+
+  @override
+  String reportLossesIntro(String reference, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'porównano $count okrążeń',
+      few: 'porównano $count okrążenia',
+      one: 'porównano 1 okrążenie',
+    );
+    return 'Względem $reference · $_temp0. Zaobserwowana strata nie oznacza gwarantowanego ani koniecznie bezpiecznego zysku.';
+  }
+
+  @override
+  String get reportSessionsTitle => 'Sesje';
+
+  @override
+  String get reportNoEligibleLapShort => 'brak kwalifikującego się okrążenia';
+
+  @override
+  String reportSessionBest(String time) {
+    return 'najlepsze $time';
+  }
+
+  @override
+  String get reportSameAsPrevious => 'tak samo jak w poprzedniej sesji';
+
+  @override
+  String reportFasterThanPrevious(String seconds) {
+    return '$seconds s szybciej niż w poprzedniej sesji';
+  }
+
+  @override
+  String reportSlowerThanPrevious(String seconds) {
+    return '$seconds s wolniej niż w poprzedniej sesji';
+  }
+
+  @override
+  String reportEligibleLaps(int eligible, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      eligible,
+      locale: localeName,
+      other: 'kwalifikuje się',
+      few: 'kwalifikują się',
+    );
+    return '$eligible z $_temp0 $_temp1';
+  }
+
+  @override
+  String reportMedian(String time) {
+    return 'mediana $time';
+  }
+
+  @override
+  String reportConsistencyDay(String time, String spread, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return 'Typowe okrążenie $time · środkowa połowa w granicach $spread s · $_temp0';
+  }
+
+  @override
+  String reportConsistencyTooFew(int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minimum,
+      locale: localeName,
+      other: 'Mniej niż $minimum kwalifikujących się okrążeń; brak rozrzutu.',
+      few: 'Mniej niż $minimum kwalifikujące się okrążenia; brak rozrzutu.',
+      one: 'Mniej niż 1 kwalifikujące się okrążenie; brak rozrzutu.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reportCarPeak(String channel, String value, String session) {
+    return '$channel · maksimum $value ($session)';
+  }
+
+  @override
+  String reportCoolingIntervals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nagranych okresów chłodzenia',
+      few: '$count nagrane okresy chłodzenia',
+      one: '1 nagrany okres chłodzenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reportNoCooling => 'brak nagranego chłodzenia';
+
+  @override
+  String get reportNoTemperatureSamples =>
+      'Brak poprawnych próbek temperatury.';
+
+  @override
+  String reportHeartRateSummary(String mean, String minimum, String maximum) {
+    return 'średnio $mean bpm · $minimum – $maximum';
+  }
+
+  @override
+  String reportCovered(int percent) {
+    return 'pokrycie $percent%';
+  }
+
+  @override
+  String get segmentEditorTitle => 'Edytuj segmenty';
+
+  @override
+  String get segmentEditorUndo => 'Cofnij';
+
+  @override
+  String get segmentEditorRedo => 'Ponów';
+
+  @override
+  String get segmentEditorTiming =>
+      'Mierzenie czasu każdego okrążenia na jednej osi toru…';
+
+  @override
+  String get segmentEditorMapLabel =>
+      'Ślad najlepszego okrążenia z granicami segmentów';
+
+  @override
+  String segmentEditorMapLabelHighlighted(String segment) {
+    return 'Ślad najlepszego okrążenia z granicami segmentów, wyróżniono: $segment';
+  }
+
+  @override
+  String get segmentEditorAutomatic => 'Segmenty automatyczne';
+
+  @override
+  String get segmentEditorEdited => 'Poprawione segmenty';
+
+  @override
+  String segmentEditorSummary(String time, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count segmentów',
+      few: '$count segmenty',
+      one: '1 segment',
+    );
+    return 'Teoretycznie najlepsze $time · $_temp0';
+  }
+
+  @override
+  String get segmentEditorRestoreAutomatic => 'Przywróć automatyczne';
+
+  @override
+  String segmentEditorProposedFrom(String lap) {
+    return 'Zaproponowane na podstawie: $lap. Dotknij segmentu, aby go poprawić.';
+  }
+
+  @override
+  String get segmentEditorProposedFromBestLap =>
+      'Zaproponowane na podstawie najlepszego okrążenia. Dotknij segmentu, aby go poprawić.';
+
+  @override
+  String get segmentEditorCorrectionsSaved =>
+      'Twoje poprawki są zapisywane z dniem i nigdy nie są zastępowane segmentami automatycznymi.';
+
+  @override
+  String get segmentEditorTypeCorner => 'Zakręt';
+
+  @override
+  String get segmentEditorTypeStraight => 'Prosta';
+
+  @override
+  String get segmentEditorTypeSector => 'Sektor';
+
+  @override
+  String segmentEditorRow(
+    String type,
+    String start,
+    String end,
+    String length,
+  ) {
+    return '$type · $start–$end m · $length m';
+  }
+
+  @override
+  String segmentEditorRowEdited(String row) {
+    return '$row · poprawiony';
+  }
+
+  @override
+  String get segmentEditorRestoreTitle => 'Przywrócić segmenty automatyczne?';
+
+  @override
+  String get segmentEditorRestoreBody =>
+      'Twoje poprawki segmentów tego układu toru zostaną zastąpione segmentami zaproponowanymi na podstawie najlepszego okrążenia.';
+
+  @override
+  String get segmentEditorRestore => 'Przywróć';
+
+  @override
+  String get segmentEditorName => 'Nazwa';
+
+  @override
+  String get segmentEditorStart => 'Początek';
+
+  @override
+  String get segmentEditorEnd => 'Koniec';
+
+  @override
+  String get segmentEditorKeepJoined => 'Przesuń też sąsiedni segment';
+
+  @override
+  String get segmentEditorApply => 'Zastosuj';
+
+  @override
+  String get segmentEditorReset => 'Resetuj';
+
+  @override
+  String segmentEditorSplitAt(String meters) {
+    return 'Podział w punkcie $meters m';
+  }
+
+  @override
+  String get segmentEditorSplitHere => 'Podziel tutaj';
+
+  @override
+  String get segmentEditorMergeWithNext => 'Połącz z następnym';
+
+  @override
+  String segmentEditorMergeWith(String segment) {
+    return 'Połącz z $segment';
+  }
+
+  @override
+  String get segmentEditorRemove => 'Usuń';
+
+  @override
+  String get segmentEditorErrorSaving => 'Dzień jest właśnie zapisywany.';
+
+  @override
+  String get segmentEditorErrorNotCalculated =>
+      'Segmenty można edytować, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+
+  @override
+  String get segmentEditorErrorAlreadyAutomatic =>
+      'Segmenty są już automatyczne.';
+
+  @override
+  String get segmentEditorErrorNotPossible => 'Ta zmiana nie jest możliwa.';
+
+  @override
+  String get segmentEditorErrorLastSegment =>
+      'Teoretycznie najlepsze okrążenie wymaga co najmniej jednego segmentu. Zamiast tego przywróć segmenty automatyczne.';
+
+  @override
+  String get segmentEditorErrorNoLongerApproved =>
+      'Ten segment nie jest już zatwierdzony.';
+
+  @override
+  String get segmentEditorErrorNothingToUndo => 'Nie ma czego cofnąć.';
+
+  @override
+  String get segmentEditorErrorNothingToRedo => 'Nie ma czego ponowić.';
+
+  @override
+  String get segmentEditorErrorHistoryCleared =>
+      'Segmenty zmieniły się poza tym edytorem, więc historia zmian została wyczyszczona.';
+
+  @override
+  String get segmentEditorErrorInvalidStored =>
+      'Zapisane zatwierdzone segmenty są nieprawidłowe.';
+
+  @override
+  String get segmentEditorErrorOtherConfiguration =>
+      'Najpierw trzeba odrzucić segmenty zatwierdzone dla innej konfiguracji toru.';
+
+  @override
+  String segmentEditorErrorWouldBeEmpty(String segment) {
+    return 'Segment „$segment” byłby pusty.';
+  }
+
+  @override
+  String segmentEditorErrorWouldBeInvalid(String segment) {
+    return 'Segment „$segment” byłby nieprawidłowy.';
+  }
+
+  @override
+  String segmentEditorErrorWouldOverlap(String segment, String other) {
+    return 'Segment „$segment” nachodziłby na „$other”.';
+  }
+
+  @override
+  String segmentEditorErrorTooMany(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Można zatwierdzić najwyżej $count segmentów.',
+      few: 'Można zatwierdzić najwyżej $count segmenty.',
+      one: 'Można zatwierdzić najwyżej 1 segment.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentEditorErrorCrossesGate =>
+      'Tylko jeden segment może przecinać linię startu/mety.';
+
+  @override
+  String get segmentEditorErrorChooseType =>
+      'Wybierz zakręt, prostą lub sektor.';
+
+  @override
+  String get segmentEditorErrorNoAxis => 'Oś toru jest niedostępna.';
+
+  @override
+  String get segmentEditorErrorSplitInside =>
+      'Dziel wewnątrz segmentu, z dala od jego końców.';
+
+  @override
+  String get segmentEditorErrorSplitName =>
+      'Wpisz nazwę nowego segmentu (1–160 znaków).';
+
+  @override
+  String get segmentEditorErrorMergeSame =>
+      'Wybierz dwa różne zatwierdzone segmenty.';
+
+  @override
+  String get segmentEditorErrorMergeNotAdjacent =>
+      'Połączyć można tylko segmenty o wspólnej granicy.';
+
+  @override
+  String get segmentEditorErrorMergeWholeLap =>
+      'Połączenie objęłoby całe okrążenie; segment musi mieć różny początek i koniec.';
+
+  @override
+  String get segmentEditorErrorName => 'Wpisz nazwę (1–160 znaków).';
+
+  @override
+  String segmentEditorErrorBounds(String length) {
+    return 'Granice muszą leżeć między 0 a $length m.';
+  }
+
+  @override
+  String get segmentEditorErrorEmpty => 'Segment nie może być pusty.';
+
+  @override
+  String get reportStale =>
+      'Ustawienia analizy zmieniły się po obliczeniu tego wyniku.';
 }

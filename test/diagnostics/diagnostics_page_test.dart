@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/diagnostics/app_diagnostics.dart';
 import 'package:telemetry/diagnostics/diagnostics_page.dart';
@@ -81,7 +82,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(400, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      MaterialApp(
+      TelemetryApp(
         home: DiagnosticsPage(
           diagnostics: diagnostics,
           memory: () => (current: 96 * _mib, peak: 222 * _mib + _mib ~/ 2),
@@ -110,7 +111,7 @@ void main() {
   testWidgets('says what is not available', (tester) async {
     var reads = 0;
     await tester.pumpWidget(
-      MaterialApp(
+      TelemetryApp(
         home: DiagnosticsPage(
           diagnostics: AppDiagnostics(),
           memory: () {
@@ -129,6 +130,48 @@ void main() {
     // The memory is read again while the page is open.
     await tester.pump(const Duration(seconds: 2));
     expect(reads, greaterThan(before + 1));
+  });
+
+  testWidgets('the diagnostics page speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final diagnostics = AppDiagnostics()
+      ..recordImport(
+        const ImportDiagnostics(
+          steps: [
+            (name: DiagnosticSteps.scan, duration: Duration(milliseconds: 120)),
+          ],
+          recordings: 2,
+          sessions: 2,
+          samples: 100,
+          channelSamples: 400,
+        ),
+      )
+      ..recordStep(
+        DiagnosticSteps.theoreticalBest,
+        const Duration(milliseconds: 1840),
+      );
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DiagnosticsPage(
+          diagnostics: diagnostics,
+          memory: () => (current: 96 * _mib, peak: null),
+        ),
+      ),
+    );
+    expect(find.text('Diagnostyka'), findsOneWidget);
+    expect(find.text('Ostatni import'), findsOneWidget);
+    expect(find.text('Wyszukiwanie nagrań'), findsOneWidget);
+    expect(find.text('Segmenty i czas teoretyczny'), findsOneWidget);
+    expect(find.text('Pamięć'), findsOneWidget);
+    expect(find.text('Niedostępne'), findsOneWidget);
+    expect(find.text('96.0 MiB'), findsOneWidget);
+    expect(find.text('1.84 s'), findsOneWidget);
+    expect(find.text('Diagnostics'), findsNothing);
+    expect(find.text('Last import'), findsNothing);
+    expect(find.text(DiagnosticSteps.scan), findsNothing);
   });
 
   test('reads the memory the platform reports', () {

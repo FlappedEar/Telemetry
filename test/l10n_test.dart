@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:telemetry/day/theoretical_best_card.dart'
-    show TheoreticalBestText;
+    show TheoreticalBestText, shortSegmentName;
 import 'package:telemetry/format.dart';
 import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
@@ -129,6 +129,17 @@ void main() {
     expect(polish.tbSegmentName('Corners 2–3'), 'Zakręty 2–3');
     expect(polish.tbSegmentName('Straight 1'), 'Prosta 1');
     expect(polish.tbSegmentName('Corner Bus-stop'), 'Corner Bus-stop');
+    expect(polish.tbSegmentName('Corner 3 (2)'), 'Zakręt 3 (2)');
+    expect(polish.tbSegmentName('Hairpin (2)'), 'Hairpin (2)');
+    // Short names of names as written are unchanged.
+    for (final (name, short) in [
+      ('Corner 1', 'C1'),
+      ('Corners 3–4', 'C3–4'),
+      ('La-Source hairpin', 'La-Source hairpin'),
+      ('Écurie 2', 'Écurie 2'),
+    ]) {
+      expect(shortSegmentName(name), short);
+    }
   });
 
   test('every route reason from telemetry_core has a translation', () {

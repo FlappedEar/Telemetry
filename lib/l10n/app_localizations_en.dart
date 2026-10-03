@@ -1553,4 +1553,474 @@ class AppLocalizationsEn extends AppLocalizations {
   String nothingAddedError(String error) {
     return 'Nothing was added: $error';
   }
+
+  @override
+  String get diagnosticsTitle => 'Diagnostics';
+
+  @override
+  String get diagnosticsRefresh => 'Refresh';
+
+  @override
+  String get diagnosticsLastImport => 'Last import';
+
+  @override
+  String get diagnosticsNoImport => 'No day imported since the app started.';
+
+  @override
+  String get diagnosticsRecordingsRead => 'Recordings read';
+
+  @override
+  String get diagnosticsSessions => 'Sessions';
+
+  @override
+  String get diagnosticsSamples => 'Samples';
+
+  @override
+  String get diagnosticsChannelValues => 'Channel values';
+
+  @override
+  String get diagnosticsMemory => 'Memory';
+
+  @override
+  String get diagnosticsCurrentMemory => 'Current';
+
+  @override
+  String get diagnosticsPeakMemory => 'Peak';
+
+  @override
+  String get diagnosticsNotAvailable => 'Not available';
+
+  @override
+  String get diagnosticsMemoryNote =>
+      'Resident memory of the app as the system reports it; the peak is since the app started. Times are wall time on this device.';
+
+  @override
+  String get diagnosticsStepScan => 'Find recordings';
+
+  @override
+  String get diagnosticsStepParse => 'Parse and import';
+
+  @override
+  String get diagnosticsStepAnalysis => 'Day analysis';
+
+  @override
+  String get diagnosticsStepImportTotal => 'Import, start to results';
+
+  @override
+  String get diagnosticsStepTheoreticalBest => 'Theoretical best and segments';
+
+  @override
+  String get diagnosticsStepChannelSummaries => 'Channel summaries';
+
+  @override
+  String get reportGroupNone =>
+      'Choose a group of compatible laps on the results page.';
+
+  @override
+  String get reportCalculating => 'Calculating…';
+
+  @override
+  String get reportNotCalculated => 'Not calculated yet.';
+
+  @override
+  String get reportOutOfDate => 'Out of date after an analysis change.';
+
+  @override
+  String get reportUnavailable => 'Unavailable.';
+
+  @override
+  String get reportNotInReport => 'Not in this report.';
+
+  @override
+  String get reportChooseGroup => 'Choose a compatibility group.';
+
+  @override
+  String get reportNoEligibleLap => 'No eligible lap in this group.';
+
+  @override
+  String get reportNoSession => 'No session in this group.';
+
+  @override
+  String get reportNoEligibleLaps => 'No eligible laps to summarize.';
+
+  @override
+  String get reportNoHeartRate => 'No heart rate recorded.';
+
+  @override
+  String get reportNoTemperature => 'No temperature recorded.';
+
+  @override
+  String get reportBestTitle => 'Best lap and what is left';
+
+  @override
+  String get reportBestLap => 'Best lap';
+
+  @override
+  String get reportTheoreticalBest => 'Theoretical best';
+
+  @override
+  String reportTheoreticalAvailable(String seconds) {
+    return '$seconds s available across the approved segments';
+  }
+
+  @override
+  String get reportTheoreticalNoTotal =>
+      'Some segments have no timed lap; no total.';
+
+  @override
+  String get reportOpenBestLap => 'Open best lap';
+
+  @override
+  String get reportFocusIntro =>
+      'Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.';
+
+  @override
+  String reportFocusCompare(String lap, String other, String segment) {
+    return 'Compare $lap with $other at $segment';
+  }
+
+  @override
+  String get reportLossesTitle => 'Largest time losses';
+
+  @override
+  String reportLossesIntro(String reference, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps compared',
+      one: '1 lap compared',
+    );
+    return 'Against $reference · $_temp0. An observed loss is not a guaranteed or necessarily safe gain.';
+  }
+
+  @override
+  String get reportSessionsTitle => 'Sessions';
+
+  @override
+  String get reportNoEligibleLapShort => 'no eligible lap';
+
+  @override
+  String reportSessionBest(String time) {
+    return 'best $time';
+  }
+
+  @override
+  String get reportSameAsPrevious => 'same as the previous session';
+
+  @override
+  String reportFasterThanPrevious(String seconds) {
+    return '$seconds s faster than the previous session';
+  }
+
+  @override
+  String reportSlowerThanPrevious(String seconds) {
+    return '$seconds s slower than the previous session';
+  }
+
+  @override
+  String reportEligibleLaps(int eligible, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$eligible of $_temp0 eligible';
+  }
+
+  @override
+  String reportMedian(String time) {
+    return 'median $time';
+  }
+
+  @override
+  String reportConsistencyDay(String time, String spread, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Typical lap $time · middle half within $spread s · $_temp0';
+  }
+
+  @override
+  String reportConsistencyTooFew(int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minimum,
+      locale: localeName,
+      other: 'Fewer than $minimum eligible laps; no spread.',
+      one: 'Fewer than 1 eligible lap; no spread.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reportCarPeak(String channel, String value, String session) {
+    return '$channel · peak $value in $session';
+  }
+
+  @override
+  String reportCoolingIntervals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recorded cooling intervals',
+      one: '1 recorded cooling interval',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reportNoCooling => 'no recorded cooling';
+
+  @override
+  String get reportNoTemperatureSamples => 'No valid temperature samples.';
+
+  @override
+  String reportHeartRateSummary(String mean, String minimum, String maximum) {
+    return 'mean $mean bpm · $minimum – $maximum';
+  }
+
+  @override
+  String reportCovered(int percent) {
+    return '$percent% covered';
+  }
+
+  @override
+  String get segmentEditorTitle => 'Edit segments';
+
+  @override
+  String get segmentEditorUndo => 'Undo';
+
+  @override
+  String get segmentEditorRedo => 'Redo';
+
+  @override
+  String get segmentEditorTiming => 'Timing every lap on one track axis…';
+
+  @override
+  String get segmentEditorMapLabel =>
+      'Best lap trace with the segment boundaries';
+
+  @override
+  String segmentEditorMapLabelHighlighted(String segment) {
+    return 'Best lap trace with the segment boundaries, $segment highlighted';
+  }
+
+  @override
+  String get segmentEditorAutomatic => 'Automatic segments';
+
+  @override
+  String get segmentEditorEdited => 'Edited segments';
+
+  @override
+  String segmentEditorSummary(String time, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count segments',
+      one: '1 segment',
+    );
+    return 'Theoretical best $time · $_temp0';
+  }
+
+  @override
+  String get segmentEditorRestoreAutomatic => 'Restore automatic';
+
+  @override
+  String segmentEditorProposedFrom(String lap) {
+    return 'Proposed from $lap. Tap a segment to correct it.';
+  }
+
+  @override
+  String get segmentEditorProposedFromBestLap =>
+      'Proposed from the best lap. Tap a segment to correct it.';
+
+  @override
+  String get segmentEditorCorrectionsSaved =>
+      'Your corrections are saved with the day and are never replaced by automatic segments.';
+
+  @override
+  String get segmentEditorTypeCorner => 'Corner';
+
+  @override
+  String get segmentEditorTypeStraight => 'Straight';
+
+  @override
+  String get segmentEditorTypeSector => 'Sector';
+
+  @override
+  String segmentEditorRow(
+    String type,
+    String start,
+    String end,
+    String length,
+  ) {
+    return '$type · $start–$end m · $length m';
+  }
+
+  @override
+  String segmentEditorRowEdited(String row) {
+    return '$row · edited';
+  }
+
+  @override
+  String get segmentEditorRestoreTitle => 'Restore automatic segments?';
+
+  @override
+  String get segmentEditorRestoreBody =>
+      'Your corrections to this track layout\'s segments are replaced by the segments proposed from the best lap.';
+
+  @override
+  String get segmentEditorRestore => 'Restore';
+
+  @override
+  String get segmentEditorName => 'Name';
+
+  @override
+  String get segmentEditorStart => 'Start';
+
+  @override
+  String get segmentEditorEnd => 'End';
+
+  @override
+  String get segmentEditorKeepJoined => 'Move the neighbouring segment too';
+
+  @override
+  String get segmentEditorApply => 'Apply';
+
+  @override
+  String get segmentEditorReset => 'Reset';
+
+  @override
+  String segmentEditorSplitAt(String meters) {
+    return 'Split at $meters m';
+  }
+
+  @override
+  String get segmentEditorSplitHere => 'Split here';
+
+  @override
+  String get segmentEditorMergeWithNext => 'Merge with next';
+
+  @override
+  String segmentEditorMergeWith(String segment) {
+    return 'Merge with $segment';
+  }
+
+  @override
+  String get segmentEditorRemove => 'Remove';
+
+  @override
+  String get segmentEditorErrorSaving => 'The day is being saved.';
+
+  @override
+  String get segmentEditorErrorNotCalculated =>
+      'The segments can be edited once the theoretical best is calculated.';
+
+  @override
+  String get segmentEditorErrorAlreadyAutomatic =>
+      'The segments are already the automatic ones.';
+
+  @override
+  String get segmentEditorErrorNotPossible => 'This edit is not possible.';
+
+  @override
+  String get segmentEditorErrorLastSegment =>
+      'The theoretical best needs at least one segment. Restore the automatic segments instead.';
+
+  @override
+  String get segmentEditorErrorNoLongerApproved =>
+      'This segment is no longer approved.';
+
+  @override
+  String get segmentEditorErrorNothingToUndo => 'Nothing to undo.';
+
+  @override
+  String get segmentEditorErrorNothingToRedo => 'Nothing to redo.';
+
+  @override
+  String get segmentEditorErrorHistoryCleared =>
+      'The segments changed outside this editor, so the edit history was cleared.';
+
+  @override
+  String get segmentEditorErrorInvalidStored =>
+      'The stored approved segments are invalid.';
+
+  @override
+  String get segmentEditorErrorOtherConfiguration =>
+      'Segments approved for a different track configuration must be discarded first.';
+
+  @override
+  String segmentEditorErrorWouldBeEmpty(String segment) {
+    return '“$segment” would become empty.';
+  }
+
+  @override
+  String segmentEditorErrorWouldBeInvalid(String segment) {
+    return '“$segment” would be invalid.';
+  }
+
+  @override
+  String segmentEditorErrorWouldOverlap(String segment, String other) {
+    return '“$segment” would overlap “$other”.';
+  }
+
+  @override
+  String segmentEditorErrorTooMany(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'At most $count segments can be approved.',
+      one: 'At most 1 segment can be approved.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentEditorErrorCrossesGate =>
+      'Only one segment may cross the start/finish line.';
+
+  @override
+  String get segmentEditorErrorChooseType =>
+      'Choose corner, straight or sector.';
+
+  @override
+  String get segmentEditorErrorNoAxis => 'The track axis is unavailable.';
+
+  @override
+  String get segmentEditorErrorSplitInside =>
+      'Split inside the segment, away from its ends.';
+
+  @override
+  String get segmentEditorErrorSplitName =>
+      'Enter a name of 1–160 characters for the new segment.';
+
+  @override
+  String get segmentEditorErrorMergeSame =>
+      'Choose two different approved segments.';
+
+  @override
+  String get segmentEditorErrorMergeNotAdjacent =>
+      'Only segments that share a boundary can be merged.';
+
+  @override
+  String get segmentEditorErrorMergeWholeLap =>
+      'Merging would cover the whole lap; a segment needs distinct start and end.';
+
+  @override
+  String get segmentEditorErrorName => 'Enter a name of 1–160 characters.';
+
+  @override
+  String segmentEditorErrorBounds(String length) {
+    return 'Bounds must lie between 0 and $length m.';
+  }
+
+  @override
+  String get segmentEditorErrorEmpty => 'A segment cannot be empty.';
+
+  @override
+  String get reportStale =>
+      'The analysis decisions changed after this result was computed.';
 }

@@ -2333,5 +2333,683 @@
         "example": "file not found"
       }
     }
+  },
+  "diagnosticsTitle": "Diagnostics",
+  "@diagnosticsTitle": {
+    "description": "Title of the diagnostics page and its entry in the overflow menu."
+  },
+  "diagnosticsRefresh": "Refresh",
+  "@diagnosticsRefresh": {
+    "description": "Tooltip of the diagnostics page button that reads the figures again."
+  },
+  "diagnosticsLastImport": "Last import",
+  "@diagnosticsLastImport": {
+    "description": "Heading of the diagnostics page section about the last import."
+  },
+  "diagnosticsNoImport": "No day imported since the app started.",
+  "@diagnosticsNoImport": {
+    "description": "Diagnostics page, shown when no day was imported yet."
+  },
+  "diagnosticsRecordingsRead": "Recordings read",
+  "@diagnosticsRecordingsRead": {
+    "description": "Diagnostics row: how many recordings the last import read."
+  },
+  "diagnosticsSessions": "Sessions",
+  "@diagnosticsSessions": {
+    "description": "Diagnostics row: how many sessions the imported day has."
+  },
+  "diagnosticsSamples": "Samples",
+  "@diagnosticsSamples": {
+    "description": "Diagnostics row: how many samples (rows of the recordings) the sessions have."
+  },
+  "diagnosticsChannelValues": "Channel values",
+  "@diagnosticsChannelValues": {
+    "description": "Diagnostics row: how many values of all channels the sessions have."
+  },
+  "diagnosticsMemory": "Memory",
+  "@diagnosticsMemory": {
+    "description": "Heading of the diagnostics page section about the app's memory."
+  },
+  "diagnosticsCurrentMemory": "Current",
+  "@diagnosticsCurrentMemory": {
+    "description": "Diagnostics row: the app's memory now."
+  },
+  "diagnosticsPeakMemory": "Peak",
+  "@diagnosticsPeakMemory": {
+    "description": "Diagnostics row: the app's highest memory since it started."
+  },
+  "diagnosticsNotAvailable": "Not available",
+  "@diagnosticsNotAvailable": {
+    "description": "Diagnostics value when the system does not report the memory."
+  },
+  "diagnosticsMemoryNote": "Resident memory of the app as the system reports it; the peak is since the app started. Times are wall time on this device.",
+  "@diagnosticsMemoryNote": {
+    "description": "Explanation under the diagnostics page's memory figures."
+  },
+  "diagnosticsStepScan": "Find recordings",
+  "@diagnosticsStepScan": {
+    "description": "Diagnostics step: finding the recordings to import."
+  },
+  "diagnosticsStepParse": "Parse and import",
+  "@diagnosticsStepParse": {
+    "description": "Diagnostics step: reading and importing the recordings."
+  },
+  "diagnosticsStepAnalysis": "Day analysis",
+  "@diagnosticsStepAnalysis": {
+    "description": "Diagnostics step: analysing the day."
+  },
+  "diagnosticsStepImportTotal": "Import, start to results",
+  "@diagnosticsStepImportTotal": {
+    "description": "Diagnostics step: the whole import, from start until the results show."
+  },
+  "diagnosticsStepTheoreticalBest": "Theoretical best and segments",
+  "@diagnosticsStepTheoreticalBest": {
+    "description": "Diagnostics step: computing the theoretical best lap and its segments."
+  },
+  "diagnosticsStepChannelSummaries": "Channel summaries",
+  "@diagnosticsStepChannelSummaries": {
+    "description": "Diagnostics step: summarising the channels (temperatures, heart rate) of the day."
+  },
+  "reportGroupNone": "Choose a group of compatible laps on the results page.",
+  "@reportGroupNone": {
+    "description": "Day report heading when no group of laps is chosen."
+  },
+  "reportCalculating": "Calculating…",
+  "@reportCalculating": {
+    "description": "A day report result that is being calculated."
+  },
+  "reportNotCalculated": "Not calculated yet.",
+  "@reportNotCalculated": {
+    "description": "A day report result that has not been calculated."
+  },
+  "reportOutOfDate": "Out of date after an analysis change.",
+  "@reportOutOfDate": {
+    "description": "A day report result made stale by an analysis change."
+  },
+  "reportUnavailable": "Unavailable.",
+  "@reportUnavailable": {
+    "description": "A day report result that is unavailable, without a reason."
+  },
+  "reportNotInReport": "Not in this report.",
+  "@reportNotInReport": {
+    "description": "A result missing from the day report document."
+  },
+  "reportChooseGroup": "Choose a compatibility group.",
+  "@reportChooseGroup": {
+    "description": "Why there is no best lap: no group of compatible laps is chosen."
+  },
+  "reportNoEligibleLap": "No eligible lap in this group.",
+  "@reportNoEligibleLap": {
+    "description": "Why there is no best lap in the day report."
+  },
+  "reportNoSession": "No session in this group.",
+  "@reportNoSession": {
+    "description": "Why the day report has no sessions."
+  },
+  "reportNoEligibleLaps": "No eligible laps to summarize.",
+  "@reportNoEligibleLaps": {
+    "description": "Why the day report has no consistency summary."
+  },
+  "reportNoHeartRate": "No heart rate recorded.",
+  "@reportNoHeartRate": {
+    "description": "Why the day report has no heart rate."
+  },
+  "reportNoTemperature": "No temperature recorded.",
+  "@reportNoTemperature": {
+    "description": "Why the day report has no temperatures."
+  },
+  "reportBestTitle": "Best lap and what is left",
+  "@reportBestTitle": {
+    "description": "Heading of the day report card with the best lap and the theoretical best."
+  },
+  "reportBestLap": "Best lap",
+  "@reportBestLap": {
+    "description": "Label above the best lap time of the day."
+  },
+  "reportTheoreticalBest": "Theoretical best",
+  "@reportTheoreticalBest": {
+    "description": "Label above the theoretical best time."
+  },
+  "reportTheoreticalAvailable": "{seconds} s available across the approved segments",
+  "@reportTheoreticalAvailable": {
+    "description": "Time left between the best lap and the theoretical best.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "reportTheoreticalNoTotal": "Some segments have no timed lap; no total.",
+  "@reportTheoreticalNoTotal": {
+    "description": "Why the theoretical best has no total."
+  },
+  "reportOpenBestLap": "Open best lap",
+  "@reportOpenBestLap": {
+    "description": "Button opening the best lap of the day."
+  },
+  "reportFocusIntro": "Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.",
+  "@reportFocusIntro": {
+    "description": "Introduction of the focus areas in the day report."
+  },
+  "reportFocusCompare": "Compare {lap} with {other} at {segment}",
+  "@reportFocusCompare": {
+    "description": "Row opening a comparison of two laps through a segment.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      },
+      "other": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "reportLossesTitle": "Largest time losses",
+  "@reportLossesTitle": {
+    "description": "Heading of the day report card with the largest time losses."
+  },
+  "reportLossesIntro": "Against {reference} · {count, plural, =1{1 lap compared} other{{count} laps compared}}. An observed loss is not a guaranteed or necessarily safe gain.",
+  "@reportLossesIntro": {
+    "description": "Introduction of the time losses in the day report.",
+    "placeholders": {
+      "reference": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      },
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "reportSessionsTitle": "Sessions",
+  "@reportSessionsTitle": {
+    "description": "Heading of the day report card with each session."
+  },
+  "reportNoEligibleLapShort": "no eligible lap",
+  "@reportNoEligibleLapShort": {
+    "description": "A session without an eligible lap."
+  },
+  "reportSessionBest": "best {time}",
+  "@reportSessionBest": {
+    "description": "A session's best lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      }
+    }
+  },
+  "reportSameAsPrevious": "same as the previous session",
+  "@reportSameAsPrevious": {
+    "description": "A session's best lap equal to the previous session's."
+  },
+  "reportFasterThanPrevious": "{seconds} s faster than the previous session",
+  "@reportFasterThanPrevious": {
+    "description": "A session's best lap against the previous session's.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "reportSlowerThanPrevious": "{seconds} s slower than the previous session",
+  "@reportSlowerThanPrevious": {
+    "description": "A session's best lap against the previous session's.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "reportEligibleLaps": "{eligible} of {count, plural, =1{1 lap} other{{count} laps}} eligible",
+  "@reportEligibleLaps": {
+    "description": "How many of a session's laps are eligible.",
+    "placeholders": {
+      "eligible": {
+        "type": "int",
+        "example": "3"
+      },
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "reportMedian": "median {time}",
+  "@reportMedian": {
+    "description": "A session's median lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      }
+    }
+  },
+  "reportConsistencyDay": "Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}",
+  "@reportConsistencyDay": {
+    "description": "The day's lap time consistency: median and interquartile range.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      },
+      "spread": {
+        "type": "String",
+        "example": "0.412"
+      },
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "reportConsistencyTooFew": "{minimum, plural, =1{Fewer than 1 eligible lap; no spread.} other{Fewer than {minimum} eligible laps; no spread.}}",
+  "@reportConsistencyTooFew": {
+    "description": "Why the day has no lap time spread.",
+    "placeholders": {
+      "minimum": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "reportCarPeak": "{channel} · peak {value} in {session}",
+  "@reportCarPeak": {
+    "description": "The highest temperature of a channel across the day and its session.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "Oil"
+      },
+      "value": {
+        "type": "String",
+        "example": "104 °C"
+      },
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "reportCoolingIntervals": "{count, plural, =1{1 recorded cooling interval} other{{count} recorded cooling intervals}}",
+  "@reportCoolingIntervals": {
+    "description": "How many cooling intervals a temperature channel recorded.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "reportNoCooling": "no recorded cooling",
+  "@reportNoCooling": {
+    "description": "A temperature channel without cooling intervals."
+  },
+  "reportNoTemperatureSamples": "No valid temperature samples.",
+  "@reportNoTemperatureSamples": {
+    "description": "The day report has no valid temperature."
+  },
+  "reportHeartRateSummary": "mean {mean} bpm · {minimum} – {maximum}",
+  "@reportHeartRateSummary": {
+    "description": "A session's heart rate: mean, minimum and maximum.",
+    "placeholders": {
+      "mean": {
+        "type": "String",
+        "example": "142"
+      },
+      "minimum": {
+        "type": "String",
+        "example": "98"
+      },
+      "maximum": {
+        "type": "String",
+        "example": "171"
+      }
+    }
+  },
+  "reportCovered": "{percent}% covered",
+  "@reportCovered": {
+    "description": "How much of a session the heart rate covers.",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "97"
+      }
+    }
+  },
+  "segmentEditorTitle": "Edit segments",
+  "@segmentEditorTitle": {
+    "description": "Title of the segment editor page."
+  },
+  "segmentEditorUndo": "Undo",
+  "@segmentEditorUndo": {
+    "description": "Tooltip of the button that undoes the last segment edit."
+  },
+  "segmentEditorRedo": "Redo",
+  "@segmentEditorRedo": {
+    "description": "Tooltip of the button that redoes the last undone segment edit."
+  },
+  "segmentEditorTiming": "Timing every lap on one track axis…",
+  "@segmentEditorTiming": {
+    "description": "Shown while the segment editor calculates the theoretical best."
+  },
+  "segmentEditorMapLabel": "Best lap trace with the segment boundaries",
+  "@segmentEditorMapLabel": {
+    "description": "Accessibility label of the segment editor map."
+  },
+  "segmentEditorMapLabelHighlighted": "Best lap trace with the segment boundaries, {segment} highlighted",
+  "@segmentEditorMapLabelHighlighted": {
+    "description": "Accessibility label of the segment editor map with a segment selected.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "segmentEditorAutomatic": "Automatic segments",
+  "@segmentEditorAutomatic": {
+    "description": "The segments are the automatic proposals."
+  },
+  "segmentEditorEdited": "Edited segments",
+  "@segmentEditorEdited": {
+    "description": "The driver corrected the segments."
+  },
+  "segmentEditorSummary": "Theoretical best {time} · {count, plural, =1{1 segment} other{{count} segments}}",
+  "@segmentEditorSummary": {
+    "description": "The theoretical best time (or a dash) and the number of segments.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:23.456"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "segmentEditorRestoreAutomatic": "Restore automatic",
+  "@segmentEditorRestoreAutomatic": {
+    "description": "Button that goes back to the automatic segments."
+  },
+  "segmentEditorProposedFrom": "Proposed from {lap}. Tap a segment to correct it.",
+  "@segmentEditorProposedFrom": {
+    "description": "Hint under automatic segments; lap is a lap name.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "segmentEditorProposedFromBestLap": "Proposed from the best lap. Tap a segment to correct it.",
+  "@segmentEditorProposedFromBestLap": {
+    "description": "Hint under automatic segments when the best lap is unknown."
+  },
+  "segmentEditorCorrectionsSaved": "Your corrections are saved with the day and are never replaced by automatic segments.",
+  "@segmentEditorCorrectionsSaved": {
+    "description": "Hint under edited segments."
+  },
+  "segmentEditorTypeCorner": "Corner",
+  "@segmentEditorTypeCorner": {
+    "description": "Segment type."
+  },
+  "segmentEditorTypeStraight": "Straight",
+  "@segmentEditorTypeStraight": {
+    "description": "Segment type."
+  },
+  "segmentEditorTypeSector": "Sector",
+  "@segmentEditorTypeSector": {
+    "description": "Segment type."
+  },
+  "segmentEditorRow": "{type} · {start}–{end} m · {length} m",
+  "@segmentEditorRow": {
+    "description": "A segment row: its type, start and end along the track and its length, in metres.",
+    "placeholders": {
+      "type": {
+        "type": "String",
+        "example": "Corner"
+      },
+      "start": {
+        "type": "String",
+        "example": "120"
+      },
+      "end": {
+        "type": "String",
+        "example": "180"
+      },
+      "length": {
+        "type": "String",
+        "example": "60"
+      }
+    }
+  },
+  "segmentEditorRowEdited": "{row} · edited",
+  "@segmentEditorRowEdited": {
+    "description": "A segment row of a segment the driver changed.",
+    "placeholders": {
+      "row": {
+        "type": "String",
+        "example": "Corner · 120–180 m · 60 m"
+      }
+    }
+  },
+  "segmentEditorRestoreTitle": "Restore automatic segments?",
+  "@segmentEditorRestoreTitle": {
+    "description": "Title of the dialog confirming the automatic segments are restored."
+  },
+  "segmentEditorRestoreBody": "Your corrections to this track layout's segments are replaced by the segments proposed from the best lap.",
+  "@segmentEditorRestoreBody": {
+    "description": "Body of the dialog confirming the automatic segments are restored."
+  },
+  "segmentEditorRestore": "Restore",
+  "@segmentEditorRestore": {
+    "description": "Confirms restoring the automatic segments."
+  },
+  "segmentEditorName": "Name",
+  "@segmentEditorName": {
+    "description": "Label of the segment name field."
+  },
+  "segmentEditorStart": "Start",
+  "@segmentEditorStart": {
+    "description": "Label of the segment start boundary."
+  },
+  "segmentEditorEnd": "End",
+  "@segmentEditorEnd": {
+    "description": "Label of the segment end boundary."
+  },
+  "segmentEditorKeepJoined": "Move the neighbouring segment too",
+  "@segmentEditorKeepJoined": {
+    "description": "Switch: a moved boundary moves the neighbouring segment too."
+  },
+  "segmentEditorApply": "Apply",
+  "@segmentEditorApply": {
+    "description": "Applies the segment changes."
+  },
+  "segmentEditorReset": "Reset",
+  "@segmentEditorReset": {
+    "description": "Discards the segment changes not applied yet."
+  },
+  "segmentEditorSplitAt": "Split at {meters} m",
+  "@segmentEditorSplitAt": {
+    "description": "Where the segment is split, in metres along the track.",
+    "placeholders": {
+      "meters": {
+        "type": "String",
+        "example": "152.0"
+      }
+    }
+  },
+  "segmentEditorSplitHere": "Split here",
+  "@segmentEditorSplitHere": {
+    "description": "Splits the segment at the chosen point."
+  },
+  "segmentEditorMergeWithNext": "Merge with next",
+  "@segmentEditorMergeWithNext": {
+    "description": "Merges the segment with the next one."
+  },
+  "segmentEditorMergeWith": "Merge with {segment}",
+  "@segmentEditorMergeWith": {
+    "description": "Merges the segment with the next one, named by its short name.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "C4"
+      }
+    }
+  },
+  "segmentEditorRemove": "Remove",
+  "@segmentEditorRemove": {
+    "description": "Removes the segment."
+  },
+  "segmentEditorErrorSaving": "The day is being saved.",
+  "@segmentEditorErrorSaving": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorNotCalculated": "The segments can be edited once the theoretical best is calculated.",
+  "@segmentEditorErrorNotCalculated": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorAlreadyAutomatic": "The segments are already the automatic ones.",
+  "@segmentEditorErrorAlreadyAutomatic": {
+    "description": "Why restoring the automatic segments did nothing."
+  },
+  "segmentEditorErrorNotPossible": "This edit is not possible.",
+  "@segmentEditorErrorNotPossible": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorLastSegment": "The theoretical best needs at least one segment. Restore the automatic segments instead.",
+  "@segmentEditorErrorLastSegment": {
+    "description": "Why the last segment cannot be removed."
+  },
+  "segmentEditorErrorNoLongerApproved": "This segment is no longer approved.",
+  "@segmentEditorErrorNoLongerApproved": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorNothingToUndo": "Nothing to undo.",
+  "@segmentEditorErrorNothingToUndo": {
+    "description": "Why undo did nothing."
+  },
+  "segmentEditorErrorNothingToRedo": "Nothing to redo.",
+  "@segmentEditorErrorNothingToRedo": {
+    "description": "Why redo did nothing."
+  },
+  "segmentEditorErrorHistoryCleared": "The segments changed outside this editor, so the edit history was cleared.",
+  "@segmentEditorErrorHistoryCleared": {
+    "description": "Why undo or redo did nothing."
+  },
+  "segmentEditorErrorInvalidStored": "The stored approved segments are invalid.",
+  "@segmentEditorErrorInvalidStored": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorOtherConfiguration": "Segments approved for a different track configuration must be discarded first.",
+  "@segmentEditorErrorOtherConfiguration": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorWouldBeEmpty": "“{segment}” would become empty.",
+  "@segmentEditorErrorWouldBeEmpty": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "segmentEditorErrorWouldBeInvalid": "“{segment}” would be invalid.",
+  "@segmentEditorErrorWouldBeInvalid": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "segmentEditorErrorWouldOverlap": "“{segment}” would overlap “{other}”.",
+  "@segmentEditorErrorWouldOverlap": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      },
+      "other": {
+        "type": "String",
+        "example": "Corner 4"
+      }
+    }
+  },
+  "segmentEditorErrorTooMany": "{count, plural, =1{At most 1 segment can be approved.} other{At most {count} segments can be approved.}}",
+  "@segmentEditorErrorTooMany": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "segmentEditorErrorCrossesGate": "Only one segment may cross the start/finish line.",
+  "@segmentEditorErrorCrossesGate": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorChooseType": "Choose corner, straight or sector.",
+  "@segmentEditorErrorChooseType": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorNoAxis": "The track axis is unavailable.",
+  "@segmentEditorErrorNoAxis": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorSplitInside": "Split inside the segment, away from its ends.",
+  "@segmentEditorErrorSplitInside": {
+    "description": "Why a split is refused."
+  },
+  "segmentEditorErrorSplitName": "Enter a name of 1–160 characters for the new segment.",
+  "@segmentEditorErrorSplitName": {
+    "description": "Why a split is refused."
+  },
+  "segmentEditorErrorMergeSame": "Choose two different approved segments.",
+  "@segmentEditorErrorMergeSame": {
+    "description": "Why a merge is refused."
+  },
+  "segmentEditorErrorMergeNotAdjacent": "Only segments that share a boundary can be merged.",
+  "@segmentEditorErrorMergeNotAdjacent": {
+    "description": "Why a merge is refused."
+  },
+  "segmentEditorErrorMergeWholeLap": "Merging would cover the whole lap; a segment needs distinct start and end.",
+  "@segmentEditorErrorMergeWholeLap": {
+    "description": "Why a merge is refused."
+  },
+  "segmentEditorErrorName": "Enter a name of 1–160 characters.",
+  "@segmentEditorErrorName": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorBounds": "Bounds must lie between 0 and {length} m.",
+  "@segmentEditorErrorBounds": {
+    "description": "Why a segment edit is refused; length is the track axis length.",
+    "placeholders": {
+      "length": {
+        "type": "String",
+        "example": "1234.5"
+      }
+    }
+  },
+  "segmentEditorErrorEmpty": "A segment cannot be empty.",
+  "@segmentEditorErrorEmpty": {
+    "description": "Why a segment edit is refused."
+  },
+  "reportStale": "The analysis decisions changed after this result was computed.",
+  "@reportStale": {
+    "description": "A day report result computed before the analysis decisions changed."
   }
 }
