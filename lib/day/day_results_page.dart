@@ -101,7 +101,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
   // The section shown: on a phone the bottom bar's Day, Laps or Compare; on a
   // wide screen the rail's Day (summary and laps side by side) or Compare.
   _Section _section = _Section.day;
-
   // Reading the recordings again ("Retry recordings"): the running task and
   // its generation, so a result after the page moved on is dropped.
   BackgroundTask<OpenedDay>? _retryTask;
