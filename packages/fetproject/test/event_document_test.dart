@@ -558,5 +558,29 @@ void main() {
       expect(event(await readFetproject(path))['name'], 'Renamed day');
       expect(directory.listSync(), hasLength(1));
     });
+
+    test(
+      'writes in place when only the document may be written',
+      () async {
+        // The macOS sandbox grants the file chosen in the save panel, not
+        // its folder: a folder without write permission stands in for it.
+        final path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        final renamed = project();
+        event(renamed)['name'] = 'Renamed day';
+        await Process.run('chmod', ['555', directory.path]);
+        addTearDown(() => Process.run('chmod', ['755', directory.path]));
+        await writeFetproject(path, renamed);
+        expect(event(await readFetproject(path))['name'], 'Renamed day');
+        expect(directory.listSync(), hasLength(1));
+      },
+      skip: Platform.isWindows || _isRoot()
+          ? 'Needs folder permissions that bind this user'
+          : false,
+    );
   });
 }
+
+bool _isRoot() =>
+    !Platform.isWindows &&
+    (Process.runSync('id', ['-u']).stdout as String).trim() == '0';
