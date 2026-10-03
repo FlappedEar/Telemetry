@@ -200,8 +200,11 @@ void main() {
     );
     expect(find.text('Zapisz'), findsOneWidget);
     expect(find.text('Anuluj'), findsOneWidget);
-    // The longer Polish labels fit a narrow phone.
-    expect(tester.takeException(), isNull);
+    // On a narrow phone the long direction labels are stacked.
+    final directions = tester.widget<SegmentedButton<TrackDirection>>(
+      find.byType(SegmentedButton<TrackDirection>),
+    );
+    expect(directions.direction, Axis.vertical);
   });
 
   testWidgets('names the circuit of a session and its route', (tester) async {

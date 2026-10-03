@@ -115,18 +115,26 @@ class _TrackDialogState extends State<TrackDialog> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              SegmentedButton<TrackDirection>(
-                emptySelectionAllowed: true,
-                segments: [
-                  for (final direction in TrackDirection.values)
-                    ButtonSegment(
-                      value: direction,
-                      label: Text(l10n.direction(direction)),
+              // Stacked on phones, where the Polish labels are too long
+              // to share a row.
+              LayoutBuilder(
+                builder: (context, constraints) =>
+                    SegmentedButton<TrackDirection>(
+                      direction: constraints.maxWidth < 360
+                          ? Axis.vertical
+                          : Axis.horizontal,
+                      emptySelectionAllowed: true,
+                      segments: [
+                        for (final direction in TrackDirection.values)
+                          ButtonSegment(
+                            value: direction,
+                            label: Text(l10n.direction(direction)),
+                          ),
+                      ],
+                      selected: {?_direction},
+                      onSelectionChanged: (selection) =>
+                          setState(() => _direction = selection.firstOrNull),
                     ),
-                ],
-                selected: {?_direction},
-                onSelectionChanged: (selection) =>
-                    setState(() => _direction = selection.firstOrNull),
               ),
               if (_sameRoute.isNotEmpty)
                 CheckboxListTile(

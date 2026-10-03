@@ -108,6 +108,16 @@ void main() {
     }
   });
 
+  test('session names are translated, other run names kept', () {
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    final english = lookupAppLocalizations(const Locale('en'));
+    expect(polish.session('Session 2'), 'Sesja 2');
+    expect(polish.session('Session 12'), 'Sesja 12');
+    expect(english.session('Session 2'), 'Session 2');
+    expect(polish.session('Session 2b'), 'Session 2b');
+    expect(polish.session('Morning run'), 'Morning run');
+  });
+
   group('numbers and dates', () {
     String all(BuildContext context) => [
       displayTime(109.898),
