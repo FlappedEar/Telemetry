@@ -171,8 +171,8 @@ any folder or a synthetic day, with `packages/telemetry_core/tool/day_benchmark.
 | --- | --- |
 | iOS | 15 |
 | Android | 8.0 (API level 26) |
-| macOS | not decided |
-| Windows | not decided |
+| macOS | 12.0 |
+| Windows | 10 (64-bit) |
 
 macOS is the active development platform.
 
@@ -237,4 +237,7 @@ Read [AGENTS.md](AGENTS.md) first. It holds the engineering rules, the shared
 
 ## Licence
 
-Not chosen yet.
+[Apache License 2.0](LICENSE). Map tiles keep their own terms: OpenStreetMap
+data is © OpenStreetMap contributors under the
+[ODbL](https://www.openstreetmap.org/copyright), and MapTiler imagery is
+© [MapTiler](https://www.maptiler.com/copyright/).
