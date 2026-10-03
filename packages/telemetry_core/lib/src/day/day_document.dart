@@ -409,6 +409,7 @@ Map<String, Object?> _sourceEntry(
   String projectPath,
 ) {
   final stored = _object(source['reference']) ?? const <String, Object?>{};
+  final provenance = _object(source['importProvenance']);
   return {
     ...source,
     'id': run.sourceId,
@@ -422,9 +423,11 @@ Map<String, Object?> _sourceEntry(
         fingerprint: fingerprint,
       ).toJson(projectPath),
     },
-    'importProvenance':
-        source['importProvenance'] ??
-        {'sha256': run.contentSha256, 'format': run.format.name, 'fingerprint': fingerprint},
+    // The import's provenance stays while it is this content's; a file
+    // that now holds another recording of the same drive gets its own.
+    'importProvenance': provenance != null && provenance['sha256'] == run.contentSha256
+        ? provenance
+        : {'sha256': run.contentSha256, 'format': run.format.name, 'fingerprint': fingerprint},
   };
 }
 
@@ -466,14 +469,23 @@ final class OpenedDay {
     required this.exclusions,
     required this.missing,
     required this.analysis,
-    this.fusions = const {},
+    this.alternatives = const {},
     this.relinked = const {},
   });
 
-  /// The opened runs' alternative recordings, by run id: fused with the
-  /// document's decision while it is bound to both recordings, otherwise
-  /// aligned again (see [dayDocument]).
-  final Map<String, RunFusion> fusions;
+  /// The runs' alternative recordings as the document names them, by run
+  /// id, also of runs whose recording is [missing] (to find them both when
+  /// relinking). Not read yet: [resolveDocumentAlternative] reads, checks
+  /// and fuses those of opened runs in the background once the day shows.
+  final Map<String, DocumentAlternative> alternatives;
+
+  /// The alternative recordings of the runs whose recording is [missing],
+  /// to look for with them ([findMovedRecordings]).
+  List<MissingRecording> get missingAlternatives => [
+    for (final recording in missing)
+      if (alternatives[recording.runId] case final alternative?)
+        alternative.missing(recording.name, 'Recording not found.'),
+  ];
 
   final String path;
 
@@ -533,11 +545,21 @@ String _expectedRevision(Map<String, Object?> source) {
 /// with the saved layouts, exclusions and group shown. A recording that is missing,
 /// unreadable or different is listed in [OpenedDay.missing] and the rest of
 /// the day still opens. Throws [fet.FetprojectError] for an invalid document.
+///
+/// [relinkedAlternatives] overrides where runs' alternative recordings are,
+/// by run id, as [relinked] does for their recordings.
 OpenedDay openDay(
   String path, {
   Map<String, String> relinked = const {},
+  Map<String, String> relinkedAlternatives = const {},
   CancellationCheck? cancelled,
-}) => openDayDocument(readDayDocument(path), path, relinked: relinked, cancelled: cancelled);
+}) => openDayDocument(
+  readDayDocument(path),
+  path,
+  relinked: relinked,
+  relinkedAlternatives: relinkedAlternatives,
+  cancelled: cancelled,
+);
 
 /// Opens a day from its already validated [document], whose relative
 /// recording paths are relative to [path] (see [openDay]).
@@ -545,6 +567,7 @@ OpenedDay openDayDocument(
   Map<String, Object?> document,
   String path, {
   Map<String, String> relinked = const {},
+  Map<String, String> relinkedAlternatives = const {},
   CancellationCheck? cancelled,
 }) {
   final event = document['event'] as Map<String, Object?>;
@@ -649,7 +672,7 @@ OpenedDay openDayDocument(
     );
   }
 
-  final fusions = _openFusions(runs, named, path, cancelled);
+  final alternatives = _openAlternatives(runs, path, relinkedAlternatives);
 
   final exclusions = <DayLapReference, String>{};
   final byId = {for (final run in runs) run['id']: run};
@@ -692,7 +715,7 @@ OpenedDay openDayDocument(
     exclusions: exclusions,
     missing: missing,
     analysis: analysis,
-    fusions: fusions,
+    alternatives: alternatives,
     relinked: {
       for (final runId in moved)
         if (named.any((run) => run.run.id == runId)) runId,
@@ -700,110 +723,175 @@ OpenedDay openDayDocument(
   );
 }
 
-/// The alternative recording of each opened run in [named] and its fusion:
-/// the source its `fusion` decision names, else the first RCZ source of a
-/// VBO run. A recording is used only when it is the content the document
-/// asserts, never by its path or name alone. The decision is applied without
-/// aligning again when it is bound to both recordings' content; otherwise
-/// they are aligned and fused afresh.
-Map<String, RunFusion> _openFusions(
+/// A run's alternative recording as an opened document names it (see
+/// [OpenedDay.alternatives]).
+final class DocumentAlternative {
+  const DocumentAlternative({
+    required this.runId,
+    required this.sourceId,
+    required this.path,
+    required this.displayPath,
+    this.contentSha256 = '',
+    this.fingerprint = const {},
+    this.decision,
+    this.relinked = false,
+  });
+
+  final String runId;
+
+  /// The document's id of the source.
+  final String sourceId;
+
+  /// The file to read; empty when it was not found.
+  final String path;
+
+  /// The path the document names, relative when it has one.
+  final String displayPath;
+
+  /// The recording's content SHA-256 as the document asserts it; empty when
+  /// it asserts none.
+  final String contentSha256;
+
+  /// Its `telemetry-v1` fingerprint as the document stores it; empty when it
+  /// has none.
+  final Map<String, Object?> fingerprint;
+
+  /// The run's `fusion` decision, if it has one.
+  final Map<String, Object?>? decision;
+
+  /// [path] was found somewhere else than the document says.
+  final bool relinked;
+
+  /// The format its name says, or null.
+  RecordingFormat? get format => recordingFormatOf(displayPath);
+
+  /// The alternative as a missing recording of run [name], for
+  /// [findMovedRecordings].
+  MissingRecording missing(String name, String reason) => MissingRecording(
+    runId: runId,
+    name: name,
+    path: displayPath,
+    reason: reason,
+    contentSha256: contentSha256,
+    fingerprint: fingerprint,
+  );
+}
+
+/// The alternative recording of each run of [runs] that has one: the source
+/// its `fusion` decision names, else the first RCZ source of a VBO run.
+/// [relinked] overrides where it is, by run id. Nothing is read.
+Map<String, DocumentAlternative> _openAlternatives(
   List<Map<String, Object?>> runs,
-  List<NamedRun> named,
   String path,
-  CancellationCheck? cancelled,
+  Map<String, String> relinked,
 ) {
-  final byId = {for (final run in runs) run['id']: run};
-  final wanted = <(TelemetryRunProposal, Map<String, Object?>, Map<String, Object?>, String)>[];
-  final result = <String, RunFusion>{};
-  for (final opened in named) {
-    final primary = opened.run;
-    final run = byId[primary.id];
-    final telemetry = _object(run?['sources'])?['telemetry'];
-    if (run == null || telemetry is! List) continue;
+  final result = <String, DocumentAlternative>{};
+  for (final run in runs) {
+    final runId = run['id'] as String;
+    final primary = _primarySource(run);
+    final telemetry = _object(run['sources'])?['telemetry'];
+    if (primary == null || telemetry is! List) continue;
+    String displayPath(Map<String, Object?> source) =>
+        fet.SourceReference.fromJson(_object(source['reference']) ?? const {}).displayPath;
+    final vbo = recordingFormatOf(displayPath(primary)) == RecordingFormat.vbo;
     final decision = _object(run['fusion']);
     Map<String, Object?>? source;
-    String file = '';
     for (final value in telemetry) {
       final candidate = _object(value);
       final id = candidate?['id'];
-      if (candidate == null || id == primary.sourceId || id is! String) continue;
-      final reference = _object(candidate['reference']);
-      if (reference == null) continue;
-      final resolved = fet.SourceReference.fromJson(reference).resolve(path);
+      if (candidate == null || id == primary['id'] || id is! String) continue;
+      if (_object(candidate['reference']) == null) continue;
       final chosen = decision != null && decision['alternativeSourceId'] == id;
       final automatic =
           decision == null &&
-          primary.format == RecordingFormat.vbo &&
-          recordingFormatOf(fet.SourceReference.fromJson(reference).displayPath) ==
-              RecordingFormat.rcz;
+          vbo &&
+          recordingFormatOf(displayPath(candidate)) == RecordingFormat.rcz;
       if (chosen || (automatic && source == null)) {
         source = candidate;
-        file = resolved;
         if (chosen) break;
       }
     }
     if (source == null) continue;
-    if (file.isEmpty) {
-      result[primary.id] = RunFusion.unavailable(
-        primarySourceId: primary.sourceId,
-        primaryRevision: primary.contentSha256,
-        alternativeSourceId: source['id'] as String,
-        alternativeFormat: recordingFormatOf(
-          fet.SourceReference.fromJson(_object(source['reference'])!).displayPath,
-        ),
-        reason: 'Recording not found.',
-      );
-      continue;
-    }
-    wanted.add((primary, run, source, file));
-  }
-  if (wanted.isEmpty) return result;
-  final plan = prepareTelemetryImport([
-    for (final (_, _, _, file) in wanted) file,
-  ], cancelled: cancelled);
-  for (var index = 0; index < wanted.length; ++index) {
-    final (primary, run, source, file) = wanted[index];
-    final status = plan.files[index];
-    TelemetryRunProposal? loaded;
-    for (final proposal in plan.runs) {
-      if (proposal.id == status.runId) loaded = proposal;
-    }
-    RunFusion unavailable(String reason) => RunFusion.unavailable(
-      primarySourceId: primary.sourceId,
-      primaryRevision: primary.contentSha256,
-      alternativeSourceId: source['id'] as String,
-      alternativeFormat: recordingFormatOf(file),
-      reason: reason,
-    );
-    if (status.status == TelemetryImportFileStatus.error || loaded == null) {
-      result[primary.id] = unavailable(status.message);
-      continue;
-    }
-    final expected = _expectedRevision(source);
-    final storedFingerprint = _object(_object(source['reference'])?['fingerprint']) ?? const {};
-    if ((expected.isNotEmpty && expected != loaded.contentSha256) ||
-        (storedFingerprint.isNotEmpty &&
-            fet.qtCompactJson(storedFingerprint) !=
-                fet.qtCompactJson(telemetryFingerprint(file, loaded.telemetry)))) {
-      result[primary.id] = unavailable('The file found is a different recording.');
-      continue;
-    }
-    final alternative = TelemetryRunProposal(
-      id: loaded.id,
+    final reference = fet.SourceReference.fromJson(_object(source['reference'])!);
+    final stored = reference.resolve(path);
+    final file = relinked[runId] ?? stored;
+    result[runId] = DocumentAlternative(
+      runId: runId,
       sourceId: source['id'] as String,
-      sourcePath: loaded.sourcePath,
-      format: loaded.format,
-      contentSha256: loaded.contentSha256,
-      telemetry: loaded.telemetry,
-      laps: loaded.laps,
+      path: file,
+      displayPath: reference.displayPath,
+      contentSha256: _expectedRevision(source),
+      fingerprint: _object(_object(source['reference'])?['fingerprint']) ?? const {},
+      decision: decision,
+      relinked: file.isNotEmpty && file != stored,
     );
-    final decision = _object(run['fusion']);
-    result[primary.id] = decision != null && fusionDecisionApplies(decision, primary, alternative)
-        ? applyFusionDecision(decision, primary, alternative, cancelled: cancelled)
-        : fuseRunRecordings(primary, alternative, cancelled: cancelled);
   }
   return result;
 }
+
+/// Reads [alternative] (a document's alternative recording of [primary]),
+/// checks it and fuses it: with the document's decision, without aligning
+/// again, while that is bound to both recordings' content; otherwise aligned
+/// and fused afresh. A file that is not the content the document asserts is
+/// used only when it is the same drive as [primary] in the other format
+/// ([sameDriveInOtherFormat]): it is then aligned afresh and its source entry
+/// updated when the day is saved ([RunFusion.documentChanged]); otherwise it
+/// is "a different recording" and nothing is fused. Takes seconds: run it in
+/// the background.
+RunFusion resolveDocumentAlternative(
+  TelemetryRunProposal primary,
+  DocumentAlternative alternative, {
+  CancellationCheck? cancelled,
+}) {
+  RunFusion unavailable(String reason) => RunFusion.unavailable(
+    primarySourceId: primary.sourceId,
+    primaryRevision: primary.contentSha256,
+    alternativeSourceId: alternative.sourceId,
+    alternativeFormat: alternative.format,
+    reason: reason,
+  );
+  if (alternative.path.isEmpty) return unavailable('Recording not found.');
+  final plan = prepareTelemetryImport([alternative.path], cancelled: cancelled);
+  final status = plan.files.single;
+  TelemetryRunProposal? loaded;
+  for (final proposal in plan.runs) {
+    if (proposal.id == status.runId) loaded = proposal;
+  }
+  if (status.status == TelemetryImportFileStatus.error || loaded == null) {
+    return unavailable(status.message);
+  }
+  final same =
+      (alternative.contentSha256.isEmpty || alternative.contentSha256 == loaded.contentSha256) &&
+      (alternative.fingerprint.isEmpty ||
+          fet.qtCompactJson(alternative.fingerprint) ==
+              fet.qtCompactJson(telemetryFingerprint(alternative.path, loaded.telemetry)));
+  if (!same && !sameDriveInOtherFormat(primary, loaded, cancelled: cancelled)) {
+    return unavailable('The file found is a different recording.');
+  }
+  final recording = TelemetryRunProposal(
+    id: loaded.id,
+    sourceId: alternative.sourceId,
+    sourcePath: loaded.sourcePath,
+    format: loaded.format,
+    contentSha256: loaded.contentSha256,
+    telemetry: loaded.telemetry,
+    laps: loaded.laps,
+  );
+  final decision = alternative.decision;
+  final fusion = decision != null && fusionDecisionApplies(decision, primary, recording)
+      ? applyFusionDecision(decision, primary, recording, cancelled: cancelled)
+      : fuseRunRecordings(primary, recording, cancelled: cancelled);
+  return !same || alternative.relinked ? fusion.withDocumentChanged() : fusion;
+}
+
+/// Every alternative recording of [day] resolved and fused
+/// ([resolveDocumentAlternative]), by run id: what the app does in the
+/// background once the day shows.
+Map<String, RunFusion> fuseOpenedDay(OpenedDay day, {CancellationCheck? cancelled}) => {
+  for (final named in day.runs)
+    if (day.alternatives[named.run.id] case final alternative?)
+      named.run.id: resolveDocumentAlternative(named.run, alternative, cancelled: cancelled),
+};
 
 /// Writes [document] to [path] atomically (see [fet.writeFetproject]).
 Future<void> saveDayDocument(String path, Map<String, Object?> document) =>

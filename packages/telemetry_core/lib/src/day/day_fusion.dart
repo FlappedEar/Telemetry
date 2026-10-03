@@ -48,6 +48,7 @@ final class RunFusion {
     this.result,
     this.session,
     this.fromDocument = false,
+    this.documentChanged = false,
   });
 
   /// The alternative recording the document names, which could not be used
@@ -106,6 +107,31 @@ final class RunFusion {
   /// The clock and rules came from the document's decision, without
   /// aligning again.
   final bool fromDocument;
+
+  /// The alternative recording is not where or what the document says (it
+  /// was relinked, or its file now holds another recording of the same
+  /// drive): the document's source entry changes when the day is saved.
+  final bool documentChanged;
+
+  /// This fusion with [documentChanged] set.
+  RunFusion withDocumentChanged() => RunFusion._(
+    state: state,
+    primarySourceId: primarySourceId,
+    primaryRevision: primaryRevision,
+    alternativeSourceId: alternativeSourceId,
+    alternativeFormat: alternativeFormat,
+    alternative: alternative,
+    status: status,
+    reason: reason,
+    clock: clock,
+    uncertaintySeconds: uncertaintySeconds,
+    resolvedByDeclaredClock: resolvedByDeclaredClock,
+    rules: rules,
+    result: result,
+    session: session,
+    fromDocument: fromDocument,
+    documentChanged: true,
+  );
 
   bool get fused => state == RunFusionState.fused;
 
@@ -177,6 +203,7 @@ RunFusion _fuse(
   required bool resolvedByDeclaredClock,
   required Map<String, FusionRule> rules,
   required bool fromDocument,
+  bool documentChanged = false,
   CancellationCheck? cancelled,
 }) {
   ChannelFusionResult run(Map<String, FusionRule> rules) => fuseChannels(
@@ -219,6 +246,7 @@ RunFusion _fuse(
     result: result,
     session: fusedSession(primary.telemetry, result),
     fromDocument: fromDocument,
+    documentChanged: documentChanged,
   );
 }
 
@@ -326,28 +354,42 @@ RunFusion? withFusionRule(
     resolvedByDeclaredClock: fusion.resolvedByDeclaredClock,
     rules: {...fusion.rules, key: rule},
     fromDocument: fusion.fromDocument,
+    documentChanged: fusion.documentChanged,
     cancelled: cancelled,
   );
 }
 
+/// The alternative recording of every run of [primaries] that [plan] has
+/// one for (an RCZ grouped under its VBO by [automaticVboPrimaries]), by run
+/// id: what [fuseRunRecordings] aligns and fuses, in the background after
+/// the day shows.
+Map<String, TelemetryRunProposal> importedAlternatives(
+  TelemetryImportPlan plan,
+  Iterable<TelemetryRunProposal> primaries,
+) {
+  final groups = automaticVboPrimaries(plan);
+  final byId = {for (final run in primaries) run.id: run};
+  final result = <String, TelemetryRunProposal>{};
+  for (final run in plan.runs) {
+    final primary = byId[groups[run.id]];
+    if (primary == null || primary.id == run.id || result.containsKey(primary.id)) continue;
+    if (primary.format != RecordingFormat.vbo || run.format != RecordingFormat.rcz) continue;
+    result[primary.id] = run;
+  }
+  return result;
+}
+
 /// The fusion of every run of [primaries] that [plan] has an alternative
-/// recording for (an RCZ grouped under its VBO by [automaticVboPrimaries]),
-/// by run id. Aligning takes a few seconds per run: run it in the
-/// background.
+/// recording for ([importedAlternatives]), by run id. Aligning takes a few
+/// seconds per run: run it in the background.
 Map<String, RunFusion> fuseImportedRuns(
   TelemetryImportPlan plan,
   Iterable<TelemetryRunProposal> primaries, {
   CancellationCheck? cancelled,
 }) {
-  final groups = automaticVboPrimaries(plan);
   final byId = {for (final run in primaries) run.id: run};
-  final result = <String, RunFusion>{};
-  for (final run in plan.runs) {
-    final primary = byId[groups[run.id]];
-    if (primary == null || primary.id == run.id || result.containsKey(primary.id)) continue;
-    if (primary.format != RecordingFormat.vbo || run.format != RecordingFormat.rcz) continue;
-    throwIfCancelled(cancelled);
-    result[primary.id] = fuseRunRecordings(primary, run, cancelled: cancelled);
-  }
-  return result;
+  return {
+    for (final MapEntry(:key, :value) in importedAlternatives(plan, primaries).entries)
+      key: fuseRunRecordings(byId[key]!, value, cancelled: cancelled),
+  };
 }

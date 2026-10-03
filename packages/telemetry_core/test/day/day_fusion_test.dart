@@ -142,8 +142,10 @@ void main() {
     await saveDayDocument(path, document);
 
     final opened = openDay(path);
-    final applied = opened.fusions[primary.id]!;
+    final applied = fuseOpenedDay(opened)[primary.id]!;
     expect(applied.fromDocument, isTrue, reason: 'applied without aligning again');
+    expect(applied.documentChanged, isFalse);
+    expect(opened.alternatives[primary.id]!.path, rcz, reason: 'not read when opening');
     expect(applied.clock.offsetSeconds, chosen.clock.offsetSeconds);
     expect(applied.rules, {'sats': FusionRule.fillGaps});
     expect(applied.channelOrigins, {'rpm-obd': 'added', 'sats': 'fillGaps'});
@@ -156,7 +158,7 @@ void main() {
       projectPath: path,
       previous: opened.document,
       previousPath: path,
-      fusions: opened.fusions,
+      fusions: fuseOpenedDay(opened),
     );
     expect(runJson(again, primary.id)['fusion'], fusion);
     expect(((runJson(again, primary.id)['sources'] as Map)['telemetry'] as List), hasLength(2));
@@ -182,7 +184,7 @@ void main() {
     expect(fet.validateFetproject(document), isNull);
     await saveDayDocument(path, document);
     final opened = openDay(path);
-    final aligned = opened.fusions[primary.id]!;
+    final aligned = fuseOpenedDay(opened)[primary.id]!;
     expect(aligned.fromDocument, isFalse);
     expect(aligned.fused, isTrue);
     expect(aligned.clock.offsetSeconds, closeTo(0.1, 0.06));
@@ -195,7 +197,7 @@ void main() {
       projectPath: path,
       previous: opened.document,
       previousPath: path,
-      fusions: opened.fusions,
+      fusions: fuseOpenedDay(opened),
     );
     final rewritten = runJson(again, primary.id)['fusion'] as Map<String, Object?>;
     expect(rewritten['alternativeSourceRevision'], aligned.alternative!.contentSha256);
@@ -220,7 +222,7 @@ void main() {
     final opened = openDay(path);
     expect(opened.missing, isEmpty);
     expect(opened.runs, hasLength(1));
-    final fusion = opened.fusions[primary.id]!;
+    final fusion = fuseOpenedDay(opened)[primary.id]!;
     expect(fusion.state, RunFusionState.unavailable);
     expect(fusion.reason, 'Recording not found.');
     expect(fusion.alternativeFormat, RecordingFormat.rcz);
@@ -232,7 +234,7 @@ void main() {
       projectPath: path,
       previous: opened.document,
       previousPath: path,
-      fusions: opened.fusions,
+      fusions: fuseOpenedDay(opened),
     );
     expect(runJson(again, primary.id)['fusion'], runJson(document, primary.id)['fusion']);
     expect(runJson(again, primary.id)['sources'], runJson(document, primary.id)['sources']);
@@ -262,10 +264,107 @@ void main() {
     File(otherRcz).copySync(rcz);
     final opened = openDay(path);
     expect(opened.runs, hasLength(1));
-    final fusion = opened.fusions[primary.id]!;
+    final fusion = fuseOpenedDay(opened)[primary.id]!;
     expect(fusion.state, RunFusionState.unavailable);
     expect(fusion.reason, 'The file found is a different recording.');
     expect(fusion.session, isNull);
+  });
+
+  test('an RCZ written again for the same drive is aligned afresh and its entry updated', () async {
+    final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+    final day = importDay([vbo, rcz]);
+    final primary = day.runs.single.run;
+    final path = p.join(root, 'day.fetproject');
+    final document = dayDocument(
+      eventId: newEventId(),
+      name: 'Fused day',
+      runs: day.runs,
+      analysis: day.analysis,
+      projectPath: path,
+      fusions: day.fusions,
+    );
+    await saveDayDocument(path, document);
+    final before = runJson(document, primary.id);
+    // The same drive exported again: other content (no satellite count).
+    Directory(p.join(root, 'other')).createSync();
+    final (_, again) = writeFusionPair(p.join(root, 'other'));
+    File(again).copySync(rcz);
+
+    final opened = openDay(path);
+    final fusion = fuseOpenedDay(opened)[primary.id]!;
+    expect(fusion.state, RunFusionState.fused);
+    expect(fusion.fromDocument, isFalse, reason: 'aligned afresh');
+    expect(fusion.documentChanged, isTrue);
+    expect(fusion.alternativeSourceId, (before['fusion'] as Map)['alternativeSourceId']);
+    expect(fusion.channelOrigins, {'rpm-obd': 'added'});
+    expect(fusion.conflicts, isEmpty);
+
+    final saved = dayDocument(
+      eventId: opened.eventId,
+      name: opened.name,
+      runs: opened.runs,
+      analysis: opened.analysis!,
+      projectPath: path,
+      previous: opened.document,
+      previousPath: path,
+      fusions: {primary.id: fusion},
+    );
+    expect(fet.validateFetproject(saved), isNull);
+    final run = runJson(saved, primary.id);
+    final sources = ((run['sources'] as Map)['telemetry'] as List).cast<Map<String, Object?>>();
+    expect(sources, hasLength(2), reason: 'the entry is updated, not added');
+    final sha = fusion.alternative!.contentSha256;
+    expect(sources.last['contentSha256'], sha);
+    expect((sources.last['importProvenance'] as Map)['sha256'], sha);
+    expect((run['fusion'] as Map)['alternativeSourceRevision'], sha);
+    await saveDayDocument(path, saved);
+    final reopened = fuseOpenedDay(openDay(path))[primary.id]!;
+    expect(reopened.fromDocument, isTrue);
+    expect(reopened.documentChanged, isFalse);
+  });
+
+  test('a moved RCZ is found by its content and fused again', () async {
+    final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+    final day = importDay([vbo, rcz]);
+    final primary = day.runs.single.run;
+    final path = p.join(root, 'day.fetproject');
+    await saveDayDocument(
+      path,
+      dayDocument(
+        eventId: newEventId(),
+        name: 'Fused day',
+        runs: day.runs,
+        analysis: day.analysis,
+        projectPath: path,
+        fusions: day.fusions,
+      ),
+    );
+    Directory(p.join(root, 'recordings')).renameSync(p.join(root, 'moved'));
+    File(p.join(root, 'moved', 'drive.rcz')).renameSync(p.join(root, 'moved', 'renamed.rcz'));
+    final missing = openDay(path);
+    expect(missing.runs, isEmpty);
+    expect(missing.alternatives.keys, [primary.id], reason: 'to find it with its run');
+
+    final search = findMovedRecordings(
+      p.join(root, 'moved'),
+      missing.missing,
+      missingAlternatives: [
+        for (final recording in missing.missing)
+          if (missing.alternatives[recording.runId] case final alternative?)
+            alternative.missing(recording.name, 'Recording not found.'),
+      ],
+    );
+    expect(search.found, {primary.id: p.join(root, 'moved', 'drive.vbo')});
+    expect(search.alternatives, {primary.id: p.join(root, 'moved', 'renamed.rcz')});
+    final relinked = openDay(
+      path,
+      relinked: search.found,
+      relinkedAlternatives: search.alternatives,
+    );
+    final fusion = fuseOpenedDay(relinked)[primary.id]!;
+    expect(fusion.fused, isTrue);
+    expect(fusion.fromDocument, isTrue, reason: 'the same content: the decision applies');
+    expect(fusion.documentChanged, isTrue, reason: 'its new place is saved');
   });
 }
 

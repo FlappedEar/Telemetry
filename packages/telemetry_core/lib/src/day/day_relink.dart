@@ -14,7 +14,11 @@ import 'day_document.dart';
 
 /// What [findMovedRecordings] found in a folder.
 final class RecordingSearch {
-  const RecordingSearch({this.found = const {}, this.different = const {}});
+  const RecordingSearch({
+    this.found = const {},
+    this.different = const {},
+    this.alternatives = const {},
+  });
 
   /// The file to open for each missing run, by run id: a file with the
   /// recording's content, or for a recording the document has no identity
@@ -24,6 +28,12 @@ final class RecordingSearch {
   /// Files named like a missing recording that are another recording, by
   /// run id. They are not used.
   final Map<String, String> different;
+
+  /// The file to open for each missing alternative recording, by run id: a
+  /// file with its content, else one of the same name, which is used only
+  /// when it is the same drive as the run's recording
+  /// ([resolveDocumentAlternative] checks).
+  final Map<String, String> alternatives;
 }
 
 /// Looks under [folder] (and its subfolders, at most [maximumFiles] files
@@ -35,9 +45,15 @@ final class RecordingSearch {
 /// when the day opens). Only a recording the document has no identity for is
 /// found by its file name, as Overlays accepts any compatible file for it.
 /// Only VBO and RCZ files of the right size are read.
+///
+/// [missingAlternatives] are runs' alternative recordings (the RCZ of a
+/// VBO) that could not be used, found the same way, except that a file of
+/// the same name with other content is offered too: an RCZ written again
+/// is still the same drive.
 RecordingSearch findMovedRecordings(
   String folder,
   List<MissingRecording> missing, {
+  List<MissingRecording> missingAlternatives = const [],
   int maximumFiles = 20000,
   CancellationCheck? cancelled,
 }) {
@@ -74,7 +90,9 @@ RecordingSearch findMovedRecordings(
     }
   });
 
-  for (final recording in missing) {
+  final alternatives = <String, String>{};
+  for (final (index, recording) in [...missing, ...missingAlternatives].indexed) {
+    final alternative = index >= missing.length;
     throwIfCancelled(cancelled);
     final name = p.basename(recording.path.replaceAll(r'\', '/')).toLowerCase();
     final fingerprint = recording.fingerprint;
@@ -116,11 +134,13 @@ RecordingSearch findMovedRecordings(
       }
       if (named) sameName ??= file.path;
     }
-    if (match != null) {
+    if (alternative) {
+      if ((match ?? sameName) case final file?) alternatives[recording.runId] = file;
+    } else if (match != null) {
       found[recording.runId] = match;
     } else if (sameName != null) {
       different[recording.runId] = sameName;
     }
   }
-  return RecordingSearch(found: found, different: different);
+  return RecordingSearch(found: found, different: different, alternatives: alternatives);
 }
