@@ -56,6 +56,11 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Generate the app icons and launch screens from assets/branding; see
+  # flutter_launcher_icons.yaml and flutter_native_splash.yaml.
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

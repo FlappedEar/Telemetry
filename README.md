@@ -137,6 +137,14 @@ licences (SIL Open Font License 1.1), so the app needs no network for them.
 Screens use the theme's colour roles, text styles and `FetColors` rather than
 their own colours.
 
+The app icon is the FlappedEar ears from the Overlays logo over two laps'
+speed traces, amber and blue, on charcoal; the launch screen shows the ears
+with the FlappedEar Telemetry wordmark. Their sources are in
+`assets/branding/` (`icon.svg` is the vector original). After changing them,
+regenerate the platform files with `dart run flutter_launcher_icons` and
+`dart run flutter_native_splash:create`, then revert the generators'
+unrelated edits to `ios/Runner/Info.plist` and `ios/Runner.xcodeproj`.
+
 ## Platforms
 
 | Platform | Minimum |
