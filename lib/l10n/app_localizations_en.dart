@@ -1735,4 +1735,231 @@ class AppLocalizationsEn extends AppLocalizations {
   String reportCovered(int percent) {
     return '$percent% covered';
   }
+
+  @override
+  String get segmentEditorTitle => 'Edit segments';
+
+  @override
+  String get segmentEditorUndo => 'Undo';
+
+  @override
+  String get segmentEditorRedo => 'Redo';
+
+  @override
+  String get segmentEditorTiming => 'Timing every lap on one track axis…';
+
+  @override
+  String get segmentEditorMapLabel =>
+      'Best lap trace with the segment boundaries';
+
+  @override
+  String segmentEditorMapLabelHighlighted(String segment) {
+    return 'Best lap trace with the segment boundaries, $segment highlighted';
+  }
+
+  @override
+  String get segmentEditorAutomatic => 'Automatic segments';
+
+  @override
+  String get segmentEditorEdited => 'Edited segments';
+
+  @override
+  String segmentEditorSummary(String time, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count segments',
+      one: '1 segment',
+    );
+    return 'Theoretical best $time · $_temp0';
+  }
+
+  @override
+  String get segmentEditorRestoreAutomatic => 'Restore automatic';
+
+  @override
+  String segmentEditorProposedFrom(String lap) {
+    return 'Proposed from $lap. Tap a segment to correct it.';
+  }
+
+  @override
+  String get segmentEditorProposedFromBestLap =>
+      'Proposed from the best lap. Tap a segment to correct it.';
+
+  @override
+  String get segmentEditorCorrectionsSaved =>
+      'Your corrections are saved with the day and are never replaced by automatic segments.';
+
+  @override
+  String get segmentEditorTypeCorner => 'Corner';
+
+  @override
+  String get segmentEditorTypeStraight => 'Straight';
+
+  @override
+  String get segmentEditorTypeSector => 'Sector';
+
+  @override
+  String segmentEditorRow(
+    String type,
+    String start,
+    String end,
+    String length,
+  ) {
+    return '$type · $start–$end m · $length m';
+  }
+
+  @override
+  String segmentEditorRowEdited(String row) {
+    return '$row · edited';
+  }
+
+  @override
+  String get segmentEditorRestoreTitle => 'Restore automatic segments?';
+
+  @override
+  String get segmentEditorRestoreBody =>
+      'Your corrections to this track layout\'s segments are replaced by the segments proposed from the best lap.';
+
+  @override
+  String get segmentEditorRestore => 'Restore';
+
+  @override
+  String get segmentEditorName => 'Name';
+
+  @override
+  String get segmentEditorStart => 'Start';
+
+  @override
+  String get segmentEditorEnd => 'End';
+
+  @override
+  String get segmentEditorKeepJoined => 'Move the neighbouring segment too';
+
+  @override
+  String get segmentEditorApply => 'Apply';
+
+  @override
+  String get segmentEditorReset => 'Reset';
+
+  @override
+  String segmentEditorSplitAt(String meters) {
+    return 'Split at $meters m';
+  }
+
+  @override
+  String get segmentEditorSplitHere => 'Split here';
+
+  @override
+  String get segmentEditorMergeWithNext => 'Merge with next';
+
+  @override
+  String segmentEditorMergeWith(String segment) {
+    return 'Merge with $segment';
+  }
+
+  @override
+  String get segmentEditorRemove => 'Remove';
+
+  @override
+  String get segmentEditorErrorSaving => 'The day is being saved.';
+
+  @override
+  String get segmentEditorErrorNotCalculated =>
+      'The segments can be edited once the theoretical best is calculated.';
+
+  @override
+  String get segmentEditorErrorAlreadyAutomatic =>
+      'The segments are already the automatic ones.';
+
+  @override
+  String get segmentEditorErrorNotPossible => 'This edit is not possible.';
+
+  @override
+  String get segmentEditorErrorLastSegment =>
+      'The theoretical best needs at least one segment. Restore the automatic segments instead.';
+
+  @override
+  String get segmentEditorErrorNoLongerApproved =>
+      'This segment is no longer approved.';
+
+  @override
+  String get segmentEditorErrorNothingToUndo => 'Nothing to undo.';
+
+  @override
+  String get segmentEditorErrorNothingToRedo => 'Nothing to redo.';
+
+  @override
+  String get segmentEditorErrorHistoryCleared =>
+      'The segments changed outside this editor, so the edit history was cleared.';
+
+  @override
+  String get segmentEditorErrorInvalidStored =>
+      'The stored approved segments are invalid.';
+
+  @override
+  String get segmentEditorErrorOtherConfiguration =>
+      'Segments approved for a different track configuration must be discarded first.';
+
+  @override
+  String segmentEditorErrorWouldBeEmpty(String segment) {
+    return '“$segment” would become empty.';
+  }
+
+  @override
+  String segmentEditorErrorWouldBeInvalid(String segment) {
+    return '“$segment” would be invalid.';
+  }
+
+  @override
+  String segmentEditorErrorWouldOverlap(String segment, String other) {
+    return '“$segment” would overlap “$other”.';
+  }
+
+  @override
+  String segmentEditorErrorTooMany(String count) {
+    return 'At most $count segments can be approved.';
+  }
+
+  @override
+  String get segmentEditorErrorCrossesGate =>
+      'Only one segment may cross the start/finish line.';
+
+  @override
+  String get segmentEditorErrorChooseType =>
+      'Choose corner, straight or sector.';
+
+  @override
+  String get segmentEditorErrorNoAxis => 'The track axis is unavailable.';
+
+  @override
+  String get segmentEditorErrorSplitInside =>
+      'Split inside the segment, away from its ends.';
+
+  @override
+  String get segmentEditorErrorSplitName =>
+      'Enter a name of 1–160 characters for the new segment.';
+
+  @override
+  String get segmentEditorErrorMergeSame =>
+      'Choose two different approved segments.';
+
+  @override
+  String get segmentEditorErrorMergeNotAdjacent =>
+      'Only segments that share a boundary can be merged.';
+
+  @override
+  String get segmentEditorErrorMergeWholeLap =>
+      'Merging would cover the whole lap; a segment needs distinct start and end.';
+
+  @override
+  String get segmentEditorErrorName => 'Enter a name of 1–160 characters.';
+
+  @override
+  String segmentEditorErrorBounds(String length) {
+    return 'Bounds must lie between 0 and $length m.';
+  }
+
+  @override
+  String get segmentEditorErrorEmpty => 'A segment cannot be empty.';
 }

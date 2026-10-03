@@ -2558,6 +2558,354 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{percent}% covered'**
   String reportCovered(int percent);
+
+  /// Title of the segment editor page.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit segments'**
+  String get segmentEditorTitle;
+
+  /// Tooltip of the button that undoes the last segment edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get segmentEditorUndo;
+
+  /// Tooltip of the button that redoes the last undone segment edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get segmentEditorRedo;
+
+  /// Shown while the segment editor calculates the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing every lap on one track axis…'**
+  String get segmentEditorTiming;
+
+  /// Accessibility label of the segment editor map.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with the segment boundaries'**
+  String get segmentEditorMapLabel;
+
+  /// Accessibility label of the segment editor map with a segment selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with the segment boundaries, {segment} highlighted'**
+  String segmentEditorMapLabelHighlighted(String segment);
+
+  /// The segments are the automatic proposals.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic segments'**
+  String get segmentEditorAutomatic;
+
+  /// The driver corrected the segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited segments'**
+  String get segmentEditorEdited;
+
+  /// The theoretical best time (or a dash) and the number of segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best {time} · {count, plural, =1{1 segment} other{{count} segments}}'**
+  String segmentEditorSummary(String time, int count);
+
+  /// Button that goes back to the automatic segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore automatic'**
+  String get segmentEditorRestoreAutomatic;
+
+  /// Hint under automatic segments; lap is a lap name.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed from {lap}. Tap a segment to correct it.'**
+  String segmentEditorProposedFrom(String lap);
+
+  /// Hint under automatic segments when the best lap is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed from the best lap. Tap a segment to correct it.'**
+  String get segmentEditorProposedFromBestLap;
+
+  /// Hint under edited segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Your corrections are saved with the day and are never replaced by automatic segments.'**
+  String get segmentEditorCorrectionsSaved;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get segmentEditorTypeCorner;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight'**
+  String get segmentEditorTypeStraight;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Sector'**
+  String get segmentEditorTypeSector;
+
+  /// A segment row: its type, start and end along the track and its length, in metres.
+  ///
+  /// In en, this message translates to:
+  /// **'{type} · {start}–{end} m · {length} m'**
+  String segmentEditorRow(String type, String start, String end, String length);
+
+  /// A segment row of a segment the driver changed.
+  ///
+  /// In en, this message translates to:
+  /// **'{row} · edited'**
+  String segmentEditorRowEdited(String row);
+
+  /// Title of the dialog confirming the automatic segments are restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore automatic segments?'**
+  String get segmentEditorRestoreTitle;
+
+  /// Body of the dialog confirming the automatic segments are restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Your corrections to this track layout\'s segments are replaced by the segments proposed from the best lap.'**
+  String get segmentEditorRestoreBody;
+
+  /// Confirms restoring the automatic segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get segmentEditorRestore;
+
+  /// Label of the segment name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get segmentEditorName;
+
+  /// Label of the segment start boundary.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get segmentEditorStart;
+
+  /// Label of the segment end boundary.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get segmentEditorEnd;
+
+  /// Switch: a moved boundary moves the neighbouring segment too.
+  ///
+  /// In en, this message translates to:
+  /// **'Move the neighbouring segment too'**
+  String get segmentEditorKeepJoined;
+
+  /// Applies the segment changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get segmentEditorApply;
+
+  /// Discards the segment changes not applied yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get segmentEditorReset;
+
+  /// Where the segment is split, in metres along the track.
+  ///
+  /// In en, this message translates to:
+  /// **'Split at {meters} m'**
+  String segmentEditorSplitAt(String meters);
+
+  /// Splits the segment at the chosen point.
+  ///
+  /// In en, this message translates to:
+  /// **'Split here'**
+  String get segmentEditorSplitHere;
+
+  /// Merges the segment with the next one.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge with next'**
+  String get segmentEditorMergeWithNext;
+
+  /// Merges the segment with the next one, named by its short name.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge with {segment}'**
+  String segmentEditorMergeWith(String segment);
+
+  /// Removes the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get segmentEditorRemove;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'The day is being saved.'**
+  String get segmentEditorErrorSaving;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments can be edited once the theoretical best is calculated.'**
+  String get segmentEditorErrorNotCalculated;
+
+  /// Why restoring the automatic segments did nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments are already the automatic ones.'**
+  String get segmentEditorErrorAlreadyAutomatic;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'This edit is not possible.'**
+  String get segmentEditorErrorNotPossible;
+
+  /// Why the last segment cannot be removed.
+  ///
+  /// In en, this message translates to:
+  /// **'The theoretical best needs at least one segment. Restore the automatic segments instead.'**
+  String get segmentEditorErrorLastSegment;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'This segment is no longer approved.'**
+  String get segmentEditorErrorNoLongerApproved;
+
+  /// Why undo did nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to undo.'**
+  String get segmentEditorErrorNothingToUndo;
+
+  /// Why redo did nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to redo.'**
+  String get segmentEditorErrorNothingToRedo;
+
+  /// Why undo or redo did nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments changed outside this editor, so the edit history was cleared.'**
+  String get segmentEditorErrorHistoryCleared;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'The stored approved segments are invalid.'**
+  String get segmentEditorErrorInvalidStored;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments approved for a different track configuration must be discarded first.'**
+  String get segmentEditorErrorOtherConfiguration;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'“{segment}” would become empty.'**
+  String segmentEditorErrorWouldBeEmpty(String segment);
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'“{segment}” would be invalid.'**
+  String segmentEditorErrorWouldBeInvalid(String segment);
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'“{segment}” would overlap “{other}”.'**
+  String segmentEditorErrorWouldOverlap(String segment, String other);
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'At most {count} segments can be approved.'**
+  String segmentEditorErrorTooMany(String count);
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one segment may cross the start/finish line.'**
+  String get segmentEditorErrorCrossesGate;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose corner, straight or sector.'**
+  String get segmentEditorErrorChooseType;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'The track axis is unavailable.'**
+  String get segmentEditorErrorNoAxis;
+
+  /// Why a split is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Split inside the segment, away from its ends.'**
+  String get segmentEditorErrorSplitInside;
+
+  /// Why a split is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name of 1–160 characters for the new segment.'**
+  String get segmentEditorErrorSplitName;
+
+  /// Why a merge is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose two different approved segments.'**
+  String get segmentEditorErrorMergeSame;
+
+  /// Why a merge is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Only segments that share a boundary can be merged.'**
+  String get segmentEditorErrorMergeNotAdjacent;
+
+  /// Why a merge is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Merging would cover the whole lap; a segment needs distinct start and end.'**
+  String get segmentEditorErrorMergeWholeLap;
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name of 1–160 characters.'**
+  String get segmentEditorErrorName;
+
+  /// Why a segment edit is refused; length is the track axis length.
+  ///
+  /// In en, this message translates to:
+  /// **'Bounds must lie between 0 and {length} m.'**
+  String segmentEditorErrorBounds(String length);
+
+  /// Why a segment edit is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'A segment cannot be empty.'**
+  String get segmentEditorErrorEmpty;
 }
 
 class _AppLocalizationsDelegate

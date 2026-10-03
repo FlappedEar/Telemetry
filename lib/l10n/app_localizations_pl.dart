@@ -1759,4 +1759,233 @@ class AppLocalizationsPl extends AppLocalizations {
   String reportCovered(int percent) {
     return 'pokrycie $percent%';
   }
+
+  @override
+  String get segmentEditorTitle => 'Edytuj segmenty';
+
+  @override
+  String get segmentEditorUndo => 'Cofnij';
+
+  @override
+  String get segmentEditorRedo => 'Ponów';
+
+  @override
+  String get segmentEditorTiming =>
+      'Mierzenie czasu każdego okrążenia na jednej osi toru…';
+
+  @override
+  String get segmentEditorMapLabel =>
+      'Ślad najlepszego okrążenia z granicami segmentów';
+
+  @override
+  String segmentEditorMapLabelHighlighted(String segment) {
+    return 'Ślad najlepszego okrążenia z granicami segmentów, wyróżniony $segment';
+  }
+
+  @override
+  String get segmentEditorAutomatic => 'Segmenty automatyczne';
+
+  @override
+  String get segmentEditorEdited => 'Segmenty poprawione';
+
+  @override
+  String segmentEditorSummary(String time, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count segmentów',
+      few: '$count segmenty',
+      one: '1 segment',
+    );
+    return 'Teoretycznie najlepsze $time · $_temp0';
+  }
+
+  @override
+  String get segmentEditorRestoreAutomatic => 'Przywróć automatyczne';
+
+  @override
+  String segmentEditorProposedFrom(String lap) {
+    return 'Zaproponowane na podstawie: $lap. Dotknij segmentu, aby go poprawić.';
+  }
+
+  @override
+  String get segmentEditorProposedFromBestLap =>
+      'Zaproponowane na podstawie najlepszego okrążenia. Dotknij segmentu, aby go poprawić.';
+
+  @override
+  String get segmentEditorCorrectionsSaved =>
+      'Twoje poprawki są zapisywane z dniem i nigdy nie są zastępowane segmentami automatycznymi.';
+
+  @override
+  String get segmentEditorTypeCorner => 'Zakręt';
+
+  @override
+  String get segmentEditorTypeStraight => 'Prosta';
+
+  @override
+  String get segmentEditorTypeSector => 'Sektor';
+
+  @override
+  String segmentEditorRow(
+    String type,
+    String start,
+    String end,
+    String length,
+  ) {
+    return '$type · $start–$end m · $length m';
+  }
+
+  @override
+  String segmentEditorRowEdited(String row) {
+    return '$row · poprawiony';
+  }
+
+  @override
+  String get segmentEditorRestoreTitle => 'Przywrócić segmenty automatyczne?';
+
+  @override
+  String get segmentEditorRestoreBody =>
+      'Twoje poprawki segmentów tego układu toru zostaną zastąpione segmentami zaproponowanymi na podstawie najlepszego okrążenia.';
+
+  @override
+  String get segmentEditorRestore => 'Przywróć';
+
+  @override
+  String get segmentEditorName => 'Nazwa';
+
+  @override
+  String get segmentEditorStart => 'Początek';
+
+  @override
+  String get segmentEditorEnd => 'Koniec';
+
+  @override
+  String get segmentEditorKeepJoined => 'Przesuń też sąsiedni segment';
+
+  @override
+  String get segmentEditorApply => 'Zastosuj';
+
+  @override
+  String get segmentEditorReset => 'Resetuj';
+
+  @override
+  String segmentEditorSplitAt(String meters) {
+    return 'Podział w $meters m';
+  }
+
+  @override
+  String get segmentEditorSplitHere => 'Podziel tutaj';
+
+  @override
+  String get segmentEditorMergeWithNext => 'Połącz z następnym';
+
+  @override
+  String segmentEditorMergeWith(String segment) {
+    return 'Połącz z $segment';
+  }
+
+  @override
+  String get segmentEditorRemove => 'Usuń';
+
+  @override
+  String get segmentEditorErrorSaving => 'Dzień jest właśnie zapisywany.';
+
+  @override
+  String get segmentEditorErrorNotCalculated =>
+      'Segmenty można edytować, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+
+  @override
+  String get segmentEditorErrorAlreadyAutomatic =>
+      'Segmenty są już automatyczne.';
+
+  @override
+  String get segmentEditorErrorNotPossible => 'Ta zmiana nie jest możliwa.';
+
+  @override
+  String get segmentEditorErrorLastSegment =>
+      'Teoretycznie najlepsze okrążenie wymaga co najmniej jednego segmentu. Zamiast tego przywróć segmenty automatyczne.';
+
+  @override
+  String get segmentEditorErrorNoLongerApproved =>
+      'Ten segment nie jest już zatwierdzony.';
+
+  @override
+  String get segmentEditorErrorNothingToUndo => 'Nie ma czego cofnąć.';
+
+  @override
+  String get segmentEditorErrorNothingToRedo => 'Nie ma czego ponowić.';
+
+  @override
+  String get segmentEditorErrorHistoryCleared =>
+      'Segmenty zmieniły się poza tym edytorem, więc historia zmian została wyczyszczona.';
+
+  @override
+  String get segmentEditorErrorInvalidStored =>
+      'Zapisane zatwierdzone segmenty są nieprawidłowe.';
+
+  @override
+  String get segmentEditorErrorOtherConfiguration =>
+      'Najpierw trzeba odrzucić segmenty zatwierdzone dla innej konfiguracji toru.';
+
+  @override
+  String segmentEditorErrorWouldBeEmpty(String segment) {
+    return '„$segment” byłby pusty.';
+  }
+
+  @override
+  String segmentEditorErrorWouldBeInvalid(String segment) {
+    return '„$segment” byłby nieprawidłowy.';
+  }
+
+  @override
+  String segmentEditorErrorWouldOverlap(String segment, String other) {
+    return '„$segment” nachodziłby na „$other”.';
+  }
+
+  @override
+  String segmentEditorErrorTooMany(String count) {
+    return 'Można zatwierdzić najwyżej $count segmentów.';
+  }
+
+  @override
+  String get segmentEditorErrorCrossesGate =>
+      'Tylko jeden segment może przecinać linię startu/mety.';
+
+  @override
+  String get segmentEditorErrorChooseType =>
+      'Wybierz zakręt, prostą lub sektor.';
+
+  @override
+  String get segmentEditorErrorNoAxis => 'Oś toru jest niedostępna.';
+
+  @override
+  String get segmentEditorErrorSplitInside =>
+      'Dziel wewnątrz segmentu, z dala od jego końców.';
+
+  @override
+  String get segmentEditorErrorSplitName =>
+      'Wpisz nazwę nowego segmentu (1–160 znaków).';
+
+  @override
+  String get segmentEditorErrorMergeSame =>
+      'Wybierz dwa różne zatwierdzone segmenty.';
+
+  @override
+  String get segmentEditorErrorMergeNotAdjacent =>
+      'Połączyć można tylko segmenty o wspólnej granicy.';
+
+  @override
+  String get segmentEditorErrorMergeWholeLap =>
+      'Połączenie objęłoby całe okrążenie; segment musi mieć różny początek i koniec.';
+
+  @override
+  String get segmentEditorErrorName => 'Wpisz nazwę (1–160 znaków).';
+
+  @override
+  String segmentEditorErrorBounds(String length) {
+    return 'Granice muszą leżeć między 0 a $length m.';
+  }
+
+  @override
+  String get segmentEditorErrorEmpty => 'Segment nie może być pusty.';
 }

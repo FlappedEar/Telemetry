@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import 'day_results_controller.dart';
 import 'theoretical_best_card.dart';
 import 'track_map.dart';
@@ -12,11 +13,97 @@ import 'track_map.dart';
 const segmentTypes = ['corner', 'straight', 'sector'];
 
 /// "Corner", "Straight", "Sector".
-String segmentTypeLabel(String type) => switch (type) {
-  'corner' => 'Corner',
-  'straight' => 'Straight',
-  _ => 'Sector',
+String segmentTypeLabel(AppLocalizations l10n, String type) => switch (type) {
+  'corner' => l10n.segmentEditorTypeCorner,
+  'straight' => l10n.segmentEditorTypeStraight,
+  _ => l10n.segmentEditorTypeSector,
 };
+
+// A split segment's name, "Corner 3 (2)" (`splitSegmentName`).
+final _splitName = RegExp(r'^(.+) \((\d+)\)$');
+
+/// A segment's name in the app's language: an automatic name, also when
+/// split ("Corner 3 (2)"), is translated; a name the user gave is shown as
+/// written.
+String _segmentName(AppLocalizations l10n, String name) {
+  final split = _splitName.firstMatch(name);
+  if (split != null) {
+    final base = l10n.tbSegmentName(split.group(1)!);
+    if (base != split.group(1)) return '$base (${split.group(2)})';
+  }
+  return l10n.tbSegmentName(name);
+}
+
+final _wouldBeEmpty = RegExp(r'^“(.*)” would become empty\.$');
+final _wouldBeInvalid = RegExp(r'^“(.*)” would be invalid\.$');
+final _wouldOverlap = RegExp(r'^“(.*)” would overlap “(.*)”\.$');
+final _tooMany = RegExp(r'^At most (\d+) segments can be approved\.$');
+final _bounds = RegExp(r'^Bounds must lie between 0 and (.+) m\.$');
+
+/// Why a segment edit was refused (`DayResultsController` and
+/// `telemetry_core` segment editing) in the app's language; an error the
+/// app does not know is shown as written.
+String _segmentError(AppLocalizations l10n, String error) {
+  if (_wouldBeEmpty.firstMatch(error) case final m?) {
+    return l10n.segmentEditorErrorWouldBeEmpty(_segmentName(l10n, m[1]!));
+  }
+  if (_wouldBeInvalid.firstMatch(error) case final m?) {
+    return l10n.segmentEditorErrorWouldBeInvalid(_segmentName(l10n, m[1]!));
+  }
+  if (_wouldOverlap.firstMatch(error) case final m?) {
+    return l10n.segmentEditorErrorWouldOverlap(
+      _segmentName(l10n, m[1]!),
+      _segmentName(l10n, m[2]!),
+    );
+  }
+  if (_tooMany.firstMatch(error) case final m?) {
+    return l10n.segmentEditorErrorTooMany(m[1]!);
+  }
+  if (_bounds.firstMatch(error) case final m?) {
+    return l10n.segmentEditorErrorBounds(m[1]!);
+  }
+  return switch (error) {
+    'The day is being saved.' => l10n.segmentEditorErrorSaving,
+    'The segments can be edited once the theoretical best is calculated.' =>
+      l10n.segmentEditorErrorNotCalculated,
+    'The segments are already the automatic ones.' =>
+      l10n.segmentEditorErrorAlreadyAutomatic,
+    'This edit is not possible.' => l10n.segmentEditorErrorNotPossible,
+    'The theoretical best needs at least one segment. Restore the automatic '
+        'segments instead.' =>
+      l10n.segmentEditorErrorLastSegment,
+    'This segment is no longer approved.' =>
+      l10n.segmentEditorErrorNoLongerApproved,
+    'Nothing to undo.' => l10n.segmentEditorErrorNothingToUndo,
+    'Nothing to redo.' => l10n.segmentEditorErrorNothingToRedo,
+    'The segments changed outside this editor, so the edit history was '
+        'cleared.' =>
+      l10n.segmentEditorErrorHistoryCleared,
+    'The stored approved segments are invalid.' =>
+      l10n.segmentEditorErrorInvalidStored,
+    'Segments approved for a different track configuration must be '
+        'discarded first.' =>
+      l10n.segmentEditorErrorOtherConfiguration,
+    'Only one segment may cross the start/finish line.' =>
+      l10n.segmentEditorErrorCrossesGate,
+    'Choose corner, straight or sector.' => l10n.segmentEditorErrorChooseType,
+    'The track axis is unavailable.' => l10n.segmentEditorErrorNoAxis,
+    'Split inside the segment, away from its ends.' =>
+      l10n.segmentEditorErrorSplitInside,
+    'Enter a name of 1–160 characters for the new segment.' =>
+      l10n.segmentEditorErrorSplitName,
+    'Choose two different approved segments.' =>
+      l10n.segmentEditorErrorMergeSame,
+    'Only segments that share a boundary can be merged.' =>
+      l10n.segmentEditorErrorMergeNotAdjacent,
+    'Merging would cover the whole lap; a segment needs distinct start and '
+        'end.' =>
+      l10n.segmentEditorErrorMergeWholeLap,
+    'Enter a name of 1–160 characters.' => l10n.segmentEditorErrorName,
+    'A segment cannot be empty.' => l10n.segmentEditorErrorEmpty,
+    _ => error,
+  };
+}
 
 /// Reviews and corrects the day's track segments (FET-34): the best lap's
 /// map with the segment boundaries, and the segments in lap order. Tap a
@@ -82,7 +169,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     ..showSnackBar(SnackBar(content: Text(message)));
 
   void _report(String error) {
-    if (error.isNotEmpty) _tell(error);
+    if (error.isNotEmpty) _tell(_segmentError(context.l10n, error));
   }
 
   void _place(DayTheoreticalBest result) {
@@ -134,16 +221,17 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
   @override
   Widget build(BuildContext context) {
     final result = _shown;
+    final l10n = context.l10n;
     final loading =
         _controller.theoreticalBestLoading ||
         _controller.theoreticalBest == null;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit segments'),
+        title: Text(l10n.segmentEditorTitle),
         actions: [
           IconButton(
             key: const ValueKey('undoSegmentEdit'),
-            tooltip: 'Undo',
+            tooltip: l10n.segmentEditorUndo,
             icon: const Icon(Icons.undo),
             onPressed: _controller.canUndoSegmentEdit && !loading
                 ? () => _report(_controller.undoSegmentEdit())
@@ -151,7 +239,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           ),
           IconButton(
             key: const ValueKey('redoSegmentEdit'),
-            tooltip: 'Redo',
+            tooltip: l10n.segmentEditorRedo,
             icon: const Icon(Icons.redo),
             onPressed: _controller.canRedoSegmentEdit && !loading
                 ? () => _report(_controller.redoSegmentEdit())
@@ -161,21 +249,21 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
       ),
       body: SafeArea(
         child: result == null
-            ? const Padding(
-                padding: EdgeInsets.all(16),
+            ? Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LinearProgressIndicator(),
-                    SizedBox(height: 8),
-                    Text('Timing every lap on one track axis…'),
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 8),
+                    Text(l10n.segmentEditorTiming),
                   ],
                 ),
               )
             : result.state != DayTheoreticalBestState.ready
             ? Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(result.message),
+                child: Text(l10n.tbMessage(result.message)),
               )
             : _ready(context, result, loading),
       ),
@@ -185,6 +273,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
   Widget _ready(BuildContext context, DayTheoreticalBest result, bool busy) {
     _place(result);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final selected = _indexOf(result, _selectedId);
     final path = widget.path;
     final map = path == null || path.isEmpty
@@ -195,9 +284,11 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
             gate: widget.gate,
             pointColor: _segmentColors(result, selected),
             marks: _boundaryMarks(result, selected),
-            semanticLabel:
-                'Best lap trace with the segment boundaries'
-                '${selected == null ? '' : ', ${result.segments[selected].name} highlighted'}',
+            semanticLabel: selected == null
+                ? l10n.segmentEditorMapLabel
+                : l10n.segmentEditorMapLabelHighlighted(
+                    _segmentName(l10n, result.segments[selected].name),
+                  ),
           );
     final list = <Widget>[
       Padding(
@@ -210,15 +301,18 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
                 children: [
                   Text(
                     result.segmentsAutomatic
-                        ? 'Automatic segments'
-                        : 'Edited segments',
+                        ? l10n.segmentEditorAutomatic
+                        : l10n.segmentEditorEdited,
                     key: const ValueKey('segmentsState'),
                     style: theme.textTheme.titleSmall,
                   ),
                   Text(
-                    'Theoretical best '
-                    '${result.theoreticalBestSeconds == null ? '—' : displayTime(result.theoreticalBestSeconds!)}'
-                    ' · ${result.segments.length} segments',
+                    l10n.segmentEditorSummary(
+                      result.theoreticalBestSeconds == null
+                          ? '—'
+                          : displayTime(result.theoreticalBestSeconds!),
+                      result.segments.length,
+                    ),
                     key: const ValueKey('editorTheoreticalBest'),
                     style: theme.textTheme.bodySmall,
                   ),
@@ -231,7 +325,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
               child: TextButton.icon(
                 key: const ValueKey('restoreAutomatic'),
                 icon: const Icon(Icons.restore),
-                label: const Text('Restore automatic'),
+                label: Text(l10n.segmentEditorRestoreAutomatic),
                 onPressed: result.segmentsAutomatic || busy
                     ? null
                     : () => _confirmRestore(),
@@ -244,10 +338,11 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
         child: Text(
           result.segmentsAutomatic
-              ? 'Proposed from ${result.bestLap?.displayName ?? 'the best lap'}. '
-                    'Tap a segment to correct it.'
-              : 'Your corrections are saved with the day and are never replaced '
-                    'by automatic segments.',
+              ? switch (result.bestLap) {
+                  final best? => l10n.segmentEditorProposedFrom(l10n.lap(best)),
+                  null => l10n.segmentEditorProposedFromBestLap,
+                }
+              : l10n.segmentEditorCorrectionsSaved,
           style: theme.textTheme.bodySmall,
         ),
       ),
@@ -407,13 +502,21 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     required bool busy,
   }) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final segment = result.segments[index];
+    final name = _segmentName(l10n, segment.name);
     final id = result.approvedSegment(index)?['id'] as String? ?? '';
     final length = segment.endProgressMeters >= segment.startProgressMeters
         ? segment.endProgressMeters - segment.startProgressMeters
         : segment.endProgressMeters +
               result.axisLengthMeters -
               segment.startProgressMeters;
+    final row = l10n.segmentEditorRow(
+      segmentTypeLabel(l10n, segment.type),
+      segment.startProgressMeters.toStringAsFixed(0),
+      segment.endProgressMeters.toStringAsFixed(0),
+      length.toStringAsFixed(0),
+    );
     final tile = ListTile(
       key: ValueKey('segment $id'),
       selected: selected,
@@ -426,7 +529,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
-          shortSegmentName(segment.name),
+          shortSegmentName(name),
           maxLines: 1,
           overflow: TextOverflow.clip,
           style: theme.textTheme.labelSmall?.copyWith(
@@ -434,13 +537,11 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           ),
         ),
       ),
-      title: Text(segment.name, overflow: TextOverflow.ellipsis),
+      title: Text(name, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        '${segmentTypeLabel(segment.type)} · '
-        '${segment.startProgressMeters.toStringAsFixed(0)}–'
-        '${segment.endProgressMeters.toStringAsFixed(0)} m · '
-        '${length.toStringAsFixed(0)} m'
-        '${result.segmentMatchesProposal(index) ? '' : ' · edited'}',
+        result.segmentMatchesProposal(index)
+            ? row
+            : l10n.segmentEditorRowEdited(row),
       ),
       trailing: Text(
         segment.seconds == null ? '—' : displayTime(segment.seconds!),
@@ -496,20 +597,17 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     final restore = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Restore automatic segments?'),
-        content: const Text(
-          'Your corrections to this track layout\'s segments are replaced by '
-          'the segments proposed from the best lap.',
-        ),
+        title: Text(context.l10n.segmentEditorRestoreTitle),
+        content: Text(context.l10n.segmentEditorRestoreBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             key: const ValueKey('confirmRestore'),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Restore'),
+            child: Text(context.l10n.segmentEditorRestore),
           ),
         ],
       ),
@@ -557,8 +655,11 @@ class _SegmentTools extends StatefulWidget {
 }
 
 class _SegmentToolsState extends State<_SegmentTools> {
+  // The name as shown: an automatic name in the app's language.
+  String get _shownName => _segmentName(context.l10n, _segment.name);
+
   late final TextEditingController _name = TextEditingController(
-    text: _segment.name,
+    text: _shownName,
   );
   late String _type = _segment.type;
   late double _start = _segment.startProgressMeters;
@@ -578,7 +679,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
   }
 
   bool get _changed =>
-      _name.text.trim() != _segment.name ||
+      _name.text.trim() != _shownName ||
       _type != _segment.type ||
       _start != _segment.startProgressMeters ||
       _end != _segment.endProgressMeters;
@@ -660,6 +761,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final result = widget.result;
     final count = result.segments.length;
     final next = count > 1 ? (widget.index + 1) % count : null;
@@ -676,26 +778,39 @@ class _SegmentToolsState extends State<_SegmentTools> {
             key: const ValueKey('segmentName'),
             controller: _name,
             maxLength: 160,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: InputDecoration(labelText: l10n.segmentEditorName),
             onChanged: (_) => setState(() {}),
           ),
           SegmentedButton<String>(
             key: const ValueKey('segmentType'),
             segments: [
               for (final type in segmentTypes)
-                ButtonSegment(value: type, label: Text(segmentTypeLabel(type))),
+                ButtonSegment(
+                  value: type,
+                  label: Text(segmentTypeLabel(l10n, type)),
+                ),
             ],
             selected: {_type},
             onSelectionChanged: (types) => setState(() => _type = types.first),
           ),
           const SizedBox(height: 12),
-          _nudges('Start', 'segmentStart', _start, (value) => _start = value),
+          _nudges(
+            l10n.segmentEditorStart,
+            'segmentStart',
+            _start,
+            (value) => _start = value,
+          ),
           const SizedBox(height: 8),
-          _nudges('End', 'segmentEnd', _end, (value) => _end = value),
+          _nudges(
+            l10n.segmentEditorEnd,
+            'segmentEnd',
+            _end,
+            (value) => _end = value,
+          ),
           SwitchListTile(
             key: const ValueKey('keepJoined'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Move the neighbouring segment too'),
+            title: Text(l10n.segmentEditorKeepJoined),
             value: _joined,
             onChanged: (value) => setState(() => _joined = value),
           ),
@@ -706,14 +821,18 @@ class _SegmentToolsState extends State<_SegmentTools> {
                   key: const ValueKey('applySegment'),
                   onPressed: _changed && !widget.busy
                       ? () => widget.onEdit(
-                          name: _name.text,
+                          // An automatic name left as shown keeps its
+                          // stored (English) name.
+                          name: _name.text.trim() == _shownName
+                              ? _segment.name
+                              : _name.text,
                           type: _type,
                           start: _start,
                           end: _end,
                           joined: _joined,
                         )
                       : null,
-                  child: const Text('Apply'),
+                  child: Text(l10n.segmentEditorApply),
                 ),
               ),
               const SizedBox(width: 8),
@@ -722,7 +841,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
                 onPressed: _changed
                     ? () {
                         setState(() {
-                          _name.text = _segment.name;
+                          _name.text = _shownName;
                           _type = _segment.type;
                           _start = _segment.startProgressMeters;
                           _end = _segment.endProgressMeters;
@@ -730,13 +849,13 @@ class _SegmentToolsState extends State<_SegmentTools> {
                         widget.onPending(const []);
                       }
                     : null,
-                child: const Text('Reset'),
+                child: Text(l10n.segmentEditorReset),
               ),
             ],
           ),
           const Divider(height: 24),
           Text(
-            'Split at ${splitAt.toStringAsFixed(1)} m',
+            l10n.segmentEditorSplitAt(splitAt.toStringAsFixed(1)),
             key: const ValueKey('splitValue'),
             style: theme.textTheme.bodySmall,
           ),
@@ -762,7 +881,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
               OutlinedButton.icon(
                 key: const ValueKey('splitSegment'),
                 icon: const Icon(Icons.call_split),
-                label: const Text('Split here'),
+                label: Text(l10n.segmentEditorSplitHere),
                 onPressed: widget.busy || _span <= 2
                     ? null
                     : () => widget.onSplit(splitAt),
@@ -772,8 +891,12 @@ class _SegmentToolsState extends State<_SegmentTools> {
                 icon: const Icon(Icons.merge),
                 label: Text(
                   next == null
-                      ? 'Merge with next'
-                      : 'Merge with ${shortSegmentName(result.segments[next].name)}',
+                      ? l10n.segmentEditorMergeWithNext
+                      : l10n.segmentEditorMergeWith(
+                          shortSegmentName(
+                            _segmentName(l10n, result.segments[next].name),
+                          ),
+                        ),
                 ),
                 onPressed: widget.busy || nextId == null
                     ? null
@@ -782,7 +905,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
               OutlinedButton.icon(
                 key: const ValueKey('removeSegment'),
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Remove'),
+                label: Text(l10n.segmentEditorRemove),
                 onPressed: widget.busy || count <= 1 ? null : widget.onRemove,
               ),
             ],

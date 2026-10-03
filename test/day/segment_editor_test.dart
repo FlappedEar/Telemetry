@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/segment_editor_page.dart';
@@ -257,4 +258,57 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('the segment editor speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: SegmentEditorPage(controller: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Edytuj segmenty'), findsOneWidget);
+    expect(find.text('Segmenty automatyczne'), findsOneWidget);
+    expect(find.textContaining('Teoretycznie najlepsze '), findsOneWidget);
+    expect(find.textContaining('Zaproponowane na podstawie: '), findsOneWidget);
+    expect(find.textContaining('OKR.'), findsOneWidget);
+    // Automatic segment names and types.
+    expect(find.textContaining(RegExp(r'^(Zakręty?|Prosta) \d')), findsWidgets);
+    expect(find.textContaining(RegExp(r'^(Zakręt|Prosta) · ')), findsWidgets);
+    expect(find.text('Edit segments'), findsNothing);
+    expect(find.text('Automatic segments'), findsNothing);
+
+    final id0 =
+        controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+    await tester.tap(find.byKey(ValueKey('segment $id0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Nazwa'), findsOneWidget);
+    expect(find.text('Sektor'), findsOneWidget);
+    expect(find.text('Początek'), findsOneWidget);
+    expect(find.text('Przesuń też sąsiedni segment'), findsOneWidget);
+    expect(find.text('Zastosuj'), findsOneWidget);
+    expect(find.text('Podziel tutaj'), findsOneWidget);
+    expect(find.textContaining('Połącz z '), findsOneWidget);
+    expect(find.text('Usuń'), findsOneWidget);
+    expect(find.text('Apply'), findsNothing);
+
+    // A refused edit is explained in Polish.
+    await tester.enterText(find.byKey(const ValueKey('segmentName')), ' ');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const ValueKey('applySegment')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('applySegment')));
+    await tester.pump();
+    expect(find.text('Wpisz nazwę (1–160 znaków).'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
