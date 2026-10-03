@@ -116,7 +116,10 @@ on `main`:
 - an iOS simulator debug build, then `integration_test/` on a booted iPhone
   simulator;
 - an Android debug APK, then `integration_test/` on an Android emulator
-  (API 34, x86_64).
+  (API 34, x86_64, OpenGL ES on SwiftShader with guest Vulkan turned off),
+  through `.github/scripts/android-integration-test.sh`. A run whose app never
+  reports a result is stopped after 8 minutes and run once more, with a
+  warning in the job summary.
 
 Run the integration tests locally on any connected device or simulator:
 
