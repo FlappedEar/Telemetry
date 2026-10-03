@@ -154,17 +154,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final addition = _controller.lastAddition;
     if (addition == null || identical(addition, _reported) || !mounted) return;
     _reported = addition;
+    final l10n = context.l10n;
     final added = addition.added;
     final lines = [
       if (addition.error.isNotEmpty)
         addition.error
       else if (added.isEmpty)
-        'Nothing was added.'
+        l10n.nothingAdded
       else
-        '${added.join(', ')} added to the day.',
-      if (addition.savedTo != null)
-        'Saved as ${p.basename(addition.savedTo!)}.',
-      if (addition.saveError.isNotEmpty) 'Not saved: ${addition.saveError}',
+        l10n.addedToDay(added.map(l10n.session).join(', ')),
+      if (addition.savedTo != null) l10n.savedAs(p.basename(addition.savedTo!)),
+      if (addition.saveError.isNotEmpty) l10n.notSaved(addition.saveError),
       ...addition.notes,
     ];
     _tell(lines.join('\n'));
@@ -237,13 +237,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Future<void> _pickComparison() async {
     final a = await pickComparisonLap(
       context,
-      title: 'Lap A',
+      title: context.l10n.pickLapA,
       candidates: _controller.comparisonCandidates(),
     );
     if (a == null || !mounted) return;
     final b = await pickComparisonLap(
       context,
-      title: 'Compare ${a.displayName} with',
+      title: context.l10n.pickLapB(context.l10n.lap(a)),
       candidates: [
         for (final row in _controller.comparisonCandidates(a))
           if (row.reference != a.reference) row,
@@ -298,13 +298,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
       if (mounted) {
         _tell(
           _controller.dirty
-              ? 'Saved as ${p.basename(path)}. Changes made while saving '
-                    'are not saved yet.'
-              : 'Saved as ${p.basename(path)}.',
+              ? context.l10n.savedAsChangesPending(p.basename(path))
+              : context.l10n.savedAs(p.basename(path)),
         );
       }
     } on Exception catch (error) {
-      if (mounted) _tell('Not saved: $error');
+      if (mounted) _tell(context.l10n.notSaved('$error'));
     }
   }
 
@@ -326,11 +325,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final path = _controller.documentPath;
     if (path == null) return;
     if (_controller.adding) {
-      _tell('Wait until the recordings are added, then find the others.');
+      _tell(context.l10n.waitThenFindRecordings);
       return;
     }
     if (_controller.dirty) {
-      _tell('Save the day first, then find its recordings.');
+      _tell(context.l10n.saveThenFindRecordings);
       return;
     }
     final folder = await widget.documents.pickFolder();
@@ -348,7 +347,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       if (_controller.adding ||
           _controller.dirty ||
           _controller.runs.length != sessions) {
-        _tell('Recordings were added meanwhile. Find the recordings again.');
+        _tell(context.l10n.recordingsAddedMeanwhile);
         return;
       }
       if (day.missing.length == missing.length) {
@@ -359,10 +358,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ];
         _tell(
           names.isEmpty
-              ? 'No missing recording was found in that folder.'
-              : '${names.join(', ')} in that folder '
-                    '${names.length == 1 ? 'is a different recording' : 'are different recordings'}'
-                    ' and ${names.length == 1 ? 'was' : 'were'} not used.',
+              ? context.l10n.noMissingRecordingFound
+              : context.l10n.differentRecordingsNotUsed(
+                  names.length,
+                  names.join(', '),
+                ),
         );
         return;
       }
@@ -389,7 +389,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       );
     } on Exception catch (error) {
-      if (mounted) _tell('The day could not be opened again: $error');
+      if (mounted) _tell(context.l10n.dayReopenFailed('$error'));
     } finally {
       if (mounted) setState(() => _relinking = false);
     }
@@ -509,7 +509,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           listenable: _controller,
           builder: (context, _) => Text(
             _controller.documentPath == null
-                ? 'Day results'
+                ? context.l10n.dayResultsTitle
                 : '${_controller.name}${_controller.dirty ? ' •' : ''}',
           ),
         ),
@@ -518,7 +518,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) => IconButton(
-              tooltip: 'Save',
+              tooltip: context.l10n.save,
               icon: const Icon(Icons.save_outlined),
               onPressed: _controller.saving || !_controller.dirty
                   ? null
@@ -529,7 +529,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             listenable: _controller,
             builder: (context, _) => IconButton(
               key: const ValueKey('addRecordings'),
-              tooltip: 'Add recordings',
+              tooltip: context.l10n.addRecordings,
               icon: const Icon(Icons.playlist_add),
               onPressed: _controller.adding || _controller.saving || _relinking
                   ? null
@@ -538,18 +538,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
           IconButton(
             key: const ValueKey('openDayReport'),
-            tooltip: 'Day report',
+            tooltip: context.l10n.dayReport,
             icon: const Icon(Icons.summarize_outlined),
             onPressed: _openReport,
           ),
           PopupMenuButton<void>(
             key: const ValueKey('moreMenu'),
-            tooltip: 'More',
+            tooltip: context.l10n.moreActions,
             itemBuilder: (context) => [
               PopupMenuItem(
                 height: kMinInteractiveDimension,
                 onTap: () => _save(choose: true),
-                child: const Text('Save as…'),
+                child: Text(context.l10n.saveAs),
               ),
               diagnosticsMenuItem(context),
             ],
@@ -584,9 +584,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
         builder: (context, _) => Column(
           children: [
             if (_controller.adding)
-              const LinearProgressIndicator(
-                key: ValueKey('addingRecordings'),
-                semanticsLabel: 'Adding recordings',
+              LinearProgressIndicator(
+                key: const ValueKey('addingRecordings'),
+                semanticsLabel: context.l10n.addingRecordings,
               ),
             Expanded(child: _body(context, wide, mapHeight)),
           ],
@@ -601,7 +601,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       builder: (context, child) => PopScope(
         canPop: !_controller.adding,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) _tell('Wait until the session is added.');
+          if (!didPop) _tell(context.l10n.waitUntilSessionAdded);
         },
         child: child!,
       ),
@@ -629,25 +629,23 @@ class _DayResultsPageState extends State<DayResultsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  missing.length == 1
-                      ? '1 session could not be opened'
-                      : '${missing.length} sessions could not be opened',
+                  l10n.sessionsNotOpened(missing.length),
                   style: theme.textTheme.titleSmall,
                 ),
                 for (final recording in missing)
                   Text(
-                    '${recording.name}: ${recording.path} · ${recording.reason}',
+                    '${l10n.session(recording.name)}: ${recording.path} · ${recording.reason}',
                   ),
                 const SizedBox(height: 4),
-                const Text(
-                  'They stay in the day when it is saved, but are not shown.',
-                ),
+                Text(l10n.missingSessionsKept),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: _relinking ? null : _findRecordings,
                   icon: const Icon(Icons.folder_open_outlined),
                   label: Text(
-                    _relinking ? 'Looking…' : 'Find recordings in a folder…',
+                    _relinking
+                        ? l10n.lookingForRecordings
+                        : l10n.findRecordingsInFolder,
                   ),
                 ),
               ],
@@ -660,7 +658,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         _HeadlineBar(
           key: const ValueKey('dayBestBar'),
           label: l10n.dayBestLabel,
-          title: best.displayName,
+          title: l10n.lap(best),
           time: displayTime(best.durationSeconds),
           color: colors.you,
           onColor: colors.onLap,
@@ -697,9 +695,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   ),
                 ] else ...[
                   if (ranking!.tieCount > 1)
-                    Text(
-                      '${ranking.tieCount} laps share this time; the earliest is shown.',
-                    ),
+                    Text(l10n.lapsShareBestTime(ranking.tieCount)),
                   if (path != null && !path.isEmpty) ...[
                     SizedBox(
                       height: mapHeight,
@@ -708,18 +704,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
                           interactive: false,
                           path: path,
                           gate: _mapGate,
-                          semanticLabel:
-                              'Trace of the best lap, coloured by speed',
+                          semanticLabel: l10n.bestLapTrace,
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     SpeedLegend(path: path),
                     const SizedBox(height: 4),
-                    Text(
-                      'Tap to open the lap.',
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    Text(l10n.tapToOpenLap, style: theme.textTheme.bodySmall),
                   ],
                 ],
               ],
@@ -729,7 +721,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       const SizedBox(height: 12),
       if (resolved.length > 1) ...[
-        Text('Compared laps', style: theme.textTheme.titleSmall),
+        Text(l10n.comparedLaps, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         DropdownButton<String>(
           isExpanded: true,
@@ -739,7 +731,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
               DropdownMenuItem(
                 value: group.id,
                 child: Text(
-                  '${group.label} · ${group.eligibleLapCount}/${group.lapCount} laps',
+                  l10n.groupLapCount(
+                    _groupLabel(group),
+                    group.eligibleLapCount,
+                    group.lapCount,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -752,7 +748,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ],
       if (analysis.chosenGroup case final group?)
         Text(
-          '${group.label} · ${group.eligibleLapCount} of ${group.lapCount} laps ranked',
+          '${_groupLabel(group)} · '
+          '${l10n.lapsRanked(group.lapCount, group.eligibleLapCount)}',
           style: theme.textTheme.bodyMedium,
         ),
       if (best != null) ...[
@@ -815,17 +812,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ..._channelCards(),
       if (ranking != null && ranking.runs.isNotEmpty) ...[
         const SizedBox(height: 12),
-        Text('Best lap of each session', style: theme.textTheme.titleSmall),
+        Text(l10n.bestLapOfEachSession, style: theme.textTheme.titleSmall),
         for (final run in ranking.runs)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(run.runName),
+            title: Text(l10n.session(run.runName)),
             subtitle: Text(
               run.bestLap == null
-                  ? 'No ranked lap · ${run.lapCount} ${run.lapCount == 1 ? 'lap' : 'laps'}'
-                  : '${run.bestLap!.displayName.split(' · ').last} · '
-                        '${run.eligibleLapCount} of ${run.lapCount} laps ranked'
-                        '${run.eligibleLapCount >= 3 ? ' · typical ${displayTime(run.distribution!.median)}' : ''}',
+                  ? l10n.noRankedLap(run.lapCount)
+                  : '${l10n.lap(run.bestLap!).split(' · ').last} · '
+                        '${l10n.lapsRanked(run.lapCount, run.eligibleLapCount)}'
+                        '${run.eligibleLapCount >= 3 ? ' · ${l10n.typicalTime(displayTime(run.distribution!.median))}' : ''}',
             ),
             trailing: run.bestLap == null
                 ? null
@@ -840,17 +837,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.help_outline),
-          title: Text(group.label),
-          subtitle: const Text(
-            'Its circuit could not be identified, so its laps are not compared.',
-          ),
+          title: Text(_groupLabel(group)),
+          subtitle: Text(l10n.circuitNotIdentified),
         ),
       const SizedBox(height: 12),
-      Text('Circuits', style: theme.textTheme.titleSmall),
+      Text(l10n.circuits, style: theme.textTheme.titleSmall),
       for (final named in _controller.runs)
         ListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(named.name),
+          title: Text(l10n.session(named.name)),
           subtitle: Text(_circuitText(named.run.id)),
           trailing: const Icon(Icons.edit_outlined),
           onTap: () => showDialog<void>(
@@ -861,11 +856,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       if (analysis.messages.isNotEmpty) ...[
         const SizedBox(height: 12),
-        Text('Notes', style: theme.textTheme.titleSmall),
+        Text(l10n.notes, style: theme.textTheme.titleSmall),
         for (final message in analysis.messages)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text('${_runName(message.runId)}${message.text}'),
+            child: Text(
+              '${_runName(message.runId)}${l10n.dayNote(message.text)}',
+            ),
           ),
       ],
     ];
@@ -919,36 +916,67 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   String _circuitText(String runId) {
+    final l10n = context.l10n;
     final analysis = _controller.analysis;
     final configuration =
         analysis.configurations[runId] ?? const TrackConfiguration();
     final manual = _controller.manualTrack(runId) != null;
-    String? groupLabel;
-    for (final group in analysis.groups) {
-      if (group.runIds.contains(runId)) groupLabel = group.label;
+    DayGroup? group;
+    for (final candidate in analysis.groups) {
+      if (candidate.runIds.contains(runId)) group = candidate;
     }
-    final layout = configuration.layoutId == null
-        ? 'Not identified'
-        : configuration.detectedRoute
-        ? 'Detected route'
-        : configuration.layoutId!;
-    final direction = configuration.direction?.label ?? 'direction unknown';
-    return '$layout · $direction · ${manual ? 'set by you' : 'inferred from GPS'}'
-        '${groupLabel == null ? '' : ' · ${groupLabel.split(' · ').first}'}';
+    final layout = _layout(configuration);
+    final direction = configuration.direction == null
+        ? l10n.directionUnknown
+        : l10n.direction(configuration.direction!);
+    return '$layout · $direction · '
+        '${manual ? l10n.circuitSetByYou : l10n.circuitInferredFromGps}'
+        '${group == null ? '' : ' · ${_groupLabel(group).split(' · ').first}'}';
+  }
+
+  String _layout(TrackConfiguration configuration) =>
+      configuration.layoutId == null
+      ? context.l10n.circuitNotIdentifiedShort
+      : configuration.detectedRoute
+      ? context.l10n.detectedRoute
+      : configuration.layoutId!;
+
+  /// A group's label in the app's language, built as `telemetry_core`
+  /// builds `DayGroup.label`: resolved groups are numbered in order.
+  String _groupLabel(DayGroup group) {
+    final l10n = context.l10n;
+    final groups = _controller.analysis.groups;
+    if (!group.resolved) {
+      final runId = group.runIds.first;
+      final name = [
+        for (final named in _controller.runs)
+          if (named.run.id == runId) named.name,
+      ].firstOrNull;
+      return name == null
+          ? group.label
+          : l10n.circuitGroupUnresolved(l10n.session(name));
+    }
+    final direction = group.configuration.direction;
+    if (direction == null) return group.label;
+    final number =
+        groups.where((other) => other.resolved).toList().indexOf(group) + 1;
+    return l10n.circuitGroup(
+      number,
+      _layout(group.configuration),
+      l10n.direction(direction),
+    );
   }
 
   String _runName(String runId) {
     for (final named in _controller.runs) {
-      if (named.run.id == runId) return '${named.name}: ';
+      if (named.run.id == runId) return '${context.l10n.session(named.name)}: ';
     }
     return '';
   }
 
   String _noBestReason(DayAnalysis analysis, DayRanking? ranking) {
-    if (analysis.chosenGroup == null) {
-      return 'No best lap: no session has enough complete GPS laps to identify its circuit.';
-    }
-    return 'No best lap: no lap of this group can be ranked.';
+    if (analysis.chosenGroup == null) return context.l10n.noBestLapNoCircuit;
+    return context.l10n.noBestLapNoRankable;
   }
 
   /// Compare: pick any two laps, or open a suggested pair, each session's
@@ -1004,7 +1032,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               key: ValueKey('comparePair-${lap.reference}'),
-              title: Text(lap.displayName),
+              title: Text(l10n.lap(lap)),
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Wrap(
@@ -1042,19 +1070,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   List<Widget> _lapList(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return [
       // The button moves under the title when large text needs the room.
       Wrap(
         alignment: WrapAlignment.spaceBetween,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Laps', style: theme.textTheme.titleSmall),
+          Text(l10n.daySectionLaps, style: theme.textTheme.titleSmall),
           if (_controller.comparisonCandidates().length >= 2)
             TextButton.icon(
               key: const ValueKey('lapsCompare'),
               onPressed: _pickComparison,
               icon: const Icon(Icons.compare_arrows),
-              label: const Text('Compare two laps'),
+              label: Text(l10n.compareTwoLaps),
             ),
         ],
       ),
@@ -1064,23 +1093,29 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   Widget _lapTile(BuildContext context, DayLapRow row) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final issues = _controller.issues(row);
     final timed = row.type == LapSectionType.lap;
     final bestOfDay = _controller.isBestOfDay(row);
     final bestOfRun = _controller.isBestOfRun(row);
     final marks = [
       if (bestOfDay)
-        'Best of the day'
+        l10n.bestOfDay
       else if (bestOfRun)
-        'Best of ${row.runName}',
+        l10n.bestOfSession(l10n.session(row.runName)),
       if (timed && issues.isNotEmpty)
         issues.contains(LapIssue.userExclusion)
-            ? 'Excluded: ${_controller.exclusionReason(row)}'
-            : 'Not ranked: ${issues.first.label}',
+            ? switch (_controller.exclusionReason(row)) {
+                final reason? when reason.isNotEmpty => l10n.lapExcluded(
+                  reason,
+                ),
+                _ => l10n.lapExcludedNoReason,
+              }
+            : l10n.lapNotRanked(l10n.lapIssue(issues.first)),
       if (!timed)
         row.type == LapSectionType.unknown
-            ? 'No start/finish pass'
-            : 'Not timed',
+            ? l10n.noStartFinishPass
+            : l10n.notTimed,
     ];
     // As on a timing screen: purple marks the best of the day, green the
     // best of its session, on the edge and in the time.
@@ -1108,7 +1143,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.only(left: 12),
-        title: Text(row.displayName),
+        title: Text(l10n.lap(row)),
         subtitle: marks.isEmpty ? null : Text(marks.join(' · ')),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,

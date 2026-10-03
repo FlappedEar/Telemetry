@@ -331,4 +331,306 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get theoreticalBestHint => 'Fastest of every segment';
+
+  @override
+  String get dayResultsTitle => 'Day results';
+
+  @override
+  String get addRecordings => 'Add recordings';
+
+  @override
+  String get dayReport => 'Day report';
+
+  @override
+  String get moreActions => 'More';
+
+  @override
+  String get saveAs => 'Save as…';
+
+  @override
+  String get addingRecordings => 'Adding recordings';
+
+  @override
+  String get waitUntilSessionAdded => 'Wait until the session is added.';
+
+  @override
+  String get nothingAdded => 'Nothing was added.';
+
+  @override
+  String addedToDay(String sessions) {
+    return '$sessions added to the day.';
+  }
+
+  @override
+  String savedAs(String file) {
+    return 'Saved as $file.';
+  }
+
+  @override
+  String savedAsChangesPending(String file) {
+    return 'Saved as $file. Changes made while saving are not saved yet.';
+  }
+
+  @override
+  String notSaved(String error) {
+    return 'Not saved: $error';
+  }
+
+  @override
+  String get waitThenFindRecordings =>
+      'Wait until the recordings are added, then find the others.';
+
+  @override
+  String get saveThenFindRecordings =>
+      'Save the day first, then find its recordings.';
+
+  @override
+  String get recordingsAddedMeanwhile =>
+      'Recordings were added meanwhile. Find the recordings again.';
+
+  @override
+  String get noMissingRecordingFound =>
+      'No missing recording was found in that folder.';
+
+  @override
+  String differentRecordingsNotUsed(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$files in that folder are different recordings and were not used.',
+      one: '$files in that folder is a different recording and was not used.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dayReopenFailed(String error) {
+    return 'The day could not be opened again: $error';
+  }
+
+  @override
+  String sessionsNotOpened(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions could not be opened',
+      one: '1 session could not be opened',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get missingSessionsKept =>
+      'They stay in the day when it is saved, but are not shown.';
+
+  @override
+  String get lookingForRecordings => 'Looking…';
+
+  @override
+  String get findRecordingsInFolder => 'Find recordings in a folder…';
+
+  @override
+  String lapsShareBestTime(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps share this time; the earliest is shown.',
+      one: '1 lap has this time.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bestLapTrace => 'Trace of the best lap, coloured by speed';
+
+  @override
+  String get tapToOpenLap => 'Tap to open the lap.';
+
+  @override
+  String get comparedLaps => 'Compared laps';
+
+  @override
+  String groupLapCount(String group, int eligible, int count) {
+    return '$group · $eligible/$count laps';
+  }
+
+  @override
+  String lapsRanked(int count, int eligible) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$eligible of $count laps ranked',
+      one: '$eligible of 1 lap ranked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bestLapOfEachSession => 'Best lap of each session';
+
+  @override
+  String noRankedLap(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'No ranked lap · $count laps',
+      one: 'No ranked lap · 1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String typicalTime(String time) {
+    return 'typical $time';
+  }
+
+  @override
+  String get circuitNotIdentified =>
+      'Its circuit could not be identified, so its laps are not compared.';
+
+  @override
+  String get circuits => 'Circuits';
+
+  @override
+  String get notes => 'Notes';
+
+  @override
+  String get circuitNotIdentifiedShort => 'Not identified';
+
+  @override
+  String get detectedRoute => 'Detected route';
+
+  @override
+  String get directionUnknown => 'direction unknown';
+
+  @override
+  String get circuitSetByYou => 'set by you';
+
+  @override
+  String get circuitInferredFromGps => 'inferred from GPS';
+
+  @override
+  String get noBestLapNoCircuit =>
+      'No best lap: no session has enough complete GPS laps to identify its circuit.';
+
+  @override
+  String get noBestLapNoRankable =>
+      'No best lap: no lap of this group can be ranked.';
+
+  @override
+  String get compareTwoLaps => 'Compare two laps';
+
+  @override
+  String get bestOfDay => 'Best of the day';
+
+  @override
+  String bestOfSession(String session) {
+    return 'Best of $session';
+  }
+
+  @override
+  String lapExcluded(String reason) {
+    return 'Excluded: $reason';
+  }
+
+  @override
+  String get lapExcludedNoReason => 'Excluded';
+
+  @override
+  String lapNotRanked(String issue) {
+    return 'Not ranked: $issue';
+  }
+
+  @override
+  String get noStartFinishPass => 'No start/finish pass';
+
+  @override
+  String get notTimed => 'Not timed';
+
+  @override
+  String get pickLapA => 'Lap A';
+
+  @override
+  String pickLapB(String lap) {
+    return 'Compare $lap with';
+  }
+
+  @override
+  String lapName(String session, int number) {
+    return '$session · LAP $number';
+  }
+
+  @override
+  String outLapName(String session) {
+    return '$session · OUT';
+  }
+
+  @override
+  String inLapName(String session) {
+    return '$session · IN';
+  }
+
+  @override
+  String unknownLapName(String session) {
+    return '$session · UNKNOWN';
+  }
+
+  @override
+  String circuitGroup(int number, String layout, String direction) {
+    return 'Group $number · $layout · $direction';
+  }
+
+  @override
+  String circuitGroupUnresolved(String session) {
+    return 'Unresolved · $session';
+  }
+
+  @override
+  String get noteUndated =>
+      'Recording date and time unavailable; listed after the dated recordings in import order.';
+
+  @override
+  String get noteNoPasses =>
+      'No reliable start/finish passes; lap type is unknown.';
+
+  @override
+  String get lapIssueLayoutUnresolved => 'Layout needs confirmation';
+
+  @override
+  String get lapIssueDirectionUnresolved => 'Direction needs confirmation';
+
+  @override
+  String get lapIssueTimingGateUnresolved => 'Timing gates unresolved';
+
+  @override
+  String get lapIssueChangedLayout => 'Different layout';
+
+  @override
+  String get lapIssueOppositeDirection => 'Opposite direction';
+
+  @override
+  String get lapIssueChangedTimingGate => 'Different timing gates';
+
+  @override
+  String get lapIssueIncompleteGps => 'Incomplete GPS';
+
+  @override
+  String get lapIssueInvalidGps => 'Invalid GPS';
+
+  @override
+  String get lapIssueUserExclusion => 'User exclusion';
+
+  @override
+  String get lapIssueNotTimedLap => 'Not a complete timed lap';
+
+  @override
+  String get lapIssueStaleSource => 'Source changed; reload recording';
+
+  @override
+  String get lapIssueIneligibleLap => 'Lap is not eligible';
+
+  @override
+  String get lapIssueDifferentRoute =>
+      'Lap leaves the route the other laps took (off track, a detour or the pit lane)';
 }

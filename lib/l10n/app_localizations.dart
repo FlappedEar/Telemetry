@@ -613,6 +613,438 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fastest of every segment'**
   String get theoreticalBestHint;
+
+  /// Title of the day page before the day is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Day results'**
+  String get dayResultsTitle;
+
+  /// Button on the day page that adds recordings to the open day.
+  ///
+  /// In en, this message translates to:
+  /// **'Add recordings'**
+  String get addRecordings;
+
+  /// Button on the day page that opens the day report.
+  ///
+  /// In en, this message translates to:
+  /// **'Day report'**
+  String get dayReport;
+
+  /// Tooltip of the menu with more actions.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get moreActions;
+
+  /// Menu item that saves the day under a new name.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get saveAs;
+
+  /// Screen reader label of the progress bar while recordings are added.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding recordings'**
+  String get addingRecordings;
+
+  /// Shown when leaving the day page while a session is being added.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session is added.'**
+  String get waitUntilSessionAdded;
+
+  /// After adding recordings: none was added.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was added.'**
+  String get nothingAdded;
+
+  /// After adding recordings: the new sessions' names.
+  ///
+  /// In en, this message translates to:
+  /// **'{sessions} added to the day.'**
+  String addedToDay(String sessions);
+
+  /// After saving the day: its file name.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as {file}.'**
+  String savedAs(String file);
+
+  /// After saving the day when it changed during the save.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as {file}. Changes made while saving are not saved yet.'**
+  String savedAsChangesPending(String file);
+
+  /// Saving the day failed; the error follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved: {error}'**
+  String notSaved(String error);
+
+  /// Finding missing recordings while others are being added.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the recordings are added, then find the others.'**
+  String get waitThenFindRecordings;
+
+  /// Finding missing recordings of a day with unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the day first, then find its recordings.'**
+  String get saveThenFindRecordings;
+
+  /// The day changed while missing recordings were searched for.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings were added meanwhile. Find the recordings again.'**
+  String get recordingsAddedMeanwhile;
+
+  /// Searching a folder for missing recordings found none.
+  ///
+  /// In en, this message translates to:
+  /// **'No missing recording was found in that folder.'**
+  String get noMissingRecordingFound;
+
+  /// Files named like the missing recordings but with different content.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}'**
+  String differentRecordingsNotUsed(int count, String files);
+
+  /// Opening the day again with the found recordings failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be opened again: {error}'**
+  String dayReopenFailed(String error);
+
+  /// Heading over the sessions whose recordings are missing.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 session could not be opened} other{{count} sessions could not be opened}}'**
+  String sessionsNotOpened(int count);
+
+  /// Under the missing sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'They stay in the day when it is saved, but are not shown.'**
+  String get missingSessionsKept;
+
+  /// Button text while missing recordings are searched for.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking…'**
+  String get lookingForRecordings;
+
+  /// Button that searches a folder for the missing recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Find recordings in a folder…'**
+  String get findRecordingsInFolder;
+
+  /// Several laps tie for the best time of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap has this time.} other{{count} laps share this time; the earliest is shown.}}'**
+  String lapsShareBestTime(int count);
+
+  /// Screen reader label of the map of the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace of the best lap, coloured by speed'**
+  String get bestLapTrace;
+
+  /// Under the map of the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open the lap.'**
+  String get tapToOpenLap;
+
+  /// Heading of the choice of which circuit group's laps are ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared laps'**
+  String get comparedLaps;
+
+  /// A circuit group in the group choice, with its ranked and all laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{group} · {eligible}/{count} laps'**
+  String groupLapCount(String group, int eligible, int count);
+
+  /// How many laps of a group or session are ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{eligible} of 1 lap ranked} other{{eligible} of {count} laps ranked}}'**
+  String lapsRanked(int count, int eligible);
+
+  /// Heading of the list of each session's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap of each session'**
+  String get bestLapOfEachSession;
+
+  /// A session without a ranked lap, with its number of laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{No ranked lap · 1 lap} other{No ranked lap · {count} laps}}'**
+  String noRankedLap(int count);
+
+  /// A session's typical (median) lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'typical {time}'**
+  String typicalTime(String time);
+
+  /// Under a group whose circuit is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Its circuit could not be identified, so its laps are not compared.'**
+  String get circuitNotIdentified;
+
+  /// Heading of the list of each session's circuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuits'**
+  String get circuits;
+
+  /// Heading of the analysis notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notes;
+
+  /// A session's circuit is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not identified'**
+  String get circuitNotIdentifiedShort;
+
+  /// A circuit found from the GPS route, with no known layout name.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected route'**
+  String get detectedRoute;
+
+  /// A session's driving direction is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'direction unknown'**
+  String get directionUnknown;
+
+  /// The session's circuit was set by the user.
+  ///
+  /// In en, this message translates to:
+  /// **'set by you'**
+  String get circuitSetByYou;
+
+  /// The session's circuit was inferred from GPS.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred from GPS'**
+  String get circuitInferredFromGps;
+
+  /// Why there is no best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'No best lap: no session has enough complete GPS laps to identify its circuit.'**
+  String get noBestLapNoCircuit;
+
+  /// Why there is no best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'No best lap: no lap of this group can be ranked.'**
+  String get noBestLapNoRankable;
+
+  /// Button in the lap list that starts a comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare two laps'**
+  String get compareTwoLaps;
+
+  /// Mark of the day's best lap in the lap list.
+  ///
+  /// In en, this message translates to:
+  /// **'Best of the day'**
+  String get bestOfDay;
+
+  /// Mark of a session's best lap in the lap list.
+  ///
+  /// In en, this message translates to:
+  /// **'Best of {session}'**
+  String bestOfSession(String session);
+
+  /// A lap the user excluded, with the reason they gave.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded: {reason}'**
+  String lapExcluded(String reason);
+
+  /// A lap the user excluded without a reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded'**
+  String get lapExcludedNoReason;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ranked: {issue}'**
+  String lapNotRanked(String issue);
+
+  /// A recording part that never crossed the start/finish line.
+  ///
+  /// In en, this message translates to:
+  /// **'No start/finish pass'**
+  String get noStartFinishPass;
+
+  /// An out or in lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Not timed'**
+  String get notTimed;
+
+  /// Title of the list for picking the first lap to compare.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap A'**
+  String get pickLapA;
+
+  /// Title of the list for picking the second lap to compare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare {lap} with'**
+  String pickLapB(String lap);
+
+  /// A timed lap's name, as on a timing screen.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} · LAP {number}'**
+  String lapName(String session, int number);
+
+  /// The part from the start of a recording to the first start/finish pass.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} · OUT'**
+  String outLapName(String session);
+
+  /// The part from the last start/finish pass to the end of a recording.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} · IN'**
+  String inLapName(String session);
+
+  /// A whole recording with no start/finish pass.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} · UNKNOWN'**
+  String unknownLapName(String session);
+
+  /// A group of sessions on one circuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Group {number} · {layout} · {direction}'**
+  String circuitGroup(int number, String layout, String direction);
+
+  /// A session whose circuit is unknown, as its own group.
+  ///
+  /// In en, this message translates to:
+  /// **'Unresolved · {session}'**
+  String circuitGroupUnresolved(String session);
+
+  /// Analysis note about a recording without a clock.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording date and time unavailable; listed after the dated recordings in import order.'**
+  String get noteUndated;
+
+  /// Analysis note about a recording without start/finish passes.
+  ///
+  /// In en, this message translates to:
+  /// **'No reliable start/finish passes; lap type is unknown.'**
+  String get noteNoPasses;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout needs confirmation'**
+  String get lapIssueLayoutUnresolved;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction needs confirmation'**
+  String get lapIssueDirectionUnresolved;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing gates unresolved'**
+  String get lapIssueTimingGateUnresolved;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Different layout'**
+  String get lapIssueChangedLayout;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Opposite direction'**
+  String get lapIssueOppositeDirection;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Different timing gates'**
+  String get lapIssueChangedTimingGate;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete GPS'**
+  String get lapIssueIncompleteGps;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid GPS'**
+  String get lapIssueInvalidGps;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'User exclusion'**
+  String get lapIssueUserExclusion;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a complete timed lap'**
+  String get lapIssueNotTimedLap;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Source changed; reload recording'**
+  String get lapIssueStaleSource;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap is not eligible'**
+  String get lapIssueIneligibleLap;
+
+  /// Why a lap is not ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap leaves the route the other laps took (off track, a detour or the pit lane)'**
+  String get lapIssueDifferentRoute;
 }
 
 class _AppLocalizationsDelegate

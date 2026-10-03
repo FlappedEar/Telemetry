@@ -334,4 +334,310 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get theoreticalBestHint => 'Najszybszy czas każdego segmentu';
+
+  @override
+  String get dayResultsTitle => 'Wyniki dnia';
+
+  @override
+  String get addRecordings => 'Dodaj nagrania';
+
+  @override
+  String get dayReport => 'Raport dnia';
+
+  @override
+  String get moreActions => 'Więcej';
+
+  @override
+  String get saveAs => 'Zapisz jako…';
+
+  @override
+  String get addingRecordings => 'Dodawanie nagrań';
+
+  @override
+  String get waitUntilSessionAdded => 'Poczekaj, aż sesja zostanie dodana.';
+
+  @override
+  String get nothingAdded => 'Nic nie dodano.';
+
+  @override
+  String addedToDay(String sessions) {
+    return 'Dodano do dnia: $sessions.';
+  }
+
+  @override
+  String savedAs(String file) {
+    return 'Zapisano jako $file.';
+  }
+
+  @override
+  String savedAsChangesPending(String file) {
+    return 'Zapisano jako $file. Zmiany wprowadzone podczas zapisywania nie są jeszcze zapisane.';
+  }
+
+  @override
+  String notSaved(String error) {
+    return 'Nie zapisano: $error';
+  }
+
+  @override
+  String get waitThenFindRecordings =>
+      'Poczekaj, aż nagrania zostaną dodane, a potem wyszukaj pozostałe.';
+
+  @override
+  String get saveThenFindRecordings =>
+      'Najpierw zapisz dzień, a potem wyszukaj jego nagrania.';
+
+  @override
+  String get recordingsAddedMeanwhile =>
+      'W międzyczasie dodano nagrania. Wyszukaj nagrania ponownie.';
+
+  @override
+  String get noMissingRecordingFound =>
+      'W tym folderze nie znaleziono brakujących nagrań.';
+
+  @override
+  String differentRecordingsNotUsed(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$files w tym folderze to inne nagrania, więc ich nie użyto.',
+      one: '$files w tym folderze to inne nagranie, więc go nie użyto.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dayReopenFailed(String error) {
+    return 'Nie udało się ponownie otworzyć dnia: $error';
+  }
+
+  @override
+  String sessionsNotOpened(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Nie udało się otworzyć $count sesji',
+      one: 'Nie udało się otworzyć 1 sesji',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get missingSessionsKept =>
+      'Zostają w dniu po zapisaniu, ale nie są pokazywane.';
+
+  @override
+  String get lookingForRecordings => 'Szukam…';
+
+  @override
+  String get findRecordingsInFolder => 'Znajdź nagrania w folderze…';
+
+  @override
+  String lapsShareBestTime(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń ma ten czas; pokazano najwcześniejsze.',
+      few: '$count okrążenia mają ten czas; pokazano najwcześniejsze.',
+      one: '1 okrążenie ma ten czas.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bestLapTrace =>
+      'Ślad najlepszego okrążenia, pokolorowany według prędkości';
+
+  @override
+  String get tapToOpenLap => 'Dotknij, aby otworzyć okrążenie.';
+
+  @override
+  String get comparedLaps => 'Porównywane okrążenia';
+
+  @override
+  String groupLapCount(String group, int eligible, int count) {
+    return '$group · $eligible/$count okr.';
+  }
+
+  @override
+  String lapsRanked(int count, int eligible) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'sklasyfikowano $eligible z $count okrążeń',
+      one: 'sklasyfikowano $eligible z 1 okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bestLapOfEachSession => 'Najlepsze okrążenie każdej sesji';
+
+  @override
+  String noRankedLap(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Brak sklasyfikowanego okrążenia · $count okrążeń',
+      few: 'Brak sklasyfikowanego okrążenia · $count okrążenia',
+      one: 'Brak sklasyfikowanego okrążenia · 1 okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String typicalTime(String time) {
+    return 'typowo $time';
+  }
+
+  @override
+  String get circuitNotIdentified =>
+      'Nie udało się rozpoznać toru, więc jej okrążenia nie są porównywane.';
+
+  @override
+  String get circuits => 'Tory';
+
+  @override
+  String get notes => 'Uwagi';
+
+  @override
+  String get circuitNotIdentifiedShort => 'Nie rozpoznano';
+
+  @override
+  String get detectedRoute => 'Wykryta trasa';
+
+  @override
+  String get directionUnknown => 'kierunek nieznany';
+
+  @override
+  String get circuitSetByYou => 'ustawione przez ciebie';
+
+  @override
+  String get circuitInferredFromGps => 'wywnioskowane z GPS';
+
+  @override
+  String get noBestLapNoCircuit =>
+      'Brak najlepszego okrążenia: żadna sesja nie ma dość pełnych okrążeń GPS, aby rozpoznać tor.';
+
+  @override
+  String get noBestLapNoRankable =>
+      'Brak najlepszego okrążenia: żadnego okrążenia tej grupy nie można sklasyfikować.';
+
+  @override
+  String get compareTwoLaps => 'Porównaj dwa okrążenia';
+
+  @override
+  String get bestOfDay => 'Najlepsze z dnia';
+
+  @override
+  String bestOfSession(String session) {
+    return 'Najlepsze: $session';
+  }
+
+  @override
+  String lapExcluded(String reason) {
+    return 'Wykluczone: $reason';
+  }
+
+  @override
+  String get lapExcludedNoReason => 'Wykluczone';
+
+  @override
+  String lapNotRanked(String issue) {
+    return 'Niesklasyfikowane: $issue';
+  }
+
+  @override
+  String get noStartFinishPass => 'Brak przejazdu przez linię start/meta';
+
+  @override
+  String get notTimed => 'Bez pomiaru czasu';
+
+  @override
+  String get pickLapA => 'Okrążenie A';
+
+  @override
+  String pickLapB(String lap) {
+    return 'Porównaj $lap z';
+  }
+
+  @override
+  String lapName(String session, int number) {
+    return '$session · OKR. $number';
+  }
+
+  @override
+  String outLapName(String session) {
+    return '$session · WYJAZD';
+  }
+
+  @override
+  String inLapName(String session) {
+    return '$session · ZJAZD';
+  }
+
+  @override
+  String unknownLapName(String session) {
+    return '$session · NIEZNANE';
+  }
+
+  @override
+  String circuitGroup(int number, String layout, String direction) {
+    return 'Grupa $number · $layout · $direction';
+  }
+
+  @override
+  String circuitGroupUnresolved(String session) {
+    return 'Nierozpoznane · $session';
+  }
+
+  @override
+  String get noteUndated =>
+      'Brak daty i godziny nagrania; pokazano je po nagraniach z datą, w kolejności importu.';
+
+  @override
+  String get noteNoPasses =>
+      'Brak pewnych przejazdów przez linię start/meta; rodzaj okrążenia jest nieznany.';
+
+  @override
+  String get lapIssueLayoutUnresolved => 'Konfiguracja toru do potwierdzenia';
+
+  @override
+  String get lapIssueDirectionUnresolved => 'Kierunek do potwierdzenia';
+
+  @override
+  String get lapIssueTimingGateUnresolved => 'Nieustalone bramki pomiaru czasu';
+
+  @override
+  String get lapIssueChangedLayout => 'Inna konfiguracja toru';
+
+  @override
+  String get lapIssueOppositeDirection => 'Przeciwny kierunek';
+
+  @override
+  String get lapIssueChangedTimingGate => 'Inne bramki pomiaru czasu';
+
+  @override
+  String get lapIssueIncompleteGps => 'Niepełny GPS';
+
+  @override
+  String get lapIssueInvalidGps => 'Błędny GPS';
+
+  @override
+  String get lapIssueUserExclusion => 'Wykluczone przez użytkownika';
+
+  @override
+  String get lapIssueNotTimedLap =>
+      'To nie jest pełne okrążenie z pomiarem czasu';
+
+  @override
+  String get lapIssueStaleSource =>
+      'Źródło się zmieniło; wczytaj nagranie ponownie';
+
+  @override
+  String get lapIssueIneligibleLap => 'Okrążenie się nie kwalifikuje';
+
+  @override
+  String get lapIssueDifferentRoute =>
+      'Okrążenie zjeżdża z trasy pozostałych okrążeń (wyjazd poza tor, objazd lub aleja serwisowa)';
 }

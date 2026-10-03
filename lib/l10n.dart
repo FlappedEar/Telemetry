@@ -75,3 +75,49 @@ extension SessionNameText on AppLocalizations {
     return number == null ? name : sessionName(int.parse(number));
   }
 }
+
+extension LapNameText on AppLocalizations {
+  /// A lap's name in the app's language, "Sesja 3 · OKR. 2", instead of
+  /// `DayLapRow.displayName` ("Session 3 · LAP 2").
+  String lap(DayLapRow row) {
+    final run = session(row.runName);
+    return switch (row.type) {
+      LapSectionType.lap => lapName(run, row.lapNumber),
+      LapSectionType.outLap => outLapName(run),
+      LapSectionType.inLap => inLapName(run),
+      LapSectionType.unknown => unknownLapName(run),
+    };
+  }
+}
+
+extension LapIssueText on AppLocalizations {
+  /// Why a lap is not ranked, in the app's language.
+  String lapIssue(LapIssue issue) => switch (issue) {
+    LapIssue.layoutUnresolved => lapIssueLayoutUnresolved,
+    LapIssue.directionUnresolved => lapIssueDirectionUnresolved,
+    LapIssue.timingGateUnresolved => lapIssueTimingGateUnresolved,
+    LapIssue.changedLayout => lapIssueChangedLayout,
+    LapIssue.oppositeDirection => lapIssueOppositeDirection,
+    LapIssue.changedTimingGate => lapIssueChangedTimingGate,
+    LapIssue.incompleteGps => lapIssueIncompleteGps,
+    LapIssue.invalidGps => lapIssueInvalidGps,
+    LapIssue.userExclusion => lapIssueUserExclusion,
+    LapIssue.notTimedLap => lapIssueNotTimedLap,
+    LapIssue.staleSource => lapIssueStaleSource,
+    LapIssue.ineligibleLap => lapIssueIneligibleLap,
+    LapIssue.differentRecordedRoute => lapIssueDifferentRoute,
+  };
+}
+
+extension DayNoteText on AppLocalizations {
+  /// A note of the day's analysis (`DayMessage.text`) in the app's
+  /// language; a note the app does not know, such as an error, is shown as
+  /// written.
+  String dayNote(String text) => switch (text) {
+    'Recording date and time unavailable; listed after the dated '
+        'recordings in import order.' =>
+      noteUndated,
+    'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
+    _ => routeReason(text),
+  };
+}

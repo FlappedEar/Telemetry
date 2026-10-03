@@ -276,9 +276,13 @@ void main() {
         home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
       ),
     );
-    await tester.tap(find.text('Session 1').last);
+    // The circuit list, the last name on the day section.
+    await tester.tap(find.text('Sesja 1').last);
     await tester.pumpAndSettle();
-    expect(find.text('Sesja 1'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(Dialog), matching: find.text('Sesja 1')),
+      findsOneWidget,
+    );
     expect(
       find.textContaining('przeciwnie do ruchu wskazówek zegara'),
       findsOneWidget,
@@ -295,6 +299,34 @@ void main() {
       find.byType(SegmentedButton<TrackDirection>),
     );
     expect(directions.direction, Axis.vertical);
+  });
+
+  testWidgets('the day page speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(400, 6000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Wyniki dnia'), findsOneWidget);
+    expect(find.text('Najlepsze okrążenie każdej sesji'), findsOneWidget);
+    expect(find.text('Tory'), findsOneWidget);
+    expect(find.textContaining('OKR. '), findsWidgets);
+
+    await tester.tap(find.text('Okrążenia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Porównaj dwa okrążenia'), findsOneWidget);
+    expect(find.text('Najlepsze z dnia'), findsOneWidget);
+    expect(find.text('Sesja 2 · WYJAZD'), findsOneWidget);
+    expect(find.text('Sesja 1 · OKR. 2'), findsWidgets);
   });
 
   testWidgets('names the circuit of a session and its route', (tester) async {

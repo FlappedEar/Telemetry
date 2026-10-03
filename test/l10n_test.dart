@@ -78,9 +78,10 @@ void main() {
               ((english['@$key'] as Map?)?['placeholders'] as Map?)?.keys ??
               const [];
           for (final name in placeholders) {
+            // Used in the text, or as the selector of a plural.
             expect(
               translated[key],
-              contains('{$name}'),
+              anyOf(contains('{$name}'), contains('{$name,')),
               reason: '$language $key',
             );
           }

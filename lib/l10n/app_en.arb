@@ -511,5 +511,443 @@
   "theoreticalBestHint": "Fastest of every segment",
   "@theoreticalBestHint": {
     "description": "Under the theoretical best label: what it is made of."
+  },
+  "dayResultsTitle": "Day results",
+  "@dayResultsTitle": {
+    "description": "Title of the day page before the day is saved."
+  },
+  "addRecordings": "Add recordings",
+  "@addRecordings": {
+    "description": "Button on the day page that adds recordings to the open day."
+  },
+  "dayReport": "Day report",
+  "@dayReport": {
+    "description": "Button on the day page that opens the day report."
+  },
+  "moreActions": "More",
+  "@moreActions": {
+    "description": "Tooltip of the menu with more actions."
+  },
+  "saveAs": "Save as…",
+  "@saveAs": {
+    "description": "Menu item that saves the day under a new name."
+  },
+  "addingRecordings": "Adding recordings",
+  "@addingRecordings": {
+    "description": "Screen reader label of the progress bar while recordings are added."
+  },
+  "waitUntilSessionAdded": "Wait until the session is added.",
+  "@waitUntilSessionAdded": {
+    "description": "Shown when leaving the day page while a session is being added."
+  },
+  "nothingAdded": "Nothing was added.",
+  "@nothingAdded": {
+    "description": "After adding recordings: none was added."
+  },
+  "addedToDay": "{sessions} added to the day.",
+  "@addedToDay": {
+    "description": "After adding recordings: the new sessions' names.",
+    "placeholders": {
+      "sessions": {
+        "type": "String",
+        "example": "Session 4, Session 5"
+      }
+    }
+  },
+  "savedAs": "Saved as {file}.",
+  "@savedAs": {
+    "description": "After saving the day: its file name.",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrzab.fetproject"
+      }
+    }
+  },
+  "savedAsChangesPending": "Saved as {file}. Changes made while saving are not saved yet.",
+  "@savedAsChangesPending": {
+    "description": "After saving the day when it changed during the save.",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrzab.fetproject"
+      }
+    }
+  },
+  "notSaved": "Not saved: {error}",
+  "@notSaved": {
+    "description": "Saving the day failed; the error follows.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "disk full"
+      }
+    }
+  },
+  "waitThenFindRecordings": "Wait until the recordings are added, then find the others.",
+  "@waitThenFindRecordings": {
+    "description": "Finding missing recordings while others are being added."
+  },
+  "saveThenFindRecordings": "Save the day first, then find its recordings.",
+  "@saveThenFindRecordings": {
+    "description": "Finding missing recordings of a day with unsaved changes."
+  },
+  "recordingsAddedMeanwhile": "Recordings were added meanwhile. Find the recordings again.",
+  "@recordingsAddedMeanwhile": {
+    "description": "The day changed while missing recordings were searched for."
+  },
+  "noMissingRecordingFound": "No missing recording was found in that folder.",
+  "@noMissingRecordingFound": {
+    "description": "Searching a folder for missing recordings found none."
+  },
+  "differentRecordingsNotUsed": "{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}",
+  "@differentRecordingsNotUsed": {
+    "description": "Files named like the missing recordings but with different content.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "files": {
+        "type": "String",
+        "example": "Run1.vbo, Run2.vbo"
+      }
+    }
+  },
+  "dayReopenFailed": "The day could not be opened again: {error}",
+  "@dayReopenFailed": {
+    "description": "Opening the day again with the found recordings failed.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "file not found"
+      }
+    }
+  },
+  "sessionsNotOpened": "{count, plural, =1{1 session could not be opened} other{{count} sessions could not be opened}}",
+  "@sessionsNotOpened": {
+    "description": "Heading over the sessions whose recordings are missing.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missingSessionsKept": "They stay in the day when it is saved, but are not shown.",
+  "@missingSessionsKept": {
+    "description": "Under the missing sessions."
+  },
+  "lookingForRecordings": "Looking…",
+  "@lookingForRecordings": {
+    "description": "Button text while missing recordings are searched for."
+  },
+  "findRecordingsInFolder": "Find recordings in a folder…",
+  "@findRecordingsInFolder": {
+    "description": "Button that searches a folder for the missing recordings."
+  },
+  "lapsShareBestTime": "{count, plural, =1{1 lap has this time.} other{{count} laps share this time; the earliest is shown.}}",
+  "@lapsShareBestTime": {
+    "description": "Several laps tie for the best time of the day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestLapTrace": "Trace of the best lap, coloured by speed",
+  "@bestLapTrace": {
+    "description": "Screen reader label of the map of the best lap."
+  },
+  "tapToOpenLap": "Tap to open the lap.",
+  "@tapToOpenLap": {
+    "description": "Under the map of the best lap."
+  },
+  "comparedLaps": "Compared laps",
+  "@comparedLaps": {
+    "description": "Heading of the choice of which circuit group's laps are ranked."
+  },
+  "groupLapCount": "{group} · {eligible}/{count} laps",
+  "@groupLapCount": {
+    "description": "A circuit group in the group choice, with its ranked and all laps.",
+    "placeholders": {
+      "group": {
+        "type": "String",
+        "example": "Group 1 · Jastrząb · Clockwise"
+      },
+      "eligible": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lapsRanked": "{count, plural, =1{{eligible} of 1 lap ranked} other{{eligible} of {count} laps ranked}}",
+  "@lapsRanked": {
+    "description": "How many laps of a group or session are ranked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "eligible": {
+        "type": "int"
+      }
+    }
+  },
+  "bestLapOfEachSession": "Best lap of each session",
+  "@bestLapOfEachSession": {
+    "description": "Heading of the list of each session's best lap."
+  },
+  "noRankedLap": "{count, plural, =1{No ranked lap · 1 lap} other{No ranked lap · {count} laps}}",
+  "@noRankedLap": {
+    "description": "A session without a ranked lap, with its number of laps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "typicalTime": "typical {time}",
+  "@typicalTime": {
+    "description": "A session's typical (median) lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:51.204"
+      }
+    }
+  },
+  "circuitNotIdentified": "Its circuit could not be identified, so its laps are not compared.",
+  "@circuitNotIdentified": {
+    "description": "Under a group whose circuit is unknown."
+  },
+  "circuits": "Circuits",
+  "@circuits": {
+    "description": "Heading of the list of each session's circuit."
+  },
+  "notes": "Notes",
+  "@notes": {
+    "description": "Heading of the analysis notes."
+  },
+  "circuitNotIdentifiedShort": "Not identified",
+  "@circuitNotIdentifiedShort": {
+    "description": "A session's circuit is unknown."
+  },
+  "detectedRoute": "Detected route",
+  "@detectedRoute": {
+    "description": "A circuit found from the GPS route, with no known layout name."
+  },
+  "directionUnknown": "direction unknown",
+  "@directionUnknown": {
+    "description": "A session's driving direction is unknown."
+  },
+  "circuitSetByYou": "set by you",
+  "@circuitSetByYou": {
+    "description": "The session's circuit was set by the user."
+  },
+  "circuitInferredFromGps": "inferred from GPS",
+  "@circuitInferredFromGps": {
+    "description": "The session's circuit was inferred from GPS."
+  },
+  "noBestLapNoCircuit": "No best lap: no session has enough complete GPS laps to identify its circuit.",
+  "@noBestLapNoCircuit": {
+    "description": "Why there is no best lap."
+  },
+  "noBestLapNoRankable": "No best lap: no lap of this group can be ranked.",
+  "@noBestLapNoRankable": {
+    "description": "Why there is no best lap."
+  },
+  "compareTwoLaps": "Compare two laps",
+  "@compareTwoLaps": {
+    "description": "Button in the lap list that starts a comparison."
+  },
+  "bestOfDay": "Best of the day",
+  "@bestOfDay": {
+    "description": "Mark of the day's best lap in the lap list."
+  },
+  "bestOfSession": "Best of {session}",
+  "@bestOfSession": {
+    "description": "Mark of a session's best lap in the lap list.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "lapExcluded": "Excluded: {reason}",
+  "@lapExcluded": {
+    "description": "A lap the user excluded, with the reason they gave.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "traffic"
+      }
+    }
+  },
+  "lapExcludedNoReason": "Excluded",
+  "@lapExcludedNoReason": {
+    "description": "A lap the user excluded without a reason."
+  },
+  "lapNotRanked": "Not ranked: {issue}",
+  "@lapNotRanked": {
+    "description": "Why a lap is not ranked.",
+    "placeholders": {
+      "issue": {
+        "type": "String",
+        "example": "Incomplete GPS"
+      }
+    }
+  },
+  "noStartFinishPass": "No start/finish pass",
+  "@noStartFinishPass": {
+    "description": "A recording part that never crossed the start/finish line."
+  },
+  "notTimed": "Not timed",
+  "@notTimed": {
+    "description": "An out or in lap."
+  },
+  "pickLapA": "Lap A",
+  "@pickLapA": {
+    "description": "Title of the list for picking the first lap to compare."
+  },
+  "pickLapB": "Compare {lap} with",
+  "@pickLapB": {
+    "description": "Title of the list for picking the second lap to compare.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "lapName": "{session} · LAP {number}",
+  "@lapName": {
+    "description": "A timed lap's name, as on a timing screen.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      },
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "outLapName": "{session} · OUT",
+  "@outLapName": {
+    "description": "The part from the start of a recording to the first start/finish pass.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "inLapName": "{session} · IN",
+  "@inLapName": {
+    "description": "The part from the last start/finish pass to the end of a recording.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "unknownLapName": "{session} · UNKNOWN",
+  "@unknownLapName": {
+    "description": "A whole recording with no start/finish pass.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "circuitGroup": "Group {number} · {layout} · {direction}",
+  "@circuitGroup": {
+    "description": "A group of sessions on one circuit.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "layout": {
+        "type": "String",
+        "example": "Jastrząb"
+      },
+      "direction": {
+        "type": "String",
+        "example": "Clockwise"
+      }
+    }
+  },
+  "circuitGroupUnresolved": "Unresolved · {session}",
+  "@circuitGroupUnresolved": {
+    "description": "A session whose circuit is unknown, as its own group.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "noteUndated": "Recording date and time unavailable; listed after the dated recordings in import order.",
+  "@noteUndated": {
+    "description": "Analysis note about a recording without a clock."
+  },
+  "noteNoPasses": "No reliable start/finish passes; lap type is unknown.",
+  "@noteNoPasses": {
+    "description": "Analysis note about a recording without start/finish passes."
+  },
+  "lapIssueLayoutUnresolved": "Layout needs confirmation",
+  "@lapIssueLayoutUnresolved": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueDirectionUnresolved": "Direction needs confirmation",
+  "@lapIssueDirectionUnresolved": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueTimingGateUnresolved": "Timing gates unresolved",
+  "@lapIssueTimingGateUnresolved": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueChangedLayout": "Different layout",
+  "@lapIssueChangedLayout": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueOppositeDirection": "Opposite direction",
+  "@lapIssueOppositeDirection": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueChangedTimingGate": "Different timing gates",
+  "@lapIssueChangedTimingGate": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueIncompleteGps": "Incomplete GPS",
+  "@lapIssueIncompleteGps": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueInvalidGps": "Invalid GPS",
+  "@lapIssueInvalidGps": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueUserExclusion": "User exclusion",
+  "@lapIssueUserExclusion": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueNotTimedLap": "Not a complete timed lap",
+  "@lapIssueNotTimedLap": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueStaleSource": "Source changed; reload recording",
+  "@lapIssueStaleSource": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueIneligibleLap": "Lap is not eligible",
+  "@lapIssueIneligibleLap": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueDifferentRoute": "Lap leaves the route the other laps took (off track, a detour or the pit lane)",
+  "@lapIssueDifferentRoute": {
+    "description": "Why a lap is not ranked."
   }
 }
