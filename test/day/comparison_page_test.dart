@@ -623,5 +623,5 @@ void main() {
   }
 }
 
-const lapAColorForTest = Color(0xFF55E6A5);
-const lapBColorForTest = Color(0xFFD95926);
+const lapAColorForTest = Color(0xFFFCB203);
+const lapBColorForTest = Color(0xFF3D8BFF);

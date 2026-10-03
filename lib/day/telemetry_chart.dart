@@ -10,11 +10,12 @@ import '../units.dart';
 import 'channel_sources.dart';
 import 'touch.dart';
 
-/// The colour of the Δ time line (one line, not an A/B pair).
-const Color deltaLineColor = Color(0xFFFFCF5C);
+/// The colour of the Δ time line (one line, not an A/B pair): neutral, so it
+/// is not read as lap A's amber or lap B's blue.
+const Color deltaLineColor = Color(0xFFE6E6E6);
 
-/// [deltaLineColor] on a light background: the same hue, darker.
-const Color deltaLineLightColor = Color(0xFFB98500);
+/// [deltaLineColor] on a light background: the same grey, darker.
+const Color deltaLineLightColor = Color(0xFF3A3A3A);
 
 /// One line of a chart: a lap's series in its colour.
 @immutable

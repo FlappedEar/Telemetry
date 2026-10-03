@@ -740,13 +740,14 @@ class _ComparisonPageState extends State<ComparisonPage> {
   }
 }
 
-/// Sequential: one blue hue, dim to bright. Diverging: blue, grey at zero,
-/// amber, symmetric around zero so zero is always neutral.
+/// Sequential: one blue hue, dim to bright. Diverging: amber, grey at zero,
+/// blue, symmetric around zero so zero is always neutral. For Δ time (A − B)
+/// that is lap A's colour where A is ahead and lap B's where B is ahead.
 const List<Color> sequentialLayerStops = [Color(0xFF28527A), Color(0xFFE3F4FF)];
 const List<Color> divergingLayerStops = [
-  Color(0xFF4F9DFF),
+  Color(0xFFFCB203),
   Color(0xFF8B95A1),
-  Color(0xFFFFAB40),
+  Color(0xFF3D8BFF),
 ];
 
 /// The colour scale of [layer]: its low and high ends.
