@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
-import 'theoretical_best_card.dart' show shortSegmentName;
+import 'touch.dart';
 
 /// "11:20:05 UTC on 19 Aug 2026" from a recording clock.
 String recordingClockText(int milliseconds) {
@@ -42,7 +42,9 @@ class ProgressionCard extends StatefulWidget {
 }
 
 class _ProgressionCardState extends State<ProgressionCard> {
-  bool _bySection = false;
+  // Kept for the page: the list rebuilds the card when it scrolls back.
+  late bool _bySection =
+      readPageState(context, 'progressionBySection') ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -63,8 +65,10 @@ class _ProgressionCardState extends State<ProgressionCard> {
                 ButtonSegment(value: true, label: Text('By segment')),
               ],
               selected: {_bySection},
-              onSelectionChanged: (selection) =>
-                  setState(() => _bySection = selection.single),
+              onSelectionChanged: (selection) => setState(() {
+                _bySection = selection.single;
+                writePageState(context, 'progressionBySection', _bySection);
+              }),
             ),
             const SizedBox(height: 8),
             if (_bySection) ..._sections(context) else ..._sessions(context),
@@ -261,14 +265,15 @@ class _RangePainter extends CustomPainter {
       old.distribution != distribution || old.low != low || old.high != high;
 }
 
-/// Segments by sessions, scrolling sideways on a phone.
+/// Segments by sessions: the segment names stay while the sessions scroll
+/// sideways on a phone.
 class _SectionTable extends StatelessWidget {
   const _SectionTable({required this.sections, required this.result});
 
   final SectionProgression sections;
   final DayTheoreticalBest result;
 
-  static const _nameWidth = 96.0, _cellWidth = 104.0;
+  static const _nameWidth = 96.0, _cellWidth = 112.0;
 
   String _lapName(Object? reference) {
     for (final lap in result.laps) {
@@ -318,57 +323,39 @@ class _SectionTable extends StatelessWidget {
     if (sections.sessions.isEmpty) {
       return const Text('No session has timed segments.');
     }
-    Widget box(Widget child, double width, {Color? color}) => Container(
-      width: width,
-      height: 44,
-      color: color,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: child,
-    );
-    return SingleChildScrollView(
+    final label = theme.textTheme.labelMedium;
+    return StickyTable(
       key: const ValueKey('sectionTable'),
-      scrollDirection: Axis.horizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              box(const SizedBox.shrink(), _nameWidth),
-              for (final session in sections.sessions)
-                box(
-                  Text(
-                    session.run.name,
-                    style: theme.textTheme.labelMedium,
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  _cellWidth,
-                ),
-            ],
-          ),
-          const Divider(height: 1),
-          for (final row in sections.segments)
-            Row(
-              children: [
-                Container(
-                  width: _nameWidth,
-                  height: 44,
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    shortSegmentName(row.name),
-                    style: theme.textTheme.labelMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                for (var c = 0; c < row.cells.length; ++c)
-                  _cell(context, row, c, numbers, scheme, box),
-              ],
+      firstWidth: _nameWidth,
+      cellWidths: [for (final _ in sections.sessions) _cellWidth],
+      rowHeight: 52,
+      header: StickyRow(
+        first: const SizedBox.shrink(),
+        cells: [
+          for (final session in sections.sessions)
+            TableCellText(
+              session.run.name,
+              style: label,
+              alignment: Alignment.center,
+              maxLines: 2,
             ),
         ],
       ),
+      rows: [
+        for (final row in sections.segments)
+          StickyRow(
+            first: TableCellText(
+              row.name,
+              style: label,
+              alignment: Alignment.centerLeft,
+              maxLines: 2,
+            ),
+            cells: [
+              for (var c = 0; c < row.cells.length; ++c)
+                _cell(context, row, c, numbers, scheme),
+            ],
+          ),
+      ],
     );
   }
 
@@ -378,7 +365,6 @@ class _SectionTable extends StatelessWidget {
     int index,
     TextStyle? numbers,
     ColorScheme scheme,
-    Widget Function(Widget, double, {Color? color}) box,
   ) {
     final cell = row.cells[index];
     final summary = cell.summary;
@@ -396,8 +382,8 @@ class _SectionTable extends StatelessWidget {
               ),
               Text(
                 'spread ${summary.interquartileRange!.toStringAsFixed(3)} s',
-                style: numbers?.copyWith(
-                  fontSize: 10,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
                   color: quickest ? scheme.onPrimaryContainer : null,
                 ),
               ),
@@ -414,10 +400,12 @@ class _SectionTable extends StatelessWidget {
       onTap: cell.laps.isEmpty
           ? null
           : () => _showLaps(context, row, sections.sessions[index], cell),
-      child: box(
-        FittedBox(fit: BoxFit.scaleDown, child: content),
-        _cellWidth,
+      child: Container(
         color: quickest ? scheme.primaryContainer : null,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        // Only a last resort: the cell grows with the text size.
+        child: FittedBox(fit: BoxFit.scaleDown, child: content),
       ),
     );
   }

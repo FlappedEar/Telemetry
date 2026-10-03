@@ -4,6 +4,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import 'theoretical_best_card.dart' show lossColor;
 import 'track_map.dart';
+import 'touch.dart';
 
 /// Opens lap [a] against lap [b], showing [focus] of lap A first (its
 /// recording times) when given; with [segmentId] (a segment of the
@@ -84,8 +85,14 @@ class TimeLossesCard extends StatefulWidget {
 
 class _TimeLossesCardState extends State<TimeLossesCard> {
   static const _shown = 8;
-  bool _allLaps = false;
-  bool _expanded = false;
+  // Kept for the page: the list rebuilds the card when it scrolls back.
+  late bool _allLaps = readPageState(context, 'timeLossesAllLaps') ?? false;
+  late bool _expanded = readPageState(context, 'timeLossesExpanded') ?? false;
+
+  void _remember() {
+    writePageState(context, 'timeLossesAllLaps', _allLaps);
+    writePageState(context, 'timeLossesExpanded', _expanded);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +135,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
         onSelectionChanged: (selection) => setState(() {
           _allLaps = selection.single;
           _expanded = false;
+          _remember();
         }),
       ),
       const SizedBox(height: 8),
@@ -158,7 +166,10 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
         if (losses.length > _shown && !_expanded)
           TextButton(
             key: const ValueKey('timeLossShowAll'),
-            onPressed: () => setState(() => _expanded = true),
+            onPressed: () => setState(() {
+              _expanded = true;
+              _remember();
+            }),
             child: Text('Show all ${losses.length}'),
           ),
       ],
@@ -204,21 +215,21 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    timeLossWindowName(loss),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  // Wraps rather than cut "after Corner 4" at 360 dp.
+                  Text(timeLossWindowName(loss)),
                   Text(
                     _lapName(result, loss.lapReference),
                     style: theme.textTheme.bodySmall,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               displayDelta(loss.lossSeconds),
-              style: theme.textTheme.titleSmall,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
             Icon(Icons.chevron_right, color: theme.colorScheme.outline),
           ],
