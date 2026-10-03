@@ -12,7 +12,9 @@ void main() {
   // A first frame that never comes fails the test with a result after three
   // minutes, instead of leaving the tool waiting until CI stops it.
   testWidgets('the app starts and shows its first screen', (tester) async {
-    app.main();
+    // main() loads the settings before runApp; without the await,
+    // pumpAndSettle can return before the app has been built.
+    await app.main();
     await tester.pumpAndSettle();
 
     final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
