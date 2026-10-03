@@ -834,9 +834,13 @@ Map<String, DocumentAlternative> _openAlternatives(
 /// again, while that is bound to both recordings' content; otherwise aligned
 /// and fused afresh. A file that is not the content the document asserts is
 /// used only when it is the same drive as [primary] in the other format
-/// ([sameDriveInOtherFormat]): it is then aligned afresh and its source entry
-/// updated when the day is saved ([RunFusion.documentChanged]); otherwise it
-/// is "a different recording" and nothing is fused. Takes seconds: run it in
+/// ([sameDriveInOtherFormat]): it is then aligned afresh, keeping the
+/// decision's rules for channels both still measure ([keepFusionChoices]),
+/// and its source entry is updated when the day is saved
+/// ([RunFusion.documentChanged]); otherwise it is "a different recording" and
+/// nothing is fused. A source with neither a content SHA-256 nor a
+/// fingerprint is used only when it is the same drive, never by its path
+/// alone. Takes seconds: run it in
 /// the background.
 RunFusion resolveDocumentAlternative(
   TelemetryRunProposal primary,
@@ -860,7 +864,12 @@ RunFusion resolveDocumentAlternative(
   if (status.status == TelemetryImportFileStatus.error || loaded == null) {
     return unavailable(status.message);
   }
+  // A file is never accepted only because of its path: without a content
+  // SHA-256 or fingerprint to check (as Overlays may write the source), it
+  // must be the same drive as the run's recording.
+  final identified = alternative.contentSha256.isNotEmpty || alternative.fingerprint.isNotEmpty;
   final same =
+      identified &&
       (alternative.contentSha256.isEmpty || alternative.contentSha256 == loaded.contentSha256) &&
       (alternative.fingerprint.isEmpty ||
           fet.qtCompactJson(alternative.fingerprint) ==
@@ -868,6 +877,7 @@ RunFusion resolveDocumentAlternative(
   if (!same && !sameDriveInOtherFormat(primary, loaded, cancelled: cancelled)) {
     return unavailable('The file found is a different recording.');
   }
+  final changed = identified && !same;
   final recording = TelemetryRunProposal(
     id: loaded.id,
     sourceId: alternative.sourceId,
@@ -878,10 +888,17 @@ RunFusion resolveDocumentAlternative(
     laps: loaded.laps,
   );
   final decision = alternative.decision;
-  final fusion = decision != null && fusionDecisionApplies(decision, primary, recording)
-      ? applyFusionDecision(decision, primary, recording, cancelled: cancelled)
-      : fuseRunRecordings(primary, recording, cancelled: cancelled);
-  return !same || alternative.relinked ? fusion.withDocumentChanged() : fusion;
+  final RunFusion fusion;
+  if (decision != null && fusionDecisionApplies(decision, primary, recording)) {
+    fusion = applyFusionDecision(decision, primary, recording, cancelled: cancelled);
+  } else {
+    // Aligned afresh, keeping the user's choices for channels that remain.
+    final aligned = fuseRunRecordings(primary, recording, cancelled: cancelled);
+    fusion = decision != null && decision['alternativeSourceId'] == alternative.sourceId
+        ? keepFusionChoices(aligned, primary, decision, cancelled: cancelled)
+        : aligned;
+  }
+  return changed || alternative.relinked ? fusion.withDocumentChanged() : fusion;
 }
 
 /// Every alternative recording of [day] resolved and fused

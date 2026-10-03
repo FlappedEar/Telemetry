@@ -288,24 +288,28 @@ final class DayResultsController extends ChangeNotifier {
   // [runs] with each fused session in place of its recording: what the
   // analysis that reads channels uses. Laps stay the primary's own.
   List<NamedRun>? _channelRuns;
-  List<NamedRun> get _analysisRuns => _channelRuns ??= [
-    for (final named in _runs)
-      if (_fusions[named.run.id]?.session case final fused?)
-        (
-          run: TelemetryRunProposal(
-            id: named.run.id,
-            sourceId: named.run.sourceId,
-            sourcePath: named.run.sourcePath,
-            format: named.run.format,
-            contentSha256: named.run.contentSha256,
-            telemetry: fused,
-            laps: named.run.laps,
-          ),
-          name: named.name,
-        )
-      else
-        named,
-  ];
+  // Built again whenever the fusions or the runs change, also when a run
+  // is added some other way than [addRecordings].
+  List<NamedRun> get _analysisRuns => _channelRuns?.length == _runs.length
+      ? _channelRuns!
+      : _channelRuns = [
+          for (final named in _runs)
+            if (_fusions[named.run.id]?.session case final fused?)
+              (
+                run: TelemetryRunProposal(
+                  id: named.run.id,
+                  sourceId: named.run.sourceId,
+                  sourcePath: named.run.sourcePath,
+                  format: named.run.format,
+                  contentSha256: named.run.contentSha256,
+                  telemetry: fused,
+                  laps: named.run.laps,
+                ),
+                name: named.name,
+              )
+            else
+              named,
+        ];
 
   NamedRun? _named(String runId) {
     for (final named in _runs) {
@@ -857,6 +861,8 @@ final class DayResultsController extends ChangeNotifier {
     }
     final existing = {for (final named in _runs) named.run.id};
     _runs.addAll(outcome.runs);
+    // What reads channels includes the new sessions.
+    _channelRuns = null;
     // The new session's speed unit counts as much as the others'.
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);

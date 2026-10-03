@@ -310,14 +310,7 @@ RunFusion applyFusionDecision(
 }) {
   final clock = decision['clock'] as Map;
   double number(Object? value) => value is num ? value.toDouble() : 0.0;
-  final rules = <String, FusionRule>{};
-  for (final value in (decision['rules'] as List?) ?? const []) {
-    if (value case {'key': final String key, 'rule': final String rule}) {
-      for (final candidate in FusionRule.values) {
-        if (candidate.name == rule) rules[key] = candidate;
-      }
-    }
-  }
+  final rules = fusionDecisionRules(decision);
   return _fuse(
     primary,
     alternative,
@@ -330,6 +323,55 @@ RunFusion applyFusionDecision(
     resolvedByDeclaredClock: clock['resolvedByDeclaredClock'] == true,
     rules: rules,
     fromDocument: true,
+    cancelled: cancelled,
+  );
+}
+
+/// The rule of each channel key a saved [decision] lists.
+Map<String, FusionRule> fusionDecisionRules(Map<String, Object?> decision) {
+  final rules = <String, FusionRule>{};
+  final listed = decision['rules'];
+  for (final value in listed is List ? listed : const []) {
+    if (value case {'key': final String key, 'rule': final String rule}) {
+      for (final candidate in FusionRule.values) {
+        if (candidate.name == rule) rules[key] = candidate;
+      }
+    }
+  }
+  return rules;
+}
+
+/// [fusion] (aligned afresh) with the user's choices of an earlier
+/// [decision] kept: each rule other than [FusionRule.primaryOnly] for a
+/// channel both recordings still measure. [fusion] itself when there is
+/// none to keep or it is not fused.
+RunFusion keepFusionChoices(
+  RunFusion fusion,
+  TelemetryRunProposal primary,
+  Map<String, Object?> decision, {
+  CancellationCheck? cancelled,
+}) {
+  final alternative = fusion.alternative;
+  if (!fusion.fused || alternative == null) return fusion;
+  final shared = {
+    for (final channel in fusion.result?.channels ?? const <FusedChannel>[])
+      if (channel.comparedSourceId.isNotEmpty) channel.key,
+  };
+  final kept = {
+    for (final MapEntry(:key, :value) in fusionDecisionRules(decision).entries)
+      if (value != FusionRule.primaryOnly && shared.contains(key)) key: value,
+  };
+  if (kept.isEmpty) return fusion;
+  return _fuse(
+    primary,
+    alternative,
+    status: fusion.status,
+    clock: fusion.clock,
+    uncertaintySeconds: fusion.uncertaintySeconds,
+    resolvedByDeclaredClock: fusion.resolvedByDeclaredClock,
+    rules: {...fusion.rules, ...kept},
+    fromDocument: fusion.fromDocument,
+    documentChanged: fusion.documentChanged,
     cancelled: cancelled,
   );
 }

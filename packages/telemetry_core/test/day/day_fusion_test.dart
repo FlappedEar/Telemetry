@@ -323,6 +323,84 @@ void main() {
     expect(reopened.documentChanged, isFalse);
   });
 
+  test('a changed RCZ of the same drive keeps the rules chosen for it', () async {
+    final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+    final day = importDay([vbo, rcz]);
+    final primary = day.runs.single.run;
+    final chosen = withFusionRule(day.fusions[primary.id]!, primary, 'sats', FusionRule.fillGaps)!;
+    final path = p.join(root, 'day.fetproject');
+    await saveDayDocument(
+      path,
+      dayDocument(
+        eventId: newEventId(),
+        name: 'Fused day',
+        runs: day.runs,
+        analysis: day.analysis,
+        projectPath: path,
+        fusions: {primary.id: chosen},
+      ),
+    );
+    // Exported again: other content, the satellite count still disagreeing.
+    Directory(p.join(root, 'again')).createSync();
+    final (_, again) = writeFusionPair(
+      p.join(root, 'again'),
+      satellites: true,
+      satelliteDifference: 6,
+    );
+    File(again).copySync(rcz);
+    final fusion = fuseOpenedDay(openDay(path))[primary.id]!;
+    expect(fusion.fused, isTrue);
+    expect(fusion.fromDocument, isFalse, reason: 'aligned afresh');
+    expect(fusion.documentChanged, isTrue);
+    expect(fusion.ruleOf('sats'), FusionRule.fillGaps, reason: 'the choice is kept');
+    expect(fusion.channelOrigins, {'rpm-obd': 'added', 'sats': 'fillGaps'});
+  });
+
+  for (final sameDrive in [true, false]) {
+    test('an RCZ the document has no identity for is used only when it is the same drive '
+        '(${sameDrive ? 'same' : 'another'} drive)', () async {
+      final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+      final day = importDay([vbo, rcz]);
+      final primary = day.runs.single.run;
+      final path = p.join(root, 'day.fetproject');
+      final document = dayDocument(
+        eventId: newEventId(),
+        name: 'Fused day',
+        runs: day.runs,
+        analysis: day.analysis,
+        projectPath: path,
+        fusions: day.fusions,
+      );
+      // As another writer may keep it: a path, no SHA-256, no fingerprint.
+      final run = runJson(document, primary.id)..remove('fusion');
+      final sources = ((run['sources'] as Map)['telemetry'] as List).cast<Map<String, Object?>>();
+      final entry = sources.last
+        ..remove('contentSha256')
+        ..remove('importProvenance');
+      (entry['reference'] as Map).remove('fingerprint');
+      expect(fet.validateFetproject(document), isNull);
+      await saveDayDocument(path, document);
+      if (!sameDrive) {
+        Directory(p.join(root, 'other')).createSync();
+        final (_, other) = writeFusionPair(
+          p.join(root, 'other'),
+          speeds: const [31, 26, 30, 28, 33, 27, 29, 25, 32, 30],
+        );
+        File(other).copySync(rcz);
+      }
+      final opened = openDay(path);
+      expect(opened.alternatives[primary.id]!.contentSha256, isEmpty);
+      expect(opened.alternatives[primary.id]!.fingerprint, isEmpty);
+      final fusion = fuseOpenedDay(opened)[primary.id]!;
+      if (sameDrive) {
+        expect(fusion.fused, isTrue);
+      } else {
+        expect(fusion.state, RunFusionState.unavailable);
+        expect(fusion.reason, 'The file found is a different recording.');
+      }
+    });
+  }
+
   test('a moved RCZ is found by its content and fused again', () async {
     final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
     final day = importDay([vbo, rcz]);

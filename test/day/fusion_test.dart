@@ -366,6 +366,53 @@ void main() {
     },
   );
 
+  test(
+    'a session added after channels were read is compared and summarized',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final both = importDay([vbo, rcz]);
+      final controller = DayResultsController(
+        runs: both.runs,
+        analysis: both.analysis!,
+        alternatives: both.alternatives,
+        appender: _SyncAppender(),
+      );
+      addTearDown(controller.dispose);
+      await controller.fusionsSettled;
+      // Fill what reads channels: a comparison and the Car/Driver summaries.
+      final first = controller.comparisonCandidates();
+      expect(controller.comparison(first[0], first[1]), isNotNull);
+      await controller.requestChannelSummaries();
+      expect(controller.channelSummaries!.runs, hasLength(1));
+
+      // A plain VBO of another drive, no RCZ.
+      final other = Directory('${directory.path}/other')..createSync();
+      final (plain, _) = writeFusionPair(
+        other.path,
+        name: 'plain',
+        speeds: const [31, 26, 30, 28, 33, 27, 29, 25, 32, 30],
+      );
+      final addition = await controller.addRecordings([plain]);
+      expect(addition.added, hasLength(1));
+      final added = controller.runs.last.run.id;
+      final laps = [
+        for (final row in controller.analysis.rows)
+          if (row.runId == added && row.type == LapSectionType.lap) row,
+      ];
+      expect(laps.length, greaterThanOrEqualTo(2));
+      final comparison = controller.comparison(laps[0], laps[1]);
+      expect(comparison, isNotNull);
+      expect(controller.comparison(laps[0], first[0]), isNotNull);
+      await controller.requestChannelSummaries();
+      final summaries = controller.channelSummaries!.runs;
+      expect(summaries.map((run) => run.runId), contains(added));
+      expect(
+        summaries.firstWhere((run) => run.runId == added).unavailableReason,
+        isEmpty,
+      );
+    },
+  );
+
   test('a rule change that fails leaves the choice usable', () async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final both = importDay([vbo, rcz]);

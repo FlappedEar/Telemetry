@@ -118,9 +118,11 @@ both recordings are unchanged, and they are aligned afresh otherwise. When
 the file at the RCZ's place (or one found by **Find recordings in a
 folder…**, which also looks for RCZs by content, or by name) holds other
 content, it is still used when it is the same drive as the VBO by the
-import's pairing rule: it is aligned afresh, its source entry is updated and
-the day has changes until saved. Otherwise it is "a different recording" and
-the session uses its VBO alone. A day gets unsaved changes from this only
+import's pairing rule: it is aligned afresh (keeping the rules chosen for
+channels both still record), its source entry is updated and the day has
+changes until saved. Otherwise it is "a different recording" and the session
+uses its VBO alone. An RCZ the document stores no SHA-256 or fingerprint for
+is likewise used only when it is the same drive, never by its path alone. A day gets unsaved changes from this only
 when it produces a new decision or updates the RCZ's entry, never just by
 opening.
 
