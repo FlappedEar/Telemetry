@@ -987,5 +987,13 @@
   "recordingsBusyRetry": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem spróbuj ponownie.",
   "recordingsBusyLeave": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji.",
   "recordingsUnsaved": "Zapisz dzień przed zmianą głównego nagrania.",
-  "recordingsBusyAdd": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania."
+  "recordingsBusyAdd": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.",
+  "mapBackgroundMenu": "Tło mapy",
+  "mapBackgroundStreets": "Ulice",
+  "mapBackgroundSatellite": "Satelita",
+  "mapBackgroundApple": "Apple Maps",
+  "mapBackgroundPlain": "Bez tła",
+  "documentPickerDays": "Dzień FlappedEar",
+  "documentPickerLookInFolder": "Szukaj w tym folderze",
+  "speedLegendNoSpeed": "Nie zapisano prędkości; ślad jest w jednym kolorze."
 }

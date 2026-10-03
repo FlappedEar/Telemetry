@@ -6092,6 +6092,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wait until the session\'s recordings are checked or changed, then add recordings.'**
   String get recordingsBusyAdd;
+
+  /// Tooltip of the button that chooses the map background.
+  ///
+  /// In en, this message translates to:
+  /// **'Map background'**
+  String get mapBackgroundMenu;
+
+  /// Map background: street map.
+  ///
+  /// In en, this message translates to:
+  /// **'Streets'**
+  String get mapBackgroundStreets;
+
+  /// Map background: satellite imagery.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellite'**
+  String get mapBackgroundSatellite;
+
+  /// Map background: Apple Maps (a product name, keep it).
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Maps'**
+  String get mapBackgroundApple;
+
+  /// Map background: no map, the track line only.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain'**
+  String get mapBackgroundPlain;
+
+  /// The file type shown in the file picker when opening or saving a day.
+  ///
+  /// In en, this message translates to:
+  /// **'FlappedEar day'**
+  String get documentPickerDays;
+
+  /// The folder picker's confirm button when looking for a day's missing recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Look in this folder'**
+  String get documentPickerLookInFolder;
+
+  /// Under the track map when the lap has no speed channel, so the trace has no speed colours.
+  ///
+  /// In en, this message translates to:
+  /// **'No speed recorded; the trace is drawn in one colour.'**
+  String get speedLegendNoSpeed;
 }
 
 class _AppLocalizationsDelegate
