@@ -1,0 +1,71 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Polish (`pl`).
+class AppLocalizationsPl extends AppLocalizations {
+  AppLocalizationsPl([String locale = 'pl']) : super(locale);
+
+  @override
+  String get appTitle => 'FlappedEar Telemetry';
+
+  @override
+  String get directionClockwise => 'Zgodnie z zegarem';
+
+  @override
+  String get directionCounterclockwise => 'Przeciwnie do zegara';
+
+  @override
+  String get directionClockwiseInSentence =>
+      'zgodnie z ruchem wskazówek zegara';
+
+  @override
+  String get directionCounterclockwiseInSentence =>
+      'przeciwnie do ruchu wskazówek zegara';
+
+  @override
+  String trackDialogTitle(String session) {
+    return 'Tor sesji $session';
+  }
+
+  @override
+  String trackDialogNoRoute(String reason) {
+    return 'Nie wykryto trasy: $reason';
+  }
+
+  @override
+  String get trackDialogNoLaps => 'brak okrążeń';
+
+  @override
+  String trackDialogDetectedRoute(String length, String direction) {
+    return 'Wykryta trasa: $length m, $direction (na podstawie GPS).';
+  }
+
+  @override
+  String trackDialogWholeTrace(String session) {
+    return 'Cały ślad GPS sesji $session';
+  }
+
+  @override
+  String get trackDialogLayoutName => 'Nazwa konfiguracji toru';
+
+  @override
+  String get trackDialogLayoutHint => 'Jastrząb, pełna pętla';
+
+  @override
+  String trackDialogSameRoute(String sessions) {
+    return 'Także dla sesji na tej samej trasie: $sessions';
+  }
+
+  @override
+  String get trackDialogUseDetected => 'Użyj wykrytej trasy';
+
+  @override
+  String get cancel => 'Anuluj';
+
+  @override
+  String get save => 'Zapisz';
+}

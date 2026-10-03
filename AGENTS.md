@@ -142,7 +142,7 @@ From the handover, section "How results are presented".
   recording-time order.
 - Mobile is touch-first: no hover, no tooltips, large targets.
 - Times from one minute read `m:ss.mmm` ("1:49.898"); below a minute "28.662 s";
-  a non-finite value is "—". Round before splitting minutes, so a time never reads
+  a non-finite value is "—". Polish uses a decimal comma ("1:49,898"). Round before splitting minutes, so a time never reads
   "x:60".
 - A missing result says why and is never shown as zero.
 - Typical means the median, spread means the interquartile range, and at least
@@ -153,3 +153,21 @@ From the handover, section "How results are presented".
   orange `#d95926`.
 - Longitudinal G: braking points upward in charts; acceleration points upward in
   G-G and on the map.
+
+## Languages
+
+The app speaks English and Polish and follows the device language, falling back
+to English (`lib/l10n.dart`).
+
+- Every text a user sees comes from `lib/l10n/app_en.arb`, with a description,
+  and has its Polish in `app_pl.arb`. `flutter pub get` generates
+  `lib/l10n/app_localizations*.dart`; commit them. `test/l10n_test.dart` checks
+  that both files have the same keys and placeholders.
+- Read text with `context.l10n`. Format numbers with `fixed`, times with
+  `displayTime`/`displayDelta` and dates with `displayDateTime` from
+  `format.dart`, never `toStringAsFixed` alone, so Polish gets its decimal
+  comma.
+- Labels and reasons from `telemetry_core` are English; map them to ARB texts in
+  the app instead of showing them (see `TrackDirectionText`).
+- The owner reviews Polish driving and telemetry terms.
+- The user guide stays in English.

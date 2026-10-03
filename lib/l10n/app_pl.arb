@@ -1,0 +1,22 @@
+{
+  "@@locale": "pl",
+  "appTitle": "FlappedEar Telemetry",
+
+  "directionClockwise": "Zgodnie z zegarem",
+  "directionCounterclockwise": "Przeciwnie do zegara",
+  "directionClockwiseInSentence": "zgodnie z ruchem wskazówek zegara",
+  "directionCounterclockwiseInSentence": "przeciwnie do ruchu wskazówek zegara",
+
+  "trackDialogTitle": "Tor sesji {session}",
+  "trackDialogNoRoute": "Nie wykryto trasy: {reason}",
+  "trackDialogNoLaps": "brak okrążeń",
+  "trackDialogDetectedRoute": "Wykryta trasa: {length} m, {direction} (na podstawie GPS).",
+  "trackDialogWholeTrace": "Cały ślad GPS sesji {session}",
+  "trackDialogLayoutName": "Nazwa konfiguracji toru",
+  "trackDialogLayoutHint": "Jastrząb, pełna pętla",
+  "trackDialogSameRoute": "Także dla sesji na tej samej trasie: {sessions}",
+  "trackDialogUseDetected": "Użyj wykrytej trasy",
+
+  "cancel": "Anuluj",
+  "save": "Zapisz"
+}

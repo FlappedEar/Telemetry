@@ -171,6 +171,35 @@ void main() {
     },
   );
 
+  testWidgets('the circuit dialog speaks Polish', (tester) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.tap(find.text('Session 1').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Tor sesji Session 1'), findsOneWidget);
+    expect(
+      find.textContaining('przeciwnie do ruchu wskazówek zegara'),
+      findsOneWidget,
+    );
+    expect(find.text('Przeciwnie do zegara'), findsOneWidget);
+    expect(
+      find.text('Także dla sesji na tej samej trasie: Session 2'),
+      findsOneWidget,
+    );
+    expect(find.text('Zapisz'), findsOneWidget);
+    expect(find.text('Anuluj'), findsOneWidget);
+  });
+
   testWidgets('names the circuit of a session and its route', (tester) async {
     final outcome = importDay({
       'a.vbo': [30, 28, 31],
