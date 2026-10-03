@@ -37,25 +37,21 @@ final class _SyncJob implements DayAppendJob {
   void cancel() {}
 }
 
-/// Prepares additions on the test's own thread once released.
-final class _GatedAppender implements DayAppender {
-  final _gate = Completer<void>();
-
-  void release() => _gate.complete();
-
+/// An addition that finishes only when cancelled.
+final class _PendingAppender implements DayAppender {
   @override
   DayAppendJob start(DayAppendRequest request, void Function(int, int) _) =>
-      _GatedJob(_gate.future.then((_) => runDayAppend(request)));
+      _PendingJob();
 }
 
-final class _GatedJob implements DayAppendJob {
-  _GatedJob(this.result);
+final class _PendingJob implements DayAppendJob {
+  final _completer = Completer<DayAppendOutcome>();
 
   @override
-  final Future<DayAppendOutcome> result;
+  Future<DayAppendOutcome> get result => _completer.future;
 
   @override
-  void cancel() {}
+  void cancel() => _completer.completeError(const OperationCancelled());
 }
 
 final class _FakePickers implements RecordingPickers {
@@ -303,31 +299,26 @@ void main() {
     expect(runs, hasLength(2));
   });
 
-  test('closing the day while adding still keeps the new session', () async {
-    final store = FileRecoveryStore('${directory.path}/day-recovery.json');
-    final a = write('a.vbo', [30, 28, 31]);
-    final b = write('b.vbo', [29, 33]);
-    final first = runDayImport((paths: [a], includeSubfolders: false));
-    final appender = _GatedAppender();
-    final controller = DayResultsController(
-      runs: first.runs,
-      analysis: first.analysis!,
-      appender: appender,
-      recovery: store,
-    );
-    final adding = controller.addRecordings([b]);
-    await Future<void>.delayed(Duration.zero);
-    controller.dispose();
-    appender.release();
-    final addition = await adding;
-    expect(addition.added, ['Session 2']);
-    await controller.flushRecovery();
-    final kept = (await store.load())!;
-    final runs = (kept.document['event'] as Map)['runs'] as List;
-    expect(runs, hasLength(2));
-    // A day closed before an addition started hands it back.
-    expect((await controller.addRecordings([b])).closed, isTrue);
-  });
+  test(
+    'closing the day while adding says the recordings were not added',
+    () async {
+      final a = write('a.vbo', [30, 28, 31]);
+      final first = runDayImport((paths: [a], includeSubfolders: false));
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _PendingAppender(),
+      );
+      final adding = controller.addRecordings([
+        write('b.vbo', [29, 33]),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      controller.dispose();
+      final addition = await adding;
+      expect(addition.closed, isTrue);
+      expect(addition.added, isEmpty);
+    },
+  );
 
   test('a save asked for while another runs follows it', () async {
     final a = write('a.vbo', [30, 28, 31]);
@@ -409,6 +400,58 @@ void main() {
       'archive.rcz: the same drive as Session 1 in the other format; not added again.',
     ]);
     expect(controller.runs, hasLength(1));
+  });
+
+  testWidgets('the day stays open while a session is being added', (
+    tester,
+  ) async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _PendingAppender(),
+    );
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => DayResultsPage.controller(
+                  controller: controller,
+                  documents: FakeDocuments(),
+                ),
+              ),
+            ),
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    unawaited(
+      controller.addRecordings([
+        write('b.vbo', [29, 33]),
+      ]),
+    );
+    await tester.pump();
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    await navigator.maybePop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(DayResultsPage), findsOneWidget);
+    expect(find.text('Wait until the session is added.'), findsOneWidget);
+    controller.cancelAdding();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+    expect(controller.adding, isFalse);
+    await navigator.maybePop();
+    await tester.pumpAndSettle();
+    expect(find.byType(DayResultsPage), findsNothing);
   });
 
   testWidgets('Add recordings on the day page adds and says so', (

@@ -457,7 +457,22 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       ),
     );
-    return wide ? scaffold : DefaultTabController(length: 2, child: scaffold);
+    final page = wide
+        ? scaffold
+        : DefaultTabController(length: 2, child: scaffold);
+    // A session being added is part of the day: the day stays open until it
+    // is in, so it is saved or kept for recovery with it.
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, child) => PopScope(
+        canPop: !_controller.adding,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _tell('Wait until the session is added.');
+        },
+        child: child!,
+      ),
+      child: page,
+    );
   }
 
   List<Widget> _summary(BuildContext context, bool wide, double mapHeight) {
