@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import 'day_results_controller.dart';
 import 'theoretical_best_card.dart';
 import 'track_map.dart';
@@ -53,6 +54,16 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
 
   DayResultsController get _controller => widget.controller;
 
+  // A boundary being placed on the map (Overlays' "Pick on map"): which one
+  // of the selected segment, and where the tools take it.
+  BoundaryPick? _pickTarget;
+  ValueChanged<double>? _pickDeliver;
+
+  // The larger side of the best lap's session on the map, by which Overlays
+  // scales its pick tolerances.
+  DayTheoreticalBest? _scaleFor;
+  double _mapScale = double.nan;
+
   @override
   void initState() {
     super.initState();
@@ -73,7 +84,12 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
         if (mounted) _controller.requestTheoreticalBest();
       });
     }
-    if (result != null) _shown = result;
+    if (result != null && !identical(result, _shown)) {
+      _shown = result;
+      // The tools that asked for a point are built again for this result.
+      _pickTarget = null;
+      _pickDeliver = null;
+    }
     if (mounted) setState(() {});
   }
 
@@ -121,6 +137,81 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
       }
     }
     return nearest;
+  }
+
+  double _scaleOf(DayTheoreticalBest result) {
+    if (identical(result, _scaleFor)) return _mapScale;
+    _scaleFor = result;
+    final best = result.bestLap;
+    final session = best == null ? null : _controller.session(best.runId);
+    final origin = widget.path?.origin;
+    var minX = double.infinity, minY = double.infinity;
+    var maxX = -double.infinity, maxY = -double.infinity;
+    void add(double x, double y) {
+      minX = math.min(minX, x);
+      maxX = math.max(maxX, x);
+      minY = math.min(minY, y);
+      maxY = math.max(maxY, y);
+    }
+
+    if (session != null && origin != null) {
+      final whole = lapPath(
+        session,
+        0,
+        session.duration,
+        origin: origin,
+        maximumPoints: 4000,
+      );
+      for (final segment in whole.segments) {
+        for (final point in segment) {
+          add(point.eastMeters, point.northMeters);
+        }
+      }
+    }
+    if (!minX.isFinite) {
+      for (final (_, point) in _placed) {
+        add(point.eastMeters, point.northMeters);
+      }
+    }
+    return _mapScale = minX.isFinite
+        ? math.max(maxX - minX, maxY - minY)
+        : double.nan;
+  }
+
+  void _startPick(BoundaryPick? target, ValueChanged<double> deliver) =>
+      setState(() {
+        _pickTarget = target;
+        _pickDeliver = target == null ? null : deliver;
+      });
+
+  void _pickAt(DayTheoreticalBest result, double east, double north) {
+    final deliver = _pickDeliver;
+    if (_pickTarget == null || deliver == null) return;
+    final pick = pickBoundaryAt(
+      [
+        for (final (at, point) in _placed)
+          ProgressMapPoint(at, point.eastMeters, point.northMeters),
+      ],
+      east,
+      north,
+      mapScaleMeters: _scaleOf(result),
+      lengthMeters: result.axisLengthMeters,
+    );
+    final l10n = context.l10n;
+    final progress = pick.progressMeters;
+    if (progress == null) {
+      _tell(switch (pick.reason) {
+        'ambiguous' => l10n.segmentPickAmbiguous,
+        'farFromTrack' => l10n.segmentPickFar,
+        _ => l10n.segmentPickNoTrace,
+      });
+      return;
+    }
+    setState(() {
+      _pickTarget = null;
+      _pickDeliver = null;
+    });
+    deliver(progress);
   }
 
   int? _indexOf(DayTheoreticalBest result, String? id) {
@@ -175,7 +266,14 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
             : result.state != DayTheoreticalBestState.ready
             ? Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(result.message),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(result.message),
+                    if (!loading)
+                      CalculateAgainButton(_controller.retryTheoreticalBest),
+                  ],
+                ),
               )
             : _ready(context, result, loading),
       ),
@@ -187,17 +285,57 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     final theme = Theme.of(context);
     final selected = _indexOf(result, _selectedId);
     final path = widget.path;
+    final picking = _pickTarget;
+    final l10n = context.l10n;
     final map = path == null || path.isEmpty
         ? null
-        : TrackMap(
-            key: const ValueKey('segmentMap'),
-            path: path,
-            gate: widget.gate,
-            pointColor: _segmentColors(result, selected),
-            marks: _boundaryMarks(result, selected),
-            semanticLabel:
-                'Best lap trace with the segment boundaries'
-                '${selected == null ? '' : ', ${result.segments[selected].name} highlighted'}',
+        : Stack(
+            children: [
+              Positioned.fill(
+                child: TrackMap(
+                  key: const ValueKey('segmentMap'),
+                  path: path,
+                  gate: widget.gate,
+                  pointColor: _segmentColors(result, selected),
+                  marks: _boundaryMarks(result, selected),
+                  onTapMeters: picking == null || busy
+                      ? null
+                      : (east, north) => _pickAt(result, east, north),
+                  semanticLabel:
+                      'Best lap trace with the segment boundaries'
+                      '${selected == null ? '' : ', ${result.segments[selected].name} highlighted'}',
+                ),
+              ),
+              if (picking != null)
+                Positioned(
+                  left: 8,
+                  top: 8,
+                  right: 64,
+                  child: IgnorePointer(
+                    child: Container(
+                      key: const ValueKey('segmentPickBanner'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        switch (picking) {
+                          BoundaryPick.start => l10n.segmentPickBannerStart,
+                          BoundaryPick.end => l10n.segmentPickBannerEnd,
+                          BoundaryPick.split => l10n.segmentPickBannerSplit,
+                        },
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           );
     final list = <Widget>[
       Padding(
@@ -449,6 +587,8 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
       onTap: () => setState(() {
         _selectedId = selected ? null : id;
         _pendingMarks = const [];
+        _pickTarget = null;
+        _pickDeliver = null;
       }),
     );
     if (!selected) return tile;
@@ -461,6 +601,8 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           result: result,
           index: index,
           busy: busy,
+          picking: _pickTarget,
+          onPick: _startPick,
           onPending: (marks) => setState(() => _pendingMarks = marks),
           onEdit:
               ({
@@ -520,6 +662,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
   }
 }
 
+/// Which boundary of the selected segment a tap on the map places.
+enum BoundaryPick { start, end, split }
+
 typedef _EditCallback = void Function({
   required String name,
   required String type,
@@ -536,6 +681,8 @@ class _SegmentTools extends StatefulWidget {
     required this.result,
     required this.index,
     required this.busy,
+    required this.picking,
+    required this.onPick,
     required this.onPending,
     required this.onEdit,
     required this.onSplit,
@@ -546,6 +693,13 @@ class _SegmentTools extends StatefulWidget {
   final DayTheoreticalBest result;
   final int index;
   final bool busy;
+
+  /// The boundary being placed on the map, if any.
+  final BoundaryPick? picking;
+
+  /// Asks the page for a point on the map ([BoundaryPick] null: no longer).
+  final void Function(BoundaryPick? target, ValueChanged<double> deliver)
+  onPick;
   final ValueChanged<List<double>> onPending;
   final _EditCallback onEdit;
   final ValueChanged<double> onSplit;
@@ -596,6 +750,56 @@ class _SegmentToolsState extends State<_SegmentTools> {
     if (next < 0) next += _length;
     if (next > _length) next -= _length;
     return double.parse(next.toStringAsFixed(3));
+  }
+
+  // A field takes a picked point as Overlays shows it, to 0.1 m.
+  static double _tenth(double value) => double.parse(value.toStringAsFixed(1));
+
+  void _picked(BoundaryPick target, double meters) {
+    if (!mounted) return;
+    switch (target) {
+      case BoundaryPick.start:
+        setState(() => _start = _tenth(meters));
+        _pending();
+      case BoundaryPick.end:
+        setState(() => _end = _tenth(meters));
+        _pending();
+      case BoundaryPick.split:
+        var after = _tenth(meters) - _segment.startProgressMeters;
+        if (after < 0) after += _length;
+        if (after < 1 || after > _span - 1) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(context.l10n.segmentPickOutside)),
+            );
+          return;
+        }
+        setState(() => _splitAfter = after);
+        widget.onPending([(_segment.startProgressMeters + after) % _length]);
+    }
+  }
+
+  Widget _pickButton(BoundaryPick target) {
+    final l10n = context.l10n;
+    final active = widget.picking == target;
+    return Align(
+      alignment: Alignment.center,
+      child: TextButton.icon(
+        key: ValueKey('pick ${target.name}'),
+        style: TextButton.styleFrom(
+          minimumSize: const Size(kMinInteractiveDimension, 48),
+        ),
+        icon: Icon(active ? Icons.close : Icons.ads_click),
+        label: Text(active ? l10n.segmentPickActive : l10n.segmentPickOnMap),
+        onPressed: widget.busy
+            ? null
+            : () => widget.onPick(
+                active ? null : target,
+                (meters) => _picked(target, meters),
+              ),
+      ),
+    );
   }
 
   void _pending() {
@@ -690,8 +894,9 @@ class _SegmentToolsState extends State<_SegmentTools> {
           ),
           const SizedBox(height: 12),
           _nudges('Start', 'segmentStart', _start, (value) => _start = value),
-          const SizedBox(height: 8),
+          _pickButton(BoundaryPick.start),
           _nudges('End', 'segmentEnd', _end, (value) => _end = value),
+          _pickButton(BoundaryPick.end),
           SwitchListTile(
             key: const ValueKey('keepJoined'),
             contentPadding: EdgeInsets.zero,
@@ -740,6 +945,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
             key: const ValueKey('splitValue'),
             style: theme.textTheme.bodySmall,
           ),
+          if (_span > 2) _pickButton(BoundaryPick.split),
           if (_span > 2)
             Slider(
               key: const ValueKey('splitSlider'),

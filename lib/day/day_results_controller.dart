@@ -1465,6 +1465,23 @@ final class DayResultsController extends ChangeNotifier {
     unawaited(_requestCoach(result, generation));
   }
 
+  /// Calculates the theoretical best again when it failed or had nothing to
+  /// use (Overlays' "Calculate again"). A result still on its way for the
+  /// earlier request is dropped by its generation. Returns whether it
+  /// started.
+  bool retryTheoreticalBest() {
+    final result = _theoreticalBest;
+    if (_disposed ||
+        _theoreticalBestLoading ||
+        result == null ||
+        result.state == DayTheoreticalBestState.ready) {
+      return false;
+    }
+    _resetTheoreticalBest();
+    unawaited(requestTheoreticalBest());
+    return true;
+  }
+
   /// The coach's plan for the next session after the day's latest session,
   /// from the theoretical best; null while it is prepared.
   DayCoach? get coach => _coach;

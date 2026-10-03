@@ -12,6 +12,7 @@ import '../l10n.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
 import '../settings_dialog.dart';
+import 'background_task.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -94,6 +95,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
   bool _relinking = false;
 
+  // Reading the recordings again ("Retry recordings"): the running task and
+  // its generation, so a result after the page moved on is dropped.
+  BackgroundTask<OpenedDay>? _retryTask;
+  int _retryGeneration = 0;
+
   // The best lap's trace, recomputed only when the best lap changes.
   DayLapReference? _mapReference;
   LapPath? _mapPath;
@@ -136,6 +142,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   @override
   void dispose() {
+    ++_retryGeneration;
+    _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _lifecycle.dispose();
     _summaryScroll.dispose();
@@ -424,6 +432,84 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
+  /// Opens the day again from its saved document with the recordings where
+  /// it says they are, as Overlays' "Retry recordings" reads them again: a
+  /// drive that was not connected, say. Recordings found are checked by
+  /// their content like any opened day's; the day is shown again when more
+  /// of them open, or to line up its RCZs again. Cancelled when the page
+  /// closes.
+  Future<void> _retryRecordings() async {
+    final path = _controller.documentPath;
+    if (path == null) return;
+    final l10n = context.l10n;
+    if (_controller.adding) {
+      _tell('Wait until the recordings are added, then find the others.');
+      return;
+    }
+    if (_controller.dirty) {
+      _tell(l10n.retryRecordingsSaveFirst);
+      return;
+    }
+    final generation = ++_retryGeneration;
+    final missing = _controller.missing.length;
+    final sessions = _controller.runs.length;
+    final shown = {for (final named in _controller.runs) named.run.id};
+    final alternatives = _controller.missingAlternatives
+        .where((recording) => shown.contains(recording.runId))
+        .length;
+    setState(() => _relinking = true);
+    final task = _retryTask = runInBackground(
+      (cancelled) => openDay(path, cancelled: cancelled),
+    );
+    try {
+      final day = await task.result;
+      if (!mounted || generation != _retryGeneration) return;
+      if (_controller.adding ||
+          _controller.dirty ||
+          _controller.runs.length != sessions) {
+        _tell('Recordings were added meanwhile. Find the recordings again.');
+        return;
+      }
+      if (day.missing.length >= missing && alternatives == 0) {
+        _tell(l10n.retryRecordingsStill);
+        return;
+      }
+      if (day.analysis == null) return;
+      final replace = widget.replace;
+      if (replace != null) {
+        replace(
+          DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: _controller.appender,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => DayResultsPage.opened(
+            day: day,
+            documents: widget.documents,
+            recovery: widget.recovery,
+          ),
+        ),
+      );
+    } on OperationCancelled {
+      return;
+    } on Exception catch (error) {
+      if (mounted && generation == _retryGeneration) {
+        _tell('The day could not be opened again: $error');
+      }
+    } finally {
+      if (identical(_retryTask, task)) _retryTask = null;
+      if (mounted && generation == _retryGeneration) {
+        setState(() => _relinking = false);
+      }
+    }
+  }
+
   /// Two panes from this width; below it the summary and the laps are tabs.
   static const _twoPaneWidth = 900.0;
 
@@ -645,12 +731,31 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     ),
                 ],
                 const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _relinking ? null : _findRecordings,
-                  icon: const Icon(Icons.folder_open_outlined),
-                  label: Text(
-                    _relinking ? 'Looking…' : 'Find recordings in a folder…',
-                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _relinking ? null : _findRecordings,
+                      icon: const Icon(Icons.folder_open_outlined),
+                      label: Text(
+                        _relinking
+                            ? 'Looking…'
+                            : 'Find recordings in a folder…',
+                      ),
+                    ),
+                    if (_controller.documentPath != null)
+                      OutlinedButton.icon(
+                        key: const ValueKey('retryRecordings'),
+                        onPressed: _relinking ? null : _retryRecordings,
+                        icon: const Icon(Icons.refresh),
+                        label: Text(
+                          _retryTask != null
+                              ? l10n.retryRecordingsLooking
+                              : l10n.retryRecordings,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -780,6 +885,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           wide: wide,
           onOpenLap: _open,
           onCompare: _compare,
+          onRetry: _controller.retryTheoreticalBest,
         ),
         const SizedBox(height: 12),
         ConsistencyCard(
@@ -898,6 +1004,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       gate: _mapGate,
       wide: wide,
       onAnalyze: _compare,
+      onRetry: _controller.retryTheoreticalBest,
       onEditSegments: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => SegmentEditorPage(

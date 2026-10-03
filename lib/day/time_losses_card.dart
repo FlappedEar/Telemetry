@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
-import 'theoretical_best_card.dart' show lossColor;
+import 'theoretical_best_card.dart' show CalculateAgainButton, lossColor;
 import 'track_map.dart';
 import 'touch.dart';
 
@@ -64,7 +64,12 @@ class TimeLossesCard extends StatefulWidget {
     this.wide = false,
     this.onOpenLap,
     this.onCompare,
+    this.onRetry,
   });
+
+  /// Calculates the theoretical best again (Overlays' "Calculate again");
+  /// no button when null.
+  final VoidCallback? onRetry;
 
   /// Null while the theoretical best is calculated for the first time.
   final DayTheoreticalBest? result;
@@ -108,9 +113,10 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
             const SizedBox(height: 4),
             if (widget.loading || result == null)
               const Text('Measured with the theoretical best…')
-            else if (result.state != DayTheoreticalBestState.ready)
-              Text(result.message)
-            else
+            else if (result.state != DayTheoreticalBestState.ready) ...[
+              Text(result.message),
+              if (widget.onRetry case final retry?) CalculateAgainButton(retry),
+            ] else
               ..._ready(context, result),
           ],
         ),
