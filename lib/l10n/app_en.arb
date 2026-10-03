@@ -1051,6 +1051,66 @@
   "@lapsLastComparison": {
     "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
   },
+  "daySectionDay": "Day",
+  "@daySectionDay": {
+    "description": "Section of the day page with the best lap and the analysis; bottom bar and side rail label."
+  },
+  "daySectionLaps": "Laps",
+  "@daySectionLaps": {
+    "description": "Section of the day page listing every lap; bottom bar label."
+  },
+  "daySectionCompare": "Compare",
+  "@daySectionCompare": {
+    "description": "Section of the day page for comparing two laps; bottom bar and side rail label, and its heading."
+  },
+  "compareIntro": "Two laps side by side: where one gains and loses time, segment by segment and corner by corner.",
+  "@compareIntro": {
+    "description": "Explains the Compare section under its heading."
+  },
+  "compareNeedsTwoLaps": "Comparing needs two ranked laps of one circuit.",
+  "@compareNeedsTwoLaps": {
+    "description": "Shown in the Compare section when the day has fewer than two comparable laps."
+  },
+  "comparePickTwoLaps": "Pick two laps",
+  "@comparePickTwoLaps": {
+    "description": "Button that asks for lap A, then lap B, and opens their comparison."
+  },
+  "compareAgainstBest": "Against the best of the day",
+  "@compareAgainstBest": {
+    "description": "Heading over suggested comparisons: each session's best lap against the day's best lap."
+  },
+  "compareLapA": "A {time}",
+  "@compareLapA": {
+    "description": "Chip with lap A's time in a suggested comparison; A is the session's best lap.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:49.898"
+      }
+    }
+  },
+  "compareLapB": "B {time}",
+  "@compareLapB": {
+    "description": "Chip with lap B's time in a suggested comparison; B is the best lap of the day.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:49.898"
+      }
+    }
+  },
+  "dayBestLabel": "Best day",
+  "@dayBestLabel": {
+    "description": "Label of the day's best lap, at the top of the day page."
+  },
+  "theoreticalBestLabel": "Theoretical best",
+  "@theoreticalBestLabel": {
+    "description": "Label of the theoretical best: the fastest time of each segment added up."
+  },
+  "theoreticalBestHint": "Fastest of every segment",
+  "@theoreticalBestHint": {
+    "description": "Under the theoretical best label: what it is made of."
+  },
   "segmentReviewOpen": "Review proposals",
   "@segmentReviewOpen": {
     "description": "Button in the segment editor that opens the optional review of the automatic segment proposals."

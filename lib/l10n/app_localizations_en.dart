@@ -681,6 +681,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lapsLastComparison => 'Last comparison';
 
   @override
+  String get daySectionDay => 'Day';
+
+  @override
+  String get daySectionLaps => 'Laps';
+
+  @override
+  String get daySectionCompare => 'Compare';
+
+  @override
+  String get compareIntro =>
+      'Two laps side by side: where one gains and loses time, segment by segment and corner by corner.';
+
+  @override
+  String get compareNeedsTwoLaps =>
+      'Comparing needs two ranked laps of one circuit.';
+
+  @override
+  String get comparePickTwoLaps => 'Pick two laps';
+
+  @override
+  String get compareAgainstBest => 'Against the best of the day';
+
+  @override
+  String compareLapA(String time) {
+    return 'A $time';
+  }
+
+  @override
+  String compareLapB(String time) {
+    return 'B $time';
+  }
+
+  @override
+  String get dayBestLabel => 'Best day';
+
+  @override
+  String get theoreticalBestLabel => 'Theoretical best';
+
+  @override
+  String get theoreticalBestHint => 'Fastest of every segment';
+
+  @override
   String get segmentReviewOpen => 'Review proposals';
 
   @override

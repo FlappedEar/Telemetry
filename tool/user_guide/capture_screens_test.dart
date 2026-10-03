@@ -228,11 +228,15 @@ void main() {
 
   /// Scrolls [finder] to the top of its list.
   Future<void> toTop(WidgetTester tester, Finder finder) async {
-    await Scrollable.ensureVisible(
-      tester.element(finder.first),
-      alignment: 0.02,
-    );
-    await tester.pumpAndSettle();
+    // Twice: the first scroll can land short while the cards around the
+    // target are laid out for the first time.
+    for (var i = 0; i < 2; ++i) {
+      await Scrollable.ensureVisible(
+        tester.element(finder.first),
+        alignment: 0.02,
+      );
+      await tester.pumpAndSettle();
+    }
   }
 
   Future<void> scrollIn(
@@ -476,7 +480,7 @@ void main() {
     debugDisableShadows = false;
     await showDay(tester, _phone, 2);
     await shot(tester, 'phone-results');
-    await tester.tap(find.widgetWithText(Tab, 'Laps'));
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-laps');
     final best = find.descendant(
@@ -493,6 +497,11 @@ void main() {
     await shot(tester, 'phone-lap');
     await toTop(tester, find.text('Channels'));
     await shot(tester, 'phone-lap-charts');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Compare'));
+    await tester.pumpAndSettle();
+    await shot(tester, 'phone-compare');
     debugDisableShadows = true;
   });
 }
