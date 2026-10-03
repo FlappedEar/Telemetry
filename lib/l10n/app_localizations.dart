@@ -2330,6 +2330,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Channel summaries'**
   String get diagnosticsStepChannelSummaries;
+
+  /// Day report heading when no group of laps is chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a group of compatible laps on the results page.'**
+  String get reportGroupNone;
+
+  /// A day report result that is being calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating…'**
+  String get reportCalculating;
+
+  /// A day report result that has not been calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not calculated yet.'**
+  String get reportNotCalculated;
+
+  /// A day report result made stale by an analysis change.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of date after an analysis change.'**
+  String get reportOutOfDate;
+
+  /// A day report result that is unavailable, without a reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable.'**
+  String get reportUnavailable;
+
+  /// A result missing from the day report document.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in this report.'**
+  String get reportNotInReport;
+
+  /// Why there is no best lap: no group of compatible laps is chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a compatibility group.'**
+  String get reportChooseGroup;
+
+  /// Why there is no best lap in the day report.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible lap in this group.'**
+  String get reportNoEligibleLap;
+
+  /// Why the day report has no sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No session in this group.'**
+  String get reportNoSession;
+
+  /// Why the day report has no consistency summary.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible laps to summarize.'**
+  String get reportNoEligibleLaps;
+
+  /// Why the day report has no heart rate.
+  ///
+  /// In en, this message translates to:
+  /// **'No heart rate recorded.'**
+  String get reportNoHeartRate;
+
+  /// Why the day report has no temperatures.
+  ///
+  /// In en, this message translates to:
+  /// **'No temperature recorded.'**
+  String get reportNoTemperature;
+
+  /// Heading of the day report card with the best lap and the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap and what is left'**
+  String get reportBestTitle;
+
+  /// Label above the best lap time of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get reportBestLap;
+
+  /// Label above the theoretical best time.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best'**
+  String get reportTheoreticalBest;
+
+  /// Time left between the best lap and the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s available across the approved segments'**
+  String reportTheoreticalAvailable(String seconds);
+
+  /// Why the theoretical best has no total.
+  ///
+  /// In en, this message translates to:
+  /// **'Some segments have no timed lap; no total.'**
+  String get reportTheoreticalNoTotal;
+
+  /// Button opening the best lap of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Open best lap'**
+  String get reportOpenBestLap;
+
+  /// Introduction of the focus areas in the day report.
+  ///
+  /// In en, this message translates to:
+  /// **'Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.'**
+  String get reportFocusIntro;
+
+  /// Row opening a comparison of two laps through a segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare {lap} with {other} at {segment}'**
+  String reportFocusCompare(String lap, String other, String segment);
+
+  /// Heading of the day report card with the largest time losses.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest time losses'**
+  String get reportLossesTitle;
+
+  /// Introduction of the time losses in the day report.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {reference} · {count, plural, =1{1 lap compared} other{{count} laps compared}}. An observed loss is not a guaranteed or necessarily safe gain.'**
+  String reportLossesIntro(String reference, int count);
+
+  /// Heading of the day report card with each session.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get reportSessionsTitle;
+
+  /// A session without an eligible lap.
+  ///
+  /// In en, this message translates to:
+  /// **'no eligible lap'**
+  String get reportNoEligibleLapShort;
+
+  /// A session's best lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'best {time}'**
+  String reportSessionBest(String time);
+
+  /// A session's best lap equal to the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'same as the previous session'**
+  String get reportSameAsPrevious;
+
+  /// A session's best lap against the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s faster than the previous session'**
+  String reportFasterThanPrevious(String seconds);
+
+  /// A session's best lap against the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s slower than the previous session'**
+  String reportSlowerThanPrevious(String seconds);
+
+  /// How many of a session's laps are eligible.
+  ///
+  /// In en, this message translates to:
+  /// **'{eligible} of {count, plural, =1{1 lap} other{{count} laps}} eligible'**
+  String reportEligibleLaps(int eligible, int count);
+
+  /// A session's median lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'median {time}'**
+  String reportMedian(String time);
+
+  /// The day's lap time consistency: median and interquartile range.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}'**
+  String reportConsistencyDay(String time, String spread, int count);
+
+  /// Why the day has no lap time spread.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer than {minimum} eligible laps; no spread.'**
+  String reportConsistencyTooFew(int minimum);
+
+  /// The highest temperature of a channel across the day and its session.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} · peak {value} in {session}'**
+  String reportCarPeak(String channel, String value, String session);
+
+  /// How many cooling intervals a temperature channel recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 recorded cooling interval} other{{count} recorded cooling intervals}}'**
+  String reportCoolingIntervals(int count);
+
+  /// A temperature channel without cooling intervals.
+  ///
+  /// In en, this message translates to:
+  /// **'no recorded cooling'**
+  String get reportNoCooling;
+
+  /// The day report has no valid temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid temperature samples.'**
+  String get reportNoTemperatureSamples;
+
+  /// A session's heart rate: mean, minimum and maximum.
+  ///
+  /// In en, this message translates to:
+  /// **'mean {mean} bpm · {minimum} – {maximum}'**
+  String reportHeartRateSummary(String mean, String minimum, String maximum);
+
+  /// How much of a session the heart rate covers.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% covered'**
+  String reportCovered(int percent);
 }
 
 class _AppLocalizationsDelegate

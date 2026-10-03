@@ -324,4 +324,62 @@ void main() {
     );
     expect(find.textContaining(' 0 s'), findsNothing);
   });
+
+  testWidgets('the day report speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final controller = await open(tester, importDay());
+    final report = controller.dayReportDocument;
+    await tester.binding.setSurfaceSize(const Size(412, 6000));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayReportPage(report: report),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Raport dnia'), findsOneWidget);
+    expect(find.text('Day report'), findsNothing);
+    expect(find.textContaining('Grupa 1 · '), findsOneWidget);
+    expect(find.text('Najlepsze okrążenie i co zostało'), findsOneWidget);
+    expect(find.text('Best lap and what is left'), findsNothing);
+    expect(find.textContaining('· OKR. '), findsWidgets);
+    expect(find.textContaining('Zmierzono: '), findsWidgets);
+    expect(find.textContaining('Observed: '), findsNothing);
+    expect(find.textContaining('Your best lap'), findsNothing);
+    expect(find.text('Największe straty czasu'), findsOneWidget);
+    expect(find.textContaining('Względem Sesja '), findsOneWidget);
+    expect(find.text('Sesje'), findsOneWidget);
+    expect(find.textContaining('kwalifikuje się'), findsWidgets);
+    expect(find.text('Powtarzalność'), findsOneWidget);
+    expect(find.textContaining('Typowe okrążenie '), findsOneWidget);
+    expect(find.textContaining('Olej · maksimum'), findsOneWidget);
+    expect(find.text('Tętno'), findsOneWidget);
+    expect(find.textContaining('ud./min'), findsWidgets);
+    expect(find.textContaining('laps'), findsNothing);
+
+    // A result not calculated yet says why in Polish.
+    final outcome = importDay();
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayReportPage(
+          report: dayReport(
+            analysis: outcome.analysis!,
+            eventId: 'event',
+            runs: const [],
+            channelsLoading: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('dayReportTheoreticalNote')))
+          .data,
+      'Jeszcze nie obliczono.',
+    );
+    expect(find.text('Obliczanie…'), findsWidgets);
+    expect(find.text('Calculating…'), findsNothing);
+  });
 }

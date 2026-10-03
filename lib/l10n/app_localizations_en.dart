@@ -1566,4 +1566,173 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsStepChannelSummaries => 'Channel summaries';
+
+  @override
+  String get reportGroupNone =>
+      'Choose a group of compatible laps on the results page.';
+
+  @override
+  String get reportCalculating => 'Calculating…';
+
+  @override
+  String get reportNotCalculated => 'Not calculated yet.';
+
+  @override
+  String get reportOutOfDate => 'Out of date after an analysis change.';
+
+  @override
+  String get reportUnavailable => 'Unavailable.';
+
+  @override
+  String get reportNotInReport => 'Not in this report.';
+
+  @override
+  String get reportChooseGroup => 'Choose a compatibility group.';
+
+  @override
+  String get reportNoEligibleLap => 'No eligible lap in this group.';
+
+  @override
+  String get reportNoSession => 'No session in this group.';
+
+  @override
+  String get reportNoEligibleLaps => 'No eligible laps to summarize.';
+
+  @override
+  String get reportNoHeartRate => 'No heart rate recorded.';
+
+  @override
+  String get reportNoTemperature => 'No temperature recorded.';
+
+  @override
+  String get reportBestTitle => 'Best lap and what is left';
+
+  @override
+  String get reportBestLap => 'Best lap';
+
+  @override
+  String get reportTheoreticalBest => 'Theoretical best';
+
+  @override
+  String reportTheoreticalAvailable(String seconds) {
+    return '$seconds s available across the approved segments';
+  }
+
+  @override
+  String get reportTheoreticalNoTotal =>
+      'Some segments have no timed lap; no total.';
+
+  @override
+  String get reportOpenBestLap => 'Open best lap';
+
+  @override
+  String get reportFocusIntro =>
+      'Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.';
+
+  @override
+  String reportFocusCompare(String lap, String other, String segment) {
+    return 'Compare $lap with $other at $segment';
+  }
+
+  @override
+  String get reportLossesTitle => 'Largest time losses';
+
+  @override
+  String reportLossesIntro(String reference, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps compared',
+      one: '1 lap compared',
+    );
+    return 'Against $reference · $_temp0. An observed loss is not a guaranteed or necessarily safe gain.';
+  }
+
+  @override
+  String get reportSessionsTitle => 'Sessions';
+
+  @override
+  String get reportNoEligibleLapShort => 'no eligible lap';
+
+  @override
+  String reportSessionBest(String time) {
+    return 'best $time';
+  }
+
+  @override
+  String get reportSameAsPrevious => 'same as the previous session';
+
+  @override
+  String reportFasterThanPrevious(String seconds) {
+    return '$seconds s faster than the previous session';
+  }
+
+  @override
+  String reportSlowerThanPrevious(String seconds) {
+    return '$seconds s slower than the previous session';
+  }
+
+  @override
+  String reportEligibleLaps(int eligible, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$eligible of $_temp0 eligible';
+  }
+
+  @override
+  String reportMedian(String time) {
+    return 'median $time';
+  }
+
+  @override
+  String reportConsistencyDay(String time, String spread, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Typical lap $time · middle half within $spread s · $_temp0';
+  }
+
+  @override
+  String reportConsistencyTooFew(int minimum) {
+    return 'Fewer than $minimum eligible laps; no spread.';
+  }
+
+  @override
+  String reportCarPeak(String channel, String value, String session) {
+    return '$channel · peak $value in $session';
+  }
+
+  @override
+  String reportCoolingIntervals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recorded cooling intervals',
+      one: '1 recorded cooling interval',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reportNoCooling => 'no recorded cooling';
+
+  @override
+  String get reportNoTemperatureSamples => 'No valid temperature samples.';
+
+  @override
+  String reportHeartRateSummary(String mean, String minimum, String maximum) {
+    return 'mean $mean bpm · $minimum – $maximum';
+  }
+
+  @override
+  String reportCovered(int percent) {
+    return '$percent% covered';
+  }
 }

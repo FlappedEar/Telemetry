@@ -1584,4 +1584,179 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
+
+  @override
+  String get reportGroupNone =>
+      'Wybierz grupę zgodnych okrążeń na stronie wyników.';
+
+  @override
+  String get reportCalculating => 'Obliczanie…';
+
+  @override
+  String get reportNotCalculated => 'Jeszcze nie obliczono.';
+
+  @override
+  String get reportOutOfDate => 'Nieaktualne po zmianie analizy.';
+
+  @override
+  String get reportUnavailable => 'Niedostępne.';
+
+  @override
+  String get reportNotInReport => 'Brak w tym raporcie.';
+
+  @override
+  String get reportChooseGroup => 'Wybierz grupę zgodności.';
+
+  @override
+  String get reportNoEligibleLap =>
+      'W tej grupie nie ma kwalifikującego się okrążenia.';
+
+  @override
+  String get reportNoSession => 'W tej grupie nie ma sesji.';
+
+  @override
+  String get reportNoEligibleLaps =>
+      'Brak kwalifikujących się okrążeń do podsumowania.';
+
+  @override
+  String get reportNoHeartRate => 'Nie nagrano tętna.';
+
+  @override
+  String get reportNoTemperature => 'Nie nagrano temperatury.';
+
+  @override
+  String get reportBestTitle => 'Najlepsze okrążenie i co zostało';
+
+  @override
+  String get reportBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String get reportTheoreticalBest => 'Teoretycznie najlepsze';
+
+  @override
+  String reportTheoreticalAvailable(String seconds) {
+    return '$seconds s rezerwy na zatwierdzonych segmentach';
+  }
+
+  @override
+  String get reportTheoreticalNoTotal =>
+      'Część segmentów nie ma zmierzonego okrążenia; brak sumy.';
+
+  @override
+  String get reportOpenBestLap => 'Otwórz najlepsze okrążenie';
+
+  @override
+  String get reportFocusIntro =>
+      'Każdy zaczyna się od tego, co zmierzono. Wiersz pod spodem to hipoteza do sprawdzenia na okrążeniach, a nie przyczyna ani polecenie.';
+
+  @override
+  String reportFocusCompare(String lap, String other, String segment) {
+    return 'Porównaj $lap z $other ($segment)';
+  }
+
+  @override
+  String get reportLossesTitle => 'Największe straty czasu';
+
+  @override
+  String reportLossesIntro(String reference, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'porównano $count okrążeń',
+      few: 'porównano $count okrążenia',
+      one: 'porównano 1 okrążenie',
+    );
+    return 'Względem $reference · $_temp0. Zaobserwowana strata nie oznacza gwarantowanego ani koniecznie bezpiecznego zysku.';
+  }
+
+  @override
+  String get reportSessionsTitle => 'Sesje';
+
+  @override
+  String get reportNoEligibleLapShort => 'brak kwalifikującego się okrążenia';
+
+  @override
+  String reportSessionBest(String time) {
+    return 'najlepsze $time';
+  }
+
+  @override
+  String get reportSameAsPrevious => 'tak samo jak w poprzedniej sesji';
+
+  @override
+  String reportFasterThanPrevious(String seconds) {
+    return '$seconds s szybciej niż w poprzedniej sesji';
+  }
+
+  @override
+  String reportSlowerThanPrevious(String seconds) {
+    return '$seconds s wolniej niż w poprzedniej sesji';
+  }
+
+  @override
+  String reportEligibleLaps(int eligible, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return '$eligible z $_temp0 kwalifikuje się';
+  }
+
+  @override
+  String reportMedian(String time) {
+    return 'mediana $time';
+  }
+
+  @override
+  String reportConsistencyDay(String time, String spread, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return 'Typowe okrążenie $time · środkowa połowa w granicach $spread s · $_temp0';
+  }
+
+  @override
+  String reportConsistencyTooFew(int minimum) {
+    return 'Mniej niż $minimum kwalifikujących się okrążeń; brak rozrzutu.';
+  }
+
+  @override
+  String reportCarPeak(String channel, String value, String session) {
+    return '$channel · maksimum $value ($session)';
+  }
+
+  @override
+  String reportCoolingIntervals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nagranych okresów chłodzenia',
+      few: '$count nagrane okresy chłodzenia',
+      one: '1 nagrany okres chłodzenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reportNoCooling => 'brak nagranego chłodzenia';
+
+  @override
+  String get reportNoTemperatureSamples =>
+      'Brak poprawnych próbek temperatury.';
+
+  @override
+  String reportHeartRateSummary(String mean, String minimum, String maximum) {
+    return 'średnio $mean ud./min · $minimum – $maximum';
+  }
+
+  @override
+  String reportCovered(int percent) {
+    return 'pokrycie $percent%';
+  }
 }
