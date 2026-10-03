@@ -25,7 +25,9 @@ cursor, shown on the map, and zoom around it. **Compare with…** (on a lap, or
 **Compare two laps** above the lap list) puts two laps of one group side by
 side on a shared track-position axis, as FlappedEar Overlays does: A green, B
 orange, the Δ time (A − B, positive when A is behind) and the channels of both
-laps, braking drawn upward, and both lines on one map, optionally coloured by
+laps, braking drawn upward, and both lines on one map over street or satellite
+tiles, with the zoom window highlighted on lap B and a dot per lap at the
+cursor, optionally coloured by
 speed, the Δ time, G, the pedals or a recorded temperature (never invented
 when a lap did not record it). Swap the laps, change either, or set B to the
 best of A's session or of the day; a time loss or a focus area opens its two
@@ -47,10 +49,11 @@ best (the fastest time of each segment) and the time available; a loss map,
 the best lap's trace with each segment coloured by the time the chosen lap
 loses there to the fastest time, with the segments listed largest loss first;
 and a sector table of every lap by segment, the fastest time of each segment
-highlighted. Tap a lap in the table to show its losses on the map. Each corner in the loss list also shows the lap's minimum speed and braking point against the best lap; tap it for entry, minimum and exit speed, braking point, braking time, peak deceleration and throttle pickup against the best lap and the best of all laps, measured and inferred values labelled. **Edit segments** shows the best lap's map with the segment boundaries and the segments in lap order: tap one to rename it, change its type, move its start or end in metres, split it, merge it with the next one or remove it, with undo and redo, or **Restore automatic**; every change times the laps again. Corrections are saved with the day as its approved segments and are never replaced by automatic ones. **Time losses** ranks the largest losses of each session's best lap (or of every lap) against the best lap, one segment at a time; tap one for both laps' times through that segment and the segment on the map. **Consistency** gives the typical lap and segment time (median) and the spread (interquartile range) over the day and per session, or says that at least three laps are needed. **Progression** lists the sessions in recording order with their best and typical lap and the best against the session before, and each segment's typical time per session; tap a cell for its laps. **Where to look next** picks at most three areas from the measured losses, sector gaps and corner spreads: each shows what was measured apart from a hypothesis to check, never a cause or an instruction; tap one to compare its two laps (A green, B orange) through the segment. **Car** summarizes each session's recorded temperatures (mean, range, coverage, implausible readings left out, continuously recorded cooling) and how each moved with lap time over the compared laps, saying when there are too few laps or the day's progression could explain it; **Driver** shows each session's recorded heart rate and each lap's mean. **Day report** (in the toolbar) presents the day's results as calculated, each leading to its lap, and says exactly why one is missing. The trace is drawn over
-OpenStreetMap street tiles, or MapTiler satellite imagery when the build has a
-key; the layers button switches between them and the trace alone, which needs
-no network. Tiles already seen stay cached for the track. **Save** writes the day as a
+highlighted. Tap a lap in the table to show its losses on the map. Each corner in the loss list also shows the lap's minimum speed and braking point against the best lap; tap it for entry, minimum and exit speed, braking point, braking time, peak deceleration and throttle pickup against the best lap and the best of all laps, measured and inferred values labelled. **Edit segments** shows the best lap's map with the segment boundaries and the segments in lap order: tap one to rename it, change its type, move its start or end in metres, split it, merge it with the next one or remove it, with undo and redo, or **Restore automatic**; every change times the laps again. Corrections are saved with the day as its approved segments and are never replaced by automatic ones. **Time losses** ranks the largest losses of each session's best lap (or of every lap) against the best lap, one segment at a time; tap one for both laps' times through that segment and the segment on the map. **Consistency** gives the typical lap and segment time (median) and the spread (interquartile range) over the day and per session, or says that at least three laps are needed. **Progression** lists the sessions in recording order with their best and typical lap and the best against the session before, and each segment's typical time per session; tap a cell for its laps. **Where to look next** picks at most three areas from the measured losses, sector gaps and corner spreads: each shows what was measured apart from a hypothesis to check, never a cause or an instruction; tap one to compare its two laps (A green, B orange) through the segment. **Car** summarizes each session's recorded temperatures (mean, range, coverage, implausible readings left out, continuously recorded cooling) and how each moved with lap time over the compared laps, saying when there are too few laps or the day's progression could explain it; **Driver** shows each session's recorded heart rate and each lap's mean. **Day report** (in the toolbar) presents the day's results as calculated, each leading to its lap, and says exactly why one is missing. Every map
+draws the trace over a real map: OpenStreetMap street tiles, or MapTiler
+satellite imagery when the build has a key; the layers button switches
+between them, on every map at once. Tiles already seen stay cached for the
+track. **Save** writes the day as a
 `.fetproject` document FlappedEar Overlays can open (sessions, recordings,
 circuit names, excluded laps and the group shown); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
@@ -137,7 +140,8 @@ flutter run --dart-define=MAPTILER_KEY=your-key
 ```
 
 CI reads it from the repository secret `MAPTILER_KEY`. Without a key the app
-offers streets and the trace only. Another provider is another `TileSource` in
+offers streets only. There is no trace-only choice: the plain drawing without
+tiles is used only by the tests, which have no network. Another provider is another `TileSource` in
 `lib/day/track_map.dart`.
 
 ## Development
