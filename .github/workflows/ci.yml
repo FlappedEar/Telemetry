@@ -163,11 +163,42 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: android-debug-keystore-v1
+      # The Android Gradle plugin reads the debug key from
+      # $ANDROID_USER_HOME/debug.keystore. On the runner that was not
+      # ~/.android, so the cache never had a key to save and every APK was
+      # signed with a new one. Make the key here, where the cache keeps it,
+      # unless the cache restored it.
+      - name: Make the signing key if the cache had none
+        run: |
+          echo "ANDROID_USER_HOME=$HOME/.android" >> "$GITHUB_ENV"
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            echo "::warning::No cached signing key; making a new one. APKs from this build do not install over earlier ones."
+            keytool -genkeypair -keystore ~/.android/debug.keystore \
+              -storepass android -keypass android -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
       # MAPTILER_KEY gives the sideloaded app its satellite map tiles (FET-27).
       - name: Build Android APK (release, sideloadable)
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
         run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      # Fails if the APK was signed with any key but the cached one.
+      - name: Check the APK's signing key
+        run: |
+          expected=$(keytool -list -v -keystore ~/.android/debug.keystore \
+            -storepass android -alias androiddebugkey \
+            | sed -n 's/^.*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          actual=$("$apksigner" verify --print-certs \
+            build/app/outputs/flutter-apk/app-release.apk \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          echo "Signing key SHA-256: $actual"
+          [ -n "$expected" ] && [ "$expected" = "$actual" ] || {
+            echo "::error::The APK is signed with $actual, not the cached key $expected."
+            exit 1
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: flappedear-telemetry-android-${{ github.sha }}
