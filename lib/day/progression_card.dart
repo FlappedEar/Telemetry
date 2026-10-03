@@ -1,21 +1,22 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
 
-/// "11:20:05 UTC on 19 Aug 2026" from a recording clock.
-String recordingClockText(int milliseconds) {
+/// "11:20:05 UTC on 19 Aug 2026" from a recording clock, in the app's
+/// language ("11:20:05 UTC, 19 sie 2026").
+String recordingClockText(AppLocalizations l10n, int milliseconds) {
   final time = DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
-  String two(int value) => value.toString().padLeft(2, '0');
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  return '${two(time.hour)}:${two(time.minute)}:${two(time.second)} UTC on '
-      '${time.day} ${months[time.month - 1]} ${time.year}';
+  return l10n.progressionRecordingClock(
+    DateFormat('HH:mm:ss', l10n.localeName).format(time),
+    DateFormat('d MMM y', l10n.localeName).format(time),
+  );
 }
 
 /// How the day went: each session's best and typical lap in recording
@@ -49,20 +50,27 @@ class _ProgressionCardState extends State<ProgressionCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Progression', style: theme.textTheme.labelLarge),
+            Text(l10n.progressionTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             SegmentedButton<bool>(
               key: const ValueKey('progressionView'),
               showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: false, label: Text('By session')),
-                ButtonSegment(value: true, label: Text('By segment')),
+              segments: [
+                ButtonSegment(
+                  value: false,
+                  label: Text(l10n.progressionBySession),
+                ),
+                ButtonSegment(
+                  value: true,
+                  label: Text(l10n.progressionBySegment),
+                ),
               ],
               selected: {_bySection},
               onSelectionChanged: (selection) => setState(() {
@@ -80,17 +88,12 @@ class _ProgressionCardState extends State<ProgressionCard> {
 
   List<Widget> _sessions(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final progression = widget.progression;
     final low = progression.minimumSeconds, high = progression.maximumSeconds;
     return [
-      Text(
-        'Sessions in recording order; sessions without a recording time '
-        'follow in import order. The bar runs from the quickest to the '
-        'slowest ranked lap on one time scale, the middle half boxed and the '
-        'typical lap marked.',
-        style: theme.textTheme.bodySmall,
-      ),
-      if (progression.runs.isEmpty) const Text('No session to compare.'),
+      Text(l10n.progressionSessionsIntro, style: theme.textTheme.bodySmall),
+      if (progression.runs.isEmpty) Text(l10n.progressionNoSession),
       for (var i = 0; i < progression.runs.length; ++i)
         _session(context, progression.runs[i], i, low, high),
     ];
@@ -104,6 +107,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
     double? high,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final best = run.bestLap;
     final distribution = run.distribution;
     final typical =
@@ -112,23 +116,30 @@ class _ProgressionCardState extends State<ProgressionCard> {
     final delta = run.bestDeltaPreviousListedSeconds;
     final details = [
       run.firstSectionUtcMilliseconds == null
-          ? 'Recording time unavailable'
-          : recordingClockText(run.firstSectionUtcMilliseconds!),
+          ? l10n.progressionRecordingTimeUnavailable
+          : recordingClockText(l10n, run.firstSectionUtcMilliseconds!),
       switch (run.state) {
-        ProgressionRunState.noRecordedLaps => 'No recorded laps',
-        ProgressionRunState.noEligibleLaps =>
-          'No ranked lap · 0 of ${run.lapCount} laps',
-        ProgressionRunState.available =>
-          '${run.eligibleLapCount} of ${run.lapCount} laps ranked',
+        ProgressionRunState.noRecordedLaps => l10n.progressionNoRecordedLaps,
+        ProgressionRunState.noEligibleLaps => l10n.progressionNoRankedLap(
+          run.lapCount,
+        ),
+        ProgressionRunState.available => l10n.progressionLapsRanked(
+          run.lapCount,
+          run.eligibleLapCount,
+        ),
       },
       typical
-          ? 'Typical ${displayTime(distribution.median)}'
-          : 'Typical lap needs at least $minimumConsistencySamples ranked laps',
+          ? l10n.progressionTypical(displayTime(distribution.median))
+          : l10n.progressionTypicalNeedsLaps(minimumConsistencySamples),
       if (delta != null)
-        'Best ${displayDelta(delta)} against ${run.previousListedRunName}',
-      if (run.run.conditions case final conditions?) 'Conditions: $conditions',
-      if (run.run.setupChanges case final setup?) 'Setup: $setup',
-      if (run.run.notes case final notes?) 'Notes: $notes',
+        l10n.progressionBestAgainst(
+          displayDelta(delta),
+          l10n.session(run.previousListedRunName ?? ''),
+        ),
+      if (run.run.conditions case final conditions?)
+        l10n.progressionConditions(conditions),
+      if (run.run.setupChanges case final setup?) l10n.progressionSetup(setup),
+      if (run.run.notes case final notes?) l10n.progressionNotes(notes),
     ];
     return InkWell(
       key: ValueKey('progressionRun ${run.runId}'),
@@ -144,7 +155,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
               children: [
                 Expanded(
                   child: Text(
-                    '${index + 1}. ${run.runName}',
+                    '${index + 1}. ${l10n.session(run.runName)}',
                     style: theme.textTheme.titleSmall,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -158,7 +169,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
             ),
             if (best != null)
               Text(
-                'Best: LAP ${best.lapNumber}',
+                l10n.progressionBestLap(best.lapNumber),
                 style: theme.textTheme.bodySmall,
               ),
             for (final line in details)
@@ -189,22 +200,20 @@ class _ProgressionCardState extends State<ProgressionCard> {
 
   List<Widget> _sections(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final result = widget.result;
     if (widget.loading || result == null) {
-      return [const Text('Measured with the theoretical best…')];
+      return [Text(l10n.progressionMeasuring)];
     }
     if (result.state != DayTheoreticalBestState.ready) {
-      return [Text(result.message)];
+      return [Text(l10n.tbMessage(result.message))];
     }
     final sections = result.sectionProgression([
       for (final run in widget.progression.runs) run.run,
     ]);
     return [
       Text(
-        'Each segment\'s typical time (median) and spread (middle half) per '
-        'session. The quickest typical time of each segment is highlighted. '
-        'Fewer than $minimumConsistencySamples laps: no statistics. Tap a cell '
-        'for its laps.',
+        l10n.progressionSegmentsIntro(minimumConsistencySamples),
         style: theme.textTheme.bodySmall,
       ),
       const SizedBox(height: 8),
@@ -275,11 +284,11 @@ class _SectionTable extends StatelessWidget {
 
   static const _nameWidth = 96.0, _cellWidth = 112.0;
 
-  String _lapName(Object? reference) {
+  String _lapName(AppLocalizations l10n, Object? reference) {
     for (final lap in result.laps) {
-      if (lap.lap.reference == reference) return lap.lap.displayName;
+      if (lap.lap.reference == reference) return l10n.lap(lap.lap);
     }
-    return 'Lap unavailable';
+    return l10n.progressionLapUnavailable;
   }
 
   void _showLaps(
@@ -291,37 +300,41 @@ class _SectionTable extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          key: const ValueKey('sectionCellLaps'),
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          children: [
-            Text(
-              '${row.name} · ${session.run.name}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            for (final lap in cell.laps)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(_lapName(lap.reference)),
-                trailing: Text(displayTime(lap.seconds)),
+      builder: (context) {
+        final l10n = context.l10n;
+        return SafeArea(
+          child: ListView(
+            key: const ValueKey('sectionCellLaps'),
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            children: [
+              Text(
+                '${l10n.tbSegmentName(row.name)} · ${l10n.session(session.run.name)}',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-          ],
-        ),
-      ),
+              for (final lap in cell.laps)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(_lapName(l10n, lap.reference)),
+                  trailing: Text(displayTime(lap.seconds)),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final scheme = theme.colorScheme;
     final numbers = theme.textTheme.bodySmall?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
     );
     if (sections.sessions.isEmpty) {
-      return const Text('No session has timed segments.');
+      return Text(l10n.progressionNoTimedSegments);
     }
     final label = theme.textTheme.labelMedium;
     return StickyTable(
@@ -334,7 +347,7 @@ class _SectionTable extends StatelessWidget {
         cells: [
           for (final session in sections.sessions)
             TableCellText(
-              session.run.name,
+              l10n.session(session.run.name),
               style: label,
               alignment: Alignment.center,
               maxLines: 2,
@@ -345,7 +358,7 @@ class _SectionTable extends StatelessWidget {
         for (final row in sections.segments)
           StickyRow(
             first: TableCellText(
-              row.name,
+              l10n.tbSegmentName(row.name),
               style: label,
               alignment: Alignment.centerLeft,
               maxLines: 2,
@@ -366,6 +379,7 @@ class _SectionTable extends StatelessWidget {
     TextStyle? numbers,
     ColorScheme scheme,
   ) {
+    final l10n = context.l10n;
     final cell = row.cells[index];
     final summary = cell.summary;
     final quickest = summary.available && summary.median == row.fastestTypical;
@@ -381,7 +395,7 @@ class _SectionTable extends StatelessWidget {
                 ),
               ),
               Text(
-                'spread ${summary.interquartileRange!.toStringAsFixed(3)} s',
+                l10n.progressionSpread(fixed(summary.interquartileRange!, 3)),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontFeatures: const [FontFeature.tabularFigures()],
                   color: quickest ? scheme.onPrimaryContainer : null,
@@ -390,9 +404,7 @@ class _SectionTable extends StatelessWidget {
             ],
           )
         : Text(
-            summary.count == 0
-                ? '—'
-                : '${summary.count} ${summary.count == 1 ? 'lap' : 'laps'}',
+            summary.count == 0 ? '—' : l10n.progressionLapCount(summary.count),
             style: numbers?.copyWith(color: scheme.outline),
           );
     return InkWell(

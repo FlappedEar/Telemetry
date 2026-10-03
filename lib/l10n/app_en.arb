@@ -112,6 +112,58 @@
       }
     }
   },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings button tooltip and dialog title."
+  },
+  "settingsSpeedUnitHeading": "Unit for unlabelled speeds",
+  "@settingsSpeedUnitHeading": {
+    "description": "Heading of the speed unit setting."
+  },
+  "settingsSpeedUnitHelp": "Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.",
+  "@settingsSpeedUnitHelp": {
+    "description": "Explains the speed unit setting."
+  },
+  "speedUnitNone": "None",
+  "@speedUnitNone": {
+    "description": "Speed unit setting: assume no unit for unlabelled speeds."
+  },
+  "settingsNoDayOpen": "No day open yet.",
+  "@settingsNoDayOpen": {
+    "description": "Shown in settings when no track day is open."
+  },
+  "settingsDeclaredUnits": "The open day's recordings declare {units}.",
+  "@settingsDeclaredUnits": {
+    "description": "The speed units the open day's recordings declare.",
+    "placeholders": {
+      "units": {
+        "type": "String",
+        "example": "km/h and mph"
+      }
+    }
+  },
+  "unitsAnd": " and ",
+  "@unitsAnd": {
+    "description": "Joins two speed units: 'km/h and mph'. Keep the spaces."
+  },
+  "settingsAllUnlabelled": "Its recordings do not say their speed unit.",
+  "@settingsAllUnlabelled": {
+    "description": "None of the open day's recordings declares a speed unit."
+  },
+  "settingsSomeUnlabelled": "{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}",
+  "@settingsSomeUnlabelled": {
+    "description": "Some of the open day's recordings declare no speed unit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Button that closes a dialog."
+  },
   "cancel": "Cancel",
   "@cancel": {
     "description": "Button that closes a dialog without changes."
@@ -452,6 +504,2493 @@
       }
     }
   },
+  "appleMapLegal": "Legal",
+  "@appleMapLegal": {
+    "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
+  },
+  "daySectionDay": "Day",
+  "@daySectionDay": {
+    "description": "Section of the day page with the best lap and the analysis; bottom bar and side rail label."
+  },
+  "daySectionLaps": "Laps",
+  "@daySectionLaps": {
+    "description": "Section of the day page listing every lap; bottom bar label."
+  },
+  "daySectionCompare": "Compare",
+  "@daySectionCompare": {
+    "description": "Section of the day page for comparing two laps; bottom bar and side rail label, and its heading."
+  },
+  "compareIntro": "Two laps side by side: where one gains and loses time, segment by segment and corner by corner.",
+  "@compareIntro": {
+    "description": "Explains the Compare section under its heading."
+  },
+  "compareNeedsTwoLaps": "Comparing needs two ranked laps of one circuit.",
+  "@compareNeedsTwoLaps": {
+    "description": "Shown in the Compare section when the day has fewer than two comparable laps."
+  },
+  "comparePickTwoLaps": "Pick two laps",
+  "@comparePickTwoLaps": {
+    "description": "Button that asks for lap A, then lap B, and opens their comparison."
+  },
+  "compareAgainstBest": "Against the best of the day",
+  "@compareAgainstBest": {
+    "description": "Heading over suggested comparisons: each session's best lap against the day's best lap."
+  },
+  "compareLapA": "A {time}",
+  "@compareLapA": {
+    "description": "Chip with lap A's time in a suggested comparison; A is the session's best lap.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:49.898"
+      }
+    }
+  },
+  "compareLapB": "B {time}",
+  "@compareLapB": {
+    "description": "Chip with lap B's time in a suggested comparison; B is the best lap of the day.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:49.898"
+      }
+    }
+  },
+  "dayBestLabel": "Best day",
+  "@dayBestLabel": {
+    "description": "Label of the day's best lap, at the top of the day page."
+  },
+  "theoreticalBestLabel": "Theoretical best",
+  "@theoreticalBestLabel": {
+    "description": "Label of the theoretical best: the fastest time of each segment added up."
+  },
+  "theoreticalBestHint": "Fastest of every segment",
+  "@theoreticalBestHint": {
+    "description": "Under the theoretical best label: what it is made of."
+  },
+  "dayResultsTitle": "Day results",
+  "@dayResultsTitle": {
+    "description": "Title of the day page before the day is saved."
+  },
+  "addRecordings": "Add recordings",
+  "@addRecordings": {
+    "description": "Button on the day page that adds recordings to the open day."
+  },
+  "dayReport": "Day report",
+  "@dayReport": {
+    "description": "Button on the day page that opens the day report."
+  },
+  "moreActions": "More",
+  "@moreActions": {
+    "description": "Tooltip of the menu with more actions."
+  },
+  "saveAs": "Save as…",
+  "@saveAs": {
+    "description": "Menu item that saves the day under a new name."
+  },
+  "addingRecordings": "Adding recordings",
+  "@addingRecordings": {
+    "description": "Screen reader label of the progress bar while recordings are added."
+  },
+  "waitUntilSessionAdded": "Wait until the session is added.",
+  "@waitUntilSessionAdded": {
+    "description": "Shown when leaving the day page while a session is being added."
+  },
+  "nothingAdded": "Nothing was added.",
+  "@nothingAdded": {
+    "description": "After adding recordings: none was added."
+  },
+  "addedToDay": "{sessions} added to the day.",
+  "@addedToDay": {
+    "description": "After adding recordings: the new sessions' names.",
+    "placeholders": {
+      "sessions": {
+        "type": "String",
+        "example": "Session 4, Session 5"
+      }
+    }
+  },
+  "savedAs": "Saved as {file}.",
+  "@savedAs": {
+    "description": "After saving the day: its file name.",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrzab.fetproject"
+      }
+    }
+  },
+  "savedAsChangesPending": "Saved as {file}. Changes made while saving are not saved yet.",
+  "@savedAsChangesPending": {
+    "description": "After saving the day when it changed during the save.",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrzab.fetproject"
+      }
+    }
+  },
+  "notSaved": "Not saved: {error}",
+  "@notSaved": {
+    "description": "Saving the day failed; the error follows.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "disk full"
+      }
+    }
+  },
+  "waitThenFindRecordings": "Wait until the recordings are added, then find the others.",
+  "@waitThenFindRecordings": {
+    "description": "Finding missing recordings while others are being added."
+  },
+  "saveThenFindRecordings": "Save the day first, then find its recordings.",
+  "@saveThenFindRecordings": {
+    "description": "Finding missing recordings of a day with unsaved changes."
+  },
+  "recordingsAddedMeanwhile": "Recordings were added meanwhile. Find the recordings again.",
+  "@recordingsAddedMeanwhile": {
+    "description": "The day changed while missing recordings were searched for."
+  },
+  "dayReopenFailed": "The day could not be opened again: {error}",
+  "@dayReopenFailed": {
+    "description": "Opening the day again with the found recordings failed.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "file not found"
+      }
+    }
+  },
+  "sessionsNotOpened": "{count, plural, =1{1 session could not be opened} other{{count} sessions could not be opened}}",
+  "@sessionsNotOpened": {
+    "description": "Heading over the sessions whose recordings are missing.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "missingSessionsKept": "They stay in the day when it is saved, but are not shown.",
+  "@missingSessionsKept": {
+    "description": "Under the missing sessions."
+  },
+  "lookingForRecordings": "Looking…",
+  "@lookingForRecordings": {
+    "description": "Button text while missing recordings are searched for."
+  },
+  "findRecordingsInFolder": "Find recordings in a folder…",
+  "@findRecordingsInFolder": {
+    "description": "Button that searches a folder for the missing recordings."
+  },
+  "lapsShareBestTime": "{count, plural, =1{1 lap has this time.} other{{count} laps share this time; the earliest is shown.}}",
+  "@lapsShareBestTime": {
+    "description": "Several laps tie for the best time of the day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestLapTrace": "Trace of the best lap, coloured by speed",
+  "@bestLapTrace": {
+    "description": "Screen reader label of the map of the best lap."
+  },
+  "tapToOpenLap": "Tap to open the lap.",
+  "@tapToOpenLap": {
+    "description": "Under the map of the best lap."
+  },
+  "comparedLaps": "Compared laps",
+  "@comparedLaps": {
+    "description": "Heading of the choice of which circuit group's laps are ranked."
+  },
+  "groupLapCount": "{group} · {eligible}/{count} laps",
+  "@groupLapCount": {
+    "description": "A circuit group in the group choice, with its ranked and all laps.",
+    "placeholders": {
+      "group": {
+        "type": "String",
+        "example": "Group 1 · Jastrząb · Clockwise"
+      },
+      "eligible": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lapsRanked": "{count, plural, =1{{eligible} of 1 lap ranked} other{{eligible} of {count} laps ranked}}",
+  "@lapsRanked": {
+    "description": "How many laps of a group or session are ranked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "eligible": {
+        "type": "int"
+      }
+    }
+  },
+  "bestLapOfEachSession": "Best lap of each session",
+  "@bestLapOfEachSession": {
+    "description": "Heading of the list of each session's best lap."
+  },
+  "noRankedLap": "{count, plural, =1{No ranked lap · 1 lap} other{No ranked lap · {count} laps}}",
+  "@noRankedLap": {
+    "description": "A session without a ranked lap, with its number of laps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "typicalTime": "typical {time}",
+  "@typicalTime": {
+    "description": "A session's typical (median) lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:51.204"
+      }
+    }
+  },
+  "circuitNotIdentified": "Its circuit could not be identified, so its laps are not compared.",
+  "@circuitNotIdentified": {
+    "description": "Under a group whose circuit is unknown."
+  },
+  "circuits": "Circuits",
+  "@circuits": {
+    "description": "Heading of the list of each session's circuit."
+  },
+  "notes": "Notes",
+  "@notes": {
+    "description": "Heading of the analysis notes."
+  },
+  "circuitNotIdentifiedShort": "Not identified",
+  "@circuitNotIdentifiedShort": {
+    "description": "A session's circuit is unknown."
+  },
+  "detectedRoute": "Detected route",
+  "@detectedRoute": {
+    "description": "A circuit found from the GPS route, with no known layout name."
+  },
+  "directionUnknown": "direction unknown",
+  "@directionUnknown": {
+    "description": "A session's driving direction is unknown."
+  },
+  "circuitSetByYou": "set by you",
+  "@circuitSetByYou": {
+    "description": "The session's circuit was set by the user."
+  },
+  "circuitInferredFromGps": "inferred from GPS",
+  "@circuitInferredFromGps": {
+    "description": "The session's circuit was inferred from GPS."
+  },
+  "noBestLapNoCircuit": "No best lap: no session has enough complete GPS laps to identify its circuit.",
+  "@noBestLapNoCircuit": {
+    "description": "Why there is no best lap."
+  },
+  "noBestLapNoRankable": "No best lap: no lap of this group can be ranked.",
+  "@noBestLapNoRankable": {
+    "description": "Why there is no best lap."
+  },
+  "bestOfDay": "Best of the day",
+  "@bestOfDay": {
+    "description": "Mark of the day's best lap in the lap list."
+  },
+  "bestOfSession": "Best of {session}",
+  "@bestOfSession": {
+    "description": "Mark of a session's best lap in the lap list.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "lapExcluded": "Excluded: {reason}",
+  "@lapExcluded": {
+    "description": "A lap the user excluded, with the reason they gave.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "traffic"
+      }
+    }
+  },
+  "lapExcludedNoReason": "Excluded",
+  "@lapExcludedNoReason": {
+    "description": "A lap the user excluded without a reason."
+  },
+  "lapNotRanked": "Not ranked: {issue}",
+  "@lapNotRanked": {
+    "description": "Why a lap is not ranked.",
+    "placeholders": {
+      "issue": {
+        "type": "String",
+        "example": "Incomplete GPS"
+      }
+    }
+  },
+  "noStartFinishPass": "No start/finish pass",
+  "@noStartFinishPass": {
+    "description": "A recording part that never crossed the start/finish line."
+  },
+  "notTimed": "Not timed",
+  "@notTimed": {
+    "description": "An out or in lap."
+  },
+  "pickLapA": "Lap A",
+  "@pickLapA": {
+    "description": "Title of the list for picking the first lap to compare."
+  },
+  "pickLapB": "Compare {lap} with",
+  "@pickLapB": {
+    "description": "Title of the list for picking the second lap to compare.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "lapName": "{session} · LAP {number}",
+  "@lapName": {
+    "description": "A timed lap's name, as on a timing screen.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      },
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "outLapName": "{session} · OUT",
+  "@outLapName": {
+    "description": "The part from the start of a recording to the first start/finish pass.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "inLapName": "{session} · IN",
+  "@inLapName": {
+    "description": "The part from the last start/finish pass to the end of a recording.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "unknownLapName": "{session} · UNKNOWN",
+  "@unknownLapName": {
+    "description": "A whole recording with no start/finish pass.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "circuitGroup": "Group {number} · {layout} · {direction}",
+  "@circuitGroup": {
+    "description": "A group of sessions on one circuit.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "layout": {
+        "type": "String",
+        "example": "Jastrząb"
+      },
+      "direction": {
+        "type": "String",
+        "example": "Clockwise"
+      }
+    }
+  },
+  "circuitGroupUnresolved": "Unresolved · {session}",
+  "@circuitGroupUnresolved": {
+    "description": "A session whose circuit is unknown, as its own group.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 3"
+      }
+    }
+  },
+  "noteUndated": "Recording date and time unavailable; listed after the dated recordings in import order.",
+  "@noteUndated": {
+    "description": "Analysis note about a recording without a clock."
+  },
+  "noteNoPasses": "No reliable start/finish passes; lap type is unknown.",
+  "@noteNoPasses": {
+    "description": "Analysis note about a recording without start/finish passes."
+  },
+  "lapIssueLayoutUnresolved": "Layout needs confirmation",
+  "@lapIssueLayoutUnresolved": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueDirectionUnresolved": "Direction needs confirmation",
+  "@lapIssueDirectionUnresolved": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueTimingGateUnresolved": "Timing gates unresolved",
+  "@lapIssueTimingGateUnresolved": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueChangedLayout": "Different layout",
+  "@lapIssueChangedLayout": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueOppositeDirection": "Opposite direction",
+  "@lapIssueOppositeDirection": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueChangedTimingGate": "Different timing gates",
+  "@lapIssueChangedTimingGate": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueIncompleteGps": "Incomplete GPS",
+  "@lapIssueIncompleteGps": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueInvalidGps": "Invalid GPS",
+  "@lapIssueInvalidGps": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueUserExclusion": "User exclusion",
+  "@lapIssueUserExclusion": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueNotTimedLap": "Not a complete timed lap",
+  "@lapIssueNotTimedLap": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueStaleSource": "Source changed; reload recording",
+  "@lapIssueStaleSource": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueIneligibleLap": "Lap is not eligible",
+  "@lapIssueIneligibleLap": {
+    "description": "Why a lap is not ranked."
+  },
+  "lapIssueDifferentRoute": "Lap leaves the route the other laps took (off track, a detour or the pit lane)",
+  "@lapIssueDifferentRoute": {
+    "description": "Why a lap is not ranked."
+  },
+  "tbTiming": "Timing every lap on one track axis…",
+  "@tbTiming": {
+    "description": "Theoretical best card while it is calculated."
+  },
+  "tbIntro": "The fastest time of each of the {segments, plural, =1{1 segment} other{{segments} segments}} across {laps, plural, =1{1 lap} other{{laps} laps}}. It combines parts of different laps, so it does not show that the whole lap can be driven that fast.",
+  "@tbIntro": {
+    "description": "Explains the theoretical best: the fastest time of every segment over all timed laps.",
+    "placeholders": {
+      "segments": {
+        "type": "int"
+      },
+      "laps": {
+        "type": "int"
+      }
+    }
+  },
+  "tbSegmentsProposed": "Segments proposed from the best lap; saving the day keeps them.",
+  "@tbSegmentsProposed": {
+    "description": "After the theoretical best explanation when the segments were proposed automatically."
+  },
+  "tbSegmentsCorrected": "The segments include your corrections.",
+  "@tbSegmentsCorrected": {
+    "description": "After the theoretical best explanation when the user edited the segments."
+  },
+  "tbEditSegments": "Edit segments",
+  "@tbEditSegments": {
+    "description": "Button opening the segment editor."
+  },
+  "tbWhereTimeGoes": "Where the time goes",
+  "@tbWhereTimeGoes": {
+    "description": "Heading of the loss map and the list of each segment's time loss."
+  },
+  "tbMarkedBest": "{text} · best",
+  "@tbMarkedBest": {
+    "description": "A lap in the lap choice or the sector table marked as the best lap of the day.",
+    "placeholders": {
+      "text": {
+        "type": "String",
+        "example": "Session 1 · LAP 2 · 1:31.234"
+      }
+    }
+  },
+  "tbMapLabel": "Best lap trace, each segment coloured by the time {lap} loses there",
+  "@tbMapLabel": {
+    "description": "Screen reader label of the loss map.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 1 · LAP 2"
+      }
+    }
+  },
+  "tbTapCorner": "Tap a corner for its speeds, braking and pickup against the best lap.",
+  "@tbTapCorner": {
+    "description": "Hint above the list of segment losses."
+  },
+  "tbCompareHint": "The compare button opens this lap against the best lap through the segment in the Corner Analyzer.",
+  "@tbCompareHint": {
+    "description": "Hint above the list of segment losses when laps can be compared."
+  },
+  "tbOpenInAnalyzer": "Open in the Corner Analyzer",
+  "@tbOpenInAnalyzer": {
+    "description": "Tooltip of the button comparing a lap with the best lap through one segment."
+  },
+  "tbSectorTimes": "Sector times",
+  "@tbSectorTimes": {
+    "description": "Heading of the table of every lap's segment times."
+  },
+  "tbSectorHint": "The fastest time of each segment is highlighted. Tap a lap to show its losses on the map.",
+  "@tbSectorHint": {
+    "description": "Explains the sector table."
+  },
+  "tbNotCovered": "Not fully covered on this lap · fastest {time}",
+  "@tbNotCovered": {
+    "description": "A segment the chosen lap has no full time through, with the fastest time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "12.345"
+      }
+    }
+  },
+  "tbFastestHere": "Fastest here · {time}",
+  "@tbFastestHere": {
+    "description": "A segment where the chosen lap set the fastest time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "12.345"
+      }
+    }
+  },
+  "tbFastestBy": "Fastest {time} · {lap}",
+  "@tbFastestBy": {
+    "description": "A segment's fastest time and the lap that set it.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "12.345"
+      },
+      "lap": {
+        "type": "String",
+        "example": "Session 1 · LAP 2"
+      }
+    }
+  },
+  "tbLapUnavailable": "lap unavailable",
+  "@tbLapUnavailable": {
+    "description": "In place of the lap that set a segment's fastest time when it is not found."
+  },
+  "tbBestLap": "Best lap",
+  "@tbBestLap": {
+    "description": "Label of the best lap's time on the theoretical best card."
+  },
+  "tbBestLapSameSegments": "Best lap, same segments",
+  "@tbBestLapSameSegments": {
+    "description": "Label of the best lap's time over the segments only, when they do not cover the whole lap."
+  },
+  "tbAvailable": "Available",
+  "@tbAvailable": {
+    "description": "Label of the time the best lap leaves: best lap minus theoretical best."
+  },
+  "tbLapColumn": "Lap",
+  "@tbLapColumn": {
+    "description": "Sector table column header."
+  },
+  "tbTimeColumn": "Time",
+  "@tbTimeColumn": {
+    "description": "Sector table column header: the lap time."
+  },
+  "tbFastestRow": "Fastest",
+  "@tbFastestRow": {
+    "description": "Sector table last row: the fastest time of each segment."
+  },
+  "tbSegmentCorner": "Corner {number}",
+  "@tbSegmentCorner": {
+    "description": "An automatically named corner segment.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "3"
+      }
+    }
+  },
+  "tbSegmentCorners": "Corners {numbers}",
+  "@tbSegmentCorners": {
+    "description": "An automatically named segment of linked corners.",
+    "placeholders": {
+      "numbers": {
+        "type": "String",
+        "example": "3–4"
+      }
+    }
+  },
+  "tbSegmentStraight": "Straight {number}",
+  "@tbSegmentStraight": {
+    "description": "An automatically named straight segment.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "2"
+      }
+    }
+  },
+  "tbNoConfiguration": "Confirm a compatible track configuration before calculating a theoretical best.",
+  "@tbNoConfiguration": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbNoEligibleLaps": "No eligible laps in this group to calculate a theoretical best from.",
+  "@tbNoEligibleLaps": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbNoApprovedRun": "No run in this group has an approved segment review yet. Approve segments for at least one run first.",
+  "@tbNoApprovedRun": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbNoApprovedSegments": "No approved segments to measure sectors against.",
+  "@tbNoApprovedSegments": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbIncompleteCoverage": "At least one sector has no fully covered time on any eligible lap, so no total is shown.",
+  "@tbIncompleteCoverage": {
+    "description": "Why the theoretical best total, or a segment's fastest time, is not shown."
+  },
+  "tbCancelled": "Theoretical best calculation was cancelled.",
+  "@tbCancelled": {
+    "description": "Why there is no theoretical best."
+  },
+  "consistencyHeading": "Consistency",
+  "@consistencyHeading": {
+    "description": "Heading of the card on how repeatable lap and segment times are."
+  },
+  "consistencyIntro": "Typical time is the median; the spread is the interquartile range, the width of the middle half of the laps, so one slow or quick lap does not dominate it. At least {count, plural, =1{1 lap is} other{{count} laps are}} needed.",
+  "@consistencyIntro": {
+    "description": "Explains the consistency card.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "consistencyLapTimes": "Lap times",
+  "@consistencyLapTimes": {
+    "description": "Consistency card heading of the lap times."
+  },
+  "consistencyAllSessions": "All sessions",
+  "@consistencyAllSessions": {
+    "description": "Consistency of the lap times over the whole day."
+  },
+  "consistencySegmentTimes": "Segment times",
+  "@consistencySegmentTimes": {
+    "description": "Consistency card heading of the segment times."
+  },
+  "consistencyMeasuring": "Measured with the theoretical best…",
+  "@consistencyMeasuring": {
+    "description": "Consistency card while the segment times are calculated."
+  },
+  "consistencyNeedsLaps": "Needs at least {count, plural, =1{1 lap} other{{count} laps}}",
+  "@consistencyNeedsLaps": {
+    "description": "In place of a consistency with too few laps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "consistencyValue": "{time} · spread {spread} s",
+  "@consistencyValue": {
+    "description": "A typical (median) time and its spread (interquartile range) in seconds.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:31.234"
+      },
+      "spread": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "consistencyLapCount": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@consistencyLapCount": {
+    "description": "How many laps a consistency is measured over.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossTitle": "Time losses",
+  "@timeLossTitle": {
+    "description": "Heading of the card listing the day's largest time losses."
+  },
+  "timeLossLoading": "Measured with the theoretical best…",
+  "@timeLossLoading": {
+    "description": "Shown on the time-loss card while the theoretical best is calculated."
+  },
+  "timeLossScopeSessionBest": "Each session's best",
+  "@timeLossScopeSessionBest": {
+    "description": "Choice: compare only each session's best lap with the best lap."
+  },
+  "timeLossScopeEveryLap": "Every lap",
+  "@timeLossScopeEveryLap": {
+    "description": "Choice: compare every lap with the best lap."
+  },
+  "timeLossAgainst": "Against {lap}",
+  "@timeLossAgainst": {
+    "description": "First part of the time-loss summary: the lap every loss is measured against.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "timeLossLapsCompared": "{count, plural, =1{1 lap compared} other{{count} laps compared}}",
+  "@timeLossLapsCompared": {
+    "description": "Part of the time-loss summary: how many laps were compared with the best lap.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossLossesObserved": "{count, plural, =1{1 loss observed} other{{count} losses observed}}",
+  "@timeLossLossesObserved": {
+    "description": "Part of the time-loss summary: how many time losses were found.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossUntimedLeftOut": "{count} not fully covered left out",
+  "@timeLossUntimedLeftOut": {
+    "description": "Part of the time-loss summary: segments left out because a lap has no complete time through them.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossExplanation": "Each loss is the extra time one lap took through one segment compared with the best lap, both timed on one track axis. A straight right after a corner is its own segment, so time lost on the exit is not counted in the corner. An observed loss is not a guaranteed or necessarily safe gain.",
+  "@timeLossExplanation": {
+    "description": "Explains what a time loss is, under the time-loss summary."
+  },
+  "timeLossNone": "No lap lost time to the best lap in any timed segment.",
+  "@timeLossNone": {
+    "description": "Shown when no lap lost time anywhere."
+  },
+  "timeLossShowAll": "Show all {count}",
+  "@timeLossShowAll": {
+    "description": "Button that shows every time loss instead of the first ones.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossReasonNoReference": "The best lap could not be timed against the segments.",
+  "@timeLossReasonNoReference": {
+    "description": "Why there is no time-loss list: the best lap has no time on the segments."
+  },
+  "timeLossReasonBestLapUntimed": "The group's best lap could not be timed against the approved segments.",
+  "@timeLossReasonBestLapUntimed": {
+    "description": "Why there are no time losses or focus areas: the group's best lap has no time on the approved segments."
+  },
+  "timeLossSegmentAfterCorner": "{segment} · after {corner}",
+  "@timeLossSegmentAfterCorner": {
+    "description": "Name of a straight right after a corner, measured on its own.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Straight 2"
+      },
+      "corner": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "timeLossSegmentAfterTheCorner": "{segment} · after the corner",
+  "@timeLossSegmentAfterTheCorner": {
+    "description": "Name of a straight right after a corner whose name is unknown.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Straight 2"
+      }
+    }
+  },
+  "timeLossLapUnavailable": "Lap unavailable",
+  "@timeLossLapUnavailable": {
+    "description": "In place of a lap's name when the lap cannot be found."
+  },
+  "timeLossAgainstBestLap": "{lap} against the best lap, {best}",
+  "@timeLossAgainstBestLap": {
+    "description": "Heading of one opened time loss: the lap that lost time and the best lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "best": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "timeLossUnavailable": "unavailable",
+  "@timeLossUnavailable": {
+    "description": "In place of a lap's name inside a sentence when the lap cannot be found."
+  },
+  "timeLossThisLap": "This lap",
+  "@timeLossThisLap": {
+    "description": "Label of this lap's time through the segment."
+  },
+  "timeLossBestLap": "Best lap",
+  "@timeLossBestLap": {
+    "description": "Label of the best lap's time through the segment."
+  },
+  "timeLossDifference": "Difference",
+  "@timeLossDifference": {
+    "description": "Label of the time difference between the two laps through the segment."
+  },
+  "timeLossThrough": "Through {segment}, from {start} m to {end} m after the line.",
+  "@timeLossThrough": {
+    "description": "Where the segment of a time loss is on the track.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLossGap": "Gap to the best lap: {start} at the start of the segment, {end} at its end.",
+  "@timeLossGap": {
+    "description": "The running gap to the best lap at both ends of the segment.",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "+0.120"
+      },
+      "end": {
+        "type": "String",
+        "example": "+0.310"
+      }
+    }
+  },
+  "timeLossNoGps": "Part of the segment has no GPS on one of the laps.",
+  "@timeLossNoGps": {
+    "description": "Warning that the comparison is incomplete."
+  },
+  "timeLossMapLabel": "Best lap trace with {segment} highlighted",
+  "@timeLossMapLabel": {
+    "description": "Accessibility label of the map showing the segment.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "timeLossDisclaimer": "An observed difference between two laps, not a guaranteed or necessarily safe gain.",
+  "@timeLossDisclaimer": {
+    "description": "Caution under an opened time loss."
+  },
+  "timeLossOpenLap": "Open {lap}",
+  "@timeLossOpenLap": {
+    "description": "Button that opens a lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "timeLossCompareWith": "Compare with {lap}",
+  "@timeLossCompareWith": {
+    "description": "Button that compares the lap with the best lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "focusTitle": "Where to look next",
+  "@focusTitle": {
+    "description": "Heading of the card of focus areas: where the driver may find time."
+  },
+  "focusLoading": "Selected with the theoretical best…",
+  "@focusLoading": {
+    "description": "Shown on the focus-area card while the theoretical best is calculated."
+  },
+  "focusNone": "No loss, sector gap or spread is large enough to single out.",
+  "@focusNone": {
+    "description": "Shown when there is no focus area."
+  },
+  "focusIntro": "Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.",
+  "@focusIntro": {
+    "description": "Explains how a focus area reads."
+  },
+  "focusKindSectorGap": "Best lap against the fastest sector",
+  "@focusKindSectorGap": {
+    "description": "Kind of focus area: the best lap was slower through a sector than another lap."
+  },
+  "focusKindRepeatedLoss": "Repeated loss",
+  "@focusKindRepeatedLoss": {
+    "description": "Kind of focus area: time lost in the same segment on several laps."
+  },
+  "focusKindBrakingSpread": "Braking-point spread",
+  "@focusKindBrakingSpread": {
+    "description": "Kind of focus area: the braking point varies from lap to lap."
+  },
+  "focusKindMinimumSpeedSpread": "Lowest-speed spread",
+  "@focusKindMinimumSpeedSpread": {
+    "description": "Kind of focus area: the lowest speed in a corner varies from lap to lap."
+  },
+  "focusObserved": "Observed: {text}",
+  "@focusObserved": {
+    "description": "What a focus area measured.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "focusHypothesis": "Hypothesis: {text}",
+  "@focusHypothesis": {
+    "description": "What may be worth checking in a focus area; never a cause.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "focusCompareLaps": "Compare {lap} with {other}",
+  "@focusCompareLaps": {
+    "description": "The two laps a focus area suggests comparing.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "other": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "focusLapUnavailable": "a lap unavailable",
+  "@focusLapUnavailable": {
+    "description": "In place of a lap's name inside a sentence when the lap cannot be found."
+  },
+  "focusThrough": "Through {segment}",
+  "@focusThrough": {
+    "description": "Heading of the two laps' measurements through the segment.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusNotTimed": "not timed",
+  "@focusNotTimed": {
+    "description": "A lap has no time through the segment."
+  },
+  "focusBrakingNotMeasured": "braking point not measured",
+  "@focusBrakingNotMeasured": {
+    "description": "A lap's braking point could not be measured."
+  },
+  "focusBrakingStarts": "braking starts at {meters} m",
+  "@focusBrakingStarts": {
+    "description": "Where braking starts on a lap, in meters along the lap.",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "focusLowestSpeedNotMeasured": "lowest speed not measured",
+  "@focusLowestSpeedNotMeasured": {
+    "description": "A lap's lowest speed could not be measured."
+  },
+  "focusLowestSpeed": "lowest speed {speed}",
+  "@focusLowestSpeed": {
+    "description": "A lap's lowest speed through the corner, with its unit.",
+    "placeholders": {
+      "speed": {
+        "type": "String",
+        "example": "62.4 km/h"
+      }
+    }
+  },
+  "focusDisclaimer": "Measured on these laps only. It does not say which way is faster or safe.",
+  "@focusDisclaimer": {
+    "description": "Caution under an opened focus area."
+  },
+  "focusCompareAB": "Compare laps A and B",
+  "@focusCompareAB": {
+    "description": "Button that compares the focus area's two laps."
+  },
+  "focusObservationSectorGap": "Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.",
+  "@focusObservationSectorGap": {
+    "description": "What a sector-gap focus area measured.",
+    "placeholders": {
+      "bestLap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "gap": {
+        "type": "String",
+        "example": "0.120"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "sourceLap": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      }
+    }
+  },
+  "focusHypothesisSectorGap": "Comparing the two laps through {segment} may show where the time went: where braking starts, the lowest speed, and when the throttle comes back.",
+  "@focusHypothesisSectorGap": {
+    "description": "What a sector-gap focus area suggests checking; never a cause.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusObservationRepeatedLoss": "In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).",
+  "@focusObservationRepeatedLoss": {
+    "description": "What a repeated-loss focus area measured.",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "3"
+      },
+      "total": {
+        "type": "String",
+        "example": "5"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "reference": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      },
+      "median": {
+        "type": "String",
+        "example": "0.080"
+      }
+    }
+  },
+  "focusHypothesisRepeatedLoss": "Because it repeats, comparing a typical lap with {reference} through {segment} may show a pattern rather than a one-off.",
+  "@focusHypothesisRepeatedLoss": {
+    "description": "What a repeated-loss focus area suggests checking; never a cause.",
+    "placeholders": {
+      "reference": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusObservationBrakingSpread": "Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).",
+  "@focusObservationBrakingSpread": {
+    "description": "What a braking-spread focus area measured.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "spread": {
+        "type": "String",
+        "example": "12.5"
+      },
+      "count": {
+        "type": "String",
+        "example": "6"
+      }
+    }
+  },
+  "focusHypothesisBrakingSpread": "A more repeatable braking reference for {segment} may be worth checking. This does not show whether earlier or later braking is faster or safe; compare the earliest and the latest example.",
+  "@focusHypothesisBrakingSpread": {
+    "description": "What a braking-spread focus area suggests checking; never a cause.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "focusObservationMinimumSpeedSpread": "The lowest speed through {segment} varies by {spread} across the middle half of {count} laps (median {median}).",
+  "@focusObservationMinimumSpeedSpread": {
+    "description": "What a lowest-speed-spread focus area measured; the speeds carry their unit when recorded.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      },
+      "spread": {
+        "type": "String",
+        "example": "4.2 km/h"
+      },
+      "count": {
+        "type": "String",
+        "example": "6"
+      },
+      "median": {
+        "type": "String",
+        "example": "61.0 km/h"
+      }
+    }
+  },
+  "focusObservationRecordingUnits": "Speeds are in the recording's own units.",
+  "@focusObservationRecordingUnits": {
+    "description": "Added after a lowest-speed spread when the recording gives no speed unit."
+  },
+  "focusHypothesisMinimumSpeedSpread": "Comparing the slowest and the fastest example through {segment} may show what differs; a higher minimum speed is not by itself better.",
+  "@focusHypothesisMinimumSpeedSpread": {
+    "description": "What a lowest-speed-spread focus area suggests checking; never a cause.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 1"
+      }
+    }
+  },
+  "progressionTitle": "Progression",
+  "@progressionTitle": {
+    "description": "Heading of the card showing how the day went session by session."
+  },
+  "progressionBySession": "By session",
+  "@progressionBySession": {
+    "description": "Progression view: one entry per session."
+  },
+  "progressionBySegment": "By segment",
+  "@progressionBySegment": {
+    "description": "Progression view: a table of segments by session."
+  },
+  "progressionSessionsIntro": "Sessions in recording order; sessions without a recording time follow in import order. The bar runs from the quickest to the slowest ranked lap on one time scale, the middle half boxed and the typical lap marked.",
+  "@progressionSessionsIntro": {
+    "description": "Explains the progression by session."
+  },
+  "progressionNoSession": "No session to compare.",
+  "@progressionNoSession": {
+    "description": "Progression card without sessions."
+  },
+  "progressionRecordingTimeUnavailable": "Recording time unavailable",
+  "@progressionRecordingTimeUnavailable": {
+    "description": "A session whose recording has no date and time."
+  },
+  "progressionRecordingClock": "{time} UTC on {date}",
+  "@progressionRecordingClock": {
+    "description": "When a session was recorded, from the recording's clock.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "11:20:05"
+      },
+      "date": {
+        "type": "String",
+        "example": "19 Aug 2026"
+      }
+    }
+  },
+  "progressionNoRecordedLaps": "No recorded laps",
+  "@progressionNoRecordedLaps": {
+    "description": "A session without laps."
+  },
+  "progressionNoRankedLap": "{count, plural, =1{No ranked lap · 0 of 1 lap} other{No ranked lap · 0 of {count} laps}}",
+  "@progressionNoRankedLap": {
+    "description": "A session none of whose laps is ranked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionLapsRanked": "{count, plural, =1{{eligible} of 1 lap ranked} other{{eligible} of {count} laps ranked}}",
+  "@progressionLapsRanked": {
+    "description": "How many of a session's laps are ranked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "eligible": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionTypical": "Typical {time}",
+  "@progressionTypical": {
+    "description": "A session's typical (median) lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      }
+    }
+  },
+  "progressionTypicalNeedsLaps": "{count, plural, =1{Typical lap needs at least 1 ranked lap} other{Typical lap needs at least {count} ranked laps}}",
+  "@progressionTypicalNeedsLaps": {
+    "description": "Why a session has no typical lap.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionBestAgainst": "Best {delta} against {session}",
+  "@progressionBestAgainst": {
+    "description": "A session's best lap compared with the previous session's.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "−0.412 s"
+      },
+      "session": {
+        "type": "String",
+        "example": "Session 1"
+      }
+    }
+  },
+  "progressionConditions": "Conditions: {conditions}",
+  "@progressionConditions": {
+    "description": "The conditions the driver noted for a session.",
+    "placeholders": {
+      "conditions": {
+        "type": "String"
+      }
+    }
+  },
+  "progressionSetup": "Setup: {setup}",
+  "@progressionSetup": {
+    "description": "The setup changes the driver noted for a session.",
+    "placeholders": {
+      "setup": {
+        "type": "String"
+      }
+    }
+  },
+  "progressionNotes": "Notes: {notes}",
+  "@progressionNotes": {
+    "description": "The driver's notes for a session.",
+    "placeholders": {
+      "notes": {
+        "type": "String"
+      }
+    }
+  },
+  "progressionBestLap": "Best: LAP {number}",
+  "@progressionBestLap": {
+    "description": "A session's best lap, as on a timing screen.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionMeasuring": "Measured with the theoretical best…",
+  "@progressionMeasuring": {
+    "description": "The progression by segment while the theoretical best is calculated."
+  },
+  "progressionSegmentsIntro": "{count, plural, =1{Each segment's typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than 1 lap: no statistics. Tap a cell for its laps.} other{Each segment's typical time (median) and spread (middle half) per session. The quickest typical time of each segment is highlighted. Fewer than {count} laps: no statistics. Tap a cell for its laps.}}",
+  "@progressionSegmentsIntro": {
+    "description": "Explains the progression by segment.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressionLapUnavailable": "Lap unavailable",
+  "@progressionLapUnavailable": {
+    "description": "A lap of a segment cell that can no longer be found."
+  },
+  "progressionNoTimedSegments": "No session has timed segments.",
+  "@progressionNoTimedSegments": {
+    "description": "Progression by segment without timed segments."
+  },
+  "progressionSpread": "spread {seconds} s",
+  "@progressionSpread": {
+    "description": "A segment's spread (interquartile range) in a session.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.123"
+      }
+    }
+  },
+  "progressionLapCount": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@progressionLapCount": {
+    "description": "A segment cell with too few laps for statistics.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelOil": "Oil",
+  "@channelOil": {
+    "description": "An oil temperature channel."
+  },
+  "channelCoolant": "Coolant",
+  "@channelCoolant": {
+    "description": "A coolant temperature channel."
+  },
+  "channelIntakeAir": "Intake air",
+  "@channelIntakeAir": {
+    "description": "An intake air temperature channel."
+  },
+  "channelGearbox": "Gearbox",
+  "@channelGearbox": {
+    "description": "A gearbox temperature channel."
+  },
+  "channelExhaust": "Exhaust",
+  "@channelExhaust": {
+    "description": "An exhaust gas temperature channel."
+  },
+  "channelAmbient": "Ambient",
+  "@channelAmbient": {
+    "description": "An ambient temperature channel."
+  },
+  "channelNotRecorded": "Not recorded",
+  "@channelNotRecorded": {
+    "description": "A channel missing from a session."
+  },
+  "channelNoValidSamples": "No valid samples",
+  "@channelNoValidSamples": {
+    "description": "A channel without a usable reading."
+  },
+  "channelSummary": "mean {mean} · {minimum} – {maximum} · {coverage}% covered",
+  "@channelSummary": {
+    "description": "A channel's mean, range and how much of the time it was recorded.",
+    "placeholders": {
+      "mean": {
+        "type": "String",
+        "example": "104 °C"
+      },
+      "minimum": {
+        "type": "String",
+        "example": "98"
+      },
+      "maximum": {
+        "type": "String",
+        "example": "112 °C"
+      },
+      "coverage": {
+        "type": "int"
+      }
+    }
+  },
+  "channelImplausibleLeftOut": "{count} implausible left out",
+  "@channelImplausibleLeftOut": {
+    "description": "Readings of a channel left out as implausible.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelOutLap": "out lap",
+  "@channelOutLap": {
+    "description": "Section of a recording before the first start/finish pass."
+  },
+  "channelInLap": "in lap",
+  "@channelInLap": {
+    "description": "Section of a recording after the last start/finish pass."
+  },
+  "channelLapSection": "lap {number}",
+  "@channelLapSection": {
+    "description": "A timed lap as a section of a recording.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "channelUnknownSection": "unknown section",
+  "@channelUnknownSection": {
+    "description": "A section of a recording of unknown type."
+  },
+  "channelCoolingNone": "none recorded",
+  "@channelCoolingNone": {
+    "description": "No cooling in a channel."
+  },
+  "channelCoolingDrop": "−{drop} in {duration}",
+  "@channelCoolingDrop": {
+    "description": "A continuously recorded temperature drop and how long it took.",
+    "placeholders": {
+      "drop": {
+        "type": "String",
+        "example": "12 °C"
+      },
+      "duration": {
+        "type": "String",
+        "example": "1:40"
+      }
+    }
+  },
+  "channelCooling": "Cooling: {cooling}",
+  "@channelCooling": {
+    "description": "A session's cooling of a temperature channel.",
+    "placeholders": {
+      "cooling": {
+        "type": "String"
+      }
+    }
+  },
+  "channelLapTime": "Lap time",
+  "@channelLapTime": {
+    "description": "Lap time as a metric associated with a temperature."
+  },
+  "channelStrongAcceleration": "Strong acceleration",
+  "@channelStrongAcceleration": {
+    "description": "Strong acceleration as a metric associated with a temperature."
+  },
+  "channelAssociationNoSpread": "{count, plural, =1{{metric}: the temperature (or the metric) did not vary over 1 lap.} other{{metric}: the temperature (or the metric) did not vary over {count} laps.}}",
+  "@channelAssociationNoSpread": {
+    "description": "No association: nothing varied.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lap time"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "channelAssociationTooFew": "{count, plural, =1{{metric}: 1 comparable lap with this temperature; at least {minimum} are needed.} other{{metric}: {count} comparable laps with this temperature; at least {minimum} are needed.}}",
+  "@channelAssociationTooFew": {
+    "description": "No association: too few laps.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lap time"
+      },
+      "count": {
+        "type": "int"
+      },
+      "minimum": {
+        "type": "int"
+      }
+    }
+  },
+  "channelAssociation": "{count, plural, =1{{metric}: ρ {rho} · {strength} · 1 lap — {meaning}} other{{metric}: ρ {rho} · {strength} · {count} laps — {meaning}}}",
+  "@channelAssociation": {
+    "description": "A temperature's rank correlation with a metric over the compared laps. Never a cause.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lap time"
+      },
+      "rho": {
+        "type": "String",
+        "example": "+0.45"
+      },
+      "strength": {
+        "type": "String",
+        "example": "moderate"
+      },
+      "count": {
+        "type": "int"
+      },
+      "meaning": {
+        "type": "String",
+        "example": "hotter laps were slower"
+      }
+    }
+  },
+  "channelStrengthWeak": "weak",
+  "@channelStrengthWeak": {
+    "description": "Strength of a correlation."
+  },
+  "channelStrengthModerate": "moderate",
+  "@channelStrengthModerate": {
+    "description": "Strength of a correlation."
+  },
+  "channelStrengthStrong": "strong",
+  "@channelStrengthStrong": {
+    "description": "Strength of a correlation."
+  },
+  "channelMeaningLittle": "little association",
+  "@channelMeaningLittle": {
+    "description": "What a weak correlation means."
+  },
+  "channelMeaningQuicker": "hotter laps were quicker",
+  "@channelMeaningQuicker": {
+    "description": "What a correlation of temperature with lap time means."
+  },
+  "channelMeaningSlower": "hotter laps were slower",
+  "@channelMeaningSlower": {
+    "description": "What a correlation of temperature with lap time means."
+  },
+  "channelMeaningHarder": "hotter laps accelerated harder",
+  "@channelMeaningHarder": {
+    "description": "What a correlation of temperature with acceleration means."
+  },
+  "channelMeaningLess": "hotter laps accelerated less",
+  "@channelMeaningLess": {
+    "description": "What a correlation of temperature with acceleration means."
+  },
+  "channelCarTitle": "Car",
+  "@channelCarTitle": {
+    "description": "Heading of the card with the car's recorded temperatures."
+  },
+  "channelCarReading": "Reading each session's recorded temperatures…",
+  "@channelCarReading": {
+    "description": "Car card while temperatures are read."
+  },
+  "channelCarNoChannels": "None of the recordings contain a temperature channel.",
+  "@channelCarNoChannels": {
+    "description": "Car card without temperature channels."
+  },
+  "channelCarIntro": "Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.",
+  "@channelCarIntro": {
+    "description": "Explains the car card."
+  },
+  "channelUnitsNotDeclared": "units not declared by the recording",
+  "@channelUnitsNotDeclared": {
+    "description": "A channel whose recording gives no unit."
+  },
+  "channelConfounded": "The temperature also changed through the day, so this cannot be told apart from everything else that changed: the driver, tyres, track and fuel.",
+  "@channelConfounded": {
+    "description": "Why a temperature association is not a cause."
+  },
+  "channelHeartRateIntro": "Observed values from the recording, not an assessment.",
+  "@channelHeartRateIntro": {
+    "description": "Heart rate page intro."
+  },
+  "channelEverySectionIntro": "Every recorded section of each session.",
+  "@channelEverySectionIntro": {
+    "description": "Channel page intro."
+  },
+  "channelWithLapPerformance": "With lap performance",
+  "@channelWithLapPerformance": {
+    "description": "Heading of a temperature's association with lap performance."
+  },
+  "channelConfoundedRose": "The temperature also rose through the day (ρ {rho} with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.",
+  "@channelConfoundedRose": {
+    "description": "Why a temperature association is not a cause.",
+    "placeholders": {
+      "rho": {
+        "type": "String",
+        "example": "0.72"
+      }
+    }
+  },
+  "channelConfoundedFell": "The temperature also fell through the day (ρ {rho} with the order of laps), so this cannot be told apart from everything else that changed over the day: the driver, tyres, track and fuel.",
+  "@channelConfoundedFell": {
+    "description": "Why a temperature association is not a cause.",
+    "placeholders": {
+      "rho": {
+        "type": "String",
+        "example": "-0.72"
+      }
+    }
+  },
+  "channelSpearman": "Spearman rank correlation over the day's compared laps whose sensor covered at least {coverage}% of the lap. {lowCoverage} left out for low coverage, {notRecorded} without a valid reading. It describes how the two moved together on this day; it does not establish a critical temperature or a cause.",
+  "@channelSpearman": {
+    "description": "How a temperature association is calculated.",
+    "placeholders": {
+      "coverage": {
+        "type": "int"
+      },
+      "lowCoverage": {
+        "type": "int"
+      },
+      "notRecorded": {
+        "type": "int"
+      }
+    }
+  },
+  "channelDriverTitle": "Driver",
+  "@channelDriverTitle": {
+    "description": "Heading of the card with the driver's heart rate."
+  },
+  "channelDriverReading": "Reading each session's recorded heart rate…",
+  "@channelDriverReading": {
+    "description": "Driver card while heart rate is read."
+  },
+  "channelDriverNoHeartRate": "No heart rate recorded.",
+  "@channelDriverNoHeartRate": {
+    "description": "Driver card without heart rate."
+  },
+  "channelDriverIntro": "Heart rate from the recordings: observed values, not an assessment. Per lap: mean bpm; tap a lap to open it.",
+  "@channelDriverIntro": {
+    "description": "Explains the driver card."
+  },
+  "channelHeartRate": "Heart rate",
+  "@channelHeartRate": {
+    "description": "Title of the heart rate page."
+  },
+  "channelEverySection": "Every section…",
+  "@channelEverySection": {
+    "description": "Button opening the heart rate of every section."
+  },
+  "channelLapMean": "LAP {number} · {mean}",
+  "@channelLapMean": {
+    "description": "A lap's mean heart rate, as on a timing screen.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "mean": {
+        "type": "String",
+        "example": "142"
+      }
+    }
+  },
+  "channelRecordingUnavailable": "Recording unavailable.",
+  "@channelRecordingUnavailable": {
+    "description": "A session whose recording cannot be read."
+  },
+  "channelSummariesCancelled": "Channel summaries were cancelled.",
+  "@channelSummariesCancelled": {
+    "description": "Channel summaries stopped before they finished."
+  },
+  "cornerSummaryMin": "Min {speed}",
+  "@cornerSummaryMin": {
+    "description": "Corner line under a loss row: the lap's minimum speed with its unit.",
+    "placeholders": {
+      "speed": {
+        "type": "String",
+        "example": "72.4 km/h"
+      }
+    }
+  },
+  "cornerSummaryMinWithBest": "Min {speed} (best lap {best})",
+  "@cornerSummaryMinWithBest": {
+    "description": "Corner line: the lap's minimum speed and the best lap's.",
+    "placeholders": {
+      "speed": {
+        "type": "String",
+        "example": "72.4 km/h"
+      },
+      "best": {
+        "type": "String",
+        "example": "74.1"
+      }
+    }
+  },
+  "cornerSummaryBrakes": "brakes {where}",
+  "@cornerSummaryBrakes": {
+    "description": "Corner line: where the lap starts braking.",
+    "placeholders": {
+      "where": {
+        "type": "String",
+        "example": "35 m before"
+      }
+    }
+  },
+  "cornerSummaryBrakesWithBest": "brakes {where} ({position})",
+  "@cornerSummaryBrakesWithBest": {
+    "description": "Corner line: where the lap starts braking, against the best lap.",
+    "placeholders": {
+      "where": {
+        "type": "String",
+        "example": "35 m before"
+      },
+      "position": {
+        "type": "String",
+        "example": "4 m later"
+      }
+    }
+  },
+  "cornerBeforeEntry": "{metres} m before",
+  "@cornerBeforeEntry": {
+    "description": "A braking point before the corner's start.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerIntoCorner": "{metres} m into the corner",
+  "@cornerIntoCorner": {
+    "description": "A braking point inside the corner.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerSamePosition": "same",
+  "@cornerSamePosition": {
+    "description": "A braking point at the same place as on the best lap."
+  },
+  "cornerLater": "{metres} m later",
+  "@cornerLater": {
+    "description": "A braking point later than on the best lap.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerEarlier": "{metres} m earlier",
+  "@cornerEarlier": {
+    "description": "A braking point earlier than on the best lap.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "missingRecordingNotFound": "Recording not found.",
+  "@missingRecordingNotFound": {
+    "description": "Why a session of a saved day could not be opened."
+  },
+  "missingRecordingDuplicate": "The same recording as another session of this day.",
+  "@missingRecordingDuplicate": {
+    "description": "Why a session of a saved day could not be opened."
+  },
+  "missingRecordingDifferent": "The file found is a different recording.",
+  "@missingRecordingDifferent": {
+    "description": "Why a session of a saved day could not be opened."
+  },
+  "lapB": "Lap B",
+  "@lapB": {
+    "description": "Title of the list for changing lap B of a comparison."
+  },
+  "suggestedFastest": "Suggested: the fastest",
+  "@suggestedFastest": {
+    "description": "Under the suggested lap in the lap picker."
+  },
+  "noOtherRankedLap": "No other ranked lap of this group to compare with.",
+  "@noOtherRankedLap": {
+    "description": "Lap picker with nothing to pick."
+  },
+  "addingCancelled": "Adding was cancelled.",
+  "@addingCancelled": {
+    "description": "Adding recordings to the day was cancelled."
+  },
+  "dayClosed": "The day was closed.",
+  "@dayClosed": {
+    "description": "Recordings were not added because the day was closed."
+  },
+  "nothingAddedError": "Nothing was added: {error}",
+  "@nothingAddedError": {
+    "description": "Adding recordings failed; the error follows.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "file not found"
+      }
+    }
+  },
+  "diagnosticsTitle": "Diagnostics",
+  "@diagnosticsTitle": {
+    "description": "Title of the diagnostics page and its entry in the overflow menu."
+  },
+  "diagnosticsRefresh": "Refresh",
+  "@diagnosticsRefresh": {
+    "description": "Tooltip of the diagnostics page button that reads the figures again."
+  },
+  "diagnosticsLastImport": "Last import",
+  "@diagnosticsLastImport": {
+    "description": "Heading of the diagnostics page section about the last import."
+  },
+  "diagnosticsNoImport": "No day imported since the app started.",
+  "@diagnosticsNoImport": {
+    "description": "Diagnostics page, shown when no day was imported yet."
+  },
+  "diagnosticsRecordingsRead": "Recordings read",
+  "@diagnosticsRecordingsRead": {
+    "description": "Diagnostics row: how many recordings the last import read."
+  },
+  "diagnosticsSessions": "Sessions",
+  "@diagnosticsSessions": {
+    "description": "Diagnostics row: how many sessions the imported day has."
+  },
+  "diagnosticsSamples": "Samples",
+  "@diagnosticsSamples": {
+    "description": "Diagnostics row: how many samples (rows of the recordings) the sessions have."
+  },
+  "diagnosticsChannelValues": "Channel values",
+  "@diagnosticsChannelValues": {
+    "description": "Diagnostics row: how many values of all channels the sessions have."
+  },
+  "diagnosticsMemory": "Memory",
+  "@diagnosticsMemory": {
+    "description": "Heading of the diagnostics page section about the app's memory."
+  },
+  "diagnosticsCurrentMemory": "Current",
+  "@diagnosticsCurrentMemory": {
+    "description": "Diagnostics row: the app's memory now."
+  },
+  "diagnosticsPeakMemory": "Peak",
+  "@diagnosticsPeakMemory": {
+    "description": "Diagnostics row: the app's highest memory since it started."
+  },
+  "diagnosticsNotAvailable": "Not available",
+  "@diagnosticsNotAvailable": {
+    "description": "Diagnostics value when the system does not report the memory."
+  },
+  "diagnosticsMemoryNote": "Resident memory of the app as the system reports it; the peak is since the app started. Times are wall time on this device.",
+  "@diagnosticsMemoryNote": {
+    "description": "Explanation under the diagnostics page's memory figures."
+  },
+  "diagnosticsStepScan": "Find recordings",
+  "@diagnosticsStepScan": {
+    "description": "Diagnostics step: finding the recordings to import."
+  },
+  "diagnosticsStepParse": "Parse and import",
+  "@diagnosticsStepParse": {
+    "description": "Diagnostics step: reading and importing the recordings."
+  },
+  "diagnosticsStepAnalysis": "Day analysis",
+  "@diagnosticsStepAnalysis": {
+    "description": "Diagnostics step: analysing the day."
+  },
+  "diagnosticsStepImportTotal": "Import, start to results",
+  "@diagnosticsStepImportTotal": {
+    "description": "Diagnostics step: the whole import, from start until the results show."
+  },
+  "diagnosticsStepTheoreticalBest": "Theoretical best and segments",
+  "@diagnosticsStepTheoreticalBest": {
+    "description": "Diagnostics step: computing the theoretical best lap and its segments."
+  },
+  "diagnosticsStepChannelSummaries": "Channel summaries",
+  "@diagnosticsStepChannelSummaries": {
+    "description": "Diagnostics step: summarising the channels (temperatures, heart rate) of the day."
+  },
+  "reportGroupNone": "Choose a group of compatible laps on the results page.",
+  "@reportGroupNone": {
+    "description": "Day report heading when no group of laps is chosen."
+  },
+  "reportCalculating": "Calculating…",
+  "@reportCalculating": {
+    "description": "A day report result that is being calculated."
+  },
+  "reportNotCalculated": "Not calculated yet.",
+  "@reportNotCalculated": {
+    "description": "A day report result that has not been calculated."
+  },
+  "reportOutOfDate": "Out of date after an analysis change.",
+  "@reportOutOfDate": {
+    "description": "A day report result made stale by an analysis change."
+  },
+  "reportUnavailable": "Unavailable.",
+  "@reportUnavailable": {
+    "description": "A day report result that is unavailable, without a reason."
+  },
+  "reportNotInReport": "Not in this report.",
+  "@reportNotInReport": {
+    "description": "A result missing from the day report document."
+  },
+  "reportChooseGroup": "Choose a compatibility group.",
+  "@reportChooseGroup": {
+    "description": "Why there is no best lap: no group of compatible laps is chosen."
+  },
+  "reportNoEligibleLap": "No eligible lap in this group.",
+  "@reportNoEligibleLap": {
+    "description": "Why there is no best lap in the day report."
+  },
+  "reportNoSession": "No session in this group.",
+  "@reportNoSession": {
+    "description": "Why the day report has no sessions."
+  },
+  "reportNoEligibleLaps": "No eligible laps to summarize.",
+  "@reportNoEligibleLaps": {
+    "description": "Why the day report has no consistency summary."
+  },
+  "reportNoHeartRate": "No heart rate recorded.",
+  "@reportNoHeartRate": {
+    "description": "Why the day report has no heart rate."
+  },
+  "reportNoTemperature": "No temperature recorded.",
+  "@reportNoTemperature": {
+    "description": "Why the day report has no temperatures."
+  },
+  "reportBestTitle": "Best lap and what is left",
+  "@reportBestTitle": {
+    "description": "Heading of the day report card with the best lap and the theoretical best."
+  },
+  "reportBestLap": "Best lap",
+  "@reportBestLap": {
+    "description": "Label above the best lap time of the day."
+  },
+  "reportTheoreticalBest": "Theoretical best",
+  "@reportTheoreticalBest": {
+    "description": "Label above the theoretical best time."
+  },
+  "reportTheoreticalAvailable": "{seconds} s available across the approved segments",
+  "@reportTheoreticalAvailable": {
+    "description": "Time left between the best lap and the theoretical best.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "reportTheoreticalNoTotal": "Some segments have no timed lap; no total.",
+  "@reportTheoreticalNoTotal": {
+    "description": "Why the theoretical best has no total."
+  },
+  "reportOpenBestLap": "Open best lap",
+  "@reportOpenBestLap": {
+    "description": "Button opening the best lap of the day."
+  },
+  "reportFocusIntro": "Each starts with what was measured. The line under it is a hypothesis to check in the laps, not a cause or an instruction.",
+  "@reportFocusIntro": {
+    "description": "Introduction of the focus areas in the day report."
+  },
+  "reportFocusCompare": "Compare {lap} with {other} at {segment}",
+  "@reportFocusCompare": {
+    "description": "Row opening a comparison of two laps through a segment.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      },
+      "other": {
+        "type": "String",
+        "example": "Session 1 · LAP 4"
+      },
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "reportLossesTitle": "Largest time losses",
+  "@reportLossesTitle": {
+    "description": "Heading of the day report card with the largest time losses."
+  },
+  "reportLossesIntro": "Against {reference} · {count, plural, =1{1 lap compared} other{{count} laps compared}}. An observed loss is not a guaranteed or necessarily safe gain.",
+  "@reportLossesIntro": {
+    "description": "Introduction of the time losses in the day report.",
+    "placeholders": {
+      "reference": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      },
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "reportSessionsTitle": "Sessions",
+  "@reportSessionsTitle": {
+    "description": "Heading of the day report card with each session."
+  },
+  "reportNoEligibleLapShort": "no eligible lap",
+  "@reportNoEligibleLapShort": {
+    "description": "A session without an eligible lap."
+  },
+  "reportSessionBest": "best {time}",
+  "@reportSessionBest": {
+    "description": "A session's best lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      }
+    }
+  },
+  "reportSameAsPrevious": "same as the previous session",
+  "@reportSameAsPrevious": {
+    "description": "A session's best lap equal to the previous session's."
+  },
+  "reportFasterThanPrevious": "{seconds} s faster than the previous session",
+  "@reportFasterThanPrevious": {
+    "description": "A session's best lap against the previous session's.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "reportSlowerThanPrevious": "{seconds} s slower than the previous session",
+  "@reportSlowerThanPrevious": {
+    "description": "A session's best lap against the previous session's.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "reportEligibleLaps": "{eligible} of {count, plural, =1{1 lap} other{{count} laps}} eligible",
+  "@reportEligibleLaps": {
+    "description": "How many of a session's laps are eligible.",
+    "placeholders": {
+      "eligible": {
+        "type": "int",
+        "example": "3"
+      },
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "reportMedian": "median {time}",
+  "@reportMedian": {
+    "description": "A session's median lap time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      }
+    }
+  },
+  "reportConsistencyDay": "Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}",
+  "@reportConsistencyDay": {
+    "description": "The day's lap time consistency: median and interquartile range.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:02.345"
+      },
+      "spread": {
+        "type": "String",
+        "example": "0.412"
+      },
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "reportConsistencyTooFew": "{minimum, plural, =1{Fewer than 1 eligible lap; no spread.} other{Fewer than {minimum} eligible laps; no spread.}}",
+  "@reportConsistencyTooFew": {
+    "description": "Why the day has no lap time spread.",
+    "placeholders": {
+      "minimum": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "reportCarPeak": "{channel} · peak {value} in {session}",
+  "@reportCarPeak": {
+    "description": "The highest temperature of a channel across the day and its session.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "Oil"
+      },
+      "value": {
+        "type": "String",
+        "example": "104 °C"
+      },
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "reportCoolingIntervals": "{count, plural, =1{1 recorded cooling interval} other{{count} recorded cooling intervals}}",
+  "@reportCoolingIntervals": {
+    "description": "How many cooling intervals a temperature channel recorded.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "reportNoCooling": "no recorded cooling",
+  "@reportNoCooling": {
+    "description": "A temperature channel without cooling intervals."
+  },
+  "reportNoTemperatureSamples": "No valid temperature samples.",
+  "@reportNoTemperatureSamples": {
+    "description": "The day report has no valid temperature."
+  },
+  "reportHeartRateSummary": "mean {mean} bpm · {minimum} – {maximum}",
+  "@reportHeartRateSummary": {
+    "description": "A session's heart rate: mean, minimum and maximum.",
+    "placeholders": {
+      "mean": {
+        "type": "String",
+        "example": "142"
+      },
+      "minimum": {
+        "type": "String",
+        "example": "98"
+      },
+      "maximum": {
+        "type": "String",
+        "example": "171"
+      }
+    }
+  },
+  "reportCovered": "{percent}% covered",
+  "@reportCovered": {
+    "description": "How much of a session the heart rate covers.",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "97"
+      }
+    }
+  },
+  "segmentEditorTitle": "Edit segments",
+  "@segmentEditorTitle": {
+    "description": "Title of the segment editor page."
+  },
+  "segmentEditorUndo": "Undo",
+  "@segmentEditorUndo": {
+    "description": "Tooltip of the button that undoes the last segment edit."
+  },
+  "segmentEditorRedo": "Redo",
+  "@segmentEditorRedo": {
+    "description": "Tooltip of the button that redoes the last undone segment edit."
+  },
+  "segmentEditorTiming": "Timing every lap on one track axis…",
+  "@segmentEditorTiming": {
+    "description": "Shown while the segment editor calculates the theoretical best."
+  },
+  "segmentEditorMapLabel": "Best lap trace with the segment boundaries",
+  "@segmentEditorMapLabel": {
+    "description": "Accessibility label of the segment editor map."
+  },
+  "segmentEditorMapLabelHighlighted": "Best lap trace with the segment boundaries, {segment} highlighted",
+  "@segmentEditorMapLabelHighlighted": {
+    "description": "Accessibility label of the segment editor map with a segment selected.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "segmentEditorAutomatic": "Automatic segments",
+  "@segmentEditorAutomatic": {
+    "description": "The segments are the automatic proposals."
+  },
+  "segmentEditorEdited": "Edited segments",
+  "@segmentEditorEdited": {
+    "description": "The driver corrected the segments."
+  },
+  "segmentEditorSummary": "Theoretical best {time} · {count, plural, =1{1 segment} other{{count} segments}}",
+  "@segmentEditorSummary": {
+    "description": "The theoretical best time (or a dash) and the number of segments.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:23.456"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "segmentEditorRestoreAutomatic": "Restore automatic",
+  "@segmentEditorRestoreAutomatic": {
+    "description": "Button that goes back to the automatic segments."
+  },
+  "segmentEditorProposedFrom": "Proposed from {lap}. Tap a segment to correct it.",
+  "@segmentEditorProposedFrom": {
+    "description": "Hint under automatic segments; lap is a lap name.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "segmentEditorProposedFromBestLap": "Proposed from the best lap. Tap a segment to correct it.",
+  "@segmentEditorProposedFromBestLap": {
+    "description": "Hint under automatic segments when the best lap is unknown."
+  },
+  "segmentEditorCorrectionsSaved": "Your corrections are saved with the day and are never replaced by automatic segments.",
+  "@segmentEditorCorrectionsSaved": {
+    "description": "Hint under edited segments."
+  },
+  "segmentEditorTypeCorner": "Corner",
+  "@segmentEditorTypeCorner": {
+    "description": "Segment type."
+  },
+  "segmentEditorTypeStraight": "Straight",
+  "@segmentEditorTypeStraight": {
+    "description": "Segment type."
+  },
+  "segmentEditorTypeSector": "Sector",
+  "@segmentEditorTypeSector": {
+    "description": "Segment type."
+  },
+  "segmentEditorRow": "{type} · {start}–{end} m · {length} m",
+  "@segmentEditorRow": {
+    "description": "A segment row: its type, start and end along the track and its length, in metres.",
+    "placeholders": {
+      "type": {
+        "type": "String",
+        "example": "Corner"
+      },
+      "start": {
+        "type": "String",
+        "example": "120"
+      },
+      "end": {
+        "type": "String",
+        "example": "180"
+      },
+      "length": {
+        "type": "String",
+        "example": "60"
+      }
+    }
+  },
+  "segmentEditorRowEdited": "{row} · edited",
+  "@segmentEditorRowEdited": {
+    "description": "A segment row of a segment the driver changed.",
+    "placeholders": {
+      "row": {
+        "type": "String",
+        "example": "Corner · 120–180 m · 60 m"
+      }
+    }
+  },
+  "segmentEditorRestoreTitle": "Restore automatic segments?",
+  "@segmentEditorRestoreTitle": {
+    "description": "Title of the dialog confirming the automatic segments are restored."
+  },
+  "segmentEditorRestoreBody": "Your corrections to this track layout's segments are replaced by the segments proposed from the best lap.",
+  "@segmentEditorRestoreBody": {
+    "description": "Body of the dialog confirming the automatic segments are restored."
+  },
+  "segmentEditorRestore": "Restore",
+  "@segmentEditorRestore": {
+    "description": "Confirms restoring the automatic segments."
+  },
+  "segmentEditorName": "Name",
+  "@segmentEditorName": {
+    "description": "Label of the segment name field."
+  },
+  "segmentEditorStart": "Start",
+  "@segmentEditorStart": {
+    "description": "Label of the segment start boundary."
+  },
+  "segmentEditorEnd": "End",
+  "@segmentEditorEnd": {
+    "description": "Label of the segment end boundary."
+  },
+  "segmentEditorKeepJoined": "Move the neighbouring segment too",
+  "@segmentEditorKeepJoined": {
+    "description": "Switch: a moved boundary moves the neighbouring segment too."
+  },
+  "segmentEditorApply": "Apply",
+  "@segmentEditorApply": {
+    "description": "Applies the segment changes."
+  },
+  "segmentEditorReset": "Reset",
+  "@segmentEditorReset": {
+    "description": "Discards the segment changes not applied yet."
+  },
+  "segmentEditorSplitAt": "Split at {meters} m",
+  "@segmentEditorSplitAt": {
+    "description": "Where the segment is split, in metres along the track.",
+    "placeholders": {
+      "meters": {
+        "type": "String",
+        "example": "152.0"
+      }
+    }
+  },
+  "segmentEditorSplitHere": "Split here",
+  "@segmentEditorSplitHere": {
+    "description": "Splits the segment at the chosen point."
+  },
+  "segmentEditorMergeWithNext": "Merge with next",
+  "@segmentEditorMergeWithNext": {
+    "description": "Merges the segment with the next one."
+  },
+  "segmentEditorMergeWith": "Merge with {segment}",
+  "@segmentEditorMergeWith": {
+    "description": "Merges the segment with the next one, named by its short name.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "C4"
+      }
+    }
+  },
+  "segmentEditorRemove": "Remove",
+  "@segmentEditorRemove": {
+    "description": "Removes the segment."
+  },
+  "segmentEditorErrorSaving": "The day is being saved.",
+  "@segmentEditorErrorSaving": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorNotCalculated": "The segments can be edited once the theoretical best is calculated.",
+  "@segmentEditorErrorNotCalculated": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorAlreadyAutomatic": "The segments are already the automatic ones.",
+  "@segmentEditorErrorAlreadyAutomatic": {
+    "description": "Why restoring the automatic segments did nothing."
+  },
+  "segmentEditorErrorNotPossible": "This edit is not possible.",
+  "@segmentEditorErrorNotPossible": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorLastSegment": "The theoretical best needs at least one segment. Restore the automatic segments instead.",
+  "@segmentEditorErrorLastSegment": {
+    "description": "Why the last segment cannot be removed."
+  },
+  "segmentEditorErrorNoLongerApproved": "This segment is no longer approved.",
+  "@segmentEditorErrorNoLongerApproved": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorNothingToUndo": "Nothing to undo.",
+  "@segmentEditorErrorNothingToUndo": {
+    "description": "Why undo did nothing."
+  },
+  "segmentEditorErrorNothingToRedo": "Nothing to redo.",
+  "@segmentEditorErrorNothingToRedo": {
+    "description": "Why redo did nothing."
+  },
+  "segmentEditorErrorHistoryCleared": "The segments changed outside this editor, so the edit history was cleared.",
+  "@segmentEditorErrorHistoryCleared": {
+    "description": "Why undo or redo did nothing."
+  },
+  "segmentEditorErrorInvalidStored": "The stored approved segments are invalid.",
+  "@segmentEditorErrorInvalidStored": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorOtherConfiguration": "Segments approved for a different track configuration must be discarded first.",
+  "@segmentEditorErrorOtherConfiguration": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorWouldBeEmpty": "“{segment}” would become empty.",
+  "@segmentEditorErrorWouldBeEmpty": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "segmentEditorErrorWouldBeInvalid": "“{segment}” would be invalid.",
+  "@segmentEditorErrorWouldBeInvalid": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "segmentEditorErrorWouldOverlap": "“{segment}” would overlap “{other}”.",
+  "@segmentEditorErrorWouldOverlap": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      },
+      "other": {
+        "type": "String",
+        "example": "Corner 4"
+      }
+    }
+  },
+  "segmentEditorErrorTooMany": "{count, plural, =1{At most 1 segment can be approved.} other{At most {count} segments can be approved.}}",
+  "@segmentEditorErrorTooMany": {
+    "description": "Why a segment edit is refused.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "segmentEditorErrorCrossesGate": "Only one segment may cross the start/finish line.",
+  "@segmentEditorErrorCrossesGate": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorChooseType": "Choose corner, straight or sector.",
+  "@segmentEditorErrorChooseType": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorNoAxis": "The track axis is unavailable.",
+  "@segmentEditorErrorNoAxis": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorSplitInside": "Split inside the segment, away from its ends.",
+  "@segmentEditorErrorSplitInside": {
+    "description": "Why a split is refused."
+  },
+  "segmentEditorErrorSplitName": "Enter a name of 1–160 characters for the new segment.",
+  "@segmentEditorErrorSplitName": {
+    "description": "Why a split is refused."
+  },
+  "segmentEditorErrorMergeSame": "Choose two different approved segments.",
+  "@segmentEditorErrorMergeSame": {
+    "description": "Why a merge is refused."
+  },
+  "segmentEditorErrorMergeNotAdjacent": "Only segments that share a boundary can be merged.",
+  "@segmentEditorErrorMergeNotAdjacent": {
+    "description": "Why a merge is refused."
+  },
+  "segmentEditorErrorMergeWholeLap": "Merging would cover the whole lap; a segment needs distinct start and end.",
+  "@segmentEditorErrorMergeWholeLap": {
+    "description": "Why a merge is refused."
+  },
+  "segmentEditorErrorName": "Enter a name of 1–160 characters.",
+  "@segmentEditorErrorName": {
+    "description": "Why a segment edit is refused."
+  },
+  "segmentEditorErrorBounds": "Bounds must lie between 0 and {length} m.",
+  "@segmentEditorErrorBounds": {
+    "description": "Why a segment edit is refused; length is the track axis length.",
+    "placeholders": {
+      "length": {
+        "type": "String",
+        "example": "1234.5"
+      }
+    }
+  },
+  "segmentEditorErrorEmpty": "A segment cannot be empty.",
+  "@segmentEditorErrorEmpty": {
+    "description": "Why a segment edit is refused."
+  },
+  "reportStale": "The analysis decisions changed after this result was computed.",
+  "@reportStale": {
+    "description": "A day report result computed before the analysis decisions changed."
+  },
   "channelFromSource": "from {format}",
   "@channelFromSource": {
     "description": "Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.",
@@ -695,62 +3234,6 @@
   "relinkNothingFound": "No missing recording was found in that folder.",
   "@relinkNothingFound": {
     "description": "After Find recordings in a folder: none of the missing recordings was there."
-  },
-  "settings": "Settings",
-  "@settings": {
-    "description": "Settings button tooltip and dialog title."
-  },
-  "settingsSpeedUnitHeading": "Unit for unlabelled speeds",
-  "@settingsSpeedUnitHeading": {
-    "description": "Heading of the speed unit setting."
-  },
-  "settingsSpeedUnitHelp": "Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.",
-  "@settingsSpeedUnitHelp": {
-    "description": "Explains the speed unit setting."
-  },
-  "speedUnitNone": "None",
-  "@speedUnitNone": {
-    "description": "Speed unit setting: assume no unit for unlabelled speeds."
-  },
-  "settingsNoDayOpen": "No day open yet.",
-  "@settingsNoDayOpen": {
-    "description": "Shown in settings when no track day is open."
-  },
-  "settingsDeclaredUnits": "The open day's recordings declare {units}.",
-  "@settingsDeclaredUnits": {
-    "description": "The speed units the open day's recordings declare.",
-    "placeholders": {
-      "units": {
-        "type": "String",
-        "example": "km/h and mph"
-      }
-    }
-  },
-  "unitsAnd": " and ",
-  "@unitsAnd": {
-    "description": "Joins two speed units: 'km/h and mph'. Keep the spaces."
-  },
-  "settingsAllUnlabelled": "Its recordings do not say their speed unit.",
-  "@settingsAllUnlabelled": {
-    "description": "None of the open day's recordings declares a speed unit."
-  },
-  "settingsSomeUnlabelled": "{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}",
-  "@settingsSomeUnlabelled": {
-    "description": "Some of the open day's recordings declare no speed unit.",
-    "placeholders": {
-      "count": {
-        "type": "int",
-        "example": "2"
-      }
-    }
-  },
-  "close": "Close",
-  "@close": {
-    "description": "Button that closes a dialog."
-  },
-  "appleMapLegal": "Legal",
-  "@appleMapLegal": {
-    "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
   },
   "segmentPickOnMap": "Pick on map",
   "@segmentPickOnMap": {
@@ -1051,65 +3534,13 @@
   "@lapsLastComparison": {
     "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
   },
-  "daySectionDay": "Day",
-  "@daySectionDay": {
-    "description": "Section of the day page with the best lap and the analysis; bottom bar and side rail label."
+  "taskStopped": "The work stopped.",
+  "taskStoppedUnexpectedly": "The work stopped unexpectedly.",
+  "@taskStopped": {
+    "description": "Why background work (such as reading the recordings again) failed when it gave no reason."
   },
-  "daySectionLaps": "Laps",
-  "@daySectionLaps": {
-    "description": "Section of the day page listing every lap; bottom bar label."
-  },
-  "daySectionCompare": "Compare",
-  "@daySectionCompare": {
-    "description": "Section of the day page for comparing two laps; bottom bar and side rail label, and its heading."
-  },
-  "compareIntro": "Two laps side by side: where one gains and loses time, segment by segment and corner by corner.",
-  "@compareIntro": {
-    "description": "Explains the Compare section under its heading."
-  },
-  "compareNeedsTwoLaps": "Comparing needs two ranked laps of one circuit.",
-  "@compareNeedsTwoLaps": {
-    "description": "Shown in the Compare section when the day has fewer than two comparable laps."
-  },
-  "comparePickTwoLaps": "Pick two laps",
-  "@comparePickTwoLaps": {
-    "description": "Button that asks for lap A, then lap B, and opens their comparison."
-  },
-  "compareAgainstBest": "Against the best of the day",
-  "@compareAgainstBest": {
-    "description": "Heading over suggested comparisons: each session's best lap against the day's best lap."
-  },
-  "compareLapA": "A {time}",
-  "@compareLapA": {
-    "description": "Chip with lap A's time in a suggested comparison; A is the session's best lap.",
-    "placeholders": {
-      "time": {
-        "type": "String",
-        "example": "1:49.898"
-      }
-    }
-  },
-  "compareLapB": "B {time}",
-  "@compareLapB": {
-    "description": "Chip with lap B's time in a suggested comparison; B is the best lap of the day.",
-    "placeholders": {
-      "time": {
-        "type": "String",
-        "example": "1:49.898"
-      }
-    }
-  },
-  "dayBestLabel": "Best day",
-  "@dayBestLabel": {
-    "description": "Label of the day's best lap, at the top of the day page."
-  },
-  "theoreticalBestLabel": "Theoretical best",
-  "@theoreticalBestLabel": {
-    "description": "Label of the theoretical best: the fastest time of each segment added up."
-  },
-  "theoreticalBestHint": "Fastest of every segment",
-  "@theoreticalBestHint": {
-    "description": "Under the theoretical best label: what it is made of."
+  "@taskStoppedUnexpectedly": {
+    "description": "Why background work (such as reading the recordings again) failed when it ended without a result."
   },
   "segmentReviewOpen": "Review proposals",
   "@segmentReviewOpen": {

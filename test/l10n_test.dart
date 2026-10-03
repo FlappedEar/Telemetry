@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:telemetry/day/theoretical_best_card.dart'
+    show TheoreticalBestText, shortSegmentName;
 import 'package:telemetry/format.dart';
 import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
@@ -78,14 +80,80 @@ void main() {
               ((english['@$key'] as Map?)?['placeholders'] as Map?)?.keys ??
               const [];
           for (final name in placeholders) {
+            // Used in the text, or as the selector of a plural.
             expect(
               translated[key],
-              contains('{$name}'),
+              anyOf(contains('{$name}'), contains('{$name,')),
               reason: '$language $key',
             );
           }
         }
       });
+    }
+  });
+
+  test('every missing-recording reason from telemetry_core is translated', () {
+    final source = File('packages/telemetry_core/lib/src/day/day_document.dart')
+        .readAsStringSync();
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    for (final reason in [
+      'Recording not found.',
+      'The same recording as another session of this day.',
+      'The file found is a different recording.',
+    ]) {
+      expect(source, contains("'$reason'"));
+      expect(polish.missingReason(reason), isNot(reason));
+    }
+    expect(polish.missingReason('Read error.'), 'Read error.');
+  });
+
+  test('background work failures are translated', () {
+    final source = File('lib/day/background_task.dart').readAsStringSync();
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    final english = lookupAppLocalizations(const Locale('en'));
+    for (final message in [
+      'The work stopped.',
+      'The work stopped unexpectedly.',
+    ]) {
+      expect(source, contains("'$message'"));
+      expect(polish.taskFailure(message), isNot(message));
+      expect(english.taskFailure(message), message);
+    }
+    expect(polish.taskFailure('Disk full.'), 'Disk full.');
+  });
+
+  test('errors from adding recordings are translated', () {
+    final source = File('lib/day/day_results_controller.dart')
+        .readAsStringSync();
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    for (final error in ['Adding was cancelled.', 'The day was closed.']) {
+      expect(source, contains("'$error'"));
+      expect(polish.additionError(error), isNot(error));
+    }
+    expect(source, contains("'Nothing was added: \$error'"));
+    expect(
+      polish.additionError('Nothing was added: disk full'),
+      'Nic nie dodano: disk full',
+    );
+    expect(polish.additionError('Odd error'), 'Odd error');
+  });
+
+  test('segment names: automatic ones are translated, typed ones kept', () {
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    expect(polish.tbSegmentName('Corner 4'), 'Zakręt 4');
+    expect(polish.tbSegmentName('Corners 2–3'), 'Zakręty 2–3');
+    expect(polish.tbSegmentName('Straight 1'), 'Prosta 1');
+    expect(polish.tbSegmentName('Corner Bus-stop'), 'Corner Bus-stop');
+    expect(polish.tbSegmentName('Corner 3 (2)'), 'Zakręt 3 (2)');
+    expect(polish.tbSegmentName('Hairpin (2)'), 'Hairpin (2)');
+    // Short names of names as written are unchanged.
+    for (final (name, short) in [
+      ('Corner 1', 'C1'),
+      ('Corners 3–4', 'C3–4'),
+      ('La-Source hairpin', 'La-Source hairpin'),
+      ('Écurie 2', 'Écurie 2'),
+    ]) {
+      expect(shortSegmentName(name), short);
     }
   });
 
