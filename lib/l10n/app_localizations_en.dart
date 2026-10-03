@@ -74,6 +74,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'GPS route matches more than one incompatible group; review this recording\'s layout.';
 
   @override
+  String sessionName(int number) {
+    return 'Session $number';
+  }
+
+  @override
   String get cancel => 'Cancel';
 
   @override

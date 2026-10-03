@@ -102,6 +102,16 @@
   "@routeReasonSeveralGroups": {
     "description": "Why no circuit was found from GPS: the route fits several different circuits."
   },
+  "sessionName": "Session {number}",
+  "@sessionName": {
+    "description": "A session's name: sessions are numbered in recording-time order.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
   "cancel": "Cancel",
   "@cancel": {
     "description": "Button that closes a dialog without changes."

@@ -13,10 +13,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appTitle => 'FlappedEar Telemetry';
 
   @override
-  String get directionClockwise => 'Zgodnie z zegarem';
+  String get directionClockwise => 'Zgodnie z ruchem wskazówek zegara';
 
   @override
-  String get directionCounterclockwise => 'Przeciwnie do zegara';
+  String get directionCounterclockwise =>
+      'Przeciwnie do ruchu wskazówek zegara';
 
   @override
   String get directionClockwiseInSentence =>
@@ -28,7 +29,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String trackDialogTitle(String session) {
-    return 'Tor sesji $session';
+    return '$session';
   }
 
   @override
@@ -50,7 +51,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get trackDialogLayoutName => 'Nazwa konfiguracji toru';
+  String get trackDialogLayoutName => 'Konfiguracja toru';
 
   @override
   String get trackDialogLayoutHint => 'Jastrząb, pełna pętla';
@@ -74,6 +75,11 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get routeReasonSeveralGroups =>
       'Trasa GPS pasuje do kilku niezgodnych grup; sprawdź konfigurację toru w tym nagraniu.';
+
+  @override
+  String sessionName(int number) {
+    return 'Sesja $number';
+  }
 
   @override
   String get cancel => 'Anuluj';

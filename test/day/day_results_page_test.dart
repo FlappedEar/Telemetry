@@ -172,13 +172,13 @@ void main() {
     },
   );
 
-  testWidgets('the circuit dialog speaks Polish', (tester) async {
+  testWidgets('the circuit dialog speaks Polish on a phone', (tester) async {
     addTearDown(() => Intl.defaultLocale = null);
     final outcome = importDay({
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    await tester.binding.setSurfaceSize(const Size(360, 6000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -188,18 +188,20 @@ void main() {
     );
     await tester.tap(find.text('Session 1').last);
     await tester.pumpAndSettle();
-    expect(find.text('Tor sesji Session 1'), findsOneWidget);
+    expect(find.text('Sesja 1'), findsOneWidget);
     expect(
       find.textContaining('przeciwnie do ruchu wskazówek zegara'),
       findsOneWidget,
     );
-    expect(find.text('Przeciwnie do zegara'), findsOneWidget);
+    expect(find.text('Przeciwnie do ruchu wskazówek zegara'), findsOneWidget);
     expect(
-      find.text('Także dla sesji na tej samej trasie: Session 2'),
+      find.text('Także dla sesji na tej samej trasie: Sesja 2'),
       findsOneWidget,
     );
     expect(find.text('Zapisz'), findsOneWidget);
     expect(find.text('Anuluj'), findsOneWidget);
+    // The longer Polish labels fit a narrow phone.
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('names the circuit of a session and its route', (tester) async {

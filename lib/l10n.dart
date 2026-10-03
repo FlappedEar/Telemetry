@@ -64,3 +64,14 @@ extension RouteReasonText on AppLocalizations {
     _ => reason,
   };
 }
+
+final _sessionName = RegExp(r'^Session (\d+)$');
+
+extension SessionNameText on AppLocalizations {
+  /// A run name from `telemetry_core` ("Session 2") in the app's language
+  /// ("Sesja 2"); any other name is shown as written.
+  String session(String name) {
+    final number = _sessionName.firstMatch(name)?.group(1);
+    return number == null ? name : sessionName(int.parse(number));
+  }
+}

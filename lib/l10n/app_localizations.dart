@@ -200,6 +200,12 @@ abstract class AppLocalizations {
   /// **'GPS route matches more than one incompatible group; review this recording\'s layout.'**
   String get routeReasonSeveralGroups;
 
+  /// A session's name: sessions are numbered in recording-time order.
+  ///
+  /// In en, this message translates to:
+  /// **'Session {number}'**
+  String sessionName(int number);
+
   /// Button that closes a dialog without changes.
   ///
   /// In en, this message translates to:

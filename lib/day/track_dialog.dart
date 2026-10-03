@@ -55,7 +55,7 @@ class _TrackDialogState extends State<TrackDialog> {
 
   String _runName(String runId) {
     for (final named in widget.controller.runs) {
-      if (named.run.id == runId) return named.name;
+      if (named.run.id == runId) return context.l10n.session(named.name);
     }
     return runId;
   }
