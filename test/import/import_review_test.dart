@@ -75,6 +75,32 @@ final class _Appender implements DayAppender {
   }
 }
 
+/// Fusion jobs that wait for the test: run, or failed with an error.
+final class _HeldFusions {
+  final tasks = <_HeldTask>[];
+
+  FusionTask call(FusionJob job) => _HeldTask(job)..addTo(tasks);
+}
+
+final class _HeldTask implements FusionTask {
+  _HeldTask(this.job);
+
+  final FusionJob job;
+  final _done = Completer<RunFusion?>();
+
+  void addTo(List<_HeldTask> tasks) => tasks.add(this);
+
+  void run() => _done.complete(job(() => false));
+
+  void fail() => _done.completeError(StateError('The job stopped.'));
+
+  @override
+  Future<RunFusion?> get result => _done.future;
+
+  @override
+  void cancel() {}
+}
+
 final class _Pickers implements RecordingPickers {
   List<String> recordings = const [];
 
@@ -241,7 +267,7 @@ void main() {
         // The RCZ joins Session 1 without review; it then has two recordings.
         expect((await day.addRecordings([rcz])).combined, ['Session 1']);
         final sessionId = day.runs.single.run.id;
-        final (vbo2, rcz2) = writeFusionPair(
+        final (_, rcz2) = writeFusionPair(
           (Directory(p.join(directory.path, 'again'))..createSync()).path,
           name: 'again',
         );
@@ -257,7 +283,8 @@ void main() {
         );
         expect(addition.reviewChanged, isTrue);
         expect(day.fusion(sessionId)!.alternative!.sourcePath, rcz);
-        expect(File(vbo2).existsSync(), isTrue);
+        // Nothing was added: the day still has its one session.
+        expect(day.runs.map((named) => named.run.id), [sessionId]);
       },
     );
 
@@ -302,6 +329,32 @@ void main() {
       },
     );
 
+    test('adds nothing when the choices would not pass the review', () async {
+      final review = (await day.reviewAddition([rcz, other]))!;
+      final id = ids(review.plan!);
+      final session = day.runs.single.run.id;
+      for (final choices in <ImportChoices>[
+        // Everything skipped.
+        {id['drive.rcz']!: skipRecording, id['other.vbo']!: skipRecording},
+        // The same run as a recording that is not a run itself.
+        {id['drive.rcz']!: id['other.vbo']!, id['other.vbo']!: skipRecording},
+        // A recording the review did not list.
+        {id['other.vbo']!: id['other.vbo']!},
+        // A session that would get three recordings.
+        {id['drive.rcz']!: session, id['other.vbo']!: session},
+      ]) {
+        final addition = await day.addRecordings(
+          [rcz, other],
+          review: review,
+          choices: choices,
+        );
+        expect(addition.reviewChanged, isTrue, reason: '$choices');
+      }
+      expect(appender.requests, isEmpty);
+      expect(day.runs.map((named) => named.run.id), [session]);
+      expect(day.fusion(session), isNull);
+    });
+
     test('adds nothing when the day changed during the review', () async {
       final review = (await day.reviewAddition([rcz]))!;
       final id = ids(review.plan!);
@@ -314,6 +367,74 @@ void main() {
       expect(addition.reviewChanged, isTrue);
       expect(day.runs, hasLength(2));
     });
+  });
+
+  group('a pairing only a review makes, saved while it is aligned', () {
+    // The RCZ leads and the VBO is the same run: a pair the day opened
+    // again keeps beside the session rather than fusing by itself.
+    late _HeldFusions held;
+    late DayResultsController day;
+    late String runId;
+    late String path;
+    setUp(() {
+      final request = (paths: [vbo, rcz], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      runId = id['drive.rcz']!;
+      final outcome = runDayImport(
+        request,
+        choices: {runId: runId, id['drive.vbo']!: runId},
+      );
+      held = _HeldFusions();
+      day = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        fusionRunner: held.call,
+      );
+      path = p.join(directory.path, 'day.fetproject');
+    });
+    tearDown(() => day.dispose());
+
+    test('is saved once fused, and the day opened again fuses it', () async {
+      expect(day.fusionPending(runId), 'VBO');
+      // Saved at once: the save waits for the alignment.
+      final saving = day.save(path);
+      await pumpEventQueue();
+      expect(File(path).existsSync(), isFalse);
+      held.tasks.single.run();
+      await saving;
+      expect(day.fusion(runId)!.fused, isTrue);
+      expect(day.dirty, isFalse);
+
+      final opened = DayResultsController.opened(openDay(path));
+      addTearDown(opened.dispose);
+      await opened.fusionsSettled;
+      final fusion = opened.fusion(runId)!;
+      expect(fusion.fused, isTrue);
+      expect(fusion.fromDocument, isTrue);
+      expect(p.basename(fusion.alternative!.sourcePath), 'drive.vbo');
+    });
+
+    test(
+      'kept beside the session when aligning fails, as it opens again',
+      () async {
+        final saving = day.save(path);
+        await pumpEventQueue();
+        held.tasks.single.fail();
+        await saving;
+        final kept = day.fusion(runId)!;
+        expect(kept.state, RunFusionState.primaryOnly);
+        expect(p.basename(kept.alternative!.sourcePath), 'drive.vbo');
+        expect(day.dirty, isFalse);
+
+        final opened = DayResultsController.opened(openDay(path));
+        addTearDown(opened.dispose);
+        await opened.fusionsSettled;
+        final reopened = opened.fusion(runId)!;
+        expect(reopened.state, RunFusionState.primaryOnly);
+        expect(p.basename(reopened.alternative!.sourcePath), 'drive.vbo');
+      },
+    );
   });
 
   group('the review page', () {

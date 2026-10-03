@@ -81,7 +81,9 @@ abstract interface class FusionTask {
 
 /// The reason of a run's fusion when aligning its new recording failed
 /// (the job stopped with an error): the recording stays saved, and the day
-/// opened again tries once more.
+/// opened again tries once more, as it fuses a VBO session's RCZ by itself.
+/// Other recordings paired in a review are kept beside the session instead
+/// (see [DayResultsController.save]).
 const fusionFailedReason = 'Aligning failed.';
 
 /// What reading a session's other recording as its primary gave: its part
@@ -353,9 +355,53 @@ final class DayResultsController extends ChangeNotifier {
   final Map<String, RecordingFormat?> _fusionPending = {};
 
   // Recordings added as runs' alternatives (by an import or an addition)
-  // that are not fused yet: saved as the runs' sources meanwhile, so the
-  // day opened again aligns them.
+  // that are not fused yet: saved as the runs' sources meanwhile. The day
+  // opened again aligns only a VBO session's RCZ by itself, so [save] waits
+  // for the others ([_reviewedPairingPending]).
   final Map<String, TelemetryRunProposal> _pendingRecordings = {};
+
+  // Completed whenever a run's alignment ends, for a save waiting on
+  // recordings paired in a review.
+  Completer<void>? _pairingWaiter;
+
+  /// Whether [recording], saved as [primary]'s source without a `fusion`
+  /// decision, is aligned and fused by itself when the day opens again:
+  /// only a VBO session's RCZ (FET-57). Any other pair, which only a review
+  /// makes, is kept beside the session or left in the document.
+  static bool _fusedWhenOpened(
+    TelemetryRunProposal primary,
+    TelemetryRunProposal recording,
+  ) =>
+      primary.format == RecordingFormat.vbo &&
+      recording.format == RecordingFormat.rcz;
+
+  // Whether a recording paired in a review is still being aligned with a
+  // session the day opened again would not fuse it with: saved now, the
+  // document would not say the pair is to be fused.
+  bool get _reviewedPairingPending {
+    for (final runId in _fusionPending.keys) {
+      final recording = _pendingRecordings[runId];
+      final named = _named(runId);
+      if (recording != null &&
+          named != null &&
+          !_fusedWhenOpened(named.run, recording)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _reviewedPairingsSettled() async {
+    while (!_disposed && _reviewedPairingPending) {
+      await (_pairingWaiter ??= Completer<void>()).future;
+    }
+  }
+
+  void _alignmentEnded() {
+    final waiter = _pairingWaiter;
+    _pairingWaiter = null;
+    waiter?.complete();
+  }
 
   // The background work running for each run, stopped when the day closes
   // or a newer request for the run supersedes it.
@@ -560,6 +606,7 @@ final class DayResultsController extends ChangeNotifier {
     if (reference != null && reference.path.isEmpty) {
       // Nothing to read: known at once, and nothing changes.
       _fusionPending.remove(runId);
+      _alignmentEnded();
       _fusions[runId] = RunFusion.unavailable(
         primarySourceId: named.run.sourceId,
         primaryRevision: named.run.contentSha256,
@@ -627,10 +674,13 @@ final class DayResultsController extends ChangeNotifier {
     // used.
     if (_disposed || _fusionGenerations[runId] != generation) return;
     _fusionPending.remove(runId);
+    _alignmentEnded();
     // Without a result (the job failed, or the run's recording is not the
-    // one it was started for), a recording that was added stays in
-    // [_pendingRecordings]: saved as the run's source, so the day opened
-    // again tries once more.
+    // one it was started for), a recording that was added is still saved
+    // as the run's source. A VBO session's RCZ stays in
+    // [_pendingRecordings], so the day opened again tries once more; any
+    // other recording paired in a review is kept beside the session, not
+    // fused, as the day opened again shows it ("Check clock" tries again).
     final named = _named(runId);
     final recording = _pendingRecordings[runId];
     if (result == null &&
@@ -638,15 +688,32 @@ final class DayResultsController extends ChangeNotifier {
         recording != null &&
         named != null &&
         named.run.contentSha256 == primary.contentSha256) {
-      // The run shows that its new recording is not combined, not the
-      // fusion of the one it replaces (whose rules would not be saved).
-      _fusions[runId] = RunFusion.unavailable(
-        primarySourceId: primary.sourceId,
-        primaryRevision: primary.contentSha256,
-        alternativeSourceId: recording.sourceId,
-        alternativeFormat: recording.format,
-        reason: fusionFailedReason,
-      );
+      if (_fusedWhenOpened(primary, recording)) {
+        // The run shows that its new recording is not combined, not the
+        // fusion of the one it replaces (whose rules would not be saved).
+        _fusions[runId] = RunFusion.unavailable(
+          primarySourceId: primary.sourceId,
+          primaryRevision: primary.contentSha256,
+          alternativeSourceId: recording.sourceId,
+          alternativeFormat: recording.format,
+          reason: fusionFailedReason,
+        );
+      } else {
+        _fusions[runId] = RunFusion.primaryOnly(
+          primary: primary,
+          alternative: recording,
+        );
+        _pendingRecordings.remove(runId);
+        // A save made meanwhile left the day unsaved: saved again.
+        _revision++;
+        _dirty = true;
+        final path = _documentPath;
+        if (addition && path != null) {
+          unawaited(_saveAfterFusion(path));
+        } else if (!_saving) {
+          _scheduleRecovery();
+        }
+      }
       _fusionsChanged();
       if (addition && !_disposed) {
         if (_waitingAdditions > 0) {
@@ -1203,7 +1270,16 @@ final class DayResultsController extends ChangeNotifier {
   /// [FetprojectError] when the document cannot be written; the previous
   /// file is then left as it was, except where only the file itself may be
   /// written, such as in the macOS sandbox (see `writeFetproject`).
-  Future<void> save(String path) async {
+  ///
+  /// A recording paired with a session in a review that the day opened
+  /// again would not fuse by itself (anything but a VBO session's RCZ) is
+  /// waited for while it is being aligned, so the file says how the pair
+  /// is fused: Overlays' schema has no way to say a pair is still to be
+  /// fused. With [settle] false (the save right after an addition, so the
+  /// added recordings are on disk at once) the day is written without
+  /// waiting and stays unsaved until it is saved again after the
+  /// alignment.
+  Future<void> save(String path, {bool settle = true}) async {
     // One save at a time: a save asked for while another runs, such as
     // Save as… during the save after adding a session, follows it.
     while (_saving) {
@@ -1213,6 +1289,9 @@ final class DayResultsController extends ChangeNotifier {
     final done = _saveDone = Completer<void>();
     if (!_disposed) notifyListeners();
     try {
+      // Taken at once otherwise: changes made from here on are not saved.
+      if (settle && _reviewedPairingPending) await _reviewedPairingsSettled();
+      final pairingPending = _reviewedPairingPending;
       final revision = _revision;
       final metadataNow = {..._metadataEdits};
       final document = dayDocument(
@@ -1245,7 +1324,7 @@ final class DayResultsController extends ChangeNotifier {
       // Automatic segments were approved by the save with their own ids:
       // edits start from the saved ones.
       if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
-      if (_revision == revision) {
+      if (_revision == revision && !pairingPending) {
         _dirty = false;
         _recoveryTimer?.cancel();
         _enqueueRecovery(() => _clearOwnRecovery(recovery, eventId));
@@ -1568,6 +1647,18 @@ final class DayResultsController extends ChangeNotifier {
       // Never replaces a session's other recording.
       return const DayAddition(notes: [], reviewChanged: true);
     }
+    if (reviewed &&
+        checkImportChoices(
+              [for (final run in review.plan?.runs ?? const []) run.id],
+              choices,
+              runs: {for (final session in review.sessions) session.runId},
+              alreadyGrouped: review.alreadyGrouped,
+            ) !=
+            null) {
+      // Choices the review would not have confirmed (the page checks them
+      // the same way): nothing is added.
+      return const DayAddition(notes: [], reviewChanged: true);
+    }
     final names = {for (final named in _runs) named.run.id: named.name};
     final request = (
       paths: List.of(paths),
@@ -1718,7 +1809,7 @@ final class DayResultsController extends ChangeNotifier {
     final path = _documentPath;
     if (path != null && _dirty) {
       try {
-        await save(path);
+        await save(path, settle: false);
       } on Exception catch (error) {
         saveError = '$error';
       }
@@ -2855,6 +2946,7 @@ final class DayResultsController extends ChangeNotifier {
     final settled = _fusionsSettled;
     _fusionsSettled = null;
     settled?.complete();
+    _alignmentEnded();
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits(const []);
     }
