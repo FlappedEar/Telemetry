@@ -145,18 +145,45 @@ class ComparisonPage extends StatefulWidget {
 
 /// The text for an unavailable map layer, as Overlays words it.
 String mapLayerUnavailableText(
+  AppLocalizations l10n,
   MapLayerOption? option,
   ComparisonMapLayer layer,
 ) {
   if (layer.valid) return '';
   final lap = layer.slot == 0 ? 'A' : 'B';
-  if (option != null && !option.available) return 'Not recorded on either lap.';
+  if (option != null && !option.available) {
+    return l10n.compareLayerNotRecordedEither;
+  }
   return switch (layer.reason) {
-    'channelMissing' => 'Not recorded on lap $lap.',
-    'noSamples' => 'No usable samples on lap $lap.',
-    _ => 'No shared track position for this pair.',
+    'channelMissing' => l10n.compareLayerNotRecordedOn(lap),
+    'noSamples' => l10n.compareLayerNoSamples(lap),
+    _ => l10n.compareNoSharedPosition,
   };
 }
+
+/// A map layer's name from `telemetry_core` ([id], as [label]) in the
+/// app's language; a recorded temperature keeps its channel's name.
+String _layerLabel(AppLocalizations l10n, String id, String label) =>
+    switch (id) {
+      'speed' => l10n.compareLayerSpeed,
+      'delta' => l10n.compareLayerDelta,
+      'lateralG' => l10n.compareLayerLateralG,
+      'longitudinalG' => l10n.compareLayerLongitudinalG,
+      'throttle' => l10n.compareLayerThrottle,
+      'brake' => l10n.compareLayerBrake,
+      'temperature' => l10n.compareLayerTemperature,
+      _ => label,
+    };
+
+/// What an end of a diverging map layer's scale means, in the app's
+/// language.
+String _layerEndLabel(AppLocalizations l10n, String label) => switch (label) {
+  'A ahead' => l10n.compareLayerAAhead,
+  'A behind' => l10n.compareLayerABehind,
+  'braking' => l10n.compareLayerBraking,
+  'accelerating' => l10n.compareLayerAccelerating,
+  _ => label,
+};
 
 class _ComparisonPageState extends State<ComparisonPage> {
   late DayLapRow _a = widget.a, _b = widget.b;
@@ -373,6 +400,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
 
   Widget _header(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final delta = _a.durationSeconds - _b.durationSeconds;
     Widget badge(int slot) {
       final row = slot == 0 ? _a : _b;
@@ -397,7 +425,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${slot == 0 ? 'A' : 'B'} · ${row.displayName}',
+                      '${slot == 0 ? 'A' : 'B'} · ${l10n.lap(row)}',
                       style: theme.textTheme.titleSmall,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -423,14 +451,11 @@ class _ComparisonPageState extends State<ComparisonPage> {
         Wrap(spacing: 16, runSpacing: 4, children: [badge(0), badge(1)]),
         const SizedBox(height: 4),
         Text(
-          'Lap Δ ${displayDelta(delta)}',
+          l10n.compareLapDelta(displayDelta(delta)),
           key: const ValueKey('comparisonLapDelta'),
           style: theme.textTheme.titleLarge,
         ),
-        Text(
-          'Δ is A − B: positive when A is behind.',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(l10n.compareDeltaExplained, style: theme.textTheme.bodySmall),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -440,17 +465,19 @@ class _ComparisonPageState extends State<ComparisonPage> {
               key: const ValueKey('comparisonSwap'),
               onPressed: () => _setPair(_b, _a),
               icon: const Icon(Icons.swap_horiz),
-              label: const Text('Swap A and B'),
+              label: Text(l10n.compareSwap),
             ),
             OutlinedButton(
               key: const ValueKey('comparisonBestOfRun'),
               onPressed: () => _bestAsB(sameRun: true),
-              child: Text('B: best of ${_a.runName}'),
+              child: Text(
+                l10n.compareBestOfSessionAsB(l10n.session(_a.runName)),
+              ),
             ),
             OutlinedButton(
               key: const ValueKey('comparisonBestOfDay'),
               onPressed: () => _bestAsB(sameRun: false),
-              child: const Text('B: best of the day'),
+              child: Text(l10n.compareBestOfDayAsB),
             ),
           ],
         ),
@@ -461,6 +488,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
   Widget _map(BuildContext context, double height) {
     final comparison = _comparison!;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final options = comparison.mapLayerOptions;
     final layer = _layer;
     MapLayerOption? option;
@@ -469,7 +497,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
     }
     final unavailable = layer == null
         ? ''
-        : mapLayerUnavailableText(option, layer);
+        : mapLayerUnavailableText(l10n, option, layer);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -481,14 +509,19 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 isExpanded: true,
                 value: _layerId,
                 items: [
-                  const DropdownMenuItem(value: '', child: Text('Line: A / B')),
+                  DropdownMenuItem(
+                    value: '',
+                    child: Text(l10n.compareLayerLine),
+                  ),
                   for (final option in options)
                     DropdownMenuItem(
                       value: option.id,
                       child: Text(
                         option.available
-                            ? option.label
-                            : '${option.label} · not recorded',
+                            ? _layerLabel(l10n, option.id, option.label)
+                            : l10n.compareLayerOptionNotRecorded(
+                                _layerLabel(l10n, option.id, option.label),
+                              ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -549,17 +582,15 @@ class _ComparisonPageState extends State<ComparisonPage> {
 
   List<Widget> _charts(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final comparison = _comparison!;
     final window = _window!;
     return [
-      Text('Channels by track position', style: theme.textTheme.titleMedium),
+      Text(l10n.compareChannelsByPosition, style: theme.textTheme.titleMedium),
       Text(
         isTouchPlatform(context)
-            ? 'Both laps at the same place on the track. Tap a chart or drag '
-                  'sideways across it to move the cursor; the dots show both '
-                  'laps on the map, which two fingers zoom and move.'
-            : 'Both laps at the same place on the track. Drag across a chart '
-                  'to move the cursor; the dots show both laps on the map.',
+            ? l10n.compareCursorHintTouch
+            : l10n.compareCursorHint,
         style: theme.textTheme.bodySmall,
       ),
       ChartWindowControls(
@@ -576,7 +607,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 child: channel == deltaTimeChannel
                     ? TelemetryChart(
                         key: ValueKey('comparisonChart $channel'),
-                        title: 'Δ time (A − B)',
+                        title: l10n.compareDeltaChart,
                         lines: [
                           ChartLine(
                             '',
@@ -591,7 +622,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                         valueAxis: _axisOf(channel),
                         zeroLine: true,
                         delta: true,
-                        note: '+ = A behind',
+                        note: l10n.compareDeltaNote,
                         onRemove: () => _remove(channel),
                       )
                     : TelemetryChart(
@@ -636,17 +667,14 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 foregroundColor: slot == 0 ? lapAColor : lapBColor,
               ),
               icon: const Icon(Icons.open_in_new),
-              label: Text('Open lap ${slot == 0 ? 'A' : 'B'} here'),
+              label: Text(l10n.compareOpenLapHere(slot == 0 ? 'A' : 'B')),
               onPressed: () => _openLap(slot),
             ),
         ],
       ),
       if (!_panelsFirst) ..._panels(context),
       const SizedBox(height: 8),
-      Text(
-        'Observed differences between two laps, not instructions.',
-        style: theme.textTheme.bodySmall,
-      ),
+      Text(l10n.compareDisclaimer, style: theme.textTheme.bodySmall),
     ];
   }
 
@@ -682,8 +710,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
   Widget build(BuildContext context) {
     final comparison = _comparison;
     final ready = comparison != null && comparison.axis.valid;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Compare laps')),
+      appBar: AppBar(title: Text(l10n.compareTitle)),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final header = _header(context);
@@ -695,8 +724,8 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 const SizedBox(height: 16),
                 Text(
                   comparison == null
-                      ? 'The recordings of these laps are not available.'
-                      : 'No shared track position for this pair.',
+                      ? l10n.compareRecordingsUnavailable
+                      : l10n.compareNoSharedPosition,
                   key: const ValueKey('comparisonUnavailable'),
                 ),
               ],
@@ -819,12 +848,13 @@ class _LayerLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final (low, high) = mapLayerRange(layer);
     final unit = displayUnitOf(context, layer.channel, layer.unit);
     final stops = mapLayerStops(layer);
     String end(double value, String label) =>
         '${mapLayerValueText(layer, value)}'
-        '${layer.diverging && label.isNotEmpty ? ' $label' : ''}';
+        '${layer.diverging && label.isNotEmpty ? ' ${_layerEndLabel(l10n, label)}' : ''}';
     return Column(
       key: const ValueKey('comparisonMapLegend'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -857,9 +887,9 @@ class _LayerLegend extends StatelessWidget {
           ],
         ),
         Text(
-          '${layer.label} · lap ${layer.slot == 0 ? 'A' : 'B'}'
+          '${l10n.compareLegendLap(_layerLabel(l10n, layer.id, layer.label), layer.slot == 0 ? 'A' : 'B')}'
           '${unit.isEmpty ? '' : ' · $unit'}'
-          '${layer.provenance == 'calculated' ? ' · calculated' : ''}',
+          '${layer.provenance == 'calculated' ? ' · ${l10n.compareLegendCalculated}' : ''}',
           key: const ValueKey('comparisonMapLegendSource'),
           style: theme.textTheme.bodySmall,
           overflow: TextOverflow.ellipsis,
@@ -891,10 +921,10 @@ class _OverlayMap extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = comparison.overlayTrack(0), b = comparison.overlayTrack(1);
     if (a.isEmpty && b.isEmpty) {
-      return const Center(child: Text('No GPS data in this section'));
+      return Center(child: Text(context.l10n.compareNoGps));
     }
     return Semantics(
-      label: 'Laps A and B on one map',
+      label: context.l10n.compareMapLabel,
       child: ValueListenableBuilder(
         valueListenable: mapBackground,
         builder: (context, background, _) {

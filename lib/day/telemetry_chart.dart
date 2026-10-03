@@ -30,12 +30,13 @@ final class ChartLine {
 
 /// Why a chart has no line, in words. Distinct from "no data in this
 /// range", which is not a failure.
-String chartReasonText(String reason) => switch (reason) {
-  chartReasonChannelMissing => 'not recorded',
-  chartReasonInvalidRange => 'range not valid',
-  chartReasonChannelMalformed => 'could not be read',
-  _ => reason,
-};
+String chartReasonText(AppLocalizations l10n, String reason) =>
+    switch (reason) {
+      chartReasonChannelMissing => l10n.chartReasonNotRecorded,
+      chartReasonInvalidRange => l10n.chartReasonInvalidRange,
+      chartReasonChannelMalformed => l10n.chartReasonUnreadable,
+      _ => reason,
+    };
 
 /// [value] with as many decimals as the magnitude [scale] needs.
 String chartValueText(double value, double scale, String unit) {
@@ -140,21 +141,22 @@ class TelemetryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = context.l10n;
     final shown = lines.where((line) => line.series.hasData).toList();
     final failed = [
       for (final line in lines)
         if (!line.series.hasData)
           '${line.label.isEmpty ? '' : '${line.label}: '}'
-              '${line.series.reason.isEmpty ? 'no data in this range' : chartReasonText(line.series.reason)}',
+              '${line.series.reason.isEmpty ? l10n.chartNoDataInRange : chartReasonText(l10n, line.series.reason)}',
     ];
     final braking = lines.any((line) => line.series.brakingUp);
     final from = source ?? dayChannelSources[title] ?? '';
-    final provenance = from.isEmpty ? '' : context.l10n.channelFromSource(from);
+    final provenance = from.isEmpty ? '' : l10n.channelFromSource(from);
     final message = shown.isNotEmpty
         ? null
         : lines.every((line) => line.series.reason.isEmpty)
-        ? 'No data in this range'
-        : 'Not available · ${failed.join(' · ')}';
+        ? l10n.chartNoData
+        : l10n.chartNotAvailable(failed.join(' · '));
     void move(Offset local, double width) {
       if (width <= 0 || end <= start) return;
       onCursor(start + (local.dx / width).clamp(0.0, 1.0) * (end - start));
@@ -183,7 +185,7 @@ class TelemetryChart extends StatelessWidget {
                       [
                         if (note.isNotEmpty) note,
                         if (provenance.isNotEmpty) provenance,
-                        if (braking) 'braking drawn upward',
+                        if (braking) l10n.chartBrakingUp,
                         if (shown.isNotEmpty) ...failed,
                       ].join(' · '),
                       style: theme.textTheme.bodySmall,
@@ -219,7 +221,7 @@ class TelemetryChart extends StatelessWidget {
             ),
             if (onRemove != null)
               IconButton(
-                tooltip: 'Remove $title',
+                tooltip: l10n.chartRemove(title),
                 icon: const Icon(Icons.close),
                 onPressed: onRemove,
               ),
@@ -241,7 +243,7 @@ class TelemetryChart extends StatelessWidget {
               onHorizontalDragUpdate: (details) =>
                   move(details.localPosition, constraints.maxWidth),
               child: Semantics(
-                label: '$title chart',
+                label: l10n.chartSemantics(title),
                 child: Stack(
                   children: [
                     Positioned.fill(
@@ -577,6 +579,7 @@ class ChartWindowControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -587,13 +590,13 @@ class ChartWindowControls extends StatelessWidget {
             children: [
               IconButton(
                 key: const ValueKey('chartZoomOut'),
-                tooltip: 'Zoom out',
+                tooltip: l10n.chartZoomOut,
                 icon: const Icon(Icons.zoom_out),
                 onPressed: window.zoomed ? window.zoomOut : null,
               ),
               IconButton(
                 key: const ValueKey('chartZoomIn'),
-                tooltip: 'Zoom in around the cursor',
+                tooltip: l10n.chartZoomIn,
                 icon: const Icon(Icons.zoom_in),
                 onPressed: range.$2 - range.$1 > window.minimumSpan + 1e-9
                     ? window.zoomIn
@@ -601,7 +604,7 @@ class ChartWindowControls extends StatelessWidget {
               ),
               IconButton(
                 key: const ValueKey('chartZoomReset'),
-                tooltip: 'Whole lap',
+                tooltip: l10n.chartWholeLap,
                 icon: const Icon(Icons.fit_screen_outlined),
                 onPressed: window.zoomed ? window.reset : null,
               ),
@@ -683,10 +686,14 @@ class AddChannelButton extends StatelessWidget {
         if (!shown.contains(channel)) channel,
     ];
     final full = shown.length >= maximumChartChannels;
+    final l10n = context.l10n;
+    final label = full
+        ? l10n.chartAtMost(maximumChartChannels)
+        : l10n.chartAddChannel;
     return PopupMenuButton<String>(
       key: const ValueKey('addChartChannel'),
       enabled: !full && available.isNotEmpty,
-      tooltip: full ? 'At most $maximumChartChannels charts' : 'Add a channel',
+      tooltip: label,
       onSelected: onAdd,
       itemBuilder: (context) => [
         for (final channel in available)
@@ -704,9 +711,7 @@ class AddChannelButton extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: 8),
-            Text(
-              full ? 'At most $maximumChartChannels charts' : 'Add a channel',
-            ),
+            Text(label),
           ],
         ),
       ),

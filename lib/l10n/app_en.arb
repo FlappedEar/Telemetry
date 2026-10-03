@@ -3542,6 +3542,1948 @@
   "@taskStoppedUnexpectedly": {
     "description": "Why background work (such as reading the recordings again) failed when it ended without a result."
   },
+  "lapPageChannels": "Channels",
+  "@lapPageChannels": {
+    "description": "Heading of the charts on a lap page."
+  },
+  "lapPageCursorHintTouch": "Tap a chart or drag sideways across it to move the cursor; the white dot shows it on the map. Two fingers zoom and move the map.",
+  "@lapPageCursorHintTouch": {
+    "description": "How to move the cursor of a lap page on a touch screen."
+  },
+  "lapPageCursorHint": "Drag across a chart to move the cursor; the white dot shows it on the map.",
+  "@lapPageCursorHint": {
+    "description": "How to move the cursor of a lap page with a mouse."
+  },
+  "lapPageNoChannel": "No channel shown.",
+  "@lapPageNoChannel": {
+    "description": "A lap page whose charts were all removed."
+  },
+  "lapPageBestOfDay": "Best lap of the day",
+  "@lapPageBestOfDay": {
+    "description": "Under the time of the day's best lap."
+  },
+  "lapPageToBestOfDay": "{delta} to the best of the day ({lap})",
+  "@lapPageToBestOfDay": {
+    "description": "How far a lap is from the best lap of the day.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "+1.234"
+      },
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "lapPageBestOfSession": "Best lap of {session}",
+  "@lapPageBestOfSession": {
+    "description": "Under the time of a session's best lap.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "lapPageNotRankedExcluded": "Not ranked: excluded (“{reason}”)",
+  "@lapPageNotRankedExcluded": {
+    "description": "A lap the user excluded from the ranking, with the reason they gave.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Traffic"
+      }
+    }
+  },
+  "lapPageExclude": "Exclude from ranking…",
+  "@lapPageExclude": {
+    "description": "Button that asks why to exclude the lap from the ranking."
+  },
+  "lapPageInclude": "Include in ranking",
+  "@lapPageInclude": {
+    "description": "Button that puts an excluded lap back in the ranking."
+  },
+  "lapPageCompareWith": "Compare with…",
+  "@lapPageCompareWith": {
+    "description": "Button that asks for a lap to compare this one with."
+  },
+  "lapPageNoGps": "No GPS recorded for this section.",
+  "@lapPageNoGps": {
+    "description": "A lap section without GPS, in place of its map."
+  },
+  "lapPageTraceLabel": "Trace of {lap}, coloured by speed",
+  "@lapPageTraceLabel": {
+    "description": "Screen reader label of a lap's map.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "lapPageSpeed": "Speed",
+  "@lapPageSpeed": {
+    "description": "Label of the speed colour legend under the map."
+  },
+  "lapPageShowBest": "Show the best lap ({lap}) in grey",
+  "@lapPageShowBest": {
+    "description": "Switch that draws the best lap under this one.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "lapPageExcludeTitle": "Exclude this lap",
+  "@lapPageExcludeTitle": {
+    "description": "Title of the dialog that excludes a lap from the ranking."
+  },
+  "lapPageReason": "Reason",
+  "@lapPageReason": {
+    "description": "Field for why a lap is excluded."
+  },
+  "lapPageReasonHint": "Traffic, yellow flag…",
+  "@lapPageReasonHint": {
+    "description": "Example reasons in the empty reason field."
+  },
+  "lapPageExcludeAction": "Exclude",
+  "@lapPageExcludeAction": {
+    "description": "Button that excludes the lap."
+  },
+  "compareTitle": "Compare laps",
+  "@compareTitle": {
+    "description": "Title of the page comparing two laps."
+  },
+  "compareLayerNotRecordedEither": "Not recorded on either lap.",
+  "@compareLayerNotRecordedEither": {
+    "description": "A map layer neither lap recorded."
+  },
+  "compareLayerNotRecordedOn": "Not recorded on lap {lap}.",
+  "@compareLayerNotRecordedOn": {
+    "description": "A map layer the lap shown did not record; lap is A or B.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareLayerNoSamples": "No usable samples on lap {lap}.",
+  "@compareLayerNoSamples": {
+    "description": "A map layer without usable values; lap is A or B.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareNoSharedPosition": "No shared track position for this pair.",
+  "@compareNoSharedPosition": {
+    "description": "Two laps that cannot be placed on one track axis."
+  },
+  "compareLapDelta": "Lap Δ {delta}",
+  "@compareLapDelta": {
+    "description": "Difference of the two lap times, A − B.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "+0.512"
+      }
+    }
+  },
+  "compareDeltaExplained": "Δ is A − B: positive when A is behind.",
+  "@compareDeltaExplained": {
+    "description": "How to read the differences."
+  },
+  "compareSwap": "Swap A and B",
+  "@compareSwap": {
+    "description": "Button that swaps the two laps."
+  },
+  "compareBestOfSessionAsB": "B: best of {session}",
+  "@compareBestOfSessionAsB": {
+    "description": "Button that makes B the best lap of A's session.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "compareBestOfDayAsB": "B: best of the day",
+  "@compareBestOfDayAsB": {
+    "description": "Button that makes B the best lap of the day."
+  },
+  "compareLayerLine": "Line: A / B",
+  "@compareLayerLine": {
+    "description": "Map layer choice that draws both laps in their colours."
+  },
+  "compareLayerOptionNotRecorded": "{layer} · not recorded",
+  "@compareLayerOptionNotRecorded": {
+    "description": "A map layer choice neither lap recorded.",
+    "placeholders": {
+      "layer": {
+        "type": "String",
+        "example": "Throttle"
+      }
+    }
+  },
+  "compareLayerSpeed": "Speed",
+  "@compareLayerSpeed": {
+    "description": "Map layer: speed."
+  },
+  "compareLayerDelta": "Δ time (A−B)",
+  "@compareLayerDelta": {
+    "description": "Map layer: the time difference."
+  },
+  "compareLayerLateralG": "Lateral G",
+  "@compareLayerLateralG": {
+    "description": "Map layer: lateral acceleration."
+  },
+  "compareLayerLongitudinalG": "Longitudinal G",
+  "@compareLayerLongitudinalG": {
+    "description": "Map layer: longitudinal acceleration."
+  },
+  "compareLayerThrottle": "Throttle",
+  "@compareLayerThrottle": {
+    "description": "Map layer: throttle."
+  },
+  "compareLayerBrake": "Brake (measured)",
+  "@compareLayerBrake": {
+    "description": "Map layer: the recorded brake."
+  },
+  "compareLayerTemperature": "Temperature",
+  "@compareLayerTemperature": {
+    "description": "Map layer: a temperature, when neither lap recorded one."
+  },
+  "compareLayerAAhead": "A ahead",
+  "@compareLayerAAhead": {
+    "description": "Negative end of the time difference colour scale."
+  },
+  "compareLayerABehind": "A behind",
+  "@compareLayerABehind": {
+    "description": "Positive end of the time difference colour scale."
+  },
+  "compareLayerBraking": "braking",
+  "@compareLayerBraking": {
+    "description": "Negative end of the longitudinal G colour scale."
+  },
+  "compareLayerAccelerating": "accelerating",
+  "@compareLayerAccelerating": {
+    "description": "Positive end of the longitudinal G colour scale."
+  },
+  "compareLegendLap": "{layer} · lap {lap}",
+  "@compareLegendLap": {
+    "description": "Which lap the map layer colours; lap is A or B.",
+    "placeholders": {
+      "layer": {
+        "type": "String",
+        "example": "Speed"
+      },
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareLegendCalculated": "calculated",
+  "@compareLegendCalculated": {
+    "description": "A map layer calculated rather than recorded."
+  },
+  "compareChannelsByPosition": "Channels by track position",
+  "@compareChannelsByPosition": {
+    "description": "Heading of the comparison charts."
+  },
+  "compareCursorHintTouch": "Both laps at the same place on the track. Tap a chart or drag sideways across it to move the cursor; the dots show both laps on the map, which two fingers zoom and move.",
+  "@compareCursorHintTouch": {
+    "description": "How to read and move the comparison charts on a touch screen."
+  },
+  "compareCursorHint": "Both laps at the same place on the track. Drag across a chart to move the cursor; the dots show both laps on the map.",
+  "@compareCursorHint": {
+    "description": "How to read and move the comparison charts with a mouse."
+  },
+  "compareDeltaChart": "Δ time (A − B)",
+  "@compareDeltaChart": {
+    "description": "Title of the time difference chart."
+  },
+  "compareDeltaNote": "+ = A behind",
+  "@compareDeltaNote": {
+    "description": "How to read the time difference chart."
+  },
+  "compareOpenLapHere": "Open lap {lap} here",
+  "@compareOpenLapHere": {
+    "description": "Button that opens lap A or B at the cursor.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareDisclaimer": "Observed differences between two laps, not instructions.",
+  "@compareDisclaimer": {
+    "description": "Note at the end of the comparison."
+  },
+  "compareRecordingsUnavailable": "The recordings of these laps are not available.",
+  "@compareRecordingsUnavailable": {
+    "description": "The laps' recordings could not be read."
+  },
+  "compareNoGps": "No GPS data in this section",
+  "@compareNoGps": {
+    "description": "A comparison map without GPS."
+  },
+  "compareMapLabel": "Laps A and B on one map",
+  "@compareMapLabel": {
+    "description": "Screen reader label of the comparison map."
+  },
+  "chartReasonNotRecorded": "not recorded",
+  "@chartReasonNotRecorded": {
+    "description": "Why a chart line is missing: the channel is not recorded."
+  },
+  "chartReasonInvalidRange": "range not valid",
+  "@chartReasonInvalidRange": {
+    "description": "Why a chart line is missing: the range is not valid."
+  },
+  "chartReasonUnreadable": "could not be read",
+  "@chartReasonUnreadable": {
+    "description": "Why a chart line is missing: the channel could not be read."
+  },
+  "chartNoDataInRange": "no data in this range",
+  "@chartNoDataInRange": {
+    "description": "A chart line without data in the range shown (inside a list)."
+  },
+  "chartNoData": "No data in this range",
+  "@chartNoData": {
+    "description": "A chart without data in the range shown."
+  },
+  "chartNotAvailable": "Not available · {reasons}",
+  "@chartNotAvailable": {
+    "description": "A chart whose lines failed, with why.",
+    "placeholders": {
+      "reasons": {
+        "type": "String",
+        "example": "A: not recorded"
+      }
+    }
+  },
+  "chartBrakingUp": "braking drawn upward",
+  "@chartBrakingUp": {
+    "description": "A chart of longitudinal G drawn with braking up."
+  },
+  "chartRemove": "Remove {channel}",
+  "@chartRemove": {
+    "description": "Tooltip of the button that removes a chart.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "speed"
+      }
+    }
+  },
+  "chartSemantics": "{channel} chart",
+  "@chartSemantics": {
+    "description": "Screen reader label of a chart.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "speed"
+      }
+    }
+  },
+  "chartZoomOut": "Zoom out",
+  "@chartZoomOut": {
+    "description": "Tooltip of the zoom out button of the charts."
+  },
+  "chartZoomIn": "Zoom in around the cursor",
+  "@chartZoomIn": {
+    "description": "Tooltip of the zoom in button of the charts."
+  },
+  "chartWholeLap": "Whole lap",
+  "@chartWholeLap": {
+    "description": "Tooltip of the button that shows the whole lap in the charts."
+  },
+  "chartAtMost": "{count, plural, =1{At most 1 chart} other{At most {count} charts}}",
+  "@chartAtMost": {
+    "description": "No more charts can be added.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "chartAddChannel": "Add a channel",
+  "@chartAddChannel": {
+    "description": "Button that adds a chart of a channel."
+  },
+  "coastingTitle": "Coasting",
+  "@coastingTitle": {
+    "description": "Title of a lap's coasting panel."
+  },
+  "coastingBySegment": "By segment",
+  "@coastingBySegment": {
+    "description": "Heading of a lap's coasting by segment."
+  },
+  "coastingBySegmentLoading": "Coasting by segment follows once the day's segments are calculated…",
+  "@coastingBySegmentLoading": {
+    "description": "The day's segments are being calculated."
+  },
+  "coastingBySegmentNeedsSegments": "Coasting by segment needs this lap's group to have segments.",
+  "@coastingBySegmentNeedsSegments": {
+    "description": "The lap's group has no segments."
+  },
+  "coastingEpisodes": "Episodes · select one to see it",
+  "@coastingEpisodes": {
+    "description": "Heading of a lap's coasting episodes."
+  },
+  "coastingIntoLap": "{seconds} s into the lap",
+  "@coastingIntoLap": {
+    "description": "Where an episode starts, outside any segment.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "12.4"
+      }
+    }
+  },
+  "drivingGgNoLongitudinal": "No longitudinal G recorded",
+  "@drivingGgNoLongitudinal": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingGgNoLateral": "No lateral G recorded",
+  "@drivingGgNoLateral": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingGgUnsupportedUnit": "G in an unsupported unit",
+  "@drivingGgUnsupportedUnit": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingGgNoSamples": "No samples in this stretch",
+  "@drivingGgNoSamples": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingNoCoverage": "Does not cover this stretch",
+  "@drivingNoCoverage": {
+    "description": "Why a lap has no driving states."
+  },
+  "drivingNotAvailable": "Not available",
+  "@drivingNotAvailable": {
+    "description": "A lap without driving states or coasting."
+  },
+  "drivingMeasured": "measured",
+  "@drivingMeasured": {
+    "description": "How a driving state was obtained."
+  },
+  "drivingCalculatedFromGps": "calculated from GPS",
+  "@drivingCalculatedFromGps": {
+    "description": "How a driving state was obtained."
+  },
+  "drivingInferred": "inferred",
+  "@drivingInferred": {
+    "description": "How a driving state was obtained."
+  },
+  "drivingUnexpectedUnit": "unexpected unit",
+  "@drivingUnexpectedUnit": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingNotRecorded": "not recorded",
+  "@drivingNotRecorded": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingPedalsUnknown": "pedals unknown",
+  "@drivingPedalsUnknown": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingNoSpeed": "no speed",
+  "@drivingNoSpeed": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingBrakeMeasuredLateralGps": "brake measured, lateral G from GPS",
+  "@drivingBrakeMeasuredLateralGps": {
+    "description": "How braking while cornering was obtained."
+  },
+  "drivingUnexpectedUnitChannel": "{channel} is in an unexpected unit",
+  "@drivingUnexpectedUnitChannel": {
+    "description": "A pedal channel in an unexpected unit.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "brake"
+      }
+    }
+  },
+  "drivingNoBrakeChannel": "no brake channel",
+  "@drivingNoBrakeChannel": {
+    "description": "A lap without a brake pedal channel."
+  },
+  "drivingNoAcceleratorChannel": "no accelerator channel",
+  "@drivingNoAcceleratorChannel": {
+    "description": "A lap without an accelerator pedal channel."
+  },
+  "drivingBrakeRecorded": "brake pedal recorded",
+  "@drivingBrakeRecorded": {
+    "description": "Where a lap's braking comes from."
+  },
+  "drivingBrakingInferred": "braking inferred from deceleration (no brake channel)",
+  "@drivingBrakingInferred": {
+    "description": "Where a lap's braking comes from."
+  },
+  "drivingAcceleratorRecorded": "accelerator pedal recorded",
+  "@drivingAcceleratorRecorded": {
+    "description": "Where a lap's accelerating comes from."
+  },
+  "drivingAcceleratingInferred": "accelerating inferred from longitudinal G (no accelerator channel)",
+  "@drivingAcceleratingInferred": {
+    "description": "Where a lap's accelerating comes from."
+  },
+  "drivingLateralMeasured": "lateral G measured",
+  "@drivingLateralMeasured": {
+    "description": "Where a lap's cornering comes from."
+  },
+  "drivingLateralCalculated": "lateral G calculated from GPS by the logger",
+  "@drivingLateralCalculated": {
+    "description": "Where a lap's cornering comes from."
+  },
+  "drivingNoLateral": "no lateral G",
+  "@drivingNoLateral": {
+    "description": "Where a lap's cornering comes from."
+  },
+  "drivingCoastingMeasured": "Measured: from the recorded brake and accelerator pedals.",
+  "@drivingCoastingMeasured": {
+    "description": "Where a lap's coasting comes from."
+  },
+  "drivingCoastingInferred": "Inferred from longitudinal G: this recording has no brake or no accelerator pedal channel.",
+  "@drivingCoastingInferred": {
+    "description": "Where a lap's coasting comes from."
+  },
+  "drivingCoastingNoPedals": "Cannot be told: the recording has neither pedal channels nor longitudinal G.",
+  "@drivingCoastingNoPedals": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingNoSpeed": "Cannot be told: the recording has no speed.",
+  "@drivingCoastingNoSpeed": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingUnitMismatch": "Cannot be told: a pedal or speed channel is in an unexpected unit.",
+  "@drivingCoastingUnitMismatch": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingUnavailable": "Coasting is not available for this stretch.",
+  "@drivingCoastingUnavailable": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingSummaryLap": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)",
+  "@drivingCoastingSummaryLap": {
+    "description": "A lap's coasting: its time, distance, episodes and share of the lap time.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "4.2"
+      },
+      "meters": {
+        "type": "String",
+        "example": "128"
+      },
+      "count": {
+        "type": "int",
+        "example": "9"
+      },
+      "share": {
+        "type": "String",
+        "example": "5.1"
+      }
+    }
+  },
+  "drivingCoastingSummaryStretch": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)",
+  "@drivingCoastingSummaryStretch": {
+    "description": "A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "4.2"
+      },
+      "meters": {
+        "type": "String",
+        "example": "128"
+      },
+      "count": {
+        "type": "int",
+        "example": "9"
+      },
+      "share": {
+        "type": "String",
+        "example": "5.1"
+      }
+    }
+  },
+  "drivingCoastingNote": "Coasting is time at speed with neither pedal pressed. It is not a mistake by itself: a lift can settle the car or be forced by traffic.",
+  "@drivingCoastingNote": {
+    "description": "Coasting is an observation, never a verdict."
+  },
+  "drivingCoastingEpisodesHint": "Each episode is listed by where it starts on the track; select one to move the cursor there.",
+  "@drivingCoastingEpisodesHint": {
+    "description": "Under the comparison's coasting episodes."
+  },
+  "drivingSelectedStretch": "Selected stretch · {meters} m",
+  "@drivingSelectedStretch": {
+    "description": "The zoomed stretch a panel covers, with its length.",
+    "placeholders": {
+      "meters": {
+        "type": "String",
+        "example": "240"
+      }
+    }
+  },
+  "drivingWholeLap": "Whole lap",
+  "@drivingWholeLap": {
+    "description": "A panel covers the whole lap."
+  },
+  "drivingGgCalculated": "calculated from GPS by the logger",
+  "@drivingGgCalculated": {
+    "description": "G channels the logger calculated from GPS."
+  },
+  "drivingGgSource": "{lap}: {longitudinal} / {lateral}, {provenance}",
+  "@drivingGgSource": {
+    "description": "The G channels of lap A or B and how they were obtained.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "longitudinal": {
+        "type": "String",
+        "example": "longacc"
+      },
+      "lateral": {
+        "type": "String",
+        "example": "latacc"
+      },
+      "provenance": {
+        "type": "String",
+        "example": "measured"
+      }
+    }
+  },
+  "drivingLap": "Lap {lap}",
+  "@drivingLap": {
+    "description": "Legend entry of lap A or B.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "drivingGgSemantics": "G-G diagram of laps A and B: peak combined {a} and {b}",
+  "@drivingGgSemantics": {
+    "description": "Screen reader label of the G-G diagram.",
+    "placeholders": {
+      "a": {
+        "type": "String",
+        "example": "1.20 g"
+      },
+      "b": {
+        "type": "String",
+        "example": "1.15 g"
+      }
+    }
+  },
+  "drivingPeakLateral": "Peak lateral",
+  "@drivingPeakLateral": {
+    "description": "Row of the G-G table."
+  },
+  "drivingPeakBraking": "Peak braking",
+  "@drivingPeakBraking": {
+    "description": "Row of the G-G table."
+  },
+  "drivingPeakAccelerating": "Peak accelerating",
+  "@drivingPeakAccelerating": {
+    "description": "Row of the G-G table."
+  },
+  "drivingPeakCombined": "Peak combined",
+  "@drivingPeakCombined": {
+    "description": "Row of the G-G table."
+  },
+  "drivingSamples": "Samples",
+  "@drivingSamples": {
+    "description": "Row of the G-G table: the number of G pairs."
+  },
+  "drivingGgNote": "Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap's peaks.",
+  "@drivingGgNote": {
+    "description": "Under the G-G diagram."
+  },
+  "drivingGgAccelerating": "accelerating",
+  "@drivingGgAccelerating": {
+    "description": "Top of the G-G diagram."
+  },
+  "drivingGgBraking": "braking",
+  "@drivingGgBraking": {
+    "description": "Bottom of the G-G diagram."
+  },
+  "drivingGgLeft": "left",
+  "@drivingGgLeft": {
+    "description": "Left of the G-G diagram."
+  },
+  "drivingGgRight": "right",
+  "@drivingGgRight": {
+    "description": "Right of the G-G diagram."
+  },
+  "drivingStripLabel": "Lap {lap} along the track",
+  "@drivingStripLabel": {
+    "description": "Screen reader label of a driving-state strip.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "drivingStripHint": "Tap to move the cursor there",
+  "@drivingStripHint": {
+    "description": "Screen reader hint of a driving-state strip."
+  },
+  "drivingStatesTitle": "Driving states",
+  "@drivingStatesTitle": {
+    "description": "Title of the driving-state panel."
+  },
+  "drivingBraking": "Braking",
+  "@drivingBraking": {
+    "description": "Driving state."
+  },
+  "drivingTrailBraking": "Braking while cornering",
+  "@drivingTrailBraking": {
+    "description": "Driving state."
+  },
+  "drivingCornering": "Cornering",
+  "@drivingCornering": {
+    "description": "Driving state."
+  },
+  "drivingAccelerating": "Accelerating",
+  "@drivingAccelerating": {
+    "description": "Driving state."
+  },
+  "drivingCoasting": "Coasting",
+  "@drivingCoasting": {
+    "description": "Driving state, and title of the comparison's coasting panel."
+  },
+  "drivingStatesNote": "Each lap's share of its own time over this stretch. States overlap: cornering can come with braking, accelerating or coasting. Tap a strip to move the cursor there. Longer braking while cornering is not automatically better or safer.",
+  "@drivingStatesNote": {
+    "description": "Under the driving-state table."
+  },
+  "cornerDetailsReasonNotMeasured": "not measured",
+  "@cornerDetailsReasonNotMeasured": {
+    "description": "Why a corner figure is missing, lower case: not measured."
+  },
+  "cornerDetailsReasonNoBraking": "no braking detected",
+  "@cornerDetailsReasonNoBraking": {
+    "description": "Why a corner figure is missing, lower case: no braking detected."
+  },
+  "cornerDetailsReasonNoBrakeOrDeceleration": "no brake or deceleration channel",
+  "@cornerDetailsReasonNoBrakeOrDeceleration": {
+    "description": "Why a corner figure is missing, lower case: no brake or deceleration channel."
+  },
+  "cornerDetailsReasonNoBrakeChannel": "no brake channel",
+  "@cornerDetailsReasonNoBrakeChannel": {
+    "description": "Why a corner figure is missing, lower case: no brake channel."
+  },
+  "cornerDetailsReasonNoDecelerationChannel": "no deceleration channel",
+  "@cornerDetailsReasonNoDecelerationChannel": {
+    "description": "Why a corner figure is missing, lower case: no deceleration channel."
+  },
+  "cornerDetailsReasonApproachClipped": "approach cut off at the start/finish line",
+  "@cornerDetailsReasonApproachClipped": {
+    "description": "Why a corner figure is missing, lower case: approach cut off at the start/finish line."
+  },
+  "cornerDetailsReasonApproachInPreviousCorner": "approach runs into the previous corner",
+  "@cornerDetailsReasonApproachInPreviousCorner": {
+    "description": "Why a corner figure is missing, lower case: approach runs into the previous corner."
+  },
+  "cornerDetailsReasonAlreadyBraking": "already braking before the approach",
+  "@cornerDetailsReasonAlreadyBraking": {
+    "description": "Why a corner figure is missing, lower case: already braking before the approach."
+  },
+  "cornerDetailsReasonBrakingGap": "braking interrupted by a recording gap",
+  "@cornerDetailsReasonBrakingGap": {
+    "description": "Why a corner figure is missing, lower case: braking interrupted by a recording gap."
+  },
+  "cornerDetailsReasonNoSamplesHere": "no samples here",
+  "@cornerDetailsReasonNoSamplesHere": {
+    "description": "Why a corner figure is missing, lower case: no samples here."
+  },
+  "cornerDetailsReasonNoThrottleOrAcceleration": "no throttle or acceleration channel",
+  "@cornerDetailsReasonNoThrottleOrAcceleration": {
+    "description": "Why a corner figure is missing, lower case: no throttle or acceleration channel."
+  },
+  "cornerDetailsReasonNoLift": "no lift before the pickup",
+  "@cornerDetailsReasonNoLift": {
+    "description": "Why a corner figure is missing, lower case: no lift before the pickup."
+  },
+  "cornerDetailsReasonNoPickup": "no pickup detected",
+  "@cornerDetailsReasonNoPickup": {
+    "description": "Why a corner figure is missing, lower case: no pickup detected."
+  },
+  "cornerDetailsReasonAfterGap": "after a recording gap",
+  "@cornerDetailsReasonAfterGap": {
+    "description": "Why a corner figure is missing, lower case: after a recording gap."
+  },
+  "cornerDetailsReasonCutAtLapEnd": "cut off at the lap end",
+  "@cornerDetailsReasonCutAtLapEnd": {
+    "description": "Why a corner figure is missing, lower case: cut off at the lap end."
+  },
+  "cornerDetailsReasonNotCovered": "lap not fully covered here",
+  "@cornerDetailsReasonNotCovered": {
+    "description": "Why a corner figure is missing, lower case: lap not fully covered here."
+  },
+  "cornerDetailsReasonCrossesGate": "crosses the start/finish line",
+  "@cornerDetailsReasonCrossesGate": {
+    "description": "Why a corner figure is missing, lower case: crosses the start/finish line."
+  },
+  "cornerDetailsReasonUnitNotSupported": "channel unit not supported",
+  "@cornerDetailsReasonUnitNotSupported": {
+    "description": "Why a corner figure is missing, lower case: channel unit not supported."
+  },
+  "cornerDetailsReasonUnitNotRecorded": "channel unit not recorded",
+  "@cornerDetailsReasonUnitNotRecorded": {
+    "description": "Why a corner figure is missing, lower case: channel unit not recorded."
+  },
+  "cornerDetailsReasonNoSpeedChannel": "no speed channel",
+  "@cornerDetailsReasonNoSpeedChannel": {
+    "description": "Why a corner figure is missing, lower case: no speed channel."
+  },
+  "cornerDetailsReasonMixedProvenance": "measured differently on A and B",
+  "@cornerDetailsReasonMixedProvenance": {
+    "description": "Why a corner figure is missing, lower case: measured differently on A and B."
+  },
+  "cornerDetailsReasonSegmentsDiffer": "segments differ between the laps",
+  "@cornerDetailsReasonSegmentsDiffer": {
+    "description": "Why a corner figure is missing, lower case: segments differ between the laps."
+  },
+  "cornerDetailsReasonDoubleApex": "double apex: no single apex point",
+  "@cornerDetailsReasonDoubleApex": {
+    "description": "Why a corner figure is missing, lower case: double apex: no single apex point."
+  },
+  "cornerDetailsReasonFlatSpeed": "no lowest point (constant speed)",
+  "@cornerDetailsReasonFlatSpeed": {
+    "description": "Why a corner figure is missing, lower case: no lowest point (constant speed)."
+  },
+  "cornerDetailsReasonUnclearGeometry": "corner shape too unclear to place it",
+  "@cornerDetailsReasonUnclearGeometry": {
+    "description": "Why a corner figure is missing, lower case: corner shape too unclear to place it."
+  },
+  "cornerDetailsReasonInvalidInput": "corner could not be measured",
+  "@cornerDetailsReasonInvalidInput": {
+    "description": "Why a corner figure is missing, lower case: corner could not be measured."
+  },
+  "cornerDetailsReasonBroadApex": "apex spread over a long arc",
+  "@cornerDetailsReasonBroadApex": {
+    "description": "Why a corner figure is missing, lower case: apex spread over a long arc."
+  },
+  "cornerDetailsReasonAtBoundary": "at the edge of the corner",
+  "@cornerDetailsReasonAtBoundary": {
+    "description": "Why a corner figure is missing, lower case: at the edge of the corner."
+  },
+  "cornerDetailsReasonNotACorner": "not a corner",
+  "@cornerDetailsReasonNotACorner": {
+    "description": "Why a corner figure is missing, lower case: not a corner."
+  },
+  "cornerDetailsReasonSparseSamples": "too few samples",
+  "@cornerDetailsReasonSparseSamples": {
+    "description": "Why a corner figure is missing, lower case: too few samples."
+  },
+  "cornerDetailsReasonSegmentNotFound": "segment not found on this lap",
+  "@cornerDetailsReasonSegmentNotFound": {
+    "description": "Why a corner figure is missing, lower case: segment not found on this lap."
+  },
+  "cornerDetailsReasonNotRecorded": "not recorded",
+  "@cornerDetailsReasonNotRecorded": {
+    "description": "Why a corner figure is missing, lower case: not recorded."
+  },
+  "cornerDetailsReasonNoValidSamples": "no valid samples",
+  "@cornerDetailsReasonNoValidSamples": {
+    "description": "Why a corner figure is missing, lower case: no valid samples."
+  },
+  "cornerDetailsReasonNoReference": "no reference lap",
+  "@cornerDetailsReasonNoReference": {
+    "description": "Why a corner figure is missing, lower case: no reference lap."
+  },
+  "cornerDetailsReasonNotTimed": "not timed",
+  "@cornerDetailsReasonNotTimed": {
+    "description": "Why a corner figure is missing, lower case: not timed."
+  },
+  "cornerDetailsReasonNoApprovedSegments": "no approved segments",
+  "@cornerDetailsReasonNoApprovedSegments": {
+    "description": "Why a corner figure is missing, lower case: no approved segments."
+  },
+  "cornerDetailsReasonDrivingStateUnknown": "driving state unknown",
+  "@cornerDetailsReasonDrivingStateUnknown": {
+    "description": "Why a corner figure is missing, lower case: driving state unknown."
+  },
+  "cornerDetailsReasonNotAvailable": "not available",
+  "@cornerDetailsReasonNotAvailable": {
+    "description": "Why a corner figure is missing, lower case: not available."
+  },
+  "cornerDetailsFromDeceleration": "Inferred from deceleration",
+  "@cornerDetailsFromDeceleration": {
+    "description": "How a lap's braking point was found: from the deceleration, without a brake channel."
+  },
+  "cornerDetailsFromBrakeChannel": "From the brake channel",
+  "@cornerDetailsFromBrakeChannel": {
+    "description": "How a lap's braking point was found: from the recorded brake channel."
+  },
+  "cornerDetailsFromAcceleration": "Inferred from acceleration",
+  "@cornerDetailsFromAcceleration": {
+    "description": "How a lap's throttle pickup was found: from the acceleration, without a throttle channel."
+  },
+  "cornerDetailsFromThrottleChannel": "From the throttle channel",
+  "@cornerDetailsFromThrottleChannel": {
+    "description": "How a lap's throttle pickup was found: from the recorded throttle channel."
+  },
+  "cornerDetailsBestMeasuredDifferently": "{how}; the best lap was measured differently",
+  "@cornerDetailsBestMeasuredDifferently": {
+    "description": "How a figure was found, when the best lap's was found another way, so they are not compared.",
+    "placeholders": {
+      "how": {
+        "type": "String",
+        "example": "From the brake channel"
+      }
+    }
+  },
+  "cornerDetailsBestSpeedDifferent": "The best lap’s speed was recorded differently",
+  "@cornerDetailsBestSpeedDifferent": {
+    "description": "The corner speeds are not compared: the best lap's speed comes from another kind of channel."
+  },
+  "cornerDetailsMinimumMissing": "Minimum: {reason}",
+  "@cornerDetailsMinimumMissing": {
+    "description": "Why the lap's minimum speed is missing.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "too few samples"
+      }
+    }
+  },
+  "cornerDetailsHighestMinimumSpeed": "Highest minimum speed",
+  "@cornerDetailsHighestMinimumSpeed": {
+    "description": "The best value of every lap of the group: highest minimum speed in the corner."
+  },
+  "cornerDetailsHighestExitSpeed": "Highest exit speed",
+  "@cornerDetailsHighestExitSpeed": {
+    "description": "The best value of every lap of the group: highest exit speed."
+  },
+  "cornerDetailsLatestBrakingPoint": "Latest braking point",
+  "@cornerDetailsLatestBrakingPoint": {
+    "description": "The best value of every lap of the group: latest braking point."
+  },
+  "cornerDetailsEarliestPickup": "Earliest throttle pickup",
+  "@cornerDetailsEarliestPickup": {
+    "description": "The best value of every lap of the group: earliest throttle pickup."
+  },
+  "cornerDetailsMetresIn": "{metres} m in",
+  "@cornerDetailsMetresIn": {
+    "description": "A throttle pickup: metres after the corner's start.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerDetailsIsBestLap": "{lap} · the best lap",
+  "@cornerDetailsIsBestLap": {
+    "description": "Under the corner's name: the lap shown is the group's best lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      }
+    }
+  },
+  "cornerDetailsAgainstBestLap": "{lap} against the best lap, {best}",
+  "@cornerDetailsAgainstBestLap": {
+    "description": "Under the corner's name: the lap shown and the group's best lap it is compared with.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 3 · LAP 2"
+      },
+      "best": {
+        "type": "String",
+        "example": "Session 2 · LAP 4"
+      }
+    }
+  },
+  "cornerDetailsBestLapUnavailable": "unavailable",
+  "@cornerDetailsBestLapUnavailable": {
+    "description": "In place of the best lap's name when there is none."
+  },
+  "cornerDetailsThisLap": "This lap",
+  "@cornerDetailsThisLap": {
+    "description": "Column heading: the lap shown (lap A's colour)."
+  },
+  "cornerDetailsBestLap": "Best lap",
+  "@cornerDetailsBestLap": {
+    "description": "Column heading: the group's best lap (lap B's colour); a narrow column."
+  },
+  "cornerDetailsEntrySpeed": "Entry speed{unit}",
+  "@cornerDetailsEntrySpeed": {
+    "description": "Row label; unit is empty or ' (km/h)' with its leading space.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": " (km/h)"
+      }
+    }
+  },
+  "cornerDetailsMinimumSpeed": "Minimum speed{unit}",
+  "@cornerDetailsMinimumSpeed": {
+    "description": "Row label; unit is empty or ' (km/h)' with its leading space.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": " (km/h)"
+      }
+    }
+  },
+  "cornerDetailsExitSpeed": "Exit speed{unit}",
+  "@cornerDetailsExitSpeed": {
+    "description": "Row label; unit is empty or ' (km/h)' with its leading space.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": " (km/h)"
+      }
+    }
+  },
+  "cornerDetailsBrakingPoint": "Braking point, before the corner",
+  "@cornerDetailsBrakingPoint": {
+    "description": "Row label: where braking starts, in metres before the corner."
+  },
+  "cornerDetailsBrakingTime": "Braking time",
+  "@cornerDetailsBrakingTime": {
+    "description": "Row label: how long the lap brakes."
+  },
+  "cornerDetailsPeakDeceleration": "Peak deceleration{unit}",
+  "@cornerDetailsPeakDeceleration": {
+    "description": "Row label; unit is empty or ' (g)' with its leading space.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": " (g)"
+      }
+    }
+  },
+  "cornerDetailsPickup": "Throttle pickup, into the corner",
+  "@cornerDetailsPickup": {
+    "description": "Row label: where the throttle comes back, in metres after the corner's start."
+  },
+  "cornerDetailsBestOfLaps": "{count, plural, =1{Best of 1 lap} other{Best of {count} laps}}",
+  "@cornerDetailsBestOfLaps": {
+    "description": "Heading of the best values of every lap of the group.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerDetailsExplanation": "Braking point and pickup are distances from the corner’s start on the shared track axis. Later braking or an earlier pickup is not automatically faster. Laps measured another way are not compared.",
+  "@cornerDetailsExplanation": {
+    "description": "Explains the corner's figures."
+  },
+  "cornerDetailsNotMeasured": "{corner}: this lap was not measured here.",
+  "@cornerDetailsNotMeasured": {
+    "description": "A corner without figures for the lap tapped.",
+    "placeholders": {
+      "corner": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "cornerAnalyzerTypeCorner": "corner",
+  "@cornerAnalyzerTypeCorner": {
+    "description": "A segment's type in the segment picker, lower case."
+  },
+  "cornerAnalyzerTypeStraight": "straight",
+  "@cornerAnalyzerTypeStraight": {
+    "description": "A segment's type in the segment picker, lower case."
+  },
+  "cornerAnalyzerTypeSector": "sector",
+  "@cornerAnalyzerTypeSector": {
+    "description": "A segment's type in the segment picker, lower case."
+  },
+  "cornerAnalyzerNoteProposed": "Segments proposed from {lap}, as used by the sector theoretical best; saving the day approves them. Boundaries are distances along that lap's axis, so they can shift by a few metres on these laps.",
+  "@cornerAnalyzerNoteProposed": {
+    "description": "The Corner Analyzer uses segments proposed from another lap.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 4"
+      }
+    }
+  },
+  "cornerAnalyzerNoteApproved": "Segments approved on {session}, as used by the sector theoretical best. Boundaries are distances along that run's axis, so they can shift by a few metres on these laps.",
+  "@cornerAnalyzerNoteApproved": {
+    "description": "The Corner Analyzer uses segments approved on another session.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "cornerAnalyzerSummarySame": "A and B take the same time here.",
+  "@cornerAnalyzerSummarySame": {
+    "description": "Summary: laps A and B are equally fast through the segment."
+  },
+  "cornerAnalyzerSummaryFaster": "{lap} is {time} faster here.",
+  "@cornerAnalyzerSummaryFaster": {
+    "description": "Summary: lap A or B is faster through the segment.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "time": {
+        "type": "String",
+        "example": "0.015 s"
+      }
+    }
+  },
+  "cornerAnalyzerSummaryEntry": "{lap} is {time} faster here and carries {speed} more entry speed.",
+  "@cornerAnalyzerSummaryEntry": {
+    "description": "Summary: the faster lap and the speed it gains most.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "time": {
+        "type": "String",
+        "example": "0.015 s"
+      },
+      "speed": {
+        "type": "String",
+        "example": "5.7 km/h"
+      }
+    }
+  },
+  "cornerAnalyzerSummaryMinimum": "{lap} is {time} faster here and carries {speed} more minimum speed.",
+  "@cornerAnalyzerSummaryMinimum": {
+    "description": "Summary: the faster lap and the speed it gains most.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "time": {
+        "type": "String",
+        "example": "0.015 s"
+      },
+      "speed": {
+        "type": "String",
+        "example": "5.7 km/h"
+      }
+    }
+  },
+  "cornerAnalyzerSummaryLowest": "{lap} is {time} faster here and carries {speed} more lowest speed.",
+  "@cornerAnalyzerSummaryLowest": {
+    "description": "Summary: the faster lap and the speed it gains most.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "time": {
+        "type": "String",
+        "example": "0.015 s"
+      },
+      "speed": {
+        "type": "String",
+        "example": "5.7 km/h"
+      }
+    }
+  },
+  "cornerAnalyzerSummaryExit": "{lap} is {time} faster here and carries {speed} more exit speed.",
+  "@cornerAnalyzerSummaryExit": {
+    "description": "Summary: the faster lap and the speed it gains most.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "time": {
+        "type": "String",
+        "example": "0.015 s"
+      },
+      "speed": {
+        "type": "String",
+        "example": "5.7 km/h"
+      }
+    }
+  },
+  "cornerAnalyzerTitle": "Corner Analyzer",
+  "@cornerAnalyzerTitle": {
+    "description": "Heading of the Corner Analyzer panel."
+  },
+  "cornerAnalyzerEmpty": "No matching approved segments for these two laps. Approve the same track segmentation on both to use the Corner Analyzer.",
+  "@cornerAnalyzerEmpty": {
+    "description": "The two laps share no approved segments."
+  },
+  "cornerAnalyzerUseTheoreticalBest": "Use the theoretical best’s segments",
+  "@cornerAnalyzerUseTheoreticalBest": {
+    "description": "Button: analyze the laps with the theoretical best's segments."
+  },
+  "cornerAnalyzerPrevious": "Previous segment",
+  "@cornerAnalyzerPrevious": {
+    "description": "Tooltip of the button to the previous segment."
+  },
+  "cornerAnalyzerNext": "Next segment",
+  "@cornerAnalyzerNext": {
+    "description": "Tooltip of the button to the next segment."
+  },
+  "cornerAnalyzerNoChart": "No speed chart: this segment crosses the start/finish line.",
+  "@cornerAnalyzerNoChart": {
+    "description": "Why a segment has no speed chart."
+  },
+  "cornerAnalyzerNoFigures": "No figures for this segment.",
+  "@cornerAnalyzerNoFigures": {
+    "description": "The segment could not be analyzed."
+  },
+  "cornerAnalyzerHeartRateNote": "Heart rate: mean over this segment · A {a} · B {b}. Observed values only.",
+  "@cornerAnalyzerHeartRateNote": {
+    "description": "How each lap's heart rate was measured.",
+    "placeholders": {
+      "a": {
+        "type": "String",
+        "example": "120 samples, 98% covered"
+      },
+      "b": {
+        "type": "String",
+        "example": "not recorded"
+      }
+    }
+  },
+  "cornerAnalyzerCoverage": "{count, plural, =1{1 sample, {percent}% covered} other{{count} samples, {percent}% covered}}",
+  "@cornerAnalyzerCoverage": {
+    "description": "Heart-rate samples of a lap in the segment and how much of it they cover.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerAnalyzerExplanation": "Δ is A − B, coloured by the lap that is faster or carries more speed. Observed differences, not instructions.",
+  "@cornerAnalyzerExplanation": {
+    "description": "Explains the table's differences."
+  },
+  "cornerAnalyzerExplanationWithBraking": "Δ is A − B, coloured by the lap that is faster or carries more speed. Braking and pickup are distances from the corner entry; braking later or picking up earlier is not automatically faster. Observed differences, not instructions.",
+  "@cornerAnalyzerExplanationWithBraking": {
+    "description": "Explains the table's differences, with braking or throttle pickup shown."
+  },
+  "cornerAnalyzerZoom": "Zoom to segment",
+  "@cornerAnalyzerZoom": {
+    "description": "Button: zoom the charts to the segment."
+  },
+  "cornerAnalyzerOpenLap": "Lap {lap} here",
+  "@cornerAnalyzerOpenLap": {
+    "description": "Button: open lap A or B at the segment.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "cornerAnalyzerGroupTime": "Time",
+  "@cornerAnalyzerGroupTime": {
+    "description": "Group of the table's rows (shown in capitals)."
+  },
+  "cornerAnalyzerGroupBraking": "Braking",
+  "@cornerAnalyzerGroupBraking": {
+    "description": "Group of the table's rows (shown in capitals)."
+  },
+  "cornerAnalyzerGroupCorner": "Corner",
+  "@cornerAnalyzerGroupCorner": {
+    "description": "Group of the table's rows (shown in capitals)."
+  },
+  "cornerAnalyzerGroupSpeed": "Speed",
+  "@cornerAnalyzerGroupSpeed": {
+    "description": "Group of the table's rows (shown in capitals)."
+  },
+  "cornerAnalyzerGroupExit": "Exit",
+  "@cornerAnalyzerGroupExit": {
+    "description": "Group of the table's rows (shown in capitals)."
+  },
+  "cornerAnalyzerGroupDriver": "Driver",
+  "@cornerAnalyzerGroupDriver": {
+    "description": "Group of the table's rows (shown in capitals)."
+  },
+  "cornerAnalyzerTimeThroughCorner": "Time through the corner",
+  "@cornerAnalyzerTimeThroughCorner": {
+    "description": "Row label: the corner segment's time."
+  },
+  "cornerAnalyzerSectorTime": "Sector time",
+  "@cornerAnalyzerSectorTime": {
+    "description": "Row label: the segment's time."
+  },
+  "cornerAnalyzerBrakingPoint": "Braking starts, before entry",
+  "@cornerAnalyzerBrakingPoint": {
+    "description": "Row label: metres before the corner entry where braking starts."
+  },
+  "cornerAnalyzerBrakingTime": "Time on the brakes",
+  "@cornerAnalyzerBrakingTime": {
+    "description": "Row label: how long the lap brakes."
+  },
+  "cornerAnalyzerPeakDeceleration": "Peak deceleration",
+  "@cornerAnalyzerPeakDeceleration": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerEntrySpeed": "Entry speed",
+  "@cornerAnalyzerEntrySpeed": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerApexSpeed": "Apex speed",
+  "@cornerAnalyzerApexSpeed": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerMinimumSpeed": "Minimum speed",
+  "@cornerAnalyzerMinimumSpeed": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerTopSpeed": "Top speed",
+  "@cornerAnalyzerTopSpeed": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerLowestSpeed": "Lowest speed",
+  "@cornerAnalyzerLowestSpeed": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerExitSpeed": "Exit speed",
+  "@cornerAnalyzerExitSpeed": {
+    "description": "Row label."
+  },
+  "cornerAnalyzerPickup": "Throttle pickup, after entry",
+  "@cornerAnalyzerPickup": {
+    "description": "Row label: metres after the corner entry where the throttle comes back."
+  },
+  "cornerAnalyzerHeartRate": "Heart rate",
+  "@cornerAnalyzerHeartRate": {
+    "description": "Row label: mean heart rate over the segment."
+  },
+  "cornerAnalyzerAHigher": "A higher",
+  "@cornerAnalyzerAHigher": {
+    "description": "Under a speed difference: lap A's speed is higher."
+  },
+  "cornerAnalyzerBHigher": "B higher",
+  "@cornerAnalyzerBHigher": {
+    "description": "Under a speed difference: lap B's speed is higher."
+  },
+  "cornerAnalyzerAFaster": "A faster",
+  "@cornerAnalyzerAFaster": {
+    "description": "Under a time difference: lap A is faster."
+  },
+  "cornerAnalyzerBFaster": "B faster",
+  "@cornerAnalyzerBFaster": {
+    "description": "Under a time difference: lap B is faster."
+  },
+  "cornerAnalyzerABrakesEarlier": "A brakes earlier",
+  "@cornerAnalyzerABrakesEarlier": {
+    "description": "Under a braking point difference."
+  },
+  "cornerAnalyzerABrakesLater": "A brakes later",
+  "@cornerAnalyzerABrakesLater": {
+    "description": "Under a braking point difference."
+  },
+  "cornerAnalyzerALonger": "A longer",
+  "@cornerAnalyzerALonger": {
+    "description": "Under a braking time difference."
+  },
+  "cornerAnalyzerAShorter": "A shorter",
+  "@cornerAnalyzerAShorter": {
+    "description": "Under a braking time difference."
+  },
+  "cornerAnalyzerAHarder": "A harder",
+  "@cornerAnalyzerAHarder": {
+    "description": "Under a peak deceleration difference."
+  },
+  "cornerAnalyzerASofter": "A softer",
+  "@cornerAnalyzerASofter": {
+    "description": "Under a peak deceleration difference."
+  },
+  "cornerAnalyzerALater": "A later",
+  "@cornerAnalyzerALater": {
+    "description": "Under a throttle pickup difference."
+  },
+  "cornerAnalyzerAEarlier": "A earlier",
+  "@cornerAnalyzerAEarlier": {
+    "description": "Under a throttle pickup difference."
+  },
+  "cornerAnalyzerSame": "same",
+  "@cornerAnalyzerSame": {
+    "description": "Under a difference that rounds to zero."
+  },
+  "cornerAnalyzerInferred": "inferred",
+  "@cornerAnalyzerInferred": {
+    "description": "Under a value inferred from another channel."
+  },
+  "cornerAnalyzerBothLaps": "{reason} (both laps)",
+  "@cornerAnalyzerBothLaps": {
+    "description": "Why a value is missing on both laps.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "No brake channel"
+      }
+    }
+  },
+  "cornerAnalyzerNotCompared": "Not compared: {reason}",
+  "@cornerAnalyzerNotCompared": {
+    "description": "Why the laps' values are not compared.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "measured differently on A and B"
+      }
+    }
+  },
+  "cornerAnalyzerUnitNoteSpeed": "This recording does not declare its speed unit: those values are shown as recorded, without a unit.",
+  "@cornerAnalyzerUnitNoteSpeed": {
+    "description": "The recording has no speed unit."
+  },
+  "cornerAnalyzerUnitNoteDeceleration": "This recording does not declare its deceleration unit: those values are shown as recorded, without a unit.",
+  "@cornerAnalyzerUnitNoteDeceleration": {
+    "description": "The recording has no deceleration unit."
+  },
+  "cornerAnalyzerUnitNoteBoth": "This recording does not declare its speed and deceleration units: those values are shown as recorded, without a unit.",
+  "@cornerAnalyzerUnitNoteBoth": {
+    "description": "The recording has no speed and no deceleration unit."
+  },
+  "cornerAnalyzerChartNoSpeed": "No speed recorded on either lap: no speed chart.",
+  "@cornerAnalyzerChartNoSpeed": {
+    "description": "Neither lap recorded speed."
+  },
+  "cornerAnalyzerChartNoSamples": "No speed samples on either lap through {segment}.",
+  "@cornerAnalyzerChartNoSamples": {
+    "description": "Neither lap has speed samples in the segment.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "cornerAnalyzerChartTitle": "Speed through {segment}",
+  "@cornerAnalyzerChartTitle": {
+    "description": "Heading of the segment's speed chart.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "cornerAnalyzerChartLabel": "Speed through {segment} chart",
+  "@cornerAnalyzerChartLabel": {
+    "description": "Screen reader label of the speed chart.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 3"
+      }
+    }
+  },
+  "cornerAnalyzerCursor": "Cursor {offset} m: ",
+  "@cornerAnalyzerCursor": {
+    "description": "Before both laps' speed at the cursor; offset is metres from the segment's start, with its sign. Keep the trailing space.",
+    "placeholders": {
+      "offset": {
+        "type": "String",
+        "example": "−12"
+      }
+    }
+  },
+  "cornerAnalyzerEntry": "Entry",
+  "@cornerAnalyzerEntry": {
+    "description": "Chart label of the corner's entry line."
+  },
+  "cornerAnalyzerExit": "Exit",
+  "@cornerAnalyzerExit": {
+    "description": "Chart label of the corner's exit line."
+  },
+  "cornerAnalyzerStart": "Start",
+  "@cornerAnalyzerStart": {
+    "description": "Chart label of the segment's start line."
+  },
+  "cornerAnalyzerEnd": "End",
+  "@cornerAnalyzerEnd": {
+    "description": "Chart label of the segment's end line."
+  },
+  "cornerAnalyzerSpeedAxis": "speed",
+  "@cornerAnalyzerSpeedAxis": {
+    "description": "Name of the chart's speed axis when the recording declares no unit."
+  },
+  "cornerAnalyzerApex": "Apex",
+  "@cornerAnalyzerApex": {
+    "description": "The apex line on the chart and in its legend."
+  },
+  "cornerAnalyzerAxisCorner": "Distance from the corner entry (m) · shaded: the corner",
+  "@cornerAnalyzerAxisCorner": {
+    "description": "Under the chart: its distance axis and shading."
+  },
+  "cornerAnalyzerAxisSegment": "Distance from the segment entry (m) · shaded: the segment",
+  "@cornerAnalyzerAxisSegment": {
+    "description": "Under the chart: its distance axis and shading."
+  },
+  "cornerAnalyzerAxisNoUnit": "{axis} · speed unit not declared in the recording",
+  "@cornerAnalyzerAxisNoUnit": {
+    "description": "Under the chart when the recording has no speed unit.",
+    "placeholders": {
+      "axis": {
+        "type": "String",
+        "example": "Distance from the corner entry (m) · shaded: the corner"
+      }
+    }
+  },
+  "cornerAnalyzerLegendBraking": "Braking starts",
+  "@cornerAnalyzerLegendBraking": {
+    "description": "Chart legend: the braking point marker."
+  },
+  "cornerAnalyzerLegendPickup": "Throttle pickup",
+  "@cornerAnalyzerLegendPickup": {
+    "description": "Chart legend: the throttle pickup marker."
+  },
+  "cornerAnalyzerLegendMinimum": "Lowest speed",
+  "@cornerAnalyzerLegendMinimum": {
+    "description": "Chart legend: the lowest speed marker."
+  },
+  "importPageLaps": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@importPageLaps": {
+    "description": "An imported session's timed laps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageLapsWithBest": "{count, plural, =1{1 lap · best {time}} other{{count} laps · best {time}}}",
+  "@importPageLapsWithBest": {
+    "description": "An imported session's timed laps and its fastest lap time.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String",
+        "example": "1:23.456"
+      }
+    }
+  },
+  "importPageNoGate": "No laps: the recording has no start/finish line.",
+  "@importPageNoGate": {
+    "description": "Why an imported session has no laps."
+  },
+  "importPageSeveralGates": "No laps: the recording has more than one start/finish line.",
+  "@importPageSeveralGates": {
+    "description": "Why an imported session has no laps."
+  },
+  "importPageInvalidGate": "No laps: the start/finish line is not valid.",
+  "@importPageInvalidGate": {
+    "description": "Why an imported session has no laps."
+  },
+  "importPageNoGps": "No laps: the recording has no usable GPS.",
+  "@importPageNoGps": {
+    "description": "Why an imported session has no laps."
+  },
+  "importPageTooFewPasses": "No complete laps: the start/finish line was not crossed often enough.",
+  "@importPageTooFewPasses": {
+    "description": "Why an imported session has no laps."
+  },
+  "importPageImportFailed": "The import failed: {error}",
+  "@importPageImportFailed": {
+    "description": "The import stopped with an error.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Import failed."
+      }
+    }
+  },
+  "importPageFolderTooMany": "{count, plural, other{The folder holds {count} recordings; import at most {maximum} at a time. Choose a smaller folder.}}",
+  "@importPageFolderTooMany": {
+    "description": "A folder holds too many recordings to import.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "maximum": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageTooMany": "{count, plural, other{That is {count} recordings; import at most {maximum} at a time.}}",
+  "@importPageTooMany": {
+    "description": "Too many recordings were chosen to import.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "maximum": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageStoppedAfter": "Stopped after {count} files and folders; recordings beyond that were not scanned.",
+  "@importPageStoppedAfter": {
+    "description": "A folder scan stopped at its limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageTooDeep": "{count} folder(s) deeper than {depth} levels were not scanned.",
+  "@importPageTooDeep": {
+    "description": "Folders too deep to scan.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "depth": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageLinksSkipped": "{count} link(s) were not followed.",
+  "@importPageLinksSkipped": {
+    "description": "Links in a folder were not followed.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageOtherFilesSkipped": "{count} other file(s) were ignored; only VBO and RCZ recordings are imported.",
+  "@importPageOtherFilesSkipped": {
+    "description": "Files of a folder that are not recordings.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageSameContent": "same content as {other}; imported once.",
+  "@importPageSameContent": {
+    "description": "After a file's name: it is a copy of another file.",
+    "placeholders": {
+      "other": {
+        "type": "String",
+        "example": "a.vbo"
+      }
+    }
+  },
+  "importPageSameDrive": "the same drive as {other}; kept as its alternative source.",
+  "@importPageSameDrive": {
+    "description": "After a recording's name: another recording of the same drive.",
+    "placeholders": {
+      "other": {
+        "type": "String",
+        "example": "a.vbo"
+      }
+    }
+  },
+  "importPageNoRecording": "No recording could be imported.",
+  "@importPageNoRecording": {
+    "description": "The import found nothing it could use."
+  },
+  "importPageFailed": "Import failed.",
+  "@importPageFailed": {
+    "description": "The import stopped with an unknown error."
+  },
+  "importPageStoppedUnexpectedly": "Bad state: The import stopped unexpectedly.",
+  "@importPageStoppedUnexpectedly": {
+    "description": "The import's background work ended without a result."
+  },
+  "importPageNoFolder": "The folder does not exist or is not a folder.",
+  "@importPageNoFolder": {
+    "description": "A chosen folder cannot be scanned."
+  },
+  "importPageFolderLink": "Choose the folder itself, not a link to it.",
+  "@importPageFolderLink": {
+    "description": "A chosen folder is a link."
+  },
+  "importPageNoneFound": "No VBO or RCZ recordings were found.",
+  "@importPageNoneFound": {
+    "description": "A folder holds no recordings."
+  },
+  "importPageNoneFoundNoSubfolders": "No VBO or RCZ recordings were found (subfolders were not included).",
+  "@importPageNoneFoundNoSubfolders": {
+    "description": "A folder holds no recordings; its subfolders were not scanned."
+  },
+  "importPageNothingToImport": "No VBO or RCZ recordings to import.",
+  "@importPageNothingToImport": {
+    "description": "Nothing chosen is a recording."
+  },
+  "importPageFileNotFound": "not found; not imported.",
+  "@importPageFileNotFound": {
+    "description": "After a file's name."
+  },
+  "importPageMetadataFile": "a macOS metadata file, not a recording; not imported.",
+  "@importPageMetadataFile": {
+    "description": "After a file's name."
+  },
+  "importPageFileLink": "a link; not followed.",
+  "@importPageFileLink": {
+    "description": "After a file's name."
+  },
+  "importPageNotRecording": "not a VBO or RCZ recording; not imported.",
+  "@importPageNotRecording": {
+    "description": "After a file's name."
+  },
+  "importPageNotRestored": "The day could not be restored: {error}",
+  "@importPageNotRestored": {
+    "description": "Restoring an unsaved day failed.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "disk full"
+      }
+    }
+  },
+  "importPageDiscardTitle": "Discard the changes to {day}?",
+  "@importPageDiscardTitle": {
+    "description": "Asks before discarding a day's unsaved changes.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "Jastrząb 2026-10-03"
+      }
+    }
+  },
+  "importPageDiscardBody": "The unsaved changes are lost. Recordings and saved days are not touched.",
+  "@importPageDiscardBody": {
+    "description": "Explains discarding unsaved changes."
+  },
+  "importPageKeep": "Keep",
+  "@importPageKeep": {
+    "description": "Button: keep the unsaved changes."
+  },
+  "importPageDiscard": "Discard",
+  "@importPageDiscard": {
+    "description": "Button: discard the unsaved changes."
+  },
+  "importPageNotDiscarded": "Not discarded: {error}",
+  "@importPageNotDiscarded": {
+    "description": "Discarding unsaved changes failed.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "disk full"
+      }
+    }
+  },
+  "importPageCannotOpenTitle": "{day} could not be opened",
+  "@importPageCannotOpenTitle": {
+    "description": "A saved day none of whose recordings could be read.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "Jastrząb 2026-10-03"
+      }
+    }
+  },
+  "importPageNoneUsable": "None of its recordings could be used:",
+  "@importPageNoneUsable": {
+    "description": "Before the day's recordings and why each could not be used."
+  },
+  "importPageChooseFolderHint": "Choose the folder the recordings are in to use them, also when they have not moved.",
+  "@importPageChooseFolderHint": {
+    "description": "How to find a day's recordings."
+  },
+  "importPageImportingBehind": "Importing the shared recordings. Go back to Import a day to see them.",
+  "@importPageImportingBehind": {
+    "description": "Recordings shared from another app are imported behind the page shown."
+  },
+  "importPageFinishFirst": "Finish the current import first. Nothing was imported.",
+  "@importPageFinishFirst": {
+    "description": "An import was asked for while another runs."
+  },
+  "importPageOpenSavedTitle": "Open a saved day",
+  "@importPageOpenSavedTitle": {
+    "description": "Title of the list of saved days."
+  },
+  "importPageAnotherFile": "Another file…",
+  "@importPageAnotherFile": {
+    "description": "Opens a file picker for a saved day not in the list."
+  },
+  "importPageAnotherOpening": "Another day is being opened. Try again after it.",
+  "@importPageAnotherOpening": {
+    "description": "A day was chosen while another is being opened."
+  },
+  "importPageNotOpened": "The day could not be opened: {error}",
+  "@importPageNotOpened": {
+    "description": "Opening a saved day failed.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "disk full"
+      }
+    }
+  },
+  "importPageTitle": "Import a day",
+  "@importPageTitle": {
+    "description": "Title of the import page, the app's first page."
+  },
+  "importPageUnsaved": "{day} has unsaved changes from {time}.",
+  "@importPageUnsaved": {
+    "description": "A day with unsaved changes that can be restored, and when they were made.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "Jastrząb 2026-10-03"
+      },
+      "time": {
+        "type": "String",
+        "example": "2026-10-03 06:30"
+      }
+    }
+  },
+  "importPageRestore": "Restore",
+  "@importPageRestore": {
+    "description": "Button: restore the day with unsaved changes."
+  },
+  "importPageDiscardEllipsis": "Discard…",
+  "@importPageDiscardEllipsis": {
+    "description": "Button: asks before discarding the unsaved changes."
+  },
+  "importPageIntroDrop": "Choose the day's VBO and RCZ recordings or a folder, or drop them here.",
+  "@importPageIntroDrop": {
+    "description": "Explains the import page on desktops."
+  },
+  "importPageIntroFolder": "Choose the day's VBO and RCZ recordings or a folder.",
+  "@importPageIntroFolder": {
+    "description": "Explains the import page when folders can be picked."
+  },
+  "importPageIntro": "Choose the day's VBO and RCZ recordings.",
+  "@importPageIntro": {
+    "description": "Explains the import page on phones."
+  },
+  "importPageChooseRecordings": "Choose recordings…",
+  "@importPageChooseRecordings": {
+    "description": "Button: pick recordings to import."
+  },
+  "importPageChooseFolder": "Choose a folder…",
+  "@importPageChooseFolder": {
+    "description": "Button: pick a folder to import."
+  },
+  "importPageOpening": "Opening…",
+  "@importPageOpening": {
+    "description": "A saved day is being opened."
+  },
+  "importPageOpenSaved": "Open a saved day…",
+  "@importPageOpenSaved": {
+    "description": "Button: open a saved day."
+  },
+  "importPageIncludeSubfolders": "Include subfolders",
+  "@importPageIncludeSubfolders": {
+    "description": "Checkbox: also import a folder's subfolders."
+  },
+  "importPageNotes": "Import notes",
+  "@importPageNotes": {
+    "description": "Heading of what was skipped or failed."
+  },
+  "importPageLooking": "Looking for recordings…",
+  "@importPageLooking": {
+    "description": "The import is looking for recordings."
+  },
+  "importPagePreparing": "Preparing recording {number} of {total}…",
+  "@importPagePreparing": {
+    "description": "Import progress.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageCancelled": "Import cancelled. Nothing was imported.",
+  "@importPageCancelled": {
+    "description": "The import was cancelled."
+  },
+  "importPageSessionsImported": "{count, plural, =1{1 session imported} other{{count} sessions imported}}",
+  "@importPageSessionsImported": {
+    "description": "Heading of a finished import.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageShowResults": "Show the day's results",
+  "@importPageShowResults": {
+    "description": "Button: open the imported day."
+  },
+  "importPageRecordingTypes": "VBO and RCZ recordings",
+  "@importPageRecordingTypes": {
+    "description": "The file type shown in the file picker when choosing recordings."
+  },
+  "importPageImportThisFolder": "Import this folder",
+  "@importPageImportThisFolder": {
+    "description": "The folder picker's confirm button."
+  },
+  "importPageChooseFile": "Choose a VBO or RaceChrono RCZ telemetry file.",
+  "@importPageChooseFile": {
+    "description": "A picked file is not a recording the app reads."
+  },
+  "importPageNotRegularFile": "Telemetry source is not an existing regular file.",
+  "@importPageNotRegularFile": {
+    "description": "A picked recording is missing or is not a regular file."
+  },
+  "importPageTooManyFiles": "Too many files in one import; select a smaller batch.",
+  "@importPageTooManyFiles": {
+    "description": "An import was refused because it had too many files."
+  },
+  "importPagePathTooLong": "Telemetry source path is too long.",
+  "@importPagePathTooLong": {
+    "description": "A recording path is longer than the app accepts."
+  },
+  "importPageFileSize": "Telemetry file is empty or exceeds the per-file import limit.",
+  "@importPageFileSize": {
+    "description": "A recording is empty or too large."
+  },
+  "importPageBatchBytes": "Batch input-byte limit exceeded; import fewer recordings.",
+  "@importPageBatchBytes": {
+    "description": "The files of one import are too large together."
+  },
+  "importPageIdenticalContent": "Identical file content already present in this batch.",
+  "@importPageIdenticalContent": {
+    "description": "A recording is a copy of another file of the same import."
+  },
+  "importPageSourceChanged": "Telemetry source changed during import; retry with a stable file.",
+  "@importPageSourceChanged": {
+    "description": "A recording changed while it was being read."
+  },
+  "importPageInvalidTimeRange": "Telemetry source has an invalid time range.",
+  "@importPageInvalidTimeRange": {
+    "description": "A recording whose times are not valid."
+  },
+  "importPageMismatchedChannels": "Telemetry source has mismatched channel timestamps and values.",
+  "@importPageMismatchedChannels": {
+    "description": "A recording whose channel times and values do not match."
+  },
+  "importPageBatchSamples": "Batch decoded-sample limit exceeded; import fewer recordings.",
+  "@importPageBatchSamples": {
+    "description": "The recordings of one import hold too many samples together."
+  },
+  "importPageGroupingLimit": "Source grouping exceeds the import limit.",
+  "@importPageGroupingLimit": {
+    "description": "The recordings of one import could not be grouped within the limit."
+  },
   "segmentReviewOpen": "Review proposals",
   "@segmentReviewOpen": {
     "description": "Button in the segment editor that opens the optional review of the automatic segment proposals."

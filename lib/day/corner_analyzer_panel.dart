@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import '../units.dart';
 import 'comparison_page.dart';
 import 'corner_details.dart' show cornerReasonText, lapAColor, lapBColor;
 import 'day_results_controller.dart';
 import 'telemetry_chart.dart' show ChartWindow;
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
 
 /// The Corner Analyzer under a comparison's charts (registered in
@@ -42,14 +44,57 @@ double segmentLengthMeters(ComparisonSegment segment, double axisLength) {
 
 /// The segment picker's label: "Corner 1 · 170 m". The type is added only
 /// when the name does not already say it ("S1 · sector · 300 m").
-String segmentPickerLabel(ComparisonSegment segment, double axisLength) {
+String segmentPickerLabel(
+  AppLocalizations l10n,
+  ComparisonSegment segment,
+  double axisLength,
+) {
   final type = segment.type.trim();
   final length = '${segmentLengthMeters(segment, axisLength).round()} m';
-  final name = segment.name.trim();
-  if (type.isEmpty || name.toLowerCase().contains(type.toLowerCase())) {
+  final name = l10n.tbSegmentName(segment.name.trim());
+  if (type.isEmpty ||
+      segment.name.trim().toLowerCase().contains(type.toLowerCase())) {
     return '$name · $length';
   }
-  return '$name · $type · $length';
+  final typeText = switch (type) {
+    'corner' => l10n.cornerAnalyzerTypeCorner,
+    'straight' => l10n.cornerAnalyzerTypeStraight,
+    'sector' => l10n.cornerAnalyzerTypeSector,
+    _ => type,
+  };
+  return '$name · $typeText · $length';
+}
+
+// The analyzer's note on whose segments are used
+// (`DayCornerAnalyzer.note`) in the app's language; a note the app does
+// not know is shown as written.
+final _proposedNote = RegExp(
+  r'^Segments proposed from (.+), as used by the sector theoretical best; '
+  r'saving the day approves them\. Boundaries are distances along that '
+  r"lap's axis, so they can shift by a few metres on these laps\.$",
+);
+final _approvedNote = RegExp(
+  r'^Segments approved on (.+), as used by the sector theoretical best\. '
+  r"Boundaries are distances along that run's axis, so they can shift by a "
+  r'few metres on these laps\.$',
+);
+
+/// [note] of the Corner Analyzer in the app's language; [rows] name the
+/// lap a proposal came from.
+String cornerAnalyzerNoteText(
+  AppLocalizations l10n,
+  String note,
+  Iterable<DayLapRow> rows,
+) {
+  if (_proposedNote.firstMatch(note) case final match?) {
+    final name = match.group(1)!;
+    final row = rows.where((row) => row.displayName == name).firstOrNull;
+    return l10n.cornerAnalyzerNoteProposed(row == null ? name : l10n.lap(row));
+  }
+  if (_approvedNote.firstMatch(note) case final match?) {
+    return l10n.cornerAnalyzerNoteApproved(l10n.session(match.group(1)!));
+  }
+  return note;
 }
 
 String _unit(String unit) => unit.trim().isEmpty ? '' : ' ${unit.trim()}';
@@ -67,10 +112,10 @@ bool _rounded(double value, int digits) =>
 /// time's Δ and, when one lap also carries more speed, the largest speed
 /// difference in its favour: "A is 0.015 s faster here and carries 5.7 km/h
 /// more entry speed." Null without a sector time on both laps.
-String? cornerAnalyzerSummary(SegmentAnalysis analysis) {
+String? cornerAnalyzerSummary(AppLocalizations l10n, SegmentAnalysis analysis) {
   final delta = analysis.sectorTime?.delta.value;
   if (delta == null || !delta.isFinite) return null;
-  if (_rounded(delta, 3)) return 'A and B take the same time here.';
+  if (_rounded(delta, 3)) return l10n.cornerAnalyzerSummarySame;
   final faster = delta < 0 ? 'A' : 'B';
   final time = '${delta.abs().toStringAsFixed(3)} s';
   final corner = analysis.corner;
@@ -97,9 +142,14 @@ String? cornerAnalyzerSummary(SegmentAnalysis analysis) {
       reason = name;
     }
   }
-  if (reason == null) return '$faster is $time faster here.';
-  return '$faster is $time faster here and carries '
-      '${largest.toStringAsFixed(1)}${_unit(unit)} more $reason.';
+  if (reason == null) return l10n.cornerAnalyzerSummaryFaster(faster, time);
+  final more = '${largest.toStringAsFixed(1)}${_unit(unit)}';
+  return switch (reason) {
+    'entry speed' => l10n.cornerAnalyzerSummaryEntry(faster, time, more),
+    'minimum speed' => l10n.cornerAnalyzerSummaryMinimum(faster, time, more),
+    'lowest speed' => l10n.cornerAnalyzerSummaryLowest(faster, time, more),
+    _ => l10n.cornerAnalyzerSummaryExit(faster, time, more),
+  };
 }
 
 class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
@@ -175,6 +225,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
 
   Widget _content(BuildContext context, DayCornerAnalyzer view) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final analyzer = view.analyzer;
     final segments = analyzer.segments;
     final length = analyzer.axisLengthMeters;
@@ -200,12 +251,16 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Corner Analyzer', style: theme.textTheme.titleMedium),
+            Text(l10n.cornerAnalyzerTitle, style: theme.textTheme.titleMedium),
             if (view.note.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  view.note,
+                  cornerAnalyzerNoteText(
+                    l10n,
+                    view.note,
+                    _panel.controller.analysis.rows,
+                  ),
                   key: const ValueKey('cornerAnalyzerNote'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.tertiary,
@@ -214,11 +269,9 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
               ),
             if (segments.isEmpty) ...[
               const SizedBox(height: 4),
-              const Text(
-                'No matching approved segments for these two laps. Approve '
-                'the same track segmentation on both to use the Corner '
-                'Analyzer.',
-                key: ValueKey('cornerAnalyzerEmpty'),
+              Text(
+                l10n.cornerAnalyzerEmpty,
+                key: const ValueKey('cornerAnalyzerEmpty'),
               ),
               if (view.theoreticalBestAvailable &&
                   _panel.useTheoreticalBest != null)
@@ -227,7 +280,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
                   child: OutlinedButton(
                     key: const ValueKey('cornerAnalyzerUseTheoreticalBest'),
                     onPressed: _panel.useTheoreticalBest,
-                    child: const Text('Use the theoretical best’s segments'),
+                    child: Text(l10n.cornerAnalyzerUseTheoreticalBest),
                   ),
                 ),
             ] else if (selected != null) ...[
@@ -236,7 +289,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
                 children: [
                   IconButton(
                     key: const ValueKey('cornerAnalyzerPrevious'),
-                    tooltip: 'Previous segment',
+                    tooltip: l10n.cornerAnalyzerPrevious,
                     icon: const Icon(Icons.chevron_left),
                     onPressed: index > 0
                         ? () => _select(segments[index - 1])
@@ -252,7 +305,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
                           DropdownMenuItem(
                             value: segment.id,
                             child: Text(
-                              segmentPickerLabel(segment, length),
+                              segmentPickerLabel(l10n, segment, length),
                               key: ValueKey(
                                 'cornerAnalyzerSegment ${segment.name}',
                               ),
@@ -268,7 +321,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
                   ),
                   IconButton(
                     key: const ValueKey('cornerAnalyzerNext'),
-                    tooltip: 'Next segment',
+                    tooltip: l10n.cornerAnalyzerNext,
                     icon: const Icon(Icons.chevron_right),
                     onPressed: index + 1 < segments.length
                         ? () => _select(segments[index + 1])
@@ -290,11 +343,14 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
     ComparisonSegment segment,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final analysis = analyzer.analyze(segment.id);
     final heartRate = segment.endMeters == segment.startMeters
         ? null
         : analyzer.heartRate(segment.startMeters, segment.endMeters);
-    final summary = analysis == null ? null : cornerAnalyzerSummary(analysis);
+    final summary = analysis == null
+        ? null
+        : cornerAnalyzerSummary(l10n, analysis);
     final small = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
@@ -314,36 +370,36 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
           comparison: _panel.comparison,
           analysis: analysis,
           window: _panel.window,
-          lapNames: [_panel.a.displayName, _panel.b.displayName],
+          lapNames: [l10n.lap(_panel.a), l10n.lap(_panel.b)],
         )
       else if (analysis != null)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Text(
-            'No speed chart: this segment crosses the start/finish line.',
+            l10n.cornerAnalyzerNoChart,
             key: const ValueKey('cornerAnalyzerNoChart'),
             style: small,
           ),
         ),
       const SizedBox(height: 8),
       if (analysis == null)
-        const Text('No figures for this segment.')
+        Text(l10n.cornerAnalyzerNoFigures)
       else
         AnalyzerTable(analysis: analysis, heartRate: heartRate),
       const SizedBox(height: 6),
       if (heartRate != null && heartRate.laps.any((lap) => lap.valid))
         Text(
-          'Heart rate: mean over this segment · A '
-          '${_coverage(heartRate.laps[0])} · B ${_coverage(heartRate.laps[1])}. '
-          'Observed values only.',
+          l10n.cornerAnalyzerHeartRateNote(
+            _coverage(l10n, heartRate.laps[0]),
+            _coverage(l10n, heartRate.laps[1]),
+          ),
           key: const ValueKey('cornerAnalyzerHeartRateNote'),
           style: small,
         ),
       Text(
-        'Δ is A − B, coloured by the lap that is faster or carries more '
-        'speed. '
-        '${analysis?.braking != null || analysis?.exitEffects != null ? 'Braking and pickup are distances from the corner entry; braking later or picking up earlier is not automatically faster. ' : ''}'
-        'Observed differences, not instructions.',
+        analysis?.braking != null || analysis?.exitEffects != null
+            ? l10n.cornerAnalyzerExplanationWithBraking
+            : l10n.cornerAnalyzerExplanation,
         style: small,
       ),
       const SizedBox(height: 4),
@@ -355,7 +411,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
             OutlinedButton.icon(
               key: const ValueKey('cornerAnalyzerZoom'),
               icon: const Icon(Icons.center_focus_strong_outlined),
-              label: const Text('Zoom to segment'),
+              label: Text(l10n.cornerAnalyzerZoom),
               onPressed: () => _show(segment),
             ),
           for (final slot in const [0, 1])
@@ -365,7 +421,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
                 foregroundColor: slot == 0 ? lapAColor : lapBColor,
               ),
               icon: const Icon(Icons.open_in_new),
-              label: Text('Lap ${slot == 0 ? 'A' : 'B'} here'),
+              label: Text(l10n.cornerAnalyzerOpenLap(slot == 0 ? 'A' : 'B')),
               onPressed: () => _panel.openLap(slot, segment.startMeters),
             ),
         ],
@@ -374,15 +430,17 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
   }
 }
 
-String _coverage(HeartRateLap lap) {
+String _coverage(AppLocalizations l10n, HeartRateLap lap) {
   final summary = lap.summary;
   if (!lap.valid) {
     return summary.unavailableReason == channelSummaryMissing
-        ? 'not recorded'
-        : 'no valid samples';
+        ? l10n.cornerDetailsReasonNotRecorded
+        : l10n.cornerDetailsReasonNoValidSamples;
   }
-  return '${summary.sampleCount} samples, '
-      '${(summary.coverage * 100).round()}% covered';
+  return l10n.cornerAnalyzerCoverage(
+    summary.sampleCount,
+    (summary.coverage * 100).round(),
+  );
 }
 
 /// How a row's Δ reads: who is faster, who carries more, or which way a
@@ -403,7 +461,8 @@ typedef _Row = ({
   (String, String) words,
 });
 
-typedef _Group = (String, List<_Row>);
+/// A group's English name (its rows' keys), its name shown and its rows.
+typedef _Group = (String, String, List<_Row>);
 
 double _same(double value) => value;
 
@@ -418,6 +477,7 @@ class AnalyzerTable extends StatelessWidget {
   final ComparisonHeartRate? heartRate;
 
   List<_Group> _groups(BuildContext context) {
+    final l10n = context.l10n;
     final segment = analysis.segment;
     final corner = analysis.corner;
     final speedUnit = _unit(
@@ -436,23 +496,26 @@ class AnalyzerTable extends StatelessWidget {
       delta: speedDelta,
       shownDelta: _same,
       compare: _Compare.speed,
-      words: ('A higher', 'B higher'),
+      words: (l10n.cornerAnalyzerAHigher, l10n.cornerAnalyzerBHigher),
     );
 
     final groups = <_Group>[];
     if (analysis.sectorTime case final metric?) {
       groups.add((
         'Time',
+        l10n.cornerAnalyzerGroupTime,
         [
           (
             id: 'sectorTime',
-            label: segment.corner ? 'Time through the corner' : 'Sector time',
+            label: segment.corner
+                ? l10n.cornerAnalyzerTimeThroughCorner
+                : l10n.cornerAnalyzerSectorTime,
             metric: metric,
             value: displayTime,
             delta: displayDelta,
             shownDelta: _same,
             compare: _Compare.time,
-            words: ('B faster', 'A faster'),
+            words: (l10n.cornerAnalyzerBFaster, l10n.cornerAnalyzerAFaster),
           ),
         ],
       ));
@@ -483,36 +546,40 @@ class AnalyzerTable extends StatelessWidget {
 
       groups.add((
         'Braking',
+        l10n.cornerAnalyzerGroupBraking,
         [
           (
             id: 'brakingPoint',
-            label: 'Braking starts, before entry',
+            label: l10n.cornerAnalyzerBrakingPoint,
             metric: beforeEntry(braking.point),
             value: meters,
             delta: metersDelta,
             shownDelta: (d) => -d,
             compare: _Compare.position,
-            words: ('A brakes earlier', 'A brakes later'),
+            words: (
+              l10n.cornerAnalyzerABrakesEarlier,
+              l10n.cornerAnalyzerABrakesLater,
+            ),
           ),
           (
             id: 'brakingTime',
-            label: 'Time on the brakes',
+            label: l10n.cornerAnalyzerBrakingTime,
             metric: braking.seconds,
             value: (v) => '${v.toStringAsFixed(2)} s',
             delta: (d) => _signed(d, 2, ' s'),
             shownDelta: _same,
             compare: _Compare.amount,
-            words: ('A longer', 'A shorter'),
+            words: (l10n.cornerAnalyzerALonger, l10n.cornerAnalyzerAShorter),
           ),
           (
             id: 'peakDeceleration',
-            label: 'Peak deceleration',
+            label: l10n.cornerAnalyzerPeakDeceleration,
             metric: braking.peakDeceleration,
             value: (v) => '${v.toStringAsFixed(2)}$decelerationUnit',
             delta: (d) => _signed(d, 2, decelerationUnit),
             shownDelta: _same,
             compare: _Compare.amount,
-            words: ('A harder', 'A softer'),
+            words: (l10n.cornerAnalyzerAHarder, l10n.cornerAnalyzerASofter),
           ),
         ],
       ));
@@ -521,21 +588,41 @@ class AnalyzerTable extends StatelessWidget {
     if (corner != null) {
       groups.add((
         'Corner',
+        l10n.cornerAnalyzerGroupCorner,
         [
-          speedRow('entry', 'Entry speed', corner.entry),
-          speedRow('apex', 'Apex speed', corner.apex),
-          speedRow('minimum', 'Minimum speed', corner.minimum),
+          speedRow('entry', l10n.cornerAnalyzerEntrySpeed, corner.entry),
+          speedRow('apex', l10n.cornerAnalyzerApexSpeed, corner.apex),
+          speedRow('minimum', l10n.cornerAnalyzerMinimumSpeed, corner.minimum),
         ],
       ));
     } else {
       groups.add((
         segment.corner ? 'Corner' : 'Speed',
+        segment.corner
+            ? l10n.cornerAnalyzerGroupCorner
+            : l10n.cornerAnalyzerGroupSpeed,
         [
-          speedRow('entry', 'Entry speed', analysis.speeds.entry),
-          speedRow('maximum', 'Top speed', analysis.speeds.maximum),
-          speedRow('minimum', 'Lowest speed', analysis.speeds.minimum),
+          speedRow(
+            'entry',
+            l10n.cornerAnalyzerEntrySpeed,
+            analysis.speeds.entry,
+          ),
+          speedRow(
+            'maximum',
+            l10n.cornerAnalyzerTopSpeed,
+            analysis.speeds.maximum,
+          ),
+          speedRow(
+            'minimum',
+            l10n.cornerAnalyzerLowestSpeed,
+            analysis.speeds.minimum,
+          ),
           if (!segment.corner)
-            speedRow('exit', 'Exit speed', analysis.speeds.exit),
+            speedRow(
+              'exit',
+              l10n.cornerAnalyzerExitSpeed,
+              analysis.speeds.exit,
+            ),
         ],
       ));
     }
@@ -559,18 +646,23 @@ class AnalyzerTable extends StatelessWidget {
 
       groups.add((
         'Exit',
+        l10n.cornerAnalyzerGroupExit,
         [
-          speedRow('exit', 'Exit speed', corner?.exit ?? analysis.speeds.exit),
+          speedRow(
+            'exit',
+            l10n.cornerAnalyzerExitSpeed,
+            corner?.exit ?? analysis.speeds.exit,
+          ),
           if (exit != null)
             (
               id: 'pickup',
-              label: 'Throttle pickup, after entry',
+              label: l10n.cornerAnalyzerPickup,
               metric: afterEntry(exit.pickup),
               value: meters,
               delta: metersDelta,
               shownDelta: _same,
               compare: _Compare.position,
-              words: ('A later', 'A earlier'),
+              words: (l10n.cornerAnalyzerALater, l10n.cornerAnalyzerAEarlier),
             ),
         ],
       ));
@@ -581,6 +673,7 @@ class AnalyzerTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final numbers = theme.textTheme.bodyMedium?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -631,7 +724,9 @@ class AnalyzerTable extends StatelessWidget {
       return cell(
         key,
         show(value),
-        note: side.provenance == metricInferred ? 'inferred' : '',
+        note: side.provenance == metricInferred
+            ? l10n.cornerAnalyzerInferred
+            : '',
       );
     }
 
@@ -642,7 +737,9 @@ class AnalyzerTable extends StatelessWidget {
       final text = row.delta(shown);
       final level = text.startsWith('±');
       final (positive, negative) = row.words;
-      final words = level ? 'same' : (shown > 0 ? positive : negative);
+      final words = level
+          ? l10n.cornerAnalyzerSame
+          : (shown > 0 ? positive : negative);
       Color? color;
       if (!level) {
         // Time: a negative Δ is A faster. Speed: a positive Δ is A higher.
@@ -665,17 +762,19 @@ class AnalyzerTable extends StatelessWidget {
     String why(_Row row) {
       final metric = row.metric;
       String? reason(AnalyzerValue value) => value.value == null
-          ? _sentence(cornerReasonText(value.unavailableReason))
+          ? _sentence(cornerReasonText(l10n, value.unavailableReason))
           : null;
       final a = reason(metric.a), b = reason(metric.b);
       if (a != null && b != null) {
-        return a == b ? '$a (both laps)' : 'A: $a · B: $b';
+        return a == b ? l10n.cornerAnalyzerBothLaps(a) : 'A: $a · B: $b';
       }
       if (a != null) return 'A: $a';
       if (b != null) return 'B: $b';
       if (metric.delta.value == null &&
           metric.delta.unavailableReason.isNotEmpty) {
-        return 'Not compared: ${cornerReasonText(metric.delta.unavailableReason)}';
+        return l10n.cornerAnalyzerNotCompared(
+          cornerReasonText(l10n, metric.delta.unavailableReason),
+        );
       }
       return '';
     }
@@ -723,7 +822,7 @@ class AnalyzerTable extends StatelessWidget {
     final decelerationUnitMissing = (analysis.brakingMetrics ?? const []).every(
       (lap) => lap.decelerationUnit.trim().isEmpty,
     );
-    TableRow group(String name) => TableRow(
+    TableRow group(String name, String text) => TableRow(
       key: ValueKey('cornerAnalyzerGroupRow $name'),
       decoration: divider,
       children: [
@@ -733,7 +832,7 @@ class AnalyzerTable extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name.toUpperCase(),
+                text.toUpperCase(),
                 key: ValueKey('cornerAnalyzerGroup $name'),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -754,10 +853,14 @@ class AnalyzerTable extends StatelessWidget {
     String bpm(HeartRateLap lap) =>
         lap.valid ? '${lap.summary.mean!.toStringAsFixed(0)} bpm' : '—';
 
-    final missing = [
-      if (speedUnitMissing) 'speed',
-      if (decelerationUnitMissing && analysis.braking != null) 'deceleration',
-    ];
+    final decelerationMissing =
+        decelerationUnitMissing && analysis.braking != null;
+    final unitNote = switch ((speedUnitMissing, decelerationMissing)) {
+      (true, true) => l10n.cornerAnalyzerUnitNoteBoth,
+      (true, false) => l10n.cornerAnalyzerUnitNoteSpeed,
+      (false, true) => l10n.cornerAnalyzerUnitNoteDeceleration,
+      (false, false) => null,
+    };
     final table = Table(
       key: const ValueKey('cornerAnalyzerTable'),
       columnWidths: const {
@@ -776,8 +879,8 @@ class AnalyzerTable extends StatelessWidget {
             heading('Δ A − B', null),
           ],
         ),
-        for (final (name, rows) in groups) ...[
-          group(name),
+        for (final (name, text, rows) in groups) ...[
+          group(name, text),
           for (final row in rows)
             TableRow(
               key: ValueKey('cornerAnalyzerRow ${row.id}'),
@@ -790,11 +893,11 @@ class AnalyzerTable extends StatelessWidget {
             ),
         ],
         if (heartRateShown) ...[
-          group('Driver'),
+          group('Driver', l10n.cornerAnalyzerGroupDriver),
           TableRow(
             key: const ValueKey('cornerAnalyzerRow heartRate'),
             children: [
-              label('heartRate', 'Heart rate', ''),
+              label('heartRate', l10n.cornerAnalyzerHeartRate, ''),
               cell('heartRate A', bpm(laps[0])),
               cell('heartRate B', bpm(laps[1])),
               laps[0].valid && laps[1].valid
@@ -813,14 +916,12 @@ class AnalyzerTable extends StatelessWidget {
         ],
       ],
     );
-    if (missing.isEmpty) return table;
+    if (unitNote == null) return table;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'This recording does not declare its ${missing.join(' and ')} '
-          'unit${missing.length > 1 ? 's' : ''}: those values are shown as '
-          'recorded, without a unit.',
+          unitNote,
           key: const ValueKey('cornerAnalyzerUnitNote'),
           style: small,
         ),
@@ -905,6 +1006,7 @@ class SegmentSpeedChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final (start, end) = range;
     final series = [
       for (final slot in const [0, 1])
@@ -925,6 +1027,7 @@ class SegmentSpeedChart extends StatelessWidget {
         ? [apex.progressMeters]
         : analysis.phases!.apexCandidatesMeters;
     final corner = segment.corner;
+    final segmentName = l10n.tbSegmentName(segment.name);
     final small = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
@@ -949,8 +1052,8 @@ class SegmentSpeedChart extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
           series.every((series) => series.reason == chartReasonChannelMissing)
-              ? 'No speed recorded on either lap: no speed chart.'
-              : 'No speed samples on either lap through ${segment.name}.',
+              ? l10n.cornerAnalyzerChartNoSpeed
+              : l10n.cornerAnalyzerChartNoSamples(segmentName),
           key: const ValueKey('cornerAnalyzerChartEmpty'),
           style: small,
         ),
@@ -965,7 +1068,7 @@ class SegmentSpeedChart extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.end,
           children: [
             Text(
-              'Speed through ${segment.name}',
+              l10n.cornerAnalyzerChartTitle(segmentName),
               key: const ValueKey('cornerAnalyzerChartTitle'),
               style: theme.textTheme.titleSmall,
             ),
@@ -987,8 +1090,9 @@ class SegmentSpeedChart extends StatelessWidget {
                     style: small,
                     children: [
                       TextSpan(
-                        text:
-                            'Cursor ${offset < 0 ? '−' : ''}${offset.abs()} m: ',
+                        text: l10n.cornerAnalyzerCursor(
+                          '${offset < 0 ? '−' : ''}${offset.abs()}',
+                        ),
                       ),
                       TextSpan(
                         text: 'A ${at(0)}',
@@ -1009,7 +1113,7 @@ class SegmentSpeedChart extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Semantics(
-          label: 'Speed through ${segment.name} chart',
+          label: l10n.cornerAnalyzerChartLabel(segmentName),
           child: SizedBox(
             height: height,
             child: LayoutBuilder(
@@ -1041,8 +1145,10 @@ class SegmentSpeedChart extends StatelessWidget {
                       ],
                       apexes: apexes,
                       boundaryNames: corner
-                          ? const ('Entry', 'Exit')
-                          : const ('Start', 'End'),
+                          ? (l10n.cornerAnalyzerEntry, l10n.cornerAnalyzerExit)
+                          : (l10n.cornerAnalyzerStart, l10n.cornerAnalyzerEnd),
+                      speedLabel: l10n.cornerAnalyzerSpeedAxis,
+                      apexLabel: l10n.cornerAnalyzerApex,
                       unit: unit,
                       cursor: cursor,
                       cursorColor: theme.colorScheme.tertiary,
@@ -1069,9 +1175,14 @@ class SegmentSpeedChart extends StatelessWidget {
             top: 2,
           ),
           child: Text(
-            'Distance from the ${corner ? 'corner' : 'segment'} entry (m) · '
-            'shaded: the ${corner ? 'corner' : 'segment'}'
-            '${unit.isEmpty ? ' · speed unit not declared in the recording' : ''}',
+            switch (corner
+                ? l10n.cornerAnalyzerAxisCorner
+                : l10n.cornerAnalyzerAxisSegment) {
+              final axis when unit.isEmpty => l10n.cornerAnalyzerAxisNoUnit(
+                axis,
+              ),
+              final axis => axis,
+            },
             key: const ValueKey('cornerAnalyzerChartAxis'),
             style: small,
           ),
@@ -1204,6 +1315,8 @@ class SegmentSpeedPainter extends CustomPainter {
     required this.ink,
     required this.surface,
     required this.textStyle,
+    this.speedLabel = 'speed',
+    this.apexLabel = 'Apex',
   });
 
   static const leftGutter = 44.0;
@@ -1234,6 +1347,12 @@ class SegmentSpeedPainter extends CustomPainter {
   final Color ink;
   final Color surface;
   final TextStyle textStyle;
+
+  /// The speed axis's name when the recording declares no unit.
+  final String speedLabel;
+
+  /// The apex line's name.
+  final String apexLabel;
 
   /// Lap [slot]'s speed at [meters], read from its line; null in a gap or
   /// outside the drawn range.
@@ -1315,7 +1434,7 @@ class SegmentSpeedPainter extends CustomPainter {
     }
     {
       final label = _text(
-        unit.isEmpty ? 'speed' : unit,
+        unit.isEmpty ? speedLabel : unit,
         weight: FontWeight.w600,
       );
       label.paint(canvas, Offset(math.max(0, plot.left - 6 - label.width), 2));
@@ -1382,7 +1501,7 @@ class SegmentSpeedPainter extends CustomPainter {
           apexPaint,
         );
       }
-      final label = _text('Apex', color: ink);
+      final label = _text(apexLabel, color: ink);
       final rect = Offset(at - label.width / 2, plot.top + 1) & label.size;
       if (rect.left > apexLabelRight + 4) {
         label.paint(canvas, rect.topLeft);
@@ -1503,7 +1622,9 @@ class SegmentSpeedPainter extends CustomPainter {
       !identical(old.series, series) ||
       old.grid != grid ||
       old.ink != ink ||
-      old.surface != surface;
+      old.surface != surface ||
+      old.speedLabel != speedLabel ||
+      old.apexLabel != apexLabel;
 }
 
 /// The chart's key: both laps' lines with their names and every marker.
@@ -1524,6 +1645,7 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     Widget item(String key, Widget symbol, String text) => Row(
       key: ValueKey('cornerAnalyzerLegend $key'),
       mainAxisSize: MainAxisSize.min,
@@ -1559,11 +1681,23 @@ class _Legend extends StatelessWidget {
         item('A', line(lapAColor), name(0)),
         item('B', line(lapBColor), name(1)),
         if (kinds.contains(SpeedMarkerKind.braking))
-          item('braking', marker(SpeedMarkerKind.braking), 'Braking starts'),
+          item(
+            'braking',
+            marker(SpeedMarkerKind.braking),
+            l10n.cornerAnalyzerLegendBraking,
+          ),
         if (kinds.contains(SpeedMarkerKind.pickup))
-          item('pickup', marker(SpeedMarkerKind.pickup), 'Throttle pickup'),
+          item(
+            'pickup',
+            marker(SpeedMarkerKind.pickup),
+            l10n.cornerAnalyzerLegendPickup,
+          ),
         if (kinds.contains(SpeedMarkerKind.minimum))
-          item('minimum', marker(SpeedMarkerKind.minimum), 'Lowest speed'),
+          item(
+            'minimum',
+            marker(SpeedMarkerKind.minimum),
+            l10n.cornerAnalyzerLegendMinimum,
+          ),
         if (apex)
           item(
             'apex',
@@ -1581,7 +1715,7 @@ class _Legend extends StatelessWidget {
                 }
               }),
             ),
-            'Apex',
+            l10n.cornerAnalyzerApex,
           ),
       ],
     );

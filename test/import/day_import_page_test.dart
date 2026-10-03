@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/recovery_store.dart';
@@ -537,6 +538,15 @@ void main() {
     }
   });
 
+  testWidgets('the pickers follow the device language', (tester) async {
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    tester.platformDispatcher.localesTestValue = const [Locale('pl', 'PL')];
+    expect(deviceL10n().importPageRecordingTypes, 'Nagrania VBO i RCZ');
+    tester.platformDispatcher.localesTestValue = const [Locale('de')];
+    expect(deviceL10n().importPageRecordingTypes, 'VBO and RCZ recordings');
+    expect(recordingTypeGroup(TargetPlatform.macOS, label: 'X').label, 'X');
+  });
+
   test('Android picks with the host picker, keeping file names', () async {
     // file_selector would hand back "session.bin" for a picked "session.vbo".
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -607,6 +617,42 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Cancel'), findsNothing);
+  });
+
+  testWidgets('the import page speaks Polish', (tester) async {
+    final laps = write('laps.vbo', _lapsVbo);
+    final copy = write('copy.vbo', _lapsVbo);
+    final other = write('notes.txt', 'not a recording');
+    pickers.recordings = [laps, copy, other];
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayImportPage(controller: controller, pickers: pickers),
+      ),
+    );
+    expect(find.text('Importuj dzień'), findsOneWidget);
+    expect(find.text('Import a day'), findsNothing);
+    expect(find.text('Wybierz nagrania…'), findsOneWidget);
+
+    await tester.tap(find.text('Wybierz nagrania…'));
+    await tester.pump();
+    expect(find.text('Szukam nagrań…'), findsOneWidget);
+    importer.jobs.single.finish();
+    await tester.pump();
+    expect(find.text('Zaimportowano 1 sesję'), findsOneWidget);
+    expect(find.text('Sesja 1'), findsOneWidget);
+    expect(find.text('3 okrążenia · najlepsze 4.000 s'), findsOneWidget);
+    expect(find.text('Uwagi do importu'), findsOneWidget);
+    expect(
+      find.text('copy.vbo: ta sama zawartość co laps.vbo; zaimportowano raz.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'notes.txt: to nie jest nagranie VBO ani RCZ; nie zaimportowano.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a session shows its laps and best lap', (tester) async {

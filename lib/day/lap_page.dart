@@ -159,19 +159,17 @@ class _LapPageState extends State<LapPage> {
   List<Widget> _charts(BuildContext context) {
     final session = _session;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     if (session == null || !(widget.row.end > widget.row.start)) {
       return const [];
     }
     return [
       const SizedBox(height: 16),
-      Text('Channels', style: theme.textTheme.titleMedium),
+      Text(l10n.lapPageChannels, style: theme.textTheme.titleMedium),
       Text(
         isTouchPlatform(context)
-            ? 'Tap a chart or drag sideways across it to move the cursor; the '
-                  'white dot shows it on the map. Two fingers zoom and move '
-                  'the map.'
-            : 'Drag across a chart to move the cursor; the white dot shows it '
-                  'on the map.',
+            ? l10n.lapPageCursorHintTouch
+            : l10n.lapPageCursorHint,
         style: theme.textTheme.bodySmall,
       ),
       ChartWindowControls(window: _window, axisText: _axisText),
@@ -211,7 +209,7 @@ class _LapPageState extends State<LapPage> {
         ),
       ),
       if (_channels.isEmpty)
-        Text('No channel shown.', style: theme.textTheme.bodySmall),
+        Text(l10n.lapPageNoChannel, style: theme.textTheme.bodySmall),
       AddChannelButton(
         channels: _chartable,
         shown: _channels,
@@ -273,8 +271,9 @@ class _LapPageState extends State<LapPage> {
   Widget build(BuildContext context) {
     final row = widget.row;
     final controller = widget.controller;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(row.displayName)),
+      appBar: AppBar(title: Text(l10n.lap(row))),
       body: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
@@ -293,21 +292,23 @@ class _LapPageState extends State<LapPage> {
             ),
             const SizedBox(height: 4),
             if (controller.isBestOfDay(row))
-              const Text('Best lap of the day')
+              Text(l10n.lapPageBestOfDay)
             else if (best != null && row.type == LapSectionType.lap)
               Text(
-                '${displayDelta(row.durationSeconds - best.durationSeconds)} '
-                'to the best of the day (${best.displayName})',
+                l10n.lapPageToBestOfDay(
+                  displayDelta(row.durationSeconds - best.durationSeconds),
+                  l10n.lap(best),
+                ),
               ),
             if (controller.isBestOfRun(row) && !controller.isBestOfDay(row))
-              Text('Best lap of ${row.runName}'),
+              Text(l10n.lapPageBestOfSession(l10n.session(row.runName))),
             for (final issue in issues)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   issue == LapIssue.userExclusion && reason != null
-                      ? 'Not ranked: excluded (“$reason”)'
-                      : 'Not ranked: ${issue.label}',
+                      ? l10n.lapPageNotRankedExcluded(reason)
+                      : l10n.lapNotRanked(l10n.lapIssue(issue)),
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
@@ -321,27 +322,27 @@ class _LapPageState extends State<LapPage> {
                     OutlinedButton.icon(
                       onPressed: _exclude,
                       icon: const Icon(Icons.block),
-                      label: const Text('Exclude from ranking…'),
+                      label: Text(l10n.lapPageExclude),
                     )
                   else
                     OutlinedButton.icon(
                       onPressed: () => controller.include(row),
                       icon: const Icon(Icons.undo),
-                      label: const Text('Include in ranking'),
+                      label: Text(l10n.lapPageInclude),
                     ),
                   if (comparable)
                     OutlinedButton.icon(
                       key: const ValueKey('lapCompare'),
                       onPressed: _compare,
                       icon: const Icon(Icons.compare_arrows),
-                      label: const Text('Compare with…'),
+                      label: Text(l10n.lapPageCompareWith),
                     ),
                 ],
               ),
             ],
           ];
           final trace = _path.isEmpty
-              ? const Center(child: Text('No GPS recorded for this section.'))
+              ? Center(child: Text(l10n.lapPageNoGps))
               : Card(
                   clipBehavior: Clip.antiAlias,
                   child: TrackMap(
@@ -349,15 +350,14 @@ class _LapPageState extends State<LapPage> {
                     reference: bestPath,
                     gate: _gate,
                     movingMarks: _cursorMarks,
-                    semanticLabel:
-                        'Trace of ${row.displayName}, coloured by speed',
+                    semanticLabel: l10n.lapPageTraceLabel(l10n.lap(row)),
                   ),
                 );
           final legend = <Widget>[
             const SizedBox(height: 8),
             Row(
               children: [
-                Text('Speed', style: theme.textTheme.labelMedium),
+                Text(l10n.lapPageSpeed, style: theme.textTheme.labelMedium),
                 const SizedBox(width: 8),
                 Expanded(child: SpeedLegend(path: _path)),
               ],
@@ -367,7 +367,7 @@ class _LapPageState extends State<LapPage> {
                 contentPadding: EdgeInsets.zero,
                 value: _showBest,
                 onChanged: (value) => setState(() => _showBest = value),
-                title: Text('Show the best lap (${best.displayName}) in grey'),
+                title: Text(l10n.lapPageShowBest(l10n.lap(best))),
               ),
           ];
           final charts = [
@@ -445,27 +445,27 @@ class _ExcludeDialogState extends State<_ExcludeDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Exclude this lap'),
+    title: Text(context.l10n.lapPageExcludeTitle),
     content: TextField(
       controller: _reason,
       autofocus: true,
       maxLength: 256,
-      decoration: const InputDecoration(
-        labelText: 'Reason',
-        hintText: 'Traffic, yellow flag…',
+      decoration: InputDecoration(
+        labelText: context.l10n.lapPageReason,
+        hintText: context.l10n.lapPageReasonHint,
       ),
       onChanged: (_) => setState(() {}),
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         onPressed: _reason.text.trim().isEmpty
             ? null
             : () => Navigator.pop(context, _reason.text.trim()),
-        child: const Text('Exclude'),
+        child: Text(context.l10n.lapPageExcludeAction),
       ),
     ],
   );

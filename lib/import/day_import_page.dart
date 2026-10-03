@@ -39,16 +39,14 @@ abstract interface class RecordingPickers {
 /// carry a type declared by another app (RaceChrono), so iOS shows every
 /// file; the scan reports what is not a recording. Desktops filter by
 /// extension. Android does not use this, see [PlatformRecordingPickers].
-XTypeGroup recordingTypeGroup(TargetPlatform platform) =>
-    platform == TargetPlatform.iOS
-    ? const XTypeGroup(
-        label: 'VBO and RCZ recordings',
-        uniformTypeIdentifiers: ['public.data'],
-      )
-    : const XTypeGroup(
-        label: 'VBO and RCZ recordings',
-        extensions: ['vbo', 'rcz', 'VBO', 'RCZ'],
-      );
+///
+/// [label] is the filter's name in the picker.
+XTypeGroup recordingTypeGroup(
+  TargetPlatform platform, {
+  String label = 'VBO and RCZ recordings',
+}) => platform == TargetPlatform.iOS
+    ? XTypeGroup(label: label, uniformTypeIdentifiers: const ['public.data'])
+    : XTypeGroup(label: label, extensions: const ['vbo', 'rcz', 'VBO', 'RCZ']);
 
 /// Desktops accept dropped recordings and offer a folder picker. Phones and
 /// tablets pick recordings only: on iOS file_selector has no folder picker,
@@ -88,7 +86,12 @@ final class PlatformRecordingPickers implements RecordingPickers {
     }
     final paths = [
       for (final file in await openFiles(
-        acceptedTypeGroups: [recordingTypeGroup(defaultTargetPlatform)],
+        acceptedTypeGroups: [
+          recordingTypeGroup(
+            defaultTargetPlatform,
+            label: deviceL10n().importPageRecordingTypes,
+          ),
+        ],
       ))
         file.path,
     ];
@@ -99,33 +102,160 @@ final class PlatformRecordingPickers implements RecordingPickers {
   @override
   Future<String?> pickFolder() async {
     final folder = await getDirectoryPath(
-      confirmButtonText: 'Import this folder',
+      confirmButtonText: deviceL10n().importPageImportThisFolder,
     );
     if (folder != null) await const PlatformFileAccess().remember([folder]);
     return folder;
   }
 }
 
-String _lapSummary(LapSession laps) {
+String _lapSummary(AppLocalizations l10n, LapSession laps) {
   switch (laps.status) {
     case LapSessionStatus.available:
       final count = laps.timedLaps.length;
       final fastest = laps.fastestLapIndex;
-      final best = fastest == null
-          ? ''
-          : ' · best ${displayTime(laps.timedLaps[fastest].durationSeconds)}';
-      return '$count ${count == 1 ? 'lap' : 'laps'}$best';
+      return fastest == null
+          ? l10n.importPageLaps(count)
+          : l10n.importPageLapsWithBest(
+              count,
+              displayTime(laps.timedLaps[fastest].durationSeconds),
+            );
     case LapSessionStatus.noSourceStartGate:
-      return 'No laps: the recording has no start/finish line.';
+      return l10n.importPageNoGate;
     case LapSessionStatus.ambiguousSourceStartGate:
-      return 'No laps: the recording has more than one start/finish line.';
+      return l10n.importPageSeveralGates;
     case LapSessionStatus.invalidGate:
-      return 'No laps: the start/finish line is not valid.';
+      return l10n.importPageInvalidGate;
     case LapSessionStatus.noUsableGps:
-      return 'No laps: the recording has no usable GPS.';
+      return l10n.importPageNoGps;
     case LapSessionStatus.noAcceptedPasses:
     case LapSessionStatus.insufficientPasses:
-      return 'No complete laps: the start/finish line was not crossed often enough.';
+      return l10n.importPageTooFewPasses;
+  }
+}
+
+// What the import says (`DayImportFailed.message`, the notes of a scan and
+// a plan) as written in `import_runner.dart`, `day_import_controller.dart`
+// and `telemetry_core`'s folder scan.
+final _folderTooMany = RegExp(
+  r'^The folder holds (\d+) recordings; import at most (\d+) at a time\. '
+  r'Choose a smaller folder\.$',
+);
+final _tooMany = RegExp(
+  r'^That is (\d+) recordings; import at most (\d+) at a time\.$',
+);
+final _stoppedAfter = RegExp(
+  r'^Stopped after (\d+) files and folders; recordings beyond that were '
+  r'not scanned\.$',
+);
+final _tooDeep = RegExp(
+  r'^(\d+) folder\(s\) deeper than (\d+) levels were not scanned\.$',
+);
+final _links = RegExp(r'^(\d+) link\(s\) were not followed\.$');
+final _others = RegExp(
+  r'^(\d+) other file\(s\) were ignored; only VBO and RCZ recordings are '
+  r'imported\.$',
+);
+final _sameContent = RegExp(r'^same content as (.+); imported once\.$');
+// Not the note of adding to a day, "... as Session 2 in the other format;
+// kept as ...".
+final _sameDrive = RegExp(
+  r'^the same drive as ((?:(?! in the other format;).)+); kept as its '
+  r'alternative source\.$',
+);
+
+/// The import's errors and notes in the app's language.
+extension ImportMessageText on AppLocalizations {
+  /// An error or a note of an import, also one about a file or folder
+  /// ("a.vbo: not found; not imported."), in the app's language; one the
+  /// app does not know, such as a reading error, is shown as written.
+  String importMessage(String message) {
+    if (_importMessage(message) case final known?) return known;
+    // "name: text", the name being the part before the first ": " whose
+    // text is known.
+    for (
+      var at = message.indexOf(': ');
+      at >= 0;
+      at = message.indexOf(': ', at + 2)
+    ) {
+      if (_importMessage(message.substring(at + 2)) case final known?) {
+        return '${message.substring(0, at)}: $known';
+      }
+    }
+    return message;
+  }
+
+  String? _importMessage(String message) {
+    int number(Match match, int group) => int.parse(match.group(group)!);
+    const failed = 'The import failed: ';
+    if (message.startsWith(failed)) {
+      return importPageImportFailed(
+        importMessage(message.substring(failed.length)),
+      );
+    }
+    if (_folderTooMany.firstMatch(message) case final match?) {
+      return importPageFolderTooMany(number(match, 1), number(match, 2));
+    }
+    if (_tooMany.firstMatch(message) case final match?) {
+      return importPageTooMany(number(match, 1), number(match, 2));
+    }
+    if (_stoppedAfter.firstMatch(message) case final match?) {
+      return importPageStoppedAfter(number(match, 1));
+    }
+    if (_tooDeep.firstMatch(message) case final match?) {
+      return importPageTooDeep(number(match, 1), number(match, 2));
+    }
+    if (_links.firstMatch(message) case final match?) {
+      return importPageLinksSkipped(number(match, 1));
+    }
+    if (_others.firstMatch(message) case final match?) {
+      return importPageOtherFilesSkipped(number(match, 1));
+    }
+    if (_sameContent.firstMatch(message) case final match?) {
+      return importPageSameContent(match.group(1)!);
+    }
+    if (_sameDrive.firstMatch(message) case final match?) {
+      return importPageSameDrive(match.group(1)!);
+    }
+    return switch (message) {
+      'No recording could be imported.' => importPageNoRecording,
+      'Import failed.' => importPageFailed,
+      'Bad state: The import stopped unexpectedly.' =>
+        importPageStoppedUnexpectedly,
+      'The folder does not exist or is not a folder.' => importPageNoFolder,
+      'Choose the folder itself, not a link to it.' => importPageFolderLink,
+      'No VBO or RCZ recordings were found.' => importPageNoneFound,
+      'No VBO or RCZ recordings were found (subfolders were not included).' =>
+        importPageNoneFoundNoSubfolders,
+      'No VBO or RCZ recordings to import.' => importPageNothingToImport,
+      'not found; not imported.' => importPageFileNotFound,
+      'a macOS metadata file, not a recording; not imported.' =>
+        importPageMetadataFile,
+      'a link; not followed.' => importPageFileLink,
+      'not a VBO or RCZ recording; not imported.' => importPageNotRecording,
+      'Choose a VBO or RaceChrono RCZ telemetry file.' => importPageChooseFile,
+      'Telemetry source is not an existing regular file.' =>
+        importPageNotRegularFile,
+      'Too many files in one import; select a smaller batch.' =>
+        importPageTooManyFiles,
+      'Telemetry source path is too long.' => importPagePathTooLong,
+      'Telemetry file is empty or exceeds the per-file import limit.' =>
+        importPageFileSize,
+      'Batch input-byte limit exceeded; import fewer recordings.' =>
+        importPageBatchBytes,
+      'Identical file content already present in this batch.' =>
+        importPageIdenticalContent,
+      'Telemetry source changed during import; retry with a stable file.' =>
+        importPageSourceChanged,
+      'Telemetry source has an invalid time range.' =>
+        importPageInvalidTimeRange,
+      'Telemetry source has mismatched channel timestamps and values.' =>
+        importPageMismatchedChannels,
+      'Batch decoded-sample limit exceeded; import fewer recordings.' =>
+        importPageBatchSamples,
+      'Source grouping exceeds the import limit.' => importPageGroupingLimit,
+      _ => null,
+    };
   }
 }
 
@@ -341,7 +471,7 @@ class _DayImportPageState extends State<DayImportPage> {
     } on Exception catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('The day could not be restored: $error')),
+          SnackBar(content: Text(context.l10n.importPageNotRestored('$error'))),
         );
       }
     } finally {
@@ -353,18 +483,16 @@ class _DayImportPageState extends State<DayImportPage> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Discard the changes to ${recovery.name}?'),
-        content: const Text(
-          'The unsaved changes are lost. Recordings and saved days are not touched.',
-        ),
+        title: Text(context.l10n.importPageDiscardTitle(recovery.name)),
+        content: Text(context.l10n.importPageDiscardBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep'),
+            child: Text(context.l10n.importPageKeep),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
+            child: Text(context.l10n.importPageDiscard),
           ),
         ],
       ),
@@ -374,8 +502,11 @@ class _DayImportPageState extends State<DayImportPage> {
       await queueRecovery(widget.recovery.clear);
     } on Exception catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Not discarded: $error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.importPageNotDiscarded('$error')),
+          ),
+        );
       }
     }
     await _checkRecovery();
@@ -387,29 +518,26 @@ class _DayImportPageState extends State<DayImportPage> {
       await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('${day.name} could not be opened'),
+          title: Text(context.l10n.importPageCannotOpenTitle(day.name)),
           content: Text(
             [
-              'None of its recordings could be used:',
+              context.l10n.importPageNoneUsable,
               for (final recording in day.missing)
-                '${recording.name}: ${recording.path} · ${recording.reason}',
-              if (searchable) ...[
-                '',
-                'Choose the folder the recordings are in to use them, also '
-                    'when they have not moved.',
-              ],
+                '${context.l10n.session(recording.name)}: ${recording.path} · '
+                    '${context.l10n.missingReason(recording.reason)}',
+              if (searchable) ...['', context.l10n.importPageChooseFolderHint],
             ].join('\n'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Close'),
+              child: Text(context.l10n.close),
             ),
             if (searchable)
               TextButton(
                 key: const ValueKey('cannotOpenFindRecordings'),
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Find recordings in a folder…'),
+                child: Text(context.l10n.findRecordingsInFolder),
               ),
           ],
         ),
@@ -457,11 +585,7 @@ class _DayImportPageState extends State<DayImportPage> {
 
   void _tellImportingBehind() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Importing the shared recordings. Go back to Import a day to see them.',
-        ),
-      ),
+      SnackBar(content: Text(context.l10n.importPageImportingBehind)),
     );
   }
 
@@ -620,11 +744,7 @@ class _DayImportPageState extends State<DayImportPage> {
     if (paths.isEmpty) return;
     if (!_controller.start(paths, includeSubfolders: _includeSubfolders)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Finish the current import first. Nothing was imported.',
-          ),
-        ),
+        SnackBar(content: Text(context.l10n.importPageFinishFirst)),
       );
     }
   }
@@ -657,7 +777,7 @@ class _DayImportPageState extends State<DayImportPage> {
     final choice = await showDialog<String>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Open a saved day'),
+        title: Text(context.l10n.importPageOpenSavedTitle),
         children: [
           for (final path in saved)
             SimpleDialogOption(
@@ -666,7 +786,7 @@ class _DayImportPageState extends State<DayImportPage> {
             ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, other),
-            child: const Text('Another file…'),
+            child: Text(context.l10n.importPageAnotherFile),
           ),
         ],
       ),
@@ -681,9 +801,7 @@ class _DayImportPageState extends State<DayImportPage> {
     if (_opening || _shownDay != null) {
       // A shared recording opened a day while the choice was made.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Another day is being opened. Try again after it.'),
-        ),
+        SnackBar(content: Text(context.l10n.importPageAnotherOpening)),
       );
       return;
     }
@@ -730,7 +848,7 @@ class _DayImportPageState extends State<DayImportPage> {
     } on Exception catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('The day could not be opened: $error')),
+          SnackBar(content: Text(context.l10n.importPageNotOpened('$error'))),
         );
       }
     } finally {
@@ -772,7 +890,7 @@ class _DayImportPageState extends State<DayImportPage> {
     );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Import a day'),
+        title: Text(context.l10n.importPageTitle),
         actions: const [SettingsButton(), DiagnosticsMenu()],
       ),
       body: !_acceptsDrops
@@ -803,8 +921,10 @@ class _DayImportPageState extends State<DayImportPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${recovered.name} has unsaved changes from '
-                  '${_when(recovered.timestamp)}.',
+                  context.l10n.importPageUnsaved(
+                    recovered.name,
+                    _when(recovered.timestamp),
+                  ),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 8),
@@ -815,13 +935,13 @@ class _DayImportPageState extends State<DayImportPage> {
                       onPressed: enabled && !_opening
                           ? () => _restore(recovered)
                           : null,
-                      child: const Text('Restore'),
+                      child: Text(context.l10n.importPageRestore),
                     ),
                     TextButton(
                       onPressed: enabled && !_opening
                           ? () => _discard(recovered)
                           : null,
-                      child: const Text('Discard…'),
+                      child: Text(context.l10n.importPageDiscardEllipsis),
                     ),
                   ],
                 ),
@@ -833,10 +953,10 @@ class _DayImportPageState extends State<DayImportPage> {
       ],
       Text(
         _acceptsDrops
-            ? 'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.'
+            ? context.l10n.importPageIntroDrop
             : _picksFolders
-            ? 'Choose the day\'s VBO and RCZ recordings or a folder.'
-            : 'Choose the day\'s VBO and RCZ recordings.',
+            ? context.l10n.importPageIntroFolder
+            : context.l10n.importPageIntro,
         style: Theme.of(context).textTheme.bodyLarge,
       ),
       const SizedBox(height: 12),
@@ -848,18 +968,22 @@ class _DayImportPageState extends State<DayImportPage> {
           FilledButton.icon(
             onPressed: enabled && !_opening ? _pickRecordings : null,
             icon: const Icon(Icons.insert_drive_file_outlined),
-            label: const Text('Choose recordings…'),
+            label: Text(context.l10n.importPageChooseRecordings),
           ),
           if (_picksFolders)
             OutlinedButton.icon(
               onPressed: enabled ? _pickFolder : null,
               icon: const Icon(Icons.folder_open_outlined),
-              label: const Text('Choose a folder…'),
+              label: Text(context.l10n.importPageChooseFolder),
             ),
           OutlinedButton.icon(
             onPressed: enabled && !_opening ? _openDay : null,
             icon: const Icon(Icons.history),
-            label: Text(_opening ? 'Opening…' : 'Open a saved day…'),
+            label: Text(
+              _opening
+                  ? context.l10n.importPageOpening
+                  : context.l10n.importPageOpenSaved,
+            ),
           ),
           if (_picksFolders)
             Row(
@@ -872,7 +996,7 @@ class _DayImportPageState extends State<DayImportPage> {
                             setState(() => _includeSubfolders = value ?? false)
                       : null,
                 ),
-                const Text('Include subfolders'),
+                Text(context.l10n.importPageIncludeSubfolders),
               ],
             ),
         ],
@@ -882,12 +1006,16 @@ class _DayImportPageState extends State<DayImportPage> {
 
   List<Widget> _status(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     List<Widget> notes(List<String> notes) => [
       if (notes.isNotEmpty) ...[
         const SizedBox(height: 16),
-        Text('Import notes', style: theme.textTheme.titleSmall),
+        Text(l10n.importPageNotes, style: theme.textTheme.titleSmall),
         for (final note in notes)
-          Padding(padding: const EdgeInsets.only(top: 4), child: Text(note)),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(l10n.importMessage(note)),
+          ),
       ],
     ];
     switch (_controller.state) {
@@ -897,8 +1025,11 @@ class _DayImportPageState extends State<DayImportPage> {
         return [
           Text(
             total == 0
-                ? 'Looking for recordings…'
-                : 'Preparing recording ${processed < total ? processed + 1 : total} of $total…',
+                ? l10n.importPageLooking
+                : l10n.importPagePreparing(
+                    processed < total ? processed + 1 : total,
+                    total,
+                  ),
           ),
           const SizedBox(height: 8),
           LinearProgressIndicator(value: total == 0 ? null : processed / total),
@@ -907,15 +1038,18 @@ class _DayImportPageState extends State<DayImportPage> {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: _controller.cancel,
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
           ),
         ];
       case DayImportCancelled():
-        return const [Text('Import cancelled. Nothing was imported.')];
+        return [Text(l10n.importPageCancelled)];
       case DayImportFailed(:final message, notes: final failedNotes):
         return [
-          Text(message, style: TextStyle(color: theme.colorScheme.error)),
+          Text(
+            l10n.importMessage(message),
+            style: TextStyle(color: theme.colorScheme.error),
+          ),
           ...notes(failedNotes),
         ];
       case DayImportFinished(
@@ -925,7 +1059,7 @@ class _DayImportPageState extends State<DayImportPage> {
       ):
         return [
           Text(
-            '${runs.length} ${runs.length == 1 ? 'session' : 'sessions'} imported',
+            l10n.importPageSessionsImported(runs.length),
             style: theme.textTheme.titleMedium,
           ),
           if (analysis != null) ...[
@@ -935,15 +1069,15 @@ class _DayImportPageState extends State<DayImportPage> {
               child: FilledButton.icon(
                 onPressed: () => _showImported(runs, analysis),
                 icon: const Icon(Icons.flag_outlined),
-                label: const Text('Show the day\'s results'),
+                label: Text(l10n.importPageShowResults),
               ),
             ),
           ],
           for (final named in runs)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(named.name),
-              subtitle: Text(_lapSummary(named.run.laps)),
+              title: Text(l10n.session(named.name)),
+              subtitle: Text(_lapSummary(l10n, named.run.laps)),
             ),
           ...notes(finishedNotes),
         ];

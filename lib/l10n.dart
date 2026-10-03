@@ -22,6 +22,12 @@ Locale resolveAppLocale(List<Locale>? preferred) {
   return supportedLocales.first;
 }
 
+/// The texts in the device's language, for the few places without a
+/// [BuildContext], such as the system file pickers.
+AppLocalizations deviceL10n() => lookupAppLocalizations(
+  resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locales),
+);
+
 /// Makes [locale] the language of dates formatted without a
 /// [BuildContext] (format.dart). Called by the app when its language is
 /// chosen.
