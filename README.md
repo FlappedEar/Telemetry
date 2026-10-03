@@ -303,6 +303,25 @@ Run the integration tests locally on any connected device or simulator:
 flutter test integration_test -d <device id>
 ```
 
+### Checks on a real day
+
+The real-recording tests and the parity checks against FlappedEar Overlays'
+C++ are skipped in CI: they need private recordings and an Overlays checkout.
+`tool/real_day_parity.dart` runs all of them on one day's folder of VBO and
+RCZ files, building the C++ tools of
+[`packages/telemetry_core/tool`](packages/telemetry_core/tool/README.md) and
+writing their references to a temporary folder, and prints PASS, FAIL or SKIP
+with test counts per check:
+
+```bash
+FET_REAL_DAY=<day folder> VBOOVERLAY_DIR=<Overlay checkout> \
+  QT_PREFIX=<Qt 6.8 prefix> dart run tool/real_day_parity.dart
+```
+
+`--verbose` adds the figures the tests print, `--only=<name>,...` runs some
+checks, `--keep` keeps the references and logs (private: never commit them).
+Report its results separately from the synthetic tests.
+
 ## Contributing
 
 Read [AGENTS.md](AGENTS.md) first. It holds the engineering rules, the shared
