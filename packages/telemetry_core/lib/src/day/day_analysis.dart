@@ -412,6 +412,27 @@ DayAnalysis rerankDay(
   manualTracks: day.manualTracks,
 );
 
+/// [day] with run [runId] named [name] in its lap rows, groups and
+/// rankings; everything else as it was. Cheap enough for the interface thread.
+DayAnalysis renameDayRun(
+  DayAnalysis day,
+  String runId,
+  String name, {
+  Map<DayLapReference, String> exclusions = const {},
+  String? preferredGroupId,
+}) => _assemble(
+  [for (final row in day.rows) row.runId == runId ? row.copyWith(runName: name) : row],
+  day.configurations,
+  day.inferences,
+  day.messages,
+  exclusions,
+  preferredGroupId ?? day.chosenGroupId,
+  null,
+  sources: day.sources,
+  runMessages: day.runMessages,
+  manualTracks: day.manualTracks,
+);
+
 DayAnalysis _assemble(
   List<DayLapRow> sorted,
   Map<String, TrackConfiguration> configurations,

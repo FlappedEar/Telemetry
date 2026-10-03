@@ -62,9 +62,22 @@
 
 <h2 id="sessions">Best lap of each session</h2>
 <figure>
-  <img src="assets/screens/sessions-and-circuits.png" alt="Best lap of each session list, followed by the Circuits list" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/sessions-and-circuits.png" alt="Best lap of each session list, followed by the Session details list" width="1280" height="800" loading="lazy">
 </figure>
 <p>One row per session with its best ranked lap, for example <em>LAP 2 · 5 of 7 laps ranked · typical 1:50.123</em>. Tap a row to open that lap.</p>
+
+<h2 id="details">Session details</h2>
+<p>One row per session with its conditions, setup changes and notes, or <em>No conditions, setup changes or notes</em>. Tap a row to open <strong>Details of Session N</strong>:</p>
+<figure>
+  <img src="assets/screens/session-details-dialog.png" alt="Details of Session 1 dialog with Name, Conditions, Setup changes and Notes fields" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Name</strong>: the session's name, up to 160 characters, for example <em>Warm-up</em>. It cannot be blank. The new name is used everywhere: the lap list (<em>Warm-up · LAP 2</em>), the results, the progression and the day report.</li>
+  <li><strong>Conditions</strong>, for example <em>Dry, 18 °C</em>.</li>
+  <li><strong>Setup changes</strong>, for example <em>Tyres +0.1 bar</em>.</li>
+  <li><strong>Notes</strong>: anything else about the session.</li>
+</ul>
+<p><strong>Save</strong> keeps the change and the day then has unsaved changes; save the day to write it to the file. Each text can be up to 4096 characters, and a text you clear is removed. FlappedEar Overlays reads and edits the same details (see <a href="overlays.html">Working with FlappedEar Overlays</a>).</p>
 
 <h2 id="circuits">Circuits</h2>
 <p>One row per session says which circuit and direction it was matched to, and whether that was inferred from GPS or set by you. Tap the pencil to open <strong>Circuit of Session N</strong>:</p>

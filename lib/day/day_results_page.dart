@@ -25,6 +25,7 @@ import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
 import 'segment_editor_page.dart';
+import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
 import 'touch.dart';
@@ -534,6 +535,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onTap: () => _save(choose: true),
                 child: const Text('Save as…'),
               ),
+              PopupMenuItem(
+                key: const ValueKey('renameDay'),
+                height: kMinInteractiveDimension,
+                onTap: () => showDialog<void>(
+                  context: this.context,
+                  builder: (_) => RenameDayDialog(controller: _controller),
+                ),
+                child: Text(context.l10n.renameDayMenu),
+              ),
               diagnosticsMenuItem(context),
             ],
           ),
@@ -830,6 +840,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
         ),
       const SizedBox(height: 12),
+      Text(
+        context.l10n.sessionDetailsHeading,
+        style: theme.textTheme.titleSmall,
+      ),
+      for (final named in _controller.runs)
+        ListTile(
+          key: ValueKey('sessionDetails ${named.run.id}'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(context.l10n.session(named.name)),
+          subtitle: Text(
+            _detailsText(named.run.id),
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: const Icon(Icons.edit_note),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (_) => SessionDetailsDialog(
+              controller: _controller,
+              runId: named.run.id,
+            ),
+          ),
+        ),
+      const SizedBox(height: 12),
       Text('Circuits', style: theme.textTheme.titleSmall),
       for (final named in _controller.runs) ...[
         ListTile(
@@ -927,6 +961,21 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final direction = configuration.direction?.label ?? 'direction unknown';
     return '$layout · $direction · ${manual ? 'set by you' : 'inferred from GPS'}'
         '${groupLabel == null ? '' : ' · ${groupLabel.split(' · ').first}'}';
+  }
+
+  // A session's conditions, setup changes and notes on one line each.
+  String _detailsText(String runId) {
+    final l10n = context.l10n;
+    final details = _controller.runMetadata(runId);
+    final lines = [
+      for (final (label, text) in [
+        (l10n.sessionDetailsConditions, details.conditions),
+        (l10n.sessionDetailsSetup, details.setupChanges),
+        (l10n.sessionDetailsNotes, details.notes),
+      ])
+        if (text.trim().isNotEmpty) '$label: ${text.trim()}',
+    ];
+    return lines.isEmpty ? l10n.sessionDetailsNone : lines.join('\n');
   }
 
   String _runName(String runId) {
