@@ -1047,7 +1047,9 @@ class SegmentSpeedChart extends StatelessWidget {
                         alpha: 0.5,
                       ),
                       boundary: theme.colorScheme.outline,
-                      shade: theme.colorScheme.primary.withValues(alpha: 0.10),
+                      shade: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.06,
+                      ),
                       ink: theme.colorScheme.onSurfaceVariant,
                       surface: theme.colorScheme.surfaceContainerLow,
                       textStyle: painterStyle,

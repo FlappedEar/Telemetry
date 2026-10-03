@@ -498,6 +498,13 @@ class _ComparisonPageState extends State<ComparisonPage> {
               SegmentedButton<int>(
                 key: const ValueKey('comparisonMapLayerSlot'),
                 showSelectedIcon: false,
+                // The selected lap in its own colour, so B is never amber.
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: _layerSlot == 0
+                      ? lapAColor
+                      : lapBColor,
+                  selectedForegroundColor: const Color(0xFF111214),
+                ),
                 segments: const [
                   ButtonSegment(value: 0, label: Text('A')),
                   ButtonSegment(value: 1, label: Text('B')),
@@ -1188,7 +1195,7 @@ class _TiledOverlayMap extends StatelessWidget {
                         point: at,
                         radius: 7,
                         color: slot == 0 ? lapAColor : lapBColor,
-                        borderColor: const Color(0xFF0C150F),
+                        borderColor: const Color(0xFF111214),
                         borderStrokeWidth: 2.5,
                       ),
               ],
@@ -1315,7 +1322,7 @@ class _MarkersPainter extends CustomPainter {
       if (point == null) continue;
       final centre = Offset(point.x * size.width, point.y * size.height);
       canvas
-        ..drawCircle(centre, 8, Paint()..color = const Color(0xFF0C150F))
+        ..drawCircle(centre, 8, Paint()..color = const Color(0xFF111214))
         ..drawCircle(
           centre,
           6,

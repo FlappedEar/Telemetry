@@ -12,7 +12,7 @@ import 'touch.dart';
 
 /// The colour of the Δ time line (one line, not an A/B pair): neutral, so it
 /// is not read as lap A's amber or lap B's blue.
-const Color deltaLineColor = Color(0xFFE6E6E6);
+const Color deltaLineColor = Color(0xFFB0B0B0);
 
 /// [deltaLineColor] on a light background: the same grey, darker.
 const Color deltaLineLightColor = Color(0xFF3A3A3A);

@@ -621,6 +621,19 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   }
+
+  test('the Δ time map runs from lap A\'s colour to lap B\'s', () {
+    const layer = ComparisonMapLayer(
+      id: 'delta',
+      scale: 'diverging',
+      trace: MapLayerTrace(minimum: -1, maximum: 1),
+    );
+    // Δ is A − B: negative where A is ahead, positive where B is.
+    expect(mapLayerColor(layer, -1), lapAColorForTest);
+    expect(mapLayerColor(layer, 1), lapBColorForTest);
+    // The single Δ line is neither lap's colour.
+    expect(deltaLineColor, isNot(anyOf(lapAColorForTest, lapBColorForTest)));
+  });
 }
 
 const lapAColorForTest = Color(0xFFFCB203);
