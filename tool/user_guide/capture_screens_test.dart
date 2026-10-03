@@ -228,11 +228,15 @@ void main() {
 
   /// Scrolls [finder] to the top of its list.
   Future<void> toTop(WidgetTester tester, Finder finder) async {
-    await Scrollable.ensureVisible(
-      tester.element(finder.first),
-      alignment: 0.02,
-    );
-    await tester.pumpAndSettle();
+    // Twice: the first scroll can land short while the cards around the
+    // target are laid out for the first time.
+    for (var i = 0; i < 2; ++i) {
+      await Scrollable.ensureVisible(
+        tester.element(finder.first),
+        alignment: 0.02,
+      );
+      await tester.pumpAndSettle();
+    }
   }
 
   Future<void> scrollIn(
