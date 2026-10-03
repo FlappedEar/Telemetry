@@ -105,7 +105,7 @@ Future<DayLapRow?> pickComparisonLap(
   },
 );
 
-/// Two laps of one group, A (green) against B (orange), on a shared
+/// Two laps of one group, A (amber) against B (blue), on a shared
 /// track-position axis: the Δ time (A − B, positive when A is behind), the
 /// channels of both laps, and both lines on one map, optionally coloured by
 /// a recorded value. A drag on a chart moves one cursor, shown on the map
