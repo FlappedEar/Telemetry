@@ -184,6 +184,11 @@ jobs:
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
         run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      # JVM unit tests of the native code (android/app/src/test), such as the
+      # bounded copy of shared and picked files. The APK build made gradlew.
+      - name: Android unit tests
+        working-directory: android
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
       # Fails if the APK was signed with any key but the cached one.
       - name: Check the APK's signing key
         run: |
