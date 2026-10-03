@@ -76,11 +76,13 @@ Color speedColor(double fraction) {
   return low == null ? null : (low, high!);
 }
 
-/// What is drawn under the trace.
+/// What is drawn under the trace. Every map shows real tiles: [none] is
+/// not offered to users; it is the network-free plain drawing used under
+/// tests.
 enum MapBackground {
   streets('Streets'),
   satellite('Satellite'),
-  none('Trace only');
+  none('Plain');
 
   const MapBackground(this.label);
 
@@ -120,15 +122,15 @@ TileSource satelliteTiles(String key) => TileSource(
   maxNativeZoom: 20,
 );
 
-/// The backgrounds this build offers.
+/// The backgrounds this build offers: always a real map under the trace.
 List<MapBackground> get availableBackgrounds => [
   MapBackground.streets,
   if (mapTilerKey.isNotEmpty) MapBackground.satellite,
-  MapBackground.none,
 ];
 
 /// The background of every map, shared while the app runs. Tests draw the
-/// trace only, without network.
+/// trace on a plain background, without network, unless they provide
+/// [debugTileProvider].
 final ValueNotifier<MapBackground> mapBackground = ValueNotifier(
   !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
       ? MapBackground.none
@@ -141,13 +143,43 @@ final ValueNotifier<MapBackground> mapBackground = ValueNotifier(
 @visibleForTesting
 TileProvider Function()? debugTileProvider;
 
-/// The tile source for [background], or null for the trace only.
+/// The tile source for [background], or null for the plain test drawing.
 TileSource? tileSourceFor(MapBackground background) => switch (background) {
   MapBackground.streets => streetTiles,
   MapBackground.satellite =>
     mapTilerKey.isEmpty ? streetTiles : satelliteTiles(mapTilerKey),
   MapBackground.none => null,
 };
+
+/// The tile layer of [tiles], identified to the tile server as the app.
+TileLayer mapTileLayer(TileSource tiles) => TileLayer(
+  urlTemplate: tiles.urlTemplate,
+  userAgentPackageName: 'com.flappedear.telemetry',
+  maxNativeZoom: tiles.maxNativeZoom,
+  tileProvider: debugTileProvider?.call(),
+);
+
+/// The attribution [tiles] require, in a map's bottom-right corner.
+class MapAttribution extends StatelessWidget {
+  const MapAttribution(this.tiles, {super.key});
+
+  final TileSource tiles;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.bottomRight,
+    child: Container(
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Text(
+        tiles.attribution,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
+    ),
+  );
+}
 
 /// [point] of [path] back in degrees (the inverse of the path's projection).
 LatLng pathLatLng(GeoCoordinate origin, double east, double north) {
@@ -179,8 +211,8 @@ final class MapMark {
 }
 
 /// The GPS trace of a lap coloured by speed, over street or satellite tiles
-/// or on a plain background, with an optional reference lap in grey under it
-/// and the start/finish line. North is up. Pinch or scroll to zoom; the
+/// (a plain background only under tests), with an optional reference lap in
+/// grey under it and the start/finish line. North is up. Pinch or scroll to zoom; the
 /// layers button switches the background.
 class TrackMap extends StatelessWidget {
   const TrackMap({
@@ -240,7 +272,11 @@ class TrackMap extends StatelessWidget {
                       ),
               ),
               if (interactive)
-                Positioned(top: 8, right: 8, child: _LayersButton(background)),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: MapLayersButton(background),
+                ),
             ],
           ),
         ),
@@ -286,8 +322,9 @@ class TrackMap extends StatelessWidget {
   }
 }
 
-class _LayersButton extends StatelessWidget {
-  const _LayersButton(this.current);
+/// Switches the shared [mapBackground] of every map.
+class MapLayersButton extends StatelessWidget {
+  const MapLayersButton(this.current, {super.key});
 
   final MapBackground current;
 
@@ -441,12 +478,7 @@ class _TiledMap extends StatelessWidget {
         ),
       ),
       children: [
-        TileLayer(
-          urlTemplate: tiles.urlTemplate,
-          userAgentPackageName: 'com.flappedear.telemetry',
-          maxNativeZoom: tiles.maxNativeZoom,
-          tileProvider: debugTileProvider?.call(),
-        ),
+        mapTileLayer(tiles),
         if (reference case final reference?)
           PolylineLayer(
             polylines: [
@@ -521,19 +553,7 @@ class _TiledMap extends StatelessWidget {
               ),
             ],
           ),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Container(
-            color: scheme.surface.withValues(alpha: 0.8),
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text(
-              tiles.attribution,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-          ),
-        ),
+        MapAttribution(tiles),
       ],
     );
   }

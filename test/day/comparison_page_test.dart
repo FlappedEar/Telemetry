@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
@@ -14,6 +16,7 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import 'blank_tiles.dart';
 import 'rectangle_vbo.dart';
 
 void main() {
@@ -312,6 +315,96 @@ void main() {
       'Lap Δ ${displayDelta(a.durationSeconds - best.durationSeconds)}',
     );
   });
+
+  testWidgets('the comparison map draws both laps over map tiles', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: analysis,
+    );
+    final best = analysis.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.durationSeconds > best.durationSeconds + 0.5);
+    mapBackground.value = MapBackground.streets;
+    debugTileProvider = BlankTiles.new;
+    addTearDown(() {
+      mapBackground.value = MapBackground.none;
+      debugTileProvider = null;
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: ComparisonPage(controller: controller, a: a, b: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final map = find.byKey(const ValueKey('comparisonMap'));
+    Finder inMap(Finder finder) => find.descendant(of: map, matching: finder);
+    expect(inMap(find.byType(FlutterMap)), findsOneWidget);
+    expect(inMap(find.byType(TileLayer)), findsOneWidget);
+    expect(inMap(find.text('© OpenStreetMap contributors')), findsOneWidget);
+    expect(inMap(find.byTooltip('Map background')), findsOneWidget);
+
+    // Both laps, in their colours, where the recordings were driven (the
+    // synthetic track's start line is at 52° N, 21° E).
+    List<Polyline<Object>> lines() => [
+      for (final layer in tester.widgetList<PolylineLayer>(
+        inMap(find.byType(PolylineLayer)),
+      ))
+        if (layer.key != const ValueKey('comparisonMapRange'))
+          ...layer.polylines,
+    ];
+    final colors = {for (final line in lines()) line.color};
+    expect(colors, containsAll([lapAColorForTest, lapBColorForTest]));
+    for (final line in lines()) {
+      for (final point in line.points) {
+        expect(point.latitude, closeTo(52.0, 0.01));
+        expect(point.longitude, closeTo(21.0, 0.01));
+      }
+    }
+
+    // Only the markers follow the cursor.
+    List<LatLng> markers() => [
+      for (final circle
+          in tester
+              .widget<CircleLayer>(
+                find.byKey(const ValueKey('comparisonMapMarkers')),
+              )
+              .circles)
+        circle.point,
+    ];
+    final delta = find.byKey(const ValueKey('comparisonChart Δ time'));
+    await dragAcross(tester, delta, 0.1);
+    final before = markers();
+    expect(before, hasLength(2));
+    await dragAcross(tester, delta, 0.5);
+    final after = markers();
+    expect(after, hasLength(2));
+    expect(after.first, isNot(before.first));
+
+    // The zoom window is highlighted on lap B.
+    PolylineLayer range() => tester.widget<PolylineLayer>(
+      find.byKey(const ValueKey('comparisonMapRange')),
+    );
+    expect(range().polylines, isEmpty);
+    await tester.tap(find.byKey(const ValueKey('chartZoomIn')).first);
+    await tester.pump();
+    expect(range().polylines, isNotEmpty);
+
+    // A channel layer colours lap B over the tiles and dims both lines.
+    await tester.tap(find.byKey(const ValueKey('comparisonMapLayerPicker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Speed').last);
+    await tester.pumpAndSettle();
+    expect(lines().length, greaterThan(colors.length));
+    expect(lines().where((line) => line.color == lapAColorForTest), isEmpty);
+  });
 }
 
 const lapAColorForTest = Color(0xFF55E6A5);
+const lapBColorForTest = Color(0xFFD95926);

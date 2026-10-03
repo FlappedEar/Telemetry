@@ -238,7 +238,9 @@ a background isolate.
   built from lap A's own trace: the channels both recorded, `deltaSeries`
   (Δ time, A − B, positive when A is behind) and `channelSeries` by position,
   each lap's time and map position at a position, both traces on one map
-  normalization (`sharedMapGeometry`, `mapTrace`, `mapPointAt`), and
+  normalization (`sharedMapGeometry`, `mapTrace`, `mapPointAt`; its inverse
+  `mapPointCoordinate` places a normalized position back in east-positive
+  degrees, so the app draws it over map tiles), and
   `mapLayer`, one lap's line coloured by speed, the Δ time, lateral or
   longitudinal G, throttle, the measured brake or a recorded temperature
   (`channelAlongProgress` and `placeOnMap`, never bridging a gap, an

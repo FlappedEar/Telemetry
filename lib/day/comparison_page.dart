@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
@@ -11,6 +13,7 @@ import 'day_results_controller.dart';
 import 'driving_panels.dart';
 import 'lap_page.dart';
 import 'telemetry_chart.dart';
+import 'track_map.dart';
 
 /// What a panel under a comparison's charts gets: the pair, its comparison
 /// and the shared cursor and range.
@@ -757,10 +760,12 @@ class _LayerLegend extends StatelessWidget {
   }
 }
 
-/// Both laps on one map to the same scale (the shared normalization), with
-/// the zoom window highlighted on lap B and a marker per lap at the cursor.
-/// The lines and the layer are drawn once; the range and the markers are
-/// separate layers, repainted only when they change.
+/// Both laps on one map over street or satellite tiles (the shared
+/// [mapBackground], switched with the layers button), with the zoom window
+/// highlighted on lap B and a marker per lap at the cursor. The lines and
+/// the layer are built once; the range and the markers are separate layers,
+/// rebuilt only when they change. Under tests without tiles both laps are
+/// drawn to the same scale on a plain background.
 class _OverlayMap extends StatelessWidget {
   const _OverlayMap({
     super.key,
@@ -776,55 +781,329 @@ class _OverlayMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = comparison.overlayTrack(0), b = comparison.overlayTrack(1);
-    final theme = Theme.of(context);
     if (a.isEmpty && b.isEmpty) {
       return const Center(child: Text('No GPS data in this section'));
     }
     return Semantics(
       label: 'Laps A and B on one map',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final side = math.max(
-            0.0,
-            math.min(constraints.maxWidth, constraints.maxHeight) - 24,
-          );
-          return Center(
-            child: SizedBox.square(
-              dimension: side,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: RepaintBoundary(
-                      child: CustomPaint(
-                        painter: _TracksPainter(a: a, b: b, layer: layer),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _RangePainter(
-                        comparison: comparison,
-                        window: window,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
+      child: ValueListenableBuilder(
+        valueListenable: mapBackground,
+        builder: (context, background, _) {
+          final tiles = tileSourceFor(background);
+          return ClipRect(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: tiles == null
+                      ? _plainMap(context, a, b)
+                      : _TiledOverlayMap(
+                          key: ValueKey((tiles.urlTemplate, comparison)),
+                          tiles: tiles,
+                          comparison: comparison,
+                          layer: layer,
+                          window: window,
                         ),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _MarkersPainter(
-                        comparison: comparison,
-                        cursor: window.cursor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: MapLayersButton(background),
+                ),
+              ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _plainMap(
+    BuildContext context,
+    List<List<MapPoint>> a,
+    List<List<MapPoint>> b,
+  ) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = math.max(
+          0.0,
+          math.min(constraints.maxWidth, constraints.maxHeight) - 24,
+        );
+        return Center(
+          child: SizedBox.square(
+            dimension: side,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _TracksPainter(a: a, b: b, layer: layer),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _RangePainter(
+                      comparison: comparison,
+                      window: window,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _MarkersPainter(
+                      comparison: comparison,
+                      cursor: window.cursor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// [x], [y] on [geometry]'s normalized overlay map in degrees, or null.
+LatLng? _overlayLatLng(MapGeometry geometry, double x, double y) {
+  final coordinate = mapPointCoordinate(x, y, geometry);
+  return coordinate == null
+      ? null
+      : LatLng(coordinate.latitudeDegrees, coordinate.longitudeDegrees);
+}
+
+// Each lap's overlay track in degrees, computed once per track; a position
+// with no place on the earth ends a line (never bridged).
+final Expando<List<List<LatLng>>> _overlayDegrees = Expando(
+  'comparison overlay degrees',
+);
+
+// A map layer's coloured polylines, computed once per layer.
+final Expando<List<Polyline<Object>>> _layerLines = Expando(
+  'comparison layer lines',
+);
+
+/// The comparison map over tiles: both laps' lines and the optional layer
+/// are static; only the range highlight and the cursor markers rebuild.
+class _TiledOverlayMap extends StatelessWidget {
+  const _TiledOverlayMap({
+    super.key,
+    required this.tiles,
+    required this.comparison,
+    required this.layer,
+    required this.window,
+  });
+
+  final TileSource tiles;
+  final LapComparison comparison;
+  final ComparisonMapLayer? layer;
+  final ChartWindow window;
+
+  // Neighbouring points of one colour band share a polyline.
+  static const _bands = 32;
+
+  List<List<LatLng>> _track(int slot) {
+    final track = comparison.overlayTrack(slot);
+    final cached = _overlayDegrees[track];
+    if (cached != null) return cached;
+    final geometry = comparison.geometry;
+    final lines = <List<LatLng>>[];
+    for (final run in track) {
+      var line = <LatLng>[];
+      for (final point in run) {
+        final at = _overlayLatLng(geometry, point.x, point.y);
+        if (at == null) {
+          if (line.length > 1) lines.add(line);
+          line = [];
+          continue;
+        }
+        line.add(at);
+      }
+      if (line.length > 1) lines.add(line);
+    }
+    // An empty track is a shared const list: nothing to cache on.
+    if (track.isNotEmpty) _overlayDegrees[track] = lines;
+    return lines;
+  }
+
+  List<Polyline<Object>> _layerPolylines(ComparisonMapLayer layer) {
+    final cached = _layerLines[layer];
+    if (cached != null) return cached;
+    final geometry = comparison.geometry;
+    final (low, high) = mapLayerRange(layer);
+    final spread = high - low;
+    Color colorOf(MapLayerPoint from, MapLayerPoint to) {
+      final value = (from.value + to.value) / 2;
+      final banded = spread > 0
+          ? low +
+                ((value - low) / spread * _bands).roundToDouble() /
+                    _bands *
+                    spread
+          : value;
+      return mapLayerColor(layer, banded);
+    }
+
+    // Runs of placed points; a point with no place on the earth ends a run.
+    final runs = <List<(LatLng, MapLayerPoint)>>[];
+    for (final polyline in layer.trace.polylines) {
+      var run = <(LatLng, MapLayerPoint)>[];
+      for (final point in polyline) {
+        final at = _overlayLatLng(geometry, point.x, point.y);
+        if (at == null) {
+          if (run.length > 1) runs.add(run);
+          run = [];
+          continue;
+        }
+        run.add((at, point));
+      }
+      if (run.length > 1) runs.add(run);
+    }
+
+    // One dark outline under each run, so the colour bands join seamlessly
+    // and stay readable on any background.
+    final lines = <Polyline<Object>>[
+      for (final run in runs)
+        Polyline(
+          points: [for (final (at, _) in run) at],
+          color: Colors.black54,
+          strokeWidth: 8,
+        ),
+    ];
+    for (final run in runs) {
+      var points = [run.first.$1];
+      var color = colorOf(run[0].$2, run[1].$2);
+      for (var i = 1; i < run.length; ++i) {
+        final next = colorOf(run[i - 1].$2, run[i].$2);
+        if (next != color) {
+          lines.add(Polyline(points: points, color: color, strokeWidth: 5));
+          points = [points.last];
+          color = next;
+        }
+        points.add(run[i].$1);
+      }
+      lines.add(Polyline(points: points, color: color, strokeWidth: 5));
+    }
+    return _layerLines[layer] = lines;
+  }
+
+  static Polyline<Object> _line(
+    List<LatLng> points,
+    Color color,
+    double width,
+  ) => Polyline(
+    points: points,
+    color: color,
+    strokeWidth: width,
+    borderStrokeWidth: 1.5,
+    borderColor: Colors.black54,
+  );
+
+  /// Lap B over the zoom window, sampled along the shared axis; a gap on
+  /// lap B ends the highlight and is never bridged.
+  List<Polyline<Object>> _rangeLines() {
+    if (!window.zoomed) return const [];
+    final geometry = comparison.geometry;
+    final (start, end) = window.range.value;
+    final step = math.max(2.0, (end - start) / 150);
+    final lines = <Polyline<Object>>[];
+    var points = <LatLng>[];
+    void flush() {
+      if (points.length > 1) {
+        lines.add(
+          Polyline(
+            points: points,
+            color: Colors.white.withValues(alpha: 0.85),
+            strokeWidth: 11,
+            borderStrokeWidth: 1.5,
+            borderColor: Colors.black54,
+          ),
+        );
+      }
+      points = [];
+    }
+
+    for (var meters = start; meters <= end + 1e-6; meters += step) {
+      final point = comparison.positionAt(1, math.min(meters, end));
+      final at = point == null
+          ? null
+          : _overlayLatLng(geometry, point.x, point.y);
+      if (at == null) {
+        flush();
+        continue;
+      }
+      points.add(at);
+    }
+    flush();
+    return lines;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final a = _track(0), b = _track(1);
+    final all = [
+      for (final line in [...a, ...b]) ...line,
+    ];
+    if (all.isEmpty) return const SizedBox.expand();
+    final shown = layer;
+    final dimmed = shown != null;
+    final geometry = comparison.geometry;
+    return FlutterMap(
+      options: MapOptions(
+        initialCameraFit: CameraFit.coordinates(
+          coordinates: all,
+          padding: const EdgeInsets.all(24),
+          maxZoom: 18,
+        ),
+        maxZoom: 21,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+        ),
+      ),
+      children: [
+        mapTileLayer(tiles),
+        // Under the laps, so both stay readable inside the window.
+        ValueListenableBuilder(
+          valueListenable: window.range,
+          builder: (context, _, _) => PolylineLayer(
+            key: const ValueKey('comparisonMapRange'),
+            polylines: _rangeLines(),
+          ),
+        ),
+        PolylineLayer(
+          polylines: [
+            for (final (lines, color) in [(a, lapAColor), (b, lapBColor)])
+              for (final line in lines)
+                _line(
+                  line,
+                  dimmed ? color.withValues(alpha: 0.35) : color,
+                  3.5,
+                ),
+            if (shown != null) ..._layerPolylines(shown),
+          ],
+        ),
+        ValueListenableBuilder(
+          valueListenable: window.cursor,
+          builder: (context, cursor, _) => CircleLayer(
+            key: const ValueKey('comparisonMapMarkers'),
+            circles: [
+              for (final slot in const [0, 1])
+                if (comparison.positionAt(slot, cursor) case final point?)
+                  if (_overlayLatLng(geometry, point.x, point.y) case final at?)
+                    CircleMarker(
+                      point: at,
+                      radius: 7,
+                      color: slot == 0 ? lapAColor : lapBColor,
+                      borderColor: const Color(0xFF0C150F),
+                      borderStrokeWidth: 2.5,
+                    ),
+            ],
+          ),
+        ),
+        MapAttribution(tiles),
+      ],
     );
   }
 }

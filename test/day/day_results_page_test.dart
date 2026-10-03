@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -17,19 +15,7 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
-/// Transparent tiles, without network.
-final class _BlankTiles extends TileProvider {
-  // A 1x1 transparent PNG.
-  static final _png = Uint8List.fromList(
-    base64Decode(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-    ),
-  );
-
-  @override
-  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
-      MemoryImage(_png);
-}
+import 'blank_tiles.dart';
 
 /// Pickers that answer from fixed values.
 final class FakeDocuments implements DocumentPickers {
@@ -513,7 +499,7 @@ void main() {
       'a.vbo': [30, 28, 31],
     });
     mapBackground.value = MapBackground.streets;
-    debugTileProvider = _BlankTiles.new;
+    debugTileProvider = BlankTiles.new;
     addTearDown(() {
       mapBackground.value = MapBackground.none;
       debugTileProvider = null;
@@ -529,12 +515,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(FlutterMap), findsOneWidget);
     expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+    // A real map is always under the trace: no trace-only choice.
     await tester.tap(find.byTooltip('Map background'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Trace only'));
+    expect(find.text('Streets'), findsOneWidget);
+    expect(find.text('Trace only'), findsNothing);
+    expect(find.text('Plain'), findsNothing);
+    expect(availableBackgrounds, isNot(contains(MapBackground.none)));
+    expect(
+      find.byType(CheckedPopupMenuItem<MapBackground>),
+      findsNWidgets(availableBackgrounds.length),
+    );
+    await tester.tap(find.byType(CheckedPopupMenuItem<MapBackground>).first);
     await tester.pumpAndSettle();
-    expect(mapBackground.value, MapBackground.none);
-    expect(find.byType(FlutterMap), findsNothing);
+    expect(mapBackground.value, MapBackground.streets);
+    expect(find.byType(FlutterMap), findsOneWidget);
   });
 
   test('maps metres around the origin back to degrees', () {
