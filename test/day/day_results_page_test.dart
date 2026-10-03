@@ -16,6 +16,7 @@ import 'package:telemetry/import/file_access.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/format.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/ui/theme.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'blank_tiles.dart';
@@ -129,6 +130,16 @@ void main() {
     }
     expect(find.byType(TrackMap), findsOneWidget);
     expect(find.text('Best lap of each session'), findsOneWidget);
+    // Only the best lap of the day's session best is purple.
+    for (final run in outcome.analysis!.ranking!.runs) {
+      final time = tester.widget<Text>(
+        find.byKey(ValueKey('sessionBest ${run.runId}')),
+      );
+      expect(
+        time.style?.color == FetColors.dark.dayBest,
+        run.bestLap!.reference == best.reference,
+      );
+    }
     // On a phone the laps are the second tab.
     await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
     await tester.pumpAndSettle();

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/ui/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/corner_details.dart';
@@ -74,6 +75,21 @@ void main() {
       expect(
         tester.widget<Text>(find.byKey(const ValueKey('availableTime'))).data,
         '${expected.availableSeconds!.toStringAsFixed(3)} s',
+      );
+      // Blue as the Theoretical best bar; what is available as a gain.
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('theoreticalBestTime')))
+            .style
+            ?.color,
+        FetColors.dark.reference,
+      );
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('availableTime')))
+            .style
+            ?.color,
+        FetColors.dark.gain,
       );
       expect(find.byKey(const ValueKey('lossMap')), findsOneWidget);
       expect(find.byKey(const ValueKey('sectorTable')), findsOneWidget);
@@ -442,5 +458,7 @@ void main() {
     expect(shortSegmentName('Corners 1–2'), 'C1–2');
     expect(shortSegmentName('Pit'), 'Pit');
     expect(lossColor(0), isNot(lossColor(1)));
+    // The largest loss is the app's loss red, never lap A's amber.
+    expect(lossColor(1), FetColors.dark.loss);
   });
 }
