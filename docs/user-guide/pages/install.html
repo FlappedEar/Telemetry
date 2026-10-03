@@ -1,20 +1,37 @@
 <!-- title: Install | nav: Install -->
 <h1 id="install">Install</h1>
-<p class="lead">There is no app store release yet. Android installs from a build file; macOS runs from the source code.</p>
+<p class="lead">There is no app store release yet. Android and macOS download from the project's GitHub Releases.</p>
+
+<p>Each release on the <a href="https://github.com/FlappedEar/Telemetry/releases">Releases page</a> has, under <strong>Assets</strong>:</p>
+<ul>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-android.apk</code>: the Android app.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-macos.zip</code>: the Mac app.</li>
+  <li><code>SHA256SUMS.txt</code>: checksums of both files.</li>
+</ul>
 
 <h2 id="android">Android (Pixel)</h2>
 <ol class="steps">
-  <li>On a computer signed in to GitHub, open the newest green run of the CI workflow on the <code>main</code> branch: <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">Actions, branch main</a>.</li>
-  <li>At the bottom of the run, download the artifact <code>flappedear-telemetry-android-&lt;commit&gt;</code> and unzip it. Inside is <code>app-release.apk</code>.</li>
-  <li>Copy the APK to the phone (USB, Google Drive or email).</li>
-  <li>Open it from the Files app. Allow installs from that app when Android asks, then tap <strong>Install</strong>. If Play Protect warns about an unknown app, choose <strong>Install anyway</strong>.</li>
+  <li>On the phone, open the <a href="https://github.com/FlappedEar/Telemetry/releases">Releases page</a> and tap the <code>.apk</code> under <strong>Assets</strong> of the newest release.</li>
+  <li>Open the downloaded file. Allow installs from that app when Android asks, then tap <strong>Install</strong>. If Play Protect warns about an unknown app, choose <strong>Install anyway</strong>.</li>
   <li>Open <strong>FlappedEar Telemetry</strong>. It starts on <strong>Import a day</strong>.</li>
 </ol>
-<div class="tip"><p>Always take the APK from a run on <code>main</code>. Those builds share one signing key, so a newer one installs over the old one and keeps your saved days. Builds from pull requests are for testing only.</p></div>
+<div class="tip"><p>Releases and the builds from <code>main</code> share one signing key, so a newer one installs over the old one and keeps your saved days.</p></div>
+<p>Builds newer than the last release: on a computer signed in to GitHub, open the newest green run of the CI workflow on <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">branch main</a> and download the artifact <code>flappedear-telemetry-android-&lt;commit&gt;</code>. Inside the zip is <code>app-release.apk</code>. Builds from pull requests are for testing only.</p>
 <div class="note"><p>If Android refuses an update because the app "is not installed" or the signature differs, do not uninstall yet: uninstalling deletes the days kept in the app. Save them elsewhere first.</p></div>
 
 <h2 id="mac">macOS</h2>
-<p>The app needs macOS 12.0 or later. There is no signed Mac download yet. With Flutter 3.47.6 installed, run it from a checkout of the repository:</p>
+<p>The app needs macOS 12.0 or later.</p>
+<ol class="steps">
+  <li>Download the <code>-macos.zip</code> from the newest release and open it. Move <strong>FlappedEar Telemetry</strong> to <strong>Applications</strong>.</li>
+  <li>Open the app. The Mac download is not notarized by Apple yet, so the first time macOS refuses to open it:
+    <ul>
+      <li>macOS 15 and later: click <strong>Done</strong>, open <strong>System Settings &gt; Privacy &amp; Security</strong>, scroll down to the message about FlappedEar Telemetry and click <strong>Open Anyway</strong>, then confirm with your password or Touch ID.</li>
+      <li>macOS 12 to 14: Control-click the app, choose <strong>Open</strong>, then <strong>Open</strong> again.</li>
+    </ul>
+  </li>
+  <li>After that it opens normally. A newer release replaces the app in Applications; your saved days stay where you saved them.</li>
+</ol>
+<p>To run the newest code instead, install Flutter 3.47.6 and run it from a checkout of the repository:</p>
 <pre><code>flutter pub get
 flutter run -d macos</code></pre>
 
@@ -25,7 +42,7 @@ flutter run -d macos</code></pre>
 <p>The app needs Windows 10 or 11 (64-bit). It builds for Windows, but there is no download yet.</p>
 
 <h2 id="maps">Map backgrounds</h2>
-<p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the Android builds from CI have one. Tiles need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>
+<p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the releases and the Android builds from CI have one, a Mac build you run yourself does not. On iPhone, iPad and Mac the layers button also offers Apple Maps, which needs no key; other platforms do not have it. Maps need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>
 
 <h2 id="licences">Licences</h2>
 <p>FlappedEar Telemetry is free and its source code is under the Apache License 2.0. To see the licences of the app and of the software it uses, with the map credits (OpenStreetMap and MapTiler), open <strong>Settings</strong> (the gear in the toolbar) and choose <strong>Open-source licences</strong>.</p>

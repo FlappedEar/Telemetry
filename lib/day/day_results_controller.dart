@@ -221,7 +221,8 @@ final class DayResultsController extends ChangeNotifier {
   /// Saves the day to [path]: the event, its runs and recordings, the
   /// layouts set by the user and the excluded laps. Throws
   /// [FetprojectError] when the document cannot be written; the previous
-  /// file is then left as it was.
+  /// file is then left as it was, except where only the file itself may be
+  /// written, such as in the macOS sandbox (see `writeFetproject`).
   Future<void> save(String path) async {
     // One save at a time: a save asked for while another runs, such as
     // Save as… during the save after adding a session, follows it.
@@ -362,11 +363,16 @@ final class DayResultsController extends ChangeNotifier {
   /// been saved is saved again where it was. Additions run one after
   /// another, in the order asked. With [sameDayOnly], nothing is added
   /// unless every new recording started on the day's date
-  /// ([DayAddition.otherDay]).
+  /// ([DayAddition.otherDay]). [since], when given, runs from when the
+  /// recordings arrived (a share opening the day first), for the
+  /// diagnostics; else the time is measured from this call, waiting for
+  /// earlier additions included.
   Future<DayAddition> addRecordings(
     List<String> paths, {
     bool sameDayOnly = false,
+    Stopwatch? since,
   }) async {
+    final clock = since ?? (Stopwatch()..start());
     if (paths.isEmpty) return const DayAddition(notes: []);
     if (_disposed) {
       return const DayAddition(
@@ -383,7 +389,7 @@ final class DayResultsController extends ChangeNotifier {
     DayAddition addition;
     try {
       if (previous != null) await previous;
-      addition = await _add(paths, sameDayOnly: sameDayOnly);
+      addition = await _add(paths, sameDayOnly: sameDayOnly, clock: clock);
     } finally {
       --_waitingAdditions;
       done.complete();
@@ -398,6 +404,7 @@ final class DayResultsController extends ChangeNotifier {
   Future<DayAddition> _add(
     List<String> paths, {
     required bool sameDayOnly,
+    required Stopwatch clock,
   }) async {
     if (_disposed) {
       return const DayAddition(
@@ -491,6 +498,9 @@ final class DayResultsController extends ChangeNotifier {
     // kept for recovery now, so a share into a saved day does not replace
     // the unsaved day the recovery slot may hold.
     if (_documentPath == null && !_saving) _scheduleRecovery();
+    diagnostics.recordStep(DiagnosticSteps.addSession, clock.elapsed);
+    // Measured on to the coach's plan for it (see _requestCoach).
+    _additionClock = clock;
     notifyListeners();
     var saveError = '';
     // A save running now may have been asked for a new file: the day is
@@ -836,6 +846,12 @@ final class DayResultsController extends ChangeNotifier {
   bool get coachWithoutTheoreticalBest =>
       _theoreticalBest?.state == DayTheoreticalBestState.error;
 
+  /// Running from the start of the last addition until the coach's plan
+  /// for it, a save of automatic segments and its recalculation included;
+  /// null once measured, or when it failed or the user changed the day
+  /// meanwhile.
+  Stopwatch? _additionClock;
+
   /// Why the coach could not run; empty when it ran.
   String get coachError => _coachError;
   String _coachError = '';
@@ -891,6 +907,7 @@ final class DayResultsController extends ChangeNotifier {
     if (result.state == DayTheoreticalBestState.error) {
       // The coach needs the sector times, which failed (see
       // [coachWithoutTheoreticalBest]).
+      _additionClock = null;
       _coach = null;
       _coachError = '';
       _coachLoading = false;
@@ -901,6 +918,7 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
     DayCoach? coach;
     var error = '';
+    final clock = Stopwatch()..start();
     try {
       coach = await _coachRunner(
         _coachJob(result, {
@@ -911,6 +929,13 @@ final class DayResultsController extends ChangeNotifier {
       error = '$failure';
     }
     if (_disposed || generation != _theoreticalBestGeneration) return;
+    if (coach != null) {
+      diagnostics.recordStep(DiagnosticSteps.coach, clock.elapsed);
+      if (_additionClock case final added?) {
+        diagnostics.recordStep(DiagnosticSteps.addToCoach, added.elapsed);
+      }
+    }
+    _additionClock = null;
     _coach = coach;
     _coachError = error;
     _coachLoading = false;
@@ -1095,6 +1120,8 @@ final class DayResultsController extends ChangeNotifier {
   void _segmentsChanged() {
     _revision++;
     _dirty = true;
+    // The user's change ends the measurement of the last addition.
+    _additionClock = null;
     _resetTheoreticalBest();
     _scheduleRecovery();
     notifyListeners();
@@ -1163,6 +1190,8 @@ final class DayResultsController extends ChangeNotifier {
   void _rerank() {
     _revision++;
     _dirty = true;
+    // The user's change ends the measurement of the last addition.
+    _additionClock = null;
     _resetTheoreticalBest();
     _analysis = rerankDay(
       _analysis,

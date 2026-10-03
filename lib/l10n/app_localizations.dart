@@ -206,6 +206,66 @@ abstract class AppLocalizations {
   /// **'Session {number}'**
   String sessionName(int number);
 
+  /// Settings button tooltip and dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// Heading of the speed unit setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit for unlabelled speeds'**
+  String get settingsSpeedUnitHeading;
+
+  /// Explains the speed unit setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.'**
+  String get settingsSpeedUnitHelp;
+
+  /// Speed unit setting: assume no unit for unlabelled speeds.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get speedUnitNone;
+
+  /// Shown in settings when no track day is open.
+  ///
+  /// In en, this message translates to:
+  /// **'No day open yet.'**
+  String get settingsNoDayOpen;
+
+  /// The speed units the open day's recordings declare.
+  ///
+  /// In en, this message translates to:
+  /// **'The open day\'s recordings declare {units}.'**
+  String settingsDeclaredUnits(String units);
+
+  /// Joins two speed units: 'km/h and mph'. Keep the spaces.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get unitsAnd;
+
+  /// None of the open day's recordings declares a speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Its recordings do not say their speed unit.'**
+  String get settingsAllUnlabelled;
+
+  /// Some of the open day's recordings declare no speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}'**
+  String settingsSomeUnlabelled(int count);
+
+  /// Button that closes a dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
   /// Button that closes a dialog without changes.
   ///
   /// In en, this message translates to:
@@ -541,6 +601,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Best lap trace with {segment} highlighted'**
   String coachWhyMap(String segment);
+
+  /// Link to Apple Maps' legal notices, shown on the Apple Maps background.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get appleMapLegal;
 
   /// Section of the day page with the best lap and the analysis; bottom bar and side rail label.
   ///

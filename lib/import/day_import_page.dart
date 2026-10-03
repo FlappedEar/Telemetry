@@ -551,10 +551,12 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<({DayResultsController? day, bool snapshotLeft})> _todayWith(
     List<String> paths,
   ) async {
+    // From the share, opening the day included (see the diagnostics).
+    final clock = Stopwatch()..start();
     final recovery = await queueRecovery(widget.recovery.load);
     if (recovery != null) {
       if (!_recent(recovery.timestamp)) return (day: null, snapshotLeft: true);
-      final day = await _added(paths, () async {
+      final day = await _added(paths, clock, () async {
         await widget.fileAccess.restore();
         final day = await Isolate.run(_recoverJob(recovery));
         return day.analysis == null
@@ -568,7 +570,7 @@ class _DayImportPageState extends State<DayImportPage> {
       });
       return (day: day, snapshotLeft: day == null);
     }
-    final day = await _added(paths, () async {
+    final day = await _added(paths, clock, () async {
       final saved = await widget.documents.savedDays();
       if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
         return null;
@@ -591,13 +593,18 @@ class _DayImportPageState extends State<DayImportPage> {
   /// discarded as it was: its recovery snapshot is not written again.
   Future<DayResultsController?> _added(
     List<String> paths,
+    Stopwatch clock,
     Future<DayResultsController?> Function() open,
   ) async {
     DayResultsController? day;
     try {
       day = await open();
       if (day == null) return null;
-      final addition = await day.addRecordings(paths, sameDayOnly: true);
+      final addition = await day.addRecordings(
+        paths,
+        sameDayOnly: true,
+        since: clock,
+      );
       if (!addition.otherDay && addition.error.isEmpty) return day;
     } on Exception catch (error) {
       debugPrint('Today\'s day not continued: $error');
