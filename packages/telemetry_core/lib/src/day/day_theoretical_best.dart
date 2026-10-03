@@ -171,6 +171,18 @@ final class DayTheoreticalBest {
     return null;
   }
 
+  /// When [lap] was at [progressMeters] on the shared axis, or null where
+  /// its projection has no coverage there.
+  double? timeAt(DayLapRow lap, double progressMeters) {
+    final computed = this.computed;
+    if (computed == null) return null;
+    for (var i = 0; i < computed.population.length; ++i) {
+      if (computed.population[i].times.lapReference != lap.reference) continue;
+      return timeAtProgress(computed.traces[i], progressMeters);
+    }
+    return null;
+  }
+
   /// The corner at segment [index] of [segments], or null for a straight or
   /// sector.
   DayCorner? cornerAt(int index) {

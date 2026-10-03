@@ -60,6 +60,14 @@ void main() {
       expect(result.segments.map((s) => s.sourceLapReference).toSet().length, greaterThan(1));
     });
 
+    test('maps a lap between its time and the shared axis', () {
+      final lap = result.laps.first.lap;
+      final time = result.timeAt(lap, 300)!;
+      expect(time, inInclusiveRange(lap.start, lap.end));
+      expect(result.progressAt(lap, time), closeTo(300, 1e-6));
+      expect(result.timeAt(lap, result.axisLengthMeters * 3), isNull);
+    });
+
     test('gives each lap its loss to the fastest time of every segment', () {
       for (var i = 0; i < result.segments.length; ++i) {
         final losses = [for (final lap in result.laps) lap.lossSeconds[i]!];

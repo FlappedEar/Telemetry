@@ -334,3 +334,49 @@ other references are unchanged. To check other recordings locally, run the
 test with `FET_DAYREPORT_REFERENCE=<json>` and
 `FET_DAYREPORT_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the
 largest difference. Never edit the JSON by hand.
+
+## cpp_comparison_dump
+
+Runs FlappedEar Overlays' own `TrackProgress`, `TrackGeometry`, `MapLayers`
+and `ChannelSummary` with the comparison, map-layer and lap-chart functions
+of its app (`AnalysisControllerComparison.cpp`,
+`AnalysisControllerMapLayers.cpp`, `comparisonPreferredChannels` and
+`sessionSeries`; app member functions, so the tool repeats their lines) over
+VBO files and fixed cases and writes the results as JSON. Each file with lap
+traces, a start gate and an eligible lap gets pairs of its own laps (the
+first eligible lap against the fastest, the swap, and the last eligible lap
+against the second; a single eligible lap against itself), and a few
+corpus files of one track are compared across files. For each pair it
+follows the comparison of `AnalysisController`: the shared axis from lap A's
+trace and start gate, both projections, the shared map geometry and both
+overlay tracks, the available and preferred channels, the Δ time by
+progress over seven ranges, channel series by progress on both laps
+(including a missing channel, the gear and invalid ranges), both laps'
+positions and times at 42 progress values, the map-layer options and every
+layer on both laps (and an unknown layer and slot), and lap A's lap-detail
+charts on a time axis, values at the cursor and its own map. Series points
+are written every 4th and map points every 16th (`strides`), with each run's
+last point. The cases section runs `channelAlongProgress`, `placeOnMap`,
+`plausibleChannelValue`, `currentTrackPoint`, `buildTrackSegments` and
+`buildSharedTrackGeometry` on the hand-made straight runs of
+`MapLayersTests.cpp` (one with a GPS gap, one west-positive).
+
+```bash
+cmake -S tool/cpp_comparison_dump -B /tmp/comparisonbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/comparisonbuild
+/tmp/comparisonbuild/cpp_comparison_dump test/parity/comparison_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/comparison_parity_test.dart
+```
+
+`--day <day.json> <output.json>` compares chosen laps of a real day, writing
+every point: `runs` (`runId`, VBO `file`) and `pairs` (`a` and `b`, each a
+`runId` and `lapNumber`). Use it locally only; never commit its input or
+output. Run the test against it with `FET_COMPARISON_REFERENCE=<json>` and
+`FET_COMPARISON_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the number
+of values compared, the mismatches and the largest difference.
+
+The committed `test/parity/comparison_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+other references are unchanged. Never edit the JSON by hand.
