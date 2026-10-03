@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -200,7 +201,30 @@ class _DayImportPageState extends State<DayImportPage> {
     _incoming = (widget.incoming ?? PlatformIncomingRecordings.instance)
         .received
         .listen(_receive);
+    _controller.addListener(_imported);
     _checkRecovery();
+  }
+
+  /// Whether the import running was started by recordings shared from
+  /// another app; its day then opens by itself.
+  bool _showWhenImported = false;
+
+  void _imported() {
+    if (!_showWhenImported || _controller.isWorking || !mounted) return;
+    _showWhenImported = false;
+    if (_controller.state case DayImportFinished(:final runs, :final analysis?)
+        when ModalRoute.of(context)?.isCurrent ?? false) {
+      unawaited(
+        _show(
+          DayResultsController(
+            runs: runs,
+            analysis: analysis,
+            recovery: widget.recovery,
+            appender: widget.appender,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _checkRecovery() async {
@@ -336,6 +360,7 @@ class _DayImportPageState extends State<DayImportPage> {
   @override
   void dispose() {
     _incoming.cancel();
+    _controller.removeListener(_imported);
     if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
@@ -350,7 +375,16 @@ class _DayImportPageState extends State<DayImportPage> {
       unawaited(day.addRecordings(paths));
       return;
     }
+    final waiting = _waiting;
+    if (waiting != null) {
+      waiting.addAll(paths);
+      return;
+    }
     final behind = ModalRoute.of(context)?.isCurrent == false;
+    if (!behind && !_controller.isWorking && !_opening) {
+      unawaited(_continueToday(paths));
+      return;
+    }
     final started = !_controller.isWorking;
     _start(paths);
     if (behind && started) {
@@ -362,6 +396,93 @@ class _DayImportPageState extends State<DayImportPage> {
         ),
       );
     }
+  }
+
+  /// Shared recordings that arrived while today's day was being opened;
+  /// null when none is.
+  List<String>? _waiting;
+
+  /// Adds recordings shared while no day is shown to today's day, as the
+  /// driver does after each session even when the system closed the app in
+  /// between: the unsaved day kept for recovery, else the day saved last in
+  /// the app, when every recording started on its date. The day then opens
+  /// and says what was added. Otherwise the recordings start an import.
+  Future<void> _continueToday(List<String> paths) async {
+    final waiting = _waiting = [];
+    setState(() => _opening = true);
+    DayResultsController? today;
+    try {
+      today = await _todayWith(paths);
+    } finally {
+      _waiting = null;
+      if (mounted) setState(() => _opening = false);
+    }
+    if (!mounted) {
+      today?.dispose();
+      return;
+    }
+    if (today == null) {
+      _showWhenImported = !_controller.isWorking;
+      _start([...paths, ...waiting]);
+      return;
+    }
+    final shown = _show(today);
+    if (waiting.isNotEmpty) unawaited(today.addRecordings(waiting));
+    await shown;
+  }
+
+  // Only a day worked on in the last day can be today's: older ones are not
+  // opened (reading all their recordings) just to be refused.
+  static bool _recent(DateTime time) =>
+      DateTime.now().difference(time) < const Duration(hours: 24);
+
+  /// The first day that takes [paths] as recordings of its date, with them
+  /// added; null when none does.
+  Future<DayResultsController?> _todayWith(List<String> paths) async {
+    final candidates = <Future<DayResultsController?> Function()>[
+      () async {
+        final recovery = await queueRecovery(widget.recovery.load);
+        if (recovery == null || !_recent(recovery.timestamp)) return null;
+        await widget.fileAccess.restore();
+        final day = await Isolate.run(_recoverJob(recovery));
+        return day.analysis == null
+            ? null
+            : DayResultsController.recovered(
+                day,
+                recovery,
+                recovery: widget.recovery,
+                appender: widget.appender,
+              );
+      },
+      () async {
+        final saved = await widget.documents.savedDays();
+        if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
+          return null;
+        }
+        await widget.fileAccess.restore();
+        final day = await Isolate.run(_openJob(saved.first));
+        return day.analysis == null
+            ? null
+            : DayResultsController.opened(
+                day,
+                recovery: widget.recovery,
+                appender: widget.appender,
+              );
+      },
+    ];
+    for (final candidate in candidates) {
+      DayResultsController? day;
+      try {
+        day = await candidate();
+        if (day == null) continue;
+        final addition = await day.addRecordings(paths, sameDayOnly: true);
+        if (!addition.otherDay && addition.error.isEmpty) return day;
+      } on Exception catch (error) {
+        debugPrint('Today\'s day not continued: $error');
+      }
+      day?.dispose();
+    }
+    return null;
   }
 
   void _start(List<String> paths) {

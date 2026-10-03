@@ -88,8 +88,12 @@ On a phone or tablet, **Choose recordings…** picks VBO and RCZ files (there is
 no folder picker). Recordings can also be sent from another app: in
 RaceChrono, export a session and choose **FlappedEar Telemetry** in the share
 sheet. The app copies the shared files into its own storage and imports them
-on **Import a day**. While a day is open, a shared recording is added to that
-day instead, as its next session.
+on **Import a day**, and the day opens by itself. While a day is open, a
+shared recording is added to that day instead, as its next session. When the
+system has closed the app between sessions, a shared recording continues
+today's day: the unsaved day the app kept, or else the day saved last in the
+app, when it was worked on in the last 24 hours and the recording started on
+its date. Otherwise it starts a new day.
 
 At the track, a day grows one session at a time: **Add recordings** (the
 playlist button on the day page) or a recording shared while the day is open

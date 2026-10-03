@@ -241,8 +241,13 @@ final class DayResultsController extends ChangeNotifier {
   /// sessions. Only they are read; the day is grouped and ranked again with
   /// the user's layouts, exclusions and chosen group, and a day that has
   /// been saved is saved again where it was. Additions run one after
-  /// another, in the order asked.
-  Future<DayAddition> addRecordings(List<String> paths) async {
+  /// another, in the order asked. With [sameDayOnly], nothing is added
+  /// unless every new recording started on the day's date
+  /// ([DayAddition.otherDay]).
+  Future<DayAddition> addRecordings(
+    List<String> paths, {
+    bool sameDayOnly = false,
+  }) async {
     if (paths.isEmpty || _disposed) return const DayAddition(notes: []);
     ++_waitingAdditions;
     notifyListeners();
@@ -254,7 +259,7 @@ final class DayResultsController extends ChangeNotifier {
       if (previous != null) await previous;
       addition = _disposed
           ? const DayAddition(notes: [], error: 'The day was closed.')
-          : await _add(paths);
+          : await _add(paths, sameDayOnly: sameDayOnly);
     } finally {
       --_waitingAdditions;
       done.complete();
@@ -266,7 +271,22 @@ final class DayResultsController extends ChangeNotifier {
     return addition;
   }
 
-  Future<DayAddition> _add(List<String> paths) async {
+  Future<DayAddition> _add(
+    List<String> paths, {
+    required bool sameDayOnly,
+  }) async {
+    int? sameDayAs;
+    if (sameDayOnly) {
+      for (final named in _runs) {
+        final start = recordingTimestamp(named.run.telemetry);
+        if (start != null && (sameDayAs == null || start > sameDayAs)) {
+          sameDayAs = start;
+        }
+      }
+      if (sameDayAs == null) {
+        return const DayAddition(notes: [], otherDay: true);
+      }
+    }
     final job = _appender.start((
       paths: List.of(paths),
       runIds: {
@@ -275,6 +295,7 @@ final class DayResultsController extends ChangeNotifier {
       },
       runCount: _runs.length + missing.length,
       rowCount: _analysis.rows.length,
+      sameDayAs: sameDayAs,
     ), (_, _) {});
     _appendJob = job;
     DayAppendOutcome outcome;
@@ -290,7 +311,11 @@ final class DayResultsController extends ChangeNotifier {
     }
     final part = outcome.part;
     if (_disposed || part == null || outcome.runs.isEmpty) {
-      return DayAddition(notes: outcome.notes, error: outcome.error);
+      return DayAddition(
+        notes: outcome.notes,
+        error: outcome.error,
+        otherDay: outcome.otherDay,
+      );
     }
     try {
       _analysis = extendDay(
@@ -1012,7 +1037,12 @@ final class DayAddition {
     this.error = '',
     this.savedTo,
     this.saveError = '',
+    this.otherDay = false,
   });
+
+  /// Nothing was added: the recordings are from another day than this one
+  /// (asked with `sameDayOnly`).
+  final bool otherDay;
 
   /// The new sessions' names, "Session 4".
   final List<String> added;

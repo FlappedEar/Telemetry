@@ -86,8 +86,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
   @override
   void initState() {
     super.initState();
-    _reported = _controller.lastAddition;
     _controller.addListener(_reportAddition);
+    // An addition made before the page opened, such as a shared recording
+    // added to today's day, is reported once the page is shown.
+    if (_controller.lastAddition != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reportAddition());
+    }
   }
 
   @override

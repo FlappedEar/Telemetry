@@ -132,13 +132,25 @@ List<String> importPlanNotes(
 }
 
 /// Recordings to add to a day that already has [runIds] (its runs and its
-/// missing runs, [runCount] in all) and [rowCount] lap sections.
+/// missing runs, [runCount] in all) and [rowCount] lap sections. With
+/// [sameDayAs] (a recording start of the day, milliseconds since the
+/// epoch), recordings are added only when every new one started on that
+/// local calendar date.
 typedef DayAppendRequest = ({
   List<String> paths,
   Set<String> runIds,
   int runCount,
   int rowCount,
+  int? sameDayAs,
 });
+
+/// Whether [a] and [b] (milliseconds since the epoch) fall on one local
+/// calendar date.
+bool sameLocalDate(int a, int b) {
+  final x = DateTime.fromMillisecondsSinceEpoch(a);
+  final y = DateTime.fromMillisecondsSinceEpoch(b);
+  return x.year == y.year && x.month == y.month && x.day == y.day;
+}
 
 /// The runs a request adds and their part of the day.
 final class DayAppendOutcome {
@@ -147,7 +159,12 @@ final class DayAppendOutcome {
     this.runs = const [],
     this.part,
     this.error = '',
+    this.otherDay = false,
   });
+
+  /// Nothing was added: a new recording did not start on the day's date
+  /// (or has no date), as [DayAppendRequest.sameDayAs] asked.
+  final bool otherDay;
 
   /// The new runs, named after the day's sessions in recording order.
   final List<NamedRun> runs;
@@ -194,6 +211,14 @@ DayAppendOutcome runDayAppend(
     }
   }
   if (added.isEmpty) return DayAppendOutcome(notes: notes);
+  final day = request.sameDayAs;
+  if (day != null &&
+      !added.every((run) {
+        final start = recordingTimestamp(run.telemetry);
+        return start != null && sameLocalDate(start, day);
+      })) {
+    return DayAppendOutcome(notes: notes, otherDay: true);
+  }
   final runs = nameRunsInRecordingOrder(added, existingRuns: request.runCount);
   final part = analyzeDayRuns(
     [
