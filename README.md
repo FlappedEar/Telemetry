@@ -61,7 +61,11 @@ install `app-release.apk` (allow installs from the browser or file manager).
 Use builds from `main`: they share one signing key kept in the Actions cache,
 so a newer APK installs over the old one and keeps the app's days. If that
 cache expires (seven days without a build), the key changes and Android
-refuses the update; days would then have to be saved elsewhere first.
+refuses the update; days would then have to be saved elsewhere first. The
+job prints the key's SHA-256 ("Check the APK's signing key") and warns when it
+had to make a new one. APKs built before 2026-10-03 were each signed with a
+different key and do not update; uninstall such a build once before
+installing a newer one.
 
 ## Platforms
 
