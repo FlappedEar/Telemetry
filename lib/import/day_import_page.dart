@@ -14,6 +14,7 @@ import '../day/day_results_controller.dart';
 import '../day/day_results_page.dart';
 import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
+import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../settings_dialog.dart';
 import 'day_import_controller.dart';
@@ -672,7 +673,7 @@ class _DayImportPageState extends State<DayImportPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Import a day'),
-        actions: const [SettingsButton()],
+        actions: const [SettingsButton(), DiagnosticsMenu()],
       ),
       body: !_acceptsDrops
           ? content

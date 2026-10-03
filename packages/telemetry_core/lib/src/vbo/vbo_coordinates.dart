@@ -92,8 +92,12 @@ CoordinateEvidence resolveCoordinateEvidence(
 
 /// A coordinate column value in degrees (NaN when invalid or the unit is
 /// unknown); any other column's value unchanged.
-double normalizeChannelValue(String name, double value, CoordinateUnit? unit) {
-  final axis = coordinateAxisForName(name);
+double normalizeChannelValue(String name, double value, CoordinateUnit? unit) =>
+    normalizeAxisValue(coordinateAxisForName(name), value, unit);
+
+/// [normalizeChannelValue] for a column whose [coordinateAxisForName] is
+/// [axis], looked up once per column.
+double normalizeAxisValue(CoordinateAxis? axis, double value, CoordinateUnit? unit) {
   if (axis == null) return value;
   if (unit == null) return double.nan;
   return normalizeCoordinateDegrees(axis, value, unit) ?? double.nan;

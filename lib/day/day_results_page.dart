@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
@@ -413,6 +414,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onTap: () => _save(choose: true),
                 child: const Text('Save as…'),
               ),
+              diagnosticsMenuItem(context),
             ],
           ),
         ],

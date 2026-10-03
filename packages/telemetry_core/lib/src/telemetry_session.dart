@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'selection.dart';
 import 'timing_gate.dart';
 
 /// How [TelemetrySession.valueAt] reads between two samples.
@@ -35,15 +36,23 @@ final class TelemetryChannel {
 
   int get sampleCount => timestamps.length;
 
-  static double _medianInterval(Float64List timestamps) {
-    final intervals = <double>[];
+  // Channels on one clock share its timestamps (a VBO's columns, an RCZ
+  // device's channels), so the median is found once per clock. Timestamps
+  // never change once a channel is built.
+  static final _medians = Expando<double>('median interval');
+
+  static double _medianInterval(Float64List timestamps) =>
+      _medians[timestamps] ??= _computeMedianInterval(timestamps);
+
+  static double _computeMedianInterval(Float64List timestamps) {
+    final intervals = Float64List(timestamps.length > 1 ? timestamps.length - 1 : 0);
+    var count = 0;
     for (var index = 1; index < timestamps.length; ++index) {
       final interval = timestamps[index] - timestamps[index - 1];
-      if (interval.isFinite && interval > 0.0) intervals.add(interval);
+      if (interval.isFinite && interval > 0.0) intervals[count++] = interval;
     }
-    if (intervals.isEmpty) return 0.0;
-    intervals.sort();
-    return intervals[intervals.length ~/ 2];
+    if (count == 0) return 0.0;
+    return selectKth(intervals, count, count ~/ 2);
   }
 }
 

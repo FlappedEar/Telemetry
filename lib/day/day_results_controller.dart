@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/app_diagnostics.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
 import 'recovery_store.dart';
@@ -62,8 +63,10 @@ final class DayResultsController extends ChangeNotifier {
     ChannelSummariesRunner? channelSummariesRunner,
     DayAppender? appender,
     bool changed = false,
+    AppDiagnostics? diagnostics,
   }) : _runs = [...runs],
        _appender = appender ?? const IsolateDayAppender(),
+       diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
            channelSummariesRunner ?? defaultChannelSummariesRunner,
        _theoreticalBestRunner =
@@ -138,6 +141,9 @@ final class DayResultsController extends ChangeNotifier {
 
   /// The day's runs whose recordings were read, in the order added.
   List<NamedRun> get runs => List.unmodifiable(_runs);
+
+  /// Where background calculation times go.
+  final AppDiagnostics diagnostics;
   DayAnalysis _analysis;
   String? _groupId;
 
@@ -745,10 +751,12 @@ final class DayResultsController extends ChangeNotifier {
     final documentRuns = _documentRuns;
     _theoreticalKey = decisionsKey;
     DayTheoreticalBest result;
+    final clock = Stopwatch()..start();
     try {
       result = await _theoreticalBestRunner(
         _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
       );
+      diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
     } on Exception catch (error) {
       result = DayTheoreticalBest(
         groupId: _analysis.chosenGroupId ?? '',
@@ -848,12 +856,14 @@ final class DayResultsController extends ChangeNotifier {
     _channelSummariesLoading = true;
     notifyListeners();
     DayChannelSummaries result;
+    final clock = Stopwatch()..start();
     try {
       result = await _channelSummariesRunner(
         _channelSummariesJob(_analysis.rows, {
           for (final named in runs) named.run.id: named.run.telemetry,
         }),
       );
+      diagnostics.recordStep(DiagnosticSteps.channelSummaries, clock.elapsed);
     } on Exception catch (error) {
       result = DayChannelSummaries(error: '$error');
     }
