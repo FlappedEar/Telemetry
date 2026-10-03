@@ -114,8 +114,8 @@ void main() {
       ]);
       final overlaysSaved = readDayDocument(overlaysPath);
 
-      // Telemetry opens it: one session, the RCZ's laps, the VBO kept with
-      // it as its alternative recording.
+      // Telemetry opens it: one session, the RCZ's laps, the VBO kept beside
+      // it, not fused: Overlays decided no fusion (FET-57's rule).
       final day = openDay(overlaysPath);
       expect(day.missing, isEmpty);
       expect(day.runs, hasLength(1));
@@ -127,9 +127,12 @@ void main() {
           .cast<Map<String, Object?>>()
           .firstWhere((source) => (source['importProvenance']! as Map)['format'] == 'vbo');
       expect(alternative.sourceId, vboSource['id']);
+      expect(alternative.automatic, isFalse);
 
-      // Telemetry's re-save keeps both sources and the primary as they were.
+      // Telemetry's re-save keeps both sources and the primary as they were,
+      // and decides no fusion for Overlays.
       final fusions = fuseOpenedDay(day);
+      expect(fusions[session.id]!.fused, isFalse);
       final resaved = dayDocument(
         eventId: day.eventId,
         name: day.name,
@@ -143,6 +146,7 @@ void main() {
       );
       expect(fet.validateFetproject(resaved), isNull);
       expect(_grouping(resaved), _grouping(overlaysSaved));
+      expect(_runs(resaved).single.containsKey('fusion'), isFalse);
       await saveDayDocument(overlaysPath, resaved);
       // Overlays adds the skipped file to Telemetry's save in its review and
       // knows the RCZ is in the day already.
@@ -176,15 +180,28 @@ void main() {
           ),
       ]);
       final telemetryPath = p.join(root, 'telemetry-reviewed.fetproject');
+      // The pair the user made is fused when it is imported, and its saved
+      // decision carries it from then on.
+      final alternatives = importedAlternatives(plan, [
+        for (final named in runs) named.run,
+      ], choices: choices);
+      final fused = {
+        for (final named in runs)
+          if (alternatives[named.run.id] case final alternative?)
+            named.run.id: fuseRunRecordings(named.run, alternative),
+      };
+      expect(fused.values.single.fused, isTrue);
       final document = dayDocument(
         eventId: newEventId(),
         name: 'Reviewed day',
         runs: runs,
         analysis: analysis,
         projectPath: telemetryPath,
-        pendingAlternatives: importedAlternatives(plan, [
-          for (final named in runs) named.run,
-        ], choices: choices),
+        fusions: fused,
+      );
+      expect(
+        (_runs(document).single['fusion']! as Map)['alternativeSourceId'],
+        alternatives.values.single.sourceId,
       );
       expect(fet.validateFetproject(document), isNull);
       await saveDayDocument(telemetryPath, document);
@@ -194,7 +211,43 @@ void main() {
       expect(_recordings(opened), _recordings(inspected));
       // And Telemetry reads its own save back the same way.
       final reopened = openDay(telemetryPath);
-      expect(reopened.alternatives[reopened.runs.single.run.id]!.format, RecordingFormat.vbo);
+      final reopenedId = reopened.runs.single.run.id;
+      expect(reopened.alternatives[reopenedId]!.format, RecordingFormat.vbo);
+      final reapplied = fuseOpenedDay(reopened)[reopenedId]!;
+      expect(reapplied.fused, isTrue);
+      expect(reapplied.fromDocument, isTrue, reason: 'the saved decision, not aligned again');
+    },
+    timeout: const Timeout(Duration(minutes: 10)),
+    skip: _tool == null ? _skip : false,
+  );
+
+  test(
+    'a pairing Overlays made that is not a VBO with its RCZ is kept and never fused',
+    () async {
+      // Two VBOs made one run in Overlays' review, as an alternative
+      // attached in Run details would be.
+      final path = p.join(root, 'overlays-two-vbo.fetproject');
+      final reviewed = _run(['review', path, 'Two VBOs', '$vbo=new', '$other=same:1']);
+      expect(_recordings(reviewed['inspected']! as Map<String, Object?>), [
+        ['vbo alternative', 'vbo primary'],
+      ]);
+      final saved = readDayDocument(path);
+      final day = openDay(path);
+      expect(day.alternatives, isEmpty);
+      expect(fuseOpenedDay(day), isEmpty);
+      final resaved = dayDocument(
+        eventId: day.eventId,
+        name: day.name,
+        runs: day.runs,
+        analysis: day.analysis!,
+        exclusions: day.exclusions,
+        projectPath: path,
+        previous: day.document,
+        previousPath: path,
+        fusions: fuseOpenedDay(day),
+      );
+      expect(_runs(resaved).single.containsKey('fusion'), isFalse);
+      expect(_grouping(resaved), _grouping(saved));
     },
     timeout: const Timeout(Duration(minutes: 10)),
     skip: _tool == null ? _skip : false,

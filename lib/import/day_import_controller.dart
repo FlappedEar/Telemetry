@@ -113,6 +113,15 @@ final class DayImportController extends ChangeNotifier {
     ImportChoices? choices,
   }) {
     if (isWorking || isReviewing || paths.isEmpty) return false;
+    _import(paths, includeSubfolders: includeSubfolders, choices: choices);
+    return true;
+  }
+
+  void _import(
+    List<String> paths, {
+    required bool includeSubfolders,
+    ImportChoices? choices,
+  }) {
     final ticket = _generation.begin(paths);
     final clock = Stopwatch()..start();
     _set(const DayImportWorking());
@@ -144,7 +153,6 @@ final class DayImportController extends ChangeNotifier {
         );
       },
     );
-    return true;
   }
 
   /// Prepares [paths] for the user's review (FET-58) instead of importing
@@ -217,12 +225,14 @@ final class DayImportController extends ChangeNotifier {
         null) {
       return false;
     }
-    _set(const DayImportIdle());
-    return start(
+    // Straight from the review to the import: never idle in between, so
+    // recordings shared meanwhile wait for it rather than start another.
+    _import(
       state.paths,
       includeSubfolders: state.includeSubfolders,
       choices: Map.of(choices),
     );
+    return true;
   }
 
   /// Forgets a finished import once its day has been shown: from then on

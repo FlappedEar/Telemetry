@@ -56,6 +56,23 @@ final class _FakeImporter implements DayImporter {
   }
 }
 
+/// Prepares reviews on the test's own thread.
+final class _SyncPreparer implements ImportPreparer {
+  @override
+  ImportPreviewJob start(DayImportRequest request, void Function(int, int) _) =>
+      _SyncPreviewJob(runImportPreview(request));
+}
+
+final class _SyncPreviewJob implements ImportPreviewJob {
+  _SyncPreviewJob(ImportPreview preview) : result = Future.value(preview);
+
+  @override
+  final Future<ImportPreview> result;
+
+  @override
+  void cancel() {}
+}
+
 /// Prepares additions to a day on the test's own thread.
 final class _SyncAppender implements DayAppender {
   @override
@@ -283,6 +300,59 @@ void main() {
     expect(find.text('Session 2 added to the day.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await settleRecovery(tester);
+  });
+
+  testWidgets('a recording shared during a review is imported after it', (
+    tester,
+  ) async {
+    final incoming = _FakeIncoming();
+    final reviewing = DayImportController(
+      importer: importer,
+      preparer: _SyncPreparer(),
+    );
+    addTearDown(reviewing.dispose);
+    pickers.recordings = [write('reviewed.vbo', _datedVbo(hour: 9))];
+    final shared = write('shared.vbo', _datedVbo(hour: 11, speed: 80));
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayImportPage(
+          controller: reviewing,
+          pickers: pickers,
+          incoming: incoming,
+          picksFolders: false,
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
+    await tester.tap(find.text('Choose recordings…'));
+    await tester.pumpAndSettle();
+    expect(find.text('Review the import'), findsOneWidget);
+
+    // The next session is shared while the review is open: it waits.
+    incoming.controller.add([shared]);
+    await tester.pump();
+    expect(importer.jobs, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('confirmReview')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(importer.jobs, hasLength(1));
+    expect(importer.jobs.single.choices, isNotNull);
+    expect(find.textContaining('Nothing was imported'), findsNothing);
+    importer.jobs.single.finish();
+    for (var i = 0; i < 20 && importer.jobs.length < 2; ++i) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    // Not refused and not dropped: imported once the reviewed one is in.
+    expect(find.textContaining('Nothing was imported'), findsNothing);
+    expect(importer.jobs, hasLength(2));
+    expect(importer.jobs.last.request.paths, contains(shared));
+    expect(importer.jobs.last.choices, isNull);
   });
 
   testWidgets('a share while a day is open imports behind it and says so', (

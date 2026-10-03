@@ -369,12 +369,16 @@ the decision Overlays approved.
 on synthetic recordings: Overlays' review makes the RCZ of
 `writeFusionPair` the run, its VBO "Same run as" the RCZ (overriding the
 automatic pairing) and skips a third file. Telemetry opens the day with the
-RCZ's laps and the VBO as the run's alternative recording, and its re-save
-groups the sources as Overlays did; Overlays then adds the skipped file in
-its own review and recognises the RCZ as already in the day. Telemetry's
-review with the same choices saves the run as Overlays does (one run, the
-same primary, the same sources with content, fingerprint and import
-provenance) and Overlays lists the same recordings. Last run against
+RCZ's laps and the VBO kept beside the run, not fused (Overlays decided no
+fusion; FET-57's rule), and its re-save groups the sources as Overlays did
+and writes no `fusion`; Overlays then adds the skipped file in its own
+review and recognises the RCZ as already in the day. Telemetry's review
+with the same choices fuses the pair at import and saves the run as
+Overlays does (one run, the same primary, the same sources with content,
+fingerprint and import provenance) plus the fusion decision, which
+Telemetry applies again on open without aligning; Overlays lists the same
+recordings. Two VBOs made one run in Overlays' review are kept and never
+fused, and Telemetry's re-save writes no `fusion`. Last run against
 FlappedEar/Overlay `d4d1039`: passed.
 
 The committed day in `../fetproject/test/fixtures/roundtrip` was built by
