@@ -138,8 +138,8 @@ installing a newer one.
 | --- | --- |
 | iOS | 15 |
 | Android | 8.0 (API level 26) |
-| macOS | not decided |
-| Windows | not decided |
+| macOS | 15.0 |
+| Windows | 10 (64-bit) |
 
 macOS is the active development platform.
 
