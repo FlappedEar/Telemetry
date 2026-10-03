@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/corner_details.dart';
 import 'package:telemetry/day/day_results_page.dart';
@@ -103,7 +104,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(412, 3000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
-        MaterialApp(
+        TelemetryApp(
           home: Scaffold(
             body: ListView(
               children: [TheoreticalBestCard(result: result, path: path)],
@@ -178,7 +179,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(412, 915));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
-        MaterialApp(
+        TelemetryApp(
           home: Scaffold(
             body: ListView(children: [TheoreticalBestCard(result: result)]),
           ),
@@ -301,7 +302,7 @@ void main() {
 
   testWidgets('says why there is no theoretical best', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TelemetryApp(
         home: Scaffold(
           body: Column(
             children: [
@@ -325,6 +326,54 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Timing every lap on one track axis…'), findsOneWidget);
+  });
+
+  testWidgets('the theoretical best speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final result = dayTheoreticalBest(analysis, outingRuns(outcome.runs));
+    final best = analysis.ranking!.bestOfDay!;
+    final session = outcome.runs
+        .firstWhere((named) => named.run.id == best.runId)
+        .run
+        .telemetry;
+    final path = lapPath(
+      session,
+      best.start,
+      best.end,
+      origin: mapOrigin(session),
+    );
+    await tester.binding.setSurfaceSize(const Size(412, 4000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: Scaffold(
+          body: ListView(
+            children: [TheoreticalBestCard(result: result, path: path)],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Teoretycznie najlepsze'), findsWidgets);
+    expect(find.text('Gdzie ucieka czas'), findsOneWidget);
+    expect(find.text('Czasy sektorów'), findsOneWidget);
+    expect(find.text('Zakręt 1'), findsWidgets);
+    expect(find.text('Najszybciej'), findsOneWidget);
+    expect(find.textContaining('OKR. '), findsWidgets);
+    expect(find.textContaining('najlepsze'), findsWidgets);
+    expect(
+      tester
+          .widget<TrackMap>(find.byKey(const ValueKey('lossMap')))
+          .semanticLabel,
+      contains('Sesja '),
+    );
+    expect(find.text('Theoretical best'), findsNothing);
+    expect(find.text('Sector times'), findsNothing);
+    expect(find.text('Corner 1'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   test('the controller drops a result for laps that changed', () async {

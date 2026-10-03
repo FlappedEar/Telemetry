@@ -633,4 +633,192 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get lapIssueDifferentRoute =>
       'Lap leaves the route the other laps took (off track, a detour or the pit lane)';
+
+  @override
+  String get tbTiming => 'Timing every lap on one track axis…';
+
+  @override
+  String tbIntro(int segments, int laps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      segments,
+      locale: localeName,
+      other: '$segments segments',
+      one: '1 segment',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: '$laps laps',
+      one: '1 lap',
+    );
+    return 'The fastest time of each of the $_temp0 across $_temp1. It combines parts of different laps, so it does not show that the whole lap can be driven that fast.';
+  }
+
+  @override
+  String get tbSegmentsProposed =>
+      'Segments proposed from the best lap; saving the day keeps them.';
+
+  @override
+  String get tbSegmentsCorrected => 'The segments include your corrections.';
+
+  @override
+  String get tbEditSegments => 'Edit segments';
+
+  @override
+  String get tbWhereTimeGoes => 'Where the time goes';
+
+  @override
+  String tbMarkedBest(String text) {
+    return '$text · best';
+  }
+
+  @override
+  String tbMapLabel(String lap) {
+    return 'Best lap trace, each segment coloured by the time $lap loses there';
+  }
+
+  @override
+  String get tbTapCorner =>
+      'Tap a corner for its speeds, braking and pickup against the best lap.';
+
+  @override
+  String get tbCompareHint =>
+      'The compare button opens this lap against the best lap through the segment in the Corner Analyzer.';
+
+  @override
+  String get tbOpenInAnalyzer => 'Open in the Corner Analyzer';
+
+  @override
+  String get tbSectorTimes => 'Sector times';
+
+  @override
+  String get tbSectorHint =>
+      'The fastest time of each segment is highlighted. Tap a lap to show its losses on the map.';
+
+  @override
+  String tbNotCovered(String time) {
+    return 'Not fully covered on this lap · fastest $time';
+  }
+
+  @override
+  String tbFastestHere(String time) {
+    return 'Fastest here · $time';
+  }
+
+  @override
+  String tbFastestBy(String time, String lap) {
+    return 'Fastest $time · $lap';
+  }
+
+  @override
+  String get tbLapUnavailable => 'lap unavailable';
+
+  @override
+  String get tbBestLap => 'Best lap';
+
+  @override
+  String get tbBestLapSameSegments => 'Best lap, same segments';
+
+  @override
+  String get tbAvailable => 'Available';
+
+  @override
+  String get tbLapColumn => 'Lap';
+
+  @override
+  String get tbTimeColumn => 'Time';
+
+  @override
+  String get tbFastestRow => 'Fastest';
+
+  @override
+  String tbSegmentCorner(String number) {
+    return 'Corner $number';
+  }
+
+  @override
+  String tbSegmentCorners(String numbers) {
+    return 'Corners $numbers';
+  }
+
+  @override
+  String tbSegmentStraight(String number) {
+    return 'Straight $number';
+  }
+
+  @override
+  String get tbNoConfiguration =>
+      'Confirm a compatible track configuration before calculating a theoretical best.';
+
+  @override
+  String get tbNoEligibleLaps =>
+      'No eligible laps in this group to calculate a theoretical best from.';
+
+  @override
+  String get tbNoApprovedRun =>
+      'No run in this group has an approved segment review yet. Approve segments for at least one run first.';
+
+  @override
+  String get tbNoApprovedSegments =>
+      'No approved segments to measure sectors against.';
+
+  @override
+  String get tbIncompleteCoverage =>
+      'At least one sector has no fully covered time on any eligible lap, so no total is shown.';
+
+  @override
+  String get tbCancelled => 'Theoretical best calculation was cancelled.';
+
+  @override
+  String get consistencyHeading => 'Consistency';
+
+  @override
+  String consistencyIntro(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps are',
+      one: '1 lap is',
+    );
+    return 'Typical time is the median; the spread is the interquartile range, the width of the middle half of the laps, so one slow or quick lap does not dominate it. At least $_temp0 needed.';
+  }
+
+  @override
+  String get consistencyLapTimes => 'Lap times';
+
+  @override
+  String get consistencyAllSessions => 'All sessions';
+
+  @override
+  String get consistencySegmentTimes => 'Segment times';
+
+  @override
+  String get consistencyMeasuring => 'Measured with the theoretical best…';
+
+  @override
+  String consistencyNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Needs at least $_temp0';
+  }
+
+  @override
+  String consistencyValue(String time, String spread) {
+    return '$time · spread $spread s';
+  }
+
+  @override
+  String consistencyLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$_temp0';
+  }
 }

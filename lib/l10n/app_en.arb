@@ -949,5 +949,254 @@
   "lapIssueDifferentRoute": "Lap leaves the route the other laps took (off track, a detour or the pit lane)",
   "@lapIssueDifferentRoute": {
     "description": "Why a lap is not ranked."
+  },
+  "tbTiming": "Timing every lap on one track axis…",
+  "@tbTiming": {
+    "description": "Theoretical best card while it is calculated."
+  },
+  "tbIntro": "The fastest time of each of the {segments, plural, =1{1 segment} other{{segments} segments}} across {laps, plural, =1{1 lap} other{{laps} laps}}. It combines parts of different laps, so it does not show that the whole lap can be driven that fast.",
+  "@tbIntro": {
+    "description": "Explains the theoretical best: the fastest time of every segment over all timed laps.",
+    "placeholders": {
+      "segments": {
+        "type": "int"
+      },
+      "laps": {
+        "type": "int"
+      }
+    }
+  },
+  "tbSegmentsProposed": "Segments proposed from the best lap; saving the day keeps them.",
+  "@tbSegmentsProposed": {
+    "description": "After the theoretical best explanation when the segments were proposed automatically."
+  },
+  "tbSegmentsCorrected": "The segments include your corrections.",
+  "@tbSegmentsCorrected": {
+    "description": "After the theoretical best explanation when the user edited the segments."
+  },
+  "tbEditSegments": "Edit segments",
+  "@tbEditSegments": {
+    "description": "Button opening the segment editor."
+  },
+  "tbWhereTimeGoes": "Where the time goes",
+  "@tbWhereTimeGoes": {
+    "description": "Heading of the loss map and the list of each segment's time loss."
+  },
+  "tbMarkedBest": "{text} · best",
+  "@tbMarkedBest": {
+    "description": "A lap in the lap choice or the sector table marked as the best lap of the day.",
+    "placeholders": {
+      "text": {
+        "type": "String",
+        "example": "Session 1 · LAP 2 · 1:31.234"
+      }
+    }
+  },
+  "tbMapLabel": "Best lap trace, each segment coloured by the time {lap} loses there",
+  "@tbMapLabel": {
+    "description": "Screen reader label of the loss map.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 1 · LAP 2"
+      }
+    }
+  },
+  "tbTapCorner": "Tap a corner for its speeds, braking and pickup against the best lap.",
+  "@tbTapCorner": {
+    "description": "Hint above the list of segment losses."
+  },
+  "tbCompareHint": "The compare button opens this lap against the best lap through the segment in the Corner Analyzer.",
+  "@tbCompareHint": {
+    "description": "Hint above the list of segment losses when laps can be compared."
+  },
+  "tbOpenInAnalyzer": "Open in the Corner Analyzer",
+  "@tbOpenInAnalyzer": {
+    "description": "Tooltip of the button comparing a lap with the best lap through one segment."
+  },
+  "tbSectorTimes": "Sector times",
+  "@tbSectorTimes": {
+    "description": "Heading of the table of every lap's segment times."
+  },
+  "tbSectorHint": "The fastest time of each segment is highlighted. Tap a lap to show its losses on the map.",
+  "@tbSectorHint": {
+    "description": "Explains the sector table."
+  },
+  "tbNotCovered": "Not fully covered on this lap · fastest {time}",
+  "@tbNotCovered": {
+    "description": "A segment the chosen lap has no full time through, with the fastest time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "12.345"
+      }
+    }
+  },
+  "tbFastestHere": "Fastest here · {time}",
+  "@tbFastestHere": {
+    "description": "A segment where the chosen lap set the fastest time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "12.345"
+      }
+    }
+  },
+  "tbFastestBy": "Fastest {time} · {lap}",
+  "@tbFastestBy": {
+    "description": "A segment's fastest time and the lap that set it.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "12.345"
+      },
+      "lap": {
+        "type": "String",
+        "example": "Session 1 · LAP 2"
+      }
+    }
+  },
+  "tbLapUnavailable": "lap unavailable",
+  "@tbLapUnavailable": {
+    "description": "In place of the lap that set a segment's fastest time when it is not found."
+  },
+  "tbBestLap": "Best lap",
+  "@tbBestLap": {
+    "description": "Label of the best lap's time on the theoretical best card."
+  },
+  "tbBestLapSameSegments": "Best lap, same segments",
+  "@tbBestLapSameSegments": {
+    "description": "Label of the best lap's time over the segments only, when they do not cover the whole lap."
+  },
+  "tbAvailable": "Available",
+  "@tbAvailable": {
+    "description": "Label of the time the best lap leaves: best lap minus theoretical best."
+  },
+  "tbLapColumn": "Lap",
+  "@tbLapColumn": {
+    "description": "Sector table column header."
+  },
+  "tbTimeColumn": "Time",
+  "@tbTimeColumn": {
+    "description": "Sector table column header: the lap time."
+  },
+  "tbFastestRow": "Fastest",
+  "@tbFastestRow": {
+    "description": "Sector table last row: the fastest time of each segment."
+  },
+  "tbSegmentCorner": "Corner {number}",
+  "@tbSegmentCorner": {
+    "description": "An automatically named corner segment.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "3"
+      }
+    }
+  },
+  "tbSegmentCorners": "Corners {numbers}",
+  "@tbSegmentCorners": {
+    "description": "An automatically named segment of linked corners.",
+    "placeholders": {
+      "numbers": {
+        "type": "String",
+        "example": "3–4"
+      }
+    }
+  },
+  "tbSegmentStraight": "Straight {number}",
+  "@tbSegmentStraight": {
+    "description": "An automatically named straight segment.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "2"
+      }
+    }
+  },
+  "tbNoConfiguration": "Confirm a compatible track configuration before calculating a theoretical best.",
+  "@tbNoConfiguration": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbNoEligibleLaps": "No eligible laps in this group to calculate a theoretical best from.",
+  "@tbNoEligibleLaps": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbNoApprovedRun": "No run in this group has an approved segment review yet. Approve segments for at least one run first.",
+  "@tbNoApprovedRun": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbNoApprovedSegments": "No approved segments to measure sectors against.",
+  "@tbNoApprovedSegments": {
+    "description": "Why there is no theoretical best."
+  },
+  "tbIncompleteCoverage": "At least one sector has no fully covered time on any eligible lap, so no total is shown.",
+  "@tbIncompleteCoverage": {
+    "description": "Why the theoretical best total, or a segment's fastest time, is not shown."
+  },
+  "tbCancelled": "Theoretical best calculation was cancelled.",
+  "@tbCancelled": {
+    "description": "Why there is no theoretical best."
+  },
+  "consistencyHeading": "Consistency",
+  "@consistencyHeading": {
+    "description": "Heading of the card on how repeatable lap and segment times are."
+  },
+  "consistencyIntro": "Typical time is the median; the spread is the interquartile range, the width of the middle half of the laps, so one slow or quick lap does not dominate it. At least {count, plural, =1{1 lap is} other{{count} laps are}} needed.",
+  "@consistencyIntro": {
+    "description": "Explains the consistency card.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "consistencyLapTimes": "Lap times",
+  "@consistencyLapTimes": {
+    "description": "Consistency card heading of the lap times."
+  },
+  "consistencyAllSessions": "All sessions",
+  "@consistencyAllSessions": {
+    "description": "Consistency of the lap times over the whole day."
+  },
+  "consistencySegmentTimes": "Segment times",
+  "@consistencySegmentTimes": {
+    "description": "Consistency card heading of the segment times."
+  },
+  "consistencyMeasuring": "Measured with the theoretical best…",
+  "@consistencyMeasuring": {
+    "description": "Consistency card while the segment times are calculated."
+  },
+  "consistencyNeedsLaps": "Needs at least {count, plural, =1{1 lap} other{{count} laps}}",
+  "@consistencyNeedsLaps": {
+    "description": "In place of a consistency with too few laps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "consistencyValue": "{time} · spread {spread} s",
+  "@consistencyValue": {
+    "description": "A typical (median) time and its spread (interquartile range) in seconds.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:31.234"
+      },
+      "spread": {
+        "type": "String",
+        "example": "0.412"
+      }
+    }
+  },
+  "consistencyLapCount": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@consistencyLapCount": {
+    "description": "How many laps a consistency is measured over.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

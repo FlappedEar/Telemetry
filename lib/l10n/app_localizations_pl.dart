@@ -640,4 +640,195 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get lapIssueDifferentRoute =>
       'Okrążenie zjeżdża z trasy pozostałych okrążeń (wyjazd poza tor, objazd lub aleja serwisowa)';
+
+  @override
+  String get tbTiming => 'Pomiar czasu każdego okrążenia na wspólnej osi toru…';
+
+  @override
+  String tbIntro(int segments, int laps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      segments,
+      locale: localeName,
+      other: '$segments segmentów',
+      one: '1 segmentu',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: '$laps okrążeniach',
+      one: '1 okrążeniu',
+    );
+    return 'Najszybszy czas każdego z $_temp0 na $_temp1. Łączy fragmenty różnych okrążeń, więc nie dowodzi, że całe okrążenie da się przejechać tak szybko.';
+  }
+
+  @override
+  String get tbSegmentsProposed =>
+      'Segmenty zaproponowano na podstawie najlepszego okrążenia; zapisanie dnia je zachowa.';
+
+  @override
+  String get tbSegmentsCorrected => 'Segmenty uwzględniają Twoje poprawki.';
+
+  @override
+  String get tbEditSegments => 'Edytuj segmenty';
+
+  @override
+  String get tbWhereTimeGoes => 'Gdzie ucieka czas';
+
+  @override
+  String tbMarkedBest(String text) {
+    return '$text · najlepsze';
+  }
+
+  @override
+  String tbMapLabel(String lap) {
+    return 'Ślad najlepszego okrążenia, każdy segment pokolorowany według czasu, jaki traci tam $lap';
+  }
+
+  @override
+  String get tbTapCorner =>
+      'Dotknij zakrętu, aby zobaczyć prędkości, hamowanie i powrót do gazu na tle najlepszego okrążenia.';
+
+  @override
+  String get tbCompareHint =>
+      'Przycisk porównania otwiera to okrążenie na tle najlepszego okrążenia w danym segmencie w Analizatorze zakrętów.';
+
+  @override
+  String get tbOpenInAnalyzer => 'Otwórz w Analizatorze zakrętów';
+
+  @override
+  String get tbSectorTimes => 'Czasy sektorów';
+
+  @override
+  String get tbSectorHint =>
+      'Najszybszy czas każdego segmentu jest wyróżniony. Dotknij okrążenia, aby pokazać jego straty na mapie.';
+
+  @override
+  String tbNotCovered(String time) {
+    return 'Nie w pełni pokryty na tym okrążeniu · najszybciej $time';
+  }
+
+  @override
+  String tbFastestHere(String time) {
+    return 'Najszybciej tutaj · $time';
+  }
+
+  @override
+  String tbFastestBy(String time, String lap) {
+    return 'Najszybciej $time · $lap';
+  }
+
+  @override
+  String get tbLapUnavailable => 'okrążenie niedostępne';
+
+  @override
+  String get tbBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String get tbBestLapSameSegments => 'Najlepsze okrążenie, te same segmenty';
+
+  @override
+  String get tbAvailable => 'Do zyskania';
+
+  @override
+  String get tbLapColumn => 'Okrążenie';
+
+  @override
+  String get tbTimeColumn => 'Czas';
+
+  @override
+  String get tbFastestRow => 'Najszybciej';
+
+  @override
+  String tbSegmentCorner(String number) {
+    return 'Zakręt $number';
+  }
+
+  @override
+  String tbSegmentCorners(String numbers) {
+    return 'Zakręty $numbers';
+  }
+
+  @override
+  String tbSegmentStraight(String number) {
+    return 'Prosta $number';
+  }
+
+  @override
+  String get tbNoConfiguration =>
+      'Potwierdź zgodną konfigurację toru, aby obliczyć teoretycznie najlepsze okrążenie.';
+
+  @override
+  String get tbNoEligibleLaps =>
+      'W tej grupie nie ma okrążeń, z których można obliczyć teoretycznie najlepsze okrążenie.';
+
+  @override
+  String get tbNoApprovedRun =>
+      'Żadna sesja w tej grupie nie ma jeszcze zatwierdzonych segmentów. Najpierw zatwierdź segmenty dla co najmniej jednej sesji.';
+
+  @override
+  String get tbNoApprovedSegments =>
+      'Brak zatwierdzonych segmentów, według których można mierzyć sektory.';
+
+  @override
+  String get tbIncompleteCoverage =>
+      'Co najmniej jeden sektor nie ma w pełni pokrytego czasu na żadnym okrążeniu, więc suma nie jest pokazana.';
+
+  @override
+  String get tbCancelled =>
+      'Obliczanie teoretycznie najlepszego okrążenia zostało przerwane.';
+
+  @override
+  String get consistencyHeading => 'Powtarzalność';
+
+  @override
+  String consistencyIntro(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Typowy czas to mediana; rozrzut to rozstęp międzykwartylowy, czyli szerokość środkowej połowy okrążeń, więc jedno wolne lub szybkie okrążenie go nie zdominuje. Potrzeba co najmniej $_temp0.';
+  }
+
+  @override
+  String get consistencyLapTimes => 'Czasy okrążeń';
+
+  @override
+  String get consistencyAllSessions => 'Wszystkie sesje';
+
+  @override
+  String get consistencySegmentTimes => 'Czasy segmentów';
+
+  @override
+  String get consistencyMeasuring =>
+      'Mierzone razem z teoretycznie najlepszym okrążeniem…';
+
+  @override
+  String consistencyNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Potrzeba co najmniej $_temp0';
+  }
+
+  @override
+  String consistencyValue(String time, String spread) {
+    return '$time · rozrzut $spread s';
+  }
+
+  @override
+  String consistencyLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$_temp0';
+  }
 }

@@ -308,7 +308,7 @@ void main() {
 
   testWidgets('cards say what is missing', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TelemetryApp(
         home: Scaffold(
           body: ListView(
             children: [

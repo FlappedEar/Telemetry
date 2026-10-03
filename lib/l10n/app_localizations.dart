@@ -1045,6 +1045,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lap leaves the route the other laps took (off track, a detour or the pit lane)'**
   String get lapIssueDifferentRoute;
+
+  /// Theoretical best card while it is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing every lap on one track axis…'**
+  String get tbTiming;
+
+  /// Explains the theoretical best: the fastest time of every segment over all timed laps.
+  ///
+  /// In en, this message translates to:
+  /// **'The fastest time of each of the {segments, plural, =1{1 segment} other{{segments} segments}} across {laps, plural, =1{1 lap} other{{laps} laps}}. It combines parts of different laps, so it does not show that the whole lap can be driven that fast.'**
+  String tbIntro(int segments, int laps);
+
+  /// After the theoretical best explanation when the segments were proposed automatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments proposed from the best lap; saving the day keeps them.'**
+  String get tbSegmentsProposed;
+
+  /// After the theoretical best explanation when the user edited the segments.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments include your corrections.'**
+  String get tbSegmentsCorrected;
+
+  /// Button opening the segment editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit segments'**
+  String get tbEditSegments;
+
+  /// Heading of the loss map and the list of each segment's time loss.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the time goes'**
+  String get tbWhereTimeGoes;
+
+  /// A lap in the lap choice or the sector table marked as the best lap of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'{text} · best'**
+  String tbMarkedBest(String text);
+
+  /// Screen reader label of the loss map.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace, each segment coloured by the time {lap} loses there'**
+  String tbMapLabel(String lap);
+
+  /// Hint above the list of segment losses.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a corner for its speeds, braking and pickup against the best lap.'**
+  String get tbTapCorner;
+
+  /// Hint above the list of segment losses when laps can be compared.
+  ///
+  /// In en, this message translates to:
+  /// **'The compare button opens this lap against the best lap through the segment in the Corner Analyzer.'**
+  String get tbCompareHint;
+
+  /// Tooltip of the button comparing a lap with the best lap through one segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in the Corner Analyzer'**
+  String get tbOpenInAnalyzer;
+
+  /// Heading of the table of every lap's segment times.
+  ///
+  /// In en, this message translates to:
+  /// **'Sector times'**
+  String get tbSectorTimes;
+
+  /// Explains the sector table.
+  ///
+  /// In en, this message translates to:
+  /// **'The fastest time of each segment is highlighted. Tap a lap to show its losses on the map.'**
+  String get tbSectorHint;
+
+  /// A segment the chosen lap has no full time through, with the fastest time.
+  ///
+  /// In en, this message translates to:
+  /// **'Not fully covered on this lap · fastest {time}'**
+  String tbNotCovered(String time);
+
+  /// A segment where the chosen lap set the fastest time.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest here · {time}'**
+  String tbFastestHere(String time);
+
+  /// A segment's fastest time and the lap that set it.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest {time} · {lap}'**
+  String tbFastestBy(String time, String lap);
+
+  /// In place of the lap that set a segment's fastest time when it is not found.
+  ///
+  /// In en, this message translates to:
+  /// **'lap unavailable'**
+  String get tbLapUnavailable;
+
+  /// Label of the best lap's time on the theoretical best card.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get tbBestLap;
+
+  /// Label of the best lap's time over the segments only, when they do not cover the whole lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap, same segments'**
+  String get tbBestLapSameSegments;
+
+  /// Label of the time the best lap leaves: best lap minus theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get tbAvailable;
+
+  /// Sector table column header.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap'**
+  String get tbLapColumn;
+
+  /// Sector table column header: the lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get tbTimeColumn;
+
+  /// Sector table last row: the fastest time of each segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest'**
+  String get tbFastestRow;
+
+  /// An automatically named corner segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner {number}'**
+  String tbSegmentCorner(String number);
+
+  /// An automatically named segment of linked corners.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners {numbers}'**
+  String tbSegmentCorners(String numbers);
+
+  /// An automatically named straight segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight {number}'**
+  String tbSegmentStraight(String number);
+
+  /// Why there is no theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm a compatible track configuration before calculating a theoretical best.'**
+  String get tbNoConfiguration;
+
+  /// Why there is no theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible laps in this group to calculate a theoretical best from.'**
+  String get tbNoEligibleLaps;
+
+  /// Why there is no theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'No run in this group has an approved segment review yet. Approve segments for at least one run first.'**
+  String get tbNoApprovedRun;
+
+  /// Why there is no theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'No approved segments to measure sectors against.'**
+  String get tbNoApprovedSegments;
+
+  /// Why the theoretical best total, or a segment's fastest time, is not shown.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one sector has no fully covered time on any eligible lap, so no total is shown.'**
+  String get tbIncompleteCoverage;
+
+  /// Why there is no theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best calculation was cancelled.'**
+  String get tbCancelled;
+
+  /// Heading of the card on how repeatable lap and segment times are.
+  ///
+  /// In en, this message translates to:
+  /// **'Consistency'**
+  String get consistencyHeading;
+
+  /// Explains the consistency card.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical time is the median; the spread is the interquartile range, the width of the middle half of the laps, so one slow or quick lap does not dominate it. At least {count, plural, =1{1 lap is} other{{count} laps are}} needed.'**
+  String consistencyIntro(int count);
+
+  /// Consistency card heading of the lap times.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap times'**
+  String get consistencyLapTimes;
+
+  /// Consistency of the lap times over the whole day.
+  ///
+  /// In en, this message translates to:
+  /// **'All sessions'**
+  String get consistencyAllSessions;
+
+  /// Consistency card heading of the segment times.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment times'**
+  String get consistencySegmentTimes;
+
+  /// Consistency card while the segment times are calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured with the theoretical best…'**
+  String get consistencyMeasuring;
+
+  /// In place of a consistency with too few laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs at least {count, plural, =1{1 lap} other{{count} laps}}'**
+  String consistencyNeedsLaps(int count);
+
+  /// A typical (median) time and its spread (interquartile range) in seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · spread {spread} s'**
+  String consistencyValue(String time, String spread);
+
+  /// How many laps a consistency is measured over.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
+  String consistencyLapCount(int count);
 }
 
 class _AppLocalizationsDelegate

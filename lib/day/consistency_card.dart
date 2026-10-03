@@ -2,21 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// "1:31.234 · spread 0.412 s", or "Needs at least 3 laps" when there are
 /// too few: a missing value is never shown as zero.
-String consistencyText(ConsistencySummary summary) {
+String consistencyText(AppLocalizations l10n, ConsistencySummary summary) {
   if (!summary.available ||
       summary.median == null ||
       summary.interquartileRange == null) {
-    return 'Needs at least $minimumConsistencySamples laps';
+    return l10n.consistencyNeedsLaps(minimumConsistencySamples);
   }
-  return '${displayTime(summary.median!)} · spread '
-      '${summary.interquartileRange!.toStringAsFixed(3)} s';
+  return l10n.consistencyValue(
+    displayTime(summary.median!),
+    summary.interquartileRange!.toStringAsFixed(3),
+  );
 }
 
 /// "7 laps", "1 lap".
-String lapCountText(int count) => '$count ${count == 1 ? 'lap' : 'laps'}';
+String lapCountText(AppLocalizations l10n, int count) =>
+    l10n.consistencyLapCount(count);
 
 /// How repeatable the group's lap times and segment times are: the median
 /// (typical time) and the interquartile range (spread of the middle half),
@@ -40,6 +45,7 @@ class ConsistencyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final result = this.result;
     Widget row(String label, ConsistencySummary summary, Key key) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -54,7 +60,7 @@ class ConsistencyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  consistencyText(summary),
+                  consistencyText(l10n, summary),
                   key: key,
                   textAlign: TextAlign.end,
                   style: summary.available
@@ -64,7 +70,7 @@ class ConsistencyCard extends StatelessWidget {
                         ),
                 ),
                 Text(
-                  lapCountText(summary.count),
+                  lapCountText(l10n, summary.count),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
@@ -79,34 +85,38 @@ class ConsistencyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Consistency', style: theme.textTheme.labelLarge),
+            Text(l10n.consistencyHeading, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             Text(
-              'Typical time is the median; the spread is the interquartile '
-              'range, the width of the middle half of the laps, so one slow '
-              'or quick lap does not dominate it. At least '
-              '$minimumConsistencySamples laps are needed.',
+              l10n.consistencyIntro(minimumConsistencySamples),
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
-            Text('Lap times', style: theme.textTheme.titleSmall),
-            row('All sessions', laps.day, const ValueKey('lapConsistency day')),
+            Text(l10n.consistencyLapTimes, style: theme.textTheme.titleSmall),
+            row(
+              l10n.consistencyAllSessions,
+              laps.day,
+              const ValueKey('lapConsistency day'),
+            ),
             for (final run in laps.runs)
               row(
-                run.runName,
+                l10n.session(run.runName),
                 run.laps,
                 ValueKey('lapConsistency ${run.runId}'),
               ),
             const SizedBox(height: 8),
-            Text('Segment times', style: theme.textTheme.titleSmall),
+            Text(
+              l10n.consistencySegmentTimes,
+              style: theme.textTheme.titleSmall,
+            ),
             if (loading || result == null)
-              const Text('Measured with the theoretical best…')
+              Text(l10n.consistencyMeasuring)
             else if (result.state != DayTheoreticalBestState.ready)
-              Text(result.message)
+              Text(l10n.tbMessage(result.message))
             else
               for (final segment in result.segments)
                 row(
-                  segment.name,
+                  l10n.tbSegmentName(segment.name),
                   segment.consistency,
                   ValueKey('sectorConsistency ${segment.segmentId}'),
                 ),
