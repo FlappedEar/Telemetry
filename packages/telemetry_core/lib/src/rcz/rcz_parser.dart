@@ -343,37 +343,71 @@ final class _RczSession {
       name = '${map.name} ($suffix)';
     }
     sampleCount = math.max(sampleCount, times.length);
-    final gapLimit = telemetryGapThreshold(
-      TelemetryChannel(name: name, timestamps: times, values: values),
-    );
     // Recording gaps get a missing-value boundary on each side, so neither
-    // analysis nor interpolation bridges them.
-    final gapTimes = <double>[], gapValues = <double>[];
-    for (var index = 0; index < times.length; ++index) {
-      if ((index & 0xfff) == 0) throwIfCancelled(cancelled);
-      final time = times[index];
-      if (index > 0 && time - times[index - 1] > gapLimit) {
-        gapTimes
-          ..add(_nextAfter(times[index - 1], up: true))
-          ..add(_nextAfter(time, up: false));
-        gapValues
-          ..add(double.nan)
-          ..add(double.nan);
-        totalSamples += 2;
-        if (totalSamples > maximumRczDecodedValues) _fail('Decoded gap/sample budget exceeded.');
+    // analysis nor interpolation bridges them. Where they go depends on the
+    // clock alone, so the channels of one clock share one timestamp list.
+    final clock = _gapClock(times);
+    totalSamples += clock.gaps.length * 2;
+    if (clock.gaps.isNotEmpty && totalSamples > maximumRczDecodedValues) {
+      _fail('Decoded gap/sample budget exceeded.');
+    }
+    final Float32List withGaps;
+    if (clock.gaps.isEmpty) {
+      withGaps = values;
+    } else {
+      withGaps = Float32List(clock.timestamps.length);
+      var from = 0, to = 0;
+      for (final gap in clock.gaps) {
+        withGaps.setRange(to, to + gap - from, values, from);
+        to += gap - from;
+        withGaps[to++] = double.nan;
+        withGaps[to++] = double.nan;
+        from = gap;
       }
-      gapTimes.add(time);
-      gapValues.add(values[index]);
+      withGaps.setRange(to, withGaps.length, values, from);
     }
     final channel = TelemetryChannel(
       name: name,
       unit: map.unit,
-      timestamps: Float64List.fromList(gapTimes),
-      values: Float32List.fromList(gapValues),
+      timestamps: clock.timestamps,
+      values: withGaps,
     );
     duration = math.max(duration, channel.timestamps.last);
     if (map.alias.isNotEmpty) aliases[map.alias] = name;
     channels[name] = channel;
+  }
+
+  // The clocks with their gap boundaries, by the raw clock.
+  final Map<Float64List, ({Float64List timestamps, List<int> gaps})> _gapClocks = Map.identity();
+
+  /// [times] with two boundary times around every interval longer than
+  /// [telemetryGapThreshold], and the indices of [times] each gap precedes.
+  ({Float64List timestamps, List<int> gaps}) _gapClock(Float64List times) {
+    final cached = _gapClocks[times];
+    if (cached != null) return cached;
+    // The threshold depends on the timestamps only.
+    final gapLimit = telemetryGapThreshold(
+      TelemetryChannel(name: '', timestamps: times, values: Float32List(0)),
+    );
+    final gaps = <int>[];
+    for (var index = 1; index < times.length; ++index) {
+      if ((index & 0xfff) == 0) throwIfCancelled(cancelled);
+      if (times[index] - times[index - 1] > gapLimit) gaps.add(index);
+    }
+    var timestamps = times;
+    if (gaps.isNotEmpty) {
+      timestamps = Float64List(times.length + gaps.length * 2);
+      var from = 0, to = 0;
+      for (final gap in gaps) {
+        timestamps.setRange(to, to + gap - from, times, from);
+        to += gap - from;
+        timestamps[to++] = _nextAfter(times[gap - 1], up: true);
+        timestamps[to++] = _nextAfter(times[gap], up: false);
+        from = gap;
+      }
+      timestamps.setRange(to, timestamps.length, times, from);
+    }
+    return _gapClocks[times] = (timestamps: timestamps, gaps: gaps);
   }
 
   void _readGates(Uint8List bytes) {

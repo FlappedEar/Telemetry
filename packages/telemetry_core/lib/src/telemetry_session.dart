@@ -35,15 +35,56 @@ final class TelemetryChannel {
 
   int get sampleCount => timestamps.length;
 
-  static double _medianInterval(Float64List timestamps) {
-    final intervals = <double>[];
+  // Channels on one clock share its timestamps (a VBO's columns, an RCZ
+  // device's channels), so the median is found once per clock. Timestamps
+  // never change once a channel is built.
+  static final _medians = Expando<double>('median interval');
+
+  static double _medianInterval(Float64List timestamps) =>
+      _medians[timestamps] ??= _computeMedianInterval(timestamps);
+
+  static double _computeMedianInterval(Float64List timestamps) {
+    final intervals = Float64List(timestamps.length > 1 ? timestamps.length - 1 : 0);
+    var count = 0;
     for (var index = 1; index < timestamps.length; ++index) {
       final interval = timestamps[index] - timestamps[index - 1];
-      if (interval.isFinite && interval > 0.0) intervals.add(interval);
+      if (interval.isFinite && interval > 0.0) intervals[count++] = interval;
     }
-    if (intervals.isEmpty) return 0.0;
-    intervals.sort();
-    return intervals[intervals.length ~/ 2];
+    if (count == 0) return 0.0;
+    return _select(intervals, count, count ~/ 2);
+  }
+
+  /// The [k]th smallest of the first [count] values: the value at [k] once
+  /// sorted. Reorders [values].
+  static double _select(Float64List values, int count, int k) {
+    var low = 0, high = count - 1;
+    while (low < high) {
+      final pivot = values[low + ((high - low) >> 1)];
+      var i = low, j = high;
+      while (i <= j) {
+        while (values[i] < pivot) {
+          ++i;
+        }
+        while (values[j] > pivot) {
+          --j;
+        }
+        if (i <= j) {
+          final swap = values[i];
+          values[i] = values[j];
+          values[j] = swap;
+          ++i;
+          --j;
+        }
+      }
+      if (k <= j) {
+        high = j;
+      } else if (k >= i) {
+        low = i;
+      } else {
+        return values[k];
+      }
+    }
+    return values[k];
   }
 }
 
