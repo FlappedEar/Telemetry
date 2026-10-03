@@ -10,6 +10,39 @@ cases. No real recording, GPS trace or heart rate.
 python3 tool/generate_parity_corpus.py
 ```
 
+## day_benchmark.dart
+
+Measures one day of recordings step by step, as the app runs them (FET-41):
+parse and import, day analysis, theoretical best and segments, one A/B
+comparison (the group's best lap against the next fastest, as the comparison
+page first draws it), the Corner Analyzer on the theoretical best's segments,
+the channel summaries and the day report. For each step it prints the wall
+time, the peak and final resident set (RSS) of the process and, when the VM
+service can run, the peak and final heap. Import, analysis, the theoretical
+best and the channel summaries run in background isolates as in the app, so
+copies into and out of isolates are part of their figures; `--one-isolate`
+runs everything on one isolate, for profiling the analysis code alone.
+
+It prints figures only (times, MiB and counts) and a SHA-256 "result digest"
+of the results: laps, ranking, comparison series, Corner Analyzer metrics,
+channel summaries and the day report. Two runs with the same digest gave
+identical results, so a performance change can be checked on real recordings
+without printing anything from them.
+
+```bash
+# A synthetic day (no recordings needed); this is what CI runs.
+dart run tool/day_benchmark.dart --synthetic=6 --laps=12
+
+# Any folder or files, for example a real day. Compile it ahead of time for
+# figures close to the phone's (an AOT executable has no VM service, so the
+# heap is not sampled; RSS is).
+dart compile exe tool/day_benchmark.dart -o /tmp/day_benchmark
+/tmp/day_benchmark --runs=2 --json=/tmp/day.json <folder>
+```
+
+`test/tool/day_benchmark_test.dart` only checks that it runs on a synthetic
+day and that one isolate gives the same digest; it checks no timing.
+
 ## cpp_reference_dump
 
 A small C++ program that runs FlappedEar Overlays' own `VboParser` and

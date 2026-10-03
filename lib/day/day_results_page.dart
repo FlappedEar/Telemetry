@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../settings_dialog.dart';
 import 'channel_cards.dart';
@@ -284,6 +285,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onTap: () => _save(choose: true),
                 child: const Text('Save as…'),
               ),
+              diagnosticsMenuItem(context),
             ],
           ),
         ],

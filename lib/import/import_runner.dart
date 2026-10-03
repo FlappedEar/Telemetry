@@ -3,6 +3,8 @@ import 'dart:isolate';
 
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/app_diagnostics.dart';
+
 /// What the user chose: recordings and folders, in any mix.
 typedef DayImportRequest = ({List<String> paths, bool includeSubfolders});
 
@@ -13,6 +15,7 @@ final class DayImportOutcome {
     this.plan,
     this.runs = const [],
     this.analysis,
+    this.steps = const [],
   });
 
   final TelemetryFolderScan scan;
@@ -25,6 +28,9 @@ final class DayImportOutcome {
 
   /// The day's laps, groups and ranking; null without runs.
   final DayAnalysis? analysis;
+
+  /// How long each step took in the background, in order.
+  final List<DiagnosticStep> steps;
 }
 
 /// The runs a plan imports: one per drive, the VBO when a VBO and an RCZ of
@@ -60,6 +66,13 @@ DayImportOutcome runDayImport(
   CancellationCheck? cancelled,
   void Function(int processed, int total)? progress,
 }) {
+  final steps = <DiagnosticStep>[];
+  final clock = Stopwatch()..start();
+  void step(String name) {
+    steps.add((name: name, duration: clock.elapsed));
+    clock.reset();
+  }
+
   final scan = scanTelemetrySources(
     request.paths,
     includeSubfolders: request.includeSubfolders,
@@ -67,12 +80,14 @@ DayImportOutcome runDayImport(
   );
   if (scan.cancelled) throw const OperationCancelled();
   if (scan.error.isNotEmpty) return DayImportOutcome(scan: scan);
+  step(DiagnosticSteps.scan);
   final plan = prepareTelemetryImport(
     scan.files,
     cancelled: cancelled,
     progress: progress,
   );
   final runs = nameRunsInRecordingOrder(primaryRuns(plan));
+  step(DiagnosticSteps.parse);
   final analysis = runs.isEmpty
       ? null
       : analyzeDay([
@@ -85,11 +100,13 @@ DayImportOutcome runDayImport(
               laps: named.run.laps,
             ),
         ], cancelled: cancelled);
+  if (analysis != null) step(DiagnosticSteps.analysis);
   return DayImportOutcome(
     scan: scan,
     plan: plan,
     runs: runs,
     analysis: analysis,
+    steps: steps,
   );
 }
 
