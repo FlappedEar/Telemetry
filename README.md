@@ -132,6 +132,18 @@ had to make a new one. APKs built before 2026-10-03 were each signed with a
 different key and do not update; uninstall such a build once before
 installing a newer one.
 
+### Measuring a day on the phone
+
+**Diagnostics**, in the **More** menu of **Import a day** and of the day page,
+shows how long the last import took step by step (finding the recordings,
+parse and import, day analysis, start to results, then the theoretical best
+and the channel summaries once they have been calculated), how many
+recordings, sessions and samples it read, and the app's current and peak
+resident memory as the system reports it ("Not available" where it does not).
+Nothing is stored or sent. The same steps can be measured on a computer, on
+any folder or a synthetic day, with `packages/telemetry_core/tool/day_benchmark.dart`
+(see [its notes](packages/telemetry_core/tool/README.md#day_benchmarkdart)).
+
 ## Platforms
 
 | Platform | Minimum |

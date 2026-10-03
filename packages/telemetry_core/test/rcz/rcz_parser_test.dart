@@ -70,6 +70,16 @@ void main() {
     }
   });
 
+  test('channels of one clock share its timestamps', () {
+    final session = parse(zip(fixtureMembers()));
+    final latitude = session.channel('latitude')!, longitude = session.channel('longitude')!;
+    expect(identical(latitude.timestamps, longitude.timestamps), isTrue);
+    for (final channel in session.channels.values) {
+      expect(channel.values, hasLength(channel.timestamps.length));
+    }
+    expect(session.channel('speed')!.values.where((value) => value.isNaN), hasLength(2));
+  });
+
   test('prefers the accelerator pedal for throttle', () {
     final files = fixtureMembers()
       ..['channel_5_200_10025_1_1'] = ticks([250, 1250])

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../operation.dart';
 import 'vbo_limits.dart';
 import 'vbo_text.dart';
@@ -88,6 +90,87 @@ void _visitRow(List<String> lines, CancellationCheck? cancelled, bool Function(i
     for (var position = 0; position < line.length; ++position) {
       if ((visited++ & 0xfff) == 0) throwIfCancelled(cancelled);
       if (!visit(line.codeUnitAt(position))) return;
+    }
+  }
+}
+
+/// Where each retained field of one data row starts and ends, as [scanRow]
+/// would split it, without creating the field strings.
+final class RowBounds {
+  RowBounds(int retainedColumns)
+    : starts = Int32List(retainedColumns),
+      ends = Int32List(retainedColumns);
+
+  /// Field `i` is `line.substring(starts[i], ends[i])` for `i < retained`.
+  final Int32List starts;
+  final Int32List ends;
+
+  /// Fields kept: at most the number of retained columns.
+  int retained = 0;
+
+  /// Fields in the row, including those beyond the retained columns.
+  int count = 0;
+
+  /// Splits [line] as `scanRow([line], retainedColumns, false, cancelled)`
+  /// does: the same fields, the same trimming and the same field-length
+  /// error.
+  void scan(String line, CancellationCheck? cancelled) {
+    final capacity = starts.length;
+    retained = count = 0;
+    final length = line.length;
+    var commaSeparated = false;
+    for (var position = 0; position < length; ++position) {
+      if (line.codeUnitAt(position) == 0x2c) {
+        commaSeparated = true;
+        break;
+      }
+    }
+    void field(int start, int end) {
+      if (end - start > VboLimits.maximumFieldCharacters) {
+        throw const ResourceLimitError(
+          'VBO contains a field longer than the supported 64 KiB limit.',
+        );
+      }
+      if (count < capacity) {
+        starts[count] = start;
+        ends[count] = end;
+        retained = count + 1;
+      }
+      ++count;
+    }
+
+    if (!commaSeparated) {
+      // Runs of ASCII white space separate fields; there are no empty fields.
+      var position = 0;
+      while (position < length) {
+        if ((position & 0xfff) == 0) throwIfCancelled(cancelled);
+        if (isAsciiSpace(line.codeUnitAt(position))) {
+          ++position;
+          continue;
+        }
+        final start = position;
+        while (position < length && !isAsciiSpace(line.codeUnitAt(position))) {
+          ++position;
+        }
+        field(start, position);
+      }
+      return;
+    }
+    // Every comma ends a field, empty ones included; fields lose leading and
+    // trailing white space.
+    var start = 0;
+    for (var position = 0; position <= length; ++position) {
+      if ((position & 0xfff) == 0) throwIfCancelled(cancelled);
+      if (position < length && line.codeUnitAt(position) != 0x2c) continue;
+      var first = start, last = position;
+      while (first < last && isUnicodeSpace(line.codeUnitAt(first))) {
+        ++first;
+      }
+      while (last > first && isUnicodeSpace(line.codeUnitAt(last - 1))) {
+        --last;
+      }
+      field(first, last);
+      start = position + 1;
     }
   }
 }

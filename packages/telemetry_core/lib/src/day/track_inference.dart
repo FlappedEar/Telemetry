@@ -2,6 +2,7 @@
 // the route a recording's laps follow, and which runs share a route.
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 
@@ -181,41 +182,75 @@ Map<int, double> lapLineDeviations(
     }
   }
   if (used.length < 3 || points > 4000000) return {};
-  int key(int x, int y) => x * 1000003 + y;
-  final grid = <int, List<(int, int)>>{};
-  for (var lap = 0; lap < used.length; ++lap) {
-    final path = used[lap].points;
-    for (var index = 0; index < path.length; ++index) {
-      final point = path[index];
-      grid
-          .putIfAbsent(
-            key((point.eastMeters / cell).floor(), (point.northMeters / cell).floor()),
-            () => [],
-          )
-          .add((lap, index));
-    }
+  // Coordinates in typed lists and grid entries packed into one integer,
+  // so the search allocates nothing per point. The order of the search and
+  // the arithmetic are those of [_toSegment], so the result is the same.
+  final east = [
+    for (final trace in used)
+      Float64List.fromList([for (final point in trace.points) point.eastMeters]),
+  ];
+  final north = [
+    for (final trace in used)
+      Float64List.fromList([for (final point in trace.points) point.northMeters]),
+  ];
+  var longest = 0;
+  for (final trace in used) {
+    longest = math.max(longest, trace.points.length);
   }
-  MetricPoint at(LapTracePoint point) => MetricPoint(point.eastMeters, point.northMeters);
+  final indexBits = longest.bitLength;
+  final indexMask = (1 << indexBits) - 1;
+  int key(int x, int y) => x * 1000003 + y;
+  final grid = <int, List<int>>{};
+  final cellX = <Int32List>[], cellY = <Int32List>[];
+  for (var lap = 0; lap < used.length; ++lap) {
+    final xs = east[lap], ys = north[lap];
+    final cx = Int32List(xs.length), cy = Int32List(xs.length);
+    for (var index = 0; index < xs.length; ++index) {
+      cx[index] = (xs[index] / cell).floor();
+      cy[index] = (ys[index] / cell).floor();
+      grid.putIfAbsent(key(cx[index], cy[index]), () => []).add(lap << indexBits | index);
+    }
+    cellX.add(cx);
+    cellY.add(cy);
+  }
+  double toSegment(double px, double py, double ax, double ay, double bx, double by) {
+    final abx = bx - ax, aby = by - ay;
+    final length2 = abx * abx + aby * aby;
+    final t = length2 > 0 ? (((px - ax) * abx + (py - ay) * aby) / length2).clamp(0.0, 1.0) : 0.0;
+    return hypot(px - (ax + abx * t), py - (ay + aby * t));
+  }
+
   final reach = (cap / cell).ceil();
   final result = <int, double>{};
   for (var lap = 0; lap < used.length; ++lap) {
     throwIfCancelled(cancelled);
     var worst = 0.0;
-    for (final sample in used[lap].points) {
-      final p = at(sample);
-      final cx = (p.eastMeters / cell).floor(), cy = (p.northMeters / cell).floor();
+    final xs = east[lap], ys = north[lap];
+    for (var sample = 0; sample < xs.length; ++sample) {
+      final px = xs[sample], py = ys[sample];
+      final cx = (px / cell).floor(), cy = (py / cell).floor();
       var nearest = cap;
       for (var dx = -reach; dx <= reach; ++dx) {
         for (var dy = -reach; dy <= reach; ++dy) {
           final found = grid[key(cx + dx, cy + dy)];
           if (found == null) continue;
-          for (final (other, index) in found) {
+          for (final entry in found) {
+            final other = entry >> indexBits;
             if (other == lap) continue;
-            final path = used[other].points;
-            final q = at(path[index]);
-            if (index > 0) nearest = math.min(nearest, _toSegment(p, at(path[index - 1]), q));
-            if (index + 1 < path.length) {
-              nearest = math.min(nearest, _toSegment(p, q, at(path[index + 1])));
+            final index = entry & indexMask;
+            final ox = east[other], oy = north[other];
+            final qx = ox[index], qy = oy[index];
+            // The segment from the previous point is measured from that
+            // point's entry when it is in the window too: each segment once.
+            // The minimum of the same distances is the same in any order
+            // (they are never negative zero).
+            if (index > 0 &&
+                ((cellX[other][index - 1] - cx).abs() > reach ||
+                    (cellY[other][index - 1] - cy).abs() > reach)) {
+              nearest = math.min(nearest, toSegment(px, py, ox[index - 1], oy[index - 1], qx, qy));
+            }
+            if (index + 1 < ox.length) {
+              nearest = math.min(nearest, toSegment(px, py, qx, qy, ox[index + 1], oy[index + 1]));
             }
           }
         }
