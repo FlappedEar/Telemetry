@@ -235,6 +235,73 @@ void main() {
       ]);
     });
 
+    test(
+      'never gives a session that has another recording a new one',
+      () async {
+        // The RCZ joins Session 1 without review; it then has two recordings.
+        expect((await day.addRecordings([rcz])).combined, ['Session 1']);
+        final sessionId = day.runs.single.run.id;
+        final (vbo2, rcz2) = writeFusionPair(
+          (Directory(p.join(directory.path, 'again'))..createSync()).path,
+          name: 'again',
+        );
+        final review = (await day.reviewAddition([rcz2]))!;
+        final id = ids(review.plan!);
+        expect(review.alreadyGrouped, {sessionId});
+        // Not offered as "Same run as Session 1", and refused if asked for.
+        expect(review.automatic[id['again.rcz']!], isNot(sessionId));
+        final addition = await day.addRecordings(
+          [rcz2],
+          review: review,
+          choices: {id['again.rcz']!: sessionId},
+        );
+        expect(addition.reviewChanged, isTrue);
+        expect(day.fusion(sessionId)!.alternative!.sourcePath, rcz);
+        expect(File(vbo2).existsSync(), isTrue);
+      },
+    );
+
+    test(
+      'a session whose saved RCZ is missing keeps it: no new one is offered',
+      () async {
+        expect((await day.addRecordings([rcz])).combined, ['Session 1']);
+        await day.fusionsSettled;
+        final path = p.join(directory.path, 'day.fetproject');
+        await day.save(path);
+        File(rcz).deleteSync();
+        final opened = DayResultsController.opened(
+          openDay(path),
+          appender: _Appender(),
+          preparer: _Preparer(),
+        );
+        addTearDown(opened.dispose);
+        final sessionId = opened.runs.single.run.id;
+        final (_, again) = writeFusionPair(
+          (Directory(p.join(directory.path, 'same'))..createSync()).path,
+        );
+        final review = (await opened.reviewAddition([again]))!;
+        expect(review.alreadyGrouped, {sessionId});
+        expect(review.automatic.values, isNot(contains(sessionId)));
+      },
+    );
+
+    test(
+      'adds nothing when a session got another recording during the review',
+      () async {
+        final review = (await day.reviewAddition([other]))!;
+        final id = ids(review.plan!);
+        // Same number of sessions, but Session 1 now has its RCZ.
+        expect((await day.addRecordings([rcz])).combined, ['Session 1']);
+        final addition = await day.addRecordings(
+          [other],
+          review: review,
+          choices: {id['other.vbo']!: id['other.vbo']!},
+        );
+        expect(addition.reviewChanged, isTrue);
+        expect(day.runs, hasLength(1));
+      },
+    );
+
     test('adds nothing when the day changed during the review', () async {
       final review = (await day.reviewAddition([rcz]))!;
       final id = ids(review.plan!);

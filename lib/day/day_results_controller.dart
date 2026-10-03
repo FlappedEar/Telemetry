@@ -1378,13 +1378,7 @@ final class DayResultsController extends ChangeNotifier {
       for (final named in _runs) named.run.id,
       for (final recording in missing) recording.runId,
     };
-    final grouped = {
-      for (final named in _runs)
-        if ((_fusions[named.run.id]?.fused ?? false) ||
-            _pendingRecordings.containsKey(named.run.id) ||
-            _fusionPending.containsKey(named.run.id))
-          named.run.id,
-    };
+    final grouped = _sessionsWithOtherRecording();
     final sessions = {for (final named in _runs) named.run.id};
     // As adding without review does: the automatic grouping within the
     // recordings, then an RCZ of one of the day's VBO sessions joins it, and
@@ -1427,6 +1421,34 @@ final class DayResultsController extends ChangeNotifier {
       alreadyInDay: inDay,
       runCount: _runs.length + missing.length,
     );
+  }
+
+  /// The day's sessions that have a recording besides their primary in any
+  /// state: fused, being aligned, kept beside it, not found or not usable,
+  /// or only named by the saved document. A review never gives them another
+  /// one, so no recording of theirs is ever replaced (FET-58).
+  Set<String> _sessionsWithOtherRecording() {
+    final documentRuns = <String, int>{};
+    final event = _document?['event'];
+    if (event is Map && event['runs'] is List) {
+      for (final run in event['runs'] as List) {
+        if (run is! Map || run['id'] is! String) continue;
+        final sources = run['sources'];
+        final telemetry = sources is Map ? sources['telemetry'] : null;
+        documentRuns[run['id'] as String] = telemetry is List
+            ? telemetry.length
+            : 0;
+      }
+    }
+    return {
+      for (final named in _runs)
+        if (_fusions.containsKey(named.run.id) ||
+            _pendingRecordings.containsKey(named.run.id) ||
+            _fusionPending.containsKey(named.run.id) ||
+            _documentAlternatives.containsKey(named.run.id) ||
+            (documentRuns[named.run.id] ?? 0) > 1)
+          named.run.id,
+    };
   }
 
   /// Prepares the recordings added to the day.
@@ -1531,8 +1553,19 @@ final class DayResultsController extends ChangeNotifier {
       }
     }
     final reviewed = review != null && choices != null;
-    if (reviewed && review.runCount != _runs.length + missing.length) {
-      // A session was added (shared, say) while the review was open.
+    if (reviewed &&
+        (review.runCount != _runs.length + missing.length ||
+            !setEquals(
+              {for (final session in review.sessions) session.runId},
+              {for (final named in _runs) named.run.id},
+            ) ||
+            !setEquals(review.alreadyGrouped, _sessionsWithOtherRecording()))) {
+      // A session was added (shared, say), or one got another recording,
+      // while the review was open.
+      return const DayAddition(notes: [], reviewChanged: true);
+    }
+    if (reviewed && choices.values.any(review.alreadyGrouped.contains)) {
+      // Never replaces a session's other recording.
       return const DayAddition(notes: [], reviewChanged: true);
     }
     final names = {for (final named in _runs) named.run.id: named.name};
