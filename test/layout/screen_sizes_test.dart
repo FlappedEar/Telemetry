@@ -130,6 +130,10 @@ void main() {
           200,
           scrollable: summary,
         );
+        // A drag can land on a map or a table, which takes it instead of
+        // the page, so bring the circuits into view directly.
+        await tester.ensureVisible(find.text('Circuits'));
+        await tester.pumpAndSettle();
         final circuit = find.byIcon(Icons.edit_outlined).first;
         await tester.ensureVisible(circuit);
         await tester.pumpAndSettle();
