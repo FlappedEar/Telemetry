@@ -111,6 +111,18 @@ had to make a new one. APKs built before 2026-10-03 were each signed with a
 different key and do not update; uninstall such a build once before
 installing a newer one.
 
+## Look
+
+`lib/ui/theme.dart` holds the whole look: a white, high-contrast light theme
+for reading a phone in sunlight, with one orange accent, and a dark theme that
+follows the system. Text is IBM Plex Sans, whose digits are all one width so
+lap times line up; lap times in large type use IBM Plex Mono. Both fonts are
+bundled under `assets/fonts/` with their licence (SIL Open Font License 1.1),
+so the app needs no network for them. Timing colours follow the motorsport
+convention through `FetColors`: purple for the fastest of the day, green for
+the fastest of a session, orange for time lost. Screens use the theme's colour
+roles and text styles rather than their own colours.
+
 ## Platforms
 
 | Platform | Minimum |

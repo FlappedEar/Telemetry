@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'import/day_import_page.dart';
+import 'ui/theme.dart';
 
 void main() {
   runApp(const TelemetryApp());
@@ -15,15 +16,8 @@ class TelemetryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FlappedEar Telemetry',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff55e6a5)),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff55e6a5),
-          brightness: Brightness.dark,
-        ),
-      ),
+      theme: FetTheme.light(),
+      darkTheme: FetTheme.dark(),
       home: home,
     );
   }
