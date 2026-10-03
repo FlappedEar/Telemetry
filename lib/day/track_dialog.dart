@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../format.dart';
+import '../l10n.dart';
 import 'day_results_controller.dart';
 import 'track_map.dart';
 
@@ -53,7 +55,7 @@ class _TrackDialogState extends State<TrackDialog> {
 
   String _runName(String runId) {
     for (final named in widget.controller.runs) {
-      if (named.run.id == runId) return named.name;
+      if (named.run.id == runId) return context.l10n.session(named.name);
     }
     return runId;
   }
@@ -61,12 +63,13 @@ class _TrackDialogState extends State<TrackDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final inference = widget.controller.analysis.inferences[widget.runId];
     final canSave = _name.text.trim().isNotEmpty && _direction != null;
     final session = widget.controller.session(widget.runId);
     final origin = session == null ? null : mapOrigin(session);
     return AlertDialog(
-      title: Text('Circuit of ${_runName(widget.runId)}'),
+      title: Text(l10n.trackDialogTitle(_runName(widget.runId))),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -76,9 +79,15 @@ class _TrackDialogState extends State<TrackDialog> {
             children: [
               Text(
                 inference?.route == null
-                    ? 'No route was detected: ${inference?.reason ?? 'no laps'}'
-                    : 'Detected route: ${inference!.route!.lengthMeters.toStringAsFixed(0)} m, '
-                          '${inference.route!.direction.label.toLowerCase()} (inferred from GPS).',
+                    ? l10n.trackDialogNoRoute(
+                        inference == null || inference.reason.isEmpty
+                            ? l10n.trackDialogNoLaps
+                            : l10n.routeReason(inference.reason),
+                      )
+                    : l10n.trackDialogDetectedRoute(
+                        fixed(inference!.route!.lengthMeters, 0),
+                        l10n.directionInSentence(inference.route!.direction),
+                      ),
                 style: theme.textTheme.bodySmall,
               ),
               if (_trace != null && !_trace.isEmpty) ...[
@@ -90,8 +99,9 @@ class _TrackDialogState extends State<TrackDialog> {
                     gate: session == null || origin == null
                         ? null
                         : mapGate(session, origin),
-                    semanticLabel:
-                        'Whole GPS trace of ${_runName(widget.runId)}',
+                    semanticLabel: l10n.trackDialogWholeTrace(
+                      _runName(widget.runId),
+                    ),
                   ),
                 ),
               ],
@@ -99,24 +109,32 @@ class _TrackDialogState extends State<TrackDialog> {
               TextField(
                 controller: _name,
                 maxLength: 128,
-                decoration: const InputDecoration(
-                  labelText: 'Layout name',
-                  hintText: 'Jastrząb full circuit',
+                decoration: InputDecoration(
+                  labelText: l10n.trackDialogLayoutName,
+                  hintText: l10n.trackDialogLayoutHint,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              SegmentedButton<TrackDirection>(
-                emptySelectionAllowed: true,
-                segments: [
-                  for (final direction in TrackDirection.values)
-                    ButtonSegment(
-                      value: direction,
-                      label: Text(direction.label),
+              // Stacked on phones, where the Polish labels are too long
+              // to share a row.
+              LayoutBuilder(
+                builder: (context, constraints) =>
+                    SegmentedButton<TrackDirection>(
+                      direction: constraints.maxWidth < 360
+                          ? Axis.vertical
+                          : Axis.horizontal,
+                      emptySelectionAllowed: true,
+                      segments: [
+                        for (final direction in TrackDirection.values)
+                          ButtonSegment(
+                            value: direction,
+                            label: Text(l10n.direction(direction)),
+                          ),
+                      ],
+                      selected: {?_direction},
+                      onSelectionChanged: (selection) =>
+                          setState(() => _direction = selection.firstOrNull),
                     ),
-                ],
-                selected: {?_direction},
-                onSelectionChanged: (selection) =>
-                    setState(() => _direction = selection.firstOrNull),
               ),
               if (_sameRoute.isNotEmpty)
                 CheckboxListTile(
@@ -125,8 +143,9 @@ class _TrackDialogState extends State<TrackDialog> {
                   onChanged: (value) =>
                       setState(() => _applyToSameRoute = value ?? false),
                   title: Text(
-                    'Also for the sessions on the same route: '
-                    '${_sameRoute.map(_runName).join(', ')}',
+                    l10n.trackDialogSameRoute(
+                      _sameRoute.map(_runName).join(', '),
+                    ),
                   ),
                 ),
             ],
@@ -140,11 +159,11 @@ class _TrackDialogState extends State<TrackDialog> {
               widget.controller.useDetectedRoute(widget.runId);
               Navigator.pop(context);
             },
-            child: const Text('Use the detected route'),
+            child: Text(l10n.trackDialogUseDetected),
           ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: !canSave
@@ -157,7 +176,7 @@ class _TrackDialogState extends State<TrackDialog> {
                   );
                   Navigator.pop(context);
                 },
-          child: const Text('Save'),
+          child: Text(l10n.save),
         ),
       ],
     );

@@ -20,7 +20,13 @@
 <ol class="steps">
   <li>In RaceChrono, open the session and export it as VBO (and/or RCZ).</li>
   <li>Choose <strong>Share</strong>, then <strong>FlappedEar Telemetry</strong>.</li>
-  <li>The app opens and imports the file on <strong>Import a day</strong>. If a day is open, a message says the shared recordings are being imported; go back to Import a day to see them.</li>
+  <li>The app opens and adds the file to today's day:
+    <ul>
+      <li>If a day is open, the recording is added to it as the next session.</li>
+      <li>Otherwise, if you worked on a day with recordings from the same date in the last 24 hours (unsaved, or the newest saved day), that day opens with the new session added.</li>
+      <li>Otherwise the app imports the file as a new day and opens it. If another day has unsaved changes, the import stays on <strong>Import a day</strong> next to the offer to restore that day, so nothing is replaced. Recordings you share after it are imported together with it, as one day.</li>
+    </ul>
+  </li>
 </ol>
 <p>This works on Android and iOS, also when the app was closed.</p>
 

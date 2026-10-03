@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:isolate';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -6,6 +8,8 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
+import '../import/day_import_page.dart'
+    show PlatformRecordingPickers, RecordingPickers;
 import '../settings_dialog.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
@@ -34,8 +38,10 @@ class DayResultsPage extends StatefulWidget {
     required List<NamedRun> runs,
     required DayAnalysis analysis,
     this.documents = const PlatformDocumentPickers(),
+    this.pickers = const PlatformRecordingPickers(),
     this.recovery,
-  }) : _create = (() => DayResultsController(
+  }) : replace = null,
+       _create = (() => DayResultsController(
          runs: runs,
          analysis: analysis,
          recovery: recovery,
@@ -46,22 +52,36 @@ class DayResultsPage extends StatefulWidget {
     super.key,
     required OpenedDay day,
     this.documents = const PlatformDocumentPickers(),
+    this.pickers = const PlatformRecordingPickers(),
     this.recovery,
-  }) : _create = (() => DayResultsController.opened(day, recovery: recovery));
+  }) : replace = null,
+       _create = (() => DayResultsController.opened(day, recovery: recovery));
 
-  /// A day held by [controller], which the page then owns.
+  /// A day held by [controller], which the page then owns. With [replace],
+  /// a day opened again with its recordings found elsewhere goes to
+  /// [replace] as this page closes, for the caller to show; otherwise this
+  /// page is replaced by one of that day.
   DayResultsPage.controller({
     super.key,
     required DayResultsController controller,
     this.documents = const PlatformDocumentPickers(),
+    this.pickers = const PlatformRecordingPickers(),
     this.recovery,
+    this.replace,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
   final DocumentPickers documents;
 
+  /// Chooses recordings to add to the day.
+  final RecordingPickers pickers;
+
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
+
+  /// Takes the day opened again in place of this one; see
+  /// [DayResultsPage.controller].
+  final ValueChanged<DayResultsController>? replace;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
@@ -76,10 +96,75 @@ class _DayResultsPageState extends State<DayResultsPage> {
   LapPath? _mapPath;
   (Offset, Offset)? _mapGate;
 
+  DayAddition? _reported;
+
+  // Writes waiting changes for recovery when the app goes to the background
+  // or is closed, where the operating system may end it without warning.
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onStateChange: (state) {
+      if (state == AppLifecycleState.inactive ||
+          state == AppLifecycleState.hidden ||
+          state == AppLifecycleState.paused ||
+          state == AppLifecycleState.detached) {
+        unawaited(_controller.flushRecovery());
+      }
+    },
+    // On desktop, quitting waits briefly for the write.
+    onExitRequested: () async {
+      await _controller.flushRecovery().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {},
+      );
+      return AppExitResponse.exit;
+    },
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_reportAddition);
+    // An addition made before the page opened, such as a shared recording
+    // added to today's day, is reported once the page is shown.
+    if (_controller.lastAddition != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reportAddition());
+    }
+    _lifecycle;
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_reportAddition);
+    _lifecycle.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Says what the last addition of recordings did, from this page or a
+  /// recording shared to the app while the day is open.
+  void _reportAddition() {
+    final addition = _controller.lastAddition;
+    if (addition == null || identical(addition, _reported) || !mounted) return;
+    _reported = addition;
+    final added = addition.added;
+    final lines = [
+      if (addition.error.isNotEmpty)
+        addition.error
+      else if (added.isEmpty)
+        'Nothing was added.'
+      else
+        '${added.join(', ')} added to the day.',
+      if (addition.savedTo != null)
+        'Saved as ${p.basename(addition.savedTo!)}.',
+      if (addition.saveError.isNotEmpty) 'Not saved: ${addition.saveError}',
+      ...addition.notes,
+    ];
+    _tell(lines.join('\n'));
+  }
+
+  Future<void> _addRecordings() async {
+    final paths = await widget.pickers.pickRecordings();
+    if (paths.isEmpty || !mounted) return;
+    await _controller.addRecordings(paths);
   }
 
   void _open(DayLapRow row) => Navigator.of(context).push(
@@ -170,7 +255,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (path == null || !mounted) return;
     try {
       await _controller.save(path);
-      if (mounted) _tell('Saved as ${p.basename(path)}.');
+      if (mounted) {
+        _tell(
+          _controller.dirty
+              ? 'Saved as ${p.basename(path)}. Changes made while saving '
+                    'are not saved yet.'
+              : 'Saved as ${p.basename(path)}.',
+        );
+      }
     } on Exception catch (error) {
       if (mounted) _tell('Not saved: $error');
     }
@@ -193,6 +285,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Future<void> _findRecordings() async {
     final path = _controller.documentPath;
     if (path == null) return;
+    if (_controller.adding) {
+      _tell('Wait until the recordings are added, then find the others.');
+      return;
+    }
     if (_controller.dirty) {
       _tell('Save the day first, then find its recordings.');
       return;
@@ -202,10 +298,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
     setState(() => _relinking = true);
     try {
       final missing = _controller.missing;
+      final sessions = _controller.runs.length;
       final (day, search) = await Isolate.run(
         _relinkJob(path, folder, missing),
       );
       if (!mounted) return;
+      // The day is opened again from its saved document: a recording added
+      // meanwhile, such as a shared one, would not be in it.
+      if (_controller.adding ||
+          _controller.dirty ||
+          _controller.runs.length != sessions) {
+        _tell('Recordings were added meanwhile. Find the recordings again.');
+        return;
+      }
       if (day.missing.length == missing.length) {
         final names = [
           for (final recording in missing)
@@ -222,6 +327,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
         return;
       }
       if (day.analysis == null) return;
+      final replace = widget.replace;
+      if (replace != null) {
+        replace(
+          DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: _controller.appender,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           builder: (_) => DayResultsPage.opened(
@@ -245,6 +362,52 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => _page(context, constraints.maxWidth),
   );
+
+  Widget _body(BuildContext context, bool wide, double mapHeight) {
+    final summary = _summary(context, wide, mapHeight);
+    final laps = _lapList(context);
+    if (!wide) {
+      return TabBarView(
+        children: [
+          KeepAliveItem(
+            child: ListView(
+              key: const ValueKey('dayResultsSummary'),
+              padding: const EdgeInsets.all(16),
+              children: summary,
+            ),
+          ),
+          KeepAliveItem(
+            child: ListView(
+              key: const ValueKey('dayResultsLaps'),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              children: laps,
+            ),
+          ),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 5,
+          child: ListView(
+            key: const ValueKey('dayResultsSummary'),
+            padding: const EdgeInsets.all(16),
+            children: summary,
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: ListView(
+            key: const ValueKey('dayResultsLaps'),
+            padding: const EdgeInsets.all(16),
+            children: laps,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _page(BuildContext context, double width) {
     final wide = width >= _twoPaneWidth;
@@ -271,6 +434,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
               onPressed: _controller.saving || !_controller.dirty
                   ? null
                   : () => _save(),
+            ),
+          ),
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) => IconButton(
+              key: const ValueKey('addRecordings'),
+              tooltip: 'Add recordings',
+              icon: const Icon(Icons.playlist_add),
+              onPressed: _controller.adding || _controller.saving || _relinking
+                  ? null
+                  : _addRecordings,
             ),
           ),
           IconButton(
@@ -303,54 +477,34 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       body: ListenableBuilder(
         listenable: _controller,
-        builder: (context, _) {
-          final summary = _summary(context, wide, mapHeight);
-          final laps = _lapList(context);
-          if (!wide) {
-            return TabBarView(
-              children: [
-                KeepAliveItem(
-                  child: ListView(
-                    key: const ValueKey('dayResultsSummary'),
-                    padding: const EdgeInsets.all(16),
-                    children: summary,
-                  ),
-                ),
-                KeepAliveItem(
-                  child: ListView(
-                    key: const ValueKey('dayResultsLaps'),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    children: laps,
-                  ),
-                ),
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 5,
-                child: ListView(
-                  key: const ValueKey('dayResultsSummary'),
-                  padding: const EdgeInsets.all(16),
-                  children: summary,
-                ),
+        builder: (context, _) => Column(
+          children: [
+            if (_controller.adding)
+              const LinearProgressIndicator(
+                key: ValueKey('addingRecordings'),
+                semanticsLabel: 'Adding recordings',
               ),
-              Expanded(
-                flex: 4,
-                child: ListView(
-                  key: const ValueKey('dayResultsLaps'),
-                  padding: const EdgeInsets.all(16),
-                  children: laps,
-                ),
-              ),
-            ],
-          );
-        },
+            Expanded(child: _body(context, wide, mapHeight)),
+          ],
+        ),
       ),
     );
-    return wide ? scaffold : DefaultTabController(length: 2, child: scaffold);
+    final page = wide
+        ? scaffold
+        : DefaultTabController(length: 2, child: scaffold);
+    // A session being added is part of the day: the day stays open until it
+    // is in, so it is saved or kept for recovery with it.
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, child) => PopScope(
+        canPop: !_controller.adding,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _tell('Wait until the session is added.');
+        },
+        child: child!,
+      ),
+      child: page,
+    );
   }
 
   List<Widget> _summary(BuildContext context, bool wide, double mapHeight) {

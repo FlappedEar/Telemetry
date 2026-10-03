@@ -87,6 +87,14 @@ void main() {
     expect(automaticVboPrimaries(plan)[plan.runs[0].id], plan.runs[1].id);
     final wrong = write('wrong.vbo', recording(wrongSign: true));
     expect(prepareTelemetryImport([wrong, rczPath]).possibleSameRuns, isEmpty);
+    // The same pairing when each recording was prepared on its own, as when
+    // one is added to a day that has the other.
+    final vboRun = prepareTelemetryImport([vboPath]).runs.single;
+    final rczRun = prepareTelemetryImport([rczPath]).runs.single;
+    expect(sameDriveInOtherFormat(rczRun, vboRun), isTrue);
+    expect(sameDriveInOtherFormat(vboRun, rczRun), isTrue);
+    expect(sameDriveInOtherFormat(vboRun, vboRun), isFalse);
+    expect(sameDriveInOtherFormat(prepareTelemetryImport([wrong]).runs.single, rczRun), isFalse);
   });
 
   test('reports completed file progress', () {
