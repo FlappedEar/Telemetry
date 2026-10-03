@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../units.dart';
+
 /// Why a corner figure is missing, in a short plain phrase (lower case, to
 /// follow a colon or start a sentence). Every reason the corner analyses can
 /// give is mapped; an unknown one reads "not available", never its
@@ -100,7 +102,7 @@ class CornerDetails extends StatelessWidget {
     final own = comparison.metrics;
     final best = comparison.bestLapMetrics;
     final isBest = comparison.bestLap?.reference == comparison.lap.reference;
-    final unit = own.speeds.unit.trim();
+    final unit = speedUnitOf(context, own.speeds.unit).trim();
     final speedUnit = unit.isEmpty ? '' : ' ($unit)';
     final numbers = theme.textTheme.bodyMedium?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -415,7 +417,7 @@ String cornerSummary(DayCornerComparison comparison) {
   final own = comparison.metrics;
   final best = comparison.bestLapMetrics;
   final isBest = comparison.bestLap?.reference == comparison.lap.reference;
-  final unit = own.speeds.unit.trim();
+  final unit = speedUnitLabel(own.speeds.unit).trim();
   final parts = <String>[];
   final minimum = own.speeds.minimum.value;
   if (minimum != null) {

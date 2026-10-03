@@ -96,6 +96,13 @@ pedal or sensor, calculated by the logger from GPS, or inferred from
 longitudinal G, which happens only when the recording has no such pedal
 channel.
 
+Speeds are labelled km/h or mph from the recordings: RCZ declares its unit,
+and a RaceChrono VBO names it in its header (`velocity kmh`), which the parser
+keeps as header metadata. **Settings** (the gear in the toolbar) chooses
+**Automatic**, **km/h** or **mph**. It changes only the label; values are
+always shown as recorded, never converted, so every calculation and the
+parity with FlappedEar Overlays are unchanged.
+
 ## Phones and tablets
 
 On a phone or tablet, **Choose recordings…** picks VBO and RCZ files (there is

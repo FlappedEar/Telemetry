@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../units.dart';
 
 /// The colour of the Δ time line (one line, not an A/B pair).
 const Color deltaLineColor = Color(0xFFFFCF5C);
@@ -114,12 +115,12 @@ class TelemetryChart extends StatelessWidget {
   double _fraction(double value) =>
       end > start ? (value - start) / (end - start) : 0;
 
-  String _value(ChartLine line, double fraction) {
+  String _value(ChartLine line, double fraction, String unit) {
     final value = nearestChartValue(line.series, fraction);
     if (value == null) return '–';
     if (delta) return displayDelta(value);
     final scale = math.max(valueAxis.$1.abs(), valueAxis.$2.abs());
-    return chartValueText(value, scale, line.series.unit);
+    return chartValueText(value, scale, unit);
   }
 
   @override
@@ -186,7 +187,7 @@ class TelemetryChart extends StatelessWidget {
                     for (final line in lines)
                       Text(
                         '${line.label.isEmpty ? '' : '${line.label} '}'
-                        '${inside ? _value(line, fraction) : '–'}',
+                        '${inside ? _value(line, fraction, displayUnitOf(context, title, line.series.unit)) : '–'}',
                         key: ValueKey('chartValue $title ${line.label}'),
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: line.color == deltaLineColor
@@ -236,6 +237,13 @@ class TelemetryChart extends StatelessWidget {
                               color: scheme.onSurfaceVariant,
                             ),
                             delta: delta,
+                            unit: shown.isEmpty
+                                ? ''
+                                : displayUnitOf(
+                                    context,
+                                    title,
+                                    shown.first.series.unit,
+                                  ),
                           ),
                         ),
                       ),
@@ -293,6 +301,7 @@ class _SeriesPainter extends CustomPainter {
     required this.zeroColor,
     required this.labelStyle,
     required this.delta,
+    required this.unit,
   });
 
   final List<ChartLine> lines;
@@ -302,6 +311,7 @@ class _SeriesPainter extends CustomPainter {
   final Color zeroColor;
   final TextStyle labelStyle;
   final bool delta;
+  final String unit;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -328,9 +338,8 @@ class _SeriesPainter extends CustomPainter {
     }
     if (lines.isNotEmpty) {
       final scale = math.max(axis.$1.abs(), axis.$2.abs());
-      String label(double value) => delta
-          ? displayDelta(value)
-          : chartValueText(value, scale, lines.first.series.unit);
+      String label(double value) =>
+          delta ? displayDelta(value) : chartValueText(value, scale, unit);
       final top = brakingUp ? axis.$1 : axis.$2,
           bottom = brakingUp ? axis.$2 : axis.$1;
       final high = TextPainter(
@@ -394,7 +403,8 @@ class _SeriesPainter extends CustomPainter {
       old.zeroLine != zeroLine ||
       old.gridColor != gridColor ||
       old.zeroColor != zeroColor ||
-      old.labelStyle != labelStyle;
+      old.labelStyle != labelStyle ||
+      old.unit != unit;
 }
 
 class _CursorPainter extends CustomPainter {

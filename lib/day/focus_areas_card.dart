@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../units.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'time_losses_card.dart' show CompareLaps, lapStretch;
 import 'track_map.dart';
@@ -235,7 +236,8 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
         );
       case FocusAreaKind.minimumSpeedSpread:
         final speed = observation?.minimumSpeed;
-        final unit = widget.area.unit.isEmpty ? '' : ' ${widget.area.unit}';
+        final label = speedUnitOf(context, widget.area.unit);
+        final unit = label.isEmpty ? '' : ' $label';
         parts.add(
           speed == null
               ? 'lowest speed not measured'
