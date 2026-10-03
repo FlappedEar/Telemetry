@@ -18,6 +18,7 @@ import 'day_results_controller.dart';
 import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
+import 'next_session_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
@@ -159,7 +160,21 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ...addition.notes,
     ];
     _tell(lines.join('\n'));
+    // The day opens on what to do in the next session.
+    if (added.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final card = _coachKey.currentContext;
+        if (mounted && card != null) {
+          Scrollable.ensureVisible(
+            card,
+            duration: const Duration(milliseconds: 300),
+          );
+        }
+      });
+    }
   }
+
+  final _coachKey = GlobalKey();
 
   Future<void> _addRecordings() async {
     final paths = await widget.pickers.pickRecordings();
@@ -634,17 +649,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
           style: theme.textTheme.bodyMedium,
         ),
       if (best != null) ...[
+        // What to do next first: the coach's suggestions, then the
+        // observations to look at.
         const SizedBox(height: 12),
-        _theoreticalBest(path, wide),
-        const SizedBox(height: 12),
-        TimeLossesCard(
+        NextSessionCard(
+          key: _coachKey,
+          coach: _controller.coach,
           result: _controller.theoreticalBest,
-          loading: _controller.theoreticalBestLoading,
+          session: _controller.latestRunName,
+          lapLabel: _controller.lapLabel,
+          loading: _controller.coachLoading,
+          error: _controller.coachError,
           path: path,
           gate: _mapGate,
           wide: wide,
-          onOpenLap: _open,
-          onCompare: _compare,
         ),
         const SizedBox(height: 12),
         FocusAreasCard(
@@ -652,6 +670,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
           loading: _controller.theoreticalBestLoading,
           areas: _controller.focusAreas,
           lapLabel: _controller.lapLabel,
+          path: path,
+          gate: _mapGate,
+          wide: wide,
+          onOpenLap: _open,
+          onCompare: _compare,
+        ),
+        const SizedBox(height: 12),
+        _theoreticalBest(path, wide),
+        const SizedBox(height: 12),
+        TimeLossesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
           path: path,
           gate: _mapGate,
           wide: wide,

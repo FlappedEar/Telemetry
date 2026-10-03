@@ -275,6 +275,22 @@ void main() {
     await shot(tester, 'day-wide');
     final summary = list('dayResultsSummary');
 
+    // The coach's card and its first item's measured values.
+    await scrollIn(tester, summary, find.text('Next session'));
+    await shot(tester, 'next-session');
+    final why = find.byKey(const ValueKey('coachWhy 0'));
+    if (why.evaluate().isNotEmpty) {
+      await tester.ensureVisible(why);
+      await tester.pumpAndSettle();
+      await tester.tap(why);
+      await tester.pumpAndSettle();
+      await shot(tester, 'coach-why');
+      await back(tester);
+    }
+    // The observations, under the coach's card.
+    await scrollIn(tester, summary, find.text('Where to look next'));
+    await shot(tester, 'where-to-look-next');
+
     await scrollIn(tester, summary, find.text('Theoretical best'));
     await shot(tester, 'theoretical-best');
     await scrollIn(tester, summary, find.text('Where the time goes'));
@@ -283,8 +299,6 @@ void main() {
     await shot(tester, 'sector-times');
     await scrollIn(tester, summary, find.text('Time losses'));
     await shot(tester, 'time-losses');
-    await scrollIn(tester, summary, find.text('Where to look next'));
-    await shot(tester, 'where-to-look-next');
     await scrollIn(tester, summary, find.text('Consistency'));
     await shot(tester, 'consistency');
     await scrollIn(tester, summary, find.text('Progression'));
