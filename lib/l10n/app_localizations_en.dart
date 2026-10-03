@@ -79,6 +79,48 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settings => 'Settings';
+
+  @override
+  String get settingsSpeedUnitHeading => 'Unit for unlabelled speeds';
+
+  @override
+  String get settingsSpeedUnitHelp =>
+      'Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.';
+
+  @override
+  String get speedUnitNone => 'None';
+
+  @override
+  String get settingsNoDayOpen => 'No day open yet.';
+
+  @override
+  String settingsDeclaredUnits(String units) {
+    return 'The open day\'s recordings declare $units.';
+  }
+
+  @override
+  String get unitsAnd => ' and ';
+
+  @override
+  String get settingsAllUnlabelled =>
+      'Its recordings do not say their speed unit.';
+
+  @override
+  String settingsSomeUnlabelled(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count of its recordings do not say their speed unit.',
+      one: '1 of its recordings does not say its speed unit.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get close => 'Close';
+
+  @override
   String get cancel => 'Cancel';
 
   @override

@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/import_runner.dart';
-import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/units.dart';
@@ -146,11 +146,8 @@ void main() {
 
   Future<void> pumpApp(WidgetTester tester, {Locale? locale}) =>
       tester.pumpWidget(
-        MaterialApp(
+        TelemetryApp(
           locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          builder: (context, child) => SpeedUnitScope(child: child!),
           home: Scaffold(
             appBar: AppBar(actions: const [SettingsButton()]),
             body: Builder(
@@ -221,7 +218,7 @@ void main() {
 
   testWidgets('the licences entry is translated', (tester) async {
     await pumpApp(tester, locale: const Locale('pl'));
-    await tester.tap(find.byTooltip('Settings'));
+    await tester.tap(find.byTooltip('Ustawienia'));
     await tester.pumpAndSettle();
     expect(find.text('O aplikacji'), findsOneWidget);
     await tester.tap(find.text('Licencje open source'));
@@ -249,5 +246,41 @@ void main() {
       ),
     );
     expect(find.text('Open-source licences').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('the settings dialog counts recordings without a unit', (
+    tester,
+  ) async {
+    declaredSpeedUnits = const ['km/h', ''];
+    await pumpApp(tester);
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        "The open day's recordings declare km/h. "
+        '1 of its recordings does not say its speed unit.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the settings dialog speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    declaredSpeedUnits = const ['km/h', 'mph', '', ''];
+    await pumpApp(tester, locale: const Locale('pl'));
+    await tester.tap(find.byTooltip('Ustawienia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Jednostka dla prędkości bez oznaczenia'), findsOneWidget);
+    expect(
+      find.text(
+        'Nagrania otwartego dnia podają km/h i mph. '
+        '2 z jego nagrań nie podają jednostki prędkości.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Brak'), findsOneWidget);
+    await tester.tap(find.text('Zamknij'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsDialog), findsNothing);
   });
 }
