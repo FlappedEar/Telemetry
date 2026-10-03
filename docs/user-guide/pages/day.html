@@ -19,7 +19,7 @@
 <ol class="steps">
   <li>On the day page, tap <strong>Add recordings</strong> and choose the new VBO/RCZ file. On a phone you can also share it from RaceChrono; see <a href="phone.html#share">Sharing from RaceChrono</a>.</li>
   <li>Only the new file is read. It becomes the next session (<em>Session 4</em> after three), and every card, ranking and the best day update.</li>
-  <li>A message says <em>Session 4 added to the day.</em> and the page shows the <a href="#next">Next session</a> card for it. A recording already in the day is not added again, nor the RCZ of a session added as VBO (or the other way round); the message says so.</li>
+  <li>A message says <em>Session 4 added to the day.</em> and the page moves to the <a href="#next">Next session</a> card, which coaches the session recorded last: the one just added, unless it was recorded before the others. A recording already in the day is not added again, nor the RCZ of a session added as VBO (or the other way round); the message says so.</li>
   <li>While the bar shows a session being added, the day stays open: <strong>Back</strong> asks you to wait until the session is in.</li>
 </ol>
 <p>Excluded laps, circuit names and your chosen group are kept. A day that was saved is saved again at once with the new session; a day never saved is kept as unsaved work (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
@@ -29,7 +29,7 @@
 <p>If there is no best lap, the card says why, for example that no session has enough complete GPS laps to identify its circuit.</p>
 
 <h2 id="next">Next session</h2>
-<p>Between sessions, the <strong>Next session</strong> card suggests what to try in the next run. It looks at the session recorded last (the line under the heading names it, for example <em>Coaching Session 6 against the day's faster laps</em>) and compares its laps with the faster laps of the whole day, corner by corner.</p>
+<p>Between sessions, the <strong>Next session</strong> card suggests what to try in the next run. It looks at the session recorded last, or the one added last when that recording has no time (the line under the heading names it, for example <em>Coaching Session 6 against the day's faster laps</em>), and compares its laps with the faster laps of the whole day, corner by corner.</p>
 <figure>
   <img src="assets/screens/next-session.png" alt="Next session card: one coach suggestion for Corner 1, with what was measured and what to keep, and a Why? button" width="1280" height="800" loading="lazy">
 </figure>
@@ -40,6 +40,7 @@
   <li><strong>Why?</strong> opens the measured values (session against faster laps), the laps they come from, the corner highlighted on the best lap's map, and a support score from 0 to 0.9. The score says how well the laps back the pattern; it is not a probability.</li>
 </ul>
 <p>There are at most three items: at most two changes, each in a different corner, and one thing to keep. Choose one at a time. The suggestions look for an early lift, too much coasting, a low minimum speed and a late throttle return, using the rules of the earlier DrivingCoach app on this app's own laps and corners. They suggest an opportunity, not a promised gain. A change is only suggested when it was seen on at least three laps of the session.</p>
+<p>Speeds carry the unit your recordings declare, without a unit when they declare none, and are never converted. If a recording declares a speed unit other than km/h, the coach's speeds are left out (shown as —) and the card says why.</p>
 <p>When there is nothing to suggest, the card says why: for example that a pattern was seen on fewer than three laps, that no lap of the session has a faster lap to compare with, or that throttle and brake are not recorded (lift, coasting and throttle return then cannot be compared). The <a href="theoretical-best.html#look-next">Where to look next</a> card under it lists observations: places worth a closer look, without telling you what to do.</p>
 
 <h2 id="groups">Compared laps (groups)</h2>

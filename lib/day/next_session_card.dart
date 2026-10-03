@@ -53,19 +53,20 @@ extension CoachText on AppLocalizations {
     CoachReason.belowThreshold => coachReasonBelowThreshold,
   };
 
-  /// What was measured for [finding], in one sentence.
-  String coachMeasured(CoachFinding finding) {
+  /// What was measured for [finding], in one sentence; speeds labelled
+  /// [speedUnit] (see [coachValue]).
+  String coachMeasured(CoachFinding finding, String? speedUnit) {
     final evidence = finding.evidence.first;
     final metric = coachMetric(evidence.key);
     if (finding.kind == CoachKind.improving) {
       return coachMeasuredImproving(
         metric,
-        coachValue(evidence.reference, evidence.unit),
-        coachValue(evidence.observed, evidence.unit),
+        coachValue(evidence.reference, evidence.unit, speedUnit),
+        coachValue(evidence.observed, evidence.unit, speedUnit),
       );
     }
-    final observed = coachValue(evidence.observed, evidence.unit);
-    final reference = coachValue(evidence.reference, evidence.unit);
+    final observed = coachValue(evidence.observed, evidence.unit, speedUnit);
+    final reference = coachValue(evidence.reference, evidence.unit, speedUnit);
     return evidence.referenceLaps.length == 1
         ? coachMeasuredOne(metric, observed, reference)
         : coachMeasuredMany(metric, observed, reference);
@@ -73,11 +74,25 @@ extension CoachText on AppLocalizations {
 }
 
 /// A coach value with its unit: positions in whole metres, the rest with
-/// one decimal ("46.9 km/h", "3.3 s", "412 m").
-String coachValue(double value, String unit) {
+/// one decimal ("46.9 km/h", "3.3 s", "412 m"). The coach reports speeds
+/// in km/h; they are labelled [speedUnit], the day's own unit (unlabelled
+/// when it is empty), and not shown when it is null because the recordings
+/// declare another unit and the values were converted.
+String coachValue(double value, String unit, [String? speedUnit = 'km/h']) {
   if (!value.isFinite) return '—';
-  return unit == 'm' ? '${value.round()} m' : '${fixed(value, 1)} $unit';
+  if (unit == 'm') return '${value.round()} m';
+  if (unit == 'km/h') {
+    if (speedUnit == null) return '—';
+    return speedUnit.isEmpty
+        ? fixed(value, 1)
+        : '${fixed(value, 1)} $speedUnit';
+  }
+  return '${fixed(value, 1)} $unit';
 }
+
+/// Whether [finding] reports a speed, which the coach measures in km/h.
+bool _hasSpeed(CoachFinding finding) =>
+    finding.evidence.any((evidence) => evidence.unit == 'km/h');
 
 /// The coach between sessions: at most three items for the next run, each
 /// a labelled suggestion with what was measured apart from what to try.
@@ -95,6 +110,8 @@ class NextSessionCard extends StatelessWidget {
     this.path,
     this.gate,
     this.wide = false,
+    this.speedUnit = 'km/h',
+    this.withoutTheoreticalBest = false,
   });
 
   /// Null while it is prepared.
@@ -111,6 +128,12 @@ class NextSessionCard extends StatelessWidget {
   final LapPath? path;
   final (Offset, Offset)? gate;
   final bool wide;
+
+  /// The label for speeds (see [coachValue]).
+  final String? speedUnit;
+
+  /// The theoretical best failed, so the coach cannot run.
+  final bool withoutTheoreticalBest;
 
   @override
   Widget build(BuildContext context) {
@@ -131,8 +154,13 @@ class NextSessionCard extends StatelessWidget {
                 style: theme.textTheme.bodySmall,
               ),
             const SizedBox(height: 8),
-            if (error.isNotEmpty)
-              Text(l10n.coachFailed(error))
+            if (withoutTheoreticalBest)
+              Text(
+                l10n.coachNoTheoreticalBest,
+                key: const ValueKey('coachReason'),
+              )
+            else if (error.isNotEmpty)
+              Text(l10n.coachFailed(error), key: const ValueKey('coachReason'))
             else if (loading || coach == null)
               Text(l10n.coachLoading)
             else ...[
@@ -142,6 +170,15 @@ class NextSessionCard extends StatelessWidget {
               ),
               for (var i = 0; i < coach.plan.length; ++i)
                 _item(context, coach.plan[i].finding, i),
+              if (speedUnit == null &&
+                  coach.plan.any((item) => _hasSpeed(item.finding))) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.coachSpeedHidden,
+                  key: const ValueKey('coachSpeedHidden'),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
               if (coach.plan.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(l10n.coachFooter, style: theme.textTheme.bodySmall),
@@ -205,7 +242,7 @@ class NextSessionCard extends StatelessWidget {
           ),
           labelled(
             l10n.coachMeasuredLabel,
-            l10n.coachMeasured(finding),
+            l10n.coachMeasured(finding, speedUnit),
             ValueKey('coachMeasured $index'),
           ),
           labelled(
@@ -228,6 +265,7 @@ class NextSessionCard extends StatelessWidget {
                       path: path,
                       gate: gate,
                       wide: wide,
+                      speedUnit: speedUnit,
                     ),
                   ),
                 ),
@@ -251,6 +289,7 @@ class CoachItemPage extends StatefulWidget {
     this.path,
     this.gate,
     this.wide = false,
+    this.speedUnit = 'km/h',
   });
 
   final CoachFinding finding;
@@ -259,6 +298,9 @@ class CoachItemPage extends StatefulWidget {
   final LapPath? path;
   final (Offset, Offset)? gate;
   final bool wide;
+
+  /// The label for speeds (see [coachValue]).
+  final String? speedUnit;
 
   @override
   State<CoachItemPage> createState() => _CoachItemPageState();
@@ -310,7 +352,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            l10n.coachMeasured(finding),
+            l10n.coachMeasured(finding, widget.speedUnit),
             style: theme.textTheme.titleMedium,
             key: const ValueKey('coachWhyMeasured'),
           ),
@@ -322,11 +364,21 @@ class _CoachItemPageState extends State<CoachItemPage> {
               title: Text(l10n.coachMetric(evidence.key)),
               subtitle: Text(
                 l10n.coachWhyValues(
-                  coachValue(evidence.observed, evidence.unit),
-                  coachValue(evidence.reference, evidence.unit),
+                  coachValue(
+                    evidence.observed,
+                    evidence.unit,
+                    widget.speedUnit,
+                  ),
+                  coachValue(
+                    evidence.reference,
+                    evidence.unit,
+                    widget.speedUnit,
+                  ),
                 ),
               ),
             ),
+          if (widget.speedUnit == null && _hasSpeed(finding))
+            Text(l10n.coachSpeedHidden, style: theme.textTheme.bodySmall),
           const SizedBox(height: 8),
           Text(l10n.coachWhyAffected, style: theme.textTheme.labelLarge),
           Text(_laps(finding.affectedLaps)),

@@ -111,6 +111,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get coachNoTheoreticalBest =>
+      'The coach needs the theoretical best, which could not be computed.';
+
+  @override
+  String get coachSpeedHidden =>
+      'Speeds are not shown: a recording declares a speed unit other than km/h, and the coach converts speeds to km/h.';
+
+  @override
   String get coachLabel => 'Coach suggestion';
 
   @override

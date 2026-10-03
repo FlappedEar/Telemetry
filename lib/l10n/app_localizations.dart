@@ -260,6 +260,18 @@ abstract class AppLocalizations {
   /// **'The coach could not run: {error}'**
   String coachFailed(String error);
 
+  /// When the theoretical best failed, so the coach cannot run.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach needs the theoretical best, which could not be computed.'**
+  String get coachNoTheoreticalBest;
+
+  /// Under coach items when speeds are hidden because the recordings use another unit and values are never shown converted.
+  ///
+  /// In en, this message translates to:
+  /// **'Speeds are not shown: a recording declares a speed unit other than km/h, and the coach converts speeds to km/h.'**
+  String get coachSpeedHidden;
+
   /// Label on each coach item, marking it as a suggestion from the coach rules, unlike the measured observations elsewhere on the page.
   ///
   /// In en, this message translates to:

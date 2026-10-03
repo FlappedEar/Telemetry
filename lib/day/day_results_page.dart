@@ -136,6 +136,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   void dispose() {
     _controller.removeListener(_reportAddition);
     _lifecycle.dispose();
+    _summaryScroll.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -160,21 +161,41 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ...addition.notes,
     ];
     _tell(lines.join('\n'));
-    // The day opens on what to do in the next session.
-    if (added.isNotEmpty) {
+    if (added.isNotEmpty) _revealCoach();
+  }
+
+  final _coachKey = GlobalKey();
+
+  /// The summary's scroll position, on a phone's Results tab or the wide
+  /// layout's left pane.
+  final _summaryScroll = ScrollController();
+
+  /// The phone layout's Results and Laps tabs; null in the wide layout.
+  TabController? _tabs;
+
+  /// The day opens on what to do in the next session: the Results tab,
+  /// scrolled to the Next session card. Scrolled far below it, the card is
+  /// not built, so the summary first goes back to the top, near the card.
+  void _revealCoach() {
+    _tabs?.animateTo(0);
+    void reveal({required bool again}) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         final card = _coachKey.currentContext;
-        if (mounted && card != null) {
+        if (card != null) {
           Scrollable.ensureVisible(
             card,
             duration: const Duration(milliseconds: 300),
           );
+        } else if (again && _summaryScroll.hasClients) {
+          _summaryScroll.jumpTo(0);
+          reveal(again: false);
         }
       });
     }
-  }
 
-  final _coachKey = GlobalKey();
+    reveal(again: true);
+  }
 
   Future<void> _addRecordings() async {
     final paths = await widget.pickers.pickRecordings();
@@ -381,12 +402,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Widget _body(BuildContext context, bool wide, double mapHeight) {
     final summary = _summary(context, wide, mapHeight);
     final laps = _lapList(context);
+    _tabs = wide ? null : DefaultTabController.maybeOf(context);
     if (!wide) {
       return TabBarView(
         children: [
           KeepAliveItem(
             child: ListView(
               key: const ValueKey('dayResultsSummary'),
+              controller: _summaryScroll,
               padding: const EdgeInsets.all(16),
               children: summary,
             ),
@@ -408,6 +431,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           flex: 5,
           child: ListView(
             key: const ValueKey('dayResultsSummary'),
+            controller: _summaryScroll,
             padding: const EdgeInsets.all(16),
             children: summary,
           ),
@@ -663,6 +687,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
           path: path,
           gate: _mapGate,
           wide: wide,
+          speedUnit: _controller.coachSpeedUnit,
+          withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
         ),
         const SizedBox(height: 12),
         FocusAreasCard(

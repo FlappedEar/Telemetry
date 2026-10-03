@@ -832,15 +832,20 @@ final class DayResultsController extends ChangeNotifier {
   DayCoach? get coach => _coach;
   bool get coachLoading => _theoreticalBestLoading || _coachLoading;
 
+  /// Whether the coach cannot run because the theoretical best failed.
+  bool get coachWithoutTheoreticalBest =>
+      _theoreticalBest?.state == DayTheoreticalBestState.error;
+
   /// Why the coach could not run; empty when it ran.
   String get coachError => _coachError;
   String _coachError = '';
 
   /// The session recorded last, which the coach coaches: by recording time,
-  /// or the one added last when no recording has a time.
+  /// or the one added last when it has no recording time.
   String get latestRunId {
     if (_runs.isEmpty) return '';
     var latest = _runs.last;
+    if (recordingTimestamp(latest.run.telemetry) == null) return latest.run.id;
     int? latestStart;
     for (final named in _runs) {
       final start = recordingTimestamp(named.run.telemetry);
@@ -850,6 +855,22 @@ final class DayResultsController extends ChangeNotifier {
       }
     }
     return latest.run.id;
+  }
+
+  /// The label for the coach's speeds, which the coach reports in km/h:
+  /// the day's speed unit (see [speedUnitLabel]), empty when nothing says.
+  /// Null when a recording's speed channel declares another unit, as the
+  /// coach's values are then converted and are not shown.
+  String? get coachSpeedUnit {
+    for (final named in _runs) {
+      final session = named.run.telemetry;
+      for (final MapEntry(:key, :value) in session.channels.entries) {
+        if (!isSpeedChannel(key) && key != session.aliases['speed']) continue;
+        final own = value.unit.trim();
+        if (own.isNotEmpty && normalizedSpeedUnit(own) != 'km/h') return null;
+      }
+    }
+    return speedUnitLabel();
   }
 
   /// The name of [latestRunId]: "Session 4".
@@ -869,6 +890,15 @@ final class DayResultsController extends ChangeNotifier {
       () => dayCoach(result, sessions, runId: runId);
 
   Future<void> _requestCoach(DayTheoreticalBest result, int generation) async {
+    if (result.state == DayTheoreticalBestState.error) {
+      // The coach needs the sector times, which failed (see
+      // [coachWithoutTheoreticalBest]).
+      _coach = null;
+      _coachError = '';
+      _coachLoading = false;
+      notifyListeners();
+      return;
+    }
     _coachLoading = true;
     notifyListeners();
     DayCoach? coach;
@@ -879,7 +909,7 @@ final class DayResultsController extends ChangeNotifier {
           for (final named in _runs) named.run.id: named.run.telemetry,
         }, latestRunId),
       );
-    } on Exception catch (failure) {
+    } on Object catch (failure) {
       error = '$failure';
     }
     if (_disposed || generation != _theoreticalBestGeneration) return;

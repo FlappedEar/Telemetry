@@ -7,16 +7,24 @@ import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/next_session_card.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'rectangle_vbo.dart';
 
 void main() {
   late Directory directory;
-  setUp(() => directory = Directory.systemTemp.createTempSync('coach'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  setUp(() {
+    directory = Directory.systemTemp.createTempSync('coach');
+    speedUnitSetting.value = SpeedUnitSetting.automatic;
+  });
+  tearDown(() {
+    directory.deleteSync(recursive: true);
+    speedUnitSetting.value = SpeedUnitSetting.automatic;
+  });
 
-  DayImportOutcome importDay() {
+  /// [header] is a VBO header line such as `velocity mph`.
+  DayImportOutcome importDay({String header = ''}) {
     final files = {
       'a.vbo': [
         rectangleLap(30, 50, 120, 20),
@@ -28,7 +36,15 @@ void main() {
     final paths = <String>[];
     files.forEach((name, laps) {
       final path = '${directory.path}/$name';
-      File(path).writeAsStringSync(rectangleVbo(laps));
+      final vbo = rectangleVbo(laps);
+      File(path).writeAsStringSync(
+        header.isEmpty
+            ? vbo
+            : vbo.replaceFirst(
+                '[header]\n',
+                '[header]\ntime\nlatitude\nlongitude\n$header\n',
+              ),
+      );
       paths.add(path);
     });
     return runDayImport((paths: paths, includeSubfolders: false));
@@ -100,17 +116,24 @@ void main() {
     bool withPlan = true,
     Size size = const Size(412, 915),
     double textScale = 1.0,
+    String header = 'velocity kmh',
+    List<NamedRun> Function(List<NamedRun> runs)? editRuns,
+    CoachRunner? coachRunner,
+    TheoreticalBestRunner? theoreticalBestRunner,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final outcome = importDay();
+    final outcome = importDay(header: header);
     late DayResultsController controller;
     controller = DayResultsController(
-      runs: outcome.runs,
+      runs: editRuns == null ? outcome.runs : editRuns(outcome.runs),
       analysis: outcome.analysis!,
-      coachRunner: (job) async => withPlan
-          ? plan(controller.theoreticalBest!, controller.latestRunId)
-          : job(),
+      theoreticalBestRunner: theoreticalBestRunner,
+      coachRunner:
+          coachRunner ??
+          (job) async => withPlan
+              ? plan(controller.theoreticalBest!, controller.latestRunId)
+              : job(),
     );
     await tester.pumpWidget(
       MediaQuery(
@@ -241,5 +264,136 @@ void main() {
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+  });
+
+  String measured(WidgetTester tester, int index) => tester
+      .widget<Text>(find.byKey(ValueKey('coachMeasured $index')))
+      .textSpan!
+      .toPlainText();
+
+  testWidgets('speeds keep the unit the recordings declare: mph', (
+    tester,
+  ) async {
+    await show(tester, header: 'velocity mph');
+    expect(
+      measured(tester, 1),
+      'Measured: Minimum speed: 46.9 mph on this session\'s laps, 53.7 mph on your faster lap.',
+    );
+    expect(find.textContaining('km/h'), findsNothing);
+  });
+
+  testWidgets('speeds of recordings declaring no unit stay unlabelled', (
+    tester,
+  ) async {
+    await show(tester, header: '');
+    expect(
+      measured(tester, 1),
+      'Measured: Minimum speed: 46.9 on this session\'s laps, 53.7 on your faster lap.',
+    );
+    expect(find.byKey(const ValueKey('coachSpeedHidden')), findsNothing);
+  });
+
+  testWidgets('speeds of recordings declaring km/h say km/h', (tester) async {
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    await show(tester, header: 'velocity kmh');
+    expect(measured(tester, 1), contains('46.9 km/h'));
+  });
+
+  testWidgets('converted speeds are not shown, and the card says why', (
+    tester,
+  ) async {
+    // A speed channel declaring mph, as an RCZ recording can: the coach
+    // converts its speeds to km/h, which are never shown converted.
+    NamedRun inMph(NamedRun named) {
+      final t = named.run.telemetry;
+      final speed = t.aliases['speed'] ?? 'velocity';
+      final channel = t.channels[speed]!;
+      final r = named.run;
+      return (
+        run: TelemetryRunProposal(
+          id: r.id,
+          sourceId: r.sourceId,
+          sourcePath: r.sourcePath,
+          format: r.format,
+          contentSha256: r.contentSha256,
+          laps: r.laps,
+          telemetry: TelemetrySession(
+            duration: t.duration,
+            startTime: t.startTime,
+            metadata: t.metadata,
+            channels: {
+              ...t.channels,
+              speed: TelemetryChannel(
+                name: channel.name,
+                unit: 'mph',
+                timestamps: channel.timestamps,
+                values: channel.values,
+              ),
+            },
+            aliases: t.aliases,
+            warnings: t.warnings,
+            timingGates: t.timingGates,
+            sampleCount: t.sampleCount,
+          ),
+        ),
+        name: named.name,
+      );
+    }
+
+    final controller = await show(
+      tester,
+      editRuns: (runs) => [inMph(runs.first), ...runs.skip(1)],
+    );
+    expect(controller.coachSpeedUnit, isNull);
+    expect(
+      measured(tester, 1),
+      'Measured: Minimum speed: — on this session\'s laps, — on your faster lap.',
+    );
+    expect(find.byKey(const ValueKey('coachSpeedHidden')), findsOneWidget);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    await tester.pumpAndSettle();
+    expect(find.text('— against —'), findsOneWidget);
+    expect(find.text('4.2 s against 4.0 s'), findsOneWidget);
+    expect(find.textContaining('Speeds are not shown'), findsOneWidget);
+  });
+
+  testWidgets('a coach that fails says so instead of loading for ever', (
+    tester,
+  ) async {
+    final controller = await show(
+      tester,
+      coachRunner: (job) async => throw StateError('broken'),
+    );
+    expect(controller.coachLoading, isFalse);
+    expect(controller.coachError, contains('broken'));
+    expect(
+      find.text('The coach could not run: Bad state: broken'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('without a theoretical best the coach says why', (tester) async {
+    var coached = false;
+    final controller = await show(
+      tester,
+      theoreticalBestRunner: (job) async => DayTheoreticalBest(
+        groupId: '',
+        state: DayTheoreticalBestState.error,
+        message: 'failed',
+      ),
+      coachRunner: (job) async {
+        coached = true;
+        return job();
+      },
+    );
+    expect(coached, isFalse);
+    expect(controller.coachLoading, isFalse);
+    expect(
+      find.text(
+        'The coach needs the theoretical best, which could not be computed.',
+      ),
+      findsOneWidget,
+    );
   });
 }

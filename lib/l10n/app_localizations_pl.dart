@@ -114,6 +114,14 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get coachNoTheoreticalBest =>
+      'Trener potrzebuje idealnego okrążenia, którego nie udało się obliczyć.';
+
+  @override
+  String get coachSpeedHidden =>
+      'Prędkości nie są pokazane: nagranie deklaruje inną jednostkę prędkości niż km/h, a trener przelicza prędkości na km/h.';
+
+  @override
   String get coachLabel => 'Sugestia trenera';
 
   @override
@@ -155,7 +163,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachActionEarlyLift =>
-      'Spróbuj odjąć gaz nieco później, w ramach dojazdu, który już powtarzałeś z powodzeniem. Nie zmieniaj punktu hamowania.';
+      'Spróbuj odjąć gaz nieco później, w ramach dojazdu, który już się sprawdził. Nie zmieniaj punktu hamowania.';
 
   @override
   String get coachActionExcessiveCoasting =>
