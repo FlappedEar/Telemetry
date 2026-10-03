@@ -26,6 +26,7 @@ final class DayImportFinished extends DayImportState {
     required this.runs,
     required this.notes,
     this.analysis,
+    this.fusions = const {},
   });
 
   /// Primary runs, named "Session N" in recording order.
@@ -33,6 +34,9 @@ final class DayImportFinished extends DayImportState {
 
   /// The day's laps, groups and ranking.
   final DayAnalysis? analysis;
+
+  /// Each run's RCZ, aligned and fused when it could be, by run id.
+  final Map<String, RunFusion> fusions;
 
   /// What was skipped, grouped or failed, for the user.
   final List<String> notes;
@@ -180,5 +184,6 @@ DayImportState _finished(DayImportOutcome outcome) {
         : nameRunsInRecordingOrder(primaries),
     notes: notes,
     analysis: outcome.analysis,
+    fusions: outcome.fusions,
   );
 }

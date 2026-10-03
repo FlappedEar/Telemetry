@@ -75,3 +75,26 @@ extension SessionNameText on AppLocalizations {
     return number == null ? name : sessionName(int.parse(number));
   }
 }
+
+extension FusionReasonText on AppLocalizations {
+  /// Why a session's other recording was not combined with it, from the
+  /// reason `telemetry_core` gives, in the app's language.
+  String fusionReason(RunFusion fusion) => switch (fusion.state) {
+    RunFusionState.unavailable => switch (fusion.reason) {
+      'Recording not found.' => fusionReasonNotFound,
+      'The file found is a different recording.' => fusionReasonDifferent,
+      _ => fusionReasonUnreadable,
+    },
+    _ => switch (fusion.reason) {
+      'noSpeed' => fusionReasonNoSpeed,
+      'shortOverlap' => fusionReasonShortOverlap,
+      'weakMatch' ||
+      'tooFewWindows' ||
+      'windowsDisagree' ||
+      'implausibleDrift' ||
+      'repeatedMatch' => fusionReasonAmbiguous,
+      'declaredClockDisagrees' => fusionReasonClockDisagrees,
+      _ => fusionReasonInsufficient,
+    },
+  };
+}

@@ -8,6 +8,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../diagnostics/app_diagnostics.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
+import 'channel_sources.dart';
 import 'recovery_store.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
@@ -42,6 +43,16 @@ Future<DayChannelSummaries> defaultChannelSummariesRunner(
     ? Future.microtask(job)
     : Isolate.run(job);
 
+/// Fuses a run again with a changed rule. Replaced in widget tests, which
+/// run it on the test's own thread.
+typedef FusionRunner = Future<RunFusion?> Function(RunFusion? Function() job);
+
+/// In a background isolate, or directly under `flutter test`.
+Future<RunFusion?> defaultFusionRunner(RunFusion? Function() job) =>
+    !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    ? Future.microtask(job)
+    : Isolate.run(job);
+
 /// The results of one imported day and the user's choices on them: the group
 /// shown and the laps excluded. Re-ranking keeps rows and routes, so it runs
 /// on the interface thread.
@@ -61,10 +72,14 @@ final class DayResultsController extends ChangeNotifier {
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
     ChannelSummariesRunner? channelSummariesRunner,
+    FusionRunner? fusionRunner,
     DayAppender? appender,
     bool changed = false,
     AppDiagnostics? diagnostics,
+    Map<String, RunFusion> fusions = const {},
   }) : _runs = [...runs],
+       _fusions = {...fusions},
+       _fusionRunner = fusionRunner ?? defaultFusionRunner,
        _appender = appender ?? const IsolateDayAppender(),
        diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
@@ -83,6 +98,7 @@ final class DayResultsController extends ChangeNotifier {
        _dirty = recovered || changed {
     declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
     _declaredSpeedUnits = declaredSpeedUnits;
+    _declareChannelSources();
     // A restored day is what its snapshot holds: written again only when it
     // changes, so a day restored and not taken leaves the snapshot as it was.
     if (!recovered) _scheduleRecovery();
@@ -107,8 +123,14 @@ final class DayResultsController extends ChangeNotifier {
          openedDocument: day.document,
          writer: writer,
          recovery: recovery,
-         changed: day.relinked.isNotEmpty,
+         fusions: day.fusions,
+         changed: day.relinked.isNotEmpty || _realigned(day),
        );
+
+  /// Whether a run of [day] was aligned afresh, so its new decision is not
+  /// saved yet.
+  static bool _realigned(OpenedDay day) =>
+      day.fusions.values.any((fusion) => fusion.fused && !fusion.fromDocument);
 
   /// An unsaved day restored from [recovery]'s snapshot: it has changes
   /// until saved, and saving it again goes where it was last saved.
@@ -133,6 +155,7 @@ final class DayResultsController extends ChangeNotifier {
          documentBase: snapshot.basePath,
          writer: writer,
          recovery: recovery,
+         fusions: day.fusions,
          recovered: true,
        );
 
@@ -140,6 +163,128 @@ final class DayResultsController extends ChangeNotifier {
 
   /// The day's runs whose recordings were read, in the order added.
   List<NamedRun> get runs => List.unmodifiable(_runs);
+
+  // Each run's alternative recording (the RCZ of its VBO) and its fusion.
+  final Map<String, RunFusion> _fusions;
+  final FusionRunner _fusionRunner;
+  final Map<String, int> _fusionGenerations = {};
+  final Set<String> _fusionUpdating = {};
+
+  /// [runId]'s alternative recording and what fusing it did; null when the
+  /// run has none.
+  RunFusion? fusion(String runId) => _fusions[runId];
+
+  /// Whether [runId] is being fused again after a rule changed.
+  bool fusionUpdating(String runId) => _fusionUpdating.contains(runId);
+
+  /// The format of the recording channel [channel] of [runId]'s session
+  /// came from in whole or in part ("RCZ"), when that is not the run's own
+  /// recording; empty otherwise.
+  String channelSource(String runId, String channel) {
+    final fusion = _fusions[runId];
+    if (fusion == null || !fusion.channelOrigins.containsKey(channel)) {
+      return '';
+    }
+    return fusion.alternativeFormat?.name.toUpperCase() ?? '';
+  }
+
+  /// Every channel of [runId]'s session that came from another recording,
+  /// with that recording's format (see [channelSource]).
+  Map<String, String> channelSources(String runId) => {
+    for (final channel
+        in _fusions[runId]?.channelOrigins.keys ?? const <String>[])
+      channel: channelSource(runId, channel),
+  };
+
+  // This day's [dayChannelSources], cleared when it closes unless another
+  // day has declared its own since.
+  Map<String, String> _declaredChannelSources = const {};
+
+  void _declareChannelSources() {
+    final sources = <String, String>{};
+    for (final named in _runs) {
+      sources.addAll(channelSources(named.run.id));
+    }
+    dayChannelSources = _declaredChannelSources = Map.unmodifiable(sources);
+  }
+
+  // [runs] with each fused session in place of its recording: what the
+  // analysis that reads channels uses. Laps stay the primary's own.
+  List<NamedRun>? _channelRuns;
+  List<NamedRun> get _analysisRuns => _channelRuns ??= [
+    for (final named in _runs)
+      if (_fusions[named.run.id]?.session case final fused?)
+        (
+          run: TelemetryRunProposal(
+            id: named.run.id,
+            sourceId: named.run.sourceId,
+            sourcePath: named.run.sourcePath,
+            format: named.run.format,
+            contentSha256: named.run.contentSha256,
+            telemetry: fused,
+            laps: named.run.laps,
+          ),
+          name: named.name,
+        )
+      else
+        named,
+  ];
+
+  // Built outside the controller so the isolate's closure holds only its
+  // inputs.
+  static RunFusion? Function() _fusionJob(
+    RunFusion fusion,
+    TelemetryRunProposal primary,
+    String key,
+    FusionRule rule,
+  ) =>
+      () => withFusionRule(fusion, primary, key, rule);
+
+  /// Uses [rule] for channel [key] of [runId], where its two recordings
+  /// disagree: [FusionRule.primaryOnly] keeps the primary recording,
+  /// [FusionRule.fillGaps] fills its gaps from the alternative and
+  /// [FusionRule.preferAlternative] uses the alternative. Fused again in
+  /// the background; lap rows, timing and rankings never change.
+  Future<void> setFusionRule(String runId, String key, FusionRule rule) async {
+    final fusion = _fusions[runId];
+    NamedRun? named;
+    for (final candidate in _runs) {
+      if (candidate.run.id == runId) named = candidate;
+    }
+    if (fusion == null || named == null || !fusion.fused || _disposed) return;
+    if (fusion.ruleOf(key) == rule && !_fusionUpdating.contains(runId)) return;
+    final generation = (_fusionGenerations[runId] ?? 0) + 1;
+    _fusionGenerations[runId] = generation;
+    _fusionUpdating.add(runId);
+    notifyListeners();
+    RunFusion? result;
+    try {
+      result = await _fusionRunner(_fusionJob(fusion, named.run, key, rule));
+    } on Exception catch (error) {
+      debugPrint('Fusion not changed: $error');
+    }
+    if (_disposed || _fusionGenerations[runId] != generation) return;
+    _fusionUpdating.remove(runId);
+    // Only the fusion it started from is replaced.
+    if (result != null && identical(_fusions[runId], fusion)) {
+      _fusions[runId] = result;
+      _fusionsChanged();
+      _revision++;
+      _dirty = true;
+      _scheduleRecovery();
+    }
+    notifyListeners();
+  }
+
+  // The fused sessions changed: what reads channels is calculated again.
+  void _fusionsChanged() {
+    _channelRuns = null;
+    _comparisons.clear();
+    _resetChannelSummaries();
+    if (identical(dayChannelSources, _declaredChannelSources)) {
+      _declareChannelSources();
+    }
+  }
 
   /// Where background calculation times go.
   final AppDiagnostics diagnostics;
@@ -229,6 +374,7 @@ final class DayResultsController extends ChangeNotifier {
         previousPath: _documentBase,
         trackSegments: _segmentEdits.runs,
         groupChosen: _groupChosen,
+        fusions: _fusions,
       );
       await _writer(path, document);
       _document = document;
@@ -307,8 +453,8 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   /// The new [runs] that are another format of one of the day's sessions,
-  /// with that session's name. Like an import, only one-to-one matches count.
-  Map<String, String> _otherFormats(List<NamedRun> runs) {
+  /// with that session. Like an import, only one-to-one matches count.
+  Map<String, NamedRun> _otherFormats(List<NamedRun> runs) {
     final matches = <(NamedRun, NamedRun)>[];
     for (final added in runs) {
       for (final named in _runs) {
@@ -324,7 +470,7 @@ final class DayResultsController extends ChangeNotifier {
         .length;
     return {
       for (final (added, named) in matches)
-        if (count(added) == 1 && count(named) == 1) added.run.id: named.name,
+        if (count(added) == 1 && count(named) == 1) added.run.id: named,
     };
   }
 
@@ -413,6 +559,7 @@ final class DayResultsController extends ChangeNotifier {
       rowCount: _analysis.rows.length,
       sameDayAs: sameDayAs,
       alternatives: const <String, String>{},
+      alternativeOf: const <String, TelemetryRunProposal>{},
     );
     var prepared = await _prepare(request);
     if (prepared case DayAppendOutcome(:final runs) when runs.isNotEmpty) {
@@ -420,13 +567,25 @@ final class DayResultsController extends ChangeNotifier {
       // one at a time: prepare again without the day's other formats.
       final alternatives = _otherFormats(runs);
       if (alternatives.isNotEmpty && !_disposed) {
+        // An RCZ of a VBO session without one becomes its alternative.
+        final formats = {for (final named in runs) named.run.id: named.run};
         prepared = await _prepare((
           paths: request.paths,
           runIds: request.runIds,
           runCount: request.runCount,
           rowCount: request.rowCount,
           sameDayAs: request.sameDayAs,
-          alternatives: alternatives,
+          alternatives: {
+            for (final MapEntry(:key, :value) in alternatives.entries)
+              key: value.name,
+          },
+          alternativeOf: {
+            for (final MapEntry(:key, :value) in alternatives.entries)
+              if (formats[key]?.format == RecordingFormat.rcz &&
+                  value.run.format == RecordingFormat.vbo &&
+                  !(_fusions[value.run.id]?.fused ?? false))
+                key: value.run,
+          },
         ));
       }
     }
@@ -440,28 +599,40 @@ final class DayResultsController extends ChangeNotifier {
         closed: true,
       );
     }
-    if (part == null || outcome.runs.isEmpty) {
+    final adding = part != null && outcome.runs.isNotEmpty;
+    // An RCZ for one of the day's sessions is added to it, not as a session.
+    final combined = [
+      for (final named in _runs)
+        if (outcome.fusions.containsKey(named.run.id)) named.name,
+    ];
+    if (!adding && combined.isEmpty) {
       return DayAddition(
         notes: outcome.notes,
         error: outcome.error,
         otherDay: outcome.otherDay,
       );
     }
-    try {
-      _analysis = extendDay(
-        _analysis,
-        part,
-        manualTracks: _analysis.manualTracks,
-        exclusions: _exclusions,
-        preferredGroupId: _groupChosen ? _groupId : _savedGroupId,
-      );
-    } on Exception catch (error) {
-      return DayAddition(
-        notes: outcome.notes,
-        error: 'Nothing was added: $error',
-      );
+    if (adding) {
+      try {
+        _analysis = extendDay(
+          _analysis,
+          part,
+          manualTracks: _analysis.manualTracks,
+          exclusions: _exclusions,
+          preferredGroupId: _groupChosen ? _groupId : _savedGroupId,
+        );
+      } on Exception catch (error) {
+        return DayAddition(
+          notes: outcome.notes,
+          error: 'Nothing was added: $error',
+        );
+      }
     }
     _runs.addAll(outcome.runs);
+    for (final MapEntry(:key, :value) in outcome.fusions.entries) {
+      if (_runs.any((named) => named.run.id == key)) _fusions[key] = value;
+    }
+    _fusionsChanged();
     // The new session's speed unit counts as much as the others'.
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
@@ -470,7 +641,7 @@ final class DayResultsController extends ChangeNotifier {
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
     _revision++;
-    _resetTheoreticalBest();
+    if (adding) _resetTheoreticalBest();
     _resetChannelSummaries();
     // A day with a file is saved again below; only a day without one is
     // kept for recovery now, so a share into a saved day does not replace
@@ -501,6 +672,7 @@ final class DayResultsController extends ChangeNotifier {
     }
     return DayAddition(
       added: [for (final named in outcome.runs) named.name],
+      combined: combined,
       notes: outcome.notes,
       savedTo: path != null && saveError.isEmpty ? path : null,
       saveError: saveError,
@@ -519,10 +691,14 @@ final class DayResultsController extends ChangeNotifier {
   DayRanking? get ranking => _analysis.ranking;
   Map<DayLapReference, String> get exclusions => Map.unmodifiable(_exclusions);
 
-  /// The recording of [runId].
+  /// The session of [runId] as the analysis that reads channels sees it:
+  /// its recording with the channels fused from its alternative recording.
+  /// Laps and lap timing come from the recording alone.
   TelemetrySession? session(String runId) {
     for (final named in runs) {
-      if (named.run.id == runId) return named.run.telemetry;
+      if (named.run.id == runId) {
+        return _fusions[runId]?.session ?? named.run.telemetry;
+      }
     }
     return null;
   }
@@ -558,7 +734,8 @@ final class DayResultsController extends ChangeNotifier {
     final key = (a.reference, b.reference);
     final cached = _comparisons.remove(key);
     if (cached != null) return _comparisons[key] = cached;
-    final lapA = dayComparisonLap(runs, a), lapB = dayComparisonLap(runs, b);
+    final lapA = dayComparisonLap(_analysisRuns, a);
+    final lapB = dayComparisonLap(_analysisRuns, b);
     if (lapA == null || lapB == null) return null;
     final built = LapComparison(lapA, lapB);
     _comparisons[key] = built;
@@ -901,7 +1078,7 @@ final class DayResultsController extends ChangeNotifier {
     try {
       result = await _channelSummariesRunner(
         _channelSummariesJob(_analysis.rows, {
-          for (final named in runs) named.run.id: named.run.telemetry,
+          for (final named in _analysisRuns) named.run.id: named.run.telemetry,
         }),
       );
       diagnostics.recordStep(DiagnosticSteps.channelSummaries, clock.elapsed);
@@ -1090,6 +1267,7 @@ final class DayResultsController extends ChangeNotifier {
     final exclusionsNow = {..._exclusions};
     final segmentsNow = _segmentEdits.runs;
     final groupChosenNow = _groupChosen;
+    final fusionsNow = {..._fusions};
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -1110,6 +1288,7 @@ final class DayResultsController extends ChangeNotifier {
             previousPath: previousBase,
             trackSegments: segmentsNow,
             groupChosen: groupChosenNow,
+            fusions: fusionsNow,
           ),
           originalPath: original,
           basePath: base,
@@ -1141,6 +1320,9 @@ final class DayResultsController extends ChangeNotifier {
     _disposed = true;
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits(const []);
+    }
+    if (identical(dayChannelSources, _declaredChannelSources)) {
+      dayChannelSources = const {};
     }
     _appendJob?.cancel();
     // Changes made just before leaving the day are still written; best
@@ -1202,6 +1384,7 @@ final class DayCornerAnalyzer {
 final class DayAddition {
   const DayAddition({
     this.added = const [],
+    this.combined = const [],
     required this.notes,
     this.error = '',
     this.savedTo,
@@ -1219,6 +1402,10 @@ final class DayAddition {
 
   /// The new sessions' names, "Session 4".
   final List<String> added;
+
+  /// The day's sessions that got the RCZ added as their alternative
+  /// recording.
+  final List<String> combined;
 
   /// What was skipped, already in the day or failed.
   final List<String> notes;

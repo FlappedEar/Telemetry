@@ -131,5 +131,117 @@
   "licencesLegalese": "FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.",
   "@licencesLegalese": {
     "description": "Shown at the top of the licences page: the app's own licence and the map credits. Keep 'Apache License 2.0', 'OpenStreetMap', 'ODbL' and 'MapTiler' as written."
+  },
+  "channelFromSource": "from {format}",
+  "@channelFromSource": {
+    "description": "Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionAdded": "{count, plural, =0{Combined with its {format}: no channel added} =1{Combined with its {format}: 1 channel added} other{Combined with its {format}: {count} channels added}}",
+  "@fusionAdded": {
+    "description": "A session's VBO recording was combined with its RCZ of the same drive; count is how many channels only the RCZ recorded were added. {format} is the other recording's format, such as RCZ.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      },
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionConflict": "{channel}: the {primary} and the {alternative} disagree",
+  "@fusionConflict": {
+    "description": "A channel both recordings of a session measured, whose values differ; the buttons below choose which to use. {primary} and {alternative} are formats such as VBO and RCZ.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "sats"
+      },
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionKeepPrimary": "Keep {format}",
+  "@fusionKeepPrimary": {
+    "description": "Button: keep the session's own recording (such as the VBO) for a channel both recordings disagree on.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionFillGaps": "Fill gaps",
+  "@fusionFillGaps": {
+    "description": "Button: keep the session's own recording for a channel and fill its gaps from the other recording."
+  },
+  "fusionUseAlternative": "Use {format}",
+  "@fusionUseAlternative": {
+    "description": "Button: use the other recording (such as the RCZ) for a channel both recordings disagree on, the session's own where it has none.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionNotCombined": "Not combined with its {format}: {reason}",
+  "@fusionNotCombined": {
+    "description": "A session's other recording (such as its RCZ) was not combined with it; reason says why.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "reason": {
+        "type": "String",
+        "example": "their speed traces do not line up clearly"
+      }
+    }
+  },
+  "fusionReasonNoSpeed": "a recording has no speed",
+  "@fusionReasonNoSpeed": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonShortOverlap": "the recordings overlap too little",
+  "@fusionReasonShortOverlap": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonAmbiguous": "their speed traces do not line up clearly",
+  "@fusionReasonAmbiguous": {
+    "description": "Why two recordings could not be lined up in time: their speed traces match weakly or in several places."
+  },
+  "fusionReasonClockDisagrees": "their clocks disagree with their speed traces",
+  "@fusionReasonClockDisagrees": {
+    "description": "Why two recordings could not be lined up in time: the loggers' start times and the speed traces give different offsets."
+  },
+  "fusionReasonInsufficient": "not enough data to line them up",
+  "@fusionReasonInsufficient": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonNotFound": "the recording was not found",
+  "@fusionReasonNotFound": {
+    "description": "Why a session's other recording could not be used when the day was opened."
+  },
+  "fusionReasonDifferent": "the file found is a different recording",
+  "@fusionReasonDifferent": {
+    "description": "Why a session's other recording could not be used: a file is at its place, but with other content."
+  },
+  "fusionReasonUnreadable": "it could not be read",
+  "@fusionReasonUnreadable": {
+    "description": "Why a session's other recording could not be used."
   }
 }

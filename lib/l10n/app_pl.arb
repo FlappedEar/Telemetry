@@ -22,5 +22,20 @@
   "save": "Zapisz",
   "settingsAbout": "O aplikacji",
   "settingsLicences": "Licencje open source",
-  "licencesLegalese": "FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler."
+  "licencesLegalese": "FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler.",
+  "channelFromSource": "z {format}",
+  "fusionAdded": "{count, plural, =0{Połączono z {format}: nie dodano kanałów} =1{Połączono z {format}: dodano 1 kanał} few{Połączono z {format}: dodano {count} kanały} many{Połączono z {format}: dodano {count} kanałów} other{Połączono z {format}: dodano {count} kanału}}",
+  "fusionConflict": "{channel}: {primary} i {alternative} się różnią",
+  "fusionKeepPrimary": "Zostaw {format}",
+  "fusionFillGaps": "Uzupełnij luki",
+  "fusionUseAlternative": "Użyj {format}",
+  "fusionNotCombined": "Nie połączono z {format}: {reason}",
+  "fusionReasonNoSpeed": "jedno z nagrań nie ma prędkości",
+  "fusionReasonShortOverlap": "nagrania pokrywają się zbyt krótko",
+  "fusionReasonAmbiguous": "przebiegi prędkości nie pokrywają się jednoznacznie",
+  "fusionReasonClockDisagrees": "zegary nagrań nie zgadzają się z przebiegami prędkości",
+  "fusionReasonInsufficient": "za mało danych, by je dopasować",
+  "fusionReasonNotFound": "nie znaleziono nagrania",
+  "fusionReasonDifferent": "znaleziony plik to inne nagranie",
+  "fusionReasonUnreadable": "nie udało się go odczytać"
 }

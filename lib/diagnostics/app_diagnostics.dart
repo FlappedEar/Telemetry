@@ -9,6 +9,7 @@ abstract final class DiagnosticSteps {
   static const scan = 'Find recordings';
   static const parse = 'Parse and import';
   static const analysis = 'Day analysis';
+  static const fusion = 'Align and combine VBO and RCZ';
   static const importTotal = 'Import, start to results';
   static const theoreticalBest = 'Theoretical best and segments';
   static const channelSummaries = 'Channel summaries';

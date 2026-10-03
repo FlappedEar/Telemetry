@@ -16,6 +16,7 @@ final class DayImportOutcome {
     this.plan,
     this.runs = const [],
     this.analysis,
+    this.fusions = const {},
     this.steps = const [],
   });
 
@@ -29,6 +30,10 @@ final class DayImportOutcome {
 
   /// The day's laps, groups and ranking; null without runs.
   final DayAnalysis? analysis;
+
+  /// Each run's RCZ of the same drive, aligned and fused when it could be,
+  /// by run id.
+  final Map<String, RunFusion> fusions;
 
   /// How long each step took in the background, in order.
   final List<DiagnosticStep> steps;
@@ -102,11 +107,16 @@ DayImportOutcome runDayImport(
             ),
         ], cancelled: cancelled);
   if (analysis != null) step(DiagnosticSteps.analysis);
+  final fusions = fuseImportedRuns(plan, [
+    for (final named in runs) named.run,
+  ], cancelled: cancelled);
+  if (fusions.isNotEmpty) step(DiagnosticSteps.fusion);
   return DayImportOutcome(
     scan: scan,
     plan: plan,
     runs: runs,
     analysis: analysis,
+    fusions: fusions,
     steps: steps,
   );
 }
@@ -140,8 +150,8 @@ List<String> importPlanNotes(
     final primary = groups[run.id];
     if (primary != null && primary != run.id) {
       notes.add(
-        '${names[run.id]}: the same drive as ${names[primary]}; kept as its alternative '
-        'source, channels are not combined.',
+        '${names[run.id]}: the same drive as ${names[primary]}; kept as its '
+        'alternative source.',
       );
     }
   }
@@ -154,7 +164,9 @@ List<String> importPlanNotes(
 /// epoch), recordings are added only when every new one started on that
 /// local calendar date. [alternatives] maps a recording's run id to the
 /// day's session it is the other format of (a VBO and an RCZ of one drive);
-/// those are not added.
+/// those are not added. [alternativeOf] maps those that are an RCZ to the
+/// day's VBO run without an alternative yet: they are aligned to it and
+/// fused.
 typedef DayAppendRequest = ({
   List<String> paths,
   Set<String> runIds,
@@ -162,6 +174,7 @@ typedef DayAppendRequest = ({
   int rowCount,
   int? sameDayAs,
   Map<String, String> alternatives,
+  Map<String, TelemetryRunProposal> alternativeOf,
 });
 
 /// Whether [a] and [b] (milliseconds since the epoch) fall on one local
@@ -178,6 +191,7 @@ final class DayAppendOutcome {
     required this.notes,
     this.runs = const [],
     this.part,
+    this.fusions = const {},
     this.error = '',
     this.otherDay = false,
   });
@@ -191,6 +205,11 @@ final class DayAppendOutcome {
 
   /// Their lap rows and routes; null when nothing is added.
   final DayRunsPart? part;
+
+  /// The RCZ of each new run, and each RCZ added to one of the day's runs
+  /// ([DayAppendRequest.alternativeOf]), aligned and fused when it could
+  /// be, by run id.
+  final Map<String, RunFusion> fusions;
 
   /// What was skipped, already in the day or failed, for the user.
   final List<String> notes;
@@ -223,10 +242,22 @@ DayAppendOutcome runDayAppend(
   );
   final notes = importPlanNotes(scan, plan);
   final added = <TelemetryRunProposal>[];
+  final fusions = <String, RunFusion>{};
   for (final run in primaryRuns(plan)) {
     final session = request.alternatives[run.id];
+    final primary = request.alternativeOf[run.id];
     if (request.runIds.contains(run.id)) {
       notes.add('${p.basename(run.sourcePath)}: already in this day.');
+    } else if (session != null && primary != null) {
+      fusions[primary.id] = fuseRunRecordings(
+        primary,
+        run,
+        cancelled: cancelled,
+      );
+      notes.add(
+        '${p.basename(run.sourcePath)}: the same drive as $session in the other '
+        'format; kept as its alternative source.',
+      );
     } else if (session != null) {
       notes.add(
         '${p.basename(run.sourcePath)}: the same drive as $session in the other '
@@ -236,7 +267,7 @@ DayAppendOutcome runDayAppend(
       added.add(run);
     }
   }
-  if (added.isEmpty) return DayAppendOutcome(notes: notes);
+  if (added.isEmpty) return DayAppendOutcome(notes: notes, fusions: fusions);
   final day = request.sameDayAs;
   if (day != null &&
       !added.every((run) {
@@ -261,7 +292,13 @@ DayAppendOutcome runDayAppend(
     existingRows: request.rowCount,
     cancelled: cancelled,
   );
-  return DayAppendOutcome(notes: notes, runs: runs, part: part);
+  fusions.addAll(fuseImportedRuns(plan, added, cancelled: cancelled));
+  return DayAppendOutcome(
+    notes: notes,
+    runs: runs,
+    part: part,
+    fusions: fusions,
+  );
 }
 
 /// A running addition to a day. [result] completes with

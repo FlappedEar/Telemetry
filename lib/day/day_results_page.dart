@@ -18,6 +18,7 @@ import 'day_results_controller.dart';
 import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
+import 'fusion_panel.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
@@ -149,10 +150,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final lines = [
       if (addition.error.isNotEmpty)
         addition.error
-      else if (added.isEmpty)
+      else if (added.isEmpty && addition.combined.isEmpty)
         'Nothing was added.'
-      else
-        '${added.join(', ')} added to the day.',
+      else ...[
+        if (added.isNotEmpty) '${added.join(', ')} added to the day.',
+        if (addition.combined.isNotEmpty)
+          'RCZ added to ${addition.combined.join(', ')}.',
+      ],
       if (addition.savedTo != null)
         'Saved as ${p.basename(addition.savedTo!)}.',
       if (addition.saveError.isNotEmpty) 'Not saved: ${addition.saveError}',
@@ -708,7 +712,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       const SizedBox(height: 12),
       Text('Circuits', style: theme.textTheme.titleSmall),
-      for (final named in _controller.runs)
+      for (final named in _controller.runs) ...[
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(named.name),
@@ -720,6 +724,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 TrackDialog(controller: _controller, runId: named.run.id),
           ),
         ),
+        SessionFusion(controller: _controller, runId: named.run.id),
+      ],
       if (analysis.messages.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text('Notes', style: theme.textTheme.titleSmall),
@@ -747,9 +753,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channels: channels,
         associations: _controller.temperatureAssociations,
         loading: loading,
+        channelSource: _controller.channelSource,
       ),
       const SizedBox(height: 12),
-      DriverCard(channels: channels, loading: loading, onOpenLap: _open),
+      DriverCard(
+        channels: channels,
+        loading: loading,
+        onOpenLap: _open,
+        channelSource: _controller.channelSource,
+      ),
     ];
   }
 

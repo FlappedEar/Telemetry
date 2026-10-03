@@ -235,6 +235,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.'**
   String get licencesLegalese;
+
+  /// Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'from {format}'**
+  String channelFromSource(String format);
+
+  /// A session's VBO recording was combined with its RCZ of the same drive; count is how many channels only the RCZ recorded were added. {format} is the other recording's format, such as RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Combined with its {format}: no channel added} =1{Combined with its {format}: 1 channel added} other{Combined with its {format}: {count} channels added}}'**
+  String fusionAdded(int count, String format);
+
+  /// A channel both recordings of a session measured, whose values differ; the buttons below choose which to use. {primary} and {alternative} are formats such as VBO and RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel}: the {primary} and the {alternative} disagree'**
+  String fusionConflict(String channel, String primary, String alternative);
+
+  /// Button: keep the session's own recording (such as the VBO) for a channel both recordings disagree on.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {format}'**
+  String fusionKeepPrimary(String format);
+
+  /// Button: keep the session's own recording for a channel and fill its gaps from the other recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill gaps'**
+  String get fusionFillGaps;
+
+  /// Button: use the other recording (such as the RCZ) for a channel both recordings disagree on, the session's own where it has none.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {format}'**
+  String fusionUseAlternative(String format);
+
+  /// A session's other recording (such as its RCZ) was not combined with it; reason says why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not combined with its {format}: {reason}'**
+  String fusionNotCombined(String format, String reason);
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'a recording has no speed'**
+  String get fusionReasonNoSpeed;
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'the recordings overlap too little'**
+  String get fusionReasonShortOverlap;
+
+  /// Why two recordings could not be lined up in time: their speed traces match weakly or in several places.
+  ///
+  /// In en, this message translates to:
+  /// **'their speed traces do not line up clearly'**
+  String get fusionReasonAmbiguous;
+
+  /// Why two recordings could not be lined up in time: the loggers' start times and the speed traces give different offsets.
+  ///
+  /// In en, this message translates to:
+  /// **'their clocks disagree with their speed traces'**
+  String get fusionReasonClockDisagrees;
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'not enough data to line them up'**
+  String get fusionReasonInsufficient;
+
+  /// Why a session's other recording could not be used when the day was opened.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording was not found'**
+  String get fusionReasonNotFound;
+
+  /// Why a session's other recording could not be used: a file is at its place, but with other content.
+  ///
+  /// In en, this message translates to:
+  /// **'the file found is a different recording'**
+  String get fusionReasonDifferent;
+
+  /// Why a session's other recording could not be used.
+  ///
+  /// In en, this message translates to:
+  /// **'it could not be read'**
+  String get fusionReasonUnreadable;
 }
 
 class _AppLocalizationsDelegate

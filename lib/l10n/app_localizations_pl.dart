@@ -96,4 +96,72 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get licencesLegalese =>
       'FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler.';
+
+  @override
+  String channelFromSource(String format) {
+    return 'z $format';
+  }
+
+  @override
+  String fusionAdded(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Połączono z $format: dodano $count kanału',
+      many: 'Połączono z $format: dodano $count kanałów',
+      few: 'Połączono z $format: dodano $count kanały',
+      one: 'Połączono z $format: dodano 1 kanał',
+      zero: 'Połączono z $format: nie dodano kanałów',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionConflict(String channel, String primary, String alternative) {
+    return '$channel: $primary i $alternative się różnią';
+  }
+
+  @override
+  String fusionKeepPrimary(String format) {
+    return 'Zostaw $format';
+  }
+
+  @override
+  String get fusionFillGaps => 'Uzupełnij luki';
+
+  @override
+  String fusionUseAlternative(String format) {
+    return 'Użyj $format';
+  }
+
+  @override
+  String fusionNotCombined(String format, String reason) {
+    return 'Nie połączono z $format: $reason';
+  }
+
+  @override
+  String get fusionReasonNoSpeed => 'jedno z nagrań nie ma prędkości';
+
+  @override
+  String get fusionReasonShortOverlap => 'nagrania pokrywają się zbyt krótko';
+
+  @override
+  String get fusionReasonAmbiguous =>
+      'przebiegi prędkości nie pokrywają się jednoznacznie';
+
+  @override
+  String get fusionReasonClockDisagrees =>
+      'zegary nagrań nie zgadzają się z przebiegami prędkości';
+
+  @override
+  String get fusionReasonInsufficient => 'za mało danych, by je dopasować';
+
+  @override
+  String get fusionReasonNotFound => 'nie znaleziono nagrania';
+
+  @override
+  String get fusionReasonDifferent => 'znaleziony plik to inne nagranie';
+
+  @override
+  String get fusionReasonUnreadable => 'nie udało się go odczytać';
 }

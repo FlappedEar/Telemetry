@@ -222,9 +222,11 @@ class _DayImportPageState extends State<DayImportPage> {
     List<NamedRun> runs,
     DayAnalysis analysis,
   ) {
+    final state = _controller.state;
     final day = DayResultsController(
       runs: runs,
       analysis: analysis,
+      fusions: state is DayImportFinished ? state.fusions : const {},
       recovery: widget.recovery,
       appender: widget.appender,
     );

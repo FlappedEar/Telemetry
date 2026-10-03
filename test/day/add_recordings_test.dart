@@ -431,7 +431,7 @@ void main() {
     expect(controller.documentPath, two);
   });
 
-  test('the RCZ of a session already in the day is not added again', () async {
+  test('the RCZ of a session already in the day becomes its alternative', () async {
     // Synthetic recordings of one 31-second drive, as VBO and as RCZ.
     final origin = DateTime.fromMillisecondsSinceEpoch(
       fixtureOrigin + 100,
@@ -483,10 +483,16 @@ void main() {
     );
     final addition = await controller.addRecordings([rcz]);
     expect(addition.added, isEmpty);
+    expect(addition.combined, ['Session 1']);
     expect(addition.notes, [
-      'archive.rcz: the same drive as Session 1 in the other format; not added again.',
+      'archive.rcz: the same drive as Session 1 in the other format; kept as '
+          'its alternative source.',
     ]);
     expect(controller.runs, hasLength(1));
+    // A steady 72 km/h for 31 s has nothing to line the clocks up on.
+    final fusion = controller.fusion(controller.runs.single.run.id)!;
+    expect(fusion.fused, isFalse);
+    expect(fusion.alternativeFormat, RecordingFormat.rcz);
   });
 
   testWidgets('the day stays open while a session is being added', (
