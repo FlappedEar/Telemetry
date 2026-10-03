@@ -32,13 +32,21 @@ speed, the Δ time, G, the pedals or a recorded temperature (never invented
 when a lap did not record it). Swap the laps, change either, or set B to the
 best of A's session or of the day; a time loss or a focus area opens its two
 laps there, zoomed to its segment. Under the charts, the **Corner Analyzer**
-lists the approved segments both laps share and, for the chosen one, A, B and
-Δ of the sector time, the speeds (entry, apex, minimum and exit in a corner;
-entry, top, lowest and exit elsewhere), the braking point and throttle pickup
-(positions along the lap) and the heart rate, each missing value with its
-reason and inferred values labelled, over a chart of both laps' speed through
-the segment with the braking points drawn as upward triangles. Choosing a
-segment zooms the charts to it; **Lap A here** and **Lap B here** open a lap
+lists the approved segments both laps share ("Corner 1 · 108 m") and, for the
+chosen one, a one-line summary of who is faster there (with the largest speed
+difference in that lap's favour), a chart of both laps' speed through the
+segment and a lead-in before it (speed axis with its unit, metres from the
+corner entry, the corner shaded between its entry and exit, the apex dashed,
+and each lap's braking start ▲, throttle pickup ◆ and lowest speed ● on its own
+line, with a legend and the shared cursor's readout), and a table of A, B and
+Δ grouped as Time, Braking (where braking starts before the entry, time on the
+brakes, peak deceleration), Corner (entry, apex and minimum speed; entry, top
+and lowest elsewhere), Exit (exit speed, throttle pickup after the entry) and
+Driver (heart rate). Every value carries its unit, or the panel says once that
+the recording declares none; Δ is coloured by the faster lap or the lap
+carrying more speed and says so in words; each missing value gives its reason
+in plain words and inferred values are labelled. Choosing a segment zooms the
+charts to it; **Lap A here** and **Lap B here** open a lap
 at its start. A time loss, a focus area, a row of the theoretical best's loss
 list or a corner's details open it on that segment, measured against the
 theoretical best's segments when the two laps' own differ (and saying so);
