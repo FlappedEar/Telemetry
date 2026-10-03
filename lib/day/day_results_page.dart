@@ -158,7 +158,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final added = addition.added;
     final lines = [
       if (addition.error.isNotEmpty)
-        addition.error
+        l10n.additionError(addition.error)
       else if (added.isEmpty)
         l10n.nothingAdded
       else

@@ -1487,4 +1487,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get missingRecordingDifferent =>
       'The file found is a different recording.';
+
+  @override
+  String get lapB => 'Lap B';
+
+  @override
+  String get suggestedFastest => 'Suggested: the fastest';
+
+  @override
+  String get noOtherRankedLap =>
+      'No other ranked lap of this group to compare with.';
+
+  @override
+  String get addingCancelled => 'Adding was cancelled.';
+
+  @override
+  String get dayClosed => 'The day was closed.';
+
+  @override
+  String nothingAddedError(String error) {
+    return 'Nothing was added: $error';
+  }
 }

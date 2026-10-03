@@ -121,6 +121,17 @@ extension DayNoteText on AppLocalizations {
     _ => routeReason(text),
   };
 
+  /// Why adding recordings to the day failed (`DayAddition.error`); an
+  /// error the app does not know is shown as written.
+  String additionError(String error) => switch (error) {
+    'Adding was cancelled.' => addingCancelled,
+    'The day was closed.' => dayClosed,
+    _ when error.startsWith('Nothing was added: ') => nothingAddedError(
+      error.substring('Nothing was added: '.length),
+    ),
+    _ => error,
+  };
+
   /// Why a session of a saved day could not be opened
   /// (`MissingRecording.reason`); any other reason, such as a read error,
   /// is shown as written.

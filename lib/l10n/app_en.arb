@@ -2247,5 +2247,35 @@
   "missingRecordingDifferent": "The file found is a different recording.",
   "@missingRecordingDifferent": {
     "description": "Why a session of a saved day could not be opened."
+  },
+  "lapB": "Lap B",
+  "@lapB": {
+    "description": "Title of the list for changing lap B of a comparison."
+  },
+  "suggestedFastest": "Suggested: the fastest",
+  "@suggestedFastest": {
+    "description": "Under the suggested lap in the lap picker."
+  },
+  "noOtherRankedLap": "No other ranked lap of this group to compare with.",
+  "@noOtherRankedLap": {
+    "description": "Lap picker with nothing to pick."
+  },
+  "addingCancelled": "Adding was cancelled.",
+  "@addingCancelled": {
+    "description": "Adding recordings to the day was cancelled."
+  },
+  "dayClosed": "The day was closed.",
+  "@dayClosed": {
+    "description": "Recordings were not added because the day was closed."
+  },
+  "nothingAddedError": "Nothing was added: {error}",
+  "@nothingAddedError": {
+    "description": "Adding recordings failed; the error follows.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "file not found"
+      }
+    }
   }
 }

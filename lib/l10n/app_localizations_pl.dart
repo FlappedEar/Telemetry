@@ -1503,4 +1503,25 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get missingRecordingDifferent => 'Znaleziony plik to inne nagranie.';
+
+  @override
+  String get lapB => 'Okrążenie B';
+
+  @override
+  String get suggestedFastest => 'Propozycja: najszybsze';
+
+  @override
+  String get noOtherRankedLap =>
+      'W tej grupie nie ma innego sklasyfikowanego okrążenia do porównania.';
+
+  @override
+  String get addingCancelled => 'Dodawanie przerwano.';
+
+  @override
+  String get dayClosed => 'Dzień został zamknięty.';
+
+  @override
+  String nothingAddedError(String error) {
+    return 'Nic nie dodano: $error';
+  }
 }

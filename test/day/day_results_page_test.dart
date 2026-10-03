@@ -332,6 +332,19 @@ void main() {
     expect(find.text('Najlepsze z dnia'), findsOneWidget);
     expect(find.text('Sesja 2 · WYJAZD'), findsOneWidget);
     expect(find.text('Sesja 1 · OKR. 2'), findsWidgets);
+
+    await tester.tap(find.text('Porównaj dwa okrążenia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Okrążenie A'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SimpleDialog),
+        matching: find.text('Sesja 1 · OKR. 1'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
     for (final english in ['Session', ' LAP ', 'Best of', 'laps ranked']) {
       expect(
         find.textContaining(english, skipOffstage: false),

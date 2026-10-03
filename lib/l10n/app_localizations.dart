@@ -2180,6 +2180,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The file found is a different recording.'**
   String get missingRecordingDifferent;
+
+  /// Title of the list for changing lap B of a comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap B'**
+  String get lapB;
+
+  /// Under the suggested lap in the lap picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested: the fastest'**
+  String get suggestedFastest;
+
+  /// Lap picker with nothing to pick.
+  ///
+  /// In en, this message translates to:
+  /// **'No other ranked lap of this group to compare with.'**
+  String get noOtherRankedLap;
+
+  /// Adding recordings to the day was cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding was cancelled.'**
+  String get addingCancelled;
+
+  /// Recordings were not added because the day was closed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day was closed.'**
+  String get dayClosed;
+
+  /// Adding recordings failed; the error follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was added: {error}'**
+  String nothingAddedError(String error);
 }
 
 class _AppLocalizationsDelegate

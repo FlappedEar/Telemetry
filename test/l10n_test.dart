@@ -107,6 +107,22 @@ void main() {
     expect(polish.missingReason('Read error.'), 'Read error.');
   });
 
+  test('errors from adding recordings are translated', () {
+    final source = File('lib/day/day_results_controller.dart')
+        .readAsStringSync();
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    for (final error in ['Adding was cancelled.', 'The day was closed.']) {
+      expect(source, contains("'$error'"));
+      expect(polish.additionError(error), isNot(error));
+    }
+    expect(source, contains("'Nothing was added: \$error'"));
+    expect(
+      polish.additionError('Nothing was added: disk full'),
+      'Nic nie dodano: disk full',
+    );
+    expect(polish.additionError('Odd error'), 'Odd error');
+  });
+
   test('segment names: automatic ones are translated, typed ones kept', () {
     final polish = lookupAppLocalizations(const Locale('pl'));
     expect(polish.tbSegmentName('Corner 4'), 'Zakręt 4');

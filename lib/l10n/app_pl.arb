@@ -341,5 +341,11 @@
   "cornerEarlier": "{metres} m wcześniej",
   "missingRecordingNotFound": "Nie znaleziono nagrania.",
   "missingRecordingDuplicate": "To samo nagranie co inna sesja tego dnia.",
-  "missingRecordingDifferent": "Znaleziony plik to inne nagranie."
+  "missingRecordingDifferent": "Znaleziony plik to inne nagranie.",
+  "lapB": "Okrążenie B",
+  "suggestedFastest": "Propozycja: najszybsze",
+  "noOtherRankedLap": "W tej grupie nie ma innego sklasyfikowanego okrążenia do porównania.",
+  "addingCancelled": "Dodawanie przerwano.",
+  "dayClosed": "Dzień został zamknięty.",
+  "nothingAddedError": "Nic nie dodano: {error}"
 }
