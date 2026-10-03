@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'comparison_page.dart' show ComparisonPanelBuilder;
+import 'touch.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'telemetry_chart.dart';
 
@@ -343,7 +344,7 @@ class _ComparisonGgPanelState
                     _lapNames[slot],
                     textAlign: TextAlign.end,
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: _lapColors[slot],
+                      color: readableOn(context, _lapColors[slot]),
                     ),
                   ),
               ],
@@ -612,24 +613,29 @@ class _LapStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 20,
-            child: Text(
-              _lapNames[slot],
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: _lapColors[slot],
-              ),
+    final height = math.max(16.0, lanes.length * 8.0);
+    final tappable = onTapFraction != null;
+    // A tappable strip is a 48 dp target, however thin it is drawn.
+    final margin = tappable ? math.max(4.0, (48 - height) / 2) : 4.0;
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          child: Text(
+            _lapNames[slot],
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: readableOn(context, _lapColors[slot]),
             ),
           ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) => GestureDetector(
+        ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Semantics(
+              label: 'Lap ${_lapNames[slot]} along the track',
+              hint: tappable ? 'Tap to move the cursor there' : null,
+              child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapUp: onTapFraction == null
+                onTapUp: !tappable
                     ? null
                     : (details) => onTapFraction!(
                         (details.localPosition.dx / constraints.maxWidth).clamp(
@@ -637,22 +643,25 @@ class _LapStrip extends StatelessWidget {
                           1.0,
                         ),
                       ),
-                child: SizedBox(
-                  height: math.max(16.0, lanes.length * 8.0),
-                  child: CustomPaint(
-                    painter: StripPainter(
-                      lanes: lanes,
-                      background: theme.colorScheme.surfaceContainerHighest,
-                      cursorColor: theme.colorScheme.onSurface,
-                      cursor: cursor,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: margin),
+                  child: SizedBox(
+                    height: height,
+                    child: CustomPaint(
+                      painter: StripPainter(
+                        lanes: lanes,
+                        background: theme.colorScheme.surfaceContainerHighest,
+                        cursorColor: theme.colorScheme.onSurface,
+                        cursor: cursor,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -802,11 +811,13 @@ class _ComparisonDrivingStatesPanelState
         children: [
           Text(
             known
+                // A number keeps its unit: a narrow column wraps after
+                // the "·" only.
                 ? state == 'trail'
-                      ? '${seconds.toStringAsFixed(1)} s · '
-                            '${lap.overlapMeters.round()} m'
-                      : '${seconds.toStringAsFixed(1)} s · '
-                            '${share.round()} %'
+                      ? '${seconds.toStringAsFixed(1)}\u00a0s · '
+                            '${lap.overlapMeters.round()}\u00a0m'
+                      : '${seconds.toStringAsFixed(1)}\u00a0s · '
+                            '${share.round()}\u00a0%'
                 : '—',
             key: key,
             textAlign: TextAlign.end,
@@ -817,7 +828,7 @@ class _ComparisonDrivingStatesPanelState
             textAlign: TextAlign.end,
             style: theme.textTheme.labelSmall?.copyWith(
               color: inferred
-                  ? inferredColor
+                  ? readableOn(context, inferredColor)
                   : theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -839,7 +850,7 @@ class _ComparisonDrivingStatesPanelState
         ),
         for (final slot in const [0, 1])
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4),
             child: cell(slot, state),
           ),
       ],
@@ -881,7 +892,7 @@ class _ComparisonDrivingStatesPanelState
                     _lapNames[slot],
                     textAlign: TextAlign.end,
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: _lapColors[slot],
+                      color: readableOn(context, _lapColors[slot]),
                     ),
                   ),
               ],
@@ -974,7 +985,7 @@ class _ComparisonCoastingPanelState
                         TextSpan(
                           text: '${_lapNames[slot]}  ',
                           style: theme.textTheme.labelLarge?.copyWith(
-                            color: _lapColors[slot],
+                            color: readableOn(context, _lapColors[slot]),
                           ),
                         ),
                         TextSpan(
@@ -994,7 +1005,7 @@ class _ComparisonCoastingPanelState
                       key: ValueKey('coastingSource ${_lapNames[slot]}'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: coasting.provenance == drivingStateInferred
-                            ? inferredColor
+                            ? readableOn(context, inferredColor)
                             : null,
                       ),
                     ),
