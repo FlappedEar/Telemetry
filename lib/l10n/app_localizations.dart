@@ -1382,24 +1382,6 @@ abstract class AppLocalizations {
   /// **'{segment} · after the corner'**
   String timeLossSegmentAfterTheCorner(String segment);
 
-  /// Name of a numbered straight segment of the track.
-  ///
-  /// In en, this message translates to:
-  /// **'Straight {number}'**
-  String timeLossSegmentStraight(String number);
-
-  /// Name of a numbered corner segment of the track.
-  ///
-  /// In en, this message translates to:
-  /// **'Corner {number}'**
-  String timeLossSegmentCorner(String number);
-
-  /// Name of a segment of several linked corners.
-  ///
-  /// In en, this message translates to:
-  /// **'Corners {first}–{last}'**
-  String timeLossSegmentCorners(String first, String last);
-
   /// In place of a lap's name when the lap cannot be found.
   ///
   /// In en, this message translates to:

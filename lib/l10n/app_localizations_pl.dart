@@ -910,21 +910,6 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String timeLossSegmentStraight(String number) {
-    return 'Prosta $number';
-  }
-
-  @override
-  String timeLossSegmentCorner(String number) {
-    return 'Zakręt $number';
-  }
-
-  @override
-  String timeLossSegmentCorners(String first, String last) {
-    return 'Zakręty $first–$last';
-  }
-
-  @override
   String get timeLossLapUnavailable => 'Okrążenie niedostępne';
 
   @override

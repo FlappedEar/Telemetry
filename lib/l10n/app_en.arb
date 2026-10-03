@@ -1301,40 +1301,6 @@
       }
     }
   },
-  "timeLossSegmentStraight": "Straight {number}",
-  "@timeLossSegmentStraight": {
-    "description": "Name of a numbered straight segment of the track.",
-    "placeholders": {
-      "number": {
-        "type": "String",
-        "example": "2"
-      }
-    }
-  },
-  "timeLossSegmentCorner": "Corner {number}",
-  "@timeLossSegmentCorner": {
-    "description": "Name of a numbered corner segment of the track.",
-    "placeholders": {
-      "number": {
-        "type": "String",
-        "example": "1"
-      }
-    }
-  },
-  "timeLossSegmentCorners": "Corners {first}–{last}",
-  "@timeLossSegmentCorners": {
-    "description": "Name of a segment of several linked corners.",
-    "placeholders": {
-      "first": {
-        "type": "String",
-        "example": "3"
-      },
-      "last": {
-        "type": "String",
-        "example": "5"
-      }
-    }
-  },
   "timeLossLapUnavailable": "Lap unavailable",
   "@timeLossLapUnavailable": {
     "description": "In place of a lap's name when the lap cannot be found."

@@ -327,6 +327,13 @@ void main() {
     expect(find.text('Najlepsze z dnia'), findsOneWidget);
     expect(find.text('Sesja 2 · WYJAZD'), findsOneWidget);
     expect(find.text('Sesja 1 · OKR. 2'), findsWidgets);
+    for (final english in ['Session', ' LAP ', 'Best of', 'laps ranked']) {
+      expect(
+        find.textContaining(english, skipOffstage: false),
+        findsNothing,
+        reason: english,
+      );
+    }
   });
 
   testWidgets('names the circuit of a session and its route', (tester) async {

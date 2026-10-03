@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
 
 /// "11:20:05 UTC on 19 Aug 2026" from a recording clock, in the app's
@@ -205,7 +206,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
       return [Text(l10n.progressionMeasuring)];
     }
     if (result.state != DayTheoreticalBestState.ready) {
-      return [Text(result.message)];
+      return [Text(l10n.tbMessage(result.message))];
     }
     final sections = result.sectionProgression([
       for (final run in widget.progression.runs) run.run,

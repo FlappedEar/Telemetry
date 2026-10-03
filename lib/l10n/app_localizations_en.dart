@@ -898,21 +898,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String timeLossSegmentStraight(String number) {
-    return 'Straight $number';
-  }
-
-  @override
-  String timeLossSegmentCorner(String number) {
-    return 'Corner $number';
-  }
-
-  @override
-  String timeLossSegmentCorners(String first, String last) {
-    return 'Corners $first–$last';
-  }
-
-  @override
   String get timeLossLapUnavailable => 'Lap unavailable';
 
   @override

@@ -5,6 +5,7 @@ import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'time_losses_card.dart' show CompareLaps, TimeLossText, lapStretch;
 import 'track_map.dart';
 
@@ -178,7 +179,7 @@ class FocusAreasCard extends StatelessWidget {
             if (loading || result == null)
               Text(l10n.focusLoading)
             else if (result.state != DayTheoreticalBestState.ready)
-              Text(result.message)
+              Text(l10n.tbMessage(result.message))
             else if (result.computed?.actualBest == null)
               Text(l10n.timeLossReasonBestLapUntimed)
             else if (areas.isEmpty)

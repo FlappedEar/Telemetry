@@ -3,7 +3,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
-import 'theoretical_best_card.dart' show lossColor;
+import 'theoretical_best_card.dart' show TheoreticalBestText, lossColor;
 import 'track_map.dart';
 import 'touch.dart';
 
@@ -42,27 +42,13 @@ String timeLossReasonText(String reason) => _english.timeLossReason(reason);
 String timeLossWindowName(PublishedTimeLoss loss) =>
     _english.timeLossWindow(loss);
 
-final _straightName = RegExp(r'^Straight (\d+)$');
-final _cornerName = RegExp(r'^Corner (\d+)$');
-final _cornersName = RegExp(r'^Corners (\d+)–(\d+)$');
 final _lapLabel = RegExp(r'^(.+) · LAP (\d+)$');
 
 extension TimeLossText on AppLocalizations {
   /// A segment name proposed by `telemetry_core` ("Corner 1", "Straight 2",
   /// "Corners 3–5") in the app's language; a name the user gave is shown
   /// as written.
-  String timeLossSegment(String name) {
-    if (_straightName.firstMatch(name) case final match?) {
-      return timeLossSegmentStraight(match.group(1)!);
-    }
-    if (_cornerName.firstMatch(name) case final match?) {
-      return timeLossSegmentCorner(match.group(1)!);
-    }
-    if (_cornersName.firstMatch(name) case final match?) {
-      return timeLossSegmentCorners(match.group(1)!, match.group(2)!);
-    }
-    return name;
-  }
+  String timeLossSegment(String name) => tbSegmentName(name);
 
   /// A lap label written by the day's analysis ("Session 3 · LAP 2") in the
   /// app's language; any other label is shown as written.
@@ -161,7 +147,7 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
             if (widget.loading || result == null)
               Text(l10n.timeLossLoading)
             else if (result.state != DayTheoreticalBestState.ready)
-              Text(result.message)
+              Text(l10n.tbMessage(result.message))
             else
               ..._ready(context, result),
           ],
