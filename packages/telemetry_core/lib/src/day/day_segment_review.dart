@@ -95,9 +95,10 @@ final class DayProposalReview {
 
   /// Whether this review is of the lap [result] is reviewed with.
   bool matches(DayTheoreticalBest result) {
+    // A result with no lap to review matches the review that says so, so
+    // the app never computes it again and again.
     final current = segmentReviewLap(result);
-    return current != null &&
-        lap?.reference == current.reference &&
+    return lap?.reference == current?.reference &&
         runId == result.segmentRunId &&
         groupId == result.groupId;
   }

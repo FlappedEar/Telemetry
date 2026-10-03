@@ -751,25 +751,22 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie udało się zatwierdzić żadnej propozycji.';
 
   @override
-  String get segmentReviewNotNow => 'Propozycji nie można teraz zmienić.';
-
-  @override
   String get segmentReviewReject => 'Odrzuć';
 
   @override
   String get segmentReviewRestore => 'Przywróć';
 
   @override
-  String get segmentReviewStateProposed => 'Proponowany';
+  String get segmentReviewStateProposed => 'Proponowana';
 
   @override
-  String get segmentReviewStateApproved => 'Zatwierdzony';
+  String get segmentReviewStateApproved => 'Zatwierdzona';
 
   @override
-  String get segmentReviewStateRejected => 'Odrzucony';
+  String get segmentReviewStateRejected => 'Odrzucona';
 
   @override
-  String get segmentReviewStateSuperseded => 'Nachodzi na zatwierdzony';
+  String get segmentReviewStateSuperseded => 'Nachodzi na zatwierdzony odcinek';
 
   @override
   String get segmentReviewCorner => 'Zakręt';
@@ -869,4 +866,37 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentReviewFailed => 'Nie udało się obliczyć propozycji.';
+
+  @override
+  String get segmentReviewSaving => 'Dzień jest zapisywany. Spróbuj za chwilę.';
+
+  @override
+  String get segmentReviewSegmentsUnavailable =>
+      'Odcinki można zmienić, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+
+  @override
+  String get segmentReviewNotReady => 'Propozycje nie są jeszcze gotowe.';
+
+  @override
+  String get segmentReviewNoLongerAvailable =>
+      'Ta propozycja nie jest już dostępna.';
+
+  @override
+  String get segmentReviewNotOpen => 'Odrzucić można tylko otwarte propozycje.';
+
+  @override
+  String get segmentReviewNotStored => 'Nie można zapisać odrzucenia.';
+
+  @override
+  String get segmentReviewNothingToUndo => 'Nie ma czego cofnąć.';
+
+  @override
+  String get segmentReviewNothingToRedo => 'Nie ma czego ponowić.';
+
+  @override
+  String get segmentReviewHistoryCleared =>
+      'Odcinki zmieniły się poza tym edytorem, więc historię zmian wyczyszczono.';
+
+  @override
+  String get segmentReviewUncertainOther => 'Niepewna granica';
 }

@@ -21,11 +21,23 @@ class SegmentReviewPage extends StatefulWidget {
   State<SegmentReviewPage> createState() => _SegmentReviewPageState();
 }
 
-/// Overlays' review state colours.
-const _proposedColor = Color(0xff4da3ff);
-const _approvedColor = Color(0xff55e6a5);
-const _rejectedColor = Color(0xff657386);
-const _supersededColor = Color(0xffff8f99);
+/// [issue] in the app's language.
+String segmentChangeIssueText(
+  AppLocalizations l10n,
+  SegmentChangeIssue issue,
+) => switch (issue) {
+  SegmentChangeIssue.saving => l10n.segmentReviewSaving,
+  SegmentChangeIssue.segmentsUnavailable =>
+    l10n.segmentReviewSegmentsUnavailable,
+  SegmentChangeIssue.notReady => l10n.segmentReviewNotReady,
+  SegmentChangeIssue.noLongerAvailable => l10n.segmentReviewNoLongerAvailable,
+  SegmentChangeIssue.notOpen => l10n.segmentReviewNotOpen,
+  SegmentChangeIssue.notStored => l10n.segmentReviewNotStored,
+  SegmentChangeIssue.noneApproved => l10n.segmentReviewNoneApproved,
+  SegmentChangeIssue.nothingToUndo => l10n.segmentReviewNothingToUndo,
+  SegmentChangeIssue.nothingToRedo => l10n.segmentReviewNothingToRedo,
+  SegmentChangeIssue.historyCleared => l10n.segmentReviewHistoryCleared,
+};
 
 class _SegmentReviewPageState extends State<SegmentReviewPage> {
   DayResultsController get _controller => widget.controller;
@@ -62,29 +74,26 @@ class _SegmentReviewPageState extends State<SegmentReviewPage> {
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message)));
 
+  void _report(SegmentChangeIssue? issue) {
+    if (issue != null) _tell(segmentChangeIssueText(context.l10n, issue));
+  }
+
   void _approveAll() {
-    final l10n = context.l10n;
     final outcome = _controller.approveAllSegmentProposals();
-    _tell(
-      outcome.approved > 0
-          ? l10n.segmentReviewApproved(outcome.approved)
-          : outcome.error == 'No proposal could be approved.'
-          ? l10n.segmentReviewNoneApproved
-          : l10n.segmentReviewNotNow,
-    );
+    final issue = outcome.issue;
+    if (issue == null) {
+      _tell(context.l10n.segmentReviewApproved(outcome.approved));
+    } else {
+      _report(issue);
+    }
   }
 
-  void _reject(int index, bool rejected) {
-    final error = _controller.rejectSegmentProposal(index, rejected: rejected);
-    if (error.isNotEmpty) _tell(context.l10n.segmentReviewNotNow);
-  }
+  void _reject(int index, bool rejected) =>
+      _report(_controller.rejectSegmentProposal(index, rejected: rejected));
 
-  void _history({required bool undo}) {
-    final error = undo
-        ? _controller.undoSegmentEdit()
-        : _controller.redoSegmentEdit();
-    if (error.isNotEmpty) _tell(context.l10n.segmentReviewNotNow);
-  }
+  void _history({required bool undo}) => _report(
+    undo ? _controller.undoSegmentChange() : _controller.redoSegmentChange(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -280,22 +289,24 @@ class _ProposalCard extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final proposal = item.proposal;
+    // The theme's roles, so the text keeps its contrast with the theme.
+    final scheme = theme.colorScheme;
     final (stateText, stateColor) = switch (item.state) {
       SegmentReviewState.approved => (
         l10n.segmentReviewStateApproved,
-        _approvedColor,
+        scheme.tertiary,
       ),
       SegmentReviewState.rejected => (
         l10n.segmentReviewStateRejected,
-        _rejectedColor,
+        scheme.onSurfaceVariant,
       ),
       SegmentReviewState.superseded => (
         l10n.segmentReviewStateSuperseded,
-        _supersededColor,
+        scheme.error,
       ),
       SegmentReviewState.proposed => (
         l10n.segmentReviewStateProposed,
-        _proposedColor,
+        scheme.secondary,
       ),
     };
     final corner = proposal.type.name == 'corner';
@@ -319,7 +330,7 @@ class _ProposalCard extends StatelessWidget {
             l10n.segmentReviewConnectedCorners,
           proposalUncertainShortStraight => l10n.segmentReviewShortStraight,
           proposalUncertainGpsGap => l10n.segmentReviewGpsGap,
-          _ => code,
+          _ => l10n.segmentReviewUncertainOther,
         },
     ].join(', ');
     final uncertainty = [
@@ -406,7 +417,7 @@ class _ProposalCard extends StatelessWidget {
               if (uncertainty.isNotEmpty)
                 Text(
                   uncertainty,
-                  style: small?.copyWith(color: const Color(0xffffb84d)),
+                  style: small?.copyWith(color: scheme.primary),
                 ),
               if (apex != null) Text(apex, style: small),
               if (decidable)

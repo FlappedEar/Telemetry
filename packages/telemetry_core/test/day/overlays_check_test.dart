@@ -178,7 +178,7 @@ void main() {
         .items(result.runSegments, null)
         .indexWhere((item) => item.state == SegmentReviewState.proposed);
     expect(open, isNonNegative);
-    expect(edits.setRejected(result, review, const [], open), isEmpty);
+    expect(edits.setRejected(result, review, const [], open), isNull);
 
     final path = p.join(root, 'edited.fetproject');
     final document = dayDocument(

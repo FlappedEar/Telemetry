@@ -728,10 +728,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get segmentReviewNoneApproved => 'No proposal could be approved.';
 
   @override
-  String get segmentReviewNotNow =>
-      'The proposals cannot be changed right now.';
-
-  @override
   String get segmentReviewReject => 'Reject';
 
   @override
@@ -845,4 +841,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get segmentReviewFailed => 'The proposals could not be computed.';
+
+  @override
+  String get segmentReviewSaving =>
+      'The day is being saved. Try again in a moment.';
+
+  @override
+  String get segmentReviewSegmentsUnavailable =>
+      'The segments can be changed once the theoretical best is calculated.';
+
+  @override
+  String get segmentReviewNotReady => 'The proposals are not ready yet.';
+
+  @override
+  String get segmentReviewNoLongerAvailable =>
+      'This proposal is no longer available.';
+
+  @override
+  String get segmentReviewNotOpen => 'Only open proposals can be rejected.';
+
+  @override
+  String get segmentReviewNotStored => 'The rejection cannot be stored.';
+
+  @override
+  String get segmentReviewNothingToUndo => 'Nothing to undo.';
+
+  @override
+  String get segmentReviewNothingToRedo => 'Nothing to redo.';
+
+  @override
+  String get segmentReviewHistoryCleared =>
+      'The segments changed outside this editor, so the edit history was cleared.';
+
+  @override
+  String get segmentReviewUncertainOther => 'Uncertain boundary';
 }

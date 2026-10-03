@@ -785,6 +785,7 @@ final class DayResultsController extends ChangeNotifier {
   DayProposalReview? _segmentReview;
   bool _segmentReviewLoading = false;
   int _segmentReviewGeneration = 0;
+  DayTheoreticalBest? _segmentReviewFor;
   DayCoach? _coach;
   bool _coachLoading = false;
   DayTheoreticalBest? _theoreticalBest;
@@ -2017,21 +2018,23 @@ final class DayResultsController extends ChangeNotifier {
         : 'The segments are already the automatic ones.';
   });
 
-  String _segmentHistory({required bool undo}) {
-    if (_saving) return 'The day is being saved.';
+  SegmentChangeIssue? _segmentHistory({required bool undo}) {
+    if (_saving) return SegmentChangeIssue.saving;
     final saved = _savedRuns;
     final timing = undo
         ? _segmentEdits.undoChangesSegments
         : _segmentEdits.redoChangesSegments;
-    final error = undo ? _segmentEdits.undo(saved) : _segmentEdits.redo(saved);
-    if (error.isEmpty && timing) {
+    final issue = undo
+        ? _segmentEdits.undoChange(saved)
+        : _segmentEdits.redoChange(saved);
+    if (issue == null && timing) {
       _segmentsChanged();
-    } else if (error.isEmpty) {
+    } else if (issue == null) {
       _reviewDecisionChanged();
     } else {
       notifyListeners();
     }
-    return error;
+    return issue;
   }
 
   // A review decision changed the day but not its segments, so nothing is
@@ -2090,6 +2093,10 @@ final class DayResultsController extends ChangeNotifier {
       return;
     }
     if (!recompute && (_segmentReviewLoading || segmentReview != null)) return;
+    // Once per theoretical best unless asked to recompute: a review that
+    // does not match its result is never computed again and again.
+    if (!recompute && identical(_segmentReviewFor, result)) return;
+    _segmentReviewFor = result;
     final generation = ++_segmentReviewGeneration;
     _segmentReviewLoading = true;
     notifyListeners();
@@ -2136,47 +2143,52 @@ final class DayResultsController extends ChangeNotifier {
   /// Rejects proposal [index] of [segmentReview], or with [rejected] false
   /// takes the rejection back. The decision is saved with the day and
   /// undone like an edit; the segments do not change. Returns why not, or
-  /// an empty string.
-  String rejectSegmentProposal(int index, {bool rejected = true}) {
+  /// null.
+  SegmentChangeIssue? rejectSegmentProposal(int index, {bool rejected = true}) {
     final result = _theoreticalBest;
     final review = segmentReview;
-    if (_saving) return 'The day is being saved.';
+    if (_saving) return SegmentChangeIssue.saving;
     if (result == null || review == null || _theoreticalBestLoading) {
-      return 'The proposals are not ready yet.';
+      return SegmentChangeIssue.notReady;
     }
-    final error = _segmentEdits.setRejected(
+    final issue = _segmentEdits.setRejected(
       result,
       review,
       _savedRuns,
       index,
       rejected: rejected,
     );
-    if (error.isEmpty) _reviewDecisionChanged();
-    return error;
+    if (issue == null) _reviewDecisionChanged();
+    return issue;
   }
 
   /// Approves every open proposal of [segmentReview] (rejected ones stay
   /// out), as Overlays' "Approve all". Every lap is timed again. Returns
   /// how many were approved, or why none.
-  ({int approved, String error}) approveAllSegmentProposals() {
+  ({int approved, SegmentChangeIssue? issue}) approveAllSegmentProposals() {
+    final result = _theoreticalBest;
     final review = segmentReview;
-    if (review == null) {
-      return (approved: 0, error: 'The proposals are not ready yet.');
+    if (_saving) return (approved: 0, issue: SegmentChangeIssue.saving);
+    if (result == null || review == null || _theoreticalBestLoading) {
+      return (approved: 0, issue: SegmentChangeIssue.notReady);
     }
-    var approved = 0;
-    final error = _segmentEdit((result) {
-      final outcome = _segmentEdits.approveAll(result, review, _savedRuns);
-      approved = outcome.approved;
-      return outcome.error;
-    });
-    return (approved: error.isEmpty ? approved : 0, error: error);
+    final outcome = _segmentEdits.approveAll(result, review, _savedRuns);
+    if (outcome.issue == null) _segmentsChanged();
+    return outcome;
   }
 
   /// Undoes the last segment edit.
-  String undoSegmentEdit() => _segmentHistory(undo: true);
+  String undoSegmentEdit() => undoSegmentChange()?.message ?? '';
 
   /// Redoes the last undone segment edit.
-  String redoSegmentEdit() => _segmentHistory(undo: false);
+  String redoSegmentEdit() => redoSegmentChange()?.message ?? '';
+
+  /// Undoes the last change of the segments or of a review decision, or
+  /// says why not.
+  SegmentChangeIssue? undoSegmentChange() => _segmentHistory(undo: true);
+
+  /// Redoes the last undone change, or says why not.
+  SegmentChangeIssue? redoSegmentChange() => _segmentHistory(undo: false);
 
   void _rerank() {
     _revision++;

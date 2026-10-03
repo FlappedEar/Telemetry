@@ -7,9 +7,11 @@ import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/segment_editor_page.dart';
 import 'package:telemetry/day/segment_review_page.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import 'recovery_test.dart' show FileRecoveryStore;
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
 
@@ -348,4 +350,70 @@ void main() {
     reopened.dispose();
     expect(tester.takeException(), isNull);
   });
+
+  test('a recovery snapshot keeps the rejections', () async {
+    final outcome = importDay();
+    final store = FileRecoveryStore(
+      '${directory.path}/support/day-recovery.json',
+    );
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      recovery: store,
+    );
+    await controller.requestTheoreticalBest();
+    final result = controller.theoreticalBest!;
+    expect(
+      controller.removeSegment(result.approvedSegment(0)!['id']! as String),
+      isEmpty,
+    );
+    await controller.requestTheoreticalBest();
+    await controller.requestSegmentReview();
+    expect(controller.rejectSegmentProposal(0), isNull);
+    final runId = controller.segmentReview!.runId;
+    await controller.flushRecovery();
+
+    final kept = (await store.load())!;
+    final run =
+        ((kept.document['event'] as Map<String, Object?>)['runs'] as List)
+            .cast<Map<String, Object?>>()
+            .firstWhere((run) => run['id'] == runId);
+    final stored = run['trackSegmentReview'];
+    expect(validTrackSegmentReview(stored), isTrue);
+    expect((stored! as Map<String, Object?>)['rejected'], hasLength(1));
+
+    // The recovered day shows the proposal rejected.
+    final recovered = DayResultsController.recovered(
+      openRecoveredDay(kept),
+      kept,
+    );
+    expect(recovered.dirty, isTrue);
+    await recovered.requestTheoreticalBest();
+    await recovered.requestSegmentReview();
+    expect(recovered.segmentReviewItems[0].state, SegmentReviewState.rejected);
+    controller.dispose();
+    recovered.dispose();
+  });
+
+  test(
+    'every reason a change was not made has its own text in both languages',
+    () {
+      for (final locale in supportedLocales) {
+        final l10n = lookupAppLocalizations(locale);
+        final texts = {
+          for (final issue in SegmentChangeIssue.values)
+            segmentChangeIssueText(l10n, issue),
+        };
+        expect(texts, hasLength(SegmentChangeIssue.values.length));
+        expect(texts.every((text) => text.isNotEmpty), isTrue);
+      }
+      expect(
+        segmentChangeIssueText(
+          lookupAppLocalizations(const Locale('pl')),
+          SegmentChangeIssue.historyCleared,
+        ),
+        isNot(SegmentChangeIssue.historyCleared.message),
+      );
+    },
+  );
 }

@@ -1107,10 +1107,6 @@
   "@segmentReviewNoneApproved": {
     "description": "Approve all found nothing it could approve."
   },
-  "segmentReviewNotNow": "The proposals cannot be changed right now.",
-  "@segmentReviewNotNow": {
-    "description": "A review action could not be done, for example while the day is saved."
-  },
   "segmentReviewReject": "Reject",
   "@segmentReviewReject": {
     "description": "Rejects this proposal."
@@ -1292,5 +1288,45 @@
   "segmentReviewFailed": "The proposals could not be computed.",
   "@segmentReviewFailed": {
     "description": "The proposals failed."
+  },
+  "segmentReviewSaving": "The day is being saved. Try again in a moment.",
+  "@segmentReviewSaving": {
+    "description": "A review action, undo or redo was not done because the day is being saved."
+  },
+  "segmentReviewSegmentsUnavailable": "The segments can be changed once the theoretical best is calculated.",
+  "@segmentReviewSegmentsUnavailable": {
+    "description": "A change was not done because the theoretical best is not calculated yet."
+  },
+  "segmentReviewNotReady": "The proposals are not ready yet.",
+  "@segmentReviewNotReady": {
+    "description": "A review action was not done because the proposals are still being computed."
+  },
+  "segmentReviewNoLongerAvailable": "This proposal is no longer available.",
+  "@segmentReviewNoLongerAvailable": {
+    "description": "The proposal changed before the action was done."
+  },
+  "segmentReviewNotOpen": "Only open proposals can be rejected.",
+  "@segmentReviewNotOpen": {
+    "description": "Rejecting was refused: the proposal is approved or overlaps an approved segment."
+  },
+  "segmentReviewNotStored": "The rejection cannot be stored.",
+  "@segmentReviewNotStored": {
+    "description": "The rejection could not be written in the day's document."
+  },
+  "segmentReviewNothingToUndo": "Nothing to undo.",
+  "@segmentReviewNothingToUndo": {
+    "description": "Undo found no change to undo."
+  },
+  "segmentReviewNothingToRedo": "Nothing to redo.",
+  "@segmentReviewNothingToRedo": {
+    "description": "Redo found no change to redo."
+  },
+  "segmentReviewHistoryCleared": "The segments changed outside this editor, so the edit history was cleared.",
+  "@segmentReviewHistoryCleared": {
+    "description": "Undo or redo was refused because the segments changed elsewhere; the history was cleared."
+  },
+  "segmentReviewUncertainOther": "Uncertain boundary",
+  "@segmentReviewUncertainOther": {
+    "description": "An uncertainty reason this version of the app does not know."
   }
 }

@@ -1183,12 +1183,6 @@ abstract class AppLocalizations {
   /// **'No proposal could be approved.'**
   String get segmentReviewNoneApproved;
 
-  /// A review action could not be done, for example while the day is saved.
-  ///
-  /// In en, this message translates to:
-  /// **'The proposals cannot be changed right now.'**
-  String get segmentReviewNotNow;
-
   /// Rejects this proposal.
   ///
   /// In en, this message translates to:
@@ -1374,6 +1368,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The proposals could not be computed.'**
   String get segmentReviewFailed;
+
+  /// A review action, undo or redo was not done because the day is being saved.
+  ///
+  /// In en, this message translates to:
+  /// **'The day is being saved. Try again in a moment.'**
+  String get segmentReviewSaving;
+
+  /// A change was not done because the theoretical best is not calculated yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments can be changed once the theoretical best is calculated.'**
+  String get segmentReviewSegmentsUnavailable;
+
+  /// A review action was not done because the proposals are still being computed.
+  ///
+  /// In en, this message translates to:
+  /// **'The proposals are not ready yet.'**
+  String get segmentReviewNotReady;
+
+  /// The proposal changed before the action was done.
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal is no longer available.'**
+  String get segmentReviewNoLongerAvailable;
+
+  /// Rejecting was refused: the proposal is approved or overlaps an approved segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Only open proposals can be rejected.'**
+  String get segmentReviewNotOpen;
+
+  /// The rejection could not be written in the day's document.
+  ///
+  /// In en, this message translates to:
+  /// **'The rejection cannot be stored.'**
+  String get segmentReviewNotStored;
+
+  /// Undo found no change to undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to undo.'**
+  String get segmentReviewNothingToUndo;
+
+  /// Redo found no change to redo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to redo.'**
+  String get segmentReviewNothingToRedo;
+
+  /// Undo or redo was refused because the segments changed elsewhere; the history was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments changed outside this editor, so the edit history was cleared.'**
+  String get segmentReviewHistoryCleared;
+
+  /// An uncertainty reason this version of the app does not know.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncertain boundary'**
+  String get segmentReviewUncertainOther;
 }
 
 class _AppLocalizationsDelegate

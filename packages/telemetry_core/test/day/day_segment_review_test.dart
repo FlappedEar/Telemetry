@@ -89,10 +89,22 @@ void main() {
     expect(missing.ready, isFalse);
     expect(missing.reason, segmentReviewNoLap);
     expect(missing.items(result.runSegments, null), isEmpty);
+    // A result with no lap to review matches the review that says so, so it
+    // is not computed again and again.
+    final shell = DayTheoreticalBest(
+      groupId: result.groupId,
+      state: DayTheoreticalBestState.ready,
+      segmentRunId: 'none',
+    );
+    expect(segmentReviewLap(shell), isNull);
+    final none = dayProposalReview(shell, null, null);
+    expect(none.reason, segmentReviewNoLap);
+    expect(none.matches(shell), isTrue);
+    expect(none.matches(result), isFalse);
     // Nothing waits for a review: approve all has nothing left to do.
     expect(
-      DaySegmentEdits().approveAll(result, review, const []).error,
-      'No proposal could be approved.',
+      DaySegmentEdits().approveAll(result, review, const []).issue,
+      SegmentChangeIssue.noneApproved,
     );
   });
 
@@ -114,7 +126,7 @@ void main() {
     // A rejection is stored in the run's trackSegmentReview, as Overlays
     // writes it, without changing the segments.
     final review = reviewOf(result);
-    expect(edits.setRejected(result, review, const [], 1), isEmpty);
+    expect(edits.setRejected(result, review, const [], 1), isNull);
     expect(edits.undoChangesSegments, isFalse);
     final stored = storedReview(edits, best.runId)!;
     expect(validTrackSegmentReview(stored), isTrue);
@@ -133,7 +145,7 @@ void main() {
     expect(edits.runs[best.runId], hasLength(count - 2));
     expect(states(edits, result)[1], SegmentReviewState.rejected);
     // Approved proposals cannot be rejected.
-    expect(edits.setRejected(result, review, const [], 2), contains('Only open'));
+    expect(edits.setRejected(result, review, const [], 2), SegmentChangeIssue.notOpen);
 
     // Undo and redo the rejection.
     expect(edits.undo(const []), isEmpty);
@@ -144,7 +156,7 @@ void main() {
 
     // Approve all approves the open proposal, not the rejected one.
     final approval = edits.approveAll(result, review, const []);
-    expect(approval, (approved: 1, error: ''));
+    expect(approval, (approved: 1, issue: null));
     expect(edits.undoChangesSegments, isTrue);
     result = calculate(edits);
     expect(result.segments, hasLength(count - 1));
@@ -154,7 +166,7 @@ void main() {
     ]);
 
     // Restoring the rejected proposal and approving all brings every one back.
-    expect(edits.setRejected(result, reviewOf(result), const [], 1, rejected: false), isEmpty);
+    expect(edits.setRejected(result, reviewOf(result), const [], 1, rejected: false), isNull);
     expect(storedReview(edits, best.runId), isNull);
     expect(edits.approveAll(result, reviewOf(result), const []).approved, 1);
     result = calculate(edits);
@@ -168,6 +180,8 @@ void main() {
     expect(edits.undo(const []), isEmpty);
     expect(calculate(edits).segments, hasLength(count - 2));
     expect(storedReview(edits, best.runId), isNotNull);
+    expect(DaySegmentEdits().undoChange(const []), SegmentChangeIssue.nothingToUndo);
+    expect(DaySegmentEdits().redoChange(const []), SegmentChangeIssue.nothingToRedo);
   });
 
   group('saved', () {
@@ -214,7 +228,7 @@ void main() {
         dayRuns[result.segmentRunId],
       );
       expect(review.ready, isTrue, reason: review.message);
-      expect(edits.setRejected(result, review, const [], 0), isEmpty);
+      expect(edits.setRejected(result, review, const [], 0), isNull);
       final document = dayDocument(
         eventId: eventId,
         name: 'Day',
@@ -256,7 +270,7 @@ void main() {
 
       // Taking the last rejection back removes the key.
       final restore = DaySegmentEdits();
-      expect(restore.setRejected(reopened, review, runsOf(again), 0, rejected: false), isEmpty);
+      expect(restore.setRejected(reopened, review, runsOf(again), 0, rejected: false), isNull);
       final cleared = dayDocument(
         eventId: eventId,
         name: 'Day',
