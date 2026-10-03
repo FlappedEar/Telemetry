@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n.dart';
 import 'app_diagnostics.dart';
 
 /// "1.84 s", or "120 ms" below a second.
@@ -12,10 +13,23 @@ String diagnosticDuration(Duration duration) {
       : '${(milliseconds / 1000).toStringAsFixed(2)} s';
 }
 
-/// "123.4 MiB", or "Not available".
-String diagnosticMemory(int? bytes) => bytes == null
-    ? 'Not available'
+/// "123.4 MiB", or "Not available" in the app's language.
+String diagnosticMemory(AppLocalizations l10n, int? bytes) => bytes == null
+    ? l10n.diagnosticsNotAvailable
     : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MiB';
+
+/// A step's name ([DiagnosticSteps]) in the app's language; a step the app
+/// does not know is shown as written. The names themselves stay English:
+/// the day benchmark prints them too.
+String _stepName(AppLocalizations l10n, String name) => switch (name) {
+  DiagnosticSteps.scan => l10n.diagnosticsStepScan,
+  DiagnosticSteps.parse => l10n.diagnosticsStepParse,
+  DiagnosticSteps.analysis => l10n.diagnosticsStepAnalysis,
+  DiagnosticSteps.importTotal => l10n.diagnosticsStepImportTotal,
+  DiagnosticSteps.theoreticalBest => l10n.diagnosticsStepTheoreticalBest,
+  DiagnosticSteps.channelSummaries => l10n.diagnosticsStepChannelSummaries,
+  _ => name,
+};
 
 /// How long the last import took step by step, how much it read, and the
 /// memory the platform reports for the app, for measuring on a phone.
@@ -58,6 +72,7 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final diagnostics = widget.diagnostics ?? appDiagnostics;
     final last = diagnostics.lastImport;
     Widget heading(String text) => Padding(
@@ -72,11 +87,11 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
     );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Diagnostics'),
+        title: Text(l10n.diagnosticsTitle),
         actions: [
           IconButton(
             key: const ValueKey('refreshDiagnostics'),
-            tooltip: 'Refresh',
+            tooltip: l10n.diagnosticsRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: _refresh,
           ),
@@ -86,43 +101,43 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
         key: const ValueKey('diagnostics'),
         padding: const EdgeInsets.only(bottom: 16),
         children: [
-          heading('Last import'),
+          heading(l10n.diagnosticsLastImport),
           if (last == null)
-            const ListTile(
-              title: Text('No day imported since the app started.'),
-            )
+            ListTile(title: Text(l10n.diagnosticsNoImport))
           else ...[
             for (final step in diagnostics.steps)
-              row(step.name, diagnosticDuration(step.duration)),
-            row('Recordings read', '${last.recordings}'),
+              row(
+                _stepName(l10n, step.name),
+                diagnosticDuration(step.duration),
+              ),
+            row(l10n.diagnosticsRecordingsRead, '${last.recordings}'),
             row(
-              'Sessions',
+              l10n.diagnosticsSessions,
               '${last.sessions}',
               key: const ValueKey('diagnosticsSessions'),
             ),
             row(
-              'Samples',
+              l10n.diagnosticsSamples,
               '${last.samples}',
               key: const ValueKey('diagnosticsSamples'),
             ),
-            row('Channel values', '${last.channelSamples}'),
+            row(l10n.diagnosticsChannelValues, '${last.channelSamples}'),
           ],
-          heading('Memory'),
+          heading(l10n.diagnosticsMemory),
           row(
-            'Current',
-            diagnosticMemory(_memory.current),
+            l10n.diagnosticsCurrentMemory,
+            diagnosticMemory(l10n, _memory.current),
             key: const ValueKey('diagnosticsCurrentMemory'),
           ),
           row(
-            'Peak',
-            diagnosticMemory(_memory.peak),
+            l10n.diagnosticsPeakMemory,
+            diagnosticMemory(l10n, _memory.peak),
             key: const ValueKey('diagnosticsPeakMemory'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Resident memory of the app as the system reports it; the peak is '
-              'since the app started. Times are wall time on this device.',
+              l10n.diagnosticsMemoryNote,
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -150,7 +165,7 @@ PopupMenuItem<T> diagnosticsMenuItem<T>(BuildContext context) =>
       // A full 48 dp touch target, whatever the theme's menu density.
       height: kMinInteractiveDimension,
       onTap: () => _openDiagnostics(context),
-      child: const Text('Diagnostics'),
+      child: Text(context.l10n.diagnosticsTitle),
     );
 
 /// An overflow menu with the diagnostics entry, for an app bar.
@@ -160,7 +175,7 @@ class DiagnosticsMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopupMenuButton<void>(
     key: const ValueKey('moreMenu'),
-    tooltip: 'More',
+    tooltip: context.l10n.moreActions,
     itemBuilder: (_) => [diagnosticsMenuItem(context)],
   );
 }

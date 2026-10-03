@@ -76,6 +76,82 @@ extension SessionNameText on AppLocalizations {
   }
 }
 
+extension LapNameText on AppLocalizations {
+  /// A lap's name in the app's language, "Sesja 3 · OKR. 2", instead of
+  /// `DayLapRow.displayName` ("Session 3 · LAP 2").
+  String lap(DayLapRow row) {
+    final run = session(row.runName);
+    return switch (row.type) {
+      LapSectionType.lap => lapName(run, row.lapNumber),
+      LapSectionType.outLap => outLapName(run),
+      LapSectionType.inLap => inLapName(run),
+      LapSectionType.unknown => unknownLapName(run),
+    };
+  }
+}
+
+extension LapIssueText on AppLocalizations {
+  /// Why a lap is not ranked, in the app's language.
+  String lapIssue(LapIssue issue) => switch (issue) {
+    LapIssue.layoutUnresolved => lapIssueLayoutUnresolved,
+    LapIssue.directionUnresolved => lapIssueDirectionUnresolved,
+    LapIssue.timingGateUnresolved => lapIssueTimingGateUnresolved,
+    LapIssue.changedLayout => lapIssueChangedLayout,
+    LapIssue.oppositeDirection => lapIssueOppositeDirection,
+    LapIssue.changedTimingGate => lapIssueChangedTimingGate,
+    LapIssue.incompleteGps => lapIssueIncompleteGps,
+    LapIssue.invalidGps => lapIssueInvalidGps,
+    LapIssue.userExclusion => lapIssueUserExclusion,
+    LapIssue.notTimedLap => lapIssueNotTimedLap,
+    LapIssue.staleSource => lapIssueStaleSource,
+    LapIssue.ineligibleLap => lapIssueIneligibleLap,
+    LapIssue.differentRecordedRoute => lapIssueDifferentRoute,
+  };
+}
+
+extension DayNoteText on AppLocalizations {
+  /// A note of the day's analysis (`DayMessage.text`) in the app's
+  /// language; a note the app does not know, such as an error, is shown as
+  /// written.
+  String dayNote(String text) => switch (text) {
+    'Recording date and time unavailable; listed after the dated '
+        'recordings in import order.' =>
+      noteUndated,
+    'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
+    _ => routeReason(text),
+  };
+
+  /// Why adding recordings to the day failed (`DayAddition.error`); an
+  /// error the app does not know is shown as written.
+  String additionError(String error) => switch (error) {
+    'Adding was cancelled.' => addingCancelled,
+    'The day was closed.' => dayClosed,
+    _ when error.startsWith('Nothing was added: ') => nothingAddedError(
+      error.substring('Nothing was added: '.length),
+    ),
+    _ => error,
+  };
+
+  /// Why background work failed (`BackgroundTaskFailed.message`); a
+  /// message the app does not know, such as an error, is shown as written.
+  String taskFailure(String message) => switch (message) {
+    'The work stopped.' => taskStopped,
+    'The work stopped unexpectedly.' => taskStoppedUnexpectedly,
+    _ => message,
+  };
+
+  /// Why a session of a saved day could not be opened
+  /// (`MissingRecording.reason`); any other reason, such as a read error,
+  /// is shown as written.
+  String missingReason(String reason) => switch (reason) {
+    'Recording not found.' => missingRecordingNotFound,
+    'The same recording as another session of this day.' =>
+      missingRecordingDuplicate,
+    'The file found is a different recording.' => missingRecordingDifferent,
+    _ => reason,
+  };
+}
+
 extension FusionReasonText on AppLocalizations {
   /// Why a session's other recording was not combined with it, from the
   /// reason `telemetry_core` gives, in the app's language.

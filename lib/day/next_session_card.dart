@@ -5,6 +5,7 @@ import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
 import 'corner_details.dart' show lapAColor;
+import 'time_losses_card.dart' show TimeLossText;
 import 'track_map.dart';
 
 extension CoachText on AppLocalizations {
@@ -166,7 +167,7 @@ class NextSessionCard extends StatelessWidget {
             Text(l10n.coachTitle, style: theme.textTheme.titleMedium),
             if (session.isNotEmpty)
               Text(
-                l10n.coachSubtitle(session),
+                l10n.coachSubtitle(l10n.session(session)),
                 style: theme.textTheme.bodySmall,
               ),
             const SizedBox(height: 8),
@@ -346,11 +347,11 @@ class _CoachItemPageState extends State<CoachItemPage> {
     };
   }
 
-  String _laps(List<DayLapRow> laps) => [
+  String _laps(AppLocalizations l10n, List<DayLapRow> laps) => [
     for (final lap in laps)
       widget.lapLabel(lap.reference).isEmpty
-          ? lap.displayName
-          : widget.lapLabel(lap.reference),
+          ? l10n.lap(lap)
+          : l10n.timeLossLapLabel(widget.lapLabel(lap.reference)),
   ].join(', ');
 
   @override
@@ -398,13 +399,13 @@ class _CoachItemPageState extends State<CoachItemPage> {
             Text(l10n.coachSpeedHidden, style: theme.textTheme.bodySmall),
           const SizedBox(height: 8),
           Text(l10n.coachWhyAffected, style: theme.textTheme.labelLarge),
-          Text(_laps(finding.affectedLaps)),
+          Text(_laps(l10n, finding.affectedLaps)),
           const SizedBox(height: 8),
           Text(
             keep ? l10n.coachWhyBefore : l10n.coachWhyFaster,
             style: theme.textTheme.labelLarge,
           ),
-          Text(_laps(finding.evidence.first.referenceLaps)),
+          Text(_laps(l10n, finding.evidence.first.referenceLaps)),
           if (path != null && !path.isEmpty && _segment >= 0) ...[
             const SizedBox(height: 12),
             SizedBox(

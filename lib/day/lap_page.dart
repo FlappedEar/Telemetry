@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import 'comparison_page.dart';
 import 'day_results_controller.dart';
 import 'lap_coasting_panel.dart';
@@ -226,7 +227,7 @@ class _LapPageState extends State<LapPage> {
     final partner = controller.comparisonPartner(row);
     final other = await pickComparisonLap(
       context,
-      title: 'Compare ${row.displayName} with',
+      title: context.l10n.pickLapB(context.l10n.lap(row)),
       candidates: [
         for (final candidate in controller.comparisonCandidates(row))
           if (candidate.reference != row.reference) candidate,

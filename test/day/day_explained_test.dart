@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/consistency_card.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
@@ -307,9 +308,55 @@ void main() {
     }
   });
 
+  testWidgets('the progression card speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage.controller(controller: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final page = find
+        .descendant(
+          of: find.byKey(const ValueKey('dayResultsSummary')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final view = find.byKey(const ValueKey('progressionView'));
+    await tester.scrollUntilVisible(view, 300, scrollable: page);
+    await tester.pumpAndSettle();
+    expect(find.text('Postęp'), findsOneWidget);
+    expect(find.text('Progression'), findsNothing);
+    expect(find.text('Według sesji'), findsOneWidget);
+    expect(find.text('1. Sesja 1'), findsOneWidget);
+    expect(find.text('Brak czasu nagrania'), findsWidgets);
+    expect(
+      find.text(
+        'Typowe okrążenie wymaga co najmniej 3 sklasyfikowanych okrążeń',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.text('Według segmentów'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Według segmentów'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('sectionTable')), findsOneWidget);
+    expect(find.textContaining('rozrzut '), findsWidgets);
+    expect(find.textContaining('spread '), findsNothing);
+  });
+
   testWidgets('cards say what is missing', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TelemetryApp(
         home: Scaffold(
           body: ListView(
             children: [
