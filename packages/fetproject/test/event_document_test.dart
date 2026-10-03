@@ -642,7 +642,7 @@ void main() {
         expect(File(path).readAsBytesSync(), before);
       });
 
-      test('a new document cut partway says it may be incomplete', () async {
+      test('a new document cut partway is removed', () async {
         final path = p.join(directory.path, 'new.fetproject');
         await expectLater(
           writeDocumentInPlace(path, utf8.encode('x' * 90), write: cutWrite),
@@ -650,10 +650,11 @@ void main() {
             isA<FetprojectError>().having(
               (error) => error.message,
               'message',
-              endsWith('; the file may be incomplete'),
+              endsWith('; nothing was saved'),
             ),
           ),
         );
+        expect(File(path).existsSync(), isFalse);
       });
 
       test('a write refused before it starts leaves the document', () async {

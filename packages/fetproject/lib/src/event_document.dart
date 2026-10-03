@@ -731,12 +731,29 @@ Future<void> writeDocumentInPlace(
   } on FileSystemException {
     previous = null; // A new document, or not readable.
   }
+  final existed = previous != null || await file.exists();
+  // What is left after a failed write, for the message.
+  Future<String> outcome() async {
+    if (!existed) {
+      try {
+        if (await file.exists()) await file.delete();
+        return '; nothing was saved';
+      } on FileSystemException {
+        return '; the file may be incomplete';
+      }
+    }
+    return await _restore(file, previous, writeBytes)
+        ? '; the previously saved version is unchanged'
+        : '; the file may be incomplete';
+  }
+
   try {
     await writeBytes(file, bytes);
   } on FileSystemException catch (failure) {
+    final system = failure.osError?.message ?? '';
     throw FetprojectError(
       'Could not save the project: ${failure.message}'
-      '${await _restore(file, previous, writeBytes) ? '; the previously saved version is unchanged' : '; the file may be incomplete'}',
+      '${system.isEmpty ? '' : ' ($system)'}${await outcome()}',
     );
   }
   final List<int> written;
@@ -749,7 +766,7 @@ Future<void> writeDocumentInPlace(
   if (!_sameBytes(written, bytes)) {
     throw FetprojectError(
       'Could not save the project: the saved document reads back differently'
-      '${await _restore(file, previous, writeBytes) ? '; the previously saved version is unchanged' : '; the file may be incomplete'}',
+      '${await outcome()}',
     );
   }
 }
