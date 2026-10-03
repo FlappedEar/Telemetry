@@ -15,6 +15,7 @@ import '../day/day_results_page.dart';
 import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
 import '../format.dart';
+import '../settings_dialog.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
 import 'import_runner.dart' show DayAppender, IsolateDayAppender;
@@ -601,7 +602,10 @@ class _DayImportPageState extends State<DayImportPage> {
       ),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Import a day')),
+      appBar: AppBar(
+        title: const Text('Import a day'),
+        actions: const [SettingsButton()],
+      ),
       body: !_acceptsDrops
           ? content
           : DropTarget(

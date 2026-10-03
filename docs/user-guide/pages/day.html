@@ -1,0 +1,69 @@
+<!-- title: Day results | nav: Day results -->
+<h1 id="day">Day results</h1>
+<p class="lead">The day page leads with your best lap and its map, then explains where the time is. On a wide screen the analysis is on the left and the laps on the right; on a phone they are two tabs, <strong>Results</strong> and <strong>Laps</strong>.</p>
+
+<figure>
+  <img src="assets/screens/day-wide.png" alt="Day results with the Best day card, its speed-coloured map, and the lap list" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="toolbar">The toolbar</h2>
+<ul>
+  <li>The title is <strong>Day results</strong> for a day never saved, otherwise the day's name. A <strong>•</strong> after the name means there are unsaved changes.</li>
+  <li><strong>Save</strong> (disk icon) and, under <strong>More</strong> (⋮), <strong>Save as…</strong>. See <a href="saving.html">Saving</a>.</li>
+  <li><strong>Add recordings</strong> (list icon with a plus): add the next session to this day. See <a href="#add">Adding a session</a>.</li>
+  <li><strong>Day report</strong>: the whole day on one page. See <a href="day-report.html">Day report</a>.</li>
+</ul>
+
+<h2 id="add">Adding a session</h2>
+<p>At the track you do not need to import the whole day again after each session.</p>
+<ol class="steps">
+  <li>On the day page, tap <strong>Add recordings</strong> and choose the new VBO/RCZ file. On a phone you can also share it from RaceChrono; see <a href="phone.html#share">Sharing from RaceChrono</a>.</li>
+  <li>Only the new file is read. It becomes the next session (<em>Session 4</em> after three), and every card, ranking and the best day update.</li>
+  <li>A message says <em>Session 4 added to the day.</em> A recording already in the day is not added again; the message says so.</li>
+</ol>
+<p>Excluded laps, circuit names and your chosen group are kept. A day that was saved is saved again at once with the new session; a day never saved is kept as unsaved work (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
+
+<h2 id="best">Best day</h2>
+<p>The first card shows the best lap of the day: its time, which session and lap, and its trace coloured by speed (purple slow, yellow fast) with the speed range underneath. Tap it to open the lap.</p>
+<p>If there is no best lap, the card says why, for example that no session has enough complete GPS laps to identify its circuit.</p>
+
+<h2 id="groups">Compared laps (groups)</h2>
+<p>Laps are only ranked against laps driven on the same layout, in the same direction, with the same start/finish line. The app forms these groups by itself. Under the best lap a line such as <em>Group 1 · Detected route · Counterclockwise · 15 of 15 laps ranked</em> says which group the page shows.</p>
+<p>When the day has more than one group (for example two layouts), a <strong>Compared laps</strong> menu lets you pick one. The whole page then follows that group.</p>
+
+<h2 id="analysis">The analysis cards</h2>
+<p>Below the best lap, when the group has a best lap:</p>
+<table>
+  <tr><th>Card</th><th>What it answers</th></tr>
+  <tr><td><a href="theoretical-best.html">Theoretical best</a></td><td>How fast the best segments of the day add up to, and where each lap loses time.</td></tr>
+  <tr><td><a href="theoretical-best.html#time-losses">Time losses</a></td><td>The largest losses to the best lap, segment by segment.</td></tr>
+  <tr><td><a href="theoretical-best.html#look-next">Where to look next</a></td><td>Up to three places worth a closer look.</td></tr>
+  <tr><td><a href="day-report.html#consistency">Consistency</a></td><td>Typical lap and spread, per session and for the day.</td></tr>
+  <tr><td><a href="day-report.html#progression">Progression</a></td><td>How each session compares with the one before.</td></tr>
+  <tr><td><a href="day-report.html#car">Car and Driver</a></td><td>Recorded temperatures and heart rate.</td></tr>
+</table>
+
+<h2 id="sessions">Best lap of each session</h2>
+<figure>
+  <img src="assets/screens/sessions-and-circuits.png" alt="Best lap of each session list, followed by the Circuits list" width="1280" height="800" loading="lazy">
+</figure>
+<p>One row per session with its best ranked lap, for example <em>LAP 2 · 5 of 7 laps ranked · typical 1:50.123</em>. Tap a row to open that lap.</p>
+
+<h2 id="circuits">Circuits</h2>
+<p>One row per session says which circuit and direction it was matched to, and whether that was inferred from GPS or set by you. Tap the pencil to open <strong>Circuit of Session N</strong>:</p>
+<figure>
+  <img src="assets/screens/circuit-dialog.png" alt="Circuit of Session 1 dialog with the detected route, the session's trace, a layout name field and Clockwise and Counterclockwise buttons" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Layout name</strong>: give the circuit a name, for example <em>Jastrząb full circuit</em>.</li>
+  <li><strong>Clockwise</strong> / <strong>Counterclockwise</strong>: set the direction.</li>
+  <li><strong>Also for the sessions on the same route</strong>: apply it to the other sessions on that route (on by default).</li>
+  <li><strong>Save</strong> regroups the day. <strong>Use the detected route</strong> removes your setting again.</li>
+</ul>
+<p>Use this when a session was put in the wrong group, or its direction is unknown.</p>
+
+<h2 id="notes">Notes</h2>
+<p>At the bottom, <strong>Notes</strong> lists messages from the analysis, each starting with the session it is about. Sessions whose circuit could not be identified are listed under their own heading; their laps are not compared.</p>
+
+<h2 id="missing">Missing recordings</h2>
+<p>A saved day only points to its recording files. If one was moved or deleted, the day still opens, and a red card at the top lists the sessions that could not be opened. See <a href="saving.html#find">Find recordings in a folder</a>.</p>

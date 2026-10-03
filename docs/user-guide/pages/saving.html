@@ -1,0 +1,49 @@
+<!-- title: Saving and opening days | nav: Saving and opening -->
+<h1 id="saving">Saving and opening days</h1>
+<p class="lead">A day is saved as a <code>.fetproject</code> file. It holds your sessions and your choices, and it points to the recording files rather than copying them.</p>
+
+<h2 id="what">What a saved day keeps</h2>
+<ul>
+  <li>The sessions and where their recordings are.</li>
+  <li>Circuit names and directions you set.</li>
+  <li>Laps you excluded, with their reasons.</li>
+  <li>The group of laps shown.</li>
+  <li>The segments: the automatic ones become the day's approved segments when you save, and your edits are kept.</li>
+</ul>
+<p>The day is named <em>Day YYYY-MM-DD</em> from its first dated recording. There is no way to rename it in the app yet; the file name on a Mac or PC is yours to choose.</p>
+
+<h2 id="save">Saving</h2>
+<ul>
+  <li><strong>Save</strong> (disk icon) writes to the file the day came from. The first time, it asks where to save. It is greyed out when nothing changed.</li>
+  <li><strong>Save as…</strong> (under ⋮) always asks.</li>
+  <li>Adding a session to a saved day saves it again on its own. See <a href="day.html#add">Adding a session</a>.</li>
+</ul>
+<p>The app confirms with <em>Saved as &lt;file&gt;.fetproject.</em> or says why it could not save.</p>
+<table>
+  <tr><th></th><th>Mac and PC</th><th>Phone and tablet</th></tr>
+  <tr><td>Where days go</td><td>Anywhere, with the system save dialog.</td><td>Inside the app, in its own <em>Days</em> folder. There is no save dialog.</td></tr>
+  <tr><td>Save as…</td><td>Choose a new file.</td><td>Writes another copy, named <em>&lt;name&gt; (2)</em>, and so on.</td></tr>
+</table>
+<div class="note"><p>Leaving a day with unsaved changes does not ask you to save. The app keeps one unsaved day for you; see <a href="import.html#restore">Restoring unsaved work</a>. Save before starting on another day.</p></div>
+
+<h2 id="open">Opening a day</h2>
+<p>On <strong>Import a day</strong>, tap <strong>Open a saved day…</strong>.</p>
+<ul>
+  <li>Mac and PC: the system open dialog shows <em>FlappedEar day</em> files.</li>
+  <li>Phone: a list of the days saved in the app, newest first, and <strong>Another file…</strong> to pick a file from elsewhere.</li>
+</ul>
+
+<h2 id="find">Find recordings in a folder</h2>
+<p>If a recording was moved, renamed or deleted, the day still opens. A red card lists each session that could not be opened, and those sessions stay in the day when you save it.</p>
+<ol class="steps">
+  <li>Save the day first if it has changes.</li>
+  <li>Tap <strong>Find recordings in a folder…</strong> and choose the folder that holds the recordings now.</li>
+  <li>The app recognises each recording by its content, so a renamed file is found. A different recording that only has the same name is never used.</li>
+  <li>Tap <strong>Save</strong> to keep the new locations.</li>
+</ol>
+<p>If none of a day's recordings can be used, the app says <em>&lt;day&gt; could not be opened</em>, lists them, and offers <strong>Find recordings in a folder…</strong> there too.</p>
+<p>This needs a folder picker, so it works on a Mac or PC. On a phone it may not work.</p>
+<p>On a Mac, the app remembers access to the recordings and folders you chose or dropped, so a saved day reopens after a restart without asking again.</p>
+
+<h2 id="overlays">Days and FlappedEar Overlays</h2>
+<p>Overlays and Telemetry use the same <code>.fetproject</code> format. See <a href="overlays.html">Working with FlappedEar Overlays</a>.</p>

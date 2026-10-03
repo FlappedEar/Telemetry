@@ -7,6 +7,9 @@ FlappedEar Overlays.
 
 The app is free for users.
 
+The user guide for drivers is at <https://flappedear.github.io/Telemetry/>
+(sources in [`docs/user-guide`](docs/user-guide/README.md)).
+
 ## Status
 
 Early development. The app opens on **Import a day**: choose the day's VBO and
@@ -25,18 +28,28 @@ cursor, shown on the map, and zoom around it. **Compare with…** (on a lap, or
 **Compare two laps** above the lap list) puts two laps of one group side by
 side on a shared track-position axis, as FlappedEar Overlays does: A green, B
 orange, the Δ time (A − B, positive when A is behind) and the channels of both
-laps, braking drawn upward, and both lines on one map, optionally coloured by
+laps, braking drawn upward, and both lines on one map over street or satellite
+tiles, with the zoom window highlighted on lap B and a dot per lap at the
+cursor, optionally coloured by
 speed, the Δ time, G, the pedals or a recorded temperature (never invented
 when a lap did not record it). Swap the laps, change either, or set B to the
 best of A's session or of the day; a time loss or a focus area opens its two
 laps there, zoomed to its segment. Under the charts, the **Corner Analyzer**
-lists the approved segments both laps share and, for the chosen one, A, B and
-Δ of the sector time, the speeds (entry, apex, minimum and exit in a corner;
-entry, top, lowest and exit elsewhere), the braking point and throttle pickup
-(positions along the lap) and the heart rate, each missing value with its
-reason and inferred values labelled, over a chart of both laps' speed through
-the segment with the braking points drawn as upward triangles. Choosing a
-segment zooms the charts to it; **Lap A here** and **Lap B here** open a lap
+lists the approved segments both laps share ("Corner 1 · 108 m") and, for the
+chosen one, a one-line summary of who is faster there (with the largest speed
+difference in that lap's favour), a chart of both laps' speed through the
+segment and a lead-in before it (speed axis with its unit, metres from the
+corner entry, the corner shaded between its entry and exit, the apex dashed,
+and each lap's braking start ▲, throttle pickup ◆ and lowest speed ● on its own
+line, with a legend and the shared cursor's readout), and a table of A, B and
+Δ grouped as Time, Braking (where braking starts before the entry, time on the
+brakes, peak deceleration), Corner (entry, apex and minimum speed; entry, top
+and lowest elsewhere), Exit (exit speed, throttle pickup after the entry) and
+Driver (heart rate). Every value carries its unit, or the panel says once that
+the recording declares none; Δ is coloured by the faster lap or the lap
+carrying more speed and says so in words; each missing value gives its reason
+in plain words and inferred values are labelled. Choosing a segment zooms the
+charts to it; **Lap A here** and **Lap B here** open a lap
 at its start. A time loss, a focus area, a row of the theoretical best's loss
 list or a corner's details open it on that segment, measured against the
 theoretical best's segments when the two laps' own differ (and saying so);
@@ -47,10 +60,11 @@ best (the fastest time of each segment) and the time available; a loss map,
 the best lap's trace with each segment coloured by the time the chosen lap
 loses there to the fastest time, with the segments listed largest loss first;
 and a sector table of every lap by segment, the fastest time of each segment
-highlighted. Tap a lap in the table to show its losses on the map. Each corner in the loss list also shows the lap's minimum speed and braking point against the best lap; tap it for entry, minimum and exit speed, braking point, braking time, peak deceleration and throttle pickup against the best lap and the best of all laps, measured and inferred values labelled. **Edit segments** shows the best lap's map with the segment boundaries and the segments in lap order: tap one to rename it, change its type, move its start or end in metres, split it, merge it with the next one or remove it, with undo and redo, or **Restore automatic**; every change times the laps again. Corrections are saved with the day as its approved segments and are never replaced by automatic ones. **Time losses** ranks the largest losses of each session's best lap (or of every lap) against the best lap, one segment at a time; tap one for both laps' times through that segment and the segment on the map. **Consistency** gives the typical lap and segment time (median) and the spread (interquartile range) over the day and per session, or says that at least three laps are needed. **Progression** lists the sessions in recording order with their best and typical lap and the best against the session before, and each segment's typical time per session; tap a cell for its laps. **Where to look next** picks at most three areas from the measured losses, sector gaps and corner spreads: each shows what was measured apart from a hypothesis to check, never a cause or an instruction; tap one to compare its two laps (A green, B orange) through the segment. **Car** summarizes each session's recorded temperatures (mean, range, coverage, implausible readings left out, continuously recorded cooling) and how each moved with lap time over the compared laps, saying when there are too few laps or the day's progression could explain it; **Driver** shows each session's recorded heart rate and each lap's mean. **Day report** (in the toolbar) presents the day's results as calculated, each leading to its lap, and says exactly why one is missing. The trace is drawn over
-OpenStreetMap street tiles, or MapTiler satellite imagery when the build has a
-key; the layers button switches between them and the trace alone, which needs
-no network. Tiles already seen stay cached for the track. **Save** writes the day as a
+highlighted. Tap a lap in the table to show its losses on the map. Each corner in the loss list also shows the lap's minimum speed and braking point against the best lap; tap it for entry, minimum and exit speed, braking point, braking time, peak deceleration and throttle pickup against the best lap and the best of all laps, measured and inferred values labelled. **Edit segments** shows the best lap's map with the segment boundaries and the segments in lap order: tap one to rename it, change its type, move its start or end in metres, split it, merge it with the next one or remove it, with undo and redo, or **Restore automatic**; every change times the laps again. Corrections are saved with the day as its approved segments and are never replaced by automatic ones. **Time losses** ranks the largest losses of each session's best lap (or of every lap) against the best lap, one segment at a time; tap one for both laps' times through that segment and the segment on the map. **Consistency** gives the typical lap and segment time (median) and the spread (interquartile range) over the day and per session, or says that at least three laps are needed. **Progression** lists the sessions in recording order with their best and typical lap and the best against the session before, and each segment's typical time per session; tap a cell for its laps. **Where to look next** picks at most three areas from the measured losses, sector gaps and corner spreads: each shows what was measured apart from a hypothesis to check, never a cause or an instruction; tap one to compare its two laps (A green, B orange) through the segment. **Car** summarizes each session's recorded temperatures (mean, range, coverage, implausible readings left out, continuously recorded cooling) and how each moved with lap time over the compared laps, saying when there are too few laps or the day's progression could explain it; **Driver** shows each session's recorded heart rate and each lap's mean. **Day report** (in the toolbar) presents the day's results as calculated, each leading to its lap, and says exactly why one is missing. Every map
+draws the trace over a real map: OpenStreetMap street tiles, or MapTiler
+satellite imagery when the build has a key; the layers button switches
+between them, on every map at once. Tiles already seen stay cached for the
+track. **Save** writes the day as a
 `.fetproject` document FlappedEar Overlays can open (sessions, recordings,
 circuit names, excluded laps and the group shown); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
@@ -81,6 +95,13 @@ segments are calculated. Every value says whether it was measured from a
 pedal or sensor, calculated by the logger from GPS, or inferred from
 longitudinal G, which happens only when the recording has no such pedal
 channel.
+
+Speeds are labelled km/h or mph from the recordings: RCZ declares its unit,
+and a RaceChrono VBO names it in its header (`velocity kmh`), which the parser
+keeps as header metadata. **Settings** (the gear in the toolbar) chooses
+**Automatic**, **km/h** or **mph**. It changes only the label; values are
+always shown as recorded, never converted, so every calculation and the
+parity with FlappedEar Overlays are unchanged.
 
 ## Phones and tablets
 
@@ -150,7 +171,8 @@ flutter run --dart-define=MAPTILER_KEY=your-key
 ```
 
 CI reads it from the repository secret `MAPTILER_KEY`. Without a key the app
-offers streets and the trace only. Another provider is another `TileSource` in
+offers streets only. There is no trace-only choice: the plain drawing without
+tiles is used only by the tests, which have no network. Another provider is another `TileSource` in
 `lib/day/track_map.dart`.
 
 ## Development

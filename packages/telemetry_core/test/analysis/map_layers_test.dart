@@ -243,4 +243,39 @@ void main() {
     expect(mapPointAt(west, 10, mirrored)!.x, closeTo(1.0, 1e-3));
     expect(mapPointAt(west, 11, mirrored), isNull);
   });
+
+  test('maps a normalized position back to degrees, east-positive', () {
+    final session = _straightRun((t) => 90.0);
+    final geometry = sessionMapGeometry(session);
+    for (final time in [0.0, 3.5, 10.0]) {
+      final point = mapPointAt(session, time, geometry)!;
+      final coordinate = mapPointCoordinate(point.x, point.y, geometry)!;
+      expect(coordinate.latitudeDegrees, closeTo(session.valueAt('latitude', time)!, 1e-9));
+      expect(coordinate.longitudeDegrees, closeTo(session.valueAt('longitude', time)!, 1e-9));
+    }
+    expect(mapPointCoordinate(0.5, 0.5, const MapGeometry()), isNull);
+    expect(mapPointCoordinate(double.nan, 0.5, geometry), isNull);
+
+    // A west-positive recording comes back with an east-positive longitude.
+    final west = TelemetrySession(
+      duration: 10,
+      startTime: 0,
+      metadata: const {'gpsLongitudeConvention': 'west-positive'},
+      channels: {
+        'lat': _channel('lat', 'deg', (t) => 50.0),
+        'lon': _channel('lon', 'deg', (t) => 19.0 - t * _metersPerSecond / 71500.0),
+      },
+      aliases: const {'latitude': 'lat', 'longitude': 'lon'},
+      warnings: const [],
+      timingGates: const [],
+      sampleCount: _sampleCount,
+    );
+    final mirrored = sessionMapGeometry(west);
+    for (final time in [0.0, 6.0]) {
+      final point = mapPointAt(west, time, mirrored)!;
+      final coordinate = mapPointCoordinate(point.x, point.y, mirrored)!;
+      expect(coordinate.latitudeDegrees, closeTo(50.0, 1e-9));
+      expect(coordinate.longitudeDegrees, closeTo(-west.valueAt('longitude', time)!, 1e-9));
+    }
+  });
 }

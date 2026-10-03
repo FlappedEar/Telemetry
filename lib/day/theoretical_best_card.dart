@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../units.dart';
 import 'corner_details.dart';
 import 'time_losses_card.dart' show CompareLaps, lapStretch;
 import 'track_map.dart';
@@ -291,6 +292,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     final analyze = _analyze(result, lap, index);
     final corner = result.cornerAt(index);
     final comparison = corner?.compare(lap.lap.reference);
+    speedUnitOf(context); // The summary's speeds follow the setting.
     final summary = comparison == null ? null : cornerSummary(comparison);
     final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

@@ -7,6 +7,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
+import '../settings_dialog.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -355,6 +356,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
         ),
         actions: [
+          const SettingsButton(),
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) => IconButton(

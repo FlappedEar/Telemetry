@@ -35,6 +35,26 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
 - Do not implement roadmap features that were not requested.
 - No licence file until the owner chooses one.
 
+## The user guide
+
+The user guide in [`docs/user-guide`](docs/user-guide/README.md) is published to
+GitHub Pages from `main`. It is written for drivers, not developers, and it must
+match what the app on `main` shows.
+
+- A change to anything a user sees or does (a screen, a label, a button, a
+  default, a message, a supported format, a workflow) updates the guide pages in
+  the same pull request.
+- When a screen in a screenshot changes visibly, refresh the screenshots with
+  `GUIDE_RECORDINGS=../refdata flutter test tool/user_guide/capture_screens_test.dart --update-goldens` and
+  look at them before committing. New screens get a capture step there.
+- Screenshots show the owner's Jastrząb day of 29 August 2026 from
+  `FlappedEar/refdata` (`GUIDE_RECORDINGS=../refdata`); the owner approved
+  screenshots of that day, heart rate included, for the public guide on
+  2026-10-03. The recordings themselves still never leave `refdata`.
+- Describe only what the app does at that revision; do not announce features.
+- The pull request template asks for this; answer it, including "no visible
+  change".
+
 ## Product rules
 
 - **No video.** Telemetry never has video, video sync or overlays. Those belong to

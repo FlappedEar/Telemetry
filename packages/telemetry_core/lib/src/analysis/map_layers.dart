@@ -227,6 +227,32 @@ MapPoint? mapPointAt(TelemetrySession session, double time, MapGeometry geometry
   return normalizedX.isFinite && normalizedY.isFinite ? (x: normalizedX, y: normalizedY) : null;
 }
 
+/// Where the normalized map position ([x], [y]) of [geometry] is on the
+/// earth, the inverse of [mapPointAt]: degrees, east-positive whatever the
+/// recording's longitude convention, so the point can be drawn over map
+/// tiles. Null for an invalid geometry or a position that is not finite.
+GeoCoordinate? mapPointCoordinate(double x, double y, MapGeometry geometry) {
+  if (!geometry.valid ||
+      !x.isFinite ||
+      !y.isFinite ||
+      !geometry.normalizationScale.isFinite ||
+      geometry.normalizationScale <= 0.0) {
+    return null;
+  }
+  final east = (x - 0.5) * geometry.normalizationScale + geometry.centerX;
+  final south = (y - 0.5) * geometry.normalizationScale + geometry.centerY;
+  // The map's x is already east-positive; only the origin's longitude is in
+  // the recording's convention.
+  final origin = GeoCoordinate(
+    geometry.originLatitude,
+    geometry.longitudeIsWestPositive ? -geometry.originLongitude : geometry.originLongitude,
+  );
+  final coordinate = unprojectCoordinate(east, -south, origin);
+  return coordinate.latitudeDegrees.isFinite && coordinate.longitudeDegrees.isFinite
+      ? coordinate
+      : null;
+}
+
 /// One lap section's trace on [geometry]'s map, as runs of fixes: a GPS gap
 /// (a missing longitude or a gap in the sampled latitude) starts a new run
 /// (Overlays' `buildTrackSegments`).
