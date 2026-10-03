@@ -5,6 +5,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import 'corner_details.dart';
+import 'time_losses_card.dart' show CompareLaps, lapStretch;
 import 'track_map.dart';
 
 /// The colour of a loss of [fraction] (0 to 1) of the largest: one hue, dim
@@ -40,10 +41,15 @@ class TheoreticalBestCard extends StatefulWidget {
     this.gate,
     this.wide = false,
     this.onEditSegments,
+    this.onAnalyze,
   });
 
   /// Opens the segment editor; no button when null.
   final VoidCallback? onEditSegments;
+
+  /// Opens two laps in the Corner Analyzer on a segment; no button when
+  /// null.
+  final CompareLaps? onAnalyze;
 
   /// Null while it is calculated for the first time.
   final DayTheoreticalBest? result;
@@ -209,6 +215,12 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             'Tap a corner for its speeds, braking and pickup against the best lap.',
             style: theme.textTheme.bodySmall,
           ),
+        if (widget.onAnalyze != null)
+          Text(
+            'The compare button opens this lap against the best lap through '
+            'the segment in the Corner Analyzer.',
+            style: theme.textTheme.bodySmall,
+          ),
         ..._losses(context, result, lap),
       ],
       const SizedBox(height: 16),
@@ -275,6 +287,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     double maximum,
   ) {
     final theme = Theme.of(context);
+    final segment = result.segments[index];
+    final analyze = _analyze(result, lap, index);
     final corner = result.cornerAt(index);
     final comparison = corner?.compare(lap.lap.reference);
     final summary = comparison == null ? null : cornerSummary(comparison);
@@ -297,7 +311,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(result.segments[index].name),
+                Text(segment.name),
                 Text(
                   _lossDetail(result, lap, index),
                   style: theme.textTheme.bodySmall,
@@ -320,7 +334,14 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                 : '+${lap.lossSeconds[index]!.toStringAsFixed(3)} s',
             style: theme.textTheme.titleSmall,
           ),
-          if (comparison != null)
+          if (analyze != null)
+            IconButton(
+              key: ValueKey('lossAnalyze ${segment.name}'),
+              tooltip: 'Open in the Corner Analyzer',
+              icon: const Icon(Icons.compare_arrows),
+              onPressed: analyze,
+            )
+          else if (comparison != null)
             Icon(Icons.chevron_right, color: theme.colorScheme.outline),
         ],
       ),
@@ -328,8 +349,43 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     if (corner == null || comparison == null) return row;
     return InkWell(
       key: ValueKey('lossRow ${corner.name}'),
-      onTap: () => showCornerDetails(context, corner, lap.lap.reference),
+      onTap: () => showCornerDetails(
+        context,
+        corner,
+        lap.lap.reference,
+        onAnalyze: analyze,
+      ),
       child: row,
+    );
+  }
+
+  // Opens [lap] (or, for the best lap, the lap that set the segment's
+  // fastest time) against the best lap through segment [index].
+  VoidCallback? _analyze(
+    DayTheoreticalBest result,
+    DayLapSectors lap,
+    int index,
+  ) {
+    final onAnalyze = widget.onAnalyze;
+    final segment = result.segments[index];
+    if (onAnalyze == null) return null;
+    final pair = dayTheoreticalBestSectorPair(
+      result,
+      segment.segmentId,
+      lap: lap.lap,
+    );
+    if (pair == null) return null;
+    final (a, b) = pair;
+    return () => onAnalyze(
+      a,
+      b,
+      lapStretch(
+        result,
+        a,
+        segment.startProgressMeters,
+        segment.endProgressMeters,
+      ),
+      segmentId: segment.segmentId,
     );
   }
 

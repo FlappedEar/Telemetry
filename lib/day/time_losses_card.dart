@@ -6,12 +6,15 @@ import 'theoretical_best_card.dart' show lossColor;
 import 'track_map.dart';
 
 /// Opens lap [a] against lap [b], showing [focus] of lap A first (its
-/// recording times) when given.
+/// recording times) when given; with [segmentId] (a segment of the
+/// theoretical best) the Corner Analyzer opens on it, measured against the
+/// theoretical best's segments.
 typedef CompareLaps = void Function(
   DayLapRow a,
   DayLapRow b,
-  (double, double)? focus,
-);
+  (double, double)? focus, {
+  String? segmentId,
+});
 
 /// [lap]'s recording times from [startMeters] to [endMeters] on the day's
 /// shared axis, or null for a stretch across the line or without coverage.
@@ -409,6 +412,7 @@ class _TimeLossPageState extends State<TimeLossPage> {
                     window.startProgressMeters,
                     window.endProgressMeters,
                   ),
+                  segmentId: window.segmentId,
                 ),
               ),
             ),

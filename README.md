@@ -29,7 +29,18 @@ laps, braking drawn upward, and both lines on one map, optionally coloured by
 speed, the Δ time, G, the pedals or a recorded temperature (never invented
 when a lap did not record it). Swap the laps, change either, or set B to the
 best of A's session or of the day; a time loss or a focus area opens its two
-laps there, zoomed to its segment. Below it, **Theoretical best** times every
+laps there, zoomed to its segment. Under the charts, the **Corner Analyzer**
+lists the approved segments both laps share and, for the chosen one, A, B and
+Δ of the sector time, the speeds (entry, apex, minimum and exit in a corner;
+entry, top, lowest and exit elsewhere), the braking point and throttle pickup
+(positions along the lap) and the heart rate, each missing value with its
+reason and inferred values labelled, over a chart of both laps' speed through
+the segment with the braking points drawn as upward triangles. Choosing a
+segment zooms the charts to it; **Lap A here** and **Lap B here** open a lap
+at its start. A time loss, a focus area, a row of the theoretical best's loss
+list or a corner's details open it on that segment, measured against the
+theoretical best's segments when the two laps' own differ (and saying so);
+laps without shared segments can use them too. Below it, **Theoretical best** times every
 ranked lap against the day's segments (proposed from the best lap when the
 day has none yet, as FlappedEar Overlays does): the best lap, the theoretical
 best (the fastest time of each segment) and the time available; a loss map,

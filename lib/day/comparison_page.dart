@@ -5,23 +5,58 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import 'corner_analyzer_panel.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
 import 'lap_page.dart';
 import 'telemetry_chart.dart';
 
-/// A panel under a comparison's charts. Where later analyses of a pair plug
-/// in (the corner analyzer, FET-38; G-G and driving states, FET-39): each
-/// gets the comparison and its shared cursor and range, and returns null
-/// when it has nothing to show.
+/// What a panel under a comparison's charts gets: the pair, its comparison
+/// and the shared cursor and range.
+final class ComparisonPanelContext {
+  const ComparisonPanelContext({
+    required this.controller,
+    required this.a,
+    required this.b,
+    required this.comparison,
+    required this.window,
+    required this.openLap,
+    this.focusSegmentId,
+    this.fromTheoreticalBest = false,
+    this.useTheoreticalBest,
+  });
+
+  final DayResultsController controller;
+  final DayLapRow a;
+  final DayLapRow b;
+  final LapComparison comparison;
+  final ChartWindow window;
+
+  /// Opens lap 0 (A) or 1 (B) at a position on the shared axis.
+  final void Function(int slot, double progressMeters) openLap;
+
+  /// The segment the page was opened for, such as a time loss's.
+  final String? focusSegmentId;
+
+  /// The page measures against the theoretical best's segments (opened from
+  /// one of its results, or asked for).
+  final bool fromTheoreticalBest;
+
+  /// Switches the page to the theoretical best's segments.
+  final VoidCallback? useTheoreticalBest;
+}
+
+/// A panel under a comparison's charts. Where analyses of a pair plug in
+/// (the Corner Analyzer, FET-38; G-G and driving states, FET-39): each gets
+/// the comparison and its shared cursor and range, and returns null when it
+/// has nothing to show.
 typedef ComparisonPanelBuilder = Widget? Function(
   BuildContext context,
-  LapComparison comparison,
-  ChartWindow window,
+  ComparisonPanelContext panel,
 );
 
-/// The extra panels of every comparison page, in order. None yet.
-final List<ComparisonPanelBuilder> comparisonPanels = [];
+/// The extra panels of every comparison page, in order.
+final List<ComparisonPanelBuilder> comparisonPanels = [cornerAnalyzerPanel];
 
 /// Asks for a lap of [candidates]; [suggested] is offered first.
 Future<DayLapRow?> pickComparisonLap(
@@ -71,6 +106,8 @@ class ComparisonPage extends StatefulWidget {
     required this.a,
     required this.b,
     this.focus,
+    this.segmentId,
+    this.fromTheoreticalBest = false,
   });
 
   final DayResultsController controller;
@@ -80,6 +117,13 @@ class ComparisonPage extends StatefulWidget {
   /// A stretch of lap A to show first, in its recording time (such as a
   /// time loss's segment); the whole lap when null.
   final (double, double)? focus;
+
+  /// The segment to show first in the Corner Analyzer.
+  final String? segmentId;
+
+  /// Opened from a result of the theoretical best: the laps are measured
+  /// against its segments when their own differ.
+  final bool fromTheoreticalBest;
 
   @override
   State<ComparisonPage> createState() => _ComparisonPageState();
@@ -102,6 +146,7 @@ String mapLayerUnavailableText(
 
 class _ComparisonPageState extends State<ComparisonPage> {
   late DayLapRow _a = widget.a, _b = widget.b;
+  late bool _fromTheoreticalBest = widget.fromTheoreticalBest;
   LapComparison? _comparison;
   ChartWindow? _window;
   List<String> _channels = const [];
@@ -188,10 +233,15 @@ class _ComparisonPageState extends State<ComparisonPage> {
   }
 
   void _openLap(int slot) {
-    final comparison = _comparison, window = _window;
-    if (comparison == null || window == null) return;
+    final window = _window;
+    if (window != null) _openLapAt(slot, window.cursor.value);
+  }
+
+  void _openLapAt(int slot, double progressMeters) {
+    final comparison = _comparison;
+    if (comparison == null) return;
     final row = slot == 0 ? _a : _b;
-    final time = comparison.timeAt(slot, window.cursor.value);
+    final time = comparison.timeAt(slot, progressMeters);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => LapPage(
@@ -487,8 +537,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
             ),
         ],
       ),
-      for (final builder in comparisonPanels)
-        ?builder(context, comparison, window),
+      if (!_panelsFirst) ..._panels(context),
       const SizedBox(height: 8),
       Text(
         'Observed differences between two laps, not instructions.',
@@ -496,6 +545,27 @@ class _ComparisonPageState extends State<ComparisonPage> {
       ),
     ];
   }
+
+  // Opened for a segment: its analysis comes first, the charts after it.
+  bool get _panelsFirst => widget.segmentId != null;
+
+  List<Widget> _panels(BuildContext context) => [
+    for (final builder in comparisonPanels)
+      ?builder(
+        context,
+        ComparisonPanelContext(
+          controller: widget.controller,
+          a: _a,
+          b: _b,
+          comparison: _comparison!,
+          window: _window!,
+          openLap: _openLapAt,
+          focusSegmentId: widget.segmentId,
+          fromTheoreticalBest: _fromTheoreticalBest,
+          useTheoreticalBest: () => setState(() => _fromTheoreticalBest = true),
+        ),
+      ),
+  ];
 
   void _remove(String channel) => setState(
     () => _channels = [
@@ -550,7 +620,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
                   child: ListView(
                     key: const ValueKey('comparisonCharts'),
                     padding: const EdgeInsets.all(16),
-                    children: _charts(context),
+                    children: [
+                      if (_panelsFirst) ..._panels(context),
+                      ..._charts(context),
+                    ],
                   ),
                 ),
               ],
@@ -565,6 +638,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
             padding: const EdgeInsets.all(16),
             children: [
               header,
+              if (_panelsFirst) ..._panels(context),
               const SizedBox(height: 12),
               _map(context, mapHeight),
               const SizedBox(height: 16),

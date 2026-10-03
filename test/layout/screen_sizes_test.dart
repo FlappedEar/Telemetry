@@ -216,6 +216,81 @@ void main() {
         expect(tester.takeException(), isNull, reason: 'comparison scrolled');
       });
 
+      testWidgets('the Corner Analyzer fits', (tester) async {
+        final outcome = importDay();
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: DayResultsPage(
+              runs: outcome.runs,
+              analysis: outcome.analysis!,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final summary = find
+            .descendant(
+              of: find.byKey(const ValueKey('dayResultsSummary')),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        // A corner of the theoretical best, from its row's sheet.
+        final corner = find.byKey(const ValueKey('lossRow Corner 1'));
+        await tester.scrollUntilVisible(corner, 200, scrollable: summary);
+        await tester.ensureVisible(corner);
+        await tester.pumpAndSettle();
+        await tester.tap(corner);
+        await tester.pumpAndSettle();
+        final open = find.byKey(const ValueKey('cornerOpenAnalyzer'));
+        await tester.ensureVisible(open);
+        await tester.pumpAndSettle();
+        await tester.tap(open);
+        await tester.pumpAndSettle();
+        expect(find.byType(ComparisonPage), findsOneWidget);
+        expect(find.byKey(const ValueKey('cornerAnalyzer')), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: 'analyzer');
+        // Opened on its segment, in view, with the table.
+        final table = find.byKey(const ValueKey('cornerAnalyzerTable'));
+        expect(table, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('cornerAnalyzer brakingPoint A')),
+          findsOneWidget,
+        );
+        // Every segment in turn.
+        final next = find.byKey(const ValueKey('cornerAnalyzerNext'));
+        for (var step = 0; step < 12; step++) {
+          await tester.ensureVisible(next);
+          await tester.pumpAndSettle();
+          if (tester.widget<IconButton>(next).onPressed == null) break;
+          await tester.tap(next);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: 'segment $step');
+        }
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('cornerAnalyzerSegmentPicker')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('cornerAnalyzerSegmentPicker')),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'segment list');
+        final item = find
+            .byKey(const ValueKey('cornerAnalyzerSegment Corner 2'))
+            .last;
+        await tester.ensureVisible(item);
+        await tester.pumpAndSettle();
+        await tester.tap(item);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('cornerAnalyzerChart')),
+          findsOneWidget,
+        );
+        await scrollThrough(tester);
+        expect(tester.takeException(), isNull, reason: 'analyzer scrolled');
+      });
+
       testWidgets('the day report, a focus area and a channel fit', (
         tester,
       ) async {

@@ -257,6 +257,84 @@ final class DayResultsController extends ChangeNotifier {
     return built;
   }
 
+  // The Corner Analyzers of the last comparisons; dropped on any change of
+  // the day, since their segments may have changed.
+  final _analyzers =
+      <(DayLapReference, DayLapReference, bool), DayCornerAnalyzer>{};
+
+  @override
+  void notifyListeners() {
+    _analyzers.clear();
+    super.notifyListeners();
+  }
+
+  /// The Corner Analyzer of [a] against [b]: the approved segments both
+  /// laps' runs share or, with [fromTheoreticalBest] (opened from a result
+  /// of it), the theoretical best's segments when theirs differ, as
+  /// Overlays measures evidence against the segments that led to it. Null
+  /// without a shared axis.
+  DayCornerAnalyzer? cornerAnalyzer(
+    DayLapRow a,
+    DayLapRow b, {
+    bool fromTheoreticalBest = false,
+  }) {
+    final comparison = this.comparison(a, b);
+    if (comparison == null || !comparison.axis.valid) return null;
+    final key = (a.reference, b.reference, fromTheoreticalBest);
+    final cached = _analyzers.remove(key);
+    if (cached != null && identical(cached.analyzer.axis, comparison.axis)) {
+      return _analyzers[key] = cached;
+    }
+    final result = _theoreticalBestLoading ? null : _theoreticalBest;
+    final documentRuns = _documentRuns;
+    final own = dayComparisonSegmentation(
+      _analysis,
+      a,
+      b,
+      documentRuns: documentRuns,
+    );
+    final borrowed = result == null
+        ? own
+        : dayComparisonSegmentation(
+            _analysis,
+            a,
+            b,
+            documentRuns: documentRuns,
+            theoreticalBest: result,
+          );
+    final used = fromTheoreticalBest ? borrowed : own;
+    var note = '';
+    if (used.borrowed && used.shared != null && result != null) {
+      final best = result.bestLap;
+      note = result.automaticSegments && best != null
+          ? 'Segments proposed from ${best.displayName}, as used by the '
+                'sector theoretical best; saving the day approves them. '
+                'Boundaries are distances along that lap\'s axis, so they '
+                'can shift by a few metres on these laps.'
+          : 'Segments approved on ${_runName(result.segmentRunId)}, as used '
+                'by the sector theoretical best. Boundaries are distances '
+                'along that run\'s axis, so they can shift by a few metres on '
+                'these laps.';
+    }
+    final built = _analyzers[key] = DayCornerAnalyzer(
+      analyzer: CornerAnalyzer.of(comparison, used),
+      note: note,
+      theoreticalBestAvailable:
+          !fromTheoreticalBest && own.shared == null && borrowed.shared != null,
+    );
+    while (_analyzers.length > 4) {
+      _analyzers.remove(_analyzers.keys.first);
+    }
+    return built;
+  }
+
+  String _runName(String runId) {
+    for (final row in _analysis.rows) {
+      if (row.runId == runId) return row.runName;
+    }
+    return runId;
+  }
+
   /// Shows [groupId]'s ranking first.
   void chooseGroup(String groupId) {
     if (groupId == _analysis.chosenGroupId) return;
@@ -756,4 +834,22 @@ final class DayResultsController extends ChangeNotifier {
   bool isBestOfRun(DayLapRow row) =>
       ranking?.runs.any((run) => run.bestLap?.reference == row.reference) ??
       false;
+}
+
+/// The Corner Analyzer of a comparison, with how its segments were chosen.
+final class DayCornerAnalyzer {
+  const DayCornerAnalyzer({
+    required this.analyzer,
+    this.note = '',
+    this.theoreticalBestAvailable = false,
+  });
+
+  final CornerAnalyzer analyzer;
+
+  /// Why the segments are another run's or the theoretical best's; empty
+  /// when they are both laps' own.
+  final String note;
+
+  /// The laps share no segments, but the theoretical best's would apply.
+  final bool theoreticalBestAvailable;
 }

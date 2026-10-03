@@ -85,13 +85,25 @@ class _DayResultsPageState extends State<DayResultsPage> {
     ),
   );
 
-  Future<void> _compare(DayLapRow a, DayLapRow b, [(double, double)? focus]) =>
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              ComparisonPage(controller: _controller, a: a, b: b, focus: focus),
-        ),
-      );
+  // With [segmentId], from a result of the theoretical best: the Corner
+  // Analyzer opens on that segment, measured against its segments.
+  Future<void> _compare(
+    DayLapRow a,
+    DayLapRow b,
+    (double, double)? focus, {
+    String? segmentId,
+  }) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ComparisonPage(
+        controller: _controller,
+        a: a,
+        b: b,
+        focus: focus,
+        segmentId: segmentId,
+        fromTheoreticalBest: segmentId != null,
+      ),
+    ),
+  );
 
   /// Asks for lap A, then lap B of its group, and compares them.
   Future<void> _pickComparison() async {
@@ -111,7 +123,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       suggested: _controller.comparisonPartner(a),
     );
     if (b == null || !mounted) return;
-    await _compare(a, b);
+    await _compare(a, b, null);
   }
 
   void _openReport() => Navigator.of(context).push(
@@ -576,6 +588,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       path: path,
       gate: _mapGate,
       wide: wide,
+      onAnalyze: _compare,
       onEditSegments: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => SegmentEditorPage(

@@ -335,11 +335,13 @@ class CornerDetails extends StatelessWidget {
 }
 
 /// Shows [corner] on [lap] in a bottom sheet.
+/// With [onAnalyze], a button opens the corner in the Corner Analyzer.
 Future<void> showCornerDetails(
   BuildContext context,
   DayCorner corner,
-  DayLapReference lap,
-) {
+  DayLapReference lap, {
+  VoidCallback? onAnalyze,
+}) {
   final comparison = corner.compare(lap);
   return showModalBottomSheet<void>(
     context: context,
@@ -348,9 +350,28 @@ Future<void> showCornerDetails(
     builder: (context) => SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: comparison == null
-            ? Text('${corner.name}: this lap was not measured here.')
-            : CornerDetails(corner: corner, comparison: comparison),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (comparison == null)
+              Text('${corner.name}: this lap was not measured here.')
+            else
+              CornerDetails(corner: corner, comparison: comparison),
+            if (onAnalyze != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: OutlinedButton.icon(
+                  key: const ValueKey('cornerOpenAnalyzer'),
+                  icon: const Icon(Icons.compare_arrows),
+                  label: const Text('Open in the Corner Analyzer'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onAnalyze();
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     ),
   );

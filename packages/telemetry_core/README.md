@@ -156,6 +156,20 @@ a background isolate.
   functions, which never compare values measured differently.
   `calculateOutingTheoreticalBest` measures them for every lap and corner
   (`cornerMetrics`).
+- The Corner Analyzer of two compared laps (Overlays
+  `AnalysisControllerCornerAnalyzer.cpp`, `d4d1039`): `CornerAnalyzer` on a
+  comparison's shared axis lists the segments both laps share
+  (`comparisonSharedSegmentation`: the same approved revision, or the
+  theoretical best's segments, `borrowed`, when opened from it) and gives per
+  segment A, B and Δ (A − B) of the sector time, segment speeds, corner
+  speeds, braking point, braking time and peak deceleration, throttle pickup
+  and exit speed, each with its provenance or the reason it is missing, plus
+  the corner's geometric phases and the per-lap figures behind them;
+  `heartRate` summarizes both laps over a range (also across start/finish)
+  and `timeLosses` gives the observations through every segment.
+  `dayComparisonSegmentation` and `dayTheoreticalBestSectorPair` choose the
+  segments and the pair for a day. Trail braking, G-G and driving states are
+  not part of it yet.
 - `dayTheoreticalBest` does it for one group of a day: its eligible laps in
   recording order with their sector times and their loss to the fastest time
   of every segment (`DayLapSectors.lossSeconds`), the theoretical best and
@@ -268,6 +282,12 @@ app, `d4d1039`) against `test/parity/dayreport_reference.json` from
 and A/B comparison (`MapLayers.cpp`, `TrackGeometry.cpp` and the comparison,
 map-layer and lap-chart functions of Overlays' app, `d4d1039`) against
 `test/parity/comparison_reference.json` from `tool/cpp_comparison_dump`.
+`test/parity/corner_analyzer_parity_test.dart` does the same for the Corner
+Analyzer of two compared laps (`comparisonSegmentMetrics`,
+`comparisonSharedSegmentation`, `comparisonHeartRate` and the time-loss
+observations of Overlays' app, `d4d1039`) against
+`test/parity/corner_analyzer_reference.json` from
+`tool/cpp_corner_analyzer_dump`.
 
 Known, deliberate differences:
 
