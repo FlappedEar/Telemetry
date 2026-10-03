@@ -67,23 +67,25 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # IBM Plex, SIL Open Font License 1.1: assets/fonts/OFL.txt.
+  # Sora and JetBrains Mono, SIL Open Font License 1.1: assets/fonts/OFL-*.txt.
   fonts:
-    - family: IBMPlexSans
+    - family: Sora
       fonts:
-        - asset: assets/fonts/IBMPlexSans-400.ttf
-        - asset: assets/fonts/IBMPlexSans-500.ttf
+        - asset: assets/fonts/Sora-400.ttf
+        - asset: assets/fonts/Sora-500.ttf
           weight: 500
-        - asset: assets/fonts/IBMPlexSans-600.ttf
+        - asset: assets/fonts/Sora-600.ttf
           weight: 600
-        - asset: assets/fonts/IBMPlexSans-700.ttf
+        - asset: assets/fonts/Sora-700.ttf
           weight: 700
-    - family: IBMPlexMono
+    - family: JetBrainsMono
       fonts:
-        - asset: assets/fonts/IBMPlexMono-500.ttf
+        - asset: assets/fonts/JetBrainsMono-500.ttf
           weight: 500
-        - asset: assets/fonts/IBMPlexMono-600.ttf
+        - asset: assets/fonts/JetBrainsMono-600.ttf
           weight: 600
+        - asset: assets/fonts/JetBrainsMono-700.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

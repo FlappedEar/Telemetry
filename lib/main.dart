@@ -16,8 +16,7 @@ class TelemetryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FlappedEar Telemetry',
-      theme: FetTheme.light(),
-      darkTheme: FetTheme.dark(),
+      theme: FetTheme.dark(),
       home: home,
     );
   }

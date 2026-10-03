@@ -113,15 +113,15 @@ installing a newer one.
 
 ## Look
 
-`lib/ui/theme.dart` holds the whole look: a white, high-contrast light theme
-for reading a phone in sunlight, with one orange accent, and a dark theme that
-follows the system. Text is IBM Plex Sans, whose digits are all one width so
-lap times line up; lap times in large type use IBM Plex Mono. Both fonts are
-bundled under `assets/fonts/` with their licence (SIL Open Font License 1.1),
-so the app needs no network for them. Timing colours follow the motorsport
-convention through `FetColors`: purple for the fastest of the day, green for
-the fastest of a session, orange for time lost. Screens use the theme's colour
-roles and text styles rather than their own colours.
+`lib/ui/theme.dart` holds the whole look: a dark track-day dashboard of flat
+charcoal panels, after the design language of Track Titan. Your lap is always
+FlappedEar amber (the logo's colour) and the reference lap always blue, on
+maps, charts and lap bars; time lost is red and time gained green. Text is
+Sora with tabular digits, so times line up; lap times in large type use
+JetBrains Mono. Both fonts are bundled under `assets/fonts/` with their
+licences (SIL Open Font License 1.1), so the app needs no network for them.
+Screens use the theme's colour roles, text styles and `FetColors` rather than
+their own colours.
 
 ## Platforms
 
