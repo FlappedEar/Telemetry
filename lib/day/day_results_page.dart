@@ -463,10 +463,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
     try {
       final day = await task.result;
       if (!mounted || generation != _retryGeneration) return;
-      if (_controller.adding ||
-          _controller.dirty ||
-          _controller.runs.length != sessions) {
+      if (_controller.adding || _controller.runs.length != sessions) {
         _tell(l10n.retryRecordingsAddedMeanwhile);
+        return;
+      }
+      if (_controller.dirty) {
+        _tell(l10n.retryRecordingsChangedMeanwhile);
         return;
       }
       if (day.missing.length >= missing && alternatives == 0) {

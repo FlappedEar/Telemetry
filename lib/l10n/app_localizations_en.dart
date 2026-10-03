@@ -669,4 +669,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String retryRecordingsFailed(String reason) {
     return 'The day could not be opened again: $reason';
   }
+
+  @override
+  String get retryRecordingsChangedMeanwhile =>
+      'The day was changed meanwhile. Save it, then retry the recordings.';
 }

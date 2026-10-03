@@ -39,9 +39,16 @@ final class BackgroundTaskFailed implements Exception {
 /// next cancellation check. Either way the job's failures come back as
 /// [BackgroundTaskFailed].
 BackgroundTask<T> runInBackground<A, T>(BackgroundJob<A, T> job, A argument) =>
-    !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    !debugRunInIsolate &&
+        !kIsWeb &&
+        Platform.environment.containsKey('FLUTTER_TEST')
     ? _InlineTask(job, argument)
     : runInIsolate(job, argument);
+
+/// Makes [runInBackground] use its own isolate under `flutter test` too, to
+/// test the app's jobs as it runs them.
+@visibleForTesting
+bool debugRunInIsolate = false;
 
 /// [runInBackground] in its own isolate, also under `flutter test`.
 @visibleForTesting

@@ -1038,5 +1038,9 @@
         "type": "String"
       }
     }
+  },
+  "retryRecordingsChangedMeanwhile": "The day was changed meanwhile. Save it, then retry the recordings.",
+  "@retryRecordingsChangedMeanwhile": {
+    "description": "The day was edited while its recordings were being read again."
   }
 }

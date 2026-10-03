@@ -1,5 +1,6 @@
 // The background task in its own isolate, as the app runs it outside
 // `flutter test` (FET-54). Synthetic recordings only.
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -21,6 +22,28 @@ int _stateError(Object? _, CancellationCheck cancelled) =>
     throw StateError('Out of memory');
 
 int _forever(Object? _, CancellationCheck cancelled) {
+  while (true) {
+    sleep(const Duration(milliseconds: 5));
+  }
+}
+
+/// Returns what Isolate.exit cannot send: an error the job leaves uncaught,
+/// as Isolate.spawn's onError reports it.
+Object _unsendableResult(Object? _, CancellationCheck cancelled) =>
+    ReceivePort();
+
+/// Ends its isolate without a result.
+int _exitsEarly(Object? _, CancellationCheck cancelled) {
+  Isolate.current.kill(priority: Isolate.immediate);
+  while (true) {
+    sleep(const Duration(milliseconds: 5));
+  }
+}
+
+/// Tells [port] when it starts and, through onExit, when its isolate ends.
+int _reportsExit(SendPort port, CancellationCheck cancelled) {
+  Isolate.current.addOnExitListener(port, response: 'exited');
+  port.send('started');
   while (true) {
     sleep(const Duration(milliseconds: 5));
   }
@@ -68,6 +91,42 @@ void main() {
       null,
     );
     await expectLater(task.result, throwsA(isA<BackgroundTaskFailed>()));
+  });
+
+  test('an error left uncaught in the isolate fails the task', () async {
+    await expectLater(
+      runInIsolate(_unsendableResult, null).result,
+      throwsA(isA<BackgroundTaskFailed>()),
+    );
+  });
+
+  test('an isolate ending without a result fails the task', () async {
+    await expectLater(
+      runInIsolate(_exitsEarly, null).result,
+      throwsA(
+        isA<BackgroundTaskFailed>().having(
+          (failed) => failed.message,
+          'message',
+          'The work stopped unexpectedly.',
+        ),
+      ),
+    );
+  });
+
+  test('cancelling ends the isolate', () async {
+    final port = ReceivePort();
+    addTearDown(port.close);
+    final messages = StreamIterator(port);
+    final task = runInIsolate(_reportsExit, port.sendPort);
+    expect(await messages.moveNext(), isTrue);
+    expect(messages.current, 'started');
+    task.cancel();
+    await expectLater(task.result, throwsA(isA<OperationCancelled>()));
+    expect(
+      await messages.moveNext().timeout(const Duration(seconds: 5)),
+      isTrue,
+    );
+    expect(messages.current, 'exited');
   });
 
   test('a cancelled job is stopped', () async {

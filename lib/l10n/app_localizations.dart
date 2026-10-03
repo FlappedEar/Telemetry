@@ -1104,6 +1104,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The day could not be opened again: {reason}'**
   String retryRecordingsFailed(String reason);
+
+  /// The day was edited while its recordings were being read again.
+  ///
+  /// In en, this message translates to:
+  /// **'The day was changed meanwhile. Save it, then retry the recordings.'**
+  String get retryRecordingsChangedMeanwhile;
 }
 
 class _AppLocalizationsDelegate

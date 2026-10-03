@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/background_task.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/theoretical_best_card.dart';
@@ -297,6 +298,67 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 session could not be opened'), findsNothing);
     expect(find.byKey(const ValueKey('retryRecordings')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('retrying the recordings runs in its own isolate', (
+    tester,
+  ) async {
+    debugRunInIsolate = true;
+    addTearDown(() => debugRunInIsolate = false);
+    final outcome = runDayImport((
+      paths: [
+        for (final (name, speeds) in [
+          ('a.vbo', <double>[30, 28, 31]),
+          ('b.vbo', <double>[29, 32]),
+        ])
+          (File(
+            '${directory.path}/$name',
+          )..writeAsStringSync(circuitVbo(speeds))).path,
+      ],
+      includeSubfolders: false,
+    ));
+    final path = '${directory.path}/Day.fetproject';
+    final away = '${directory.path}/away.vbo';
+    final opened = (await tester.runAsync(() async {
+      await saveDayDocument(
+        path,
+        dayDocument(
+          eventId: newEventId(),
+          name: 'Track day',
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          projectPath: path,
+        ),
+      );
+      File('${directory.path}/b.vbo').renameSync(away);
+      return openDay(path);
+    }))!;
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.opened(day: opened, documents: FakeDocuments()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    File(away).renameSync('${directory.path}/b.vbo');
+    await tester.tap(find.byKey(const ValueKey('retryRecordings')));
+    await tester.pump();
+    final missingCard = find.text('1 session could not be opened');
+    for (
+      var tries = 0;
+      tries < 100 && missingCard.evaluate().isNotEmpty;
+      tries++
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(missingCard, findsNothing);
+    expect(find.textContaining('could not be opened again'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
