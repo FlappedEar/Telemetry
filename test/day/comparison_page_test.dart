@@ -642,6 +642,139 @@ void main() {
     });
   }
 
+  testWidgets('a lap page shows the best of the day in blue and compares '
+      'with it', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    final row = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Color barColor(String key) => tester
+        .widget<Material>(
+          find
+              .descendant(
+                of: find.byKey(ValueKey(key)),
+                matching: find.byType(Material),
+              )
+              .first,
+        )
+        .color!;
+    expect(barColor('lapTimeBar'), lapAColorForTest);
+    expect(barColor('lapBestBar'), lapBColorForTest);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('lapTimeBar')),
+        matching: find.text(displayTime(row.durationSeconds)),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('lapBestBar')),
+        matching: find.text(displayTime(best.durationSeconds)),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        '${displayDelta(row.durationSeconds - best.durationSeconds)} '
+        'to the best of the day',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('lapBestBar')));
+    await tester.pumpAndSettle();
+    final page = tester.widget<ComparisonPage>(find.byType(ComparisonPage));
+    expect(page.a.reference, row.reference);
+    expect(page.b.reference, best.reference);
+  });
+
+  testWidgets('an excluded lap\'s best bar does not compare, and an out '
+      'lap has none', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    final row = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    controller.exclude(row, 'Traffic');
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<InkWell>(
+            find.descendant(
+              of: find.byKey(const ValueKey('lapBestBar')),
+              matching: find.byType(InkWell),
+            ),
+          )
+          .onTap,
+      isNull,
+    );
+
+    final out = controller.analysis.rows.firstWhere(
+      (row) => row.type != LapSectionType.lap,
+    );
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: out),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('lapTimeBar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('lapBestBar')), findsNothing);
+    expect(find.byKey(const ValueKey('lapGapToBest')), findsNothing);
+  });
+
+  testWidgets('the best lap of the day has no second bar', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('lapTimeBar')),
+        matching: find.text('Best lap of the day'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('lapBestBar')), findsNothing);
+    expect(find.byKey(const ValueKey('lapGapToBest')), findsNothing);
+  });
+
   testWidgets('a lap page speaks Polish', (tester) async {
     addTearDown(() => Intl.defaultLocale = null);
     final outcome = importDay();

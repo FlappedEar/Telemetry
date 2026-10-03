@@ -31,6 +31,7 @@ import 'segment_editor_page.dart';
 import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
+import '../ui/headline_bar.dart';
 import '../ui/theme.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
@@ -866,7 +867,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         const SizedBox(height: 12),
       ],
       if (best != null) ...[
-        _HeadlineBar(
+        HeadlineBar(
           key: const ValueKey('dayBestBar'),
           label: l10n.dayBestLabel,
           title: l10n.lap(best),
@@ -878,7 +879,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         if (_controller.theoreticalBest?.theoreticalBestSeconds
             case final seconds?) ...[
           const SizedBox(height: 4),
-          _HeadlineBar(
+          HeadlineBar(
             key: const ValueKey('dayTheoreticalBar'),
             label: l10n.theoreticalBestLabel,
             title: l10n.theoreticalBestHint,
@@ -1440,78 +1441,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
 }
 
 enum _Section { day, laps, compare }
-
-/// A headline result as a filled bar, as on a timing screen: a small label
-/// and a name on the left, the time large on the right.
-class _HeadlineBar extends StatelessWidget {
-  const _HeadlineBar({
-    super.key,
-    required this.label,
-    required this.title,
-    required this.time,
-    required this.color,
-    required this.onColor,
-    this.onTap,
-  });
-
-  final String label;
-  final String title;
-  final String time;
-  final Color color;
-  final Color onColor;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Material(
-      color: color,
-      borderRadius: const BorderRadius.all(Radius.circular(4)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        label,
-                        style: text.labelSmall?.copyWith(
-                          color: onColor,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      Text(
-                        title,
-                        style: text.titleSmall?.copyWith(color: onColor),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  time,
-                  style: text.headlineSmall?.copyWith(
-                    fontFamily: FetTheme.mono,
-                    fontWeight: FontWeight.w700,
-                    color: onColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// The day saved at [path] opened again, as [DayResultsPage]'s "Retry
 /// recordings" runs it in the background: top-level, so that nothing of

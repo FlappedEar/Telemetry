@@ -267,6 +267,15 @@ void main() {
             300,
             scrollable: summary,
           );
+          // The circuit's edit button, which may be just past the heading.
+          for (
+            var i = 0;
+            i < 20 && find.byIcon(Icons.edit_outlined).evaluate().isEmpty;
+            ++i
+          ) {
+            await tester.drag(summary, const Offset(0, -100));
+            await tester.pumpAndSettle();
+          }
           final circuit = find.byIcon(Icons.edit_outlined).first;
           await tester.ensureVisible(circuit);
           await tester.pumpAndSettle();

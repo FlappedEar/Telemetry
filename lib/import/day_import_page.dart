@@ -18,6 +18,7 @@ import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../settings_dialog.dart';
+import '../ui/theme.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
 import 'import_runner.dart' show DayAppender, IsolateDayAppender;
@@ -112,14 +113,7 @@ final class PlatformRecordingPickers implements RecordingPickers {
 String _lapSummary(AppLocalizations l10n, LapSession laps) {
   switch (laps.status) {
     case LapSessionStatus.available:
-      final count = laps.timedLaps.length;
-      final fastest = laps.fastestLapIndex;
-      return fastest == null
-          ? l10n.importPageLaps(count)
-          : l10n.importPageLapsWithBest(
-              count,
-              displayTime(laps.timedLaps[fastest].durationSeconds),
-            );
+      return l10n.importPageLaps(laps.timedLaps.length);
     case LapSessionStatus.noSourceStartGate:
       return l10n.importPageNoGate;
     case LapSessionStatus.ambiguousSourceStartGate:
@@ -132,6 +126,13 @@ String _lapSummary(AppLocalizations l10n, LapSession laps) {
     case LapSessionStatus.insufficientPasses:
       return l10n.importPageTooFewPasses;
   }
+}
+
+// A session's fastest timed lap, in seconds; null without one.
+double? _bestSeconds(LapSession laps) {
+  if (laps.status != LapSessionStatus.available) return null;
+  final fastest = laps.fastestLapIndex;
+  return fastest == null ? null : laps.timedLaps[fastest].durationSeconds;
 }
 
 // What the import says (`DayImportFailed.message`, the notes of a scan and
@@ -951,55 +952,83 @@ class _DayImportPageState extends State<DayImportPage> {
         ),
         const SizedBox(height: 16),
       ],
-      Text(
-        _acceptsDrops
-            ? context.l10n.importPageIntroDrop
-            : _picksFolders
-            ? context.l10n.importPageIntroFolder
-            : context.l10n.importPageIntro,
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
-      const SizedBox(height: 12),
-      Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          FilledButton.icon(
-            onPressed: enabled && !_opening ? _pickRecordings : null,
-            icon: const Icon(Icons.insert_drive_file_outlined),
-            label: Text(context.l10n.importPageChooseRecordings),
+      // Where a day starts: the recordings, a folder or a saved day, in one
+      // panel the recordings can also be dropped on.
+      Card(
+        key: const ValueKey('importChoices'),
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    _acceptsDrops
+                        ? Icons.file_download_outlined
+                        : Icons.insert_drive_file_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _acceptsDrops
+                          ? context.l10n.importPageIntroDrop
+                          : _picksFolders
+                          ? context.l10n.importPageIntroFolder
+                          : context.l10n.importPageIntro,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: enabled && !_opening ? _pickRecordings : null,
+                    icon: const Icon(Icons.insert_drive_file_outlined),
+                    label: Text(context.l10n.importPageChooseRecordings),
+                  ),
+                  if (_picksFolders)
+                    OutlinedButton.icon(
+                      onPressed: enabled ? _pickFolder : null,
+                      icon: const Icon(Icons.folder_open_outlined),
+                      label: Text(context.l10n.importPageChooseFolder),
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: enabled && !_opening ? _openDay : null,
+                    icon: const Icon(Icons.history),
+                    label: Text(
+                      _opening
+                          ? context.l10n.importPageOpening
+                          : context.l10n.importPageOpenSaved,
+                    ),
+                  ),
+                  if (_picksFolders)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value: _includeSubfolders,
+                          onChanged: enabled
+                              ? (value) => setState(
+                                  () => _includeSubfolders = value ?? false,
+                                )
+                              : null,
+                        ),
+                        Text(context.l10n.importPageIncludeSubfolders),
+                      ],
+                    ),
+                ],
+              ),
+            ],
           ),
-          if (_picksFolders)
-            OutlinedButton.icon(
-              onPressed: enabled ? _pickFolder : null,
-              icon: const Icon(Icons.folder_open_outlined),
-              label: Text(context.l10n.importPageChooseFolder),
-            ),
-          OutlinedButton.icon(
-            onPressed: enabled && !_opening ? _openDay : null,
-            icon: const Icon(Icons.history),
-            label: Text(
-              _opening
-                  ? context.l10n.importPageOpening
-                  : context.l10n.importPageOpenSaved,
-            ),
-          ),
-          if (_picksFolders)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Checkbox(
-                  value: _includeSubfolders,
-                  onChanged: enabled
-                      ? (value) =>
-                            setState(() => _includeSubfolders = value ?? false)
-                      : null,
-                ),
-                Text(context.l10n.importPageIncludeSubfolders),
-              ],
-            ),
-        ],
+        ),
       ),
     ];
   }
@@ -1014,7 +1043,12 @@ class _DayImportPageState extends State<DayImportPage> {
         for (final note in notes)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(l10n.importMessage(note)),
+            child: Text(
+              l10n.importMessage(note),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
       ],
     ];
@@ -1073,14 +1107,109 @@ class _DayImportPageState extends State<DayImportPage> {
               ),
             ),
           ],
-          for (final named in runs)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.session(named.name)),
-              subtitle: Text(_lapSummary(l10n, named.run.laps)),
-            ),
+          const SizedBox(height: 12),
+          _sessions(context, runs, analysis),
           ...notes(finishedNotes),
         ];
     }
+  }
+
+  // The imported sessions as a timing table: each session's laps, and its
+  // best time on the right. A session the day ranks shows its best ranked
+  // lap, and the session of the best lap of the day is purple and bold, as
+  // on the day page; a session outside the ranking (another layout) shows
+  // its recording's fastest lap.
+  Widget _sessions(
+    BuildContext context,
+    List<NamedRun> runs,
+    DayAnalysis? analysis,
+  ) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final colors = FetColors.of(context);
+    final ranking = analysis?.ranking;
+    final bests = [
+      for (final named in runs)
+        switch (ranking?.runs.where((run) => run.runId == named.run.id)) {
+          final ranked? when ranked.isNotEmpty =>
+            ranked.first.bestLap?.durationSeconds,
+          _ => _bestSeconds(named.run.laps),
+        },
+    ];
+    final dayBestRun = ranking?.bestOfDay?.runId;
+    // A ranked session with laps but none ranked says so, as on the day page.
+    String summary(int i) {
+      final laps = runs[i].run.laps;
+      final ranked = ranking?.runs.where((run) => run.runId == runs[i].run.id);
+      return ranked != null &&
+              ranked.isNotEmpty &&
+              bests[i] == null &&
+              laps.status == LapSessionStatus.available &&
+              laps.timedLaps.isNotEmpty
+          ? l10n.noRankedLap(laps.timedLaps.length)
+          : _lapSummary(l10n, laps);
+    }
+
+    return Card(
+      key: const ValueKey('importSessions'),
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (var i = 0; i < runs.length; ++i) ...[
+            if (i > 0) const Divider(height: 1),
+            Padding(
+              key: ValueKey('importSession ${runs[i].name}'),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.session(runs[i].name),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Text(
+                          summary(i),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (bests[i] case final seconds?)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          l10n.importPageBest,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          displayTime(seconds),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontFamily: FetTheme.mono,
+                            fontWeight: runs[i].run.id == dayBestRun
+                                ? FontWeight.w700
+                                : null,
+                            color: runs[i].run.id == dayBestRun
+                                ? colors.dayBest
+                                : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

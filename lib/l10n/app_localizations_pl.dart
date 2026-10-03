@@ -2423,11 +2423,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lapPageBestOfDay => 'Najlepsze okrążenie dnia';
 
   @override
-  String lapPageToBestOfDay(String delta, String lap) {
-    return '$delta do najlepszego okrążenia dnia ($lap)';
-  }
-
-  @override
   String lapPageBestOfSession(String session) {
     return 'Najlepsze okrążenie – $session';
   }
@@ -3460,18 +3455,6 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String importPageLapsWithBest(int count, String time) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count okrążeń · najlepsze $time',
-      few: '$count okrążenia · najlepsze $time',
-      one: '1 okrążenie · najlepsze $time',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get importPageNoGate =>
       'Brak okrążeń: nagranie nie ma linii start/meta.';
 
@@ -4107,4 +4090,15 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get recordingsBusyAdd =>
       'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.';
+
+  @override
+  String get lapPageThisLap => 'To okrążenie';
+
+  @override
+  String lapPageGapToBest(String delta) {
+    return '$delta do najlepszego okrążenia dnia';
+  }
+
+  @override
+  String get importPageBest => 'Najlepsze';
 }
