@@ -169,6 +169,9 @@ jobs:
   publish:
     name: Publish the release
     needs: [version, android, macos]
+    # Android comes first: the release goes out with the APK even when the
+    # Mac build fails, and the Mac zip is added to it once that is fixed.
+    if: ${{ !cancelled() && needs.android.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -182,6 +185,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
+          if [ "${{ needs.macos.result }}" != success ]; then
+            echo "::warning::The macOS build did not succeed; the release has the Android APK only."
+          fi
           ls -l dist
           (cd dist && shasum -a 256 * > SHA256SUMS.txt)
           prerelease=
