@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry/day/apple_map.dart';
 import 'package:telemetry/day/track_map.dart';
+import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'blank_tiles.dart';
@@ -155,6 +156,8 @@ void main() {
         debugDefaultTargetPlatformOverride = platform;
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: SizedBox(width: 400, height: 300, child: _map()),
             ),
@@ -199,6 +202,8 @@ void main() {
       addTearDown(cursor.dispose);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Center(
               child: SizedBox(
@@ -455,6 +460,8 @@ void main() {
         mock(tester);
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: Center(
                 child: SizedBox(width: 400, height: 300, child: _map()),

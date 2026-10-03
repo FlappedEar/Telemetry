@@ -73,5 +73,6 @@
   "coachWhyBefore": "Pierwsze z trzech okrążeń",
   "coachWhyValues": "{observed} wobec {reference}",
   "coachWhySupport": "Wsparcie {score} z 0.9. Ostrożna ocena, jak dobrze okrążenia potwierdzają wzorzec, a nie prawdopodobieństwo.",
-  "coachWhyMap": "Ślad najlepszego okrążenia z wyróżnionym: {segment}"
+  "coachWhyMap": "Ślad najlepszego okrążenia z wyróżnionym: {segment}",
+  "appleMapLegal": "Informacje prawne"
 }

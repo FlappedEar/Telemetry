@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 
+import '../l10n.dart';
 import 'track_map.dart';
 
 // Apple Maps (MapKit) under the trace, on iPhone, iPad and Mac only.
@@ -252,7 +253,10 @@ class AppleMapLegal extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Center(
                   widthFactor: 1,
-                  child: Text('Legal', style: theme.textTheme.labelMedium),
+                  child: Text(
+                    context.l10n.appleMapLegal,
+                    style: theme.textTheme.labelMedium,
+                  ),
                 ),
               ),
             ),

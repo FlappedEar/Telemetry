@@ -541,6 +541,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Best lap trace with {segment} highlighted'**
   String coachWhyMap(String segment);
+
+  /// Link to Apple Maps' legal notices, shown on the Apple Maps background.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get appleMapLegal;
 }
 
 class _AppLocalizationsDelegate
