@@ -1050,5 +1050,247 @@
   "lapsLastComparison": "Last comparison",
   "@lapsLastComparison": {
     "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
+  },
+  "segmentReviewOpen": "Review proposals",
+  "@segmentReviewOpen": {
+    "description": "Button in the segment editor that opens the optional review of the automatic segment proposals."
+  },
+  "segmentReviewTitle": "Segment proposals",
+  "@segmentReviewTitle": {
+    "description": "Title of the segment proposal review screen."
+  },
+  "segmentReviewUndo": "Undo",
+  "@segmentReviewUndo": {
+    "description": "Undoes the last change of the segments or of a review decision."
+  },
+  "segmentReviewRedo": "Redo",
+  "@segmentReviewRedo": {
+    "description": "Redoes the last undone change of the segments or of a review decision."
+  },
+  "segmentReviewIntro": "Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.",
+  "@segmentReviewIntro": {
+    "description": "Explains that the review is optional and what rejecting does."
+  },
+  "segmentReviewSummary": "{count, plural, =1{1 proposal from {lap}} other{{count} proposals from {lap}}}",
+  "@segmentReviewSummary": {
+    "description": "How many proposals there are and the lap they were made from.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      },
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "segmentReviewApproveAll": "Approve all",
+  "@segmentReviewApproveAll": {
+    "description": "Approves every open proposal (rejected ones stay out)."
+  },
+  "segmentReviewRecompute": "Recompute",
+  "@segmentReviewRecompute": {
+    "description": "Computes the proposals again from the lap."
+  },
+  "segmentReviewApproved": "{count, plural, =1{1 proposal approved} other{{count} proposals approved}}",
+  "@segmentReviewApproved": {
+    "description": "Shown after Approve all.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "segmentReviewNoneApproved": "No proposal could be approved.",
+  "@segmentReviewNoneApproved": {
+    "description": "Approve all found nothing it could approve."
+  },
+  "segmentReviewNotNow": "The proposals cannot be changed right now.",
+  "@segmentReviewNotNow": {
+    "description": "A review action could not be done, for example while the day is saved."
+  },
+  "segmentReviewReject": "Reject",
+  "@segmentReviewReject": {
+    "description": "Rejects this proposal."
+  },
+  "segmentReviewRestore": "Restore",
+  "@segmentReviewRestore": {
+    "description": "Takes back the rejection of this proposal."
+  },
+  "segmentReviewStateProposed": "Proposed",
+  "@segmentReviewStateProposed": {
+    "description": "State of a proposal awaiting a decision."
+  },
+  "segmentReviewStateApproved": "Approved",
+  "@segmentReviewStateApproved": {
+    "description": "State of a proposal that is an approved segment."
+  },
+  "segmentReviewStateRejected": "Rejected",
+  "@segmentReviewStateRejected": {
+    "description": "State of a proposal the driver rejected."
+  },
+  "segmentReviewStateSuperseded": "Overlaps approved",
+  "@segmentReviewStateSuperseded": {
+    "description": "State of a proposal that overlaps an approved segment that came from an edit."
+  },
+  "segmentReviewCorner": "Corner",
+  "@segmentReviewCorner": {
+    "description": "Segment type."
+  },
+  "segmentReviewStraight": "Straight",
+  "@segmentReviewStraight": {
+    "description": "Segment type."
+  },
+  "segmentReviewSector": "Sector",
+  "@segmentReviewSector": {
+    "description": "Segment type."
+  },
+  "segmentReviewTurnLeft": "{degrees}° left",
+  "@segmentReviewTurnLeft": {
+    "description": "A corner's total heading change, turning left.",
+    "placeholders": {
+      "degrees": {
+        "type": "String",
+        "example": "92"
+      }
+    }
+  },
+  "segmentReviewTurnRight": "{degrees}° right",
+  "@segmentReviewTurnRight": {
+    "description": "A corner's total heading change, turning right.",
+    "placeholders": {
+      "degrees": {
+        "type": "String",
+        "example": "92"
+      }
+    }
+  },
+  "segmentReviewBounds": "{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)",
+  "@segmentReviewBounds": {
+    "description": "A proposal's start and end in metres from the line with their tolerance, and its length.",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "120.0"
+      },
+      "startTolerance": {
+        "type": "String",
+        "example": "8"
+      },
+      "end": {
+        "type": "String",
+        "example": "210.0"
+      },
+      "endTolerance": {
+        "type": "String",
+        "example": "8"
+      },
+      "length": {
+        "type": "String",
+        "example": "90.0"
+      }
+    }
+  },
+  "segmentReviewCrossesLine": "Crosses start/finish",
+  "@segmentReviewCrossesLine": {
+    "description": "The proposal runs across the start/finish line."
+  },
+  "segmentReviewStartUncertain": "Start uncertain: {reasons}",
+  "@segmentReviewStartUncertain": {
+    "description": "Why the proposal's start is uncertain.",
+    "placeholders": {
+      "reasons": {
+        "type": "String",
+        "example": "Short straight"
+      }
+    }
+  },
+  "segmentReviewEndUncertain": "End uncertain: {reasons}",
+  "@segmentReviewEndUncertain": {
+    "description": "Why the proposal's end is uncertain.",
+    "placeholders": {
+      "reasons": {
+        "type": "String",
+        "example": "Short straight"
+      }
+    }
+  },
+  "segmentReviewConnectedCorners": "Corners connect without a straight",
+  "@segmentReviewConnectedCorners": {
+    "description": "Uncertainty: no straight between two corners."
+  },
+  "segmentReviewShortStraight": "Short straight",
+  "@segmentReviewShortStraight": {
+    "description": "Uncertainty: the straight next to this boundary is short."
+  },
+  "segmentReviewGpsGap": "Near a GPS gap in this lap",
+  "@segmentReviewGpsGap": {
+    "description": "Uncertainty: the lap has no GPS near this boundary."
+  },
+  "segmentReviewApex": "Geometric apex {at} m ±{tolerance} m",
+  "@segmentReviewApex": {
+    "description": "Where the corner turns most, from the track's shape (not from speed).",
+    "placeholders": {
+      "at": {
+        "type": "String",
+        "example": "160.0"
+      },
+      "tolerance": {
+        "type": "String",
+        "example": "4"
+      }
+    }
+  },
+  "segmentReviewApexMultiple": "Multiple apexes — review manually",
+  "@segmentReviewApexMultiple": {
+    "description": "The corner has more than one apex, so none is proposed."
+  },
+  "segmentReviewApexCrossesGate": "Corner crosses the timing gate",
+  "@segmentReviewApexCrossesGate": {
+    "description": "No apex: the corner runs across the timing gate."
+  },
+  "segmentReviewApexUnresolved": "Apex unresolved",
+  "@segmentReviewApexUnresolved": {
+    "description": "No apex could be found for this corner."
+  },
+  "segmentReviewWaiting": "Timing every lap on one track axis…",
+  "@segmentReviewWaiting": {
+    "description": "Shown while the theoretical best is calculated before the review."
+  },
+  "segmentReviewComputing": "Finding corners and straights…",
+  "@segmentReviewComputing": {
+    "description": "Shown while the proposals are computed."
+  },
+  "segmentReviewNoLap": "The lap the segments are measured on is not available.",
+  "@segmentReviewNoLap": {
+    "description": "No proposals: the lap or its recording is missing."
+  },
+  "segmentReviewNoAxis": "This lap's GPS trace cannot be made into a track axis.",
+  "@segmentReviewNoAxis": {
+    "description": "No proposals: the lap's GPS trace is unusable."
+  },
+  "segmentReviewContinuousCorner": "No automatic proposal: this lap turns continuously, with no straight between corners.",
+  "@segmentReviewContinuousCorner": {
+    "description": "No proposals: unsplittable geometry."
+  },
+  "segmentReviewNoCorners": "No automatic proposal: no corner was detected on this lap.",
+  "@segmentReviewNoCorners": {
+    "description": "No proposals: no corners."
+  },
+  "segmentReviewTooMany": "No automatic proposal: the lap would split into more than {count} segments.",
+  "@segmentReviewTooMany": {
+    "description": "No proposals: too many segments.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "segmentReviewFailed": "The proposals could not be computed.",
+  "@segmentReviewFailed": {
+    "description": "The proposals failed."
   }
 }

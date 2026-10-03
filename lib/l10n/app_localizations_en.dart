@@ -679,4 +679,170 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Last comparison';
+
+  @override
+  String get segmentReviewOpen => 'Review proposals';
+
+  @override
+  String get segmentReviewTitle => 'Segment proposals';
+
+  @override
+  String get segmentReviewUndo => 'Undo';
+
+  @override
+  String get segmentReviewRedo => 'Redo';
+
+  @override
+  String get segmentReviewIntro =>
+      'Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.';
+
+  @override
+  String segmentReviewSummary(int count, String lap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count proposals from $lap',
+      one: '1 proposal from $lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewApproveAll => 'Approve all';
+
+  @override
+  String get segmentReviewRecompute => 'Recompute';
+
+  @override
+  String segmentReviewApproved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count proposals approved',
+      one: '1 proposal approved',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewNoneApproved => 'No proposal could be approved.';
+
+  @override
+  String get segmentReviewNotNow =>
+      'The proposals cannot be changed right now.';
+
+  @override
+  String get segmentReviewReject => 'Reject';
+
+  @override
+  String get segmentReviewRestore => 'Restore';
+
+  @override
+  String get segmentReviewStateProposed => 'Proposed';
+
+  @override
+  String get segmentReviewStateApproved => 'Approved';
+
+  @override
+  String get segmentReviewStateRejected => 'Rejected';
+
+  @override
+  String get segmentReviewStateSuperseded => 'Overlaps approved';
+
+  @override
+  String get segmentReviewCorner => 'Corner';
+
+  @override
+  String get segmentReviewStraight => 'Straight';
+
+  @override
+  String get segmentReviewSector => 'Sector';
+
+  @override
+  String segmentReviewTurnLeft(String degrees) {
+    return '$degrees° left';
+  }
+
+  @override
+  String segmentReviewTurnRight(String degrees) {
+    return '$degrees° right';
+  }
+
+  @override
+  String segmentReviewBounds(
+    String start,
+    String startTolerance,
+    String end,
+    String endTolerance,
+    String length,
+  ) {
+    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
+  }
+
+  @override
+  String get segmentReviewCrossesLine => 'Crosses start/finish';
+
+  @override
+  String segmentReviewStartUncertain(String reasons) {
+    return 'Start uncertain: $reasons';
+  }
+
+  @override
+  String segmentReviewEndUncertain(String reasons) {
+    return 'End uncertain: $reasons';
+  }
+
+  @override
+  String get segmentReviewConnectedCorners =>
+      'Corners connect without a straight';
+
+  @override
+  String get segmentReviewShortStraight => 'Short straight';
+
+  @override
+  String get segmentReviewGpsGap => 'Near a GPS gap in this lap';
+
+  @override
+  String segmentReviewApex(String at, String tolerance) {
+    return 'Geometric apex $at m ±$tolerance m';
+  }
+
+  @override
+  String get segmentReviewApexMultiple => 'Multiple apexes — review manually';
+
+  @override
+  String get segmentReviewApexCrossesGate => 'Corner crosses the timing gate';
+
+  @override
+  String get segmentReviewApexUnresolved => 'Apex unresolved';
+
+  @override
+  String get segmentReviewWaiting => 'Timing every lap on one track axis…';
+
+  @override
+  String get segmentReviewComputing => 'Finding corners and straights…';
+
+  @override
+  String get segmentReviewNoLap =>
+      'The lap the segments are measured on is not available.';
+
+  @override
+  String get segmentReviewNoAxis =>
+      'This lap\'s GPS trace cannot be made into a track axis.';
+
+  @override
+  String get segmentReviewContinuousCorner =>
+      'No automatic proposal: this lap turns continuously, with no straight between corners.';
+
+  @override
+  String get segmentReviewNoCorners =>
+      'No automatic proposal: no corner was detected on this lap.';
+
+  @override
+  String segmentReviewTooMany(int count) {
+    return 'No automatic proposal: the lap would split into more than $count segments.';
+  }
+
+  @override
+  String get segmentReviewFailed => 'The proposals could not be computed.';
 }

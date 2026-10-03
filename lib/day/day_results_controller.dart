@@ -31,6 +31,19 @@ Future<DayTheoreticalBest> defaultTheoreticalBestRunner(
     ? Future.microtask(job)
     : Isolate.run(job);
 
+/// Computes the segment proposals the review shows. Replaced in widget
+/// tests like [TheoreticalBestRunner].
+typedef SegmentReviewRunner = Future<DayProposalReview> Function(
+  DayProposalReview Function() job,
+);
+
+/// In a background isolate, or directly under `flutter test`.
+Future<DayProposalReview> defaultSegmentReviewRunner(
+  DayProposalReview Function() job,
+) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    ? Future.microtask(job)
+    : Isolate.run(job);
+
 /// Runs the coach's job; replaced in widget tests like
 /// [TheoreticalBestRunner].
 typedef CoachRunner = Future<DayCoach> Function(DayCoach Function() job);
@@ -187,6 +200,7 @@ final class DayResultsController extends ChangeNotifier {
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
     CoachRunner? coachRunner,
+    SegmentReviewRunner? segmentReviewRunner,
     ChannelSummariesRunner? channelSummariesRunner,
     FusionRunner? fusionRunner,
     DayAppender? appender,
@@ -200,6 +214,7 @@ final class DayResultsController extends ChangeNotifier {
        _fusions = {...fusions},
        _fusionRunner = fusionRunner ?? defaultFusionRunner,
        _coachRunner = coachRunner ?? defaultCoachRunner,
+       _segmentReviewRunner = segmentReviewRunner ?? defaultSegmentReviewRunner,
        _appender = appender ?? const IsolateDayAppender(),
        diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
@@ -766,6 +781,10 @@ final class DayResultsController extends ChangeNotifier {
 
   final TheoreticalBestRunner _theoreticalBestRunner;
   final CoachRunner _coachRunner;
+  final SegmentReviewRunner _segmentReviewRunner;
+  DayProposalReview? _segmentReview;
+  bool _segmentReviewLoading = false;
+  int _segmentReviewGeneration = 0;
   DayCoach? _coach;
   bool _coachLoading = false;
   DayTheoreticalBest? _theoreticalBest;
@@ -819,6 +838,7 @@ final class DayResultsController extends ChangeNotifier {
         previous: _document,
         previousPath: _documentBase,
         trackSegments: _segmentEdits.runs,
+        trackSegmentReviews: _segmentEdits.reviews,
         groupChosen: _groupDecided,
         comparison: _comparisonChoice,
         fusions: _fusions,
@@ -2000,13 +2020,156 @@ final class DayResultsController extends ChangeNotifier {
   String _segmentHistory({required bool undo}) {
     if (_saving) return 'The day is being saved.';
     final saved = _savedRuns;
+    final timing = undo
+        ? _segmentEdits.undoChangesSegments
+        : _segmentEdits.redoChangesSegments;
     final error = undo ? _segmentEdits.undo(saved) : _segmentEdits.redo(saved);
-    if (error.isEmpty) {
+    if (error.isEmpty && timing) {
       _segmentsChanged();
+    } else if (error.isEmpty) {
+      _reviewDecisionChanged();
     } else {
       notifyListeners();
     }
     return error;
+  }
+
+  // A review decision changed the day but not its segments, so nothing is
+  // timed again.
+  void _reviewDecisionChanged() {
+    _revision++;
+    _dirty = true;
+    _additionClock = null;
+    _scheduleRecovery();
+    notifyListeners();
+  }
+
+  /// The proposals of the lap the day's segments are measured on, for the
+  /// optional segment review (FET-56); null until [requestSegmentReview] has
+  /// computed them for the current theoretical best.
+  DayProposalReview? get segmentReview {
+    final result = _theoreticalBest;
+    final review = _segmentReview;
+    return result == null || review == null || !review.matches(result)
+        ? null
+        : review;
+  }
+
+  bool get segmentReviewLoading => _segmentReviewLoading;
+
+  /// Each proposal of [segmentReview] and its state against the segments
+  /// approved now and the rejections stored with the day.
+  List<SegmentReviewItem> get segmentReviewItems {
+    final result = _theoreticalBest;
+    final review = segmentReview;
+    if (result == null || review == null || _theoreticalBestLoading) {
+      return const [];
+    }
+    return review.items(result.runSegments, _storedReview(review.runId));
+  }
+
+  Object? _storedReview(String runId) {
+    for (final value in _documentRuns) {
+      if (value is Map<String, Object?> && value['id'] == runId) {
+        return value['trackSegmentReview'];
+      }
+    }
+    return null;
+  }
+
+  /// Computes the proposals of the lap the theoretical best's segments are
+  /// measured on, in the background; with [recompute], again even when they
+  /// are there (Overlays' "Recompute proposals"). A result for a lap that
+  /// is no longer the one reviewed is dropped.
+  Future<void> requestSegmentReview({bool recompute = false}) async {
+    final result = _theoreticalBest;
+    if (_disposed ||
+        result == null ||
+        _theoreticalBestLoading ||
+        result.state != DayTheoreticalBestState.ready) {
+      return;
+    }
+    if (!recompute && (_segmentReviewLoading || segmentReview != null)) return;
+    final generation = ++_segmentReviewGeneration;
+    _segmentReviewLoading = true;
+    notifyListeners();
+    final lap = segmentReviewLap(result);
+    final run = lap == null ? null : outingRuns(runs)[lap.runId];
+    DayProposalReview review;
+    try {
+      review = await _segmentReviewRunner(_segmentReviewJob(result, lap, run));
+    } on Object catch (error) {
+      review = DayProposalReview(
+        groupId: result.groupId,
+        runId: result.segmentRunId,
+        lap: lap,
+        message: '$error',
+        failed: true,
+      );
+    }
+    if (_disposed || generation != _segmentReviewGeneration) return;
+    _segmentReview = review;
+    _segmentReviewLoading = false;
+    notifyListeners();
+  }
+
+  // Built outside the controller so the isolate's closure holds only its
+  // inputs.
+  static DayProposalReview Function() _segmentReviewJob(
+    DayTheoreticalBest result,
+    DayLapRow? lap,
+    OutingRun? run,
+  ) {
+    // Only what the review needs crosses to the isolate.
+    final shell = DayTheoreticalBest(
+      groupId: result.groupId,
+      state: result.state,
+      segmentRunId: result.segmentRunId,
+    );
+    return () => dayProposalReview(shell, lap, run);
+  }
+
+  /// Computes the proposals again (Overlays' "Recompute proposals").
+  Future<void> recomputeSegmentProposals() =>
+      requestSegmentReview(recompute: true);
+
+  /// Rejects proposal [index] of [segmentReview], or with [rejected] false
+  /// takes the rejection back. The decision is saved with the day and
+  /// undone like an edit; the segments do not change. Returns why not, or
+  /// an empty string.
+  String rejectSegmentProposal(int index, {bool rejected = true}) {
+    final result = _theoreticalBest;
+    final review = segmentReview;
+    if (_saving) return 'The day is being saved.';
+    if (result == null || review == null || _theoreticalBestLoading) {
+      return 'The proposals are not ready yet.';
+    }
+    final error = _segmentEdits.setRejected(
+      result,
+      review,
+      _savedRuns,
+      index,
+      rejected: rejected,
+    );
+    if (error.isEmpty) _reviewDecisionChanged();
+    return error;
+  }
+
+  /// Approves every open proposal of [segmentReview] (rejected ones stay
+  /// out), as Overlays' "Approve all". Every lap is timed again. Returns
+  /// how many were approved, or why none.
+  ({int approved, String error}) approveAllSegmentProposals() {
+    final review = segmentReview;
+    if (review == null) {
+      return (approved: 0, error: 'The proposals are not ready yet.');
+    }
+    var approved = 0;
+    final error = _segmentEdit((result) {
+      final outcome = _segmentEdits.approveAll(result, review, _savedRuns);
+      approved = outcome.approved;
+      return outcome.error;
+    });
+    return (approved: error.isEmpty ? approved : 0, error: error);
   }
 
   /// Undoes the last segment edit.
@@ -2055,6 +2218,7 @@ final class DayResultsController extends ChangeNotifier {
     final analysisNow = _analysis;
     final exclusionsNow = {..._exclusions};
     final segmentsNow = _segmentEdits.runs;
+    final reviewsNow = _segmentEdits.reviews;
     final groupChosenNow = _groupDecided;
     final comparisonNow = _comparisonChoice;
     final fusionsNow = {..._fusions};
@@ -2079,6 +2243,7 @@ final class DayResultsController extends ChangeNotifier {
             previous: previous,
             previousPath: previousBase,
             trackSegments: segmentsNow,
+            trackSegmentReviews: reviewsNow,
             groupChosen: groupChosenNow,
             comparison: comparisonNow,
             fusions: fusionsNow,

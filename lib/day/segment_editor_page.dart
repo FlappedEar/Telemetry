@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import '../l10n.dart';
 import 'day_results_controller.dart';
+import 'segment_review_page.dart';
 import 'theoretical_best_card.dart';
 import 'track_map.dart';
 
@@ -23,7 +24,9 @@ String segmentTypeLabel(String type) => switch (type) {
 /// map with the segment boundaries, and the segments in lap order. Tap a
 /// segment to rename it, change its type, move its start or end, split it,
 /// merge it with the next one or remove it. Each change times every lap
-/// again; "Restore automatic" goes back to the best lap's proposals.
+/// again; "Restore automatic" goes back to the best lap's proposals, and
+/// "Review proposals" opens the optional proposal review
+/// ([SegmentReviewPage]).
 class SegmentEditorPage extends StatefulWidget {
   const SegmentEditorPage({
     super.key,
@@ -387,6 +390,26 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
               : 'Your corrections are saved with the day and are never replaced '
                     'by automatic segments.',
           style: theme.textTheme.bodySmall,
+        ),
+      ),
+      // The optional review of the automatic proposals (FET-56).
+      Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const ValueKey('reviewProposals'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(kMinInteractiveDimension, 48),
+            ),
+            icon: const Icon(Icons.fact_check_outlined),
+            label: Text(l10n.segmentReviewOpen),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SegmentReviewPage(controller: _controller),
+              ),
+            ),
+          ),
         ),
       ),
       const Divider(height: 1),

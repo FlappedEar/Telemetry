@@ -7,10 +7,18 @@
 // are never replaced by automatic ones on a later save. Restoring the
 // automatic segments removes the group's approved segments, so the best lap's
 // proposals are approved again, as for a new day.
+//
+// The optional proposal review (FET-56, day_segment_review.dart) approves
+// proposals into the same `trackSegments` and stores rejections in the run's
+// `trackSegmentReview`, as Overlays does (setSegmentProposalRejected, KAN-50);
+// both go through the same history, so a rejection is undone like an edit.
 import 'dart:math' as math;
+
+import 'package:fetproject/fetproject.dart' show makeTrackSegment;
 
 import '../analysis/track_segment_editing.dart';
 import '../analysis/track_segment_review.dart';
+import 'day_segment_review.dart';
 import 'day_theoretical_best.dart';
 
 Map<String, Object?>? _object(Object? value) => value is Map<String, Object?> ? value : null;
@@ -24,6 +32,39 @@ List<Map<String, Object?>> _segmentsOf(Object? value) => [
 /// The name of the second part of a split segment, as Overlays names it.
 String splitSegmentName(String name) => '${name.length > 150 ? name.substring(0, 150) : name} (2)';
 
+bool _sameJson(Object? a, Object? b) {
+  if (a is Map && b is Map) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key) || !_sameJson(entry.value, b[entry.key])) return false;
+    }
+    return true;
+  }
+  if (a is List && b is List) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; ++i) {
+      if (!_sameJson(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  return a == b;
+}
+
+/// One change of a run's `trackSegments`, its `trackSegmentReview`, or both;
+/// a null pair is a part the change leaves as it was. An empty review is no
+/// review (the key is removed).
+final class _Step {
+  const _Step(this.runId, {this.before, this.after, this.reviewBefore, this.reviewAfter});
+
+  final String runId;
+  final List<Map<String, Object?>>? before;
+  final List<Map<String, Object?>>? after;
+  final Map<String, Object?>? reviewBefore;
+  final Map<String, Object?>? reviewAfter;
+
+  bool get changesSegments => before != null;
+}
+
 /// Unsaved segment edits of a day, by run id.
 final class DaySegmentEdits {
   DaySegmentEdits({this.random});
@@ -31,13 +72,37 @@ final class DaySegmentEdits {
   /// Mints the ids of split segments; secure when null.
   final math.Random? random;
   final Map<String, List<Map<String, Object?>>> _runs = {};
-  final SegmentEditHistory _history = SegmentEditHistory();
+  final Map<String, Map<String, Object?>> _reviews = {};
+
+  // Bounded like Overlays' SegmentEditHistory (50 steps).
+  static const _historyLimit = 50;
+  final List<_Step> _undo = [];
+  final List<_Step> _redo = [];
 
   /// Each edited run's `trackSegments`; an empty list removes them.
   Map<String, List<Map<String, Object?>>> get runs => Map.unmodifiable(_runs);
-  bool get isEmpty => _runs.isEmpty;
-  bool get canUndo => _history.nextUndo != null;
-  bool get canRedo => _history.nextRedo != null;
+
+  /// Each run's changed `trackSegmentReview` (the proposals rejected in the
+  /// review); an empty map removes it.
+  Map<String, Map<String, Object?>> get reviews => Map.unmodifiable(_reviews);
+  bool get isEmpty => _runs.isEmpty && _reviews.isEmpty;
+  bool get canUndo => _undo.isNotEmpty;
+  bool get canRedo => _redo.isNotEmpty;
+
+  /// Whether the next undo or redo changes segments (and so the timing), not
+  /// only review decisions.
+  bool get undoChangesSegments => _undo.isNotEmpty && _undo.last.changesSegments;
+  bool get redoChangesSegments => _redo.isNotEmpty && _redo.last.changesSegments;
+
+  Map<String, Object?> _withEdits(Map<String, Object?> run) {
+    final id = run['id'];
+    final copy = {...run};
+    if (_runs[id] case final segments?) copy['trackSegments'] = segments;
+    if (_reviews[id] case final review?) {
+      review.isEmpty ? copy.remove('trackSegmentReview') : copy['trackSegmentReview'] = review;
+    }
+    return copy;
+  }
 
   /// [documentRuns] (a document's `event.runs`) with the edits applied, and
   /// a bare run for each edited run the document does not have yet.
@@ -45,16 +110,17 @@ final class DaySegmentEdits {
     final seen = <Object?>{};
     final result = <Object?>[
       for (final value in documentRuns)
-        if (_object(value) case final run? when _runs.containsKey(run['id']))
-          {...run, 'trackSegments': _runs[run['id']]}
+        if (_object(value) case final run?
+            when _runs.containsKey(run['id']) || _reviews.containsKey(run['id']))
+          _withEdits(run)
         else
           value,
     ];
     for (final value in documentRuns) {
       seen.add(_object(value)?['id']);
     }
-    for (final entry in _runs.entries) {
-      if (!seen.contains(entry.key)) result.add({'id': entry.key, 'trackSegments': entry.value});
+    for (final id in {..._runs.keys, ..._reviews.keys}) {
+      if (!seen.contains(id)) result.add(_withEdits({'id': id}));
     }
     return result;
   }
@@ -62,13 +128,25 @@ final class DaySegmentEdits {
   /// Forgets the edits once they are saved.
   void clear() {
     _runs.clear();
-    _history.clear();
+    _reviews.clear();
+    _undo.clear();
+    _redo.clear();
+  }
+
+  void _record(_Step step) {
+    _redo.clear();
+    _undo.add(step);
+    while (_undo.length > _historyLimit) {
+      _undo.removeAt(0);
+    }
   }
 
   String _apply(DayTheoreticalBest result, SegmentEdit edit) {
     final segments = edit.segments;
     if (segments == null) return edit.error.isEmpty ? 'This edit is not possible.' : edit.error;
-    _history.record(result.segmentRunId, result.runSegments, segments);
+    if (!sameTrackSegments(result.runSegments, segments)) {
+      _record(_Step(result.segmentRunId, before: result.runSegments, after: segments));
+    }
     _runs[result.segmentRunId] = segments;
     return '';
   }
@@ -167,26 +245,131 @@ final class DaySegmentEdits {
       _runs[id] = kept;
       changed = true;
     }
-    if (changed) _history.clear();
+    if (changed) {
+      _undo.clear();
+      _redo.clear();
+    }
     return changed;
   }
 
-  String _step(Iterable<Object?> documentRuns, {required bool undo}) {
-    final step = undo ? _history.nextUndo : _history.nextRedo;
-    if (step == null) return undo ? 'Nothing to undo.' : 'Nothing to redo.';
-    var current = <Map<String, Object?>>[];
+  // The run [runId] of [documentRuns] with the edits applied.
+  Map<String, Object?> _current(Iterable<Object?> documentRuns, String runId) {
     for (final value in applyTo(documentRuns)) {
-      if (_object(value) case final run? when run['id'] == step.runId) {
-        current = _segmentsOf(run['trackSegments']);
-      }
+      if (_object(value) case final run? when run['id'] == runId) return run;
     }
+    return const {};
+  }
+
+  /// Rejects proposal [index] of [review] (or with [rejected] false, takes
+  /// the rejection back), as Overlays' "Reject" and "Restore": only an open
+  /// or rejected proposal, and stored in the run's `trackSegmentReview` with
+  /// the other rejections. [result] gives the segments approved now and
+  /// [documentRuns] the stored decisions. Returns why not, or an empty
+  /// string.
+  String setRejected(
+    DayTheoreticalBest result,
+    DayProposalReview review,
+    Iterable<Object?> documentRuns,
+    int index, {
+    bool rejected = true,
+  }) {
+    if (!review.ready || review.runId != result.segmentRunId) {
+      return 'The proposals are not ready yet.';
+    }
+    final stored = _object(_current(documentRuns, review.runId)['trackSegmentReview']);
+    final items = review.items(result.runSegments, stored);
+    if (index < 0 || index >= items.length) return 'This proposal is no longer available.';
+    final state = items[index].state;
+    if (state != SegmentReviewState.proposed && state != SegmentReviewState.rejected) {
+      return 'Only open proposals can be rejected.';
+    }
+    final indexes = review.rejected(stored);
+    rejected ? indexes.add(index) : indexes.remove(index);
+    final ordered = indexes.toList()..sort();
+    final proposals = review.proposals;
+    final decisions = [
+      for (final i in ordered)
+        if (i >= 0 && i < proposals.length) proposals[i],
+    ];
+    final next = decisions.isEmpty
+        ? <String, Object?>{}
+        : makeTrackSegmentReview(review.groupId, decisions);
+    if (decisions.isNotEmpty && next.isEmpty) return 'The rejection cannot be stored.';
+    final before = stored ?? const <String, Object?>{};
+    if (_sameJson(before, next)) return '';
+    _record(_Step(review.runId, reviewBefore: before, reviewAfter: next));
+    _reviews[review.runId] = next;
+    return '';
+  }
+
+  /// Approves every open proposal of [review] into the run's segments in
+  /// order, whatever its boundary uncertainty, skipping any that would
+  /// overlap or not validate (Overlays' "Approve all", KAN-136). Returns how
+  /// many were approved, or why none.
+  ({int approved, String error}) approveAll(
+    DayTheoreticalBest result,
+    DayProposalReview review,
+    Iterable<Object?> documentRuns, {
+    math.Random? random,
+  }) {
+    final unavailable = _unavailable(result);
+    if (unavailable != null) return (approved: 0, error: unavailable);
+    if (!review.ready || review.runId != result.segmentRunId) {
+      return (approved: 0, error: 'The proposals are not ready yet.');
+    }
+    final stored = _object(_current(documentRuns, review.runId)['trackSegmentReview']);
+    final items = review.items(result.runSegments, stored);
+    Object? segments = result.runSegments;
+    var approved = 0;
+    for (final item in items) {
+      if (item.state != SegmentReviewState.proposed) continue;
+      final proposal = item.proposal;
+      final segment = makeTrackSegment(
+        proposal.type,
+        proposal.name,
+        proposal.start.progressMeters,
+        proposal.end.progressMeters,
+        review.groupId,
+        random: random ?? this.random,
+      );
+      if (segment.isEmpty) continue;
+      final next = withApprovedSegment(segments, segment, review.axisLengthMeters).segments;
+      if (next == null) continue;
+      segments = next;
+      ++approved;
+    }
+    if (approved == 0) return (approved: 0, error: 'No proposal could be approved.');
+    final error = _apply(result, (segments: segments as List<Map<String, Object?>>, error: ''));
+    return (approved: error.isEmpty ? approved : 0, error: error);
+  }
+
+  String _step(Iterable<Object?> documentRuns, {required bool undo}) {
+    final step = undo ? (_undo.isEmpty ? null : _undo.last) : (_redo.isEmpty ? null : _redo.last);
+    if (step == null) return undo ? 'Nothing to undo.' : 'Nothing to redo.';
+    final run = _current(documentRuns, step.runId);
     // Never overwrite a change made outside this history.
-    if (!sameTrackSegments(current, undo ? step.after : step.before)) {
-      _history.clear();
+    final segmentsExpected = undo ? step.after : step.before;
+    final reviewExpected = undo ? step.reviewAfter : step.reviewBefore;
+    if ((segmentsExpected != null &&
+            !sameTrackSegments(_segmentsOf(run['trackSegments']), segmentsExpected)) ||
+        (reviewExpected != null &&
+            !_sameJson(
+              _object(run['trackSegmentReview']) ?? const <String, Object?>{},
+              reviewExpected,
+            ))) {
+      _undo.clear();
+      _redo.clear();
       return 'The segments changed outside this editor, so the edit history was cleared.';
     }
-    _runs[step.runId] = undo ? step.before : step.after;
-    undo ? _history.commitUndo() : _history.commitRedo();
+    if ((undo ? step.before : step.after) case final segments?) _runs[step.runId] = segments;
+    if ((undo ? step.reviewBefore : step.reviewAfter) case final review?) {
+      _reviews[step.runId] = review;
+    }
+    if (undo) {
+      _redo.add(_undo.removeLast());
+    } else {
+      _undo.add(_redo.removeLast());
+    }
     return '';
   }
 
