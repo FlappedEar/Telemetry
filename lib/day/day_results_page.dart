@@ -9,9 +9,9 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
-import '../l10n.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
+import '../l10n.dart';
 import '../settings_dialog.dart';
 import 'background_task.dart';
 import 'channel_cards.dart';
