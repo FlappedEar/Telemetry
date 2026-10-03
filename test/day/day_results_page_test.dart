@@ -106,7 +106,7 @@ void main() {
     });
     expect(outcome.analysis, isNotNull);
     final best = outcome.analysis!.ranking!.bestOfDay!;
-    await tester.binding.setSurfaceSize(const Size(400, 2400));
+    await tester.binding.setSurfaceSize(const Size(400, 6000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -175,7 +175,7 @@ void main() {
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    await tester.binding.setSurfaceSize(const Size(1200, 6000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(

@@ -288,6 +288,35 @@ final class DayResultsController extends ChangeNotifier {
     _rerank();
   }
 
+  // The progression and lap consistency of [_explainedFor].
+  DayAnalysis? _explainedFor;
+  DayProgression? _progression;
+  LapConsistency? _lapConsistency;
+
+  void _explain() {
+    if (identical(_explainedFor, _analysis)) return;
+    _explainedFor = _analysis;
+    _progression = dayProgression(_analysis, progressionRuns);
+    _lapConsistency = dayLapConsistency(_analysis);
+  }
+
+  /// The day's runs with the notes, conditions and setup changes the
+  /// document records for them.
+  List<ProgressionRunInfo> get progressionRuns =>
+      progressionRunInfo(runs, documentRuns: _savedRuns);
+
+  /// The shown group's runs in recording order with their best laps.
+  DayProgression get progression {
+    _explain();
+    return _progression!;
+  }
+
+  /// How repeatable the shown group's lap times are.
+  LapConsistency get lapConsistency {
+    _explain();
+    return _lapConsistency!;
+  }
+
   /// The shown group's theoretical best, sector times and loss map; null
   /// until [requestTheoreticalBest] has finished for the current laps.
   DayTheoreticalBest? get theoreticalBest => _theoreticalBest;
