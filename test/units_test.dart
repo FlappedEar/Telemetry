@@ -2,9 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/main.dart';
 import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
+
+import 'day/day_results_page_test.dart' show FakeDocuments, circuitVbo;
 
 /// A tiny synthetic VBO whose header declares [velocityHeader].
 TelemetrySession vbo(Directory directory, String velocityHeader) {
@@ -22,7 +28,7 @@ void main() {
   setUp(() {
     directory = Directory.systemTemp.createTempSync('units');
     speedUnitSetting.value = SpeedUnitSetting.automatic;
-    declaredSpeedUnits = const [];
+    declareDaySpeedUnits(const []);
   });
   tearDown(() => directory.deleteSync(recursive: true));
 
@@ -77,6 +83,64 @@ void main() {
       expect(speedUnitLabel(), '', reason: '$setting');
     }
     expect(daySpeedUnit(const [], 'mph'), '');
+  });
+
+  test('each speed channel keeps the unit its header line declares', () {
+    final file = File('${directory.path}/obd.vbo')
+      ..writeAsStringSync(
+        '[header]\ntime\nlatitude\nlongitude\nvelocity kmh\nvelocity-obd mph\n'
+        'velocity-calc\n'
+        '[column names]\ntime lat long velocity velocity-obd velocity-calc\n'
+        '[data]\n0.00 52.0 21.0 50.0 31.0 50.0\n0.10 52.0001 21.0 51.0 32.0 51.0\n',
+      );
+    final session = parseVboFile(file.path);
+    declareDaySpeedUnits([session]);
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+    expect(displayUnit('velocity', ''), 'km/h');
+    expect(displayUnit('velocity-obd', ''), 'mph');
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    expect(displayUnit('velocity', ''), 'km/h');
+    // Declared nowhere: the assumption names it.
+    expect(displayUnit('velocity-calc', ''), 'mph');
+    speedUnitSetting.value = SpeedUnitSetting.automatic;
+    expect(displayUnit('velocity-calc', ''), '');
+  });
+
+  testWidgets('a day recorded in km/h shows km/h with mph chosen, end to end', (
+    tester,
+  ) async {
+    final path = '${directory.path}/kmh.vbo';
+    File(path).writeAsStringSync(
+      circuitVbo([30, 28, 31]).replaceFirst(
+        '[header]\n',
+        '[header]\ntime\nlatitude\nlongitude\nvelocity kmh\n',
+      ),
+    );
+    final outcome = runDayImport((paths: [path], includeSubfolders: false));
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    expect(declaredSpeedUnits, ['km/h']);
+    expect(speedUnitLabel(), 'km/h');
+    expect(displayUnit('velocity', ''), 'km/h');
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: FakeDocuments(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('km/h'), findsWidgets);
+    expect(find.textContaining('mph'), findsNothing);
+    // Closing the day forgets its units.
+    await tester.pumpWidget(const SizedBox());
+    expect(declaredSpeedUnits, isEmpty);
   });
 
   Future<void> pumpApp(WidgetTester tester) => tester.pumpWidget(

@@ -75,9 +75,8 @@ final class DayResultsController extends ChangeNotifier {
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayDocument,
        _dirty = recovered || changed {
-    declaredSpeedUnits = [
-      for (final run in runs) sessionSpeedUnit(run.run.telemetry),
-    ];
+    declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
+    _declaredSpeedUnits = declaredSpeedUnits;
     _scheduleRecovery();
   }
 
@@ -162,6 +161,10 @@ final class DayResultsController extends ChangeNotifier {
   bool _theoreticalBestLoading = false;
   int _theoreticalBestGeneration = 0;
   bool _disposed = false;
+
+  // This day's [declaredSpeedUnits], cleared when it closes unless another
+  // day has opened since.
+  late final List<String> _declaredSpeedUnits;
 
   // The last recovery write or clear queued (see [queueRecovery]).
   Future<void> _recoveryWork = Future.value();
@@ -816,6 +819,9 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
+      declareDaySpeedUnits(const []);
+    }
     // Changes made just before leaving the day are still kept.
     unawaited(flushRecovery());
     super.dispose();
