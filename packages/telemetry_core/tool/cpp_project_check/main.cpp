@@ -4,10 +4,11 @@
 // the primary VBO recording is resolved, parsed and given its laps; the run's
 // lap exclusions are applied with the binding Overlays builds, and the
 // excluded laps are listed, with its approved segments (valid, count,
-// revision). A run's source-fusion decision is reported as Overlays' Run
-// details judges it: "applied" while both recordings' content revisions are
-// the approved ones, otherwise "needsRevalidation" (KAN-103), with its
-// alternative recording resolved and hashed. The event is also passed through Overlays'
+// revision) and its segment review's rejections (valid, count). A run's
+// source-fusion decision is reported as Overlays' Run details judges it:
+// "applied" while both recordings' content revisions are the approved ones,
+// otherwise "needsRevalidation" (KAN-103), with its alternative recording
+// resolved and hashed. The event is also passed through Overlays'
 // editor projection and back, as a re-save does, and compared.
 
 #include "project/BoundedJsonLoader.h"
@@ -62,6 +63,12 @@ QJsonObject checkRun(const QJsonObject &event, const QJsonObject &run, const QSt
     result.insert("trackSegments", QJsonObject{{"valid", validTrackSegments(segments)},
         {"count", segments.toArray().size()},
         {"revision", segments.toArray().isEmpty() ? QString() : trackSegmentSetRevision(segments.toArray())}});
+    // The segment review's stored rejections (KAN-50), when the run has any.
+    if (run.contains("trackSegmentReview")) {
+        const auto review = run.value("trackSegmentReview");
+        result.insert("trackSegmentReview", QJsonObject{{"valid", validTrackSegmentReview(review)},
+            {"rejected", review.toObject().value("rejected").toArray().size()}});
+    }
     QJsonObject source;
     for (const auto &value : run.value("sources").toObject().value("telemetry").toArray()) {
         if (value.toObject().value("id") == run.value("primaryTelemetrySourceId")) source = value.toObject();

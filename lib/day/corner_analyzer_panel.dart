@@ -361,6 +361,9 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
           for (final slot in const [0, 1])
             TextButton.icon(
               key: ValueKey('cornerAnalyzerOpenLap${slot == 0 ? 'A' : 'B'}'),
+              style: TextButton.styleFrom(
+                foregroundColor: slot == 0 ? lapAColor : lapBColor,
+              ),
               icon: const Icon(Icons.open_in_new),
               label: Text('Lap ${slot == 0 ? 'A' : 'B'} here'),
               onPressed: () => _panel.openLap(slot, segment.startMeters),
@@ -733,7 +736,7 @@ class AnalyzerTable extends StatelessWidget {
                 name.toUpperCase(),
                 key: ValueKey('cornerAnalyzerGroup $name'),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -1047,7 +1050,9 @@ class SegmentSpeedChart extends StatelessWidget {
                         alpha: 0.5,
                       ),
                       boundary: theme.colorScheme.outline,
-                      shade: theme.colorScheme.primary.withValues(alpha: 0.10),
+                      shade: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.06,
+                      ),
                       ink: theme.colorScheme.onSurfaceVariant,
                       surface: theme.colorScheme.surfaceContainerLow,
                       textStyle: painterStyle,

@@ -618,10 +618,65 @@ void main() {
       await tester.pumpAndSettle();
       expect(lines().length, greaterThan(plain));
       expect(lines().where((line) => line.color == lapAColorForTest), isEmpty);
+
+      // With lap A picked for the colouring, the B button is not amber.
+      final slot = find.byKey(const ValueKey('comparisonMapLayerSlot'));
+      Color? slotColor(String label) => tester
+          .widget<RichText>(
+            find.descendant(
+              of: find.descendant(of: slot, matching: find.text(label)),
+              matching: find.byType(RichText),
+            ),
+          )
+          .text
+          .style
+          ?.color;
+      await tester.tap(find.descendant(of: slot, matching: find.text('A')));
+      await tester.pumpAndSettle();
+      expect(slotColor('B'), isNot(anyOf(lapAColorForTest, lapBColorForTest)));
+      await tester.tap(find.descendant(of: slot, matching: find.text('B')));
+      await tester.pumpAndSettle();
+      expect(slotColor('A'), isNot(anyOf(lapAColorForTest, lapBColorForTest)));
       debugDefaultTargetPlatformOverride = null;
     });
   }
+
+  test('the Δ time map runs from lap A\'s colour to lap B\'s', () {
+    const layer = ComparisonMapLayer(
+      id: 'delta',
+      scale: 'diverging',
+      trace: MapLayerTrace(minimum: -1, maximum: 1),
+    );
+    // Δ is A − B: negative where A is ahead, positive where B is.
+    expect(mapLayerColor(layer, -1), lapAColorForTest);
+    expect(mapLayerColor(layer, 1), lapBColorForTest);
+    // The single Δ line is neither lap's colour.
+    expect(deltaLineColor, isNot(anyOf(lapAColorForTest, lapBColorForTest)));
+  });
+
+  test('the other map layers use neither lap\'s colour', () {
+    for (final layer in const [
+      ComparisonMapLayer(
+        id: 'lateralG',
+        scale: 'diverging',
+        trace: MapLayerTrace(minimum: -1, maximum: 1),
+      ),
+      ComparisonMapLayer(
+        id: 'speed',
+        scale: 'sequential',
+        trace: MapLayerTrace(minimum: 0, maximum: 1),
+      ),
+    ]) {
+      for (final value in [-1.0, 0.0, 0.5, 1.0]) {
+        expect(
+          mapLayerColor(layer, value),
+          isNot(anyOf(lapAColorForTest, lapBColorForTest)),
+          reason: '${layer.id} at $value',
+        );
+      }
+    }
+  });
 }
 
-const lapAColorForTest = Color(0xFF55E6A5);
-const lapBColorForTest = Color(0xFFD95926);
+const lapAColorForTest = Color(0xFFFCB203);
+const lapBColorForTest = Color(0xFF3D8BFF);

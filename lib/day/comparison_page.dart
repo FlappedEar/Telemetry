@@ -9,6 +9,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../ui/theme.dart';
 import '../units.dart';
 import 'apple_map.dart';
 import 'corner_analyzer_panel.dart';
@@ -107,7 +108,7 @@ Future<DayLapRow?> pickComparisonLap(
   },
 );
 
-/// Two laps of one group, A (green) against B (orange), on a shared
+/// Two laps of one group, A (amber) against B (blue), on a shared
 /// track-position axis: the Δ time (A − B, positive when A is behind), the
 /// channels of both laps, and both lines on one map, optionally coloured by
 /// a recorded value. A drag on a chart moves one cursor, shown on the map
@@ -500,6 +501,15 @@ class _ComparisonPageState extends State<ComparisonPage> {
               SegmentedButton<int>(
                 key: const ValueKey('comparisonMapLayerSlot'),
                 showSelectedIcon: false,
+                // The selected lap in its own colour and the other one
+                // neutral, so B is never amber.
+                style: SegmentedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  selectedBackgroundColor: _layerSlot == 0
+                      ? lapAColor
+                      : lapBColor,
+                  selectedForegroundColor: FetColors.of(context).onLap,
+                ),
                 segments: const [
                   ButtonSegment(value: 0, label: Text('A')),
                   ButtonSegment(value: 1, label: Text('B')),
@@ -622,6 +632,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
           for (final slot in const [0, 1])
             TextButton.icon(
               key: ValueKey('comparisonOpenLap${slot == 0 ? 'A' : 'B'}'),
+              style: TextButton.styleFrom(
+                foregroundColor: slot == 0 ? lapAColor : lapBColor,
+              ),
               icon: const Icon(Icons.open_in_new),
               label: Text('Open lap ${slot == 0 ? 'A' : 'B'} here'),
               onPressed: () => _openLap(slot),
@@ -742,14 +755,30 @@ class _ComparisonPageState extends State<ComparisonPage> {
   }
 }
 
-/// Sequential: one blue hue, dim to bright. Diverging: blue, grey at zero,
-/// amber, symmetric around zero so zero is always neutral.
-const List<Color> sequentialLayerStops = [Color(0xFF28527A), Color(0xFFE3F4FF)];
+/// Map layer scales. None of them uses lap A's amber or lap B's blue, except
+/// Δ time, whose ends are the laps themselves.
+///
+/// Sequential (speed, throttle, brake): purple, dim, to mint, bright.
+const List<Color> sequentialLayerStops = [Color(0xFF4A2A7A), Color(0xFFB8F5E0)];
+
+/// Diverging (lateral and longitudinal G): magenta, grey at zero, teal,
+/// symmetric around zero so zero is always neutral.
 const List<Color> divergingLayerStops = [
-  Color(0xFF4F9DFF),
+  Color(0xFFE05BD8),
   Color(0xFF8B95A1),
-  Color(0xFFFFAB40),
+  Color(0xFF2FD6A8),
 ];
+
+/// Δ time (A − B): lap A's colour where A is ahead, grey at zero, lap B's
+/// where B is ahead.
+const List<Color> deltaLayerStops = [lapAColor, Color(0xFF8B95A1), lapBColor];
+
+/// The colour stops of [layer]'s scale.
+List<Color> mapLayerStops(ComparisonMapLayer layer) => layer.id == 'delta'
+    ? deltaLayerStops
+    : layer.diverging
+    ? divergingLayerStops
+    : sequentialLayerStops;
 
 /// The colour scale of [layer]: its low and high ends.
 (double, double) mapLayerRange(ComparisonMapLayer layer) {
@@ -764,16 +793,11 @@ const List<Color> divergingLayerStops = [
 Color mapLayerColor(ComparisonMapLayer layer, double value) {
   final (low, high) = mapLayerRange(layer);
   final t = ((value - low) / (high - low)).clamp(0.0, 1.0);
-  if (!layer.diverging) {
-    return Color.lerp(sequentialLayerStops[0], sequentialLayerStops[1], t)!;
-  }
+  final stops = mapLayerStops(layer);
+  if (!layer.diverging) return Color.lerp(stops[0], stops[1], t)!;
   return t < 0.5
-      ? Color.lerp(divergingLayerStops[0], divergingLayerStops[1], t * 2)!
-      : Color.lerp(
-          divergingLayerStops[1],
-          divergingLayerStops[2],
-          (t - 0.5) * 2,
-        )!;
+      ? Color.lerp(stops[0], stops[1], t * 2)!
+      : Color.lerp(stops[1], stops[2], (t - 0.5) * 2)!;
 }
 
 String mapLayerValueText(ComparisonMapLayer layer, double value) {
@@ -797,7 +821,7 @@ class _LayerLegend extends StatelessWidget {
     final theme = Theme.of(context);
     final (low, high) = mapLayerRange(layer);
     final unit = displayUnitOf(context, layer.channel, layer.unit);
-    final stops = layer.diverging ? divergingLayerStops : sequentialLayerStops;
+    final stops = mapLayerStops(layer);
     String end(double value, String label) =>
         '${mapLayerValueText(layer, value)}'
         '${layer.diverging && label.isNotEmpty ? ' $label' : ''}';
@@ -1189,7 +1213,7 @@ class _TiledOverlayMap extends StatelessWidget {
                         point: at,
                         radius: 7,
                         color: slot == 0 ? lapAColor : lapBColor,
-                        borderColor: const Color(0xFF0C150F),
+                        borderColor: const Color(0xFF111214),
                         borderStrokeWidth: 2.5,
                       ),
               ],
@@ -1316,7 +1340,7 @@ class _MarkersPainter extends CustomPainter {
       if (point == null) continue;
       final centre = Offset(point.x * size.width, point.y * size.height);
       canvas
-        ..drawCircle(centre, 8, Paint()..color = const Color(0xFF0C150F))
+        ..drawCircle(centre, 8, Paint()..color = const Color(0xFF111214))
         ..drawCircle(
           centre,
           6,

@@ -166,7 +166,9 @@ final class ComparisonDecisions {
 ///
 /// [trackSegments] replaces runs' `trackSegments` by run id (the segments the
 /// user edited; an empty list removes the key, as Overlays stores it), before
-/// anything else is decided about segments.
+/// anything else is decided about segments. [trackSegmentReviews] replaces
+/// runs' `trackSegmentReview` (the proposals rejected in the segment review)
+/// the same way: an empty map removes the key, as Overlays stores it.
 ///
 /// With [automaticSegments], the chosen group's best lap gets its segment
 /// proposals as approved `trackSegments` when no run has segments for the
@@ -207,6 +209,7 @@ Map<String, Object?> dayDocument({
   Map<String, Object?>? previous,
   String previousPath = '',
   Map<String, List<Map<String, Object?>>> trackSegments = const {},
+  Map<String, Map<String, Object?>> trackSegmentReviews = const {},
   bool automaticSegments = true,
   bool groupChosen = false,
   ComparisonDecisions comparison = const ComparisonDecisions(),
@@ -333,6 +336,15 @@ Map<String, Object?> dayDocument({
       run.remove('trackSegments');
     } else {
       run['trackSegments'] = _copy({'segments': edited})['segments'];
+    }
+  }
+  for (final run in allRuns) {
+    final review = trackSegmentReviews[run['id']];
+    if (review == null) continue;
+    if (review.isEmpty) {
+      run.remove('trackSegmentReview');
+    } else {
+      run['trackSegmentReview'] = _copy(review);
     }
   }
   for (final run in allRuns) {
