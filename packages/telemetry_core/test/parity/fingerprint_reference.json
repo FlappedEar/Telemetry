@@ -1,0 +1,1711 @@
+[
+    {
+        "file": "test/parity/corpus/acceleration_aliases.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "Engine",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "LongAcc-Calc",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "Speed",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "heart_rate",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "latacc",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "latacc-calc",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 2,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "45d9f11d9ca0a5dcedab14e030e0cdea69e9f3c874369a11917accf45a2e081a",
+            "size": 145
+        }
+    },
+    {
+        "file": "test/parity/corpus/all_columns_empty.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "a",
+                    "samples": 3,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 3,
+            "sampledSha256": "6155d88a0accc2a93645c9a6e821480ac420ef0c7cc77f41027209f3b3aedcda",
+            "size": 49
+        }
+    },
+    {
+        "file": "test/parity/corpus/bad_utf8.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "a�",
+                    "samples": 2,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "ec28a1209f0cbff80e12f0a00afcb9cec30b21a6007d0d7a1ff2ecd65a5592c9",
+            "size": 67
+        }
+    },
+    {
+        "file": "test/parity/corpus/bom_crlf.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "a",
+                    "samples": 3,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 3,
+            "sampledSha256": "5fc3f2135759fa3fa040fb27e2ceac1635e8284e596f39aaf8be79a5ab9294f3",
+            "size": 50
+        }
+    },
+    {
+        "file": "test/parity/corpus/clock_formats.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "value",
+                    "samples": 7,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 43201500000,
+            "kind": "telemetry-v1",
+            "sampleCount": 7,
+            "sampledSha256": "7e934060274b5a1e4e213275bd2da13046b0027136b929e099e004b8b507af4c",
+            "size": 114
+        }
+    },
+    {
+        "file": "test/parity/corpus/comma_separated.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "Accelerator Pedal",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "Lat",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "Longitude",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "column 5",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "speed",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "speed (2)",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 4,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1500000,
+            "kind": "telemetry-v1",
+            "sampleCount": 4,
+            "sampledSha256": "c7d0bdbefe7ecbb9a6794e8788f73e29513533ded07b033ee2bca0e3963bf3bf",
+            "size": 256
+        }
+    },
+    {
+        "file": "test/parity/corpus/coordinate_out_of_range.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 4,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 3000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 4,
+            "sampledSha256": "903e031209c12918da29a0393f8906b87b1a5a7be0c47ba649205016d4c721fc",
+            "size": 118
+        }
+    },
+    {
+        "file": "test/parity/corpus/coordinate_units_conflict.vbo",
+        "fingerprint": {
+            "channels": [
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "7c92670be02ea7621ac0daa5c4551c773014ad4c25ca61403ad7a39d7a7379d2",
+            "size": 129
+        }
+    },
+    {
+        "file": "test/parity/corpus/coordinate_units_invalid.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "v",
+                    "samples": 2,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "87b50aa111cae25ae30b6ae60dfa704e6aeb2643a2382b38081c631942a5c483",
+            "size": 93
+        }
+    },
+    {
+        "file": "test/parity/corpus/coordinate_units_missing.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "v",
+                    "samples": 2,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "2ff9b167e81fe16ded971d483fcc60d52a615bda72d4b594a78dcf73428599be",
+            "size": 103
+        }
+    },
+    {
+        "file": "test/parity/corpus/corners_gaps.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "accuracy",
+                    "samples": 5477,
+                    "unit": ""
+                },
+                {
+                    "name": "brake",
+                    "samples": 5477,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 5477,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 5477,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 5477,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 5477,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 5477,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 275750000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5477,
+            "sampledSha256": "7894a2b579db9c87e58254f675d86024598990672391bcc9a141cedfd27cea7f",
+            "size": 319921
+        }
+    },
+    {
+        "file": "test/parity/corpus/corners_inferred.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2015,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 201400000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2015,
+            "sampledSha256": "2a5b96c6de23a69b985de5ad2d3a191c4e71f0d511e600ef6fd1b19fc984ba03",
+            "size": 89008
+        }
+    },
+    {
+        "file": "test/parity/corpus/corners_measured.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "accuracy",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "brake",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 5516,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 275750000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5516,
+            "sampledSha256": "7e9dc30df564933c7ab2671732b77680083c1bb72a131af5758245de1f3e65c0",
+            "size": 322379
+        }
+    },
+    {
+        "error": "VBO has no [column names] section.",
+        "file": "test/parity/corpus/cr_only.vbo"
+    },
+    {
+        "error": "VBO has no [column names] section.",
+        "file": "test/parity/corpus/error_empty.vbo"
+    },
+    {
+        "file": "test/parity/corpus/error_empty_column_names.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "column 1",
+                    "samples": 1,
+                    "unit": ""
+                },
+                {
+                    "name": "column 2",
+                    "samples": 1,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 0,
+            "kind": "telemetry-v1",
+            "sampleCount": 1,
+            "sampledSha256": "ac036dfb0ebc10eb1236ad8a0a2cde572f49d2c9ceb4f2c8aebb90cc070524e7",
+            "size": 32
+        }
+    },
+    {
+        "error": "VBO timestamp exceeds the supported signed 64-bit microsecond range.",
+        "file": "test/parity/corpus/error_huge_timestamp.vbo"
+    },
+    {
+        "error": "VBO has no [column names] section.",
+        "file": "test/parity/corpus/error_no_columns.vbo"
+    },
+    {
+        "error": "VBO has no [data] rows.",
+        "file": "test/parity/corpus/error_no_data.vbo"
+    },
+    {
+        "error": "VBO contains no valid timestamped data rows.",
+        "file": "test/parity/corpus/error_no_valid_rows.vbo"
+    },
+    {
+        "error": "VBO contains more than one data or column-names section.",
+        "file": "test/parity/corpus/error_two_column_sections.vbo"
+    },
+    {
+        "error": "VBO contains more than one data or column-names section.",
+        "file": "test/parity/corpus/error_two_data_sections.vbo"
+    },
+    {
+        "file": "test/parity/corpus/gate_lines.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "d8024ac97bdbfde5b6bdd91b6e2c3593560e589224118d47a2d931798adc0305",
+            "size": 319
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_arc_minutes.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 738,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 738,
+            "sampledSha256": "9c1330d50a185124f3242b5a79799f518a8d07ec21a217d0ec65085bc63e6b94",
+            "size": 30319
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_clean.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 738,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 738,
+            "sampledSha256": "c0396e551e35c005d08b3cc96f13f57e2b574624e741e5fa75e9eb8d636ac20f",
+            "size": 27369
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_clockwise.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 524,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 524,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 524,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 52300000,
+            "kind": "telemetry-v1",
+            "sampleCount": 524,
+            "sampledSha256": "d212859735582f30a0c0d2f231c06ece97bd3c4bc078e661877b2da39dc60357",
+            "size": 19451
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_end_inside_corridor.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 430,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 430,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 430,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 42900000,
+            "kind": "telemetry-v1",
+            "sampleCount": 430,
+            "sampledSha256": "6929b6e9166fb58f57f1edd829625431c1bb98232975841f3a7ff7ac20335f4d",
+            "size": 15973
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_gate_too_long.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 738,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 738,
+            "sampledSha256": "9c18a1711dbfcecb018a4ac34f0c664923beedecf45b6c9aefc1172057d121ef",
+            "size": 27369
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_gps_gap.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 718,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 718,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 718,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 718,
+            "sampledSha256": "c55e8c1adadc6fef4e8a3ebc0726a34c46fb6b221f0e77b39d43c87d2d501f86",
+            "size": 26629
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_invalid_coordinate.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 738,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 738,
+            "sampledSha256": "d47b146256969216ccef5512684b3a35cda3913bc279c95d6eaad4ecff95abc3",
+            "size": 27339
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_long_trace.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 10270,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 10270,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 10270,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1026900000,
+            "kind": "telemetry-v1",
+            "sampleCount": 10270,
+            "sampledSha256": "40e87251d7582bad5b2e3fd260604550cf67757108883022df2ebf598e84d288",
+            "size": 379323
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_no_start_gate.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 738,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 738,
+            "sampledSha256": "c368c17a3bc210481a2d759b6c1df7ed0da102eb3b15d8f6a67144bc12ed0928",
+            "size": 27369
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_slow.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 1257,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 1257,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 1257,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 125600000,
+            "kind": "telemetry-v1",
+            "sampleCount": 1257,
+            "sampledSha256": "e38710422182a222b4975a2003176ff45bcab08af15e4a51c4c31a3457cb5e42",
+            "size": 44315
+        }
+    },
+    {
+        "file": "test/parity/corpus/laps_two_start_gates.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 738,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 738,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 73700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 738,
+            "sampledSha256": "86d12b1629b01e61f0bb923948305512e4ca7a90fd091d2c24c535db7178aa16",
+            "size": 27429
+        }
+    },
+    {
+        "file": "test/parity/corpus/midnight_and_mixed.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "a",
+                    "samples": 6,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 5401000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 6,
+            "sampledSha256": "1b722ea90df56a9098074f37881cc0da6126b6674f47eb1bf9a71caf1bcd8344",
+            "size": 103
+        }
+    },
+    {
+        "file": "test/parity/corpus/no_time_column.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "rpm",
+                    "samples": 3,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 3,
+            "sampledSha256": "edf38316039b2b13d0a5840b284932d3ebb560ccd453cedd3162377b057d275f",
+            "size": 54
+        }
+    },
+    {
+        "file": "test/parity/corpus/number_spellings.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "v",
+                    "samples": 27,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 26000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 27,
+            "sampledSha256": "2f2d05a5ed45f0f110f8b4ffd40675d1b9e7ed402f04397605a45e44f4871d74",
+            "size": 231
+        }
+    },
+    {
+        "file": "test/parity/corpus/racechrono_10_2_4.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "lat",
+                    "samples": 535,
+                    "unit": ""
+                },
+                {
+                    "name": "long",
+                    "samples": 535,
+                    "unit": ""
+                },
+                {
+                    "name": "sats",
+                    "samples": 535,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 535,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 53400000,
+            "kind": "telemetry-v1",
+            "sampleCount": 535,
+            "sampledSha256": "a02e81f0055b4fe886c7e402c8e842757bdfba7380cdbfe7122e057ad438e71a",
+            "size": 27048
+        }
+    },
+    {
+        "file": "test/parity/corpus/racechrono_unvalidated_version.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "sats",
+                    "samples": 535,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 535,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 53400000,
+            "kind": "telemetry-v1",
+            "sampleCount": 535,
+            "sampledSha256": "f153a02506580126bae740c1a2e6bbd5ddbcbbb72fbb96a96defe7894259478e",
+            "size": 27047
+        }
+    },
+    {
+        "file": "test/parity/corpus/relative_seconds.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "a",
+                    "samples": 5,
+                    "unit": ""
+                },
+                {
+                    "name": "b",
+                    "samples": 5,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5,
+            "sampledSha256": "c3748bec9b5de576e5d17ab16cf4dd445540cc07d703fd6742a88c3bb3729db4",
+            "size": 119
+        }
+    },
+    {
+        "file": "test/parity/corpus/sections_and_metadata.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "(2)",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "x",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "x (2)",
+                    "samples": 2,
+                    "unit": ""
+                },
+                {
+                    "name": "x (3)",
+                    "samples": 2,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2,
+            "sampledSha256": "94f88ce6552b83a555fc38f8e53b7ac31c17e00b78cab998257b5da8cede02f4",
+            "size": 268
+        }
+    },
+    {
+        "file": "test/parity/corpus/segments_mixed.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2814,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2814,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2814,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 281300000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2814,
+            "sampledSha256": "51d630ab7b7deee00a9bfb5d7e8261467a4d76cb8293f3a56bb5940f946bc480",
+            "size": 103181
+        }
+    },
+    {
+        "file": "test/parity/corpus/segments_mixed_gps_gap.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2784,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2784,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2784,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 281300000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2784,
+            "sampledSha256": "9dce64597d9b765bed84d010e26874799b8e8dec7ba06041683abcc5be6dd547",
+            "size": 102101
+        }
+    },
+    {
+        "file": "test/parity/corpus/segments_mixed_mirrored.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2030,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2030,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2030,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 202900000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2030,
+            "sampledSha256": "62068098e2d77d2d5c507861b5264320ba1996b6ea8c3327dd1c18c838bec241",
+            "size": 74173
+        }
+    },
+    {
+        "file": "test/parity/corpus/segments_rectangle.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 1668,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 1668,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 1668,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 166700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 1668,
+            "sampledSha256": "5c64dd024a96bf15d041706bdcc6cfe856ae32f297da7daaeb65913bb92b7846",
+            "size": 60779
+        }
+    },
+    {
+        "file": "test/parity/corpus/whitespace.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "a b",
+                    "samples": 4,
+                    "unit": ""
+                },
+                {
+                    "name": "c",
+                    "samples": 4,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 4000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 4,
+            "sampledSha256": "31730529294e12c70ac46cff55434fe53fa8b03d120e975cffbf7d93f9ccdb88",
+            "size": 86
+        }
+    },
+    {
+        "file": "test/parity/driving/driving_calc.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake",
+                    "samples": 1995,
+                    "unit": ""
+                },
+                {
+                    "name": "latacc-calc",
+                    "samples": 1995,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 1995,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc-calc",
+                    "samples": 1995,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 1995,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 1995,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 1995,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 201400000,
+            "kind": "telemetry-v1",
+            "sampleCount": 1995,
+            "sampledSha256": "2b5d5618c7e0360947d11a35607f7332d01e4be36d5845ea8a9328102f6a9580",
+            "size": 118140
+        }
+    },
+    {
+        "file": "test/parity/driving/driving_inferred.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latacc",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2015,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 201400000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2015,
+            "sampledSha256": "3e2423c95229f965ba77059a4443939bc5bc166a3385af7cc3b4d868177e9a52",
+            "size": 101943
+        }
+    },
+    {
+        "file": "test/parity/driving/driving_measured.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "latacc",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 5516,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 5516,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 275750000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5516,
+            "sampledSha256": "7b8b7b4dd170060e92d65463d359d0949551f9ac7b38510cc647b6ae42f97024",
+            "size": 328176
+        }
+    },
+    {
+        "file": "test/parity/driving/driving_pressure.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pressure",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "longacc",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 2015,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2015,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 201400000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2015,
+            "sampledSha256": "97e4e5ccf8e7f898793746ec9947735146dec75db9a47b8847524499832cc9b9",
+            "size": 106482
+        }
+    },
+    {
+        "file": "test/fixtures/basic.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "heart_rate",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "lateral_acceleration",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "latitude",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "longitudinal_acceleration",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "mystery",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "rpm",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "sats",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "throttle",
+                    "samples": 3,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 3,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 1000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 3,
+            "sampledSha256": "acaf93a2ef77448cb14c116d9530c4628aaab35b1f2aab96afacf2f8f7de4507",
+            "size": 411
+        }
+    },
+    {
+        "file": "test/fixtures/event-laps.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 15,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 15,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 15000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 15,
+            "sampledSha256": "0d402eb6ed7725a2a9e4c23c96a7b35ec8cc3c697747b1b0d3fa69c6d56aaa98",
+            "size": 414
+        }
+    },
+    {
+        "file": "test/parity/rcz_corpus/basic.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 7,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5,
+            "sampledSha256": "e63ea1b98f685cdc0e80794f4d3e04a97d7816dd1ad3c9c701f1d849349e86ab",
+            "size": 2068
+        }
+    },
+    {
+        "error": "RCZ: Unsupported session version.",
+        "file": "test/parity/rcz_corpus/error_version.rcz"
+    },
+    {
+        "file": "test/parity/rcz_corpus/long.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 12000,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 12000,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 12000,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 1200000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 12000,
+            "sampledSha256": "c921113cce65c9de7e3fcf26a8839bd9c2c38874c0bab5d31cb6e6f4d69bd242",
+            "size": 120269
+        }
+    },
+    {
+        "file": "test/parity/rcz_corpus/long_stored.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 12000,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 12000,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 12000,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 1200000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 12000,
+            "sampledSha256": "e02cfb9dce535551226522f3fbb7f5a83db42c0bfd4a268980f495c5a77fcca5",
+            "size": 242041
+        }
+    },
+    {
+        "file": "test/parity/rcz_corpus/missing_values.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 7,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5,
+            "sampledSha256": "5edbded2be3720204e8642f0531610ea5bea276cc8acc6b46385835f32284113",
+            "size": 2186
+        }
+    },
+    {
+        "file": "test/parity/rcz_corpus/pedals.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "accelerator_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "throttle_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 7,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5,
+            "sampledSha256": "969b7323b5db7fc33bd6be3c81d5240b31229285d8309b4a36d477c63ffdf619",
+            "size": 2624
+        }
+    },
+    {
+        "file": "test/parity/rcz_corpus/stored.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 7,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5,
+            "sampledSha256": "c514928154ba3e0881a94affc002390eaf9af44fa88bbcbfaf10ea5d87346824",
+            "size": 2141
+        }
+    },
+    {
+        "file": "test/parity/rcz_corpus/unknown_channel.rcz",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "brake_pos-obd",
+                    "samples": 2,
+                    "unit": "%"
+                },
+                {
+                    "name": "heart_rate-hrm",
+                    "samples": 2,
+                    "unit": "bpm"
+                },
+                {
+                    "name": "lat",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "long",
+                    "samples": 7,
+                    "unit": "deg"
+                },
+                {
+                    "name": "rpm-obd",
+                    "samples": 2,
+                    "unit": "rpm"
+                },
+                {
+                    "name": "velocity",
+                    "samples": 7,
+                    "unit": "km/h"
+                },
+                {
+                    "name": "x_acc-acc",
+                    "samples": 2,
+                    "unit": "g"
+                }
+            ],
+            "durationUs": 2000000,
+            "kind": "telemetry-v1",
+            "sampleCount": 5,
+            "sampledSha256": "4f8fbbabab611a67d960bdecbf15b51dbb61313e599cb6ec84c49ece016920a4",
+            "size": 2306
+        }
+    },
+    {
+        "file": "../fetproject/test/fixtures/roundtrip/recordings/afternoon.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2013,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2013,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2013,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 201200000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2013,
+            "sampledSha256": "5ab9d59a3648b7eee2c4191d7b7aaabf97d6b1b297993468d76d77f161b0eee2",
+            "size": 73544
+        }
+    },
+    {
+        "file": "../fetproject/test/fixtures/roundtrip/recordings/midday.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2783,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2783,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2783,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 278200000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2783,
+            "sampledSha256": "273fbab0d805ed534e390ca6f778831d03ee9de5a2077a624fbb9bf01726cc39",
+            "size": 102034
+        }
+    },
+    {
+        "file": "../fetproject/test/fixtures/roundtrip/recordings/morning.vbo",
+        "fingerprint": {
+            "channels": [
+                {
+                    "name": "latitude",
+                    "samples": 2868,
+                    "unit": ""
+                },
+                {
+                    "name": "longitude",
+                    "samples": 2868,
+                    "unit": ""
+                },
+                {
+                    "name": "velocity",
+                    "samples": 2868,
+                    "unit": ""
+                }
+            ],
+            "durationUs": 286700000,
+            "kind": "telemetry-v1",
+            "sampleCount": 2868,
+            "sampledSha256": "342d27b6b055f9857f05160b4fabc0bb88910dbaa112f1a014ab2a604765144c",
+            "size": 105179
+        }
+    }
+]

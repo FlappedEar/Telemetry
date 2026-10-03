@@ -1,0 +1,273 @@
+{
+    "comparisonGroupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+    "comparisonSelectionState": "applied",
+    "dirty": false,
+    "documentState": {
+        "id": "a01f78b8-1f70-48bb-9f09-06e3e3b0214e",
+        "savedRevision": "12"
+    },
+    "eventId": "2ec6aa83-a477-4e74-a907-45e18b4d5ff4",
+    "eventName": "Synthetic day",
+    "file": "overlays-day.fetproject",
+    "laps": [
+        {
+            "bestOfDay": false,
+            "endTime": 7.14,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 1 · OUT 0",
+            "lapNumber": 0,
+            "referenceEligible": false,
+            "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+            "startTime": 0,
+            "type": "OUT"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 90.68,
+            "excluded": true,
+            "exclusionReason": "Traffic",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 1 · LAP 1",
+            "lapNumber": 1,
+            "referenceEligible": false,
+            "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+            "startTime": 7.14,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 170.88,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 1 · LAP 2",
+            "lapNumber": 2,
+            "referenceEligible": true,
+            "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+            "startTime": 90.68,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 252.78,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 1 · LAP 3",
+            "lapNumber": 3,
+            "referenceEligible": true,
+            "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+            "startTime": 170.88,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 286.7,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 1 · IN 0",
+            "lapNumber": 0,
+            "referenceEligible": false,
+            "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+            "startTime": 252.78,
+            "type": "IN"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 6.88,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 2 · OUT 0",
+            "lapNumber": 0,
+            "referenceEligible": false,
+            "runId": "7168fe4b-2610-4641-b17f-ee8057676df3",
+            "startTime": 0,
+            "type": "OUT"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 87.42,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 2 · LAP 1",
+            "lapNumber": 1,
+            "referenceEligible": true,
+            "runId": "7168fe4b-2610-4641-b17f-ee8057676df3",
+            "startTime": 6.88,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": true,
+            "endTime": 165.48333333333332,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 2 · LAP 2",
+            "lapNumber": 2,
+            "referenceEligible": true,
+            "runId": "7168fe4b-2610-4641-b17f-ee8057676df3",
+            "startTime": 87.42,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 245.16666666666666,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 2 · LAP 3",
+            "lapNumber": 3,
+            "referenceEligible": true,
+            "runId": "7168fe4b-2610-4641-b17f-ee8057676df3",
+            "startTime": 165.48333333333332,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 278.2,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 2 · IN 0",
+            "lapNumber": 0,
+            "referenceEligible": false,
+            "runId": "7168fe4b-2610-4641-b17f-ee8057676df3",
+            "startTime": 245.16666666666666,
+            "type": "IN"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 6.72,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 3 · OUT 0",
+            "lapNumber": 0,
+            "referenceEligible": false,
+            "runId": "ddf071ab-b830-4843-9aa3-21a67e326f15",
+            "startTime": 0,
+            "type": "OUT"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 85.92,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 3 · LAP 1",
+            "lapNumber": 1,
+            "referenceEligible": true,
+            "runId": "ddf071ab-b830-4843-9aa3-21a67e326f15",
+            "startTime": 6.72,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 167.44,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 3 · LAP 2",
+            "lapNumber": 2,
+            "referenceEligible": true,
+            "runId": "ddf071ab-b830-4843-9aa3-21a67e326f15",
+            "startTime": 85.92,
+            "type": "LAP"
+        },
+        {
+            "bestOfDay": false,
+            "endTime": 201.2,
+            "excluded": false,
+            "exclusionReason": "",
+            "groupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "label": "Session 3 · IN 0",
+            "lapNumber": 0,
+            "referenceEligible": false,
+            "runId": "ddf071ab-b830-4843-9aa3-21a67e326f15",
+            "startTime": 167.44,
+            "type": "IN"
+        }
+    ],
+    "messages": [
+        "Session 1: recording date/time unavailable; listed after chronological records in import order.",
+        "Session 2: recording date/time unavailable; listed after chronological records in import order.",
+        "Session 3: recording date/time unavailable; listed after chronological records in import order."
+    ],
+    "report": {
+        "bestLap": {
+            "label": "Session 2 · LAP 2",
+            "seconds": 78.06333333333332,
+            "status": "available"
+        },
+        "eligibleLaps": 7,
+        "theoreticalBest": {
+            "status": "available",
+            "totalSeconds": 78.06333333333332
+        }
+    },
+    "runs": [
+        {
+            "conditions": "Dry, 18 °C",
+            "id": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+            "name": "Session 1",
+            "notes": "Synthetic notes",
+            "setupChanges": "Tyres +0.1 bar",
+            "trackSegments": {
+                "count": 0,
+                "names": [
+                ],
+                "revision": "",
+                "valid": true
+            }
+        },
+        {
+            "conditions": null,
+            "id": "7168fe4b-2610-4641-b17f-ee8057676df3",
+            "name": "Session 2",
+            "notes": null,
+            "setupChanges": null,
+            "trackSegments": {
+                "count": 15,
+                "names": [
+                    "Hairpin (Overlays)",
+                    "Straight 1",
+                    "Straight 2",
+                    "Corners 4–5",
+                    "Straight 3",
+                    "Corner 6",
+                    "Straight 4",
+                    "Corner 7",
+                    "Straight 5",
+                    "Corner 8",
+                    "Straight 6",
+                    "Corner 9",
+                    "Straight 7",
+                    "Corner 10",
+                    "Straight 8"
+                ],
+                "revision": "track-segments-v1:791c21293fc4f83024647b15460abd082b609c3ac2358ee5d86f26945de542ad",
+                "valid": true
+            }
+        },
+        {
+            "conditions": null,
+            "id": "ddf071ab-b830-4843-9aa3-21a67e326f15",
+            "name": "Session 3",
+            "notes": null,
+            "setupChanges": null,
+            "trackSegments": {
+                "count": 0,
+                "names": [
+                ],
+                "revision": "",
+                "valid": true
+            }
+        }
+    ],
+    "valid": true
+}

@@ -78,14 +78,26 @@ a background isolate.
   `analysisDecisions.comparisonGroupId`. A document opened earlier keeps
   everything this app does not manage, including runs whose recordings were
   missing. `openDay` reads it back: it finds each recording (relative path
-  first, then absolute, or a relinked path), refuses a different recording by
-  content or fingerprint, applies exclusions whose recording and derivation key
-  still match, and analyses the day. `openDayDocument` does the same for a
+  first, then absolute, or a relinked path), refuses a different recording
+  as Overlays does (a content SHA-256 or a fingerprint that differs, never
+  accepted by its name), applies exclusions whose recording and derivation key
+  still match, and analyses the day with the saved group shown when it is
+  still one of the day's (a saved group the day cannot show stays saved until
+  the user chooses another). `findMovedRecordings` looks for missing
+  recordings in a folder by the identity the document stores: the content
+  SHA-256, else the fingerprint's size and sampled SHA-256, and only for a
+  recording with neither, its file name; a file named like one but holding
+  another recording is reported and not used. A day opened with recordings
+  found elsewhere lists them in `OpenedDay.relinked`; saving writes their new
+  paths. `openDayDocument` does the same for a
   document already in memory. Each save keeps Overlays' `documentState.id`
   and raises `documentState.savedRevision` by one (`nextDocumentState`), so
   Overlays treats its own older recovery snapshot of the document as stale.
   `test/day/overlays_check_test.dart` opens a saved day with Overlays' C++
-  code (see [tool/README.md](tool/README.md)).
+  code, and `test/day/overlays_roundtrip_test.dart` takes days through both
+  apps in both directions (see [tool/README.md](tool/README.md));
+  `test/day/overlays_fixture_test.dart` checks a committed day Overlays built
+  and saved, in CI.
 - `writeDayRecovery` and `readDayRecovery` keep an unsaved day for recovery
   (after Overlays' `ProjectRecoveryStore`): this app's own file, wrapping the
   version 3 document with where the day was last saved, the path its

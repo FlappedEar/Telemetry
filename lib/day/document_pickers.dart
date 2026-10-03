@@ -4,7 +4,6 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:telemetry_core/telemetry_core.dart';
 
 /// Chooses where days are saved and which one opens. Replaced by a fake in
 /// widget tests.
@@ -95,36 +94,4 @@ final class PlatformDocumentPickers implements DocumentPickers {
     ]..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
     return [for (final file in days) file.path];
   }
-}
-
-/// Files under [folder] (and its subfolders, at most [maximumFiles] looked
-/// at) named like each missing recording, by run id. Content is checked when
-/// the day is opened again.
-Map<String, String> findRecordings(
-  String folder,
-  List<MissingRecording> missing, {
-  int maximumFiles = 20000,
-}) {
-  final wanted = <String, List<String>>{};
-  for (final recording in missing) {
-    final name = p.basename(recording.path.replaceAll(r'\', '/')).toLowerCase();
-    wanted.putIfAbsent(name, () => []).add(recording.runId);
-  }
-  final found = <String, String>{};
-  var seen = 0;
-  try {
-    for (final entity in Directory(
-      folder,
-    ).listSync(recursive: true, followLinks: false)) {
-      if (++seen > maximumFiles) break;
-      if (entity is! File) continue;
-      for (final runId
-          in wanted[p.basename(entity.path).toLowerCase()] ?? const []) {
-        found.putIfAbsent(runId, () => entity.path);
-      }
-    }
-  } on FileSystemException {
-    // A folder that cannot be listed further: use what was found.
-  }
-  return found;
 }

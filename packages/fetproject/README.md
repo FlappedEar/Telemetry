@@ -113,3 +113,18 @@ dart pub get
 dart analyze --fatal-infos
 dart test
 ```
+
+## Round-trip fixtures (FET-40)
+
+`test/fixtures/roundtrip` is shared by both round trips with FlappedEar
+Overlays. `recordings/` holds three synthetic sessions on one track
+(`packages/telemetry_core/tool/generate_roundtrip_fixtures.py`; no real
+recording). `overlays-day.fetproject` is a day Overlays' own code built and
+saved from them (`cpp_project_roundtrip create`, Overlays `d4d1039`):
+approved segments, one renamed and two merged, an excluded lap, notes,
+conditions and setup changes, the group shown, the comparison pair, range and
+channels, and the overlay editor's sync, video, channels and scene.
+`overlays-day.inspected.json` is what Overlays saw in it. Its absolute paths
+name the neutral folder it was built in (`/tmp/flappedear-roundtrip`); the
+relative paths are used. How it is made and checked is in
+`packages/telemetry_core/tool/README.md` (`cpp_project_roundtrip`).

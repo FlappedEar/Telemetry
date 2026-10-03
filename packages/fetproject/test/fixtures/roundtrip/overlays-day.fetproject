@@ -1,0 +1,541 @@
+{
+    "analysis": {
+        "channels": [
+            "speed"
+        ]
+    },
+    "documentState": {
+        "id": "a01f78b8-1f70-48bb-9f09-06e3e3b0214e",
+        "savedRevision": "12"
+    },
+    "event": {
+        "activeRunId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+        "analysisDecisions": {
+            "comparisonChannels": [
+                "velocity"
+            ],
+            "comparisonGroupId": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+            "comparisonRange": {
+                "endMeters": 120.5,
+                "startMeters": 10
+            },
+            "comparisonSlots": [
+                {
+                    "algorithm": "source-laps-v1",
+                    "derivationKey": "c2e74699321a68b3103b6ba0463e4bbb714c5bb48de4e0b5cd5fe265d4a48cdb",
+                    "endTime": 165.48333333333332,
+                    "eventId": "2ec6aa83-a477-4e74-a907-45e18b4d5ff4",
+                    "runId": "7168fe4b-2610-4641-b17f-ee8057676df3",
+                    "sourceId": "fb8a977b-cd76-466b-852b-a3a5e5bbb736",
+                    "sourceRevision": "c529edf5a08025a4cbbe49fd6a2612a35899d8da578d76b5de379142b4298037",
+                    "startTime": 87.42,
+                    "type": "LAP",
+                    "version": 1
+                },
+                {
+                    "algorithm": "source-laps-v1",
+                    "derivationKey": "1419447734a1cd63287dab40959e4715063ef9ee8234a69e934be80e9f310660",
+                    "endTime": 170.88,
+                    "eventId": "2ec6aa83-a477-4e74-a907-45e18b4d5ff4",
+                    "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+                    "sourceId": "ca21c2f6-548f-4bf3-9dc1-ed0ae44a6599",
+                    "sourceRevision": "b68b1ec136dd721f3049e2ca92299a421e4b9af266e25dd33e155441cb2cf721",
+                    "startTime": 90.68,
+                    "type": "LAP",
+                    "version": 1
+                }
+            ]
+        },
+        "id": "2ec6aa83-a477-4e74-a907-45e18b4d5ff4",
+        "lapExclusions": [
+            {
+                "reason": "Traffic",
+                "reference": {
+                    "algorithm": "source-laps-v1",
+                    "derivationKey": "1419447734a1cd63287dab40959e4715063ef9ee8234a69e934be80e9f310660",
+                    "endTime": 90.68,
+                    "eventId": "2ec6aa83-a477-4e74-a907-45e18b4d5ff4",
+                    "runId": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+                    "sourceId": "ca21c2f6-548f-4bf3-9dc1-ed0ae44a6599",
+                    "sourceRevision": "b68b1ec136dd721f3049e2ca92299a421e4b9af266e25dd33e155441cb2cf721",
+                    "startTime": 7.14,
+                    "type": "LAP",
+                    "version": 1
+                }
+            }
+        ],
+        "name": "Synthetic day",
+        "runs": [
+            {
+                "conditions": "Dry, 18 °C",
+                "id": "603a4f6d-c455-4740-8048-f659e7bde0bf",
+                "name": "Session 1",
+                "notes": "Synthetic notes",
+                "primaryTelemetrySourceId": "ca21c2f6-548f-4bf3-9dc1-ed0ae44a6599",
+                "setupChanges": "Tyres +0.1 bar",
+                "sources": {
+                    "telemetry": [
+                        {
+                            "contentSha256": "b68b1ec136dd721f3049e2ca92299a421e4b9af266e25dd33e155441cb2cf721",
+                            "id": "ca21c2f6-548f-4bf3-9dc1-ed0ae44a6599",
+                            "importProvenance": {
+                                "fingerprint": {
+                                    "channels": [
+                                        {
+                                            "name": "latitude",
+                                            "samples": 2868,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "samples": 2868,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "velocity",
+                                            "samples": 2868,
+                                            "unit": ""
+                                        }
+                                    ],
+                                    "durationUs": 286700000,
+                                    "kind": "telemetry-v1",
+                                    "sampleCount": 2868,
+                                    "sampledSha256": "342d27b6b055f9857f05160b4fabc0bb88910dbaa112f1a014ab2a604765144c",
+                                    "size": 105179
+                                },
+                                "format": "vbo",
+                                "sha256": "b68b1ec136dd721f3049e2ca92299a421e4b9af266e25dd33e155441cb2cf721"
+                            },
+                            "reference": {
+                                "absolutePath": "/tmp/flappedear-roundtrip/recordings/morning.vbo",
+                                "fingerprint": {
+                                    "channels": [
+                                        {
+                                            "name": "latitude",
+                                            "samples": 2868,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "samples": 2868,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "velocity",
+                                            "samples": 2868,
+                                            "unit": ""
+                                        }
+                                    ],
+                                    "durationUs": 286700000,
+                                    "kind": "telemetry-v1",
+                                    "sampleCount": 2868,
+                                    "sampledSha256": "342d27b6b055f9857f05160b4fabc0bb88910dbaa112f1a014ab2a604765144c",
+                                    "size": 105179
+                                },
+                                "relativePath": "recordings/morning.vbo"
+                            }
+                        }
+                    ],
+                    "video": {
+                        "absolutePath": "/tmp/flappedear-roundtrip/clip.mp4",
+                        "relativePath": "clip.mp4"
+                    }
+                },
+                "sync": {
+                    "offset": 12.5,
+                    "timeScale": 1
+                },
+                "trackConfiguration": {
+                    "direction": "unknown",
+                    "gateRevision": "gates-v1:1948810c150ab430c27fc0d933c3e5be237532123bdd2abecf38829fbdbd29d2",
+                    "layoutId": null,
+                    "sourceFingerprint": {
+                        "channels": [
+                            {
+                                "name": "latitude",
+                                "samples": 2868,
+                                "unit": ""
+                            },
+                            {
+                                "name": "longitude",
+                                "samples": 2868,
+                                "unit": ""
+                            },
+                            {
+                                "name": "velocity",
+                                "samples": 2868,
+                                "unit": ""
+                            }
+                        ],
+                        "durationUs": 286700000,
+                        "kind": "telemetry-v1",
+                        "sampleCount": 2868,
+                        "sampledSha256": "342d27b6b055f9857f05160b4fabc0bb88910dbaa112f1a014ab2a604765144c",
+                        "size": 105179
+                    },
+                    "sourceId": "ca21c2f6-548f-4bf3-9dc1-ed0ae44a6599"
+                },
+                "trackInference": {
+                    "algorithm": "gps-route-v1",
+                    "direction": "counterclockwise",
+                    "gateRevision": "gates-v1:1948810c150ab430c27fc0d933c3e5be237532123bdd2abecf38829fbdbd29d2",
+                    "layoutId": "gps-route-v1:ef4bcb7e226c184b29b84bf5491dba4316692cd48a80eb21a82cf63887d07dd4",
+                    "sourceRevision": "b68b1ec136dd721f3049e2ca92299a421e4b9af266e25dd33e155441cb2cf721"
+                }
+            },
+            {
+                "id": "7168fe4b-2610-4641-b17f-ee8057676df3",
+                "name": "Session 2",
+                "primaryTelemetrySourceId": "fb8a977b-cd76-466b-852b-a3a5e5bbb736",
+                "sources": {
+                    "telemetry": [
+                        {
+                            "contentSha256": "c529edf5a08025a4cbbe49fd6a2612a35899d8da578d76b5de379142b4298037",
+                            "id": "fb8a977b-cd76-466b-852b-a3a5e5bbb736",
+                            "importProvenance": {
+                                "fingerprint": {
+                                    "channels": [
+                                        {
+                                            "name": "latitude",
+                                            "samples": 2783,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "samples": 2783,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "velocity",
+                                            "samples": 2783,
+                                            "unit": ""
+                                        }
+                                    ],
+                                    "durationUs": 278200000,
+                                    "kind": "telemetry-v1",
+                                    "sampleCount": 2783,
+                                    "sampledSha256": "273fbab0d805ed534e390ca6f778831d03ee9de5a2077a624fbb9bf01726cc39",
+                                    "size": 102034
+                                },
+                                "format": "vbo",
+                                "sha256": "c529edf5a08025a4cbbe49fd6a2612a35899d8da578d76b5de379142b4298037"
+                            },
+                            "reference": {
+                                "absolutePath": "/tmp/flappedear-roundtrip/recordings/midday.vbo",
+                                "fingerprint": {
+                                    "channels": [
+                                        {
+                                            "name": "latitude",
+                                            "samples": 2783,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "samples": 2783,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "velocity",
+                                            "samples": 2783,
+                                            "unit": ""
+                                        }
+                                    ],
+                                    "durationUs": 278200000,
+                                    "kind": "telemetry-v1",
+                                    "sampleCount": 2783,
+                                    "sampledSha256": "273fbab0d805ed534e390ca6f778831d03ee9de5a2077a624fbb9bf01726cc39",
+                                    "size": 102034
+                                },
+                                "relativePath": "recordings/midday.vbo"
+                            }
+                        }
+                    ]
+                },
+                "sync": {
+                    "offset": 0,
+                    "timeScale": 1
+                },
+                "trackConfiguration": {
+                    "direction": "unknown",
+                    "gateRevision": "gates-v1:1948810c150ab430c27fc0d933c3e5be237532123bdd2abecf38829fbdbd29d2",
+                    "layoutId": null,
+                    "sourceFingerprint": {
+                        "channels": [
+                            {
+                                "name": "latitude",
+                                "samples": 2783,
+                                "unit": ""
+                            },
+                            {
+                                "name": "longitude",
+                                "samples": 2783,
+                                "unit": ""
+                            },
+                            {
+                                "name": "velocity",
+                                "samples": 2783,
+                                "unit": ""
+                            }
+                        ],
+                        "durationUs": 278200000,
+                        "kind": "telemetry-v1",
+                        "sampleCount": 2783,
+                        "sampledSha256": "273fbab0d805ed534e390ca6f778831d03ee9de5a2077a624fbb9bf01726cc39",
+                        "size": 102034
+                    },
+                    "sourceId": "fb8a977b-cd76-466b-852b-a3a5e5bbb736"
+                },
+                "trackInference": {
+                    "algorithm": "gps-route-v1",
+                    "direction": "counterclockwise",
+                    "gateRevision": "gates-v1:1948810c150ab430c27fc0d933c3e5be237532123bdd2abecf38829fbdbd29d2",
+                    "layoutId": "gps-route-v1:ef4bcb7e226c184b29b84bf5491dba4316692cd48a80eb21a82cf63887d07dd4",
+                    "sourceRevision": "c529edf5a08025a4cbbe49fd6a2612a35899d8da578d76b5de379142b4298037"
+                },
+                "trackSegments": [
+                    {
+                        "endProgressMeters": 287.87256048863884,
+                        "id": "e9ecd041-d8d8-4f0b-b26c-53d4328afc77",
+                        "name": "Hairpin (Overlays)",
+                        "startProgressMeters": 223.96011696587988,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 369.81934133748433,
+                        "id": "afae6364-1eac-449f-a558-c8de91fcef95",
+                        "name": "Straight 1",
+                        "startProgressMeters": 287.87256048863884,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "sector"
+                    },
+                    {
+                        "endProgressMeters": 443.81103351501173,
+                        "id": "587b9df4-6e24-49e0-ab38-576a1cb8ef28",
+                        "name": "Straight 2",
+                        "startProgressMeters": 369.81934133748433,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    },
+                    {
+                        "endProgressMeters": 487.7430145167492,
+                        "id": "922b8e9a-84fe-4114-b629-2980e46bcbc7",
+                        "name": "Corners 4–5",
+                        "startProgressMeters": 443.81103351501173,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 537.7374011231864,
+                        "id": "b7e61637-1a11-464e-9ce2-c6e7d1ac0da6",
+                        "name": "Straight 3",
+                        "startProgressMeters": 487.7430145167492,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    },
+                    {
+                        "endProgressMeters": 597.6120712772642,
+                        "id": "6f9dd7d9-60ae-409e-9b0b-db1c4e04c7a9",
+                        "name": "Corner 6",
+                        "startProgressMeters": 537.7374011231864,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 655.6055597407312,
+                        "id": "3edfb4c4-204a-4319-accb-e57ff2dc7d30",
+                        "name": "Straight 4",
+                        "startProgressMeters": 597.6120712772642,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    },
+                    {
+                        "endProgressMeters": 715.4664657637112,
+                        "id": "6b439ee5-9487-44ff-b504-c3c44d560e9a",
+                        "name": "Corner 7",
+                        "startProgressMeters": 655.6055597407312,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 763.4610769058911,
+                        "id": "11f9cb49-4a92-4f1c-be61-470bce8686c4",
+                        "name": "Straight 5",
+                        "startProgressMeters": 715.4664657637112,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    },
+                    {
+                        "endProgressMeters": 835.3981729528729,
+                        "id": "3fcbd7aa-069d-4b25-bfeb-caa03be15e65",
+                        "name": "Corner 8",
+                        "startProgressMeters": 763.4610769058911,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 1199.3573074477365,
+                        "id": "43168923-413e-4cea-8047-1da7ba20edd7",
+                        "name": "Straight 6",
+                        "startProgressMeters": 835.3981729528729,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    },
+                    {
+                        "endProgressMeters": 1269.2880333849837,
+                        "id": "f62af8c1-c14c-42a9-8829-c6cc200bf5b7",
+                        "name": "Corner 9",
+                        "startProgressMeters": 1199.3573074477365,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 1497.2624363103382,
+                        "id": "e49953ff-d395-47d0-aaa0-08d8b556817c",
+                        "name": "Straight 7",
+                        "startProgressMeters": 1269.2880333849837,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    },
+                    {
+                        "endProgressMeters": 1565.2010569044776,
+                        "id": "d4c06147-a9b5-4317-b40e-32df5170683b",
+                        "name": "Corner 10",
+                        "startProgressMeters": 1497.2624363103382,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "corner"
+                    },
+                    {
+                        "endProgressMeters": 223.96011696587988,
+                        "id": "63425264-28e8-461b-9559-34a26fd2d937",
+                        "name": "Straight 8",
+                        "startProgressMeters": 1565.2010569044776,
+                        "trackConfigurationReference": "compatibility-v1:8bd6ba7f5f80bcd67905fab90f198e395f3537257a6e95ba5743bba8a2a90943",
+                        "type": "straight"
+                    }
+                ]
+            },
+            {
+                "id": "ddf071ab-b830-4843-9aa3-21a67e326f15",
+                "name": "Session 3",
+                "primaryTelemetrySourceId": "4bd699da-ddb2-431b-aecf-26c38ef0c947",
+                "sources": {
+                    "telemetry": [
+                        {
+                            "contentSha256": "849c2878255daf5cd90bbfc13740b56a77314bead43cc6d79011538f752411a9",
+                            "id": "4bd699da-ddb2-431b-aecf-26c38ef0c947",
+                            "importProvenance": {
+                                "fingerprint": {
+                                    "channels": [
+                                        {
+                                            "name": "latitude",
+                                            "samples": 2013,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "samples": 2013,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "velocity",
+                                            "samples": 2013,
+                                            "unit": ""
+                                        }
+                                    ],
+                                    "durationUs": 201200000,
+                                    "kind": "telemetry-v1",
+                                    "sampleCount": 2013,
+                                    "sampledSha256": "5ab9d59a3648b7eee2c4191d7b7aaabf97d6b1b297993468d76d77f161b0eee2",
+                                    "size": 73544
+                                },
+                                "format": "vbo",
+                                "sha256": "849c2878255daf5cd90bbfc13740b56a77314bead43cc6d79011538f752411a9"
+                            },
+                            "reference": {
+                                "absolutePath": "/tmp/flappedear-roundtrip/recordings/afternoon.vbo",
+                                "fingerprint": {
+                                    "channels": [
+                                        {
+                                            "name": "latitude",
+                                            "samples": 2013,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "longitude",
+                                            "samples": 2013,
+                                            "unit": ""
+                                        },
+                                        {
+                                            "name": "velocity",
+                                            "samples": 2013,
+                                            "unit": ""
+                                        }
+                                    ],
+                                    "durationUs": 201200000,
+                                    "kind": "telemetry-v1",
+                                    "sampleCount": 2013,
+                                    "sampledSha256": "5ab9d59a3648b7eee2c4191d7b7aaabf97d6b1b297993468d76d77f161b0eee2",
+                                    "size": 73544
+                                },
+                                "relativePath": "recordings/afternoon.vbo"
+                            }
+                        }
+                    ]
+                },
+                "sync": {
+                    "offset": 0,
+                    "timeScale": 1
+                },
+                "trackConfiguration": {
+                    "direction": "unknown",
+                    "gateRevision": "gates-v1:1948810c150ab430c27fc0d933c3e5be237532123bdd2abecf38829fbdbd29d2",
+                    "layoutId": null,
+                    "sourceFingerprint": {
+                        "channels": [
+                            {
+                                "name": "latitude",
+                                "samples": 2013,
+                                "unit": ""
+                            },
+                            {
+                                "name": "longitude",
+                                "samples": 2013,
+                                "unit": ""
+                            },
+                            {
+                                "name": "velocity",
+                                "samples": 2013,
+                                "unit": ""
+                            }
+                        ],
+                        "durationUs": 201200000,
+                        "kind": "telemetry-v1",
+                        "sampleCount": 2013,
+                        "sampledSha256": "5ab9d59a3648b7eee2c4191d7b7aaabf97d6b1b297993468d76d77f161b0eee2",
+                        "size": 73544
+                    },
+                    "sourceId": "4bd699da-ddb2-431b-aecf-26c38ef0c947"
+                },
+                "trackInference": {
+                    "algorithm": "gps-route-v1",
+                    "direction": "counterclockwise",
+                    "gateRevision": "gates-v1:1948810c150ab430c27fc0d933c3e5be237532123bdd2abecf38829fbdbd29d2",
+                    "layoutId": "gps-route-v1:ef4bcb7e226c184b29b84bf5491dba4316692cd48a80eb21a82cf63887d07dd4",
+                    "sourceRevision": "849c2878255daf5cd90bbfc13740b56a77314bead43cc6d79011538f752411a9"
+                }
+            }
+        ]
+    },
+    "exportSettings": {
+        "quality": "high"
+    },
+    "mapSettings": {
+        "providerId": "none"
+    },
+    "scene": {
+        "widgets": [
+        ]
+    },
+    "version": 3
+}
