@@ -9,6 +9,7 @@ export 'src/analysis/corner_phases.dart';
 export 'src/analysis/corner_speeds.dart';
 export 'src/analysis/driving_variability.dart';
 export 'src/analysis/exit_metrics.dart';
+export 'src/analysis/outing_results.dart';
 export 'src/analysis/outing_theoretical_best.dart';
 export 'src/analysis/sector_timing.dart';
 export 'src/analysis/theoretical_best.dart';
@@ -28,6 +29,7 @@ export 'src/day/day_theoretical_best.dart';
 export 'package:fetproject/fetproject.dart' show FetprojectError;
 
 export 'src/day/day_laps.dart';
+export 'src/day/day_progression.dart';
 export 'src/day/day_ranking.dart';
 export 'src/day/lap_path.dart';
 export 'src/day/track_inference.dart';

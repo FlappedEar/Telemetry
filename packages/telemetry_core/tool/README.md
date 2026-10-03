@@ -248,3 +248,42 @@ unchanged for the other files. To check other recordings locally, run the
 test with `FET_CORNER_REFERENCE=<json>` and `FET_CORNER_DIRS=<dir>[:<dir>]`;
 `FET_PARITY_REPORT=1` prints the largest difference. Never edit the JSON by
 hand.
+
+## cpp_progression_dump
+
+Runs FlappedEar Overlays' own `rankOutingLaps`, `summarizeOutingProgression`,
+`eligibleOutingLaps`, `Consistency`, `publishTimeLossRanking` and
+`publishSectorProgression` over VBO files and fixed cases and writes the
+results as JSON. Each file with laps becomes the day of two runs of
+`cpp_theoretical_best_dump`, timed against the fastest lap's proposals and
+the same shifted 37 m, and gets its section progression (runs listed in a
+fixed order with a run without laps) and both time-loss rankings with corner
+names. All inputs together form one day of runs (`outingLapRows`, sorted by
+`sortOutingLaps`) on two track configurations and an unresolved one, with a
+user exclusion, a stale run and run notes, conditions and setup changes; for
+each group it writes the ranking, the progression and the lap consistency of
+`AnalysisController::outingLapConsistency` (an app member function, so the
+tool repeats its few lines over Overlays' `summarizeConsistency`). The cases
+section holds `summarizeConsistency` on fixed values and the section
+progression and time losses of hand-made laps (runs of up to five laps, so
+the statistics are available).
+
+```bash
+cmake -S tool/cpp_progression_dump -B /tmp/progressionbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/progressionbuild
+/tmp/progressionbuild/cpp_progression_dump test/parity/progression_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/progression_parity_test.dart
+```
+
+`--day <day.json> <output.json>` does the same for a real day described as
+for `cpp_theoretical_best_dump` (each run also with its `name`; every run
+gets the same configuration); never commit its input or output.
+
+The committed `test/parity/progression_reference.json` was generated from
+FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+other references are unchanged. To check other recordings locally, run the
+test with `FET_PROGRESSION_REFERENCE=<json>` and
+`FET_PROGRESSION_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the
+largest difference. Never edit the JSON by hand.
