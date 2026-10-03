@@ -100,19 +100,29 @@ longitudinal G, which happens only when the recording has no such pedal
 channel.
 
 A session recorded as both a VBO and an RCZ of the same drive is combined
-without a review: in the background, the RCZ's clock is lined up with the
-VBO's by their speed traces (recording-alignment-v1, as FlappedEar Overlays
+without a review: the results show from the VBO first, then, in a background
+isolate, the RCZ's clock is lined up with the VBO's by their speed traces (recording-alignment-v1, as FlappedEar Overlays
 does) and, when that is unambiguous, its channels are fused
 (channel-fusion-v1): a channel only the RCZ recorded is added and says
 **from RCZ** wherever it is listed or charted, a channel both recorded stays
 the VBO's, and where the two disagree the Circuits row says so with **Keep
 VBO**, **Fill gaps** and **Use RCZ**. When the clocks cannot be lined up,
-nothing is combined and the row says why. Laps, lap times, rankings and the
+nothing is combined and the row says why; when it is lined up but adds
+nothing, the row says so in one quiet line. Laps, lap times, rankings and the
 theoretical best always come from the VBO alone; lap charts, comparisons
 and the Car and Driver cards use the combined channels. Saving writes the
 run's `fusion` decision of the shared format, bound to both recordings'
-content: opening applies it without aligning again while both are
-unchanged, and aligns them afresh otherwise.
+content. A saved day opens with its VBO results at once and then reads its
+RCZ in the background: the decision is applied without aligning again while
+both recordings are unchanged, and they are aligned afresh otherwise. When
+the file at the RCZ's place (or one found by **Find recordings in a
+folder…**, which also looks for RCZs by content, or by name) holds other
+content, it is still used when it is the same drive as the VBO by the
+import's pairing rule: it is aligned afresh, its source entry is updated and
+the day has changes until saved. Otherwise it is "a different recording" and
+the session uses its VBO alone. A day gets unsaved changes from this only
+when it produces a new decision or updates the RCZ's entry, never just by
+opening.
 
 Speeds carry the unit their recording declares: RCZ declares its unit, and a
 RaceChrono VBO names it in its header (`velocity kmh`), which the parser keeps
@@ -185,8 +195,8 @@ installing a newer one.
 
 **Diagnostics**, in the **More** menu of **Import a day** and of the day page,
 shows how long the last import took step by step (finding the recordings,
-parse and import, day analysis, aligning and combining VBO and RCZ when a
-session has both, start to results, then the theoretical best
+parse and import, day analysis, start to results, then aligning and
+combining VBO and RCZ when a session has both, and the theoretical best
 and the channel summaries once they have been calculated), how many
 recordings, sessions and samples it read, and the app's current and peak
 resident memory as the system reports it ("Not available" where it does not).

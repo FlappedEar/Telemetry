@@ -37,5 +37,14 @@
   "fusionReasonInsufficient": "za mało danych, by je dopasować",
   "fusionReasonNotFound": "nie znaleziono nagrania",
   "fusionReasonDifferent": "znaleziony plik to inne nagranie",
-  "fusionReasonUnreadable": "nie udało się go odczytać"
+  "fusionReasonUnreadable": "nie udało się go odczytać",
+  "fusionPending": "Dopasowywanie do {format}…",
+  "fusionLinedUp": "Dopasowano do {format} ({offset}); nic do dodania",
+  "fusionCombinedWith": "Dodano {format} do: {sessions}.",
+  "fusionMissingTitle": "{count, plural, =1{Nie można użyć {format} 1 sesji} few{Nie można użyć {format} {count} sesji} many{Nie można użyć {format} {count} sesji} other{Nie można użyć {format} {count} sesji}}",
+  "fusionMissingLine": "{session}: {path} · {reason}",
+  "fusionChannelSpeed": "Prędkość",
+  "fusionChannelLatitude": "Szerokość geograficzna",
+  "fusionChannelLongitude": "Długość geograficzna",
+  "fusionChannelSatellites": "Satelity"
 }

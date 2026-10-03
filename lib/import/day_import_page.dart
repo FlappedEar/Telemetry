@@ -226,7 +226,7 @@ class _DayImportPageState extends State<DayImportPage> {
     final day = DayResultsController(
       runs: runs,
       analysis: analysis,
-      fusions: state is DayImportFinished ? state.fusions : const {},
+      alternatives: state is DayImportFinished ? state.alternatives : const {},
       recovery: widget.recovery,
       appender: widget.appender,
     );
@@ -636,8 +636,19 @@ class _DayImportPageState extends State<DayImportPage> {
     String path,
     String folder,
     List<MissingRecording> missing,
-  ) =>
-      () => openDay(path, relinked: findMovedRecordings(folder, missing).found);
+    List<MissingRecording> alternatives,
+  ) => () {
+    final search = findMovedRecordings(
+      folder,
+      missing,
+      missingAlternatives: alternatives,
+    );
+    return openDay(
+      path,
+      relinked: search.found,
+      relinkedAlternatives: search.alternatives,
+    );
+  };
 
   /// The day to open: on phones from the days saved in the app, else from
   /// the open dialog.
@@ -691,7 +702,9 @@ class _DayImportPageState extends State<DayImportPage> {
         if (!await _cannotOpen(day) || !mounted) return;
         final folder = await widget.documents.pickFolder();
         if (folder == null || !mounted) return;
-        day = await Isolate.run(_relinkJob(path, folder, day.missing));
+        day = await Isolate.run(
+          _relinkJob(path, folder, day.missing, day.missingAlternatives),
+        );
         if (!mounted) return;
       }
       await _showOpened(

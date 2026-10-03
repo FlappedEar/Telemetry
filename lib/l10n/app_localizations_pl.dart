@@ -164,4 +164,49 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get fusionReasonUnreadable => 'nie udało się go odczytać';
+
+  @override
+  String fusionPending(String format) {
+    return 'Dopasowywanie do $format…';
+  }
+
+  @override
+  String fusionLinedUp(String format, String offset) {
+    return 'Dopasowano do $format ($offset); nic do dodania';
+  }
+
+  @override
+  String fusionCombinedWith(String format, String sessions) {
+    return 'Dodano $format do: $sessions.';
+  }
+
+  @override
+  String fusionMissingTitle(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Nie można użyć $format $count sesji',
+      many: 'Nie można użyć $format $count sesji',
+      few: 'Nie można użyć $format $count sesji',
+      one: 'Nie można użyć $format 1 sesji',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionMissingLine(String session, String path, String reason) {
+    return '$session: $path · $reason';
+  }
+
+  @override
+  String get fusionChannelSpeed => 'Prędkość';
+
+  @override
+  String get fusionChannelLatitude => 'Szerokość geograficzna';
+
+  @override
+  String get fusionChannelLongitude => 'Długość geograficzna';
+
+  @override
+  String get fusionChannelSatellites => 'Satelity';
 }

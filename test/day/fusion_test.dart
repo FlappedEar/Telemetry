@@ -1,11 +1,14 @@
 // A session's VBO and RCZ combined without a review (FET-51), on synthetic
 // recordings of one drive: no real data.
+import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/fusion_panel.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -31,6 +34,44 @@ final class _SyncJob implements DayAppendJob {
   void cancel() {}
 }
 
+/// Holds each background fusion until the test lets it run.
+final class _HeldFusions {
+  final jobs = <(RunFusion? Function(), Completer<RunFusion?>)>[];
+
+  Future<RunFusion?> call(RunFusion? Function() job) {
+    final done = Completer<RunFusion?>();
+    jobs.add((job, done));
+    return done.future;
+  }
+
+  /// Runs the [index]th job held; [settle] lets its result be applied
+  /// (widget tests pump instead).
+  Future<void> release(int index, {bool settle = true}) async {
+    final (job, done) = jobs[index];
+    done.complete(job());
+    if (settle) await pumpEventQueue();
+  }
+}
+
+/// Folder pickers that answer [folder].
+final class _Documents implements DocumentPickers {
+  _Documents(this.folder);
+
+  final String folder;
+
+  @override
+  Future<String?> saveLocation(String name) async => null;
+
+  @override
+  Future<String?> pickDocument() async => null;
+
+  @override
+  Future<String?> pickFolder() async => folder;
+
+  @override
+  Future<List<String>> savedDays() async => const [];
+}
+
 /// What a lap row shows and is ranked by.
 List<Object> _rows(DayResultsController controller) => [
   for (final row in controller.analysis.rows)
@@ -47,6 +88,63 @@ List<Object> _rows(DayResultsController controller) => [
   controller.ranking?.bestOfDay?.reference ?? 'no best lap',
 ];
 
+TelemetrySession _session(
+  TelemetrySession session,
+  Map<String, TelemetryChannel> channels,
+) => TelemetrySession(
+  duration: session.duration,
+  startTime: session.startTime,
+  metadata: session.metadata,
+  channels: channels,
+  aliases: session.aliases,
+  warnings: session.warnings,
+  timingGates: session.timingGates,
+  sampleCount: session.sampleCount,
+);
+
+TelemetryChannel _changed(
+  TelemetryChannel channel,
+  double Function(double) f,
+) => TelemetryChannel(
+  name: channel.name,
+  unit: channel.unit,
+  timestamps: channel.timestamps,
+  values: Float32List.fromList([for (final value in channel.values) f(value)]),
+);
+
+/// An RCZ of [primary]'s drive in its units whose speed reads 8 % higher
+/// and whose position lies about 20 m north-east, with engine speed added:
+/// speed and GPS conflict, so the user can choose the RCZ for them.
+TelemetryRunProposal _conflictingRcz(TelemetryRunProposal primary) {
+  final session = primary.telemetry;
+  final speed = session.aliases['speed']!;
+  final latitude = session.aliases['latitude']!;
+  final longitude = session.aliases['longitude']!;
+  final channels = {
+    for (final MapEntry(:key, :value) in session.channels.entries)
+      key: key == speed
+          ? _changed(value, (v) => v * 1.08)
+          : key == latitude || key == longitude
+          ? _changed(value, (v) => v + 0.01)
+          : value,
+    'rpm': _changed(session.channels[speed]!, (v) => 2000 + v * 30),
+  };
+  final sha = 'a' * 64;
+  return TelemetryRunProposal(
+    id: 'run:$sha',
+    sourceId: 'sha256:$sha',
+    sourcePath: '${primary.sourcePath}.rcz',
+    format: RecordingFormat.rcz,
+    contentSha256: sha,
+    telemetry: _session(session, channels),
+    laps: primary.laps,
+  );
+}
+
+Map<String, Object?> _runJson(String path) =>
+    ((readDayDocument(path)['event'] as Map)['runs'] as List).single
+        as Map<String, Object?>;
+
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('fusion'));
@@ -55,67 +153,128 @@ void main() {
   DayImportOutcome importDay(List<String> paths) =>
       runDayImport((paths: paths, includeSubfolders: false));
 
+  test('the results show first, and the RCZ is combined after', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final alone = importDay([vbo]);
+    final both = importDay([vbo, rcz]);
+    expect(both.runs, hasLength(1));
+    // The import itself does not align: that waits until the day shows.
+    expect(
+      both.steps.map((step) => step.name),
+      isNot(contains('Align and combine VBO and RCZ')),
+    );
+    final runId = both.runs.single.run.id;
+    expect(both.alternatives.keys, [runId]);
+    final plain = DayResultsController(
+      runs: alone.runs,
+      analysis: alone.analysis!,
+    );
+    final held = _HeldFusions();
+    final fused = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+      fusionRunner: held.call,
+    );
+    addTearDown(plain.dispose);
+    addTearDown(fused.dispose);
+
+    // Before: the VBO's results, and a fusion on its way.
+    expect(fused.fusion(runId), isNull);
+    expect(fused.fusionPending(runId), 'RCZ');
+    expect(_rows(fused), _rows(plain));
+    expect(fused.session(runId)!.channels, isNot(contains('rpm-obd')));
+    final laps = fused.comparisonCandidates();
+    expect(
+      fused.comparison(laps[0], laps[1])!.chartChannels,
+      isNot(contains('rpm-obd')),
+    );
+    var notified = 0;
+    fused.addListener(() => ++notified);
+
+    await held.release(0);
+    await fused.fusionsSettled;
+    expect(notified, greaterThan(0));
+    expect(fused.fusionPending(runId), isNull);
+    final fusion = fused.fusion(runId)!;
+    expect(fusion.fused, isTrue);
+    expect(fused.session(runId)!.channels, contains('rpm-obd'));
+    expect(fused.channelSource(runId, 'rpm-obd'), 'RCZ');
+    expect(fused.channelSource(runId, 'velocity'), '');
+    // The comparison and the channel summaries read the fused channels now.
+    expect(
+      fused.comparison(laps[0], laps[1])!.chartChannels,
+      contains('rpm-obd'),
+    );
+    expect(_rows(fused), _rows(plain));
+  });
+
+  test('"Use RCZ" on speed and on GPS changes no lap row, timing, ranking or '
+      'theoretical best', () async {
+    final (vbo, _) = writeFusionPair(directory.path);
+    final alone = importDay([vbo]);
+    final primary = alone.runs.single.run;
+    final runId = primary.id;
+    final fusion = fuseRunRecordings(primary, _conflictingRcz(primary));
+    expect(fusion.fused, isTrue);
+    final speed = primary.telemetry.aliases['speed']!;
+    final latitude = primary.telemetry.aliases['latitude']!;
+    expect([
+      for (final channel in fusion.conflicts) channel.key,
+    ], containsAll(['speed', 'latitude', 'longitude']));
+    final plain = DayResultsController(
+      runs: alone.runs,
+      analysis: alone.analysis!,
+    );
+    final fused = DayResultsController(
+      runs: alone.runs,
+      analysis: alone.analysis!,
+      fusions: {runId: fusion},
+    );
+    addTearDown(plain.dispose);
+    addTearDown(fused.dispose);
+    await plain.requestTheoreticalBest();
+    final best = plain.theoreticalBest!.summary!;
+    expect(best.totalSeconds, isNotNull);
+
+    for (final key in ['speed', 'latitude', 'longitude']) {
+      await fused.setFusionRule(runId, key, FusionRule.preferAlternative);
+      expect(fused.fusion(runId)!.ruleOf(key), FusionRule.preferAlternative);
+    }
+    // The RCZ's speed and position are what the channels read now.
+    final session = fused.session(runId)!;
+    final recorded = primary.telemetry;
+    expect(
+      session.valueAt(speed, 100.0)! / recorded.valueAt(speed, 100.0)!,
+      closeTo(1.08, 0.01),
+    );
+    expect(
+      session.valueAt(latitude, 100.0)! - recorded.valueAt(latitude, 100.0)!,
+      closeTo(0.01, 0.001),
+    );
+    expect(fused.channelSource(runId, speed), 'RCZ');
+    expect(fused.dirty, isTrue);
+
+    // Laps, timing, ranking and the theoretical best are the VBO's alone.
+    expect(_rows(fused), _rows(plain));
+    await fused.requestTheoreticalBest();
+    final timed = fused.theoreticalBest!.summary!;
+    expect(timed.totalSeconds, best.totalSeconds);
+    expect(timed.differenceSeconds, best.differenceSeconds);
+    expect(
+      [
+        for (final segment in fused.theoreticalBest!.segments)
+          (segment.seconds, segment.sourceLapReference),
+      ],
+      [
+        for (final segment in plain.theoreticalBest!.segments)
+          (segment.seconds, segment.sourceLapReference),
+      ],
+    );
+  });
+
   test(
-    'the RCZ adds its channels and never changes laps or rankings',
-    () async {
-      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
-      final alone = importDay([vbo]);
-      final both = importDay([vbo, rcz]);
-      expect(both.runs, hasLength(1));
-      expect(
-        both.steps.map((step) => step.name),
-        contains('Align and combine VBO and RCZ'),
-      );
-      final runId = both.runs.single.run.id;
-      final plain = DayResultsController(
-        runs: alone.runs,
-        analysis: alone.analysis!,
-      );
-      final fused = DayResultsController(
-        runs: both.runs,
-        analysis: both.analysis!,
-        fusions: both.fusions,
-      );
-      addTearDown(plain.dispose);
-      addTearDown(fused.dispose);
-
-      final fusion = fused.fusion(runId)!;
-      expect(fusion.fused, isTrue);
-      expect(fused.session(runId)!.channels, contains('rpm-obd'));
-      expect(plain.session(runId)!.channels, isNot(contains('rpm-obd')));
-      expect(fused.channelSource(runId, 'rpm-obd'), 'RCZ');
-      expect(fused.channelSource(runId, 'velocity'), '');
-      // The comparison and the channel summaries read the fused channels.
-      final laps = fused.comparisonCandidates();
-      expect(
-        fused.comparison(laps[0], laps[1])!.chartChannels,
-        contains('rpm-obd'),
-      );
-      // Lap rows, timing and ranking are the VBO's alone.
-      expect(_rows(fused), _rows(plain));
-
-      // Using the RCZ for the channel they disagree on changes no lap either.
-      expect([for (final channel in fusion.conflicts) channel.key], ['sats']);
-      await fused.setFusionRule(runId, 'sats', FusionRule.preferAlternative);
-      expect(fused.fusion(runId)!.ruleOf('sats'), FusionRule.preferAlternative);
-      expect(fused.channelSource(runId, 'sats'), 'RCZ');
-      expect(fused.dirty, isTrue);
-      expect(_rows(fused), _rows(plain));
-      await fused.requestTheoreticalBest();
-      await plain.requestTheoreticalBest();
-      // So is the theoretical best, timed from the VBO.
-      final timed = fused.theoreticalBest!.summary!;
-      expect(timed.totalSeconds, isNotNull);
-      expect(timed.totalSeconds, plain.theoreticalBest!.summary!.totalSeconds);
-      expect(
-        timed.differenceSeconds,
-        plain.theoreticalBest!.summary!.differenceSeconds,
-      );
-    },
-  );
-
-  test(
-    'saves the decision and opens the day with it, without aligning again',
+    'an added channel and a conflict, from import to save and reopen',
     () async {
       final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
       final both = importDay([vbo, rcz]);
@@ -123,37 +282,149 @@ void main() {
       final controller = DayResultsController(
         runs: both.runs,
         analysis: both.analysis!,
-        fusions: both.fusions,
+        alternatives: both.alternatives,
       );
       addTearDown(controller.dispose);
+      await controller.fusionsSettled;
+      final fusion = controller.fusion(runId)!;
+      expect(fusion.channelOrigins, {'rpm-obd': 'added'});
+      expect([for (final channel in fusion.conflicts) channel.key], ['sats']);
       await controller.setFusionRule(runId, 'sats', FusionRule.fillGaps);
       final path = '${directory.path}/Day.fetproject';
       // The writer validates the document as FlappedEar Overlays does.
       await controller.save(path);
-      final run =
-          ((readDayDocument(path)['event'] as Map)['runs'] as List).single
-              as Map;
+      expect(controller.dirty, isFalse);
+      final run = _runJson(path);
+      final sources = (run['sources'] as Map)['telemetry'] as List;
+      expect(sources, hasLength(2));
       final decision = run['fusion'] as Map;
-      expect(
-        decision['alternativeSourceId'],
-        controller.fusion(runId)!.alternativeSourceId,
-      );
+      expect(decision['alternativeSourceId'], fusion.alternativeSourceId);
       expect(decision['rules'], [
         {'key': 'sats', 'rule': 'fillGaps'},
       ]);
 
-      final opened = DayResultsController.opened(openDay(path));
+      final held = _HeldFusions();
+      final opened = DayResultsController.opened(
+        openDay(path),
+        fusionRunner: held.call,
+      );
       addTearDown(opened.dispose);
-      expect(opened.dirty, isFalse);
+      // The day shows before its RCZ is read.
+      expect(opened.fusion(runId), isNull);
+      expect(opened.fusionPending(runId), 'RCZ');
+      expect(_rows(opened), _rows(controller));
+      await held.release(0);
+      await opened.fusionsSettled;
       final applied = opened.fusion(runId)!;
-      expect(applied.fromDocument, isTrue);
+      expect(applied.fromDocument, isTrue, reason: 'not aligned again');
       expect(applied.ruleOf('sats'), FusionRule.fillGaps);
+      expect(applied.channelOrigins, {'rpm-obd': 'added', 'sats': 'fillGaps'});
       expect(opened.channelSource(runId, 'rpm-obd'), 'RCZ');
+      expect(
+        opened.dirty,
+        isFalse,
+        reason: 'the saved decision changes nothing',
+      );
       expect(_rows(opened), _rows(controller));
     },
   );
 
-  test('an RCZ added to its VBO session is combined with it', () async {
+  test(
+    'a day without a decision has changes only once fusion makes one',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final both = importDay([vbo, rcz]);
+      final runId = both.runs.single.run.id;
+      final controller = DayResultsController(
+        runs: both.runs,
+        analysis: both.analysis!,
+        alternatives: both.alternatives,
+      );
+      addTearDown(controller.dispose);
+      await controller.fusionsSettled;
+      final path = '${directory.path}/Day.fetproject';
+      await controller.save(path);
+      // As a day saved before FET-51 keeps it: the RCZ, without a decision.
+      final document = readDayDocument(path);
+      final run = ((document['event'] as Map)['runs'] as List).single as Map;
+      run.remove('fusion');
+      // The writer refuses a document Overlays would not open.
+      await saveDayDocument(path, document);
+
+      final held = _HeldFusions();
+      final opened = DayResultsController.opened(
+        openDay(path),
+        fusionRunner: held.call,
+      );
+      addTearDown(opened.dispose);
+      expect(opened.dirty, isFalse);
+      await held.release(0);
+      await opened.fusionsSettled;
+      expect(opened.fusion(runId)!.fused, isTrue);
+      expect(opened.fusion(runId)!.fromDocument, isFalse);
+      expect(opened.dirty, isTrue, reason: 'the new decision is not saved');
+    },
+  );
+
+  test('a rule change that fails leaves the choice usable', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = importDay([vbo, rcz]);
+    final runId = both.runs.single.run.id;
+    final primary = both.runs.single.run;
+    final fusion = fuseRunRecordings(primary, both.alternatives[runId]!);
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      fusions: {runId: fusion},
+      fusionRunner: (_) => throw StateError('out of memory'),
+    );
+    addTearDown(controller.dispose);
+    await controller.setFusionRule(runId, 'sats', FusionRule.fillGaps);
+    expect(controller.fusionUpdating(runId), isFalse);
+    expect(controller.fusion(runId)!.ruleOf('sats'), FusionRule.primaryOnly);
+    await controller.fusionsSettled;
+  });
+
+  test(
+    'a fusion result for a run asked again or a closed day is dropped',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final first = importDay([vbo]);
+      final runId = first.runs.single.run.id;
+      final held = _HeldFusions();
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+        fusionRunner: held.call,
+      );
+      addTearDown(controller.dispose);
+      await controller.addRecordings([rcz]);
+      expect(controller.fusionPending(runId), 'RCZ');
+      // Added again before the first finished: only the latest counts.
+      await controller.addRecordings([rcz]);
+      expect(held.jobs, hasLength(2));
+      await held.release(0);
+      expect(controller.fusion(runId), isNull);
+      expect(controller.fusionPending(runId), 'RCZ');
+      await held.release(1);
+      await controller.fusionsSettled;
+      expect(controller.fusion(runId)!.fused, isTrue);
+
+      final closed = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+        fusionRunner: held.call,
+      );
+      await closed.addRecordings([rcz]);
+      closed.dispose();
+      await held.release(2);
+      expect(closed.fusion(runId), isNull);
+    },
+  );
+
+  test('an RCZ added to a saved VBO session is combined and saved', () async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final first = importDay([vbo]);
     final controller = DayResultsController(
@@ -162,6 +433,8 @@ void main() {
       appender: _SyncAppender(),
     );
     addTearDown(controller.dispose);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
     final before = _rows(controller);
     final addition = await controller.addRecordings([rcz]);
     expect(addition.added, isEmpty);
@@ -170,11 +443,95 @@ void main() {
       'drive.rcz: the same drive as Session 1 in the other format; kept as its '
           'alternative source.',
     ]);
+    await controller.fusionsSettled;
     final runId = first.runs.single.run.id;
     expect(controller.fusion(runId)!.fused, isTrue);
     expect(controller.session(runId)!.channels, contains('rpm-obd'));
-    expect(controller.dirty, isTrue);
     expect(_rows(controller), before);
+    // Saved again once combined, as the addition was.
+    expect(controller.dirty, isFalse);
+    expect(_runJson(path)['fusion'], isNotNull);
+  });
+
+  test(
+    'an RCZ added again for a session whose RCZ is missing takes its place',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final both = importDay([vbo, rcz]);
+      final runId = both.runs.single.run.id;
+      final controller = DayResultsController(
+        runs: both.runs,
+        analysis: both.analysis!,
+        alternatives: both.alternatives,
+      );
+      addTearDown(controller.dispose);
+      await controller.fusionsSettled;
+      final path = '${directory.path}/Day.fetproject';
+      await controller.save(path);
+      final sourceId = controller.fusion(runId)!.alternativeSourceId;
+      final moved = '${directory.path}/kept/drive.rcz';
+      Directory('${directory.path}/kept').createSync();
+      File(rcz).renameSync(moved);
+
+      final opened = DayResultsController.opened(
+        openDay(path),
+        appender: _SyncAppender(),
+      );
+      addTearDown(opened.dispose);
+      await opened.fusionsSettled;
+      expect(opened.fusion(runId)!.state, RunFusionState.unavailable);
+      expect(opened.missingAlternatives, hasLength(1));
+      await opened.addRecordings([moved]);
+      await opened.fusionsSettled;
+      expect(opened.fusion(runId)!.fused, isTrue);
+      expect(opened.fusion(runId)!.alternativeSourceId, sourceId);
+      expect(opened.dirty, isFalse, reason: 'saved again after combining');
+      final run = _runJson(path);
+      final sources = ((run['sources'] as Map)['telemetry'] as List)
+          .cast<Map<String, Object?>>();
+      expect(sources, hasLength(2), reason: 'one entry for the RCZ');
+      expect(sources.last['id'], sourceId);
+      expect(
+        (sources.last['reference'] as Map)['relativePath'],
+        'kept/drive.rcz',
+      );
+    },
+  );
+
+  test('an RCZ written again for the same drive is aligned afresh', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = importDay([vbo, rcz]);
+    final runId = both.runs.single.run.id;
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+    );
+    addTearDown(controller.dispose);
+    await controller.fusionsSettled;
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    final again = Directory('${directory.path}/again')..createSync();
+    final (_, other) = writeFusionPair(again.path);
+    File(other).copySync(rcz);
+
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    expect(opened.dirty, isFalse);
+    await opened.fusionsSettled;
+    final fusion = opened.fusion(runId)!;
+    expect(fusion.fused, isTrue);
+    expect(fusion.fromDocument, isFalse);
+    expect(fusion.conflicts, isEmpty);
+    expect(opened.dirty, isTrue, reason: 'its source entry is updated');
+    await opened.save(path);
+    final run = _runJson(path);
+    final sources = (run['sources'] as Map)['telemetry'] as List;
+    expect(sources, hasLength(2));
+    expect(
+      (sources.last as Map)['contentSha256'],
+      fusion.alternative!.contentSha256,
+    );
   });
 
   test('a VBO and RCZ added together become one fused session', () async {
@@ -193,8 +550,11 @@ void main() {
     addTearDown(controller.dispose);
     final addition = await controller.addRecordings([vbo, rcz]);
     expect(addition.added, ['Session 2']);
+    expect(addition.combined, isEmpty);
     final added = controller.runs.last.run;
     expect(added.format, RecordingFormat.vbo);
+    expect(controller.fusionPending(added.id), 'RCZ');
+    await controller.fusionsSettled;
     expect(controller.fusion(added.id)!.fused, isTrue);
     expect(controller.channelSource(added.id, 'rpm-obd'), 'RCZ');
   });
@@ -205,10 +565,12 @@ void main() {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final both = importDay([vbo, rcz]);
     final runId = both.runs.single.run.id;
+    final held = _HeldFusions();
     final controller = DayResultsController(
       runs: both.runs,
       analysis: both.analysis!,
-      fusions: both.fusions,
+      alternatives: both.alternatives,
+      fusionRunner: held.call,
     );
     final before = _rows(controller);
     await tester.binding.setSurfaceSize(const Size(400, 8000));
@@ -217,10 +579,20 @@ void main() {
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
     );
     await tester.pumpAndSettle();
+    // The day shows at once; its RCZ is lined up meanwhile.
+    expect(find.text('Lining up with its RCZ…'), findsOneWidget);
+    await held.release(0, settle: false);
+    await tester.pumpAndSettle();
+    expect(find.text('Lining up with its RCZ…'), findsNothing);
     expect(find.text('Combined with its RCZ: 1 channel added'), findsOneWidget);
-    expect(find.text('sats: the VBO and the RCZ disagree'), findsOneWidget);
+    expect(
+      find.text('Satellites: the VBO and the RCZ disagree'),
+      findsOneWidget,
+    );
     await tester.ensureVisible(find.text('Use RCZ'));
     await tester.tap(find.text('Use RCZ'));
+    await tester.pumpAndSettle();
+    await held.release(1, settle: false);
     await tester.pumpAndSettle();
     expect(
       controller.fusion(runId)!.ruleOf('sats'),
@@ -247,6 +619,55 @@ void main() {
       find.descendant(
         of: find.byKey(const ValueKey('lapChart rpm-obd')),
         matching: find.text('from RCZ'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('an RCZ with nothing to add says so in one quiet line', (
+    tester,
+  ) async {
+    final (vbo, rcz) = writeFusionPair(directory.path);
+    final plan = prepareTelemetryImport([vbo, rcz]);
+    final primary = plan.runs.firstWhere(
+      (run) => run.format == RecordingFormat.vbo,
+    );
+    final alternative = plan.runs.firstWhere(
+      (run) => run.format == RecordingFormat.rcz,
+    );
+    final bare = TelemetryRunProposal(
+      id: alternative.id,
+      sourceId: alternative.sourceId,
+      sourcePath: alternative.sourcePath,
+      format: alternative.format,
+      contentSha256: alternative.contentSha256,
+      laps: alternative.laps,
+      telemetry: _session(alternative.telemetry, {
+        for (final MapEntry(:key, :value)
+            in alternative.telemetry.channels.entries)
+          if (key != 'rpm-obd') key: value,
+      }),
+    );
+    final fusion = fuseRunRecordings(primary, bare);
+    expect(fusion.fused, isTrue);
+    expect(fusion.channelOrigins, isEmpty);
+    final alone = importDay([vbo]);
+    final controller = DayResultsController(
+      runs: alone.runs,
+      analysis: alone.analysis!,
+      fusions: {primary.id: fusion},
+    );
+    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    final offset = fusion.clock.offsetSeconds;
+    expect(
+      find.text(
+        'Lined up with its RCZ (${offset < 0 ? '−' : '+'}'
+        '${offset.abs().toStringAsFixed(2)} s); nothing to add',
       ),
       findsOneWidget,
     );
@@ -311,6 +732,129 @@ void main() {
     );
   });
 
+  // Lets the search's isolate and file work finish between frames.
+  Future<void> waitFor(WidgetTester tester, bool Function() done) async {
+    await tester.runAsync(() async {
+      for (var i = 0; i < 400 && !done(); ++i) {
+        await Future<void>.delayed(const Duration(milliseconds: 25));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+  }
+
+  for (final rczOnly in [false, true]) {
+    testWidgets(
+      rczOnly
+          ? 'finds a moved RCZ in a folder and combines it again'
+          : 'finds a fused day\'s moved recordings and combines them again',
+      (tester) async {
+        final recordings = Directory('${directory.path}/recordings')
+          ..createSync();
+        final (vbo, rcz) = writeFusionPair(recordings.path, satellites: true);
+        final path = '${directory.path}/Day.fetproject';
+        // Another session stays where it was, so the day still opens.
+        final stays = Directory('${directory.path}/stays')..createSync();
+        final (other, _) = writeFusionPair(
+          stays.path,
+          name: 'other',
+          speeds: const [31, 26, 30, 28, 33, 27, 29, 25, 32, 30],
+        );
+        final opened = (await tester.runAsync(() async {
+          final both = importDay([vbo, rcz, other]);
+          final fusedId = both.alternatives.keys.single;
+          final controller = DayResultsController(
+            runs: both.runs,
+            analysis: both.analysis!,
+            alternatives: both.alternatives,
+          );
+          await controller.fusionsSettled;
+          await controller.setFusionRule(fusedId, 'sats', FusionRule.fillGaps);
+          await controller.save(path);
+          controller.dispose();
+          final moved = Directory('${directory.path}/archive/deep')
+            ..createSync(recursive: true);
+          if (rczOnly) {
+            File(rcz).renameSync('${moved.path}/renamed.rcz');
+          } else {
+            recordings.renameSync('${moved.path}/recordings');
+          }
+          return openDay(path);
+        }))!;
+        expect(opened.missing, hasLength(rczOnly ? 0 : 1));
+        DayResultsController? replaced;
+        final day = rczOnly ? DayResultsController.opened(opened) : null;
+        if (day != null) await tester.runAsync(() => day.fusionsSettled);
+        await tester.binding.setSurfaceSize(const Size(400, 8000));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: day != null
+                ? DayResultsPage.controller(
+                    controller: day,
+                    documents: _Documents('${directory.path}/archive'),
+                    replace: (controller) => replaced = controller,
+                  )
+                : DayResultsPage.opened(
+                    day: opened,
+                    documents: _Documents('${directory.path}/archive'),
+                  ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        if (rczOnly) {
+          expect(
+            find.text('The RCZ of 1 session could not be used'),
+            findsOneWidget,
+          );
+          expect(
+            find.textContaining(
+              ': recordings/drive.rcz · the recording was not found',
+            ),
+            findsOneWidget,
+          );
+        } else {
+          expect(find.text('1 session could not be opened'), findsOneWidget);
+        }
+        await tester.tap(find.text('Find recordings in a folder…'));
+        if (rczOnly) {
+          await waitFor(tester, () => replaced != null);
+          final relinked = replaced!;
+          addTearDown(relinked.dispose);
+          await tester.runAsync(() => relinked.fusionsSettled);
+          final runId = relinked.runs
+              .firstWhere((named) => relinked.fusion(named.run.id) != null)
+              .run
+              .id;
+          final fusion = relinked.fusion(runId)!;
+          expect(fusion.fused, isTrue);
+          expect(fusion.fromDocument, isTrue);
+          expect(fusion.ruleOf('sats'), FusionRule.fillGaps);
+          expect(relinked.channelSource(runId, 'rpm-obd'), 'RCZ');
+          expect(relinked.dirty, isTrue, reason: 'its new place is saved');
+          expect(relinked.missingAlternatives, isEmpty);
+        } else {
+          await waitFor(
+            tester,
+            () => find
+                .text('Combined with its RCZ: 1 channel added')
+                .evaluate()
+                .isNotEmpty,
+          );
+          expect(find.text('1 session could not be opened'), findsNothing);
+          expect(
+            find.text('Combined with its RCZ: 1 channel added'),
+            findsOneWidget,
+          );
+          expect(
+            find.text('Satellites: the VBO and the RCZ disagree'),
+            findsOneWidget,
+          );
+        }
+      },
+    );
+  }
+
   for (final scale in const [1.0, 1.3]) {
     testWidgets(
       'the choice fits a small phone with 48 dp targets at text x$scale',
@@ -321,9 +865,10 @@ void main() {
         final controller = DayResultsController(
           runs: both.runs,
           analysis: both.analysis!,
-          fusions: both.fusions,
+          alternatives: both.alternatives,
         );
         addTearDown(controller.dispose);
+        await controller.fusionsSettled;
         await tester.binding.setSurfaceSize(const Size(360, 740));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         final semantics = tester.ensureSemantics();

@@ -325,6 +325,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'it could not be read'**
   String get fusionReasonUnreadable;
+
+  /// Quiet line under a session while its other recording (such as its RCZ) is being aligned with it in the background; the results already show.
+  ///
+  /// In en, this message translates to:
+  /// **'Lining up with its {format}…'**
+  String fusionPending(String format);
+
+  /// Quiet line under a session whose other recording (such as its RCZ) was aligned with it but has no channel to add and no disagreement. offset is the clock offset found, such as −0.14 s.
+  ///
+  /// In en, this message translates to:
+  /// **'Lined up with its {format} ({offset}); nothing to add'**
+  String fusionLinedUp(String format, String offset);
+
+  /// After adding recordings: an RCZ was added to existing sessions as their other recording. sessions is a list of session names such as "Session 2, Session 3".
+  ///
+  /// In en, this message translates to:
+  /// **'{format} added to {sessions}.'**
+  String fusionCombinedWith(String format, String sessions);
+
+  /// Title of the card listing sessions whose other recording (such as the RCZ) was not found or is another recording; a button below looks for them in a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The {format} of 1 session could not be used} other{The {format} of {count} sessions could not be used}}'**
+  String fusionMissingTitle(int count, String format);
+
+  /// One line of the card of other recordings that could not be used: the session, the path the day names and why.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {path} · {reason}'**
+  String fusionMissingLine(String session, String path, String reason);
+
+  /// A channel both recordings of a session measured: the speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get fusionChannelSpeed;
+
+  /// A channel both recordings of a session measured: the GPS latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get fusionChannelLatitude;
+
+  /// A channel both recordings of a session measured: the GPS longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get fusionChannelLongitude;
+
+  /// A channel both recordings of a session measured: the number of GPS satellites.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites'**
+  String get fusionChannelSatellites;
 }
 
 class _AppLocalizationsDelegate

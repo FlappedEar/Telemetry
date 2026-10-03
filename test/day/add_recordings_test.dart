@@ -489,6 +489,7 @@ void main() {
           'its alternative source.',
     ]);
     expect(controller.runs, hasLength(1));
+    await controller.fusionsSettled;
     // A steady 72 km/h for 31 s has nothing to line the clocks up on.
     final fusion = controller.fusion(controller.runs.single.run.id)!;
     expect(fusion.fused, isFalse);

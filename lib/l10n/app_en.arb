@@ -243,5 +243,91 @@
   "fusionReasonUnreadable": "it could not be read",
   "@fusionReasonUnreadable": {
     "description": "Why a session's other recording could not be used."
+  },
+  "fusionPending": "Lining up with its {format}…",
+  "@fusionPending": {
+    "description": "Quiet line under a session while its other recording (such as its RCZ) is being aligned with it in the background; the results already show.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionLinedUp": "Lined up with its {format} ({offset}); nothing to add",
+  "@fusionLinedUp": {
+    "description": "Quiet line under a session whose other recording (such as its RCZ) was aligned with it but has no channel to add and no disagreement. offset is the clock offset found, such as −0.14 s.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "offset": {
+        "type": "String",
+        "example": "−0.14 s"
+      }
+    }
+  },
+  "fusionCombinedWith": "{format} added to {sessions}.",
+  "@fusionCombinedWith": {
+    "description": "After adding recordings: an RCZ was added to existing sessions as their other recording. sessions is a list of session names such as \"Session 2, Session 3\".",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "sessions": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "fusionMissingTitle": "{count, plural, =1{The {format} of 1 session could not be used} other{The {format} of {count} sessions could not be used}}",
+  "@fusionMissingTitle": {
+    "description": "Title of the card listing sessions whose other recording (such as the RCZ) was not found or is another recording; a button below looks for them in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionMissingLine": "{session}: {path} · {reason}",
+  "@fusionMissingLine": {
+    "description": "One line of the card of other recordings that could not be used: the session, the path the day names and why.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      },
+      "path": {
+        "type": "String",
+        "example": "recordings/drive.rcz"
+      },
+      "reason": {
+        "type": "String",
+        "example": "the recording was not found"
+      }
+    }
+  },
+  "fusionChannelSpeed": "Speed",
+  "@fusionChannelSpeed": {
+    "description": "A channel both recordings of a session measured: the speed."
+  },
+  "fusionChannelLatitude": "Latitude",
+  "@fusionChannelLatitude": {
+    "description": "A channel both recordings of a session measured: the GPS latitude."
+  },
+  "fusionChannelLongitude": "Longitude",
+  "@fusionChannelLongitude": {
+    "description": "A channel both recordings of a session measured: the GPS longitude."
+  },
+  "fusionChannelSatellites": "Satellites",
+  "@fusionChannelSatellites": {
+    "description": "A channel both recordings of a session measured: the number of GPS satellites."
   }
 }

@@ -64,14 +64,16 @@
 <p>Use this when a session was put in the wrong group, or its direction is unknown.</p>
 
 <h3 id="combined">VBO and RCZ of one session</h3>
-<p>When a session has both a VBO and an RCZ of the same drive, the app lines up the two recordings' clocks by their speed traces and combines them by itself, with nothing to confirm:</p>
+<p>When a session has both a VBO and an RCZ of the same drive, the app lines up the two recordings' clocks by their speed traces and combines them by itself, with nothing to confirm. The results show from the VBO straight away; meanwhile the Circuits row says <em>Lining up with its RCZ…</em>, and the combined channels appear when that is done (a few seconds per session):</p>
 <ul>
   <li>A channel only the RCZ recorded is added to the session. The Circuits row then says, for example, <em>Combined with its RCZ: 1 channel added</em>, and wherever that channel is listed or charted it says <em>from RCZ</em>.</li>
   <li>A channel both recorded stays the VBO's. Channels the two declare with different units (or one without a unit) are never combined.</li>
-  <li>When the two disagree on a channel, the row says so, for example <em>sats: the VBO and the RCZ disagree</em>, with three buttons: <strong>Keep VBO</strong> (the default), <strong>Fill gaps</strong> (the VBO, and the RCZ where the VBO has no data) and <strong>Use RCZ</strong> (the RCZ, and the VBO where the RCZ has no data).</li>
+  <li>When the two disagree on a channel, the row says so, for example <em>Satellites: the VBO and the RCZ disagree</em>, with three buttons: <strong>Keep VBO</strong> (the default), <strong>Fill gaps</strong> (the VBO, and the RCZ where the VBO has no data) and <strong>Use RCZ</strong> (the RCZ, and the VBO where the RCZ has no data).</li>
+  <li>When the RCZ was lined up but has nothing to add and agrees with the VBO, the row says so quietly, for example <em>Lined up with its RCZ (−0.14 s); nothing to add</em>.</li>
   <li>When the clocks cannot be lined up, nothing is combined and the row says why in one line, for example <em>Not combined with its RCZ: their speed traces do not line up clearly</em>.</li>
 </ul>
-<p>Laps, lap times and the ranking always come from the VBO alone, as does the theoretical best; the combined channels are used by lap charts, comparisons and the Car and Driver cards. A session whose RCZ added nothing and agrees with its VBO looks as before.</p>
+<p>Laps, lap times and the ranking always come from the VBO alone, as does the theoretical best; the combined channels are used by lap charts, comparisons and the Car and Driver cards. Otherwise a session whose RCZ added nothing and agrees with its VBO looks as before.</p>
+<p>When a saved day's RCZ is not where the day says, or the file there is another recording, a card lists it (<em>The RCZ of 1 session could not be used</em>) with <strong>Find recordings in a folder…</strong>; the session uses its VBO alone until then.</p>
 
 <h2 id="notes">Notes</h2>
 <p>At the bottom, <strong>Notes</strong> lists messages from the analysis, each starting with the session it is about. Sessions whose circuit could not be identified are listed under their own heading; their laps are not compared.</p>

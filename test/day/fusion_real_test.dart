@@ -6,6 +6,7 @@
 library;
 
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,6 +45,9 @@ void main() {
             entity.path,
       ];
       final plain = runDayImport((paths: vbos, includeSubfolders: false));
+      // In background isolates, as the app runs it.
+      Future<RunFusion?> runner(RunFusion? Function() job) => Isolate.run(job);
+      final importing = Stopwatch()..start();
       final both = runDayImport((paths: [day], includeSubfolders: false));
       final alone = DayResultsController(
         runs: plain.runs,
@@ -52,14 +56,17 @@ void main() {
       final fused = DayResultsController(
         runs: both.runs,
         analysis: both.analysis!,
-        fusions: both.fusions,
+        alternatives: both.alternatives,
+        fusionRunner: runner,
       );
+      final toResults = importing.elapsedMilliseconds;
       addTearDown(alone.dispose);
       addTearDown(fused.dispose);
-      final fusions = both.fusions.values.toList();
-      final step = both.steps.firstWhere(
-        (step) => step.name == 'Align and combine VBO and RCZ',
-      );
+      await fused.fusionsSettled;
+      final toFusion = importing.elapsedMilliseconds;
+      final fusions = [
+        for (final named in fused.runs) ?fused.fusion(named.run.id),
+      ];
       debugPrint(
         'sessions ${both.runs.length}, pairs ${fusions.length}, '
         'aligned ${fusions.where((fusion) => fusion.fused).length}, '
@@ -68,8 +75,8 @@ void main() {
         'unit mismatches '
         '${[for (final fusion in fusions) fusion.result?.unitMismatches.length]}, '
         'resolved by declared clock '
-        '${fusions.where((fusion) => fusion.resolvedByDeclaredClock).length}, '
-        'aligning took ${step.duration.inMilliseconds} ms',
+        '${fusions.where((fusion) => fusion.resolvedByDeclaredClock).length}; '
+        'import: results in $toResults ms, fusion done in $toFusion ms',
       );
       expect(fusions, hasLength(both.runs.length));
       expect(fusions.every((fusion) => fusion.fused), isTrue);
@@ -87,13 +94,20 @@ void main() {
       final path = '${directory.path}/Day.fetproject';
       await fused.save(path);
       final clock = Stopwatch()..start();
-      final opened = DayResultsController.opened(openDay(path));
+      final opened = DayResultsController.opened(
+        openDay(path),
+        fusionRunner: runner,
+      );
+      final openResults = clock.elapsedMilliseconds;
       addTearDown(opened.dispose);
+      expect(opened.dirty, isFalse);
+      await opened.fusionsSettled;
+      final openFusion = clock.elapsedMilliseconds;
       final reopened = [
         for (final named in opened.runs) opened.fusion(named.run.id),
       ];
       debugPrint(
-        'reopened in ${clock.elapsedMilliseconds} ms: '
+        'open: results in $openResults ms, fusion done in $openFusion ms; '
         '${reopened.where((fusion) => fusion?.fromDocument ?? false).length} '
         'of ${reopened.length} applied from the document',
       );
