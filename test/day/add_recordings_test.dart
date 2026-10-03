@@ -9,6 +9,7 @@ import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../../packages/telemetry_core/test/rcz/rcz_fixture.dart';
@@ -265,6 +266,92 @@ void main() {
       (kept.document['event'] as Map)['id'],
     );
     expect(after.timestamp, kept.timestamp);
+  });
+
+  test(
+    'a session added during a save leaves another day\'s unsaved work',
+    () async {
+      final store = FileRecoveryStore('${directory.path}/day-recovery.json');
+      final other = runDayImport((
+        paths: [
+          write('x.vbo', [31, 31, 31]),
+        ],
+        includeSubfolders: false,
+      ));
+      final unsaved = DayResultsController(
+        runs: other.runs,
+        analysis: other.analysis!,
+        recovery: store,
+      );
+      await unsaved.flushRecovery();
+      unsaved.dispose();
+      final kept = (await store.load())!;
+
+      final first = runDayImport((
+        paths: [
+          write('a.vbo', [30, 28, 31]),
+        ],
+        includeSubfolders: false,
+      ));
+      final path = '${directory.path}/B.fetproject';
+      final saved = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+      );
+      await saved.save(path);
+      saved.dispose();
+      final gate = Completer<void>();
+      final second = Completer<void>();
+      var writes = 0;
+      final day = DayResultsController.opened(
+        openDay(path),
+        recovery: store,
+        appender: _SyncAppender(),
+        writer: (path, document) async {
+          await (++writes == 1 ? gate.future : second.future);
+          await saveDayDocument(path, document);
+        },
+      );
+      final saving = day.save(path);
+      final adding = day.addRecordings([
+        write('b.vbo', [29, 33]),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+      await saving;
+      // Longer than the recovery delay, while the second save runs.
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      second.complete();
+      expect((await adding).savedTo, path);
+      await day.flushRecovery();
+      day.dispose();
+      final after = (await store.load())!;
+      expect(
+        (after.document['event'] as Map)['id'],
+        (kept.document['event'] as Map)['id'],
+      );
+      expect(writes, 2);
+    },
+  );
+
+  test('an added session counts toward the day\'s speed units', () async {
+    final first = runDayImport((
+      paths: [
+        write('a.vbo', [30, 28, 31]),
+      ],
+      includeSubfolders: false,
+    ));
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+    );
+    addTearDown(controller.dispose);
+    expect(declaredSpeedUnits, hasLength(1));
+    await controller.addRecordings([
+      write('b.vbo', [29, 33]),
+    ]);
+    expect(declaredSpeedUnits, hasLength(2));
   });
 
   test('a session added while the day is being saved is not lost', () async {

@@ -247,7 +247,10 @@ final class DayResultsController extends ChangeNotifier {
         // The day changed while the snapshot was written: those changes
         // are not in the file, so the day stays unsaved and recoverable.
         _dirty = true;
-        _scheduleRecovery();
+        // An addition saves the day again right after, and keeps it for
+        // recovery itself if that fails: a saved day does not go through
+        // the recovery slot, which may hold another day's unsaved work.
+        if (_waitingAdditions == 0) _scheduleRecovery();
       }
     } finally {
       _saving = false;
