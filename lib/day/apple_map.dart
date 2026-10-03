@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart' show PlatformViewHitTestBehavior;
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 
@@ -41,8 +41,51 @@ const appleMapSource = TileSource(
 bool isAppleMapSource(TileSource tiles) => identical(tiles, appleMapSource);
 
 /// The native view type, registered by the iOS and macOS runners
-/// (AppleMapView.swift in each).
+/// (AppleMapView.swift in each). Also the name of the channel that opens
+/// Apple's legal notice; each view listens on its own `<type>/<view id>`.
 const appleMapViewType = 'com.flappedear.telemetry/apple_map';
+
+// The camera limits of the Apple style.
+//
+// MapKit keeps its camera a minimum distance above the ground and never
+// shows more than the world's height. Asked for a region beyond either
+// limit it shows a different area than the one requested, and the trace,
+// drawn by Dart for the requested area, would drift off the roads. So the
+// Flutter camera, which is the one both follow, stays inside them:
+// - [appleMapMaxZoom] 19 is closer than a track map needs, and kept two
+//   steps short of the street and satellite styles' 21 to stay above
+//   MapKit's minimum camera distance (to be confirmed on devices; the
+//   Swift side logs if not);
+// - [appleMapMinZoom] 3 makes the world 2048 logical pixels high, taller
+//   than any map in the app;
+// - the camera's edges stay within Web Mercator's latitudes, so the region
+//   never reaches past the top or bottom of the world.
+// AppleMapView.swift logs once if MapKit still shows another region.
+
+/// The closest zoom of the Apple style.
+const double appleMapMaxZoom = 19;
+
+/// The farthest zoom of the Apple style.
+const double appleMapMinZoom = 3;
+
+/// The closest zoom a map over [tiles] allows.
+double mapMaxZoom(TileSource tiles) =>
+    isAppleMapSource(tiles) ? appleMapMaxZoom : 21;
+
+/// The farthest zoom a map over [tiles] allows; null for no limit.
+double? mapMinZoom(TileSource tiles) =>
+    isAppleMapSource(tiles) ? appleMapMinZoom : null;
+
+/// What keeps a map's camera over [tiles] where its background can follow.
+CameraConstraint mapCameraConstraint(TileSource tiles) =>
+    isAppleMapSource(tiles)
+    ? const CameraConstraint.containLatitude(_maxLatitude, -_maxLatitude)
+    : const CameraConstraint.unconstrained();
+
+/// Apple's acknowledgements and legal notices for its maps, the page
+/// MapKit's own "Legal" link opens.
+const appleMapLegalUrl =
+    'https://gspe21-ssl.ls.apple.com/html/attribution.html';
 
 /// The largest latitude Web Mercator shows, as in flutter_map's EPSG:3857.
 const double _maxLatitude = 85.0511287798066;
@@ -124,8 +167,18 @@ final class MercatorRegion {
       width > 0 &&
       height > 0;
 
-  /// The region as sent to the native map: left, top, width, height.
-  List<double> toList() => [left, top, width, height];
+  /// The region as sent to the native map: left, top, width, height,
+  /// with [left] wrapped into [0, 1) (the world repeats east and west, so
+  /// it is the same place) and no side larger than the world.
+  List<double> toList() {
+    final wrapped = left - left.floorToDouble();
+    return [
+      wrapped < 1 ? wrapped : 0,
+      top,
+      math.min(width, 1),
+      math.min(height, 1),
+    ];
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -167,6 +220,56 @@ class AppleMapLayer extends StatelessWidget {
           ? builder(context, region)
           : IgnorePointer(child: AppleMapView(region: region)),
     );
+  }
+}
+
+/// In place of the attribution over the Apple map: MapKit draws its own
+/// logo and legal notice at the bottom, so nothing is laid over them, but
+/// the map takes no touch or click, so its "Legal" link is out of reach.
+/// This one, top left, opens the same page.
+class AppleMapLegal extends StatelessWidget {
+  const AppleMapLegal({super.key});
+
+  static const _channel = MethodChannel(appleMapViewType);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Material(
+          color: theme.colorScheme.surface.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            key: const ValueKey('appleMapLegal'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _open(),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 32, minWidth: 48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text('Legal', style: theme.textTheme.labelMedium),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _open() async {
+    try {
+      await _channel.invokeMethod<void>('openLegal', appleMapLegalUrl);
+    } on PlatformException {
+      // Nothing opened; the map itself still shows the notice.
+    } on MissingPluginException {
+      // Likewise.
+    }
   }
 }
 

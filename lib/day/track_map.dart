@@ -176,7 +176,10 @@ class MapAttribution extends StatelessWidget {
   final TileSource tiles;
 
   @override
-  Widget build(BuildContext context) => Align(
+  Widget build(BuildContext context) =>
+      isAppleMapSource(tiles) ? const AppleMapLegal() : _chip(context);
+
+  Widget _chip(BuildContext context) => Align(
     alignment: Alignment.bottomRight,
     child: Container(
       color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
@@ -560,7 +563,9 @@ class _TiledMap extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             maxZoom: 18,
           ),
-          maxZoom: 21,
+          maxZoom: mapMaxZoom(tiles),
+          minZoom: mapMinZoom(tiles),
+          cameraConstraint: mapCameraConstraint(tiles),
           interactionOptions: interaction,
         ),
         children: [

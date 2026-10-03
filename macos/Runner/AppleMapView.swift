@@ -14,8 +14,27 @@ import MapKit
 final class AppleMapPlugin: NSObject {
   static let viewType = "com.flappedear.telemetry/apple_map"
 
+  /// Opens Apple's legal notice for the map ("openLegal" with its https
+  /// URL), which the map's own link cannot: the map takes no touch or click.
+  private static var legalChannel: FlutterMethodChannel?
+
   static func register(with registrar: FlutterPluginRegistrar) {
     registrar.register(AppleMapFactory(messenger: registrar.messenger), withId: viewType)
+    let channel = FlutterMethodChannel(name: viewType, binaryMessenger: registrar.messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "openLegal" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let text = call.arguments as? String, let url = URL(string: text),
+        url.scheme == "https"
+      else {
+        result(false)
+        return
+      }
+      result(NSWorkspace.shared.open(url))
+    }
+    legalChannel = channel
   }
 
   /// The map rectangle for a region sent from Dart, or nil when it is not one.
@@ -81,6 +100,7 @@ final class AppleMapController: NSObject {
 /// does moves it.
 final class RegionMapView: MKMapView {
   private var shown: MKMapRect?
+  private var loggedMismatch = false
   var controller: AppleMapController?
 
   override init(frame frameRect: NSRect) {
@@ -111,6 +131,21 @@ final class RegionMapView: MKMapView {
   private func apply() {
     guard let rect = shown, bounds.width > 0, bounds.height > 0 else { return }
     setVisibleMapRect(rect, animated: false)
+    // Dart keeps the camera within MapKit's limits (see apple_map.dart); if
+    // MapKit still shows another region, the trace drawn over it is off.
+    // Logged once, for diagnosis only.
+    let shownRect = visibleMapRect
+    let tolerance = rect.size.width * 0.01
+    if !loggedMismatch
+      && (abs(shownRect.size.width - rect.size.width) > tolerance
+        || abs(shownRect.midX - rect.midX) > tolerance
+        || abs(shownRect.midY - rect.midY) > tolerance)
+    {
+      loggedMismatch = true
+      NSLog(
+        "AppleMapView: MapKit shows %@ instead of the requested %@; the overlay may be off.",
+        "\(shownRect)", "\(rect)")
+    }
   }
 
   // Mouse and trackpad events pass through to the Flutter view behind, which

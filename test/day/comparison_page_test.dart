@@ -445,7 +445,11 @@ void main() {
       final apple = inMap(find.byKey(const ValueKey('stubAppleMap')));
       expect(apple, findsOneWidget);
       expect(inMap(find.byType(TileLayer)), findsNothing);
-      expect(inMap(find.text('Apple Maps')), findsOneWidget);
+      expect(inMap(find.text('Apple Maps')), findsNothing);
+      expect(
+        inMap(find.byKey(const ValueKey('appleMapLegal'))),
+        findsOneWidget,
+      );
 
       // Drawn after the map, so above it.
       int order(Finder finder) =>
