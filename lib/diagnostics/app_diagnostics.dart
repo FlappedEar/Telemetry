@@ -12,6 +12,15 @@ abstract final class DiagnosticSteps {
   static const importTotal = 'Import, start to results';
   static const theoreticalBest = 'Theoretical best and segments';
   static const channelSummaries = 'Channel summaries';
+
+  /// From the share (or Add recordings) until the session is in the day,
+  /// opening today's day and waiting for earlier additions included, its
+  /// save not.
+  static const addSession = 'Add a session';
+  static const coach = 'Coach';
+
+  /// From the same start until the Next session card has the coach's plan.
+  static const addToCoach = 'Add a session, to the coach';
 }
 
 /// What the last import measured.
@@ -50,7 +59,8 @@ final class AppDiagnostics {
   ImportDiagnostics? get lastImport => _lastImport;
 
   /// The last import's steps, then the steps of its day measured since
-  /// (the theoretical best, the channel summaries), latest of each.
+  /// (the theoretical best, the channel summaries, an added session and
+  /// the coach), latest of each.
   List<DiagnosticStep> get steps => [...?_lastImport?.steps, ..._later];
 
   /// Starts the figures of a new import.
