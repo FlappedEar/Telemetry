@@ -13,6 +13,7 @@ import android.widget.Toast
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -196,19 +197,24 @@ class MainActivity : FlutterActivity() {
         var leftOut = false
         for (uri in uris) {
             val name = displayName(uri) ?: continue
-            // Like the import, only recordings count towards the batch size.
-            val recording = name.substringAfterLast('.', "").lowercase() in EXTENSIONS
-            val limit = if (recording) minOf(MAXIMUM_RECORDING_BYTES, budget) else MAXIMUM_RECORDING_BYTES
+            val folder = File(filesDir, "$area/${System.currentTimeMillis()}-${UUID.randomUUID()}")
+            // The import rejects anything that is not a recording by its name
+            // alone, so such a file is passed on as an empty file of that name.
+            if (name.substringAfterLast('.', "").lowercase() !in EXTENSIONS) {
+                val result = copyIntoFolder(folder, name, 0) { ByteArrayInputStream(ByteArray(0)) }
+                if (result is CopyResult.Copied) paths.add(result.file.path)
+                continue
+            }
+            val limit = minOf(MAXIMUM_RECORDING_BYTES, budget)
             val reported = reportedSize(uri)
             if (limit <= 0 || (reported != null && reported > limit)) {
                 leftOut = true
                 continue
             }
-            val folder = File(filesDir, "$area/${System.currentTimeMillis()}-${UUID.randomUUID()}")
             when (val result = copyIntoFolder(folder, name, limit) { contentResolver.openInputStream(uri) }) {
                 is CopyResult.Copied -> {
                     paths.add(result.file.path)
-                    if (recording) budget -= result.bytes
+                    budget -= result.bytes
                 }
                 CopyResult.TooLarge -> leftOut = true
                 is CopyResult.Failed -> Log.w(TAG, "Could not copy $name", result.error)

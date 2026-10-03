@@ -89,6 +89,14 @@ class CopyIntoFolderTest {
     }
 
     @Test
+    fun writesAnEmptyStandInWithALimitOfZero() {
+        val folder = java.io.File(temp.root, "picked/5")
+        val result = copyIntoFolder(folder, "video.mp4", limit = 0) { ByteArrayInputStream(ByteArray(0)) }
+        assertTrue(result is CopyResult.Copied)
+        assertEquals(0L, java.io.File(folder, "video.mp4").length())
+    }
+
+    @Test
     fun removesTheFolderWhenThereIsNoStream() {
         val folder = java.io.File(temp.root, "picked/4")
         val result = copyIntoFolder(folder, "day.vbo", limit = 10) { null }
