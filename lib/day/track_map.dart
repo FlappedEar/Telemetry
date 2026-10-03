@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../units.dart';
+import 'apple_map.dart';
 import 'touch.dart';
 
 /// Where a day's map is centred: the middle of [session]'s start/finish
@@ -85,6 +86,7 @@ Color speedColor(double fraction) {
 enum MapBackground {
   streets('Streets'),
   satellite('Satellite'),
+  apple('Apple Maps'),
   none('Plain');
 
   const MapBackground(this.label);
@@ -129,6 +131,7 @@ TileSource satelliteTiles(String key) => TileSource(
 List<MapBackground> get availableBackgrounds => [
   MapBackground.streets,
   if (mapTilerKey.isNotEmpty) MapBackground.satellite,
+  if (appleMapsAvailable) MapBackground.apple,
 ];
 
 /// The background of every map, shared while the app runs. Tests draw the
@@ -151,16 +154,20 @@ TileSource? tileSourceFor(MapBackground background) => switch (background) {
   MapBackground.streets => streetTiles,
   MapBackground.satellite =>
     mapTilerKey.isEmpty ? streetTiles : satelliteTiles(mapTilerKey),
+  MapBackground.apple => appleMapsAvailable ? appleMapSource : streetTiles,
   MapBackground.none => null,
 };
 
-/// The tile layer of [tiles], identified to the tile server as the app.
-TileLayer mapTileLayer(TileSource tiles) => TileLayer(
-  urlTemplate: tiles.urlTemplate,
-  userAgentPackageName: 'com.flappedear.telemetry',
-  maxNativeZoom: tiles.maxNativeZoom,
-  tileProvider: debugTileProvider?.call(),
-);
+/// The tile layer of [tiles], identified to the tile server as the app
+/// (the native map for [appleMapSource]).
+Widget mapTileLayer(TileSource tiles) => isAppleMapSource(tiles)
+    ? const AppleMapLayer()
+    : TileLayer(
+        urlTemplate: tiles.urlTemplate,
+        userAgentPackageName: 'com.flappedear.telemetry',
+        maxNativeZoom: tiles.maxNativeZoom,
+        tileProvider: debugTileProvider?.call(),
+      );
 
 /// The attribution [tiles] require, in a map's bottom-right corner.
 class MapAttribution extends StatelessWidget {

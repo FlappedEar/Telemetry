@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
+import 'package:telemetry/day/apple_map.dart';
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
@@ -404,6 +406,81 @@ void main() {
     expect(lines().length, greaterThan(colors.length));
     expect(lines().where((line) => line.color == lapAColorForTest), isEmpty);
   });
+
+  // On iPhone, iPad and Mac the same layers are drawn over Apple Maps.
+  for (final platform in const [TargetPlatform.iOS, TargetPlatform.macOS]) {
+    testWidgets('the comparison map draws both laps over Apple Maps on '
+        '${platform.name}', (tester) async {
+      final outcome = importDay();
+      final analysis = outcome.analysis!;
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: analysis,
+      );
+      final best = analysis.ranking!.bestOfDay!;
+      final a = controller
+          .comparisonCandidates(best)
+          .firstWhere(
+            (row) => row.durationSeconds > best.durationSeconds + 0.5,
+          );
+      debugDefaultTargetPlatformOverride = platform;
+      mapBackground.value = MapBackground.apple;
+      debugAppleMapBuilder = (context, region) =>
+          const ColoredBox(key: ValueKey('stubAppleMap'), color: Colors.grey);
+      addTearDown(() {
+        mapBackground.value = MapBackground.none;
+        debugAppleMapBuilder = null;
+        debugDefaultTargetPlatformOverride = null;
+      });
+      await tester.binding.setSurfaceSize(const Size(1200, 2400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: ComparisonPage(controller: controller, a: a, b: best),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final map = find.byKey(const ValueKey('comparisonMap'));
+      Finder inMap(Finder finder) => find.descendant(of: map, matching: finder);
+      final apple = inMap(find.byKey(const ValueKey('stubAppleMap')));
+      expect(apple, findsOneWidget);
+      expect(inMap(find.byType(TileLayer)), findsNothing);
+      expect(inMap(find.text('Apple Maps')), findsOneWidget);
+
+      // Drawn after the map, so above it.
+      int order(Finder finder) =>
+          tester.allElements.toList().indexOf(tester.element(finder));
+      final markers = find.byKey(const ValueKey('comparisonMapMarkers'));
+      final range = find.byKey(const ValueKey('comparisonMapRange'));
+      expect(order(markers), greaterThan(order(apple)));
+      expect(order(range), greaterThan(order(apple)));
+
+      List<Polyline<Object>> lines() => [
+        for (final layer in tester.widgetList<PolylineLayer>(
+          inMap(find.byType(PolylineLayer)),
+        ))
+          if (layer.key != const ValueKey('comparisonMapRange'))
+            ...layer.polylines,
+      ];
+      expect({
+        for (final line in lines()) line.color,
+      }, containsAll([lapAColorForTest, lapBColorForTest]));
+      expect(tester.widget<CircleLayer>(markers).circles, isNotEmpty);
+
+      // The zoom window and a channel layer, as over tiles.
+      await tester.tap(find.byKey(const ValueKey('chartZoomIn')).first);
+      await tester.pump();
+      expect(tester.widget<PolylineLayer>(range).polylines, isNotEmpty);
+      final plain = lines().length;
+      await tester.tap(find.byKey(const ValueKey('comparisonMapLayerPicker')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Speed').last);
+      await tester.pumpAndSettle();
+      expect(lines().length, greaterThan(plain));
+      expect(lines().where((line) => line.color == lapAColorForTest), isEmpty);
+      debugDefaultTargetPlatformOverride = null;
+    });
+  }
 }
 
 const lapAColorForTest = Color(0xFF55E6A5);
