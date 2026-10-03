@@ -25,7 +25,7 @@ Color lossColor(double fraction) {
 
 /// "C1" for "Corner 1", "S2" for "Straight 2", "C3–4" for "Corners 3–4".
 String shortSegmentName(String name) {
-  final match = RegExp(r'^(\w)\w*\s+(.+)$').firstMatch(name.trim());
+  final match = RegExp(r'^(\S)\S*\s+(.+)$').firstMatch(name.trim());
   if (match == null) return name;
   return '${match.group(1)!.toUpperCase()}${match.group(2)}';
 }

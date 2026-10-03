@@ -57,7 +57,7 @@ String _segmentError(AppLocalizations l10n, String error) {
     );
   }
   if (_tooMany.firstMatch(error) case final m?) {
-    return l10n.segmentEditorErrorTooMany(m[1]!);
+    return l10n.segmentEditorErrorTooMany(int.parse(m[1]!));
   }
   if (_bounds.firstMatch(error) case final m?) {
     return l10n.segmentEditorErrorBounds(m[1]!);
@@ -658,8 +658,10 @@ class _SegmentToolsState extends State<_SegmentTools> {
   // The name as shown: an automatic name in the app's language.
   String get _shownName => _segmentName(context.l10n, _segment.name);
 
+  // Seeded once: a later change of language does not count as an edit.
+  late final String _seededName = _shownName;
   late final TextEditingController _name = TextEditingController(
-    text: _shownName,
+    text: _seededName,
   );
   late String _type = _segment.type;
   late double _start = _segment.startProgressMeters;
@@ -679,7 +681,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
   }
 
   bool get _changed =>
-      _name.text.trim() != _shownName ||
+      _name.text.trim() != _seededName ||
       _type != _segment.type ||
       _start != _segment.startProgressMeters ||
       _end != _segment.endProgressMeters;
@@ -823,7 +825,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
                       ? () => widget.onEdit(
                           // An automatic name left as shown keeps its
                           // stored (English) name.
-                          name: _name.text.trim() == _shownName
+                          name: _name.text.trim() == _seededName
                               ? _segment.name
                               : _name.text,
                           type: _type,

@@ -1647,7 +1647,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get reportFocusIntro =>
-      'Każdy zaczyna się od tego, co zmierzono. Wiersz pod spodem to hipoteza do sprawdzenia na okrążeniach, a nie przyczyna ani polecenie.';
+      'Każda pozycja zaczyna się od tego, co zmierzono. Wiersz pod spodem to hipoteza do sprawdzenia na okrążeniach, a nie przyczyna ani polecenie.';
 
   @override
   String reportFocusCompare(String lap, String other, String segment) {
@@ -1723,7 +1723,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportConsistencyTooFew(int minimum) {
-    return 'Mniej niż $minimum kwalifikujących się okrążeń; brak rozrzutu.';
+    String _temp0 = intl.Intl.pluralLogic(
+      minimum,
+      locale: localeName,
+      other: 'Mniej niż $minimum kwalifikujących się okrążeń; brak rozrzutu.',
+      few: 'Mniej niż $minimum kwalifikujące się okrążenia; brak rozrzutu.',
+      one: 'Mniej niż 1 kwalifikujące się okrążenie; brak rozrzutu.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1779,7 +1786,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorMapLabelHighlighted(String segment) {
-    return 'Ślad najlepszego okrążenia z granicami segmentów, wyróżniony $segment';
+    return 'Ślad najlepszego okrążenia z granicami segmentów, wyróżniono: $segment';
   }
 
   @override
@@ -1929,22 +1936,29 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorErrorWouldBeEmpty(String segment) {
-    return '„$segment” byłby pusty.';
+    return 'Segment „$segment” byłby pusty.';
   }
 
   @override
   String segmentEditorErrorWouldBeInvalid(String segment) {
-    return '„$segment” byłby nieprawidłowy.';
+    return 'Segment „$segment” byłby nieprawidłowy.';
   }
 
   @override
   String segmentEditorErrorWouldOverlap(String segment, String other) {
-    return '„$segment” nachodziłby na „$other”.';
+    return 'Segment „$segment” nachodziłby na „$other”.';
   }
 
   @override
-  String segmentEditorErrorTooMany(String count) {
-    return 'Można zatwierdzić najwyżej $count segmentów.';
+  String segmentEditorErrorTooMany(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Można zatwierdzić najwyżej $count segmentów.',
+      few: 'Można zatwierdzić najwyżej $count segmenty.',
+      one: 'Można zatwierdzić najwyżej 1 segment.',
+    );
+    return '$_temp0';
   }
 
   @override

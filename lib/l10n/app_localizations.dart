@@ -2520,7 +2520,7 @@ abstract class AppLocalizations {
   /// Why the day has no lap time spread.
   ///
   /// In en, this message translates to:
-  /// **'Fewer than {minimum} eligible laps; no spread.'**
+  /// **'{minimum, plural, =1{Fewer than 1 eligible lap; no spread.} other{Fewer than {minimum} eligible laps; no spread.}}'**
   String reportConsistencyTooFew(int minimum);
 
   /// The highest temperature of a channel across the day and its session.
@@ -2838,8 +2838,8 @@ abstract class AppLocalizations {
   /// Why a segment edit is refused.
   ///
   /// In en, this message translates to:
-  /// **'At most {count} segments can be approved.'**
-  String segmentEditorErrorTooMany(String count);
+  /// **'{count, plural, =1{At most 1 segment can be approved.} other{At most {count} segments can be approved.}}'**
+  String segmentEditorErrorTooMany(int count);
 
   /// Why a segment edit is refused.
   ///

@@ -2556,7 +2556,7 @@
       }
     }
   },
-  "reportConsistencyTooFew": "Fewer than {minimum} eligible laps; no spread.",
+  "reportConsistencyTooFew": "{minimum, plural, =1{Fewer than 1 eligible lap; no spread.} other{Fewer than {minimum} eligible laps; no spread.}}",
   "@reportConsistencyTooFew": {
     "description": "Why the day has no lap time spread.",
     "placeholders": {
@@ -2893,13 +2893,12 @@
       }
     }
   },
-  "segmentEditorErrorTooMany": "At most {count} segments can be approved.",
+  "segmentEditorErrorTooMany": "{count, plural, =1{At most 1 segment can be approved.} other{At most {count} segments can be approved.}}",
   "@segmentEditorErrorTooMany": {
     "description": "Why a segment edit is refused.",
     "placeholders": {
       "count": {
-        "type": "String",
-        "example": "64"
+        "type": "int"
       }
     }
   },

@@ -1701,7 +1701,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportConsistencyTooFew(int minimum) {
-    return 'Fewer than $minimum eligible laps; no spread.';
+    String _temp0 = intl.Intl.pluralLogic(
+      minimum,
+      locale: localeName,
+      other: 'Fewer than $minimum eligible laps; no spread.',
+      one: 'Fewer than 1 eligible lap; no spread.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1917,8 +1923,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String segmentEditorErrorTooMany(String count) {
-    return 'At most $count segments can be approved.';
+  String segmentEditorErrorTooMany(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'At most $count segments can be approved.',
+      one: 'At most 1 segment can be approved.',
+    );
+    return '$_temp0';
   }
 
   @override
