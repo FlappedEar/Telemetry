@@ -240,6 +240,12 @@ class _DayImportPageState extends State<DayImportPage> {
 
   void _imported() {
     if (_controller.isWorking || !mounted) return;
+    // A share import that was cancelled or failed is not tried again with
+    // the next share.
+    if (_controller.state is DayImportCancelled ||
+        _controller.state is DayImportFailed) {
+      _unopenedShares = const [];
+    }
     final pending = _afterImport ?? const <String>[];
     _afterImport = null;
     final show = _showWhenImported;
@@ -302,13 +308,18 @@ class _DayImportPageState extends State<DayImportPage> {
   static OpenedDay Function() _recoverJob(DayRecovery recovery) =>
       () => openRecoveredDay(recovery);
 
-  Future<void> _restore(DayRecovery shown) async {
+  Future<void> _restore(DayRecovery _) async {
     _waiting = [];
     setState(() => _opening = true);
     try {
       // The snapshot as it is now: the day closed last may have written a
       // newer one after this card was shown.
-      final recovery = await queueRecovery(widget.recovery.load) ?? shown;
+      final recovery = await queueRecovery(widget.recovery.load);
+      if (recovery == null) {
+        // Saved meanwhile: there is nothing left to restore.
+        await _checkRecovery();
+        return;
+      }
       await widget.fileAccess.restore();
       final day = await Isolate.run(_recoverJob(recovery));
       if (!mounted) return;
