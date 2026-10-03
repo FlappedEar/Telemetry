@@ -967,7 +967,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   key: const ValueKey('lapsCompare'),
                   onPressed: _pickComparison,
                   icon: const Icon(Icons.compare_arrows),
-                  label: const Text('Compare two laps'),
+                  label: Text(context.l10n.lapsCompareTwo),
                 ),
               ],
             ),

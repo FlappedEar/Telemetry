@@ -181,8 +181,16 @@ class _ComparisonPageState extends State<ComparisonPage> {
   @override
   void dispose() {
     if (_rangeSave?.isActive ?? false) {
+      // A zoom left just before the page closed is still saved, after the
+      // frame: the day's listeners must not rebuild during this teardown.
       _rangeSave!.cancel();
-      _saveRange();
+      final (start, end) = _window!.range.value;
+      final controller = widget.controller;
+      WidgetsBinding.instance
+        ..addPostFrameCallback(
+          (_) => controller.rememberComparisonRange(start, end),
+        )
+        ..scheduleFrame();
     }
     _window?.range.removeListener(_rangeChanged);
     _window?.dispose();

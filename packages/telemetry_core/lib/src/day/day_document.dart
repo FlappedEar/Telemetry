@@ -140,11 +140,17 @@ final class ComparisonDecisions {
       range.$2 > range.$1 &&
       range.$2 <= fet.maximumComparisonRangeMeters;
 
-  /// Whether Overlays accepts [channels] (at most four distinct names).
+  /// Whether Overlays accepts [channels]: at most four distinct names, each
+  /// as its `validText` (not blank once trimmed, no NUL, bounded).
   static bool validChannels(List<String> channels) =>
       channels.length <= fet.maximumComparisonChannels &&
       channels.toSet().length == channels.length &&
-      channels.every((name) => name.isNotEmpty && name.length <= fet.maximumIdCharacters);
+      channels.every(
+        (name) =>
+            fet.qtTrimmed(name).isNotEmpty &&
+            !name.contains('\u0000') &&
+            name.length <= fet.maximumIdCharacters,
+      );
 }
 
 /// The version 3 document of a day, to be saved at [projectPath].

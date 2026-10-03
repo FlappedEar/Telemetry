@@ -391,6 +391,69 @@ void main() {
     expect(opened.dirty, isFalse);
   });
 
+  testWidgets('a zoom left just before going back is saved', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = controller.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            key: const ValueKey('openComparison'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ComparisonPage(controller: controller, a: a, b: best),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('openComparison')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('chartZoomIn')));
+    await tester.pump();
+    expect(controller.savedComparison.range, isNull);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final length = controller.comparison(a, best)!.axisLengthMeters;
+    final range = controller.savedComparison.range!;
+    expect(range.$2 - range.$1, closeTo(length / 2, 1e-6));
+    expect(tester.takeException(), isNull);
+  });
+
+  test('picking the group already shown saves it', () async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    Object? saved() =>
+        ((readDayDocument(path)['event'] as Map)['analysisDecisions']
+            as Map?)?['comparisonGroupId'];
+    expect(saved(), isNull);
+    expect(controller.dirty, isFalse);
+    controller.chooseGroup(controller.analysis.chosenGroupId!);
+    expect(controller.dirty, isTrue);
+    await controller.save(path);
+    expect(saved(), controller.analysis.chosenGroupId);
+    // Picking it again changes nothing.
+    controller.chooseGroup(controller.analysis.chosenGroupId!);
+    expect(controller.dirty, isFalse);
+  });
+
   testWidgets('the comparison map draws both laps over map tiles', (
     tester,
   ) async {

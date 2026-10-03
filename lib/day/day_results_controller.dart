@@ -1374,7 +1374,19 @@ final class DayResultsController extends ChangeNotifier {
 
   /// Shows [groupId]'s ranking first.
   void chooseGroup(String groupId) {
-    if (groupId == _analysis.chosenGroupId) return;
+    if (groupId == _analysis.chosenGroupId) {
+      // Picking the group already shown is still a choice, saved as
+      // Overlays saves it, unless the day already saves that group.
+      if (_groupDecided || _savedGroupId == groupId) return;
+      _groupId = groupId;
+      _groupChosen = true;
+      _groupDecided = true;
+      _revision++;
+      _dirty = true;
+      _scheduleRecovery();
+      notifyListeners();
+      return;
+    }
     _groupId = groupId;
     _groupChosen = true;
     _groupDecided = true;

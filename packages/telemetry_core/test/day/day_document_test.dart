@@ -195,6 +195,16 @@ void main() {
         comparison: const ComparisonDecisions(range: (50, 10), channels: ['a', 'b', 'c', 'd', 'e']),
       );
       expect(decisionsOf(refused), decisions);
+      // Channel names Overlays' validText refuses are never written.
+      for (final channels in [
+        ['velocity', '  '],
+        ['velocity', 'a\u0000b'],
+        ['velocity', 'velocity'],
+        ['x' * (fet.maximumIdCharacters + 1)],
+      ]) {
+        expect(ComparisonDecisions.validChannels(channels), isFalse, reason: '$channels');
+      }
+      expect(ComparisonDecisions.validChannels(const ['Δ time', 'velocity']), isTrue);
 
       // A lap of a changed recording is not one of the day's: read as no lap,
       // and kept in the document as it was.
