@@ -1515,7 +1515,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'W tej grupie nie ma innego sklasyfikowanego okrążenia do porównania.';
 
   @override
-  String get addingCancelled => 'Dodawanie przerwano.';
+  String get addingCancelled => 'Anulowano dodawanie.';
 
   @override
   String get dayClosed => 'Dzień został zamknięty.';

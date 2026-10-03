@@ -345,7 +345,7 @@
   "lapB": "Okrążenie B",
   "suggestedFastest": "Propozycja: najszybsze",
   "noOtherRankedLap": "W tej grupie nie ma innego sklasyfikowanego okrążenia do porównania.",
-  "addingCancelled": "Dodawanie przerwano.",
+  "addingCancelled": "Anulowano dodawanie.",
   "dayClosed": "Dzień został zamknięty.",
   "nothingAddedError": "Nic nie dodano: {error}"
 }
