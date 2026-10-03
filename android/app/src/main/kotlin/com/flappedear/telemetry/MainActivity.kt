@@ -188,7 +188,7 @@ class MainActivity : FlutterActivity() {
      */
     private fun copyBatch(uris: List<Uri>, area: String): List<String> {
         if (uris.size > MAXIMUM_BATCH_FILES) {
-            tell("Choose at most $MAXIMUM_BATCH_FILES recordings at a time.")
+            tell(getString(R.string.too_many_files, MAXIMUM_BATCH_FILES))
             return emptyList()
         }
         val paths = mutableListOf<String>()
@@ -214,9 +214,11 @@ class MainActivity : FlutterActivity() {
         }
         if (leftOut) {
             tell(
-                "Some files were not imported: a recording can be at most " +
-                    "${MAXIMUM_RECORDING_BYTES / MIB} MB, and one import at most " +
-                    "${MAXIMUM_BATCH_BYTES / MIB} MB.",
+                getString(
+                    R.string.files_too_large,
+                    (MAXIMUM_RECORDING_BYTES / MIB).toInt(),
+                    (MAXIMUM_BATCH_BYTES / MIB).toInt(),
+                ),
             )
         }
         return paths

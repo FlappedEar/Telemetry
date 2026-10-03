@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown when more recordings are shared or picked than one import takes. -->
+    <string name="too_many_files">Choose at most %1$d recordings at a time.</string>
+    <!-- Shown when shared or picked files were left out for being too large. -->
+    <string name="files_too_large">Some files were not imported: a recording can be at most %1$d MB, and one import at most %2$d MB.</string>
+</resources>
