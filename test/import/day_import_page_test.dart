@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/import/day_import_controller.dart';
@@ -225,19 +226,41 @@ void main() {
     );
   });
 
-  test('iOS picks by type identifier, other platforms by extension', () {
+  test('iOS picks by type identifier, desktops by extension', () {
     // file_selector on iOS refuses a group without type identifiers.
     final ios = recordingTypeGroup(TargetPlatform.iOS);
     expect(ios.uniformTypeIdentifiers, isNotEmpty);
-    for (final platform in [
-      TargetPlatform.android,
-      TargetPlatform.macOS,
-      TargetPlatform.windows,
-    ]) {
+    for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
       final group = recordingTypeGroup(platform);
       expect(group.extensions, containsAll(['vbo', 'rcz']));
       expect(group.uniformTypeIdentifiers, isNull);
     }
+  });
+
+  test('Android picks with the host picker, keeping file names', () async {
+    // file_selector would hand back "session.bin" for a picked "session.vbo".
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <String>[];
+    Object? picked = ['/data/picked/1/session.vbo', '/data/picked/2/day.rcz'];
+    messenger.setMockMethodCallHandler(androidPickerChannel, (call) async {
+      calls.add(call.method);
+      return picked;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(androidPickerChannel, null),
+    );
+
+    const pickers = PlatformRecordingPickers();
+    expect(await pickers.pickRecordings(), [
+      '/data/picked/1/session.vbo',
+      '/data/picked/2/day.rcz',
+    ]);
+    picked = null;
+    expect(await pickers.pickRecordings(), isEmpty);
+    expect(calls, ['pick', 'pick']);
   });
 
   testWidgets('imports picked recordings as sessions in recording order', (
