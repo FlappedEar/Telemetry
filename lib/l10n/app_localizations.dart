@@ -1110,6 +1110,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The day was changed meanwhile. Save it, then retry the recordings.'**
   String get retryRecordingsChangedMeanwhile;
+
+  /// Button above the lap list that asks for lap A, then lap B, and compares them.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare two laps'**
+  String get lapsCompareTwo;
+
+  /// Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day).
+  ///
+  /// In en, this message translates to:
+  /// **'Last comparison'**
+  String get lapsLastComparison;
 }
 
 class _AppLocalizationsDelegate

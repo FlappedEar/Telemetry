@@ -1042,5 +1042,13 @@
   "retryRecordingsChangedMeanwhile": "The day was changed meanwhile. Save it, then retry the recordings.",
   "@retryRecordingsChangedMeanwhile": {
     "description": "The day was edited while its recordings were being read again."
+  },
+  "lapsCompareTwo": "Compare two laps",
+  "@lapsCompareTwo": {
+    "description": "Button above the lap list that asks for lap A, then lap B, and compares them."
+  },
+  "lapsLastComparison": "Last comparison",
+  "@lapsLastComparison": {
+    "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
   }
 }

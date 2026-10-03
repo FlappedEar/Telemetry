@@ -167,5 +167,7 @@
   "retryRecordingsAddedMeanwhile": "W międzyczasie dodano nagrania. Ponów odczyt nagrań jeszcze raz.",
   "retryRecordingsNone": "Nie udało się otworzyć żadnego nagrania dnia, więc dzień pozostaje bez zmian.",
   "retryRecordingsFailed": "Nie udało się ponownie otworzyć dnia: {reason}",
-  "retryRecordingsChangedMeanwhile": "W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań."
+  "retryRecordingsChangedMeanwhile": "W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań.",
+  "lapsCompareTwo": "Porównaj dwa okrążenia",
+  "lapsLastComparison": "Ostatnie porównanie"
 }

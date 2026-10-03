@@ -691,4 +691,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get retryRecordingsChangedMeanwhile =>
       'W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań.';
+
+  @override
+  String get lapsCompareTwo => 'Porównaj dwa okrążenia';
+
+  @override
+  String get lapsLastComparison => 'Ostatnie porównanie';
 }

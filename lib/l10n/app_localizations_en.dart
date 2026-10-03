@@ -673,4 +673,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get retryRecordingsChangedMeanwhile =>
       'The day was changed meanwhile. Save it, then retry the recordings.';
+
+  @override
+  String get lapsCompareTwo => 'Compare two laps';
+
+  @override
+  String get lapsLastComparison => 'Last comparison';
 }

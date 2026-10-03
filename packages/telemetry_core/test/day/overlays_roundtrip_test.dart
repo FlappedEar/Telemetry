@@ -156,6 +156,7 @@ void main() {
       source['futureSourceField'] = [1, 2, 3];
       _object(source['reference'])['futureReferenceField'] = 'kept';
       event['futureEventField'] = {'nested': 'value'};
+      event['analysisDecisions'] ??= <String, Object?>{};
       _object(event['analysisDecisions'])['futureDecision'] = 7;
       _object(document['documentState'])['futureState'] = 'kept';
       document['futureTopLevel'] = {'version': 9};

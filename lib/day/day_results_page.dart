@@ -1112,11 +1112,23 @@ class _DayResultsPageState extends State<DayResultsPage> {
         children: [
           Text('Laps', style: theme.textTheme.titleSmall),
           if (_controller.comparisonCandidates().length >= 2)
-            TextButton.icon(
-              key: const ValueKey('lapsCompare'),
-              onPressed: _pickComparison,
-              icon: const Icon(Icons.compare_arrows),
-              label: const Text('Compare two laps'),
+            Wrap(
+              children: [
+                // The comparison saved with the day, as it was left.
+                if (_controller.savedComparisonPair case (final a, final b))
+                  TextButton.icon(
+                    key: const ValueKey('lapsLastComparison'),
+                    onPressed: () => _compare(a, b, null),
+                    icon: const Icon(Icons.history),
+                    label: Text(context.l10n.lapsLastComparison),
+                  ),
+                TextButton.icon(
+                  key: const ValueKey('lapsCompare'),
+                  onPressed: _pickComparison,
+                  icon: const Icon(Icons.compare_arrows),
+                  label: Text(context.l10n.lapsCompareTwo),
+                ),
+              ],
             ),
         ],
       ),
