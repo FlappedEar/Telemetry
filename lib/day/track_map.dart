@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../l10n.dart';
 import '../units.dart';
 import 'apple_map.dart';
 import 'touch.dart';
@@ -373,7 +374,7 @@ class MapLayersButton extends StatelessWidget {
     color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
     shape: const CircleBorder(),
     child: PopupMenuButton<MapBackground>(
-      tooltip: 'Map background',
+      tooltip: context.l10n.mapBackgroundMenu,
       icon: const Icon(Icons.layers_outlined),
       initialValue: current,
       onSelected: (value) => mapBackground.value = value,
@@ -382,7 +383,12 @@ class MapLayersButton extends StatelessWidget {
           CheckedPopupMenuItem(
             value: background,
             checked: background == current,
-            child: Text(background.label),
+            child: Text(switch (background) {
+              MapBackground.streets => context.l10n.mapBackgroundStreets,
+              MapBackground.satellite => context.l10n.mapBackgroundSatellite,
+              MapBackground.apple => context.l10n.mapBackgroundApple,
+              MapBackground.none => context.l10n.mapBackgroundPlain,
+            }),
           ),
       ],
     ),

@@ -4107,4 +4107,25 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get recordingsBusyAdd =>
       'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.';
+
+  @override
+  String get mapBackgroundMenu => 'Tło mapy';
+
+  @override
+  String get mapBackgroundStreets => 'Ulice';
+
+  @override
+  String get mapBackgroundSatellite => 'Satelita';
+
+  @override
+  String get mapBackgroundApple => 'Apple Maps';
+
+  @override
+  String get mapBackgroundPlain => 'Bez tła';
+
+  @override
+  String get documentPickerDays => 'Dzień FlappedEar';
+
+  @override
+  String get documentPickerLookInFolder => 'Szukaj w tym folderze';
 }
