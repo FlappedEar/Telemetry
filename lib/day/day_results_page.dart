@@ -230,7 +230,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (path == null || !mounted) return;
     try {
       await _controller.save(path);
-      if (mounted) _tell('Saved as ${p.basename(path)}.');
+      if (mounted) {
+        _tell(
+          _controller.dirty
+              ? 'Saved as ${p.basename(path)}. Changes made while saving '
+                    'are not saved yet.'
+              : 'Saved as ${p.basename(path)}.',
+        );
+      }
     } on Exception catch (error) {
       if (mounted) _tell('Not saved: $error');
     }

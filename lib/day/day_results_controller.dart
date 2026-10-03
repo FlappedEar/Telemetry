@@ -167,6 +167,10 @@ final class DayResultsController extends ChangeNotifier {
   bool _dirty;
   bool _saving = false;
 
+  // Counts the user's changes, so a save knows whether the day changed
+  // while its snapshot was being written.
+  int _revision = 0;
+
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
   Timer? _recoveryTimer;
@@ -212,8 +216,8 @@ final class DayResultsController extends ChangeNotifier {
     _saving = true;
     final done = _saveDone = Completer<void>();
     if (!_disposed) notifyListeners();
-    final added = _addedSessions;
     try {
+      final revision = _revision;
       final document = dayDocument(
         eventId: eventId,
         name: _name,
@@ -230,17 +234,20 @@ final class DayResultsController extends ChangeNotifier {
       _document = document;
       _documentPath = path;
       _documentBase = path;
-      // A session added while the file was written is not in it: the day
-      // stays unsaved and kept for recovery until it is saved again.
-      final complete = added == _addedSessions;
+      // Segment edits wait while saving, so the saved ones are all of them.
       _segmentEdits.clear();
       // Automatic segments were approved by the save with their own ids:
       // edits start from the saved ones.
       if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
-      if (complete) {
+      if (_revision == revision) {
         _dirty = false;
         _recoveryTimer?.cancel();
         _enqueueRecovery(() => _clearOwnRecovery(recovery, eventId));
+      } else {
+        // The day changed while the snapshot was written: those changes
+        // are not in the file, so the day stays unsaved and recoverable.
+        _dirty = true;
+        _scheduleRecovery();
       }
     } finally {
       _saving = false;
@@ -265,10 +272,6 @@ final class DayResultsController extends ChangeNotifier {
       await store.clear();
     }
   }
-
-  // Counts the sessions added, so a save knows whether one came while it
-  // was writing.
-  int _addedSessions = 0;
 
   /// Prepares an addition: its [DayAppendOutcome], or the [DayAddition]
   /// saying why nothing was added.
@@ -463,7 +466,7 @@ final class DayResultsController extends ChangeNotifier {
     }
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
-    ++_addedSessions;
+    _revision++;
     _resetTheoreticalBest();
     _resetChannelSummaries();
     // A day with a file is saved again below; only a day without one is
@@ -657,6 +660,8 @@ final class DayResultsController extends ChangeNotifier {
         trimmed.length > 256) {
       return false;
     }
+    // The same reason again changes nothing, so the day stays as it was.
+    if (_exclusions[row.reference] == trimmed) return true;
     _exclusions[row.reference] = trimmed;
     _rerank();
     return true;
@@ -976,6 +981,7 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   void _segmentsChanged() {
+    _revision++;
     _dirty = true;
     _resetTheoreticalBest();
     _scheduleRecovery();
@@ -1043,6 +1049,7 @@ final class DayResultsController extends ChangeNotifier {
   String redoSegmentEdit() => _segmentHistory(undo: false);
 
   void _rerank() {
+    _revision++;
     _dirty = true;
     _resetTheoreticalBest();
     _analysis = rerankDay(
