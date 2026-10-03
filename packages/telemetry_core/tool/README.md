@@ -176,7 +176,8 @@ Opens `.fetproject` documents with FlappedEar Overlays' own C++ code and prints
 what Overlays sees: whether the document is valid, each run's approved
 segments (valid, count and revision), each run's recording
 (resolved path, `telemetry-v1` fingerprint match, content SHA-256), lap
-derivation key and track configuration, the laps its exclusions apply to with
+derivation key and track configuration, its source-fusion decision as Run
+details judges it, the laps its exclusions apply to with
 Overlays' own lap timing, and whether an Overlays re-save keeps the event
 unchanged. It compiles Overlays' `project/` and `telemetry/` sources from a
 read-only checkout against Qt 6.8 Core, like `cpp_reference_dump` above. Not
@@ -195,8 +196,12 @@ checks that Overlays reads all of it. It is skipped when the variable is not set
 The test also checks that the chosen group's best lap got automatic segments,
 which Overlays accepts, and saves a day whose segments were split, merged,
 moved, renamed and removed (`DaySegmentEdits`): Overlays reads the same
-segment revision and keeps them on re-save. Last run against
-FlappedEar/Overlay `d4d1039`: passed.
+segment revision and keeps them on re-save. A third test saves a synthetic
+VBO/RCZ pair fused automatically with a channel rule (FET-51): Overlays
+validates the run's `fusion` decision, applies it ("applied": both recordings'
+content revisions match), keeps it on re-save, and reports a decision bound to
+other content as "needsRevalidation". Last run against FlappedEar/Overlay
+`d4d1039`: passed.
 
 ## cpp_project_roundtrip
 

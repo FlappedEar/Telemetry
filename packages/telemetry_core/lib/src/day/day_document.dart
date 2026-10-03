@@ -9,10 +9,12 @@ import 'package:fetproject/fetproject.dart' as fet;
 
 import '../analysis/automatic_segments.dart';
 import '../intake/import_plan.dart';
+import '../intake/recording_source.dart';
 import '../operation.dart';
 import '../source_fingerprint.dart';
 import 'compatibility.dart';
 import 'day_analysis.dart';
+import 'day_fusion.dart';
 import 'day_laps.dart';
 import 'track_inference.dart';
 
@@ -122,6 +124,12 @@ Map<String, Object?> _unknownConfiguration(
 /// [groupChosen] says the user chose the group shown; otherwise a saved group
 /// this day cannot show is kept.
 ///
+/// [fusions] are the runs' alternative recordings by run id: each one is
+/// written as a source of its run, and a fused run gets its `fusion`
+/// decision. A run whose alternative could not be aligned or used keeps the
+/// document's decision as it was (no longer bound to its recordings, so not
+/// applied), and a run without one keeps its sources as they were.
+///
 /// Reads each recording's first, middle and last 64 KiB for its fingerprint.
 Map<String, Object?> dayDocument({
   required String eventId,
@@ -135,6 +143,7 @@ Map<String, Object?> dayDocument({
   Map<String, List<Map<String, Object?>>> trackSegments = const {},
   bool automaticSegments = true,
   bool groupChosen = false,
+  Map<String, RunFusion> fusions = const {},
   Random? random,
 }) {
   final chosenGroup = analysis.chosenGroup;
@@ -161,12 +170,25 @@ Map<String, Object?> dayDocument({
     final sources = _object(json['sources']) ?? <String, Object?>{};
     final telemetry = <Object?>[];
     var primaryWritten = false;
+    final fusion = fusions[run.id];
+    final alternative = fusion?.alternative;
+    var alternativeWritten = alternative == null;
     for (final value in (sources['telemetry'] as List?) ?? const []) {
       final source = _object(value);
       if (source == null) continue;
       if (source['id'] == run.sourceId) {
         primaryWritten = true;
-        telemetry.add(_primaryEntry(source, run, fingerprint, projectPath));
+        telemetry.add(_sourceEntry(source, run, fingerprint, projectPath));
+      } else if (alternative != null && source['id'] == alternative.sourceId) {
+        alternativeWritten = true;
+        telemetry.add(
+          _sourceEntry(
+            source,
+            alternative,
+            telemetryFingerprint(alternative.sourcePath, alternative.telemetry),
+            projectPath,
+          ),
+        );
       } else {
         telemetry.add({
           ...source,
@@ -179,9 +201,23 @@ Map<String, Object?> dayDocument({
       }
     }
     if (!primaryWritten) {
-      telemetry.insert(0, _primaryEntry({'id': run.sourceId}, run, fingerprint, projectPath));
+      telemetry.insert(0, _sourceEntry({'id': run.sourceId}, run, fingerprint, projectPath));
+    }
+    if (!alternativeWritten && telemetry.length < fet.maximumSourcesPerRun) {
+      telemetry.add(
+        _sourceEntry(
+          {'id': alternative!.sourceId},
+          alternative,
+          telemetryFingerprint(alternative.sourcePath, alternative.telemetry),
+          projectPath,
+        ),
+      );
+      alternativeWritten = true;
     }
     sources['telemetry'] = telemetry;
+    if (fusion?.decision case final decision? when alternativeWritten) {
+      json['fusion'] = decision;
+    }
     if (_object(sources['video']) case final video?) {
       sources['video'] = _rebaseVideo(video, previousPath, projectPath);
     }
@@ -364,7 +400,9 @@ Map<String, Object?> nextDocumentState(Map<String, Object?>? previous) {
   return state;
 }
 
-Map<String, Object?> _primaryEntry(
+/// The document entry of [run]'s recording (a run's primary or alternative
+/// source): its reference, content SHA-256 and import provenance.
+Map<String, Object?> _sourceEntry(
   Map<String, Object?> source,
   TelemetryRunProposal run,
   Map<String, Object?> fingerprint,
@@ -428,8 +466,14 @@ final class OpenedDay {
     required this.exclusions,
     required this.missing,
     required this.analysis,
+    this.fusions = const {},
     this.relinked = const {},
   });
+
+  /// The opened runs' alternative recordings, by run id: fused with the
+  /// document's decision while it is bound to both recordings, otherwise
+  /// aligned again (see [dayDocument]).
+  final Map<String, RunFusion> fusions;
 
   final String path;
 
@@ -605,6 +649,8 @@ OpenedDay openDayDocument(
     );
   }
 
+  final fusions = _openFusions(runs, named, path, cancelled);
+
   final exclusions = <DayLapReference, String>{};
   final byId = {for (final run in runs) run['id']: run};
   final loadedIds = {for (final run in named) run.run.id: run.run.contentSha256};
@@ -646,11 +692,117 @@ OpenedDay openDayDocument(
     exclusions: exclusions,
     missing: missing,
     analysis: analysis,
+    fusions: fusions,
     relinked: {
       for (final runId in moved)
         if (named.any((run) => run.run.id == runId)) runId,
     },
   );
+}
+
+/// The alternative recording of each opened run in [named] and its fusion:
+/// the source its `fusion` decision names, else the first RCZ source of a
+/// VBO run. A recording is used only when it is the content the document
+/// asserts, never by its path or name alone. The decision is applied without
+/// aligning again when it is bound to both recordings' content; otherwise
+/// they are aligned and fused afresh.
+Map<String, RunFusion> _openFusions(
+  List<Map<String, Object?>> runs,
+  List<NamedRun> named,
+  String path,
+  CancellationCheck? cancelled,
+) {
+  final byId = {for (final run in runs) run['id']: run};
+  final wanted = <(TelemetryRunProposal, Map<String, Object?>, Map<String, Object?>, String)>[];
+  final result = <String, RunFusion>{};
+  for (final opened in named) {
+    final primary = opened.run;
+    final run = byId[primary.id];
+    final telemetry = _object(run?['sources'])?['telemetry'];
+    if (run == null || telemetry is! List) continue;
+    final decision = _object(run['fusion']);
+    Map<String, Object?>? source;
+    String file = '';
+    for (final value in telemetry) {
+      final candidate = _object(value);
+      final id = candidate?['id'];
+      if (candidate == null || id == primary.sourceId || id is! String) continue;
+      final reference = _object(candidate['reference']);
+      if (reference == null) continue;
+      final resolved = fet.SourceReference.fromJson(reference).resolve(path);
+      final chosen = decision != null && decision['alternativeSourceId'] == id;
+      final automatic =
+          decision == null &&
+          primary.format == RecordingFormat.vbo &&
+          recordingFormatOf(fet.SourceReference.fromJson(reference).displayPath) ==
+              RecordingFormat.rcz;
+      if (chosen || (automatic && source == null)) {
+        source = candidate;
+        file = resolved;
+        if (chosen) break;
+      }
+    }
+    if (source == null) continue;
+    if (file.isEmpty) {
+      result[primary.id] = RunFusion.unavailable(
+        primarySourceId: primary.sourceId,
+        primaryRevision: primary.contentSha256,
+        alternativeSourceId: source['id'] as String,
+        alternativeFormat: recordingFormatOf(
+          fet.SourceReference.fromJson(_object(source['reference'])!).displayPath,
+        ),
+        reason: 'Recording not found.',
+      );
+      continue;
+    }
+    wanted.add((primary, run, source, file));
+  }
+  if (wanted.isEmpty) return result;
+  final plan = prepareTelemetryImport([
+    for (final (_, _, _, file) in wanted) file,
+  ], cancelled: cancelled);
+  for (var index = 0; index < wanted.length; ++index) {
+    final (primary, run, source, file) = wanted[index];
+    final status = plan.files[index];
+    TelemetryRunProposal? loaded;
+    for (final proposal in plan.runs) {
+      if (proposal.id == status.runId) loaded = proposal;
+    }
+    RunFusion unavailable(String reason) => RunFusion.unavailable(
+      primarySourceId: primary.sourceId,
+      primaryRevision: primary.contentSha256,
+      alternativeSourceId: source['id'] as String,
+      alternativeFormat: recordingFormatOf(file),
+      reason: reason,
+    );
+    if (status.status == TelemetryImportFileStatus.error || loaded == null) {
+      result[primary.id] = unavailable(status.message);
+      continue;
+    }
+    final expected = _expectedRevision(source);
+    final storedFingerprint = _object(_object(source['reference'])?['fingerprint']) ?? const {};
+    if ((expected.isNotEmpty && expected != loaded.contentSha256) ||
+        (storedFingerprint.isNotEmpty &&
+            fet.qtCompactJson(storedFingerprint) !=
+                fet.qtCompactJson(telemetryFingerprint(file, loaded.telemetry)))) {
+      result[primary.id] = unavailable('The file found is a different recording.');
+      continue;
+    }
+    final alternative = TelemetryRunProposal(
+      id: loaded.id,
+      sourceId: source['id'] as String,
+      sourcePath: loaded.sourcePath,
+      format: loaded.format,
+      contentSha256: loaded.contentSha256,
+      telemetry: loaded.telemetry,
+      laps: loaded.laps,
+    );
+    final decision = _object(run['fusion']);
+    result[primary.id] = decision != null && fusionDecisionApplies(decision, primary, alternative)
+        ? applyFusionDecision(decision, primary, alternative, cancelled: cancelled)
+        : fuseRunRecordings(primary, alternative, cancelled: cancelled);
+  }
+  return result;
 }
 
 /// Writes [document] to [path] atomically (see [fet.writeFetproject]).

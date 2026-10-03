@@ -281,6 +281,17 @@ a background isolate.
   (`fusionConflictTolerance`), units must match exactly and samples are
   never resampled; every output segment keeps its source and clock.
   `fusedSession` gives the primary session with the fusion applied.
+- A day's source fusion without a review (`day_fusion.dart`, FET-51):
+  `fuseImportedRuns` aligns the RCZ grouped under each VBO run and, when the
+  alignment is "aligned", fuses it at once (`fuseRunRecordings`): added
+  channels join, every shared channel keeps the VBO, and a conflicting one
+  gets a `primaryOnly` rule. `withFusionRule` changes one channel's rule.
+  `RunFusion.decision` is the run's `fusion` object of the `.fetproject`
+  format (Overlays KAN-103), bound to both recordings' content SHA-256;
+  `dayDocument` writes it with the RCZ as the run's alternative source, and
+  `openDay` applies it without aligning again while both recordings still
+  match (`fusionDecisionApplies`), otherwise aligns afresh. Laps and lap
+  timing never come from the fused session.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.

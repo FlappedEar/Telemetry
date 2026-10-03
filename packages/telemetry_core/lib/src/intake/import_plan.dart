@@ -424,8 +424,8 @@ List<TelemetryRunMatchCandidate> _findPossibleMatches(
 
 /// Groups each RCZ under the VBO it uniquely matches: starts within 1 s,
 /// durations within 2 s, and the GPS evidence of [TelemetryRunMatchCandidate].
-/// VBO is primary and the RCZ an alternative source; channels are never
-/// fused. Returns run id to group id (the primary's id); a run that is its
+/// VBO is primary and the RCZ an alternative source, whose channels
+/// [fuseImportedRuns] fuses into it. Returns run id to group id (the primary's id); a run that is its
 /// own primary maps to itself. Undated, differently dated and ambiguous
 /// matches stay separate.
 Map<String, String> automaticVboPrimaries(TelemetryImportPlan plan) {
