@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
+import '../settings_dialog.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -260,6 +261,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
         ),
         actions: [
+          const SettingsButton(),
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) => IconButton(

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/comparison_page.dart';
+import 'package:telemetry/day/corner_analyzer_panel.dart';
+import 'package:telemetry/day/corner_details.dart' show cornerReasonText;
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/lap_page.dart';
@@ -155,6 +157,7 @@ void main() {
         reason: row,
       );
     }
+    // The braking point reads as metres before the corner's entry.
     for (final (slot, side) in [(0, 'A'), (1, 'B')]) {
       final metric = analysis.braking!.point;
       final value = slot == 0 ? metric.a : metric.b;
@@ -165,13 +168,67 @@ void main() {
       if (value.value == null) {
         expect(shown, '—');
         expect(
-          find.byKey(ValueKey('cornerAnalyzer brakingPoint $side note')),
-          findsOneWidget,
+          textOf(tester, const ValueKey('cornerAnalyzer brakingPoint note')),
+          contains(cornerReasonText(value.unavailableReason).substring(1)),
         );
       } else {
-        expect(shown, '${value.value!.toStringAsFixed(1)} m');
+        expect(shown, '${(corner.startMeters - value.value!).round()} m');
       }
     }
+
+    // Grouped as a driver reads a corner, with the summary on top and the
+    // speed chart drawn on the segment and a lead-in.
+    for (final group in ['Time', 'Braking', 'Corner', 'Exit']) {
+      expect(
+        find.byKey(ValueKey('cornerAnalyzerGroup $group')),
+        findsOneWidget,
+        reason: group,
+      );
+    }
+    expect(
+      textOf(tester, const ValueKey('cornerAnalyzerSummary')),
+      cornerAnalyzerSummary(analysis),
+    );
+    final chart = tester.widget<SegmentSpeedChart>(
+      find.byKey(const ValueKey('cornerAnalyzerChart')),
+    );
+    final (chartStart, chartEnd) = chart.range;
+    expect(chartStart, lessThan(corner.startMeters));
+    expect(chartEnd, greaterThan(corner.endMeters));
+    final painter =
+        tester
+                .widget<CustomPaint>(
+                  find.byKey(const ValueKey('cornerAnalyzerChartPlot')),
+                )
+                .painter!
+            as SegmentSpeedPainter;
+    // Both laps' lines cover the corner: a speed at its middle on each.
+    final middle = (corner.startMeters + corner.endMeters) / 2;
+    for (final slot in const [0, 1]) {
+      final speed = painter.speedAt(slot, middle);
+      expect(speed, isNotNull, reason: 'lap $slot');
+      expect(
+        speed,
+        closeTo(
+          view.analyzer
+              .lap(slot)
+              .session
+              .valueAt(
+                'speed',
+                timeAtProgress(view.analyzer.lap(slot).trace, middle)!,
+              )!,
+          1.0,
+        ),
+      );
+    }
+    expect(
+      textOf(tester, const ValueKey('cornerAnalyzerChartAxis')),
+      startsWith('Distance from the corner entry (m) · shaded: the corner'),
+    );
+    expect(
+      find.byKey(const ValueKey('cornerAnalyzerLegend A')),
+      findsOneWidget,
+    );
 
     // Lap A opens at the segment's start.
     await tapKey(tester, const ValueKey('cornerAnalyzerOpenLapA'));
@@ -221,12 +278,12 @@ void main() {
       '—',
     );
     expect(
-      textOf(tester, const ValueKey('cornerAnalyzer brakingPoint B note')),
-      'no brake or deceleration channel',
+      textOf(tester, const ValueKey('cornerAnalyzer brakingPoint note')),
+      contains('B: No brake or deceleration channel'),
     );
     expect(
-      textOf(tester, const ValueKey('cornerAnalyzer pickup B note')),
-      'no throttle or acceleration channel',
+      textOf(tester, const ValueKey('cornerAnalyzer pickup note')),
+      contains('B: No throttle or acceleration channel'),
     );
   });
 
@@ -281,5 +338,101 @@ void main() {
     expect(page.fromTheoreticalBest, isTrue);
     expect(find.byKey(const ValueKey('cornerAnalyzerTable')), findsOneWidget);
     expect(find.byType(TimeLossPage), findsNothing);
+  });
+
+  test('the segment picker does not repeat the type', () {
+    ComparisonSegment segment(String name, String type) => ComparisonSegment(
+      id: name,
+      name: name,
+      type: type,
+      startMeters: 100,
+      endMeters: 270,
+    );
+    expect(
+      segmentPickerLabel(segment('Corner 1', 'corner'), 2000),
+      'Corner 1 · 170 m',
+    );
+    expect(
+      segmentPickerLabel(segment('Corners 2–3', 'corner'), 2000),
+      'Corners 2–3 · 170 m',
+    );
+    expect(
+      segmentPickerLabel(segment('S1', 'sector'), 2000),
+      'S1 · sector · 170 m',
+    );
+  });
+
+  test('every reason the corner analyses give reads as words', () {
+    const reasons = [
+      '',
+      analyzerIncompleteCoverage,
+      brakingNoneDetected,
+      brakingIncompleteCoverage,
+      brakingSegmentCrossesGate,
+      brakingDecelerationChannelMissing,
+      brakingApproachClipped,
+      brakingApproachClippedAtCorner,
+      brakingMixedProvenance,
+      brakingNoChannel,
+      brakingInferenceDisabled,
+      brakingUnitMismatch,
+      brakingNoSamples,
+      brakingFollowsGap,
+      brakingAlreadyActive,
+      brakingInterruptedByGap,
+      brakingTruncatedAtWindowEnd,
+      brakingUnitUndeclared,
+      exitNoLift,
+      exitNoPickup,
+      exitNoChannel,
+      exitUnitMismatch,
+      exitIncompleteCoverage,
+      exitCrossesGate,
+      exitSpeedChannelMissing,
+      exitFollowsGap,
+      exitTruncated,
+      exitUnitUndeclared,
+      exitMixedProvenance,
+      cornerPhaseMultipleApexes,
+      cornerPhaseSpeedChannelMissing,
+      cornerPhaseIncompleteCoverage,
+      cornerPhaseFlatSpeed,
+      cornerPhaseCrossesGate,
+      cornerPhaseInsufficientGeometry,
+      cornerPhaseInvalidInput,
+      cornerPhaseBroadPeak,
+      cornerPhaseAtCornerBoundary,
+      cornerSpeedNotACorner,
+      cornerSpeedSparseSamples,
+      cornerSpeedMixedProvenance,
+      cornerSpeedDifferentSegmentOrRevision,
+      sectorCrossesGate,
+      sectorIncompleteCoverage,
+      sectorTimeDifferentSegmentOrRevision,
+      sectorTimeSegmentNotFound,
+      channelSummaryMissing,
+      channelSummaryNoSamples,
+      timeLossUntimed,
+      timeLossDifferentSegmentOrRevision,
+      timeLossNoReference,
+      theoreticalBestNoApprovedSegmentation,
+      theoreticalBestIncompleteCoverage,
+      drivingIncompleteCoverage,
+      drivingStateUnknownReason,
+      'somethingNew',
+    ];
+    final identifier = RegExp(r'[a-z][A-Z]');
+    for (final reason in reasons) {
+      final text = cornerReasonText(reason);
+      expect(text, isNotEmpty, reason: reason);
+      expect(text, isNot(reason), reason: reason);
+      expect(identifier.hasMatch(text), isFalse, reason: '$reason: $text');
+    }
+    // A reason is never shown as its identifier, and none falls back to
+    // the generic phrase except an unknown one.
+    for (final reason in reasons.take(reasons.length - 1)) {
+      expect(cornerReasonText(reason), isNot('not available'), reason: reason);
+    }
+    expect(cornerReasonText(cornerPhaseMultipleApexes), contains('apex'));
   });
 }

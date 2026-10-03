@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../units.dart';
 import 'corner_analyzer_panel.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
@@ -712,6 +713,7 @@ class _LayerLegend extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final (low, high) = mapLayerRange(layer);
+    final unit = displayUnitOf(context, layer.channel, layer.unit);
     final stops = layer.diverging ? divergingLayerStops : sequentialLayerStops;
     String end(double value, String label) =>
         '${mapLayerValueText(layer, value)}'
@@ -749,7 +751,7 @@ class _LayerLegend extends StatelessWidget {
         ),
         Text(
           '${layer.label} · lap ${layer.slot == 0 ? 'A' : 'B'}'
-          '${layer.unit.isEmpty ? '' : ' · ${layer.unit}'}'
+          '${unit.isEmpty ? '' : ' · $unit'}'
           '${layer.provenance == 'calculated' ? ' · calculated' : ''}',
           key: const ValueKey('comparisonMapLegendSource'),
           style: theme.textTheme.bodySmall,
