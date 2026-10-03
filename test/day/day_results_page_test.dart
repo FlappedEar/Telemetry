@@ -11,6 +11,8 @@ import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/day/track_map.dart';
+import 'package:telemetry/import/day_import_page.dart';
+import 'package:telemetry/import/file_access.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -31,10 +33,11 @@ final class _BlankTiles extends TileProvider {
 
 /// Pickers that answer from fixed values.
 final class FakeDocuments implements DocumentPickers {
-  FakeDocuments({this.location, this.folder});
+  FakeDocuments({this.location, this.folder, this.document});
 
   final String? location;
   final String? folder;
+  final String? document;
   final names = <String>[];
 
   @override
@@ -44,13 +47,25 @@ final class FakeDocuments implements DocumentPickers {
   }
 
   @override
-  Future<String?> pickDocument() async => null;
+  Future<String?> pickDocument() async => document;
 
   @override
   Future<String?> pickFolder() async => folder;
 
   @override
   Future<List<String>> savedDays() async => const [];
+}
+
+/// Counts what the import page asks of file access.
+final class FakeFileAccess implements FileAccess {
+  final remembered = <String>[];
+  var restored = 0;
+
+  @override
+  Future<void> remember(List<String> paths) async => remembered.addAll(paths);
+
+  @override
+  Future<void> restore() async => ++restored;
 }
 
 /// A synthetic, undated recording driving a 100 m circle through a start
@@ -399,6 +414,65 @@ void main() {
         ],
         ['a.vbo', 'archive/deep/renamed.vbo'],
       );
+    },
+  );
+
+  testWidgets(
+    'a day none of whose recordings can be read offers to find them, and opens',
+    (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final path = '${directory.path}/Day.fetproject';
+      await tester.runAsync(() async {
+        await saveDayDocument(
+          path,
+          dayDocument(
+            eventId: newEventId(),
+            name: 'Track day',
+            runs: outcome.runs,
+            analysis: outcome.analysis!,
+            projectPath: path,
+          ),
+        );
+        Directory('${directory.path}/moved').createSync();
+        File('${directory.path}/a.vbo')
+            .renameSync('${directory.path}/moved/a.vbo');
+      });
+      final access = FakeFileAccess();
+      await tester.binding.setSurfaceSize(const Size(1200, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            documents: FakeDocuments(
+              document: path,
+              folder: '${directory.path}/moved',
+            ),
+            fileAccess: access,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open a saved day…'));
+      await waitFor(
+        tester,
+        () => find.text('Track day could not be opened').evaluate().isNotEmpty,
+      );
+      // Access kept from earlier launches is restored before reading.
+      expect(access.restored, 1);
+      expect(
+        find.textContaining('a.vbo · Recording not found.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('cannotOpenFindRecordings')));
+      await waitFor(
+        tester,
+        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+      );
+      expect(find.byType(DayResultsPage), findsOneWidget);
+      expect(find.text('Track day could not be opened'), findsNothing);
+      // Found somewhere new: the day has changes until saved.
+      expect(find.text('Track day •'), findsOneWidget);
     },
   );
 

@@ -15,6 +15,7 @@ import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
 import '../format.dart';
 import 'day_import_controller.dart';
+import 'file_access.dart';
 import 'incoming_recordings.dart';
 
 export '../format.dart' show displayTime;
@@ -80,17 +81,24 @@ final class PlatformRecordingPickers implements RecordingPickers {
       final paths = await androidPickerChannel.invokeListMethod<String>('pick');
       return paths ?? const [];
     }
-    return [
+    final paths = [
       for (final file in await openFiles(
         acceptedTypeGroups: [recordingTypeGroup(defaultTargetPlatform)],
       ))
         file.path,
     ];
+    await const PlatformFileAccess().remember(paths);
+    return paths;
   }
 
   @override
-  Future<String?> pickFolder() =>
-      getDirectoryPath(confirmButtonText: 'Import this folder');
+  Future<String?> pickFolder() async {
+    final folder = await getDirectoryPath(
+      confirmButtonText: 'Import this folder',
+    );
+    if (folder != null) await const PlatformFileAccess().remember([folder]);
+    return folder;
+  }
 }
 
 String _lapSummary(LapSession laps) {
@@ -135,9 +143,13 @@ class DayImportPage extends StatefulWidget {
     this.acceptsDrops,
     this.picksFolders,
     this.incoming,
+    this.fileAccess = const PlatformFileAccess(),
   });
 
   final DocumentPickers documents;
+
+  /// Keeps chosen recordings readable after the app restarts (macOS).
+  final FileAccess fileAccess;
 
   /// Keeps the day being worked on until it is saved.
   final RecoveryStore recovery;
@@ -205,10 +217,11 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _restore(DayRecovery recovery) async {
     setState(() => _opening = true);
     try {
+      await widget.fileAccess.restore();
       final day = await Isolate.run(_recoverJob(recovery));
       if (!mounted) return;
       if (day.analysis == null) {
-        await _cannotOpen(day);
+        await _cannotOpen(day, searchable: false);
         return;
       }
       await _show(
@@ -265,25 +278,40 @@ class _DayImportPageState extends State<DayImportPage> {
     await _checkRecovery();
   }
 
-  Future<void> _cannotOpen(OpenedDay day) => showDialog<void>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('${day.name} could not be opened'),
-      content: Text(
-        [
-          'None of its recordings could be used:',
-          for (final recording in day.missing)
-            '${recording.name}: ${recording.path} · ${recording.reason}',
-        ].join('\n'),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+  /// Says why none of [day]'s recordings could be used. When [searchable],
+  /// offers to look for them in a folder; returns whether the user chose to.
+  Future<bool> _cannotOpen(OpenedDay day, {bool searchable = true}) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('${day.name} could not be opened'),
+          content: Text(
+            [
+              'None of its recordings could be used:',
+              for (final recording in day.missing)
+                '${recording.name}: ${recording.path} · ${recording.reason}',
+              if (searchable) ...[
+                '',
+                'Choose the folder the recordings are in to use them, also '
+                    'when they have not moved.',
+              ],
+            ].join('\n'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Close'),
+            ),
+            if (searchable)
+              TextButton(
+                key: const ValueKey('cannotOpenFindRecordings'),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Find recordings in a folder…'),
+              ),
+          ],
         ),
-      ],
-    ),
-  );
+      ) ==
+      true;
 
   @override
   void dispose() {
@@ -330,6 +358,14 @@ class _DayImportPageState extends State<DayImportPage> {
   static OpenedDay Function() _openJob(String path) =>
       () => openDay(path);
 
+  // Built outside the state so the isolate's closure holds only its inputs.
+  static OpenedDay Function() _relinkJob(
+    String path,
+    String folder,
+    List<MissingRecording> missing,
+  ) =>
+      () => openDay(path, relinked: findMovedRecordings(folder, missing).found);
+
   /// The day to open: on phones from the days saved in the app, else from
   /// the open dialog.
   Future<String?> _chooseDocument() async {
@@ -362,11 +398,18 @@ class _DayImportPageState extends State<DayImportPage> {
     if (path == null || !mounted) return;
     setState(() => _opening = true);
     try {
-      final day = await Isolate.run(_openJob(path));
+      await widget.fileAccess.restore();
+      var day = await Isolate.run(_openJob(path));
       if (!mounted) return;
-      if (day.analysis == null) {
-        await _cannotOpen(day);
-        return;
+      // None of its recordings could be read: look for them in a folder the
+      // user chooses, which also gives the app access to them, until some
+      // are found or the user gives up.
+      while (day.analysis == null) {
+        if (!await _cannotOpen(day) || !mounted) return;
+        final folder = await widget.documents.pickFolder();
+        if (folder == null || !mounted) return;
+        day = await Isolate.run(_relinkJob(path, folder, day.missing));
+        if (!mounted) return;
       }
       await _show(
         DayResultsPage.opened(
@@ -425,7 +468,9 @@ class _DayImportPageState extends State<DayImportPage> {
               onDragExited: (_) => setState(() => _dragging = false),
               onDragDone: (details) {
                 setState(() => _dragging = false);
-                _start([for (final file in details.files) file.path]);
+                final paths = [for (final file in details.files) file.path];
+                unawaited(widget.fileAccess.remember(paths));
+                _start(paths);
               },
               child: content,
             ),

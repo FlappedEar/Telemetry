@@ -56,7 +56,12 @@ circuit names, excluded laps and the group shown); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
 **Find recordings in a folder**, which finds each recording by its content
 (even renamed), never uses a different recording that only has its name, and
-saves where the recordings are now. Days saved by either app open in the
+saves where the recordings are now. When none of a day's recordings can be
+read, the open dialog offers the same search. On macOS the sandbox lets the
+app read a chosen or dropped file only until it quits, so the app keeps a
+security-scoped bookmark of every recording and folder chosen and restores
+that access before opening a day; recordings chosen before this existed are
+found once with **Find recordings in a folder…**. Days saved by either app open in the
 other with their segments, lap exclusions, notes and the group shown. On desktop the system dialogs choose the file;
 on phones days are kept in the app. A day with unsaved changes is kept in
 the app's own folder as you work, so after a crash or a closed app the import

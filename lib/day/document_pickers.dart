@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../import/file_access.dart';
+
 /// Chooses where days are saved and which one opens. Replaced by a fake in
 /// widget tests.
 abstract interface class DocumentPickers {
@@ -81,8 +83,13 @@ final class PlatformDocumentPickers implements DocumentPickers {
   ))?.path;
 
   @override
-  Future<String?> pickFolder() =>
-      getDirectoryPath(confirmButtonText: 'Look in this folder');
+  Future<String?> pickFolder() async {
+    final folder = await getDirectoryPath(
+      confirmButtonText: 'Look in this folder',
+    );
+    if (folder != null) await const PlatformFileAccess().remember([folder]);
+    return folder;
+  }
 
   @override
   Future<List<String>> savedDays() async {
