@@ -8,7 +8,8 @@ The end-user guide for FlappedEar Telemetry, published to GitHub Pages at
   in `build.py`.
 - `assets/style.css` is the site's stylesheet (light and dark).
 - `assets/screens/` holds the screenshots. They are taken from the app's own
-  widgets with a made-up demo day, never from real recordings.
+  widgets with the owner's Jastrząb day of 29 August 2026, which the owner
+  approved for the public guide (heart rate included).
 - `build.py` (Python standard library only) wraps each page in the shared
   layout. It fails when a page is missing from `NAV`, a link points to a missing
   page or anchor, or an image is missing or has no alt text.
@@ -23,15 +24,19 @@ open docs/user-guide/_site/index.html
 ## Screenshots
 
 ```bash
-flutter test tool/user_guide/capture_screens_test.dart --update-goldens
+git clone https://github.com/FlappedEar/refdata ../refdata   # private
+GUIDE_RECORDINGS=../refdata \
+  flutter test tool/user_guide/capture_screens_test.dart --update-goldens
 ```
 
-This imports the demo day of `tool/user_guide/demo_day.dart` (three sessions on
-an invented circuit) and drives the real pages at a 1280 × 800 desktop and a
+This imports the recordings in `GUIDE_RECORDINGS` (the Jastrząb day in the
+private `FlappedEar/refdata`) and drives the real pages at a 1280 × 800 desktop and a
 412 × 915 phone, writing PNGs to `assets/screens/`. Text is drawn with Roboto
 from the Flutter SDK. Maps show the street background's controls and
 attribution over plain grey tiles, because tests have no network. Look at every
-changed picture before committing it.
+changed picture before committing it. Without `GUIDE_RECORDINGS` the tool uses
+the made-up day of `tool/user_guide/demo_day.dart`, for trying it out; do not
+publish those pictures.
 
 ## Publishing
 

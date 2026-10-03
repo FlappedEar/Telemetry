@@ -1,7 +1,13 @@
-// Takes the user guide's screenshots from the real app widgets, with the
-// made-up day of demo_day.dart. Not part of CI. Run from the repository root:
+// Takes the user guide's screenshots from the real app widgets. Not part of
+// CI. Run from the repository root, with a folder of the day's recordings:
 //
-//   flutter test tool/user_guide/capture_screens_test.dart --update-goldens
+//   GUIDE_RECORDINGS=../refdata \
+//     flutter test tool/user_guide/capture_screens_test.dart --update-goldens
+//
+// The guide shows the owner's Jastrząb day of 29 August 2026 (FlappedEar/refdata),
+// which the owner approved for the public guide, heart rate included; the
+// recordings themselves never leave that repository. Without GUIDE_RECORDINGS
+// the made-up day of demo_day.dart is used, for trying the tool out.
 //
 // The pictures land in docs/user-guide/assets/screens/. Text is drawn with
 // Roboto and icons with Material Icons from the Flutter SDK, so they look like
@@ -101,22 +107,15 @@ Future<void> _loadFonts() async {
     'Roboto-Italic.ttf',
   ]);
   await load('MaterialIcons', ['MaterialIcons-Regular.otf']);
-  // Symbols Roboto lacks (▲ ◆ ● ┆), as the system font supplies them on a
-  // phone. The test engine falls back to fonts registered under these names.
-  final symbols = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
-  if (symbols.existsSync()) {
-    for (final family in ['sans-serif', 'DejaVu Sans', 'Noto Sans Symbols']) {
-      final loader = FontLoader(
-        family,
-      )..addFont(Future.value(ByteData.sublistView(symbols.readAsBytesSync())));
-      await loader.load();
-    }
-  }
 }
 
 void main() {
   late Directory directory;
   late List<String> recordings;
+  late String bestName, otherName;
+
+  DayImportOutcome importDay() =>
+      runDayImport((paths: recordings, includeSubfolders: false));
 
   setUpAll(() async {
     WidgetsApp.debugAllowBannerOverride = false;
@@ -126,10 +125,35 @@ void main() {
     mapBackground.value = MapBackground.streets;
     await _loadFonts();
     directory = Directory.systemTemp.createTempSync('user_guide');
-    recordings = [
-      for (final MapEntry(key: name, value: text) in demoDay().entries)
-        (File('${directory.path}/$name')..writeAsStringSync(text)).path,
-    ];
+    final real = Platform.environment['GUIDE_RECORDINGS'];
+    recordings = real != null
+        ? [
+            for (final file in Directory(real).listSync())
+              if (RegExp(
+                r'\.(vbo|rcz)$',
+                caseSensitive: false,
+              ).hasMatch(file.path))
+                file.path,
+          ]
+        : [
+            for (final MapEntry(key: name, value: text) in demoDay().entries)
+              (File('${directory.path}/$name')..writeAsStringSync(text)).path,
+          ];
+    recordings.sort();
+    final analysis = importDay().analysis!;
+    final best = analysis.ranking!.bestOfDay!;
+    bestName = best.displayName;
+    // Lap A of the comparisons: the best lap of the session before the best
+    // lap's session (or after it), so it differs from the best lap.
+    final ranked = analysis.rows
+        .where((row) => row.referenceEligible && row.runId != best.runId)
+        .toList();
+    final runs = {for (final row in analysis.rows) row.runId}.toList();
+    final index = runs.indexOf(best.runId);
+    final other = runs[index > 0 ? index - 1 : index + 1];
+    final candidates = ranked.where((row) => row.runId == other).toList()
+      ..sort((x, y) => (x.end - x.start).compareTo(y.end - y.start));
+    otherName = (candidates.isEmpty ? ranked : candidates).first.displayName;
   });
   tearDownAll(() => directory.deleteSync(recursive: true));
 
@@ -151,9 +175,6 @@ void main() {
     key: _root,
     child: TelemetryApp(home: home),
   );
-
-  DayImportOutcome importDay() =>
-      runDayImport((paths: recordings, includeSubfolders: false));
 
   testWidgets('import page', (tester) async {
     debugDisableShadows = false;
@@ -278,7 +299,7 @@ void main() {
     final corner = find.byWidgetPredicate(
       (w) =>
           w.key is ValueKey<String> &&
-          (w.key! as ValueKey<String>).value.startsWith('lossRow Corner'),
+          (w.key! as ValueKey<String>).value.startsWith('lossRow Corner '),
     );
     await scrollIn(tester, summary, corner, delta: -300);
     await tester.tap(corner.first);
@@ -311,7 +332,7 @@ void main() {
 
     final lap = find.descendant(
       of: find.byKey(const ValueKey('dayResultsLaps')),
-      matching: find.text('Session 2 · LAP 4'),
+      matching: find.text(otherName),
     );
     await tester.scrollUntilVisible(
       lap,
@@ -344,7 +365,9 @@ void main() {
     await tester.tap(find.text('Compare two laps'));
     await tester.pumpAndSettle();
     await shot(tester, 'compare-pick-a');
-    await tester.tap(find.textContaining('Session 2 · LAP 4').last);
+    final pick = find.textContaining(otherName);
+    await scrollIn(tester, find.byType(Scrollable).last, pick);
+    await tester.tap(pick.last);
     await tester.pumpAndSettle();
     await shot(tester, 'compare-pick-b');
     await tester.tap(find.text('Suggested: the fastest'));
@@ -374,7 +397,15 @@ void main() {
   testWidgets('corner analyzer from a loss', (tester) async {
     debugDisableShadows = false;
     await showDay(tester, _desktop, 1.5);
-    final open = find.byTooltip('Open in the Corner Analyzer');
+    // A single corner's loss, not a group of corners across the line.
+    final open = find.descendant(
+      of: find.byWidgetPredicate(
+        (w) =>
+            w.key is ValueKey<String> &&
+            (w.key! as ValueKey<String>).value.startsWith('lossRow Corner '),
+      ),
+      matching: find.byTooltip('Open in the Corner Analyzer'),
+    );
     await scrollIn(tester, list('dayResultsSummary'), open);
     await tester.tap(open.first);
     await tester.pumpAndSettle();
@@ -391,7 +422,7 @@ void main() {
     await shot(tester, 'phone-laps');
     final best = find.descendant(
       of: find.byKey(const ValueKey('dayResultsLaps')),
-      matching: find.text('Session 3 · LAP 2'),
+      matching: find.text(bestName),
     );
     await tester.scrollUntilVisible(
       best,
