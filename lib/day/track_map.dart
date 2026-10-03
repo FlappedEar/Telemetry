@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../units.dart';
+import 'touch.dart';
 
 /// Where a day's map is centred: the middle of [session]'s start/finish
 /// line, east-positive, or null when the recording has none.
@@ -214,8 +215,10 @@ final class MapMark {
 
 /// The GPS trace of a lap coloured by speed, over street or satellite tiles
 /// (a plain background only under tests), with an optional reference lap in
-/// grey under it and the start/finish line. North is up. Pinch or scroll to zoom; the
-/// layers button switches the background.
+/// grey under it and the start/finish line. North is up. On a phone or tablet
+/// one finger scrolls the page and two fingers zoom and move the map (a
+/// double tap also zooms the tiles); on desktop the mouse drags and the
+/// wheel zooms. The layers button switches the background. See [TouchMap].
 class TrackMap extends StatelessWidget {
   const TrackMap({
     super.key,
@@ -318,9 +321,9 @@ class TrackMap extends StatelessWidget {
               ),
             ],
           );
-    return interactive
-        ? InteractiveViewer(maxScale: 12, child: layers)
-        : layers;
+    // Two fingers zoom and move the map on a phone; one finger is left to
+    // the page's scroll.
+    return interactive ? PinchZoom(child: layers) : layers;
   }
 }
 
@@ -349,6 +352,81 @@ class MapLayersButton extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// A tiled map, built by [builder] with its controller and the gestures it
+/// may take itself. On a phone or tablet one finger is left to the page's
+/// scroll, so the map never traps it: two fingers zoom and move the map,
+/// keeping the place under them, and a double tap zooms in. On desktop the
+/// mouse drags and the wheel zooms. Not [interactive], it takes no gesture.
+class TouchMap extends StatefulWidget {
+  const TouchMap({super.key, this.interactive = true, required this.builder});
+
+  final bool interactive;
+  final Widget Function(
+    BuildContext context,
+    MapController controller,
+    InteractionOptions interaction,
+  )
+  builder;
+
+  @override
+  State<TouchMap> createState() => _TouchMapState();
+}
+
+class _TouchMapState extends State<TouchMap> {
+  final _map = MapController();
+  MapCamera? _startCamera;
+  LatLng? _startFocus;
+
+  @override
+  void dispose() {
+    _map.dispose();
+    super.dispose();
+  }
+
+  void _pinchStart(Offset focal) {
+    final camera = _startCamera = _map.camera;
+    _startFocus = camera.screenOffsetToLatLng(focal);
+  }
+
+  // The place first under the fingers stays under them while they zoom
+  // and move.
+  void _pinchUpdate(Offset focal, double scale) {
+    final camera = _startCamera, focus = _startFocus;
+    if (camera == null || focus == null || scale <= 0) return;
+    final zoom = camera.clampZoom(camera.zoom + math.log(scale) / math.ln2);
+    final point = camera.projectAtZoom(focus, zoom);
+    final centre = camera.unprojectAtZoom(
+      point - (focal - camera.size.center(Offset.zero)),
+      zoom,
+    );
+    _map.move(centre, zoom);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final touch = widget.interactive && isTouchPlatform(context);
+    final map = widget.builder(
+      context,
+      _map,
+      InteractionOptions(
+        // On a phone the map's own drag would trap the page's scroll; two
+        // fingers are handled around the map.
+        flags: !widget.interactive
+            ? InteractiveFlag.none
+            : touch
+            ? InteractiveFlag.doubleTapZoom
+            : InteractiveFlag.all & ~InteractiveFlag.rotate,
+      ),
+    );
+    if (!touch) return map;
+    return TwoFingerGestures(
+      onStart: _pinchStart,
+      onUpdate: _pinchUpdate,
+      child: map,
+    );
+  }
 }
 
 /// The trace on map tiles.
@@ -465,98 +543,102 @@ class _TiledMap extends StatelessWidget {
         first[ahead].northMeters - first.first.northMeters,
       );
     }
-    return FlutterMap(
-      options: MapOptions(
-        initialCameraFit: CameraFit.coordinates(
-          coordinates: all,
-          padding: const EdgeInsets.all(24),
-          maxZoom: 18,
+    return TouchMap(
+      interactive: interactive,
+      builder: (context, controller, interaction) => FlutterMap(
+        mapController: controller,
+        options: MapOptions(
+          initialCameraFit: CameraFit.coordinates(
+            coordinates: all,
+            padding: const EdgeInsets.all(24),
+            maxZoom: 18,
+          ),
+          maxZoom: 21,
+          interactionOptions: interaction,
         ),
-        maxZoom: 21,
-        interactionOptions: InteractionOptions(
-          flags: interactive
-              ? InteractiveFlag.all & ~InteractiveFlag.rotate
-              : InteractiveFlag.none,
-        ),
-      ),
-      children: [
-        mapTileLayer(tiles),
-        if (reference case final reference?)
+        children: [
+          mapTileLayer(tiles),
+          if (reference case final reference?)
+            PolylineLayer(
+              polylines: [
+                for (final segment in reference.segments)
+                  Polyline(
+                    points: [
+                      for (final point in segment) _at(reference, point),
+                    ],
+                    color: Colors.white.withValues(alpha: 0.75),
+                    strokeWidth: 7,
+                    borderStrokeWidth: 1,
+                    borderColor: Colors.black38,
+                  ),
+              ],
+            ),
           PolylineLayer(
-            polylines: [
-              for (final segment in reference.segments)
+            polylines: [..._outline(), ..._speedLines(Colors.white)],
+          ),
+          if (gate case (final a, final b))
+            PolylineLayer(
+              polylines: [
                 Polyline(
-                  points: [for (final point in segment) _at(reference, point)],
-                  color: Colors.white.withValues(alpha: 0.75),
-                  strokeWidth: 7,
-                  borderStrokeWidth: 1,
-                  borderColor: Colors.black38,
+                  points: [
+                    pathLatLng(path.origin, a.dx, a.dy),
+                    pathLatLng(path.origin, b.dx, b.dy),
+                  ],
+                  color: scheme.error,
+                  strokeWidth: 4,
                 ),
-            ],
-          ),
-        PolylineLayer(polylines: [..._outline(), ..._speedLines(Colors.white)]),
-        if (gate case (final a, final b))
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: [
-                  pathLatLng(path.origin, a.dx, a.dy),
-                  pathLatLng(path.origin, b.dx, b.dy),
-                ],
-                color: scheme.error,
-                strokeWidth: 4,
-              ),
-            ],
-          ),
-        if (marks.isNotEmpty)
-          CircleLayer(
-            circles: [
-              for (final mark in marks)
-                CircleMarker(
-                  point: pathLatLng(path.origin, mark.east, mark.north),
-                  radius: mark.radius,
-                  color: mark.color,
-                  borderColor: Colors.white,
-                  borderStrokeWidth: 2,
-                ),
-            ],
-          ),
-        if (movingMarks case final moving?)
-          ValueListenableBuilder(
-            valueListenable: moving,
-            builder: (context, marks, _) => CircleLayer(
+              ],
+            ),
+          if (marks.isNotEmpty)
+            CircleLayer(
               circles: [
                 for (final mark in marks)
                   CircleMarker(
                     point: pathLatLng(path.origin, mark.east, mark.north),
                     radius: mark.radius,
                     color: mark.color,
-                    borderColor: Colors.black87,
+                    borderColor: Colors.white,
                     borderStrokeWidth: 2,
                   ),
               ],
             ),
-          ),
-        if (start != null && heading != null)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: start,
-                width: 28,
-                height: 28,
-                child: Transform.rotate(
-                  angle: heading,
-                  child: const Icon(
-                    Icons.navigation,
-                    color: Colors.white,
-                    shadows: [Shadow(blurRadius: 3)],
+          if (movingMarks case final moving?)
+            ValueListenableBuilder(
+              valueListenable: moving,
+              builder: (context, marks, _) => CircleLayer(
+                circles: [
+                  for (final mark in marks)
+                    CircleMarker(
+                      point: pathLatLng(path.origin, mark.east, mark.north),
+                      radius: mark.radius,
+                      color: mark.color,
+                      borderColor: Colors.black87,
+                      borderStrokeWidth: 2,
+                    ),
+                ],
+              ),
+            ),
+          if (start != null && heading != null)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: start,
+                  width: 28,
+                  height: 28,
+                  child: Transform.rotate(
+                    angle: heading,
+                    child: const Icon(
+                      Icons.navigation,
+                      color: Colors.white,
+                      shadows: [Shadow(blurRadius: 3)],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        MapAttribution(tiles),
-      ],
+              ],
+            ),
+          MapAttribution(tiles),
+        ],
+      ),
     );
   }
 }

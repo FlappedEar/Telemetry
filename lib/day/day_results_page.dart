@@ -22,6 +22,7 @@ import 'recovery_store.dart';
 import 'segment_editor_page.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
+import 'touch.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
 
@@ -336,14 +337,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (!wide) {
       return TabBarView(
         children: [
-          _KeepAlive(
+          KeepAliveItem(
             child: ListView(
               key: const ValueKey('dayResultsSummary'),
               padding: const EdgeInsets.all(16),
               children: summary,
             ),
           ),
-          _KeepAlive(
+          KeepAliveItem(
             child: ListView(
               key: const ValueKey('dayResultsLaps'),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -421,9 +422,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
             onPressed: _openReport,
           ),
           PopupMenuButton<void>(
+            key: const ValueKey('moreMenu'),
             tooltip: 'More',
             itemBuilder: (context) => [
               PopupMenuItem(
+                height: kMinInteractiveDimension,
                 onTap: () => _save(choose: true),
                 child: const Text('Save as…'),
               ),
@@ -765,9 +768,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
   List<Widget> _lapList(BuildContext context) {
     final theme = Theme.of(context);
     return [
-      Row(
+      // The button moves under the title when large text needs the room.
+      Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Expanded(child: Text('Laps', style: theme.textTheme.titleSmall)),
+          Text('Laps', style: theme.textTheme.titleSmall),
           if (_controller.comparisonCandidates().length >= 2)
             TextButton.icon(
               key: const ValueKey('lapsCompare'),
@@ -820,28 +826,5 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       onTap: () => _open(row),
     );
-  }
-}
-
-/// Keeps a tab's scroll position and state, such as the lap chosen in the
-/// theoretical best, while the other tab is shown.
-class _KeepAlive extends StatefulWidget {
-  const _KeepAlive({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_KeepAlive> createState() => _KeepAliveState();
-}
-
-class _KeepAliveState extends State<_KeepAlive>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
   }
 }

@@ -187,53 +187,48 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     final theme = Theme.of(context);
     final selected = _indexOf(result, _selectedId);
     final path = widget.path;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-          height: 4,
-          child: busy ? const LinearProgressIndicator() : null,
-        ),
-        if (path != null && !path.isEmpty)
-          SizedBox(
-            height: 240,
-            child: TrackMap(
-              key: const ValueKey('segmentMap'),
-              path: path,
-              gate: widget.gate,
-              pointColor: _segmentColors(result, selected),
-              marks: _boundaryMarks(result, selected),
-              semanticLabel:
-                  'Best lap trace with the segment boundaries'
-                  '${selected == null ? '' : ', ${result.segments[selected].name} highlighted'}',
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.segmentsAutomatic
-                          ? 'Automatic segments'
-                          : 'Edited segments',
-                      key: const ValueKey('segmentsState'),
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    Text(
-                      'Theoretical best '
-                      '${result.theoreticalBestSeconds == null ? '—' : displayTime(result.theoreticalBestSeconds!)}'
-                      ' · ${result.segments.length} segments',
-                      key: const ValueKey('editorTheoreticalBest'),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
+    final map = path == null || path.isEmpty
+        ? null
+        : TrackMap(
+            key: const ValueKey('segmentMap'),
+            path: path,
+            gate: widget.gate,
+            pointColor: _segmentColors(result, selected),
+            marks: _boundaryMarks(result, selected),
+            semanticLabel:
+                'Best lap trace with the segment boundaries'
+                '${selected == null ? '' : ', ${result.segments[selected].name} highlighted'}',
+          );
+    final list = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    result.segmentsAutomatic
+                        ? 'Automatic segments'
+                        : 'Edited segments',
+                    key: const ValueKey('segmentsState'),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  Text(
+                    'Theoretical best '
+                    '${result.theoreticalBestSeconds == null ? '—' : displayTime(result.theoreticalBestSeconds!)}'
+                    ' · ${result.segments.length} segments',
+                    key: const ValueKey('editorTheoreticalBest'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
               ),
-              TextButton.icon(
+            ),
+            // Wraps its label with large text rather than squeeze the
+            // segments' summary.
+            Flexible(
+              child: TextButton.icon(
                 key: const ValueKey('restoreAutomatic'),
                 icon: const Icon(Icons.restore),
                 label: const Text('Restore automatic'),
@@ -241,35 +236,83 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
                     ? null
                     : () => _confirmRestore(),
               ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: Text(
-            result.segmentsAutomatic
-                ? 'Proposed from ${result.bestLap?.displayName ?? 'the best lap'}. '
-                      'Tap a segment to correct it.'
-                : 'Your corrections are saved with the day and are never replaced '
-                      'by automatic segments.',
-            style: theme.textTheme.bodySmall,
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: ListView.builder(
-            key: const ValueKey('segmentList'),
-            itemCount: result.segments.length,
-            itemBuilder: (context, index) => _segmentRow(
-              context,
-              result,
-              index,
-              selected: index == selected,
-              busy: busy,
             ),
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        child: Text(
+          result.segmentsAutomatic
+              ? 'Proposed from ${result.bestLap?.displayName ?? 'the best lap'}. '
+                    'Tap a segment to correct it.'
+              : 'Your corrections are saved with the day and are never replaced '
+                    'by automatic segments.',
+          style: theme.textTheme.bodySmall,
+        ),
+      ),
+      const Divider(height: 1),
+      Expanded(
+        child: ListView.builder(
+          key: const ValueKey('segmentList'),
+          itemCount: result.segments.length,
+          itemBuilder: (context, index) => _segmentRow(
+            context,
+            result,
+            index,
+            selected: index == selected,
+            busy: busy,
           ),
         ),
-      ],
+      ),
+    ];
+    final progress = SizedBox(
+      height: 4,
+      child: busy ? const LinearProgressIndicator() : null,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Sideways (a phone in landscape): the map beside the list, so
+        // the list keeps its height.
+        if (map != null &&
+            constraints.maxWidth > constraints.maxHeight &&
+            constraints.maxWidth >= 600) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              progress,
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 2, child: map),
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: list,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            progress,
+            if (map != null)
+              SizedBox(
+                // A short screen (or large text) keeps room for the list.
+                height: (constraints.maxHeight * 0.35).clamp(140.0, 240.0),
+                child: map,
+              ),
+            ...list,
+          ],
+        );
+      },
     );
   }
 
@@ -277,6 +320,13 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     final scheme = Theme.of(context).colorScheme;
     if (selected) return const Color(0xffffb300);
     return index.isEven ? scheme.primary : scheme.tertiary;
+  }
+
+  // Text on [_segmentColor], readable in both themes.
+  Color _segmentInk(BuildContext context, int index, bool selected) {
+    final scheme = Theme.of(context).colorScheme;
+    if (selected) return Colors.black;
+    return index.isEven ? scheme.onPrimary : scheme.onTertiary;
   }
 
   Color? Function(PathPoint) _segmentColors(
@@ -378,7 +428,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           shortSegmentName(segment.name),
           maxLines: 1,
           overflow: TextOverflow.clip,
-          style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: _segmentInk(context, index, selected),
+          ),
         ),
       ),
       title: Text(segment.name, overflow: TextOverflow.ellipsis),

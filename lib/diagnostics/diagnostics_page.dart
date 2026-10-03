@@ -147,6 +147,8 @@ void _openDiagnostics(BuildContext context) {
 PopupMenuItem<T> diagnosticsMenuItem<T>(BuildContext context) =>
     PopupMenuItem<T>(
       key: const ValueKey('openDiagnostics'),
+      // A full 48 dp touch target, whatever the theme's menu density.
+      height: kMinInteractiveDimension,
       onTap: () => _openDiagnostics(context),
       child: const Text('Diagnostics'),
     );

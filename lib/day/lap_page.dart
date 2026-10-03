@@ -6,6 +6,7 @@ import 'comparison_page.dart';
 import 'day_results_controller.dart';
 import 'lap_coasting_panel.dart';
 import 'telemetry_chart.dart';
+import 'touch.dart';
 import 'track_map.dart';
 
 /// The channels last chosen for a lap's charts, kept while the app runs.
@@ -164,8 +165,12 @@ class _LapPageState extends State<LapPage> {
       const SizedBox(height: 16),
       Text('Channels', style: theme.textTheme.titleMedium),
       Text(
-        'Drag across a chart to move the cursor; the white dot shows it on '
-        'the map.',
+        isTouchPlatform(context)
+            ? 'Tap a chart or drag sideways across it to move the cursor; the '
+                  'white dot shows it on the map. Two fingers zoom and move '
+                  'the map.'
+            : 'Drag across a chart to move the cursor; the white dot shows it '
+                  'on the map.',
         style: theme.textTheme.bodySmall,
       ),
       ChartWindowControls(window: _window, axisText: _axisText),
