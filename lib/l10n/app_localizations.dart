@@ -206,66 +206,6 @@ abstract class AppLocalizations {
   /// **'Session {number}'**
   String sessionName(int number);
 
-  /// Settings button tooltip and dialog title.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get settings;
-
-  /// Heading of the speed unit setting.
-  ///
-  /// In en, this message translates to:
-  /// **'Unit for unlabelled speeds'**
-  String get settingsSpeedUnitHeading;
-
-  /// Explains the speed unit setting.
-  ///
-  /// In en, this message translates to:
-  /// **'Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.'**
-  String get settingsSpeedUnitHelp;
-
-  /// Speed unit setting: assume no unit for unlabelled speeds.
-  ///
-  /// In en, this message translates to:
-  /// **'None'**
-  String get speedUnitNone;
-
-  /// Shown in settings when no track day is open.
-  ///
-  /// In en, this message translates to:
-  /// **'No day open yet.'**
-  String get settingsNoDayOpen;
-
-  /// The speed units the open day's recordings declare.
-  ///
-  /// In en, this message translates to:
-  /// **'The open day\'s recordings declare {units}.'**
-  String settingsDeclaredUnits(String units);
-
-  /// Joins two speed units: 'km/h and mph'. Keep the spaces.
-  ///
-  /// In en, this message translates to:
-  /// **' and '**
-  String get unitsAnd;
-
-  /// None of the open day's recordings declares a speed unit.
-  ///
-  /// In en, this message translates to:
-  /// **'Its recordings do not say their speed unit.'**
-  String get settingsAllUnlabelled;
-
-  /// Some of the open day's recordings declare no speed unit.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}'**
-  String settingsSomeUnlabelled(int count);
-
-  /// Button that closes a dialog.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
-
   /// Button that closes a dialog without changes.
   ///
   /// In en, this message translates to:
@@ -601,6 +541,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Best lap trace with {segment} highlighted'**
   String coachWhyMap(String segment);
+
+  /// Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'from {format}'**
+  String channelFromSource(String format);
+
+  /// A session's VBO recording was combined with its RCZ of the same drive; count is how many channels only the RCZ recorded were added. {format} is the other recording's format, such as RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Combined with its {format}: no channel added} =1{Combined with its {format}: 1 channel added} other{Combined with its {format}: {count} channels added}}'**
+  String fusionAdded(int count, String format);
+
+  /// A channel both recordings of a session measured, whose values differ; the buttons below choose which to use. {primary} and {alternative} are formats such as VBO and RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel}: the {primary} and the {alternative} disagree'**
+  String fusionConflict(String channel, String primary, String alternative);
+
+  /// Button: keep the session's own recording (such as the VBO) for a channel both recordings disagree on.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {format}'**
+  String fusionKeepPrimary(String format);
+
+  /// Button: keep the session's own recording for a channel and fill its gaps from the other recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill gaps'**
+  String get fusionFillGaps;
+
+  /// Button: use the other recording (such as the RCZ) for a channel both recordings disagree on, the session's own where it has none.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {format}'**
+  String fusionUseAlternative(String format);
+
+  /// A session's other recording (such as its RCZ) was not combined with it; reason says why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not combined with its {format}: {reason}'**
+  String fusionNotCombined(String format, String reason);
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'a recording has no speed'**
+  String get fusionReasonNoSpeed;
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'the recordings overlap too little'**
+  String get fusionReasonShortOverlap;
+
+  /// Why two recordings could not be lined up in time: their speed traces match weakly or in several places.
+  ///
+  /// In en, this message translates to:
+  /// **'their speed traces do not line up clearly'**
+  String get fusionReasonAmbiguous;
+
+  /// Why two recordings could not be lined up in time: the loggers' start times and the speed traces give different offsets.
+  ///
+  /// In en, this message translates to:
+  /// **'their clocks disagree with their speed traces'**
+  String get fusionReasonClockDisagrees;
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'not enough data to line them up'**
+  String get fusionReasonInsufficient;
+
+  /// Why a session's other recording could not be used when the day was opened.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording was not found'**
+  String get fusionReasonNotFound;
+
+  /// Why a session's other recording could not be used: a file is at its place, but with other content.
+  ///
+  /// In en, this message translates to:
+  /// **'the file found is a different recording'**
+  String get fusionReasonDifferent;
+
+  /// Why a session's other recording could not be used.
+  ///
+  /// In en, this message translates to:
+  /// **'it could not be read'**
+  String get fusionReasonUnreadable;
+
+  /// Quiet line under a session while its other recording (such as its RCZ) is being aligned with it in the background; the results already show.
+  ///
+  /// In en, this message translates to:
+  /// **'Lining up with its {format}…'**
+  String fusionPending(String format);
+
+  /// Quiet line under a session whose other recording (such as its RCZ) was aligned with it but has no channel to add and no disagreement. offset is the clock offset found, such as −0.14 s.
+  ///
+  /// In en, this message translates to:
+  /// **'Lined up with its {format} ({offset}); nothing to add'**
+  String fusionLinedUp(String format, String offset);
+
+  /// After adding recordings: an RCZ was added to existing sessions as their other recording. sessions is a list of session names such as "Session 2, Session 3".
+  ///
+  /// In en, this message translates to:
+  /// **'{format} added to {sessions}.'**
+  String fusionCombinedWith(String format, String sessions);
+
+  /// Title of the card listing sessions whose other recording (such as the RCZ) was not found or is another recording; a button below looks for them in a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The {format} of 1 session could not be used} other{The {format} of {count} sessions could not be used}}'**
+  String fusionMissingTitle(int count, String format);
+
+  /// One line of the card of other recordings that could not be used: the session, the path the day names and why.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {path} · {reason}'**
+  String fusionMissingLine(String session, String path, String reason);
+
+  /// A channel both recordings of a session measured: the speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get fusionChannelSpeed;
+
+  /// A channel both recordings of a session measured: the GPS latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get fusionChannelLatitude;
+
+  /// A channel both recordings of a session measured: the GPS longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get fusionChannelLongitude;
+
+  /// A channel both recordings of a session measured: the number of GPS satellites.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites'**
+  String get fusionChannelSatellites;
+
+  /// After Find recordings in a folder: a session's RCZ found there only by its file name is another drive's recording, so it was not used. files is the file name or names.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used, a different recording: {files}.'**
+  String fusionRelinkDifferent(String files);
+
+  /// After adding recordings: aligning an RCZ added to existing sessions failed. sessions is a list of session names.
+  ///
+  /// In en, this message translates to:
+  /// **'{format} added to {sessions}, but it could not be combined; it is kept and tried again when the day opens.'**
+  String fusionAddedNotCombined(String format, String sessions);
+
+  /// Why a session's other recording was not combined: aligning it stopped with an error.
+  ///
+  /// In en, this message translates to:
+  /// **'lining them up failed'**
+  String get fusionReasonFailed;
+
+  /// After Find recordings in a folder: files named like missing recordings that hold other recordings. files is the file names.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}'**
+  String relinkDifferentRecordings(int count, String files);
+
+  /// After Find recordings in a folder: none of the missing recordings was there.
+  ///
+  /// In en, this message translates to:
+  /// **'No missing recording was found in that folder.'**
+  String get relinkNothingFound;
+
+  /// Settings button tooltip and dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// Heading of the speed unit setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit for unlabelled speeds'**
+  String get settingsSpeedUnitHeading;
+
+  /// Explains the speed unit setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.'**
+  String get settingsSpeedUnitHelp;
+
+  /// Speed unit setting: assume no unit for unlabelled speeds.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get speedUnitNone;
+
+  /// Shown in settings when no track day is open.
+  ///
+  /// In en, this message translates to:
+  /// **'No day open yet.'**
+  String get settingsNoDayOpen;
+
+  /// The speed units the open day's recordings declare.
+  ///
+  /// In en, this message translates to:
+  /// **'The open day\'s recordings declare {units}.'**
+  String settingsDeclaredUnits(String units);
+
+  /// Joins two speed units: 'km/h and mph'. Keep the spaces.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get unitsAnd;
+
+  /// None of the open day's recordings declares a speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Its recordings do not say their speed unit.'**
+  String get settingsAllUnlabelled;
+
+  /// Some of the open day's recordings declare no speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}'**
+  String settingsSomeUnlabelled(int count);
+
+  /// Button that closes a dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
 
   /// Link to Apple Maps' legal notices, shown on the Apple Maps background.
   ///

@@ -112,58 +112,6 @@
       }
     }
   },
-  "settings": "Settings",
-  "@settings": {
-    "description": "Settings button tooltip and dialog title."
-  },
-  "settingsSpeedUnitHeading": "Unit for unlabelled speeds",
-  "@settingsSpeedUnitHeading": {
-    "description": "Heading of the speed unit setting."
-  },
-  "settingsSpeedUnitHelp": "Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.",
-  "@settingsSpeedUnitHelp": {
-    "description": "Explains the speed unit setting."
-  },
-  "speedUnitNone": "None",
-  "@speedUnitNone": {
-    "description": "Speed unit setting: assume no unit for unlabelled speeds."
-  },
-  "settingsNoDayOpen": "No day open yet.",
-  "@settingsNoDayOpen": {
-    "description": "Shown in settings when no track day is open."
-  },
-  "settingsDeclaredUnits": "The open day's recordings declare {units}.",
-  "@settingsDeclaredUnits": {
-    "description": "The speed units the open day's recordings declare.",
-    "placeholders": {
-      "units": {
-        "type": "String",
-        "example": "km/h and mph"
-      }
-    }
-  },
-  "unitsAnd": " and ",
-  "@unitsAnd": {
-    "description": "Joins two speed units: 'km/h and mph'. Keep the spaces."
-  },
-  "settingsAllUnlabelled": "Its recordings do not say their speed unit.",
-  "@settingsAllUnlabelled": {
-    "description": "None of the open day's recordings declares a speed unit."
-  },
-  "settingsSomeUnlabelled": "{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}",
-  "@settingsSomeUnlabelled": {
-    "description": "Some of the open day's recordings declare no speed unit.",
-    "placeholders": {
-      "count": {
-        "type": "int",
-        "example": "2"
-      }
-    }
-  },
-  "close": "Close",
-  "@close": {
-    "description": "Button that closes a dialog."
-  },
   "cancel": "Cancel",
   "@cancel": {
     "description": "Button that closes a dialog without changes."
@@ -503,6 +451,302 @@
         "example": "Corner 4"
       }
     }
+  },
+  "channelFromSource": "from {format}",
+  "@channelFromSource": {
+    "description": "Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionAdded": "{count, plural, =0{Combined with its {format}: no channel added} =1{Combined with its {format}: 1 channel added} other{Combined with its {format}: {count} channels added}}",
+  "@fusionAdded": {
+    "description": "A session's VBO recording was combined with its RCZ of the same drive; count is how many channels only the RCZ recorded were added. {format} is the other recording's format, such as RCZ.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      },
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionConflict": "{channel}: the {primary} and the {alternative} disagree",
+  "@fusionConflict": {
+    "description": "A channel both recordings of a session measured, whose values differ; the buttons below choose which to use. {primary} and {alternative} are formats such as VBO and RCZ.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "sats"
+      },
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionKeepPrimary": "Keep {format}",
+  "@fusionKeepPrimary": {
+    "description": "Button: keep the session's own recording (such as the VBO) for a channel both recordings disagree on.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionFillGaps": "Fill gaps",
+  "@fusionFillGaps": {
+    "description": "Button: keep the session's own recording for a channel and fill its gaps from the other recording."
+  },
+  "fusionUseAlternative": "Use {format}",
+  "@fusionUseAlternative": {
+    "description": "Button: use the other recording (such as the RCZ) for a channel both recordings disagree on, the session's own where it has none.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionNotCombined": "Not combined with its {format}: {reason}",
+  "@fusionNotCombined": {
+    "description": "A session's other recording (such as its RCZ) was not combined with it; reason says why.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "reason": {
+        "type": "String",
+        "example": "their speed traces do not line up clearly"
+      }
+    }
+  },
+  "fusionReasonNoSpeed": "a recording has no speed",
+  "@fusionReasonNoSpeed": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonShortOverlap": "the recordings overlap too little",
+  "@fusionReasonShortOverlap": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonAmbiguous": "their speed traces do not line up clearly",
+  "@fusionReasonAmbiguous": {
+    "description": "Why two recordings could not be lined up in time: their speed traces match weakly or in several places."
+  },
+  "fusionReasonClockDisagrees": "their clocks disagree with their speed traces",
+  "@fusionReasonClockDisagrees": {
+    "description": "Why two recordings could not be lined up in time: the loggers' start times and the speed traces give different offsets."
+  },
+  "fusionReasonInsufficient": "not enough data to line them up",
+  "@fusionReasonInsufficient": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonNotFound": "the recording was not found",
+  "@fusionReasonNotFound": {
+    "description": "Why a session's other recording could not be used when the day was opened."
+  },
+  "fusionReasonDifferent": "the file found is a different recording",
+  "@fusionReasonDifferent": {
+    "description": "Why a session's other recording could not be used: a file is at its place, but with other content."
+  },
+  "fusionReasonUnreadable": "it could not be read",
+  "@fusionReasonUnreadable": {
+    "description": "Why a session's other recording could not be used."
+  },
+  "fusionPending": "Lining up with its {format}…",
+  "@fusionPending": {
+    "description": "Quiet line under a session while its other recording (such as its RCZ) is being aligned with it in the background; the results already show.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionLinedUp": "Lined up with its {format} ({offset}); nothing to add",
+  "@fusionLinedUp": {
+    "description": "Quiet line under a session whose other recording (such as its RCZ) was aligned with it but has no channel to add and no disagreement. offset is the clock offset found, such as −0.14 s.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "offset": {
+        "type": "String",
+        "example": "−0.14 s"
+      }
+    }
+  },
+  "fusionCombinedWith": "{format} added to {sessions}.",
+  "@fusionCombinedWith": {
+    "description": "After adding recordings: an RCZ was added to existing sessions as their other recording. sessions is a list of session names such as \"Session 2, Session 3\".",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "sessions": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "fusionMissingTitle": "{count, plural, =1{The {format} of 1 session could not be used} other{The {format} of {count} sessions could not be used}}",
+  "@fusionMissingTitle": {
+    "description": "Title of the card listing sessions whose other recording (such as the RCZ) was not found or is another recording; a button below looks for them in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionMissingLine": "{session}: {path} · {reason}",
+  "@fusionMissingLine": {
+    "description": "One line of the card of other recordings that could not be used: the session, the path the day names and why.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      },
+      "path": {
+        "type": "String",
+        "example": "recordings/drive.rcz"
+      },
+      "reason": {
+        "type": "String",
+        "example": "the recording was not found"
+      }
+    }
+  },
+  "fusionChannelSpeed": "Speed",
+  "@fusionChannelSpeed": {
+    "description": "A channel both recordings of a session measured: the speed."
+  },
+  "fusionChannelLatitude": "Latitude",
+  "@fusionChannelLatitude": {
+    "description": "A channel both recordings of a session measured: the GPS latitude."
+  },
+  "fusionChannelLongitude": "Longitude",
+  "@fusionChannelLongitude": {
+    "description": "A channel both recordings of a session measured: the GPS longitude."
+  },
+  "fusionChannelSatellites": "Satellites",
+  "@fusionChannelSatellites": {
+    "description": "A channel both recordings of a session measured: the number of GPS satellites."
+  },
+  "fusionRelinkDifferent": "Not used, a different recording: {files}.",
+  "@fusionRelinkDifferent": {
+    "description": "After Find recordings in a folder: a session's RCZ found there only by its file name is another drive's recording, so it was not used. files is the file name or names.",
+    "placeholders": {
+      "files": {
+        "type": "String",
+        "example": "drive.rcz"
+      }
+    }
+  },
+  "fusionAddedNotCombined": "{format} added to {sessions}, but it could not be combined; it is kept and tried again when the day opens.",
+  "@fusionAddedNotCombined": {
+    "description": "After adding recordings: aligning an RCZ added to existing sessions failed. sessions is a list of session names.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "sessions": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "fusionReasonFailed": "lining them up failed",
+  "@fusionReasonFailed": {
+    "description": "Why a session's other recording was not combined: aligning it stopped with an error."
+  },
+  "relinkDifferentRecordings": "{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}",
+  "@relinkDifferentRecordings": {
+    "description": "After Find recordings in a folder: files named like missing recordings that hold other recordings. files is the file names.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "files": {
+        "type": "String",
+        "example": "b.vbo"
+      }
+    }
+  },
+  "relinkNothingFound": "No missing recording was found in that folder.",
+  "@relinkNothingFound": {
+    "description": "After Find recordings in a folder: none of the missing recordings was there."
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings button tooltip and dialog title."
+  },
+  "settingsSpeedUnitHeading": "Unit for unlabelled speeds",
+  "@settingsSpeedUnitHeading": {
+    "description": "Heading of the speed unit setting."
+  },
+  "settingsSpeedUnitHelp": "Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.",
+  "@settingsSpeedUnitHelp": {
+    "description": "Explains the speed unit setting."
+  },
+  "speedUnitNone": "None",
+  "@speedUnitNone": {
+    "description": "Speed unit setting: assume no unit for unlabelled speeds."
+  },
+  "settingsNoDayOpen": "No day open yet.",
+  "@settingsNoDayOpen": {
+    "description": "Shown in settings when no track day is open."
+  },
+  "settingsDeclaredUnits": "The open day's recordings declare {units}.",
+  "@settingsDeclaredUnits": {
+    "description": "The speed units the open day's recordings declare.",
+    "placeholders": {
+      "units": {
+        "type": "String",
+        "example": "km/h and mph"
+      }
+    }
+  },
+  "unitsAnd": " and ",
+  "@unitsAnd": {
+    "description": "Joins two speed units: 'km/h and mph'. Keep the spaces."
+  },
+  "settingsAllUnlabelled": "Its recordings do not say their speed unit.",
+  "@settingsAllUnlabelled": {
+    "description": "None of the open day's recordings declares a speed unit."
+  },
+  "settingsSomeUnlabelled": "{count, plural, =1{1 of its recordings does not say its speed unit.} other{{count} of its recordings do not say their speed unit.}}",
+  "@settingsSomeUnlabelled": {
+    "description": "Some of the open day's recordings declare no speed unit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Button that closes a dialog."
   },
   "appleMapLegal": "Legal",
   "@appleMapLegal": {

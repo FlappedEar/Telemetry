@@ -184,6 +184,10 @@ class _LapPageState extends State<LapPage> {
                 child: TelemetryChart(
                   key: ValueKey('lapChart $channel'),
                   title: channel,
+                  source: widget.controller.channelSource(
+                    widget.row.runId,
+                    channel,
+                  ),
                   lines: [
                     ChartLine(
                       '',
@@ -210,6 +214,7 @@ class _LapPageState extends State<LapPage> {
       AddChannelButton(
         channels: _chartable,
         shown: _channels,
+        sources: widget.controller.channelSources(widget.row.runId),
         onAdd: (channel) => _setChannels([..._channels, channel]),
       ),
     ];

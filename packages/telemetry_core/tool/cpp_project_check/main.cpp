@@ -4,7 +4,10 @@
 // the primary VBO recording is resolved, parsed and given its laps; the run's
 // lap exclusions are applied with the binding Overlays builds, and the
 // excluded laps are listed, with its approved segments (valid, count,
-// revision). The event is also passed through Overlays'
+// revision). A run's source-fusion decision is reported as Overlays' Run
+// details judges it: "applied" while both recordings' content revisions are
+// the approved ones, otherwise "needsRevalidation" (KAN-103), with its
+// alternative recording resolved and hashed. The event is also passed through Overlays'
 // editor projection and back, as a re-save does, and compared.
 
 #include "project/BoundedJsonLoader.h"
@@ -64,6 +67,23 @@ QJsonObject checkRun(const QJsonObject &event, const QJsonObject &run, const QSt
         if (value.toObject().value("id") == run.value("primaryTelemetrySourceId")) source = value.toObject();
     }
     result.insert("expectedRevision", QString::fromLatin1(EventProjectCodec::sourceContentRevision(source)));
+    const auto fusion = run.value("fusion").toObject();
+    if (!fusion.isEmpty()) {
+        QJsonObject alternative;
+        for (const auto &value : run.value("sources").toObject().value("telemetry").toArray()) {
+            if (value.toObject().value("id") == fusion.value("alternativeSourceId")) alternative = value.toObject();
+        }
+        const bool current = EventProjectCodec::sourceContentRevision(alternative)
+                == fusion.value("alternativeSourceRevision").toString().toLatin1()
+            && EventProjectCodec::sourceContentRevision(source) == fusion.value("primarySourceRevision").toString().toLatin1();
+        const auto alternativeReference = ProjectSourceReferenceCodec::fromProject(
+            QJsonObject{{"sources", QJsonObject{{"primary", alternative.value("reference")}}}}, "primary", {});
+        const QString alternativePath = ProjectSourceReferenceCodec::resolve(alternativeReference, projectPath);
+        result.insert("fusion", QJsonObject{{"state", current ? "applied" : "needsRevalidation"},
+            {"alternativeResolved", !alternativePath.isEmpty()},
+            {"alternativeContentRevision", alternativePath.isEmpty() ? QString() : QString::fromLatin1(fileSha256(alternativePath))},
+            {"rules", fusion.value("rules").toArray().size()}});
+    }
     const auto reference = ProjectSourceReferenceCodec::fromProject(
         QJsonObject{{"sources", QJsonObject{{"primary", source.value("reference")}}}}, "primary", {});
     const QString path = ProjectSourceReferenceCodec::resolve(reference, projectPath);

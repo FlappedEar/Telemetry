@@ -8,13 +8,19 @@ import 'dart:io';
 import 'package:fetproject/fetproject.dart' as fet;
 import 'package:path/path.dart' as p;
 
+import '../intake/import_plan.dart';
 import '../intake/recording_source.dart';
 import '../operation.dart';
 import 'day_document.dart';
 
 /// What [findMovedRecordings] found in a folder.
 final class RecordingSearch {
-  const RecordingSearch({this.found = const {}, this.different = const {}});
+  const RecordingSearch({
+    this.found = const {},
+    this.different = const {},
+    this.alternatives = const {},
+    this.alternativesByName = const {},
+  });
 
   /// The file to open for each missing run, by run id: a file with the
   /// recording's content, or for a recording the document has no identity
@@ -24,6 +30,16 @@ final class RecordingSearch {
   /// Files named like a missing recording that are another recording, by
   /// run id. They are not used.
   final Map<String, String> different;
+
+  /// The file to open for each missing alternative recording, by run id: a
+  /// file with its content, else one of the same name, which is used only
+  /// when it is the same drive as the run's recording
+  /// ([resolveDocumentAlternative] checks).
+  final Map<String, String> alternatives;
+
+  /// The runs of [alternatives] whose file was found by its name only, not
+  /// by the content the document asserts.
+  final Set<String> alternativesByName;
 }
 
 /// Looks under [folder] (and its subfolders, at most [maximumFiles] files
@@ -35,9 +51,15 @@ final class RecordingSearch {
 /// when the day opens). Only a recording the document has no identity for is
 /// found by its file name, as Overlays accepts any compatible file for it.
 /// Only VBO and RCZ files of the right size are read.
+///
+/// [missingAlternatives] are runs' alternative recordings (the RCZ of a
+/// VBO) that could not be used, found the same way, except that a file of
+/// the same name with other content is offered too: an RCZ written again
+/// is still the same drive.
 RecordingSearch findMovedRecordings(
   String folder,
   List<MissingRecording> missing, {
+  List<MissingRecording> missingAlternatives = const [],
   int maximumFiles = 20000,
   CancellationCheck? cancelled,
 }) {
@@ -74,7 +96,10 @@ RecordingSearch findMovedRecordings(
     }
   });
 
-  for (final recording in missing) {
+  final alternatives = <String, String>{};
+  final alternativesByName = <String>{};
+  for (final (index, recording) in [...missing, ...missingAlternatives].indexed) {
+    final alternative = index >= missing.length;
     throwIfCancelled(cancelled);
     final name = p.basename(recording.path.replaceAll(r'\', '/')).toLowerCase();
     final fingerprint = recording.fingerprint;
@@ -116,11 +141,89 @@ RecordingSearch findMovedRecordings(
       }
       if (named) sameName ??= file.path;
     }
-    if (match != null) {
+    if (alternative) {
+      if ((match ?? sameName) case final file?) alternatives[recording.runId] = file;
+      if (match == null && sameName != null) alternativesByName.add(recording.runId);
+    } else if (match != null) {
       found[recording.runId] = match;
     } else if (sameName != null) {
       different[recording.runId] = sameName;
     }
   }
-  return RecordingSearch(found: found, different: different);
+  return RecordingSearch(
+    found: found,
+    different: different,
+    alternatives: alternatives,
+    alternativesByName: alternativesByName,
+  );
+}
+
+/// A day opened again after looking in [folder] for its [missing]
+/// recordings and its [missingAlternatives] ([findMovedRecordings]).
+typedef RelinkedDay = ({
+  OpenedDay day,
+  RecordingSearch search,
+
+  /// Alternatives found by name only that are not the same drive as their
+  /// run's recording ([sameDriveInOtherFormat]): not used, by run id with
+  /// the file found.
+  Map<String, String> differentAlternatives,
+});
+
+/// Looks in [folder] for the [missing] recordings and [missingAlternatives]
+/// of the day saved at [path] and opens it again with those found. An
+/// alternative found only by its name is used only when it is the same
+/// drive as its run's recording; otherwise it is reported in
+/// [RelinkedDay.differentAlternatives], never accepted for its name.
+RelinkedDay relinkDay(
+  String path,
+  String folder,
+  List<MissingRecording> missing, {
+  List<MissingRecording> missingAlternatives = const [],
+  CancellationCheck? cancelled,
+}) {
+  final search = findMovedRecordings(
+    folder,
+    missing,
+    missingAlternatives: missingAlternatives,
+    cancelled: cancelled,
+  );
+  var day = openDay(
+    path,
+    relinked: search.found,
+    relinkedAlternatives: search.alternatives,
+    cancelled: cancelled,
+  );
+  final different = <String, String>{};
+  final byName = [
+    for (final named in day.runs)
+      if (search.alternativesByName.contains(named.run.id)) named,
+  ];
+  if (byName.isNotEmpty) {
+    final plan = prepareTelemetryImport([
+      for (final named in byName) search.alternatives[named.run.id]!,
+    ], cancelled: cancelled);
+    for (final (index, named) in byName.indexed) {
+      final status = plan.files[index];
+      TelemetryRunProposal? loaded;
+      for (final proposal in plan.runs) {
+        if (proposal.id == status.runId) loaded = proposal;
+      }
+      if (loaded == null || !sameDriveInOtherFormat(named.run, loaded, cancelled: cancelled)) {
+        different[named.run.id] = search.alternatives[named.run.id]!;
+      }
+    }
+  }
+  if (different.isNotEmpty) {
+    day = openDay(
+      path,
+      relinked: search.found,
+      relinkedAlternatives: {
+        for (final MapEntry(:key, :value) in search.alternatives.entries)
+          if (!different.containsKey(key)) key: value,
+      },
+      cancelled: cancelled,
+    );
+  }
+  return (day: day, search: search, differentAlternatives: different);
 }
