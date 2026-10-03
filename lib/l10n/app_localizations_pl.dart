@@ -727,7 +727,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get tbBestLapSameSegments => 'Najlepsze okrążenie, te same segmenty';
 
   @override
-  String get tbAvailable => 'Do zyskania';
+  String get tbAvailable => 'Rezerwa';
 
   @override
   String get tbLapColumn => 'Okrążenie';
@@ -901,12 +901,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String timeLossSegmentAfterCorner(String segment, String corner) {
-    return '$segment · za: $corner';
+    return '$segment · po: $corner';
   }
 
   @override
   String timeLossSegmentAfterTheCorner(String segment) {
-    return '$segment · za zakrętem';
+    return '$segment · po zakręcie';
   }
 
   @override
@@ -1007,7 +1007,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String focusThrough(String segment) {
-    return 'Odcinek: $segment';
+    return 'Segment: $segment';
   }
 
   @override
@@ -1043,12 +1043,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String segment,
     String sourceLap,
   ) {
-    return 'Twoje najlepsze okrążenie ($bestLap) było o $gap s wolniejsze na odcinku $segment niż $sourceLap, najszybsze zarejestrowane tam.';
+    return 'Twoje najlepsze okrążenie ($bestLap) było o $gap s wolniejsze w segmencie $segment niż $sourceLap, najszybsze zarejestrowane tam.';
   }
 
   @override
   String focusHypothesisSectorGap(String segment) {
-    return 'Porównanie obu okrążeń na odcinku $segment może pokazać, gdzie uciekł czas: gdzie zaczyna się hamowanie, jaka jest prędkość minimalna i kiedy wraca gaz.';
+    return 'Porównanie obu okrążeń w segmencie $segment może pokazać, gdzie uciekł czas: gdzie zaczyna się hamowanie, jaka jest prędkość minimalna i kiedy wraca gaz.';
   }
 
   @override
@@ -1059,12 +1059,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String reference,
     String median,
   ) {
-    return 'Na $count z $total porównanych okrążeń straciłeś czas na odcinku $segment względem $reference (mediana $median s).';
+    return 'Na $count z $total porównanych okrążeń czas uciekał w segmencie $segment względem $reference (mediana $median s).';
   }
 
   @override
   String focusHypothesisRepeatedLoss(String reference, String segment) {
-    return 'Ponieważ to się powtarza, porównanie typowego okrążenia z $reference na odcinku $segment może pokazać wzorzec, a nie jednorazowy przypadek.';
+    return 'Ponieważ to się powtarza, porównanie typowego okrążenia z $reference w segmencie $segment może pokazać wzorzec, a nie jednorazowy przypadek.';
   }
 
   @override
@@ -1073,12 +1073,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String spread,
     String count,
   ) {
-    return 'Punkt hamowania na odcinku $segment zmienia się o $spread m w środkowej połowie z $count okrążeń (zmierzony z sygnału hamulca).';
+    return 'Punkt hamowania w segmencie $segment zmienia się o $spread m w środkowej połowie z $count okrążeń (zmierzony z sygnału hamulca).';
   }
 
   @override
   String focusHypothesisBrakingSpread(String segment) {
-    return 'Warto sprawdzić bardziej powtarzalny punkt odniesienia do hamowania na odcinku $segment. To nie pokazuje, czy wcześniejsze czy późniejsze hamowanie jest szybsze lub bezpieczne; porównaj najwcześniejszy i najpóźniejszy przykład.';
+    return 'Warto sprawdzić bardziej powtarzalny punkt odniesienia do hamowania w segmencie $segment. To nie pokazuje, czy wcześniejsze czy późniejsze hamowanie jest szybsze lub bezpieczne; porównaj najwcześniejszy i najpóźniejszy przykład.';
   }
 
   @override
@@ -1088,7 +1088,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String count,
     String median,
   ) {
-    return 'Prędkość minimalna na odcinku $segment zmienia się o $spread w środkowej połowie z $count okrążeń (mediana $median).';
+    return 'Prędkość minimalna w segmencie $segment zmienia się o $spread w środkowej połowie z $count okrążeń (mediana $median).';
   }
 
   @override
@@ -1097,7 +1097,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String focusHypothesisMinimumSpeedSpread(String segment) {
-    return 'Porównanie najwolniejszego i najszybszego przykładu na odcinku $segment może pokazać, co się różni; wyższa prędkość minimalna sama w sobie nie jest lepsza.';
+    return 'Porównanie najwolniejszego i najszybszego przykładu w segmencie $segment może pokazać, co się różni; wyższa prędkość minimalna sama w sobie nie jest lepsza.';
   }
 
   @override
@@ -1450,4 +1450,57 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get channelSummariesCancelled =>
       'Obliczanie podsumowań kanałów anulowano.';
+
+  @override
+  String cornerSummaryMin(String speed) {
+    return 'Min $speed';
+  }
+
+  @override
+  String cornerSummaryMinWithBest(String speed, String best) {
+    return 'Min $speed (najlepsze okrążenie $best)';
+  }
+
+  @override
+  String cornerSummaryBrakes(String where) {
+    return 'hamowanie $where';
+  }
+
+  @override
+  String cornerSummaryBrakesWithBest(String where, String position) {
+    return 'hamowanie $where ($position)';
+  }
+
+  @override
+  String cornerBeforeEntry(int metres) {
+    return '$metres m przed';
+  }
+
+  @override
+  String cornerIntoCorner(int metres) {
+    return '$metres m w zakręcie';
+  }
+
+  @override
+  String get cornerSamePosition => 'w tym samym miejscu';
+
+  @override
+  String cornerLater(int metres) {
+    return '$metres m później';
+  }
+
+  @override
+  String cornerEarlier(int metres) {
+    return '$metres m wcześniej';
+  }
+
+  @override
+  String get missingRecordingNotFound => 'Nie znaleziono nagrania.';
+
+  @override
+  String get missingRecordingDuplicate =>
+      'To samo nagranie co inna sesja tego dnia.';
+
+  @override
+  String get missingRecordingDifferent => 'Znaleziony plik to inne nagranie.';
 }

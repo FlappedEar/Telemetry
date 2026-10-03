@@ -2108,6 +2108,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Channel summaries were cancelled.'**
   String get channelSummariesCancelled;
+
+  /// Corner line under a loss row: the lap's minimum speed with its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Min {speed}'**
+  String cornerSummaryMin(String speed);
+
+  /// Corner line: the lap's minimum speed and the best lap's.
+  ///
+  /// In en, this message translates to:
+  /// **'Min {speed} (best lap {best})'**
+  String cornerSummaryMinWithBest(String speed, String best);
+
+  /// Corner line: where the lap starts braking.
+  ///
+  /// In en, this message translates to:
+  /// **'brakes {where}'**
+  String cornerSummaryBrakes(String where);
+
+  /// Corner line: where the lap starts braking, against the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'brakes {where} ({position})'**
+  String cornerSummaryBrakesWithBest(String where, String position);
+
+  /// A braking point before the corner's start.
+  ///
+  /// In en, this message translates to:
+  /// **'{metres} m before'**
+  String cornerBeforeEntry(int metres);
+
+  /// A braking point inside the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'{metres} m into the corner'**
+  String cornerIntoCorner(int metres);
+
+  /// A braking point at the same place as on the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'same'**
+  String get cornerSamePosition;
+
+  /// A braking point later than on the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{metres} m later'**
+  String cornerLater(int metres);
+
+  /// A braking point earlier than on the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{metres} m earlier'**
+  String cornerEarlier(int metres);
+
+  /// Why a session of a saved day could not be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording not found.'**
+  String get missingRecordingNotFound;
+
+  /// Why a session of a saved day could not be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'The same recording as another session of this day.'**
+  String get missingRecordingDuplicate;
+
+  /// Why a session of a saved day could not be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'The file found is a different recording.'**
+  String get missingRecordingDifferent;
 }
 
 class _AppLocalizationsDelegate

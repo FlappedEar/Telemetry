@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:telemetry/day/theoretical_best_card.dart'
+    show TheoreticalBestText;
 import 'package:telemetry/format.dart';
 import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
@@ -88,6 +90,29 @@ void main() {
         }
       });
     }
+  });
+
+  test('every missing-recording reason from telemetry_core is translated', () {
+    final source = File('packages/telemetry_core/lib/src/day/day_document.dart')
+        .readAsStringSync();
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    for (final reason in [
+      'Recording not found.',
+      'The same recording as another session of this day.',
+      'The file found is a different recording.',
+    ]) {
+      expect(source, contains("'$reason'"));
+      expect(polish.missingReason(reason), isNot(reason));
+    }
+    expect(polish.missingReason('Read error.'), 'Read error.');
+  });
+
+  test('segment names: automatic ones are translated, typed ones kept', () {
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    expect(polish.tbSegmentName('Corner 4'), 'Zakręt 4');
+    expect(polish.tbSegmentName('Corners 2–3'), 'Zakręty 2–3');
+    expect(polish.tbSegmentName('Straight 1'), 'Prosta 1');
+    expect(polish.tbSegmentName('Corner Bus-stop'), 'Corner Bus-stop');
   });
 
   test('every route reason from telemetry_core has a translation', () {

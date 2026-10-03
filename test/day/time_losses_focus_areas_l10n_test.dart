@@ -87,21 +87,21 @@ void main() {
       expect(
         polish.focusAreaObservation(byKind[FocusAreaKind.sectorGap]!),
         'Twoje najlepsze okrążenie (Sesja 1 · OKR. 2) było o 0.200 s '
-        'wolniejsze na odcinku Prosta 1 niż Sesja 2 · OKR. 1, najszybsze '
+        'wolniejsze w segmencie Prosta 1 niż Sesja 2 · OKR. 1, najszybsze '
         'zarejestrowane tam.',
       );
       expect(
         polish.focusAreaHypothesis(byKind[FocusAreaKind.repeatedLoss]!),
-        contains('z Sesja 1 · OKR. 2 na odcinku Zakręt 1'),
+        contains('z Sesja 1 · OKR. 2 w segmencie Zakręt 1'),
       );
       expect(
         polish.focusAreaObservation(byKind[FocusAreaKind.brakingSpread]!),
-        startsWith('Punkt hamowania na odcinku Zakręty 2–3 zmienia się o'),
+        startsWith('Punkt hamowania w segmencie Zakręty 2–3 zmienia się o'),
       );
       final speed = polish.focusAreaObservation(
         byKind[FocusAreaKind.minimumSpeedSpread]!,
       );
-      expect(speed, startsWith('Prędkość minimalna na odcinku Hairpin'));
+      expect(speed, startsWith('Prędkość minimalna w segmencie Hairpin'));
       expect(speed.contains('km/h'), unit.isNotEmpty);
       expect(
         speed.endsWith('Prędkości są w jednostkach z nagrania.'),

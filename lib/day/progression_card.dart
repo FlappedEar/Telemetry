@@ -309,7 +309,7 @@ class _SectionTable extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             children: [
               Text(
-                '${row.name} · ${l10n.session(session.run.name)}',
+                '${l10n.tbSegmentName(row.name)} · ${l10n.session(session.run.name)}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               for (final lap in cell.laps)
@@ -358,7 +358,7 @@ class _SectionTable extends StatelessWidget {
         for (final row in sections.segments)
           StickyRow(
             first: TableCellText(
-              row.name,
+              l10n.tbSegmentName(row.name),
               style: label,
               alignment: Alignment.centerLeft,
               maxLines: 2,

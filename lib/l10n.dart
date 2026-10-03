@@ -120,4 +120,15 @@ extension DayNoteText on AppLocalizations {
     'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
     _ => routeReason(text),
   };
+
+  /// Why a session of a saved day could not be opened
+  /// (`MissingRecording.reason`); any other reason, such as a read error,
+  /// is shown as written.
+  String missingReason(String reason) => switch (reason) {
+    'Recording not found.' => missingRecordingNotFound,
+    'The same recording as another session of this day.' =>
+      missingRecordingDuplicate,
+    'The file found is a different recording.' => missingRecordingDifferent,
+    _ => reason,
+  };
 }

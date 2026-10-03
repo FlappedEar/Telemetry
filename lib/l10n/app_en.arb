@@ -2147,5 +2147,105 @@
   "channelSummariesCancelled": "Channel summaries were cancelled.",
   "@channelSummariesCancelled": {
     "description": "Channel summaries stopped before they finished."
+  },
+  "cornerSummaryMin": "Min {speed}",
+  "@cornerSummaryMin": {
+    "description": "Corner line under a loss row: the lap's minimum speed with its unit.",
+    "placeholders": {
+      "speed": {
+        "type": "String",
+        "example": "72.4 km/h"
+      }
+    }
+  },
+  "cornerSummaryMinWithBest": "Min {speed} (best lap {best})",
+  "@cornerSummaryMinWithBest": {
+    "description": "Corner line: the lap's minimum speed and the best lap's.",
+    "placeholders": {
+      "speed": {
+        "type": "String",
+        "example": "72.4 km/h"
+      },
+      "best": {
+        "type": "String",
+        "example": "74.1"
+      }
+    }
+  },
+  "cornerSummaryBrakes": "brakes {where}",
+  "@cornerSummaryBrakes": {
+    "description": "Corner line: where the lap starts braking.",
+    "placeholders": {
+      "where": {
+        "type": "String",
+        "example": "35 m before"
+      }
+    }
+  },
+  "cornerSummaryBrakesWithBest": "brakes {where} ({position})",
+  "@cornerSummaryBrakesWithBest": {
+    "description": "Corner line: where the lap starts braking, against the best lap.",
+    "placeholders": {
+      "where": {
+        "type": "String",
+        "example": "35 m before"
+      },
+      "position": {
+        "type": "String",
+        "example": "4 m later"
+      }
+    }
+  },
+  "cornerBeforeEntry": "{metres} m before",
+  "@cornerBeforeEntry": {
+    "description": "A braking point before the corner's start.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerIntoCorner": "{metres} m into the corner",
+  "@cornerIntoCorner": {
+    "description": "A braking point inside the corner.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerSamePosition": "same",
+  "@cornerSamePosition": {
+    "description": "A braking point at the same place as on the best lap."
+  },
+  "cornerLater": "{metres} m later",
+  "@cornerLater": {
+    "description": "A braking point later than on the best lap.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "cornerEarlier": "{metres} m earlier",
+  "@cornerEarlier": {
+    "description": "A braking point earlier than on the best lap.",
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      }
+    }
+  },
+  "missingRecordingNotFound": "Recording not found.",
+  "@missingRecordingNotFound": {
+    "description": "Why a session of a saved day could not be opened."
+  },
+  "missingRecordingDuplicate": "The same recording as another session of this day.",
+  "@missingRecordingDuplicate": {
+    "description": "Why a session of a saved day could not be opened."
+  },
+  "missingRecordingDifferent": "The file found is a different recording.",
+  "@missingRecordingDifferent": {
+    "description": "Why a session of a saved day could not be opened."
   }
 }

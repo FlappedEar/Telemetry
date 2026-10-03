@@ -30,7 +30,7 @@ String shortSegmentName(String name) {
   return '${match.group(1)!.toUpperCase()}${match.group(2)}';
 }
 
-final _automaticSegmentName = RegExp(r'^(Corners?|Straight) (\S+)$');
+final _automaticSegmentName = RegExp(r'^(Corners?|Straight) (\d+(?:–\d+)?)$');
 
 /// The theoretical best's texts from `telemetry_core` in the app's language.
 extension TheoreticalBestText on AppLocalizations {
@@ -336,7 +336,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     final corner = result.cornerAt(index);
     final comparison = corner?.compare(lap.lap.reference);
     speedUnitOf(context); // The summary's speeds follow the setting.
-    final summary = comparison == null ? null : cornerSummary(comparison);
+    final summary = comparison == null ? null : cornerSummary(l10n, comparison);
     final row = Padding(
       // 36 + 12: a 48 dp row to tap.
       padding: const EdgeInsets.symmetric(vertical: 6),

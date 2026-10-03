@@ -634,7 +634,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 ),
                 for (final recording in missing)
                   Text(
-                    '${l10n.session(recording.name)}: ${recording.path} · ${recording.reason}',
+                    '${l10n.session(recording.name)}: ${recording.path} · ${l10n.missingReason(recording.reason)}',
                   ),
                 const SizedBox(height: 4),
                 Text(l10n.missingSessionsKept),

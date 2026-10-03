@@ -1433,4 +1433,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelSummariesCancelled => 'Channel summaries were cancelled.';
+
+  @override
+  String cornerSummaryMin(String speed) {
+    return 'Min $speed';
+  }
+
+  @override
+  String cornerSummaryMinWithBest(String speed, String best) {
+    return 'Min $speed (best lap $best)';
+  }
+
+  @override
+  String cornerSummaryBrakes(String where) {
+    return 'brakes $where';
+  }
+
+  @override
+  String cornerSummaryBrakesWithBest(String where, String position) {
+    return 'brakes $where ($position)';
+  }
+
+  @override
+  String cornerBeforeEntry(int metres) {
+    return '$metres m before';
+  }
+
+  @override
+  String cornerIntoCorner(int metres) {
+    return '$metres m into the corner';
+  }
+
+  @override
+  String get cornerSamePosition => 'same';
+
+  @override
+  String cornerLater(int metres) {
+    return '$metres m later';
+  }
+
+  @override
+  String cornerEarlier(int metres) {
+    return '$metres m earlier';
+  }
+
+  @override
+  String get missingRecordingNotFound => 'Recording not found.';
+
+  @override
+  String get missingRecordingDuplicate =>
+      'The same recording as another session of this day.';
+
+  @override
+  String get missingRecordingDifferent =>
+      'The file found is a different recording.';
 }
