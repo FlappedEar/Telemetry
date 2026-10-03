@@ -26,6 +26,19 @@ Future<DayTheoreticalBest> defaultTheoreticalBestRunner(
     ? Future.microtask(job)
     : Isolate.run(job);
 
+/// Summarizes the day's recorded channels. Replaced in widget tests, which
+/// run it on the test's own thread.
+typedef ChannelSummariesRunner = Future<DayChannelSummaries> Function(
+  DayChannelSummaries Function() job,
+);
+
+/// In a background isolate, or directly under `flutter test`.
+Future<DayChannelSummaries> defaultChannelSummariesRunner(
+  DayChannelSummaries Function() job,
+) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    ? Future.microtask(job)
+    : Isolate.run(job);
+
 /// The results of one imported day and the user's choices on them: the group
 /// shown and the laps excluded. Re-ranking keeps rows and routes, so it runs
 /// on the interface thread.
@@ -44,7 +57,10 @@ final class DayResultsController extends ChangeNotifier {
     this.recovery,
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
+    ChannelSummariesRunner? channelSummariesRunner,
   }) : runs = List.unmodifiable(runs),
+       _channelSummariesRunner =
+           channelSummariesRunner ?? defaultChannelSummariesRunner,
        _theoreticalBestRunner =
            theoreticalBestRunner ?? defaultTheoreticalBestRunner,
        _analysis = analysis,
@@ -340,6 +356,7 @@ final class DayResultsController extends ChangeNotifier {
     _theoreticalBestLoading = true;
     notifyListeners();
     final documentRuns = _documentRuns;
+    _theoreticalKey = decisionsKey;
     DayTheoreticalBest result;
     try {
       result = await _theoreticalBestRunner(
@@ -357,6 +374,134 @@ final class DayResultsController extends ChangeNotifier {
     _theoreticalBestLoading = false;
     notifyListeners();
   }
+
+  /// The analysis decisions the shown group is computed under (see
+  /// [dayDecisionsKey]).
+  List<int> get decisionsKey => dayDecisionsKey(
+    _analysis,
+    documentRuns: _documentRuns,
+    exclusions: _exclusions,
+  );
+
+  // The decisions [_theoreticalBest] was requested under.
+  List<int> _theoreticalKey = const [];
+
+  /// The areas to inspect next, from the theoretical best; empty until it
+  /// is calculated or when nothing stands out.
+  List<FocusArea> get focusAreas {
+    final result = _theoreticalBest;
+    if (result == null || _theoreticalBestLoading) return const [];
+    if (!identical(_focusFor, result)) {
+      _focusFor = result;
+      _focusAreas = dayFocusAreas(result, lapLabel);
+    }
+    return _focusAreas;
+  }
+
+  DayTheoreticalBest? _focusFor;
+  List<FocusArea> _focusAreas = const [];
+
+  /// "Session 3 · LAP 2" for a lap reference, or empty.
+  String lapLabel(Object? reference) {
+    final row = lapRow(reference);
+    return row == null ? '' : '${row.runName} · LAP ${row.lapNumber}';
+  }
+
+  /// The lap section of [reference]: a [DayLapReference] or one as the day
+  /// report writes it.
+  DayLapRow? lapRow(Object? reference) {
+    if (!identical(_rowsFor, _analysis.rows)) {
+      _rowsFor = _analysis.rows;
+      _rowsByReference = {for (final row in _analysis.rows) row.reference: row};
+    }
+    if (reference is DayLapReference) return _rowsByReference[reference];
+    if (reference is Map<String, Object?>) {
+      for (final row in _analysis.rows) {
+        final json = dayLapReferenceJson(row.reference);
+        if (json.entries.every(
+          (entry) => reference[entry.key] == entry.value,
+        )) {
+          return row;
+        }
+      }
+    }
+    return null;
+  }
+
+  List<DayLapRow>? _rowsFor;
+  Map<DayLapReference, DayLapRow> _rowsByReference = const {};
+
+  final ChannelSummariesRunner _channelSummariesRunner;
+  DayChannelSummaries? _channelSummaries;
+  bool _channelSummariesLoading = false;
+
+  /// The recorded temperatures and heart rate of every run and section;
+  /// null until [requestChannelSummaries] has finished. They do not depend
+  /// on the group or the segments.
+  DayChannelSummaries? get channelSummaries => _channelSummaries;
+  bool get channelSummariesLoading => _channelSummariesLoading;
+
+  static DayChannelSummaries Function() _channelSummariesJob(
+    List<DayLapRow> rows,
+    Map<String, TelemetrySession?> sessions,
+  ) =>
+      () => summarizeDayChannels(rows, sessions);
+
+  /// Summarizes the recorded channels of every run in the background.
+  Future<void> requestChannelSummaries() async {
+    if (_channelSummaries != null || _channelSummariesLoading) return;
+    _channelSummariesLoading = true;
+    notifyListeners();
+    DayChannelSummaries result;
+    try {
+      result = await _channelSummariesRunner(
+        _channelSummariesJob(_analysis.rows, {
+          for (final named in runs) named.run.id: named.run.telemetry,
+        }),
+      );
+    } on Exception catch (error) {
+      result = DayChannelSummaries(error: '$error');
+    }
+    if (_disposed) return;
+    _channelSummaries = result;
+    _channelSummariesLoading = false;
+    notifyListeners();
+  }
+
+  /// How each recorded temperature moves with lap time and strong
+  /// acceleration over the shown group's eligible laps; null until the
+  /// channel summaries are calculated.
+  TemperatureAssociations? get temperatureAssociations {
+    final channels = _channelSummaries;
+    if (channels == null) return null;
+    if (!identical(_associationsFor, channels) ||
+        !identical(_associationsAnalysis, _analysis)) {
+      _associationsFor = channels;
+      _associationsAnalysis = _analysis;
+      _associations = dayTemperatureAssociations(channels, [
+        for (final row in dayEligibleLaps(_analysis)) row.reference,
+      ]);
+    }
+    return _associations;
+  }
+
+  DayChannelSummaries? _associationsFor;
+  DayAnalysis? _associationsAnalysis;
+  TemperatureAssociations? _associations;
+
+  /// The day report (Overlays' "Day report") of what has been calculated:
+  /// nothing is calculated for it, and a result not calculated yet says so.
+  Map<String, Object?> get dayReportDocument => dayReport(
+    analysis: _analysis,
+    eventId: eventId,
+    runs: progressionRuns,
+    decisionsKey: decisionsKey,
+    theoretical: _theoreticalBestLoading ? null : _theoreticalBest,
+    theoreticalLoading: _theoreticalBestLoading,
+    theoreticalKey: _theoreticalKey,
+    channels: _channelSummariesLoading ? null : _channelSummaries,
+    channelsLoading: _channelSummariesLoading,
+  );
 
   void _resetTheoreticalBest() {
     _theoreticalBest = null;

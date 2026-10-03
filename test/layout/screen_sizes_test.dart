@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/channel_cards.dart';
 import 'package:telemetry/day/corner_details.dart';
+import 'package:telemetry/day/day_report_page.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/focus_areas_card.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/day/track_dialog.dart';
 import 'package:telemetry/day/track_map.dart';
@@ -40,7 +43,7 @@ void main() {
     final paths = <String>[];
     files.forEach((name, laps) {
       final path = '${directory.path}/$name';
-      File(path).writeAsStringSync(rectangleVbo(laps));
+      File(path).writeAsStringSync(rectangleVbo(laps, car: true));
       paths.add(path);
     });
     return runDayImport((paths: paths, includeSubfolders: false));
@@ -174,6 +177,56 @@ void main() {
         );
         await scrollThrough(tester);
         expect(tester.takeException(), isNull, reason: 'lap scrolled');
+      });
+
+      testWidgets('the day report, a focus area and a channel fit', (
+        tester,
+      ) async {
+        final outcome = importDay();
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: DayResultsPage(
+              runs: outcome.runs,
+              analysis: outcome.analysis!,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final summary = find
+            .descendant(
+              of: find.byKey(const ValueKey('dayResultsSummary')),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        Future<void> open(Finder target) async {
+          await tester.scrollUntilVisible(target, 200, scrollable: summary);
+          await tester.ensureVisible(target);
+          await tester.pumpAndSettle();
+          await tester.tap(target);
+          await tester.pumpAndSettle();
+        }
+
+        await open(find.byKey(const ValueKey('focusArea 0')));
+        expect(find.byType(FocusAreaPage), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: 'focus area');
+        await scrollThrough(tester);
+        expect(tester.takeException(), isNull, reason: 'focus scrolled');
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        await open(find.byKey(const ValueKey('carChannel oil_temp')));
+        expect(find.byType(ChannelPage), findsOneWidget);
+        await scrollThrough(tester);
+        expect(tester.takeException(), isNull, reason: 'channel scrolled');
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('openDayReport')));
+        await tester.pumpAndSettle();
+        expect(find.byType(DayReportPage), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: 'day report');
+        await scrollThrough(tester);
+        expect(tester.takeException(), isNull, reason: 'report scrolled');
       });
     });
   }
