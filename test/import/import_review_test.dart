@@ -282,7 +282,11 @@ void main() {
           choices: {id['again.rcz']!: sessionId},
         );
         expect(addition.reviewChanged, isTrue);
-        expect(day.fusion(sessionId)!.alternative!.sourcePath, rcz);
+        // Compared as paths: Windows writes the separator differently.
+        expect(
+          p.equals(day.fusion(sessionId)!.alternative!.sourcePath, rcz),
+          isTrue,
+        );
         // Nothing was added: the day still has its one session.
         expect(day.runs.map((named) => named.run.id), [sessionId]);
       },
