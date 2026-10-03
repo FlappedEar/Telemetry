@@ -18,6 +18,7 @@ import 'day_results_controller.dart';
 import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
+import 'next_session_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
@@ -135,6 +136,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   void dispose() {
     _controller.removeListener(_reportAddition);
     _lifecycle.dispose();
+    _summaryScroll.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -159,6 +161,40 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ...addition.notes,
     ];
     _tell(lines.join('\n'));
+    if (added.isNotEmpty) _revealCoach();
+  }
+
+  final _coachKey = GlobalKey();
+
+  /// The summary's scroll position, on a phone's Results tab or the wide
+  /// layout's left pane.
+  final _summaryScroll = ScrollController();
+
+  /// The phone layout's Results and Laps tabs; null in the wide layout.
+  TabController? _tabs;
+
+  /// The day opens on what to do in the next session: the Results tab,
+  /// scrolled to the Next session card. Scrolled far below it, the card is
+  /// not built, so the summary first goes back to the top, near the card.
+  void _revealCoach() {
+    _tabs?.animateTo(0);
+    void reveal({required bool again}) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final card = _coachKey.currentContext;
+        if (card != null) {
+          Scrollable.ensureVisible(
+            card,
+            duration: const Duration(milliseconds: 300),
+          );
+        } else if (again && _summaryScroll.hasClients) {
+          _summaryScroll.jumpTo(0);
+          reveal(again: false);
+        }
+      });
+    }
+
+    reveal(again: true);
   }
 
   Future<void> _addRecordings() async {
@@ -366,12 +402,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Widget _body(BuildContext context, bool wide, double mapHeight) {
     final summary = _summary(context, wide, mapHeight);
     final laps = _lapList(context);
+    _tabs = wide ? null : DefaultTabController.maybeOf(context);
     if (!wide) {
       return TabBarView(
         children: [
           KeepAliveItem(
             child: ListView(
               key: const ValueKey('dayResultsSummary'),
+              controller: _summaryScroll,
               padding: const EdgeInsets.all(16),
               children: summary,
             ),
@@ -393,6 +431,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           flex: 5,
           child: ListView(
             key: const ValueKey('dayResultsSummary'),
+            controller: _summaryScroll,
             padding: const EdgeInsets.all(16),
             children: summary,
           ),
@@ -634,17 +673,22 @@ class _DayResultsPageState extends State<DayResultsPage> {
           style: theme.textTheme.bodyMedium,
         ),
       if (best != null) ...[
+        // What to do next first: the coach's suggestions, then the
+        // observations to look at.
         const SizedBox(height: 12),
-        _theoreticalBest(path, wide),
-        const SizedBox(height: 12),
-        TimeLossesCard(
+        NextSessionCard(
+          key: _coachKey,
+          coach: _controller.coach,
           result: _controller.theoreticalBest,
-          loading: _controller.theoreticalBestLoading,
+          session: _controller.latestRunName,
+          lapLabel: _controller.lapLabel,
+          loading: _controller.coachLoading,
+          error: _controller.coachError,
           path: path,
           gate: _mapGate,
           wide: wide,
-          onOpenLap: _open,
-          onCompare: _compare,
+          speedsConverted: _controller.coachSpeedsConverted,
+          withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
         ),
         const SizedBox(height: 12),
         FocusAreasCard(
@@ -652,6 +696,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
           loading: _controller.theoreticalBestLoading,
           areas: _controller.focusAreas,
           lapLabel: _controller.lapLabel,
+          path: path,
+          gate: _mapGate,
+          wide: wide,
+          onOpenLap: _open,
+          onCompare: _compare,
+        ),
+        const SizedBox(height: 12),
+        _theoreticalBest(path, wide),
+        const SizedBox(height: 12),
+        TimeLossesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
           path: path,
           gate: _mapGate,
           wide: wide,

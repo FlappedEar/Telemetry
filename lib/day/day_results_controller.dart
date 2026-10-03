@@ -29,6 +29,16 @@ Future<DayTheoreticalBest> defaultTheoreticalBestRunner(
     ? Future.microtask(job)
     : Isolate.run(job);
 
+/// Runs the coach's job; replaced in widget tests like
+/// [TheoreticalBestRunner].
+typedef CoachRunner = Future<DayCoach> Function(DayCoach Function() job);
+
+/// In a background isolate, or directly under `flutter test`.
+Future<DayCoach> defaultCoachRunner(DayCoach Function() job) =>
+    !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    ? Future.microtask(job)
+    : Isolate.run(job);
+
 /// Summarizes the day's recorded channels. Replaced in widget tests, which
 /// run it on the test's own thread.
 typedef ChannelSummariesRunner = Future<DayChannelSummaries> Function(
@@ -60,11 +70,13 @@ final class DayResultsController extends ChangeNotifier {
     this.recovery,
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
+    CoachRunner? coachRunner,
     ChannelSummariesRunner? channelSummariesRunner,
     DayAppender? appender,
     bool changed = false,
     AppDiagnostics? diagnostics,
   }) : _runs = [...runs],
+       _coachRunner = coachRunner ?? defaultCoachRunner,
        _appender = appender ?? const IsolateDayAppender(),
        diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
@@ -179,6 +191,9 @@ final class DayResultsController extends ChangeNotifier {
   final DaySegmentEdits _segmentEdits = DaySegmentEdits();
 
   final TheoreticalBestRunner _theoreticalBestRunner;
+  final CoachRunner _coachRunner;
+  DayCoach? _coach;
+  bool _coachLoading = false;
   DayTheoreticalBest? _theoreticalBest;
   bool _theoreticalBestLoading = false;
   int _theoreticalBestGeneration = 0;
@@ -798,7 +813,7 @@ final class DayResultsController extends ChangeNotifier {
         _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
       );
       diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
-    } on Exception catch (error) {
+    } on Object catch (error) {
       result = DayTheoreticalBest(
         groupId: _analysis.chosenGroupId ?? '',
         state: DayTheoreticalBestState.error,
@@ -808,6 +823,97 @@ final class DayResultsController extends ChangeNotifier {
     if (_disposed || generation != _theoreticalBestGeneration) return;
     _theoreticalBest = result;
     _theoreticalBestLoading = false;
+    notifyListeners();
+    unawaited(_requestCoach(result, generation));
+  }
+
+  /// The coach's plan for the next session after the day's latest session,
+  /// from the theoretical best; null while it is prepared.
+  DayCoach? get coach => _coach;
+  bool get coachLoading => _theoreticalBestLoading || _coachLoading;
+
+  /// Whether the coach cannot run because the theoretical best failed.
+  bool get coachWithoutTheoreticalBest =>
+      _theoreticalBest?.state == DayTheoreticalBestState.error;
+
+  /// Why the coach could not run; empty when it ran.
+  String get coachError => _coachError;
+  String _coachError = '';
+
+  /// The session recorded last, which the coach coaches: by recording time,
+  /// or the one added last when it has no recording time.
+  String get latestRunId {
+    if (_runs.isEmpty) return '';
+    var latest = _runs.last;
+    if (recordingTimestamp(latest.run.telemetry) == null) return latest.run.id;
+    int? latestStart;
+    for (final named in _runs) {
+      final start = recordingTimestamp(named.run.telemetry);
+      if (start != null && (latestStart == null || start >= latestStart)) {
+        latest = named;
+        latestStart = start;
+      }
+    }
+    return latest.run.id;
+  }
+
+  /// Whether the coach's speeds are converted values: a recording's speed
+  /// channel declares a unit other than km/h, which the coach converts to
+  /// km/h. Speeds are then not shown (see [coachSpeedLabel]).
+  bool get coachSpeedsConverted {
+    for (final named in _runs) {
+      final session = named.run.telemetry;
+      final own = session.channels[session.aliases['speed'] ?? '']?.unit.trim();
+      if (own != null && own.isNotEmpty && normalizedSpeedUnit(own) != 'km/h') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// The name of [latestRunId]: "Session 4".
+  String get latestRunName {
+    final id = latestRunId;
+    for (final named in _runs) {
+      if (named.run.id == id) return named.name;
+    }
+    return '';
+  }
+
+  static DayCoach Function() _coachJob(
+    DayTheoreticalBest result,
+    Map<String, TelemetrySession?> sessions,
+    String runId,
+  ) =>
+      () => dayCoach(result, sessions, runId: runId);
+
+  Future<void> _requestCoach(DayTheoreticalBest result, int generation) async {
+    if (result.state == DayTheoreticalBestState.error) {
+      // The coach needs the sector times, which failed (see
+      // [coachWithoutTheoreticalBest]).
+      _coach = null;
+      _coachError = '';
+      _coachLoading = false;
+      notifyListeners();
+      return;
+    }
+    _coachLoading = true;
+    notifyListeners();
+    DayCoach? coach;
+    var error = '';
+    try {
+      coach = await _coachRunner(
+        _coachJob(result, {
+          for (final named in _runs) named.run.id: named.run.telemetry,
+        }, latestRunId),
+      );
+    } on Object catch (failure) {
+      error = '$failure';
+    }
+    if (_disposed || generation != _theoreticalBestGeneration) return;
+    _coach = coach;
+    _coachError = error;
+    _coachLoading = false;
     notifyListeners();
   }
 
@@ -952,6 +1058,9 @@ final class DayResultsController extends ChangeNotifier {
   void _resetTheoreticalBest() {
     _theoreticalBest = null;
     _theoreticalBestLoading = false;
+    _coach = null;
+    _coachError = '';
+    _coachLoading = false;
     ++_theoreticalBestGeneration;
   }
 
