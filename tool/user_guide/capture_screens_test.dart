@@ -11,8 +11,9 @@
 //
 // The pictures land in docs/user-guide/assets/screens/. Text is drawn with
 // the app's bundled Sora and JetBrains Mono and icons with Material Icons from
-// the Flutter SDK, so they look like the app rather than the test font's boxes. Maps show the street
-// background's controls and attribution over plain grey tiles (no network).
+// the Flutter SDK, so they look like the app rather than the test font's
+// boxes. Maps show the street background's controls and attribution over
+// plain grey tiles (no network).
 import 'dart:convert';
 import 'dart:io';
 
