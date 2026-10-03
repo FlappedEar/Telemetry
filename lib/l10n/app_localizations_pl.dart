@@ -697,4 +697,46 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapsLastComparison => 'Ostatnie porównanie';
+
+  @override
+  String get daySectionDay => 'Dzień';
+
+  @override
+  String get daySectionLaps => 'Okrążenia';
+
+  @override
+  String get daySectionCompare => 'Porównaj';
+
+  @override
+  String get compareIntro =>
+      'Dwa okrążenia obok siebie: gdzie jedno zyskuje, a gdzie traci czas, segment po segmencie i zakręt po zakręcie.';
+
+  @override
+  String get compareNeedsTwoLaps =>
+      'Do porównania potrzebne są dwa sklasyfikowane okrążenia jednego toru.';
+
+  @override
+  String get comparePickTwoLaps => 'Wybierz dwa okrążenia';
+
+  @override
+  String get compareAgainstBest => 'Względem najlepszego okrążenia dnia';
+
+  @override
+  String compareLapA(String time) {
+    return 'A $time';
+  }
+
+  @override
+  String compareLapB(String time) {
+    return 'B $time';
+  }
+
+  @override
+  String get dayBestLabel => 'Najlepsze okrążenie dnia';
+
+  @override
+  String get theoreticalBestLabel => 'Teoretycznie najlepsze';
+
+  @override
+  String get theoreticalBestHint => 'Najszybszy czas każdego segmentu';
 }

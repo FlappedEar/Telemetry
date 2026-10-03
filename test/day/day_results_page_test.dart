@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/document_pickers.dart';
@@ -13,6 +14,7 @@ import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/file_access.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/format.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -116,17 +118,105 @@ void main() {
         home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
       ),
     );
-    expect(find.text('Best day'), findsOneWidget);
-    expect(find.text(best.displayName), findsWidgets);
+    // The best lap leads, as a bar with its name and time.
+    final bar = find.byKey(const ValueKey('dayBestBar'));
+    for (final text in [
+      'Best day',
+      best.displayName,
+      displayTime(best.durationSeconds),
+    ]) {
+      expect(find.descendant(of: bar, matching: find.text(text)), findsOne);
+    }
     expect(find.byType(TrackMap), findsOneWidget);
     expect(find.text('Best lap of each session'), findsOneWidget);
     // On a phone the laps are the second tab.
-    await tester.tap(find.widgetWithText(Tab, 'Laps'));
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
     await tester.pumpAndSettle();
     expect(find.text('Best of the day'), findsOneWidget);
+    // Every other ranked lap shows its gap to the best of the day.
+    final second = outcome.analysis!.ranking!.eligibleLaps[1];
+    expect(
+      find.text(displayDelta(second.durationSeconds - best.durationSeconds)),
+      findsOneWidget,
+    );
     // OUT, 3 laps, IN; OUT, 2 laps, IN.
     expect(find.textContaining(' · OUT'), findsNWidgets(2));
     expect(find.textContaining(' · IN'), findsNWidgets(2));
+  });
+
+  for (final (name, size, section) in [
+    ('phone', const Size(400, 900), NavigationDestination),
+    ('desktop', const Size(1200, 900), NavigationRailDestination),
+  ]) {
+    testWidgets('Compare suggests each session best against the day ($name)', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final ranking = outcome.analysis!.ranking!;
+      final best = ranking.bestOfDay!;
+      final other = ranking.runs
+          .map((run) => run.bestLap)
+          .firstWhere((lap) => lap != null && lap.reference != best.reference)!;
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+        ),
+      );
+      expect(find.byKey(const ValueKey('daySections')), findsOneWidget);
+      expect(find.byKey(const ValueKey('comparePick')), findsNothing);
+      if (section == NavigationDestination) {
+        await tester.tap(find.widgetWithText(NavigationDestination, 'Compare'));
+      } else {
+        await tester.tap(
+          find.descendant(
+            of: find.byType(NavigationRail),
+            matching: find.text('Compare'),
+          ),
+        );
+      }
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('comparePick')), findsOneWidget);
+      final pair = find.byKey(ValueKey('comparePair-${other.reference}'));
+      expect(pair, findsOneWidget);
+      expect(
+        find.descendant(
+          of: pair,
+          matching: find.text(
+            displayDelta(other.durationSeconds - best.durationSeconds),
+          ),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(pair);
+      await tester.pumpAndSettle();
+      expect(find.byType(ComparisonPage), findsOneWidget);
+    });
+  }
+
+  testWidgets('the day sections speak Polish', (tester) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    for (final label in ['Dzień', 'Okrążenia', 'Porównaj']) {
+      expect(find.widgetWithText(NavigationDestination, label), findsOneWidget);
+    }
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Porównaj'));
+    await tester.pumpAndSettle();
+    expect(find.text('Wybierz dwa okrążenia'), findsOneWidget);
   });
 
   testWidgets(
@@ -292,7 +382,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(documents.names, ['Day']);
     expect(find.text('Saved as Day.fetproject.'), findsOneWidget);
-    expect(find.text('Day'), findsOneWidget);
+    // The title, beside the bottom bar's Day section.
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Day')),
+      findsOneWidget,
+    );
     expect(saved, hasLength(1));
 
     final opened = (await tester.runAsync(() async {
@@ -308,7 +402,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Excluded: Traffic'), findsOneWidget);
-    expect(find.text('Day'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Day')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('lists the sessions whose recordings are missing', (
