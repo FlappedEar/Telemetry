@@ -161,23 +161,29 @@ class _VboParse {
     double? previousClockTime;
     var clockDayOffset = 0.0;
 
+    // Fields are read in place: no string per value.
+    final row = RowBounds(names.length);
+    final axes = [for (final name in names) coordinateAxisForName(name)];
     for (var rowIndex = 0; rowIndex < dataSection.length; ++rowIndex) {
       if ((rowIndex & 0xff) == 0) throwIfCancelled(cancelled);
-      final row = scanRow([dataSection[rowIndex]], names.length, false, cancelled);
-      final cells = row.cells;
+      final line = dataSection[rowIndex];
+      row.scan(line, cancelled);
+      final cellCount = row.retained;
       final rowNumber = rowIndex + 1;
-      if (cells.length < names.length) {
-        warn('Row $rowNumber: missing ${names.length - cells.length} value(s).');
+      if (cellCount < names.length) {
+        warn('Row $rowNumber: missing ${names.length - cellCount} value(s).');
       }
       if (row.count > names.length) {
         warn('Row $rowNumber: ignored ${row.count - names.length} extra value(s).');
       }
+      final timeText = timeIndex >= 0 && timeIndex < cellCount
+          ? line.substring(row.starts[timeIndex], row.ends[timeIndex])
+          : null;
       final ParsedTimestamp? parsedTime = timeIndex >= 0
-          ? (timeIndex < cells.length ? parseTimestamp(cells[timeIndex]) : null)
+          ? (timeText != null ? parseTimestamp(timeText) : null)
           : ParsedTimestamp(rowIndex.toDouble(), TimestampFormat.relativeSeconds);
       if (parsedTime == null) {
-        final timestampText = timeIndex >= 0 && timeIndex < cells.length ? cells[timeIndex] : '';
-        warn('Row $rowNumber: invalid timestamp "$timestampText"; row skipped.');
+        warn('Row $rowNumber: invalid timestamp "${timeText ?? ''}"; row skipped.');
         continue;
       }
       var absoluteTime = checkedTime(parsedTime.seconds);
@@ -218,9 +224,11 @@ class _VboParse {
       }
       rawTimes[accepted] = timestamp;
       for (var column = 0; column < names.length; ++column) {
-        final parsed = column < cells.length ? parseDecimal(cells[column]) : null;
+        final parsed = column < cellCount
+            ? parseDecimalRange(line, row.starts[column], row.ends[column])
+            : null;
         final normalized = parsed != null && parsed.isFinite
-            ? normalizeChannelValue(names[column], parsed, coordinates.unit)
+            ? normalizeAxisValue(axes[column], parsed, coordinates.unit)
             : double.nan;
         // Beyond the float range is no data, not infinity.
         rawValues[column][accepted] = normalized.isFinite && normalized.abs() <= _floatMax

@@ -39,16 +39,102 @@ String trimSpace(String text) {
   return start == 0 && end == text.length ? text : text.substring(start, end);
 }
 
-final RegExp _decimal = RegExp(r'^[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$');
-
 /// Parses a plain decimal number: optional sign, ASCII digits with an optional
 /// point, optional exponent. Leading and trailing white space is allowed.
 /// Returns null for any other spelling, including hexadecimal, `inf`, `nan`
 /// and digit-group separators. The result may be infinite on overflow.
-double? parseDecimal(String text) {
-  final trimmed = trimSpace(text);
-  if (!_decimal.hasMatch(trimmed)) return null;
-  return double.parse(trimmed);
+double? parseDecimal(String text) => parseDecimalRange(text, 0, text.length);
+
+// Powers of ten a double holds exactly.
+const List<double> _exactPowersOfTen = [
+  1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, //
+  1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22,
+];
+
+bool _isDigit(int unit) => unit >= 0x30 && unit <= 0x39;
+
+/// [parseDecimal] of `text.substring(start, end)`, without creating the
+/// substring for the common spellings.
+///
+/// Accepts exactly `[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?`
+/// between white space. A number of at most 15 significant digits whose
+/// decimal exponent is within ±22 is one exact integer multiplied or divided
+/// by an exact power of ten: a single correctly rounded operation, so the
+/// result is the one `double.parse` gives. Every other number goes to
+/// `double.parse`.
+double? parseDecimalRange(String text, int start, int end) {
+  while (start < end && isUnicodeSpace(text.codeUnitAt(start))) {
+    ++start;
+  }
+  while (end > start && isUnicodeSpace(text.codeUnitAt(end - 1))) {
+    --end;
+  }
+  var position = start;
+  var negative = false;
+  if (position < end) {
+    final sign = text.codeUnitAt(position);
+    if (sign == 0x2b || sign == 0x2d) {
+      negative = sign == 0x2d;
+      ++position;
+    }
+  }
+  var mantissa = 0, significant = 0, fractionDigits = 0, digits = 0;
+  void digit(int unit) {
+    ++digits;
+    if (significant == 0 && unit == 0x30) return; // Leading zeros.
+    ++significant;
+    if (significant <= 15) mantissa = mantissa * 10 + (unit - 0x30);
+  }
+
+  while (position < end && _isDigit(text.codeUnitAt(position))) {
+    digit(text.codeUnitAt(position++));
+  }
+  final integerDigits = digits;
+  if (position < end && text.codeUnitAt(position) == 0x2e) {
+    ++position;
+    while (position < end && _isDigit(text.codeUnitAt(position))) {
+      digit(text.codeUnitAt(position++));
+      ++fractionDigits;
+    }
+  }
+  if (digits == 0) return null; // No digit, or a lone point.
+  // Digits beyond the 15th scale the value too.
+  final dropped = significant > 15 ? significant - 15 : 0;
+  var exponent = 0;
+  var exponentTooLarge = false;
+  if (position < end && (text.codeUnitAt(position) | 0x20) == 0x65) {
+    ++position;
+    var exponentNegative = false;
+    if (position < end) {
+      final sign = text.codeUnitAt(position);
+      if (sign == 0x2b || sign == 0x2d) {
+        exponentNegative = sign == 0x2d;
+        ++position;
+      }
+    }
+    final exponentStart = position;
+    while (position < end && _isDigit(text.codeUnitAt(position))) {
+      if (exponent < 100000) {
+        exponent = exponent * 10 + (text.codeUnitAt(position) - 0x30);
+      } else {
+        exponentTooLarge = true;
+      }
+      ++position;
+    }
+    if (position == exponentStart) return null;
+    if (exponentNegative) exponent = -exponent;
+  }
+  if (position != end) return null;
+  assert(integerDigits > 0 || fractionDigits > 0);
+  final scale = exponent - fractionDigits + dropped;
+  if (dropped == 0 && !exponentTooLarge && scale >= -22 && scale <= 22) {
+    final value = mantissa.toDouble();
+    final scaled = scale >= 0
+        ? value * _exactPowersOfTen[scale]
+        : value / _exactPowersOfTen[-scale];
+    return negative ? -scaled : scaled;
+  }
+  return double.parse(text.substring(start, end));
 }
 
 /// Lower-case comparison used where the format is case-insensitive.

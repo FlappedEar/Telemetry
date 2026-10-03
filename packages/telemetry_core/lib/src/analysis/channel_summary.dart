@@ -14,6 +14,9 @@
 //    response or after a dropout.
 // Units are reported as declared ("" when the recording does not declare
 // them).
+import 'dart:typed_data';
+
+import '../selection.dart';
 import '../telemetry_session.dart';
 
 const String channelSummaryAlgorithm = 'channel-summary-v1';
@@ -62,13 +65,14 @@ const ChannelSummaryPolicy heartRateSummaryPolicy = ChannelSummaryPolicy(
 /// level.
 bool zeroIsPlaceholder(TelemetryChannel channel, ChannelSummaryPolicy policy) {
   if (!policy.zeroIsPlaceholder) return false;
-  final finite = <double>[
-    for (final value in channel.values)
-      if (value.isFinite) value,
-  ];
-  if (finite.isEmpty) return false;
-  finite.sort();
-  return finite[finite.length ~/ 2].abs() > policy.placeholderTypicalAbove;
+  final finite = Float64List(channel.values.length);
+  var count = 0;
+  for (final value in channel.values) {
+    if (value.isFinite) finite[count++] = value;
+  }
+  if (count == 0) return false;
+  // The sorted middle; its sign does not matter once it is made absolute.
+  return selectKth(finite, count, count ~/ 2).abs() > policy.placeholderTypicalAbove;
 }
 
 /// A finite sample inside the policy's plausible range that is not a
@@ -379,33 +383,42 @@ List<CoolingInterval> findCoolingIntervals(
   if (channel == null || channel.timestamps.length != channel.values.length) return intervals;
   final placeholder = zeroIsPlaceholder(channel, policy);
   final gapLimit = telemetryGapThreshold(channel);
-  // Split into continuously recorded stretches of valid samples.
-  final stretches = <List<(double, double)>>[[]];
+  // Split into continuously recorded stretches of valid samples: the valid
+  // samples in order, and where each stretch starts among them.
+  final times = Float64List(channel.timestamps.length);
+  final values = Float64List(channel.timestamps.length);
+  final starts = <int>[0];
+  var count = 0;
   var previousTime = double.negativeInfinity;
   for (var i = 0; i < channel.timestamps.length; ++i) {
     final time = channel.timestamps[i];
     final double value = channel.values[i];
     final valid = plausibleSample(value, policy, placeholder);
     if (!valid || time - previousTime > gapLimit) {
-      if (stretches.last.isNotEmpty) stretches.add([]);
+      if (count > starts.last) starts.add(count);
     }
     if (!valid) continue;
-    stretches.last.add((time, value));
+    times[count] = time;
+    values[count++] = value;
     previousTime = time;
   }
-  for (final stretch in stretches) {
-    if (stretch.length < 3) continue;
+  starts.add(count);
+  for (var stretchIndex = 0; stretchIndex + 1 < starts.length; ++stretchIndex) {
+    final first = starts[stretchIndex], length = starts[stretchIndex + 1] - first;
+    if (length < 3) continue;
+    double timeAt(int index) => times[first + index];
+    double valueAt(int index) => values[first + index];
     // Centred moving average over the smoothing window (two pointers).
-    final smooth = List<double>.filled(stretch.length, 0.0);
+    final smooth = Float64List(length);
     var lo = 0, hi = 0;
     var sum = 0.0;
     final half = options.smoothingSeconds / 2.0;
-    for (var i = 0; i < stretch.length; ++i) {
-      while (hi < stretch.length && stretch[hi].$1 <= stretch[i].$1 + half) {
-        sum += stretch[hi++].$2;
+    for (var i = 0; i < length; ++i) {
+      while (hi < length && timeAt(hi) <= timeAt(i) + half) {
+        sum += valueAt(hi++);
       }
-      while (stretch[lo].$1 < stretch[i].$1 - half) {
-        sum -= stretch[lo++].$2;
+      while (timeAt(lo) < timeAt(i) - half) {
+        sum -= valueAt(lo++);
       }
       smooth[i] = sum / (hi - lo);
     }
@@ -414,8 +427,8 @@ List<CoolingInterval> findCoolingIntervals(
     var falling = false;
     void close() {
       final interval = CoolingInterval(
-        startTime: stretch[peak].$1,
-        endTime: stretch[trough].$1,
+        startTime: timeAt(peak),
+        endTime: timeAt(trough),
         startValue: smooth[peak],
         endValue: smooth[trough],
       );
@@ -424,7 +437,7 @@ List<CoolingInterval> findCoolingIntervals(
       }
     }
 
-    for (var i = 1; i < stretch.length; ++i) {
+    for (var i = 1; i < length; ++i) {
       if (!falling) {
         if (smooth[i] >= smooth[peak]) {
           peak = i;
