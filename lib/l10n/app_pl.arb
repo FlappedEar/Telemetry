@@ -22,5 +22,17 @@
   "save": "Zapisz",
   "settingsAbout": "O aplikacji",
   "settingsLicences": "Licencje open source",
-  "licencesLegalese": "FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler."
+  "licencesLegalese": "FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler.",
+  "daySectionDay": "Dzień",
+  "daySectionLaps": "Okrążenia",
+  "daySectionCompare": "Porównaj",
+  "compareIntro": "Dwa okrążenia obok siebie: gdzie jedno zyskuje, a gdzie traci czas, segment po segmencie i zakręt po zakręcie.",
+  "compareNeedsTwoLaps": "Do porównania potrzebne są dwa sklasyfikowane okrążenia jednego toru.",
+  "comparePickTwoLaps": "Wybierz dwa okrążenia",
+  "compareAgainstBest": "Względem najlepszego okrążenia dnia",
+  "compareLapA": "A {time}",
+  "compareLapB": "B {time}",
+  "dayBestLabel": "Najlepsze okrążenie dnia",
+  "theoreticalBestLabel": "Teoretycznie najlepsze",
+  "theoreticalBestHint": "Najszybszy czas każdego segmentu"
 }

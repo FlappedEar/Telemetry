@@ -235,6 +235,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.'**
   String get licencesLegalese;
+
+  /// Section of the day page with the best lap and the analysis; bottom bar and side rail label.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get daySectionDay;
+
+  /// Section of the day page listing every lap; bottom bar label.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps'**
+  String get daySectionLaps;
+
+  /// Section of the day page for comparing two laps; bottom bar and side rail label, and its heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get daySectionCompare;
+
+  /// Explains the Compare section under its heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Two laps side by side: where one gains and loses time, segment by segment and corner by corner.'**
+  String get compareIntro;
+
+  /// Shown in the Compare section when the day has fewer than two comparable laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparing needs two ranked laps of one circuit.'**
+  String get compareNeedsTwoLaps;
+
+  /// Button that asks for lap A, then lap B, and opens their comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick two laps'**
+  String get comparePickTwoLaps;
+
+  /// Heading over suggested comparisons: each session's best lap against the day's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Against the best of the day'**
+  String get compareAgainstBest;
+
+  /// Chip with lap A's time in a suggested comparison; A is the session's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'A {time}'**
+  String compareLapA(String time);
+
+  /// Chip with lap B's time in a suggested comparison; B is the best lap of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'B {time}'**
+  String compareLapB(String time);
+
+  /// Label of the day's best lap, at the top of the day page.
+  ///
+  /// In en, this message translates to:
+  /// **'Best day'**
+  String get dayBestLabel;
+
+  /// Label of the theoretical best: the fastest time of each segment added up.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best'**
+  String get theoreticalBestLabel;
+
+  /// Under the theoretical best label: what it is made of.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest of every segment'**
+  String get theoreticalBestHint;
 }
 
 class _AppLocalizationsDelegate

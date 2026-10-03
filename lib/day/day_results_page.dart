@@ -10,10 +10,12 @@ import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
+import '../l10n.dart';
 import '../settings_dialog.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
+import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
 import 'day_report_page.dart';
 import 'document_pickers.dart';
@@ -24,7 +26,7 @@ import 'recovery_store.dart';
 import 'segment_editor_page.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
-import 'touch.dart';
+import '../ui/theme.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
 
@@ -90,6 +92,10 @@ class DayResultsPage extends StatefulWidget {
 class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
   bool _relinking = false;
+
+  // The section shown: on a phone the bottom bar's Day, Laps or Compare; on a
+  // wide screen the rail's Day (summary and laps side by side) or Compare.
+  _Section _section = _Section.day;
 
   // The best lap's trace, recomputed only when the best lap changes.
   DayLapReference? _mapReference;
@@ -355,7 +361,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
-  /// Two panes from this width; below it the summary and the laps are tabs.
+  /// Two panes and a side rail from this width; below it the summary, the
+  /// laps and Compare are sections of a bottom bar.
   static const _twoPaneWidth = 900.0;
 
   @override
@@ -366,45 +373,86 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Widget _body(BuildContext context, bool wide, double mapHeight) {
     final summary = _summary(context, wide, mapHeight);
     final laps = _lapList(context);
+    final compare = _comparePane(context);
     if (!wide) {
-      return TabBarView(
+      // Every section stays built, so each keeps its scroll position.
+      return IndexedStack(
+        index: _section.index,
         children: [
-          KeepAliveItem(
+          ListView(
+            key: const ValueKey('dayResultsSummary'),
+            padding: const EdgeInsets.all(16),
+            children: summary,
+          ),
+          ListView(
+            key: const ValueKey('dayResultsLaps'),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            children: laps,
+          ),
+          ListView(
+            key: const ValueKey('dayResultsCompare'),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            children: compare,
+          ),
+        ],
+      );
+    }
+    final comparing = _section == _Section.compare;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        NavigationRail(
+          key: const ValueKey('daySections'),
+          selectedIndex: comparing ? 1 : 0,
+          labelType: NavigationRailLabelType.all,
+          onDestinationSelected: (index) => setState(
+            () => _section = index == 1 ? _Section.compare : _Section.day,
+          ),
+          destinations: [
+            NavigationRailDestination(
+              icon: const Icon(Icons.flag_outlined),
+              selectedIcon: const Icon(Icons.flag),
+              label: Text(context.l10n.daySectionDay),
+            ),
+            NavigationRailDestination(
+              icon: const Icon(Icons.compare_arrows),
+              label: Text(context.l10n.daySectionCompare),
+            ),
+          ],
+        ),
+        const VerticalDivider(width: 1),
+        if (comparing)
+          Expanded(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: ListView(
+                  key: const ValueKey('dayResultsCompare'),
+                  padding: const EdgeInsets.all(16),
+                  children: compare,
+                ),
+              ),
+            ),
+          )
+        else ...[
+          Expanded(
+            flex: 5,
             child: ListView(
               key: const ValueKey('dayResultsSummary'),
               padding: const EdgeInsets.all(16),
               children: summary,
             ),
           ),
-          KeepAliveItem(
+          Expanded(
+            flex: 4,
             child: ListView(
               key: const ValueKey('dayResultsLaps'),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.all(16),
               children: laps,
             ),
           ),
         ],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 5,
-          child: ListView(
-            key: const ValueKey('dayResultsSummary'),
-            padding: const EdgeInsets.all(16),
-            children: summary,
-          ),
-        ),
-        Expanded(
-          flex: 4,
-          child: ListView(
-            key: const ValueKey('dayResultsLaps'),
-            padding: const EdgeInsets.all(16),
-            children: laps,
-          ),
-        ),
       ],
     );
   }
@@ -466,15 +514,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ],
           ),
         ],
-        bottom: wide
-            ? null
-            : const TabBar(
-                tabs: [
-                  Tab(text: 'Results'),
-                  Tab(text: 'Laps'),
-                ],
-              ),
       ),
+      bottomNavigationBar: wide
+          ? null
+          : NavigationBar(
+              key: const ValueKey('daySections'),
+              selectedIndex: _section.index,
+              onDestinationSelected: (index) =>
+                  setState(() => _section = _Section.values[index]),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.flag_outlined),
+                  selectedIcon: const Icon(Icons.flag),
+                  label: context.l10n.daySectionDay,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.format_list_numbered),
+                  label: context.l10n.daySectionLaps,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.compare_arrows),
+                  label: context.l10n.daySectionCompare,
+                ),
+              ],
+            ),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) => Column(
@@ -489,9 +552,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       ),
     );
-    final page = wide
-        ? scaffold
-        : DefaultTabController(length: 2, child: scaffold);
+    final page = scaffold;
     // A session being added is part of the day: the day stays open until it
     // is in, so it is saved or kept for recovery with it.
     return ListenableBuilder(
@@ -509,6 +570,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   List<Widget> _summary(BuildContext context, bool wide, double mapHeight) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final colors = FetColors.of(context);
     final analysis = _controller.analysis;
     final ranking = _controller.ranking;
     final best = ranking?.bestOfDay;
@@ -552,6 +615,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
         const SizedBox(height: 12),
       ],
+      if (best != null) ...[
+        _HeadlineBar(
+          key: const ValueKey('dayBestBar'),
+          label: l10n.dayBestLabel,
+          title: best.displayName,
+          time: displayTime(best.durationSeconds),
+          color: colors.you,
+          onColor: colors.onLap,
+          onTap: () => _open(best),
+        ),
+        if (_controller.theoreticalBest?.theoreticalBestSeconds
+            case final seconds?) ...[
+          const SizedBox(height: 4),
+          _HeadlineBar(
+            key: const ValueKey('dayTheoreticalBar'),
+            label: l10n.theoreticalBestLabel,
+            title: l10n.theoreticalBestHint,
+            time: displayTime(seconds),
+            color: colors.reference,
+            onColor: colors.onLap,
+          ),
+        ],
+        const SizedBox(height: 8),
+      ],
       Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -561,24 +648,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Best day', style: theme.textTheme.labelLarge),
-                if (best == null)
+                if (best == null) ...[
+                  Text(l10n.dayBestLabel, style: theme.textTheme.labelLarge),
                   Text(
                     _noBestReason(analysis, ranking),
                     style: theme.textTheme.titleMedium,
-                  )
-                else ...[
-                  Text(
-                    displayTime(best.durationSeconds),
-                    style: theme.textTheme.displaySmall,
                   ),
-                  Text(best.displayName, style: theme.textTheme.titleMedium),
+                ] else ...[
                   if (ranking!.tieCount > 1)
                     Text(
                       '${ranking.tieCount} laps share this time; the earliest is shown.',
                     ),
                   if (path != null && !path.isEmpty) ...[
-                    const SizedBox(height: 12),
                     SizedBox(
                       height: mapHeight,
                       child: IgnorePointer(
@@ -812,6 +893,92 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return 'No best lap: no lap of this group can be ranked.';
   }
 
+  /// Compare: pick any two laps, or open a suggested pair, each session's
+  /// best lap against the best of the day.
+  List<Widget> _comparePane(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final colors = FetColors.of(context);
+    final best = _controller.ranking?.bestOfDay;
+    final canPick = _controller.comparisonCandidates().length >= 2;
+    final pairs = [
+      if (best != null)
+        for (final run in _controller.ranking!.runs)
+          if (run.bestLap case final lap?)
+            if (lap.reference != best.reference &&
+                _controller.comparable(lap, best))
+              lap,
+    ];
+    Widget chip(String text, Color color) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: const BorderRadius.all(Radius.circular(3)),
+      ),
+      child: Text(
+        text,
+        style: theme.textTheme.labelSmall?.copyWith(color: colors.onLap),
+      ),
+    );
+    return [
+      Text(l10n.daySectionCompare, style: theme.textTheme.titleLarge),
+      const SizedBox(height: 4),
+      Text(
+        canPick ? l10n.compareIntro : l10n.compareNeedsTwoLaps,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: 12),
+      if (canPick)
+        FilledButton.icon(
+          key: const ValueKey('comparePick'),
+          onPressed: _pickComparison,
+          icon: const Icon(Icons.compare_arrows),
+          label: Text(l10n.comparePickTwoLaps),
+        ),
+      if (best != null && pairs.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        Text(l10n.compareAgainstBest, style: theme.textTheme.titleSmall),
+        const SizedBox(height: 4),
+        for (final lap in pairs)
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              key: ValueKey('comparePair-${lap.reference}'),
+              title: Text(lap.displayName),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    chip(
+                      l10n.compareLapA(displayTime(lap.durationSeconds)),
+                      lapAColor,
+                    ),
+                    chip(
+                      l10n.compareLapB(displayTime(best.durationSeconds)),
+                      lapBColor,
+                    ),
+                  ],
+                ),
+              ),
+              trailing: Text(
+                displayDelta(lap.durationSeconds - best.durationSeconds),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontFamily: FetTheme.mono,
+                  color: colors.loss,
+                ),
+              ),
+              onTap: () => _compare(lap, best, null),
+            ),
+          ),
+      ],
+    ];
+  }
+
   List<Widget> _lapList(BuildContext context) {
     final theme = Theme.of(context);
     return [
@@ -854,24 +1021,126 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ? 'No start/finish pass'
             : 'Not timed',
     ];
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: bestOfDay
-          ? Icon(Icons.emoji_events, color: theme.colorScheme.primary)
-          : bestOfRun
-          ? const Icon(Icons.star_outline)
-          : const SizedBox(width: 24),
-      title: Text(row.displayName),
-      subtitle: marks.isEmpty ? null : Text(marks.join(' · ')),
-      trailing: Text(
-        displayTime(row.durationSeconds),
-        style: timed && issues.isEmpty
-            ? theme.textTheme.titleMedium
-            : theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+    // As on a timing screen: purple marks the best of the day, green the
+    // best of its session, on the edge and in the time.
+    final colors = FetColors.of(context);
+    final ranked = timed && issues.isEmpty;
+    final mark = bestOfDay
+        ? colors.dayBest
+        : bestOfRun
+        ? colors.gain
+        : null;
+    final best = _controller.ranking?.bestOfDay;
+    final delta = ranked && best != null && !bestOfDay
+        ? row.durationSeconds - best.durationSeconds
+        : null;
+    final timeStyle = theme.textTheme.titleMedium?.copyWith(
+      fontFamily: FetTheme.mono,
+      fontWeight: mark == null ? FontWeight.w500 : FontWeight.w700,
+      color: !ranked ? theme.colorScheme.outline : mark,
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: mark ?? Colors.transparent, width: 3),
+        ),
       ),
-      onTap: () => _open(row),
+      child: ListTile(
+        contentPadding: const EdgeInsets.only(left: 12),
+        title: Text(row.displayName),
+        subtitle: marks.isEmpty ? null : Text(marks.join(' · ')),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(displayTime(row.durationSeconds), style: timeStyle),
+            if (delta != null)
+              Text(
+                displayDelta(delta),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontFamily: FetTheme.mono,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        onTap: () => _open(row),
+      ),
+    );
+  }
+}
+
+enum _Section { day, laps, compare }
+
+/// A headline result as a filled bar, as on a timing screen: a small label
+/// and a name on the left, the time large on the right.
+class _HeadlineBar extends StatelessWidget {
+  const _HeadlineBar({
+    super.key,
+    required this.label,
+    required this.title,
+    required this.time,
+    required this.color,
+    required this.onColor,
+    this.onTap,
+  });
+
+  final String label;
+  final String title;
+  final String time;
+  final Color color;
+  final Color onColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Material(
+      color: color,
+      borderRadius: const BorderRadius.all(Radius.circular(4)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: text.labelSmall?.copyWith(
+                          color: onColor.withValues(alpha: 0.75),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      Text(
+                        title,
+                        style: text.titleSmall?.copyWith(color: onColor),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  time,
+                  style: text.headlineSmall?.copyWith(
+                    fontFamily: FetTheme.mono,
+                    fontWeight: FontWeight.w700,
+                    color: onColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
