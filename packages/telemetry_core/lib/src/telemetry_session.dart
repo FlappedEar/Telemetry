@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'selection.dart';
 import 'timing_gate.dart';
 
 /// How [TelemetrySession.valueAt] reads between two samples.
@@ -51,40 +52,7 @@ final class TelemetryChannel {
       if (interval.isFinite && interval > 0.0) intervals[count++] = interval;
     }
     if (count == 0) return 0.0;
-    return _select(intervals, count, count ~/ 2);
-  }
-
-  /// The [k]th smallest of the first [count] values: the value at [k] once
-  /// sorted. Reorders [values].
-  static double _select(Float64List values, int count, int k) {
-    var low = 0, high = count - 1;
-    while (low < high) {
-      final pivot = values[low + ((high - low) >> 1)];
-      var i = low, j = high;
-      while (i <= j) {
-        while (values[i] < pivot) {
-          ++i;
-        }
-        while (values[j] > pivot) {
-          --j;
-        }
-        if (i <= j) {
-          final swap = values[i];
-          values[i] = values[j];
-          values[j] = swap;
-          ++i;
-          --j;
-        }
-      }
-      if (k <= j) {
-        high = j;
-      } else if (k >= i) {
-        low = i;
-      } else {
-        return values[k];
-      }
-    }
-    return values[k];
+    return selectKth(intervals, count, count ~/ 2);
   }
 }
 

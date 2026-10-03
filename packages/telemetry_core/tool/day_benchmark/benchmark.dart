@@ -462,6 +462,7 @@ Future<void> _worker((SendPort, List<String>, bool, bool) message) async {
   });
   final channels = isolates ? await Isolate.run(channelsJob) : channelsJob();
   _end(port, benchmarkSteps[5]);
+  digest.addChannels(channels);
 
   _begin(port, benchmarkSteps[6]);
   final key = dayDecisionsKey(analysis);
@@ -546,6 +547,41 @@ final class _Digest {
         for (final row in [braking.point, braking.seconds, braking.peakDeceleration]) metric(row),
       if (exit != null) ...[metric(exit.pickup), metric(exit.exitSpeed)],
     ]);
+  }
+
+  void addChannels(DayChannelSummaries summaries) {
+    Object? channel(RunChannel? channel) => channel == null
+        ? null
+        : [
+            channel.channel,
+            channel.unit,
+            channelSummaryMap(channel.run),
+            for (final section in channel.sections) channelSummaryMap(section.summary),
+            [
+              for (final point in channel.trace) [point?.time, point?.mean],
+            ],
+            [
+              for (final cooling in channel.cooling)
+                [
+                  cooling.interval.startTime,
+                  cooling.interval.endTime,
+                  cooling.interval.startValue,
+                  cooling.interval.endValue,
+                  cooling.section?.lapNumber,
+                ],
+            ],
+          ];
+    add(summaries.error);
+    for (final run in summaries.runs) {
+      add([
+        run.runId,
+        run.unavailableReason,
+        for (final entry in run.channels) channel(entry),
+        channel(run.heartRate),
+        for (final lap in run.laps)
+          [lap.acceleration.strongG, lap.acceleration.channel, lap.acceleration.sampleCount],
+      ]);
+    }
   }
 
   String get hex {
