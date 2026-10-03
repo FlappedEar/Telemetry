@@ -18,6 +18,7 @@
 // limit for a road car is excluded and counted, never clipped.
 import 'dart:math' as math;
 
+import '../geometry.dart' show hypot;
 import '../telemetry_session.dart';
 
 const String ggPairsAlgorithm = 'gg-pairs-v1';
@@ -181,9 +182,8 @@ final class GgPeaks {
   int sampleCount = 0;
 }
 
-/// sqrt(x² + y²). Pairs are bounded by [ggPlausibleLimitG], so the squares
-/// cannot overflow.
-double ggMagnitude(double x, double y) => math.sqrt(x * x + y * y);
+/// sqrt(x² + y²), rounded exactly like Overlays' `std::hypot`.
+double ggMagnitude(double x, double y) => hypot(x, y);
 
 GgPeaks computeGgPeaks(List<GgPoint> points) {
   final peaks = GgPeaks()..sampleCount = points.length;

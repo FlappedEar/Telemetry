@@ -75,15 +75,52 @@ GeoCoordinate unprojectCoordinate(double east, double north, GeoCoordinate origi
           radiansPerDegree,
 );
 
-/// Euclidean length of (x, y), without intermediate overflow.
+/// Euclidean length of (x, y), without intermediate overflow or underflow.
+///
+/// Reproduces glibc's correctly rounded `hypot` (e_hypot.c, the kernel built
+/// without fused multiply-add), which is what Overlays' `std::hypot` calls.
+/// A cheaper formula is often one ULP off, and that is enough to flip a
+/// strict nearest-point comparison, e.g. which side of start/finish a sample
+/// projects to.
 double hypot(double x, double y) {
-  final a = x.abs();
-  final b = y.abs();
-  if (a == double.infinity || b == double.infinity) return double.infinity;
-  if (a.isNaN || b.isNaN) return double.nan;
-  final larger = a > b ? a : b;
-  if (larger == 0.0 || !larger.isFinite) return larger;
-  final smaller = a > b ? b : a;
-  final ratio = smaller / larger;
-  return larger * math.sqrt(1.0 + ratio * ratio);
+  if (!x.isFinite || !y.isFinite) {
+    return x.isInfinite || y.isInfinite ? double.infinity : double.nan;
+  }
+  x = x.abs();
+  y = y.abs();
+  final ax = x < y ? y : x;
+  final ay = x < y ? x : y;
+  if (ax > _hypotLarge) {
+    if (ay <= ax * _hypotEpsilon) return ax + ay;
+    return _hypotKernel(ax * _hypotScale, ay * _hypotScale) / _hypotScale;
+  }
+  if (ay < _hypotTiny) {
+    if (ax >= ay / _hypotEpsilon) return ax + ay;
+    return _hypotKernel(ax / _hypotScale, ay / _hypotScale) * _hypotScale;
+  }
+  if (ay <= ax * _hypotEpsilon) return ax + ay;
+  return _hypotKernel(ax, ay);
+}
+
+const _hypotScale = 2.409919865102884e-181; // 2^-600
+const _hypotLarge = 6.703903964971299e+153; // 2^511
+const _hypotTiny = 1.4916681462400413e-154; // 2^-511
+const _hypotEpsilon = 5.551115123125783e-17; // 2^-54
+
+// sqrt(ax² + ay²) for ax >= ay, then one correction step for the rounding
+// error of the squares, as glibc does.
+double _hypotKernel(double ax, double ay) {
+  var h = math.sqrt(ax * ax + ay * ay);
+  final double t1, t2;
+  if (h <= 2.0 * ay) {
+    final delta = h - ay;
+    t1 = ax * (2.0 * delta - ax);
+    t2 = (delta - 2.0 * (ax - ay)) * delta;
+  } else {
+    final delta = h - ax;
+    t1 = 2.0 * delta * (ax - 2.0 * ay);
+    t2 = (4.0 * delta - ay) * ay + delta * delta;
+  }
+  h -= (t1 + t2) / (2.0 * h);
+  return h;
 }
