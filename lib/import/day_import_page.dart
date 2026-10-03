@@ -263,6 +263,7 @@ class _DayImportPageState extends State<DayImportPage> {
       () => openRecoveredDay(recovery);
 
   Future<void> _restore(DayRecovery recovery) async {
+    _waiting = [];
     setState(() => _opening = true);
     try {
       await widget.fileAccess.restore();
@@ -272,7 +273,7 @@ class _DayImportPageState extends State<DayImportPage> {
         await _cannotOpen(day, searchable: false);
         return;
       }
-      await _show(
+      await _showOpened(
         DayResultsController.recovered(
           day,
           recovery,
@@ -287,7 +288,7 @@ class _DayImportPageState extends State<DayImportPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _opening = false);
+      _openingDone();
     }
   }
 
@@ -399,9 +400,31 @@ class _DayImportPageState extends State<DayImportPage> {
     }
   }
 
-  /// Shared recordings that arrived while today's day was being opened;
-  /// null when none is.
+  /// Shared recordings that arrived while a day was being opened; null when
+  /// none is.
   List<String>? _waiting;
+
+  /// Shows a day the user opened or restored, with the recordings shared
+  /// while it was opened added to it.
+  Future<void> _showOpened(DayResultsController controller) {
+    final waiting = _waiting;
+    _waiting = null;
+    final shown = _show(controller);
+    if (waiting != null && waiting.isNotEmpty) {
+      unawaited(controller.addRecordings(waiting));
+    }
+    return shown;
+  }
+
+  /// Ends opening a day; recordings shared meanwhile that no day took are
+  /// imported here.
+  void _openingDone() {
+    final waiting = _waiting;
+    _waiting = null;
+    if (!mounted) return;
+    setState(() => _opening = false);
+    if (waiting != null && waiting.isNotEmpty) _receive(waiting);
+  }
 
   /// Adds recordings shared while no day is shown to today's day, as the
   /// driver does after each session even when the system closed the app in
@@ -544,6 +567,7 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _openDay() async {
     final path = await _chooseDocument();
     if (path == null || !mounted) return;
+    _waiting = [];
     setState(() => _opening = true);
     try {
       await widget.fileAccess.restore();
@@ -559,7 +583,13 @@ class _DayImportPageState extends State<DayImportPage> {
         day = await Isolate.run(_relinkJob(path, folder, day.missing));
         if (!mounted) return;
       }
-      await _show(DayResultsController.opened(day, recovery: widget.recovery));
+      await _showOpened(
+        DayResultsController.opened(
+          day,
+          recovery: widget.recovery,
+          appender: widget.appender,
+        ),
+      );
     } on Exception catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -567,7 +597,7 @@ class _DayImportPageState extends State<DayImportPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _opening = false);
+      _openingDone();
     }
   }
 

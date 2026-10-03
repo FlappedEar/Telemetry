@@ -197,6 +197,7 @@ final class DayResultsController extends ChangeNotifier {
     _saving = true;
     final done = _saveDone = Completer<void>();
     notifyListeners();
+    final added = _addedSessions;
     try {
       final document = dayDocument(
         eventId: eventId,
@@ -214,13 +215,18 @@ final class DayResultsController extends ChangeNotifier {
       _document = document;
       _documentPath = path;
       _documentBase = path;
-      _dirty = false;
+      // A session added while the file was written is not in it: the day
+      // stays unsaved and kept for recovery until it is saved again.
+      final complete = added == _addedSessions;
       _segmentEdits.clear();
       // Automatic segments were approved by the save with their own ids:
       // edits start from the saved ones.
       if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
-      _recoveryTimer?.cancel();
-      _enqueueRecovery(() => recovery?.clear());
+      if (complete) {
+        _dirty = false;
+        _recoveryTimer?.cancel();
+        _enqueueRecovery(() => recovery?.clear());
+      }
     } finally {
       _saving = false;
       done.complete();
@@ -230,6 +236,49 @@ final class DayResultsController extends ChangeNotifier {
 
   // Completes when the running save has finished.
   Completer<void>? _saveDone;
+
+  // Counts the sessions added, so a save knows whether one came while it
+  // was writing.
+  int _addedSessions = 0;
+
+  /// Prepares an addition: its [DayAppendOutcome], or the [DayAddition]
+  /// saying why nothing was added.
+  Future<Object> _prepare(DayAppendRequest request) async {
+    final job = _appender.start(request, (_, _) {});
+    _appendJob = job;
+    try {
+      return await job.result;
+    } on OperationCancelled {
+      return const DayAddition(notes: [], error: 'Adding was cancelled.');
+    } on Object catch (error) {
+      return DayAddition(notes: const [], error: 'Nothing was added: $error');
+    } finally {
+      if (identical(_appendJob, job)) _appendJob = null;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  /// The new [runs] that are another format of one of the day's sessions,
+  /// with that session's name. Like an import, only one-to-one matches count.
+  Map<String, String> _otherFormats(List<NamedRun> runs) {
+    final matches = <(NamedRun, NamedRun)>[];
+    for (final added in runs) {
+      for (final named in _runs) {
+        if (sameDriveInOtherFormat(added.run, named.run)) {
+          matches.add((added, named));
+        }
+      }
+    }
+    int count(NamedRun named) => matches
+        .where(
+          (match) => identical(match.$1, named) || identical(match.$2, named),
+        )
+        .length;
+    return {
+      for (final (added, named) in matches)
+        if (count(added) == 1 && count(named) == 1) added.run.id: named.name,
+    };
+  }
 
   final DayAppender _appender;
   DayAppendJob? _appendJob;
@@ -291,7 +340,7 @@ final class DayResultsController extends ChangeNotifier {
         return const DayAddition(notes: [], otherDay: true);
       }
     }
-    final job = _appender.start((
+    final request = (
       paths: List.of(paths),
       runIds: {
         for (final named in _runs) named.run.id,
@@ -300,19 +349,26 @@ final class DayResultsController extends ChangeNotifier {
       runCount: _runs.length + missing.length,
       rowCount: _analysis.rows.length,
       sameDayAs: sameDayAs,
-    ), (_, _) {});
-    _appendJob = job;
-    DayAppendOutcome outcome;
-    try {
-      outcome = await job.result;
-    } on OperationCancelled {
-      return const DayAddition(notes: [], error: 'Adding was cancelled.');
-    } on Object catch (error) {
-      return DayAddition(notes: const [], error: 'Nothing was added: $error');
-    } finally {
-      if (identical(_appendJob, job)) _appendJob = null;
-      if (!_disposed) notifyListeners();
+      alternatives: const <String, String>{},
+    );
+    var prepared = await _prepare(request);
+    if (prepared case DayAppendOutcome(:final runs) when runs.isNotEmpty) {
+      // A VBO and an RCZ of one drive are one session, also when they come
+      // one at a time: prepare again without the day's other formats.
+      final alternatives = _otherFormats(runs);
+      if (alternatives.isNotEmpty && !_disposed) {
+        prepared = await _prepare((
+          paths: request.paths,
+          runIds: request.runIds,
+          runCount: request.runCount,
+          rowCount: request.rowCount,
+          sameDayAs: request.sameDayAs,
+          alternatives: alternatives,
+        ));
+      }
     }
+    if (prepared is DayAddition) return prepared;
+    final outcome = prepared as DayAppendOutcome;
     final part = outcome.part;
     if (_disposed || part == null || outcome.runs.isEmpty) {
       return DayAddition(
@@ -338,17 +394,20 @@ final class DayResultsController extends ChangeNotifier {
     _runs.addAll(outcome.runs);
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
+    ++_addedSessions;
     _resetTheoreticalBest();
     _resetChannelSummaries();
     _scheduleRecovery();
     notifyListeners();
     var saveError = '';
-    final path = _documentPath;
-    if (path != null) {
+    // A save running now may have been asked for a new file: the day is
+    // saved where that save leaves it.
+    while (_saving) {
+      await _saveDone?.future;
+    }
+    final path = _disposed ? null : _documentPath;
+    if (path != null && _dirty) {
       try {
-        while (_saving) {
-          await _saveDone?.future;
-        }
         await save(path);
       } on Exception catch (error) {
         saveError = '$error';

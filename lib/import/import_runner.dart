@@ -135,13 +135,16 @@ List<String> importPlanNotes(
 /// missing runs, [runCount] in all) and [rowCount] lap sections. With
 /// [sameDayAs] (a recording start of the day, milliseconds since the
 /// epoch), recordings are added only when every new one started on that
-/// local calendar date.
+/// local calendar date. [alternatives] maps a recording's run id to the
+/// day's session it is the other format of (a VBO and an RCZ of one drive);
+/// those are not added.
 typedef DayAppendRequest = ({
   List<String> paths,
   Set<String> runIds,
   int runCount,
   int rowCount,
   int? sameDayAs,
+  Map<String, String> alternatives,
 });
 
 /// Whether [a] and [b] (milliseconds since the epoch) fall on one local
@@ -204,8 +207,14 @@ DayAppendOutcome runDayAppend(
   final notes = importPlanNotes(scan, plan);
   final added = <TelemetryRunProposal>[];
   for (final run in primaryRuns(plan)) {
+    final session = request.alternatives[run.id];
     if (request.runIds.contains(run.id)) {
       notes.add('${p.basename(run.sourcePath)}: already in this day.');
+    } else if (session != null) {
+      notes.add(
+        '${p.basename(run.sourcePath)}: the same drive as $session in the other '
+        'format; not added again.',
+      );
     } else {
       added.add(run);
     }

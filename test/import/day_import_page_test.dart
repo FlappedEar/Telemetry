@@ -364,6 +364,34 @@ void main() {
       }
     });
 
+    testWidgets('a share while a day is being restored goes to that day', (
+      tester,
+    ) async {
+      final incoming = _FakeIncoming();
+      await tester.runAsync(
+        () => keepUnsaved(write('a.vbo', _datedVbo(hour: 10))),
+      );
+      await showWith(tester, incoming);
+      await pumpUntil(tester, () => find.text('Restore').evaluate().isNotEmpty);
+      await tester.tap(find.text('Restore'));
+      // Shared before the restored day could open.
+      incoming.controller.add([write('b.vbo', _datedVbo(hour: 12, speed: 80))]);
+      await pumpUntil(
+        tester,
+        () => find.text('Session 2 added to the day.').evaluate().isNotEmpty,
+      );
+      expect(importer.jobs, isEmpty);
+      expect(find.text('Day results'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      for (var i = 0; i < 20; ++i) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+    });
+
     testWidgets('a recording of another date starts its own day', (
       tester,
     ) async {
