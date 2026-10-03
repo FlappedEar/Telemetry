@@ -13,12 +13,6 @@ const supportedLocales = [Locale('en'), Locale('pl')];
 /// The language the app uses for a device that prefers [preferred], in its
 /// order of preference: the first one the app speaks, else English. Only
 /// the language counts; en-GB and pl-PL get English and Polish.
-/// The texts in the device's language, for the few places without a
-/// [BuildContext], such as the system file pickers.
-AppLocalizations deviceL10n() => lookupAppLocalizations(
-  resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locales),
-);
-
 Locale resolveAppLocale(List<Locale>? preferred) {
   for (final locale in preferred ?? const <Locale>[]) {
     for (final supported in supportedLocales) {
@@ -27,6 +21,12 @@ Locale resolveAppLocale(List<Locale>? preferred) {
   }
   return supportedLocales.first;
 }
+
+/// The texts in the device's language, for the few places without a
+/// [BuildContext], such as the system file pickers.
+AppLocalizations deviceL10n() => lookupAppLocalizations(
+  resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locales),
+);
 
 /// Makes [locale] the language of dates formatted without a
 /// [BuildContext] (format.dart). Called by the app when its language is

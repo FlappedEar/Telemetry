@@ -3385,7 +3385,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerAnalyzerChartNoSpeed =>
-      'Na żadnym okrążeniu nie nagrano prędkości: brak wykresu prędkości.';
+      'Na żadnym okrążeniu nie zapisano prędkości: brak wykresu prędkości.';
 
   @override
   String cornerAnalyzerChartNoSamples(String segment) {

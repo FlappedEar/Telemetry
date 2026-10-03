@@ -819,7 +819,7 @@
   "cornerAnalyzerUnitNoteSpeed": "To nagranie nie podaje jednostki prędkości: te wartości pokazano tak, jak je zapisano, bez jednostki.",
   "cornerAnalyzerUnitNoteDeceleration": "To nagranie nie podaje jednostki opóźnienia: te wartości pokazano tak, jak je zapisano, bez jednostki.",
   "cornerAnalyzerUnitNoteBoth": "To nagranie nie podaje jednostek prędkości i opóźnienia: te wartości pokazano tak, jak je zapisano, bez jednostki.",
-  "cornerAnalyzerChartNoSpeed": "Na żadnym okrążeniu nie nagrano prędkości: brak wykresu prędkości.",
+  "cornerAnalyzerChartNoSpeed": "Na żadnym okrążeniu nie zapisano prędkości: brak wykresu prędkości.",
   "cornerAnalyzerChartNoSamples": "Żadne okrążenie nie ma próbek prędkości w segmencie {segment}.",
   "cornerAnalyzerChartTitle": "Prędkość · {segment}",
   "cornerAnalyzerChartLabel": "Wykres prędkości · {segment}",

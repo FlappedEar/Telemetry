@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/recovery_store.dart';
@@ -535,6 +536,15 @@ void main() {
       expect(group.extensions, containsAll(['vbo', 'rcz']));
       expect(group.uniformTypeIdentifiers, isNull);
     }
+  });
+
+  testWidgets('the pickers follow the device language', (tester) async {
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    tester.platformDispatcher.localesTestValue = const [Locale('pl', 'PL')];
+    expect(deviceL10n().importPageRecordingTypes, 'Nagrania VBO i RCZ');
+    tester.platformDispatcher.localesTestValue = const [Locale('de')];
+    expect(deviceL10n().importPageRecordingTypes, 'VBO and RCZ recordings');
+    expect(recordingTypeGroup(TargetPlatform.macOS, label: 'X').label, 'X');
   });
 
   test('Android picks with the host picker, keeping file names', () async {
