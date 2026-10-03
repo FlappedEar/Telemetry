@@ -334,7 +334,12 @@ void main() {
               )
               .first;
           Future<void> open(Finder target) async {
-            await tester.scrollUntilVisible(target, 200, scrollable: summary);
+            await tester.scrollUntilVisible(
+              target,
+              200,
+              scrollable: summary,
+              maxScrolls: 200,
+            );
             await tester.ensureVisible(target);
             await tester.pumpAndSettle();
             await tester.tap(target);

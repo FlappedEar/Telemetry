@@ -139,7 +139,12 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('editSegments')),
         300,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const ValueKey('dayResultsSummary')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       await tester.ensureVisible(find.byKey(const ValueKey('editSegments')));
       await tester.pumpAndSettle();
