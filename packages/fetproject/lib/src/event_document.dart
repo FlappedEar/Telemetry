@@ -669,6 +669,11 @@ Future<Map<String, Object?>> readFetproject(String path) async {
 /// Validates [project] and writes it to [path] atomically: to a temporary
 /// file in the same folder, flushed, then renamed over [path], so a failed
 /// save leaves the previous document whole.
+///
+/// Where the folder refuses the temporary file but [path] itself may be
+/// written, [path] is written in place. The macOS sandbox grants the app
+/// only the file chosen in the save or open panel, not its folder, so there
+/// the temporary file failed with "Cannot open file" and nothing saved.
 Future<void> writeFetproject(String path, Map<String, Object?> project) async {
   if (path.isEmpty) throw const FetprojectError('Project path is empty.');
   final error = validateFetproject(project);
@@ -686,6 +691,14 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
     await temporary.writeAsBytes(bytes, flush: true);
     await temporary.rename(path);
   } on FileSystemException catch (failure) {
+    if (_permissionDenied(failure) && !await temporary.exists()) {
+      try {
+        await File(path).writeAsBytes(bytes, flush: true);
+        return;
+      } on FileSystemException catch (inPlace) {
+        throw FetprojectError('Could not save the project: ${inPlace.message}');
+      }
+    }
     try {
       if (await temporary.exists()) await temporary.delete();
     } on FileSystemException {
@@ -694,3 +707,13 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
     throw FetprojectError('Could not save the project: ${failure.message}');
   }
 }
+
+/// Whether [failure] is the system refusing access (EPERM or EACCES on
+/// macOS and Linux, ERROR_ACCESS_DENIED on Windows), not a full disk or a
+/// missing folder.
+bool _permissionDenied(FileSystemException failure) =>
+    switch (failure.osError?.errorCode) {
+      1 || 13 => !Platform.isWindows,
+      5 => Platform.isWindows,
+      _ => false,
+    };
