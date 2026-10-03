@@ -417,7 +417,7 @@ void main() {
     debugDisableShadows = false;
     await showDay(tester, _phone, 2);
     await shot(tester, 'phone-results');
-    await tester.tap(find.widgetWithText(Tab, 'Laps'));
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-laps');
     final best = find.descendant(
