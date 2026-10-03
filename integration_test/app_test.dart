@@ -158,7 +158,7 @@ void main() {
     expect(find.textContaining('could not be opened'), findsNothing);
   }, timeout: const Timeout(Duration(minutes: 4)));
 
-  // The CI script sends the share once this test prints that it is waiting;
+  // The CI script sends the share once this test says it is waiting;
   // see android/app/src/debug (TestShareProvider) for the file it shares.
   testWidgets(
     'a recording shared with ACTION_SEND opens as the day',
@@ -181,6 +181,9 @@ void main() {
 
       await tester.pumpWidget(const TelemetryApp());
       await tester.pumpAndSettle();
+      // The CI script polls for this file (the test runner holds back
+      // printed output until a test ends, so it cannot watch for a print).
+      File(p.join(fixtures.path, 'ready')).writeAsStringSync('');
       debugPrint('FET_WAITING_FOR_SHARE');
       // A share with no day in progress is imported and opened as today's
       // day straight away, so the day page is what appears.
