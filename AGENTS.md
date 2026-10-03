@@ -166,8 +166,8 @@ From the handover, section "How results are presented".
   observation and, labelled apart from it, what to try next. Coach findings
   are patterns that suggest an opportunity, never a promised gain.
 - Measured and inferred values are labelled.
-- Δ is A − B; a positive value means A is behind. A is green `#55e6a5`, B is
-  orange `#d95926`.
+- Δ is A − B; a positive value means A is behind. A is amber `#fcb203`, B is
+  blue `#3d8bff`.
 - Longitudinal G: braking points upward in charts; acceleration points upward in
   G-G and on the map.
 

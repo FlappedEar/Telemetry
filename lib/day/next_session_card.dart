@@ -3,8 +3,8 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../ui/theme.dart';
 import '../units.dart';
-import 'corner_details.dart' show lapAColor;
 import 'time_losses_card.dart' show TimeLossText;
 import 'track_map.dart';
 
@@ -418,7 +418,8 @@ class _CoachItemPageState extends State<CoachItemPage> {
                   gate: widget.gate,
                   pointColor: (point) =>
                       _inSegment[point.telemetryTime] ?? false
-                      ? lapAColor
+                      // The best lap's trace, in the day best's purple.
+                      ? FetColors.of(context).dayBest
                       : theme.colorScheme.outlineVariant,
                   semanticLabel: l10n.coachWhyMap(finding.segmentName),
                 ),

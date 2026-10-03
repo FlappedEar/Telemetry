@@ -3,6 +3,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../ui/theme.dart';
 import '../units.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
@@ -231,7 +232,7 @@ class FocusAreasCard extends StatelessWidget {
                     '${l10n.focusAreaKind(area.kind)} · '
                     '${l10n.timeLossSegment(area.name)}',
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -409,7 +410,7 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
           Text(
             l10n.focusAreaKind(area.kind),
             style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.primary,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
@@ -444,7 +445,9 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
                   gate: widget.gate,
                   pointColor: (point) =>
                       _inSegment[point.telemetryTime] ?? false
-                      ? lapAColor
+                      // The best lap's trace, in the day best's purple:
+                      // it is neither lap A nor, necessarily, lap B.
+                      ? FetColors.of(context).dayBest
                       : theme.colorScheme.outlineVariant,
                   semanticLabel: l10n.timeLossMapLabel(segment),
                 ),
@@ -461,6 +464,9 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
                   if (lap != null)
                     TextButton.icon(
                       key: ValueKey('focusOpenLap$key'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: key == 'A' ? lapAColor : lapBColor,
+                      ),
                       icon: const Icon(Icons.map_outlined),
                       label: Text(l10n.timeLossOpenLap(l10n.lap(lap))),
                       onPressed: () => widget.onOpenLap!(lap),
@@ -475,6 +481,9 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 key: const ValueKey('focusCompare'),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.onSurface,
+                ),
                 icon: const Icon(Icons.compare_arrows),
                 label: Text(l10n.focusCompareAB),
                 onPressed: () => widget.onCompare!(
