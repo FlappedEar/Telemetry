@@ -11,9 +11,12 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request cancels the older run. Every revision of
+# main runs to the end in its own group: AGENTS.md requires green CI on each
+# resulting main revision, so a quick second merge must not cancel the first.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   analyze-and-test:
