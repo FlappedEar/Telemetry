@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
 import android.util.Log
+import android.widget.Toast
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -32,6 +33,12 @@ import java.util.concurrent.Executors
  * it renames a copy after the type the provider reports, and providers report
  * a .vbo file as application/octet-stream, so "session.vbo" arrived as
  * "session.bin" and was not imported as a recording.
+ *
+ * Copies are bounded by the Dart import's limits (BoundedCopy.kt): a file
+ * larger than [MAXIMUM_RECORDING_BYTES] is not copied (its size is checked
+ * first where the provider reports one, and the copy stops at the limit
+ * regardless), one share or pick copies at most [MAXIMUM_BATCH_BYTES] and
+ * [MAXIMUM_BATCH_FILES] files, and the user is told once what was left out.
  */
 class MainActivity : FlutterActivity() {
     private val copier = Executors.newSingleThreadExecutor()
@@ -94,7 +101,10 @@ class MainActivity : FlutterActivity() {
         // A recreated activity gets the same intent again; import it once.
         intent.putExtra(HANDLED, true)
         copier.execute {
-            val paths = uris.mapNotNull { copyRecording(it) }
+            val recordings = uris.filter { uri ->
+                displayName(uri)?.substringAfterLast('.', "")?.lowercase() in EXTENSIONS
+            }
+            val paths = copyBatch(recordings, "incoming")
             if (paths.isNotEmpty()) main.post { deliver(paths) }
         }
     }
@@ -133,7 +143,7 @@ class MainActivity : FlutterActivity() {
             return
         }
         copier.execute {
-            val paths = uris.mapNotNull { copyFile(it, "picked") }
+            val paths = copyBatch(uris, "picked")
             main.post { result.success(paths) }
         }
     }
@@ -171,33 +181,60 @@ class MainActivity : FlutterActivity() {
         else -> emptyList()
     }
 
-    /** Copies one shared VBO or RCZ file; null for other files or on failure. */
-    private fun copyRecording(uri: Uri): String? {
-        val name = displayName(uri) ?: return null
-        if (name.substringAfterLast('.', "").lowercase() !in EXTENSIONS) return null
-        return copyFile(uri, "incoming")
+    /**
+     * Copies [uris] to files/<area>/<unique folder>/<own name> within the batch
+     * limits and returns the copies' paths. A batch of more than
+     * [MAXIMUM_BATCH_FILES] files copies nothing.
+     */
+    private fun copyBatch(uris: List<Uri>, area: String): List<String> {
+        if (uris.size > MAXIMUM_BATCH_FILES) {
+            tell("Choose at most $MAXIMUM_BATCH_FILES recordings at a time.")
+            return emptyList()
+        }
+        val paths = mutableListOf<String>()
+        var budget = MAXIMUM_BATCH_BYTES
+        var leftOut = false
+        for (uri in uris) {
+            val name = displayName(uri) ?: continue
+            val limit = minOf(MAXIMUM_RECORDING_BYTES, budget)
+            val reported = reportedSize(uri)
+            if (limit <= 0 || (reported != null && reported > limit)) {
+                leftOut = true
+                continue
+            }
+            val folder = File(filesDir, "$area/${System.currentTimeMillis()}-${UUID.randomUUID()}")
+            when (val result = copyIntoFolder(folder, name, limit) { contentResolver.openInputStream(uri) }) {
+                is CopyResult.Copied -> {
+                    paths.add(result.file.path)
+                    budget -= result.bytes
+                }
+                CopyResult.TooLarge -> leftOut = true
+                is CopyResult.Failed -> Log.w(TAG, "Could not copy $name", result.error)
+            }
+        }
+        if (leftOut) {
+            tell(
+                "Some files were not imported: a recording can be at most " +
+                    "${MAXIMUM_RECORDING_BYTES / MIB} MB, and one import at most " +
+                    "${MAXIMUM_BATCH_BYTES / MIB} MB.",
+            )
+        }
+        return paths
     }
 
-    /**
-     * Copies [uri] to files/<area>/<unique folder>/<its own name>; null when it
-     * has no name or on failure.
-     */
-    private fun copyFile(uri: Uri, area: String): String? {
-        val name = displayName(uri) ?: return null
-        val folder = File(filesDir, "$area/${System.currentTimeMillis()}-${UUID.randomUUID()}")
-        val target = File(folder, name)
-        return try {
-            if (!folder.mkdirs()) return null
-            contentResolver.openInputStream(uri)?.use { input ->
-                target.outputStream().use { output -> input.copyTo(output) }
-            } ?: return null
-            target.path
-        } catch (error: Exception) {
-            Log.w(TAG, "Could not copy $name", error)
-            target.delete()
-            folder.delete()
-            null
+    /** The size the provider reports for [uri], or null when it reports none. */
+    private fun reportedSize(uri: Uri): Long? = try {
+        contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else null
         }
+    } catch (error: Exception) {
+        null
+    }
+
+    private fun tell(message: String) {
+        Log.w(TAG, message)
+        val context = applicationContext
+        main.post { Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
     }
 
     /** The file's name without any folder part, or null when it has none. */
@@ -218,5 +255,6 @@ class MainActivity : FlutterActivity() {
         const val HANDLED = "com.flappedear.telemetry.SHARE_HANDLED"
         const val TAG = "IncomingRecordings"
         val EXTENSIONS = setOf("vbo", "rcz")
+        const val MIB = 1024L * 1024
     }
 }
