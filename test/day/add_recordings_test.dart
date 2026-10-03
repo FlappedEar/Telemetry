@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/diagnostics/app_diagnostics.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -68,6 +69,14 @@ final class _FakePickers implements RecordingPickers {
 }
 
 // Recordings here are synthetic (circuitVbo): no real data.
+/// Asks for the theoretical best and waits for the coach after it.
+Future<void> coached(DayResultsController controller) async {
+  await controller.requestTheoreticalBest();
+  while (controller.coachLoading) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 void main() {
   late Directory directory;
   setUp(
@@ -582,6 +591,7 @@ void main() {
   testWidgets(
     'after an addition the page moves to the Next session card for it',
     (tester) async {
+      final diagnostics = AppDiagnostics();
       final a = write('a.vbo', [30, 28, 31]);
       final b = write('b.vbo', [29, 33]);
       final first = runDayImport((paths: [a], includeSubfolders: false));
@@ -590,6 +600,7 @@ void main() {
         analysis: first.analysis!,
         appender: _SyncAppender(),
         coachRunner: (job) async => job(),
+        diagnostics: diagnostics,
       );
       await tester.binding.setSurfaceSize(const Size(412, 915));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -628,6 +639,15 @@ void main() {
       expect(card.hitTestable(), findsOneWidget);
       final top = tester.getTopLeft(card).dy;
       expect(top, inInclusiveRange(0, 915 - 100));
+      // The diagnostics page shows how long it took, for the phone.
+      expect(
+        [for (final step in diagnostics.steps) step.name],
+        containsAll([
+          DiagnosticSteps.addSession,
+          DiagnosticSteps.coach,
+          DiagnosticSteps.addToCoach,
+        ]),
+      );
       // Neither has a recording time, so the one added last is coached.
       expect(controller.latestRunName, 'Session 2');
       expect(
@@ -636,4 +656,62 @@ void main() {
       );
     },
   );
+
+  test('a change before the coach ends the timing of an addition', () async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final b = write('b.vbo', [29, 33]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final diagnostics = AppDiagnostics();
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      diagnostics: diagnostics,
+      coachRunner: (job) async => job(),
+    );
+    addTearDown(controller.dispose);
+    List<String> names() => [for (final step in diagnostics.steps) step.name];
+
+    // A lap excluded before the coach ran: the coach's time is not the
+    // addition's.
+    expect((await controller.addRecordings([b])).added, ['Session 2']);
+    expect(names(), contains(DiagnosticSteps.addSession));
+    final lap = controller.analysis.rows.firstWhere(
+      (row) => row.type == LapSectionType.lap,
+    );
+    expect(controller.exclude(lap, 'test'), isTrue);
+    await coached(controller);
+    expect(names(), contains(DiagnosticSteps.coach));
+    expect(names(), isNot(contains(DiagnosticSteps.addToCoach)));
+  });
+
+  test('the timing of an addition runs from when it was asked', () async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final b = write('b.vbo', [29, 33]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final diagnostics = AppDiagnostics();
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      diagnostics: diagnostics,
+      coachRunner: (job) async => job(),
+    );
+    addTearDown(controller.dispose);
+    // A share that waited 300 ms to open the day first.
+    final since = Stopwatch()..start();
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    await controller.addRecordings([b], since: since);
+    await coached(controller);
+    Duration step(String name) =>
+        diagnostics.steps.firstWhere((step) => step.name == name).duration;
+    expect(
+      step(DiagnosticSteps.addSession),
+      greaterThanOrEqualTo(const Duration(milliseconds: 300)),
+    );
+    expect(
+      step(DiagnosticSteps.addToCoach),
+      greaterThanOrEqualTo(step(DiagnosticSteps.addSession)),
+    );
+  });
 }
