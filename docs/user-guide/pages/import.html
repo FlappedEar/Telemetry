@@ -1,0 +1,57 @@
+<!-- title: Importing a day | nav: Importing a day -->
+<h1 id="import">Importing a day</h1>
+<p class="lead">The app opens on <strong>Import a day</strong>. Give it the day's recordings and it prepares the sessions, laps and analysis on its own.</p>
+
+<figure>
+  <img src="assets/screens/import-empty.png" alt="Import a day on a desktop: Choose recordings, Choose a folder, Open a saved day and Include subfolders" width="1280" height="800" loading="lazy">
+  <figcaption>Import a day on a Mac or PC.</figcaption>
+</figure>
+
+<h2 id="formats">What you can import</h2>
+<ul>
+  <li><strong>VBO and RCZ</strong> recordings, such as RaceChrono exports. Other files are skipped and listed under Import notes.</li>
+  <li>Up to <strong>64 recordings</strong> at a time.</li>
+  <li>When the same drive was exported as both VBO and RCZ, the app uses the VBO and keeps the RCZ as its alternative source. A file with the same content as another is imported once.</li>
+</ul>
+
+<h2 id="choose">Choosing the recordings</h2>
+<table>
+  <tr><th>Button</th><th>What it does</th><th>Where</th></tr>
+  <tr><td><strong>Choose recordings…</strong></td><td>Pick one or more VBO/RCZ files.</td><td>Everywhere</td></tr>
+  <tr><td><strong>Choose a folder…</strong></td><td>Import every recording in a folder. Tick <strong>Include subfolders</strong> first to look inside subfolders too.</td><td>Mac and PC</td></tr>
+  <tr><td>Drag and drop</td><td>Drop files or folders anywhere on the window. A coloured border shows while you drag; it turns amber when an import is already running.</td><td>Mac and PC</td></tr>
+  <tr><td><strong>Open a saved day…</strong></td><td>Open a day you saved before. See <a href="saving.html#open">Opening a day</a>.</td><td>Everywhere</td></tr>
+</table>
+<p>On a phone there is no folder picker; select the files, or share them from RaceChrono. See <a href="phone.html">Phones and tablets</a>.</p>
+
+<h2 id="progress">While it imports</h2>
+<p>The page shows <em>Looking for recordings…</em>, then <em>Preparing recording X of N…</em> with a progress bar. <strong>Cancel</strong> stops at once and imports nothing. You cannot start a second import while one runs.</p>
+
+<h2 id="result">The result</h2>
+<p>When it is done, the page says how many sessions were imported and lists each one:</p>
+<ul>
+  <li><strong>Session N</strong>, numbered in the order the sessions were recorded.</li>
+  <li>Under it, the lap count and best lap, for example <em>7 laps · best 1:49.898</em>, or why it has no laps, for example <em>No laps: the recording has no start/finish line.</em></li>
+</ul>
+<p>Tap <strong>Show the day's results</strong> to open the <a href="day.html">day results</a>.</p>
+
+<h3 id="notes">Import notes</h3>
+<p>Anything that was skipped or combined is listed under <strong>Import notes</strong>, one line per file, for example a file that is not a recording, a duplicate, or a VBO and RCZ of the same drive.</p>
+
+<h2 id="laps-found">How laps are found</h2>
+<p>Laps come from the start/finish line saved in the recording (the RaceChrono track's start line) and the GPS trace:</p>
+<ul>
+  <li><strong>OUT</strong>: from the start of the recording to the first crossing.</li>
+  <li><strong>LAP n</strong>: between two crossings.</li>
+  <li><strong>IN</strong>: from the last crossing to the end of the recording.</li>
+  <li><strong>UNKNOWN</strong>: the whole recording, when the line was never crossed.</li>
+</ul>
+<p>The start/finish line cannot be placed by hand. If a session has no laps, see <a href="troubleshooting.html#no-laps">No laps</a>.</p>
+
+<h2 id="restore">Restoring unsaved work</h2>
+<p>While you work on a day that is not saved, the app keeps a copy of it. If the app closed before you saved, <strong>Import a day</strong> shows <em>&lt;day&gt; has unsaved changes from …</em> with two buttons:</p>
+<ul>
+  <li><strong>Restore</strong> reopens the day with your changes.</li>
+  <li><strong>Discard…</strong> deletes the copy after asking. Your recordings and saved days are not touched.</li>
+</ul>
+<p>Only one unsaved day is kept: working on another unsaved day replaces the copy. A day you just imported and never saved counts as unsaved, so the banner also appears when you go back from its results.</p>

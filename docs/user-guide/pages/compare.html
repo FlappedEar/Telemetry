@@ -1,0 +1,52 @@
+<!-- title: Compare laps | nav: Compare laps -->
+<h1 id="compare">Compare laps</h1>
+<p class="lead">Two laps at the same place on the track. Lap A is green, lap B is orange, and Δ is A − B: positive when A is behind.</p>
+
+<figure>
+  <img src="assets/screens/compare-wide.png" alt="Compare laps: lap A and B badges, the lap delta, the two lines on the map, and the Δ time, speed and throttle charts by track position" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="open">Opening a comparison</h2>
+<ul>
+  <li><strong>Compare two laps</strong> above the lap list: choose lap A, then lap B. <strong>Suggested: the fastest</strong> picks the group's best lap.</li>
+  <li><strong>Compare with…</strong> on a lap: that lap is A; choose B.</li>
+  <li>From the analysis (a time loss, a corner, a focus area): the comparison opens zoomed to that segment, with the <a href="corners.html">Corner Analyzer</a> first.</li>
+</ul>
+<p>Only ranked laps of the same group can be compared.</p>
+
+<h2 id="header">Choosing A and B</h2>
+<ul>
+  <li>Tap the <strong>A</strong> or <strong>B</strong> badge to pick another lap.</li>
+  <li><strong>Swap A and B</strong>.</li>
+  <li><strong>B: best of Session N</strong> (best of A's session) and <strong>B: best of the day</strong>. If A is that lap already, the next fastest is used.</li>
+  <li><strong>Lap Δ</strong> is the difference in lap time.</li>
+</ul>
+
+<h2 id="map">The comparison map</h2>
+<p>Both lines are drawn on the same street or satellite map as the other maps, with a dot for each lap at the cursor. Pinch or scroll to zoom, drag to move, and use the layers button to change the background. The menu above the map colours a line by:</p>
+<ul>
+  <li><strong>Line: A / B</strong> (default): green and orange.</li>
+  <li><strong>Speed</strong>, <strong>Δ time (A−B)</strong>, <strong>Lateral G</strong>, <strong>Longitudinal G</strong>, <strong>Throttle</strong>, <strong>Brake (measured)</strong>, and each recorded temperature.</li>
+</ul>
+<p>When a colouring is chosen, <strong>A</strong> / <strong>B</strong> next to the menu picks which lap's line is coloured. If a channel was not recorded, the menu says <em>not recorded</em>; nothing is invented.</p>
+<figure>
+  <img src="assets/screens/compare-delta-map.png" alt="Comparison map coloured by Δ time, blue where A is ahead and orange where A is behind" width="1280" height="800" loading="lazy">
+  <figcaption>Coloured by Δ time: blue where A is ahead, orange where A is behind.</figcaption>
+</figure>
+
+<h2 id="charts">Channels by track position</h2>
+<p>The charts put both laps at the same place on the track, in metres from the start/finish line.</p>
+<ul>
+  <li>The first chart is <strong>Δ time (A − B)</strong>: rising means A is losing time there.</li>
+  <li>Then speed, throttle and brake when both laps recorded them. Add or remove channels as on the <a href="lap.html#charts">lap page</a> (up to four).</li>
+  <li>Drag across a chart to move the cursor; both dots move on the map.</li>
+  <li>Zoom in around the cursor to look at one corner; the map highlights the stretch shown.</li>
+  <li><strong>Open lap A here</strong> / <strong>Open lap B here</strong> open that lap at the same place.</li>
+</ul>
+
+<h2 id="panels">Under the charts</h2>
+<ul>
+  <li><a href="corners.html">Corner Analyzer</a>: corner by corner, A against B.</li>
+  <li><a href="driving.html#gg">G-G</a>, <a href="driving.html#states">Driving states</a> and <a href="driving.html#coasting">Coasting</a> for the whole lap, or for the stretch you zoomed to.</li>
+</ul>
+<p class="note">Everything on this page is an observed difference between two laps, not an instruction.</p>

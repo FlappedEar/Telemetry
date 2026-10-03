@@ -1,0 +1,29 @@
+<!-- title: G-G, driving states and coasting | nav: G-G and coasting -->
+<h1 id="driving">G-G, driving states and coasting</h1>
+<p class="lead">Three cards under the Corner Analyzer on the comparison page. Each covers the whole lap, or only the stretch you zoomed the charts to (<em>Selected stretch · 420 m</em>).</p>
+
+<h2 id="gg">G-G</h2>
+<figure>
+  <img src="assets/screens/gg.png" alt="G-G diagram of laps A and B with rings every 0.5 g, and a table of peak lateral, braking, accelerating and combined G" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li>Each dot is one moment of the lap: left/right is lateral G, up is accelerating, down is braking.</li>
+  <li>Rings are every 0.5 g. A circle marks each lap's peaks.</li>
+  <li>The table gives <strong>Peak lateral</strong>, <strong>Peak braking</strong>, <strong>Peak accelerating</strong>, <strong>Peak combined</strong> and the number of samples.</li>
+  <li>Under it, which channels were used and whether they were measured or calculated from GPS by the logger.</li>
+</ul>
+<p>These are observed accelerations, not a share of the grip available.</p>
+
+<h2 id="states">Driving states</h2>
+<figure>
+  <img src="assets/screens/driving-states.png" alt="Driving states strips for laps A and B, and a table of braking, braking while cornering, cornering, accelerating and coasting" width="1280" height="800" loading="lazy">
+</figure>
+<p>Coloured strips show where each lap was braking, braking while cornering, cornering, accelerating or coasting. Tap a strip to move the cursor there. The table gives each state's time and share of the lap, and whether it was measured, calculated from GPS or inferred.</p>
+<p>States overlap: cornering can come with braking, accelerating or coasting. Longer braking while cornering is not automatically better or safer.</p>
+
+<h2 id="coasting">Coasting</h2>
+<figure>
+  <img src="assets/screens/compare-coasting.png" alt="Coasting card for laps A and B with a strip and a chip for each coasting episode" width="1280" height="800" loading="lazy">
+</figure>
+<p>For each lap: total coasting time and distance, how it was measured, a strip along the track, and a chip for each episode such as <em>640 m · 1.2 s</em>. Tap a chip to move the cursor there.</p>
+<p>Coasting is measured from the brake and accelerator pedals when both were recorded. Without them it is inferred from longitudinal G, and the card says so. A single lap's coasting is also on its <a href="lap.html#coasting">lap page</a>.</p>

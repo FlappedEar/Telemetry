@@ -1,28 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
-/// Why a corner figure is missing, in words.
+/// Why a corner figure is missing, in a short plain phrase (lower case, to
+/// follow a colon or start a sentence). Every reason the corner analyses can
+/// give is mapped; an unknown one reads "not available", never its
+/// identifier.
 String cornerReasonText(String reason) => switch (reason) {
   '' => 'not measured',
-  'noBrakingDetected' => 'no braking detected',
-  'noBrakeOrDecelerationChannel' => 'no brake or deceleration channel',
-  'noThrottleOrAccelerationChannel' => 'no throttle or acceleration channel',
-  'inferenceDisabled' => 'no brake channel',
-  'noLift' => 'no lift before the pickup',
-  'noPickupDetected' => 'no pickup detected',
-  'incompleteCoverage' => 'lap not fully covered here',
-  'crossesGate' => 'corner crosses the start line',
-  'unitMismatch' => 'channel unit not supported',
-  'channelUnitUndeclared' => 'channel unit not recorded',
-  'noSamplesInWindow' => 'no samples here',
-  'speedChannelMissing' => 'no speed channel',
-  'flatSpeed' => 'no lowest point (constant speed)',
-  'sparseSamples' => 'too few samples',
-  'mixedProvenance' => 'measured differently',
-  'differentSegmentOrRevision' => 'different segments',
-  'followsGap' => 'after a recording gap',
-  'truncatedAtWindowEnd' => 'cut off at the lap end',
-  _ => reason,
+  // Braking.
+  brakingNoneDetected => 'no braking detected',
+  brakingNoChannel => 'no brake or deceleration channel',
+  brakingInferenceDisabled => 'no brake channel',
+  brakingDecelerationChannelMissing => 'no deceleration channel',
+  brakingApproachClipped => 'approach cut off at the start/finish line',
+  brakingApproachClippedAtCorner => 'approach runs into the previous corner',
+  brakingAlreadyActive => 'already braking before the approach',
+  brakingInterruptedByGap => 'braking interrupted by a recording gap',
+  brakingNoSamples => 'no samples here',
+  // Throttle pickup and exit.
+  exitNoChannel => 'no throttle or acceleration channel',
+  exitNoLift => 'no lift before the pickup',
+  exitNoPickup => 'no pickup detected',
+  exitFollowsGap => 'after a recording gap',
+  exitTruncated => 'cut off at the lap end',
+  // Shared by several analyses.
+  analyzerIncompleteCoverage => 'lap not fully covered here',
+  cornerPhaseCrossesGate => 'crosses the start/finish line',
+  exitUnitMismatch => 'channel unit not supported',
+  exitUnitUndeclared => 'channel unit not recorded',
+  cornerPhaseSpeedChannelMissing => 'no speed channel',
+  cornerSpeedMixedProvenance => 'measured differently on A and B',
+  cornerSpeedDifferentSegmentOrRevision => 'segments differ between the laps',
+  // Corner phases and speeds.
+  cornerPhaseMultipleApexes => 'double apex: no single apex point',
+  cornerPhaseFlatSpeed => 'no lowest point (constant speed)',
+  cornerPhaseInsufficientGeometry => 'corner shape too unclear to place it',
+  cornerPhaseInvalidInput => 'corner could not be measured',
+  cornerPhaseBroadPeak => 'apex spread over a long arc',
+  cornerPhaseAtCornerBoundary => 'at the edge of the corner',
+  cornerSpeedNotACorner => 'not a corner',
+  cornerSpeedSparseSamples => 'too few samples',
+  // Sector times and summaries.
+  sectorTimeSegmentNotFound => 'segment not found on this lap',
+  channelSummaryMissing => 'not recorded',
+  channelSummaryNoSamples => 'no valid samples',
+  timeLossNoReference => 'no reference lap',
+  timeLossUntimed => 'not timed',
+  theoreticalBestNoApprovedSegmentation => 'no approved segments',
+  drivingStateUnknownReason => 'driving state unknown',
+  _ => 'not available',
 };
 
 String _speed(double? value) => value == null ? '—' : value.toStringAsFixed(1);

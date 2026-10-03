@@ -1,0 +1,28 @@
+<!-- title: Install | nav: Install -->
+<h1 id="install">Install</h1>
+<p class="lead">There is no app store release yet. Android installs from a build file; macOS runs from the source code.</p>
+
+<h2 id="android">Android (Pixel)</h2>
+<ol class="steps">
+  <li>On a computer signed in to GitHub, open the newest green run of the CI workflow on the <code>main</code> branch: <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">Actions, branch main</a>.</li>
+  <li>At the bottom of the run, download the artifact <code>flappedear-telemetry-android-&lt;commit&gt;</code> and unzip it. Inside is <code>app-release.apk</code>.</li>
+  <li>Copy the APK to the phone (USB, Google Drive or email).</li>
+  <li>Open it from the Files app. Allow installs from that app when Android asks, then tap <strong>Install</strong>. If Play Protect warns about an unknown app, choose <strong>Install anyway</strong>.</li>
+  <li>Open <strong>FlappedEar Telemetry</strong>. It starts on <strong>Import a day</strong>.</li>
+</ol>
+<div class="tip"><p>Always take the APK from a run on <code>main</code>. Those builds share one signing key, so a newer one installs over the old one and keeps your saved days. Builds from pull requests are for testing only.</p></div>
+<div class="note"><p>If Android refuses an update because the app "is not installed" or the signature differs, do not uninstall yet: uninstalling deletes the days kept in the app. Save them elsewhere first.</p></div>
+
+<h2 id="mac">macOS</h2>
+<p>There is no signed Mac download yet. With Flutter 3.47.6 installed, run it from a checkout of the repository:</p>
+<pre><code>flutter pub get
+flutter run -d macos</code></pre>
+
+<h2 id="iphone">iPhone and iPad</h2>
+<p>The iOS app is built and tested in the simulator only, until there is an Apple developer account. It cannot be installed on a phone yet.</p>
+
+<h2 id="windows">Windows</h2>
+<p>The app builds for Windows, but there is no download yet.</p>
+
+<h2 id="maps">Map backgrounds</h2>
+<p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the Android builds from CI have one. Tiles need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>

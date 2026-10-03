@@ -295,7 +295,7 @@ void main() {
       findsOneWidget,
     );
     expect(cornerReasonText('noBrakingDetected'), 'no braking detected');
-    expect(cornerReasonText('somethingNew'), 'somethingNew');
+    expect(cornerReasonText('somethingNew'), 'not available');
     expect(tester.takeException(), isNull);
   });
 
