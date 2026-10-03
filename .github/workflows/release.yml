@@ -43,6 +43,9 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = push ]; then
             version="${GITHUB_REF_NAME#v}"
+            # A tag off main could carry a build number main reaches later.
+            git merge-base --is-ancestor HEAD origin/main \
+              || { echo "::error::The tag $GITHUB_REF_NAME is not on main."; exit 1; }
           else
             [ "$GITHUB_REF" = refs/heads/main ] || { echo "::error::Run the release from main."; exit 1; }
             version="${INPUT_VERSION#v}"
@@ -100,7 +103,13 @@ jobs:
           [ -n "$MAPTILER_KEY" ] || echo "::warning::MAPTILER_KEY is not set; this APK shows street tiles only."
           flutter build apk --release --build-name="$VERSION" --build-number="$BUILD" \
             --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      # The certificate of the APKs on the owner's phone since 3974d07. If
+      # the cache ever holds a different key (it expired and CI made a new
+      # one), the release stops instead of publishing an APK that the phone
+      # would refuse as an update.
       - name: Check the APK's signing key
+        env:
+          RELEASE_CERT_SHA256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
         run: |
           expected=$(keytool -list -v -keystore ~/.android/debug.keystore \
             -storepass android -alias androiddebugkey \
@@ -116,6 +125,10 @@ jobs:
           [ -n "$expected" ] && [ "$expected" = "$actual" ] || {
             printf '%s\n' "$certs"
             echo "::error::The APK is signed with '$actual', not the cached key $expected."
+            exit 1
+          }
+          [ "$actual" = "$RELEASE_CERT_SHA256" ] || {
+            echo "::error::The signing key is $actual, not the release key $RELEASE_CERT_SHA256 that installed apps have."
             exit 1
           }
       - name: Name the APK
@@ -170,7 +183,8 @@ jobs:
     name: Publish the release
     needs: [version, android, macos]
     # Android comes first: the release goes out with the APK even when the
-    # Mac build fails, and the Mac zip is added to it once that is fixed.
+    # Mac build fails. Re-running the failed jobs then adds the Mac zip to the
+    # existing release and refreshes SHA256SUMS.txt.
     if: ${{ !cancelled() && needs.android.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -180,7 +194,7 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: Create the release
+      - name: Create the release, or add to it
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
@@ -188,11 +202,26 @@ jobs:
           if [ "${{ needs.macos.result }}" != success ]; then
             echo "::warning::The macOS build did not succeed; the release has the Android APK only."
           fi
+          tag="v$VERSION"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # A re-run: keep the assets already published that this run did
+            # not rebuild, so the checksums cover every file.
+            mkdir -p published
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" --dir published \
+              --pattern 'FlappedEar-Telemetry-*'
+            for f in published/*; do
+              [ -e "dist/$(basename "$f")" ] || cp "$f" dist/
+            done
+            ls -l dist
+            (cd dist && shasum -a 256 FlappedEar-Telemetry-* > SHA256SUMS.txt)
+            gh release upload "$tag" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+            exit 0
+          fi
           ls -l dist
-          (cd dist && shasum -a 256 * > SHA256SUMS.txt)
+          (cd dist && shasum -a 256 FlappedEar-Telemetry-* > SHA256SUMS.txt)
           prerelease=
           case "$VERSION" in 0.*) prerelease=--prerelease ;; esac
-          gh release create "v$VERSION" dist/* \
+          gh release create "$tag" dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "FlappedEar Telemetry $VERSION" \
