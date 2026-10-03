@@ -118,16 +118,17 @@
   <li><strong>Refuse</strong> keeps the RCZ beside the session without combining it: the session's charts and cards use its primary recording only, and the row says <em>Its RCZ is kept beside it and not combined until the day is opened again</em>.</li>
 </ul>
 <p><strong>Don't combine</strong>, under a combined session, refuses straight away, without a new check.</p>
-<div class="note"><p>A refusal lasts until the day is opened again. The day file, which FlappedEar Overlays reads too, saves a refused RCZ as Overlays saves a removed fusion: as a recording kept with the session and not combined. It has no place to record that you refused it, so when the day opens again the app lines up that RCZ and combines it again by itself. Check the clock again and refuse it again if you need to.</p></div>
+<div class="note"><p>For a session whose primary recording is its VBO, a refusal lasts until the day is opened again. The day file, which FlappedEar Overlays reads too, saves a refused RCZ as Overlays saves a removed fusion: as a recording kept with the session and not combined. It has no place to record that you refused it, and the app combines a VBO session's RCZ by itself, so when the day opens again it lines up that RCZ and combines it again. Check the clock again and refuse it again if you need to. A session whose primary is its RCZ (see <a href="#primary">Choosing the primary recording</a>) keeps its VBO apart when the day is opened again.</p></div>
 
 <h4 id="primary">Choosing the primary recording</h4>
 <p>A session's primary recording gives its laps, lap times and ranking. It is the VBO when both were imported. <strong>Make RCZ primary</strong> under the session makes the RCZ its primary recording instead, as Overlays' Run details does (<strong>Make VBO primary</strong> switches back):</p>
 <ul>
   <li>While the RCZ is read, the row says <em>Reading the RCZ as this session's recording…</em>. The day's laps, groups and ranking are then worked out again with the session's laps from the RCZ, and every result is calculated again from them.</li>
   <li>The other recording is kept beside the session and not combined (<em>Its VBO is kept beside it and not combined</em>). The day keeps it this way when it is opened again.</li>
-  <li>A circuit layout you set for the session is not carried over: the new recording starts with its detected route. Laps you excluded in the old recording do not apply to the new one.</li>
+  <li>A circuit layout you set for the session is not carried over: the new recording starts with its detected route. Laps you excluded in the old recording do not apply to the new one; they are kept in the day and apply again when you switch back.</li>
 </ul>
-<p>The day then has changes until you save it.</p>
+<p>The day then has changes until you save it. Before the switch, the app checks that the other recording's file is still where it was read from and holds the same recording; if not, nothing changes and the row says so, for example <em>The RCZ file has changed since it was read. Open the day again, then make it primary.</em></p>
+<p>While a clock is checked or a primary recording is changed, <strong>Find recordings</strong>, <strong>Retry recordings</strong> and leaving the day wait for it: the app says <em>Wait until the session's recordings are checked or changed</em>.</p>
 
 <h2 id="notes">Notes</h2>
 <p>At the bottom, <strong>Notes</strong> lists messages from the analysis, each starting with the session it is about. Sessions whose circuit could not be identified are listed under their own heading; their laps are not compared.</p>

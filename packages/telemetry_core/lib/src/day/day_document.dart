@@ -340,12 +340,44 @@ Map<String, Object?> dayDocument({
   }
   if (automaticSegments) _approveAutomaticSegments(allRuns, opened, runs, analysis, random);
 
+  // A lap reference of [reference]'s run as the document names it: of the
+  // run's current recording, or of the other recording it keeps beside it
+  // (a lap of the primary before "Make primary", FET-57), named as that
+  // recording's laps are when it is the primary again. Null when it is of
+  // neither.
+  final current = {for (final named in runs) named.run.id: named.run};
+  Map<String, Object?>? referenceJson(DayLapReference reference) {
+    final run = opened[reference.runId];
+    final recording = current[reference.runId];
+    if (run == null || recording == null || reference.type != LapSectionType.lap) return null;
+    if (reference.sourceRevision == recording.contentSha256) {
+      return _lapReferenceJson(eventId, run, reference);
+    }
+    final other = fusions[reference.runId]?.alternative;
+    if (other == null || other.contentSha256 != reference.sourceRevision) return null;
+    return _lapReferenceJson(eventId, _asPrimary(run, other), reference);
+  }
+
   final exclusionEntries = <Object?>[];
+  final kept = <String>{};
   if (event['lapExclusions'] case final List<Object?> stored) {
-    // Exclusions of runs that were not opened stay as they were.
+    // Exclusions of runs that were not opened stay as they were, and so do
+    // those of a recording an opened run does not read now or of another
+    // lap derivation (as Overlays keeps them): they apply again when that
+    // recording is the run's primary again. The others are written from
+    // [exclusions].
     for (final value in stored) {
-      final runId = _object(_object(value)?['reference'])?['runId'];
-      if (!opened.containsKey(runId)) exclusionEntries.add(value);
+      final reference = _object(_object(value)?['reference']);
+      final runId = reference?['runId'];
+      final run = opened[runId];
+      final applies =
+          run != null &&
+          reference?['sourceRevision'] == current[runId]?.contentSha256 &&
+          reference?['derivationKey'] == fet.lapDerivationV1Key(run);
+      if (!applies) {
+        exclusionEntries.add(value);
+        if (reference != null) kept.add(_lapIdentity(reference));
+      }
     }
   }
   final sorted = exclusions.entries.toList()
@@ -354,12 +386,10 @@ Map<String, Object?> dayDocument({
       return byRun != 0 ? byRun : a.key.startTime.compareTo(b.key.startTime);
     });
   for (final MapEntry(key: reference, value: reason) in sorted) {
-    final run = opened[reference.runId];
-    if (run == null || reference.type != LapSectionType.lap) continue;
-    exclusionEntries.add({
-      'reference': _lapReferenceJson(eventId, run, reference),
-      'reason': reason,
-    });
+    final json = referenceJson(reference);
+    // A lap kept as stored is not written twice.
+    if (json == null || kept.contains(_lapIdentity(json))) continue;
+    exclusionEntries.add({'reference': json, 'reason': reason});
   }
 
   // The comparison decisions, as Overlays saves them: the group only when
@@ -375,10 +405,7 @@ Map<String, Object?> dayDocument({
   }
   if (comparison.slots case final slots? when slots.length == 2) {
     final written = [
-      for (final reference in slots)
-        reference == null || opened[reference.runId] == null || reference.type != LapSectionType.lap
-            ? null
-            : _lapReferenceJson(eventId, opened[reference.runId]!, reference),
+      for (final reference in slots) reference == null ? null : referenceJson(reference),
     ];
     // A lap of a run that was not opened cannot be named: the pair is not changed.
     if (written.indexed.every((entry) => entry.$2 != null || slots[entry.$1] == null)) {
@@ -411,6 +438,71 @@ Map<String, Object?> dayDocument({
   document['documentState'] = nextDocumentState(_object(document['documentState']));
   return document;
 }
+
+/// [run] (a document run) as it is saved with [recording] as its primary,
+/// as far as its laps are named ([fet.lapDerivationV1Key]): the recording's
+/// source and the unknown track configuration, as "Make primary" leaves it.
+Map<String, Object?> _asPrimary(Map<String, Object?> run, TelemetryRunProposal recording) {
+  final fingerprint = telemetryFingerprint(recording.sourcePath, recording.telemetry);
+  return {
+    ...run,
+    'primaryTelemetrySourceId': recording.sourceId,
+    'sources': {
+      'telemetry': [
+        {
+          'id': recording.sourceId,
+          'reference': {'fingerprint': fingerprint},
+        },
+      ],
+    },
+    'trackConfiguration': _unknownConfiguration(
+      recording.sourceId,
+      fingerprint,
+      sessionGateRevision(recording.telemetry),
+    ),
+  };
+}
+
+/// The lap exclusions [document] keeps for run [runId]'s laps of
+/// [recording] that apply once it is the run's primary again ("Make
+/// primary", FET-57): those named with its content and the lap derivation
+/// it then has. What the day excludes again when the run switches back.
+Map<DayLapReference, String> recordingExclusions(
+  Map<String, Object?>? document,
+  String runId,
+  TelemetryRunProposal recording,
+) {
+  final event = _object(document?['event']);
+  final runs = event?['runs'];
+  Map<String, Object?>? run;
+  for (final value in runs is List ? runs : const []) {
+    if (_object(value) case final candidate? when candidate['id'] == runId) run = candidate;
+  }
+  final stored = event?['lapExclusions'];
+  if (run == null || stored is! List) return const {};
+  final asPrimary = {runId: _asPrimary(run, recording)};
+  final loaded = {runId: recording.contentSha256};
+  final result = <DayLapReference, String>{};
+  for (final value in stored) {
+    if (_object(value)
+        case {'reference': final Map<String, Object?> reference, 'reason': final String reason}
+        when reference['runId'] == runId && reference['type'] == LapSectionType.lap.label) {
+      final applied = _appliedLapReference(reference, asPrimary, loaded);
+      if (applied != null) result[applied] = reason;
+    }
+  }
+  return result;
+}
+
+/// The lap a document's lap reference names, whatever lap derivation it
+/// was named with: its run, recording, type and times.
+String _lapIdentity(Map<String, Object?> reference) => fet.qtCompactJson([
+  reference['runId'],
+  reference['sourceRevision'],
+  reference['type'],
+  reference['startTime'],
+  reference['endTime'],
+]);
 
 /// [reference] as a document's lap reference (`source-laps-v1`) of [run].
 Map<String, Object?> _lapReferenceJson(

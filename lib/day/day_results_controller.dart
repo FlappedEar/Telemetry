@@ -71,6 +71,26 @@ abstract interface class FusionTask {
 /// opened again tries once more.
 const fusionFailedReason = 'Aligning failed.';
 
+/// What reading a session's other recording as its primary gave: its part
+/// of the day, or why not.
+typedef PreparedPrimary = ({DayRunsPart? part, NewPrimaryProblem? problem});
+
+/// Why a session's clock check or primary change failed (FET-57), for the
+/// page to say.
+enum RecordingsProblem {
+  /// The clocks could not be compared.
+  clockFailed,
+
+  /// The other recording's file is not where it was read from.
+  primaryMissing,
+
+  /// The other recording's file holds other content now.
+  primaryChanged,
+
+  /// The other recording could not be read as the session.
+  primaryFailed,
+}
+
 /// Starts a [FusionJob]. Replaced in widget tests, which run it on the
 /// test's own thread.
 typedef FusionRunner = FusionTask Function(FusionJob job);
@@ -509,8 +529,7 @@ final class DayResultsController extends ChangeNotifier {
   }) {
     final named = _named(runId);
     if (named == null || _disposed) return;
-    final generation = (_fusionGenerations[runId] ?? 0) + 1;
-    _fusionGenerations[runId] = generation;
+    final generation = _nextRecordingGeneration(runId);
     // What ran for the run before is superseded.
     _fusionTasks.remove(runId)?.cancel();
     if (recording != null) _pendingRecordings[runId] = recording;
@@ -674,8 +693,7 @@ final class DayResultsController extends ChangeNotifier {
     if (fusion.ruleOf(key) == rule && !_fusionUpdating.containsKey(runId)) {
       return;
     }
-    final generation = (_fusionGenerations[runId] ?? 0) + 1;
-    _fusionGenerations[runId] = generation;
+    final generation = _nextRecordingGeneration(runId);
     _fusionUpdating[runId] = generation;
     notifyListeners();
     RunFusion? result;
@@ -713,40 +731,81 @@ final class DayResultsController extends ChangeNotifier {
 
   // Runs whose clocks are being compared (FET-57), with that check's
   // generation, and the checks done that wait for the user to accept or
-  // refuse them.
+  // refuse them, with the fusion each was made against: a check is
+  // accepted only while that is still the run's.
   final Map<String, int> _clocksChecking = {};
-  final Map<String, RunFusion> _clockChecks = {};
+  final Map<String, ({RunFusion check, RunFusion base})> _clockChecks = {};
 
   // Runs whose primary recording is being changed, with that change's
   // generation, and the background work reading the new one.
   final Map<String, int> _primaryChanging = {};
-  final Map<String, BackgroundTask<DayRunsPart>> _primaryTasks = {};
+  final Map<String, BackgroundTask<PreparedPrimary>> _primaryTasks = {};
+
+  // Why the last check or primary change of a run failed, until the next.
+  final Map<String, RecordingsProblem> _recordingsProblems = {};
+
+  // Work waiting for a slot of [fusionSlots] ([_inSlot]); failed with
+  // [OperationCancelled] when the day closes.
+  final Set<Completer<Object?>> _slotWaiters = {};
 
   /// Whether [runId]'s clocks are being compared ([checkClock]).
   bool clockChecking(String runId) => _clocksChecking.containsKey(runId);
 
   /// The clock check of [runId] waiting to be accepted ([acceptClock]) or
   /// refused ([refuseClock]); null when there is none.
-  RunFusion? clockCheck(String runId) => _clockChecks[runId];
+  RunFusion? clockCheck(String runId) => _clockChecks[runId]?.check;
 
   /// Whether [runId]'s primary recording is being changed ([makePrimary]).
   bool primaryChanging(String runId) => _primaryChanging.containsKey(runId);
+
+  /// Why [runId]'s last clock check or primary change failed; null when it
+  /// did not.
+  RecordingsProblem? recordingsProblem(String runId) =>
+      _recordingsProblems[runId];
+
+  /// Whether a clock check or a primary change runs for any session: the
+  /// day is not opened again or closed meanwhile.
+  bool get recordingsBusy =>
+      _clocksChecking.isNotEmpty || _primaryChanging.isNotEmpty;
 
   /// Whether [runId]'s recordings can be changed now: it has another
   /// recording that was read, and nothing runs for it or adds to the day.
   bool recordingsEditable(String runId) =>
       !_disposed &&
       _fusions[runId]?.alternative != null &&
+      _recordingsIdle(runId) &&
+      !adding;
+
+  bool _recordingsIdle(String runId) =>
       !_fusionPending.containsKey(runId) &&
       !_fusionUpdating.containsKey(runId) &&
       !_clocksChecking.containsKey(runId) &&
-      !_primaryChanging.containsKey(runId) &&
-      !adding;
+      !_primaryChanging.containsKey(runId);
 
   /// A new generation for [runId]'s recordings: a fusion, rule change or
-  /// check still running for the run is not used.
-  int _nextRecordingGeneration(String runId) =>
-      _fusionGenerations[runId] = (_fusionGenerations[runId] ?? 0) + 1;
+  /// check still running for the run is not used, and a clock check
+  /// waiting for the user no longer applies.
+  int _nextRecordingGeneration(String runId) {
+    _clockChecks.remove(runId);
+    return _fusionGenerations[runId] = (_fusionGenerations[runId] ?? 0) + 1;
+  }
+
+  /// Runs [work] once one of the [fusionSlots] is free, as the background
+  /// alignments run.
+  Future<T> _inSlot<T>(Future<T> Function() work) {
+    final done = Completer<Object?>();
+    _slotWaiters.add(done);
+    _fusionQueue.add(() async {
+      if (!_slotWaiters.remove(done)) return;
+      try {
+        done.complete(await work());
+      } on Object catch (error, stack) {
+        done.completeError(error, stack);
+      }
+    });
+    _runFusions();
+    return done.future.then((value) => value as T);
+  }
 
   static FusionJob _clockJob(
     TelemetryRunProposal primary,
@@ -769,27 +828,38 @@ final class DayResultsController extends ChangeNotifier {
     }
     final generation = _nextRecordingGeneration(runId);
     _clocksChecking[runId] = generation;
-    _clockChecks.remove(runId);
+    _recordingsProblems.remove(runId);
     notifyListeners();
     RunFusion? result;
+    var failed = false;
     try {
-      result = await _runFusionTask(
-        runId,
-        _clockJob(named.run, alternative, _decisionOf(runId)),
-      );
+      result = await _inSlot(() async {
+        if (_disposed || _fusionGenerations[runId] != generation) {
+          throw const OperationCancelled();
+        }
+        return _runFusionTask(
+          runId,
+          _clockJob(named.run, alternative, _decisionOf(runId)),
+        );
+      });
+      failed = result == null;
     } on OperationCancelled {
       // Superseded, or the day closed.
     } on Object catch (error) {
       debugPrint('Clocks not compared: $error');
+      failed = true;
     } finally {
       if (_clocksChecking[runId] == generation) _clocksChecking.remove(runId);
     }
     if (_disposed) return;
-    if (result != null &&
+    final current =
         _fusionGenerations[runId] == generation &&
         identical(_fusions[runId], fusion) &&
-        identical(_named(runId), named)) {
-      _clockChecks[runId] = result;
+        identical(_named(runId), named);
+    if (current && result != null) {
+      _clockChecks[runId] = (check: result, base: fusion!);
+    } else if (current && failed) {
+      _recordingsProblems[runId] = RecordingsProblem.clockFailed;
     }
     notifyListeners();
     _settleFusions();
@@ -797,15 +867,24 @@ final class DayResultsController extends ChangeNotifier {
 
   /// Accepts [runId]'s clock check: when its clocks line up, the other
   /// recording is fused with the measured clock, as Overlays approves a
-  /// fusion; saved with the day.
+  /// fusion; saved with the day. Nothing happens when the run's fusion or
+  /// recordings changed since the check (it is no longer shown).
   void acceptClock(String runId) {
-    final check = _clockChecks[runId];
-    if (check == null || !check.fused || _disposed) return;
+    final waiting = _clockChecks[runId];
     final named = _named(runId);
-    if (named == null || named.run.sourceId != check.primarySourceId) return;
-    _clockChecks.remove(runId);
+    if (waiting == null ||
+        !waiting.check.fused ||
+        _disposed ||
+        named == null ||
+        adding ||
+        !_recordingsIdle(runId) ||
+        !identical(_fusions[runId], waiting.base) ||
+        named.run.sourceId != waiting.check.primarySourceId ||
+        named.run.contentSha256 != waiting.check.primaryRevision) {
+      return;
+    }
     _nextRecordingGeneration(runId);
-    _fusions[runId] = check;
+    _fusions[runId] = waiting.check;
     _recordingsChanged();
   }
 
@@ -817,13 +896,23 @@ final class DayResultsController extends ChangeNotifier {
     final fusion = _fusions[runId];
     final named = _named(runId);
     final alternative = fusion?.alternative;
-    if (named == null || alternative == null || _disposed) return;
-    final check = _clockChecks.remove(runId);
+    if (named == null ||
+        alternative == null ||
+        _disposed ||
+        adding ||
+        !_recordingsIdle(runId)) {
+      return;
+    }
+    final waiting = _clockChecks[runId];
+    final check = waiting != null && identical(waiting.base, fusion)
+        ? waiting.check
+        : null;
+    _recordingsProblems.remove(runId);
+    _nextRecordingGeneration(runId);
     if (fusion!.state == RunFusionState.primaryOnly) {
       notifyListeners();
       return;
     }
-    _nextRecordingGeneration(runId);
     _fusionTasks.remove(runId)?.cancel();
     _fusions[runId] = RunFusion.primaryOnly(
       primary: named.run,
@@ -844,10 +933,10 @@ final class DayResultsController extends ChangeNotifier {
     _settleFusions();
   }
 
-  static DayRunsPart _primaryJob(
+  static PreparedPrimary _primaryJob(
     (TelemetryRunProposal, String, int) argument,
     CancellationCheck cancelled,
-  ) => analyzeNewPrimary(
+  ) => prepareNewPrimary(
     argument.$1,
     argument.$2,
     otherRows: argument.$3,
@@ -855,10 +944,12 @@ final class DayResultsController extends ChangeNotifier {
   );
 
   /// Makes [runId]'s other recording its primary (FET-57, Overlays' "Make
-  /// primary"): its laps are derived again in the background and the day
-  /// is grouped and ranked again; every result is calculated again. The
-  /// recording it replaces is kept beside it, not fused, and a layout set
-  /// for the run is not kept, as in Overlays. Saved with the day.
+  /// primary"): its file is checked to be still the recording read, its
+  /// laps are derived again in the background and the day is grouped and
+  /// ranked again; every result is calculated again. The recording it
+  /// replaces is kept beside it, not fused, and a layout set for the run is
+  /// not kept, as in Overlays. Saved with the day. When the file is gone or
+  /// changed, nothing changes and [recordingsProblem] says why.
   Future<void> makePrimary(String runId) async {
     final fusion = _fusions[runId];
     final named = _named(runId);
@@ -868,30 +959,57 @@ final class DayResultsController extends ChangeNotifier {
     }
     final generation = _nextRecordingGeneration(runId);
     _fusionTasks.remove(runId)?.cancel();
-    _clockChecks.remove(runId);
+    _recordingsProblems.remove(runId);
     _primaryChanging[runId] = generation;
     notifyListeners();
     final primary = runFromRecording(named.run, alternative);
-    final otherRows = _analysis.rows.where((row) => row.runId != runId).length;
-    final task = runInBackground(_primaryJob, (primary, named.name, otherRows));
-    _primaryTasks[runId] = task;
-    DayRunsPart? part;
+    PreparedPrimary? prepared;
     try {
-      part = await task.result;
+      prepared = await _inSlot(() async {
+        if (_disposed || _fusionGenerations[runId] != generation) {
+          throw const OperationCancelled();
+        }
+        final otherRows = _analysis.rows
+            .where((row) => row.runId != runId)
+            .length;
+        final task = runInBackground(_primaryJob, (
+          primary,
+          named.name,
+          otherRows,
+        ));
+        _primaryTasks[runId] = task;
+        try {
+          return await task.result;
+        } finally {
+          if (identical(_primaryTasks[runId], task)) {
+            _primaryTasks.remove(runId);
+          }
+        }
+      });
     } on OperationCancelled {
-      // The day closed.
+      // Superseded, or the day closed.
     } on Object catch (error) {
       debugPrint('Primary not changed: $error');
+      prepared = (part: null, problem: NewPrimaryProblem.failed);
     } finally {
-      if (identical(_primaryTasks[runId], task)) _primaryTasks.remove(runId);
       if (_primaryChanging[runId] == generation) _primaryChanging.remove(runId);
     }
     if (_disposed) return;
-    final current = _named(runId);
-    if (part == null ||
+    final part = prepared?.part;
+    if (prepared == null ||
         _fusionGenerations[runId] != generation ||
-        !identical(current, named) ||
+        !identical(_named(runId), named) ||
         !identical(_fusions[runId], fusion)) {
+      notifyListeners();
+      _settleFusions();
+      return;
+    }
+    if (part == null) {
+      _recordingsProblems[runId] = switch (prepared.problem) {
+        NewPrimaryProblem.missing => RecordingsProblem.primaryMissing,
+        NewPrimaryProblem.changed => RecordingsProblem.primaryChanged,
+        _ => RecordingsProblem.primaryFailed,
+      };
       notifyListeners();
       _settleFusions();
       return;
@@ -903,6 +1021,15 @@ final class DayResultsController extends ChangeNotifier {
       primary: primary,
       alternative: named.run,
     );
+    // Laps of the new primary the day excluded when it was the primary
+    // before are excluded again; the old primary's stay, for switching back.
+    for (final MapEntry(:key, :value) in recordingExclusions(
+      _document,
+      runId,
+      primary,
+    ).entries) {
+      _exclusions.putIfAbsent(key, () => value);
+    }
     final manual = {..._analysis.manualTracks}..remove(runId);
     _analysis = replaceDayRun(
       _analysis,
@@ -2336,6 +2463,10 @@ final class DayResultsController extends ChangeNotifier {
     _disposed = true;
     // Alignments not started are dropped; running ones are stopped.
     _fusionQueue.clear();
+    for (final waiter in _slotWaiters) {
+      waiter.completeError(const OperationCancelled());
+    }
+    _slotWaiters.clear();
     for (final task in _fusionTasks.values) {
       task.cancel();
     }

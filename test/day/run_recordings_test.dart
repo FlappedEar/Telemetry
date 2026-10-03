@@ -1,6 +1,7 @@
 // A session's recordings (FET-57): "Make primary" and the clock check with
 // its accept or refuse, on a synthetic VBO and RCZ of one drive: no real
 // data.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,18 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../../packages/telemetry_core/test/support/fusion_pair.dart';
+
+/// A fusion job run once [gate] completes.
+final class _GatedTask implements FusionTask {
+  _GatedTask(Future<void> gate, FusionJob job)
+    : result = gate.then((_) => job(() => false));
+
+  @override
+  final Future<RunFusion?> result;
+
+  @override
+  void cancel() {}
+}
 
 Map<String, Object?> _runJson(String path) =>
     ((readDayDocument(path)['event'] as Map)['runs'] as List).single
@@ -170,6 +183,167 @@ void main() {
     expect(opened.analysis.rows.map((row) => row.sourceRevision).toSet(), {
       vbo.contentSha256,
     });
+  });
+
+  test('an exclusion and the comparison pair of the VBO come back when it '
+      'is the primary again', () async {
+    final (controller, runId) = await fusedDay();
+    final vbo = controller.runs.single.run;
+    final laps = controller.analysis.rows
+        .where((row) => row.type == LapSectionType.lap && row.referenceEligible)
+        .toList();
+    expect(controller.exclude(laps[0], 'Traffic'), isTrue);
+    controller.rememberComparisonPair(laps[1], laps[2]);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.rcz);
+    await controller.save(path);
+    final rczDay = DayResultsController.opened(openDay(path));
+    addTearDown(rczDay.dispose);
+    await rczDay.fusionsSettled;
+    expect(rczDay.exclusions, isEmpty);
+    expect(rczDay.savedComparisonPair, isNull);
+
+    await rczDay.makePrimary(runId);
+    expect(rczDay.runs.single.run.sourceId, vbo.sourceId);
+    // At once, before saving: the VBO's exclusion applies again.
+    expect(rczDay.exclusions, {laps[0].reference: 'Traffic'});
+    await rczDay.save(path);
+    final vboDay = DayResultsController.opened(openDay(path));
+    addTearDown(vboDay.dispose);
+    await vboDay.fusionsSettled;
+    expect(vboDay.exclusions, {laps[0].reference: 'Traffic'});
+    final pair = vboDay.savedComparisonPair!;
+    expect(
+      [pair.$1.reference, pair.$2.reference],
+      [laps[1].reference, laps[2].reference],
+    );
+  });
+
+  test('a clock check waiting for the user no longer applies once a rule '
+      'changed', () async {
+    final (controller, runId) = await fusedDay();
+    await controller.checkClock(runId);
+    expect(controller.clockCheck(runId), isNotNull);
+    await controller.setFusionRule(runId, 'sats', FusionRule.preferAlternative);
+    expect(controller.clockCheck(runId), isNull);
+    controller.acceptClock(runId);
+    expect(
+      controller.fusion(runId)!.ruleOf('sats'),
+      FusionRule.preferAlternative,
+      reason: 'the rule change is not reverted',
+    );
+  });
+
+  test('a clock check waiting for the user no longer applies once another '
+      'RCZ is added', () async {
+    final (controller, runId) = await fusedDay();
+    final old = controller.fusion(runId)!.alternative!;
+    controller.refuseClock(runId);
+    await controller.checkClock(runId);
+    expect(controller.clockCheck(runId), isNotNull);
+    // Another RCZ of the same drive, its satellite counts other.
+    final other = Directory('${directory.path}/other')..createSync();
+    final (_, rcz) = writeFusionPair(
+      other.path,
+      satellites: true,
+      satelliteDifference: 7,
+    );
+    final addition = controller.addRecordings([rcz]);
+    // Not while recordings are added, nor after: the check was of the RCZ
+    // the addition replaces.
+    controller.acceptClock(runId);
+    expect(controller.fusion(runId)!.state, RunFusionState.primaryOnly);
+    await addition;
+    expect(controller.clockCheck(runId), isNull);
+    controller.acceptClock(runId);
+    await controller.fusionsSettled;
+    final fusion = controller.fusion(runId)!;
+    expect(fusion.alternative!.contentSha256, isNot(old.contentSha256));
+    expect(fusion.fused, isTrue);
+  });
+
+  test('making a primary whose file changed or is gone changes nothing and '
+      'says why', () async {
+    final (controller, runId) = await fusedDay();
+    final rcz = controller.fusion(runId)!.alternative!;
+    final file = File(rcz.sourcePath);
+    final bytes = file.readAsBytesSync();
+    file.writeAsBytesSync([...bytes.reversed]);
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    expect(
+      controller.recordingsProblem(runId),
+      RecordingsProblem.primaryChanged,
+    );
+    file.deleteSync();
+    await controller.makePrimary(runId);
+    expect(controller.runs.single.run.format, RecordingFormat.vbo);
+    expect(
+      controller.recordingsProblem(runId),
+      RecordingsProblem.primaryMissing,
+    );
+    file.writeAsBytesSync(bytes);
+    await controller.makePrimary(runId);
+    expect(controller.recordingsProblem(runId), isNull);
+    expect(controller.runs.single.run.format, RecordingFormat.rcz);
+  });
+
+  test('clock checks and primary changes wait for a free slot', () async {
+    final previous = DayResultsController.fusionSlots;
+    DayResultsController.fusionSlots = 1;
+    addTearDown(() => DayResultsController.fusionSlots = previous);
+    final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
+    final (vbo2, rcz2) = writeFusionPair(
+      directory.path,
+      name: 'second',
+      speeds: const [31, 28, 30, 27, 33, 29],
+    );
+    final day = runDayImport((
+      paths: [vbo1, rcz1, vbo2, rcz2],
+      includeSubfolders: false,
+    ));
+    // Once [hold] is set, fusion jobs wait until released.
+    final held = <Completer<void>>[];
+    var hold = false;
+    final controller = DayResultsController(
+      runs: day.runs,
+      analysis: day.analysis!,
+      alternatives: day.alternatives,
+      fusionRunner: (job) {
+        final gate = Completer<void>();
+        if (hold) {
+          held.add(gate);
+        } else {
+          gate.complete();
+        }
+        return _GatedTask(gate.future, job);
+      },
+    );
+    addTearDown(controller.dispose);
+    await controller.fusionsSettled;
+    expect(
+      [for (final named in day.runs) controller.fusion(named.run.id)?.fused],
+      [true, true],
+    );
+    hold = true;
+    final [first, second] = [for (final named in day.runs) named.run.id];
+    final check = controller.checkClock(first);
+    final change = controller.makePrimary(second);
+    expect(controller.primaryChanging(second), isTrue);
+    await pumpEventQueue();
+    // The clock check holds the only slot: the primary change waits.
+    expect(held, hasLength(1));
+    expect(controller.runs.last.run.format, RecordingFormat.vbo);
+    // Retry, Find recordings and leaving the day wait meanwhile.
+    expect(controller.recordingsBusy, isTrue);
+    held.single.complete();
+    await Future.wait([check, change]);
+    expect(controller.recordingsBusy, isFalse);
+    expect(controller.clockCheck(first), isNotNull);
+    expect(controller.runs.last.run.format, RecordingFormat.rcz);
   });
 
   testWidgets('the session shows its recordings\' actions, the clock check '

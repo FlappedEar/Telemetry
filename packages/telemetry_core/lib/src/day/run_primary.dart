@@ -6,7 +6,10 @@
 // user asserted for the old recording is not inherited. The document is
 // written by [dayDocument]: the new `primaryTelemetrySourceId`, no `fusion`
 // and the unknown track configuration of the new recording.
+import 'dart:io';
+
 import '../intake/import_plan.dart';
+import '../intake/recording_source.dart';
 import '../operation.dart';
 import 'day_analysis.dart';
 import 'day_laps.dart';
@@ -54,4 +57,56 @@ int runSourceOrder(DayAnalysis day, String runId, int fallback) {
     if (row.runId == runId) return row.sourceOrder;
   }
   return fallback;
+}
+
+/// Why a recording cannot become a run's primary.
+enum NewPrimaryProblem {
+  /// The file is not where the day read it from any more.
+  missing,
+
+  /// The file there now holds other content than the recording read.
+  changed,
+
+  /// Its laps could not be derived.
+  failed,
+}
+
+/// The lap rows, route and messages of [run] (see [analyzeNewPrimary]) once
+/// its file is checked to be still the recording that was read, as
+/// Overlays checks it before making it the primary: still there, with the
+/// same content SHA-256. Otherwise why not, and nothing. Heavy: run it in
+/// the background.
+({DayRunsPart? part, NewPrimaryProblem? problem}) prepareNewPrimary(
+  TelemetryRunProposal run,
+  String name, {
+  int otherRows = 0,
+  CancellationCheck? cancelled,
+}) {
+  final file = File(run.sourcePath);
+  final int size;
+  try {
+    if (!file.existsSync()) return (part: null, problem: NewPrimaryProblem.missing);
+    size = file.lengthSync();
+  } on FileSystemException {
+    return (part: null, problem: NewPrimaryProblem.missing);
+  }
+  try {
+    if (contentSha256(run.sourcePath, size, cancelled: cancelled) != run.contentSha256) {
+      return (part: null, problem: NewPrimaryProblem.changed);
+    }
+  } on OperationCancelled {
+    rethrow;
+  } on Exception {
+    return (part: null, problem: NewPrimaryProblem.changed);
+  }
+  try {
+    return (
+      part: analyzeNewPrimary(run, name, otherRows: otherRows, cancelled: cancelled),
+      problem: null,
+    );
+  } on OperationCancelled {
+    rethrow;
+  } on Exception {
+    return (part: null, problem: NewPrimaryProblem.failed);
+  }
 }

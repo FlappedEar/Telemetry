@@ -765,6 +765,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String clockReopenNote(String alternative) {
-    return 'The day\'s file cannot keep a refusal: when the day is opened again, the $alternative is lined up and combined again.';
+    return 'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the $alternative is lined up and combined again.';
   }
+
+  @override
+  String get recordingsClockFailed =>
+      'The clocks could not be compared. Try again.';
+
+  @override
+  String recordingsPrimaryMissing(String format) {
+    return 'The $format is no longer where it was read from. Find it, then make it primary.';
+  }
+
+  @override
+  String recordingsPrimaryChanged(String format) {
+    return 'The $format file has changed since it was read. Open the day again, then make it primary.';
+  }
+
+  @override
+  String recordingsPrimaryFailed(String format) {
+    return 'The $format could not be read as this session\'s recording.';
+  }
+
+  @override
+  String get recordingsBusyFind =>
+      'Wait until the session\'s recordings are checked or changed, then find the others.';
+
+  @override
+  String get recordingsBusyRetry =>
+      'Wait until the session\'s recordings are checked or changed, then retry.';
+
+  @override
+  String get recordingsBusyLeave =>
+      'Wait until the session\'s recordings are checked or changed.';
 }

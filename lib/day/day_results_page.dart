@@ -351,6 +351,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
       _tell('Wait until the recordings are added, then find the others.');
       return;
     }
+    if (_controller.recordingsBusy) {
+      _tell(context.l10n.recordingsBusyFind);
+      return;
+    }
     if (_controller.dirty) {
       _tell('Save the day first, then find its recordings.');
       return;
@@ -372,6 +376,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           _controller.dirty ||
           _controller.runs.length != sessions) {
         _tell('Recordings were added meanwhile. Find the recordings again.');
+        return;
+      }
+      // A session's recordings being checked or changed would be dropped.
+      if (_controller.recordingsBusy) {
+        _tell(context.l10n.recordingsBusyFind);
         return;
       }
       // An RCZ found only by its name that is not the same drive: said, not
@@ -447,6 +456,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
       _tell(l10n.retryRecordingsWaitAdding);
       return;
     }
+    if (_controller.recordingsBusy) {
+      _tell(l10n.recordingsBusyRetry);
+      return;
+    }
     if (_controller.dirty) {
       _tell(l10n.retryRecordingsSaveFirst);
       return;
@@ -469,6 +482,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
       }
       if (_controller.dirty) {
         _tell(l10n.retryRecordingsChangedMeanwhile);
+        return;
+      }
+      // A session's recordings being checked or changed would be dropped.
+      if (_controller.recordingsBusy) {
+        _tell(l10n.recordingsBusyRetry);
         return;
       }
       if (day.missing.length >= missing && alternatives == 0) {
@@ -668,9 +686,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, child) => PopScope(
-        canPop: !_controller.adding,
+        canPop: !_controller.adding && !_controller.recordingsBusy,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) _tell('Wait until the session is added.');
+          if (didPop) return;
+          _tell(
+            _controller.adding
+                ? 'Wait until the session is added.'
+                : context.l10n.recordingsBusyLeave,
+          );
         },
         child: child!,
       ),

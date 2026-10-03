@@ -261,4 +261,143 @@ void main() {
       expect(fuseOpenedDay(again)[named.run.id]!.fused, isTrue);
     },
   );
+
+  group('an exclusion and a comparison pair of the VBO across VBO, RCZ and VBO again', () {
+    // Saves [runs] at [path] as the day [previous] was opened, with
+    // [exclusions], the comparison [slots] and [fusions].
+    Future<OpenedDay> saveAndOpen(
+      String path,
+      List<NamedRun> runs,
+      DayAnalysis analysis,
+      Map<String, RunFusion> fusions, {
+      OpenedDay? previous,
+      Map<DayLapReference, String> exclusions = const {},
+      List<DayLapReference?>? slots,
+    }) async {
+      final document = dayDocument(
+        eventId: previous?.eventId ?? 'event',
+        name: 'Day',
+        runs: runs,
+        analysis: analysis,
+        exclusions: exclusions,
+        projectPath: path,
+        previous: previous?.document,
+        previousPath: path,
+        fusions: fusions,
+        comparison: ComparisonDecisions(slots: slots),
+      );
+      expect(fet.validateFetproject(document), isNull);
+      await saveDayDocument(path, document);
+      return openDay(path);
+    }
+
+    // [day]'s run read from its other recording, as "Make primary" does,
+    // with the exclusions the controller then has: the day's, and those the
+    // document keeps for the new primary's laps.
+    (List<NamedRun>, DayAnalysis, Map<String, RunFusion>, Map<DayLapReference, String>) switched(
+      OpenedDay day,
+      TelemetryRunProposal other,
+    ) {
+      final named = day.runs.single;
+      final primary = runFromRecording(named.run, other);
+      final exclusions = {
+        ...day.exclusions,
+        ...recordingExclusions(day.document, named.run.id, primary),
+      };
+      return (
+        [(run: primary, name: named.name)],
+        replaceDayRun(
+          day.analysis!,
+          named.run.id,
+          analyzeNewPrimary(primary, named.name),
+          sourceOrder: 0,
+          exclusions: exclusions,
+        ),
+        {named.run.id: RunFusion.primaryOnly(primary: primary, alternative: named.run)},
+        exclusions,
+      );
+    }
+
+    for (final savedFirst in [true, false]) {
+      test(savedFirst ? 'saved before the switch' : 'made just before the switch', () async {
+        final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+        final day = importDay([vbo, rcz]);
+        final runId = day.runs.single.run.id;
+        final laps = day.analysis.rows
+            .where((row) => row.type == LapSectionType.lap && row.referenceEligible)
+            .toList();
+        expect(laps.length, greaterThanOrEqualTo(3));
+        final excluded = laps[0].reference;
+        final pair = [laps[1].reference, laps[2].reference];
+        final path = p.join(root, 'day.fetproject');
+        final rczRecording = day.fusions[runId]!.alternative!;
+
+        var opened = await saveAndOpen(
+          path,
+          day.runs,
+          day.analysis,
+          day.fusions,
+          exclusions: savedFirst ? {excluded: 'Traffic'} : const {},
+          slots: savedFirst ? pair : null,
+        );
+        final stored = readDayDocument(path)['event'] as Map;
+        if (savedFirst) {
+          expect(opened.exclusions, {excluded: 'Traffic'});
+          expect(opened.comparison.slots, pair);
+        }
+
+        // The RCZ made primary and saved: the VBO's exclusion and pair are
+        // kept as the VBO names them.
+        final (rczRuns, rczAnalysis, rczFusions, rczExclusions) = switched(opened, rczRecording);
+        expect(rczExclusions.keys, savedFirst ? [excluded] : isEmpty);
+        opened = await saveAndOpen(
+          path,
+          rczRuns,
+          rczAnalysis,
+          rczFusions,
+          previous: opened,
+          exclusions: {...rczExclusions, excluded: 'Traffic'},
+          slots: savedFirst ? null : pair,
+        );
+        final event = readDayDocument(path)['event'] as Map;
+        expect((event['lapExclusions'] as List), hasLength(1));
+        final reference = ((event['lapExclusions'] as List).single as Map)['reference'] as Map;
+        expect(reference['sourceRevision'], excluded.sourceRevision);
+        expect(reference['sourceId'], day.runs.single.run.sourceId);
+        if (savedFirst) {
+          expect(event['lapExclusions'], stored['lapExclusions']);
+          expect(
+            (event['analysisDecisions'] as Map)['comparisonSlots'],
+            (stored['analysisDecisions'] as Map)['comparisonSlots'],
+          );
+        }
+        // Not laps of the RCZ: not applied while it is primary.
+        expect(opened.runs.single.run.format, RecordingFormat.rcz);
+        expect(opened.exclusions, isEmpty);
+        expect(opened.comparison.slots, [null, null]);
+
+        // The VBO made primary again and the day reopened: both apply again.
+        final kept = fuseOpenedDay(opened)[runId]!;
+        final (vboRuns, vboAnalysis, vboFusions, vboExclusions) = switched(
+          opened,
+          kept.alternative!,
+        );
+        // Switched back, the VBO's exclusion applies at once.
+        expect(vboExclusions, {excluded: 'Traffic'});
+        expect(vboAnalysis.rows.firstWhere((row) => row.reference == excluded), isNotNull);
+        opened = await saveAndOpen(
+          path,
+          vboRuns,
+          vboAnalysis,
+          vboFusions,
+          previous: opened,
+          exclusions: vboExclusions,
+        );
+        expect(opened.runs.single.run.sourceId, day.runs.single.run.sourceId);
+        expect(opened.exclusions, {excluded: 'Traffic'});
+        expect(opened.comparison.slots, pair);
+        expect(((readDayDocument(path)['event'] as Map)['lapExclusions'] as List), hasLength(1));
+      });
+    }
+  });
 }

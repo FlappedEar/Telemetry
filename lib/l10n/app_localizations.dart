@@ -1238,8 +1238,50 @@ abstract class AppLocalizations {
   /// Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.
   ///
   /// In en, this message translates to:
-  /// **'The day\'s file cannot keep a refusal: when the day is opened again, the {alternative} is lined up and combined again.'**
+  /// **'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the {alternative} is lined up and combined again.'**
   String clockReopenNote(String alternative);
+
+  /// Under a session: its clock check failed; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The clocks could not be compared. Try again.'**
+  String get recordingsClockFailed;
+
+  /// Under a session: Make primary was refused because the other recording's file is gone; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} is no longer where it was read from. Find it, then make it primary.'**
+  String recordingsPrimaryMissing(String format);
+
+  /// Under a session: Make primary was refused because the other recording's file now has other content; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} file has changed since it was read. Open the day again, then make it primary.'**
+  String recordingsPrimaryChanged(String format);
+
+  /// Under a session: Make primary failed while reading the other recording; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} could not be read as this session\'s recording.'**
+  String recordingsPrimaryFailed(String format);
+
+  /// Find recordings was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed, then find the others.'**
+  String get recordingsBusyFind;
+
+  /// Retry recordings was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed, then retry.'**
+  String get recordingsBusyRetry;
+
+  /// Leaving the day was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed.'**
+  String get recordingsBusyLeave;
 }
 
 class _AppLocalizationsDelegate

@@ -55,6 +55,26 @@ class SessionFusion extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _state(context, fusion, primary, alternative),
+        if (controller.recordingsProblem(runId) case final problem?)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              switch (problem) {
+                RecordingsProblem.clockFailed => l10n.recordingsClockFailed,
+                RecordingsProblem.primaryMissing =>
+                  l10n.recordingsPrimaryMissing(alternative),
+                RecordingsProblem.primaryChanged =>
+                  l10n.recordingsPrimaryChanged(alternative),
+                RecordingsProblem.primaryFailed => l10n.recordingsPrimaryFailed(
+                  alternative,
+                ),
+              },
+              key: ValueKey('recordingsProblem $runId'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
         if (controller.clockChecking(runId))
           Padding(
             padding: const EdgeInsets.only(top: 4),

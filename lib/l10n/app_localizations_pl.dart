@@ -783,6 +783,37 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String clockReopenNote(String alternative) {
-    return 'Plik dnia nie zapamiętuje odrzucenia: po ponownym otwarciu dnia $alternative zostanie znów dopasowany i połączony.';
+    return 'Ta sesja korzysta z VBO i zachowuje RCZ, a plik dnia nie zapamiętuje odrzucenia dla takiej sesji: po ponownym otwarciu dnia $alternative zostanie znów dopasowany i połączony.';
   }
+
+  @override
+  String get recordingsClockFailed =>
+      'Nie udało się porównać zegarów. Spróbuj ponownie.';
+
+  @override
+  String recordingsPrimaryMissing(String format) {
+    return 'Pliku $format nie ma już tam, skąd go wczytano. Znajdź go, a potem ustaw jako główny.';
+  }
+
+  @override
+  String recordingsPrimaryChanged(String format) {
+    return 'Plik $format zmienił się od wczytania. Otwórz dzień ponownie, a potem ustaw go jako główny.';
+  }
+
+  @override
+  String recordingsPrimaryFailed(String format) {
+    return 'Nie udało się wczytać $format jako nagrania tej sesji.';
+  }
+
+  @override
+  String get recordingsBusyFind =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem znajdź pozostałe.';
+
+  @override
+  String get recordingsBusyRetry =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem spróbuj ponownie.';
+
+  @override
+  String get recordingsBusyLeave =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji.';
 }
