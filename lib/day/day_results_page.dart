@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:isolate';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -96,6 +98,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   DayAddition? _reported;
 
+  // Writes waiting changes for recovery when the app goes to the background
+  // or is closed, where the operating system may end it without warning.
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onStateChange: (state) {
+      if (state == AppLifecycleState.inactive ||
+          state == AppLifecycleState.hidden ||
+          state == AppLifecycleState.paused ||
+          state == AppLifecycleState.detached) {
+        unawaited(_controller.flushRecovery());
+      }
+    },
+    // On desktop, quitting waits briefly for the write.
+    onExitRequested: () async {
+      await _controller.flushRecovery().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {},
+      );
+      return AppExitResponse.exit;
+    },
+  );
+
   @override
   void initState() {
     super.initState();
@@ -105,11 +128,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (_controller.lastAddition != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _reportAddition());
     }
+    _lifecycle;
   }
 
   @override
   void dispose() {
     _controller.removeListener(_reportAddition);
+    _lifecycle.dispose();
     _controller.dispose();
     super.dispose();
   }
