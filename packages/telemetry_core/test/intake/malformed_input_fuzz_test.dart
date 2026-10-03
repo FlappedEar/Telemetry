@@ -9,10 +9,14 @@ import 'dart:typed_data';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import '../rcz/rcz_fixture.dart';
+
 // FUZZ_VARIANTS=500 dart test test/intake/malformed_input_fuzz_test.dart
 // runs a longer search locally; CI keeps the default.
 final _variantsPerFile = int.tryParse(Platform.environment['FUZZ_VARIANTS'] ?? '') ?? 24;
 final _seed = int.tryParse(Platform.environment['FUZZ_SEED'] ?? '') ?? 20261004;
+
+const _zipLayer = ['ZIP', 'Archive', 'archive', 'Truncated', 'compressed member', 'Decompression'];
 
 const _sources = [
   'test/parity/corpus/laps_clean.vbo',
@@ -75,6 +79,39 @@ void main() {
   setUp(() => directory = Directory.systemTemp.createTempSync('malformed_fuzz'));
   tearDown(() => directory.deleteSync(recursive: true));
 
+  // Damage inside the archive, repacked with valid checksums, so the RCZ
+  // parser itself (JSON, channel layouts, timestamps) reads the damage
+  // instead of the ZIP layer refusing it.
+  test('RCZ exports with damaged members import or fail cleanly', () {
+    final random = Random(_seed + _sources.length);
+    final members = _rczMembers();
+    final names = members.keys.toList()..sort();
+    var parsed = 0, total = 0;
+    for (var batch = 0; batch < _variantsPerFile; batch += 12) {
+      final paths = <String>[];
+      for (var i = batch; i < min(batch + 12, _variantsPerFile); ++i) {
+        final damaged = Map.of(members);
+        final name = names[random.nextInt(names.length)];
+        if (i % 7 == 6) {
+          damaged.remove(name);
+        } else {
+          damaged[name] = _damage(members[name]!, i, random);
+        }
+        final path = '${directory.path}/member_$i.rcz';
+        File(path).writeAsBytesSync(zip(damaged, compressed: i.isEven), flush: true);
+        paths.add(path);
+      }
+      final plan = _importAndAnalyse(paths);
+      for (final file in plan.files) {
+        ++total;
+        if (!_zipLayer.any(file.message.contains)) ++parsed;
+      }
+    }
+    // Nearly all reach the RCZ parser; the ZIP layer only sees a member
+    // that went missing or grew past its size limit.
+    expect(parsed, greaterThan(total * 3 ~/ 4), reason: '$parsed of $total parsed');
+  });
+
   for (final source in _sources) {
     test('damaged copies of ${source.split('/').last} import or fail cleanly', () {
       final original = File(source).readAsBytesSync();
@@ -94,7 +131,26 @@ void main() {
   }
 }
 
-void _importAndAnalyse(List<String> paths) {
+// The members of a RaceChrono export of a few laps around a small square,
+// for damaging inside a valid archive.
+Map<String, Uint8List> _rczMembers() {
+  const samples = 240;
+  final timestamps = ByteData(samples * 8), coordinates = ByteData(samples * 8);
+  final speed = ByteData(samples * 4);
+  for (var i = 0; i < samples; ++i) {
+    final angle = i * 2 * pi / 60; // A lap every 60 samples.
+    timestamps.setInt64(i * 8, fixtureOrigin + 100 + i * 1000, Endian.little);
+    coordinates.setInt32(i * 8, 300000000 + (cos(angle) * 6000).round(), Endian.little);
+    coordinates.setInt32(i * 8 + 4, 120000000 + (sin(angle) * 6000).round(), Endian.little);
+    speed.setInt32(i * 4, 20000, Endian.little);
+  }
+  return fixtureMembers()
+    ..['channel_1_300_0_1_1'] = timestamps.buffer.asUint8List()
+    ..['channel_1_300_0_3_1'] = coordinates.buffer.asUint8List()
+    ..['channel_1_300_0_4_0'] = speed.buffer.asUint8List();
+}
+
+TelemetryImportPlan _importAndAnalyse(List<String> paths) {
   final plan = prepareTelemetryImport(paths);
 
   expect(plan.files, hasLength(paths.length));
@@ -122,4 +178,5 @@ void _importAndAnalyse(List<String> paths) {
   for (final row in day.rows) {
     expect(row.durationSeconds.isFinite, isTrue, reason: row.displayName);
   }
+  return plan;
 }

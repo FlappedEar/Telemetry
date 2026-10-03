@@ -52,7 +52,12 @@ void main() {
       ]);
       expect(errors.records.last.count, 50);
       expect(errors.dropped, 0);
-      expect(errors.report(), contains('(50 times, last 2026-10-04T06:00:50'));
+      expect(
+        errors.report(),
+        contains(
+          '2026-10-04T06:00:50.000Z (50 times since 2026-10-04T06:00:01',
+        ),
+      );
     });
 
     test('cuts a very long message to one line of 300 characters', () {

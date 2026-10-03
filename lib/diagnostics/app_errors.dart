@@ -101,16 +101,17 @@ final class AppErrors extends ChangeNotifier {
     return summary;
   }
 
-  /// Every kept error with its stack trace, least recent first, for the
-  /// clipboard.
+  /// Every kept error with its stack trace, least recently seen first,
+  /// for the clipboard.
   String report() => [
     if (_dropped > 0)
       _dropped == 1
           ? '(1 earlier error not kept)'
           : '($_dropped earlier errors not kept)',
+    // In the order of their last occurrence, so the times read in order.
     for (final record in _records)
-      '${record.firstTime.toIso8601String()}'
-          '${record.count > 1 ? ' (${record.count} times, last ${record.time.toIso8601String()})' : ''}'
+      '${record.time.toIso8601String()}'
+          '${record.count > 1 ? ' (${record.count} times since ${record.firstTime.toIso8601String()})' : ''}'
           ' ${record.details}',
   ].join('\n\n');
 
