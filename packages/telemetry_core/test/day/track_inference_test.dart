@@ -185,6 +185,80 @@ void main() {
     });
   });
 
+  group('extendDay', () {
+    String describe(DayAnalysis day) => [
+      for (final row in day.rows)
+        '${row.displayName} ${row.sourceOrder} ${row.offRoute} ${row.referenceEligible}',
+      for (final group in day.groups)
+        '${group.id} ${group.label} ${group.runIds} ${group.eligibleLapCount} '
+            '${group.ranking?.bestOfDay?.displayName}',
+      for (final message in day.messages) '${message.runId}: ${message.text}',
+      'chosen ${day.chosenGroupId}',
+    ].join('\n');
+
+    final runs = [
+      run('run:1', circuitSession(speeds: [30, 28, 31], firstTimestampMilliseconds: 1000)),
+      run(
+        'run:2',
+        circuitSession(radius: 200, speeds: [30, 30], firstTimestampMilliseconds: 500000),
+      ),
+      run('run:3', circuitSession(speeds: [29, 33, 30], firstTimestampMilliseconds: 900000)),
+      run('run:4', circuitSession(speeds: [30])),
+    ];
+
+    test('adding runs one at a time gives the day analysed at once', () {
+      final whole = analyzeDay(runs);
+      DayAnalysis? day;
+      for (var count = 0; count < runs.length; ++count) {
+        day = extendDay(day, analyzeDayRuns([runs[count]], existingRuns: count));
+        expect(
+          describe(day),
+          describe(analyzeDay(runs.sublist(0, count + 1))),
+          reason: 'after ${count + 1} runs',
+        );
+      }
+      expect(describe(day!), describe(whole));
+      expect(day.ranking!.bestOfDay!.displayName, 'Session 3 · LAP 2');
+    });
+
+    test('keeps the user\'s layouts, exclusions and chosen group', () {
+      final first = analyzeDay(runs.sublist(0, 2));
+      final best = first.ranking!.bestOfDay!;
+      final manual = {
+        'run:2': const TrackConfiguration(
+          layoutId: 'Long',
+          direction: TrackDirection.counterclockwise,
+        ),
+      };
+      final longGroup = regroupDay(
+        first,
+        manualTracks: manual,
+      ).groups.firstWhere((group) => group.runIds.contains('run:2')).id;
+      final added = extendDay(
+        first,
+        analyzeDayRuns([runs[2]], existingRuns: 2),
+        manualTracks: manual,
+        exclusions: {best.reference: 'Traffic'},
+        preferredGroupId: longGroup,
+      );
+      expect(added.manualTracks, manual);
+      expect(added.chosenGroupId, longGroup);
+      expect(added.configurations['run:2']!.layoutId, 'Long');
+      final circuit = rerankDay(added, exclusions: {best.reference: 'Traffic'});
+      expect(circuit.chosenGroup!.runIds, ['run:1', 'run:3']);
+      expect(circuit.ranking!.excludedLaps.single.userReason, 'Traffic');
+    });
+
+    test('refuses a run already in the day and more than 64 runs', () {
+      final day = analyzeDay(runs.sublist(0, 1));
+      expect(() => extendDay(day, analyzeDayRuns([runs[0]], existingRuns: 1)), throwsArgumentError);
+      expect(
+        () => analyzeDayRuns([runs[1]], existingRuns: maximumDayRuns),
+        throwsA(isA<ResourceLimitError>()),
+      );
+    });
+  });
+
   group('lapPath', () {
     test('returns the fixes of a lap with speed, split at a GPS gap', () {
       final session = circuitSession();

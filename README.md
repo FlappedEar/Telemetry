@@ -78,8 +78,11 @@ that access before opening a day; recordings chosen before this existed are
 found once with **Find recordings in a folder…**. Days saved by either app open in the
 other with their segments, lap exclusions, notes and the group shown. On desktop the system dialogs choose the file;
 on phones days are kept in the app. A day with unsaved changes is kept in
-the app's own folder as you work, so after a crash or a closed app the import
-screen offers to **Restore** or **Discard** it. The
+the app's own folder as you work, and after a crash or a closed app the import
+screen offers to **Restore** or **Discard** it. This recovery is best effort:
+changes are written half a second after they settle, and at once when the app
+leaves the foreground or is asked to quit, so a crash or a forced stop right
+after a change can lose that last change. Saving is the only guarantee. The
 recording model, parsers, lap timing and day import plan live in
 [`packages/telemetry_core`](packages/telemetry_core/README.md). Milestones are tracked in
 the Jira space [FET](https://kozucharkadiusz.atlassian.net/browse/FET).
@@ -111,7 +114,20 @@ On a phone or tablet, **Choose recordings…** picks VBO and RCZ files (there is
 no folder picker). Recordings can also be sent from another app: in
 RaceChrono, export a session and choose **FlappedEar Telemetry** in the share
 sheet. The app copies the shared files into its own storage and imports them
-on **Import a day**.
+on **Import a day**, and the day opens by itself. While a day is open, a
+shared recording is added to that day instead, as its next session. When the
+system has closed the app between sessions, a shared recording continues
+today's day: the unsaved day the app kept, or else the day saved last in the
+app, when it was worked on in the last 24 hours and the recording started on
+its date. Otherwise it starts a new day.
+
+At the track, a day grows one session at a time: **Add recordings** (the
+playlist button on the day page) or a recording shared while the day is open
+adds it as the next "Session N". Only the new recording is read; the day is
+grouped and ranked again with your circuit names, excluded laps and chosen
+group, a recording already in the day is not added twice, and a day that has
+been saved is saved again where it was. On the six real recordings of one day
+this gives exactly the day imported all at once.
 
 Below 900 logical pixels of width (a phone, or a tablet in portrait) the day
 page shows **Results** and **Laps** as two tabs; wider screens show them side
@@ -189,8 +205,8 @@ unrelated edits to `ios/Runner/Info.plist` and `ios/Runner.xcodeproj`.
 | --- | --- |
 | iOS | 15 |
 | Android | 8.0 (API level 26) |
-| macOS | not decided |
-| Windows | not decided |
+| macOS | 12.0 |
+| Windows | 10 (64-bit) |
 
 macOS is the active development platform.
 
@@ -255,4 +271,9 @@ Read [AGENTS.md](AGENTS.md) first. It holds the engineering rules, the shared
 
 ## Licence
 
-Not chosen yet.
+[Apache License 2.0](LICENSE). Map tiles keep their own terms: OpenStreetMap
+data is © OpenStreetMap contributors under the
+[ODbL](https://www.openstreetmap.org/copyright), and MapTiler imagery is
+© [MapTiler](https://www.maptiler.com/copyright/).
+In the app, **Settings** → **Open-source licences** shows the app's licence,
+the map credits and the licences of every package it uses.

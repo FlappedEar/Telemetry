@@ -12,6 +12,9 @@ import 'day_laps.dart';
 import 'day_ranking.dart';
 import 'track_inference.dart';
 
+/// The most recordings one day holds.
+const int maximumDayRuns = 64;
+
 /// One run of a day, as imported.
 final class DayRunInput {
   const DayRunInput({
@@ -157,8 +160,53 @@ DayAnalysis analyzeDay(
   Map<DayLapReference, String> exclusions = const {},
   String? preferredGroupId,
   CancellationCheck? cancelled,
+}) => extendDay(
+  null,
+  analyzeDayRuns(runs, cancelled: cancelled),
+  manualTracks: {
+    for (final run in runs)
+      if (run.manual)
+        run.runId: TrackConfiguration(layoutId: run.layoutName, direction: run.direction),
+  },
+  exclusions: exclusions,
+  preferredGroupId: preferredGroupId,
+  cancelled: cancelled,
+);
+
+/// The part of a day that each run contributes on its own, before grouping:
+/// its lap rows, route and messages. Computed once per run, so a run added
+/// to a day is the only one read again ([extendDay]).
+final class DayRunsPart {
+  DayRunsPart({
+    required List<DayLapRow> rows,
+    required Map<String, TrackInference> inferences,
+    required List<TrackGroupingSource> sources,
+    required List<DayMessage> messages,
+  }) : rows = List.unmodifiable(rows),
+       inferences = Map.unmodifiable(inferences),
+       sources = List.unmodifiable(sources),
+       messages = List.unmodifiable(messages);
+
+  /// In the order derived, not sorted.
+  final List<DayLapRow> rows;
+  final Map<String, TrackInference> inferences;
+  final List<TrackGroupingSource> sources;
+  final List<DayMessage> messages;
+}
+
+/// The lap rows, routes and messages of [runs], numbered for import order
+/// after [existingRuns] runs and checked against the day's limits with
+/// [existingRows] rows already in it. Heavy: run it off the interface
+/// thread.
+DayRunsPart analyzeDayRuns(
+  List<DayRunInput> runs, {
+  int existingRuns = 0,
+  int existingRows = 0,
+  CancellationCheck? cancelled,
 }) {
-  if (runs.length > 64) throw const ResourceLimitError('Too many recordings in this day.');
+  if (runs.length > maximumDayRuns - existingRuns) {
+    throw const ResourceLimitError('Too many recordings in this day.');
+  }
   final rows = <DayLapRow>[];
   final messages = <DayMessage>[];
   final inferences = <String, TrackInference>{};
@@ -173,10 +221,10 @@ DayAnalysis analyzeDay(
         runId: run.runId,
         runName: run.name,
         sourceRevision: run.contentSha256,
-        sourceOrder: index,
+        sourceOrder: existingRuns + index,
         cancelled: cancelled,
       );
-      if (runRows.length > maximumDayLapRows - rows.length) {
+      if (runRows.length > maximumDayLapRows - existingRows - rows.length) {
         throw const ResourceLimitError('This day exceeds the 20,000 lap-section limit.');
       }
       final inference = inferTrack(
@@ -213,16 +261,40 @@ DayAnalysis analyzeDay(
     }
   }
   throwIfCancelled(cancelled);
+  return DayRunsPart(rows: rows, inferences: inferences, sources: sources, messages: messages);
+}
+
+/// [day] (none for a new day) with the runs of [added], grouped and ranked
+/// again with the user's [manualTracks], [exclusions] and
+/// [preferredGroupId]. The same day as [analyzeDay] of all the runs, in the
+/// same order, without reading the earlier runs again.
+DayAnalysis extendDay(
+  DayAnalysis? day,
+  DayRunsPart added, {
+  Map<String, TrackConfiguration> manualTracks = const {},
+  Map<DayLapReference, String> exclusions = const {},
+  String? preferredGroupId,
+  CancellationCheck? cancelled,
+}) {
+  final known = {for (final source in day?.sources ?? const <TrackGroupingSource>[]) source.runId};
+  for (final source in added.sources) {
+    if (!known.add(source.runId)) {
+      throw ArgumentError.value(source.runId, 'added', 'Run already in the day');
+    }
+  }
+  if (known.length > maximumDayRuns) {
+    throw const ResourceLimitError('Too many recordings in this day.');
+  }
   return _group(
-    sortDayLaps(rows),
-    inferences,
-    sources,
-    messages,
-    {
-      for (final run in runs)
-        if (run.manual)
-          run.runId: TrackConfiguration(layoutId: run.layoutName, direction: run.direction),
-    },
+    sortDayLaps([
+      for (final row in day?.rows ?? const <DayLapRow>[])
+        row.offRoute ? row.copyWith(offRoute: false) : row,
+      ...added.rows,
+    ]),
+    {...?day?.inferences, ...added.inferences},
+    [...?day?.sources, ...added.sources],
+    [...?day?.runMessages, ...added.messages],
+    manualTracks,
     exclusions,
     preferredGroupId,
     cancelled,
