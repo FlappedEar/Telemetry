@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="too_many_files">Wybierz najwyżej %1$d nagrań naraz.</string>
+    <plurals name="too_many_files">
+        <item quantity="one">Wybierz najwyżej %1$d nagranie naraz.</item>
+        <item quantity="few">Wybierz najwyżej %1$d nagrania naraz.</item>
+        <item quantity="many">Wybierz najwyżej %1$d nagrań naraz.</item>
+        <item quantity="other">Wybierz najwyżej %1$d nagrania naraz.</item>
+    </plurals>
     <string name="files_too_large">Niektóre pliki nie zostały zaimportowane: nagranie może mieć najwyżej %1$d MB, a jeden import najwyżej %2$d MB.</string>
 </resources>

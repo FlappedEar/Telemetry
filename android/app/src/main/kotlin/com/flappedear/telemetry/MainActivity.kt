@@ -188,7 +188,7 @@ class MainActivity : FlutterActivity() {
      */
     private fun copyBatch(uris: List<Uri>, area: String): List<String> {
         if (uris.size > MAXIMUM_BATCH_FILES) {
-            tell(getString(R.string.too_many_files, MAXIMUM_BATCH_FILES))
+            tell(resources.getQuantityString(R.plurals.too_many_files, MAXIMUM_BATCH_FILES, MAXIMUM_BATCH_FILES))
             return emptyList()
         }
         val paths = mutableListOf<String>()
@@ -196,7 +196,9 @@ class MainActivity : FlutterActivity() {
         var leftOut = false
         for (uri in uris) {
             val name = displayName(uri) ?: continue
-            val limit = minOf(MAXIMUM_RECORDING_BYTES, budget)
+            // Like the import, only recordings count towards the batch size.
+            val recording = name.substringAfterLast('.', "").lowercase() in EXTENSIONS
+            val limit = if (recording) minOf(MAXIMUM_RECORDING_BYTES, budget) else MAXIMUM_RECORDING_BYTES
             val reported = reportedSize(uri)
             if (limit <= 0 || (reported != null && reported > limit)) {
                 leftOut = true
@@ -206,7 +208,7 @@ class MainActivity : FlutterActivity() {
             when (val result = copyIntoFolder(folder, name, limit) { contentResolver.openInputStream(uri) }) {
                 is CopyResult.Copied -> {
                     paths.add(result.file.path)
-                    budget -= result.bytes
+                    if (recording) budget -= result.bytes
                 }
                 CopyResult.TooLarge -> leftOut = true
                 is CopyResult.Failed -> Log.w(TAG, "Could not copy $name", result.error)
