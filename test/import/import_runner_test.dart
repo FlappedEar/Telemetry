@@ -4,10 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../support/temp_directory.dart';
+
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('import_runner'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   const vbo =
       '[header]\ncoordinate units = degrees\n[column names]\ntime latitude longitude velocity\n'

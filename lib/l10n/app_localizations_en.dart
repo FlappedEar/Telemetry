@@ -434,22 +434,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Recordings were added meanwhile. Find the recordings again.';
 
   @override
-  String get noMissingRecordingFound =>
-      'No missing recording was found in that folder.';
-
-  @override
-  String differentRecordingsNotUsed(int count, String files) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          '$files in that folder are different recordings and were not used.',
-      one: '$files in that folder is a different recording and was not used.',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dayReopenFailed(String error) {
     return 'The day could not be opened again: $error';
   }
@@ -562,9 +546,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noBestLapNoRankable =>
       'No best lap: no lap of this group can be ranked.';
-
-  @override
-  String get compareTwoLaps => 'Compare two laps';
 
   @override
   String get bestOfDay => 'Best of the day';
@@ -2023,4 +2004,349 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reportStale =>
       'The analysis decisions changed after this result was computed.';
+
+  @override
+  String channelFromSource(String format) {
+    return 'from $format';
+  }
+
+  @override
+  String fusionAdded(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Combined with its $format: $count channels added',
+      one: 'Combined with its $format: 1 channel added',
+      zero: 'Combined with its $format: no channel added',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionConflict(String channel, String primary, String alternative) {
+    return '$channel: the $primary and the $alternative disagree';
+  }
+
+  @override
+  String fusionKeepPrimary(String format) {
+    return 'Keep $format';
+  }
+
+  @override
+  String get fusionFillGaps => 'Fill gaps';
+
+  @override
+  String fusionUseAlternative(String format) {
+    return 'Use $format';
+  }
+
+  @override
+  String fusionNotCombined(String format, String reason) {
+    return 'Not combined with its $format: $reason';
+  }
+
+  @override
+  String get fusionReasonNoSpeed => 'a recording has no speed';
+
+  @override
+  String get fusionReasonShortOverlap => 'the recordings overlap too little';
+
+  @override
+  String get fusionReasonAmbiguous =>
+      'their speed traces do not line up clearly';
+
+  @override
+  String get fusionReasonClockDisagrees =>
+      'their clocks disagree with their speed traces';
+
+  @override
+  String get fusionReasonInsufficient => 'not enough data to line them up';
+
+  @override
+  String get fusionReasonNotFound => 'the recording was not found';
+
+  @override
+  String get fusionReasonDifferent => 'the file found is a different recording';
+
+  @override
+  String get fusionReasonUnreadable => 'it could not be read';
+
+  @override
+  String fusionPending(String format) {
+    return 'Lining up with its $format…';
+  }
+
+  @override
+  String fusionLinedUp(String format, String offset) {
+    return 'Lined up with its $format ($offset); nothing to add';
+  }
+
+  @override
+  String fusionCombinedWith(String format, String sessions) {
+    return '$format added to $sessions.';
+  }
+
+  @override
+  String fusionMissingTitle(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The $format of $count sessions could not be used',
+      one: 'The $format of 1 session could not be used',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionMissingLine(String session, String path, String reason) {
+    return '$session: $path · $reason';
+  }
+
+  @override
+  String get fusionChannelSpeed => 'Speed';
+
+  @override
+  String get fusionChannelLatitude => 'Latitude';
+
+  @override
+  String get fusionChannelLongitude => 'Longitude';
+
+  @override
+  String get fusionChannelSatellites => 'Satellites';
+
+  @override
+  String fusionRelinkDifferent(String files) {
+    return 'Not used, a different recording: $files.';
+  }
+
+  @override
+  String fusionAddedNotCombined(String format, String sessions) {
+    return '$format added to $sessions, but it could not be combined; it is kept and tried again when the day opens.';
+  }
+
+  @override
+  String get fusionReasonFailed => 'lining them up failed';
+
+  @override
+  String relinkDifferentRecordings(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$files in that folder are different recordings and were not used.',
+      one: '$files in that folder is a different recording and was not used.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get relinkNothingFound =>
+      'No missing recording was found in that folder.';
+
+  @override
+  String get segmentPickOnMap => 'Pick on map';
+
+  @override
+  String get segmentPickActive => 'Tap the map… (cancel)';
+
+  @override
+  String get segmentPickBannerStart => 'Tap the track line to place the start';
+
+  @override
+  String get segmentPickBannerEnd => 'Tap the track line to place the end';
+
+  @override
+  String get segmentPickBannerSplit => 'Tap the track line to place the split';
+
+  @override
+  String get segmentPickAmbiguous =>
+      'Another part of the track passes close by here. Set the distance with the buttons instead.';
+
+  @override
+  String get segmentPickFar => 'Tap on the lap\'s track line.';
+
+  @override
+  String get segmentPickNoTrace =>
+      'The lap trace is not available for picking.';
+
+  @override
+  String get segmentPickOutside =>
+      'Pick a point inside this segment to split it.';
+
+  @override
+  String get variabilityHeading => 'Lap to lap in each corner';
+
+  @override
+  String get variabilityIntro =>
+      'How much each corner changes from lap to lap over the group\'s laps: typical is the median, spread the middle half of the laps (interquartile range), from at least 3 laps. Observations, not causes.';
+
+  @override
+  String get variabilityNone => 'No corner was measured on enough laps.';
+
+  @override
+  String get variabilityNotMeasured => 'Not measured on these laps.';
+
+  @override
+  String variabilityLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get variabilityMeasured => 'measured';
+
+  @override
+  String get variabilityInferred => 'inferred';
+
+  @override
+  String variabilitySpread(String label, String spread, String tail) {
+    return '$label: spread $spread · $tail';
+  }
+
+  @override
+  String variabilityTypical(
+    String label,
+    String typical,
+    String spread,
+    String tail,
+  ) {
+    return '$label: typical $typical · spread $spread · $tail';
+  }
+
+  @override
+  String variabilityTooFew(String label, String tail) {
+    return '$label: too few laps ($tail)';
+  }
+
+  @override
+  String get variabilityBraking => 'Braking point';
+
+  @override
+  String get variabilityApex => 'Apex speed';
+
+  @override
+  String get variabilityMinimum => 'Minimum speed';
+
+  @override
+  String get variabilityExit => 'Exit speed';
+
+  @override
+  String get variabilityPickup => 'Throttle pickup';
+
+  @override
+  String variabilityLine(String spread, String accuracy) {
+    return 'Line: spread $spread m · $accuracy';
+  }
+
+  @override
+  String variabilityGpsAccuracy(String meters) {
+    return 'GPS accuracy about $meters m';
+  }
+
+  @override
+  String get variabilityGpsUnknown => 'GPS accuracy not recorded';
+
+  @override
+  String get variabilityLineUnresolved =>
+      ' · not distinguishable from GPS error';
+
+  @override
+  String get calculateAgain => 'Calculate again';
+
+  @override
+  String get retryRecordings => 'Retry recordings';
+
+  @override
+  String get retryRecordingsLooking => 'Opening…';
+
+  @override
+  String get retryRecordingsSaveFirst =>
+      'Save the day first, then try the recordings again.';
+
+  @override
+  String get retryRecordingsStill =>
+      'The recordings are still not where the day says.';
+
+  @override
+  String get sessionDetailsHeading => 'Session details';
+
+  @override
+  String get sessionDetailsNone => 'No conditions, setup changes or notes';
+
+  @override
+  String sessionDetailsTitle(String session) {
+    return 'Details of $session';
+  }
+
+  @override
+  String get sessionDetailsName => 'Name';
+
+  @override
+  String get sessionDetailsNameRequired => 'A session needs a name.';
+
+  @override
+  String get sessionDetailsConditions => 'Conditions';
+
+  @override
+  String get sessionDetailsConditionsHint => 'Dry, 18 °C';
+
+  @override
+  String get sessionDetailsSetup => 'Setup changes';
+
+  @override
+  String get sessionDetailsSetupHint => 'Tyres +0.1 bar';
+
+  @override
+  String get sessionDetailsNotes => 'Notes';
+
+  @override
+  String get sessionDetailsSaved =>
+      'Kept in the day\'s file, which FlappedEar Overlays reads too.';
+
+  @override
+  String get detailsInvalid => 'This text cannot be saved.';
+
+  @override
+  String get renameDayMenu => 'Rename day…';
+
+  @override
+  String get renameDayTitle => 'Rename day';
+
+  @override
+  String get renameDayName => 'Day name';
+
+  @override
+  String get renameDayRequired => 'A day needs a name.';
+
+  @override
+  String get retryRecordingsWaitAdding =>
+      'Wait until the recordings are added, then retry.';
+
+  @override
+  String get retryRecordingsAddedMeanwhile =>
+      'Recordings were added meanwhile. Retry the recordings again.';
+
+  @override
+  String get retryRecordingsNone =>
+      'None of the day\'s recordings could be opened, so the day stays as it is.';
+
+  @override
+  String retryRecordingsFailed(String reason) {
+    return 'The day could not be opened again: $reason';
+  }
+
+  @override
+  String get retryRecordingsChangedMeanwhile =>
+      'The day was changed meanwhile. Save it, then retry the recordings.';
+
+  @override
+  String get lapsCompareTwo => 'Compare two laps';
+
+  @override
+  String get lapsLastComparison => 'Last comparison';
 }

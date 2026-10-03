@@ -13,6 +13,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import 'driving_vbo.dart';
 import 'rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 void main() {
   late Directory directory;
@@ -20,7 +21,7 @@ void main() {
     directory = Directory.systemTemp.createTempSync('driving');
     rememberedLapChannels.value = null;
   });
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   /// Two sessions braking into the second corner, with accelerations; with
   /// [pedals] they also record the brake and throttle (lifting off at a

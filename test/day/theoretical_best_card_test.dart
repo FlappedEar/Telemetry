@@ -7,6 +7,7 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/corner_details.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/theoretical_best_card.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/format.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -14,11 +15,12 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('theoretical'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   // Each lap is slow somewhere else, so the theoretical best takes segments
   // from several laps.
@@ -278,6 +280,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: SingleChildScrollView(
             child: CornerDetails(corner: corner, comparison: best),

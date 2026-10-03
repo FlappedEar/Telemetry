@@ -439,21 +439,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'W międzyczasie dodano nagrania. Wyszukaj nagrania ponownie.';
 
   @override
-  String get noMissingRecordingFound =>
-      'W tym folderze nie znaleziono brakujących nagrań.';
-
-  @override
-  String differentRecordingsNotUsed(int count, String files) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$files w tym folderze to inne nagrania, więc ich nie użyto.',
-      one: '$files w tym folderze to inne nagranie, więc go nie użyto.',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dayReopenFailed(String error) {
     return 'Nie udało się ponownie otworzyć dnia: $error';
   }
@@ -569,9 +554,6 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get noBestLapNoRankable =>
       'Brak najlepszego okrążenia: żadnego okrążenia tej grupy nie można sklasyfikować.';
-
-  @override
-  String get compareTwoLaps => 'Porównaj dwa okrążenia';
 
   @override
   String get bestOfDay => 'Najlepsze z dnia';
@@ -2058,4 +2040,362 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get reportStale =>
       'Ustawienia analizy zmieniły się po obliczeniu tego wyniku.';
+
+  @override
+  String channelFromSource(String format) {
+    return 'z $format';
+  }
+
+  @override
+  String fusionAdded(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Połączono z $format: dodano $count kanału',
+      many: 'Połączono z $format: dodano $count kanałów',
+      few: 'Połączono z $format: dodano $count kanały',
+      one: 'Połączono z $format: dodano 1 kanał',
+      zero: 'Połączono z $format: nie dodano kanałów',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionConflict(String channel, String primary, String alternative) {
+    return '$channel: $primary i $alternative się różnią';
+  }
+
+  @override
+  String fusionKeepPrimary(String format) {
+    return 'Zostaw $format';
+  }
+
+  @override
+  String get fusionFillGaps => 'Uzupełnij luki';
+
+  @override
+  String fusionUseAlternative(String format) {
+    return 'Użyj $format';
+  }
+
+  @override
+  String fusionNotCombined(String format, String reason) {
+    return 'Nie połączono z $format: $reason';
+  }
+
+  @override
+  String get fusionReasonNoSpeed => 'jedno z nagrań nie ma prędkości';
+
+  @override
+  String get fusionReasonShortOverlap => 'nagrania pokrywają się zbyt krótko';
+
+  @override
+  String get fusionReasonAmbiguous =>
+      'przebiegi prędkości nie pokrywają się jednoznacznie';
+
+  @override
+  String get fusionReasonClockDisagrees =>
+      'zegary nagrań nie zgadzają się z przebiegami prędkości';
+
+  @override
+  String get fusionReasonInsufficient => 'za mało danych, by je dopasować';
+
+  @override
+  String get fusionReasonNotFound => 'nie znaleziono nagrania';
+
+  @override
+  String get fusionReasonDifferent => 'znaleziony plik to inne nagranie';
+
+  @override
+  String get fusionReasonUnreadable => 'nie udało się go odczytać';
+
+  @override
+  String fusionPending(String format) {
+    return 'Dopasowywanie do $format…';
+  }
+
+  @override
+  String fusionLinedUp(String format, String offset) {
+    return 'Dopasowano do $format ($offset); nic do dodania';
+  }
+
+  @override
+  String fusionCombinedWith(String format, String sessions) {
+    return 'Dodano $format do: $sessions.';
+  }
+
+  @override
+  String fusionMissingTitle(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Nie można użyć $format $count sesji',
+      many: 'Nie można użyć $format $count sesji',
+      few: 'Nie można użyć $format $count sesji',
+      one: 'Nie można użyć $format 1 sesji',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionMissingLine(String session, String path, String reason) {
+    return '$session: $path · $reason';
+  }
+
+  @override
+  String get fusionChannelSpeed => 'Prędkość';
+
+  @override
+  String get fusionChannelLatitude => 'Szerokość geograficzna';
+
+  @override
+  String get fusionChannelLongitude => 'Długość geograficzna';
+
+  @override
+  String get fusionChannelSatellites => 'Satelity';
+
+  @override
+  String fusionRelinkDifferent(String files) {
+    return 'Nie użyto, to inne nagranie: $files.';
+  }
+
+  @override
+  String fusionAddedNotCombined(String format, String sessions) {
+    return 'Dodano $format do: $sessions, ale nie udało się go połączyć; zostaje zapisany i zostanie połączony przy otwarciu dnia.';
+  }
+
+  @override
+  String get fusionReasonFailed => 'dopasowanie się nie powiodło';
+
+  @override
+  String relinkDifferentRecordings(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count plików w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+      many:
+          '$count plików w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+      few:
+          '$count pliki w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+      one: '$files w tym folderze to inne nagranie i nie zostało użyte.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get relinkNothingFound =>
+      'W tym folderze nie znaleziono żadnego brakującego nagrania.';
+
+  @override
+  String get segmentPickOnMap => 'Wskaż na mapie';
+
+  @override
+  String get segmentPickActive => 'Dotknij mapy… (anuluj)';
+
+  @override
+  String get segmentPickBannerStart =>
+      'Dotknij linii toru, aby ustawić początek';
+
+  @override
+  String get segmentPickBannerEnd => 'Dotknij linii toru, aby ustawić koniec';
+
+  @override
+  String get segmentPickBannerSplit =>
+      'Dotknij linii toru, aby wskazać miejsce podziału';
+
+  @override
+  String get segmentPickAmbiguous =>
+      'W pobliżu przebiega inny fragment toru. Ustaw odległość przyciskami.';
+
+  @override
+  String get segmentPickFar => 'Dotknij linii przejazdu okrążenia.';
+
+  @override
+  String get segmentPickNoTrace =>
+      'Ślad okrążenia nie jest dostępny do wskazywania.';
+
+  @override
+  String get segmentPickOutside =>
+      'Aby podzielić segment, wskaż punkt wewnątrz niego.';
+
+  @override
+  String get variabilityHeading => 'Powtarzalność w zakrętach';
+
+  @override
+  String get variabilityIntro =>
+      'Jak bardzo każdy zakręt zmienia się z okrążenia na okrążenie w okrążeniach grupy: typowa to mediana, rozrzut to środkowa połowa okrążeń (rozstęp ćwiartkowy), z co najmniej 3 okrążeń. To obserwacje, nie przyczyny.';
+
+  @override
+  String get variabilityNone =>
+      'Żaden zakręt nie został zmierzony na wystarczającej liczbie okrążeń.';
+
+  @override
+  String get variabilityNotMeasured => 'Nie zmierzono na tych okrążeniach.';
+
+  @override
+  String variabilityLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia',
+      many: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get variabilityMeasured => 'zmierzony';
+
+  @override
+  String get variabilityInferred => 'wywnioskowany';
+
+  @override
+  String variabilitySpread(String label, String spread, String tail) {
+    return '$label: rozrzut $spread · $tail';
+  }
+
+  @override
+  String variabilityTypical(
+    String label,
+    String typical,
+    String spread,
+    String tail,
+  ) {
+    return '$label: typowa $typical · rozrzut $spread · $tail';
+  }
+
+  @override
+  String variabilityTooFew(String label, String tail) {
+    return '$label: za mało okrążeń ($tail)';
+  }
+
+  @override
+  String get variabilityBraking => 'Punkt hamowania';
+
+  @override
+  String get variabilityApex => 'Prędkość na wierzchołku';
+
+  @override
+  String get variabilityMinimum => 'Prędkość minimalna';
+
+  @override
+  String get variabilityExit => 'Prędkość na wyjściu';
+
+  @override
+  String get variabilityPickup => 'Powrót do gazu';
+
+  @override
+  String variabilityLine(String spread, String accuracy) {
+    return 'Linia: rozrzut $spread m · $accuracy';
+  }
+
+  @override
+  String variabilityGpsAccuracy(String meters) {
+    return 'dokładność GPS około $meters m';
+  }
+
+  @override
+  String get variabilityGpsUnknown => 'dokładność GPS nie jest zapisana';
+
+  @override
+  String get variabilityLineUnresolved => ' · nie do odróżnienia od błędu GPS';
+
+  @override
+  String get calculateAgain => 'Oblicz ponownie';
+
+  @override
+  String get retryRecordings => 'Ponów odczyt nagrań';
+
+  @override
+  String get retryRecordingsLooking => 'Otwieranie…';
+
+  @override
+  String get retryRecordingsSaveFirst =>
+      'Najpierw zapisz dzień, potem ponów odczyt nagrań.';
+
+  @override
+  String get retryRecordingsStill =>
+      'Nagrania nadal nie są tam, gdzie wskazuje dzień.';
+
+  @override
+  String get sessionDetailsHeading => 'Szczegóły sesji';
+
+  @override
+  String get sessionDetailsNone =>
+      'Brak warunków, zmian w ustawieniach i notatek';
+
+  @override
+  String sessionDetailsTitle(String session) {
+    return 'Szczegóły: $session';
+  }
+
+  @override
+  String get sessionDetailsName => 'Nazwa';
+
+  @override
+  String get sessionDetailsNameRequired => 'Sesja musi mieć nazwę.';
+
+  @override
+  String get sessionDetailsConditions => 'Warunki';
+
+  @override
+  String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
+
+  @override
+  String get sessionDetailsSetup => 'Zmiany w ustawieniach';
+
+  @override
+  String get sessionDetailsSetupHint => 'Opony +0.1 bar';
+
+  @override
+  String get sessionDetailsNotes => 'Notatki';
+
+  @override
+  String get sessionDetailsSaved =>
+      'Zapisywane w pliku dnia, który czyta też FlappedEar Overlays.';
+
+  @override
+  String get detailsInvalid => 'Tego tekstu nie można zapisać.';
+
+  @override
+  String get renameDayMenu => 'Zmień nazwę dnia…';
+
+  @override
+  String get renameDayTitle => 'Zmiana nazwy dnia';
+
+  @override
+  String get renameDayName => 'Nazwa dnia';
+
+  @override
+  String get renameDayRequired => 'Dzień musi mieć nazwę.';
+
+  @override
+  String get retryRecordingsWaitAdding =>
+      'Poczekaj, aż nagrania zostaną dodane, i spróbuj ponownie.';
+
+  @override
+  String get retryRecordingsAddedMeanwhile =>
+      'W międzyczasie dodano nagrania. Ponów odczyt nagrań jeszcze raz.';
+
+  @override
+  String get retryRecordingsNone =>
+      'Nie udało się otworzyć żadnego nagrania dnia, więc dzień pozostaje bez zmian.';
+
+  @override
+  String retryRecordingsFailed(String reason) {
+    return 'Nie udało się ponownie otworzyć dnia: $reason';
+  }
+
+  @override
+  String get retryRecordingsChangedMeanwhile =>
+      'W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań.';
+
+  @override
+  String get lapsCompareTwo => 'Porównaj dwa okrążenia';
+
+  @override
+  String get lapsLastComparison => 'Ostatnie porównanie';
 }

@@ -770,18 +770,6 @@ abstract class AppLocalizations {
   /// **'Recordings were added meanwhile. Find the recordings again.'**
   String get recordingsAddedMeanwhile;
 
-  /// Searching a folder for missing recordings found none.
-  ///
-  /// In en, this message translates to:
-  /// **'No missing recording was found in that folder.'**
-  String get noMissingRecordingFound;
-
-  /// Files named like the missing recordings but with different content.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}'**
-  String differentRecordingsNotUsed(int count, String files);
-
   /// Opening the day again with the found recordings failed.
   ///
   /// In en, this message translates to:
@@ -925,12 +913,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No best lap: no lap of this group can be ranked.'**
   String get noBestLapNoRankable;
-
-  /// Button in the lap list that starts a comparison.
-  ///
-  /// In en, this message translates to:
-  /// **'Compare two laps'**
-  String get compareTwoLaps;
 
   /// Mark of the day's best lap in the lap list.
   ///
@@ -2978,6 +2960,521 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The analysis decisions changed after this result was computed.'**
   String get reportStale;
+
+  /// Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'from {format}'**
+  String channelFromSource(String format);
+
+  /// A session's VBO recording was combined with its RCZ of the same drive; count is how many channels only the RCZ recorded were added. {format} is the other recording's format, such as RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Combined with its {format}: no channel added} =1{Combined with its {format}: 1 channel added} other{Combined with its {format}: {count} channels added}}'**
+  String fusionAdded(int count, String format);
+
+  /// A channel both recordings of a session measured, whose values differ; the buttons below choose which to use. {primary} and {alternative} are formats such as VBO and RCZ.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel}: the {primary} and the {alternative} disagree'**
+  String fusionConflict(String channel, String primary, String alternative);
+
+  /// Button: keep the session's own recording (such as the VBO) for a channel both recordings disagree on.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep {format}'**
+  String fusionKeepPrimary(String format);
+
+  /// Button: keep the session's own recording for a channel and fill its gaps from the other recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill gaps'**
+  String get fusionFillGaps;
+
+  /// Button: use the other recording (such as the RCZ) for a channel both recordings disagree on, the session's own where it has none.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {format}'**
+  String fusionUseAlternative(String format);
+
+  /// A session's other recording (such as its RCZ) was not combined with it; reason says why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not combined with its {format}: {reason}'**
+  String fusionNotCombined(String format, String reason);
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'a recording has no speed'**
+  String get fusionReasonNoSpeed;
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'the recordings overlap too little'**
+  String get fusionReasonShortOverlap;
+
+  /// Why two recordings could not be lined up in time: their speed traces match weakly or in several places.
+  ///
+  /// In en, this message translates to:
+  /// **'their speed traces do not line up clearly'**
+  String get fusionReasonAmbiguous;
+
+  /// Why two recordings could not be lined up in time: the loggers' start times and the speed traces give different offsets.
+  ///
+  /// In en, this message translates to:
+  /// **'their clocks disagree with their speed traces'**
+  String get fusionReasonClockDisagrees;
+
+  /// Why two recordings could not be lined up in time.
+  ///
+  /// In en, this message translates to:
+  /// **'not enough data to line them up'**
+  String get fusionReasonInsufficient;
+
+  /// Why a session's other recording could not be used when the day was opened.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording was not found'**
+  String get fusionReasonNotFound;
+
+  /// Why a session's other recording could not be used: a file is at its place, but with other content.
+  ///
+  /// In en, this message translates to:
+  /// **'the file found is a different recording'**
+  String get fusionReasonDifferent;
+
+  /// Why a session's other recording could not be used.
+  ///
+  /// In en, this message translates to:
+  /// **'it could not be read'**
+  String get fusionReasonUnreadable;
+
+  /// Quiet line under a session while its other recording (such as its RCZ) is being aligned with it in the background; the results already show.
+  ///
+  /// In en, this message translates to:
+  /// **'Lining up with its {format}…'**
+  String fusionPending(String format);
+
+  /// Quiet line under a session whose other recording (such as its RCZ) was aligned with it but has no channel to add and no disagreement. offset is the clock offset found, such as −0.14 s.
+  ///
+  /// In en, this message translates to:
+  /// **'Lined up with its {format} ({offset}); nothing to add'**
+  String fusionLinedUp(String format, String offset);
+
+  /// After adding recordings: an RCZ was added to existing sessions as their other recording. sessions is a list of session names such as "Session 2, Session 3".
+  ///
+  /// In en, this message translates to:
+  /// **'{format} added to {sessions}.'**
+  String fusionCombinedWith(String format, String sessions);
+
+  /// Title of the card listing sessions whose other recording (such as the RCZ) was not found or is another recording; a button below looks for them in a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The {format} of 1 session could not be used} other{The {format} of {count} sessions could not be used}}'**
+  String fusionMissingTitle(int count, String format);
+
+  /// One line of the card of other recordings that could not be used: the session, the path the day names and why.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {path} · {reason}'**
+  String fusionMissingLine(String session, String path, String reason);
+
+  /// A channel both recordings of a session measured: the speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get fusionChannelSpeed;
+
+  /// A channel both recordings of a session measured: the GPS latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get fusionChannelLatitude;
+
+  /// A channel both recordings of a session measured: the GPS longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get fusionChannelLongitude;
+
+  /// A channel both recordings of a session measured: the number of GPS satellites.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites'**
+  String get fusionChannelSatellites;
+
+  /// After Find recordings in a folder: a session's RCZ found there only by its file name is another drive's recording, so it was not used. files is the file name or names.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used, a different recording: {files}.'**
+  String fusionRelinkDifferent(String files);
+
+  /// After adding recordings: aligning an RCZ added to existing sessions failed. sessions is a list of session names.
+  ///
+  /// In en, this message translates to:
+  /// **'{format} added to {sessions}, but it could not be combined; it is kept and tried again when the day opens.'**
+  String fusionAddedNotCombined(String format, String sessions);
+
+  /// Why a session's other recording was not combined: aligning it stopped with an error.
+  ///
+  /// In en, this message translates to:
+  /// **'lining them up failed'**
+  String get fusionReasonFailed;
+
+  /// After Find recordings in a folder: files named like missing recordings that hold other recordings. files is the file names.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}'**
+  String relinkDifferentRecordings(int count, String files);
+
+  /// After Find recordings in a folder: none of the missing recordings was there.
+  ///
+  /// In en, this message translates to:
+  /// **'No missing recording was found in that folder.'**
+  String get relinkNothingFound;
+
+  /// Button: place this segment boundary by tapping the track on the map.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick on map'**
+  String get segmentPickOnMap;
+
+  /// The pick button while waiting for a tap on the map; pressing it again cancels.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map… (cancel)'**
+  String get segmentPickActive;
+
+  /// Shown on the map while it waits for the segment's start.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the track line to place the start'**
+  String get segmentPickBannerStart;
+
+  /// Shown on the map while it waits for the segment's end.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the track line to place the end'**
+  String get segmentPickBannerEnd;
+
+  /// Shown on the map while it waits for where to split the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the track line to place the split'**
+  String get segmentPickBannerSplit;
+
+  /// A tap near a crossing or a parallel stretch of track: the place along the lap is unclear.
+  ///
+  /// In en, this message translates to:
+  /// **'Another part of the track passes close by here. Set the distance with the buttons instead.'**
+  String get segmentPickAmbiguous;
+
+  /// A tap too far from the lap's trace.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap on the lap\'s track line.'**
+  String get segmentPickFar;
+
+  /// The best lap has no trace to pick a place on.
+  ///
+  /// In en, this message translates to:
+  /// **'The lap trace is not available for picking.'**
+  String get segmentPickNoTrace;
+
+  /// The place tapped for a split is outside the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a point inside this segment to split it.'**
+  String get segmentPickOutside;
+
+  /// Heading of the theoretical best card's per-corner variability list.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap to lap in each corner'**
+  String get variabilityHeading;
+
+  /// Explains the corner variability list.
+  ///
+  /// In en, this message translates to:
+  /// **'How much each corner changes from lap to lap over the group\'s laps: typical is the median, spread the middle half of the laps (interquartile range), from at least 3 laps. Observations, not causes.'**
+  String get variabilityIntro;
+
+  /// No corner has variability results.
+  ///
+  /// In en, this message translates to:
+  /// **'No corner was measured on enough laps.'**
+  String get variabilityNone;
+
+  /// A corner without any measured metric.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured on these laps.'**
+  String get variabilityNotMeasured;
+
+  /// How many laps a figure is from.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
+  String variabilityLaps(int count);
+
+  /// A braking point or throttle pickup read from the recorded brake or throttle.
+  ///
+  /// In en, this message translates to:
+  /// **'measured'**
+  String get variabilityMeasured;
+
+  /// A braking point or throttle pickup inferred from speed.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred'**
+  String get variabilityInferred;
+
+  /// A position metric's spread across laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: spread {spread} · {tail}'**
+  String variabilitySpread(String label, String spread, String tail);
+
+  /// A speed's typical value and spread across laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: typical {typical} · spread {spread} · {tail}'**
+  String variabilityTypical(
+    String label,
+    String typical,
+    String spread,
+    String tail,
+  );
+
+  /// Fewer than three laps measured this metric.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: too few laps ({tail})'**
+  String variabilityTooFew(String label, String tail);
+
+  /// Label: where braking starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point'**
+  String get variabilityBraking;
+
+  /// Label: speed at the corner's apex.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex speed'**
+  String get variabilityApex;
+
+  /// Label: the lowest speed in the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum speed'**
+  String get variabilityMinimum;
+
+  /// Label: speed at the corner's exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit speed'**
+  String get variabilityExit;
+
+  /// Label: where the driver goes back on the throttle.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup'**
+  String get variabilityPickup;
+
+  /// How far apart the laps' lines are at the apex.
+  ///
+  /// In en, this message translates to:
+  /// **'Line: spread {spread} m · {accuracy}'**
+  String variabilityLine(String spread, String accuracy);
+
+  /// The recording's typical GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS accuracy about {meters} m'**
+  String variabilityGpsAccuracy(String meters);
+
+  /// The recording does not state its GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS accuracy not recorded'**
+  String get variabilityGpsUnknown;
+
+  /// Appended when the line spread is no larger than the GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **' · not distinguishable from GPS error'**
+  String get variabilityLineUnresolved;
+
+  /// Button: run the theoretical best calculation again after it failed or had nothing to use.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate again'**
+  String get calculateAgain;
+
+  /// Button: open the sessions' recordings again from where the day says they are.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry recordings'**
+  String get retryRecordings;
+
+  /// The retry button while the recordings are read again.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening…'**
+  String get retryRecordingsLooking;
+
+  /// The day has unsaved changes, so it cannot be opened again from its file.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the day first, then try the recordings again.'**
+  String get retryRecordingsSaveFirst;
+
+  /// Retrying found no more recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'The recordings are still not where the day says.'**
+  String get retryRecordingsStill;
+
+  /// Heading of the day page's list of sessions with their conditions, setup changes and notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Session details'**
+  String get sessionDetailsHeading;
+
+  /// Shown under a session that has no conditions, setup changes or notes.
+  ///
+  /// In en, this message translates to:
+  /// **'No conditions, setup changes or notes'**
+  String get sessionDetailsNone;
+
+  /// Title of the dialog that edits a session's name, conditions, setup changes and notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of {session}'**
+  String sessionDetailsTitle(String session);
+
+  /// Text field label: the session's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sessionDetailsName;
+
+  /// Shown under an empty session name.
+  ///
+  /// In en, this message translates to:
+  /// **'A session needs a name.'**
+  String get sessionDetailsNameRequired;
+
+  /// Text field label and list label: the weather and track conditions of a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get sessionDetailsConditions;
+
+  /// Example conditions in the empty text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Dry, 18 °C'**
+  String get sessionDetailsConditionsHint;
+
+  /// Text field label and list label: what was changed on the car before the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup changes'**
+  String get sessionDetailsSetup;
+
+  /// Example setup change in the empty text field. Keep the decimal point.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres +0.1 bar'**
+  String get sessionDetailsSetupHint;
+
+  /// Text field label and list label: the driver's notes on a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get sessionDetailsNotes;
+
+  /// Explains where a session's details are kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in the day\'s file, which FlappedEar Overlays reads too.'**
+  String get sessionDetailsSaved;
+
+  /// Shown when an entered name or text contains characters that cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'This text cannot be saved.'**
+  String get detailsInvalid;
+
+  /// Menu item that opens the dialog renaming the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename day…'**
+  String get renameDayMenu;
+
+  /// Title of the dialog that renames the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename day'**
+  String get renameDayTitle;
+
+  /// Text field label: the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Day name'**
+  String get renameDayName;
+
+  /// Shown under an empty day name.
+  ///
+  /// In en, this message translates to:
+  /// **'A day needs a name.'**
+  String get renameDayRequired;
+
+  /// Retrying while recordings are still being added.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the recordings are added, then retry.'**
+  String get retryRecordingsWaitAdding;
+
+  /// Recordings were added to the day while it was being opened again.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings were added meanwhile. Retry the recordings again.'**
+  String get retryRecordingsAddedMeanwhile;
+
+  /// Retrying opened none of the day's recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'None of the day\'s recordings could be opened, so the day stays as it is.'**
+  String get retryRecordingsNone;
+
+  /// Retrying could not read the day's document; reason is the error, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be opened again: {reason}'**
+  String retryRecordingsFailed(String reason);
+
+  /// The day was edited while its recordings were being read again.
+  ///
+  /// In en, this message translates to:
+  /// **'The day was changed meanwhile. Save it, then retry the recordings.'**
+  String get retryRecordingsChangedMeanwhile;
+
+  /// Button above the lap list that asks for lap A, then lap B, and compares them.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare two laps'**
+  String get lapsCompareTwo;
+
+  /// Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day).
+  ///
+  /// In en, this message translates to:
+  /// **'Last comparison'**
+  String get lapsLastComparison;
 }
 
 class _AppLocalizationsDelegate

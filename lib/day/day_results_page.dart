@@ -9,10 +9,11 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
+import '../l10n.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
-import '../l10n.dart';
 import '../settings_dialog.dart';
+import 'background_task.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -21,11 +22,13 @@ import 'day_results_controller.dart';
 import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
+import 'fusion_panel.dart';
 import 'next_session_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
 import 'segment_editor_page.dart';
+import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
 import '../ui/theme.dart';
@@ -99,6 +102,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   // wide screen the rail's Day (summary and laps side by side) or Compare.
   _Section _section = _Section.day;
 
+  // Reading the recordings again ("Retry recordings"): the running task and
+  // its generation, so a result after the page moved on is dropped.
+  BackgroundTask<OpenedDay>? _retryTask;
+  int _retryGeneration = 0;
+
   // The best lap's trace, recomputed only when the best lap changes.
   DayLapReference? _mapReference;
   LapPath? _mapPath;
@@ -141,6 +149,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   @override
   void dispose() {
+    ++_retryGeneration;
+    _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _lifecycle.dispose();
     _summaryScroll.dispose();
@@ -159,10 +169,24 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final lines = [
       if (addition.error.isNotEmpty)
         l10n.additionError(addition.error)
-      else if (added.isEmpty)
+      else if (added.isEmpty &&
+          addition.combined.isEmpty &&
+          addition.notCombined.isEmpty)
         l10n.nothingAdded
-      else
-        l10n.addedToDay(added.map(l10n.session).join(', ')),
+      else ...[
+        if (added.isNotEmpty)
+          l10n.addedToDay(added.map(l10n.session).join(', ')),
+        if (addition.combined.isNotEmpty)
+          l10n.fusionCombinedWith(
+            RecordingFormat.rcz.name.toUpperCase(),
+            addition.combined.map(l10n.session).join(', '),
+          ),
+        if (addition.notCombined.isNotEmpty)
+          l10n.fusionAddedNotCombined(
+            RecordingFormat.rcz.name.toUpperCase(),
+            addition.notCombined.map(l10n.session).join(', '),
+          ),
+      ],
       if (addition.savedTo != null) l10n.savedAs(p.basename(addition.savedTo!)),
       if (addition.saveError.isNotEmpty) l10n.notSaved(addition.saveError),
       ...addition.notes,
@@ -308,19 +332,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   // Built outside the state so the isolate's closure holds only its inputs.
-  static (OpenedDay, RecordingSearch) Function() _relinkJob(
+  static RelinkedDay Function() _relinkJob(
     String path,
     String folder,
     List<MissingRecording> missing,
-  ) => () {
-    final search = findMovedRecordings(folder, missing);
-    return (openDay(path, relinked: search.found), search);
-  };
+    List<MissingRecording> alternatives,
+  ) =>
+      () => relinkDay(path, folder, missing, missingAlternatives: alternatives);
 
   /// Looks for the missing recordings in a folder the user picks, by their
   /// content as Overlays relinks them (a file only named like one is not
-  /// used), and opens the day again with the ones found. The day then has
-  /// changes: saving writes where the recordings are now.
+  /// used), and opens the day again with the ones found. Sessions' RCZs that
+  /// could not be used are looked for too (one of the same name is used
+  /// when it is the same drive). The day then has changes: saving writes
+  /// where the recordings are now.
   Future<void> _findRecordings() async {
     final path = _controller.documentPath;
     if (path == null) return;
@@ -337,9 +362,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     setState(() => _relinking = true);
     try {
       final missing = _controller.missing;
+      final alternatives = _controller.missingAlternatives;
       final sessions = _controller.runs.length;
-      final (day, search) = await Isolate.run(
-        _relinkJob(path, folder, missing),
+      final (:day, :search, :differentAlternatives) = await Isolate.run(
+        _relinkJob(path, folder, missing, alternatives),
       );
       if (!mounted) return;
       // The day is opened again from its saved document: a recording added
@@ -350,22 +376,36 @@ class _DayResultsPageState extends State<DayResultsPage> {
         _tell(context.l10n.recordingsAddedMeanwhile);
         return;
       }
-      if (day.missing.length == missing.length) {
+      // An RCZ found only by its name that is not the same drive: said, not
+      // used.
+      final differentRcz = [
+        for (final file in differentAlternatives.values) p.basename(file),
+      ];
+      final rczMessage = differentRcz.isEmpty
+          ? null
+          : context.l10n.fusionRelinkDifferent(differentRcz.join(', '));
+      final used = {
+        for (final runId in search.alternatives.keys)
+          if (!differentAlternatives.containsKey(runId)) runId,
+      };
+      if (day.missing.length == missing.length && used.isEmpty) {
         final names = [
           for (final recording in missing)
             if (search.different.containsKey(recording.runId))
               p.basename(search.different[recording.runId]!),
         ];
+        final l10n = context.l10n;
         _tell(
-          names.isEmpty
-              ? context.l10n.noMissingRecordingFound
-              : context.l10n.differentRecordingsNotUsed(
-                  names.length,
-                  names.join(', '),
-                ),
+          [
+            if (names.isNotEmpty)
+              l10n.relinkDifferentRecordings(names.length, names.join(', ')),
+            ?rczMessage,
+            if (names.isEmpty && rczMessage == null) l10n.relinkNothingFound,
+          ].join('\n'),
         );
         return;
       }
+      if (rczMessage != null) _tell(rczMessage);
       if (day.analysis == null) return;
       final replace = widget.replace;
       if (replace != null) {
@@ -392,6 +432,87 @@ class _DayResultsPageState extends State<DayResultsPage> {
       if (mounted) _tell(context.l10n.dayReopenFailed('$error'));
     } finally {
       if (mounted) setState(() => _relinking = false);
+    }
+  }
+
+  /// Opens the day again from its saved document with the recordings where
+  /// it says they are, as Overlays' "Retry recordings" reads them again: a
+  /// drive that was not connected, say. Recordings found are checked by
+  /// their content like any opened day's; the day is shown again when more
+  /// of them open, or to line up its RCZs again. Cancelled when the page
+  /// closes.
+  Future<void> _retryRecordings() async {
+    final path = _controller.documentPath;
+    if (path == null) return;
+    final l10n = context.l10n;
+    if (_controller.adding) {
+      _tell(l10n.retryRecordingsWaitAdding);
+      return;
+    }
+    if (_controller.dirty) {
+      _tell(l10n.retryRecordingsSaveFirst);
+      return;
+    }
+    final generation = ++_retryGeneration;
+    final missing = _controller.missing.length;
+    final sessions = _controller.runs.length;
+    final shown = {for (final named in _controller.runs) named.run.id};
+    final alternatives = _controller.missingAlternatives
+        .where((recording) => shown.contains(recording.runId))
+        .length;
+    setState(() => _relinking = true);
+    final task = _retryTask = runInBackground(reopenDay, path);
+    try {
+      final day = await task.result;
+      if (!mounted || generation != _retryGeneration) return;
+      if (_controller.adding || _controller.runs.length != sessions) {
+        _tell(l10n.retryRecordingsAddedMeanwhile);
+        return;
+      }
+      if (_controller.dirty) {
+        _tell(l10n.retryRecordingsChangedMeanwhile);
+        return;
+      }
+      if (day.missing.length >= missing && alternatives == 0) {
+        _tell(l10n.retryRecordingsStill);
+        return;
+      }
+      if (day.analysis == null) {
+        _tell(l10n.retryRecordingsNone);
+        return;
+      }
+      final replace = widget.replace;
+      if (replace != null) {
+        replace(
+          DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: _controller.appender,
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => DayResultsPage.opened(
+            day: day,
+            documents: widget.documents,
+            recovery: widget.recovery,
+          ),
+        ),
+      );
+    } on OperationCancelled {
+      return;
+    } on BackgroundTaskFailed catch (error) {
+      if (mounted && generation == _retryGeneration) {
+        _tell(l10n.retryRecordingsFailed(error.message));
+      }
+    } finally {
+      if (identical(_retryTask, task)) _retryTask = null;
+      if (mounted && generation == _retryGeneration) {
+        setState(() => _relinking = false);
+      }
     }
   }
 
@@ -551,6 +672,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onTap: () => _save(choose: true),
                 child: Text(context.l10n.saveAs),
               ),
+              PopupMenuItem(
+                key: const ValueKey('renameDay'),
+                height: kMinInteractiveDimension,
+                onTap: () => showDialog<void>(
+                  context: this.context,
+                  builder: (_) => RenameDayDialog(controller: _controller),
+                ),
+                child: Text(context.l10n.renameDayMenu),
+              ),
               diagnosticsMenuItem(context),
             ],
           ),
@@ -619,34 +749,84 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final resolved = analysis.groups.where((group) => group.resolved).toList();
     final path = best == null ? null : _bestPath(best);
     final missing = _controller.missing;
+    // Sessions shown without their RCZ, which was not found or is another
+    // recording: found again like the sessions' own recordings.
+    final shown = {for (final named in _controller.runs) named.run.id};
+    final alternatives = [
+      for (final recording in _controller.missingAlternatives)
+        if (shown.contains(recording.runId)) recording,
+    ];
     return [
-      if (missing.isNotEmpty) ...[
+      if (missing.isNotEmpty || alternatives.isNotEmpty) ...[
         Card(
-          color: theme.colorScheme.errorContainer,
+          key: const ValueKey('missingRecordings'),
+          color: missing.isEmpty
+              ? theme.colorScheme.secondaryContainer
+              : theme.colorScheme.errorContainer,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.sessionsNotOpened(missing.length),
-                  style: theme.textTheme.titleSmall,
-                ),
-                for (final recording in missing)
+                if (missing.isNotEmpty) ...[
                   Text(
-                    '${l10n.session(recording.name)}: ${recording.path} · ${l10n.missingReason(recording.reason)}',
+                    l10n.sessionsNotOpened(missing.length),
+                    style: theme.textTheme.titleSmall,
                   ),
-                const SizedBox(height: 4),
-                Text(l10n.missingSessionsKept),
+                  for (final recording in missing)
+                    Text(
+                      '${l10n.session(recording.name)}: ${recording.path} · ${l10n.missingReason(recording.reason)}',
+                    ),
+                  const SizedBox(height: 4),
+                  Text(l10n.missingSessionsKept),
+                ],
+                if (alternatives.isNotEmpty) ...[
+                  if (missing.isNotEmpty) const SizedBox(height: 8),
+                  Text(
+                    l10n.fusionMissingTitle(
+                      alternatives.length,
+                      RecordingFormat.rcz.name.toUpperCase(),
+                    ),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  for (final recording in alternatives)
+                    Text(
+                      l10n.fusionMissingLine(
+                        l10n.session(recording.name),
+                        recording.path,
+                        l10n.fusionReasonText(
+                          recording.reason,
+                          unavailable: true,
+                        ),
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _relinking ? null : _findRecordings,
-                  icon: const Icon(Icons.folder_open_outlined),
-                  label: Text(
-                    _relinking
-                        ? l10n.lookingForRecordings
-                        : l10n.findRecordingsInFolder,
-                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _relinking ? null : _findRecordings,
+                      icon: const Icon(Icons.folder_open_outlined),
+                      label: Text(
+                        _relinking
+                            ? l10n.lookingForRecordings
+                            : l10n.findRecordingsInFolder,
+                      ),
+                    ),
+                    if (_controller.documentPath != null)
+                      OutlinedButton.icon(
+                        key: const ValueKey('retryRecordings'),
+                        onPressed: _relinking ? null : _retryRecordings,
+                        icon: const Icon(Icons.refresh),
+                        label: Text(
+                          _retryTask != null
+                              ? l10n.retryRecordingsLooking
+                              : l10n.retryRecordings,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -793,6 +973,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           wide: wide,
           onOpenLap: _open,
           onCompare: _compare,
+          onRetry: _controller.retryTheoreticalBest,
         ),
         const SizedBox(height: 12),
         ConsistencyCard(
@@ -841,8 +1022,32 @@ class _DayResultsPageState extends State<DayResultsPage> {
           subtitle: Text(l10n.circuitNotIdentified),
         ),
       const SizedBox(height: 12),
-      Text(l10n.circuits, style: theme.textTheme.titleSmall),
+      Text(
+        context.l10n.sessionDetailsHeading,
+        style: theme.textTheme.titleSmall,
+      ),
       for (final named in _controller.runs)
+        ListTile(
+          key: ValueKey('sessionDetails ${named.run.id}'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(context.l10n.session(named.name)),
+          subtitle: Text(
+            _detailsText(named.run.id),
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: const Icon(Icons.edit_note),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (_) => SessionDetailsDialog(
+              controller: _controller,
+              runId: named.run.id,
+            ),
+          ),
+        ),
+      const SizedBox(height: 12),
+      Text(l10n.circuits, style: theme.textTheme.titleSmall),
+      for (final named in _controller.runs) ...[
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(l10n.session(named.name)),
@@ -854,6 +1059,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 TrackDialog(controller: _controller, runId: named.run.id),
           ),
         ),
+        SessionFusion(controller: _controller, runId: named.run.id),
+      ],
       if (analysis.messages.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text(l10n.notes, style: theme.textTheme.titleSmall),
@@ -883,9 +1090,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channels: channels,
         associations: _controller.temperatureAssociations,
         loading: loading,
+        channelSource: _controller.channelSource,
       ),
       const SizedBox(height: 12),
-      DriverCard(channels: channels, loading: loading, onOpenLap: _open),
+      DriverCard(
+        channels: channels,
+        loading: loading,
+        onOpenLap: _open,
+        channelSource: _controller.channelSource,
+      ),
     ];
   }
 
@@ -903,6 +1116,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       gate: _mapGate,
       wide: wide,
       onAnalyze: _compare,
+      onRetry: _controller.retryTheoreticalBest,
       onEditSegments: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => SegmentEditorPage(
@@ -965,6 +1179,21 @@ class _DayResultsPageState extends State<DayResultsPage> {
       _layout(group.configuration),
       l10n.direction(direction),
     );
+  }
+
+  // A session's conditions, setup changes and notes on one line each.
+  String _detailsText(String runId) {
+    final l10n = context.l10n;
+    final details = _controller.runMetadata(runId);
+    final lines = [
+      for (final (label, text) in [
+        (l10n.sessionDetailsConditions, details.conditions),
+        (l10n.sessionDetailsSetup, details.setupChanges),
+        (l10n.sessionDetailsNotes, details.notes),
+      ])
+        if (text.trim().isNotEmpty) '$label: ${text.trim()}',
+    ];
+    return lines.isEmpty ? l10n.sessionDetailsNone : lines.join('\n');
   }
 
   String _runName(String runId) {
@@ -1079,11 +1308,23 @@ class _DayResultsPageState extends State<DayResultsPage> {
         children: [
           Text(l10n.daySectionLaps, style: theme.textTheme.titleSmall),
           if (_controller.comparisonCandidates().length >= 2)
-            TextButton.icon(
-              key: const ValueKey('lapsCompare'),
-              onPressed: _pickComparison,
-              icon: const Icon(Icons.compare_arrows),
-              label: Text(l10n.compareTwoLaps),
+            Wrap(
+              children: [
+                // The comparison saved with the day, as it was left.
+                if (_controller.savedComparisonPair case (final a, final b))
+                  TextButton.icon(
+                    key: const ValueKey('lapsLastComparison'),
+                    onPressed: () => _compare(a, b, null),
+                    icon: const Icon(Icons.history),
+                    label: Text(context.l10n.lapsLastComparison),
+                  ),
+                TextButton.icon(
+                  key: const ValueKey('lapsCompare'),
+                  onPressed: _pickComparison,
+                  icon: const Icon(Icons.compare_arrows),
+                  label: Text(context.l10n.lapsCompareTwo),
+                ),
+              ],
             ),
         ],
       ),
@@ -1240,3 +1481,9 @@ class _HeadlineBar extends StatelessWidget {
     );
   }
 }
+
+/// The day saved at [path] opened again, as [DayResultsPage]'s "Retry
+/// recordings" runs it in the background: top-level, so that nothing of
+/// the page goes with it to the other isolate.
+OpenedDay reopenDay(String path, CancellationCheck cancelled) =>
+    openDay(path, cancelled: cancelled);

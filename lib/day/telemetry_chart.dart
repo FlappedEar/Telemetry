@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../l10n.dart';
 import '../units.dart';
+import 'channel_sources.dart';
 import 'touch.dart';
 
 /// The colour of the Δ time line (one line, not an A/B pair).
@@ -84,6 +86,7 @@ class TelemetryChart extends StatelessWidget {
     required this.valueAxis,
     this.zeroLine = false,
     this.note = '',
+    this.source,
     this.delta = false,
     this.onRemove,
     this.height = 120,
@@ -108,6 +111,11 @@ class TelemetryChart extends StatelessWidget {
 
   /// Shown under the title, such as "+ = A behind".
   final String note;
+
+  /// The format of the other recording the channel came from ("RCZ"), said
+  /// under the title; empty when it is the session's own. When null, the
+  /// open day says ([dayChannelSources]).
+  final String? source;
 
   /// The values are seconds of difference, shown with [displayDelta].
   final bool delta;
@@ -139,6 +147,8 @@ class TelemetryChart extends StatelessWidget {
               '${line.series.reason.isEmpty ? 'no data in this range' : chartReasonText(line.series.reason)}',
     ];
     final braking = lines.any((line) => line.series.brakingUp);
+    final from = source ?? dayChannelSources[title] ?? '';
+    final provenance = from.isEmpty ? '' : context.l10n.channelFromSource(from);
     final message = shown.isNotEmpty
         ? null
         : lines.every((line) => line.series.reason.isEmpty)
@@ -165,11 +175,13 @@ class TelemetryChart extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (note.isNotEmpty ||
+                      provenance.isNotEmpty ||
                       braking ||
                       (shown.isNotEmpty && failed.isNotEmpty))
                     Text(
                       [
                         if (note.isNotEmpty) note,
+                        if (provenance.isNotEmpty) provenance,
                         if (braking) 'braking drawn upward',
                         if (shown.isNotEmpty) ...failed,
                       ].join(' · '),
@@ -640,16 +652,28 @@ class ChartWindowControls extends StatelessWidget {
 
 /// A menu of channels to add to a set of charts; disabled at four.
 class AddChannelButton extends StatelessWidget {
+  String _label(BuildContext context, String channel) {
+    final source = (sources ?? dayChannelSources)[channel] ?? '';
+    return source.isEmpty
+        ? channel
+        : '$channel · ${context.l10n.channelFromSource(source)}';
+  }
+
   const AddChannelButton({
     super.key,
     required this.channels,
     required this.shown,
     required this.onAdd,
+    this.sources,
   });
 
   final List<String> channels;
   final List<String> shown;
   final ValueChanged<String> onAdd;
+
+  /// The channels that came from another recording, with its format
+  /// ("RCZ"); when null, the open day's ([dayChannelSources]).
+  final Map<String, String>? sources;
 
   @override
   Widget build(BuildContext context) {
@@ -665,7 +689,7 @@ class AddChannelButton extends StatelessWidget {
       onSelected: onAdd,
       itemBuilder: (context) => [
         for (final channel in available)
-          PopupMenuItem(value: channel, child: Text(channel)),
+          PopupMenuItem(value: channel, child: Text(_label(context, channel))),
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),

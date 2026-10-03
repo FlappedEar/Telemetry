@@ -652,23 +652,6 @@
   "@recordingsAddedMeanwhile": {
     "description": "The day changed while missing recordings were searched for."
   },
-  "noMissingRecordingFound": "No missing recording was found in that folder.",
-  "@noMissingRecordingFound": {
-    "description": "Searching a folder for missing recordings found none."
-  },
-  "differentRecordingsNotUsed": "{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}",
-  "@differentRecordingsNotUsed": {
-    "description": "Files named like the missing recordings but with different content.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "files": {
-        "type": "String",
-        "example": "Run1.vbo, Run2.vbo"
-      }
-    }
-  },
   "dayReopenFailed": "The day could not be opened again: {error}",
   "@dayReopenFailed": {
     "description": "Opening the day again with the found recordings failed.",
@@ -811,10 +794,6 @@
   "noBestLapNoRankable": "No best lap: no lap of this group can be ranked.",
   "@noBestLapNoRankable": {
     "description": "Why there is no best lap."
-  },
-  "compareTwoLaps": "Compare two laps",
-  "@compareTwoLaps": {
-    "description": "Button in the lap list that starts a comparison."
   },
   "bestOfDay": "Best of the day",
   "@bestOfDay": {
@@ -3011,5 +2990,548 @@
   "reportStale": "The analysis decisions changed after this result was computed.",
   "@reportStale": {
     "description": "A day report result computed before the analysis decisions changed."
+  },
+  "channelFromSource": "from {format}",
+  "@channelFromSource": {
+    "description": "Says a channel's samples come, in whole or in part, from the session's other recording, such as 'from RCZ'; shown next to a channel's name. {format} is a recording format such as RCZ.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionAdded": "{count, plural, =0{Combined with its {format}: no channel added} =1{Combined with its {format}: 1 channel added} other{Combined with its {format}: {count} channels added}}",
+  "@fusionAdded": {
+    "description": "A session's VBO recording was combined with its RCZ of the same drive; count is how many channels only the RCZ recorded were added. {format} is the other recording's format, such as RCZ.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      },
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionConflict": "{channel}: the {primary} and the {alternative} disagree",
+  "@fusionConflict": {
+    "description": "A channel both recordings of a session measured, whose values differ; the buttons below choose which to use. {primary} and {alternative} are formats such as VBO and RCZ.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "sats"
+      },
+      "primary": {
+        "type": "String",
+        "example": "VBO"
+      },
+      "alternative": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionKeepPrimary": "Keep {format}",
+  "@fusionKeepPrimary": {
+    "description": "Button: keep the session's own recording (such as the VBO) for a channel both recordings disagree on.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionFillGaps": "Fill gaps",
+  "@fusionFillGaps": {
+    "description": "Button: keep the session's own recording for a channel and fill its gaps from the other recording."
+  },
+  "fusionUseAlternative": "Use {format}",
+  "@fusionUseAlternative": {
+    "description": "Button: use the other recording (such as the RCZ) for a channel both recordings disagree on, the session's own where it has none.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionNotCombined": "Not combined with its {format}: {reason}",
+  "@fusionNotCombined": {
+    "description": "A session's other recording (such as its RCZ) was not combined with it; reason says why.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "reason": {
+        "type": "String",
+        "example": "their speed traces do not line up clearly"
+      }
+    }
+  },
+  "fusionReasonNoSpeed": "a recording has no speed",
+  "@fusionReasonNoSpeed": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonShortOverlap": "the recordings overlap too little",
+  "@fusionReasonShortOverlap": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonAmbiguous": "their speed traces do not line up clearly",
+  "@fusionReasonAmbiguous": {
+    "description": "Why two recordings could not be lined up in time: their speed traces match weakly or in several places."
+  },
+  "fusionReasonClockDisagrees": "their clocks disagree with their speed traces",
+  "@fusionReasonClockDisagrees": {
+    "description": "Why two recordings could not be lined up in time: the loggers' start times and the speed traces give different offsets."
+  },
+  "fusionReasonInsufficient": "not enough data to line them up",
+  "@fusionReasonInsufficient": {
+    "description": "Why two recordings could not be lined up in time."
+  },
+  "fusionReasonNotFound": "the recording was not found",
+  "@fusionReasonNotFound": {
+    "description": "Why a session's other recording could not be used when the day was opened."
+  },
+  "fusionReasonDifferent": "the file found is a different recording",
+  "@fusionReasonDifferent": {
+    "description": "Why a session's other recording could not be used: a file is at its place, but with other content."
+  },
+  "fusionReasonUnreadable": "it could not be read",
+  "@fusionReasonUnreadable": {
+    "description": "Why a session's other recording could not be used."
+  },
+  "fusionPending": "Lining up with its {format}…",
+  "@fusionPending": {
+    "description": "Quiet line under a session while its other recording (such as its RCZ) is being aligned with it in the background; the results already show.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionLinedUp": "Lined up with its {format} ({offset}); nothing to add",
+  "@fusionLinedUp": {
+    "description": "Quiet line under a session whose other recording (such as its RCZ) was aligned with it but has no channel to add and no disagreement. offset is the clock offset found, such as −0.14 s.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "offset": {
+        "type": "String",
+        "example": "−0.14 s"
+      }
+    }
+  },
+  "fusionCombinedWith": "{format} added to {sessions}.",
+  "@fusionCombinedWith": {
+    "description": "After adding recordings: an RCZ was added to existing sessions as their other recording. sessions is a list of session names such as \"Session 2, Session 3\".",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "sessions": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "fusionMissingTitle": "{count, plural, =1{The {format} of 1 session could not be used} other{The {format} of {count} sessions could not be used}}",
+  "@fusionMissingTitle": {
+    "description": "Title of the card listing sessions whose other recording (such as the RCZ) was not found or is another recording; a button below looks for them in a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      }
+    }
+  },
+  "fusionMissingLine": "{session}: {path} · {reason}",
+  "@fusionMissingLine": {
+    "description": "One line of the card of other recordings that could not be used: the session, the path the day names and why.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      },
+      "path": {
+        "type": "String",
+        "example": "recordings/drive.rcz"
+      },
+      "reason": {
+        "type": "String",
+        "example": "the recording was not found"
+      }
+    }
+  },
+  "fusionChannelSpeed": "Speed",
+  "@fusionChannelSpeed": {
+    "description": "A channel both recordings of a session measured: the speed."
+  },
+  "fusionChannelLatitude": "Latitude",
+  "@fusionChannelLatitude": {
+    "description": "A channel both recordings of a session measured: the GPS latitude."
+  },
+  "fusionChannelLongitude": "Longitude",
+  "@fusionChannelLongitude": {
+    "description": "A channel both recordings of a session measured: the GPS longitude."
+  },
+  "fusionChannelSatellites": "Satellites",
+  "@fusionChannelSatellites": {
+    "description": "A channel both recordings of a session measured: the number of GPS satellites."
+  },
+  "fusionRelinkDifferent": "Not used, a different recording: {files}.",
+  "@fusionRelinkDifferent": {
+    "description": "After Find recordings in a folder: a session's RCZ found there only by its file name is another drive's recording, so it was not used. files is the file name or names.",
+    "placeholders": {
+      "files": {
+        "type": "String",
+        "example": "drive.rcz"
+      }
+    }
+  },
+  "fusionAddedNotCombined": "{format} added to {sessions}, but it could not be combined; it is kept and tried again when the day opens.",
+  "@fusionAddedNotCombined": {
+    "description": "After adding recordings: aligning an RCZ added to existing sessions failed. sessions is a list of session names.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "sessions": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "fusionReasonFailed": "lining them up failed",
+  "@fusionReasonFailed": {
+    "description": "Why a session's other recording was not combined: aligning it stopped with an error."
+  },
+  "relinkDifferentRecordings": "{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}",
+  "@relinkDifferentRecordings": {
+    "description": "After Find recordings in a folder: files named like missing recordings that hold other recordings. files is the file names.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "files": {
+        "type": "String",
+        "example": "b.vbo"
+      }
+    }
+  },
+  "relinkNothingFound": "No missing recording was found in that folder.",
+  "@relinkNothingFound": {
+    "description": "After Find recordings in a folder: none of the missing recordings was there."
+  },
+  "segmentPickOnMap": "Pick on map",
+  "@segmentPickOnMap": {
+    "description": "Button: place this segment boundary by tapping the track on the map."
+  },
+  "segmentPickActive": "Tap the map… (cancel)",
+  "@segmentPickActive": {
+    "description": "The pick button while waiting for a tap on the map; pressing it again cancels."
+  },
+  "segmentPickBannerStart": "Tap the track line to place the start",
+  "@segmentPickBannerStart": {
+    "description": "Shown on the map while it waits for the segment's start."
+  },
+  "segmentPickBannerEnd": "Tap the track line to place the end",
+  "@segmentPickBannerEnd": {
+    "description": "Shown on the map while it waits for the segment's end."
+  },
+  "segmentPickBannerSplit": "Tap the track line to place the split",
+  "@segmentPickBannerSplit": {
+    "description": "Shown on the map while it waits for where to split the segment."
+  },
+  "segmentPickAmbiguous": "Another part of the track passes close by here. Set the distance with the buttons instead.",
+  "@segmentPickAmbiguous": {
+    "description": "A tap near a crossing or a parallel stretch of track: the place along the lap is unclear."
+  },
+  "segmentPickFar": "Tap on the lap's track line.",
+  "@segmentPickFar": {
+    "description": "A tap too far from the lap's trace."
+  },
+  "segmentPickNoTrace": "The lap trace is not available for picking.",
+  "@segmentPickNoTrace": {
+    "description": "The best lap has no trace to pick a place on."
+  },
+  "segmentPickOutside": "Pick a point inside this segment to split it.",
+  "@segmentPickOutside": {
+    "description": "The place tapped for a split is outside the segment."
+  },
+  "variabilityHeading": "Lap to lap in each corner",
+  "@variabilityHeading": {
+    "description": "Heading of the theoretical best card's per-corner variability list."
+  },
+  "variabilityIntro": "How much each corner changes from lap to lap over the group's laps: typical is the median, spread the middle half of the laps (interquartile range), from at least 3 laps. Observations, not causes.",
+  "@variabilityIntro": {
+    "description": "Explains the corner variability list."
+  },
+  "variabilityNone": "No corner was measured on enough laps.",
+  "@variabilityNone": {
+    "description": "No corner has variability results."
+  },
+  "variabilityNotMeasured": "Not measured on these laps.",
+  "@variabilityNotMeasured": {
+    "description": "A corner without any measured metric."
+  },
+  "variabilityLaps": "{count, plural, =1{1 lap} other{{count} laps}}",
+  "@variabilityLaps": {
+    "description": "How many laps a figure is from.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "variabilityMeasured": "measured",
+  "@variabilityMeasured": {
+    "description": "A braking point or throttle pickup read from the recorded brake or throttle."
+  },
+  "variabilityInferred": "inferred",
+  "@variabilityInferred": {
+    "description": "A braking point or throttle pickup inferred from speed."
+  },
+  "variabilitySpread": "{label}: spread {spread} · {tail}",
+  "@variabilitySpread": {
+    "description": "A position metric's spread across laps.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Braking point"
+      },
+      "spread": {
+        "type": "String",
+        "example": "4.2 m"
+      },
+      "tail": {
+        "type": "String",
+        "example": "6 laps · measured"
+      }
+    }
+  },
+  "variabilityTypical": "{label}: typical {typical} · spread {spread} · {tail}",
+  "@variabilityTypical": {
+    "description": "A speed's typical value and spread across laps.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Minimum speed"
+      },
+      "typical": {
+        "type": "String",
+        "example": "72.4 km/h"
+      },
+      "spread": {
+        "type": "String",
+        "example": "1.8 km/h"
+      },
+      "tail": {
+        "type": "String",
+        "example": "6 laps"
+      }
+    }
+  },
+  "variabilityTooFew": "{label}: too few laps ({tail})",
+  "@variabilityTooFew": {
+    "description": "Fewer than three laps measured this metric.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Apex speed"
+      },
+      "tail": {
+        "type": "String",
+        "example": "2 laps"
+      }
+    }
+  },
+  "variabilityBraking": "Braking point",
+  "@variabilityBraking": {
+    "description": "Label: where braking starts."
+  },
+  "variabilityApex": "Apex speed",
+  "@variabilityApex": {
+    "description": "Label: speed at the corner's apex."
+  },
+  "variabilityMinimum": "Minimum speed",
+  "@variabilityMinimum": {
+    "description": "Label: the lowest speed in the corner."
+  },
+  "variabilityExit": "Exit speed",
+  "@variabilityExit": {
+    "description": "Label: speed at the corner's exit."
+  },
+  "variabilityPickup": "Throttle pickup",
+  "@variabilityPickup": {
+    "description": "Label: where the driver goes back on the throttle."
+  },
+  "variabilityLine": "Line: spread {spread} m · {accuracy}",
+  "@variabilityLine": {
+    "description": "How far apart the laps' lines are at the apex.",
+    "placeholders": {
+      "spread": {
+        "type": "String",
+        "example": "1.4"
+      },
+      "accuracy": {
+        "type": "String",
+        "example": "GPS accuracy about 0.8 m"
+      }
+    }
+  },
+  "variabilityGpsAccuracy": "GPS accuracy about {meters} m",
+  "@variabilityGpsAccuracy": {
+    "description": "The recording's typical GPS accuracy.",
+    "placeholders": {
+      "meters": {
+        "type": "String",
+        "example": "0.8"
+      }
+    }
+  },
+  "variabilityGpsUnknown": "GPS accuracy not recorded",
+  "@variabilityGpsUnknown": {
+    "description": "The recording does not state its GPS accuracy."
+  },
+  "variabilityLineUnresolved": " · not distinguishable from GPS error",
+  "@variabilityLineUnresolved": {
+    "description": "Appended when the line spread is no larger than the GPS accuracy."
+  },
+  "calculateAgain": "Calculate again",
+  "@calculateAgain": {
+    "description": "Button: run the theoretical best calculation again after it failed or had nothing to use."
+  },
+  "retryRecordings": "Retry recordings",
+  "@retryRecordings": {
+    "description": "Button: open the sessions' recordings again from where the day says they are."
+  },
+  "retryRecordingsLooking": "Opening…",
+  "@retryRecordingsLooking": {
+    "description": "The retry button while the recordings are read again."
+  },
+  "retryRecordingsSaveFirst": "Save the day first, then try the recordings again.",
+  "@retryRecordingsSaveFirst": {
+    "description": "The day has unsaved changes, so it cannot be opened again from its file."
+  },
+  "retryRecordingsStill": "The recordings are still not where the day says.",
+  "@retryRecordingsStill": {
+    "description": "Retrying found no more recordings."
+  },
+  "sessionDetailsHeading": "Session details",
+  "@sessionDetailsHeading": {
+    "description": "Heading of the day page's list of sessions with their conditions, setup changes and notes."
+  },
+  "sessionDetailsNone": "No conditions, setup changes or notes",
+  "@sessionDetailsNone": {
+    "description": "Shown under a session that has no conditions, setup changes or notes."
+  },
+  "sessionDetailsTitle": "Details of {session}",
+  "@sessionDetailsTitle": {
+    "description": "Title of the dialog that edits a session's name, conditions, setup changes and notes.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "sessionDetailsName": "Name",
+  "@sessionDetailsName": {
+    "description": "Text field label: the session's name."
+  },
+  "sessionDetailsNameRequired": "A session needs a name.",
+  "@sessionDetailsNameRequired": {
+    "description": "Shown under an empty session name."
+  },
+  "sessionDetailsConditions": "Conditions",
+  "@sessionDetailsConditions": {
+    "description": "Text field label and list label: the weather and track conditions of a session."
+  },
+  "sessionDetailsConditionsHint": "Dry, 18 °C",
+  "@sessionDetailsConditionsHint": {
+    "description": "Example conditions in the empty text field."
+  },
+  "sessionDetailsSetup": "Setup changes",
+  "@sessionDetailsSetup": {
+    "description": "Text field label and list label: what was changed on the car before the session."
+  },
+  "sessionDetailsSetupHint": "Tyres +0.1 bar",
+  "@sessionDetailsSetupHint": {
+    "description": "Example setup change in the empty text field. Keep the decimal point."
+  },
+  "sessionDetailsNotes": "Notes",
+  "@sessionDetailsNotes": {
+    "description": "Text field label and list label: the driver's notes on a session."
+  },
+  "sessionDetailsSaved": "Kept in the day's file, which FlappedEar Overlays reads too.",
+  "@sessionDetailsSaved": {
+    "description": "Explains where a session's details are kept."
+  },
+  "detailsInvalid": "This text cannot be saved.",
+  "@detailsInvalid": {
+    "description": "Shown when an entered name or text contains characters that cannot be saved."
+  },
+  "renameDayMenu": "Rename day…",
+  "@renameDayMenu": {
+    "description": "Menu item that opens the dialog renaming the day."
+  },
+  "renameDayTitle": "Rename day",
+  "@renameDayTitle": {
+    "description": "Title of the dialog that renames the day."
+  },
+  "renameDayName": "Day name",
+  "@renameDayName": {
+    "description": "Text field label: the day's name."
+  },
+  "renameDayRequired": "A day needs a name.",
+  "@renameDayRequired": {
+    "description": "Shown under an empty day name."
+  },
+  "retryRecordingsWaitAdding": "Wait until the recordings are added, then retry.",
+  "@retryRecordingsWaitAdding": {
+    "description": "Retrying while recordings are still being added."
+  },
+  "retryRecordingsAddedMeanwhile": "Recordings were added meanwhile. Retry the recordings again.",
+  "@retryRecordingsAddedMeanwhile": {
+    "description": "Recordings were added to the day while it was being opened again."
+  },
+  "retryRecordingsNone": "None of the day's recordings could be opened, so the day stays as it is.",
+  "@retryRecordingsNone": {
+    "description": "Retrying opened none of the day's recordings."
+  },
+  "retryRecordingsFailed": "The day could not be opened again: {reason}",
+  "@retryRecordingsFailed": {
+    "description": "Retrying could not read the day's document; reason is the error, in English.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "retryRecordingsChangedMeanwhile": "The day was changed meanwhile. Save it, then retry the recordings.",
+  "@retryRecordingsChangedMeanwhile": {
+    "description": "The day was edited while its recordings were being read again."
+  },
+  "lapsCompareTwo": "Compare two laps",
+  "@lapsCompareTwo": {
+    "description": "Button above the lap list that asks for lap A, then lap B, and compares them."
+  },
+  "lapsLastComparison": "Last comparison",
+  "@lapsLastComparison": {
+    "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
   }
 }

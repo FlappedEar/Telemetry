@@ -297,6 +297,17 @@ void main() {
     await shot(tester, 'where-the-time-goes');
     await scrollIn(tester, summary, find.text('Sector times'));
     await shot(tester, 'sector-times');
+    // Each corner lap to lap, the first one opened.
+    await scrollIn(tester, summary, find.text('Lap to lap in each corner'));
+    final variability = find.byWidgetPredicate(
+      (w) =>
+          w.key is ValueKey<String> &&
+          (w.key! as ValueKey<String>).value.startsWith('variability '),
+    );
+    await tester.tap(variability.first);
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Lap to lap in each corner'));
+    await shot(tester, 'corner-variability');
     await scrollIn(tester, summary, find.text('Time losses'));
     await shot(tester, 'time-losses');
     await scrollIn(tester, summary, find.text('Consistency'));
@@ -311,6 +322,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.edit_outlined).first);
     await tester.pumpAndSettle();
     await shot(tester, 'circuit-dialog');
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    // A session's details.
+    await scrollIn(tester, summary, find.text('Session details'), delta: -300);
+    await tester.tap(find.byIcon(Icons.edit_note).first);
+    await tester.pumpAndSettle();
+    await shot(tester, 'session-details-dialog');
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
@@ -332,6 +351,18 @@ void main() {
     await tester.tap(find.text('Edit segments'));
     await tester.pumpAndSettle();
     await shot(tester, 'segment-editor');
+    // A boundary placed on the map.
+    final firstSegment = find.byWidgetPredicate(
+      (w) =>
+          w.key is ValueKey<String> &&
+          (w.key! as ValueKey<String>).value.startsWith('segment ') &&
+          w is ListTile,
+    );
+    await tester.tap(firstSegment.first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('pick end')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'segment-pick');
 
     // The day report.
     await back(tester);

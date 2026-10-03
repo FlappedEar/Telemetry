@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -170,20 +171,69 @@ class _ComparisonPageState extends State<ComparisonPage> {
   final Map<String, (double, double)> _axes = {};
   final Map<(String, int), ComparisonMapLayer> _layers = {};
 
+  // Saves the range shown once a zoom or drag settles.
+  Timer? _rangeSave;
+
   @override
   void initState() {
     super.initState();
-    _pair(focus: widget.focus);
+    _pair(focus: widget.focus, opening: true);
   }
 
   @override
   void dispose() {
+    if (_rangeSave?.isActive ?? false) {
+      // A zoom left just before the page closed is still saved, after the
+      // frame: the day's listeners must not rebuild during this teardown.
+      _rangeSave!.cancel();
+      final (start, end) = _window!.range.value;
+      final controller = widget.controller;
+      WidgetsBinding.instance
+        ..addPostFrameCallback(
+          (_) => controller.rememberComparisonRange(start, end),
+        )
+        ..scheduleFrame();
+    }
+    _window?.range.removeListener(_rangeChanged);
     _window?.dispose();
     super.dispose();
   }
 
-  void _pair({(double, double)? focus}) {
+  // The comparison set up here is saved with the day (FET-53), as Overlays
+  // saves its comparison: the pair, the range shown and the charts.
+  void _remember(void Function(DayResultsController controller) change) {
+    // After the frame: the day's listeners rebuild, which is not allowed
+    // while this page builds.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) change(widget.controller);
+    });
+  }
+
+  void _rangeChanged() {
+    _rangeSave?.cancel();
+    _rangeSave = Timer(const Duration(milliseconds: 300), _saveRange);
+  }
+
+  void _saveRange() {
+    final window = _window;
+    if (window == null || !mounted) return;
+    final (start, end) = window.range.value;
+    widget.controller.rememberComparisonRange(start, end);
+  }
+
+  void _setChannels(List<String> channels) {
+    _channels = channels;
+    _remember((controller) => controller.rememberComparisonChannels(channels));
+  }
+
+  /// Shows the pair [_a], [_b]. [opening] the page, the day's saved range
+  /// and charts are shown again where they fit this pair (as Overlays
+  /// restores them when its comparison view opens); otherwise the range is
+  /// the whole lap and the charts shown stay where the pair has them.
+  void _pair({(double, double)? focus, bool opening = false}) {
     final previous = _comparison == null ? null : _channels;
+    _rangeSave?.cancel();
+    _window?.range.removeListener(_rangeChanged);
     _window?.dispose();
     _window = null;
     _series.clear();
@@ -195,13 +245,33 @@ class _ComparisonPageState extends State<ComparisonPage> {
       _channels = const [];
       return;
     }
-    final window = _window = ChartWindow(0, comparison.axisLengthMeters);
+    final length = comparison.axisLengthMeters;
+    final saved = opening ? widget.controller.savedComparison : null;
+    final savedRange = saved?.range;
+    final window = _window = ChartWindow(
+      0,
+      length,
+      range:
+          focus == null &&
+              savedRange != null &&
+              savedRange.$2 > savedRange.$1 &&
+              savedRange.$1 >= 0 &&
+              savedRange.$2 <= length + 1e-3
+          ? (savedRange.$1, math.min(savedRange.$2, length))
+          : null,
+    );
     final available = comparison.chartChannels;
     final kept = [
-      for (final channel in previous ?? const <String>[])
+      for (final channel
+          in (opening ? saved?.channels : previous) ?? const <String>[])
         if (available.contains(channel)) channel,
     ];
-    _channels = kept.isNotEmpty ? kept : comparison.defaultChartChannels;
+    final channels = kept.isNotEmpty ? kept : comparison.defaultChartChannels;
+    if (opening) {
+      _channels = channels;
+    } else {
+      _setChannels(channels);
+    }
     if (focus != null) {
       final trace = comparison.trace(0);
       final start = progressAtTime(trace, focus.$1);
@@ -211,6 +281,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
         window.cursor.value = start;
       }
     }
+    final a = _a, b = _b;
+    _remember((controller) => controller.rememberComparisonPair(a, b));
+    if (!opening) _rangeChanged();
+    window.range.addListener(_rangeChanged);
   }
 
   void _setPair(DayLapRow a, DayLapRow b) {
@@ -539,7 +613,8 @@ class _ComparisonPageState extends State<ComparisonPage> {
       AddChannelButton(
         channels: comparison.chartChannels,
         shown: _channels,
-        onAdd: (channel) => setState(() => _channels = [..._channels, channel]),
+        onAdd: (channel) =>
+            setState(() => _setChannels([..._channels, channel])),
       ),
       Wrap(
         spacing: 8,
@@ -584,10 +659,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
   ];
 
   void _remove(String channel) => setState(
-    () => _channels = [
+    () => _setChannels([
       for (final shown in _channels)
         if (shown != channel) shown,
-    ],
+    ]),
   );
 
   @override

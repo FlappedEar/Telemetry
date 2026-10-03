@@ -143,3 +143,34 @@ extension DayNoteText on AppLocalizations {
     _ => reason,
   };
 }
+
+extension FusionReasonText on AppLocalizations {
+  /// Why a session's other recording was not combined with it, from the
+  /// reason `telemetry_core` gives, in the app's language.
+  String fusionReason(RunFusion fusion) => fusionReasonText(
+    fusion.reason,
+    unavailable: fusion.state == RunFusionState.unavailable,
+  );
+
+  /// [reason] as [fusionReason] says it: why the recording could not be
+  /// used when [unavailable], else why it could not be aligned.
+  String fusionReasonText(String reason, {required bool unavailable}) =>
+      unavailable
+      ? switch (reason) {
+          'Recording not found.' => fusionReasonNotFound,
+          'The file found is a different recording.' => fusionReasonDifferent,
+          'Aligning failed.' => fusionReasonFailed,
+          _ => fusionReasonUnreadable,
+        }
+      : switch (reason) {
+          'noSpeed' => fusionReasonNoSpeed,
+          'shortOverlap' => fusionReasonShortOverlap,
+          'weakMatch' ||
+          'tooFewWindows' ||
+          'windowsDisagree' ||
+          'implausibleDrift' ||
+          'repeatedMatch' => fusionReasonAmbiguous,
+          'declaredClockDisagrees' => fusionReasonClockDisagrees,
+          _ => fusionReasonInsufficient,
+        };
+}

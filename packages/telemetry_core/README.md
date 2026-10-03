@@ -74,8 +74,14 @@ a background isolate.
   run's recording (relative path when close, content SHA-256, `telemetry-v1`
   fingerprint from `telemetryFingerprint`), its manual layout and direction
   or the unknown configuration with its gate revision, the detected route's
-  provenance, lap exclusions as full lap references, and the group shown as
-  `analysisDecisions.comparisonGroupId`. A document opened earlier keeps
+  provenance, lap exclusions as full lap references and the comparison
+  decisions as Overlays writes them (FET-53): the group as
+  `analysisDecisions.comparisonGroupId` only when the user chose it
+  (`groupChosen`; otherwise the saved group, or none, is kept, so a day
+  never chosen stays "automatic" in Overlays), and the comparison set up
+  (`ComparisonDecisions`: `comparisonSlots` as lap references,
+  `comparisonRange` in meters and `comparisonChannels`, each written only
+  when set and valid). A document opened earlier keeps
   everything this app does not manage, including runs whose recordings were
   missing. `openDay` reads it back: it finds each recording (relative path
   first, then absolute, or a relinked path), refuses a different recording
@@ -83,7 +89,9 @@ a background isolate.
   accepted by its name), applies exclusions whose recording and derivation key
   still match, and analyses the day with the saved group shown when it is
   still one of the day's (a saved group the day cannot show stays saved until
-  the user chooses another). `findMovedRecordings` looks for missing
+  the user chooses another); `OpenedDay.comparison` (`documentComparison`)
+  is the saved comparison, a lap whose recording or derivation changed read
+  as none and kept in the document as it was. `findMovedRecordings` looks for missing
   recordings in a folder by the identity the document stores: the content
   SHA-256, else the fingerprint's size and sampled SHA-256, and only for a
   recording with neither, its file name; a file named like one but holding
@@ -281,6 +289,27 @@ a background isolate.
   (`fusionConflictTolerance`), units must match exactly and samples are
   never resampled; every output segment keeps its source and clock.
   `fusedSession` gives the primary session with the fusion applied.
+- A day's source fusion without a review (`day_fusion.dart`, FET-51):
+  `importedAlternatives` names the RCZ grouped under each VBO run;
+  `fuseRunRecordings` aligns it and, when the alignment is "aligned", fuses
+  it at once (`fuseImportedRuns` does both): added channels join, every
+  shared channel keeps the VBO, and a conflicting one gets a `primaryOnly`
+  rule. `withFusionRule` changes one channel's rule. `RunFusion.decision` is
+  the run's `fusion` object of the `.fetproject` format (Overlays KAN-103),
+  bound to both recordings' content SHA-256; `dayDocument` writes it with the
+  RCZ as the run's alternative source (updating that entry, never adding a
+  second one). `openDay` does not read the RCZ: `OpenedDay.alternatives`
+  names each run's, and `resolveDocumentAlternative` (meant for a background
+  isolate; `fuseOpenedDay` does all) reads it, applies the decision without
+  aligning again while both recordings still match (`fusionDecisionApplies`)
+  and aligns afresh otherwise. A file that is not the content the document
+  asserts is used only when it is the same drive as the VBO
+  (`sameDriveInOtherFormat`), with `RunFusion.documentChanged` set so its
+  entry is rewritten; otherwise it is a different recording.
+  `findMovedRecordings` also looks for missing alternatives
+  (`missingAlternatives`), by content or else by name, and `openDay` takes
+  them as `relinkedAlternatives`. Laps and lap timing never come from the
+  fused session.
 
 Every untrusted size is bounded before allocation (`VboLimits`), and long
 operations take a `CancellationCheck`.

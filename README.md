@@ -66,7 +66,7 @@ satellite imagery when the build has a key; the layers button switches
 between them, on every map at once. Tiles already seen stay cached for the
 track. **Save** writes the day as a
 `.fetproject` document FlappedEar Overlays can open (sessions, recordings,
-circuit names, excluded laps and the group shown); **Open a saved day** reads
+circuit names, excluded laps, the group chosen and the last comparison); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
 **Find recordings in a folder**, which finds each recording by its content
 (even renamed), never uses a different recording that only has its name, and
@@ -76,7 +76,7 @@ app read a chosen or dropped file only until it quits, so the app keeps a
 security-scoped bookmark of every recording and folder chosen and restores
 that access before opening a day; recordings chosen before this existed are
 found once with **Find recordings in a folder…**. Days saved by either app open in the
-other with their segments, lap exclusions, notes and the group shown. On desktop the system dialogs choose the file;
+other with their segments, lap exclusions, notes, the group chosen and the last comparison. On desktop the system dialogs choose the file;
 on phones days are kept in the app. A day with unsaved changes is kept in
 the app's own folder as you work, and after a crash or a closed app the import
 screen offers to **Restore** or **Discard** it. This recovery is best effort:
@@ -98,6 +98,35 @@ segments are calculated. Every value says whether it was measured from a
 pedal or sensor, calculated by the logger from GPS, or inferred from
 longitudinal G, which happens only when the recording has no such pedal
 channel.
+
+A session recorded as both a VBO and an RCZ of the same drive is combined
+without a review: the results show from the VBO first, then, in a background
+isolate, the RCZ's clock is lined up with the VBO's by their speed traces (recording-alignment-v1, as FlappedEar Overlays
+does) and, when that is unambiguous, its channels are fused
+(channel-fusion-v1): a channel only the RCZ recorded is added and says
+**from RCZ** wherever it is listed or charted, a channel both recorded stays
+the VBO's, and where the two disagree the Circuits row says so with **Keep
+VBO**, **Fill gaps** and **Use RCZ**. When the clocks cannot be lined up,
+nothing is combined and the row says why; when it is lined up but adds
+nothing, the row says so in one quiet line. Laps, lap times, rankings and the
+theoretical best always come from the VBO alone; lap charts, comparisons
+and the Car and Driver cards use the combined channels. Saving writes the
+run's `fusion` decision of the shared format, bound to both recordings'
+content. A saved day opens with its VBO results at once and then reads its
+RCZ in the background: the decision is applied without aligning again while
+both recordings are unchanged, and they are aligned afresh otherwise. When
+the file at the RCZ's place (or one found by **Find recordings in a
+folder…**, which also looks for RCZs by content, or by name) holds other
+content, it is still used when it is the same drive as the VBO by the
+import's pairing rule: it is aligned afresh (keeping the rules chosen for
+channels both still record), its source entry is updated and the day has
+changes until saved. Otherwise it is "a different recording" and the session
+uses its VBO alone. An RCZ the document stores no SHA-256 or fingerprint for
+is likewise used only when it is the same drive, never by its path alone. A day gets unsaved changes from this only
+when it produces a new decision or updates the RCZ's entry, never just by
+opening. An RCZ still being aligned when the day is saved is written as the
+run's source (keeping any earlier decision), so it is aligned when the day
+opens again; closing the day stops the alignment.
 
 Speeds carry the unit their recording declares: RCZ declares its unit, and a
 RaceChrono VBO names it in its header (`velocity kmh`), which the parser keeps
@@ -170,7 +199,8 @@ installing a newer one.
 
 **Diagnostics**, in the **More** menu of **Import a day** and of the day page,
 shows how long the last import took step by step (finding the recordings,
-parse and import, day analysis, start to results, then the theoretical best
+parse and import, day analysis, start to results, then aligning and
+combining VBO and RCZ when a session has both, and the theoretical best
 and the channel summaries once they have been calculated), how many
 recordings, sessions and samples it read, and the app's current and peak
 resident memory as the system reports it ("Not available" where it does not).
@@ -250,6 +280,7 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every pull request and
 on `main`:
 
 - analyze, tests and a macOS debug build;
+- analyze, tests and a Windows release build on Windows;
 - an iOS simulator debug build, then `integration_test/` on a booted iPhone
   simulator;
 - an Android debug APK, then `integration_test/` on an Android emulator
@@ -271,6 +302,25 @@ Run the integration tests locally on any connected device or simulator:
 ```bash
 flutter test integration_test -d <device id>
 ```
+
+### Checks on a real day
+
+The real-recording tests and the parity checks against FlappedEar Overlays'
+C++ are skipped in CI: they need private recordings and an Overlays checkout.
+`tool/real_day_parity.dart` runs all of them on one day's folder of VBO and
+RCZ files, building the C++ tools of
+[`packages/telemetry_core/tool`](packages/telemetry_core/tool/README.md) and
+writing their references to a temporary folder, and prints PASS, FAIL or SKIP
+with test counts per check:
+
+```bash
+FET_REAL_DAY=<day folder> VBOOVERLAY_DIR=<Overlay checkout> \
+  QT_PREFIX=<Qt 6.8 prefix> dart run tool/real_day_parity.dart
+```
+
+`--verbose` adds the figures the tests print, `--only=<name>,...` runs some
+checks, `--keep` keeps the references and logs (private: never commit them).
+Report its results separately from the synthetic tests.
 
 ## Contributing
 
