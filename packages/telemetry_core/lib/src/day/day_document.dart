@@ -103,6 +103,50 @@ Map<String, Object?> _unknownConfiguration(
   'sourceFingerprint': fingerprint,
 };
 
+/// A comparison of two laps as Overlays saves it in the event's
+/// `analysisDecisions` (KAN-41, FET-53): the A/B pair, the range shown on
+/// the shared track-position axis and the charts shown. When writing
+/// ([dayDocument]), a null field keeps what the document has; when read
+/// ([OpenedDay.comparison]), a null field is not saved or not usable.
+final class ComparisonDecisions {
+  const ComparisonDecisions({this.slots, this.range, this.channels});
+
+  /// Laps A and B; an entry is null when that slot is empty, or (read back)
+  /// when its lap is not one of this day's any more (a changed recording or
+  /// lap derivation): the document then keeps it as it was, unapplied.
+  final List<DayLapReference?>? slots;
+
+  /// The range shown, in meters along the shared axis.
+  final (double, double)? range;
+
+  /// The charts shown, by channel name ("Δ time" included), at
+  /// most [fet.maximumComparisonChannels].
+  final List<String>? channels;
+
+  bool get isEmpty => slots == null && range == null && channels == null;
+
+  /// [other]'s fields where it has them, this one's elsewhere.
+  ComparisonDecisions overriddenBy(ComparisonDecisions other) => ComparisonDecisions(
+    slots: other.slots ?? slots,
+    range: other.range ?? range,
+    channels: other.channels ?? channels,
+  );
+
+  /// Whether Overlays accepts [range] (finite, from 0, increasing, bounded).
+  static bool validRange((double, double) range) =>
+      range.$1.isFinite &&
+      range.$2.isFinite &&
+      range.$1 >= 0 &&
+      range.$2 > range.$1 &&
+      range.$2 <= fet.maximumComparisonRangeMeters;
+
+  /// Whether Overlays accepts [channels] (at most four distinct names).
+  static bool validChannels(List<String> channels) =>
+      channels.length <= fet.maximumComparisonChannels &&
+      channels.toSet().length == channels.length &&
+      channels.every((name) => name.isNotEmpty && name.length <= fet.maximumIdCharacters);
+}
+
 /// The version 3 document of a day, to be saved at [projectPath].
 ///
 /// [previous] is the document the day was opened from (saved at
@@ -121,8 +165,14 @@ Map<String, Object?> _unknownConfiguration(
 /// proposals as approved `trackSegments` when no run has segments for the
 /// group yet ([automaticTrackSegments]); [random] mints their ids.
 ///
-/// [groupChosen] says the user chose the group shown; otherwise a saved group
-/// this day cannot show is kept.
+/// [groupChosen] says the user chose the group shown: it is saved as
+/// `analysisDecisions.comparisonGroupId`. Otherwise the document's saved
+/// group, or its absence, is kept as it was, as Overlays writes the group
+/// only when the user chooses one (`selectOutingComparisonGroup`), so a day
+/// whose group was never chosen stays "automatic".
+///
+/// [comparison] is the comparison the user set up (see
+/// [ComparisonDecisions]); its null fields keep the document's.
 ///
 /// [fusions] are the runs' alternative recordings by run id: each one is
 /// written as a source of its run, and a fused run gets its `fusion`
@@ -146,6 +196,7 @@ Map<String, Object?> dayDocument({
   Map<String, List<Map<String, Object?>>> trackSegments = const {},
   bool automaticSegments = true,
   bool groupChosen = false,
+  ComparisonDecisions comparison = const ComparisonDecisions(),
   Map<String, RunFusion> fusions = const {},
   Map<String, TelemetryRunProposal> pendingAlternatives = const {},
   Random? random,
@@ -286,37 +337,43 @@ Map<String, Object?> dayDocument({
     final run = opened[reference.runId];
     if (run == null || reference.type != LapSectionType.lap) continue;
     exclusionEntries.add({
-      'reference': {
-        'version': 1,
-        'algorithm': fet.lapReferenceAlgorithm,
-        'eventId': eventId,
-        'runId': reference.runId,
-        'sourceId': run['primaryTelemetrySourceId'],
-        'sourceRevision': reference.sourceRevision,
-        'derivationKey': fet.lapDerivationV1Key(run),
-        'type': reference.type.label,
-        'startTime': reference.startTime,
-        'endTime': reference.endTime,
-      },
+      'reference': _lapReferenceJson(eventId, run, reference),
       'reason': reason,
     });
   }
 
-  // The group shown, as Overlays saves its comparison choice. Other saved
-  // decisions (slots, range, channels) are kept as they were. A saved group
-  // that is not one of this day's groups (its sessions are missing or have
-  // changed) stays saved, unapplied, until the user chooses another, as
-  // Overlays keeps it.
+  // The comparison decisions, as Overlays saves them: the group only when
+  // the user chose one (a saved group this day cannot show, or none, stays
+  // as it was), and the comparison's pair, range and charts the user set up.
+  // Keys this app does not know are kept; the object is added only when
+  // something is decided, as Overlays adds it.
   final decisions = _object(event['analysisDecisions']) ?? <String, Object?>{};
-  final savedGroup = decisions['comparisonGroupId'];
-  final unavailable =
-      savedGroup is String && !analysis.groups.any((group) => group.id == savedGroup);
-  if (groupChosen || !unavailable) {
+  if (groupChosen) {
     decisions['comparisonGroupId'] = chosenGroup != null && chosenGroup.resolved
         ? chosenGroup.id
         : null;
   }
-  event['analysisDecisions'] = decisions;
+  if (comparison.slots case final slots? when slots.length == 2) {
+    final written = [
+      for (final reference in slots)
+        reference == null || opened[reference.runId] == null || reference.type != LapSectionType.lap
+            ? null
+            : _lapReferenceJson(eventId, opened[reference.runId]!, reference),
+    ];
+    // A lap of a run that was not opened cannot be named: the pair is not changed.
+    if (written.indexed.every((entry) => entry.$2 != null || slots[entry.$1] == null)) {
+      decisions['comparisonSlots'] = written;
+    }
+  }
+  if (comparison.range case final range? when ComparisonDecisions.validRange(range)) {
+    decisions['comparisonRange'] = {'startMeters': range.$1, 'endMeters': range.$2};
+  }
+  if (comparison.channels case final channels? when ComparisonDecisions.validChannels(channels)) {
+    decisions['comparisonChannels'] = [...channels];
+  }
+  if (decisions.isNotEmpty || event.containsKey('analysisDecisions')) {
+    event['analysisDecisions'] = decisions;
+  }
   event['id'] = eventId;
   event['name'] = name;
   event['runs'] = allRuns;
@@ -334,6 +391,24 @@ Map<String, Object?> dayDocument({
   document['documentState'] = nextDocumentState(_object(document['documentState']));
   return document;
 }
+
+/// [reference] as a document's lap reference (`source-laps-v1`) of [run].
+Map<String, Object?> _lapReferenceJson(
+  String eventId,
+  Map<String, Object?> run,
+  DayLapReference reference,
+) => {
+  'version': 1,
+  'algorithm': fet.lapReferenceAlgorithm,
+  'eventId': eventId,
+  'runId': reference.runId,
+  'sourceId': run['primaryTelemetrySourceId'],
+  'sourceRevision': reference.sourceRevision,
+  'derivationKey': fet.lapDerivationV1Key(run),
+  'type': reference.type.label,
+  'startTime': reference.startTime,
+  'endTime': reference.endTime,
+};
 
 /// Segments without manual review (Overlays KAN-136): when no run stores
 /// segments approved for the chosen group, the proposals of the group's best
@@ -478,7 +553,12 @@ final class OpenedDay {
     required this.analysis,
     this.alternatives = const {},
     this.relinked = const {},
+    this.comparison = const ComparisonDecisions(),
   });
+
+  /// The comparison the document saved: its laps of this day (a stale one
+  /// is null), range and charts.
+  final ComparisonDecisions comparison;
 
   /// The runs' alternative recordings as the document names them, by run
   /// id, also of runs whose recording is [missing] (to find them both when
@@ -513,6 +593,65 @@ final class OpenedDay {
   /// says and verified: the day has changes until saved, and saving writes
   /// the new paths (Overlays marks a relinked document dirty).
   final Set<String> relinked;
+}
+
+/// A document's lap [reference] as a reference to a lap of this day, or null
+/// when it is stale for the run's recording or lap derivation (kept in the
+/// document, not applied). [runs] are the document's runs by id, [loaded]
+/// the content SHA-256 of each opened run's recording.
+DayLapReference? _appliedLapReference(
+  Map<String, Object?> reference,
+  Map<Object?, Map<String, Object?>> runs,
+  Map<String, String> loaded,
+) {
+  final runId = reference['runId'];
+  final run = runs[runId];
+  if (run == null ||
+      loaded[runId] != reference['sourceRevision'] ||
+      reference['derivationKey'] != fet.lapDerivationV1Key(run)) {
+    return null;
+  }
+  return DayLapReference(
+    runId: runId as String,
+    sourceRevision: reference['sourceRevision'] as String,
+    type: LapSectionType.lap,
+    startTime: (reference['startTime'] as num).toDouble(),
+    endTime: (reference['endTime'] as num).toDouble(),
+  );
+}
+
+/// The comparison [document] (a validated day) saves in its
+/// `analysisDecisions`, with its laps as laps of the opened [runs]: a lap
+/// whose run is not opened, or whose recording or derivation changed, is
+/// null.
+ComparisonDecisions documentComparison(Map<String, Object?> document, List<NamedRun> runs) {
+  final event = _object(document['event']) ?? const <String, Object?>{};
+  final decisions = _object(event['analysisDecisions']) ?? const <String, Object?>{};
+  final byId = <Object?, Map<String, Object?>>{
+    for (final run in ((event['runs'] as List?) ?? const []).whereType<Map<String, Object?>>())
+      run['id']: run,
+  };
+  final loaded = {for (final named in runs) named.run.id: named.run.contentSha256};
+  final slots = decisions['comparisonSlots'];
+  final range = _object(decisions['comparisonRange']);
+  final channels = decisions['comparisonChannels'];
+  return ComparisonDecisions(
+    slots: slots is List
+        ? [
+            for (final slot in slots)
+              slot is Map<String, Object?> ? _appliedLapReference(slot, byId, loaded) : null,
+          ]
+        : null,
+    range: range != null && range['startMeters'] is num && range['endMeters'] is num
+        ? ((range['startMeters']! as num).toDouble(), (range['endMeters']! as num).toDouble())
+        : null,
+    channels: channels is List
+        ? [
+            for (final name in channels)
+              if (name is String) name,
+          ]
+        : null,
+  );
 }
 
 /// The document at [path], refusing a file over the 4 MiB limit first.
@@ -684,25 +823,15 @@ OpenedDay openDayDocument(
   final exclusions = <DayLapReference, String>{};
   final byId = {for (final run in runs) run['id']: run};
   final loadedIds = {for (final run in named) run.run.id: run.run.contentSha256};
+  DayLapReference? applied(Map<String, Object?> reference) =>
+      _appliedLapReference(reference, byId, loadedIds);
+
   for (final value in (event['lapExclusions'] as List?) ?? const []) {
     final entry = value as Map<String, Object?>;
-    final reference = entry['reference'] as Map<String, Object?>;
-    final runId = reference['runId'];
-    final run = byId[runId];
-    if (run == null ||
-        loadedIds[runId] != reference['sourceRevision'] ||
-        reference['derivationKey'] != fet.lapDerivationV1Key(run)) {
-      continue; // Stale for this recording or configuration: kept, not applied.
-    }
-    exclusions[DayLapReference(
-          runId: runId as String,
-          sourceRevision: reference['sourceRevision'] as String,
-          type: LapSectionType.lap,
-          startTime: (reference['startTime'] as num).toDouble(),
-          endTime: (reference['endTime'] as num).toDouble(),
-        )] =
-        entry['reason'] as String;
+    final reference = applied(entry['reference'] as Map<String, Object?>);
+    if (reference != null) exclusions[reference] = entry['reason'] as String;
   }
+  final comparison = documentComparison(document, named);
   // The group saved as shown leads again when it is still one of the day's.
   final savedGroup = _object(event['analysisDecisions'])?['comparisonGroupId'];
   final analysis = inputs.isEmpty
@@ -723,6 +852,7 @@ OpenedDay openDayDocument(
     missing: missing,
     analysis: analysis,
     alternatives: alternatives,
+    comparison: comparison,
     relinked: {
       for (final runId in moved)
         if (named.any((run) => run.run.id == runId)) runId,

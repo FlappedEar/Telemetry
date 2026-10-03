@@ -472,4 +472,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appleMapLegal => 'Legal';
+
+  @override
+  String get lapsLastComparison => 'Last comparison';
 }

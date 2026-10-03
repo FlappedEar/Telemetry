@@ -74,8 +74,14 @@ a background isolate.
   run's recording (relative path when close, content SHA-256, `telemetry-v1`
   fingerprint from `telemetryFingerprint`), its manual layout and direction
   or the unknown configuration with its gate revision, the detected route's
-  provenance, lap exclusions as full lap references, and the group shown as
-  `analysisDecisions.comparisonGroupId`. A document opened earlier keeps
+  provenance, lap exclusions as full lap references and the comparison
+  decisions as Overlays writes them (FET-53): the group as
+  `analysisDecisions.comparisonGroupId` only when the user chose it
+  (`groupChosen`; otherwise the saved group, or none, is kept, so a day
+  never chosen stays "automatic" in Overlays), and the comparison set up
+  (`ComparisonDecisions`: `comparisonSlots` as lap references,
+  `comparisonRange` in meters and `comparisonChannels`, each written only
+  when set and valid). A document opened earlier keeps
   everything this app does not manage, including runs whose recordings were
   missing. `openDay` reads it back: it finds each recording (relative path
   first, then absolute, or a relinked path), refuses a different recording
@@ -83,7 +89,9 @@ a background isolate.
   accepted by its name), applies exclusions whose recording and derivation key
   still match, and analyses the day with the saved group shown when it is
   still one of the day's (a saved group the day cannot show stays saved until
-  the user chooses another). `findMovedRecordings` looks for missing
+  the user chooses another); `OpenedDay.comparison` (`documentComparison`)
+  is the saved comparison, a lap whose recording or derivation changed read
+  as none and kept in the document as it was. `findMovedRecordings` looks for missing
   recordings in a folder by the identity the document stores: the content
   SHA-256, else the fingerprint's size and sampled SHA-256, and only for a
   recording with neither, its file name; a file named like one but holding

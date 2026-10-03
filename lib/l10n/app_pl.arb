@@ -113,5 +113,6 @@
   "settingsAllUnlabelled": "Jego nagrania nie podają jednostki prędkości.",
   "settingsSomeUnlabelled": "{count, plural, =1{1 z jego nagrań nie podaje jednostki prędkości.} few{{count} z jego nagrań nie podają jednostki prędkości.} other{{count} z jego nagrań nie podaje jednostki prędkości.}}",
   "close": "Zamknij",
-  "appleMapLegal": "Informacje prawne"
+  "appleMapLegal": "Informacje prawne",
+  "lapsLastComparison": "Ostatnie porównanie"
 }

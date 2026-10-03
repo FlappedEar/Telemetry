@@ -235,6 +235,7 @@ void main() {
         runs: day.runs,
         analysis: shown,
         projectPath: path,
+        groupChosen: true,
       ),
     );
     expect(openDay(path).analysis!.chosenGroupId, bGroup);

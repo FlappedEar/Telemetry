@@ -485,4 +485,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get appleMapLegal => 'Informacje prawne';
+
+  @override
+  String get lapsLastComparison => 'Ostatnie porównanie';
 }

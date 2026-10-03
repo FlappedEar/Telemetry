@@ -122,19 +122,9 @@ Future<int> _checkFusedDay(String path, Map<String, Object?> fused) async {
   await saveDayDocument(path, document);
   final telemetrySaved = readDayDocument(path);
   expect(fet.validateFetproject(telemetrySaved), isNull);
-  // Known difference (FET-55 finding): Overlays saves
-  // `event.analysisDecisions` only once the user chooses a comparison group;
-  // Telemetry always saves the group shown, so it adds it to a day Overlays
-  // saved without one. Everything else is Overlays' document.
-  final telemetryEvent = Map.of(_object(telemetrySaved['event']));
-  if (!_object(overlaysSaved['event']).containsKey('analysisDecisions')) {
-    expect(telemetryEvent.remove('analysisDecisions'), {
-      'comparisonGroupId': inspected['comparisonGroupId'],
-    });
-  }
   expect(
     jsonDifferences(
-      {...telemetrySaved, 'documentState': null, 'event': telemetryEvent},
+      {...telemetrySaved, 'documentState': null},
       {...overlaysSaved, 'documentState': null},
       unordered: const {'event.lapExclusions'},
     ),
@@ -151,6 +141,7 @@ Future<int> _checkFusedDay(String path, Map<String, Object?> fused) async {
   // Overlays applies the decision from Telemetry's save as before.
   final [again as Map<String, Object?>] = _runList(['inspect', path]);
   expect(_inspectedRun(again, runId)['fusion'], overlaysFusion);
+  expect(again['comparisonSelectionState'], inspected['comparisonSelectionState']);
   expect(
     jsonDifferences(
       overlaysView(again)..remove('documentState'),

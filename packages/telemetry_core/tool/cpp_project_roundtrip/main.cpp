@@ -28,6 +28,10 @@
 //       Overlays adds the recording to the run (its id or 1-based position)
 //       as an alternative, as Run details does (KAN-90: attachRunRecording,
 //       the match evidence, confirmRunRecording), and saves the day.
+//   cpp_project_roundtrip compare <project> <lap A> <lap B> <start> <end> [<channel>...]
+//       Overlays compares the two laps ("Session 1 · LAP 3"), shows
+//       <start>..<end> meters and the charts, as its comparison view saves
+//       them (FET-53), and saves the day.
 //   cpp_project_roundtrip fuse <project> <run> [<channel key>=<rule>...]
 //       Overlays reviews fusing the run's alternative recording into it and
 //       approves the fusion with the given rules (KAN-103: reviewRunFusion,
@@ -257,6 +261,38 @@ QJsonObject inspectFusion(TelemetryController &controller, const QJsonObject &ru
     return result;
 }
 
+QString lapLabel(const QVariantMap &row)
+{
+    return QStringLiteral("%1 · %2 %3").arg(row.value("runName").toString(), row.value("type").toString())
+        .arg(row.value("lapNumber").toInt());
+}
+
+// The comparison Overlays restores from the day (KAN-41): each slot's lap
+// ("Session 1 · LAP 3", empty when the slot is empty) and state, and the
+// saved range and charts, as its comparison view reads them.
+QJsonObject inspectComparison(AnalysisController &analysis)
+{
+    if (!waitFor([&] {
+            for (const auto &value : analysis.comparisonSlots())
+                if (value.toMap().value("state").toString() == "loading") return false;
+            return true;
+        }, 120'000))
+        fail(QStringLiteral("The comparison did not load."));
+    QJsonArray slotList;
+    for (const auto &value : analysis.comparisonSlots()) {
+        const auto slot = value.toMap();
+        const auto row = slot.value("lap").toMap();
+        slotList.append(QJsonObject{{"lap", row.isEmpty() ? QString() : lapLabel(row)},
+                                 {"state", slot.value("state").toString()}});
+    }
+    const auto range = analysis.comparisonPersistedRangeMeters();
+    return {{"slots", slotList}, {"pairReady", analysis.comparisonPairReady()},
+            {"range", range.isEmpty() ? QJsonValue(QJsonValue::Null)
+                                      : QJsonValue(QJsonArray{range.value("startMeters").toDouble(),
+                                                              range.value("endMeters").toDouble()})},
+            {"channels", QJsonArray::fromStringList(analysis.comparisonPersistedChannels())}};
+}
+
 QJsonObject inspectOpened(TelemetryController &controller, const QString &path)
 {
     auto &document = *controller.document();
@@ -309,6 +345,7 @@ QJsonObject inspectOpened(TelemetryController &controller, const QString &path)
             {"bestOfDay", row.value("bestOfDay").toBool()}});
     }
     result.insert("laps", laps);
+    result.insert("comparison", inspectComparison(analysis));
     analysis.requestOutingDayReport();
     if (!waitFor([&] { return reportSettled(analysis.outingDayReport()); }, 600'000))
         fail(QStringLiteral("The day report did not settle for %1").arg(path));
@@ -552,6 +589,33 @@ QJsonObject fuse(const QString &path, const QString &run, const QStringList &rul
             {"preview", QJsonObject::fromVariantMap(review.value("preview").toMap())}};
 }
 
+// Overlays compares laps [a] and [b] ("Session 1 · LAP 3"), shows
+// [start]..[end] meters and the charts [channels], as its comparison view
+// saves them, and saves the day.
+void compare(const QString &path, const QString &a, const QString &b, double start, double end,
+             const QStringList &channels, const QTemporaryDir &scratch)
+{
+    auto controller = newController(scratch);
+    auto &analysis = *controller->analysis();
+    open(*controller, path);
+    const auto rowOf = [&](const QString &label) {
+        const auto row = lapRow(analysis, [&](const QVariantMap &candidate) { return lapLabel(candidate) == label; });
+        if (row.isEmpty()) fail(QStringLiteral("No lap %1.").arg(label));
+        return row.value("reference").toMap();
+    };
+    analysis.clearComparisonLap(0);
+    analysis.clearComparisonLap(1);
+    if (!analysis.selectComparisonLap(0, rowOf(a)) || !analysis.selectComparisonLap(1, rowOf(b)))
+        fail(QStringLiteral("Overlays refused the pair."));
+    if (!waitFor([&] { return analysis.comparisonPairReady(); }, 120'000)) fail(QStringLiteral("The pair did not load."));
+    settle(*controller);
+    analysis.persistComparisonRange(start, end);
+    analysis.persistComparisonChannels(channels);
+    settle(*controller);
+    save(*controller, path);
+    settle(*controller);
+}
+
 void print(const QJsonValue &value)
 {
     const QByteArray json = value.isArray() ? QJsonDocument(value.toArray()).toJson(QJsonDocument::Indented)
@@ -571,7 +635,7 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QStringLiteral("cpp_project_roundtrip"));
     QSettings().clear();
     const QStringList arguments = application.arguments().mid(1);
-    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect|import|attach|fuse ..."));
+    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect|import|attach|fuse|compare ..."));
     QTemporaryDir scratch;
     if (!scratch.isValid()) fail(QStringLiteral("No temporary folder."));
     const QString command = arguments.first();
@@ -602,12 +666,16 @@ int main(int argc, char **argv)
         auto result = fuse(arguments[1], arguments[2], arguments.mid(3), scratch);
         result.insert("inspected", inspect(arguments[1], scratch));
         print(result);
+    } else if (command == "compare" && arguments.size() >= 6) {
+        compare(arguments[1], arguments[2], arguments[3], arguments[4].toDouble(), arguments[5].toDouble(),
+                arguments.mid(6), scratch);
+        print(inspect(arguments[1], scratch));
     } else if (command == "inspect") {
         QJsonArray results;
         for (const auto &path : arguments.mid(1)) results.append(inspect(path, scratch));
         print(results);
     } else {
-        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect|import|attach|fuse ..."));
+        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|inspect|import|attach|fuse|compare ..."));
     }
     QSettings().clear();
     return 0;

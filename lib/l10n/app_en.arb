@@ -751,5 +751,9 @@
   "appleMapLegal": "Legal",
   "@appleMapLegal": {
     "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
+  },
+  "lapsLastComparison": "Last comparison",
+  "@lapsLastComparison": {
+    "description": "Button above the lap list that opens the two laps last compared, with the range and charts they were left with (saved with the day)."
   }
 }
