@@ -43,7 +43,7 @@ String _reason(AppLocalizations l10n, String reason) => switch (reason) {
 };
 
 final _resolvedGroup = RegExp(
-  r'^Group (\d+) · (.+) · (Clockwise|Counterclockwise)$',
+  r'^Group (\d{1,9}) · (.+) · (Clockwise|Counterclockwise)$',
 );
 final _unresolvedGroup = RegExp(r'^Unresolved · (.+)$');
 

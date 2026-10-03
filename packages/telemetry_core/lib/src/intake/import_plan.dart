@@ -247,6 +247,10 @@ TelemetryImportPlan prepareTelemetryImport(
       result = _error(path, error.osError?.message ?? error.message);
     } on Exception catch (error) {
       result = _error(path, error.toString());
+    } on Error catch (error) {
+      // A defect while reading one file (a bug, not a bad recording) marks
+      // that file and leaves the others of the import alone.
+      result = _error(path, 'Unexpected error while reading this file: $error');
     }
     files.add(result);
     progress?.call(files.length, paths.length);

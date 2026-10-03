@@ -6023,5 +6023,38 @@
   "speedLegendNoSpeed": "No speed recorded; the trace is drawn in one colour.",
   "@speedLegendNoSpeed": {
     "description": "Under the track map when the lap has no speed channel, so the trace has no speed colours."
+  },
+  "appErrorNotice": "Something went wrong. Details are in Diagnostics.",
+  "@appErrorNotice": {
+    "description": "Short message shown at the bottom of any page after an unexpected error; Diagnostics is the page in the More menu."
+  },
+  "appErrorPart": "This part could not be shown.",
+  "@appErrorPart": {
+    "description": "Shown in place of a part of a page that failed to display, in release builds."
+  },
+  "diagnosticsErrors": "Errors",
+  "@diagnosticsErrors": {
+    "description": "Heading of the diagnostics page section that lists unexpected errors since the app started."
+  },
+  "diagnosticsNoErrors": "No errors since the app started.",
+  "@diagnosticsNoErrors": {
+    "description": "Shown in the diagnostics page's errors section when there were none."
+  },
+  "diagnosticsCopyErrors": "Copy errors",
+  "@diagnosticsCopyErrors": {
+    "description": "Button on the diagnostics page that copies the errors and their details for a bug report."
+  },
+  "diagnosticsErrorsCopied": "Errors copied. Paste them into a bug report.",
+  "@diagnosticsErrorsCopied": {
+    "description": "Message after the errors were copied to the clipboard."
+  },
+  "diagnosticsErrorsDropped": "{count} earlier errors not kept",
+  "@diagnosticsErrorsDropped": {
+    "description": "Line under the diagnostics page's errors when older ones were dropped.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

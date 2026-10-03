@@ -258,6 +258,9 @@ DayRunsPart analyzeDayRuns(
       rethrow;
     } on Exception catch (error) {
       messages.add(DayMessage(run.runId, '$error'));
+    } on Error catch (error) {
+      // A defect in one run's analysis leaves the other runs of the day.
+      messages.add(DayMessage(run.runId, 'Unexpected error while analysing this session: $error'));
     }
   }
   throwIfCancelled(cancelled);

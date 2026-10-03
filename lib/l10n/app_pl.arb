@@ -995,5 +995,12 @@
   "mapBackgroundPlain": "Bez tła",
   "documentPickerDays": "Dzień FlappedEar",
   "documentPickerLookInFolder": "Szukaj w tym folderze",
-  "speedLegendNoSpeed": "Nie zapisano prędkości; ślad jest w jednym kolorze."
+  "speedLegendNoSpeed": "Nie zapisano prędkości; ślad jest w jednym kolorze.",
+  "appErrorNotice": "Coś poszło nie tak. Szczegóły są w Diagnostyce.",
+  "appErrorPart": "Nie udało się wyświetlić tej części.",
+  "diagnosticsErrors": "Błędy",
+  "diagnosticsNoErrors": "Brak błędów od uruchomienia aplikacji.",
+  "diagnosticsCopyErrors": "Kopiuj błędy",
+  "diagnosticsErrorsCopied": "Skopiowano błędy. Wklej je do zgłoszenia błędu.",
+  "diagnosticsErrorsDropped": "Wcześniejsze błędy, których nie zachowano: {count}"
 }

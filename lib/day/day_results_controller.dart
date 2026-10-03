@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/app_diagnostics.dart';
+import '../diagnostics/app_errors.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
@@ -2596,8 +2597,15 @@ final class DayResultsController extends ChangeNotifier {
     _recoveryWork = queueRecovery(() async {
       try {
         await operation();
-      } on Exception catch (error) {
+      } on Exception catch (error, stack) {
         debugPrint('Recovery snapshot not updated: $error');
+        // Listed in Diagnostics: the day is not protected until a write
+        // succeeds.
+        appErrors.record(
+          error,
+          stack,
+          context: 'Recovery snapshot not updated',
+        );
       }
     });
   }

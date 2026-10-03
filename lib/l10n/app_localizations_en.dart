@@ -4054,4 +4054,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get speedLegendNoSpeed =>
       'No speed recorded; the trace is drawn in one colour.';
+
+  @override
+  String get appErrorNotice =>
+      'Something went wrong. Details are in Diagnostics.';
+
+  @override
+  String get appErrorPart => 'This part could not be shown.';
+
+  @override
+  String get diagnosticsErrors => 'Errors';
+
+  @override
+  String get diagnosticsNoErrors => 'No errors since the app started.';
+
+  @override
+  String get diagnosticsCopyErrors => 'Copy errors';
+
+  @override
+  String get diagnosticsErrorsCopied =>
+      'Errors copied. Paste them into a bug report.';
+
+  @override
+  String diagnosticsErrorsDropped(int count) {
+    return '$count earlier errors not kept';
+  }
 }

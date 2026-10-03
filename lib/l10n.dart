@@ -71,7 +71,7 @@ extension RouteReasonText on AppLocalizations {
   };
 }
 
-final _sessionName = RegExp(r'^Session (\d+)$');
+final _sessionName = RegExp(r'^Session (\d{1,9})$');
 
 extension SessionNameText on AppLocalizations {
   /// A run name from `telemetry_core` ("Session 2") in the app's language

@@ -6140,6 +6140,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No speed recorded; the trace is drawn in one colour.'**
   String get speedLegendNoSpeed;
+
+  /// Short message shown at the bottom of any page after an unexpected error; Diagnostics is the page in the More menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Details are in Diagnostics.'**
+  String get appErrorNotice;
+
+  /// Shown in place of a part of a page that failed to display, in release builds.
+  ///
+  /// In en, this message translates to:
+  /// **'This part could not be shown.'**
+  String get appErrorPart;
+
+  /// Heading of the diagnostics page section that lists unexpected errors since the app started.
+  ///
+  /// In en, this message translates to:
+  /// **'Errors'**
+  String get diagnosticsErrors;
+
+  /// Shown in the diagnostics page's errors section when there were none.
+  ///
+  /// In en, this message translates to:
+  /// **'No errors since the app started.'**
+  String get diagnosticsNoErrors;
+
+  /// Button on the diagnostics page that copies the errors and their details for a bug report.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy errors'**
+  String get diagnosticsCopyErrors;
+
+  /// Message after the errors were copied to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Errors copied. Paste them into a bug report.'**
+  String get diagnosticsErrorsCopied;
+
+  /// Line under the diagnostics page's errors when older ones were dropped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} earlier errors not kept'**
+  String diagnosticsErrorsDropped(int count);
 }
 
 class _AppLocalizationsDelegate
