@@ -618,6 +618,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(lines().length, greaterThan(plain));
       expect(lines().where((line) => line.color == lapAColorForTest), isEmpty);
+
+      // With lap A picked for the colouring, the B button is not amber.
+      final slot = find.byKey(const ValueKey('comparisonMapLayerSlot'));
+      Color? slotColor(String label) => tester
+          .widget<RichText>(
+            find.descendant(
+              of: find.descendant(of: slot, matching: find.text(label)),
+              matching: find.byType(RichText),
+            ),
+          )
+          .text
+          .style
+          ?.color;
+      await tester.tap(find.descendant(of: slot, matching: find.text('A')));
+      await tester.pumpAndSettle();
+      expect(slotColor('B'), isNot(anyOf(lapAColorForTest, lapBColorForTest)));
+      await tester.tap(find.descendant(of: slot, matching: find.text('B')));
+      await tester.pumpAndSettle();
+      expect(slotColor('A'), isNot(anyOf(lapAColorForTest, lapBColorForTest)));
       debugDefaultTargetPlatformOverride = null;
     });
   }

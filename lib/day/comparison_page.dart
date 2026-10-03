@@ -499,8 +499,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
               SegmentedButton<int>(
                 key: const ValueKey('comparisonMapLayerSlot'),
                 showSelectedIcon: false,
-                // The selected lap in its own colour, so B is never amber.
+                // The selected lap in its own colour and the other one
+                // neutral, so B is never amber.
                 style: SegmentedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
                   selectedBackgroundColor: _layerSlot == 0
                       ? lapAColor
                       : lapBColor,
