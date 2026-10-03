@@ -51,6 +51,9 @@ final class CoastingSummary {
 
   /// Time the pedal states and speed were known.
   double knownSeconds = 0.0;
+
+  /// Where they were known.
+  final List<DrivingStateInterval> known = [];
   double coastingSeconds = 0.0;
   double coastingMeters = 0.0;
   final List<CoastingEpisode> episodes = [];
@@ -91,6 +94,7 @@ CoastingSummary summarizeCoasting(
   summary.unresolvedReason = states.coasting.unresolvedReason;
   for (final known in states.coasting.known) {
     summary.knownSeconds += known.end - known.start;
+    summary.known.add(known);
   }
   final segments = <Map<String, Object?>>[];
   if (approved != null) {
