@@ -3706,4 +3706,327 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importPageGroupingLimit =>
       'Source grouping exceeds the import limit.';
+
+  @override
+  String get segmentReviewOpen => 'Review proposals';
+
+  @override
+  String get segmentReviewTitle => 'Segment proposals';
+
+  @override
+  String get segmentReviewUndo => 'Undo';
+
+  @override
+  String get segmentReviewRedo => 'Redo';
+
+  @override
+  String get segmentReviewIntro =>
+      'Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.';
+
+  @override
+  String segmentReviewSummary(int count, String lap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count proposals from $lap',
+      one: '1 proposal from $lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewApproveAll => 'Approve all';
+
+  @override
+  String get segmentReviewRecompute => 'Recompute';
+
+  @override
+  String segmentReviewApproved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count proposals approved',
+      one: '1 proposal approved',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewNoneApproved => 'No proposal could be approved.';
+
+  @override
+  String get segmentReviewReject => 'Reject';
+
+  @override
+  String get segmentReviewRestore => 'Restore';
+
+  @override
+  String get segmentReviewStateProposed => 'Proposed';
+
+  @override
+  String get segmentReviewStateApproved => 'Approved';
+
+  @override
+  String get segmentReviewStateRejected => 'Rejected';
+
+  @override
+  String get segmentReviewStateSuperseded => 'Overlaps approved';
+
+  @override
+  String get segmentReviewCorner => 'Corner';
+
+  @override
+  String get segmentReviewStraight => 'Straight';
+
+  @override
+  String get segmentReviewSector => 'Sector';
+
+  @override
+  String segmentReviewTurnLeft(String degrees) {
+    return '$degrees° left';
+  }
+
+  @override
+  String segmentReviewTurnRight(String degrees) {
+    return '$degrees° right';
+  }
+
+  @override
+  String segmentReviewBounds(
+    String start,
+    String startTolerance,
+    String end,
+    String endTolerance,
+    String length,
+  ) {
+    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
+  }
+
+  @override
+  String get segmentReviewCrossesLine => 'Crosses start/finish';
+
+  @override
+  String segmentReviewStartUncertain(String reasons) {
+    return 'Start uncertain: $reasons';
+  }
+
+  @override
+  String segmentReviewEndUncertain(String reasons) {
+    return 'End uncertain: $reasons';
+  }
+
+  @override
+  String get segmentReviewConnectedCorners =>
+      'Corners connect without a straight';
+
+  @override
+  String get segmentReviewShortStraight => 'Short straight';
+
+  @override
+  String get segmentReviewGpsGap => 'Near a GPS gap in this lap';
+
+  @override
+  String segmentReviewApex(String at, String tolerance) {
+    return 'Geometric apex $at m ±$tolerance m';
+  }
+
+  @override
+  String get segmentReviewApexMultiple => 'Multiple apexes — review manually';
+
+  @override
+  String get segmentReviewApexCrossesGate => 'Corner crosses the timing gate';
+
+  @override
+  String get segmentReviewApexUnresolved => 'Apex unresolved';
+
+  @override
+  String get segmentReviewWaiting => 'Timing every lap on one track axis…';
+
+  @override
+  String get segmentReviewComputing => 'Finding corners and straights…';
+
+  @override
+  String get segmentReviewNoLap =>
+      'The lap the segments are measured on is not available.';
+
+  @override
+  String get segmentReviewNoAxis =>
+      'This lap\'s GPS trace cannot be made into a track axis.';
+
+  @override
+  String get segmentReviewContinuousCorner =>
+      'No automatic proposal: this lap turns continuously, with no straight between corners.';
+
+  @override
+  String get segmentReviewNoCorners =>
+      'No automatic proposal: no corner was detected on this lap.';
+
+  @override
+  String segmentReviewTooMany(int count) {
+    return 'No automatic proposal: the lap would split into more than $count segments.';
+  }
+
+  @override
+  String get segmentReviewFailed => 'The proposals could not be computed.';
+
+  @override
+  String get segmentReviewSaving =>
+      'The day is being saved. Try again in a moment.';
+
+  @override
+  String get segmentReviewSegmentsUnavailable =>
+      'The segments can be changed once the theoretical best is calculated.';
+
+  @override
+  String get segmentReviewNotReady => 'The proposals are not ready yet.';
+
+  @override
+  String get segmentReviewNoLongerAvailable =>
+      'This proposal is no longer available.';
+
+  @override
+  String get segmentReviewNotOpen => 'Only open proposals can be rejected.';
+
+  @override
+  String get segmentReviewNotStored => 'The rejection cannot be stored.';
+
+  @override
+  String get segmentReviewNothingToUndo => 'Nothing to undo.';
+
+  @override
+  String get segmentReviewNothingToRedo => 'Nothing to redo.';
+
+  @override
+  String get segmentReviewHistoryCleared =>
+      'The segments changed outside this editor, so the edit history was cleared.';
+
+  @override
+  String get segmentReviewUncertainOther => 'Uncertain boundary';
+
+  @override
+  String recordingsKeptApart(String format) {
+    return 'Its $format is kept beside it and not combined';
+  }
+
+  @override
+  String recordingsKeptApartUntilReopened(String format) {
+    return 'Its $format is kept beside it and not combined until the day is opened again';
+  }
+
+  @override
+  String get recordingsCheckClock => 'Check clock';
+
+  @override
+  String recordingsMakePrimary(String format) {
+    return 'Make $format primary';
+  }
+
+  @override
+  String get recordingsDontCombine => 'Don\'t combine';
+
+  @override
+  String recordingsChangingPrimary(String format) {
+    return 'Reading the $format as this session\'s recording…';
+  }
+
+  @override
+  String clockChecking(String primary, String alternative) {
+    return 'Comparing the clocks of the $primary and the $alternative…';
+  }
+
+  @override
+  String get clockAligned => 'The clocks line up.';
+
+  @override
+  String clockNotAligned(String reason) {
+    return 'The clocks cannot be lined up: $reason.';
+  }
+
+  @override
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  ) {
+    return 'Measured from the speed traces: $primary time = $alternative time $offset ± $uncertainty';
+  }
+
+  @override
+  String clockDrift(String ppm) {
+    return 'Clock drift: $ppm ppm';
+  }
+
+  @override
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  ) {
+    return 'Speed correlation $correlation over $overlap of overlap; $used of $windows stretches agree';
+  }
+
+  @override
+  String clockDeclared(String offset) {
+    return 'The loggers\' clocks say $offset';
+  }
+
+  @override
+  String get clockNoDeclared => 'The loggers do not both state a start time';
+
+  @override
+  String get clockAccept => 'Accept and combine';
+
+  @override
+  String get clockRefuse => 'Refuse';
+
+  @override
+  String clockRefuseNote(String primary, String alternative) {
+    return 'Refusing keeps the $alternative beside the session without combining it; its analysis then uses the $primary only.';
+  }
+
+  @override
+  String clockReopenNote(String alternative) {
+    return 'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the $alternative is lined up and combined again.';
+  }
+
+  @override
+  String get recordingsClockFailed =>
+      'The clocks could not be compared. Try again.';
+
+  @override
+  String recordingsPrimaryMissing(String format) {
+    return 'The $format is no longer where it was read from. Put it back there, then make it primary.';
+  }
+
+  @override
+  String recordingsPrimaryChanged(String format) {
+    return 'The $format file has changed since it was read. Open the day again, then make it primary.';
+  }
+
+  @override
+  String recordingsPrimaryFailed(String format) {
+    return 'The $format could not be read as this session\'s recording.';
+  }
+
+  @override
+  String get recordingsBusyFind =>
+      'Wait until the session\'s recordings are checked or changed, then find the others.';
+
+  @override
+  String get recordingsBusyRetry =>
+      'Wait until the session\'s recordings are checked or changed, then retry.';
+
+  @override
+  String get recordingsBusyLeave =>
+      'Wait until the session\'s recordings are checked or changed.';
+
+  @override
+  String get recordingsUnsaved =>
+      'Save the day before changing the primary recording.';
+
+  @override
+  String get recordingsBusyAdd =>
+      'Wait until the session\'s recordings are checked or changed, then add recordings.';
 }

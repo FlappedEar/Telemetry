@@ -79,8 +79,9 @@ String _positionText(AppLocalizations l10n, double delta) {
   return delta > 0 ? l10n.cornerLater(metres) : l10n.cornerEarlier(metres);
 }
 
-/// Lap A (this lap) and lap B (the best lap), as Overlays colours them.
-const Color lapAColor = Color(0xFF55E6A5), lapBColor = Color(0xFFD95926);
+/// Lap A (this lap) and lap B (the best lap): A is amber like "you" in the
+/// theme, B is the blue reference.
+const Color lapAColor = Color(0xFFFCB203), lapBColor = Color(0xFF3D8BFF);
 
 String _signed(double? value, int digits, [String unit = '']) {
   if (value == null || !value.isFinite) return '—';

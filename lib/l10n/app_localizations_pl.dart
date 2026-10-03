@@ -3778,4 +3778,333 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get importPageGroupingLimit =>
       'Grupowanie nagrań przekracza limit importu.';
+
+  @override
+  String get segmentReviewOpen => 'Przejrzyj propozycje';
+
+  @override
+  String get segmentReviewTitle => 'Propozycje odcinków';
+
+  @override
+  String get segmentReviewUndo => 'Cofnij';
+
+  @override
+  String get segmentReviewRedo => 'Ponów';
+
+  @override
+  String get segmentReviewIntro =>
+      'Odcinki są zatwierdzane automatycznie, więc ten przegląd jest opcjonalny. Odrzucona propozycja jest pomijana przez Zatwierdź wszystkie i zapisuje się z dniem.';
+
+  @override
+  String segmentReviewSummary(int count, String lap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count propozycji z $lap',
+      many: '$count propozycji z $lap',
+      few: '$count propozycje z $lap',
+      one: '1 propozycja z $lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewApproveAll => 'Zatwierdź wszystkie';
+
+  @override
+  String get segmentReviewRecompute => 'Przelicz';
+
+  @override
+  String segmentReviewApproved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Zatwierdzono $count propozycji',
+      many: 'Zatwierdzono $count propozycji',
+      few: 'Zatwierdzono $count propozycje',
+      one: 'Zatwierdzono 1 propozycję',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get segmentReviewNoneApproved =>
+      'Nie udało się zatwierdzić żadnej propozycji.';
+
+  @override
+  String get segmentReviewReject => 'Odrzuć';
+
+  @override
+  String get segmentReviewRestore => 'Przywróć';
+
+  @override
+  String get segmentReviewStateProposed => 'Proponowana';
+
+  @override
+  String get segmentReviewStateApproved => 'Zatwierdzona';
+
+  @override
+  String get segmentReviewStateRejected => 'Odrzucona';
+
+  @override
+  String get segmentReviewStateSuperseded => 'Nachodzi na zatwierdzony odcinek';
+
+  @override
+  String get segmentReviewCorner => 'Zakręt';
+
+  @override
+  String get segmentReviewStraight => 'Prosta';
+
+  @override
+  String get segmentReviewSector => 'Sektor';
+
+  @override
+  String segmentReviewTurnLeft(String degrees) {
+    return '$degrees° w lewo';
+  }
+
+  @override
+  String segmentReviewTurnRight(String degrees) {
+    return '$degrees° w prawo';
+  }
+
+  @override
+  String segmentReviewBounds(
+    String start,
+    String startTolerance,
+    String end,
+    String endTolerance,
+    String length,
+  ) {
+    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
+  }
+
+  @override
+  String get segmentReviewCrossesLine => 'Przecina linię startu/mety';
+
+  @override
+  String segmentReviewStartUncertain(String reasons) {
+    return 'Niepewny początek: $reasons';
+  }
+
+  @override
+  String segmentReviewEndUncertain(String reasons) {
+    return 'Niepewny koniec: $reasons';
+  }
+
+  @override
+  String get segmentReviewConnectedCorners => 'Zakręty łączą się bez prostej';
+
+  @override
+  String get segmentReviewShortStraight => 'Krótka prosta';
+
+  @override
+  String get segmentReviewGpsGap => 'W pobliżu luki GPS na tym okrążeniu';
+
+  @override
+  String segmentReviewApex(String at, String tolerance) {
+    return 'Geometryczny wierzchołek $at m ±$tolerance m';
+  }
+
+  @override
+  String get segmentReviewApexMultiple =>
+      'Kilka wierzchołków — sprawdź ręcznie';
+
+  @override
+  String get segmentReviewApexCrossesGate =>
+      'Zakręt przecina bramkę pomiaru czasu';
+
+  @override
+  String get segmentReviewApexUnresolved => 'Nie wyznaczono wierzchołka';
+
+  @override
+  String get segmentReviewWaiting =>
+      'Mierzenie czasu każdego okrążenia na jednej osi toru…';
+
+  @override
+  String get segmentReviewComputing => 'Wyszukiwanie zakrętów i prostych…';
+
+  @override
+  String get segmentReviewNoLap =>
+      'Okrążenie, na którym mierzone są odcinki, jest niedostępne.';
+
+  @override
+  String get segmentReviewNoAxis =>
+      'Ze śladu GPS tego okrążenia nie da się zbudować osi toru.';
+
+  @override
+  String get segmentReviewContinuousCorner =>
+      'Brak automatycznej propozycji: to okrążenie skręca bez przerwy, bez prostej między zakrętami.';
+
+  @override
+  String get segmentReviewNoCorners =>
+      'Brak automatycznej propozycji: na tym okrążeniu nie wykryto zakrętu.';
+
+  @override
+  String segmentReviewTooMany(int count) {
+    return 'Brak automatycznej propozycji: okrążenie podzieliłoby się na więcej niż $count odcinków.';
+  }
+
+  @override
+  String get segmentReviewFailed => 'Nie udało się obliczyć propozycji.';
+
+  @override
+  String get segmentReviewSaving => 'Dzień jest zapisywany. Spróbuj za chwilę.';
+
+  @override
+  String get segmentReviewSegmentsUnavailable =>
+      'Odcinki można zmienić, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+
+  @override
+  String get segmentReviewNotReady => 'Propozycje nie są jeszcze gotowe.';
+
+  @override
+  String get segmentReviewNoLongerAvailable =>
+      'Ta propozycja nie jest już dostępna.';
+
+  @override
+  String get segmentReviewNotOpen => 'Odrzucić można tylko otwarte propozycje.';
+
+  @override
+  String get segmentReviewNotStored => 'Nie można zapisać odrzucenia.';
+
+  @override
+  String get segmentReviewNothingToUndo => 'Nie ma czego cofnąć.';
+
+  @override
+  String get segmentReviewNothingToRedo => 'Nie ma czego ponowić.';
+
+  @override
+  String get segmentReviewHistoryCleared =>
+      'Odcinki zmieniły się poza tym edytorem, więc historię zmian wyczyszczono.';
+
+  @override
+  String get segmentReviewUncertainOther => 'Niepewna granica';
+
+  @override
+  String recordingsKeptApart(String format) {
+    return 'Plik $format jest zachowany obok i nie jest łączony';
+  }
+
+  @override
+  String recordingsKeptApartUntilReopened(String format) {
+    return 'Plik $format jest zachowany obok i nie jest łączony do ponownego otwarcia dnia';
+  }
+
+  @override
+  String get recordingsCheckClock => 'Sprawdź zegar';
+
+  @override
+  String recordingsMakePrimary(String format) {
+    return 'Ustaw $format jako główny';
+  }
+
+  @override
+  String get recordingsDontCombine => 'Nie łącz';
+
+  @override
+  String recordingsChangingPrimary(String format) {
+    return 'Wczytywanie $format jako nagrania tej sesji…';
+  }
+
+  @override
+  String clockChecking(String primary, String alternative) {
+    return 'Porównywanie zegarów $primary i $alternative…';
+  }
+
+  @override
+  String get clockAligned => 'Zegary są zgrane.';
+
+  @override
+  String clockNotAligned(String reason) {
+    return 'Nie da się zgrać zegarów: $reason.';
+  }
+
+  @override
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  ) {
+    return 'Zmierzono z przebiegów prędkości: czas $primary = czas $alternative $offset ± $uncertainty';
+  }
+
+  @override
+  String clockDrift(String ppm) {
+    return 'Dryf zegara: $ppm ppm';
+  }
+
+  @override
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  ) {
+    return 'Korelacja prędkości $correlation na $overlap wspólnego zapisu; zgodne odcinki: $used z $windows';
+  }
+
+  @override
+  String clockDeclared(String offset) {
+    return 'Zegary rejestratorów podają $offset';
+  }
+
+  @override
+  String get clockNoDeclared => 'Nie oba rejestratory podają czas startu';
+
+  @override
+  String get clockAccept => 'Akceptuj i połącz';
+
+  @override
+  String get clockRefuse => 'Odrzuć';
+
+  @override
+  String clockRefuseNote(String primary, String alternative) {
+    return 'Odrzucenie zachowuje $alternative obok sesji bez łączenia; jej analiza korzysta wtedy tylko z $primary.';
+  }
+
+  @override
+  String clockReopenNote(String alternative) {
+    return 'Ta sesja korzysta z VBO i zachowuje RCZ, a plik dnia nie zapamiętuje odrzucenia dla takiej sesji: po ponownym otwarciu dnia $alternative zostanie znów dopasowany i połączony.';
+  }
+
+  @override
+  String get recordingsClockFailed =>
+      'Nie udało się porównać zegarów. Spróbuj ponownie.';
+
+  @override
+  String recordingsPrimaryMissing(String format) {
+    return 'Pliku $format nie ma już tam, skąd go wczytano. Przywróć go tam, a potem ustaw jako główny.';
+  }
+
+  @override
+  String recordingsPrimaryChanged(String format) {
+    return 'Plik $format zmienił się od wczytania. Otwórz dzień ponownie, a potem ustaw go jako główny.';
+  }
+
+  @override
+  String recordingsPrimaryFailed(String format) {
+    return 'Nie udało się wczytać $format jako nagrania tej sesji.';
+  }
+
+  @override
+  String get recordingsBusyFind =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem znajdź pozostałe.';
+
+  @override
+  String get recordingsBusyRetry =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem spróbuj ponownie.';
+
+  @override
+  String get recordingsBusyLeave =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji.';
+
+  @override
+  String get recordingsUnsaved =>
+      'Zapisz dzień przed zmianą głównego nagrania.';
+
+  @override
+  String get recordingsBusyAdd =>
+      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.';
 }

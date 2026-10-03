@@ -34,10 +34,10 @@ Map<String, Object?> telemetryView(OpenedDay day) {
   final analysis = day.analysis!;
   final event = day.document['event']! as Map<String, Object?>;
   final documentRuns = [for (final run in event['runs']! as List) run as Map<String, Object?>];
+  // Overlays names an unresolved run's group "unresolved:" and its id too.
   final groupOf = <String, String>{
     for (final group in analysis.groups)
-      if (group.resolved)
-        for (final runId in group.runIds) runId: group.id,
+      for (final runId in group.runIds) runId: group.id,
   };
   final ranking = analysis.ranking;
   final best = ranking?.bestOfDay;

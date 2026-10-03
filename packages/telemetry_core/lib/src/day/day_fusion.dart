@@ -28,6 +28,13 @@ enum RunFusionState {
   /// The alternative recording the document names could not be used
   /// ([RunFusion.reason]): nothing is fused.
   unavailable,
+
+  /// The alternative recording is kept beside the primary and not fused,
+  /// as the user chose (FET-57): they refused its clock alignment, or made
+  /// another recording the primary. The run has no `fusion` decision, as
+  /// Overlays stores a fusion removed or never approved: its analysis uses
+  /// the primary only.
+  primaryOnly,
 }
 
 /// A run's alternative recording and what fusing it did.
@@ -49,7 +56,27 @@ final class RunFusion {
     this.session,
     this.fromDocument = false,
     this.documentChanged = false,
+    this.alignment,
   });
+
+  /// [alternative] kept beside [primary] and not fused
+  /// ([RunFusionState.primaryOnly]); [alignment] is the clock check the
+  /// user refused, if there was one.
+  RunFusion.primaryOnly({
+    required TelemetryRunProposal primary,
+    required TelemetryRunProposal alternative,
+    RecordingAlignment? alignment,
+  }) : this._(
+         state: RunFusionState.primaryOnly,
+         primarySourceId: primary.sourceId,
+         primaryRevision: primary.contentSha256,
+         alternativeSourceId: alternative.sourceId,
+         alternativeFormat: alternative.format,
+         alternative: alternative,
+         status: alignment?.status ?? '',
+         reason: alignment?.reason ?? '',
+         alignment: alignment,
+       );
 
   /// The alternative recording the document names, which could not be used
   /// because of [reason] (in English, for the app to map).
@@ -113,6 +140,11 @@ final class RunFusion {
   /// drive): the document's source entry changes when the day is saved.
   final bool documentChanged;
 
+  /// The clocks as measured when they were aligned afresh (also when they
+  /// could not be aligned); null when nothing was measured, such as for a
+  /// decision applied from the document.
+  final RecordingAlignment? alignment;
+
   /// This fusion with [documentChanged] set.
   RunFusion withDocumentChanged() => RunFusion._(
     state: state,
@@ -131,6 +163,7 @@ final class RunFusion {
     session: session,
     fromDocument: fromDocument,
     documentChanged: true,
+    alignment: alignment,
   );
 
   bool get fused => state == RunFusionState.fused;
@@ -204,6 +237,7 @@ RunFusion _fuse(
   required Map<String, FusionRule> rules,
   required bool fromDocument,
   bool documentChanged = false,
+  RecordingAlignment? alignment,
   CancellationCheck? cancelled,
 }) {
   ChannelFusionResult run(Map<String, FusionRule> rules) => fuseChannels(
@@ -247,6 +281,7 @@ RunFusion _fuse(
     session: fusedSession(primary.telemetry, result),
     fromDocument: fromDocument,
     documentChanged: documentChanged,
+    alignment: alignment,
   );
 }
 
@@ -271,6 +306,7 @@ RunFusion fuseRunRecordings(
       alternative: alternative,
       status: alignment.status,
       reason: alignment.reason,
+      alignment: alignment,
     );
   }
   return _fuse(
@@ -282,6 +318,7 @@ RunFusion fuseRunRecordings(
     resolvedByDeclaredClock: alignment.resolvedByDeclaredClock,
     rules: const {},
     fromDocument: false,
+    alignment: alignment,
     cancelled: cancelled,
   );
 }
@@ -372,6 +409,7 @@ RunFusion keepFusionChoices(
     rules: {...fusion.rules, ...kept},
     fromDocument: fusion.fromDocument,
     documentChanged: fusion.documentChanged,
+    alignment: fusion.alignment,
     cancelled: cancelled,
   );
 }
@@ -390,6 +428,25 @@ RunFusion fuseWithDecision(
   if (decision != null && fusionDecisionApplies(decision, primary, alternative)) {
     return applyFusionDecision(decision, primary, alternative, cancelled: cancelled);
   }
+  final aligned = fuseRunRecordings(primary, alternative, cancelled: cancelled);
+  return decision != null && decision['alternativeSourceId'] == alternative.sourceId
+      ? keepFusionChoices(aligned, primary, decision, cancelled: cancelled)
+      : aligned;
+}
+
+/// The manual clock check of a run's alternative recording (FET-57, as
+/// Overlays' "Check clock", KAN-101): [alternative] aligned afresh to
+/// [primary] ([RunFusion.alignment] is what was measured) and, when the
+/// clocks line up, fused as accepting it would fuse it, keeping the rules of
+/// the run's earlier [decision] for channels both still measure. Nothing is
+/// decided: the user accepts the result or refuses it
+/// ([RunFusion.primaryOnly]). Takes seconds: run it in the background.
+RunFusion checkRunClock(
+  TelemetryRunProposal primary,
+  TelemetryRunProposal alternative,
+  Map<String, Object?>? decision, {
+  CancellationCheck? cancelled,
+}) {
   final aligned = fuseRunRecordings(primary, alternative, cancelled: cancelled);
   return decision != null && decision['alternativeSourceId'] == alternative.sourceId
       ? keepFusionChoices(aligned, primary, decision, cancelled: cancelled)
@@ -417,6 +474,7 @@ RunFusion? withFusionRule(
     rules: {...fusion.rules, key: rule},
     fromDocument: fusion.fromDocument,
     documentChanged: fusion.documentChanged,
+    alignment: fusion.alignment,
     cancelled: cancelled,
   );
 }

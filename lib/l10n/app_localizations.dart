@@ -5614,6 +5614,484 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Source grouping exceeds the import limit.'**
   String get importPageGroupingLimit;
+
+  /// Button in the segment editor that opens the optional review of the automatic segment proposals.
+  ///
+  /// In en, this message translates to:
+  /// **'Review proposals'**
+  String get segmentReviewOpen;
+
+  /// Title of the segment proposal review screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment proposals'**
+  String get segmentReviewTitle;
+
+  /// Undoes the last change of the segments or of a review decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get segmentReviewUndo;
+
+  /// Redoes the last undone change of the segments or of a review decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get segmentReviewRedo;
+
+  /// Explains that the review is optional and what rejecting does.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.'**
+  String get segmentReviewIntro;
+
+  /// How many proposals there are and the lap they were made from.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 proposal from {lap}} other{{count} proposals from {lap}}}'**
+  String segmentReviewSummary(int count, String lap);
+
+  /// Approves every open proposal (rejected ones stay out).
+  ///
+  /// In en, this message translates to:
+  /// **'Approve all'**
+  String get segmentReviewApproveAll;
+
+  /// Computes the proposals again from the lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Recompute'**
+  String get segmentReviewRecompute;
+
+  /// Shown after Approve all.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 proposal approved} other{{count} proposals approved}}'**
+  String segmentReviewApproved(int count);
+
+  /// Approve all found nothing it could approve.
+  ///
+  /// In en, this message translates to:
+  /// **'No proposal could be approved.'**
+  String get segmentReviewNoneApproved;
+
+  /// Rejects this proposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get segmentReviewReject;
+
+  /// Takes back the rejection of this proposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get segmentReviewRestore;
+
+  /// State of a proposal awaiting a decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed'**
+  String get segmentReviewStateProposed;
+
+  /// State of a proposal that is an approved segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get segmentReviewStateApproved;
+
+  /// State of a proposal the driver rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get segmentReviewStateRejected;
+
+  /// State of a proposal that overlaps an approved segment that came from an edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Overlaps approved'**
+  String get segmentReviewStateSuperseded;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get segmentReviewCorner;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight'**
+  String get segmentReviewStraight;
+
+  /// Segment type.
+  ///
+  /// In en, this message translates to:
+  /// **'Sector'**
+  String get segmentReviewSector;
+
+  /// A corner's total heading change, turning left.
+  ///
+  /// In en, this message translates to:
+  /// **'{degrees}° left'**
+  String segmentReviewTurnLeft(String degrees);
+
+  /// A corner's total heading change, turning right.
+  ///
+  /// In en, this message translates to:
+  /// **'{degrees}° right'**
+  String segmentReviewTurnRight(String degrees);
+
+  /// A proposal's start and end in metres from the line with their tolerance, and its length.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)'**
+  String segmentReviewBounds(
+    String start,
+    String startTolerance,
+    String end,
+    String endTolerance,
+    String length,
+  );
+
+  /// The proposal runs across the start/finish line.
+  ///
+  /// In en, this message translates to:
+  /// **'Crosses start/finish'**
+  String get segmentReviewCrossesLine;
+
+  /// Why the proposal's start is uncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Start uncertain: {reasons}'**
+  String segmentReviewStartUncertain(String reasons);
+
+  /// Why the proposal's end is uncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'End uncertain: {reasons}'**
+  String segmentReviewEndUncertain(String reasons);
+
+  /// Uncertainty: no straight between two corners.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners connect without a straight'**
+  String get segmentReviewConnectedCorners;
+
+  /// Uncertainty: the straight next to this boundary is short.
+  ///
+  /// In en, this message translates to:
+  /// **'Short straight'**
+  String get segmentReviewShortStraight;
+
+  /// Uncertainty: the lap has no GPS near this boundary.
+  ///
+  /// In en, this message translates to:
+  /// **'Near a GPS gap in this lap'**
+  String get segmentReviewGpsGap;
+
+  /// Where the corner turns most, from the track's shape (not from speed).
+  ///
+  /// In en, this message translates to:
+  /// **'Geometric apex {at} m ±{tolerance} m'**
+  String segmentReviewApex(String at, String tolerance);
+
+  /// The corner has more than one apex, so none is proposed.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple apexes — review manually'**
+  String get segmentReviewApexMultiple;
+
+  /// No apex: the corner runs across the timing gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner crosses the timing gate'**
+  String get segmentReviewApexCrossesGate;
+
+  /// No apex could be found for this corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex unresolved'**
+  String get segmentReviewApexUnresolved;
+
+  /// Shown while the theoretical best is calculated before the review.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing every lap on one track axis…'**
+  String get segmentReviewWaiting;
+
+  /// Shown while the proposals are computed.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding corners and straights…'**
+  String get segmentReviewComputing;
+
+  /// No proposals: the lap or its recording is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'The lap the segments are measured on is not available.'**
+  String get segmentReviewNoLap;
+
+  /// No proposals: the lap's GPS trace is unusable.
+  ///
+  /// In en, this message translates to:
+  /// **'This lap\'s GPS trace cannot be made into a track axis.'**
+  String get segmentReviewNoAxis;
+
+  /// No proposals: unsplittable geometry.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic proposal: this lap turns continuously, with no straight between corners.'**
+  String get segmentReviewContinuousCorner;
+
+  /// No proposals: no corners.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic proposal: no corner was detected on this lap.'**
+  String get segmentReviewNoCorners;
+
+  /// No proposals: too many segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No automatic proposal: the lap would split into more than {count} segments.'**
+  String segmentReviewTooMany(int count);
+
+  /// The proposals failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The proposals could not be computed.'**
+  String get segmentReviewFailed;
+
+  /// A review action, undo or redo was not done because the day is being saved.
+  ///
+  /// In en, this message translates to:
+  /// **'The day is being saved. Try again in a moment.'**
+  String get segmentReviewSaving;
+
+  /// A change was not done because the theoretical best is not calculated yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments can be changed once the theoretical best is calculated.'**
+  String get segmentReviewSegmentsUnavailable;
+
+  /// A review action was not done because the proposals are still being computed.
+  ///
+  /// In en, this message translates to:
+  /// **'The proposals are not ready yet.'**
+  String get segmentReviewNotReady;
+
+  /// The proposal changed before the action was done.
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal is no longer available.'**
+  String get segmentReviewNoLongerAvailable;
+
+  /// Rejecting was refused: the proposal is approved or overlaps an approved segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Only open proposals can be rejected.'**
+  String get segmentReviewNotOpen;
+
+  /// The rejection could not be written in the day's document.
+  ///
+  /// In en, this message translates to:
+  /// **'The rejection cannot be stored.'**
+  String get segmentReviewNotStored;
+
+  /// Undo found no change to undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to undo.'**
+  String get segmentReviewNothingToUndo;
+
+  /// Redo found no change to redo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to redo.'**
+  String get segmentReviewNothingToRedo;
+
+  /// Undo or redo was refused because the segments changed elsewhere; the history was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'The segments changed outside this editor, so the edit history was cleared.'**
+  String get segmentReviewHistoryCleared;
+
+  /// An uncertainty reason this version of the app does not know.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncertain boundary'**
+  String get segmentReviewUncertainOther;
+
+  /// Quiet line under a session whose other recording (such as its RCZ, or its VBO after the RCZ was made primary) is kept beside it without being combined: the session's analysis uses its own recording only.
+  ///
+  /// In en, this message translates to:
+  /// **'Its {format} is kept beside it and not combined'**
+  String recordingsKeptApart(String format);
+
+  /// Like recordingsKeptApart, for a VBO session whose RCZ the user refused: the day's file cannot store that choice, so the RCZ is lined up and combined again automatically when the day is opened again.
+  ///
+  /// In en, this message translates to:
+  /// **'Its {format} is kept beside it and not combined until the day is opened again'**
+  String recordingsKeptApartUntilReopened(String format);
+
+  /// Button under a session with two recordings (a VBO and an RCZ): measures again how the other recording's clock lines up with the session's, to accept or refuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Check clock'**
+  String get recordingsCheckClock;
+
+  /// Button under a session with two recordings: the other recording (such as the RCZ) becomes the session's primary recording; its laps and results are calculated again from it.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {format} primary'**
+  String recordingsMakePrimary(String format);
+
+  /// Button under a session combined with its other recording: keep the other recording beside it without combining it (refuse the alignment).
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t combine'**
+  String get recordingsDontCombine;
+
+  /// Quiet line under a session while its other recording (such as the RCZ) is being read as its primary recording in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the {format} as this session\'s recording…'**
+  String recordingsChangingPrimary(String format);
+
+  /// Quiet line under a session while the clocks of its two recordings are being compared in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparing the clocks of the {primary} and the {alternative}…'**
+  String clockChecking(String primary, String alternative);
+
+  /// Result of a session's clock check: the other recording's clock lines up with the session's recording.
+  ///
+  /// In en, this message translates to:
+  /// **'The clocks line up.'**
+  String get clockAligned;
+
+  /// Result of a session's clock check when the recordings could not be lined up in time; reason is one of the fusionReason texts.
+  ///
+  /// In en, this message translates to:
+  /// **'The clocks cannot be lined up: {reason}.'**
+  String clockNotAligned(String reason);
+
+  /// The clock offset measured between a session's two recordings. offset is signed, such as +0.10 s; uncertainty such as 0.02 s.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured from the speed traces: {primary} time = {alternative} time {offset} ± {uncertainty}'**
+  String clockMeasured(
+    String primary,
+    String alternative,
+    String offset,
+    String uncertainty,
+  );
+
+  /// How fast the two recordings' clocks drift apart, in parts per million, as measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock drift: {ppm} ppm'**
+  String clockDrift(String ppm);
+
+  /// Evidence of a clock check: how closely the two speed traces match, over how long both recordings run, and how many stretches of that overlap give the same offset.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed correlation {correlation} over {overlap} of overlap; {used} of {windows} stretches agree'**
+  String clockCorrelation(
+    String correlation,
+    String overlap,
+    int used,
+    int windows,
+  );
+
+  /// Evidence of a clock check: the offset the two loggers' own start times give, such as +0.10 s.
+  ///
+  /// In en, this message translates to:
+  /// **'The loggers\' clocks say {offset}'**
+  String clockDeclared(String offset);
+
+  /// Evidence of a clock check: at least one recording has no start time of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'The loggers do not both state a start time'**
+  String get clockNoDeclared;
+
+  /// Button after a clock check whose clocks line up: combine the other recording with the session using the measured offset.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept and combine'**
+  String get clockAccept;
+
+  /// Button after a clock check: do not use the measured alignment; the other recording is kept beside the session without combining it.
+  ///
+  /// In en, this message translates to:
+  /// **'Refuse'**
+  String get clockRefuse;
+
+  /// Explains the Refuse button of a clock check.
+  ///
+  /// In en, this message translates to:
+  /// **'Refusing keeps the {alternative} beside the session without combining it; its analysis then uses the {primary} only.'**
+  String clockRefuseNote(String primary, String alternative);
+
+  /// Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.
+  ///
+  /// In en, this message translates to:
+  /// **'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the {alternative} is lined up and combined again.'**
+  String clockReopenNote(String alternative);
+
+  /// Under a session: its clock check failed; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The clocks could not be compared. Try again.'**
+  String get recordingsClockFailed;
+
+  /// Under a session: Make primary was refused because the other recording's file is gone; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} is no longer where it was read from. Put it back there, then make it primary.'**
+  String recordingsPrimaryMissing(String format);
+
+  /// Under a session: Make primary was refused because the other recording's file now has other content; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} file has changed since it was read. Open the day again, then make it primary.'**
+  String recordingsPrimaryChanged(String format);
+
+  /// Under a session: Make primary failed while reading the other recording; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'The {format} could not be read as this session\'s recording.'**
+  String recordingsPrimaryFailed(String format);
+
+  /// Find recordings was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed, then find the others.'**
+  String get recordingsBusyFind;
+
+  /// Retry recordings was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed, then retry.'**
+  String get recordingsBusyRetry;
+
+  /// Leaving the day was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed.'**
+  String get recordingsBusyLeave;
+
+  /// Under a session: Make primary was refused because the day has unsaved changes; the user saves first.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the day before changing the primary recording.'**
+  String get recordingsUnsaved;
+
+  /// Add recordings was refused because a clock check or a primary change is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the session\'s recordings are checked or changed, then add recordings.'**
+  String get recordingsBusyAdd;
 }
 
 class _AppLocalizationsDelegate

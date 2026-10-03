@@ -9,6 +9,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../diagnostics/app_diagnostics.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
+import 'background_task.dart';
 import 'channel_sources.dart';
 import 'recovery_store.dart';
 
@@ -27,6 +28,19 @@ typedef TheoreticalBestRunner = Future<DayTheoreticalBest> Function(
 /// In a background isolate, or directly under `flutter test`.
 Future<DayTheoreticalBest> defaultTheoreticalBestRunner(
   DayTheoreticalBest Function() job,
+) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
+    ? Future.microtask(job)
+    : Isolate.run(job);
+
+/// Computes the segment proposals the review shows. Replaced in widget
+/// tests like [TheoreticalBestRunner].
+typedef SegmentReviewRunner = Future<DayProposalReview> Function(
+  DayProposalReview Function() job,
+);
+
+/// In a background isolate, or directly under `flutter test`.
+Future<DayProposalReview> defaultSegmentReviewRunner(
+  DayProposalReview Function() job,
 ) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
     ? Future.microtask(job)
     : Isolate.run(job);
@@ -69,6 +83,29 @@ abstract interface class FusionTask {
 /// (the job stopped with an error): the recording stays saved, and the day
 /// opened again tries once more.
 const fusionFailedReason = 'Aligning failed.';
+
+/// What reading a session's other recording as its primary gave: its part
+/// of the day, or why not.
+typedef PreparedPrimary = ({DayRunsPart? part, NewPrimaryProblem? problem});
+
+/// Why a session's clock check or primary change failed (FET-57), for the
+/// page to say.
+enum RecordingsProblem {
+  /// The clocks could not be compared.
+  clockFailed,
+
+  /// The other recording's file is not where it was read from.
+  primaryMissing,
+
+  /// The other recording's file holds other content now.
+  primaryChanged,
+
+  /// The other recording could not be read as the session.
+  primaryFailed,
+
+  /// The day has unsaved changes: the primary changes only on a saved day.
+  unsaved,
+}
 
 /// Starts a [FusionJob]. Replaced in widget tests, which run it on the
 /// test's own thread.
@@ -187,6 +224,7 @@ final class DayResultsController extends ChangeNotifier {
     bool recovered = false,
     TheoreticalBestRunner? theoreticalBestRunner,
     CoachRunner? coachRunner,
+    SegmentReviewRunner? segmentReviewRunner,
     ChannelSummariesRunner? channelSummariesRunner,
     FusionRunner? fusionRunner,
     DayAppender? appender,
@@ -200,6 +238,7 @@ final class DayResultsController extends ChangeNotifier {
        _fusions = {...fusions},
        _fusionRunner = fusionRunner ?? defaultFusionRunner,
        _coachRunner = coachRunner ?? defaultCoachRunner,
+       _segmentReviewRunner = segmentReviewRunner ?? defaultSegmentReviewRunner,
        _appender = appender ?? const IsolateDayAppender(),
        diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
@@ -345,6 +384,8 @@ final class DayResultsController extends ChangeNotifier {
   bool get _fusionsIdle =>
       _fusionPending.isEmpty &&
       _fusionUpdating.isEmpty &&
+      _clocksChecking.isEmpty &&
+      _primaryChanging.isEmpty &&
       _savingAfterFusion == 0;
 
   // Saves after an addition's alternative recording was fused, running.
@@ -506,8 +547,7 @@ final class DayResultsController extends ChangeNotifier {
   }) {
     final named = _named(runId);
     if (named == null || _disposed) return;
-    final generation = (_fusionGenerations[runId] ?? 0) + 1;
-    _fusionGenerations[runId] = generation;
+    final generation = _nextRecordingGeneration(runId);
     // What ran for the run before is superseded.
     _fusionTasks.remove(runId)?.cancel();
     if (recording != null) _pendingRecordings[runId] = recording;
@@ -671,8 +711,7 @@ final class DayResultsController extends ChangeNotifier {
     if (fusion.ruleOf(key) == rule && !_fusionUpdating.containsKey(runId)) {
       return;
     }
-    final generation = (_fusionGenerations[runId] ?? 0) + 1;
-    _fusionGenerations[runId] = generation;
+    final generation = _nextRecordingGeneration(runId);
     _fusionUpdating[runId] = generation;
     notifyListeners();
     RunFusion? result;
@@ -706,6 +745,362 @@ final class DayResultsController extends ChangeNotifier {
     }
     notifyListeners();
     _settleFusions();
+  }
+
+  // Runs whose clocks are being compared (FET-57), with that check's
+  // generation, and the checks done that wait for the user to accept or
+  // refuse them, with the fusion each was made against: a check is
+  // accepted only while that is still the run's.
+  final Map<String, int> _clocksChecking = {};
+  final Map<String, ({RunFusion check, RunFusion base})> _clockChecks = {};
+
+  // Runs whose primary recording is being changed, with that change's
+  // generation, and the background work reading the new one.
+  final Map<String, int> _primaryChanging = {};
+  final Map<String, BackgroundTask<PreparedPrimary>> _primaryTasks = {};
+
+  // Why the last check or primary change of a run failed, until the next.
+  final Map<String, RecordingsProblem> _recordingsProblems = {};
+
+  // Work waiting for a slot of [fusionSlots] ([_inSlot]); failed with
+  // [OperationCancelled] when the day closes.
+  final Set<Completer<Object?>> _slotWaiters = {};
+
+  /// Whether [runId]'s clocks are being compared ([checkClock]).
+  bool clockChecking(String runId) => _clocksChecking.containsKey(runId);
+
+  /// The clock check of [runId] waiting to be accepted ([acceptClock]) or
+  /// refused ([refuseClock]); null when there is none.
+  RunFusion? clockCheck(String runId) => _clockChecks[runId]?.check;
+
+  /// Whether [runId]'s primary recording is being changed ([makePrimary]).
+  bool primaryChanging(String runId) => _primaryChanging.containsKey(runId);
+
+  /// Why [runId]'s last clock check or primary change failed; null when it
+  /// did not.
+  RecordingsProblem? recordingsProblem(String runId) =>
+      _recordingsProblems[runId];
+
+  /// Whether a clock check or a primary change runs for any session: the
+  /// day is not opened again or closed meanwhile.
+  bool get recordingsBusy =>
+      _clocksChecking.isNotEmpty || _primaryChanging.isNotEmpty;
+
+  /// Whether [runId]'s recordings can be changed now: it has another
+  /// recording that was read, and nothing runs for it or adds to the day.
+  bool recordingsEditable(String runId) =>
+      !_disposed &&
+      _fusions[runId]?.alternative != null &&
+      _recordingsIdle(runId) &&
+      !adding;
+
+  bool _recordingsIdle(String runId) =>
+      !_fusionPending.containsKey(runId) &&
+      !_fusionUpdating.containsKey(runId) &&
+      !_clocksChecking.containsKey(runId) &&
+      !_primaryChanging.containsKey(runId);
+
+  /// A new generation for [runId]'s recordings: a fusion, rule change or
+  /// check still running for the run is not used, and a clock check
+  /// waiting for the user no longer applies.
+  int _nextRecordingGeneration(String runId) {
+    _clockChecks.remove(runId);
+    return _fusionGenerations[runId] = (_fusionGenerations[runId] ?? 0) + 1;
+  }
+
+  /// Runs [work] once one of the [fusionSlots] is free, as the background
+  /// alignments run.
+  Future<T> _inSlot<T>(Future<T> Function() work) {
+    final done = Completer<Object?>();
+    _slotWaiters.add(done);
+    _fusionQueue.add(() async {
+      if (!_slotWaiters.remove(done)) return;
+      try {
+        done.complete(await work());
+      } on Object catch (error, stack) {
+        done.completeError(error, stack);
+      }
+    });
+    _runFusions();
+    return done.future.then((value) => value as T);
+  }
+
+  static FusionJob _clockJob(
+    TelemetryRunProposal primary,
+    TelemetryRunProposal alternative,
+    Map<String, Object?>? decision,
+  ) =>
+      (cancelled) =>
+          checkRunClock(primary, alternative, decision, cancelled: cancelled);
+
+  /// Compares the clocks of [runId]'s recordings again in the background
+  /// (FET-57, Overlays' "Check clock"): the measured offset waits in
+  /// [clockCheck] for the user to accept or refuse it. Nothing changes
+  /// until then.
+  Future<void> checkClock(String runId) async {
+    final fusion = _fusions[runId];
+    final named = _named(runId);
+    final alternative = fusion?.alternative;
+    if (named == null || alternative == null || !recordingsEditable(runId)) {
+      return;
+    }
+    final generation = _nextRecordingGeneration(runId);
+    _clocksChecking[runId] = generation;
+    _recordingsProblems.remove(runId);
+    notifyListeners();
+    RunFusion? result;
+    var failed = false;
+    try {
+      result = await _inSlot(() async {
+        if (_disposed || _fusionGenerations[runId] != generation) {
+          throw const OperationCancelled();
+        }
+        return _runFusionTask(
+          runId,
+          _clockJob(named.run, alternative, _decisionOf(runId)),
+        );
+      });
+      failed = result == null;
+    } on OperationCancelled {
+      // Superseded, or the day closed.
+    } on Object catch (error) {
+      debugPrint('Clocks not compared: $error');
+      failed = true;
+    } finally {
+      if (_clocksChecking[runId] == generation) _clocksChecking.remove(runId);
+    }
+    if (_disposed) return;
+    final current =
+        _fusionGenerations[runId] == generation &&
+        identical(_fusions[runId], fusion) &&
+        identical(_named(runId), named);
+    if (current && result != null) {
+      _clockChecks[runId] = (check: result, base: fusion!);
+    } else if (current && failed) {
+      _recordingsProblems[runId] = RecordingsProblem.clockFailed;
+    }
+    notifyListeners();
+    _settleFusions();
+  }
+
+  /// Whether [runId]'s waiting clock check can be accepted now
+  /// ([acceptClock]): its clocks line up, and no recording is being added.
+  bool clockAcceptable(String runId) {
+    final waiting = _clockChecks[runId];
+    return waiting != null &&
+        waiting.check.fused &&
+        !adding &&
+        _recordingsIdle(runId) &&
+        identical(_fusions[runId], waiting.base);
+  }
+
+  /// Accepts [runId]'s clock check: when its clocks line up, the other
+  /// recording is fused with the measured clock, as Overlays approves a
+  /// fusion; saved with the day. Nothing happens when the run's fusion or
+  /// recordings changed since the check (it is no longer shown).
+  void acceptClock(String runId) {
+    final waiting = _clockChecks[runId];
+    final named = _named(runId);
+    if (waiting == null ||
+        !waiting.check.fused ||
+        _disposed ||
+        named == null ||
+        adding ||
+        !_recordingsIdle(runId) ||
+        !identical(_fusions[runId], waiting.base) ||
+        named.run.sourceId != waiting.check.primarySourceId ||
+        named.run.contentSha256 != waiting.check.primaryRevision) {
+      return;
+    }
+    _nextRecordingGeneration(runId);
+    _fusions[runId] = waiting.check;
+    _recordingsChanged();
+  }
+
+  /// Refuses [runId]'s clock alignment: the other recording is kept beside
+  /// the primary and not fused, and the run's analysis reads the primary
+  /// only. Saved as Overlays saves a removed fusion: the run has no
+  /// `fusion` decision.
+  void refuseClock(String runId) {
+    final fusion = _fusions[runId];
+    final named = _named(runId);
+    final alternative = fusion?.alternative;
+    if (named == null ||
+        alternative == null ||
+        _disposed ||
+        adding ||
+        !_recordingsIdle(runId)) {
+      return;
+    }
+    final waiting = _clockChecks[runId];
+    final check = waiting != null && identical(waiting.base, fusion)
+        ? waiting.check
+        : null;
+    _recordingsProblems.remove(runId);
+    _nextRecordingGeneration(runId);
+    if (fusion!.state == RunFusionState.primaryOnly) {
+      notifyListeners();
+      return;
+    }
+    _fusionTasks.remove(runId)?.cancel();
+    _fusions[runId] = RunFusion.primaryOnly(
+      primary: named.run,
+      alternative: alternative,
+      alignment: check?.alignment ?? fusion.alignment,
+    );
+    _recordingsChanged();
+  }
+
+  // A run's recordings changed how the run is analysed: what reads
+  // channels is calculated again, and the day is saved with it.
+  void _recordingsChanged() {
+    _fusionsChanged();
+    _revision++;
+    _dirty = true;
+    _scheduleRecovery();
+    notifyListeners();
+    _settleFusions();
+  }
+
+  static PreparedPrimary _primaryJob(
+    (TelemetryRunProposal, String, int) argument,
+    CancellationCheck cancelled,
+  ) => prepareNewPrimary(
+    argument.$1,
+    argument.$2,
+    otherRows: argument.$3,
+    cancelled: cancelled,
+  );
+
+  /// Makes [runId]'s other recording its primary (FET-57, Overlays' "Make
+  /// primary"): its file is checked to be still the recording read, its
+  /// laps are derived again in the background and the day is grouped and
+  /// ranked again; every result is calculated again. The recording it
+  /// replaces is kept beside it, not fused, and a layout set for the run is
+  /// not kept, as in Overlays. Saved with the day. When the file is gone or
+  /// changed, nothing changes and [recordingsProblem] says why.
+  Future<void> makePrimary(String runId) async {
+    final fusion = _fusions[runId];
+    final named = _named(runId);
+    final alternative = fusion?.alternative;
+    if (named == null || alternative == null || !recordingsEditable(runId)) {
+      return;
+    }
+    // Lap choices are the saved document's when the primary changes, so
+    // the session and the file name the same laps (Overlays commits them
+    // at once).
+    if (dirty || _saving) {
+      _recordingsProblems[runId] = RecordingsProblem.unsaved;
+      notifyListeners();
+      return;
+    }
+    final revision = _revision;
+    final generation = _nextRecordingGeneration(runId);
+    _fusionTasks.remove(runId)?.cancel();
+    _recordingsProblems.remove(runId);
+    _primaryChanging[runId] = generation;
+    notifyListeners();
+    final primary = runFromRecording(named.run, alternative);
+    PreparedPrimary? prepared;
+    try {
+      prepared = await _inSlot(() async {
+        if (_disposed || _fusionGenerations[runId] != generation) {
+          throw const OperationCancelled();
+        }
+        final otherRows = _analysis.rows
+            .where((row) => row.runId != runId)
+            .length;
+        final task = runInBackground(_primaryJob, (
+          primary,
+          named.name,
+          otherRows,
+        ));
+        _primaryTasks[runId] = task;
+        try {
+          return await task.result;
+        } finally {
+          if (identical(_primaryTasks[runId], task)) {
+            _primaryTasks.remove(runId);
+          }
+        }
+      });
+    } on OperationCancelled {
+      // Superseded, or the day closed.
+    } on Object catch (error) {
+      debugPrint('Primary not changed: $error');
+      prepared = (part: null, problem: NewPrimaryProblem.failed);
+    } finally {
+      if (_primaryChanging[runId] == generation) _primaryChanging.remove(runId);
+    }
+    if (_disposed) return;
+    final part = prepared?.part;
+    if (prepared == null ||
+        _fusionGenerations[runId] != generation ||
+        !identical(_named(runId), named) ||
+        !identical(_fusions[runId], fusion)) {
+      notifyListeners();
+      _settleFusions();
+      return;
+    }
+    if (part != null && (_revision != revision || dirty || _saving)) {
+      // The day changed meanwhile: its unsaved choices would not carry over.
+      _recordingsProblems[runId] = RecordingsProblem.unsaved;
+      notifyListeners();
+      _settleFusions();
+      return;
+    }
+    if (part == null) {
+      _recordingsProblems[runId] = switch (prepared.problem) {
+        NewPrimaryProblem.missing => RecordingsProblem.primaryMissing,
+        NewPrimaryProblem.changed => RecordingsProblem.primaryChanged,
+        _ => RecordingsProblem.primaryFailed,
+      };
+      notifyListeners();
+      _settleFusions();
+      return;
+    }
+    final index = _runs.indexOf(named);
+    _runs[index] = (run: primary, name: named.name);
+    _pendingRecordings.remove(runId);
+    _fusions[runId] = RunFusion.primaryOnly(
+      primary: primary,
+      alternative: named.run,
+    );
+    // The run's lap choices are rebuilt from the saved document: the
+    // exclusions it keeps for the new primary's laps that still apply (the
+    // same content and lap derivation). Those of the old primary stay in
+    // the document as stored, for switching back. The comparison pair
+    // saved stays as stored too; it applies while its laps do.
+    _exclusions.removeWhere((reference, _) => reference.runId == runId);
+    _exclusions.addAll(recordingExclusions(_document, runId, primary));
+    _comparisonChoice = ComparisonDecisions(
+      range: _comparisonChoice.range,
+      channels: _comparisonChoice.channels,
+    );
+    final manual = {..._analysis.manualTracks}..remove(runId);
+    _analysis = replaceDayRun(
+      _analysis,
+      runId,
+      part,
+      sourceOrder: runSourceOrder(_analysis, runId, index),
+      manualTracks: manual,
+      exclusions: _exclusions,
+      preferredGroupId: _groupChosen ? _groupId : _savedGroupId,
+    );
+    if (!_groupChosen ||
+        !_analysis.groups.any((group) => group.id == _groupId)) {
+      _groupId = _analysis.chosenGroupId;
+    }
+    _channelRuns = null;
+    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
+      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
+      _declaredSpeedUnits = declaredSpeedUnits;
+    }
+    _explainedFor = null;
+    _additionClock = null;
+    _resetTheoreticalBest();
+    _resetChannelSummaries();
+    _recordingsChanged();
   }
 
   // The fused sessions changed: what reads channels is calculated again.
@@ -766,6 +1161,11 @@ final class DayResultsController extends ChangeNotifier {
 
   final TheoreticalBestRunner _theoreticalBestRunner;
   final CoachRunner _coachRunner;
+  final SegmentReviewRunner _segmentReviewRunner;
+  DayProposalReview? _segmentReview;
+  bool _segmentReviewLoading = false;
+  int _segmentReviewGeneration = 0;
+  DayTheoreticalBest? _segmentReviewFor;
   DayCoach? _coach;
   bool _coachLoading = false;
   DayTheoreticalBest? _theoreticalBest;
@@ -819,6 +1219,7 @@ final class DayResultsController extends ChangeNotifier {
         previous: _document,
         previousPath: _documentBase,
         trackSegments: _segmentEdits.runs,
+        trackSegmentReviews: _segmentEdits.reviews,
         groupChosen: _groupDecided,
         comparison: _comparisonChoice,
         fusions: _fusions,
@@ -1997,23 +2398,177 @@ final class DayResultsController extends ChangeNotifier {
         : 'The segments are already the automatic ones.';
   });
 
-  String _segmentHistory({required bool undo}) {
-    if (_saving) return 'The day is being saved.';
+  SegmentChangeIssue? _segmentHistory({required bool undo}) {
+    if (_saving) return SegmentChangeIssue.saving;
     final saved = _savedRuns;
-    final error = undo ? _segmentEdits.undo(saved) : _segmentEdits.redo(saved);
-    if (error.isEmpty) {
+    final timing = undo
+        ? _segmentEdits.undoChangesSegments
+        : _segmentEdits.redoChangesSegments;
+    final issue = undo
+        ? _segmentEdits.undoChange(saved)
+        : _segmentEdits.redoChange(saved);
+    if (issue == null && timing) {
       _segmentsChanged();
+    } else if (issue == null) {
+      _reviewDecisionChanged();
     } else {
       notifyListeners();
     }
-    return error;
+    return issue;
+  }
+
+  // A review decision changed the day but not its segments, so nothing is
+  // timed again.
+  void _reviewDecisionChanged() {
+    _revision++;
+    _dirty = true;
+    _additionClock = null;
+    _scheduleRecovery();
+    notifyListeners();
+  }
+
+  /// The proposals of the lap the day's segments are measured on, for the
+  /// optional segment review (FET-56); null until [requestSegmentReview] has
+  /// computed them for the current theoretical best.
+  DayProposalReview? get segmentReview {
+    final result = _theoreticalBest;
+    final review = _segmentReview;
+    return result == null || review == null || !review.matches(result)
+        ? null
+        : review;
+  }
+
+  bool get segmentReviewLoading => _segmentReviewLoading;
+
+  /// Each proposal of [segmentReview] and its state against the segments
+  /// approved now and the rejections stored with the day.
+  List<SegmentReviewItem> get segmentReviewItems {
+    final result = _theoreticalBest;
+    final review = segmentReview;
+    if (result == null || review == null || _theoreticalBestLoading) {
+      return const [];
+    }
+    return review.items(result.runSegments, _storedReview(review.runId));
+  }
+
+  Object? _storedReview(String runId) {
+    for (final value in _documentRuns) {
+      if (value is Map<String, Object?> && value['id'] == runId) {
+        return value['trackSegmentReview'];
+      }
+    }
+    return null;
+  }
+
+  /// Computes the proposals of the lap the theoretical best's segments are
+  /// measured on, in the background; with [recompute], again even when they
+  /// are there (Overlays' "Recompute proposals"). A result for a lap that
+  /// is no longer the one reviewed is dropped.
+  Future<void> requestSegmentReview({bool recompute = false}) async {
+    final result = _theoreticalBest;
+    if (_disposed ||
+        result == null ||
+        _theoreticalBestLoading ||
+        result.state != DayTheoreticalBestState.ready) {
+      return;
+    }
+    if (!recompute && (_segmentReviewLoading || segmentReview != null)) return;
+    // Once per theoretical best unless asked to recompute: a review that
+    // does not match its result is never computed again and again.
+    if (!recompute && identical(_segmentReviewFor, result)) return;
+    _segmentReviewFor = result;
+    final generation = ++_segmentReviewGeneration;
+    _segmentReviewLoading = true;
+    notifyListeners();
+    final lap = segmentReviewLap(result);
+    final run = lap == null ? null : outingRuns(runs)[lap.runId];
+    DayProposalReview review;
+    try {
+      review = await _segmentReviewRunner(_segmentReviewJob(result, lap, run));
+    } on Object catch (error) {
+      review = DayProposalReview(
+        groupId: result.groupId,
+        runId: result.segmentRunId,
+        lap: lap,
+        message: '$error',
+        failed: true,
+      );
+    }
+    if (_disposed || generation != _segmentReviewGeneration) return;
+    _segmentReview = review;
+    _segmentReviewLoading = false;
+    notifyListeners();
+  }
+
+  // Built outside the controller so the isolate's closure holds only its
+  // inputs.
+  static DayProposalReview Function() _segmentReviewJob(
+    DayTheoreticalBest result,
+    DayLapRow? lap,
+    OutingRun? run,
+  ) {
+    // Only what the review needs crosses to the isolate.
+    final shell = DayTheoreticalBest(
+      groupId: result.groupId,
+      state: result.state,
+      segmentRunId: result.segmentRunId,
+    );
+    return () => dayProposalReview(shell, lap, run);
+  }
+
+  /// Computes the proposals again (Overlays' "Recompute proposals").
+  Future<void> recomputeSegmentProposals() =>
+      requestSegmentReview(recompute: true);
+
+  /// Rejects proposal [index] of [segmentReview], or with [rejected] false
+  /// takes the rejection back. The decision is saved with the day and
+  /// undone like an edit; the segments do not change. Returns why not, or
+  /// null.
+  SegmentChangeIssue? rejectSegmentProposal(int index, {bool rejected = true}) {
+    final result = _theoreticalBest;
+    final review = segmentReview;
+    if (_saving) return SegmentChangeIssue.saving;
+    if (result == null || review == null || _theoreticalBestLoading) {
+      return SegmentChangeIssue.notReady;
+    }
+    final issue = _segmentEdits.setRejected(
+      result,
+      review,
+      _savedRuns,
+      index,
+      rejected: rejected,
+    );
+    if (issue == null) _reviewDecisionChanged();
+    return issue;
+  }
+
+  /// Approves every open proposal of [segmentReview] (rejected ones stay
+  /// out), as Overlays' "Approve all". Every lap is timed again. Returns
+  /// how many were approved, or why none.
+  ({int approved, SegmentChangeIssue? issue}) approveAllSegmentProposals() {
+    final result = _theoreticalBest;
+    final review = segmentReview;
+    if (_saving) return (approved: 0, issue: SegmentChangeIssue.saving);
+    if (result == null || review == null || _theoreticalBestLoading) {
+      return (approved: 0, issue: SegmentChangeIssue.notReady);
+    }
+    final outcome = _segmentEdits.approveAll(result, review, _savedRuns);
+    if (outcome.issue == null) _segmentsChanged();
+    return outcome;
   }
 
   /// Undoes the last segment edit.
-  String undoSegmentEdit() => _segmentHistory(undo: true);
+  String undoSegmentEdit() => undoSegmentChange()?.message ?? '';
 
   /// Redoes the last undone segment edit.
-  String redoSegmentEdit() => _segmentHistory(undo: false);
+  String redoSegmentEdit() => redoSegmentChange()?.message ?? '';
+
+  /// Undoes the last change of the segments or of a review decision, or
+  /// says why not.
+  SegmentChangeIssue? undoSegmentChange() => _segmentHistory(undo: true);
+
+  /// Redoes the last undone change, or says why not.
+  SegmentChangeIssue? redoSegmentChange() => _segmentHistory(undo: false);
 
   void _rerank() {
     _revision++;
@@ -2055,6 +2610,7 @@ final class DayResultsController extends ChangeNotifier {
     final analysisNow = _analysis;
     final exclusionsNow = {..._exclusions};
     final segmentsNow = _segmentEdits.runs;
+    final reviewsNow = _segmentEdits.reviews;
     final groupChosenNow = _groupDecided;
     final comparisonNow = _comparisonChoice;
     final fusionsNow = {..._fusions};
@@ -2079,6 +2635,7 @@ final class DayResultsController extends ChangeNotifier {
             previous: previous,
             previousPath: previousBase,
             trackSegments: segmentsNow,
+            trackSegmentReviews: reviewsNow,
             groupChosen: groupChosenNow,
             comparison: comparisonNow,
             fusions: fusionsNow,
@@ -2115,10 +2672,18 @@ final class DayResultsController extends ChangeNotifier {
     _disposed = true;
     // Alignments not started are dropped; running ones are stopped.
     _fusionQueue.clear();
+    for (final waiter in _slotWaiters) {
+      waiter.completeError(const OperationCancelled());
+    }
+    _slotWaiters.clear();
     for (final task in _fusionTasks.values) {
       task.cancel();
     }
     _fusionTasks.clear();
+    for (final task in _primaryTasks.values) {
+      task.cancel();
+    }
+    _primaryTasks.clear();
     final settled = _fusionsSettled;
     _fusionsSettled = null;
     settled?.complete();
