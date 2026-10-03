@@ -13,11 +13,12 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('explained'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   // Session 1 drives four laps, session 2 two, each slow somewhere else.
   DayImportOutcome importDay() {

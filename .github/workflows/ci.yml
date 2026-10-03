@@ -11,9 +11,12 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request cancels the older run. Every revision of
+# main runs to the end in its own group: AGENTS.md requires green CI on each
+# resulting main revision, so a quick second merge must not cancel the first.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   analyze-and-test:
@@ -58,6 +61,28 @@ jobs:
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
         run: flutter build macos --debug --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+
+  # Windows is a target platform: analyze, test and build it like macOS.
+  windows:
+    name: Analyze, test and build (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-flutter
+      - run: flutter pub get
+      - name: Packages - pub get
+        working-directory: packages/fetproject
+        run: dart pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Build Windows (release)
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: flutter build windows --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
 
   telemetry-core:
     name: telemetry_core (Dart, ${{ matrix.os }})

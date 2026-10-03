@@ -280,6 +280,7 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) runs on every pull request and
 on `main`:
 
 - analyze, tests and a macOS debug build;
+- analyze, tests and a Windows release build on Windows;
 - an iOS simulator debug build, then `integration_test/` on a booted iPhone
   simulator;
 - an Android debug APK, then `integration_test/` on an Android emulator

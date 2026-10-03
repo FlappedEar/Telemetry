@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/document_pickers.dart';
+import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -14,6 +15,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../day/recovery_test.dart' show FileRecoveryStore;
+import '../support/temp_directory.dart';
 
 /// A job the test finishes by hand.
 final class _FakeJob implements DayImportJob {
@@ -112,6 +114,22 @@ const String _lapsVbo =
     '10 52.0001 21.0002\n11 52.0001 20.9998\n12 52.0008 20.9998\n'
     '13 52.0008 21.0002\n14 52.0001 21.0002\n15 52.0001 20.9998\n';
 
+/// Runs real time until every queued recovery write or clear has finished.
+///
+/// A write still running when a test ends holds its file open, so the temp
+/// folder cannot be deleted on Windows. Its rest then never runs, because it
+/// belongs to the finished test's fake clock, and the next test's recovery
+/// work waits behind it until the test times out.
+Future<void> settleRecovery(WidgetTester tester) async {
+  for (var i = 0; i < 500 && !recoveryQueueIdle; ++i) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
+  }
+  expect(recoveryQueueIdle, isTrue, reason: 'recovery work still running');
+}
+
 void main() {
   late Directory directory;
   late _FakeImporter importer;
@@ -119,6 +137,9 @@ void main() {
   late DayImportController controller;
 
   setUp(() {
+    // An earlier test left recovery work running: fail here, not in a
+    // ten-minute timeout.
+    expect(recoveryQueueIdle, isTrue, reason: 'recovery work left running');
     directory = Directory.systemTemp.createTempSync('day_import_page');
     importer = _FakeImporter();
     pickers = _FakePickers();
@@ -126,7 +147,7 @@ void main() {
   });
   tearDown(() {
     controller.dispose();
-    directory.deleteSync(recursive: true);
+    deleteTemporaryDirectory(directory);
   });
 
   String write(String name, String text) {
@@ -219,6 +240,7 @@ void main() {
     // Leaving the page stops listening.
     await tester.pumpWidget(const SizedBox());
     expect(incoming.controller.hasListener, isFalse);
+    await settleRecovery(tester);
   });
 
   testWidgets('a recording shared during that import goes to its day', (
@@ -258,6 +280,7 @@ void main() {
     expect(find.text('Day results'), findsOneWidget);
     expect(find.text('Session 2 added to the day.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('a share while a day is open imports behind it and says so', (
@@ -396,14 +419,9 @@ void main() {
       expect(find.text('Session 2 added to the day.'), findsOneWidget);
 
       // Closing the day writes its recovery file; let that finish here, not
-      // in the next test.
+      // in the next test (see [settleRecovery]).
       await tester.pumpWidget(const SizedBox());
-      for (var i = 0; i < 20; ++i) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-        await tester.pump();
-      }
+      await settleRecovery(tester);
     });
 
     testWidgets('a share while a day is being restored goes to that day', (
@@ -426,12 +444,7 @@ void main() {
       expect(find.text('Day results'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
-      for (var i = 0; i < 20; ++i) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-        await tester.pump();
-      }
+      await settleRecovery(tester);
     });
 
     testWidgets('another day\'s unsaved work is not replaced by today\'s', (
