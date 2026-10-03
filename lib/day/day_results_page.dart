@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
+import '../l10n.dart';
 import '../settings_dialog.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
@@ -174,7 +175,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (path == null || !mounted) return;
     try {
       await _controller.save(path);
-      if (mounted) _tell('Saved as ${p.basename(path)}.');
+      if (mounted) {
+        _tell(
+          _controller.dirty
+              ? 'Saved as ${p.basename(path)}. Changes made while saving '
+                    'are not saved yet.'
+              : 'Saved as ${p.basename(path)}.',
+        );
+      }
     } on Exception catch (error) {
       if (mounted) _tell('Not saved: $error');
     }
@@ -305,19 +313,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
               selectedIndex: _section.index,
               onDestinationSelected: (index) =>
                   setState(() => _section = _Section.values[index]),
-              destinations: const [
+              destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.flag_outlined),
-                  selectedIcon: Icon(Icons.flag),
-                  label: 'Day',
+                  icon: const Icon(Icons.flag_outlined),
+                  selectedIcon: const Icon(Icons.flag),
+                  label: context.l10n.daySectionDay,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.format_list_numbered),
-                  label: 'Laps',
+                  icon: const Icon(Icons.format_list_numbered),
+                  label: context.l10n.daySectionLaps,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.compare_arrows),
-                  label: 'Compare',
+                  icon: const Icon(Icons.compare_arrows),
+                  label: context.l10n.daySectionCompare,
                 ),
               ],
             ),
@@ -361,15 +369,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onDestinationSelected: (index) => setState(
                   () => _section = index == 1 ? _Section.compare : _Section.day,
                 ),
-                destinations: const [
+                destinations: [
                   NavigationRailDestination(
-                    icon: Icon(Icons.flag_outlined),
-                    selectedIcon: Icon(Icons.flag),
-                    label: Text('Day'),
+                    icon: const Icon(Icons.flag_outlined),
+                    selectedIcon: const Icon(Icons.flag),
+                    label: Text(context.l10n.daySectionDay),
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.compare_arrows),
-                    label: Text('Compare'),
+                    icon: const Icon(Icons.compare_arrows),
+                    label: Text(context.l10n.daySectionCompare),
                   ),
                 ],
               ),
@@ -723,6 +731,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// best lap against the best of the day.
   List<Widget> _comparePane(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final colors = FetColors.of(context);
     final best = _controller.ranking?.bestOfDay;
     final canPick = _controller.comparisonCandidates().length >= 2;
@@ -746,13 +755,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
     );
     return [
-      Text('Compare', style: theme.textTheme.titleLarge),
+      Text(l10n.daySectionCompare, style: theme.textTheme.titleLarge),
       const SizedBox(height: 4),
       Text(
-        canPick
-            ? 'Two laps side by side: where one gains and loses time, '
-                  'segment by segment and corner by corner.'
-            : 'Comparing needs two ranked laps of one circuit.',
+        canPick ? l10n.compareIntro : l10n.compareNeedsTwoLaps,
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
@@ -763,11 +769,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           key: const ValueKey('comparePick'),
           onPressed: _pickComparison,
           icon: const Icon(Icons.compare_arrows),
-          label: const Text('Pick two laps'),
+          label: Text(l10n.comparePickTwoLaps),
         ),
       if (best != null && pairs.isNotEmpty) ...[
         const SizedBox(height: 20),
-        Text('Against the best of the day', style: theme.textTheme.titleSmall),
+        Text(l10n.compareAgainstBest, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         for (final lap in pairs)
           Card(
@@ -782,9 +788,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    chip('A ${displayTime(lap.durationSeconds)}', colors.you),
                     chip(
-                      'B ${displayTime(best.durationSeconds)}',
+                      l10n.compareLapA(displayTime(lap.durationSeconds)),
+                      colors.you,
+                    ),
+                    chip(
+                      l10n.compareLapB(displayTime(best.durationSeconds)),
                       colors.reference,
                     ),
                   ],

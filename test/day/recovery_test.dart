@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -85,6 +86,63 @@ void main() {
     controller.dispose();
     restored.dispose();
   });
+
+  test(
+    'a change made while saving keeps the day unsaved and recoverable',
+    () async {
+      final outcome = importDay();
+      final written = <Map<String, Object?>>[];
+      var blocked = Completer<void>();
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        recovery: store,
+        writer: (path, document) async {
+          written.add(document);
+          await blocked.future;
+        },
+      );
+      final best = controller.ranking!.bestOfDay!;
+      final row = controller.analysis.rows.firstWhere(
+        (row) => row.reference == best.reference,
+      );
+
+      // The save's snapshot is taken, then the user excludes a lap while the
+      // file is still being written.
+      final path = '${directory.path}/day.fetproject';
+      final saving = controller.save(path);
+      expect(controller.saving, isTrue);
+      expect(controller.exclude(row, 'Traffic'), isTrue);
+      blocked.complete();
+      await saving;
+      await controller.flushRecovery();
+
+      expect(written, hasLength(1));
+      expect(openDayDocument(written.single, path).exclusions, isEmpty);
+      expect(controller.documentPath, path);
+      expect(controller.dirty, isTrue);
+      final kept = (await store.load())!;
+      expect(kept.originalPath, path);
+      expect(openRecoveredDay(kept).exclusions.values, [
+        'Traffic',
+      ], reason: 'the exclusion survives in recovery');
+
+      // Saving again writes the exclusion and only then marks the day clean;
+      // repeating the same exclusion while it saves changes nothing.
+      blocked = Completer<void>();
+      final again = controller.save(path);
+      expect(controller.exclude(row, 'Traffic'), isTrue);
+      blocked.complete();
+      await again;
+      await controller.flushRecovery();
+      expect(controller.dirty, isFalse);
+      expect(openDayDocument(written.last, path).exclusions.values, [
+        'Traffic',
+      ]);
+      expect(await store.load(), isNull);
+      controller.dispose();
+    },
+  );
 
   testWidgets('offers to restore or discard the unsaved day', (tester) async {
     // Lets file and isolate work finish between frames.
