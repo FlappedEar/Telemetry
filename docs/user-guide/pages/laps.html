@@ -1,0 +1,37 @@
+<!-- title: The lap list | nav: The lap list -->
+<h1 id="laps">The lap list</h1>
+<p class="lead">Every part of every session, in the order it was driven: out laps, laps, in laps. On a phone it is the <strong>Laps</strong> tab.</p>
+
+<figure class="phone">
+  <img src="assets/screens/phone-laps.png" alt="The Laps tab on a phone, listing Session 1 OUT, LAP 1 to LAP 5 and IN, with times on the right" width="412" height="915" loading="lazy">
+  <figcaption>The Laps tab on a Pixel-sized screen.</figcaption>
+</figure>
+
+<h2 id="row">Reading a row</h2>
+<ul>
+  <li><strong>Title</strong>: <em>Session 3 · LAP 2</em>, or <em>· OUT</em>, <em>· IN</em>, <em>· UNKNOWN</em>.</li>
+  <li><strong>Icon</strong>: a trophy marks the best lap of the day; an outlined star marks the best lap of its session.</li>
+  <li><strong>Notes under the title</strong>: <em>Best of the day</em>, <em>Best of Session N</em>, <em>Excluded: &lt;your reason&gt;</em>, <em>Not ranked: &lt;reason&gt;</em>, <em>Not timed</em> (out and in laps) or <em>No start/finish pass</em>.</li>
+  <li><strong>Time</strong> on the right. It is grey when the lap is not ranked or not timed.</li>
+</ul>
+<p>Tap a row to open the <a href="lap.html">lap</a>.</p>
+
+<h2 id="not-ranked">Why a lap is not ranked</h2>
+<table>
+  <tr><th>Reason shown</th><th>Meaning</th></tr>
+  <tr><td>Different layout, Opposite direction, Different timing gates</td><td>The lap was on another circuit, direction or start/finish line than the group shown.</td></tr>
+  <tr><td>Layout needs confirmation, Direction needs confirmation, Timing gates unresolved</td><td>The app could not tell; set it in <a href="day.html#circuits">Circuits</a>.</td></tr>
+  <tr><td>Incomplete GPS, Invalid GPS</td><td>Part of the lap has no usable GPS.</td></tr>
+  <tr><td>Lap leaves the route the other laps took</td><td>Off track, a detour or the pit lane.</td></tr>
+  <tr><td>User exclusion</td><td>You excluded it. See <a href="lap.html#exclude">Excluding a lap</a>.</td></tr>
+  <tr><td>Not a complete timed lap</td><td>An out lap, in lap or unknown section.</td></tr>
+  <tr><td>Source changed; reload recording</td><td>The recording file changed since the day was saved.</td></tr>
+</table>
+
+<h2 id="compare">Compare two laps</h2>
+<p>Above the list, <strong>Compare two laps</strong> asks for <strong>Lap A</strong>, then the lap to compare it with. The first choice, <strong>Suggested: the fastest</strong>, picks the best lap of the group (or the next fastest when A is the best). See <a href="compare.html">Compare laps</a>.</p>
+<figure class="pair">
+  <img src="assets/screens/compare-pick-a.png" alt="Lap A dialog listing every ranked lap with its time" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/compare-pick-b.png" alt="Compare with dialog, with Suggested: the fastest at the top" width="1280" height="800" loading="lazy">
+</figure>
+<p>Only ranked laps of the same group can be compared.</p>

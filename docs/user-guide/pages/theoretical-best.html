@@ -1,0 +1,49 @@
+<!-- title: Theoretical best and time losses | nav: Theoretical best -->
+<h1 id="theoretical-best">Theoretical best and time losses</h1>
+<p class="lead">The day page splits the track into segments (corners and straights) and times every ranked lap through each one. That shows what is left and where each lap loses it.</p>
+
+<h2 id="card">Theoretical best</h2>
+<figure>
+  <img src="assets/screens/theoretical-best.png" alt="Theoretical best card: best lap, theoretical best and time available" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Best lap</strong>: the fastest lap of the group.</li>
+  <li><strong>Theoretical best</strong>: the fastest time of each segment, across all laps, added up.</li>
+  <li><strong>Available</strong>: the difference.</li>
+</ul>
+<p>It combines parts of different laps, so it does not show that the whole lap can be driven that fast. While it is being worked out, the card says <em>Timing every lap on one track axis…</em>.</p>
+<p><strong>Edit segments</strong> opens the <a href="segments.html">segment editor</a>.</p>
+
+<h2 id="where">Where the time goes</h2>
+<figure>
+  <img src="assets/screens/where-the-time-goes.png" alt="Where the time goes: a lap picker, the best lap's trace coloured by loss, and segments listed by loss" width="1280" height="800" loading="lazy">
+</figure>
+<ol class="steps">
+  <li>Choose a lap in the menu (the best lap is chosen first).</li>
+  <li>The map colours each segment by how much time that lap loses there to the fastest time, dim to bright.</li>
+  <li>The list below gives the segments, largest loss first: the loss, the fastest time and who set it, and for a corner the lap's minimum speed and braking point against the best lap.</li>
+</ol>
+<ul>
+  <li>Tap a corner for its <a href="corners.html#details">corner details</a>.</li>
+  <li>Tap the compare button on a row to compare this lap with the best lap through that segment in the <a href="corners.html">Corner Analyzer</a>.</li>
+</ul>
+
+<h2 id="sectors">Sector times</h2>
+<figure>
+  <img src="assets/screens/sector-times.png" alt="Sector times table with one row per lap and one column per segment, the fastest of each highlighted" width="1280" height="800" loading="lazy">
+</figure>
+<p>Every lap by segment. Columns use short names (C1 for Corner 1, S2 for Straight 2). The fastest time of each segment is highlighted, the best lap is marked ★, and the last row, <strong>Fastest</strong>, adds up to the theoretical best. Tap a lap to show its losses on the map above. The table scrolls sideways on a phone.</p>
+
+<h2 id="time-losses">Time losses</h2>
+<figure>
+  <img src="assets/screens/time-losses.png" alt="Time losses card ranking the largest losses to the best lap" width="1280" height="800" loading="lazy">
+</figure>
+<p>The largest single losses to the best lap, one segment at a time, for <strong>Each session's best</strong> lap or for <strong>Every lap</strong>. The first eight are shown; <strong>Show all</strong> lists the rest.</p>
+<p>Tap a loss for both laps' times through the segment, where the gap grew, the segment on the map, and buttons to open the lap or <strong>Compare with</strong> the best lap there.</p>
+
+<h2 id="look-next">Where to look next</h2>
+<figure>
+  <img src="assets/screens/where-to-look-next.png" alt="Where to look next: three areas, each with what was observed, a hypothesis and the laps to compare" width="1280" height="800" loading="lazy">
+</figure>
+<p>Up to three places picked from the measured losses, sector gaps and corner spreads. Each says what kind it is (<em>Best lap against the fastest sector</em>, <em>Repeated loss</em>, <em>Braking-point spread</em> or <em>Lowest-speed spread</em>), what was <strong>Observed</strong>, a <strong>Hypothesis</strong> to check, and which two laps to compare.</p>
+<p>Tap an area for its detail page, with the segment on the map and buttons to open either lap or <strong>Compare laps A and B</strong>. A hypothesis is something to check in the laps, not a cause or an instruction.</p>

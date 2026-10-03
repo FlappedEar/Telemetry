@@ -1,0 +1,45 @@
+<!-- title: Corner Analyzer | nav: Corner Analyzer -->
+<h1 id="corners">Corner Analyzer</h1>
+<p class="lead">On the comparison page, the Corner Analyzer goes through the track one segment at a time and puts lap A and lap B side by side.</p>
+
+<figure>
+  <img src="assets/screens/corner-analyzer-segment.png" alt="Corner Analyzer for Corner 11: the segment picker, a speed chart with braking and pickup markers, and a table of sector time, speeds, braking point and throttle pickup for A and B" width="1280" height="800" loading="lazy">
+  <figcaption>Opened from a time loss: the comparison zooms to the corner, with the Corner Analyzer at the top.</figcaption>
+</figure>
+
+<h2 id="segments">Which segments</h2>
+<p>The analyzer uses the segments both laps share. Until the day is saved, these are the segments proposed from the best lap, and a note says so. If the two laps have no shared segments, the card says so and offers <strong>Use the theoretical best’s segments</strong>.</p>
+<figure>
+  <img src="assets/screens/corner-analyzer-no-segments.png" alt="Corner Analyzer saying there are no matching approved segments, with the button Use the theoretical best's segments" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="pick">Picking a segment</h2>
+<p>Use the arrows (<strong>Previous segment</strong>, <strong>Next segment</strong>) or the menu, for example <em>Corner 3 · corner · 142 m</em>. Choosing a segment zooms all charts to it and puts the cursor in it.</p>
+
+<h2 id="chart">Speed through the segment</h2>
+<p>The chart shows both laps' speed through the segment (shaded) and just around it. Markers along the bottom: ▲ braking point, ◆ throttle pickup, ● lowest speed, and a dashed line at the apex. Tap or drag to move the cursor.</p>
+
+<h2 id="table">The table</h2>
+<table>
+  <tr><th>Row</th><th>Meaning</th></tr>
+  <tr><td>Sector time</td><td>Time through the segment.</td></tr>
+  <tr><td>Entry, Apex, Minimum, Exit speed</td><td>For a corner, in km/h. For a straight: Entry, Top, Lowest and Exit speed.</td></tr>
+  <tr><td>Braking point</td><td>Where braking starts, as a distance along the lap in metres. Δ positive: A brakes later.</td></tr>
+  <tr><td>Throttle pickup</td><td>Where the throttle comes back, along the lap in metres.</td></tr>
+  <tr><td>Heart rate</td><td>Mean heart rate through the segment, when recorded.</td></tr>
+</table>
+<p>A missing value shows — with the reason, such as <em>no brake channel</em> or <em>lap not fully covered here</em>. Values worked out from deceleration instead of a pedal are marked <em>inferred</em>.</p>
+<p><strong>Zoom to segment</strong> zooms the charts again; <strong>Lap A here</strong> and <strong>Lap B here</strong> open a lap at the segment start.</p>
+
+<h2 id="details">Corner details from the day page</h2>
+<p>On the day page, tap a corner in the <a href="theoretical-best.html#where">Where the time goes</a> list for that lap's corner figures against the best lap:</p>
+<figure>
+  <img src="assets/screens/corner-details.png" alt="Corner 11 details: entry, minimum and exit speed, braking point, braking time, peak deceleration, throttle pickup, and the best of all laps" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li>Entry, minimum and exit speed; braking point before the corner; braking time; peak deceleration; throttle pickup.</li>
+  <li>Each figure says whether it came from the brake or throttle channel or was inferred.</li>
+  <li><strong>Best of N laps</strong>: who had the highest minimum and exit speed, the latest braking point and the earliest pickup.</li>
+  <li><strong>Open in the Corner Analyzer</strong> compares the lap with the best lap through this corner.</li>
+</ul>
+<p class="note">Later braking or an earlier pickup is not automatically faster.</p>

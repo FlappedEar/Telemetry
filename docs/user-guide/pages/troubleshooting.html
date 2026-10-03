@@ -1,0 +1,41 @@
+<!-- title: Troubleshooting | nav: Troubleshooting -->
+<h1 id="troubleshooting">Troubleshooting</h1>
+
+<h2 id="no-laps">A session has no laps</h2>
+<p>The message under the session on <strong>Import a day</strong> says why:</p>
+<table>
+  <tr><th>Message</th><th>What to do</th></tr>
+  <tr><td>No laps: the recording has no start/finish line.</td><td>In RaceChrono, set the track's start/finish line, then export again.</td></tr>
+  <tr><td>No laps: the recording has more than one start/finish line.</td><td>Keep one start/finish line on the track in RaceChrono and export again.</td></tr>
+  <tr><td>No laps: the start/finish line is not valid.</td><td>Check the line's position in RaceChrono.</td></tr>
+  <tr><td>No laps: the recording has no usable GPS.</td><td>The recording has no GPS positions the app can use.</td></tr>
+  <tr><td>No complete laps: the start/finish line was not crossed often enough.</td><td>The session needs at least two crossings for a lap.</td></tr>
+</table>
+
+<h2 id="not-ranked">A lap is not in the ranking</h2>
+<p>Open the lap list and read the note under the lap. See <a href="laps.html#not-ranked">Why a lap is not ranked</a>. A session on the wrong circuit or direction can be fixed in <a href="day.html#circuits">Circuits</a>.</p>
+
+<h2 id="nothing-imported">Nothing was imported</h2>
+<ul>
+  <li><em>No VBO or RCZ recordings were found</em>: check the folder; tick <strong>Include subfolders</strong> if the files are in subfolders.</li>
+  <li><em>import at most 64 at a time</em>: choose fewer files or a smaller folder.</li>
+  <li><em>Finish the current import first</em>: wait for the running import or tap <strong>Cancel</strong>.</li>
+</ul>
+
+<h2 id="missing">A saved day shows sessions that could not be opened</h2>
+<p>The recordings were moved, renamed or changed. Use <a href="saving.html#find">Find recordings in a folder</a>.</p>
+
+<h2 id="no-map">The map is empty or grey</h2>
+<ul>
+  <li>Street and satellite backgrounds need a network connection the first time a track is shown. The trace is still drawn without them.</li>
+  <li><em>No GPS recorded for this section.</em> means the lap has no positions.</li>
+</ul>
+
+<h2 id="chart">A chart says "No data in this range" or "Not available"</h2>
+<p>The channel was not recorded in that part of the lap, or not at all. The app never fills a gap or substitutes another channel.</p>
+
+<h2 id="update">Android will not update the app</h2>
+<p>See the note in <a href="install.html#android">Install</a>. Do not uninstall before your days are saved elsewhere.</p>
+
+<h2 id="report">Reporting a problem</h2>
+<p>Note what you did, what you expected and what happened, with a screenshot, and which build you use (the commit in the APK's file name).</p>
