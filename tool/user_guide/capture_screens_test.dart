@@ -347,7 +347,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The segment editor.
-    await toTop(tester, find.text('Edit segments'));
+    await scrollIn(tester, summary, find.text('Edit segments'), delta: -300);
     await tester.tap(find.text('Edit segments'));
     await tester.pumpAndSettle();
     await shot(tester, 'segment-editor');
