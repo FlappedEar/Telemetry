@@ -732,6 +732,33 @@ void main() {
     expect(find.text('Track day'), findsOneWidget);
   });
 
+  testWidgets('the map background menu speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    mapBackground.value = MapBackground.streets;
+    debugTileProvider = BlankTiles.new;
+    addTearDown(() {
+      mapBackground.value = MapBackground.none;
+      debugTileProvider = null;
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.tap(find.text('Dotknij, aby otworzyć okrążenie.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Tło mapy'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ulice'), findsOneWidget);
+    expect(find.text('Streets'), findsNothing);
+  });
+
   testWidgets('draws the trace over street tiles with attribution', (
     tester,
   ) async {

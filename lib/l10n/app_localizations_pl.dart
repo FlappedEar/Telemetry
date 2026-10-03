@@ -4101,4 +4101,29 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageBest => 'Najlepsze';
+
+  @override
+  String get mapBackgroundMenu => 'Tło mapy';
+
+  @override
+  String get mapBackgroundStreets => 'Ulice';
+
+  @override
+  String get mapBackgroundSatellite => 'Satelita';
+
+  @override
+  String get mapBackgroundApple => 'Apple Maps';
+
+  @override
+  String get mapBackgroundPlain => 'Bez tła';
+
+  @override
+  String get documentPickerDays => 'Dzień FlappedEar';
+
+  @override
+  String get documentPickerLookInFolder => 'Szukaj w tym folderze';
+
+  @override
+  String get speedLegendNoSpeed =>
+      'Nie zapisano prędkości; ślad jest w jednym kolorze.';
 }

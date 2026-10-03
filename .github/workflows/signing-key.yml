@@ -1,0 +1,46 @@
+name: Keep the Android signing key
+
+# The APK signing key lives only in the Actions cache (android-debug-keystore-v1,
+# see ci.yml and release.yml). GitHub removes a cache that nobody has used for
+# seven days; CI would then make a new key, and phones with the app installed
+# would refuse every later APK as an update. Restoring the cache counts as a
+# use, so this restores it every day, whether or not main builds. GitHub
+# turns scheduled workflows off after 60 days without repository activity;
+# turn it back on in the Actions tab if that happens.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  touch:
+    name: Restore the signing key
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restore the signing key
+        id: key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+      - name: Stop if the key is gone
+        if: steps.key.outputs.cache-hit != 'true'
+        run: |
+          echo "::error::The signing key cache android-debug-keystore-v1 is gone. Do not merge to main until the owner decides how to sign APKs: a new key means installed apps cannot update."
+          exit 1
+      - name: Check it is the release key
+        env:
+          RELEASE_CERT_SHA256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+        run: |
+          actual=$(keytool -list -v -keystore ~/.android/debug.keystore \
+            -storepass android -alias androiddebugkey \
+            | sed -n 's/^.*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
+          echo "Cached key SHA-256: $actual"
+          [ "$actual" = "$RELEASE_CERT_SHA256" ] || {
+            echo "::error::The cached key is $actual, not the release key $RELEASE_CERT_SHA256."
+            exit 1
+          }

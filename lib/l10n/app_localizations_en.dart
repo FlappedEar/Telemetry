@@ -4024,4 +4024,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPageBest => 'Best';
+
+  @override
+  String get mapBackgroundMenu => 'Map background';
+
+  @override
+  String get mapBackgroundStreets => 'Streets';
+
+  @override
+  String get mapBackgroundSatellite => 'Satellite';
+
+  @override
+  String get mapBackgroundApple => 'Apple Maps';
+
+  @override
+  String get mapBackgroundPlain => 'Plain';
+
+  @override
+  String get documentPickerDays => 'FlappedEar day';
+
+  @override
+  String get documentPickerLookInFolder => 'Look in this folder';
+
+  @override
+  String get speedLegendNoSpeed =>
+      'No speed recorded; the trace is drawn in one colour.';
 }

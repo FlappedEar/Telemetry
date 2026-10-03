@@ -988,5 +988,13 @@
   "recordingsBusyAdd": "Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.",
   "lapPageThisLap": "To okrążenie",
   "lapPageGapToBest": "{delta} do najlepszego okrążenia dnia",
-  "importPageBest": "Najlepsze"
+  "importPageBest": "Najlepsze",
+  "mapBackgroundMenu": "Tło mapy",
+  "mapBackgroundStreets": "Ulice",
+  "mapBackgroundSatellite": "Satelita",
+  "mapBackgroundApple": "Apple Maps",
+  "mapBackgroundPlain": "Bez tła",
+  "documentPickerDays": "Dzień FlappedEar",
+  "documentPickerLookInFolder": "Szukaj w tym folderze",
+  "speedLegendNoSpeed": "Nie zapisano prędkości; ślad jest w jednym kolorze."
 }
