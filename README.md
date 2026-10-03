@@ -204,6 +204,27 @@ Nothing is stored or sent. The same steps can be measured on a computer, on
 any folder or a synthetic day, with `packages/telemetry_core/tool/day_benchmark.dart`
 (see [its notes](packages/telemetry_core/tool/README.md#day_benchmarkdart)).
 
+## Look
+
+`lib/ui/theme.dart` holds the whole look: a dark track-day dashboard of flat
+charcoal panels, after the design language of Track Titan, with FlappedEar
+amber (the logo's colour) as the accent. `FetColors` names the lap colours:
+your lap amber, the reference lap blue, time lost red and time gained green;
+charts and maps move to them screen by screen. Text is
+Sora with tabular digits, so times line up; lap times in large type use
+JetBrains Mono. Both fonts are bundled under `assets/fonts/` with their
+licences (SIL Open Font License 1.1), so the app needs no network for them;
+the licence texts ship in the app and show on its licence page. Screens use
+the theme's colour roles and text styles rather than their own colours.
+
+The app icon is the FlappedEar ears from the Overlays logo over two laps'
+speed traces, amber and blue, on charcoal; the launch screen shows the ears
+with the FlappedEar Telemetry wordmark. Their sources are in
+`assets/branding/` (`icon.svg` is the vector original). After changing them,
+regenerate the platform files with `dart run flutter_launcher_icons` and
+`dart run flutter_native_splash:create`, then revert the generators'
+unrelated edits to `ios/Runner/Info.plist` and `ios/Runner.xcodeproj`.
+
 ## Platforms
 
 | Platform | Minimum |
