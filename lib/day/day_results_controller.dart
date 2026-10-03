@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../units.dart';
 import 'recovery_store.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
@@ -74,6 +75,9 @@ final class DayResultsController extends ChangeNotifier {
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayDocument,
        _dirty = recovered || changed {
+    detectedSpeedUnit = commonSpeedUnit([
+      for (final run in runs) run.run.telemetry,
+    ]);
     _scheduleRecovery();
   }
 
