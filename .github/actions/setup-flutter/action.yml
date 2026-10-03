@@ -2,7 +2,7 @@ name: Install pinned Flutter
 description: >
   Installs the Flutter version pinned in pubspec.yaml (environment: flutter)
   from Google's release manifest, verifies the archive's SHA-256 and adds it
-  to PATH. Works on macOS and Linux runners.
+  to PATH. Works on macOS, Linux and Windows runners (bash).
 
 runs:
   using: composite
@@ -16,11 +16,13 @@ runs:
         case "$RUNNER_OS" in
           macOS) platform=macos ;;
           Linux) platform=linux ;;
+          Windows) platform=windows ;;
           *) echo "Unsupported runner OS: $RUNNER_OS"; exit 1 ;;
         esac
         base=https://storage.googleapis.com/flutter_infra_release/releases
         curl -sSfL --retry 5 --retry-all-errors --connect-timeout 30 "$base/releases_$platform.json" -o "$RUNNER_TEMP/releases.json"
-        read -r archive sha256 < <(python3 - "$version" "$RUNNER_TEMP/releases.json" <<'PY'
+        python=$(command -v python3 || command -v python)
+        read -r archive sha256 < <("$python" - "$version" "$RUNNER_TEMP/releases.json" <<'PY'
         import json, platform, sys
         version, manifest = sys.argv[1], sys.argv[2]
         arch = "arm64" if platform.machine() in ("arm64", "aarch64") else "x64"
@@ -35,7 +37,11 @@ runs:
         )
         file="$RUNNER_TEMP/$(basename "$archive")"
         curl -sSfL --retry 5 --retry-all-errors --connect-timeout 30 "$base/$archive" -o "$file"
-        echo "$sha256  $file" | shasum -a 256 -c -
+        if command -v shasum >/dev/null; then
+          echo "$sha256  $file" | shasum -a 256 -c -
+        else
+          echo "$sha256  $file" | sha256sum -c -
+        fi
         case "$file" in
           *.zip) unzip -q "$file" -d "$RUNNER_TEMP" ;;
           *.tar.xz) tar -xJf "$file" -C "$RUNNER_TEMP" ;;

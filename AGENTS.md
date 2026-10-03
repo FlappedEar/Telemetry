@@ -27,13 +27,15 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
 - Every change goes through a pull request. CI must be green on the PR head and on
   the resulting `main` revision; earlier CI results are not evidence for new code.
 - Every pull request gets an independent review before it merges: a person, or
-  a separate reviewer agent that sees only the diff, the requirement and the
-  finding or ticket it answers, and is asked to look adversarially for whether
-  the change and its tests validate the right requirement. The author never
+  a separate reviewer agent that works from the diff, the requirement and the
+  finding or ticket it answers (not from the author's reasoning), and is asked
+  to look adversarially for whether the change and its tests validate the
+  right requirement. The author never
   reviews their own change. The verdict and what was done about each finding
   go in the pull request description.
-- CI runs on `main` are never cancelled, so every `main` revision gets a full
-  result; runs on a pull request cancel when a newer push arrives.
+- A newer run never cancels a CI run (`ci.yml`) on `main`, so every `main`
+  revision gets a full result; runs on a pull request cancel when a newer push
+  arrives. The user guide's Pages deploy still lets the newest `main` win.
 - Documentation is part of every iteration.
 - Never claim that something works without running it. If a check could not be
   run, say so and say why.
