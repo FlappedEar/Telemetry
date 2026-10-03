@@ -2860,4 +2860,797 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get drivingStatesNote =>
       'Each lap\'s share of its own time over this stretch. States overlap: cornering can come with braking, accelerating or coasting. Tap a strip to move the cursor there. Longer braking while cornering is not automatically better or safer.';
+
+  @override
+  String get cornerDetailsReasonNotMeasured => 'not measured';
+
+  @override
+  String get cornerDetailsReasonNoBraking => 'no braking detected';
+
+  @override
+  String get cornerDetailsReasonNoBrakeOrDeceleration =>
+      'no brake or deceleration channel';
+
+  @override
+  String get cornerDetailsReasonNoBrakeChannel => 'no brake channel';
+
+  @override
+  String get cornerDetailsReasonNoDecelerationChannel =>
+      'no deceleration channel';
+
+  @override
+  String get cornerDetailsReasonApproachClipped =>
+      'approach cut off at the start/finish line';
+
+  @override
+  String get cornerDetailsReasonApproachInPreviousCorner =>
+      'approach runs into the previous corner';
+
+  @override
+  String get cornerDetailsReasonAlreadyBraking =>
+      'already braking before the approach';
+
+  @override
+  String get cornerDetailsReasonBrakingGap =>
+      'braking interrupted by a recording gap';
+
+  @override
+  String get cornerDetailsReasonNoSamplesHere => 'no samples here';
+
+  @override
+  String get cornerDetailsReasonNoThrottleOrAcceleration =>
+      'no throttle or acceleration channel';
+
+  @override
+  String get cornerDetailsReasonNoLift => 'no lift before the pickup';
+
+  @override
+  String get cornerDetailsReasonNoPickup => 'no pickup detected';
+
+  @override
+  String get cornerDetailsReasonAfterGap => 'after a recording gap';
+
+  @override
+  String get cornerDetailsReasonCutAtLapEnd => 'cut off at the lap end';
+
+  @override
+  String get cornerDetailsReasonNotCovered => 'lap not fully covered here';
+
+  @override
+  String get cornerDetailsReasonCrossesGate => 'crosses the start/finish line';
+
+  @override
+  String get cornerDetailsReasonUnitNotSupported =>
+      'channel unit not supported';
+
+  @override
+  String get cornerDetailsReasonUnitNotRecorded => 'channel unit not recorded';
+
+  @override
+  String get cornerDetailsReasonNoSpeedChannel => 'no speed channel';
+
+  @override
+  String get cornerDetailsReasonMixedProvenance =>
+      'measured differently on A and B';
+
+  @override
+  String get cornerDetailsReasonSegmentsDiffer =>
+      'segments differ between the laps';
+
+  @override
+  String get cornerDetailsReasonDoubleApex =>
+      'double apex: no single apex point';
+
+  @override
+  String get cornerDetailsReasonFlatSpeed => 'no lowest point (constant speed)';
+
+  @override
+  String get cornerDetailsReasonUnclearGeometry =>
+      'corner shape too unclear to place it';
+
+  @override
+  String get cornerDetailsReasonInvalidInput => 'corner could not be measured';
+
+  @override
+  String get cornerDetailsReasonBroadApex => 'apex spread over a long arc';
+
+  @override
+  String get cornerDetailsReasonAtBoundary => 'at the edge of the corner';
+
+  @override
+  String get cornerDetailsReasonNotACorner => 'not a corner';
+
+  @override
+  String get cornerDetailsReasonSparseSamples => 'too few samples';
+
+  @override
+  String get cornerDetailsReasonSegmentNotFound =>
+      'segment not found on this lap';
+
+  @override
+  String get cornerDetailsReasonNotRecorded => 'not recorded';
+
+  @override
+  String get cornerDetailsReasonNoValidSamples => 'no valid samples';
+
+  @override
+  String get cornerDetailsReasonNoReference => 'no reference lap';
+
+  @override
+  String get cornerDetailsReasonNotTimed => 'not timed';
+
+  @override
+  String get cornerDetailsReasonNoApprovedSegments => 'no approved segments';
+
+  @override
+  String get cornerDetailsReasonDrivingStateUnknown => 'driving state unknown';
+
+  @override
+  String get cornerDetailsReasonNotAvailable => 'not available';
+
+  @override
+  String get cornerDetailsFromDeceleration => 'Inferred from deceleration';
+
+  @override
+  String get cornerDetailsFromBrakeChannel => 'From the brake channel';
+
+  @override
+  String get cornerDetailsFromAcceleration => 'Inferred from acceleration';
+
+  @override
+  String get cornerDetailsFromThrottleChannel => 'From the throttle channel';
+
+  @override
+  String cornerDetailsBestMeasuredDifferently(String how) {
+    return '$how; the best lap was measured differently';
+  }
+
+  @override
+  String get cornerDetailsBestSpeedDifferent =>
+      'The best lap’s speed was recorded differently';
+
+  @override
+  String cornerDetailsMinimumMissing(String reason) {
+    return 'Minimum: $reason';
+  }
+
+  @override
+  String get cornerDetailsHighestMinimumSpeed => 'Highest minimum speed';
+
+  @override
+  String get cornerDetailsHighestExitSpeed => 'Highest exit speed';
+
+  @override
+  String get cornerDetailsLatestBrakingPoint => 'Latest braking point';
+
+  @override
+  String get cornerDetailsEarliestPickup => 'Earliest throttle pickup';
+
+  @override
+  String cornerDetailsMetresIn(int metres) {
+    return '$metres m in';
+  }
+
+  @override
+  String cornerDetailsIsBestLap(String lap) {
+    return '$lap · the best lap';
+  }
+
+  @override
+  String cornerDetailsAgainstBestLap(String lap, String best) {
+    return '$lap against the best lap, $best';
+  }
+
+  @override
+  String get cornerDetailsBestLapUnavailable => 'unavailable';
+
+  @override
+  String get cornerDetailsThisLap => 'This lap';
+
+  @override
+  String get cornerDetailsBestLap => 'Best lap';
+
+  @override
+  String cornerDetailsEntrySpeed(String unit) {
+    return 'Entry speed$unit';
+  }
+
+  @override
+  String cornerDetailsMinimumSpeed(String unit) {
+    return 'Minimum speed$unit';
+  }
+
+  @override
+  String cornerDetailsExitSpeed(String unit) {
+    return 'Exit speed$unit';
+  }
+
+  @override
+  String get cornerDetailsBrakingPoint => 'Braking point, before the corner';
+
+  @override
+  String get cornerDetailsBrakingTime => 'Braking time';
+
+  @override
+  String cornerDetailsPeakDeceleration(String unit) {
+    return 'Peak deceleration$unit';
+  }
+
+  @override
+  String get cornerDetailsPickup => 'Throttle pickup, into the corner';
+
+  @override
+  String cornerDetailsBestOfLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Best of $count laps',
+      one: 'Best of 1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerDetailsExplanation =>
+      'Braking point and pickup are distances from the corner’s start on the shared track axis. Later braking or an earlier pickup is not automatically faster. Laps measured another way are not compared.';
+
+  @override
+  String cornerDetailsNotMeasured(String corner) {
+    return '$corner: this lap was not measured here.';
+  }
+
+  @override
+  String get cornerAnalyzerTypeCorner => 'corner';
+
+  @override
+  String get cornerAnalyzerTypeStraight => 'straight';
+
+  @override
+  String get cornerAnalyzerTypeSector => 'sector';
+
+  @override
+  String cornerAnalyzerNoteProposed(String lap) {
+    return 'Segments proposed from $lap, as used by the sector theoretical best; saving the day approves them. Boundaries are distances along that lap\'s axis, so they can shift by a few metres on these laps.';
+  }
+
+  @override
+  String cornerAnalyzerNoteApproved(String session) {
+    return 'Segments approved on $session, as used by the sector theoretical best. Boundaries are distances along that run\'s axis, so they can shift by a few metres on these laps.';
+  }
+
+  @override
+  String get cornerAnalyzerSummarySame => 'A and B take the same time here.';
+
+  @override
+  String cornerAnalyzerSummaryFaster(String lap, String time) {
+    return '$lap is $time faster here.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryEntry(String lap, String time, String speed) {
+    return '$lap is $time faster here and carries $speed more entry speed.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryMinimum(String lap, String time, String speed) {
+    return '$lap is $time faster here and carries $speed more minimum speed.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryLowest(String lap, String time, String speed) {
+    return '$lap is $time faster here and carries $speed more lowest speed.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryExit(String lap, String time, String speed) {
+    return '$lap is $time faster here and carries $speed more exit speed.';
+  }
+
+  @override
+  String get cornerAnalyzerTitle => 'Corner Analyzer';
+
+  @override
+  String get cornerAnalyzerEmpty =>
+      'No matching approved segments for these two laps. Approve the same track segmentation on both to use the Corner Analyzer.';
+
+  @override
+  String get cornerAnalyzerUseTheoreticalBest =>
+      'Use the theoretical best’s segments';
+
+  @override
+  String get cornerAnalyzerPrevious => 'Previous segment';
+
+  @override
+  String get cornerAnalyzerNext => 'Next segment';
+
+  @override
+  String get cornerAnalyzerNoChart =>
+      'No speed chart: this segment crosses the start/finish line.';
+
+  @override
+  String get cornerAnalyzerNoFigures => 'No figures for this segment.';
+
+  @override
+  String cornerAnalyzerHeartRateNote(String a, String b) {
+    return 'Heart rate: mean over this segment · A $a · B $b. Observed values only.';
+  }
+
+  @override
+  String cornerAnalyzerCoverage(int count, int percent) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count samples, $percent% covered',
+      one: '1 sample, $percent% covered',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerAnalyzerExplanation =>
+      'Δ is A − B, coloured by the lap that is faster or carries more speed. Observed differences, not instructions.';
+
+  @override
+  String get cornerAnalyzerExplanationWithBraking =>
+      'Δ is A − B, coloured by the lap that is faster or carries more speed. Braking and pickup are distances from the corner entry; braking later or picking up earlier is not automatically faster. Observed differences, not instructions.';
+
+  @override
+  String get cornerAnalyzerZoom => 'Zoom to segment';
+
+  @override
+  String cornerAnalyzerOpenLap(String lap) {
+    return 'Lap $lap here';
+  }
+
+  @override
+  String get cornerAnalyzerGroupTime => 'Time';
+
+  @override
+  String get cornerAnalyzerGroupBraking => 'Braking';
+
+  @override
+  String get cornerAnalyzerGroupCorner => 'Corner';
+
+  @override
+  String get cornerAnalyzerGroupSpeed => 'Speed';
+
+  @override
+  String get cornerAnalyzerGroupExit => 'Exit';
+
+  @override
+  String get cornerAnalyzerGroupDriver => 'Driver';
+
+  @override
+  String get cornerAnalyzerTimeThroughCorner => 'Time through the corner';
+
+  @override
+  String get cornerAnalyzerSectorTime => 'Sector time';
+
+  @override
+  String get cornerAnalyzerBrakingPoint => 'Braking starts, before entry';
+
+  @override
+  String get cornerAnalyzerBrakingTime => 'Time on the brakes';
+
+  @override
+  String get cornerAnalyzerPeakDeceleration => 'Peak deceleration';
+
+  @override
+  String get cornerAnalyzerEntrySpeed => 'Entry speed';
+
+  @override
+  String get cornerAnalyzerApexSpeed => 'Apex speed';
+
+  @override
+  String get cornerAnalyzerMinimumSpeed => 'Minimum speed';
+
+  @override
+  String get cornerAnalyzerTopSpeed => 'Top speed';
+
+  @override
+  String get cornerAnalyzerLowestSpeed => 'Lowest speed';
+
+  @override
+  String get cornerAnalyzerExitSpeed => 'Exit speed';
+
+  @override
+  String get cornerAnalyzerPickup => 'Throttle pickup, after entry';
+
+  @override
+  String get cornerAnalyzerHeartRate => 'Heart rate';
+
+  @override
+  String get cornerAnalyzerAHigher => 'A higher';
+
+  @override
+  String get cornerAnalyzerBHigher => 'B higher';
+
+  @override
+  String get cornerAnalyzerAFaster => 'A faster';
+
+  @override
+  String get cornerAnalyzerBFaster => 'B faster';
+
+  @override
+  String get cornerAnalyzerABrakesEarlier => 'A brakes earlier';
+
+  @override
+  String get cornerAnalyzerABrakesLater => 'A brakes later';
+
+  @override
+  String get cornerAnalyzerALonger => 'A longer';
+
+  @override
+  String get cornerAnalyzerAShorter => 'A shorter';
+
+  @override
+  String get cornerAnalyzerAHarder => 'A harder';
+
+  @override
+  String get cornerAnalyzerASofter => 'A softer';
+
+  @override
+  String get cornerAnalyzerALater => 'A later';
+
+  @override
+  String get cornerAnalyzerAEarlier => 'A earlier';
+
+  @override
+  String get cornerAnalyzerSame => 'same';
+
+  @override
+  String get cornerAnalyzerInferred => 'inferred';
+
+  @override
+  String cornerAnalyzerBothLaps(String reason) {
+    return '$reason (both laps)';
+  }
+
+  @override
+  String cornerAnalyzerNotCompared(String reason) {
+    return 'Not compared: $reason';
+  }
+
+  @override
+  String get cornerAnalyzerUnitNoteSpeed =>
+      'This recording does not declare its speed unit: those values are shown as recorded, without a unit.';
+
+  @override
+  String get cornerAnalyzerUnitNoteDeceleration =>
+      'This recording does not declare its deceleration unit: those values are shown as recorded, without a unit.';
+
+  @override
+  String get cornerAnalyzerUnitNoteBoth =>
+      'This recording does not declare its speed and deceleration units: those values are shown as recorded, without a unit.';
+
+  @override
+  String get cornerAnalyzerChartNoSpeed =>
+      'No speed recorded on either lap: no speed chart.';
+
+  @override
+  String cornerAnalyzerChartNoSamples(String segment) {
+    return 'No speed samples on either lap through $segment.';
+  }
+
+  @override
+  String cornerAnalyzerChartTitle(String segment) {
+    return 'Speed through $segment';
+  }
+
+  @override
+  String cornerAnalyzerChartLabel(String segment) {
+    return 'Speed through $segment chart';
+  }
+
+  @override
+  String cornerAnalyzerCursor(String offset) {
+    return 'Cursor $offset m: ';
+  }
+
+  @override
+  String get cornerAnalyzerEntry => 'Entry';
+
+  @override
+  String get cornerAnalyzerExit => 'Exit';
+
+  @override
+  String get cornerAnalyzerStart => 'Start';
+
+  @override
+  String get cornerAnalyzerEnd => 'End';
+
+  @override
+  String get cornerAnalyzerSpeedAxis => 'speed';
+
+  @override
+  String get cornerAnalyzerApex => 'Apex';
+
+  @override
+  String get cornerAnalyzerAxisCorner =>
+      'Distance from the corner entry (m) · shaded: the corner';
+
+  @override
+  String get cornerAnalyzerAxisSegment =>
+      'Distance from the segment entry (m) · shaded: the segment';
+
+  @override
+  String cornerAnalyzerAxisNoUnit(String axis) {
+    return '$axis · speed unit not declared in the recording';
+  }
+
+  @override
+  String get cornerAnalyzerLegendBraking => 'Braking starts';
+
+  @override
+  String get cornerAnalyzerLegendPickup => 'Throttle pickup';
+
+  @override
+  String get cornerAnalyzerLegendMinimum => 'Lowest speed';
+
+  @override
+  String importPageLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPageLapsWithBest(int count, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps · best $time',
+      one: '1 lap · best $time',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importPageNoGate =>
+      'No laps: the recording has no start/finish line.';
+
+  @override
+  String get importPageSeveralGates =>
+      'No laps: the recording has more than one start/finish line.';
+
+  @override
+  String get importPageInvalidGate =>
+      'No laps: the start/finish line is not valid.';
+
+  @override
+  String get importPageNoGps => 'No laps: the recording has no usable GPS.';
+
+  @override
+  String get importPageTooFewPasses =>
+      'No complete laps: the start/finish line was not crossed often enough.';
+
+  @override
+  String importPageImportFailed(String error) {
+    return 'The import failed: $error';
+  }
+
+  @override
+  String importPageFolderTooMany(int count, int maximum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The folder holds $count recordings; import at most $maximum at a time. Choose a smaller folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPageTooMany(int count, int maximum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'That is $count recordings; import at most $maximum at a time.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPageStoppedAfter(int count) {
+    return 'Stopped after $count files and folders; recordings beyond that were not scanned.';
+  }
+
+  @override
+  String importPageTooDeep(int count, int depth) {
+    return '$count folder(s) deeper than $depth levels were not scanned.';
+  }
+
+  @override
+  String importPageLinksSkipped(int count) {
+    return '$count link(s) were not followed.';
+  }
+
+  @override
+  String importPageOtherFilesSkipped(int count) {
+    return '$count other file(s) were ignored; only VBO and RCZ recordings are imported.';
+  }
+
+  @override
+  String importPageSameContent(String other) {
+    return 'same content as $other; imported once.';
+  }
+
+  @override
+  String importPageSameDrive(String other) {
+    return 'the same drive as $other; kept as its alternative source.';
+  }
+
+  @override
+  String get importPageNoRecording => 'No recording could be imported.';
+
+  @override
+  String get importPageFailed => 'Import failed.';
+
+  @override
+  String get importPageStoppedUnexpectedly =>
+      'Bad state: The import stopped unexpectedly.';
+
+  @override
+  String get importPageNoFolder =>
+      'The folder does not exist or is not a folder.';
+
+  @override
+  String get importPageFolderLink =>
+      'Choose the folder itself, not a link to it.';
+
+  @override
+  String get importPageNoneFound => 'No VBO or RCZ recordings were found.';
+
+  @override
+  String get importPageNoneFoundNoSubfolders =>
+      'No VBO or RCZ recordings were found (subfolders were not included).';
+
+  @override
+  String get importPageNothingToImport => 'No VBO or RCZ recordings to import.';
+
+  @override
+  String get importPageFileNotFound => 'not found; not imported.';
+
+  @override
+  String get importPageMetadataFile =>
+      'a macOS metadata file, not a recording; not imported.';
+
+  @override
+  String get importPageFileLink => 'a link; not followed.';
+
+  @override
+  String get importPageNotRecording =>
+      'not a VBO or RCZ recording; not imported.';
+
+  @override
+  String importPageNotRestored(String error) {
+    return 'The day could not be restored: $error';
+  }
+
+  @override
+  String importPageDiscardTitle(String day) {
+    return 'Discard the changes to $day?';
+  }
+
+  @override
+  String get importPageDiscardBody =>
+      'The unsaved changes are lost. Recordings and saved days are not touched.';
+
+  @override
+  String get importPageKeep => 'Keep';
+
+  @override
+  String get importPageDiscard => 'Discard';
+
+  @override
+  String importPageNotDiscarded(String error) {
+    return 'Not discarded: $error';
+  }
+
+  @override
+  String importPageCannotOpenTitle(String day) {
+    return '$day could not be opened';
+  }
+
+  @override
+  String get importPageNoneUsable => 'None of its recordings could be used:';
+
+  @override
+  String get importPageChooseFolderHint =>
+      'Choose the folder the recordings are in to use them, also when they have not moved.';
+
+  @override
+  String get importPageImportingBehind =>
+      'Importing the shared recordings. Go back to Import a day to see them.';
+
+  @override
+  String get importPageFinishFirst =>
+      'Finish the current import first. Nothing was imported.';
+
+  @override
+  String get importPageOpenSavedTitle => 'Open a saved day';
+
+  @override
+  String get importPageAnotherFile => 'Another file…';
+
+  @override
+  String get importPageAnotherOpening =>
+      'Another day is being opened. Try again after it.';
+
+  @override
+  String importPageNotOpened(String error) {
+    return 'The day could not be opened: $error';
+  }
+
+  @override
+  String get importPageTitle => 'Import a day';
+
+  @override
+  String importPageUnsaved(String day, String time) {
+    return '$day has unsaved changes from $time.';
+  }
+
+  @override
+  String get importPageRestore => 'Restore';
+
+  @override
+  String get importPageDiscardEllipsis => 'Discard…';
+
+  @override
+  String get importPageIntroDrop =>
+      'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.';
+
+  @override
+  String get importPageIntroFolder =>
+      'Choose the day\'s VBO and RCZ recordings or a folder.';
+
+  @override
+  String get importPageIntro => 'Choose the day\'s VBO and RCZ recordings.';
+
+  @override
+  String get importPageChooseRecordings => 'Choose recordings…';
+
+  @override
+  String get importPageChooseFolder => 'Choose a folder…';
+
+  @override
+  String get importPageOpening => 'Opening…';
+
+  @override
+  String get importPageOpenSaved => 'Open a saved day…';
+
+  @override
+  String get importPageIncludeSubfolders => 'Include subfolders';
+
+  @override
+  String get importPageNotes => 'Import notes';
+
+  @override
+  String get importPageLooking => 'Looking for recordings…';
+
+  @override
+  String importPagePreparing(int number, int total) {
+    return 'Preparing recording $number of $total…';
+  }
+
+  @override
+  String get importPageCancelled => 'Import cancelled. Nothing was imported.';
+
+  @override
+  String importPageSessionsImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions imported',
+      one: '1 session imported',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importPageShowResults => 'Show the day\'s results';
 }

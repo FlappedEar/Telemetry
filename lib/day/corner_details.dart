@@ -3,56 +3,63 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../l10n.dart';
 import '../units.dart';
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// Why a corner figure is missing, in a short plain phrase (lower case, to
 /// follow a colon or start a sentence). Every reason the corner analyses can
 /// give is mapped; an unknown one reads "not available", never its
 /// identifier.
-String cornerReasonText(String reason) => switch (reason) {
-  '' => 'not measured',
-  // Braking.
-  brakingNoneDetected => 'no braking detected',
-  brakingNoChannel => 'no brake or deceleration channel',
-  brakingInferenceDisabled => 'no brake channel',
-  brakingDecelerationChannelMissing => 'no deceleration channel',
-  brakingApproachClipped => 'approach cut off at the start/finish line',
-  brakingApproachClippedAtCorner => 'approach runs into the previous corner',
-  brakingAlreadyActive => 'already braking before the approach',
-  brakingInterruptedByGap => 'braking interrupted by a recording gap',
-  brakingNoSamples => 'no samples here',
-  // Throttle pickup and exit.
-  exitNoChannel => 'no throttle or acceleration channel',
-  exitNoLift => 'no lift before the pickup',
-  exitNoPickup => 'no pickup detected',
-  exitFollowsGap => 'after a recording gap',
-  exitTruncated => 'cut off at the lap end',
-  // Shared by several analyses.
-  analyzerIncompleteCoverage => 'lap not fully covered here',
-  cornerPhaseCrossesGate => 'crosses the start/finish line',
-  exitUnitMismatch => 'channel unit not supported',
-  exitUnitUndeclared => 'channel unit not recorded',
-  cornerPhaseSpeedChannelMissing => 'no speed channel',
-  cornerSpeedMixedProvenance => 'measured differently on A and B',
-  cornerSpeedDifferentSegmentOrRevision => 'segments differ between the laps',
-  // Corner phases and speeds.
-  cornerPhaseMultipleApexes => 'double apex: no single apex point',
-  cornerPhaseFlatSpeed => 'no lowest point (constant speed)',
-  cornerPhaseInsufficientGeometry => 'corner shape too unclear to place it',
-  cornerPhaseInvalidInput => 'corner could not be measured',
-  cornerPhaseBroadPeak => 'apex spread over a long arc',
-  cornerPhaseAtCornerBoundary => 'at the edge of the corner',
-  cornerSpeedNotACorner => 'not a corner',
-  cornerSpeedSparseSamples => 'too few samples',
-  // Sector times and summaries.
-  sectorTimeSegmentNotFound => 'segment not found on this lap',
-  channelSummaryMissing => 'not recorded',
-  channelSummaryNoSamples => 'no valid samples',
-  timeLossNoReference => 'no reference lap',
-  timeLossUntimed => 'not timed',
-  theoreticalBestNoApprovedSegmentation => 'no approved segments',
-  drivingStateUnknownReason => 'driving state unknown',
-  _ => 'not available',
-};
+String cornerReasonText(AppLocalizations l10n, String reason) =>
+    switch (reason) {
+      '' => l10n.cornerDetailsReasonNotMeasured,
+      // Braking.
+      brakingNoneDetected => l10n.cornerDetailsReasonNoBraking,
+      brakingNoChannel => l10n.cornerDetailsReasonNoBrakeOrDeceleration,
+      brakingInferenceDisabled => l10n.cornerDetailsReasonNoBrakeChannel,
+      brakingDecelerationChannelMissing =>
+        l10n.cornerDetailsReasonNoDecelerationChannel,
+      brakingApproachClipped => l10n.cornerDetailsReasonApproachClipped,
+      brakingApproachClippedAtCorner =>
+        l10n.cornerDetailsReasonApproachInPreviousCorner,
+      brakingAlreadyActive => l10n.cornerDetailsReasonAlreadyBraking,
+      brakingInterruptedByGap => l10n.cornerDetailsReasonBrakingGap,
+      brakingNoSamples => l10n.cornerDetailsReasonNoSamplesHere,
+      // Throttle pickup and exit.
+      exitNoChannel => l10n.cornerDetailsReasonNoThrottleOrAcceleration,
+      exitNoLift => l10n.cornerDetailsReasonNoLift,
+      exitNoPickup => l10n.cornerDetailsReasonNoPickup,
+      exitFollowsGap => l10n.cornerDetailsReasonAfterGap,
+      exitTruncated => l10n.cornerDetailsReasonCutAtLapEnd,
+      // Shared by several analyses.
+      analyzerIncompleteCoverage => l10n.cornerDetailsReasonNotCovered,
+      cornerPhaseCrossesGate => l10n.cornerDetailsReasonCrossesGate,
+      exitUnitMismatch => l10n.cornerDetailsReasonUnitNotSupported,
+      exitUnitUndeclared => l10n.cornerDetailsReasonUnitNotRecorded,
+      cornerPhaseSpeedChannelMissing => l10n.cornerDetailsReasonNoSpeedChannel,
+      cornerSpeedMixedProvenance => l10n.cornerDetailsReasonMixedProvenance,
+      cornerSpeedDifferentSegmentOrRevision =>
+        l10n.cornerDetailsReasonSegmentsDiffer,
+      // Corner phases and speeds.
+      cornerPhaseMultipleApexes => l10n.cornerDetailsReasonDoubleApex,
+      cornerPhaseFlatSpeed => l10n.cornerDetailsReasonFlatSpeed,
+      cornerPhaseInsufficientGeometry =>
+        l10n.cornerDetailsReasonUnclearGeometry,
+      cornerPhaseInvalidInput => l10n.cornerDetailsReasonInvalidInput,
+      cornerPhaseBroadPeak => l10n.cornerDetailsReasonBroadApex,
+      cornerPhaseAtCornerBoundary => l10n.cornerDetailsReasonAtBoundary,
+      cornerSpeedNotACorner => l10n.cornerDetailsReasonNotACorner,
+      cornerSpeedSparseSamples => l10n.cornerDetailsReasonSparseSamples,
+      // Sector times and summaries.
+      sectorTimeSegmentNotFound => l10n.cornerDetailsReasonSegmentNotFound,
+      channelSummaryMissing => l10n.cornerDetailsReasonNotRecorded,
+      channelSummaryNoSamples => l10n.cornerDetailsReasonNoValidSamples,
+      timeLossNoReference => l10n.cornerDetailsReasonNoReference,
+      timeLossUntimed => l10n.cornerDetailsReasonNotTimed,
+      theoreticalBestNoApprovedSegmentation =>
+        l10n.cornerDetailsReasonNoApprovedSegments,
+      drivingStateUnknownReason => l10n.cornerDetailsReasonDrivingStateUnknown,
+      _ => l10n.cornerDetailsReasonNotAvailable,
+    };
 
 String _speed(double? value) => value == null ? '—' : value.toStringAsFixed(1);
 
@@ -60,9 +67,9 @@ String _meters(double? value) =>
     value == null ? '—' : '${value < 0 ? '−' : ''}${value.abs().round()} m';
 
 // A braking point as metres before the corner's start; negative is inside.
-String _beforeEntry(double value) => value.round() >= 0
-    ? '${value.round()} m before'
-    : '${-value.round()} m into the corner';
+String _beforeEntry(AppLocalizations l10n, double value) => value.round() >= 0
+    ? l10n.cornerBeforeEntry(value.round())
+    : l10n.cornerIntoCorner(-value.round());
 
 // [_position] in the app's language.
 String _positionText(AppLocalizations l10n, double delta) {
@@ -83,12 +90,8 @@ String _signed(double? value, int digits, [String unit = '']) {
 }
 
 // A position delta (A minus B along the lap) in words.
-String _position(double? delta) {
-  if (delta == null || !delta.isFinite) return '—';
-  final metres = delta.abs().round();
-  if (metres == 0) return 'same';
-  return '$metres m ${delta > 0 ? 'later' : 'earlier'}';
-}
+String _position(AppLocalizations l10n, double? delta) =>
+    delta == null ? '—' : _positionText(l10n, delta);
 
 /// A corner's figures on one lap: entry, minimum and exit speed, the braking
 /// point and braking, and the throttle pickup, against the group's best lap
@@ -108,6 +111,7 @@ class CornerDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final own = comparison.metrics;
     final best = comparison.bestLapMetrics;
     final isBest = comparison.bestLap?.reference == comparison.lap.reference;
@@ -170,50 +174,69 @@ class CornerDetails extends StatelessWidget {
 
     String brakingNote() {
       if (braking.brakingPointMeters == null) {
-        return cornerReasonText(braking.unavailableReason);
+        return cornerReasonText(l10n, braking.unavailableReason);
       }
       final how = braking.provenance == 'inferred'
-          ? 'Inferred from deceleration'
-          : 'From the brake channel';
+          ? l10n.cornerDetailsFromDeceleration
+          : l10n.cornerDetailsFromBrakeChannel;
       if (best != null &&
           bestBraking?.brakingPointMeters != null &&
           comparison.braking.unavailableReason == 'mixedProvenance') {
-        return '$how; the best lap was measured differently';
+        return l10n.cornerDetailsBestMeasuredDifferently(how);
       }
       return how;
     }
 
     String pickupNote() {
       if (pickup.progressMeters == null) {
-        return cornerReasonText(pickup.unavailableReason);
+        return cornerReasonText(l10n, pickup.unavailableReason);
       }
       final how = pickup.provenance == 'inferred'
-          ? 'Inferred from acceleration'
-          : 'From the throttle channel';
+          ? l10n.cornerDetailsFromAcceleration
+          : l10n.cornerDetailsFromThrottleChannel;
       if (comparison.exit.pickupUnavailableReason == 'mixedProvenance') {
-        return '$how; the best lap was measured differently';
+        return l10n.cornerDetailsBestMeasuredDifferently(how);
       }
       return how;
     }
 
     String speedNote() {
       if (comparison.speeds.unavailableReason == 'mixedProvenance') {
-        return 'The best lap’s speed was recorded differently';
+        return l10n.cornerDetailsBestSpeedDifferent;
       }
       if (own.speeds.minimum.value == null) {
-        return 'Minimum: ${cornerReasonText(own.speeds.minimum.unavailableReason)}';
+        return l10n.cornerDetailsMinimumMissing(
+          cornerReasonText(l10n, own.speeds.minimum.unavailableReason),
+        );
       }
       return '';
     }
 
-    final group = <(String, DayCornerValue?, String Function(double))>[
-      ('Highest minimum speed', comparison.highestMinimumSpeed, _speed),
-      ('Highest exit speed', comparison.highestExitSpeed, _speed),
-      ('Latest braking point', comparison.latestBrakingPoint, _beforeEntry),
+    // The English label names the row's key.
+    final group = <(String, String, DayCornerValue?, String Function(double))>[
+      (
+        'Highest minimum speed',
+        l10n.cornerDetailsHighestMinimumSpeed,
+        comparison.highestMinimumSpeed,
+        _speed,
+      ),
+      (
+        'Highest exit speed',
+        l10n.cornerDetailsHighestExitSpeed,
+        comparison.highestExitSpeed,
+        _speed,
+      ),
+      (
+        'Latest braking point',
+        l10n.cornerDetailsLatestBrakingPoint,
+        comparison.latestBrakingPoint,
+        (v) => _beforeEntry(l10n, v),
+      ),
       (
         'Earliest throttle pickup',
+        l10n.cornerDetailsEarliestPickup,
         comparison.earliestPickup,
-        (v) => '${v.round()} m in',
+        (v) => l10n.cornerDetailsMetresIn(v.round()),
       ),
     ];
 
@@ -221,12 +244,20 @@ class CornerDetails extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(corner.name, style: theme.textTheme.titleLarge),
+        Text(
+          l10n.tbSegmentName(corner.name),
+          style: theme.textTheme.titleLarge,
+        ),
         Text(
           isBest
-              ? '${comparison.lap.displayName} · the best lap'
-              : '${comparison.lap.displayName} against the best lap, '
-                    '${comparison.bestLap?.displayName ?? 'unavailable'}',
+              ? l10n.cornerDetailsIsBestLap(l10n.lap(comparison.lap))
+              : l10n.cornerDetailsAgainstBestLap(
+                  l10n.lap(comparison.lap),
+                  switch (comparison.bestLap) {
+                    final best? => l10n.lap(best),
+                    null => l10n.cornerDetailsBestLapUnavailable,
+                  },
+                ),
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
@@ -237,8 +268,8 @@ class CornerDetails extends StatelessWidget {
               children: [
                 const Expanded(child: SizedBox()),
                 for (final (label, colour) in [
-                  ('This lap', lapAColor),
-                  ('Best lap', lapBColor),
+                  (l10n.cornerDetailsThisLap, lapAColor),
+                  (l10n.cornerDetailsBestLap, lapBColor),
                 ])
                   SizedBox(
                     width: 64,
@@ -271,21 +302,21 @@ class CornerDetails extends StatelessWidget {
             ),
           ),
         row(
-          'Entry speed$speedUnit',
+          l10n.cornerDetailsEntrySpeed(speedUnit),
           _speed(own.speeds.entry.value),
           _speed(best?.speeds.entry.value),
           _signed(comparison.speeds.entryDelta, 1),
           key: const ValueKey('cornerEntrySpeed'),
         ),
         row(
-          'Minimum speed$speedUnit',
+          l10n.cornerDetailsMinimumSpeed(speedUnit),
           _speed(own.speeds.minimum.value),
           _speed(best?.speeds.minimum.value),
           _signed(comparison.speeds.minimumDelta, 1),
           key: const ValueKey('cornerMinimumSpeed'),
         ),
         row(
-          'Exit speed$speedUnit',
+          l10n.cornerDetailsExitSpeed(speedUnit),
           _speed(own.speeds.exit.value),
           _speed(best?.speeds.exit.value),
           _signed(comparison.speeds.exitDelta, 1),
@@ -294,16 +325,16 @@ class CornerDetails extends StatelessWidget {
         ),
         const Divider(),
         row(
-          'Braking point, before the corner',
+          l10n.cornerDetailsBrakingPoint,
           _meters(braking.distanceBeforeEntryMeters),
           _meters(bestBraking?.distanceBeforeEntryMeters),
-          _position(comparison.braking.brakingPointDeltaMeters),
+          _position(l10n, comparison.braking.brakingPointDeltaMeters),
           note: brakingNote(),
           key: const ValueKey('cornerBrakingPoint'),
         ),
         if (braking.brakingSeconds != null)
           row(
-            'Braking time',
+            l10n.cornerDetailsBrakingTime,
             '${braking.brakingSeconds!.toStringAsFixed(2)} s',
             bestBraking?.brakingSeconds == null
                 ? '—'
@@ -313,8 +344,11 @@ class CornerDetails extends StatelessWidget {
           ),
         if (braking.peakDeceleration != null)
           row(
-            'Peak deceleration'
-            '${braking.decelerationUnit.isEmpty ? '' : ' (${braking.decelerationUnit})'}',
+            l10n.cornerDetailsPeakDeceleration(
+              braking.decelerationUnit.isEmpty
+                  ? ''
+                  : ' (${braking.decelerationUnit})',
+            ),
             braking.peakDeceleration!.toStringAsFixed(2),
             bestBraking?.peakDeceleration?.toStringAsFixed(2) ?? '—',
             _signed(comparison.braking.peakDecelerationDelta, 2),
@@ -322,26 +356,26 @@ class CornerDetails extends StatelessWidget {
           ),
         const Divider(),
         row(
-          'Throttle pickup, into the corner',
+          l10n.cornerDetailsPickup,
           _meters(afterEntry(pickup)),
           _meters(afterEntry(bestPickup)),
-          _position(comparison.exit.pickupDeltaMeters),
+          _position(l10n, comparison.exit.pickupDeltaMeters),
           note: pickupNote(),
           key: const ValueKey('cornerPickup'),
         ),
         const SizedBox(height: 12),
         Text(
-          'Best of ${corner.laps.length} laps',
+          l10n.cornerDetailsBestOfLaps(corner.laps.length),
           style: theme.textTheme.titleSmall,
         ),
-        for (final (label, value, format) in group)
+        for (final (label, text, value, format) in group)
           Padding(
             key: ValueKey('cornerBest $label'),
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Text(label)),
+                Expanded(child: Text(text)),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -351,7 +385,7 @@ class CornerDetails extends StatelessWidget {
                     ),
                     if (value != null)
                       Text(
-                        value.lap.displayName,
+                        l10n.lap(value.lap),
                         style: theme.textTheme.bodySmall,
                       ),
                   ],
@@ -360,12 +394,7 @@ class CornerDetails extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 8),
-        Text(
-          'Braking point and pickup are distances from the corner’s start on '
-          'the shared track axis. Later braking or an earlier pickup is not '
-          'automatically faster. Laps measured another way are not compared.',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(l10n.cornerDetailsExplanation, style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -397,7 +426,11 @@ Future<void> showCornerDetails(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (comparison == null)
-              Text('${corner.name}: this lap was not measured here.')
+              Text(
+                context.l10n.cornerDetailsNotMeasured(
+                  context.l10n.tbSegmentName(corner.name),
+                ),
+              )
             else
               CornerDetails(corner: corner, comparison: comparison),
             if (onAnalyze != null)
@@ -406,7 +439,7 @@ Future<void> showCornerDetails(
                 child: OutlinedButton.icon(
                   key: const ValueKey('cornerOpenAnalyzer'),
                   icon: const Icon(Icons.compare_arrows),
-                  label: const Text('Open in the Corner Analyzer'),
+                  label: Text(context.l10n.tbOpenInAnalyzer),
                   onPressed: () {
                     Navigator.pop(context);
                     onAnalyze();

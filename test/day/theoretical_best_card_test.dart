@@ -17,6 +17,8 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
 
+final english = lookupAppLocalizations(const Locale('en'));
+
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('theoretical'));
@@ -298,8 +300,37 @@ void main() {
       find.textContaining('no throttle or acceleration channel'),
       findsOneWidget,
     );
-    expect(cornerReasonText('noBrakingDetected'), 'no braking detected');
-    expect(cornerReasonText('somethingNew'), 'not available');
+    expect(
+      cornerReasonText(english, 'noBrakingDetected'),
+      'no braking detected',
+    );
+    expect(cornerReasonText(english, 'somethingNew'), 'not available');
+    expect(tester.takeException(), isNull);
+
+    // In Polish.
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: CornerDetails(corner: corner, comparison: best),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('najlepsze okrążenie'), findsWidgets);
+    expect(find.textContaining('Sesja '), findsWidgets);
+    expect(find.textContaining('the best lap'), findsNothing);
+    expect(
+      find.textContaining('brak kanału hamulca i opóźnienia'),
+      findsOneWidget,
+    );
+    expect(find.text('Punkt hamowania, przed zakrętem'), findsOneWidget);
+    expect(
+      find.text('Najlepsze z ${corner.laps.length} okrążeń'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

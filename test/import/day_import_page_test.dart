@@ -609,6 +609,42 @@ void main() {
     expect(find.text('Cancel'), findsNothing);
   });
 
+  testWidgets('the import page speaks Polish', (tester) async {
+    final laps = write('laps.vbo', _lapsVbo);
+    final copy = write('copy.vbo', _lapsVbo);
+    final other = write('notes.txt', 'not a recording');
+    pickers.recordings = [laps, copy, other];
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayImportPage(controller: controller, pickers: pickers),
+      ),
+    );
+    expect(find.text('Importuj dzień'), findsOneWidget);
+    expect(find.text('Import a day'), findsNothing);
+    expect(find.text('Wybierz nagrania…'), findsOneWidget);
+
+    await tester.tap(find.text('Wybierz nagrania…'));
+    await tester.pump();
+    expect(find.text('Szukam nagrań…'), findsOneWidget);
+    importer.jobs.single.finish();
+    await tester.pump();
+    expect(find.text('Zaimportowano 1 sesję'), findsOneWidget);
+    expect(find.text('Sesja 1'), findsOneWidget);
+    expect(find.text('3 okrążenia · najlepsze 4.000 s'), findsOneWidget);
+    expect(find.text('Uwagi do importu'), findsOneWidget);
+    expect(
+      find.text('copy.vbo: ta sama zawartość co laps.vbo; zaimportowano raz.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'notes.txt: to nie jest nagranie VBO ani RCZ; nie zaimportowano.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a session shows its laps and best lap', (tester) async {
     pickers.recordings = [write('laps.vbo', _lapsVbo)];
     await show(tester);

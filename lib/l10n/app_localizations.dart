@@ -4300,6 +4300,1236 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Each lap\'s share of its own time over this stretch. States overlap: cornering can come with braking, accelerating or coasting. Tap a strip to move the cursor there. Longer braking while cornering is not automatically better or safer.'**
   String get drivingStatesNote;
+
+  /// Why a corner figure is missing, lower case: not measured.
+  ///
+  /// In en, this message translates to:
+  /// **'not measured'**
+  String get cornerDetailsReasonNotMeasured;
+
+  /// Why a corner figure is missing, lower case: no braking detected.
+  ///
+  /// In en, this message translates to:
+  /// **'no braking detected'**
+  String get cornerDetailsReasonNoBraking;
+
+  /// Why a corner figure is missing, lower case: no brake or deceleration channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no brake or deceleration channel'**
+  String get cornerDetailsReasonNoBrakeOrDeceleration;
+
+  /// Why a corner figure is missing, lower case: no brake channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no brake channel'**
+  String get cornerDetailsReasonNoBrakeChannel;
+
+  /// Why a corner figure is missing, lower case: no deceleration channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no deceleration channel'**
+  String get cornerDetailsReasonNoDecelerationChannel;
+
+  /// Why a corner figure is missing, lower case: approach cut off at the start/finish line.
+  ///
+  /// In en, this message translates to:
+  /// **'approach cut off at the start/finish line'**
+  String get cornerDetailsReasonApproachClipped;
+
+  /// Why a corner figure is missing, lower case: approach runs into the previous corner.
+  ///
+  /// In en, this message translates to:
+  /// **'approach runs into the previous corner'**
+  String get cornerDetailsReasonApproachInPreviousCorner;
+
+  /// Why a corner figure is missing, lower case: already braking before the approach.
+  ///
+  /// In en, this message translates to:
+  /// **'already braking before the approach'**
+  String get cornerDetailsReasonAlreadyBraking;
+
+  /// Why a corner figure is missing, lower case: braking interrupted by a recording gap.
+  ///
+  /// In en, this message translates to:
+  /// **'braking interrupted by a recording gap'**
+  String get cornerDetailsReasonBrakingGap;
+
+  /// Why a corner figure is missing, lower case: no samples here.
+  ///
+  /// In en, this message translates to:
+  /// **'no samples here'**
+  String get cornerDetailsReasonNoSamplesHere;
+
+  /// Why a corner figure is missing, lower case: no throttle or acceleration channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no throttle or acceleration channel'**
+  String get cornerDetailsReasonNoThrottleOrAcceleration;
+
+  /// Why a corner figure is missing, lower case: no lift before the pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'no lift before the pickup'**
+  String get cornerDetailsReasonNoLift;
+
+  /// Why a corner figure is missing, lower case: no pickup detected.
+  ///
+  /// In en, this message translates to:
+  /// **'no pickup detected'**
+  String get cornerDetailsReasonNoPickup;
+
+  /// Why a corner figure is missing, lower case: after a recording gap.
+  ///
+  /// In en, this message translates to:
+  /// **'after a recording gap'**
+  String get cornerDetailsReasonAfterGap;
+
+  /// Why a corner figure is missing, lower case: cut off at the lap end.
+  ///
+  /// In en, this message translates to:
+  /// **'cut off at the lap end'**
+  String get cornerDetailsReasonCutAtLapEnd;
+
+  /// Why a corner figure is missing, lower case: lap not fully covered here.
+  ///
+  /// In en, this message translates to:
+  /// **'lap not fully covered here'**
+  String get cornerDetailsReasonNotCovered;
+
+  /// Why a corner figure is missing, lower case: crosses the start/finish line.
+  ///
+  /// In en, this message translates to:
+  /// **'crosses the start/finish line'**
+  String get cornerDetailsReasonCrossesGate;
+
+  /// Why a corner figure is missing, lower case: channel unit not supported.
+  ///
+  /// In en, this message translates to:
+  /// **'channel unit not supported'**
+  String get cornerDetailsReasonUnitNotSupported;
+
+  /// Why a corner figure is missing, lower case: channel unit not recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'channel unit not recorded'**
+  String get cornerDetailsReasonUnitNotRecorded;
+
+  /// Why a corner figure is missing, lower case: no speed channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no speed channel'**
+  String get cornerDetailsReasonNoSpeedChannel;
+
+  /// Why a corner figure is missing, lower case: measured differently on A and B.
+  ///
+  /// In en, this message translates to:
+  /// **'measured differently on A and B'**
+  String get cornerDetailsReasonMixedProvenance;
+
+  /// Why a corner figure is missing, lower case: segments differ between the laps.
+  ///
+  /// In en, this message translates to:
+  /// **'segments differ between the laps'**
+  String get cornerDetailsReasonSegmentsDiffer;
+
+  /// Why a corner figure is missing, lower case: double apex: no single apex point.
+  ///
+  /// In en, this message translates to:
+  /// **'double apex: no single apex point'**
+  String get cornerDetailsReasonDoubleApex;
+
+  /// Why a corner figure is missing, lower case: no lowest point (constant speed).
+  ///
+  /// In en, this message translates to:
+  /// **'no lowest point (constant speed)'**
+  String get cornerDetailsReasonFlatSpeed;
+
+  /// Why a corner figure is missing, lower case: corner shape too unclear to place it.
+  ///
+  /// In en, this message translates to:
+  /// **'corner shape too unclear to place it'**
+  String get cornerDetailsReasonUnclearGeometry;
+
+  /// Why a corner figure is missing, lower case: corner could not be measured.
+  ///
+  /// In en, this message translates to:
+  /// **'corner could not be measured'**
+  String get cornerDetailsReasonInvalidInput;
+
+  /// Why a corner figure is missing, lower case: apex spread over a long arc.
+  ///
+  /// In en, this message translates to:
+  /// **'apex spread over a long arc'**
+  String get cornerDetailsReasonBroadApex;
+
+  /// Why a corner figure is missing, lower case: at the edge of the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'at the edge of the corner'**
+  String get cornerDetailsReasonAtBoundary;
+
+  /// Why a corner figure is missing, lower case: not a corner.
+  ///
+  /// In en, this message translates to:
+  /// **'not a corner'**
+  String get cornerDetailsReasonNotACorner;
+
+  /// Why a corner figure is missing, lower case: too few samples.
+  ///
+  /// In en, this message translates to:
+  /// **'too few samples'**
+  String get cornerDetailsReasonSparseSamples;
+
+  /// Why a corner figure is missing, lower case: segment not found on this lap.
+  ///
+  /// In en, this message translates to:
+  /// **'segment not found on this lap'**
+  String get cornerDetailsReasonSegmentNotFound;
+
+  /// Why a corner figure is missing, lower case: not recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'not recorded'**
+  String get cornerDetailsReasonNotRecorded;
+
+  /// Why a corner figure is missing, lower case: no valid samples.
+  ///
+  /// In en, this message translates to:
+  /// **'no valid samples'**
+  String get cornerDetailsReasonNoValidSamples;
+
+  /// Why a corner figure is missing, lower case: no reference lap.
+  ///
+  /// In en, this message translates to:
+  /// **'no reference lap'**
+  String get cornerDetailsReasonNoReference;
+
+  /// Why a corner figure is missing, lower case: not timed.
+  ///
+  /// In en, this message translates to:
+  /// **'not timed'**
+  String get cornerDetailsReasonNotTimed;
+
+  /// Why a corner figure is missing, lower case: no approved segments.
+  ///
+  /// In en, this message translates to:
+  /// **'no approved segments'**
+  String get cornerDetailsReasonNoApprovedSegments;
+
+  /// Why a corner figure is missing, lower case: driving state unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'driving state unknown'**
+  String get cornerDetailsReasonDrivingStateUnknown;
+
+  /// Why a corner figure is missing, lower case: not available.
+  ///
+  /// In en, this message translates to:
+  /// **'not available'**
+  String get cornerDetailsReasonNotAvailable;
+
+  /// How a lap's braking point was found: from the deceleration, without a brake channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from deceleration'**
+  String get cornerDetailsFromDeceleration;
+
+  /// How a lap's braking point was found: from the recorded brake channel.
+  ///
+  /// In en, this message translates to:
+  /// **'From the brake channel'**
+  String get cornerDetailsFromBrakeChannel;
+
+  /// How a lap's throttle pickup was found: from the acceleration, without a throttle channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from acceleration'**
+  String get cornerDetailsFromAcceleration;
+
+  /// How a lap's throttle pickup was found: from the recorded throttle channel.
+  ///
+  /// In en, this message translates to:
+  /// **'From the throttle channel'**
+  String get cornerDetailsFromThrottleChannel;
+
+  /// How a figure was found, when the best lap's was found another way, so they are not compared.
+  ///
+  /// In en, this message translates to:
+  /// **'{how}; the best lap was measured differently'**
+  String cornerDetailsBestMeasuredDifferently(String how);
+
+  /// The corner speeds are not compared: the best lap's speed comes from another kind of channel.
+  ///
+  /// In en, this message translates to:
+  /// **'The best lap’s speed was recorded differently'**
+  String get cornerDetailsBestSpeedDifferent;
+
+  /// Why the lap's minimum speed is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum: {reason}'**
+  String cornerDetailsMinimumMissing(String reason);
+
+  /// The best value of every lap of the group: highest minimum speed in the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest minimum speed'**
+  String get cornerDetailsHighestMinimumSpeed;
+
+  /// The best value of every lap of the group: highest exit speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest exit speed'**
+  String get cornerDetailsHighestExitSpeed;
+
+  /// The best value of every lap of the group: latest braking point.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest braking point'**
+  String get cornerDetailsLatestBrakingPoint;
+
+  /// The best value of every lap of the group: earliest throttle pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Earliest throttle pickup'**
+  String get cornerDetailsEarliestPickup;
+
+  /// A throttle pickup: metres after the corner's start.
+  ///
+  /// In en, this message translates to:
+  /// **'{metres} m in'**
+  String cornerDetailsMetresIn(int metres);
+
+  /// Under the corner's name: the lap shown is the group's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} · the best lap'**
+  String cornerDetailsIsBestLap(String lap);
+
+  /// Under the corner's name: the lap shown and the group's best lap it is compared with.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} against the best lap, {best}'**
+  String cornerDetailsAgainstBestLap(String lap, String best);
+
+  /// In place of the best lap's name when there is none.
+  ///
+  /// In en, this message translates to:
+  /// **'unavailable'**
+  String get cornerDetailsBestLapUnavailable;
+
+  /// Column heading: the lap shown (lap A's colour).
+  ///
+  /// In en, this message translates to:
+  /// **'This lap'**
+  String get cornerDetailsThisLap;
+
+  /// Column heading: the group's best lap (lap B's colour); a narrow column.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get cornerDetailsBestLap;
+
+  /// Row label; unit is empty or ' (km/h)' with its leading space.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry speed{unit}'**
+  String cornerDetailsEntrySpeed(String unit);
+
+  /// Row label; unit is empty or ' (km/h)' with its leading space.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum speed{unit}'**
+  String cornerDetailsMinimumSpeed(String unit);
+
+  /// Row label; unit is empty or ' (km/h)' with its leading space.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit speed{unit}'**
+  String cornerDetailsExitSpeed(String unit);
+
+  /// Row label: where braking starts, in metres before the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point, before the corner'**
+  String get cornerDetailsBrakingPoint;
+
+  /// Row label: how long the lap brakes.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking time'**
+  String get cornerDetailsBrakingTime;
+
+  /// Row label; unit is empty or ' (g)' with its leading space.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak deceleration{unit}'**
+  String cornerDetailsPeakDeceleration(String unit);
+
+  /// Row label: where the throttle comes back, in metres after the corner's start.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup, into the corner'**
+  String get cornerDetailsPickup;
+
+  /// Heading of the best values of every lap of the group.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Best of 1 lap} other{Best of {count} laps}}'**
+  String cornerDetailsBestOfLaps(int count);
+
+  /// Explains the corner's figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point and pickup are distances from the corner’s start on the shared track axis. Later braking or an earlier pickup is not automatically faster. Laps measured another way are not compared.'**
+  String get cornerDetailsExplanation;
+
+  /// A corner without figures for the lap tapped.
+  ///
+  /// In en, this message translates to:
+  /// **'{corner}: this lap was not measured here.'**
+  String cornerDetailsNotMeasured(String corner);
+
+  /// A segment's type in the segment picker, lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'corner'**
+  String get cornerAnalyzerTypeCorner;
+
+  /// A segment's type in the segment picker, lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'straight'**
+  String get cornerAnalyzerTypeStraight;
+
+  /// A segment's type in the segment picker, lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'sector'**
+  String get cornerAnalyzerTypeSector;
+
+  /// The Corner Analyzer uses segments proposed from another lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments proposed from {lap}, as used by the sector theoretical best; saving the day approves them. Boundaries are distances along that lap\'s axis, so they can shift by a few metres on these laps.'**
+  String cornerAnalyzerNoteProposed(String lap);
+
+  /// The Corner Analyzer uses segments approved on another session.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments approved on {session}, as used by the sector theoretical best. Boundaries are distances along that run\'s axis, so they can shift by a few metres on these laps.'**
+  String cornerAnalyzerNoteApproved(String session);
+
+  /// Summary: laps A and B are equally fast through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'A and B take the same time here.'**
+  String get cornerAnalyzerSummarySame;
+
+  /// Summary: lap A or B is faster through the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} is {time} faster here.'**
+  String cornerAnalyzerSummaryFaster(String lap, String time);
+
+  /// Summary: the faster lap and the speed it gains most.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} is {time} faster here and carries {speed} more entry speed.'**
+  String cornerAnalyzerSummaryEntry(String lap, String time, String speed);
+
+  /// Summary: the faster lap and the speed it gains most.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} is {time} faster here and carries {speed} more minimum speed.'**
+  String cornerAnalyzerSummaryMinimum(String lap, String time, String speed);
+
+  /// Summary: the faster lap and the speed it gains most.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} is {time} faster here and carries {speed} more lowest speed.'**
+  String cornerAnalyzerSummaryLowest(String lap, String time, String speed);
+
+  /// Summary: the faster lap and the speed it gains most.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} is {time} faster here and carries {speed} more exit speed.'**
+  String cornerAnalyzerSummaryExit(String lap, String time, String speed);
+
+  /// Heading of the Corner Analyzer panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner Analyzer'**
+  String get cornerAnalyzerTitle;
+
+  /// The two laps share no approved segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching approved segments for these two laps. Approve the same track segmentation on both to use the Corner Analyzer.'**
+  String get cornerAnalyzerEmpty;
+
+  /// Button: analyze the laps with the theoretical best's segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the theoretical best’s segments'**
+  String get cornerAnalyzerUseTheoreticalBest;
+
+  /// Tooltip of the button to the previous segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous segment'**
+  String get cornerAnalyzerPrevious;
+
+  /// Tooltip of the button to the next segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Next segment'**
+  String get cornerAnalyzerNext;
+
+  /// Why a segment has no speed chart.
+  ///
+  /// In en, this message translates to:
+  /// **'No speed chart: this segment crosses the start/finish line.'**
+  String get cornerAnalyzerNoChart;
+
+  /// The segment could not be analyzed.
+  ///
+  /// In en, this message translates to:
+  /// **'No figures for this segment.'**
+  String get cornerAnalyzerNoFigures;
+
+  /// How each lap's heart rate was measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate: mean over this segment · A {a} · B {b}. Observed values only.'**
+  String cornerAnalyzerHeartRateNote(String a, String b);
+
+  /// Heart-rate samples of a lap in the segment and how much of it they cover.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 sample, {percent}% covered} other{{count} samples, {percent}% covered}}'**
+  String cornerAnalyzerCoverage(int count, int percent);
+
+  /// Explains the table's differences.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ is A − B, coloured by the lap that is faster or carries more speed. Observed differences, not instructions.'**
+  String get cornerAnalyzerExplanation;
+
+  /// Explains the table's differences, with braking or throttle pickup shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ is A − B, coloured by the lap that is faster or carries more speed. Braking and pickup are distances from the corner entry; braking later or picking up earlier is not automatically faster. Observed differences, not instructions.'**
+  String get cornerAnalyzerExplanationWithBraking;
+
+  /// Button: zoom the charts to the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom to segment'**
+  String get cornerAnalyzerZoom;
+
+  /// Button: open lap A or B at the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap {lap} here'**
+  String cornerAnalyzerOpenLap(String lap);
+
+  /// Group of the table's rows (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get cornerAnalyzerGroupTime;
+
+  /// Group of the table's rows (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get cornerAnalyzerGroupBraking;
+
+  /// Group of the table's rows (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get cornerAnalyzerGroupCorner;
+
+  /// Group of the table's rows (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get cornerAnalyzerGroupSpeed;
+
+  /// Group of the table's rows (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get cornerAnalyzerGroupExit;
+
+  /// Group of the table's rows (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Driver'**
+  String get cornerAnalyzerGroupDriver;
+
+  /// Row label: the corner segment's time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time through the corner'**
+  String get cornerAnalyzerTimeThroughCorner;
+
+  /// Row label: the segment's time.
+  ///
+  /// In en, this message translates to:
+  /// **'Sector time'**
+  String get cornerAnalyzerSectorTime;
+
+  /// Row label: metres before the corner entry where braking starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking starts, before entry'**
+  String get cornerAnalyzerBrakingPoint;
+
+  /// Row label: how long the lap brakes.
+  ///
+  /// In en, this message translates to:
+  /// **'Time on the brakes'**
+  String get cornerAnalyzerBrakingTime;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak deceleration'**
+  String get cornerAnalyzerPeakDeceleration;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry speed'**
+  String get cornerAnalyzerEntrySpeed;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex speed'**
+  String get cornerAnalyzerApexSpeed;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum speed'**
+  String get cornerAnalyzerMinimumSpeed;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Top speed'**
+  String get cornerAnalyzerTopSpeed;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest speed'**
+  String get cornerAnalyzerLowestSpeed;
+
+  /// Row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit speed'**
+  String get cornerAnalyzerExitSpeed;
+
+  /// Row label: metres after the corner entry where the throttle comes back.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup, after entry'**
+  String get cornerAnalyzerPickup;
+
+  /// Row label: mean heart rate over the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate'**
+  String get cornerAnalyzerHeartRate;
+
+  /// Under a speed difference: lap A's speed is higher.
+  ///
+  /// In en, this message translates to:
+  /// **'A higher'**
+  String get cornerAnalyzerAHigher;
+
+  /// Under a speed difference: lap B's speed is higher.
+  ///
+  /// In en, this message translates to:
+  /// **'B higher'**
+  String get cornerAnalyzerBHigher;
+
+  /// Under a time difference: lap A is faster.
+  ///
+  /// In en, this message translates to:
+  /// **'A faster'**
+  String get cornerAnalyzerAFaster;
+
+  /// Under a time difference: lap B is faster.
+  ///
+  /// In en, this message translates to:
+  /// **'B faster'**
+  String get cornerAnalyzerBFaster;
+
+  /// Under a braking point difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A brakes earlier'**
+  String get cornerAnalyzerABrakesEarlier;
+
+  /// Under a braking point difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A brakes later'**
+  String get cornerAnalyzerABrakesLater;
+
+  /// Under a braking time difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A longer'**
+  String get cornerAnalyzerALonger;
+
+  /// Under a braking time difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A shorter'**
+  String get cornerAnalyzerAShorter;
+
+  /// Under a peak deceleration difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A harder'**
+  String get cornerAnalyzerAHarder;
+
+  /// Under a peak deceleration difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A softer'**
+  String get cornerAnalyzerASofter;
+
+  /// Under a throttle pickup difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A later'**
+  String get cornerAnalyzerALater;
+
+  /// Under a throttle pickup difference.
+  ///
+  /// In en, this message translates to:
+  /// **'A earlier'**
+  String get cornerAnalyzerAEarlier;
+
+  /// Under a difference that rounds to zero.
+  ///
+  /// In en, this message translates to:
+  /// **'same'**
+  String get cornerAnalyzerSame;
+
+  /// Under a value inferred from another channel.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred'**
+  String get cornerAnalyzerInferred;
+
+  /// Why a value is missing on both laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{reason} (both laps)'**
+  String cornerAnalyzerBothLaps(String reason);
+
+  /// Why the laps' values are not compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Not compared: {reason}'**
+  String cornerAnalyzerNotCompared(String reason);
+
+  /// The recording has no speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording does not declare its speed unit: those values are shown as recorded, without a unit.'**
+  String get cornerAnalyzerUnitNoteSpeed;
+
+  /// The recording has no deceleration unit.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording does not declare its deceleration unit: those values are shown as recorded, without a unit.'**
+  String get cornerAnalyzerUnitNoteDeceleration;
+
+  /// The recording has no speed and no deceleration unit.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording does not declare its speed and deceleration units: those values are shown as recorded, without a unit.'**
+  String get cornerAnalyzerUnitNoteBoth;
+
+  /// Neither lap recorded speed.
+  ///
+  /// In en, this message translates to:
+  /// **'No speed recorded on either lap: no speed chart.'**
+  String get cornerAnalyzerChartNoSpeed;
+
+  /// Neither lap has speed samples in the segment.
+  ///
+  /// In en, this message translates to:
+  /// **'No speed samples on either lap through {segment}.'**
+  String cornerAnalyzerChartNoSamples(String segment);
+
+  /// Heading of the segment's speed chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed through {segment}'**
+  String cornerAnalyzerChartTitle(String segment);
+
+  /// Screen reader label of the speed chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed through {segment} chart'**
+  String cornerAnalyzerChartLabel(String segment);
+
+  /// Before both laps' speed at the cursor; offset is metres from the segment's start, with its sign. Keep the trailing space.
+  ///
+  /// In en, this message translates to:
+  /// **'Cursor {offset} m: '**
+  String cornerAnalyzerCursor(String offset);
+
+  /// Chart label of the corner's entry line.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry'**
+  String get cornerAnalyzerEntry;
+
+  /// Chart label of the corner's exit line.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get cornerAnalyzerExit;
+
+  /// Chart label of the segment's start line.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get cornerAnalyzerStart;
+
+  /// Chart label of the segment's end line.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get cornerAnalyzerEnd;
+
+  /// Name of the chart's speed axis when the recording declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'speed'**
+  String get cornerAnalyzerSpeedAxis;
+
+  /// The apex line on the chart and in its legend.
+  ///
+  /// In en, this message translates to:
+  /// **'Apex'**
+  String get cornerAnalyzerApex;
+
+  /// Under the chart: its distance axis and shading.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance from the corner entry (m) · shaded: the corner'**
+  String get cornerAnalyzerAxisCorner;
+
+  /// Under the chart: its distance axis and shading.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance from the segment entry (m) · shaded: the segment'**
+  String get cornerAnalyzerAxisSegment;
+
+  /// Under the chart when the recording has no speed unit.
+  ///
+  /// In en, this message translates to:
+  /// **'{axis} · speed unit not declared in the recording'**
+  String cornerAnalyzerAxisNoUnit(String axis);
+
+  /// Chart legend: the braking point marker.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking starts'**
+  String get cornerAnalyzerLegendBraking;
+
+  /// Chart legend: the throttle pickup marker.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup'**
+  String get cornerAnalyzerLegendPickup;
+
+  /// Chart legend: the lowest speed marker.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest speed'**
+  String get cornerAnalyzerLegendMinimum;
+
+  /// An imported session's timed laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap} other{{count} laps}}'**
+  String importPageLaps(int count);
+
+  /// An imported session's timed laps and its fastest lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap · best {time}} other{{count} laps · best {time}}}'**
+  String importPageLapsWithBest(int count, String time);
+
+  /// Why an imported session has no laps.
+  ///
+  /// In en, this message translates to:
+  /// **'No laps: the recording has no start/finish line.'**
+  String get importPageNoGate;
+
+  /// Why an imported session has no laps.
+  ///
+  /// In en, this message translates to:
+  /// **'No laps: the recording has more than one start/finish line.'**
+  String get importPageSeveralGates;
+
+  /// Why an imported session has no laps.
+  ///
+  /// In en, this message translates to:
+  /// **'No laps: the start/finish line is not valid.'**
+  String get importPageInvalidGate;
+
+  /// Why an imported session has no laps.
+  ///
+  /// In en, this message translates to:
+  /// **'No laps: the recording has no usable GPS.'**
+  String get importPageNoGps;
+
+  /// Why an imported session has no laps.
+  ///
+  /// In en, this message translates to:
+  /// **'No complete laps: the start/finish line was not crossed often enough.'**
+  String get importPageTooFewPasses;
+
+  /// The import stopped with an error.
+  ///
+  /// In en, this message translates to:
+  /// **'The import failed: {error}'**
+  String importPageImportFailed(String error);
+
+  /// A folder holds too many recordings to import.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{The folder holds {count} recordings; import at most {maximum} at a time. Choose a smaller folder.}}'**
+  String importPageFolderTooMany(int count, int maximum);
+
+  /// Too many recordings were chosen to import.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{That is {count} recordings; import at most {maximum} at a time.}}'**
+  String importPageTooMany(int count, int maximum);
+
+  /// A folder scan stopped at its limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped after {count} files and folders; recordings beyond that were not scanned.'**
+  String importPageStoppedAfter(int count);
+
+  /// Folders too deep to scan.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} folder(s) deeper than {depth} levels were not scanned.'**
+  String importPageTooDeep(int count, int depth);
+
+  /// Links in a folder were not followed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} link(s) were not followed.'**
+  String importPageLinksSkipped(int count);
+
+  /// Files of a folder that are not recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} other file(s) were ignored; only VBO and RCZ recordings are imported.'**
+  String importPageOtherFilesSkipped(int count);
+
+  /// After a file's name: it is a copy of another file.
+  ///
+  /// In en, this message translates to:
+  /// **'same content as {other}; imported once.'**
+  String importPageSameContent(String other);
+
+  /// After a recording's name: another recording of the same drive.
+  ///
+  /// In en, this message translates to:
+  /// **'the same drive as {other}; kept as its alternative source.'**
+  String importPageSameDrive(String other);
+
+  /// The import found nothing it could use.
+  ///
+  /// In en, this message translates to:
+  /// **'No recording could be imported.'**
+  String get importPageNoRecording;
+
+  /// The import stopped with an unknown error.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed.'**
+  String get importPageFailed;
+
+  /// The import's background work ended without a result.
+  ///
+  /// In en, this message translates to:
+  /// **'Bad state: The import stopped unexpectedly.'**
+  String get importPageStoppedUnexpectedly;
+
+  /// A chosen folder cannot be scanned.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder does not exist or is not a folder.'**
+  String get importPageNoFolder;
+
+  /// A chosen folder is a link.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the folder itself, not a link to it.'**
+  String get importPageFolderLink;
+
+  /// A folder holds no recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'No VBO or RCZ recordings were found.'**
+  String get importPageNoneFound;
+
+  /// A folder holds no recordings; its subfolders were not scanned.
+  ///
+  /// In en, this message translates to:
+  /// **'No VBO or RCZ recordings were found (subfolders were not included).'**
+  String get importPageNoneFoundNoSubfolders;
+
+  /// Nothing chosen is a recording.
+  ///
+  /// In en, this message translates to:
+  /// **'No VBO or RCZ recordings to import.'**
+  String get importPageNothingToImport;
+
+  /// After a file's name.
+  ///
+  /// In en, this message translates to:
+  /// **'not found; not imported.'**
+  String get importPageFileNotFound;
+
+  /// After a file's name.
+  ///
+  /// In en, this message translates to:
+  /// **'a macOS metadata file, not a recording; not imported.'**
+  String get importPageMetadataFile;
+
+  /// After a file's name.
+  ///
+  /// In en, this message translates to:
+  /// **'a link; not followed.'**
+  String get importPageFileLink;
+
+  /// After a file's name.
+  ///
+  /// In en, this message translates to:
+  /// **'not a VBO or RCZ recording; not imported.'**
+  String get importPageNotRecording;
+
+  /// Restoring an unsaved day failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be restored: {error}'**
+  String importPageNotRestored(String error);
+
+  /// Asks before discarding a day's unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard the changes to {day}?'**
+  String importPageDiscardTitle(String day);
+
+  /// Explains discarding unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'The unsaved changes are lost. Recordings and saved days are not touched.'**
+  String get importPageDiscardBody;
+
+  /// Button: keep the unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get importPageKeep;
+
+  /// Button: discard the unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get importPageDiscard;
+
+  /// Discarding unsaved changes failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not discarded: {error}'**
+  String importPageNotDiscarded(String error);
+
+  /// A saved day none of whose recordings could be read.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} could not be opened'**
+  String importPageCannotOpenTitle(String day);
+
+  /// Before the day's recordings and why each could not be used.
+  ///
+  /// In en, this message translates to:
+  /// **'None of its recordings could be used:'**
+  String get importPageNoneUsable;
+
+  /// How to find a day's recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the folder the recordings are in to use them, also when they have not moved.'**
+  String get importPageChooseFolderHint;
+
+  /// Recordings shared from another app are imported behind the page shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing the shared recordings. Go back to Import a day to see them.'**
+  String get importPageImportingBehind;
+
+  /// An import was asked for while another runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the current import first. Nothing was imported.'**
+  String get importPageFinishFirst;
+
+  /// Title of the list of saved days.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a saved day'**
+  String get importPageOpenSavedTitle;
+
+  /// Opens a file picker for a saved day not in the list.
+  ///
+  /// In en, this message translates to:
+  /// **'Another file…'**
+  String get importPageAnotherFile;
+
+  /// A day was chosen while another is being opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Another day is being opened. Try again after it.'**
+  String get importPageAnotherOpening;
+
+  /// Opening a saved day failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be opened: {error}'**
+  String importPageNotOpened(String error);
+
+  /// Title of the import page, the app's first page.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a day'**
+  String get importPageTitle;
+
+  /// A day with unsaved changes that can be restored, and when they were made.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} has unsaved changes from {time}.'**
+  String importPageUnsaved(String day, String time);
+
+  /// Button: restore the day with unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get importPageRestore;
+
+  /// Button: asks before discarding the unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard…'**
+  String get importPageDiscardEllipsis;
+
+  /// Explains the import page on desktops.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.'**
+  String get importPageIntroDrop;
+
+  /// Explains the import page when folders can be picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the day\'s VBO and RCZ recordings or a folder.'**
+  String get importPageIntroFolder;
+
+  /// Explains the import page on phones.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the day\'s VBO and RCZ recordings.'**
+  String get importPageIntro;
+
+  /// Button: pick recordings to import.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose recordings…'**
+  String get importPageChooseRecordings;
+
+  /// Button: pick a folder to import.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder…'**
+  String get importPageChooseFolder;
+
+  /// A saved day is being opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening…'**
+  String get importPageOpening;
+
+  /// Button: open a saved day.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a saved day…'**
+  String get importPageOpenSaved;
+
+  /// Checkbox: also import a folder's subfolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Include subfolders'**
+  String get importPageIncludeSubfolders;
+
+  /// Heading of what was skipped or failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import notes'**
+  String get importPageNotes;
+
+  /// The import is looking for recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for recordings…'**
+  String get importPageLooking;
+
+  /// Import progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing recording {number} of {total}…'**
+  String importPagePreparing(int number, int total);
+
+  /// The import was cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Import cancelled. Nothing was imported.'**
+  String get importPageCancelled;
+
+  /// Heading of a finished import.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 session imported} other{{count} sessions imported}}'**
+  String importPageSessionsImported(int count);
+
+  /// Button: open the imported day.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the day\'s results'**
+  String get importPageShowResults;
 }
 
 class _AppLocalizationsDelegate
