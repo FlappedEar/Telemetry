@@ -3541,5 +3541,735 @@
   },
   "@taskStoppedUnexpectedly": {
     "description": "Why background work (such as reading the recordings again) failed when it ended without a result."
+  },
+  "lapPageChannels": "Channels",
+  "@lapPageChannels": {
+    "description": "Heading of the charts on a lap page."
+  },
+  "lapPageCursorHintTouch": "Tap a chart or drag sideways across it to move the cursor; the white dot shows it on the map. Two fingers zoom and move the map.",
+  "@lapPageCursorHintTouch": {
+    "description": "How to move the cursor of a lap page on a touch screen."
+  },
+  "lapPageCursorHint": "Drag across a chart to move the cursor; the white dot shows it on the map.",
+  "@lapPageCursorHint": {
+    "description": "How to move the cursor of a lap page with a mouse."
+  },
+  "lapPageNoChannel": "No channel shown.",
+  "@lapPageNoChannel": {
+    "description": "A lap page whose charts were all removed."
+  },
+  "lapPageBestOfDay": "Best lap of the day",
+  "@lapPageBestOfDay": {
+    "description": "Under the time of the day's best lap."
+  },
+  "lapPageToBestOfDay": "{delta} to the best of the day ({lap})",
+  "@lapPageToBestOfDay": {
+    "description": "How far a lap is from the best lap of the day.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "+1.234"
+      },
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "lapPageBestOfSession": "Best lap of {session}",
+  "@lapPageBestOfSession": {
+    "description": "Under the time of a session's best lap.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "lapPageNotRankedExcluded": "Not ranked: excluded (“{reason}”)",
+  "@lapPageNotRankedExcluded": {
+    "description": "A lap the user excluded from the ranking, with the reason they gave.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Traffic"
+      }
+    }
+  },
+  "lapPageExclude": "Exclude from ranking…",
+  "@lapPageExclude": {
+    "description": "Button that asks why to exclude the lap from the ranking."
+  },
+  "lapPageInclude": "Include in ranking",
+  "@lapPageInclude": {
+    "description": "Button that puts an excluded lap back in the ranking."
+  },
+  "lapPageCompareWith": "Compare with…",
+  "@lapPageCompareWith": {
+    "description": "Button that asks for a lap to compare this one with."
+  },
+  "lapPageNoGps": "No GPS recorded for this section.",
+  "@lapPageNoGps": {
+    "description": "A lap section without GPS, in place of its map."
+  },
+  "lapPageTraceLabel": "Trace of {lap}, coloured by speed",
+  "@lapPageTraceLabel": {
+    "description": "Screen reader label of a lap's map.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "lapPageSpeed": "Speed",
+  "@lapPageSpeed": {
+    "description": "Label of the speed colour legend under the map."
+  },
+  "lapPageShowBest": "Show the best lap ({lap}) in grey",
+  "@lapPageShowBest": {
+    "description": "Switch that draws the best lap under this one.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "Session 2 · LAP 3"
+      }
+    }
+  },
+  "lapPageExcludeTitle": "Exclude this lap",
+  "@lapPageExcludeTitle": {
+    "description": "Title of the dialog that excludes a lap from the ranking."
+  },
+  "lapPageReason": "Reason",
+  "@lapPageReason": {
+    "description": "Field for why a lap is excluded."
+  },
+  "lapPageReasonHint": "Traffic, yellow flag…",
+  "@lapPageReasonHint": {
+    "description": "Example reasons in the empty reason field."
+  },
+  "lapPageExcludeAction": "Exclude",
+  "@lapPageExcludeAction": {
+    "description": "Button that excludes the lap."
+  },
+  "compareTitle": "Compare laps",
+  "@compareTitle": {
+    "description": "Title of the page comparing two laps."
+  },
+  "compareLayerNotRecordedEither": "Not recorded on either lap.",
+  "@compareLayerNotRecordedEither": {
+    "description": "A map layer neither lap recorded."
+  },
+  "compareLayerNotRecordedOn": "Not recorded on lap {lap}.",
+  "@compareLayerNotRecordedOn": {
+    "description": "A map layer the lap shown did not record; lap is A or B.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareLayerNoSamples": "No usable samples on lap {lap}.",
+  "@compareLayerNoSamples": {
+    "description": "A map layer without usable values; lap is A or B.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareNoSharedPosition": "No shared track position for this pair.",
+  "@compareNoSharedPosition": {
+    "description": "Two laps that cannot be placed on one track axis."
+  },
+  "compareLapDelta": "Lap Δ {delta}",
+  "@compareLapDelta": {
+    "description": "Difference of the two lap times, A − B.",
+    "placeholders": {
+      "delta": {
+        "type": "String",
+        "example": "+0.512"
+      }
+    }
+  },
+  "compareDeltaExplained": "Δ is A − B: positive when A is behind.",
+  "@compareDeltaExplained": {
+    "description": "How to read the differences."
+  },
+  "compareSwap": "Swap A and B",
+  "@compareSwap": {
+    "description": "Button that swaps the two laps."
+  },
+  "compareBestOfSessionAsB": "B: best of {session}",
+  "@compareBestOfSessionAsB": {
+    "description": "Button that makes B the best lap of A's session.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "compareBestOfDayAsB": "B: best of the day",
+  "@compareBestOfDayAsB": {
+    "description": "Button that makes B the best lap of the day."
+  },
+  "compareLayerLine": "Line: A / B",
+  "@compareLayerLine": {
+    "description": "Map layer choice that draws both laps in their colours."
+  },
+  "compareLayerOptionNotRecorded": "{layer} · not recorded",
+  "@compareLayerOptionNotRecorded": {
+    "description": "A map layer choice neither lap recorded.",
+    "placeholders": {
+      "layer": {
+        "type": "String",
+        "example": "Throttle"
+      }
+    }
+  },
+  "compareLayerSpeed": "Speed",
+  "@compareLayerSpeed": {
+    "description": "Map layer: speed."
+  },
+  "compareLayerDelta": "Δ time (A−B)",
+  "@compareLayerDelta": {
+    "description": "Map layer: the time difference."
+  },
+  "compareLayerLateralG": "Lateral G",
+  "@compareLayerLateralG": {
+    "description": "Map layer: lateral acceleration."
+  },
+  "compareLayerLongitudinalG": "Longitudinal G",
+  "@compareLayerLongitudinalG": {
+    "description": "Map layer: longitudinal acceleration."
+  },
+  "compareLayerThrottle": "Throttle",
+  "@compareLayerThrottle": {
+    "description": "Map layer: throttle."
+  },
+  "compareLayerBrake": "Brake (measured)",
+  "@compareLayerBrake": {
+    "description": "Map layer: the recorded brake."
+  },
+  "compareLayerTemperature": "Temperature",
+  "@compareLayerTemperature": {
+    "description": "Map layer: a temperature, when neither lap recorded one."
+  },
+  "compareLayerAAhead": "A ahead",
+  "@compareLayerAAhead": {
+    "description": "Negative end of the time difference colour scale."
+  },
+  "compareLayerABehind": "A behind",
+  "@compareLayerABehind": {
+    "description": "Positive end of the time difference colour scale."
+  },
+  "compareLayerBraking": "braking",
+  "@compareLayerBraking": {
+    "description": "Negative end of the longitudinal G colour scale."
+  },
+  "compareLayerAccelerating": "accelerating",
+  "@compareLayerAccelerating": {
+    "description": "Positive end of the longitudinal G colour scale."
+  },
+  "compareLegendLap": "{layer} · lap {lap}",
+  "@compareLegendLap": {
+    "description": "Which lap the map layer colours; lap is A or B.",
+    "placeholders": {
+      "layer": {
+        "type": "String",
+        "example": "Speed"
+      },
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareLegendCalculated": "calculated",
+  "@compareLegendCalculated": {
+    "description": "A map layer calculated rather than recorded."
+  },
+  "compareChannelsByPosition": "Channels by track position",
+  "@compareChannelsByPosition": {
+    "description": "Heading of the comparison charts."
+  },
+  "compareCursorHintTouch": "Both laps at the same place on the track. Tap a chart or drag sideways across it to move the cursor; the dots show both laps on the map, which two fingers zoom and move.",
+  "@compareCursorHintTouch": {
+    "description": "How to read and move the comparison charts on a touch screen."
+  },
+  "compareCursorHint": "Both laps at the same place on the track. Drag across a chart to move the cursor; the dots show both laps on the map.",
+  "@compareCursorHint": {
+    "description": "How to read and move the comparison charts with a mouse."
+  },
+  "compareDeltaChart": "Δ time (A − B)",
+  "@compareDeltaChart": {
+    "description": "Title of the time difference chart."
+  },
+  "compareDeltaNote": "+ = A behind",
+  "@compareDeltaNote": {
+    "description": "How to read the time difference chart."
+  },
+  "compareOpenLapHere": "Open lap {lap} here",
+  "@compareOpenLapHere": {
+    "description": "Button that opens lap A or B at the cursor.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "compareDisclaimer": "Observed differences between two laps, not instructions.",
+  "@compareDisclaimer": {
+    "description": "Note at the end of the comparison."
+  },
+  "compareRecordingsUnavailable": "The recordings of these laps are not available.",
+  "@compareRecordingsUnavailable": {
+    "description": "The laps' recordings could not be read."
+  },
+  "compareNoGps": "No GPS data in this section",
+  "@compareNoGps": {
+    "description": "A comparison map without GPS."
+  },
+  "compareMapLabel": "Laps A and B on one map",
+  "@compareMapLabel": {
+    "description": "Screen reader label of the comparison map."
+  },
+  "chartReasonNotRecorded": "not recorded",
+  "@chartReasonNotRecorded": {
+    "description": "Why a chart line is missing: the channel is not recorded."
+  },
+  "chartReasonInvalidRange": "range not valid",
+  "@chartReasonInvalidRange": {
+    "description": "Why a chart line is missing: the range is not valid."
+  },
+  "chartReasonUnreadable": "could not be read",
+  "@chartReasonUnreadable": {
+    "description": "Why a chart line is missing: the channel could not be read."
+  },
+  "chartNoDataInRange": "no data in this range",
+  "@chartNoDataInRange": {
+    "description": "A chart line without data in the range shown (inside a list)."
+  },
+  "chartNoData": "No data in this range",
+  "@chartNoData": {
+    "description": "A chart without data in the range shown."
+  },
+  "chartNotAvailable": "Not available · {reasons}",
+  "@chartNotAvailable": {
+    "description": "A chart whose lines failed, with why.",
+    "placeholders": {
+      "reasons": {
+        "type": "String",
+        "example": "A: not recorded"
+      }
+    }
+  },
+  "chartBrakingUp": "braking drawn upward",
+  "@chartBrakingUp": {
+    "description": "A chart of longitudinal G drawn with braking up."
+  },
+  "chartRemove": "Remove {channel}",
+  "@chartRemove": {
+    "description": "Tooltip of the button that removes a chart.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "speed"
+      }
+    }
+  },
+  "chartSemantics": "{channel} chart",
+  "@chartSemantics": {
+    "description": "Screen reader label of a chart.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "speed"
+      }
+    }
+  },
+  "chartZoomOut": "Zoom out",
+  "@chartZoomOut": {
+    "description": "Tooltip of the zoom out button of the charts."
+  },
+  "chartZoomIn": "Zoom in around the cursor",
+  "@chartZoomIn": {
+    "description": "Tooltip of the zoom in button of the charts."
+  },
+  "chartWholeLap": "Whole lap",
+  "@chartWholeLap": {
+    "description": "Tooltip of the button that shows the whole lap in the charts."
+  },
+  "chartAtMost": "{count, plural, =1{At most 1 chart} other{At most {count} charts}}",
+  "@chartAtMost": {
+    "description": "No more charts can be added.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "chartAddChannel": "Add a channel",
+  "@chartAddChannel": {
+    "description": "Button that adds a chart of a channel."
+  },
+  "coastingTitle": "Coasting",
+  "@coastingTitle": {
+    "description": "Title of a lap's coasting panel."
+  },
+  "coastingBySegment": "By segment",
+  "@coastingBySegment": {
+    "description": "Heading of a lap's coasting by segment."
+  },
+  "coastingBySegmentLoading": "Coasting by segment follows once the day's segments are calculated…",
+  "@coastingBySegmentLoading": {
+    "description": "The day's segments are being calculated."
+  },
+  "coastingBySegmentNeedsSegments": "Coasting by segment needs this lap's group to have segments.",
+  "@coastingBySegmentNeedsSegments": {
+    "description": "The lap's group has no segments."
+  },
+  "coastingEpisodes": "Episodes · select one to see it",
+  "@coastingEpisodes": {
+    "description": "Heading of a lap's coasting episodes."
+  },
+  "coastingIntoLap": "{seconds} s into the lap",
+  "@coastingIntoLap": {
+    "description": "Where an episode starts, outside any segment.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "12.4"
+      }
+    }
+  },
+  "drivingGgNoLongitudinal": "No longitudinal G recorded",
+  "@drivingGgNoLongitudinal": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingGgNoLateral": "No lateral G recorded",
+  "@drivingGgNoLateral": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingGgUnsupportedUnit": "G in an unsupported unit",
+  "@drivingGgUnsupportedUnit": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingGgNoSamples": "No samples in this stretch",
+  "@drivingGgNoSamples": {
+    "description": "Why a lap has no G-G."
+  },
+  "drivingNoCoverage": "Does not cover this stretch",
+  "@drivingNoCoverage": {
+    "description": "Why a lap has no driving states."
+  },
+  "drivingNotAvailable": "Not available",
+  "@drivingNotAvailable": {
+    "description": "A lap without driving states or coasting."
+  },
+  "drivingMeasured": "measured",
+  "@drivingMeasured": {
+    "description": "How a driving state was obtained."
+  },
+  "drivingCalculatedFromGps": "calculated from GPS",
+  "@drivingCalculatedFromGps": {
+    "description": "How a driving state was obtained."
+  },
+  "drivingInferred": "inferred",
+  "@drivingInferred": {
+    "description": "How a driving state was obtained."
+  },
+  "drivingUnexpectedUnit": "unexpected unit",
+  "@drivingUnexpectedUnit": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingNotRecorded": "not recorded",
+  "@drivingNotRecorded": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingPedalsUnknown": "pedals unknown",
+  "@drivingPedalsUnknown": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingNoSpeed": "no speed",
+  "@drivingNoSpeed": {
+    "description": "Why a driving state is unknown."
+  },
+  "drivingBrakeMeasuredLateralGps": "brake measured, lateral G from GPS",
+  "@drivingBrakeMeasuredLateralGps": {
+    "description": "How braking while cornering was obtained."
+  },
+  "drivingUnexpectedUnitChannel": "{channel} is in an unexpected unit",
+  "@drivingUnexpectedUnitChannel": {
+    "description": "A pedal channel in an unexpected unit.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "brake"
+      }
+    }
+  },
+  "drivingNoBrakeChannel": "no brake channel",
+  "@drivingNoBrakeChannel": {
+    "description": "A lap without a brake pedal channel."
+  },
+  "drivingNoAcceleratorChannel": "no accelerator channel",
+  "@drivingNoAcceleratorChannel": {
+    "description": "A lap without an accelerator pedal channel."
+  },
+  "drivingBrakeRecorded": "brake pedal recorded",
+  "@drivingBrakeRecorded": {
+    "description": "Where a lap's braking comes from."
+  },
+  "drivingBrakingInferred": "braking inferred from deceleration (no brake channel)",
+  "@drivingBrakingInferred": {
+    "description": "Where a lap's braking comes from."
+  },
+  "drivingAcceleratorRecorded": "accelerator pedal recorded",
+  "@drivingAcceleratorRecorded": {
+    "description": "Where a lap's accelerating comes from."
+  },
+  "drivingAcceleratingInferred": "accelerating inferred from longitudinal G (no accelerator channel)",
+  "@drivingAcceleratingInferred": {
+    "description": "Where a lap's accelerating comes from."
+  },
+  "drivingLateralMeasured": "lateral G measured",
+  "@drivingLateralMeasured": {
+    "description": "Where a lap's cornering comes from."
+  },
+  "drivingLateralCalculated": "lateral G calculated from GPS by the logger",
+  "@drivingLateralCalculated": {
+    "description": "Where a lap's cornering comes from."
+  },
+  "drivingNoLateral": "no lateral G",
+  "@drivingNoLateral": {
+    "description": "Where a lap's cornering comes from."
+  },
+  "drivingCoastingMeasured": "Measured: from the recorded brake and accelerator pedals.",
+  "@drivingCoastingMeasured": {
+    "description": "Where a lap's coasting comes from."
+  },
+  "drivingCoastingInferred": "Inferred from longitudinal G: this recording has no brake or no accelerator pedal channel.",
+  "@drivingCoastingInferred": {
+    "description": "Where a lap's coasting comes from."
+  },
+  "drivingCoastingNoPedals": "Cannot be told: the recording has neither pedal channels nor longitudinal G.",
+  "@drivingCoastingNoPedals": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingNoSpeed": "Cannot be told: the recording has no speed.",
+  "@drivingCoastingNoSpeed": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingUnitMismatch": "Cannot be told: a pedal or speed channel is in an unexpected unit.",
+  "@drivingCoastingUnitMismatch": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingUnavailable": "Coasting is not available for this stretch.",
+  "@drivingCoastingUnavailable": {
+    "description": "Why a lap's coasting is unknown."
+  },
+  "drivingCoastingSummaryLap": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)",
+  "@drivingCoastingSummaryLap": {
+    "description": "A lap's coasting: its time, distance, episodes and share of the lap time.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "4.2"
+      },
+      "meters": {
+        "type": "String",
+        "example": "128"
+      },
+      "count": {
+        "type": "int",
+        "example": "9"
+      },
+      "share": {
+        "type": "String",
+        "example": "5.1"
+      }
+    }
+  },
+  "drivingCoastingSummaryStretch": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)",
+  "@drivingCoastingSummaryStretch": {
+    "description": "A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "4.2"
+      },
+      "meters": {
+        "type": "String",
+        "example": "128"
+      },
+      "count": {
+        "type": "int",
+        "example": "9"
+      },
+      "share": {
+        "type": "String",
+        "example": "5.1"
+      }
+    }
+  },
+  "drivingCoastingNote": "Coasting is time at speed with neither pedal pressed. It is not a mistake by itself: a lift can settle the car or be forced by traffic.",
+  "@drivingCoastingNote": {
+    "description": "Coasting is an observation, never a verdict."
+  },
+  "drivingCoastingEpisodesHint": "Each episode is listed by where it starts on the track; select one to move the cursor there.",
+  "@drivingCoastingEpisodesHint": {
+    "description": "Under the comparison's coasting episodes."
+  },
+  "drivingSelectedStretch": "Selected stretch · {meters} m",
+  "@drivingSelectedStretch": {
+    "description": "The zoomed stretch a panel covers, with its length.",
+    "placeholders": {
+      "meters": {
+        "type": "String",
+        "example": "240"
+      }
+    }
+  },
+  "drivingWholeLap": "Whole lap",
+  "@drivingWholeLap": {
+    "description": "A panel covers the whole lap."
+  },
+  "drivingGgCalculated": "calculated from GPS by the logger",
+  "@drivingGgCalculated": {
+    "description": "G channels the logger calculated from GPS."
+  },
+  "drivingGgSource": "{lap}: {longitudinal} / {lateral}, {provenance}",
+  "@drivingGgSource": {
+    "description": "The G channels of lap A or B and how they were obtained.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      },
+      "longitudinal": {
+        "type": "String",
+        "example": "longacc"
+      },
+      "lateral": {
+        "type": "String",
+        "example": "latacc"
+      },
+      "provenance": {
+        "type": "String",
+        "example": "measured"
+      }
+    }
+  },
+  "drivingLap": "Lap {lap}",
+  "@drivingLap": {
+    "description": "Legend entry of lap A or B.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "drivingGgSemantics": "G-G diagram of laps A and B: peak combined {a} and {b}",
+  "@drivingGgSemantics": {
+    "description": "Screen reader label of the G-G diagram.",
+    "placeholders": {
+      "a": {
+        "type": "String",
+        "example": "1.20 g"
+      },
+      "b": {
+        "type": "String",
+        "example": "1.15 g"
+      }
+    }
+  },
+  "drivingPeakLateral": "Peak lateral",
+  "@drivingPeakLateral": {
+    "description": "Row of the G-G table."
+  },
+  "drivingPeakBraking": "Peak braking",
+  "@drivingPeakBraking": {
+    "description": "Row of the G-G table."
+  },
+  "drivingPeakAccelerating": "Peak accelerating",
+  "@drivingPeakAccelerating": {
+    "description": "Row of the G-G table."
+  },
+  "drivingPeakCombined": "Peak combined",
+  "@drivingPeakCombined": {
+    "description": "Row of the G-G table."
+  },
+  "drivingSamples": "Samples",
+  "@drivingSamples": {
+    "description": "Row of the G-G table: the number of G pairs."
+  },
+  "drivingGgNote": "Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap's peaks.",
+  "@drivingGgNote": {
+    "description": "Under the G-G diagram."
+  },
+  "drivingGgAccelerating": "accelerating",
+  "@drivingGgAccelerating": {
+    "description": "Top of the G-G diagram."
+  },
+  "drivingGgBraking": "braking",
+  "@drivingGgBraking": {
+    "description": "Bottom of the G-G diagram."
+  },
+  "drivingGgLeft": "left",
+  "@drivingGgLeft": {
+    "description": "Left of the G-G diagram."
+  },
+  "drivingGgRight": "right",
+  "@drivingGgRight": {
+    "description": "Right of the G-G diagram."
+  },
+  "drivingStripLabel": "Lap {lap} along the track",
+  "@drivingStripLabel": {
+    "description": "Screen reader label of a driving-state strip.",
+    "placeholders": {
+      "lap": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "drivingStripHint": "Tap to move the cursor there",
+  "@drivingStripHint": {
+    "description": "Screen reader hint of a driving-state strip."
+  },
+  "drivingStatesTitle": "Driving states",
+  "@drivingStatesTitle": {
+    "description": "Title of the driving-state panel."
+  },
+  "drivingBraking": "Braking",
+  "@drivingBraking": {
+    "description": "Driving state."
+  },
+  "drivingTrailBraking": "Braking while cornering",
+  "@drivingTrailBraking": {
+    "description": "Driving state."
+  },
+  "drivingCornering": "Cornering",
+  "@drivingCornering": {
+    "description": "Driving state."
+  },
+  "drivingAccelerating": "Accelerating",
+  "@drivingAccelerating": {
+    "description": "Driving state."
+  },
+  "drivingCoasting": "Coasting",
+  "@drivingCoasting": {
+    "description": "Driving state, and title of the comparison's coasting panel."
+  },
+  "drivingStatesNote": "Each lap's share of its own time over this stretch. States overlap: cornering can come with braking, accelerating or coasting. Tap a strip to move the cursor there. Longer braking while cornering is not automatically better or safer.",
+  "@drivingStatesNote": {
+    "description": "Under the driving-state table."
   }
 }

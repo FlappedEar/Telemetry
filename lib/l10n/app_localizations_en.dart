@@ -2355,4 +2355,509 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskStoppedUnexpectedly => 'The work stopped unexpectedly.';
+
+  @override
+  String get lapPageChannels => 'Channels';
+
+  @override
+  String get lapPageCursorHintTouch =>
+      'Tap a chart or drag sideways across it to move the cursor; the white dot shows it on the map. Two fingers zoom and move the map.';
+
+  @override
+  String get lapPageCursorHint =>
+      'Drag across a chart to move the cursor; the white dot shows it on the map.';
+
+  @override
+  String get lapPageNoChannel => 'No channel shown.';
+
+  @override
+  String get lapPageBestOfDay => 'Best lap of the day';
+
+  @override
+  String lapPageToBestOfDay(String delta, String lap) {
+    return '$delta to the best of the day ($lap)';
+  }
+
+  @override
+  String lapPageBestOfSession(String session) {
+    return 'Best lap of $session';
+  }
+
+  @override
+  String lapPageNotRankedExcluded(String reason) {
+    return 'Not ranked: excluded (“$reason”)';
+  }
+
+  @override
+  String get lapPageExclude => 'Exclude from ranking…';
+
+  @override
+  String get lapPageInclude => 'Include in ranking';
+
+  @override
+  String get lapPageCompareWith => 'Compare with…';
+
+  @override
+  String get lapPageNoGps => 'No GPS recorded for this section.';
+
+  @override
+  String lapPageTraceLabel(String lap) {
+    return 'Trace of $lap, coloured by speed';
+  }
+
+  @override
+  String get lapPageSpeed => 'Speed';
+
+  @override
+  String lapPageShowBest(String lap) {
+    return 'Show the best lap ($lap) in grey';
+  }
+
+  @override
+  String get lapPageExcludeTitle => 'Exclude this lap';
+
+  @override
+  String get lapPageReason => 'Reason';
+
+  @override
+  String get lapPageReasonHint => 'Traffic, yellow flag…';
+
+  @override
+  String get lapPageExcludeAction => 'Exclude';
+
+  @override
+  String get compareTitle => 'Compare laps';
+
+  @override
+  String get compareLayerNotRecordedEither => 'Not recorded on either lap.';
+
+  @override
+  String compareLayerNotRecordedOn(String lap) {
+    return 'Not recorded on lap $lap.';
+  }
+
+  @override
+  String compareLayerNoSamples(String lap) {
+    return 'No usable samples on lap $lap.';
+  }
+
+  @override
+  String get compareNoSharedPosition =>
+      'No shared track position for this pair.';
+
+  @override
+  String compareLapDelta(String delta) {
+    return 'Lap Δ $delta';
+  }
+
+  @override
+  String get compareDeltaExplained => 'Δ is A − B: positive when A is behind.';
+
+  @override
+  String get compareSwap => 'Swap A and B';
+
+  @override
+  String compareBestOfSessionAsB(String session) {
+    return 'B: best of $session';
+  }
+
+  @override
+  String get compareBestOfDayAsB => 'B: best of the day';
+
+  @override
+  String get compareLayerLine => 'Line: A / B';
+
+  @override
+  String compareLayerOptionNotRecorded(String layer) {
+    return '$layer · not recorded';
+  }
+
+  @override
+  String get compareLayerSpeed => 'Speed';
+
+  @override
+  String get compareLayerDelta => 'Δ time (A−B)';
+
+  @override
+  String get compareLayerLateralG => 'Lateral G';
+
+  @override
+  String get compareLayerLongitudinalG => 'Longitudinal G';
+
+  @override
+  String get compareLayerThrottle => 'Throttle';
+
+  @override
+  String get compareLayerBrake => 'Brake (measured)';
+
+  @override
+  String get compareLayerTemperature => 'Temperature';
+
+  @override
+  String get compareLayerAAhead => 'A ahead';
+
+  @override
+  String get compareLayerABehind => 'A behind';
+
+  @override
+  String get compareLayerBraking => 'braking';
+
+  @override
+  String get compareLayerAccelerating => 'accelerating';
+
+  @override
+  String compareLegendLap(String layer, String lap) {
+    return '$layer · lap $lap';
+  }
+
+  @override
+  String get compareLegendCalculated => 'calculated';
+
+  @override
+  String get compareChannelsByPosition => 'Channels by track position';
+
+  @override
+  String get compareCursorHintTouch =>
+      'Both laps at the same place on the track. Tap a chart or drag sideways across it to move the cursor; the dots show both laps on the map, which two fingers zoom and move.';
+
+  @override
+  String get compareCursorHint =>
+      'Both laps at the same place on the track. Drag across a chart to move the cursor; the dots show both laps on the map.';
+
+  @override
+  String get compareDeltaChart => 'Δ time (A − B)';
+
+  @override
+  String get compareDeltaNote => '+ = A behind';
+
+  @override
+  String compareOpenLapHere(String lap) {
+    return 'Open lap $lap here';
+  }
+
+  @override
+  String get compareDisclaimer =>
+      'Observed differences between two laps, not instructions.';
+
+  @override
+  String get compareRecordingsUnavailable =>
+      'The recordings of these laps are not available.';
+
+  @override
+  String get compareNoGps => 'No GPS data in this section';
+
+  @override
+  String get compareMapLabel => 'Laps A and B on one map';
+
+  @override
+  String get chartReasonNotRecorded => 'not recorded';
+
+  @override
+  String get chartReasonInvalidRange => 'range not valid';
+
+  @override
+  String get chartReasonUnreadable => 'could not be read';
+
+  @override
+  String get chartNoDataInRange => 'no data in this range';
+
+  @override
+  String get chartNoData => 'No data in this range';
+
+  @override
+  String chartNotAvailable(String reasons) {
+    return 'Not available · $reasons';
+  }
+
+  @override
+  String get chartBrakingUp => 'braking drawn upward';
+
+  @override
+  String chartRemove(String channel) {
+    return 'Remove $channel';
+  }
+
+  @override
+  String chartSemantics(String channel) {
+    return '$channel chart';
+  }
+
+  @override
+  String get chartZoomOut => 'Zoom out';
+
+  @override
+  String get chartZoomIn => 'Zoom in around the cursor';
+
+  @override
+  String get chartWholeLap => 'Whole lap';
+
+  @override
+  String chartAtMost(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'At most $count charts',
+      one: 'At most 1 chart',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chartAddChannel => 'Add a channel';
+
+  @override
+  String get coastingTitle => 'Coasting';
+
+  @override
+  String get coastingBySegment => 'By segment';
+
+  @override
+  String get coastingBySegmentLoading =>
+      'Coasting by segment follows once the day\'s segments are calculated…';
+
+  @override
+  String get coastingBySegmentNeedsSegments =>
+      'Coasting by segment needs this lap\'s group to have segments.';
+
+  @override
+  String get coastingEpisodes => 'Episodes · select one to see it';
+
+  @override
+  String coastingIntoLap(String seconds) {
+    return '$seconds s into the lap';
+  }
+
+  @override
+  String get drivingGgNoLongitudinal => 'No longitudinal G recorded';
+
+  @override
+  String get drivingGgNoLateral => 'No lateral G recorded';
+
+  @override
+  String get drivingGgUnsupportedUnit => 'G in an unsupported unit';
+
+  @override
+  String get drivingGgNoSamples => 'No samples in this stretch';
+
+  @override
+  String get drivingNoCoverage => 'Does not cover this stretch';
+
+  @override
+  String get drivingNotAvailable => 'Not available';
+
+  @override
+  String get drivingMeasured => 'measured';
+
+  @override
+  String get drivingCalculatedFromGps => 'calculated from GPS';
+
+  @override
+  String get drivingInferred => 'inferred';
+
+  @override
+  String get drivingUnexpectedUnit => 'unexpected unit';
+
+  @override
+  String get drivingNotRecorded => 'not recorded';
+
+  @override
+  String get drivingPedalsUnknown => 'pedals unknown';
+
+  @override
+  String get drivingNoSpeed => 'no speed';
+
+  @override
+  String get drivingBrakeMeasuredLateralGps =>
+      'brake measured, lateral G from GPS';
+
+  @override
+  String drivingUnexpectedUnitChannel(String channel) {
+    return '$channel is in an unexpected unit';
+  }
+
+  @override
+  String get drivingNoBrakeChannel => 'no brake channel';
+
+  @override
+  String get drivingNoAcceleratorChannel => 'no accelerator channel';
+
+  @override
+  String get drivingBrakeRecorded => 'brake pedal recorded';
+
+  @override
+  String get drivingBrakingInferred =>
+      'braking inferred from deceleration (no brake channel)';
+
+  @override
+  String get drivingAcceleratorRecorded => 'accelerator pedal recorded';
+
+  @override
+  String get drivingAcceleratingInferred =>
+      'accelerating inferred from longitudinal G (no accelerator channel)';
+
+  @override
+  String get drivingLateralMeasured => 'lateral G measured';
+
+  @override
+  String get drivingLateralCalculated =>
+      'lateral G calculated from GPS by the logger';
+
+  @override
+  String get drivingNoLateral => 'no lateral G';
+
+  @override
+  String get drivingCoastingMeasured =>
+      'Measured: from the recorded brake and accelerator pedals.';
+
+  @override
+  String get drivingCoastingInferred =>
+      'Inferred from longitudinal G: this recording has no brake or no accelerator pedal channel.';
+
+  @override
+  String get drivingCoastingNoPedals =>
+      'Cannot be told: the recording has neither pedal channels nor longitudinal G.';
+
+  @override
+  String get drivingCoastingNoSpeed =>
+      'Cannot be told: the recording has no speed.';
+
+  @override
+  String get drivingCoastingUnitMismatch =>
+      'Cannot be told: a pedal or speed channel is in an unexpected unit.';
+
+  @override
+  String get drivingCoastingUnavailable =>
+      'Coasting is not available for this stretch.';
+
+  @override
+  String drivingCoastingSummaryLap(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count episodes',
+      one: '1 episode',
+    );
+    return '$seconds s · $meters m over $_temp0 ($share % of the lap)';
+  }
+
+  @override
+  String drivingCoastingSummaryStretch(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count episodes',
+      one: '1 episode',
+    );
+    return '$seconds s · $meters m over $_temp0 ($share % of the stretch)';
+  }
+
+  @override
+  String get drivingCoastingNote =>
+      'Coasting is time at speed with neither pedal pressed. It is not a mistake by itself: a lift can settle the car or be forced by traffic.';
+
+  @override
+  String get drivingCoastingEpisodesHint =>
+      'Each episode is listed by where it starts on the track; select one to move the cursor there.';
+
+  @override
+  String drivingSelectedStretch(String meters) {
+    return 'Selected stretch · $meters m';
+  }
+
+  @override
+  String get drivingWholeLap => 'Whole lap';
+
+  @override
+  String get drivingGgCalculated => 'calculated from GPS by the logger';
+
+  @override
+  String drivingGgSource(
+    String lap,
+    String longitudinal,
+    String lateral,
+    String provenance,
+  ) {
+    return '$lap: $longitudinal / $lateral, $provenance';
+  }
+
+  @override
+  String drivingLap(String lap) {
+    return 'Lap $lap';
+  }
+
+  @override
+  String drivingGgSemantics(String a, String b) {
+    return 'G-G diagram of laps A and B: peak combined $a and $b';
+  }
+
+  @override
+  String get drivingPeakLateral => 'Peak lateral';
+
+  @override
+  String get drivingPeakBraking => 'Peak braking';
+
+  @override
+  String get drivingPeakAccelerating => 'Peak accelerating';
+
+  @override
+  String get drivingPeakCombined => 'Peak combined';
+
+  @override
+  String get drivingSamples => 'Samples';
+
+  @override
+  String get drivingGgNote =>
+      'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.';
+
+  @override
+  String get drivingGgAccelerating => 'accelerating';
+
+  @override
+  String get drivingGgBraking => 'braking';
+
+  @override
+  String get drivingGgLeft => 'left';
+
+  @override
+  String get drivingGgRight => 'right';
+
+  @override
+  String drivingStripLabel(String lap) {
+    return 'Lap $lap along the track';
+  }
+
+  @override
+  String get drivingStripHint => 'Tap to move the cursor there';
+
+  @override
+  String get drivingStatesTitle => 'Driving states';
+
+  @override
+  String get drivingBraking => 'Braking';
+
+  @override
+  String get drivingTrailBraking => 'Braking while cornering';
+
+  @override
+  String get drivingCornering => 'Cornering';
+
+  @override
+  String get drivingAccelerating => 'Accelerating';
+
+  @override
+  String get drivingCoasting => 'Coasting';
+
+  @override
+  String get drivingStatesNote =>
+      'Each lap\'s share of its own time over this stretch. States overlap: cornering can come with braking, accelerating or coasting. Tap a strip to move the cursor there. Longer braking while cornering is not automatically better or safer.';
 }

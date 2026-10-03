@@ -3487,6 +3487,819 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The work stopped unexpectedly.'**
   String get taskStoppedUnexpectedly;
+
+  /// Heading of the charts on a lap page.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get lapPageChannels;
+
+  /// How to move the cursor of a lap page on a touch screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a chart or drag sideways across it to move the cursor; the white dot shows it on the map. Two fingers zoom and move the map.'**
+  String get lapPageCursorHintTouch;
+
+  /// How to move the cursor of a lap page with a mouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag across a chart to move the cursor; the white dot shows it on the map.'**
+  String get lapPageCursorHint;
+
+  /// A lap page whose charts were all removed.
+  ///
+  /// In en, this message translates to:
+  /// **'No channel shown.'**
+  String get lapPageNoChannel;
+
+  /// Under the time of the day's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap of the day'**
+  String get lapPageBestOfDay;
+
+  /// How far a lap is from the best lap of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'{delta} to the best of the day ({lap})'**
+  String lapPageToBestOfDay(String delta, String lap);
+
+  /// Under the time of a session's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap of {session}'**
+  String lapPageBestOfSession(String session);
+
+  /// A lap the user excluded from the ranking, with the reason they gave.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ranked: excluded (“{reason}”)'**
+  String lapPageNotRankedExcluded(String reason);
+
+  /// Button that asks why to exclude the lap from the ranking.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude from ranking…'**
+  String get lapPageExclude;
+
+  /// Button that puts an excluded lap back in the ranking.
+  ///
+  /// In en, this message translates to:
+  /// **'Include in ranking'**
+  String get lapPageInclude;
+
+  /// Button that asks for a lap to compare this one with.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with…'**
+  String get lapPageCompareWith;
+
+  /// A lap section without GPS, in place of its map.
+  ///
+  /// In en, this message translates to:
+  /// **'No GPS recorded for this section.'**
+  String get lapPageNoGps;
+
+  /// Screen reader label of a lap's map.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace of {lap}, coloured by speed'**
+  String lapPageTraceLabel(String lap);
+
+  /// Label of the speed colour legend under the map.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get lapPageSpeed;
+
+  /// Switch that draws the best lap under this one.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the best lap ({lap}) in grey'**
+  String lapPageShowBest(String lap);
+
+  /// Title of the dialog that excludes a lap from the ranking.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude this lap'**
+  String get lapPageExcludeTitle;
+
+  /// Field for why a lap is excluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get lapPageReason;
+
+  /// Example reasons in the empty reason field.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic, yellow flag…'**
+  String get lapPageReasonHint;
+
+  /// Button that excludes the lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude'**
+  String get lapPageExcludeAction;
+
+  /// Title of the page comparing two laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare laps'**
+  String get compareTitle;
+
+  /// A map layer neither lap recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded on either lap.'**
+  String get compareLayerNotRecordedEither;
+
+  /// A map layer the lap shown did not record; lap is A or B.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded on lap {lap}.'**
+  String compareLayerNotRecordedOn(String lap);
+
+  /// A map layer without usable values; lap is A or B.
+  ///
+  /// In en, this message translates to:
+  /// **'No usable samples on lap {lap}.'**
+  String compareLayerNoSamples(String lap);
+
+  /// Two laps that cannot be placed on one track axis.
+  ///
+  /// In en, this message translates to:
+  /// **'No shared track position for this pair.'**
+  String get compareNoSharedPosition;
+
+  /// Difference of the two lap times, A − B.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap Δ {delta}'**
+  String compareLapDelta(String delta);
+
+  /// How to read the differences.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ is A − B: positive when A is behind.'**
+  String get compareDeltaExplained;
+
+  /// Button that swaps the two laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap A and B'**
+  String get compareSwap;
+
+  /// Button that makes B the best lap of A's session.
+  ///
+  /// In en, this message translates to:
+  /// **'B: best of {session}'**
+  String compareBestOfSessionAsB(String session);
+
+  /// Button that makes B the best lap of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'B: best of the day'**
+  String get compareBestOfDayAsB;
+
+  /// Map layer choice that draws both laps in their colours.
+  ///
+  /// In en, this message translates to:
+  /// **'Line: A / B'**
+  String get compareLayerLine;
+
+  /// A map layer choice neither lap recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'{layer} · not recorded'**
+  String compareLayerOptionNotRecorded(String layer);
+
+  /// Map layer: speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get compareLayerSpeed;
+
+  /// Map layer: the time difference.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ time (A−B)'**
+  String get compareLayerDelta;
+
+  /// Map layer: lateral acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Lateral G'**
+  String get compareLayerLateralG;
+
+  /// Map layer: longitudinal acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitudinal G'**
+  String get compareLayerLongitudinalG;
+
+  /// Map layer: throttle.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle'**
+  String get compareLayerThrottle;
+
+  /// Map layer: the recorded brake.
+  ///
+  /// In en, this message translates to:
+  /// **'Brake (measured)'**
+  String get compareLayerBrake;
+
+  /// Map layer: a temperature, when neither lap recorded one.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get compareLayerTemperature;
+
+  /// Negative end of the time difference colour scale.
+  ///
+  /// In en, this message translates to:
+  /// **'A ahead'**
+  String get compareLayerAAhead;
+
+  /// Positive end of the time difference colour scale.
+  ///
+  /// In en, this message translates to:
+  /// **'A behind'**
+  String get compareLayerABehind;
+
+  /// Negative end of the longitudinal G colour scale.
+  ///
+  /// In en, this message translates to:
+  /// **'braking'**
+  String get compareLayerBraking;
+
+  /// Positive end of the longitudinal G colour scale.
+  ///
+  /// In en, this message translates to:
+  /// **'accelerating'**
+  String get compareLayerAccelerating;
+
+  /// Which lap the map layer colours; lap is A or B.
+  ///
+  /// In en, this message translates to:
+  /// **'{layer} · lap {lap}'**
+  String compareLegendLap(String layer, String lap);
+
+  /// A map layer calculated rather than recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'calculated'**
+  String get compareLegendCalculated;
+
+  /// Heading of the comparison charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels by track position'**
+  String get compareChannelsByPosition;
+
+  /// How to read and move the comparison charts on a touch screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Both laps at the same place on the track. Tap a chart or drag sideways across it to move the cursor; the dots show both laps on the map, which two fingers zoom and move.'**
+  String get compareCursorHintTouch;
+
+  /// How to read and move the comparison charts with a mouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Both laps at the same place on the track. Drag across a chart to move the cursor; the dots show both laps on the map.'**
+  String get compareCursorHint;
+
+  /// Title of the time difference chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ time (A − B)'**
+  String get compareDeltaChart;
+
+  /// How to read the time difference chart.
+  ///
+  /// In en, this message translates to:
+  /// **'+ = A behind'**
+  String get compareDeltaNote;
+
+  /// Button that opens lap A or B at the cursor.
+  ///
+  /// In en, this message translates to:
+  /// **'Open lap {lap} here'**
+  String compareOpenLapHere(String lap);
+
+  /// Note at the end of the comparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed differences between two laps, not instructions.'**
+  String get compareDisclaimer;
+
+  /// The laps' recordings could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'The recordings of these laps are not available.'**
+  String get compareRecordingsUnavailable;
+
+  /// A comparison map without GPS.
+  ///
+  /// In en, this message translates to:
+  /// **'No GPS data in this section'**
+  String get compareNoGps;
+
+  /// Screen reader label of the comparison map.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps A and B on one map'**
+  String get compareMapLabel;
+
+  /// Why a chart line is missing: the channel is not recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'not recorded'**
+  String get chartReasonNotRecorded;
+
+  /// Why a chart line is missing: the range is not valid.
+  ///
+  /// In en, this message translates to:
+  /// **'range not valid'**
+  String get chartReasonInvalidRange;
+
+  /// Why a chart line is missing: the channel could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'could not be read'**
+  String get chartReasonUnreadable;
+
+  /// A chart line without data in the range shown (inside a list).
+  ///
+  /// In en, this message translates to:
+  /// **'no data in this range'**
+  String get chartNoDataInRange;
+
+  /// A chart without data in the range shown.
+  ///
+  /// In en, this message translates to:
+  /// **'No data in this range'**
+  String get chartNoData;
+
+  /// A chart whose lines failed, with why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available · {reasons}'**
+  String chartNotAvailable(String reasons);
+
+  /// A chart of longitudinal G drawn with braking up.
+  ///
+  /// In en, this message translates to:
+  /// **'braking drawn upward'**
+  String get chartBrakingUp;
+
+  /// Tooltip of the button that removes a chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {channel}'**
+  String chartRemove(String channel);
+
+  /// Screen reader label of a chart.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} chart'**
+  String chartSemantics(String channel);
+
+  /// Tooltip of the zoom out button of the charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get chartZoomOut;
+
+  /// Tooltip of the zoom in button of the charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in around the cursor'**
+  String get chartZoomIn;
+
+  /// Tooltip of the button that shows the whole lap in the charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole lap'**
+  String get chartWholeLap;
+
+  /// No more charts can be added.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{At most 1 chart} other{At most {count} charts}}'**
+  String chartAtMost(int count);
+
+  /// Button that adds a chart of a channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a channel'**
+  String get chartAddChannel;
+
+  /// Title of a lap's coasting panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coasting'**
+  String get coastingTitle;
+
+  /// Heading of a lap's coasting by segment.
+  ///
+  /// In en, this message translates to:
+  /// **'By segment'**
+  String get coastingBySegment;
+
+  /// The day's segments are being calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Coasting by segment follows once the day\'s segments are calculated…'**
+  String get coastingBySegmentLoading;
+
+  /// The lap's group has no segments.
+  ///
+  /// In en, this message translates to:
+  /// **'Coasting by segment needs this lap\'s group to have segments.'**
+  String get coastingBySegmentNeedsSegments;
+
+  /// Heading of a lap's coasting episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes · select one to see it'**
+  String get coastingEpisodes;
+
+  /// Where an episode starts, outside any segment.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s into the lap'**
+  String coastingIntoLap(String seconds);
+
+  /// Why a lap has no G-G.
+  ///
+  /// In en, this message translates to:
+  /// **'No longitudinal G recorded'**
+  String get drivingGgNoLongitudinal;
+
+  /// Why a lap has no G-G.
+  ///
+  /// In en, this message translates to:
+  /// **'No lateral G recorded'**
+  String get drivingGgNoLateral;
+
+  /// Why a lap has no G-G.
+  ///
+  /// In en, this message translates to:
+  /// **'G in an unsupported unit'**
+  String get drivingGgUnsupportedUnit;
+
+  /// Why a lap has no G-G.
+  ///
+  /// In en, this message translates to:
+  /// **'No samples in this stretch'**
+  String get drivingGgNoSamples;
+
+  /// Why a lap has no driving states.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not cover this stretch'**
+  String get drivingNoCoverage;
+
+  /// A lap without driving states or coasting.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get drivingNotAvailable;
+
+  /// How a driving state was obtained.
+  ///
+  /// In en, this message translates to:
+  /// **'measured'**
+  String get drivingMeasured;
+
+  /// How a driving state was obtained.
+  ///
+  /// In en, this message translates to:
+  /// **'calculated from GPS'**
+  String get drivingCalculatedFromGps;
+
+  /// How a driving state was obtained.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred'**
+  String get drivingInferred;
+
+  /// Why a driving state is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unexpected unit'**
+  String get drivingUnexpectedUnit;
+
+  /// Why a driving state is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'not recorded'**
+  String get drivingNotRecorded;
+
+  /// Why a driving state is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'pedals unknown'**
+  String get drivingPedalsUnknown;
+
+  /// Why a driving state is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'no speed'**
+  String get drivingNoSpeed;
+
+  /// How braking while cornering was obtained.
+  ///
+  /// In en, this message translates to:
+  /// **'brake measured, lateral G from GPS'**
+  String get drivingBrakeMeasuredLateralGps;
+
+  /// A pedal channel in an unexpected unit.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} is in an unexpected unit'**
+  String drivingUnexpectedUnitChannel(String channel);
+
+  /// A lap without a brake pedal channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no brake channel'**
+  String get drivingNoBrakeChannel;
+
+  /// A lap without an accelerator pedal channel.
+  ///
+  /// In en, this message translates to:
+  /// **'no accelerator channel'**
+  String get drivingNoAcceleratorChannel;
+
+  /// Where a lap's braking comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'brake pedal recorded'**
+  String get drivingBrakeRecorded;
+
+  /// Where a lap's braking comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'braking inferred from deceleration (no brake channel)'**
+  String get drivingBrakingInferred;
+
+  /// Where a lap's accelerating comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'accelerator pedal recorded'**
+  String get drivingAcceleratorRecorded;
+
+  /// Where a lap's accelerating comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'accelerating inferred from longitudinal G (no accelerator channel)'**
+  String get drivingAcceleratingInferred;
+
+  /// Where a lap's cornering comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'lateral G measured'**
+  String get drivingLateralMeasured;
+
+  /// Where a lap's cornering comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'lateral G calculated from GPS by the logger'**
+  String get drivingLateralCalculated;
+
+  /// Where a lap's cornering comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'no lateral G'**
+  String get drivingNoLateral;
+
+  /// Where a lap's coasting comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured: from the recorded brake and accelerator pedals.'**
+  String get drivingCoastingMeasured;
+
+  /// Where a lap's coasting comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from longitudinal G: this recording has no brake or no accelerator pedal channel.'**
+  String get drivingCoastingInferred;
+
+  /// Why a lap's coasting is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot be told: the recording has neither pedal channels nor longitudinal G.'**
+  String get drivingCoastingNoPedals;
+
+  /// Why a lap's coasting is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot be told: the recording has no speed.'**
+  String get drivingCoastingNoSpeed;
+
+  /// Why a lap's coasting is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot be told: a pedal or speed channel is in an unexpected unit.'**
+  String get drivingCoastingUnitMismatch;
+
+  /// Why a lap's coasting is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Coasting is not available for this stretch.'**
+  String get drivingCoastingUnavailable;
+
+  /// A lap's coasting: its time, distance, episodes and share of the lap time.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)'**
+  String drivingCoastingSummaryLap(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  );
+
+  /// A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)'**
+  String drivingCoastingSummaryStretch(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  );
+
+  /// Coasting is an observation, never a verdict.
+  ///
+  /// In en, this message translates to:
+  /// **'Coasting is time at speed with neither pedal pressed. It is not a mistake by itself: a lift can settle the car or be forced by traffic.'**
+  String get drivingCoastingNote;
+
+  /// Under the comparison's coasting episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Each episode is listed by where it starts on the track; select one to move the cursor there.'**
+  String get drivingCoastingEpisodesHint;
+
+  /// The zoomed stretch a panel covers, with its length.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected stretch · {meters} m'**
+  String drivingSelectedStretch(String meters);
+
+  /// A panel covers the whole lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole lap'**
+  String get drivingWholeLap;
+
+  /// G channels the logger calculated from GPS.
+  ///
+  /// In en, this message translates to:
+  /// **'calculated from GPS by the logger'**
+  String get drivingGgCalculated;
+
+  /// The G channels of lap A or B and how they were obtained.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap}: {longitudinal} / {lateral}, {provenance}'**
+  String drivingGgSource(
+    String lap,
+    String longitudinal,
+    String lateral,
+    String provenance,
+  );
+
+  /// Legend entry of lap A or B.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap {lap}'**
+  String drivingLap(String lap);
+
+  /// Screen reader label of the G-G diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'G-G diagram of laps A and B: peak combined {a} and {b}'**
+  String drivingGgSemantics(String a, String b);
+
+  /// Row of the G-G table.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak lateral'**
+  String get drivingPeakLateral;
+
+  /// Row of the G-G table.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak braking'**
+  String get drivingPeakBraking;
+
+  /// Row of the G-G table.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak accelerating'**
+  String get drivingPeakAccelerating;
+
+  /// Row of the G-G table.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak combined'**
+  String get drivingPeakCombined;
+
+  /// Row of the G-G table: the number of G pairs.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples'**
+  String get drivingSamples;
+
+  /// Under the G-G diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.'**
+  String get drivingGgNote;
+
+  /// Top of the G-G diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'accelerating'**
+  String get drivingGgAccelerating;
+
+  /// Bottom of the G-G diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'braking'**
+  String get drivingGgBraking;
+
+  /// Left of the G-G diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'left'**
+  String get drivingGgLeft;
+
+  /// Right of the G-G diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'right'**
+  String get drivingGgRight;
+
+  /// Screen reader label of a driving-state strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap {lap} along the track'**
+  String drivingStripLabel(String lap);
+
+  /// Screen reader hint of a driving-state strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to move the cursor there'**
+  String get drivingStripHint;
+
+  /// Title of the driving-state panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving states'**
+  String get drivingStatesTitle;
+
+  /// Driving state.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get drivingBraking;
+
+  /// Driving state.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking while cornering'**
+  String get drivingTrailBraking;
+
+  /// Driving state.
+  ///
+  /// In en, this message translates to:
+  /// **'Cornering'**
+  String get drivingCornering;
+
+  /// Driving state.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating'**
+  String get drivingAccelerating;
+
+  /// Driving state, and title of the comparison's coasting panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coasting'**
+  String get drivingCoasting;
+
+  /// Under the driving-state table.
+  ///
+  /// In en, this message translates to:
+  /// **'Each lap\'s share of its own time over this stretch. States overlap: cornering can come with braking, accelerating or coasting. Tap a strip to move the cursor there. Longer braking while cornering is not automatically better or safer.'**
+  String get drivingStatesNote;
 }
 
 class _AppLocalizationsDelegate

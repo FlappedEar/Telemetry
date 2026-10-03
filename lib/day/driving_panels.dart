@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../l10n.dart';
 import 'comparison_page.dart' show ComparisonPanelBuilder;
 import 'touch.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
@@ -39,55 +40,65 @@ const Color trailBrakingStateColor = Color(0xFF8E24AA);
 const Color inferredColor = Color(0xFFE09A1F);
 
 /// Why a lap has no G-G, in words.
-String ggReasonText(String reason) => switch (reason) {
-  ggMissingLongitudinal => 'No longitudinal G recorded',
-  ggMissingLateral => 'No lateral G recorded',
-  ggUnsupportedUnit => 'G in an unsupported unit',
-  ggNoOverlap => 'No samples in this stretch',
-  drivingIncompleteCoverage => 'Does not cover this stretch',
-  _ => 'Not available',
+String ggReasonText(AppLocalizations l10n, String reason) => switch (reason) {
+  ggMissingLongitudinal => l10n.drivingGgNoLongitudinal,
+  ggMissingLateral => l10n.drivingGgNoLateral,
+  ggUnsupportedUnit => l10n.drivingGgUnsupportedUnit,
+  ggNoOverlap => l10n.drivingGgNoSamples,
+  drivingIncompleteCoverage => l10n.drivingNoCoverage,
+  _ => l10n.drivingNotAvailable,
 };
 
 /// How a state was obtained, as a short label: "measured", "calculated
 /// from GPS", "inferred" or why it is unknown.
-String provenanceLabel(DrivingStateTrack track) => switch (track.provenance) {
-  drivingStateMeasured => 'measured',
-  drivingStateCalculated => 'calculated from GPS',
-  drivingStateInferred => 'inferred',
-  _ => switch (track.unresolvedReason) {
-    'unitMismatch' => 'unexpected unit',
-    'inferenceDisabled' => 'not recorded',
-    'pedalStateUnknown' => 'pedals unknown',
-    'noSpeedChannel' => 'no speed',
-    _ => 'not recorded',
-  },
-};
+String provenanceLabel(AppLocalizations l10n, DrivingStateTrack track) =>
+    switch (track.provenance) {
+      drivingStateMeasured => l10n.drivingMeasured,
+      drivingStateCalculated => l10n.drivingCalculatedFromGps,
+      drivingStateInferred => l10n.drivingInferred,
+      _ => switch (track.unresolvedReason) {
+        'unitMismatch' => l10n.drivingUnexpectedUnit,
+        'inferenceDisabled' => l10n.drivingNotRecorded,
+        'pedalStateUnknown' => l10n.drivingPedalsUnknown,
+        'noSpeedChannel' => l10n.drivingNoSpeed,
+        _ => l10n.drivingNotRecorded,
+      },
+    };
 
 /// Where a lap's pedal states come from, in a sentence.
-String pedalSourceText(DrivingStateClassification states) {
-  String pedal(DrivingStateTrack track, String measured, String inferred) =>
-      switch (track.provenance) {
-        drivingStateMeasured => measured,
-        drivingStateInferred => inferred,
-        _ =>
-          track.unresolvedReason == 'unitMismatch'
-              ? '${track.channel} is in an unexpected unit'
-              : 'no ${measured.split(' ').first} channel',
-      };
+String pedalSourceText(
+  AppLocalizations l10n,
+  DrivingStateClassification states,
+) {
+  String pedal(
+    DrivingStateTrack track,
+    String measured,
+    String inferred,
+    String none,
+  ) => switch (track.provenance) {
+    drivingStateMeasured => measured,
+    drivingStateInferred => inferred,
+    _ =>
+      track.unresolvedReason == 'unitMismatch'
+          ? l10n.drivingUnexpectedUnitChannel(track.channel)
+          : none,
+  };
   final braking = pedal(
     states.braking,
-    'brake pedal recorded',
-    'braking inferred from deceleration (no brake channel)',
+    l10n.drivingBrakeRecorded,
+    l10n.drivingBrakingInferred,
+    l10n.drivingNoBrakeChannel,
   );
   final accelerating = pedal(
     states.accelerating,
-    'accelerator pedal recorded',
-    'accelerating inferred from longitudinal G (no accelerator channel)',
+    l10n.drivingAcceleratorRecorded,
+    l10n.drivingAcceleratingInferred,
+    l10n.drivingNoAcceleratorChannel,
   );
   final cornering = switch (states.cornering.provenance) {
-    drivingStateMeasured => 'lateral G measured',
-    drivingStateCalculated => 'lateral G calculated from GPS by the logger',
-    _ => 'no lateral G',
+    drivingStateMeasured => l10n.drivingLateralMeasured,
+    drivingStateCalculated => l10n.drivingLateralCalculated,
+    _ => l10n.drivingNoLateral,
   };
   return '${braking[0].toUpperCase()}${braking.substring(1)}; '
       '$accelerating; $cornering.';
@@ -95,44 +106,47 @@ String pedalSourceText(DrivingStateClassification states) {
 
 /// Where a lap's coasting comes from, or why it cannot be told (Overlays'
 /// CoastingPanel).
-String coastingProvenanceText(CoastingSummary summary) =>
+String coastingProvenanceText(AppLocalizations l10n, CoastingSummary summary) =>
     switch (summary.provenance) {
-      drivingStateMeasured =>
-        'Measured: from the recorded brake and accelerator pedals.',
-      drivingStateInferred =>
-        'Inferred from longitudinal G: this recording has no brake or no '
-            'accelerator pedal channel.',
+      drivingStateMeasured => l10n.drivingCoastingMeasured,
+      drivingStateInferred => l10n.drivingCoastingInferred,
       _ => switch (summary.unresolvedReason) {
-        'pedalStateUnknown' =>
-          'Cannot be told: the recording has neither pedal channels nor '
-              'longitudinal G.',
-        'noSpeedChannel' => 'Cannot be told: the recording has no speed.',
-        'unitMismatch' =>
-          'Cannot be told: a pedal or speed channel is in an unexpected unit.',
-        _ => 'Coasting is not available for this stretch.',
+        'pedalStateUnknown' => l10n.drivingCoastingNoPedals,
+        'noSpeedChannel' => l10n.drivingCoastingNoSpeed,
+        'unitMismatch' => l10n.drivingCoastingUnitMismatch,
+        _ => l10n.drivingCoastingUnavailable,
       },
     };
 
-/// "4.2 s · 128 m over 9 episodes (5.1 % of the lap)".
-String coastingSummaryText(CoastingSummary summary, String of) {
+/// "4.2 s · 128 m over 9 episodes (5.1 % of the lap)", or "of the
+/// stretch" for a [stretch].
+String coastingSummaryText(
+  AppLocalizations l10n,
+  CoastingSummary summary, {
+  bool stretch = false,
+}) {
   final count = summary.episodes.length;
   final share = summary.lapSeconds > 0
       ? 100 * summary.coastingSeconds / summary.lapSeconds
       : 0.0;
-  return '${summary.coastingSeconds.toStringAsFixed(1)} s · '
-      '${summary.coastingMeters.round()} m over $count '
-      '${count == 1 ? 'episode' : 'episodes'} '
-      '(${share.toStringAsFixed(1)} % of $of)';
+  final seconds = summary.coastingSeconds.toStringAsFixed(1);
+  final meters = '${summary.coastingMeters.round()}';
+  final percent = share.toStringAsFixed(1);
+  return stretch
+      ? l10n.drivingCoastingSummaryStretch(seconds, meters, count, percent)
+      : l10n.drivingCoastingSummaryLap(seconds, meters, count, percent);
 }
 
 /// Coasting is an observation, never a verdict.
-const String coastingNote =
-    'Coasting is time at speed with neither pedal pressed. It is not a '
-    'mistake by itself: a lift can settle the car or be forced by traffic.';
+String coastingNote(AppLocalizations l10n) => l10n.drivingCoastingNote;
 
-String _stretchText((double, double) range, ChartWindow window) => window.zoomed
-    ? 'Selected stretch · ${(range.$2 - range.$1).round()} m'
-    : 'Whole lap';
+String _stretchText(
+  AppLocalizations l10n,
+  (double, double) range,
+  ChartWindow window,
+) => window.zoomed
+    ? l10n.drivingSelectedStretch('${(range.$2 - range.$1).round()}')
+    : l10n.drivingWholeLap;
 
 /// A titled card of the comparison page.
 class _PanelCard extends StatelessWidget {
@@ -242,6 +256,7 @@ class _ComparisonGgPanelState
     ComparisonGgScatter scatter,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final laps = scatter.laps;
     String peak(int slot, GgPeak? Function(GgPeaks) pick) {
       if (slot >= laps.length || !laps[slot].valid) return '—';
@@ -254,7 +269,7 @@ class _ComparisonGgPanelState
       final lap = laps[slot];
       return lap.valid
           ? '${lap.peaks.sampleCount}'
-          : ggReasonText(lap.unavailableReason);
+          : ggReasonText(l10n, lap.unavailableReason);
     }
 
     TableRow row(String label, String key, String Function(int) value) =>
@@ -284,21 +299,19 @@ class _ComparisonGgPanelState
           pairs.longitudinalChannel.toLowerCase().endsWith('-calc') ||
           pairs.lateralChannel.toLowerCase().endsWith('-calc');
       sources.add(
-        '${_lapNames[slot]}: ${pairs.longitudinalChannel} / '
-        '${pairs.lateralChannel}, '
-        '${calculated ? 'calculated from GPS by the logger' : 'measured'}'
-        '${pairs.unitsDeclared ? '' : ', units not declared by the recording'}',
+        '${l10n.drivingGgSource(_lapNames[slot], pairs.longitudinalChannel, pairs.lateralChannel, calculated ? l10n.drivingGgCalculated : l10n.drivingMeasured)}'
+        '${pairs.unitsDeclared ? '' : ', ${l10n.channelUnitsNotDeclared}'}',
       );
     }
     return _PanelCard(
       key: const ValueKey('ggPanel'),
       title: 'G-G',
-      subtitle: _stretchText(range, window),
+      subtitle: _stretchText(l10n, range, window),
       children: [
         _Legend(
           entries: [
             for (final slot in const [0, 1])
-              ('Lap ${_lapNames[slot]}', _lapColors[slot]),
+              (l10n.drivingLap(_lapNames[slot]), _lapColors[slot]),
           ],
         ),
         const SizedBox(height: 8),
@@ -309,14 +322,20 @@ class _ComparisonGgPanelState
               child: SizedBox.square(
                 dimension: side,
                 child: Semantics(
-                  label:
-                      'G-G diagram of laps A and B: peak combined '
-                      '${peak(0, (p) => p.combined)} and '
-                      '${peak(1, (p) => p.combined)}',
+                  label: l10n.drivingGgSemantics(
+                    peak(0, (p) => p.combined),
+                    peak(1, (p) => p.combined),
+                  ),
                   child: CustomPaint(
                     key: const ValueKey('ggPlot'),
                     painter: GgPainter(
                       laps: laps,
+                      axisLabels: [
+                        l10n.drivingGgAccelerating,
+                        l10n.drivingGgBraking,
+                        l10n.drivingGgLeft,
+                        l10n.drivingGgRight,
+                      ],
                       gridColor: theme.colorScheme.outlineVariant,
                       labelStyle: theme.textTheme.labelSmall!.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
@@ -349,25 +368,33 @@ class _ComparisonGgPanelState
                   ),
               ],
             ),
-            row('Peak lateral', 'Lateral', (s) => peak(s, (p) => p.lateral)),
-            row('Peak braking', 'Braking', (s) => peak(s, (p) => p.braking)),
             row(
-              'Peak accelerating',
+              l10n.drivingPeakLateral,
+              'Lateral',
+              (s) => peak(s, (p) => p.lateral),
+            ),
+            row(
+              l10n.drivingPeakBraking,
+              'Braking',
+              (s) => peak(s, (p) => p.braking),
+            ),
+            row(
+              l10n.drivingPeakAccelerating,
               'Acceleration',
               (s) => peak(s, (p) => p.acceleration),
             ),
-            row('Peak combined', 'Combined', (s) => peak(s, (p) => p.combined)),
-            row('Samples', 'Samples', samples),
+            row(
+              l10n.drivingPeakCombined,
+              'Combined',
+              (s) => peak(s, (p) => p.combined),
+            ),
+            row(l10n.drivingSamples, 'Samples', samples),
           ],
         ),
         const SizedBox(height: 8),
         for (final source in sources)
           Text(source, style: theme.textTheme.bodySmall),
-        Text(
-          'Observed accelerations, not a share of available grip. Rings '
-          'every 0.5 g; a circle marks each lap\'s peaks.',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(l10n.drivingGgNote, style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -391,9 +418,13 @@ class GgPainter extends CustomPainter {
     required this.laps,
     required this.gridColor,
     required this.labelStyle,
+    this.axisLabels = const ['accelerating', 'braking', 'left', 'right'],
   });
 
   final List<ComparisonGgLap> laps;
+
+  /// The words at the top, bottom, left and right of the diagram.
+  final List<String> axisLabels;
   final Color gridColor;
   final TextStyle labelStyle;
 
@@ -437,10 +468,18 @@ class GgPainter extends CustomPainter {
       painter.paint(canvas, offset);
     }
 
-    label('accelerating', Offset(centre.dx, 0), Alignment.topCenter);
-    label('braking', Offset(centre.dx, size.height), Alignment.bottomCenter);
-    label('left', Offset(0, centre.dy - 2), Alignment.bottomLeft);
-    label('right', Offset(size.width, centre.dy - 2), Alignment.bottomRight);
+    label(axisLabels[0], Offset(centre.dx, 0), Alignment.topCenter);
+    label(
+      axisLabels[1],
+      Offset(centre.dx, size.height),
+      Alignment.bottomCenter,
+    );
+    label(axisLabels[2], Offset(0, centre.dy - 2), Alignment.bottomLeft);
+    label(
+      axisLabels[3],
+      Offset(size.width, centre.dy - 2),
+      Alignment.bottomRight,
+    );
     label(
       '${scale.toStringAsFixed(1)} g',
       Offset(centre.dx + radius * 0.72, centre.dy - radius * 0.72),
@@ -486,6 +525,7 @@ class GgPainter extends CustomPainter {
   @override
   bool shouldRepaint(GgPainter oldDelegate) =>
       !identical(oldDelegate.laps, laps) ||
+      !listEquals(oldDelegate.axisLabels, axisLabels) ||
       oldDelegate.gridColor != gridColor ||
       oldDelegate.labelStyle != labelStyle;
 }
@@ -631,8 +671,8 @@ class _LapStrip extends StatelessWidget {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) => Semantics(
-              label: 'Lap ${_lapNames[slot]} along the track',
-              hint: tappable ? 'Tap to move the cursor there' : null,
+              label: context.l10n.drivingStripLabel(_lapNames[slot]),
+              hint: tappable ? context.l10n.drivingStripHint : null,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTapUp: !tappable
@@ -751,6 +791,7 @@ class _ComparisonDrivingStatesPanelState
     List<LapDrivingStates> laps,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final cursor = cursorFraction(window.cursor, range);
     StripLanes lanes(int slot) {
       final lap = laps[slot];
@@ -791,18 +832,18 @@ class _ComparisonDrivingStatesPanelState
       if (track != null) {
         known = track.isKnown;
         inferred = track.provenance == drivingStateInferred;
-        tag = provenanceLabel(track);
+        tag = provenanceLabel(l10n, track);
       } else {
         // Braking while cornering needs both states.
         known = braking.isKnown && cornering.isKnown;
         inferred = braking.provenance == drivingStateInferred;
         tag = !known
-            ? provenanceLabel(braking.isKnown ? cornering : braking)
+            ? provenanceLabel(l10n, braking.isKnown ? cornering : braking)
             : inferred
-            ? 'inferred'
+            ? l10n.drivingInferred
             : cornering.provenance == drivingStateCalculated
-            ? 'brake measured, lateral G from GPS'
-            : 'measured';
+            ? l10n.drivingBrakeMeasuredLateralGps
+            : l10n.drivingMeasured;
       }
       final seconds = intervalSeconds(intervals);
       final share = lap.seconds > 0 ? 100 * seconds / lap.seconds : 0.0;
@@ -858,8 +899,8 @@ class _ComparisonDrivingStatesPanelState
 
     return _PanelCard(
       key: const ValueKey('drivingStatesPanel'),
-      title: 'Driving states',
-      subtitle: _stretchText(range, window),
+      title: l10n.drivingStatesTitle,
+      subtitle: _stretchText(l10n, range, window),
       children: [
         for (final slot in const [0, 1])
           if (slot < laps.length && laps[slot].valid)
@@ -873,7 +914,7 @@ class _ComparisonDrivingStatesPanelState
             )
           else
             Text(
-              '${_lapNames[slot]}: ${ggReasonText(slot < laps.length ? laps[slot].unavailableReason : '')}',
+              '${_lapNames[slot]}: ${ggReasonText(l10n, slot < laps.length ? laps[slot].unavailableReason : '')}',
               style: theme.textTheme.bodySmall,
             ),
         const SizedBox(height: 8),
@@ -897,28 +938,26 @@ class _ComparisonDrivingStatesPanelState
                   ),
               ],
             ),
-            row('Braking', brakingStateColor, 'braking'),
-            row('Braking while cornering', trailBrakingStateColor, 'trail'),
-            row('Cornering', corneringStateColor, 'cornering'),
-            row('Accelerating', acceleratingStateColor, 'accelerating'),
-            row('Coasting', coastingStateColor, 'coasting'),
+            row(l10n.drivingBraking, brakingStateColor, 'braking'),
+            row(l10n.drivingTrailBraking, trailBrakingStateColor, 'trail'),
+            row(l10n.drivingCornering, corneringStateColor, 'cornering'),
+            row(
+              l10n.drivingAccelerating,
+              acceleratingStateColor,
+              'accelerating',
+            ),
+            row(l10n.drivingCoasting, coastingStateColor, 'coasting'),
           ],
         ),
         const SizedBox(height: 8),
         for (final slot in const [0, 1])
           if (slot < laps.length && laps[slot].valid)
             Text(
-              '${_lapNames[slot]}: ${pedalSourceText(laps[slot].states)}',
+              '${_lapNames[slot]}: ${pedalSourceText(l10n, laps[slot].states)}',
               key: ValueKey('drivingSources ${_lapNames[slot]}'),
               style: theme.textTheme.bodySmall,
             ),
-        Text(
-          'Each lap\'s share of its own time over this stretch. States '
-          'overlap: cornering can come with braking, accelerating or '
-          'coasting. Tap a strip to move the cursor there. Longer braking '
-          'while cornering is not automatically better or safer.',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(l10n.drivingStatesNote, style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -960,12 +999,12 @@ class _ComparisonCoastingPanelState
     List<LapDrivingStates> laps,
   ) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final cursor = cursorFraction(window.cursor, range);
-    final of = window.zoomed ? 'the stretch' : 'the lap';
     return _PanelCard(
       key: const ValueKey('comparisonCoastingPanel'),
-      title: 'Coasting',
-      subtitle: _stretchText(range, window),
+      title: l10n.drivingCoasting,
+      subtitle: _stretchText(l10n, range, window),
       children: [
         for (final slot in const [0, 1]) ...[
           Builder(
@@ -990,10 +1029,14 @@ class _ComparisonCoastingPanelState
                         ),
                         TextSpan(
                           text: known
-                              ? coastingSummaryText(coasting, of)
+                              ? coastingSummaryText(
+                                  l10n,
+                                  coasting,
+                                  stretch: window.zoomed,
+                                )
                               : lap == null || !lap.valid
-                              ? ggReasonText(lap?.unavailableReason ?? '')
-                              : 'Not available',
+                              ? ggReasonText(l10n, lap?.unavailableReason ?? '')
+                              : l10n.drivingNotAvailable,
                         ),
                       ],
                     ),
@@ -1001,7 +1044,7 @@ class _ComparisonCoastingPanelState
                   ),
                   if (lap != null && lap.valid)
                     Text(
-                      coastingProvenanceText(coasting!),
+                      coastingProvenanceText(l10n, coasting!),
                       key: ValueKey('coastingSource ${_lapNames[slot]}'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: coasting.provenance == drivingStateInferred
@@ -1056,8 +1099,7 @@ class _ComparisonCoastingPanelState
           ),
         ],
         Text(
-          '$coastingNote Each episode is listed by where it starts on the '
-          'track; select one to move the cursor there.',
+          '${coastingNote(l10n)} ${l10n.drivingCoastingEpisodesHint}',
           style: theme.textTheme.bodySmall,
         ),
       ],

@@ -2404,4 +2404,512 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get taskStoppedUnexpectedly => 'Praca nieoczekiwanie się przerwała.';
+
+  @override
+  String get lapPageChannels => 'Kanały';
+
+  @override
+  String get lapPageCursorHintTouch =>
+      'Stuknij wykres lub przeciągnij po nim w bok, aby przesunąć kursor; biała kropka pokazuje go na mapie. Dwoma palcami powiększasz i przesuwasz mapę.';
+
+  @override
+  String get lapPageCursorHint =>
+      'Przeciągnij po wykresie, aby przesunąć kursor; biała kropka pokazuje go na mapie.';
+
+  @override
+  String get lapPageNoChannel => 'Nie pokazano żadnego kanału.';
+
+  @override
+  String get lapPageBestOfDay => 'Najlepsze okrążenie dnia';
+
+  @override
+  String lapPageToBestOfDay(String delta, String lap) {
+    return '$delta do najlepszego okrążenia dnia ($lap)';
+  }
+
+  @override
+  String lapPageBestOfSession(String session) {
+    return 'Najlepsze okrążenie – $session';
+  }
+
+  @override
+  String lapPageNotRankedExcluded(String reason) {
+    return 'Niesklasyfikowane: wykluczone („$reason”)';
+  }
+
+  @override
+  String get lapPageExclude => 'Wyklucz z rankingu…';
+
+  @override
+  String get lapPageInclude => 'Przywróć do rankingu';
+
+  @override
+  String get lapPageCompareWith => 'Porównaj z…';
+
+  @override
+  String get lapPageNoGps => 'Brak zapisu GPS dla tego odcinka.';
+
+  @override
+  String lapPageTraceLabel(String lap) {
+    return 'Ślad: $lap, w kolorach prędkości';
+  }
+
+  @override
+  String get lapPageSpeed => 'Prędkość';
+
+  @override
+  String lapPageShowBest(String lap) {
+    return 'Pokaż najlepsze okrążenie ($lap) na szaro';
+  }
+
+  @override
+  String get lapPageExcludeTitle => 'Wyklucz to okrążenie';
+
+  @override
+  String get lapPageReason => 'Powód';
+
+  @override
+  String get lapPageReasonHint => 'Ruch na torze, żółta flaga…';
+
+  @override
+  String get lapPageExcludeAction => 'Wyklucz';
+
+  @override
+  String get compareTitle => 'Porównanie okrążeń';
+
+  @override
+  String get compareLayerNotRecordedEither =>
+      'Nie zapisano na żadnym okrążeniu.';
+
+  @override
+  String compareLayerNotRecordedOn(String lap) {
+    return 'Nie zapisano na okrążeniu $lap.';
+  }
+
+  @override
+  String compareLayerNoSamples(String lap) {
+    return 'Brak użytecznych próbek na okrążeniu $lap.';
+  }
+
+  @override
+  String get compareNoSharedPosition =>
+      'Ta para okrążeń nie ma wspólnej pozycji na torze.';
+
+  @override
+  String compareLapDelta(String delta) {
+    return 'Δ okrążenia $delta';
+  }
+
+  @override
+  String get compareDeltaExplained =>
+      'Δ to A − B: dodatnia, gdy A jest z tyłu.';
+
+  @override
+  String get compareSwap => 'Zamień A i B';
+
+  @override
+  String compareBestOfSessionAsB(String session) {
+    return 'B: najlepsze okrążenie – $session';
+  }
+
+  @override
+  String get compareBestOfDayAsB => 'B: najlepsze z dnia';
+
+  @override
+  String get compareLayerLine => 'Linia: A / B';
+
+  @override
+  String compareLayerOptionNotRecorded(String layer) {
+    return '$layer · nie zapisano';
+  }
+
+  @override
+  String get compareLayerSpeed => 'Prędkość';
+
+  @override
+  String get compareLayerDelta => 'Δ czasu (A−B)';
+
+  @override
+  String get compareLayerLateralG => 'G poprzeczne';
+
+  @override
+  String get compareLayerLongitudinalG => 'G wzdłużne';
+
+  @override
+  String get compareLayerThrottle => 'Gaz';
+
+  @override
+  String get compareLayerBrake => 'Hamulec (zmierzony)';
+
+  @override
+  String get compareLayerTemperature => 'Temperatura';
+
+  @override
+  String get compareLayerAAhead => 'A z przodu';
+
+  @override
+  String get compareLayerABehind => 'A z tyłu';
+
+  @override
+  String get compareLayerBraking => 'hamowanie';
+
+  @override
+  String get compareLayerAccelerating => 'przyspieszanie';
+
+  @override
+  String compareLegendLap(String layer, String lap) {
+    return '$layer · okrążenie $lap';
+  }
+
+  @override
+  String get compareLegendCalculated => 'obliczone';
+
+  @override
+  String get compareChannelsByPosition => 'Kanały według pozycji na torze';
+
+  @override
+  String get compareCursorHintTouch =>
+      'Oba okrążenia w tym samym miejscu toru. Stuknij wykres lub przeciągnij po nim w bok, aby przesunąć kursor; kropki pokazują oba okrążenia na mapie, którą dwoma palcami powiększasz i przesuwasz.';
+
+  @override
+  String get compareCursorHint =>
+      'Oba okrążenia w tym samym miejscu toru. Przeciągnij po wykresie, aby przesunąć kursor; kropki pokazują oba okrążenia na mapie.';
+
+  @override
+  String get compareDeltaChart => 'Δ czasu (A − B)';
+
+  @override
+  String get compareDeltaNote => '+ = A z tyłu';
+
+  @override
+  String compareOpenLapHere(String lap) {
+    return 'Otwórz okrążenie $lap w tym miejscu';
+  }
+
+  @override
+  String get compareDisclaimer =>
+      'Zaobserwowane różnice między dwoma okrążeniami, nie instrukcje.';
+
+  @override
+  String get compareRecordingsUnavailable =>
+      'Nagrania tych okrążeń są niedostępne.';
+
+  @override
+  String get compareNoGps => 'Brak danych GPS na tym odcinku';
+
+  @override
+  String get compareMapLabel => 'Okrążenia A i B na jednej mapie';
+
+  @override
+  String get chartReasonNotRecorded => 'nie zapisano';
+
+  @override
+  String get chartReasonInvalidRange => 'nieprawidłowy zakres';
+
+  @override
+  String get chartReasonUnreadable => 'nie udało się odczytać';
+
+  @override
+  String get chartNoDataInRange => 'brak danych w tym zakresie';
+
+  @override
+  String get chartNoData => 'Brak danych w tym zakresie';
+
+  @override
+  String chartNotAvailable(String reasons) {
+    return 'Niedostępne · $reasons';
+  }
+
+  @override
+  String get chartBrakingUp => 'hamowanie rysowane w górę';
+
+  @override
+  String chartRemove(String channel) {
+    return 'Usuń $channel';
+  }
+
+  @override
+  String chartSemantics(String channel) {
+    return 'Wykres: $channel';
+  }
+
+  @override
+  String get chartZoomOut => 'Pomniejsz';
+
+  @override
+  String get chartZoomIn => 'Powiększ wokół kursora';
+
+  @override
+  String get chartWholeLap => 'Całe okrążenie';
+
+  @override
+  String chartAtMost(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Najwyżej $count wykresów',
+      few: 'Najwyżej $count wykresy',
+      one: 'Najwyżej 1 wykres',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chartAddChannel => 'Dodaj kanał';
+
+  @override
+  String get coastingTitle => 'Toczenie bez gazu i hamulca';
+
+  @override
+  String get coastingBySegment => 'Według segmentów';
+
+  @override
+  String get coastingBySegmentLoading =>
+      'Toczenie według segmentów pojawi się po obliczeniu segmentów dnia…';
+
+  @override
+  String get coastingBySegmentNeedsSegments =>
+      'Toczenie według segmentów wymaga segmentów w grupie tego okrążenia.';
+
+  @override
+  String get coastingEpisodes => 'Epizody · wybierz jeden, aby go zobaczyć';
+
+  @override
+  String coastingIntoLap(String seconds) {
+    return '$seconds s od początku okrążenia';
+  }
+
+  @override
+  String get drivingGgNoLongitudinal => 'Nie zapisano G wzdłużnego';
+
+  @override
+  String get drivingGgNoLateral => 'Nie zapisano G poprzecznego';
+
+  @override
+  String get drivingGgUnsupportedUnit => 'G w nieobsługiwanej jednostce';
+
+  @override
+  String get drivingGgNoSamples => 'Brak próbek na tym odcinku';
+
+  @override
+  String get drivingNoCoverage => 'Nie obejmuje tego odcinka';
+
+  @override
+  String get drivingNotAvailable => 'Niedostępne';
+
+  @override
+  String get drivingMeasured => 'zmierzone';
+
+  @override
+  String get drivingCalculatedFromGps => 'obliczone z GPS';
+
+  @override
+  String get drivingInferred => 'wywnioskowane';
+
+  @override
+  String get drivingUnexpectedUnit => 'nieoczekiwana jednostka';
+
+  @override
+  String get drivingNotRecorded => 'nie zapisano';
+
+  @override
+  String get drivingPedalsUnknown => 'pedały nieznane';
+
+  @override
+  String get drivingNoSpeed => 'brak prędkości';
+
+  @override
+  String get drivingBrakeMeasuredLateralGps =>
+      'hamulec zmierzony, G poprzeczne z GPS';
+
+  @override
+  String drivingUnexpectedUnitChannel(String channel) {
+    return '$channel ma nieoczekiwaną jednostkę';
+  }
+
+  @override
+  String get drivingNoBrakeChannel => 'brak kanału hamulca';
+
+  @override
+  String get drivingNoAcceleratorChannel => 'brak kanału gazu';
+
+  @override
+  String get drivingBrakeRecorded => 'zapisano pedał hamulca';
+
+  @override
+  String get drivingBrakingInferred =>
+      'hamowanie wywnioskowane z opóźnienia (brak kanału hamulca)';
+
+  @override
+  String get drivingAcceleratorRecorded => 'zapisano pedał gazu';
+
+  @override
+  String get drivingAcceleratingInferred =>
+      'przyspieszanie wywnioskowane z G wzdłużnego (brak kanału gazu)';
+
+  @override
+  String get drivingLateralMeasured => 'zmierzono G poprzeczne';
+
+  @override
+  String get drivingLateralCalculated =>
+      'G poprzeczne obliczone przez rejestrator z GPS';
+
+  @override
+  String get drivingNoLateral => 'brak G poprzecznego';
+
+  @override
+  String get drivingCoastingMeasured =>
+      'Zmierzone: z zapisanych pedałów hamulca i gazu.';
+
+  @override
+  String get drivingCoastingInferred =>
+      'Wywnioskowane z G wzdłużnego: to nagranie nie ma kanału pedału hamulca lub gazu.';
+
+  @override
+  String get drivingCoastingNoPedals =>
+      'Nie da się określić: nagranie nie ma ani kanałów pedałów, ani G wzdłużnego.';
+
+  @override
+  String get drivingCoastingNoSpeed =>
+      'Nie da się określić: nagranie nie ma prędkości.';
+
+  @override
+  String get drivingCoastingUnitMismatch =>
+      'Nie da się określić: kanał pedału lub prędkości ma nieoczekiwaną jednostkę.';
+
+  @override
+  String get drivingCoastingUnavailable =>
+      'Toczenie bez gazu i hamulca nie jest dostępne dla tego odcinka.';
+
+  @override
+  String drivingCoastingSummaryLap(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizodach',
+      one: '1 epizodzie',
+    );
+    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
+  }
+
+  @override
+  String drivingCoastingSummaryStretch(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizodach',
+      one: '1 epizodzie',
+    );
+    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
+  }
+
+  @override
+  String get drivingCoastingNote =>
+      'Toczenie bez gazu i hamulca to jazda z prędkością bez wciśniętego żadnego pedału. Samo w sobie nie jest błędem: odpuszczenie gazu może uspokoić samochód albo wynikać z ruchu na torze.';
+
+  @override
+  String get drivingCoastingEpisodesHint =>
+      'Każdy epizod jest podany według miejsca jego początku na torze; wybierz jeden, aby przesunąć tam kursor.';
+
+  @override
+  String drivingSelectedStretch(String meters) {
+    return 'Wybrany odcinek · $meters m';
+  }
+
+  @override
+  String get drivingWholeLap => 'Całe okrążenie';
+
+  @override
+  String get drivingGgCalculated => 'obliczone przez rejestrator z GPS';
+
+  @override
+  String drivingGgSource(
+    String lap,
+    String longitudinal,
+    String lateral,
+    String provenance,
+  ) {
+    return '$lap: $longitudinal / $lateral, $provenance';
+  }
+
+  @override
+  String drivingLap(String lap) {
+    return 'Okrążenie $lap';
+  }
+
+  @override
+  String drivingGgSemantics(String a, String b) {
+    return 'Diagram G-G okrążeń A i B: maks. łączne $a i $b';
+  }
+
+  @override
+  String get drivingPeakLateral => 'Maks. poprzeczne';
+
+  @override
+  String get drivingPeakBraking => 'Maks. hamowanie';
+
+  @override
+  String get drivingPeakAccelerating => 'Maks. przyspieszanie';
+
+  @override
+  String get drivingPeakCombined => 'Maks. łączne';
+
+  @override
+  String get drivingSamples => 'Próbki';
+
+  @override
+  String get drivingGgNote =>
+      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
+
+  @override
+  String get drivingGgAccelerating => 'przyspieszanie';
+
+  @override
+  String get drivingGgBraking => 'hamowanie';
+
+  @override
+  String get drivingGgLeft => 'lewo';
+
+  @override
+  String get drivingGgRight => 'prawo';
+
+  @override
+  String drivingStripLabel(String lap) {
+    return 'Okrążenie $lap wzdłuż toru';
+  }
+
+  @override
+  String get drivingStripHint => 'Stuknij, aby przesunąć tam kursor';
+
+  @override
+  String get drivingStatesTitle => 'Stany jazdy';
+
+  @override
+  String get drivingBraking => 'Hamowanie';
+
+  @override
+  String get drivingTrailBraking => 'Hamowanie w zakręcie';
+
+  @override
+  String get drivingCornering => 'Jazda w zakręcie';
+
+  @override
+  String get drivingAccelerating => 'Przyspieszanie';
+
+  @override
+  String get drivingCoasting => 'Toczenie bez gazu i hamulca';
+
+  @override
+  String get drivingStatesNote =>
+      'Udział we własnym czasie każdego okrążenia na tym odcinku. Stany się nakładają: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie lub toczenie. Stuknij pasek, aby przesunąć tam kursor. Dłuższe hamowanie w zakręcie nie jest samo w sobie lepsze ani bezpieczniejsze.';
 }
