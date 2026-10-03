@@ -1,0 +1,24 @@
+<!-- title: Working with FlappedEar Overlays | nav: FlappedEar Overlays -->
+<h1 id="overlays">Working with FlappedEar Overlays</h1>
+<p class="lead">FlappedEar Overlays is the macOS app for onboard video with telemetry overlays. Telemetry is the analysis app for every platform, with no video. They share one day file.</p>
+
+<h2 id="shared">One file for both apps</h2>
+<p>Both apps read and write the same <code>.fetproject</code> format. A day saved by either app opens in the other, with:</p>
+<ul>
+  <li>the sessions and their recordings,</li>
+  <li>approved and edited segments,</li>
+  <li>excluded laps and their reasons,</li>
+  <li>notes, conditions and setup,</li>
+  <li>the group of laps shown.</li>
+</ul>
+<p>Telemetry keeps everything that belongs to Overlays (video, sync, overlay layouts) unchanged when it saves, so you can go back and forth.</p>
+
+<h2 id="workflow">A typical day</h2>
+<ol class="steps">
+  <li>After the session, import the RaceChrono exports in Telemetry on your phone and look at the laps between sessions.</li>
+  <li>Save the day.</li>
+  <li>At home, open the same <code>.fetproject</code> in Overlays on the Mac to add the onboard video and render overlays.</li>
+</ol>
+<div class="note"><p>A day saved on a phone is inside the app's own Days folder. To move it to the Mac, open it on the Mac from a copy of that file, or import the same recordings on the Mac. The recordings themselves must be reachable from the computer that opens the day; see <a href="saving.html#find">Find recordings in a folder</a>.</p></div>
+
+<p>The Overlays guide is at <a href="https://flappedear.github.io/Overlay/">flappedear.github.io/Overlay</a>.</p>

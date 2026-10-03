@@ -7,6 +7,9 @@ FlappedEar Overlays.
 
 The app is free for users.
 
+The user guide for drivers is at <https://flappedear.github.io/Telemetry/>
+(sources in [`docs/user-guide`](docs/user-guide/README.md)).
+
 ## Status
 
 Early development. The app opens on **Import a day**: choose the day's VBO and

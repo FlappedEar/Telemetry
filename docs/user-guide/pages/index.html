@@ -1,0 +1,43 @@
+<!-- title: FlappedEar Telemetry User Guide | nav: Overview -->
+<h1 id="overview">FlappedEar Telemetry User Guide</h1>
+<p class="lead">FlappedEar Telemetry turns a track day of RaceChrono recordings into lap times, your best lap on the map, and where the time goes. It runs on Android, iPhone and iPad, macOS and Windows.</p>
+
+<figure>
+  <img src="assets/screens/day-wide.png" alt="Day results: the best lap of the day on its map, coloured by speed, with every lap of the day listed on the right" width="1280" height="800" loading="lazy">
+  <figcaption>The day's results: the best lap first, every lap of every session on the right.</figcaption>
+</figure>
+
+<h2 id="what">What it does</h2>
+<ul>
+  <li><strong>Import a day.</strong> Choose the day's VBO and RCZ files, or share them straight from RaceChrono on a phone. Each recording becomes a session (Session 1, Session 2, …) with its laps.</li>
+  <li><strong>See the best lap first.</strong> The day opens on its fastest lap, drawn on the track map and coloured by speed.</li>
+  <li><strong>Find the time.</strong> The theoretical best, time losses per corner and straight, and a short list of where to look next.</li>
+  <li><strong>Compare two laps</strong> at the same place on the track: Δ time, speed, pedals, the Corner Analyzer, G-G, driving states and coasting.</li>
+  <li><strong>Save the day</strong> as a <code>.fetproject</code> file that FlappedEar Overlays opens too.</li>
+</ul>
+<p>Telemetry has no video. Onboard video and overlays are in the separate app, <a href="overlays.html">FlappedEar Overlays</a>.</p>
+
+<h2 id="start">Where to start</h2>
+<div class="cards">
+  <a href="install.html"><strong>Install</strong>Get the app on your Pixel or Mac.</a>
+  <a href="quick-start.html"><strong>Quick start</strong>From RaceChrono export to your best lap in five steps.</a>
+  <a href="day.html"><strong>Day results</strong>What every card on the day page means.</a>
+  <a href="compare.html"><strong>Compare laps</strong>Two laps side by side, A green and B orange.</a>
+</div>
+
+<h2 id="terms">Words used in this guide</h2>
+<table>
+  <tr><th>Word</th><th>Meaning</th></tr>
+  <tr><td>Session</td><td>One recording (one outing on track). Sessions are numbered in the order they were recorded.</td></tr>
+  <tr><td>LAP n, OUT, IN</td><td>A lap between two crossings of the start/finish line, the out lap before the first crossing, the in lap after the last one.</td></tr>
+  <tr><td>Ranked</td><td>A complete timed lap on the same circuit and direction as the others, so it counts for the best lap and the analysis.</td></tr>
+  <tr><td>Segment</td><td>A corner, straight or sector of the track. The app proposes them from your best lap; you can <a href="segments.html">edit them</a>.</td></tr>
+  <tr><td>Theoretical best</td><td>The fastest time of each segment, added up across all laps.</td></tr>
+  <tr><td>Typical, spread</td><td>Typical is the median lap; spread is the interquartile range (the width of the middle half of the laps). Both need at least three laps.</td></tr>
+  <tr><td>Δ (delta)</td><td>A − B. Positive means lap A is behind.</td></tr>
+</table>
+
+<h2 id="about">About this guide</h2>
+<p class="note">Every screenshot here is taken from the app itself with a real day: six sessions at Jastrząb on 29 August 2026, recorded with RaceChrono Pro (VBO and RCZ), with car data from OBD and heart rate. The pictures are made without network, so the street map behind each trace is left plain grey; in the app you see the streets or satellite imagery of the real track.</p>
+<p>The guide describes the app as it is on the <code>main</code> branch. It is updated with every change to what you see on screen; if something here does not match your app, your build is probably older than this page.</p>
+<p>Results in the app are observations from your recordings. They say what differed between laps, not why, and they are never driving instructions.</p>

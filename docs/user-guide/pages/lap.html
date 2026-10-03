@@ -1,0 +1,60 @@
+<!-- title: A lap | nav: A lap -->
+<h1 id="lap">A lap</h1>
+<p class="lead">Open any lap from the lap list, a session's best lap or the Best day card. The page shows the lap's time, its map and its channels.</p>
+
+<figure>
+  <img src="assets/screens/lap-wide.png" alt="Lap page: the lap time and buttons on the left, the speed-coloured map and the channel charts on the right" width="1280" height="800" loading="lazy">
+  <figcaption>The best lap of the day on a wide screen. On a phone the same parts are one under the other.</figcaption>
+</figure>
+
+<h2 id="summary">The summary</h2>
+<ul>
+  <li>The lap time, and either <em>Best lap of the day</em> or how far it is from it, for example <em>+0.412 s to the best of the day (Session 5 · LAP 2)</em>.</li>
+  <li><em>Best lap of Session N</em> when it is.</li>
+  <li>A red line for each reason the lap is not ranked.</li>
+  <li><strong>Exclude from ranking…</strong> or <strong>Include in ranking</strong>, and <strong>Compare with…</strong>.</li>
+</ul>
+
+<h2 id="exclude">Excluding a lap</h2>
+<p>A lap with traffic or a yellow flag can spoil the best lap, the theoretical best and the typical lap. Tap <strong>Exclude from ranking…</strong>, enter a reason and tap <strong>Exclude</strong>.</p>
+<figure>
+  <img src="assets/screens/exclude-dialog.png" alt="Exclude this lap dialog with a Reason field" width="1280" height="800" loading="lazy">
+</figure>
+<p>The lap stays in the list as <em>Excluded: &lt;reason&gt;</em>. <strong>Include in ranking</strong> brings it back. Exclusions are saved with the day.</p>
+
+<h2 id="map">The map</h2>
+<ul>
+  <li>The trace is coloured by speed, purple (slow) to yellow (fast); the bar under the map gives the range in km/h.</li>
+  <li>The start/finish line is red, with an arrow for the direction.</li>
+  <li>A white dot shows where the cursor is (see <a href="#charts">Charts</a>).</li>
+  <li><strong>Show the best lap (…) in grey</strong> draws the best lap of the day under this one. On street or satellite backgrounds it is drawn in a light, see-through line.</li>
+  <li>Pinch or scroll to zoom, drag to move. North is up.</li>
+</ul>
+<h3 id="background">Map background</h3>
+<p>The layers button (top right of the map) chooses the background for every map in the app until you close it:</p>
+<ul>
+  <li><strong>Streets</strong>: OpenStreetMap.</li>
+  <li><strong>Satellite</strong>: MapTiler imagery, only in builds that have a MapTiler key. It is the default when available.</li>
+</ul>
+<p>Map tiles need a network connection the first time a track is shown; tiles you have seen are kept for later.</p>
+
+<h2 id="charts">Charts</h2>
+<p>Under the map, <strong>Channels</strong> charts the lap over time. By default: speed, lateral G, longitudinal G, and throttle or brake when recorded.</p>
+<figure class="phone">
+  <img src="assets/screens/phone-lap-charts.png" alt="Channel charts on a phone with zoom buttons, the cursor slider and the speed chart" width="412" height="915" loading="lazy">
+</figure>
+<ul>
+  <li>Tap or drag across a chart to move the cursor. The value at the cursor is shown top right of each chart, and the white dot on the map follows.</li>
+  <li>The slider moves the cursor across the whole lap.</li>
+  <li><strong>Zoom in</strong> around the cursor, <strong>Zoom out</strong>, or show the <strong>Whole lap</strong>. The range shown is written on the right.</li>
+  <li>Longitudinal G is drawn with braking upward.</li>
+  <li>Add any recorded channel with <strong>Add a channel</strong> (up to four charts); remove one with its ✕. Your choice is kept for other laps until you close the app.</li>
+  <li>A gap in the recording stays a gap. A chart says <em>No data in this range</em> or why a channel is not available.</li>
+</ul>
+
+<h2 id="coasting">Coasting</h2>
+<figure>
+  <img src="assets/screens/lap-coasting.png" alt="Coasting card: total coasting time and distance, how it was measured, and coasting by segment" width="1280" height="800" loading="lazy">
+</figure>
+<p>Coasting is time at speed with neither pedal pressed. The card gives the total, for example <em>4.2 s · 128 m over 9 episodes (5.1 % of the lap)</em>, says whether it was measured from the brake and accelerator pedals or inferred from longitudinal G, lists it by segment, and lists each episode: select one to move the cursor there.</p>
+<p>Coasting is not a mistake by itself: a lift can settle the car or be forced by traffic.</p>
