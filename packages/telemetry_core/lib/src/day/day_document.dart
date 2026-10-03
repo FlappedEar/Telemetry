@@ -111,6 +111,10 @@ Map<String, Object?> _unknownConfiguration(
 /// direction or the unknown configuration, and the detected route's
 /// provenance. Exclusions become lap references with this event's id.
 ///
+/// [trackSegments] replaces runs' `trackSegments` by run id (the segments the
+/// user edited; an empty list removes the key, as Overlays stores it), before
+/// anything else is decided about segments.
+///
 /// With [automaticSegments], the chosen group's best lap gets its segment
 /// proposals as approved `trackSegments` when no run has segments for the
 /// group yet ([automaticTrackSegments]); [random] mints their ids.
@@ -125,6 +129,7 @@ Map<String, Object?> dayDocument({
   required String projectPath,
   Map<String, Object?>? previous,
   String previousPath = '',
+  Map<String, List<Map<String, Object?>>> trackSegments = const {},
   bool automaticSegments = true,
   Random? random,
 }) {
@@ -206,6 +211,15 @@ Map<String, Object?> dayDocument({
   final allRuns = [
     for (final id in order) opened[id] ?? _rebaseRun(previousRuns[id]!, previousPath, projectPath),
   ];
+  for (final run in allRuns) {
+    final edited = trackSegments[run['id']];
+    if (edited == null) continue;
+    if (edited.isEmpty) {
+      run.remove('trackSegments');
+    } else {
+      run['trackSegments'] = _copy({'segments': edited})['segments'];
+    }
+  }
   if (automaticSegments) _approveAutomaticSegments(allRuns, opened, runs, analysis, random);
 
   final exclusionEntries = <Object?>[];

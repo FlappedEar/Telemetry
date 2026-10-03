@@ -117,6 +117,21 @@ a background isolate.
   (`automaticTrackSegments`; `automaticSegments: false` turns it off). They are
   then kept on every later save. A run that still stores segments of another
   configuration gets none, as in Overlays.
+- Editing approved segments (Overlays `TrackSegmentEditing`, KAN-49):
+  `withEditedSegment` (rename, retype, move, optionally with the neighbour
+  sharing the boundary), `withSplitSegment`, `withMergedSegments` and
+  `withoutApprovedSegment` return a whole new `trackSegments` or a reason;
+  ids are stable. `SegmentEditHistory` is the bounded undo and redo,
+  `pickProgressAt` maps a map point to progress and refuses crossings. The
+  rest of `TrackSegmentReview` is ported too: review states
+  (`reviewSegmentProposals`), `proposalEditError`, stored rejections
+  (`makeTrackSegmentReview`, `rejectedProposalIndexes`) and result stamps as
+  JSON. `DaySegmentEdits` keeps a day's unsaved edits by run (on the run whose
+  segments the theoretical best uses), applies them to the document's runs
+  and restores the automatic segments by removing the group's approved ones;
+  `dayDocument(trackSegments: ...)` saves them. The last segment cannot be
+  removed (restore instead), so a saved edit is never followed by automatic
+  approval.
 - `computeLapSectorTimes` times every approved segment of one lap from its
   projection on the shared axis (gate boundaries use the lap's own start and
   end, a segment across the gate is timed within the lap, a gap inside a
@@ -146,7 +161,10 @@ a background isolate.
   of every segment (`DayLapSectors.lossSeconds`), the theoretical best and
   the time available, the largest time losses, and the segment at any time of
   a lap (`segmentAtTime`). It uses the document's segments, or proposes them
-  from the best lap as saving the day would. `corners` holds each corner
+  from the best lap as saving the day would; `segmentRunId`, `runSegments`
+  and `proposalReview` (the best lap's proposals against the approved
+  segments, `segmentsAutomatic`) are what the segment editor works on.
+  `corners` holds each corner
   segment with every lap's figures; `DayCorner.compare` sets one lap against
   the best lap and the best value of the group's laps.
 
@@ -174,6 +192,10 @@ port (`TrackProgress.cpp` and `TelemetrySession::sampledSegments`, Overlays
 (`TrackSegments.cpp`, `TrackSegmentProposals.cpp`, `TrackSegmentReview.cpp`
 and the review and automatic-approval steps of Overlays' app, `d4d1039`)
 against `test/parity/segments_reference.json` from `tool/cpp_segments_dump`.
+`test/parity/segment_editing_parity_test.dart` does the same for segment
+editing (`TrackSegmentEditing.cpp` and the rest of `TrackSegmentReview.cpp`,
+`d4d1039`) against `test/parity/segment_editing_reference.json` from
+`tool/cpp_segment_editing_dump`.
 `test/parity/corner_metrics_parity_test.dart` does the same for the Corner
 Analyzer port (`CornerPhases`, `CornerSpeeds`, `BrakingOnset`,
 `BrakingMetrics`, `ExitMetrics`, `DrivingVariability`, `d4d1039`) against

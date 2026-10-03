@@ -155,6 +155,29 @@ LatLng pathLatLng(GeoCoordinate origin, double east, double north) {
   return LatLng(point.latitudeDegrees, point.longitudeDegrees);
 }
 
+/// A point drawn over the trace, such as a segment boundary: [east] and
+/// [north] metres around the path's origin.
+@immutable
+final class MapMark {
+  const MapMark(this.east, this.north, this.color, {this.radius = 6});
+
+  final double east;
+  final double north;
+  final Color color;
+  final double radius;
+
+  @override
+  bool operator ==(Object other) =>
+      other is MapMark &&
+      other.east == east &&
+      other.north == north &&
+      other.color == color &&
+      other.radius == radius;
+
+  @override
+  int get hashCode => Object.hash(east, north, color, radius);
+}
+
 /// The GPS trace of a lap coloured by speed, over street or satellite tiles
 /// or on a plain background, with an optional reference lap in grey under it
 /// and the start/finish line. North is up. Pinch or scroll to zoom; the
@@ -168,12 +191,16 @@ class TrackMap extends StatelessWidget {
     this.semanticLabel = 'Track map',
     this.interactive = true,
     this.pointColor,
+    this.marks = const [],
   });
 
   final LapPath path;
   final LapPath? reference;
   final (Offset, Offset)? gate;
   final String semanticLabel;
+
+  /// Points drawn over the trace, last on top.
+  final List<MapMark> marks;
 
   /// The colour of the trace up to each fix, instead of its speed; null for
   /// a fix leaves it in the neutral colour.
@@ -203,6 +230,7 @@ class TrackMap extends StatelessWidget {
                         gate: gate,
                         interactive: interactive,
                         pointColor: pointColor,
+                        marks: marks,
                       ),
               ),
               if (interactive)
@@ -225,6 +253,7 @@ class TrackMap extends StatelessWidget {
         noSpeedColor: scheme.onSurface,
         gateColor: scheme.error,
         pointColor: pointColor,
+        marks: marks,
       ),
       child: const SizedBox.expand(),
     );
@@ -273,8 +302,10 @@ class _TiledMap extends StatelessWidget {
     required this.gate,
     required this.interactive,
     this.pointColor,
+    this.marks = const [],
   });
 
+  final List<MapMark> marks;
   final TileSource tiles;
   final LapPath path;
   final LapPath? reference;
@@ -421,6 +452,19 @@ class _TiledMap extends StatelessWidget {
               ),
             ],
           ),
+        if (marks.isNotEmpty)
+          CircleLayer(
+            circles: [
+              for (final mark in marks)
+                CircleMarker(
+                  point: pathLatLng(path.origin, mark.east, mark.north),
+                  radius: mark.radius,
+                  color: mark.color,
+                  borderColor: Colors.white,
+                  borderStrokeWidth: 2,
+                ),
+            ],
+          ),
         if (start != null && heading != null)
           MarkerLayer(
             markers: [
@@ -466,7 +510,10 @@ class _TrackPainter extends CustomPainter {
     required this.noSpeedColor,
     required this.gateColor,
     this.pointColor,
+    this.marks = const [],
   }) : range = speedRange(path);
+
+  final List<MapMark> marks;
 
   final LapPath path;
   final LapPath? reference;
@@ -559,6 +606,13 @@ class _TrackPainter extends CustomPainter {
       );
     }
 
+    for (final mark in marks) {
+      final centre = at(mark.east, mark.north);
+      canvas
+        ..drawCircle(centre, mark.radius + 2, Paint()..color = Colors.white)
+        ..drawCircle(centre, mark.radius, Paint()..color = mark.color);
+    }
+
     // Where the section starts, and which way it goes.
     final first = path.segments.firstOrNull;
     if (first != null && first.length > 1) {
@@ -603,7 +657,8 @@ class _TrackPainter extends CustomPainter {
       old.referenceColor != referenceColor ||
       old.noSpeedColor != noSpeedColor ||
       old.gateColor != gateColor ||
-      old.pointColor != pointColor;
+      old.pointColor != pointColor ||
+      !listEquals(old.marks, marks);
 }
 
 /// The speed scale under a map: slow and fast ends with their values.

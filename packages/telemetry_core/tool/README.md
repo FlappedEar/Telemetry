@@ -102,10 +102,46 @@ and run the test with `FET_SEGMENTS_REFERENCE=<json>` and
 `FET_SEGMENTS_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the largest
 difference. Never edit the JSON by hand.
 
+## cpp_segment_editing_dump
+
+Runs FlappedEar Overlays' own `TrackSegmentEditing` and the rest of
+`TrackSegmentReview` over VBO files and fixed cases and writes the results
+as JSON. For each file with lap traces it takes the first reference-eligible
+lap, follows `computeSegmentReview` and the automatic approval loop (as
+`cpp_segments_dump`), renames the approved ids `s0`, `s1`, ... and edits that
+set: every segment renamed and retyped, its start moved back and its end on
+with the neighbour, its end on without it, shrunk, split in the middle,
+merged with the next one and removed, and a chain of seven edits each on the
+last result. It writes the review states of the proposals against the
+automatic and the edited set and the stored rejections. A split mints a
+random id; ids not in the input are renamed `n0`, `n1`, ... on both sides.
+The cases section holds the editing functions on hand-made sets (overlap,
+empty, gate crossings, other configurations, the 64-segment bound),
+`validProposalEdit`, `withoutOtherConfigurations`, `validTrackSegmentReview`,
+result stamps, `SegmentEditHistory`, `pickProgressAt` and
+`reviewSegmentProposals` with their inputs.
+
+```bash
+cmake -S tool/cpp_segment_editing_dump -B /tmp/editbuild -DCMAKE_BUILD_TYPE=Release \
+  -DVBOOVERLAY_DIR=/tmp/vbooverlay -DCMAKE_PREFIX_PATH=/opt/Qt/6.8.3/gcc_64
+cmake --build /tmp/editbuild
+/tmp/editbuild/cpp_segment_editing_dump test/parity/segment_editing_reference.json \
+  test/parity/corpus/*.vbo test/fixtures/*.vbo
+dart test test/parity/segment_editing_parity_test.dart
+```
+
+The committed `test/parity/segment_editing_reference.json` was generated
+from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04;
+the other references are unchanged. To check other recordings locally, run
+the test with `FET_EDITING_REFERENCE=<json>` and
+`FET_EDITING_DIRS=<dir>[:<dir>]`; `FET_PARITY_REPORT=1` prints the largest
+difference. Never edit the JSON by hand.
+
 ## cpp_project_check
 
 Opens `.fetproject` documents with FlappedEar Overlays' own C++ code and prints
-what Overlays sees: whether the document is valid, each run's recording
+what Overlays sees: whether the document is valid, each run's approved
+segments (valid, count and revision), each run's recording
 (resolved path, `telemetry-v1` fingerprint match, content SHA-256), lap
 derivation key and track configuration, the laps its exclusions apply to with
 Overlays' own lap timing, and whether an Overlays re-save keeps the event
@@ -124,7 +160,10 @@ FLAPPEDEAR_OVERLAYS_CHECK=/tmp/checkbuild/cpp_project_check \
 The test saves a synthetic day with a circuit name and an excluded lap and
 checks that Overlays reads all of it. It is skipped when the variable is not set.
 The test also checks that the chosen group's best lap got automatic segments,
-which Overlays accepts. Last run against FlappedEar/Overlay `d4d1039`: passed.
+which Overlays accepts, and saves a day whose segments were split, merged,
+moved, renamed and removed (`DaySegmentEdits`): Overlays reads the same
+segment revision and keeps them on re-save. Last run against
+FlappedEar/Overlay `d4d1039`: passed.
 
 ## cpp_theoretical_best_dump
 

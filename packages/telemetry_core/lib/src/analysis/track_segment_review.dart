@@ -1,14 +1,27 @@
-// Port of the approval part of FlappedEar Overlays
-// native/src/telemetry/TrackSegmentReview.{h,cpp} (revision d4d1039, FET-31):
-// the approved segments of one track configuration, and adding one approved
-// segment to a run's stored `trackSegments`, and the stamp a segment result
-// carries (`SegmentationResultStamp`).
+// Port of FlappedEar Overlays native/src/telemetry/TrackSegmentReview.{h,cpp}
+// (revision d4d1039; approval FET-31, review states and decisions FET-34): the
+// approved segments of one track configuration, adding or removing one
+// approved segment in a run's stored `trackSegments`, the stamp a segment
+// result carries (`SegmentationResultStamp`), each proposal's review state
+// against the approved set, and the rejections a run stores in
+// `trackSegmentReview`.
 import 'dart:math' as math;
 
 import 'package:fetproject/fetproject.dart'
-    show maximumTrackSegments, trackSegmentSetRevision, validTrackSegment, validTrackSegments;
+    show
+        TrackSegmentType,
+        maximumTrackSegments,
+        qtTrimmed,
+        trackSegmentSetRevision,
+        trackSegmentTypeName,
+        validTrackSegment,
+        validTrackSegments;
 
 import 'track_segment_proposals.dart';
+
+/// The review's algorithm tag, stored as the `version` of a run's
+/// `trackSegmentReview`.
+const trackSegmentReviewAlgorithm = 'track-segment-review-v1';
 
 /// Heading and curvature smoothing radius used to build review proposals; each
 /// proposal boundary's tolerance is this plus the axis spacing.
@@ -200,3 +213,276 @@ bool segmentationResultCurrent(
     stamp.revision == approved.revision &&
     stamp.trackConfigurationReference == approved.trackConfigurationReference &&
     stamp.calculationAlgorithm == calculationAlgorithm;
+
+/// Persisted form of [stamp], for results saved in a project or report.
+Map<String, Object?> segmentationResultStampToJson(SegmentationResultStamp stamp) => {
+  'trackConfigurationReference': stamp.trackConfigurationReference,
+  'revision': stamp.revision,
+  'calculationAlgorithm': stamp.calculationAlgorithm,
+};
+
+// Overlays matches these with PCRE2, where `$` also matches before a final
+// newline.
+final _configurationReferencePattern = RegExp(r'^compatibility-v1:[0-9a-f]{64}\n?$');
+final _revisionPattern = RegExp(r'^track-segments-v1:[0-9a-f]{64}\n?$');
+const int _maximumAlgorithmTagCharacters = 64;
+
+// Matches TrackSegments' progress bound for imported or edited documents.
+const double _maximumDecisionProgressMeters = 1000000.0;
+
+/// The stamp stored in [value], or null when it is not exactly a valid
+/// stamp object.
+SegmentationResultStamp? segmentationResultStampFromJson(Object? value) {
+  if (value is! Map<String, Object?> || value.length != 3) return null;
+  final reference = value['trackConfigurationReference'];
+  final revision = value['revision'];
+  final algorithm = value['calculationAlgorithm'];
+  if (reference is! String ||
+      !_configurationReferencePattern.hasMatch(reference) ||
+      revision is! String ||
+      !_revisionPattern.hasMatch(revision) ||
+      algorithm is! String ||
+      algorithm.length > _maximumAlgorithmTagCharacters ||
+      algorithm.contains('\u0000')) {
+    return null;
+  }
+  return SegmentationResultStamp(
+    trackConfigurationReference: reference,
+    revision: revision,
+    calculationAlgorithm: algorithm,
+  );
+}
+
+/// Where a proposal stands against the approved segments.
+enum SegmentReviewState {
+  /// Awaiting a decision.
+  proposed('proposed'),
+
+  /// An approved segment has exactly these bounds and type.
+  approved('approved'),
+
+  /// Dismissed by the reviewer.
+  rejected('rejected'),
+
+  /// Overlaps an approved segment that came from elsewhere (an edit, another
+  /// proposal).
+  superseded('superseded');
+
+  const SegmentReviewState(this.label);
+
+  /// Overlays' `segmentReviewStateName`.
+  final String label;
+}
+
+/// One proposal and its review state.
+final class SegmentReviewItem {
+  const SegmentReviewItem({
+    required this.proposal,
+    this.state = SegmentReviewState.proposed,
+    this.approvedSegmentId = '',
+    this.edited = false,
+  });
+
+  /// The reviewer's edited copy when [edited].
+  final TrackSegmentProposal proposal;
+  final SegmentReviewState state;
+
+  /// Set when [state] is approved.
+  final String approvedSegmentId;
+  final bool edited;
+}
+
+bool _sameBounds(Map<String, Object?> segment, TrackSegmentProposal proposal) =>
+    segment['type'] == trackSegmentTypeName(proposal.type) &&
+    ((segment['startProgressMeters'] as num).toDouble() - proposal.start.progressMeters).abs() <=
+        _boundaryMatchMeters &&
+    ((segment['endProgressMeters'] as num).toDouble() - proposal.end.progressMeters).abs() <=
+        _boundaryMatchMeters;
+
+ProgressRange _proposalRange(TrackSegmentProposal proposal) =>
+    ProgressRange(proposal.start.progressMeters, proposal.end.progressMeters);
+
+/// Each proposal's state against [approved]. [proposals] may carry reviewer
+/// edits (their indexes in [edited]); [rejected] holds proposal indexes.
+List<SegmentReviewItem> reviewSegmentProposals(
+  List<TrackSegmentProposal> proposals,
+  Set<int> edited,
+  Set<int> rejected,
+  ApprovedSegmentation approved,
+  double lengthMeters,
+) {
+  final items = <SegmentReviewItem>[];
+  for (var index = 0; index < proposals.length; ++index) {
+    final proposal = proposals[index];
+    var approvedId = '';
+    var overlapsApproved = false;
+    for (final segment in approved.segments) {
+      if (approvedId.isEmpty && _sameBounds(segment, proposal)) {
+        approvedId = segment['id'] as String;
+        continue;
+      }
+      overlapsApproved |= progressRangesOverlap(
+        _rangeOf(segment),
+        _proposalRange(proposal),
+        lengthMeters,
+      );
+    }
+    items.add(
+      SegmentReviewItem(
+        proposal: proposal,
+        edited: edited.contains(index),
+        approvedSegmentId: approvedId,
+        state: approvedId.isNotEmpty
+            ? SegmentReviewState.approved
+            : overlapsApproved
+            ? SegmentReviewState.superseded
+            : rejected.contains(index)
+            ? SegmentReviewState.rejected
+            : SegmentReviewState.proposed,
+      ),
+    );
+  }
+  return items;
+}
+
+/// Why a reviewer's edit of a segment's name and bounds is refused, or an
+/// empty string when it is valid: bounds lie in [0, [lengthMeters]] and
+/// differ (end < start wraps the gate). Overlap is checked elsewhere.
+String proposalEditError(String name, double startMeters, double endMeters, double lengthMeters) {
+  if (!lengthMeters.isFinite || lengthMeters <= 0.0) return 'The track axis is unavailable.';
+  final trimmed = qtTrimmed(name);
+  if (trimmed.isEmpty || trimmed.length > 160 || trimmed.contains('\u0000')) {
+    return 'Enter a name of 1–160 characters.';
+  }
+  if (!startMeters.isFinite ||
+      !endMeters.isFinite ||
+      startMeters < 0.0 ||
+      endMeters < 0.0 ||
+      startMeters > lengthMeters ||
+      endMeters > lengthMeters) {
+    return 'Bounds must lie between 0 and ${lengthMeters.toStringAsFixed(1)} m.';
+  }
+  if ((startMeters - endMeters).abs() <= _boundaryMatchMeters) return 'A segment cannot be empty.';
+  return '';
+}
+
+/// Whether [proposalEditError] accepts the edit (Overlays'
+/// `validProposalEdit`).
+bool validProposalEdit(String name, double startMeters, double endMeters, double lengthMeters) =>
+    proposalEditError(name, startMeters, endMeters, lengthMeters).isEmpty;
+
+/// Most rejections a run's `trackSegmentReview` stores.
+const int maximumSegmentReviewDecisions = 64;
+
+bool _validDecisionBound(Object? value) =>
+    value is num &&
+    value.toDouble().isFinite &&
+    value >= 0.0 &&
+    value <= _maximumDecisionProgressMeters;
+
+/// Whether [value] is a valid `trackSegmentReview`: absent, or exactly
+/// `version`, `trackConfigurationReference`, `proposalAlgorithm` and at most
+/// [maximumSegmentReviewDecisions] `rejected` decisions (type and bounds).
+bool validTrackSegmentReview(Object? value) {
+  if (value == null) return true;
+  if (value is! Map<String, Object?>) return false;
+  if (value.length != 4 || value['version'] != trackSegmentReviewAlgorithm) return false;
+  final reference = value['trackConfigurationReference'];
+  final algorithm = value['proposalAlgorithm'];
+  if (reference is! String ||
+      !_configurationReferencePattern.hasMatch(reference) ||
+      algorithm is! String ||
+      qtTrimmed(algorithm).isEmpty ||
+      algorithm.length > _maximumAlgorithmTagCharacters ||
+      algorithm.contains('\u0000')) {
+    return false;
+  }
+  final rejected = value['rejected'];
+  if (rejected is! List || rejected.length > maximumSegmentReviewDecisions) return false;
+  for (final item in rejected) {
+    if (item is! Map<String, Object?> || item.length != 3) return false;
+    if (!const ['sector', 'corner', 'straight'].contains(item['type'])) return false;
+    final start = item['startProgressMeters'];
+    final end = item['endProgressMeters'];
+    if (!_validDecisionBound(start) || !_validDecisionBound(end)) return false;
+    if ((start as num).toDouble() == (end as num).toDouble()) return false;
+  }
+  return true;
+}
+
+/// The `trackSegmentReview` that stores [rejected] (at most
+/// [maximumSegmentReviewDecisions]) for [trackConfigurationReference]; empty
+/// when it would not validate.
+Map<String, Object?> makeTrackSegmentReview(
+  String trackConfigurationReference,
+  List<TrackSegmentProposal> rejected,
+) {
+  final review = <String, Object?>{
+    'version': trackSegmentReviewAlgorithm,
+    'trackConfigurationReference': trackConfigurationReference,
+    'proposalAlgorithm': trackSegmentProposalAlgorithm,
+    'rejected': [
+      for (final proposal in rejected.take(maximumSegmentReviewDecisions))
+        {
+          'type': trackSegmentTypeName(proposal.type),
+          'startProgressMeters': proposal.start.progressMeters,
+          'endProgressMeters': proposal.end.progressMeters,
+        },
+    ],
+  };
+  return validTrackSegmentReview(review) ? review : <String, Object?>{};
+}
+
+/// The indexes of [proposals] that [storedReview] rejects. Decisions apply
+/// only to the same configuration and proposal algorithm, matched by type and
+/// exact bounds.
+Set<int> rejectedProposalIndexes(
+  Object? storedReview,
+  String trackConfigurationReference,
+  List<TrackSegmentProposal> proposals,
+) {
+  final indexes = <int>{};
+  if (storedReview is! Map<String, Object?> || !validTrackSegmentReview(storedReview)) {
+    return indexes;
+  }
+  if (storedReview['trackConfigurationReference'] != trackConfigurationReference ||
+      storedReview['proposalAlgorithm'] != trackSegmentProposalAlgorithm) {
+    return indexes;
+  }
+  for (final item in storedReview['rejected'] as List) {
+    final decision = item as Map<String, Object?>;
+    for (var index = 0; index < proposals.length; ++index) {
+      final proposal = proposals[index];
+      if (decision['type'] == trackSegmentTypeName(proposal.type) &&
+          ((decision['startProgressMeters'] as num).toDouble() - proposal.start.progressMeters)
+                  .abs() <=
+              _boundaryMatchMeters &&
+          ((decision['endProgressMeters'] as num).toDouble() - proposal.end.progressMeters).abs() <=
+              _boundaryMatchMeters) {
+        indexes.add(index);
+      }
+    }
+  }
+  return indexes;
+}
+
+/// [storedSegments] without the segments approved for any configuration other
+/// than [trackConfigurationReference]; only on the user's explicit request.
+List<Map<String, Object?>> withoutOtherConfigurations(
+  Object? storedSegments,
+  String trackConfigurationReference,
+) => [
+  if (storedSegments is List)
+    for (final value in storedSegments)
+      if (value is Map<String, Object?> &&
+          value['trackConfigurationReference'] == trackConfigurationReference)
+        value,
+];
+
+/// The stored type named [name], or null.
+TrackSegmentType? trackSegmentTypeFromName(String name) {
+  for (final type in TrackSegmentType.values) {
+    if (type.jsonName == name) return type;
+  }
+  return null;
+}

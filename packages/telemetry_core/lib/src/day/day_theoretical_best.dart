@@ -12,6 +12,7 @@ import '../analysis/outing_theoretical_best.dart';
 import '../analysis/sector_timing.dart';
 import '../analysis/time_loss.dart';
 import '../analysis/track_progress.dart';
+import '../analysis/track_segment_review.dart';
 import '../intake/import_plan.dart';
 import '../operation.dart';
 import 'day_analysis.dart';
@@ -78,8 +79,13 @@ final class DayTheoreticalBest {
     this.bestLap,
     this.automaticSegments = false,
     List<DayCorner> corners = const [],
+    this.segmentRunId = '',
+    List<Map<String, Object?>> runSegments = const [],
+    List<SegmentReviewItem> proposalReview = const [],
   }) : laps = List.unmodifiable(laps),
-       corners = List.unmodifiable(corners);
+       corners = List.unmodifiable(corners),
+       runSegments = List.unmodifiable(runSegments),
+       proposalReview = List.unmodifiable(proposalReview);
 
   final String groupId;
   final DayTheoreticalBestState state;
@@ -104,6 +110,65 @@ final class DayTheoreticalBest {
   /// Each corner segment's speeds, braking and pickup on every lap, in
   /// approved order.
   final List<DayCorner> corners;
+
+  /// The run whose approved segments were used: the one an edit changes.
+  final String segmentRunId;
+
+  /// That run's whole `trackSegments` (with [automaticSegments], the
+  /// proposals approved now), which an edit starts from.
+  final List<Map<String, Object?>> runSegments;
+
+  /// The best lap's automatic proposals and their review state against the
+  /// approved segments: all approved when the segments are the automatic
+  /// ones, superseded where an edit replaced them.
+  final List<SegmentReviewItem> proposalReview;
+
+  /// The length of the shared axis the segments are edited on.
+  double get axisLengthMeters => computed?.axisLengthMeters ?? 0.0;
+
+  /// Whether the approved segments are exactly the best lap's automatic
+  /// proposals, names included.
+  bool get segmentsAutomatic {
+    if (automaticSegments) return true;
+    final approved = computed?.approved.segments ?? const [];
+    if (proposalReview.isEmpty || proposalReview.length != approved.length) return false;
+    for (var i = 0; i < approved.length; ++i) {
+      if (!segmentMatchesProposal(i)) return false;
+    }
+    return true;
+  }
+
+  /// Whether segment [index] of [segments] is one of the automatic proposals,
+  /// unchanged (bounds, type and name).
+  bool segmentMatchesProposal(int index) {
+    if (automaticSegments) return true;
+    final segment = approvedSegment(index);
+    if (segment == null) return false;
+    return proposalReview.any(
+      (item) =>
+          item.state == SegmentReviewState.approved &&
+          item.approvedSegmentId == segment['id'] &&
+          item.proposal.name == segment['name'],
+    );
+  }
+
+  /// The approved segment [index] as stored (with its id).
+  Map<String, Object?>? approvedSegment(int index) {
+    final segments = computed?.approved.segments ?? const [];
+    return index >= 0 && index < segments.length ? segments[index] : null;
+  }
+
+  /// Where [lap] is on the shared axis at [telemetryTime], or null outside
+  /// its covered stretches.
+  double? progressAt(DayLapRow lap, double telemetryTime) {
+    final computed = this.computed;
+    if (computed == null) return null;
+    for (var i = 0; i < computed.population.length; ++i) {
+      if (computed.population[i].times.lapReference != lap.reference) continue;
+      return progressAtTime(computed.traces[i], telemetryTime);
+    }
+    return null;
+  }
 
   /// The corner at segment [index] of [segments], or null for a straight or
   /// sector.
@@ -150,14 +215,8 @@ final class DayTheoreticalBest {
   /// The approved segment [lap] is in at [telemetryTime], from its projection
   /// onto the shared axis; null outside its covered stretches.
   int? segmentAtTime(DayLapRow lap, double telemetryTime) {
-    final computed = this.computed;
-    if (computed == null) return null;
-    for (var i = 0; i < computed.population.length; ++i) {
-      if (computed.population[i].times.lapReference != lap.reference) continue;
-      final progress = progressAtTime(computed.traces[i], telemetryTime);
-      return progress == null ? null : segmentAt(progress);
-    }
-    return null;
+    final progress = progressAt(lap, telemetryTime);
+    return progress == null ? null : segmentAt(progress);
   }
 }
 
@@ -211,25 +270,26 @@ DayTheoreticalBest dayTheoreticalBest(
   };
   var automatic = false;
   final best = ranking.bestOfDay;
-  if (best != null &&
-      runs[best.runId] != null &&
-      !groupHasApprovedSegments(documentRuns, group.id)) {
+  // The best lap's proposals: approved for the calculation when the group
+  // has no segments yet, and otherwise compared with the approved ones.
+  SegmentReview? review;
+  if (best != null && runs[best.runId] != null) {
     final run = runs[best.runId]!;
-    final segments = automaticTrackSegments(
-      documentRuns: documentRuns,
-      groupId: group.id,
-      storedSegments: stored[best.runId],
-      session: run.session,
-      laps: run.laps,
+    review = computeSegmentReview(
+      run.session,
+      run.laps,
       lapNumber: best.lapNumber,
       startTime: best.start,
       endTime: best.end,
-      random: random,
       cancelled: cancelled,
     );
-    if (segments != null) {
-      stored[best.runId] = segments;
-      automatic = true;
+    if (group.id.startsWith('compatibility-v1:') &&
+        !groupHasApprovedSegments(documentRuns, group.id)) {
+      final segments = approveAllProposals(stored[best.runId], review, group.id, random: random);
+      if (segments != null) {
+        stored[best.runId] = segments;
+        automatic = true;
+      }
     }
   }
   final canonical = canonicalSegmentation(
@@ -306,6 +366,20 @@ DayTheoreticalBest dayTheoreticalBest(
     bestLap: best,
     automaticSegments: automatic,
     corners: dayCorners(computed, rows, best),
+    segmentRunId: canonical.runId,
+    runSegments: [
+      for (final value in (stored[canonical.runId] as List?) ?? const [])
+        value as Map<String, Object?>,
+    ],
+    proposalReview: review == null || review.unavailable.isNotEmpty || review.error.isNotEmpty
+        ? const []
+        : reviewSegmentProposals(
+            review.proposals.proposals,
+            const {},
+            const {},
+            canonical.approved,
+            review.axis.lengthMeters,
+          ),
   );
 }
 

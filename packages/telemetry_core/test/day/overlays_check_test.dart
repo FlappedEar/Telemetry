@@ -3,6 +3,7 @@
 // the built checker; see tool/README.md.
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:fetproject/fetproject.dart' as fet;
 import 'package:path/path.dart' as p;
@@ -109,4 +110,87 @@ void main() {
     },
     skip: checker == null ? 'Set FLAPPEDEAR_OVERLAYS_CHECK to tool/cpp_project_check' : false,
   );
+
+  test('Overlays opens a day whose segments were edited, and keeps them on re-save', () async {
+    final paths = [
+      for (final (name, speeds) in [
+        ('a.vbo', <double>[30, 28, 31]),
+        ('b.vbo', <double>[29, 32, 27]),
+      ])
+        (File(p.join(root, 'recordings', name))
+              ..createSync(recursive: true)
+              ..writeAsStringSync(circuitVbo(speeds)))
+            .path,
+    ];
+    final runs = nameRunsInRecordingOrder(prepareTelemetryImport(paths).runs);
+    final analysis = analyzeDay([
+      for (final named in runs)
+        DayRunInput(
+          runId: named.run.id,
+          name: named.name,
+          contentSha256: named.run.contentSha256,
+          session: named.run.telemetry,
+          laps: named.run.laps,
+        ),
+    ]);
+    final edits = DaySegmentEdits(random: Random(2));
+    DayTheoreticalBest calculate() => dayTheoreticalBest(
+      analysis,
+      outingRuns(runs),
+      documentRuns: edits.applyTo(const []),
+      random: Random(1),
+    );
+    var result = calculate();
+    expect(result.state, DayTheoreticalBestState.ready, reason: result.message);
+    String idAt(int index) => result.approvedSegment(index)!['id']! as String;
+    final first = result.segments.first;
+    expect(
+      edits.split(result, idAt(0), (first.startProgressMeters + first.endProgressMeters) / 2),
+      isEmpty,
+    );
+    result = calculate();
+    expect(edits.merge(result, idAt(2), idAt(3)), isEmpty);
+    result = calculate();
+    final moved = result.segments[1];
+    expect(
+      edits.edit(
+        result,
+        idAt(1),
+        name: 'Renamed',
+        type: 'sector',
+        startMeters: moved.startProgressMeters,
+        endMeters: moved.endProgressMeters + 5,
+      ),
+      isEmpty,
+    );
+    result = calculate();
+    expect(edits.remove(result, idAt(result.segments.length - 1)), isEmpty);
+
+    final path = p.join(root, 'edited.fetproject');
+    final document = dayDocument(
+      eventId: newEventId(),
+      name: 'Edited segments',
+      runs: runs,
+      analysis: analysis,
+      projectPath: path,
+      trackSegments: edits.runs,
+    );
+    await saveDayDocument(path, document);
+    final [checked] = check([path]);
+    expect(checked['valid'], isTrue, reason: '${checked['error']}');
+    expect(checked['resaveKeepsEvent'], isTrue);
+    final saved = {
+      for (final run in ((document['event'] as Map)['runs'] as List).cast<Map<String, Object?>>())
+        run['id']: run['trackSegments'],
+    };
+    for (final run in (checked['runs'] as List).cast<Map<String, Object?>>()) {
+      final segments = saved[run['runId']] as List<Object?>?;
+      expect(run['trackSegments'], {
+        'valid': true,
+        'count': segments?.length ?? 0,
+        'revision': segments == null ? '' : fet.trackSegmentSetRevision(segments),
+      });
+    }
+    expect(saved[result.segmentRunId], edits.runs[result.segmentRunId]);
+  }, skip: checker == null ? 'Set FLAPPEDEAR_OVERLAYS_CHECK to tool/cpp_project_check' : false);
 }

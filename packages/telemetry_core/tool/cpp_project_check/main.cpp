@@ -3,7 +3,8 @@
 // Each document is loaded and validated as Overlays opens it. For each run,
 // the primary VBO recording is resolved, parsed and given its laps; the run's
 // lap exclusions are applied with the binding Overlays builds, and the
-// excluded laps are listed. The event is also passed through Overlays'
+// excluded laps are listed, with its approved segments (valid, count,
+// revision). The event is also passed through Overlays'
 // editor projection and back, as a re-save does, and compared.
 
 #include "project/BoundedJsonLoader.h"
@@ -12,6 +13,8 @@
 #include "project/ProjectSourceReference.h"
 #include "telemetry/LapTiming.h"
 #include "telemetry/OutingLaps.h"
+#include "telemetry/TrackSegmentReview.h"
+#include "telemetry/TrackSegments.h"
 #include "telemetry/VboParser.h"
 
 #include <QCryptographicHash>
@@ -50,6 +53,12 @@ QJsonObject checkRun(const QJsonObject &event, const QJsonObject &run, const QSt
     QJsonObject result{{"runId", run.value("id")},
                        {"derivationKey", QString::fromLatin1(EventProjectCodec::lapDerivationKey(run))},
                        {"trackConfiguration", EventProjectCodec::trackConfiguration(run)}};
+    // The approved segments as Overlays reads them: valid, how many, and the
+    // revision a segment result is stamped with.
+    const auto segments = run.value("trackSegments");
+    result.insert("trackSegments", QJsonObject{{"valid", validTrackSegments(segments)},
+        {"count", segments.toArray().size()},
+        {"revision", segments.toArray().isEmpty() ? QString() : trackSegmentSetRevision(segments.toArray())}});
     QJsonObject source;
     for (const auto &value : run.value("sources").toObject().value("telemetry").toArray()) {
         if (value.toObject().value("id") == run.value("primaryTelemetrySourceId")) source = value.toObject();
