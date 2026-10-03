@@ -969,7 +969,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 displayDelta(lap.durationSeconds - best.durationSeconds),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontFamily: FetTheme.mono,
-                  color: colors.loss,
+                  // A lap tied with the best has lost nothing.
+                  color: lap.durationSeconds > best.durationSeconds
+                      ? colors.loss
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               onTap: () => _compare(lap, best, null),
@@ -1116,7 +1119,7 @@ class _HeadlineBar extends StatelessWidget {
                       Text(
                         label,
                         style: text.labelSmall?.copyWith(
-                          color: onColor.withValues(alpha: 0.75),
+                          color: onColor,
                           letterSpacing: 0.6,
                         ),
                       ),
