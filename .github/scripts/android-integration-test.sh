@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs integration_test/ on the Android emulator (CI job "Android emulator").
 #
-# The test "a recording shared with ACTION_SEND is imported" prints
+# The test "a recording shared with ACTION_SEND opens as the day" prints
 # FET_WAITING_FOR_SHARE once the app is listening; this script then sends the
 # app a real share, as RaceChrono would, of a file the debug build's
 # TestShareProvider serves (android/app/src/debug).
@@ -19,11 +19,14 @@ share_when_asked() {
   while kill -0 "$1" 2>/dev/null; do
     if adb logcat -d -s flutter:I | grep -q FET_WAITING_FOR_SHARE; then
       echo "Sending ACTION_SEND to the app"
+      # No URI grant flags: MainActivity runs in the provider's own app, so
+      # it may read the URI without one (a grant flag would fail the send).
       adb shell am start -a android.intent.action.SEND \
         -t application/octet-stream \
         --eu android.intent.extra.STREAM \
         content://com.flappedear.telemetry.testshare/shared.vbo \
-        -n com.flappedear.telemetry/.MainActivity
+        -n com.flappedear.telemetry/.MainActivity \
+        || echo "::warning::am start could not send the share"
       return
     fi
     sleep 2

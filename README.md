@@ -263,7 +263,7 @@ background isolates and saved-days folder: the app starts; a synthetic VBO is
 imported, its results shown, the day saved, the app's widgets started again
 from scratch and the saved day reopened with the same best lap; and on
 Android a real `ACTION_SEND` share, sent by the script through a debug-only
-content provider, is imported. They do not drive the system file picker or
+content provider, is imported and opens as the day. They do not drive the system file picker or
 restart the app's process, and on iOS no share is sent.
 
 Run the integration tests locally on any connected device or simulator:

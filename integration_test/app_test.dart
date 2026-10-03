@@ -45,6 +45,15 @@ Future<void> waitFor(
   }
 }
 
+/// Removes the unsaved-day snapshot the app keeps for recovery, so a run
+/// (or a test that failed before saving) leaves nothing behind for the next.
+Future<void> clearRecovery() async {
+  final file = File(
+    p.join((await getApplicationSupportDirectory()).path, 'day-recovery.json'),
+  );
+  if (file.existsSync()) file.deleteSync();
+}
+
 /// The best lap's time on the day page, under "Best day".
 String bestLapTime(WidgetTester tester) {
   final card = find.ancestor(
@@ -64,8 +73,9 @@ String bestLapTime(WidgetTester tester) {
 // real storage, background isolates, recovery and saved-days folder: the app
 // starts; a recording is imported, its results shown, the day saved, the
 // app's widgets built again from nothing (the process keeps running) and the
-// saved day reopened with the same results; and on Android a recording shared to the app with ACTION_SEND
-// (sent by .github/scripts/android-integration-test.sh) is imported.
+// saved day reopened with the same results; and on Android a recording
+// shared to the app with ACTION_SEND (sent by
+// .github/scripts/android-integration-test.sh) opens as the day.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -89,10 +99,12 @@ void main() {
     final recording = File(p.join(recordings.path, 'session.vbo'))
       ..writeAsStringSync(circuitVbo([30, 28, 31]));
     final before = (await const PlatformDocumentPickers().savedDays()).toSet();
+    await clearRecovery();
     // Map tiles stay off the network: blank tiles, as in the widget tests.
     debugTileProvider = BlankTiles.new;
     addTearDown(() async {
       debugTileProvider = null;
+      await clearRecovery();
       for (final path in await const PlatformDocumentPickers().savedDays()) {
         if (!before.contains(path)) File(path).deleteSync();
       }
@@ -149,7 +161,7 @@ void main() {
   // The CI script sends the share once this test prints that it is waiting;
   // see android/app/src/debug (TestShareProvider) for the file it shares.
   testWidgets(
-    'a recording shared with ACTION_SEND is imported',
+    'a recording shared with ACTION_SEND opens as the day',
     (tester) async {
       final fixtures = Directory(
         p.join((await getTemporaryDirectory()).path, 'share-fixtures'),
@@ -158,22 +170,30 @@ void main() {
       final incoming = Directory(
         p.join((await getApplicationSupportDirectory()).path, 'incoming'),
       );
-      addTearDown(() {
+      await clearRecovery();
+      addTearDown(() async {
         fixtures.deleteSync(recursive: true);
         if (incoming.existsSync()) incoming.deleteSync(recursive: true);
+        await clearRecovery();
       });
       File(p.join(fixtures.path, 'shared.vbo'))
-          .writeAsStringSync(circuitVbo([30, 29]));
+          .writeAsStringSync(circuitVbo([30, 28, 31]));
 
       await tester.pumpWidget(const TelemetryApp());
       await tester.pumpAndSettle();
       debugPrint('FET_WAITING_FOR_SHARE');
+      // A share with no day in progress is imported and opened as today's
+      // day straight away, so the day page is what appears.
       await waitFor(
         tester,
-        find.text('1 session imported'),
+        find.text('Best day'),
         timeout: const Duration(minutes: 2),
       );
-      expect(find.text('Show the day\'s results'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(
+        bestLapTime(tester),
+        matches(RegExp(r'^(\d+:\d\d\.\d{3}|\d+\.\d{3} s)$')),
+      );
     },
     skip: !Platform.isAndroid || !const bool.fromEnvironment('SHARE_TEST'),
     timeout: const Timeout(Duration(minutes: 3)),
