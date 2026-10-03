@@ -7,27 +7,35 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
-/// Which speed unit is written next to speeds. Only the label changes:
-/// values are always shown as recorded, never converted.
+/// The unit assumed for speeds whose recordings do not declare one. A unit a
+/// recording declares is always shown as declared and never overridden;
+/// values are never converted. The names stay as stored in `settings.json`.
 enum SpeedUnitSetting {
-  automatic('Automatic'),
+  automatic('None'),
   kilometresPerHour('km/h'),
   milesPerHour('mph');
 
   const SpeedUnitSetting(this.label);
 
   final String label;
+
+  /// The assumed unit ("km/h", "mph"), or empty when none is assumed.
+  String get unit => switch (this) {
+    SpeedUnitSetting.automatic => '',
+    SpeedUnitSetting.kilometresPerHour => 'km/h',
+    SpeedUnitSetting.milesPerHour => 'mph',
+  };
 }
 
-/// The speed unit label chosen in settings, shared while the app runs and
-/// kept in `settings.json` in the app's support folder.
+/// The unit assumed for unlabelled speeds, chosen in settings, shared while
+/// the app runs and kept in `settings.json` in the app's support folder.
 final ValueNotifier<SpeedUnitSetting> speedUnitSetting = ValueNotifier(
   SpeedUnitSetting.automatic,
 );
 
-/// The speed unit detected from the open day's recordings ("km/h", "mph"),
-/// or empty when they do not say or disagree. Set when a day opens.
-String detectedSpeedUnit = '';
+/// The speed unit each of the open day's recordings declares ("km/h",
+/// "mph", or empty when it declares none). Set when a day opens.
+List<String> declaredSpeedUnits = const [];
 
 /// "km/h" or "mph" for a unit as recordings write it (`kmh`, `km/h`, `kph`,
 /// `mph`), else empty.
@@ -37,12 +45,11 @@ String normalizedSpeedUnit(String unit) => switch (unit.trim().toLowerCase()) {
   _ => '',
 };
 
-/// The speed unit [session] declares for its speed channel: the channel's
-/// own unit (RCZ), else the VBO `[header]` line naming the channel, such as
+/// The speed unit [session] declares for channel [name]: the channel's own
+/// unit (RCZ), else the VBO `[header]` line naming the channel, such as
 /// `velocity kmh` (RaceChrono writes units there, which the parser keeps as
 /// header metadata). Empty when it declares none.
-String sessionSpeedUnit(TelemetrySession session) {
-  final name = session.aliases['speed'] ?? 'speed';
+String channelSpeedUnit(TelemetrySession session, String name) {
   final own = normalizedSpeedUnit(session.channels[name]?.unit ?? '');
   if (own.isNotEmpty) return own;
   for (final MapEntry(:key, :value) in session.metadata.entries) {
@@ -55,32 +62,61 @@ String sessionSpeedUnit(TelemetrySession session) {
   return '';
 }
 
-/// The unit all of [sessions] declare, or empty when any declares none or
-/// they disagree.
-String commonSpeedUnit(Iterable<TelemetrySession> sessions) {
-  String? common;
+/// The speed unit [session] declares for its speed channel (see
+/// [channelSpeedUnit]).
+String sessionSpeedUnit(TelemetrySession session) =>
+    channelSpeedUnit(session, session.aliases['speed'] ?? 'speed');
+
+/// The speed units the open day's recordings declare per speed channel,
+/// keyed by lower-case channel name: one entry per recording that has the
+/// channel. Set when a day opens.
+Map<String, List<String>> declaredChannelSpeedUnits = const {};
+
+/// Sets [declaredSpeedUnits] and [declaredChannelSpeedUnits] for a day of
+/// [sessions]; an empty list when no day is open.
+void declareDaySpeedUnits(Iterable<TelemetrySession> sessions) {
+  final byChannel = <String, List<String>>{};
+  final day = <String>[];
   for (final session in sessions) {
-    final unit = sessionSpeedUnit(session);
-    if (unit.isEmpty || (common != null && common != unit)) return '';
-    common = unit;
+    day.add(sessionSpeedUnit(session));
+    final alias = session.aliases['speed'];
+    for (final name in session.channels.keys) {
+      if (!isSpeedChannel(name) && name != alias) continue;
+      byChannel
+          .putIfAbsent(name.toLowerCase(), () => [])
+          .add(channelSpeedUnit(session, name));
+    }
+  }
+  declaredSpeedUnits = List.unmodifiable(day);
+  declaredChannelSpeedUnits = Map.unmodifiable(byChannel);
+}
+
+/// The unit of the open day's speeds: each recording's declared unit, with
+/// [assumed] standing in for the recordings that declare none. Empty when
+/// that leaves any recording without a unit or the recordings disagree, so
+/// a declared unit is never replaced by another label.
+String daySpeedUnit(List<String> declared, String assumed) {
+  String? common;
+  for (final unit in declared) {
+    final own = unit.isEmpty ? assumed : unit;
+    if (own.isEmpty || (common != null && common != own)) return '';
+    common = own;
   }
   return common ?? '';
 }
 
-/// The label written next to a speed whose channel declares [recorded]:
-/// the unit chosen in settings, else the recorded unit, else the one
-/// detected from the day's recordings. Empty when nothing says.
-String speedUnitLabel([String recorded = '']) =>
-    switch (speedUnitSetting.value) {
-      SpeedUnitSetting.kilometresPerHour => 'km/h',
-      SpeedUnitSetting.milesPerHour => 'mph',
-      SpeedUnitSetting.automatic =>
-        recorded.trim().isNotEmpty
-            ? (normalizedSpeedUnit(recorded).isEmpty
-                  ? recorded.trim()
-                  : normalizedSpeedUnit(recorded))
-            : detectedSpeedUnit,
-    };
+/// The label written next to a speed whose channel declares [recorded]: the
+/// recorded unit when there is one, never overridden; else the open day's
+/// speed unit ([daySpeedUnit] with the assumption chosen in settings).
+/// Empty when nothing says.
+String speedUnitLabel([String recorded = '']) {
+  final own = recorded.trim();
+  if (own.isNotEmpty) {
+    final normalized = normalizedSpeedUnit(own);
+    return normalized.isEmpty ? own : normalized;
+  }
+  return daySpeedUnit(declaredSpeedUnits, speedUnitSetting.value.unit);
+}
 
 /// Whether a channel called [name] is a speed (`speed`, `velocity`,
 /// `velocity-obd`, `velocity-calc`, …).
@@ -89,10 +125,16 @@ bool isSpeedChannel(String name) {
   return lower == 'speed' || lower.startsWith('velocity');
 }
 
-/// The unit shown for channel [name] recorded with [unit]: speed channels
-/// get [speedUnitLabel], every other channel its recorded unit.
-String displayUnit(String name, String unit) =>
-    isSpeedChannel(name) ? speedUnitLabel(unit) : unit;
+/// The unit shown for channel [name] recorded with [unit]: a speed channel
+/// gets its recorded unit, else the unit the day's recordings declare for
+/// that channel, with the setting's assumption only for recordings that
+/// declare none (see [daySpeedUnit]); every other channel its recorded unit.
+String displayUnit(String name, String unit) {
+  if (!isSpeedChannel(name)) return unit;
+  final declared = declaredChannelSpeedUnits[name.toLowerCase()];
+  if (unit.trim().isNotEmpty || declared == null) return speedUnitLabel(unit);
+  return daySpeedUnit(declared, speedUnitSetting.value.unit);
+}
 
 /// Reads and keeps [speedUnitSetting] in `settings.json` in the app's
 /// support folder. Off in `flutter test`.

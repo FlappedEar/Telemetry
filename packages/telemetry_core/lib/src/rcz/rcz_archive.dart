@@ -309,8 +309,16 @@ final class _Crc32 {
 
   _Crc32 update(List<int> bytes) {
     var c = _state;
-    for (final byte in bytes) {
-      c = _table[(c ^ byte) & 0xff] ^ (c >> 8);
+    final table = _table;
+    if (bytes is Uint8List) {
+      // Indexed reads of the typed list the inflater and file reads give.
+      for (var i = 0; i < bytes.length; ++i) {
+        c = table[(c ^ bytes[i]) & 0xff] ^ (c >> 8);
+      }
+    } else {
+      for (final byte in bytes) {
+        c = table[(c ^ byte) & 0xff] ^ (c >> 8);
+      }
     }
     return _Crc32(c);
   }

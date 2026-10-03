@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../diagnostics/app_diagnostics.dart';
 import '../units.dart';
 import 'recovery_store.dart';
 
@@ -60,7 +61,9 @@ final class DayResultsController extends ChangeNotifier {
     TheoreticalBestRunner? theoreticalBestRunner,
     ChannelSummariesRunner? channelSummariesRunner,
     bool changed = false,
+    AppDiagnostics? diagnostics,
   }) : runs = List.unmodifiable(runs),
+       diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
            channelSummariesRunner ?? defaultChannelSummariesRunner,
        _theoreticalBestRunner =
@@ -75,9 +78,8 @@ final class DayResultsController extends ChangeNotifier {
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayDocument,
        _dirty = recovered || changed {
-    detectedSpeedUnit = commonSpeedUnit([
-      for (final run in runs) run.run.telemetry,
-    ]);
+    declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
+    _declaredSpeedUnits = declaredSpeedUnits;
     _scheduleRecovery();
   }
 
@@ -126,6 +128,9 @@ final class DayResultsController extends ChangeNotifier {
        );
 
   final List<NamedRun> runs;
+
+  /// Where background calculation times go.
+  final AppDiagnostics diagnostics;
   DayAnalysis _analysis;
   String? _groupId;
 
@@ -162,6 +167,10 @@ final class DayResultsController extends ChangeNotifier {
   bool _theoreticalBestLoading = false;
   int _theoreticalBestGeneration = 0;
   bool _disposed = false;
+
+  // This day's [declaredSpeedUnits], cleared when it closes unless another
+  // day has opened since.
+  late final List<String> _declaredSpeedUnits;
 
   // The last recovery write or clear queued (see [queueRecovery]).
   Future<void> _recoveryWork = Future.value();
@@ -491,10 +500,12 @@ final class DayResultsController extends ChangeNotifier {
     final documentRuns = _documentRuns;
     _theoreticalKey = decisionsKey;
     DayTheoreticalBest result;
+    final clock = Stopwatch()..start();
     try {
       result = await _theoreticalBestRunner(
         _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
       );
+      diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
     } on Exception catch (error) {
       result = DayTheoreticalBest(
         groupId: _analysis.chosenGroupId ?? '',
@@ -586,12 +597,14 @@ final class DayResultsController extends ChangeNotifier {
     _channelSummariesLoading = true;
     notifyListeners();
     DayChannelSummaries result;
+    final clock = Stopwatch()..start();
     try {
       result = await _channelSummariesRunner(
         _channelSummariesJob(_analysis.rows, {
           for (final named in runs) named.run.id: named.run.telemetry,
         }),
       );
+      diagnostics.recordStep(DiagnosticSteps.channelSummaries, clock.elapsed);
     } on Exception catch (error) {
       result = DayChannelSummaries(error: '$error');
     }
@@ -816,6 +829,9 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
+      declareDaySpeedUnits(const []);
+    }
     // Changes made just before leaving the day are still kept.
     unawaited(flushRecovery());
     super.dispose();

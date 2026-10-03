@@ -6,9 +6,13 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../units.dart';
+import 'touch.dart';
 
 /// The colour of the Δ time line (one line, not an A/B pair).
 const Color deltaLineColor = Color(0xFFFFCF5C);
+
+/// [deltaLineColor] on a light background: the same hue, darker.
+const Color deltaLineLightColor = Color(0xFFB98500);
 
 /// One line of a chart: a lap's series in its colour.
 @immutable
@@ -192,7 +196,7 @@ class TelemetryChart extends StatelessWidget {
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: line.color == deltaLineColor
                               ? null
-                              : line.color,
+                              : readableOn(context, line.color),
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
@@ -212,9 +216,12 @@ class TelemetryChart extends StatelessWidget {
         SizedBox(
           height: height,
           child: LayoutBuilder(
+            // A tap (on lifting the finger, so the start of a page scroll
+            // does not move it) or a sideways drag moves the cursor; an
+            // upward or downward drag scrolls the page.
             builder: (context, constraints) => GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTapDown: (details) =>
+              onTapUp: (details) =>
                   move(details.localPosition, constraints.maxWidth),
               onHorizontalDragStart: (details) =>
                   move(details.localPosition, constraints.maxWidth),
@@ -235,7 +242,12 @@ class TelemetryChart extends StatelessWidget {
                             zeroColor: scheme.outline,
                             labelStyle: theme.textTheme.labelSmall!.copyWith(
                               color: scheme.onSurfaceVariant,
+                              // Readable where a line runs under it.
+                              backgroundColor: scheme.surface.withValues(
+                                alpha: 0.8,
+                              ),
                             ),
+                            dark: theme.brightness == Brightness.dark,
                             delta: delta,
                             unit: shown.isEmpty
                                 ? ''
@@ -302,6 +314,7 @@ class _SeriesPainter extends CustomPainter {
     required this.labelStyle,
     required this.delta,
     required this.unit,
+    this.dark = false,
   });
 
   final List<ChartLine> lines;
@@ -312,6 +325,10 @@ class _SeriesPainter extends CustomPainter {
   final TextStyle labelStyle;
   final bool delta;
   final String unit;
+
+  /// The Δ line is drawn darker on a light background, where its yellow is
+  /// faint.
+  final bool dark;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -355,7 +372,9 @@ class _SeriesPainter extends CustomPainter {
     }
     for (final line in lines) {
       final paint = Paint()
-        ..color = line.color
+        ..color = line.color == deltaLineColor && !dark
+            ? deltaLineLightColor
+            : line.color
         ..strokeWidth = 2
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round;
@@ -404,7 +423,8 @@ class _SeriesPainter extends CustomPainter {
       old.gridColor != gridColor ||
       old.zeroColor != zeroColor ||
       old.labelStyle != labelStyle ||
-      old.unit != unit;
+      old.unit != unit ||
+      old.dark != dark;
 }
 
 class _CursorPainter extends CustomPainter {

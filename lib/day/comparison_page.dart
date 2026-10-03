@@ -14,6 +14,7 @@ import 'day_results_controller.dart';
 import 'driving_panels.dart';
 import 'lap_page.dart';
 import 'telemetry_chart.dart';
+import 'touch.dart';
 import 'track_map.dart';
 
 /// What a panel under a comparison's charts gets: the pair, its comparison
@@ -466,8 +467,12 @@ class _ComparisonPageState extends State<ComparisonPage> {
     return [
       Text('Channels by track position', style: theme.textTheme.titleMedium),
       Text(
-        'Both laps at the same place on the track. Drag across a chart to '
-        'move the cursor; the dots show both laps on the map.',
+        isTouchPlatform(context)
+            ? 'Both laps at the same place on the track. Tap a chart or drag '
+                  'sideways across it to move the cursor; the dots show both '
+                  'laps on the map, which two fingers zoom and move.'
+            : 'Both laps at the same place on the track. Drag across a chart '
+                  'to move the cursor; the dots show both laps on the map.',
         style: theme.textTheme.bodySmall,
       ),
       ChartWindowControls(
@@ -796,8 +801,13 @@ class _OverlayMap extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned.fill(
+                  // One finger scrolls the page on a phone; two fingers
+                  // zoom into a corner.
                   child: tiles == null
-                      ? _plainMap(context, a, b)
+                      ? PinchZoom(
+                          desktop: false,
+                          child: _plainMap(context, a, b),
+                        )
                       : _TiledOverlayMap(
                           key: ValueKey((tiles.urlTemplate, comparison)),
                           tiles: tiles,
@@ -1052,60 +1062,62 @@ class _TiledOverlayMap extends StatelessWidget {
     final shown = layer;
     final dimmed = shown != null;
     final geometry = comparison.geometry;
-    return FlutterMap(
-      options: MapOptions(
-        initialCameraFit: CameraFit.coordinates(
-          coordinates: all,
-          padding: const EdgeInsets.all(24),
-          maxZoom: 18,
-        ),
-        maxZoom: 21,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-        ),
-      ),
-      children: [
-        mapTileLayer(tiles),
-        // Under the laps, so both stay readable inside the window.
-        ValueListenableBuilder(
-          valueListenable: window.range,
-          builder: (context, _, _) => PolylineLayer(
-            key: const ValueKey('comparisonMapRange'),
-            polylines: _rangeLines(),
+    return TouchMap(
+      builder: (context, controller, interaction) => FlutterMap(
+        mapController: controller,
+        options: MapOptions(
+          initialCameraFit: CameraFit.coordinates(
+            coordinates: all,
+            padding: const EdgeInsets.all(24),
+            maxZoom: 18,
           ),
+          maxZoom: 21,
+          interactionOptions: interaction,
         ),
-        PolylineLayer(
-          polylines: [
-            for (final (lines, color) in [(a, lapAColor), (b, lapBColor)])
-              for (final line in lines)
-                _line(
-                  line,
-                  dimmed ? color.withValues(alpha: 0.35) : color,
-                  3.5,
-                ),
-            if (shown != null) ..._layerPolylines(shown),
-          ],
-        ),
-        ValueListenableBuilder(
-          valueListenable: window.cursor,
-          builder: (context, cursor, _) => CircleLayer(
-            key: const ValueKey('comparisonMapMarkers'),
-            circles: [
-              for (final slot in const [0, 1])
-                if (comparison.positionAt(slot, cursor) case final point?)
-                  if (_overlayLatLng(geometry, point.x, point.y) case final at?)
-                    CircleMarker(
-                      point: at,
-                      radius: 7,
-                      color: slot == 0 ? lapAColor : lapBColor,
-                      borderColor: const Color(0xFF0C150F),
-                      borderStrokeWidth: 2.5,
-                    ),
+        children: [
+          mapTileLayer(tiles),
+          // Under the laps, so both stay readable inside the window.
+          ValueListenableBuilder(
+            valueListenable: window.range,
+            builder: (context, _, _) => PolylineLayer(
+              key: const ValueKey('comparisonMapRange'),
+              polylines: _rangeLines(),
+            ),
+          ),
+          PolylineLayer(
+            polylines: [
+              for (final (lines, color) in [(a, lapAColor), (b, lapBColor)])
+                for (final line in lines)
+                  _line(
+                    line,
+                    dimmed ? color.withValues(alpha: 0.35) : color,
+                    3.5,
+                  ),
+              if (shown != null) ..._layerPolylines(shown),
             ],
           ),
-        ),
-        MapAttribution(tiles),
-      ],
+          ValueListenableBuilder(
+            valueListenable: window.cursor,
+            builder: (context, cursor, _) => CircleLayer(
+              key: const ValueKey('comparisonMapMarkers'),
+              circles: [
+                for (final slot in const [0, 1])
+                  if (comparison.positionAt(slot, cursor) case final point?)
+                    if (_overlayLatLng(geometry, point.x, point.y)
+                        case final at?)
+                      CircleMarker(
+                        point: at,
+                        radius: 7,
+                        color: slot == 0 ? lapAColor : lapBColor,
+                        borderColor: const Color(0xFF0C150F),
+                        borderStrokeWidth: 2.5,
+                      ),
+              ],
+            ),
+          ),
+          MapAttribution(tiles),
+        ],
+      ),
     );
   }
 }

@@ -17,14 +17,18 @@ class SettingsButton extends StatelessWidget {
   );
 }
 
-/// The app's settings: the speed unit label.
+/// The app's settings: the unit assumed for unlabelled speeds.
 class SettingsDialog extends StatelessWidget {
   const SettingsDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final detected = detectedSpeedUnit;
+    final declared = {
+      for (final unit in declaredSpeedUnits)
+        if (unit.isNotEmpty) unit,
+    };
+    final unlabelled = declaredSpeedUnits.where((unit) => unit.isEmpty).length;
     return AlertDialog(
       title: const Text('Settings'),
       content: ValueListenableBuilder(
@@ -33,11 +37,15 @@ class SettingsDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Speed unit', style: theme.textTheme.titleSmall),
+            Text(
+              'Unit for unlabelled speeds',
+              style: theme.textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Text(
-              'Only the label next to speeds changes. Values are always '
-              'shown as recorded, never converted.',
+              'Used only for recordings that do not say their speed unit. A '
+              'unit a recording declares is always shown as declared. '
+              'Values are never converted.',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
@@ -55,11 +63,18 @@ class SettingsDialog extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               key: const ValueKey('speedUnitDetected'),
-              detected.isEmpty
-                  ? 'Automatic: the unit the recordings declare (km/h in '
-                        'RaceChrono files). No day open yet, or its '
-                        'recordings do not say.'
-                  : 'Automatic: $detected, from the open day\'s recordings.',
+              declaredSpeedUnits.isEmpty
+                  ? 'No day open yet.'
+                  : [
+                      if (declared.isNotEmpty)
+                        'The open day\'s recordings declare '
+                            '${declared.join(' and ')}.',
+                      if (unlabelled > 0)
+                        unlabelled == declaredSpeedUnits.length
+                            ? 'Its recordings do not say their speed unit.'
+                            : '$unlabelled of its recordings do not say '
+                                  'their speed unit.',
+                    ].join(' '),
               style: theme.textTheme.bodySmall,
             ),
           ],

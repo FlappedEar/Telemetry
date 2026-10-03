@@ -105,7 +105,8 @@ void main() {
       );
       expect(
         textOf(tester, ValueKey('drivingState braking $lap')),
-        matches(RegExp(r'^\d+\.\d s · \d+ %$')),
+        // The units are joined to their numbers by no-break spaces.
+        matches(RegExp(r'^\d+\.\d\u00a0s · \d+\u00a0%$')),
       );
       expect(
         textOf(tester, ValueKey('coastingSummary $lap')),
