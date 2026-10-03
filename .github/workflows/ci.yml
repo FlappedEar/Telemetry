@@ -186,8 +186,9 @@ jobs:
           api-level: 34
           arch: x86_64
           target: google_apis
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          # The guest has no Vulkan, so Flutter draws with OpenGL ES on
+          # SwiftShader instead of SwiftShader's emulated Vulkan; runs that
+          # never got past the splash screen had the emulated Vulkan.
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          # A hung run stops after 15 minutes and prints the verbose tool log
-          # and the device log.
-          script: timeout 900 flutter test integration_test -d emulator-5554 -v > integration.log 2>&1 || { status=$?; tail -n 300 integration.log; adb logcat -d | tail -n 300; exit $status; }; tail -n 40 integration.log
+          script: ./.github/scripts/android-integration-test.sh

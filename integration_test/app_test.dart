@@ -9,6 +9,8 @@ import 'package:telemetry/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  // A first frame that never comes fails the test with a result after three
+  // minutes, instead of leaving the tool waiting until CI stops it.
   testWidgets('the app starts and shows its first screen', (tester) async {
     app.main();
     await tester.pumpAndSettle();
@@ -16,5 +18,5 @@ void main() {
     final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(materialApp.title, 'FlappedEar Telemetry');
     expect(find.byType(Scaffold), findsWidgets);
-  });
+  }, timeout: const Timeout(Duration(minutes: 3)));
 }
