@@ -38,6 +38,7 @@ export 'src/day/day_corner_analyzer.dart';
 export 'src/day/day_corners.dart';
 export 'src/day/day_document.dart';
 export 'src/day/day_recovery.dart';
+export 'src/day/day_relink.dart';
 export 'src/day/day_report.dart';
 export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';

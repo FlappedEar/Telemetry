@@ -119,6 +119,9 @@ Map<String, Object?> _unknownConfiguration(
 /// proposals as approved `trackSegments` when no run has segments for the
 /// group yet ([automaticTrackSegments]); [random] mints their ids.
 ///
+/// [groupChosen] says the user chose the group shown; otherwise a saved group
+/// this day cannot show is kept.
+///
 /// Reads each recording's first, middle and last 64 KiB for its fingerprint.
 Map<String, Object?> dayDocument({
   required String eventId,
@@ -131,6 +134,7 @@ Map<String, Object?> dayDocument({
   String previousPath = '',
   Map<String, List<Map<String, Object?>>> trackSegments = const {},
   bool automaticSegments = true,
+  bool groupChosen = false,
   Random? random,
 }) {
   final chosenGroup = analysis.chosenGroup;
@@ -256,11 +260,19 @@ Map<String, Object?> dayDocument({
   }
 
   // The group shown, as Overlays saves its comparison choice. Other saved
-  // decisions (slots, range, channels) are kept as they were.
+  // decisions (slots, range, channels) are kept as they were. A saved group
+  // that is not one of this day's groups (its sessions are missing or have
+  // changed) stays saved, unapplied, until the user chooses another, as
+  // Overlays keeps it.
   final decisions = _object(event['analysisDecisions']) ?? <String, Object?>{};
-  decisions['comparisonGroupId'] = chosenGroup != null && chosenGroup.resolved
-      ? chosenGroup.id
-      : null;
+  final savedGroup = decisions['comparisonGroupId'];
+  final unavailable =
+      savedGroup is String && !analysis.groups.any((group) => group.id == savedGroup);
+  if (groupChosen || !unavailable) {
+    decisions['comparisonGroupId'] = chosenGroup != null && chosenGroup.resolved
+        ? chosenGroup.id
+        : null;
+  }
   event['analysisDecisions'] = decisions;
   event['id'] = eventId;
   event['name'] = name;
@@ -385,6 +397,8 @@ final class MissingRecording {
     required this.name,
     required this.path,
     required this.reason,
+    this.contentSha256 = '',
+    this.fingerprint = const {},
   });
 
   final String runId;
@@ -393,6 +407,14 @@ final class MissingRecording {
   /// The path the document names, relative when it has one.
   final String path;
   final String reason;
+
+  /// The recording's content SHA-256 as the document asserts it; empty when
+  /// it asserts none.
+  final String contentSha256;
+
+  /// The recording's `telemetry-v1` fingerprint as the document stores it;
+  /// empty when it has none.
+  final Map<String, Object?> fingerprint;
 }
 
 /// A day read back from a document.
@@ -406,6 +428,7 @@ final class OpenedDay {
     required this.exclusions,
     required this.missing,
     required this.analysis,
+    this.relinked = const {},
   });
 
   final String path;
@@ -422,6 +445,11 @@ final class OpenedDay {
 
   /// Null when no recording could be opened.
   final DayAnalysis? analysis;
+
+  /// The runs whose recording was found somewhere else than the document
+  /// says and verified: the day has changes until saved, and saving writes
+  /// the new paths (Overlays marks a relinked document dirty).
+  final Set<String> relinked;
 }
 
 /// The document at [path], refusing a file over the 4 MiB limit first.
@@ -458,7 +486,7 @@ String _expectedRevision(Map<String, Object?> source) {
 /// Opens the day saved at [path]: reads and validates the document, finds
 /// each run's recording (relative path first, then absolute; [relinked]
 /// overrides by run id), checks it is the same content, and analyses the day
-/// with the saved layouts and exclusions. A recording that is missing,
+/// with the saved layouts, exclusions and group shown. A recording that is missing,
 /// unreadable or different is listed in [OpenedDay.missing] and the rest of
 /// the day still opens. Throws [fet.FetprojectError] for an invalid document.
 OpenedDay openDay(
@@ -479,19 +507,27 @@ OpenedDay openDayDocument(
   final runs = [for (final value in event['runs'] as List) value as Map<String, Object?>];
   final missing = <MissingRecording>[];
   final candidates = <(Map<String, Object?>, Map<String, Object?>, String)>[];
+  MissingRecording missingRecording(
+    Map<String, Object?> run,
+    Map<String, Object?> source,
+    String reason,
+  ) => MissingRecording(
+    runId: run['id'] as String,
+    name: run['name'] as String,
+    path: fet.SourceReference.fromJson(_object(source['reference'])!).displayPath,
+    reason: reason,
+    contentSha256: _expectedRevision(source),
+    fingerprint: _object(_object(source['reference'])?['fingerprint']) ?? const {},
+  );
+  final moved = <String>{};
   for (final run in runs) {
     final source = _primarySource(run)!;
     final reference = fet.SourceReference.fromJson(_object(source['reference'])!);
-    final resolved = relinked[run['id']] ?? reference.resolve(path);
+    final stored = reference.resolve(path);
+    final resolved = relinked[run['id']] ?? stored;
+    if (relinked.containsKey(run['id']) && resolved != stored) moved.add(run['id'] as String);
     if (resolved.isEmpty) {
-      missing.add(
-        MissingRecording(
-          runId: run['id'] as String,
-          name: run['name'] as String,
-          path: reference.displayPath,
-          reason: 'Recording not found.',
-        ),
-      );
+      missing.add(missingRecording(run, source, 'Recording not found.'));
     } else {
       candidates.add((run, source, resolved));
     }
@@ -517,26 +553,21 @@ OpenedDay openDayDocument(
     } else if (result.status == TelemetryImportFileStatus.duplicate) {
       problem = 'The same recording as another session of this day.';
     } else {
+      // Overlays' rule: a recording is the same when its content SHA-256 (if
+      // the document asserts one) and its fingerprint (if stored) both match.
+      // Never by its path or name.
       final expected = _expectedRevision(source);
       final storedFingerprint = _object(_object(source['reference'])?['fingerprint']) ?? const {};
       if (expected.isNotEmpty && expected != loaded!.contentSha256) {
         problem = 'The file found is a different recording.';
-      } else if (expected.isEmpty &&
-          storedFingerprint.isNotEmpty &&
+      } else if (storedFingerprint.isNotEmpty &&
           fet.qtCompactJson(storedFingerprint) !=
               fet.qtCompactJson(telemetryFingerprint(file, loaded!.telemetry))) {
         problem = 'The file found is a different recording.';
       }
     }
     if (problem != null) {
-      missing.add(
-        MissingRecording(
-          runId: runId,
-          name: runName,
-          path: fet.SourceReference.fromJson(_object(source['reference'])!).displayPath,
-          reason: problem,
-        ),
-      );
+      missing.add(missingRecording(run, source, problem));
       continue;
     }
     final proposal = TelemetryRunProposal(
@@ -596,9 +627,16 @@ OpenedDay openDayDocument(
         )] =
         entry['reason'] as String;
   }
+  // The group saved as shown leads again when it is still one of the day's.
+  final savedGroup = _object(event['analysisDecisions'])?['comparisonGroupId'];
   final analysis = inputs.isEmpty
       ? null
-      : analyzeDay(inputs, exclusions: exclusions, cancelled: cancelled);
+      : analyzeDay(
+          inputs,
+          exclusions: exclusions,
+          preferredGroupId: savedGroup is String ? savedGroup : null,
+          cancelled: cancelled,
+        );
   return OpenedDay(
     path: path,
     document: document,
@@ -608,6 +646,10 @@ OpenedDay openDayDocument(
     exclusions: exclusions,
     missing: missing,
     analysis: analysis,
+    relinked: {
+      for (final runId in moved)
+        if (named.any((run) => run.run.id == runId)) runId,
+    },
   );
 }
 
