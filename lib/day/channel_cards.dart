@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../l10n.dart';
+
+/// The format of the other recording a session's channel came from ("RCZ"),
+/// or empty when it is the session's own (see
+/// `DayResultsController.channelSource`).
+typedef ChannelSource = String Function(String runId, String channel);
+
+/// " · from RCZ" after a channel's line when [source] says it came from
+/// another recording; empty otherwise.
+String channelSourceSuffix(BuildContext context, String source) =>
+    source.isEmpty ? '' : ' · ${context.l10n.channelFromSource(source)}';
+
 /// "Oil" for an oil temperature channel; other names as recorded.
 String readableChannel(String name) {
   final lower = name.toLowerCase();
@@ -94,12 +106,16 @@ class CarCard extends StatelessWidget {
     required this.channels,
     this.associations,
     this.loading = false,
+    this.channelSource,
   });
 
   /// Null until the channel summaries are calculated.
   final DayChannelSummaries? channels;
   final TemperatureAssociations? associations;
   final bool loading;
+
+  /// Where a session's channel came from; its own recording when null.
+  final ChannelSource? channelSource;
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +196,8 @@ class CarCard extends StatelessWidget {
                   ),
                   for (final run in channels.runs)
                     Text(
-                      '${run.runName}: ${run.unavailableReason.isNotEmpty ? run.unavailableReason : channelSummaryText(run.channel(name)?.run, unit)}',
+                      '${run.runName}: ${run.unavailableReason.isNotEmpty ? run.unavailableReason : channelSummaryText(run.channel(name)?.run, unit)}'
+                      '${channelSourceSuffix(context, channelSource?.call(run.runId, name) ?? '')}',
                       style: theme.textTheme.bodySmall,
                     ),
                   if (association != null) ...[
@@ -309,12 +326,16 @@ class DriverCard extends StatelessWidget {
     required this.channels,
     this.loading = false,
     this.onOpenLap,
+    this.channelSource,
   });
 
   /// Null until the channel summaries are calculated.
   final DayChannelSummaries? channels;
   final bool loading;
   final void Function(DayLapRow lap)? onOpenLap;
+
+  /// Where a session's heart rate came from; its own recording when null.
+  final ChannelSource? channelSource;
 
   @override
   Widget build(BuildContext context) {
@@ -377,7 +398,8 @@ class DriverCard extends StatelessWidget {
       Text(
         run.unavailableReason.isNotEmpty
             ? run.unavailableReason
-            : channelSummaryText(heart?.run, heart?.unit ?? 'bpm'),
+            : '${channelSummaryText(heart?.run, heart?.unit ?? 'bpm')}'
+                  '${heart == null ? '' : channelSourceSuffix(context, channelSource?.call(run.runId, heart.channel) ?? '')}',
         key: ValueKey('heartRate ${run.runId}'),
       ),
       if (heart != null)

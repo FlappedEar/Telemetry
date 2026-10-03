@@ -82,50 +82,6 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get settings => 'Ustawienia';
-
-  @override
-  String get settingsSpeedUnitHeading =>
-      'Jednostka dla prędkości bez oznaczenia';
-
-  @override
-  String get settingsSpeedUnitHelp =>
-      'Używana tylko dla nagrań, które nie podają jednostki prędkości. Jednostka podana w nagraniu jest zawsze pokazywana tak, jak ją zapisano. Wartości nigdy nie są przeliczane.';
-
-  @override
-  String get speedUnitNone => 'Brak';
-
-  @override
-  String get settingsNoDayOpen => 'Nie otwarto jeszcze żadnego dnia.';
-
-  @override
-  String settingsDeclaredUnits(String units) {
-    return 'Nagrania otwartego dnia podają $units.';
-  }
-
-  @override
-  String get unitsAnd => ' i ';
-
-  @override
-  String get settingsAllUnlabelled =>
-      'Jego nagrania nie podają jednostki prędkości.';
-
-  @override
-  String settingsSomeUnlabelled(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count z jego nagrań nie podaje jednostki prędkości.',
-      few: '$count z jego nagrań nie podają jednostki prędkości.',
-      one: '1 z jego nagrań nie podaje jednostki prędkości.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get close => 'Zamknij';
-
-  @override
   String get cancel => 'Anuluj';
 
   @override
@@ -336,6 +292,196 @@ class AppLocalizationsPl extends AppLocalizations {
   String coachWhyMap(String segment) {
     return 'Ślad najlepszego okrążenia z wyróżnionym: $segment';
   }
+
+  @override
+  String channelFromSource(String format) {
+    return 'z $format';
+  }
+
+  @override
+  String fusionAdded(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Połączono z $format: dodano $count kanału',
+      many: 'Połączono z $format: dodano $count kanałów',
+      few: 'Połączono z $format: dodano $count kanały',
+      one: 'Połączono z $format: dodano 1 kanał',
+      zero: 'Połączono z $format: nie dodano kanałów',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionConflict(String channel, String primary, String alternative) {
+    return '$channel: $primary i $alternative się różnią';
+  }
+
+  @override
+  String fusionKeepPrimary(String format) {
+    return 'Zostaw $format';
+  }
+
+  @override
+  String get fusionFillGaps => 'Uzupełnij luki';
+
+  @override
+  String fusionUseAlternative(String format) {
+    return 'Użyj $format';
+  }
+
+  @override
+  String fusionNotCombined(String format, String reason) {
+    return 'Nie połączono z $format: $reason';
+  }
+
+  @override
+  String get fusionReasonNoSpeed => 'jedno z nagrań nie ma prędkości';
+
+  @override
+  String get fusionReasonShortOverlap => 'nagrania pokrywają się zbyt krótko';
+
+  @override
+  String get fusionReasonAmbiguous =>
+      'przebiegi prędkości nie pokrywają się jednoznacznie';
+
+  @override
+  String get fusionReasonClockDisagrees =>
+      'zegary nagrań nie zgadzają się z przebiegami prędkości';
+
+  @override
+  String get fusionReasonInsufficient => 'za mało danych, by je dopasować';
+
+  @override
+  String get fusionReasonNotFound => 'nie znaleziono nagrania';
+
+  @override
+  String get fusionReasonDifferent => 'znaleziony plik to inne nagranie';
+
+  @override
+  String get fusionReasonUnreadable => 'nie udało się go odczytać';
+
+  @override
+  String fusionPending(String format) {
+    return 'Dopasowywanie do $format…';
+  }
+
+  @override
+  String fusionLinedUp(String format, String offset) {
+    return 'Dopasowano do $format ($offset); nic do dodania';
+  }
+
+  @override
+  String fusionCombinedWith(String format, String sessions) {
+    return 'Dodano $format do: $sessions.';
+  }
+
+  @override
+  String fusionMissingTitle(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Nie można użyć $format $count sesji',
+      many: 'Nie można użyć $format $count sesji',
+      few: 'Nie można użyć $format $count sesji',
+      one: 'Nie można użyć $format 1 sesji',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionMissingLine(String session, String path, String reason) {
+    return '$session: $path · $reason';
+  }
+
+  @override
+  String get fusionChannelSpeed => 'Prędkość';
+
+  @override
+  String get fusionChannelLatitude => 'Szerokość geograficzna';
+
+  @override
+  String get fusionChannelLongitude => 'Długość geograficzna';
+
+  @override
+  String get fusionChannelSatellites => 'Satelity';
+
+  @override
+  String fusionRelinkDifferent(String files) {
+    return 'Nie użyto, to inne nagranie: $files.';
+  }
+
+  @override
+  String fusionAddedNotCombined(String format, String sessions) {
+    return 'Dodano $format do: $sessions, ale nie udało się go połączyć; zostaje zapisany i zostanie połączony przy otwarciu dnia.';
+  }
+
+  @override
+  String get fusionReasonFailed => 'dopasowanie się nie powiodło';
+
+  @override
+  String relinkDifferentRecordings(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count plików w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+      many:
+          '$count plików w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+      few:
+          '$count pliki w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+      one: '$files w tym folderze to inne nagranie i nie zostało użyte.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get relinkNothingFound =>
+      'W tym folderze nie znaleziono żadnego brakującego nagrania.';
+
+  @override
+  String get settings => 'Ustawienia';
+
+  @override
+  String get settingsSpeedUnitHeading =>
+      'Jednostka dla prędkości bez oznaczenia';
+
+  @override
+  String get settingsSpeedUnitHelp =>
+      'Używana tylko dla nagrań, które nie podają jednostki prędkości. Jednostka podana w nagraniu jest zawsze pokazywana tak, jak ją zapisano. Wartości nigdy nie są przeliczane.';
+
+  @override
+  String get speedUnitNone => 'Brak';
+
+  @override
+  String get settingsNoDayOpen => 'Nie otwarto jeszcze żadnego dnia.';
+
+  @override
+  String settingsDeclaredUnits(String units) {
+    return 'Nagrania otwartego dnia podają $units.';
+  }
+
+  @override
+  String get unitsAnd => ' i ';
+
+  @override
+  String get settingsAllUnlabelled =>
+      'Jego nagrania nie podają jednostki prędkości.';
+
+  @override
+  String settingsSomeUnlabelled(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count z jego nagrań nie podaje jednostki prędkości.',
+      few: '$count z jego nagrań nie podają jednostki prędkości.',
+      one: '1 z jego nagrań nie podaje jednostki prędkości.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get close => 'Zamknij';
 
   @override
   String get appleMapLegal => 'Informacje prawne';

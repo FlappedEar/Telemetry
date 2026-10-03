@@ -11,6 +11,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
 import '../support/circuit_vbo.dart';
+import '../support/fusion_pair.dart';
 
 void main() {
   final checker = Platform.environment['FLAPPEDEAR_OVERLAYS_CHECK'];
@@ -193,4 +194,65 @@ void main() {
     }
     expect(saved[result.segmentRunId], edits.runs[result.segmentRunId]);
   }, skip: checker == null ? 'Set FLAPPEDEAR_OVERLAYS_CHECK to tool/cpp_project_check' : false);
+
+  test(
+    'Overlays validates and applies a fusion decision Telemetry wrote, and keeps it on re-save',
+    () async {
+      Directory(p.join(root, 'recordings')).createSync();
+      final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+      final plan = prepareTelemetryImport([vbo, rcz]);
+      final primary = plan.runs.firstWhere((run) => run.format == RecordingFormat.vbo);
+      final runs = nameRunsInRecordingOrder([primary]);
+      final fusions = fuseImportedRuns(plan, [primary]);
+      final fusion = withFusionRule(
+        fusions[primary.id]!,
+        primary,
+        'sats',
+        FusionRule.preferAlternative,
+      )!;
+      final analysis = analyzeDay([
+        DayRunInput(
+          runId: primary.id,
+          name: runs.single.name,
+          contentSha256: primary.contentSha256,
+          session: primary.telemetry,
+          laps: primary.laps,
+        ),
+      ]);
+      final path = p.join(root, 'fused.fetproject');
+      final document = dayDocument(
+        eventId: newEventId(),
+        name: 'Fused day',
+        runs: runs,
+        analysis: analysis,
+        projectPath: path,
+        fusions: {primary.id: fusion},
+      );
+      await saveDayDocument(path, document);
+      final [checked] = check([path]);
+      expect(checked['valid'], isTrue, reason: '${checked['error']}');
+      expect(checked['resaveKeepsEvent'], isTrue);
+      final run = (checked['runs'] as List).single as Map<String, Object?>;
+      expect(run['fusion'], {
+        'state': 'applied',
+        'alternativeResolved': true,
+        'alternativeContentRevision': fusion.alternative!.contentSha256,
+        'rules': 1,
+      });
+
+      // Bound to other content: still valid, but Overlays no longer applies it.
+      final stale = fet.qtJsonDecode(jsonEncode(document)) as Map<String, Object?>;
+      final staleRun = ((stale['event'] as Map)['runs'] as List).single as Map;
+      (staleRun['fusion'] as Map)['primarySourceRevision'] = 'd' * 64;
+      final stalePath = p.join(root, 'stale.fetproject');
+      await saveDayDocument(stalePath, stale);
+      final [staleChecked] = check([stalePath]);
+      expect(staleChecked['valid'], isTrue, reason: '${staleChecked['error']}');
+      expect(
+        (((staleChecked['runs'] as List).single as Map)['fusion'] as Map)['state'],
+        'needsRevalidation',
+      );
+    },
+    skip: checker == null ? 'Set FLAPPEDEAR_OVERLAYS_CHECK to tool/cpp_project_check' : false,
+  );
 }

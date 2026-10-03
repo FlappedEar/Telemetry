@@ -79,48 +79,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settings => 'Settings';
-
-  @override
-  String get settingsSpeedUnitHeading => 'Unit for unlabelled speeds';
-
-  @override
-  String get settingsSpeedUnitHelp =>
-      'Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.';
-
-  @override
-  String get speedUnitNone => 'None';
-
-  @override
-  String get settingsNoDayOpen => 'No day open yet.';
-
-  @override
-  String settingsDeclaredUnits(String units) {
-    return 'The open day\'s recordings declare $units.';
-  }
-
-  @override
-  String get unitsAnd => ' and ';
-
-  @override
-  String get settingsAllUnlabelled =>
-      'Its recordings do not say their speed unit.';
-
-  @override
-  String settingsSomeUnlabelled(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count of its recordings do not say their speed unit.',
-      one: '1 of its recordings does not say its speed unit.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get close => 'Close';
-
-  @override
   String get cancel => 'Cancel';
 
   @override
@@ -331,6 +289,186 @@ class AppLocalizationsEn extends AppLocalizations {
   String coachWhyMap(String segment) {
     return 'Best lap trace with $segment highlighted';
   }
+
+  @override
+  String channelFromSource(String format) {
+    return 'from $format';
+  }
+
+  @override
+  String fusionAdded(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Combined with its $format: $count channels added',
+      one: 'Combined with its $format: 1 channel added',
+      zero: 'Combined with its $format: no channel added',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionConflict(String channel, String primary, String alternative) {
+    return '$channel: the $primary and the $alternative disagree';
+  }
+
+  @override
+  String fusionKeepPrimary(String format) {
+    return 'Keep $format';
+  }
+
+  @override
+  String get fusionFillGaps => 'Fill gaps';
+
+  @override
+  String fusionUseAlternative(String format) {
+    return 'Use $format';
+  }
+
+  @override
+  String fusionNotCombined(String format, String reason) {
+    return 'Not combined with its $format: $reason';
+  }
+
+  @override
+  String get fusionReasonNoSpeed => 'a recording has no speed';
+
+  @override
+  String get fusionReasonShortOverlap => 'the recordings overlap too little';
+
+  @override
+  String get fusionReasonAmbiguous =>
+      'their speed traces do not line up clearly';
+
+  @override
+  String get fusionReasonClockDisagrees =>
+      'their clocks disagree with their speed traces';
+
+  @override
+  String get fusionReasonInsufficient => 'not enough data to line them up';
+
+  @override
+  String get fusionReasonNotFound => 'the recording was not found';
+
+  @override
+  String get fusionReasonDifferent => 'the file found is a different recording';
+
+  @override
+  String get fusionReasonUnreadable => 'it could not be read';
+
+  @override
+  String fusionPending(String format) {
+    return 'Lining up with its $format…';
+  }
+
+  @override
+  String fusionLinedUp(String format, String offset) {
+    return 'Lined up with its $format ($offset); nothing to add';
+  }
+
+  @override
+  String fusionCombinedWith(String format, String sessions) {
+    return '$format added to $sessions.';
+  }
+
+  @override
+  String fusionMissingTitle(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The $format of $count sessions could not be used',
+      one: 'The $format of 1 session could not be used',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String fusionMissingLine(String session, String path, String reason) {
+    return '$session: $path · $reason';
+  }
+
+  @override
+  String get fusionChannelSpeed => 'Speed';
+
+  @override
+  String get fusionChannelLatitude => 'Latitude';
+
+  @override
+  String get fusionChannelLongitude => 'Longitude';
+
+  @override
+  String get fusionChannelSatellites => 'Satellites';
+
+  @override
+  String fusionRelinkDifferent(String files) {
+    return 'Not used, a different recording: $files.';
+  }
+
+  @override
+  String fusionAddedNotCombined(String format, String sessions) {
+    return '$format added to $sessions, but it could not be combined; it is kept and tried again when the day opens.';
+  }
+
+  @override
+  String get fusionReasonFailed => 'lining them up failed';
+
+  @override
+  String relinkDifferentRecordings(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$files in that folder are different recordings and were not used.',
+      one: '$files in that folder is a different recording and was not used.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get relinkNothingFound =>
+      'No missing recording was found in that folder.';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get settingsSpeedUnitHeading => 'Unit for unlabelled speeds';
+
+  @override
+  String get settingsSpeedUnitHelp =>
+      'Used only for recordings that do not say their speed unit. A unit a recording declares is always shown as declared. Values are never converted.';
+
+  @override
+  String get speedUnitNone => 'None';
+
+  @override
+  String get settingsNoDayOpen => 'No day open yet.';
+
+  @override
+  String settingsDeclaredUnits(String units) {
+    return 'The open day\'s recordings declare $units.';
+  }
+
+  @override
+  String get unitsAnd => ' and ';
+
+  @override
+  String get settingsAllUnlabelled =>
+      'Its recordings do not say their speed unit.';
+
+  @override
+  String settingsSomeUnlabelled(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count of its recordings do not say their speed unit.',
+      one: '1 of its recordings does not say its speed unit.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get close => 'Close';
 
   @override
   String get appleMapLegal => 'Legal';

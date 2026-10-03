@@ -20,6 +20,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import 'blank_tiles.dart';
 import 'rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 void main() {
   late Directory directory;
@@ -27,7 +28,7 @@ void main() {
     directory = Directory.systemTemp.createTempSync('comparison');
     rememberedLapChannels.value = null;
   });
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   // Two sessions with pedals, slow in different places, and one without.
   DayImportOutcome importDay() {

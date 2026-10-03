@@ -21,6 +21,7 @@ import 'day_results_controller.dart';
 import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
+import 'fusion_panel.dart';
 import 'next_session_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
@@ -155,13 +156,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (addition == null || identical(addition, _reported) || !mounted) return;
     _reported = addition;
     final added = addition.added;
+    final l10n = context.l10n;
     final lines = [
       if (addition.error.isNotEmpty)
         addition.error
-      else if (added.isEmpty)
+      else if (added.isEmpty &&
+          addition.combined.isEmpty &&
+          addition.notCombined.isEmpty)
         'Nothing was added.'
-      else
-        '${added.join(', ')} added to the day.',
+      else ...[
+        if (added.isNotEmpty) '${added.join(', ')} added to the day.',
+        if (addition.combined.isNotEmpty)
+          context.l10n.fusionCombinedWith(
+            RecordingFormat.rcz.name.toUpperCase(),
+            addition.combined.map(context.l10n.session).join(', '),
+          ),
+        if (addition.notCombined.isNotEmpty)
+          l10n.fusionAddedNotCombined(
+            RecordingFormat.rcz.name.toUpperCase(),
+            addition.notCombined.map(l10n.session).join(', '),
+          ),
+      ],
       if (addition.savedTo != null)
         'Saved as ${p.basename(addition.savedTo!)}.',
       if (addition.saveError.isNotEmpty) 'Not saved: ${addition.saveError}',
@@ -309,19 +324,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   // Built outside the state so the isolate's closure holds only its inputs.
-  static (OpenedDay, RecordingSearch) Function() _relinkJob(
+  static RelinkedDay Function() _relinkJob(
     String path,
     String folder,
     List<MissingRecording> missing,
-  ) => () {
-    final search = findMovedRecordings(folder, missing);
-    return (openDay(path, relinked: search.found), search);
-  };
+    List<MissingRecording> alternatives,
+  ) =>
+      () => relinkDay(path, folder, missing, missingAlternatives: alternatives);
 
   /// Looks for the missing recordings in a folder the user picks, by their
   /// content as Overlays relinks them (a file only named like one is not
-  /// used), and opens the day again with the ones found. The day then has
-  /// changes: saving writes where the recordings are now.
+  /// used), and opens the day again with the ones found. Sessions' RCZs that
+  /// could not be used are looked for too (one of the same name is used
+  /// when it is the same drive). The day then has changes: saving writes
+  /// where the recordings are now.
   Future<void> _findRecordings() async {
     final path = _controller.documentPath;
     if (path == null) return;
@@ -338,9 +354,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     setState(() => _relinking = true);
     try {
       final missing = _controller.missing;
+      final alternatives = _controller.missingAlternatives;
       final sessions = _controller.runs.length;
-      final (day, search) = await Isolate.run(
-        _relinkJob(path, folder, missing),
+      final (:day, :search, :differentAlternatives) = await Isolate.run(
+        _relinkJob(path, folder, missing, alternatives),
       );
       if (!mounted) return;
       // The day is opened again from its saved document: a recording added
@@ -351,21 +368,36 @@ class _DayResultsPageState extends State<DayResultsPage> {
         _tell('Recordings were added meanwhile. Find the recordings again.');
         return;
       }
-      if (day.missing.length == missing.length) {
+      // An RCZ found only by its name that is not the same drive: said, not
+      // used.
+      final differentRcz = [
+        for (final file in differentAlternatives.values) p.basename(file),
+      ];
+      final rczMessage = differentRcz.isEmpty
+          ? null
+          : context.l10n.fusionRelinkDifferent(differentRcz.join(', '));
+      final used = {
+        for (final runId in search.alternatives.keys)
+          if (!differentAlternatives.containsKey(runId)) runId,
+      };
+      if (day.missing.length == missing.length && used.isEmpty) {
         final names = [
           for (final recording in missing)
             if (search.different.containsKey(recording.runId))
               p.basename(search.different[recording.runId]!),
         ];
+        final l10n = context.l10n;
         _tell(
-          names.isEmpty
-              ? 'No missing recording was found in that folder.'
-              : '${names.join(', ')} in that folder '
-                    '${names.length == 1 ? 'is a different recording' : 'are different recordings'}'
-                    ' and ${names.length == 1 ? 'was' : 'were'} not used.',
+          [
+            if (names.isNotEmpty)
+              l10n.relinkDifferentRecordings(names.length, names.join(', ')),
+            ?rczMessage,
+            if (names.isEmpty && rczMessage == null) l10n.relinkNothingFound,
+          ].join('\n'),
         );
         return;
       }
+      if (rczMessage != null) _tell(rczMessage);
       if (day.analysis == null) return;
       final replace = widget.replace;
       if (replace != null) {
@@ -619,29 +651,62 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final resolved = analysis.groups.where((group) => group.resolved).toList();
     final path = best == null ? null : _bestPath(best);
     final missing = _controller.missing;
+    // Sessions shown without their RCZ, which was not found or is another
+    // recording: found again like the sessions' own recordings.
+    final shown = {for (final named in _controller.runs) named.run.id};
+    final alternatives = [
+      for (final recording in _controller.missingAlternatives)
+        if (shown.contains(recording.runId)) recording,
+    ];
     return [
-      if (missing.isNotEmpty) ...[
+      if (missing.isNotEmpty || alternatives.isNotEmpty) ...[
         Card(
-          color: theme.colorScheme.errorContainer,
+          key: const ValueKey('missingRecordings'),
+          color: missing.isEmpty
+              ? theme.colorScheme.secondaryContainer
+              : theme.colorScheme.errorContainer,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  missing.length == 1
-                      ? '1 session could not be opened'
-                      : '${missing.length} sessions could not be opened',
-                  style: theme.textTheme.titleSmall,
-                ),
-                for (final recording in missing)
+                if (missing.isNotEmpty) ...[
                   Text(
-                    '${recording.name}: ${recording.path} · ${recording.reason}',
+                    missing.length == 1
+                        ? '1 session could not be opened'
+                        : '${missing.length} sessions could not be opened',
+                    style: theme.textTheme.titleSmall,
                   ),
-                const SizedBox(height: 4),
-                const Text(
-                  'They stay in the day when it is saved, but are not shown.',
-                ),
+                  for (final recording in missing)
+                    Text(
+                      '${recording.name}: ${recording.path} · ${recording.reason}',
+                    ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'They stay in the day when it is saved, but are not shown.',
+                  ),
+                ],
+                if (alternatives.isNotEmpty) ...[
+                  if (missing.isNotEmpty) const SizedBox(height: 8),
+                  Text(
+                    l10n.fusionMissingTitle(
+                      alternatives.length,
+                      RecordingFormat.rcz.name.toUpperCase(),
+                    ),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  for (final recording in alternatives)
+                    Text(
+                      l10n.fusionMissingLine(
+                        l10n.session(recording.name),
+                        recording.path,
+                        l10n.fusionReasonText(
+                          recording.reason,
+                          unavailable: true,
+                        ),
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: _relinking ? null : _findRecordings,
@@ -847,7 +912,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       const SizedBox(height: 12),
       Text('Circuits', style: theme.textTheme.titleSmall),
-      for (final named in _controller.runs)
+      for (final named in _controller.runs) ...[
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(named.name),
@@ -859,6 +924,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 TrackDialog(controller: _controller, runId: named.run.id),
           ),
         ),
+        SessionFusion(controller: _controller, runId: named.run.id),
+      ],
       if (analysis.messages.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text('Notes', style: theme.textTheme.titleSmall),
@@ -886,9 +953,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channels: channels,
         associations: _controller.temperatureAssociations,
         loading: loading,
+        channelSource: _controller.channelSource,
       ),
       const SizedBox(height: 12),
-      DriverCard(channels: channels, loading: loading, onOpenLap: _open),
+      DriverCard(
+        channels: channels,
+        loading: loading,
+        onOpenLap: _open,
+        channelSource: _controller.channelSource,
+      ),
     ];
   }
 

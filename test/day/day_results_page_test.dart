@@ -19,6 +19,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'blank_tiles.dart';
+import '../support/temp_directory.dart';
 
 /// Pickers that answer from fixed values.
 final class FakeDocuments implements DocumentPickers {
@@ -89,7 +90,7 @@ String circuitVbo(List<double> speeds) {
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('day_results'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   DayImportOutcome importDay(Map<String, List<double>> files) {
     final paths = <String>[];

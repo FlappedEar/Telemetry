@@ -19,7 +19,7 @@
 <ol class="steps">
   <li>On the day page, tap <strong>Add recordings</strong> and choose the new VBO/RCZ file. On a phone you can also share it from RaceChrono; see <a href="phone.html#share">Sharing from RaceChrono</a>.</li>
   <li>Only the new file is read. It becomes the next session (<em>Session 4</em> after three), and every card, ranking and the best day update.</li>
-  <li>A message says <em>Session 4 added to the day.</em> and the page moves to the <a href="#next">Next session</a> card, which coaches the session recorded last: the one just added, unless it was recorded before the others. A recording already in the day is not added again, nor the RCZ of a session added as VBO (or the other way round); the message says so.</li>
+  <li>A message says <em>Session 4 added to the day.</em> and the page moves to the <a href="#next">Next session</a> card, which coaches the session recorded last: the one just added, unless it was recorded before the others. A recording already in the day is not added again. The RCZ of a session added as VBO joins that session as its alternative source instead (<em>RCZ added to Session 2.</em>, see <a href="#combined">VBO and RCZ of one session</a>); a VBO for a session added as RCZ is not added. The message says so.</li>
   <li>While the bar shows a session being added, the day stays open: <strong>Back</strong> asks you to wait until the session is in.</li>
 </ol>
 <p>Excluded laps, circuit names and your chosen group are kept. A day that was saved is saved again at once with the new session; a day never saved is kept as unsaved work (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
@@ -78,6 +78,19 @@
   <li><strong>Save</strong> regroups the day. <strong>Use the detected route</strong> removes your setting again.</li>
 </ul>
 <p>Use this when a session was put in the wrong group, or its direction is unknown.</p>
+
+<h3 id="combined">VBO and RCZ of one session</h3>
+<p>When a session has both a VBO and an RCZ of the same drive, the app lines up the two recordings' clocks by their speed traces and combines them by itself, with nothing to confirm. The results show from the VBO straight away; meanwhile the Circuits row says <em>Lining up with its RCZ…</em>, and the combined channels appear when that is done (a few seconds per session):</p>
+<ul>
+  <li>A channel only the RCZ recorded is added to the session. The Circuits row then says, for example, <em>Combined with its RCZ: 1 channel added</em>, and wherever that channel is listed or charted it says <em>from RCZ</em>.</li>
+  <li>A channel both recorded stays the VBO's. Channels the two declare with different units (or one without a unit) are never combined.</li>
+  <li>When the two disagree on a channel, the row says so, for example <em>Satellites: the VBO and the RCZ disagree</em>, with three buttons: <strong>Keep VBO</strong> (the default), <strong>Fill gaps</strong> (the VBO, and the RCZ where the VBO has no data) and <strong>Use RCZ</strong> (the RCZ, and the VBO where the RCZ has no data).</li>
+  <li>When the RCZ was lined up but has nothing to add and agrees with the VBO, the row says so quietly, for example <em>Lined up with its RCZ (−0.14 s); nothing to add</em>.</li>
+  <li>If lining up an RCZ you just added fails, the app says <em>RCZ added to Session 2, but it could not be combined; it is kept and tried again when the day opens.</em> and the row says <em>Not combined with its RCZ: lining them up failed</em>.</li>
+  <li>When the clocks cannot be lined up, nothing is combined and the row says why in one line, for example <em>Not combined with its RCZ: their speed traces do not line up clearly</em>.</li>
+</ul>
+<p>Laps, lap times and the ranking always come from the VBO alone, as does the theoretical best; the combined channels are used by lap charts, comparisons and the Car and Driver cards. Otherwise a session whose RCZ added nothing and agrees with its VBO looks as before.</p>
+<p>When a saved day's RCZ is not where the day says, or the file there is another recording, a card lists it (<em>The RCZ of 1 session could not be used</em>) with <strong>Find recordings in a folder…</strong>; the session uses its VBO alone until then.</p>
 
 <h2 id="notes">Notes</h2>
 <p>At the bottom, <strong>Notes</strong> lists messages from the analysis, each starting with the session it is about. Sessions whose circuit could not be identified are listed under their own heading; their laps are not compared.</p>

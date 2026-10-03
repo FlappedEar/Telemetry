@@ -19,6 +19,7 @@ import 'package:telemetry/main.dart';
 
 import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 /// Logical sizes of the devices the app is tested on.
 const sizes = {
@@ -33,7 +34,7 @@ const sizes = {
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('layout'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   DayImportOutcome importDay() {
     final files = {

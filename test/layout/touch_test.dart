@@ -22,6 +22,7 @@ import 'package:telemetry/main.dart';
 import '../day/blank_tiles.dart';
 import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
+import '../support/temp_directory.dart';
 
 /// The phone and tablet sizes the owner uses at the track.
 const sizes = {
@@ -71,7 +72,7 @@ class _ListTapTargetGuideline extends MinimumTapTargetGuideline {
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('touch'));
-  tearDown(() => directory.deleteSync(recursive: true));
+  tearDown(() => deleteTemporaryDirectory(directory));
 
   // A synthetic day with pedals, G, an oil temperature and heart rate, its
   // theoretical best and channel summaries calculated. No real data.
