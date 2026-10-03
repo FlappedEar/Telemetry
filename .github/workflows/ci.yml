@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+  # Entries in main's merge queue run the same checks before they merge.
+  merge_group:
   push:
     branches: [main]
   workflow_dispatch:

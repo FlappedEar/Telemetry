@@ -14,6 +14,8 @@ on:
     paths:
       - 'docs/user-guide/**'
       - '.github/workflows/user-guide.yml'
+  # merge_group takes no path filter, so every queue entry builds the guide.
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -38,7 +40,7 @@ jobs:
         run: python3 docs/user-guide/build.py "$RUNNER_TEMP/user-guide"
 
       - name: Upload Pages artifact
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ runner.temp }}/user-guide
