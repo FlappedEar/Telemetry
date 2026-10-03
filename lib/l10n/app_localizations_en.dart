@@ -652,4 +652,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get renameDayRequired => 'A day needs a name.';
+
+  @override
+  String get retryRecordingsWaitAdding =>
+      'Wait until the recordings are added, then retry.';
+
+  @override
+  String get retryRecordingsAddedMeanwhile =>
+      'Recordings were added meanwhile. Retry the recordings again.';
+
+  @override
+  String get retryRecordingsNone =>
+      'None of the day\'s recordings could be opened, so the day stays as it is.';
+
+  @override
+  String retryRecordingsFailed(String reason) {
+    return 'The day could not be opened again: $reason';
+  }
 }

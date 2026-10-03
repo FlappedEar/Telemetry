@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import 'day_results_controller.dart' show offersCalculateAgain;
 import '../format.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton, lossColor;
 import 'track_map.dart';
@@ -115,7 +116,9 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
               const Text('Measured with the theoretical best…')
             else if (result.state != DayTheoreticalBestState.ready) ...[
               Text(result.message),
-              if (widget.onRetry case final retry?) CalculateAgainButton(retry),
+              if (widget.onRetry case final retry?
+                  when offersCalculateAgain(result))
+                CalculateAgainButton(retry),
             ] else
               ..._ready(context, result),
           ],

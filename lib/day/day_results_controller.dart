@@ -1571,7 +1571,7 @@ final class DayResultsController extends ChangeNotifier {
     if (_disposed ||
         _theoreticalBestLoading ||
         result == null ||
-        result.state == DayTheoreticalBestState.ready) {
+        !offersCalculateAgain(result)) {
       return false;
     }
     _resetTheoreticalBest();
@@ -2155,3 +2155,10 @@ final class DayAddition {
   final String? savedTo;
   final String saveError;
 }
+
+/// Whether [result] offers "Calculate again": as in Overlays, only when
+/// it is unavailable or the calculation failed.
+bool offersCalculateAgain(DayTheoreticalBest result) => switch (result.state) {
+  DayTheoreticalBestState.unavailable || DayTheoreticalBestState.error => true,
+  DayTheoreticalBestState.ready => false,
+};

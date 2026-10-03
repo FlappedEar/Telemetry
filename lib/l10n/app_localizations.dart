@@ -1080,6 +1080,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A day needs a name.'**
   String get renameDayRequired;
+
+  /// Retrying while recordings are still being added.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the recordings are added, then retry.'**
+  String get retryRecordingsWaitAdding;
+
+  /// Recordings were added to the day while it was being opened again.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings were added meanwhile. Retry the recordings again.'**
+  String get retryRecordingsAddedMeanwhile;
+
+  /// Retrying opened none of the day's recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'None of the day\'s recordings could be opened, so the day stays as it is.'**
+  String get retryRecordingsNone;
+
+  /// Retrying could not read the day's document; reason is the error, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be opened again: {reason}'**
+  String retryRecordingsFailed(String reason);
 }
 
 class _AppLocalizationsDelegate

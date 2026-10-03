@@ -670,4 +670,21 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get renameDayRequired => 'Dzień musi mieć nazwę.';
+
+  @override
+  String get retryRecordingsWaitAdding =>
+      'Poczekaj, aż nagrania zostaną dodane, i spróbuj ponownie.';
+
+  @override
+  String get retryRecordingsAddedMeanwhile =>
+      'W międzyczasie dodano nagrania. Ponów odczyt nagrań jeszcze raz.';
+
+  @override
+  String get retryRecordingsNone =>
+      'Nie udało się otworzyć żadnego nagrania dnia, więc dzień pozostaje bez zmian.';
+
+  @override
+  String retryRecordingsFailed(String reason) {
+    return 'Nie udało się ponownie otworzyć dnia: $reason';
+  }
 }

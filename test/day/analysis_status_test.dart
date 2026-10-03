@@ -183,6 +183,17 @@ void main() {
     expect(controller.retryTheoreticalBest(), isFalse);
   });
 
+  test('only an unavailable or failed result offers calculating again', () {
+    DayTheoreticalBest of(DayTheoreticalBestState state) =>
+        DayTheoreticalBest(groupId: 'g', state: state, message: '');
+    expect(
+      offersCalculateAgain(of(DayTheoreticalBestState.unavailable)),
+      isTrue,
+    );
+    expect(offersCalculateAgain(of(DayTheoreticalBestState.error)), isTrue);
+    expect(offersCalculateAgain(of(DayTheoreticalBestState.ready)), isFalse);
+  });
+
   test('a result requested before calculating again is dropped', () async {
     final outcome = rectangleDay();
     var calls = 0;
@@ -265,6 +276,20 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('1 session could not be opened'), findsOneWidget);
+
+    // A document that cannot be read any more: said, the day stays.
+    final saved = File(path).readAsBytesSync();
+    File(path).writeAsStringSync('{not json');
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('The day could not be opened again: '),
+      findsOneWidget,
+    );
+    expect(find.text('1 session could not be opened'), findsOneWidget);
+    File(path).writeAsBytesSync(saved);
+    ScaffoldMessenger.of(tester.element(retry)).removeCurrentSnackBar();
+    await tester.pumpAndSettle();
 
     // Back where the day says: the day opens again with both sessions.
     File(away).renameSync('${directory.path}/b.vbo');

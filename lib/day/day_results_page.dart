@@ -444,7 +444,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (path == null) return;
     final l10n = context.l10n;
     if (_controller.adding) {
-      _tell('Wait until the recordings are added, then find the others.');
+      _tell(l10n.retryRecordingsWaitAdding);
       return;
     }
     if (_controller.dirty) {
@@ -459,23 +459,24 @@ class _DayResultsPageState extends State<DayResultsPage> {
         .where((recording) => shown.contains(recording.runId))
         .length;
     setState(() => _relinking = true);
-    final task = _retryTask = runInBackground(
-      (cancelled) => openDay(path, cancelled: cancelled),
-    );
+    final task = _retryTask = runInBackground(reopenDay, path);
     try {
       final day = await task.result;
       if (!mounted || generation != _retryGeneration) return;
       if (_controller.adding ||
           _controller.dirty ||
           _controller.runs.length != sessions) {
-        _tell('Recordings were added meanwhile. Find the recordings again.');
+        _tell(l10n.retryRecordingsAddedMeanwhile);
         return;
       }
       if (day.missing.length >= missing && alternatives == 0) {
         _tell(l10n.retryRecordingsStill);
         return;
       }
-      if (day.analysis == null) return;
+      if (day.analysis == null) {
+        _tell(l10n.retryRecordingsNone);
+        return;
+      }
       final replace = widget.replace;
       if (replace != null) {
         replace(
@@ -499,9 +500,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
       );
     } on OperationCancelled {
       return;
-    } on Exception catch (error) {
+    } on BackgroundTaskFailed catch (error) {
       if (mounted && generation == _retryGeneration) {
-        _tell('The day could not be opened again: $error');
+        _tell(l10n.retryRecordingsFailed(error.message));
       }
     } finally {
       if (identical(_retryTask, task)) _retryTask = null;
@@ -1162,3 +1163,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
     );
   }
 }
+
+/// The day saved at [path] opened again, as [DayResultsPage]'s "Retry
+/// recordings" runs it in the background: top-level, so that nothing of
+/// the page goes with it to the other isolate.
+OpenedDay reopenDay(String path, CancellationCheck cancelled) =>
+    openDay(path, cancelled: cancelled);

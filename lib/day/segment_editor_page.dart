@@ -270,7 +270,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(result.message),
-                    if (!loading)
+                    if (!loading && offersCalculateAgain(result))
                       CalculateAgainButton(_controller.retryTheoreticalBest),
                   ],
                 ),

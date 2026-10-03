@@ -1017,5 +1017,26 @@
   "renameDayRequired": "A day needs a name.",
   "@renameDayRequired": {
     "description": "Shown under an empty day name."
+  },
+  "retryRecordingsWaitAdding": "Wait until the recordings are added, then retry.",
+  "@retryRecordingsWaitAdding": {
+    "description": "Retrying while recordings are still being added."
+  },
+  "retryRecordingsAddedMeanwhile": "Recordings were added meanwhile. Retry the recordings again.",
+  "@retryRecordingsAddedMeanwhile": {
+    "description": "Recordings were added to the day while it was being opened again."
+  },
+  "retryRecordingsNone": "None of the day's recordings could be opened, so the day stays as it is.",
+  "@retryRecordingsNone": {
+    "description": "Retrying opened none of the day's recordings."
+  },
+  "retryRecordingsFailed": "The day could not be opened again: {reason}",
+  "@retryRecordingsFailed": {
+    "description": "Retrying could not read the day's document; reason is the error, in English.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
   }
 }

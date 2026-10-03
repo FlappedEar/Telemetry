@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import 'day_results_controller.dart' show offersCalculateAgain;
 import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
@@ -162,7 +163,9 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(result.message),
               ),
-              if (widget.onRetry case final retry?) CalculateAgainButton(retry),
+              if (widget.onRetry case final retry?
+                  when offersCalculateAgain(result))
+                CalculateAgainButton(retry),
             ] else
               ..._ready(context, result),
           ],
