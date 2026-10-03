@@ -994,5 +994,6 @@
   "mapBackgroundApple": "Apple Maps",
   "mapBackgroundPlain": "Bez tła",
   "documentPickerDays": "Dzień FlappedEar",
-  "documentPickerLookInFolder": "Szukaj w tym folderze"
+  "documentPickerLookInFolder": "Szukaj w tym folderze",
+  "speedLegendNoSpeed": "Nie zapisano prędkości; ślad jest w jednym kolorze."
 }

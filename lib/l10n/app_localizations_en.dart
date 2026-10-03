@@ -4050,4 +4050,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentPickerLookInFolder => 'Look in this folder';
+
+  @override
+  String get speedLegendNoSpeed =>
+      'No speed recorded; the trace is drawn in one colour.';
 }

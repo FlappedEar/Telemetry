@@ -6019,5 +6019,9 @@
   "documentPickerLookInFolder": "Look in this folder",
   "@documentPickerLookInFolder": {
     "description": "The folder picker's confirm button when looking for a day's missing recordings."
+  },
+  "speedLegendNoSpeed": "No speed recorded; the trace is drawn in one colour.",
+  "@speedLegendNoSpeed": {
+    "description": "Under the track map when the lap has no speed channel, so the trace has no speed colours."
   }
 }

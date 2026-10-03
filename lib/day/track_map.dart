@@ -937,7 +937,7 @@ class SpeedLegend extends StatelessWidget {
     final theme = Theme.of(context);
     if (range == null) {
       return Text(
-        'No speed recorded; the trace is drawn in one colour.',
+        context.l10n.speedLegendNoSpeed,
         style: theme.textTheme.bodySmall,
       );
     }

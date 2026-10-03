@@ -6134,6 +6134,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Look in this folder'**
   String get documentPickerLookInFolder;
+
+  /// Under the track map when the lap has no speed channel, so the trace has no speed colours.
+  ///
+  /// In en, this message translates to:
+  /// **'No speed recorded; the trace is drawn in one colour.'**
+  String get speedLegendNoSpeed;
 }
 
 class _AppLocalizationsDelegate

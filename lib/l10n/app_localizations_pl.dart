@@ -4128,4 +4128,8 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get documentPickerLookInFolder => 'Szukaj w tym folderze';
+
+  @override
+  String get speedLegendNoSpeed =>
+      'Nie zapisano prędkości; ślad jest w jednym kolorze.';
 }
