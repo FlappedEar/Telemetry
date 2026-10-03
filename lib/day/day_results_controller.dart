@@ -799,6 +799,7 @@ final class DayResultsController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
     try {
       final revision = _revision;
+      final metadataNow = {..._metadataEdits};
       final document = dayDocument(
         eventId: eventId,
         name: _name,
@@ -812,9 +813,14 @@ final class DayResultsController extends ChangeNotifier {
         groupChosen: _groupChosen,
         fusions: _fusions,
         pendingAlternatives: _pendingRecordings,
+        runMetadata: metadataNow,
       );
       await _writer(path, document);
       _document = document;
+      // The details saved are in the document now; later edits stay.
+      for (final MapEntry(:key, :value) in metadataNow.entries) {
+        if (_metadataEdits[key] == value) _metadataEdits.remove(key);
+      }
       _documentPath = path;
       _documentBase = path;
       // Segment edits wait while saving, so the saved ones are all of them.
@@ -1406,7 +1412,98 @@ final class DayResultsController extends ChangeNotifier {
   /// The day's runs with the notes, conditions and setup changes the
   /// document records for them.
   List<ProgressionRunInfo> get progressionRuns =>
-      progressionRunInfo(runs, documentRuns: _savedRuns);
+      progressionRunInfo(runs, documentRuns: _metadataRuns);
+
+  // The document's runs with the unsaved edits of their details.
+  List<Object?> get _metadataRuns =>
+      applyRunMetadataEdits(_savedRuns, _metadataEdits);
+
+  // The user's unsaved edits of sessions' details, by run id.
+  final Map<String, RunMetadata> _metadataEdits = {};
+
+  /// [runId]'s name, notes, conditions and setup changes as the user sees
+  /// them, unsaved edits included.
+  RunMetadata runMetadata(String runId) {
+    final edited = _metadataEdits[runId];
+    if (edited != null) return edited;
+    final named = _named(runId);
+    for (final value in _savedRuns) {
+      if (value case final Map<String, Object?> run when run['id'] == runId) {
+        final stored = RunMetadata.fromRun(run);
+        return RunMetadata(
+          name: named?.name ?? stored.name,
+          notes: stored.notes,
+          conditions: stored.conditions,
+          setupChanges: stored.setupChanges,
+        );
+      }
+    }
+    return RunMetadata(name: named?.name ?? '');
+  }
+
+  /// Edits [runId]'s name, notes, conditions and setup changes, as
+  /// FlappedEar Overlays edits them ([applyRunMetadata]): the day then has
+  /// unsaved changes. Returns why not ([runMetadataProblem]), or null.
+  String? updateRunMetadata(String runId, RunMetadata metadata) {
+    final named = _named(runId);
+    if (named == null) return 'The session is not in this day.';
+    final problem = runMetadataProblem(metadata);
+    if (problem != null) return problem;
+    final current = runMetadata(runId);
+    final run = <String, Object?>{
+      'name': current.name,
+      for (final MapEntry(:key, :value) in {
+        'notes': current.notes,
+        'conditions': current.conditions,
+        'setupChanges': current.setupChanges,
+      }.entries)
+        if (value.isNotEmpty) key: value,
+    };
+    if (!applyRunMetadata(run, metadata)) return null;
+    final name = metadata.name.trim();
+    _metadataEdits[runId] = RunMetadata(
+      name: name,
+      notes: metadata.notes,
+      conditions: metadata.conditions,
+      setupChanges: metadata.setupChanges,
+    );
+    if (name != named.name) {
+      _runs[_runs.indexOf(named)] = (run: named.run, name: name);
+      _channelRuns = null;
+      _analysis = renameDayRun(
+        _analysis,
+        runId,
+        name,
+        exclusions: _exclusions,
+        preferredGroupId: _groupId,
+      );
+      // Their results name the session.
+      _resetTheoreticalBest();
+      _resetChannelSummaries();
+    }
+    _explainedFor = null;
+    _detailsChanged();
+    return null;
+  }
+
+  /// Renames the day (the document's event name, which Overlays shows too).
+  /// Returns why not ([dayNameProblem]), or null.
+  String? renameDay(String name) {
+    final problem = dayNameProblem(name);
+    if (problem != null) return problem;
+    final trimmed = name.trim();
+    if (trimmed == _name) return null;
+    _name = trimmed;
+    _detailsChanged();
+    return null;
+  }
+
+  void _detailsChanged() {
+    _revision++;
+    _dirty = true;
+    _scheduleRecovery();
+    notifyListeners();
+  }
 
   /// The shown group's runs in recording order with their best laps.
   DayProgression get progression {
@@ -1875,6 +1972,7 @@ final class DayResultsController extends ChangeNotifier {
     final groupChosenNow = _groupChosen;
     final fusionsNow = {..._fusions};
     final pendingNow = {..._pendingRecordings};
+    final metadataNow = {..._metadataEdits};
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -1897,6 +1995,7 @@ final class DayResultsController extends ChangeNotifier {
             groupChosen: groupChosenNow,
             fusions: fusionsNow,
             pendingAlternatives: pendingNow,
+            runMetadata: metadataNow,
           ),
           originalPath: original,
           basePath: base,

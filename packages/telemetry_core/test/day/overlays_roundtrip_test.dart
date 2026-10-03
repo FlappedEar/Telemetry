@@ -14,6 +14,11 @@
 // and segments; Telemetry's save keeps every field, and Overlays reads it back
 // the same.
 //
+// Session details (FET-52): the same edits of a session's name, notes,
+// conditions and setup changes, made in Telemetry and by Overlays'
+// updateRunMetadata on the same day, save the same document; a day Telemetry
+// renamed opens in Overlays with its name, and Overlays' save keeps it.
+//
 // FET_ROUNDTRIP_RECORDINGS names other recordings (a folder of VBO files, or
 // RCZ files with FET_ROUNDTRIP_EXTENSION=.rcz; for example a real day, never
 // committed) to use instead of the fixtures';
@@ -290,6 +295,147 @@ void main() {
           '${[for (final run in created['runs']! as List) (_object(_object(run)['trackSegments'])['count']! as int)].reduce((a, b) => a + b)} segments: equal',
         );
       }
+    },
+    timeout: const Timeout(Duration(minutes: 30)),
+    skip: _tool == null ? 'Set FLAPPEDEAR_OVERLAYS_ROUNDTRIP to tool/cpp_project_roundtrip' : false,
+  );
+
+  test(
+    'session details edited in Telemetry are saved as Overlays saves them',
+    () async {
+      final runs = nameRunsInRecordingOrder(prepareTelemetryImport(recordings).runs);
+      final analysis = analyzeDay([
+        for (final named in runs)
+          DayRunInput(
+            runId: named.run.id,
+            name: named.name,
+            contentSha256: named.run.contentSha256,
+            session: named.run.telemetry,
+            laps: named.run.laps,
+          ),
+      ]);
+      final path = p.join(root, 'details.fetproject');
+      await saveDayDocument(
+        path,
+        dayDocument(
+          eventId: newEventId(),
+          name: 'Day before',
+          runs: runs,
+          analysis: analysis,
+          projectPath: path,
+        ),
+      );
+
+      // Each edit starts from the day the previous one saved: a legacy record
+      // without the keys, texts with spaces, blank and cleared texts.
+      const edits = [
+        RunMetadata(name: '  Warm-up  ', notes: ' Brake earlier into T1 ', setupChanges: '   '),
+        RunMetadata(name: 'Warm-up', conditions: 'Dry, 18 °C', setupChanges: 'Tyres +0.1 bar'),
+        RunMetadata(name: 'Sesja próbna ✓', notes: 'Line 1\nLine 2', conditions: ''),
+      ];
+      const index = 1;
+      var current = path;
+      for (final (step, edit) in edits.indexed) {
+        final overlaysPath = p.join(root, 'overlays-$step.fetproject');
+        final inspected = _object(
+          _run([
+            'metadata',
+            current,
+            overlaysPath,
+            '$index',
+            edit.name,
+            edit.notes,
+            edit.conditions,
+            edit.setupChanges,
+          ]),
+        );
+        final overlaysSaved = readDayDocument(overlaysPath);
+
+        final day = openDay(current);
+        expect(day.missing, isEmpty);
+        final runId = ((_object(day.document['event'])['runs']! as List)[index] as Map)['id']!;
+        final name = edit.name.trim();
+        final telemetryPath = p.join(root, 'telemetry-$step.fetproject');
+        final document = dayDocument(
+          eventId: day.eventId,
+          name: day.name,
+          runs: [
+            for (final named in day.runs)
+              named.run.id == runId ? (run: named.run, name: name) : named,
+          ],
+          analysis: renameDayRun(day.analysis!, runId as String, name, exclusions: day.exclusions),
+          exclusions: day.exclusions,
+          projectPath: telemetryPath,
+          previous: day.document,
+          previousPath: current,
+          runMetadata: {runId: edit},
+        );
+        await saveDayDocument(telemetryPath, document);
+        final telemetrySaved = readDayDocument(telemetryPath);
+        final telemetryRun = _object((_object(telemetrySaved['event'])['runs']! as List)[index]);
+        final overlaysRun = _object((_object(overlaysSaved['event'])['runs']! as List)[index]);
+        for (final key in ['name', ...runMetadataTextKeys]) {
+          expect(telemetryRun.containsKey(key), overlaysRun.containsKey(key), reason: '$step $key');
+          expect(telemetryRun[key], overlaysRun[key], reason: '$step $key');
+        }
+        // The whole documents match but for paths relative to their own
+        // files, Overlays' own default settings and documentState.
+        Map<String, Object?> comparable(Map<String, Object?> saved) => {
+          for (final entry in saved.entries)
+            if (!_overlaysDefaults.contains(entry.key) && entry.key != 'documentState')
+              entry.key: entry.value,
+        };
+        expect(
+          jsonDifferences(
+            comparable(telemetrySaved),
+            comparable(overlaysSaved),
+            unordered: const {'event.lapExclusions'},
+          ),
+          isEmpty,
+        );
+        // Overlays sees Telemetry's edit as its own, laps named after it.
+        final [telemetryInspected as Map<String, Object?>] =
+            _run(['inspect', telemetryPath])! as List;
+        expect(
+          jsonDifferences(
+            overlaysView(telemetryInspected)..remove('documentState'),
+            overlaysView(inspected)..remove('documentState'),
+            tolerance: 1e-9,
+          ),
+          isEmpty,
+        );
+        expect(
+          jsonDifferences(
+            telemetryView(openDay(telemetryPath))..remove('documentState'),
+            overlaysView(inspected)..remove('documentState'),
+            tolerance: 1e-9,
+          ),
+          isEmpty,
+        );
+        current = telemetryPath;
+      }
+
+      // A day renamed in Telemetry keeps its name through Overlays.
+      final day = openDay(current);
+      const dayName = 'Żółta flaga – evening ✓';
+      expect(dayNameProblem(dayName), isNull);
+      await saveDayDocument(
+        current,
+        dayDocument(
+          eventId: day.eventId,
+          name: dayName,
+          runs: day.runs,
+          analysis: day.analysis!,
+          exclusions: day.exclusions,
+          projectPath: current,
+          previous: day.document,
+          previousPath: current,
+        ),
+      );
+      final resaved = _object(_run(['resave', current]));
+      expect(_object(resaved['opened'])['eventName'], dayName);
+      expect(_object(resaved['saved'])['eventName'], dayName);
+      expect(openDay(current).name, dayName);
     },
     timeout: const Timeout(Duration(minutes: 30)),
     skip: _tool == null ? 'Set FLAPPEDEAR_OVERLAYS_ROUNDTRIP to tool/cpp_project_roundtrip' : false,

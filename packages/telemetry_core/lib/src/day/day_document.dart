@@ -16,6 +16,7 @@ import 'compatibility.dart';
 import 'day_analysis.dart';
 import 'day_fusion.dart';
 import 'day_laps.dart';
+import 'run_metadata.dart';
 import 'track_inference.dart';
 
 /// A new event id: 32 random lowercase hex digits.
@@ -133,6 +134,10 @@ Map<String, Object?> _unknownConfiguration(
 /// id: each is written as a source, so the day opened again aligns it, and
 /// the run's decision stays as it was.
 ///
+/// [runMetadata] are the user's edits of runs' names, notes, conditions and
+/// setup changes by run id, written as Overlays writes them
+/// ([applyRunMetadata]).
+///
 /// Reads each recording's first, middle and last 64 KiB for its fingerprint.
 Map<String, Object?> dayDocument({
   required String eventId,
@@ -148,6 +153,7 @@ Map<String, Object?> dayDocument({
   bool groupChosen = false,
   Map<String, RunFusion> fusions = const {},
   Map<String, TelemetryRunProposal> pendingAlternatives = const {},
+  Map<String, RunMetadata> runMetadata = const {},
   Random? random,
 }) {
   final chosenGroup = analysis.chosenGroup;
@@ -266,6 +272,9 @@ Map<String, Object?> dayDocument({
     } else {
       run['trackSegments'] = _copy({'segments': edited})['segments'];
     }
+  }
+  for (final run in allRuns) {
+    if (runMetadata[run['id']] case final metadata?) applyRunMetadata(run, metadata);
   }
   if (automaticSegments) _approveAutomaticSegments(allRuns, opened, runs, analysis, random);
 

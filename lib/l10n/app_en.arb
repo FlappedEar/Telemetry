@@ -947,5 +947,75 @@
   "retryRecordingsStill": "The recordings are still not where the day says.",
   "@retryRecordingsStill": {
     "description": "Retrying found no more recordings."
+  },
+  "sessionDetailsHeading": "Session details",
+  "@sessionDetailsHeading": {
+    "description": "Heading of the day page's list of sessions with their conditions, setup changes and notes."
+  },
+  "sessionDetailsNone": "No conditions, setup changes or notes",
+  "@sessionDetailsNone": {
+    "description": "Shown under a session that has no conditions, setup changes or notes."
+  },
+  "sessionDetailsTitle": "Details of {session}",
+  "@sessionDetailsTitle": {
+    "description": "Title of the dialog that edits a session's name, conditions, setup changes and notes.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "sessionDetailsName": "Name",
+  "@sessionDetailsName": {
+    "description": "Text field label: the session's name."
+  },
+  "sessionDetailsNameRequired": "A session needs a name.",
+  "@sessionDetailsNameRequired": {
+    "description": "Shown under an empty session name."
+  },
+  "sessionDetailsConditions": "Conditions",
+  "@sessionDetailsConditions": {
+    "description": "Text field label and list label: the weather and track conditions of a session."
+  },
+  "sessionDetailsConditionsHint": "Dry, 18 °C",
+  "@sessionDetailsConditionsHint": {
+    "description": "Example conditions in the empty text field."
+  },
+  "sessionDetailsSetup": "Setup changes",
+  "@sessionDetailsSetup": {
+    "description": "Text field label and list label: what was changed on the car before the session."
+  },
+  "sessionDetailsSetupHint": "Tyres +0.1 bar",
+  "@sessionDetailsSetupHint": {
+    "description": "Example setup change in the empty text field. Keep the decimal point."
+  },
+  "sessionDetailsNotes": "Notes",
+  "@sessionDetailsNotes": {
+    "description": "Text field label and list label: the driver's notes on a session."
+  },
+  "sessionDetailsSaved": "Kept in the day's file, which FlappedEar Overlays reads too.",
+  "@sessionDetailsSaved": {
+    "description": "Explains where a session's details are kept."
+  },
+  "detailsInvalid": "This text cannot be saved.",
+  "@detailsInvalid": {
+    "description": "Shown when an entered name or text contains characters that cannot be saved."
+  },
+  "renameDayMenu": "Rename day…",
+  "@renameDayMenu": {
+    "description": "Menu item that opens the dialog renaming the day."
+  },
+  "renameDayTitle": "Rename day",
+  "@renameDayTitle": {
+    "description": "Title of the dialog that renames the day."
+  },
+  "renameDayName": "Day name",
+  "@renameDayName": {
+    "description": "Text field label: the day's name."
+  },
+  "renameDayRequired": "A day needs a name.",
+  "@renameDayRequired": {
+    "description": "Shown under an empty day name."
   }
 }

@@ -325,6 +325,14 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
+    // A session's details.
+    await scrollIn(tester, summary, find.text('Session details'), delta: -300);
+    await tester.tap(find.byIcon(Icons.edit_note).first);
+    await tester.pumpAndSettle();
+    await shot(tester, 'session-details-dialog');
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
     // A corner's details, from the theoretical best's losses.
     final corner = find.byWidgetPredicate(
       (w) =>
