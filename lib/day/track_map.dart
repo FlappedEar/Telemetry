@@ -639,10 +639,12 @@ class _TiledMap extends StatelessWidget {
                     pathLatLng(path.origin, a.dx, a.dy),
                     pathLatLng(path.origin, b.dx, b.dy),
                   ],
-                  color: Colors.white,
+                  // Black on a white edge: apart from the red loss scale and
+                  // from the white direction arrow drawn on it.
+                  color: Colors.black,
                   strokeWidth: 4,
                   borderStrokeWidth: 1.5,
-                  borderColor: Colors.black87,
+                  borderColor: Colors.white,
                 ),
               ],
             ),

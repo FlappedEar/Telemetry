@@ -187,7 +187,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
                     high: high,
                     line: theme.colorScheme.outline,
                     box: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.4,
+                      alpha: 0.7,
                     ),
                     mark: theme.colorScheme.onSurface,
                   ),
