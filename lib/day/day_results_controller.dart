@@ -155,6 +155,10 @@ final class DayResultsController extends ChangeNotifier {
   bool _dirty;
   bool _saving = false;
 
+  // Counts the user's changes, so a save knows whether the day changed
+  // while its snapshot was being written.
+  int _revision = 0;
+
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
   Timer? _recoveryTimer;
@@ -196,6 +200,7 @@ final class DayResultsController extends ChangeNotifier {
     _saving = true;
     notifyListeners();
     try {
+      final revision = _revision;
       final document = dayDocument(
         eventId: eventId,
         name: _name,
@@ -212,13 +217,21 @@ final class DayResultsController extends ChangeNotifier {
       _document = document;
       _documentPath = path;
       _documentBase = path;
-      _dirty = false;
+      // Segment edits wait while saving, so the saved ones are all of them.
       _segmentEdits.clear();
       // Automatic segments were approved by the save with their own ids:
       // edits start from the saved ones.
       if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
-      _recoveryTimer?.cancel();
-      _enqueueRecovery(() => recovery?.clear());
+      if (_revision == revision) {
+        _dirty = false;
+        _recoveryTimer?.cancel();
+        _enqueueRecovery(() => recovery?.clear());
+      } else {
+        // The day changed while the snapshot was written: those changes
+        // are not in the file, so the day stays unsaved and recoverable.
+        _dirty = true;
+        _scheduleRecovery();
+      }
     } finally {
       _saving = false;
       notifyListeners();
@@ -684,6 +697,7 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   void _segmentsChanged() {
+    _revision++;
     _dirty = true;
     _resetTheoreticalBest();
     _scheduleRecovery();
@@ -751,6 +765,7 @@ final class DayResultsController extends ChangeNotifier {
   String redoSegmentEdit() => _segmentHistory(undo: false);
 
   void _rerank() {
+    _revision++;
     _dirty = true;
     _resetTheoreticalBest();
     _analysis = rerankDay(
