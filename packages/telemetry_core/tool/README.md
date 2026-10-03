@@ -274,6 +274,15 @@ Commands (each prints JSON):
   `preferAlternative`; `*=<rule>` for every other conflicting channel, as
   Overlays needs a rule for each), and saves the day. Prints the alignment,
   the review's channels and conflicts, and `inspect`.
+- `review <project> <name> <recording>=<choice>...` and
+  `review-append <project> <recording>=<choice>...`: Overlays' advanced
+  import review (FET-58: `BatchImportDialog`, `beginBatchImport`, then
+  `confirmBatchImport` with one choice per ready file) imports the
+  recordings as a new day named `<name>`, or adds them to the day at
+  `<project>`, and saves it there. A choice is `new` (Import as a run),
+  `skip` (Skip this file) or `same:<k>` (Same run as the k-th recording,
+  1-based). Prints the review rows (name, status, already in the day) and
+  `inspect`.
 
 `test/day/overlays_roundtrip_test.dart` (skipped unless
 `FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) runs both directions on the shared
@@ -329,6 +338,19 @@ Overlays' document with `savedRevision` one higher (and the group still
 applied. `FET_FUSION_ROUNDTRIP_DAY=<folder>` does the same for every VBO/RCZ
 pair of a folder (each conflicting channel `primaryOnly`), for example a
 real day; it prints counts only.
+
+`test/day/overlays_review_roundtrip_test.dart` (also skipped unless
+`FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) checks the reviewed import (FET-58)
+on synthetic recordings: Overlays' review makes the RCZ of
+`writeFusionPair` the run, its VBO "Same run as" the RCZ (overriding the
+automatic pairing) and skips a third file. Telemetry opens the day with the
+RCZ's laps and the VBO as the run's alternative recording, and its re-save
+groups the sources as Overlays did; Overlays then adds the skipped file in
+its own review and recognises the RCZ as already in the day. Telemetry's
+review with the same choices saves the run as Overlays does (one run, the
+same primary, the same sources with content, fingerprint and import
+provenance) and Overlays lists the same recordings. Last run against
+FlappedEar/Overlay `d4d1039`: passed.
 
 The committed day in `../fetproject/test/fixtures/roundtrip` was built by
 `create` from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on

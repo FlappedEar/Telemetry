@@ -190,6 +190,7 @@ final class DayResultsController extends ChangeNotifier {
     ChannelSummariesRunner? channelSummariesRunner,
     FusionRunner? fusionRunner,
     DayAppender? appender,
+    ImportPreparer? preparer,
     bool changed = false,
     AppDiagnostics? diagnostics,
     Map<String, RunFusion> fusions = const {},
@@ -201,6 +202,7 @@ final class DayResultsController extends ChangeNotifier {
        _fusionRunner = fusionRunner ?? defaultFusionRunner,
        _coachRunner = coachRunner ?? defaultCoachRunner,
        _appender = appender ?? const IsolateDayAppender(),
+       _preparer = preparer ?? const IsolateImportPreparer(),
        diagnostics = diagnostics ?? appDiagnostics,
        _channelSummariesRunner =
            channelSummariesRunner ?? defaultChannelSummariesRunner,
@@ -239,9 +241,11 @@ final class DayResultsController extends ChangeNotifier {
     DocumentWriter? writer,
     RecoveryStore? recovery,
     DayAppender? appender,
+    ImportPreparer? preparer,
     FusionRunner? fusionRunner,
   }) : this(
          appender: appender,
+         preparer: preparer,
          fusionRunner: fusionRunner,
          runs: day.runs,
          analysis: day.analysis!,
@@ -265,9 +269,11 @@ final class DayResultsController extends ChangeNotifier {
     DocumentWriter? writer,
     RecoveryStore? recovery,
     DayAppender? appender,
+    ImportPreparer? preparer,
     FusionRunner? fusionRunner,
   }) : this(
          appender: appender,
+         preparer: preparer,
          fusionRunner: fusionRunner,
          runs: day.runs,
          analysis: day.analysis!,
@@ -929,6 +935,99 @@ final class DayResultsController extends ChangeNotifier {
 
   final DayAppender _appender;
 
+  /// Prepares recordings for the review of an addition (FET-58).
+  final ImportPreparer _preparer;
+  ImportPreparer get preparer => _preparer;
+  ImportPreviewJob? _previewJob;
+
+  /// Reads [paths] for the user's review of adding them to the day
+  /// (FET-58): what happens to each recording without review, which of the
+  /// day's sessions one may join, and which the day has already. Nothing is
+  /// added. Null when the day was closed or the reading was cancelled.
+  Future<DayAdditionReview?> reviewAddition(List<String> paths) async {
+    if (_disposed || paths.isEmpty) return null;
+    _previewJob?.cancel();
+    final job = _preparer.start((
+      paths: List.of(paths),
+      includeSubfolders: false,
+    ), (_, _) {});
+    _previewJob = job;
+    final ImportPreview preview;
+    try {
+      preview = await job.result;
+    } on OperationCancelled {
+      return null;
+    } on Object catch (error) {
+      return DayAdditionReview._failed('$error', const []);
+    } finally {
+      if (identical(_previewJob, job)) _previewJob = null;
+    }
+    if (_disposed) return null;
+    final plan = preview.plan;
+    if (plan == null) {
+      return DayAdditionReview._failed(preview.scan.error, preview.scan.notes);
+    }
+    if (plan.runs.isEmpty) {
+      return DayAdditionReview._failed(
+        'No recording could be imported.',
+        importPlanNotes(preview.scan, plan),
+      );
+    }
+    final inDay = {
+      for (final named in _runs) named.run.id,
+      for (final recording in missing) recording.runId,
+    };
+    final grouped = {
+      for (final named in _runs)
+        if ((_fusions[named.run.id]?.fused ?? false) ||
+            _pendingRecordings.containsKey(named.run.id) ||
+            _fusionPending.containsKey(named.run.id))
+          named.run.id,
+    };
+    final sessions = {for (final named in _runs) named.run.id};
+    // As adding without review does: the automatic grouping within the
+    // recordings, then an RCZ of one of the day's VBO sessions joins it, and
+    // another format of a session is not added again.
+    final automatic = automaticImportChoices(plan);
+    // As Overlays: a recording grouped with one the day has is a run again.
+    final groups = {
+      for (final MapEntry(:key, :value) in automatic.entries)
+        key: inDay.contains(value) ? key : value,
+    };
+    final others = _otherFormats([
+      for (final run in plan.runs)
+        if (groups[run.id] == run.id && !inDay.contains(run.id))
+          (run: run, name: ''),
+    ]);
+    final choices = <String, String>{};
+    for (final run in plan.runs) {
+      final group = groups[run.id]!;
+      final session = others[run.id]?.run;
+      choices[run.id] = inDay.contains(run.id)
+          ? skipRecording
+          : group != run.id
+          ? group
+          : session == null
+          ? run.id
+          : run.format == RecordingFormat.rcz &&
+                session.format == RecordingFormat.vbo &&
+                !grouped.contains(session.id)
+          ? session.id
+          : skipRecording;
+    }
+    return DayAdditionReview._(
+      plan: plan,
+      automatic: releaseOrphanedChoices(choices, runs: sessions),
+      automaticNewDay: automatic,
+      sessions: [
+        for (final named in _runs) (runId: named.run.id, name: named.name),
+      ],
+      alreadyGrouped: grouped,
+      alreadyInDay: inDay,
+      runCount: _runs.length + missing.length,
+    );
+  }
+
   /// Prepares the recordings added to the day.
   DayAppender get appender => _appender;
   DayAppendJob? _appendJob;
@@ -953,10 +1052,17 @@ final class DayResultsController extends ChangeNotifier {
   /// recordings arrived (a share opening the day first), for the
   /// diagnostics; else the time is measured from this call, waiting for
   /// earlier additions included.
+  ///
+  /// With [review] and [choices] (FET-58), the recordings are added as the
+  /// user chose in [review] instead of the automatic grouping; nothing is
+  /// added when the day or the recordings changed since
+  /// ([DayAddition.reviewChanged]).
   Future<DayAddition> addRecordings(
     List<String> paths, {
     bool sameDayOnly = false,
     Stopwatch? since,
+    DayAdditionReview? review,
+    ImportChoices? choices,
   }) async {
     final clock = since ?? (Stopwatch()..start());
     if (paths.isEmpty) return const DayAddition(notes: []);
@@ -975,7 +1081,13 @@ final class DayResultsController extends ChangeNotifier {
     DayAddition addition;
     try {
       if (previous != null) await previous;
-      addition = await _add(paths, sameDayOnly: sameDayOnly, clock: clock);
+      addition = await _add(
+        paths,
+        sameDayOnly: sameDayOnly,
+        clock: clock,
+        review: review,
+        choices: choices,
+      );
       if (_notCombinedWhileAdding.isNotEmpty) {
         addition = addition._notCombined([..._notCombinedWhileAdding]);
         _notCombinedWhileAdding.clear();
@@ -995,6 +1107,8 @@ final class DayResultsController extends ChangeNotifier {
     List<String> paths, {
     required bool sameDayOnly,
     required Stopwatch clock,
+    DayAdditionReview? review,
+    ImportChoices? choices,
   }) async {
     if (_disposed) {
       return const DayAddition(
@@ -1015,6 +1129,12 @@ final class DayResultsController extends ChangeNotifier {
         return const DayAddition(notes: [], otherDay: true);
       }
     }
+    final reviewed = review != null && choices != null;
+    if (reviewed && review.runCount != _runs.length + missing.length) {
+      // A session was added (shared, say) while the review was open.
+      return const DayAddition(notes: [], reviewChanged: true);
+    }
+    final names = {for (final named in _runs) named.run.id: named.name};
     final request = (
       paths: List.of(paths),
       runIds: {
@@ -1024,11 +1144,22 @@ final class DayResultsController extends ChangeNotifier {
       runCount: _runs.length + missing.length,
       rowCount: _analysis.rows.length,
       sameDayAs: sameDayAs,
-      alternatives: const <String, String>{},
-      alternativeOf: const <String, String>{},
+      // The recordings the user made the same run as one of the sessions.
+      alternatives: <String, String>{
+        if (reviewed)
+          for (final MapEntry(:key, :value) in choices.entries)
+            if (key != value && names[value] != null) key: names[value]!,
+      },
+      alternativeOf: <String, String>{
+        if (reviewed)
+          for (final MapEntry(:key, :value) in choices.entries)
+            if (key != value && names.containsKey(value)) key: value,
+      },
+      choices: reviewed ? Map.of(choices) : null,
     );
     var prepared = await _prepare(request);
-    if (prepared case DayAppendOutcome(:final runs) when runs.isNotEmpty) {
+    if (prepared case DayAppendOutcome(:final runs)
+        when runs.isNotEmpty && !reviewed) {
       // A VBO and an RCZ of one drive are one session, also when they come
       // one at a time: prepare again without the day's other formats.
       final alternatives = _otherFormats(runs);
@@ -1052,11 +1183,15 @@ final class DayResultsController extends ChangeNotifier {
                   !(_fusions[value.run.id]?.fused ?? false))
                 key: value.run.id,
           },
+          choices: null,
         ));
       }
     }
     if (prepared is DayAddition) return prepared;
     final outcome = prepared as DayAppendOutcome;
+    if (outcome.reviewChanged) {
+      return DayAddition(notes: outcome.notes, reviewChanged: true);
+    }
     final part = outcome.part;
     if (_disposed) {
       return const DayAddition(
@@ -2129,6 +2264,7 @@ final class DayResultsController extends ChangeNotifier {
       dayChannelSources = const {};
     }
     _appendJob?.cancel();
+    _previewJob?.cancel();
     // Changes made just before leaving the day are still written; best
     // effort, as the app may end before the write finishes.
     unawaited(flushRecovery());
@@ -2184,6 +2320,55 @@ final class DayCornerAnalyzer {
   final bool theoreticalBestAvailable;
 }
 
+/// Recordings read for the review of adding them to a day (FET-58); see
+/// [DayResultsController.reviewAddition].
+final class DayAdditionReview {
+  const DayAdditionReview._({
+    required TelemetryImportPlan this.plan,
+    required this.automatic,
+    required this.automaticNewDay,
+    required this.sessions,
+    required this.alreadyGrouped,
+    required this.alreadyInDay,
+    required this.runCount,
+  }) : error = '',
+       notes = const [];
+
+  const DayAdditionReview._failed(this.error, this.notes)
+    : plan = null,
+      automatic = const {},
+      automaticNewDay = const {},
+      sessions = const [],
+      alreadyGrouped = const {},
+      alreadyInDay = const {},
+      runCount = 0;
+
+  /// The recordings read; null when none could be ([error]).
+  final TelemetryImportPlan? plan;
+
+  /// What happens to each recording when added without review.
+  final ImportChoices automatic;
+
+  /// What happens to each recording when it starts a new day instead.
+  final ImportChoices automaticNewDay;
+
+  /// The day's sessions a recording may be made the same run as.
+  final List<ReviewSession> sessions;
+
+  /// Those of [sessions] that have another recording already.
+  final Set<String> alreadyGrouped;
+
+  /// The recordings the day has already, by run id.
+  final Set<String> alreadyInDay;
+
+  /// The day's sessions when the review was prepared.
+  final int runCount;
+
+  /// Why nothing can be reviewed; empty otherwise.
+  final String error;
+  final List<String> notes;
+}
+
 /// What adding recordings to a day did.
 final class DayAddition {
   const DayAddition({
@@ -2196,7 +2381,12 @@ final class DayAddition {
     this.saveError = '',
     this.otherDay = false,
     this.closed = false,
+    this.reviewChanged = false,
   });
+
+  /// Nothing was added: the day or the recordings changed after the review
+  /// they were added with (FET-58).
+  final bool reviewChanged;
 
   /// Nothing was added: the recordings are from another day than this one
   /// (asked with `sameDayOnly`).
@@ -2230,6 +2420,7 @@ final class DayAddition {
     saveError: saveError,
     otherDay: otherDay,
     closed: closed,
+    reviewChanged: reviewChanged,
   );
 
   /// What was skipped, already in the day or failed.

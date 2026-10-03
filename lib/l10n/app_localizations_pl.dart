@@ -2404,4 +2404,115 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get taskStoppedUnexpectedly => 'Praca nieoczekiwanie się przerwała.';
+
+  @override
+  String get reviewImportTitle => 'Przejrzyj import';
+
+  @override
+  String get reviewImportIntro =>
+      'Wybierz, co stanie się z każdym nagraniem. Nic nie zostanie zaimportowane, dopóki nie potwierdzisz.';
+
+  @override
+  String get reviewBeforeImport => 'Przejrzyj pliki przed importem';
+
+  @override
+  String get addAndReviewRecordings => 'Dodaj i przejrzyj nagrania…';
+
+  @override
+  String get reviewChoiceNewSession => 'Importuj jako nową sesję';
+
+  @override
+  String get reviewChoiceSkip => 'Pomiń ten plik';
+
+  @override
+  String reviewChoiceSameRunAs(String name) {
+    return 'Ta sama sesja co $name';
+  }
+
+  @override
+  String reviewRecordingSummary(String duration, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pełnego okrążenia',
+      many: '$count pełnych okrążeń',
+      few: '$count pełne okrążenia',
+      one: '1 pełne okrążenie',
+      zero: 'brak pełnych okrążeń',
+    );
+    return '$duration · $_temp0';
+  }
+
+  @override
+  String reviewDuplicate(String name) {
+    return 'Ta sama zawartość co $name; zaimportowano raz.';
+  }
+
+  @override
+  String reviewFailed(String reason) {
+    return 'Nie zaimportowano: $reason';
+  }
+
+  @override
+  String get reviewAlreadyInDay => 'Już jest w tym dniu; pominięto.';
+
+  @override
+  String reviewPossibleSameRun(String name) {
+    return 'Możliwe, że to ta sama sesja co $name: ślady GPS się zgadzają.';
+  }
+
+  @override
+  String get reviewDestinationAppend => 'Dodaj do tego dnia';
+
+  @override
+  String get reviewDestinationNewDay => 'Zacznij nowy dzień';
+
+  @override
+  String get reviewNewDayNeedsSave => 'Zapisz ten dzień, zanim zaczniesz nowy.';
+
+  @override
+  String get reviewSameRunHint =>
+      'Dwa eksporty tej samej sesji? Wybierz „Ta sama sesja co”. Okrążenia sesji pochodzą z pliku, który wskażesz; drugi plik zostaje przy niej jako nagranie alternatywne.';
+
+  @override
+  String get reviewConfirmImport => 'Importuj';
+
+  @override
+  String get reviewConfirmAdd => 'Dodaj do dnia';
+
+  @override
+  String get reviewConfirmNewDay => 'Zacznij nowy dzień';
+
+  @override
+  String reviewSessionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nowej sesji',
+      many: '$count nowych sesji',
+      few: '$count nowe sesje',
+      one: '1 nowa sesja',
+      zero: 'Brak nowej sesji',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewProblemTarget =>
+      'Plik należy do tej samej sesji co plik, który nie jest importowany jako osobna sesja.';
+
+  @override
+  String get reviewProblemTooMany =>
+      'Sesja może mieć najwyżej jedno dodatkowe nagranie.';
+
+  @override
+  String get reviewProblemNothing =>
+      'Wybierz co najmniej jeden plik do importu.';
+
+  @override
+  String get reviewChanged =>
+      'Nagrania zmieniły się po przeglądzie, więc niczego nie zaimportowano. Przejrzyj je ponownie.';
+
+  @override
+  String get reviewPreparing => 'Przygotowywanie przeglądu…';
 }

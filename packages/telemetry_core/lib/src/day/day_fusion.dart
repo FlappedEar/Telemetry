@@ -12,6 +12,7 @@
 import '../fusion/channel_fusion.dart';
 import '../fusion/recording_alignment.dart';
 import '../intake/import_plan.dart';
+import '../intake/import_review.dart';
 import '../intake/recording_source.dart';
 import '../operation.dart';
 import '../telemetry_session.dart';
@@ -424,18 +425,23 @@ RunFusion? withFusionRule(
 /// The alternative recording of every run of [primaries] that [plan] has
 /// one for (an RCZ grouped under its VBO by [automaticVboPrimaries]), by run
 /// id: what [fuseRunRecordings] aligns and fuses, in the background after
-/// the day shows.
+/// the day shows. With [choices] (a review, FET-58), the recording the user
+/// made the same run as a run is its alternative, whatever the formats.
 Map<String, TelemetryRunProposal> importedAlternatives(
   TelemetryImportPlan plan,
-  Iterable<TelemetryRunProposal> primaries,
-) {
-  final groups = automaticVboPrimaries(plan);
+  Iterable<TelemetryRunProposal> primaries, {
+  ImportChoices? choices,
+}) {
+  final groups = choices ?? automaticVboPrimaries(plan);
   final byId = {for (final run in primaries) run.id: run};
   final result = <String, TelemetryRunProposal>{};
   for (final run in plan.runs) {
     final primary = byId[groups[run.id]];
     if (primary == null || primary.id == run.id || result.containsKey(primary.id)) continue;
-    if (primary.format != RecordingFormat.vbo || run.format != RecordingFormat.rcz) continue;
+    if (choices == null &&
+        (primary.format != RecordingFormat.vbo || run.format != RecordingFormat.rcz)) {
+      continue;
+    }
     result[primary.id] = run;
   }
   return result;

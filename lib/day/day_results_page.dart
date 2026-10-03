@@ -11,6 +11,7 @@ import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers;
+import '../import/import_review_page.dart';
 import '../l10n.dart';
 import '../settings_dialog.dart';
 import 'background_task.dart';
@@ -48,6 +49,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
   }) : replace = null,
+       startNewDay = null,
        _create = (() => DayResultsController(
          runs: runs,
          analysis: analysis,
@@ -62,6 +64,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
   }) : replace = null,
+       startNewDay = null,
        _create = (() => DayResultsController.opened(day, recovery: recovery));
 
   /// A day held by [controller], which the page then owns. With [replace],
@@ -75,6 +78,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
     this.replace,
+    this.startNewDay,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
@@ -89,6 +93,11 @@ class DayResultsPage extends StatefulWidget {
   /// Takes the day opened again in place of this one; see
   /// [DayResultsPage.controller].
   final ValueChanged<DayResultsController>? replace;
+
+  /// Imports recordings reviewed while this day was shown as a new day
+  /// instead (FET-58), after this page closes: "Start a new day" in the
+  /// review. Not offered when null.
+  final void Function(List<String> paths, ImportChoices choices)? startNewDay;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
@@ -166,7 +175,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final l10n = context.l10n;
     final added = addition.added;
     final lines = [
-      if (addition.error.isNotEmpty)
+      if (addition.reviewChanged)
+        l10n.reviewChanged
+      else if (addition.error.isNotEmpty)
         l10n.additionError(addition.error)
       else if (added.isEmpty &&
           addition.combined.isEmpty &&
@@ -228,6 +239,63 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final paths = await widget.pickers.pickRecordings();
     if (paths.isEmpty || !mounted) return;
     await _controller.addRecordings(paths);
+  }
+
+  // Reading recordings for the review of an addition.
+  bool _preparingReview = false;
+
+  /// Chooses recordings and opens their review (FET-58) before anything is
+  /// added: each one a new session, skipped or the same run as another
+  /// recording or session, added to this day or, with no unsaved changes,
+  /// as a new day.
+  Future<void> _addAndReview() async {
+    final paths = await widget.pickers.pickRecordings();
+    if (paths.isEmpty || !mounted) return;
+    setState(() => _preparingReview = true);
+    final DayAdditionReview? review;
+    try {
+      review = await _controller.reviewAddition(paths);
+    } finally {
+      if (mounted) setState(() => _preparingReview = false);
+    }
+    final plan = review?.plan;
+    if (review == null || !mounted) return;
+    if (plan == null) {
+      _tell(
+        [context.l10n.additionError(review.error), ...review.notes].join('\n'),
+      );
+      return;
+    }
+    final result = await showImportReview(
+      context,
+      plan: plan,
+      automatic: review.automatic,
+      adding: true,
+      sessions: review.sessions,
+      alreadyGrouped: review.alreadyGrouped,
+      alreadyInDay: review.alreadyInDay,
+      automaticNewDay: widget.startNewDay == null
+          ? null
+          : review.automaticNewDay,
+      newDayBlocked: _controller.dirty || _controller.adding,
+    );
+    if (result == null || !mounted) return;
+    final startNewDay = widget.startNewDay;
+    if (result.newDay && startNewDay != null) {
+      // Saved meanwhile is fine; changed meanwhile is not left behind.
+      if (_controller.dirty || _controller.adding) {
+        _tell(context.l10n.reviewNewDayNeedsSave);
+        return;
+      }
+      Navigator.of(context).pop();
+      startNewDay(paths, result.choices);
+      return;
+    }
+    await _controller.addRecordings(
+      paths,
+      review: review,
+      choices: result.choices,
+    );
   }
 
   void _open(DayLapRow row) => Navigator.of(context).push(
@@ -651,7 +719,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
               key: const ValueKey('addRecordings'),
               tooltip: context.l10n.addRecordings,
               icon: const Icon(Icons.playlist_add),
-              onPressed: _controller.adding || _controller.saving || _relinking
+              onPressed:
+                  _controller.adding ||
+                      _controller.saving ||
+                      _relinking ||
+                      _preparingReview
                   ? null
                   : _addRecordings,
             ),
@@ -670,6 +742,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 height: kMinInteractiveDimension,
                 onTap: () => _save(choose: true),
                 child: Text(context.l10n.saveAs),
+              ),
+              PopupMenuItem(
+                key: const ValueKey('addAndReviewRecordings'),
+                height: kMinInteractiveDimension,
+                enabled:
+                    !_controller.adding &&
+                    !_controller.saving &&
+                    !_relinking &&
+                    !_preparingReview,
+                onTap: _addAndReview,
+                child: Text(context.l10n.addAndReviewRecordings),
               ),
               PopupMenuItem(
                 key: const ValueKey('renameDay'),
@@ -716,6 +799,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
               LinearProgressIndicator(
                 key: const ValueKey('addingRecordings'),
                 semanticsLabel: context.l10n.addingRecordings,
+              )
+            else if (_preparingReview)
+              LinearProgressIndicator(
+                key: const ValueKey('preparingReview'),
+                semanticsLabel: context.l10n.reviewPreparing,
               ),
             Expanded(child: _body(context, wide, mapHeight)),
           ],

@@ -3,7 +3,7 @@
 <p class="lead">The app opens on <strong>Import a day</strong>. Give it the day's recordings and it prepares the sessions, laps and analysis on its own.</p>
 
 <figure>
-  <img src="assets/screens/import-empty.png" alt="Import a day on a desktop: Choose recordings, Choose a folder, Open a saved day and Include subfolders" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/import-empty.png" alt="Import a day on a desktop: Choose recordings, Choose a folder, Open a saved day, Include subfolders and Review the files before importing" width="1280" height="800" loading="lazy">
   <figcaption>Import a day on a Mac or PC.</figcaption>
 </figure>
 
@@ -23,6 +23,28 @@
   <tr><td><strong>Open a saved day…</strong></td><td>Open a day you saved before. See <a href="saving.html#open">Opening a day</a>.</td><td>Everywhere</td></tr>
 </table>
 <p>On a phone there is no folder picker; select the files, or share them from RaceChrono. See <a href="phone.html">Phones and tablets</a>.</p>
+
+<h2 id="review">Reviewing the files before importing</h2>
+<p>The import is automatic: nothing asks for your approval. To decide yourself what happens to each file, tick <strong>Review the files before importing</strong>, then choose the recordings or a folder, or drop them. The files are read, and before anything is imported <strong>Review the import</strong> lists every file found:</p>
+<figure>
+  <img src="assets/screens/import-review.png" alt="Review the import: each recording with its length and complete laps, a choice such as Same run as recording-1.vbo or Import as a new session, a hint that the GPS traces agree, and an Import button with the number of new sessions" width="1280" height="800" loading="lazy">
+  <figcaption>The review, with what the automatic import would do already chosen. The files were renamed for this picture.</figcaption>
+</figure>
+<ul>
+  <li>Each file shows its length (minutes:seconds) and its complete laps. A duplicate says which file has the same content, and a file that could not be read says why; neither can be imported.</li>
+  <li>Choose for each file:
+    <ul>
+      <li><strong>Import as a new session</strong>: the file becomes a session of its own.</li>
+      <li><strong>Skip this file</strong>: it is not imported.</li>
+      <li><strong>Same run as …</strong>: the file is another recording of a session you import, for example the RCZ of a VBO. The session's laps come from the file you link to; this file is kept with it as its alternative recording and combined with it as described in <a href="day.html#combined">VBO and RCZ of one session</a>. This replaces the automatic pairing, also the other way round: link the VBO to the RCZ and the RCZ supplies the laps. A session keeps one other recording.</li>
+    </ul>
+  </li>
+  <li><em>Possibly the same run as …: the GPS traces agree.</em> marks two exports whose GPS traces match. It is a hint, not a choice.</li>
+  <li>The choices start as the automatic import would make them, so <strong>Import</strong> without changes gives the same day. The bottom line counts the new sessions, or says why the choices cannot be imported, for example <em>Choose at least one file to import.</em></li>
+  <li><strong>Import</strong> reads the files again and imports them as chosen. If they changed since the review (a file was replaced, or a folder has other files now), nothing is imported: <em>The recordings changed after the review, so nothing was imported. Review them again.</em></li>
+  <li>Closing the review (✕) imports nothing: <em>Import cancelled. Nothing was imported.</em></li>
+</ul>
+<p>The box is cleared after each review, so the next import is automatic again. A single file can be reviewed too. Recordings shared from RaceChrono on a phone are never reviewed: they are added at once, as described in <a href="phone.html#share">Sharing from RaceChrono</a>. To review recordings for a day that is open, see <a href="day.html#add-review">Adding with a review</a>.</p>
 
 <h2 id="progress">While it imports</h2>
 <p>The page shows <em>Looking for recordings…</em>, then <em>Preparing recording X of N…</em> with a progress bar. <strong>Cancel</strong> stops at once and imports nothing. You cannot start a second import while one runs.</p>

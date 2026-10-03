@@ -29,6 +29,7 @@ import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry_core/telemetry_core.dart' show ImportChoices;
 import 'package:telemetry/ui/theme.dart';
 
 import 'demo_day.dart';
@@ -55,8 +56,28 @@ final class _DirectImporter implements DayImporter {
   @override
   DayImportJob start(
     DayImportRequest request,
+    void Function(int, int) progress, {
+    ImportChoices? choices,
+  }) => _DirectJob(runDayImport(request, choices: choices));
+}
+
+/// Prepares reviews on the test's own thread.
+final class _DirectPreparer implements ImportPreparer {
+  @override
+  ImportPreviewJob start(
+    DayImportRequest request,
     void Function(int, int) progress,
-  ) => _DirectJob(runDayImport(request));
+  ) => _DirectPreview(runImportPreview(request));
+}
+
+final class _DirectPreview implements ImportPreviewJob {
+  _DirectPreview(ImportPreview preview) : result = Future.value(preview);
+
+  @override
+  final Future<ImportPreview> result;
+
+  @override
+  void cancel() {}
 }
 
 final class _DirectJob implements DayImportJob {
@@ -223,6 +244,45 @@ void main() {
     await tester.pumpAndSettle();
     await shot(tester, 'phone-import-done');
     debugDefaultTargetPlatformOverride = null;
+    debugDisableShadows = true;
+  });
+
+  testWidgets('import review', (tester) async {
+    debugDisableShadows = false;
+    await size(tester, _desktop, 1.5);
+    // The recordings under plain names ("recording-1.vbo"), so the picture
+    // shows no file names of the day; their content is unchanged.
+    final named = Directory('${directory.path}/review')..createSync();
+    final stems = <String, int>{};
+    final copies = [
+      for (final path in recordings)
+        File(path)
+            .copySync(
+              '${named.path}/recording-${stems.putIfAbsent(path.substring(0, path.lastIndexOf('.')).toLowerCase(), () => stems.length + 1)}'
+              '${path.substring(path.lastIndexOf('.')).toLowerCase()}',
+            )
+            .path,
+    ];
+    final controller = DayImportController(
+      importer: _DirectImporter(),
+      preparer: _DirectPreparer(),
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      app(
+        DayImportPage(
+          controller: controller,
+          pickers: _Pickers(copies),
+          picksFolders: true,
+          acceptsDrops: true,
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
+    await tester.pump();
+    await tester.tap(find.text('Choose recordings…'));
+    await tester.pumpAndSettle();
+    await shot(tester, 'import-review');
     debugDisableShadows = true;
   });
 

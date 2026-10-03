@@ -3487,6 +3487,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The work stopped unexpectedly.'**
   String get taskStoppedUnexpectedly;
+
+  /// Title of the page that lists every recording found before an import or an addition to a day is committed.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the import'**
+  String get reviewImportTitle;
+
+  /// Text at the top of the import review page.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what happens to each recording. Nothing is imported until you confirm.'**
+  String get reviewImportIntro;
+
+  /// Checkbox on the import page: the next import stops at a review of the recordings found. Off by default and after each import.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the files before importing'**
+  String get reviewBeforeImport;
+
+  /// Menu item of a day: choose recordings to add and review what happens to each before they are added.
+  ///
+  /// In en, this message translates to:
+  /// **'Add and review recordings…'**
+  String get addAndReviewRecordings;
+
+  /// Choice for a recording in the import review: it becomes a session of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Import as a new session'**
+  String get reviewChoiceNewSession;
+
+  /// Choice for a recording in the import review: it is not imported.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip this file'**
+  String get reviewChoiceSkip;
+
+  /// Choice for a recording in the import review: it is another recording of the same run (for example the RCZ of a VBO) and is kept with that session. name is a file name or a session name.
+  ///
+  /// In en, this message translates to:
+  /// **'Same run as {name}'**
+  String reviewChoiceSameRunAs(String name);
+
+  /// A recording in the import review: its length (minutes:seconds) and its complete laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration} · {count, plural, =0{no complete laps} =1{1 complete lap} other{{count} complete laps}}'**
+  String reviewRecordingSummary(String duration, int count);
+
+  /// A recording in the import review whose content is identical to another file of the same import.
+  ///
+  /// In en, this message translates to:
+  /// **'Same content as {name}; imported once.'**
+  String reviewDuplicate(String name);
+
+  /// A recording in the import review that could not be read; reason says why (English from the reader).
+  ///
+  /// In en, this message translates to:
+  /// **'Not imported: {reason}'**
+  String reviewFailed(String reason);
+
+  /// A recording in the review of an addition that the day already has.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in this day; skipped.'**
+  String get reviewAlreadyInDay;
+
+  /// Hint under a recording in the import review: another file's GPS trace matches it. Evidence, not an automatic choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Possibly the same run as {name}: the GPS traces agree.'**
+  String reviewPossibleSameRun(String name);
+
+  /// Destination in the review of an addition: the recordings become sessions of the open day.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to this day'**
+  String get reviewDestinationAppend;
+
+  /// Destination in the review of an addition: the recordings become a new day instead of the open one.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new day'**
+  String get reviewDestinationNewDay;
+
+  /// Why 'Start a new day' is not available in the review: the open day has unsaved changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this day before starting a new one.'**
+  String get reviewNewDayNeedsSave;
+
+  /// Hint at the bottom of the import review page.
+  ///
+  /// In en, this message translates to:
+  /// **'Two exports of the same run? Choose “Same run as”. The session\'s laps come from the file you link to; the other file is kept with it as its alternative recording.'**
+  String get reviewSameRunHint;
+
+  /// Button of the import review page that imports the recordings as chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get reviewConfirmImport;
+
+  /// Button of the review of an addition that adds the recordings as chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to the day'**
+  String get reviewConfirmAdd;
+
+  /// Button of the review of an addition, with 'Start a new day' chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the new day'**
+  String get reviewConfirmNewDay;
+
+  /// Summary at the bottom of the import review page: the sessions the choices create.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No new session} =1{1 new session} other{{count} new sessions}}'**
+  String reviewSessionCount(int count);
+
+  /// Why the import review cannot be confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'A file is the same run as a file that is not imported as a session of its own.'**
+  String get reviewProblemTarget;
+
+  /// Why the import review cannot be confirmed: two files were made the same run as one session.
+  ///
+  /// In en, this message translates to:
+  /// **'A session keeps one other recording at most.'**
+  String get reviewProblemTooMany;
+
+  /// Why the import review cannot be confirmed: every file is skipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one file to import.'**
+  String get reviewProblemNothing;
+
+  /// An import or addition after a review found other recordings than the ones reviewed (a file changed or a folder has other files).
+  ///
+  /// In en, this message translates to:
+  /// **'The recordings changed after the review, so nothing was imported. Review them again.'**
+  String get reviewChanged;
+
+  /// Shown on a day while the recordings chosen for 'Add and review recordings…' are read.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing the review…'**
+  String get reviewPreparing;
 }
 
 class _AppLocalizationsDelegate

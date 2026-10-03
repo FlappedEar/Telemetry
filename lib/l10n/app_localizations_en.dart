@@ -2355,4 +2355,111 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskStoppedUnexpectedly => 'The work stopped unexpectedly.';
+
+  @override
+  String get reviewImportTitle => 'Review the import';
+
+  @override
+  String get reviewImportIntro =>
+      'Choose what happens to each recording. Nothing is imported until you confirm.';
+
+  @override
+  String get reviewBeforeImport => 'Review the files before importing';
+
+  @override
+  String get addAndReviewRecordings => 'Add and review recordings…';
+
+  @override
+  String get reviewChoiceNewSession => 'Import as a new session';
+
+  @override
+  String get reviewChoiceSkip => 'Skip this file';
+
+  @override
+  String reviewChoiceSameRunAs(String name) {
+    return 'Same run as $name';
+  }
+
+  @override
+  String reviewRecordingSummary(String duration, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count complete laps',
+      one: '1 complete lap',
+      zero: 'no complete laps',
+    );
+    return '$duration · $_temp0';
+  }
+
+  @override
+  String reviewDuplicate(String name) {
+    return 'Same content as $name; imported once.';
+  }
+
+  @override
+  String reviewFailed(String reason) {
+    return 'Not imported: $reason';
+  }
+
+  @override
+  String get reviewAlreadyInDay => 'Already in this day; skipped.';
+
+  @override
+  String reviewPossibleSameRun(String name) {
+    return 'Possibly the same run as $name: the GPS traces agree.';
+  }
+
+  @override
+  String get reviewDestinationAppend => 'Add to this day';
+
+  @override
+  String get reviewDestinationNewDay => 'Start a new day';
+
+  @override
+  String get reviewNewDayNeedsSave =>
+      'Save this day before starting a new one.';
+
+  @override
+  String get reviewSameRunHint =>
+      'Two exports of the same run? Choose “Same run as”. The session\'s laps come from the file you link to; the other file is kept with it as its alternative recording.';
+
+  @override
+  String get reviewConfirmImport => 'Import';
+
+  @override
+  String get reviewConfirmAdd => 'Add to the day';
+
+  @override
+  String get reviewConfirmNewDay => 'Start the new day';
+
+  @override
+  String reviewSessionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new sessions',
+      one: '1 new session',
+      zero: 'No new session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewProblemTarget =>
+      'A file is the same run as a file that is not imported as a session of its own.';
+
+  @override
+  String get reviewProblemTooMany =>
+      'A session keeps one other recording at most.';
+
+  @override
+  String get reviewProblemNothing => 'Choose at least one file to import.';
+
+  @override
+  String get reviewChanged =>
+      'The recordings changed after the review, so nothing was imported. Review them again.';
+
+  @override
+  String get reviewPreparing => 'Preparing the review…';
 }

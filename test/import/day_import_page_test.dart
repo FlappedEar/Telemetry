@@ -19,8 +19,9 @@ import '../support/temp_directory.dart';
 
 /// A job the test finishes by hand.
 final class _FakeJob implements DayImportJob {
-  _FakeJob(this.request, this.progress);
+  _FakeJob(this.request, this.progress, [this.choices]);
   final DayImportRequest request;
+  final ImportChoices? choices;
   final void Function(int, int) progress;
   final completer = Completer<DayImportOutcome>();
   bool cancelled = false;
@@ -37,7 +38,7 @@ final class _FakeJob implements DayImportJob {
   }
 
   /// Runs the real scan and plan synchronously and delivers the result.
-  void finish() => completer.complete(runDayImport(request));
+  void finish() => completer.complete(runDayImport(request, choices: choices));
 }
 
 final class _FakeImporter implements DayImporter {
@@ -46,9 +47,10 @@ final class _FakeImporter implements DayImporter {
   @override
   DayImportJob start(
     DayImportRequest request,
-    void Function(int, int) progress,
-  ) {
-    final job = _FakeJob(request, progress);
+    void Function(int, int) progress, {
+    ImportChoices? choices,
+  }) {
+    final job = _FakeJob(request, progress, choices);
     jobs.add(job);
     return job;
   }
@@ -566,6 +568,8 @@ void main() {
   testWidgets('imports picked recordings as sessions in recording order', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final late = write('b-late.vbo', _datedVbo(hour: 11));
     final early = write('a-early.vbo', _datedVbo(hour: 9, speed: 80));
     final copy = write('copy.vbo', _datedVbo(hour: 9, speed: 80));
@@ -623,6 +627,8 @@ void main() {
   testWidgets('a folder is imported with or without subfolders', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     Directory('${directory.path}/day/sub').createSync(recursive: true);
     write('day/sub/run.vbo', _datedVbo(hour: 9));
     pickers.folder = '${directory.path}/day';
@@ -637,7 +643,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox).first);
     await tester.tap(find.text('Choose a folder…'));
     await tester.pump();
     expect(importer.jobs.last.request.includeSubfolders, isTrue);

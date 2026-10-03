@@ -930,7 +930,9 @@ final class DocumentAlternative {
 }
 
 /// The alternative recording of each run of [runs] that has one: the source
-/// its `fusion` decision names, else the first RCZ source of a VBO run.
+/// its `fusion` decision names, else the first RCZ source of a VBO run, else
+/// its first other source (a recording made the same run in a review,
+/// FET-58, whatever its format).
 /// [relinked] overrides where it is, by run id. Nothing is read.
 Map<String, DocumentAlternative> _openAlternatives(
   List<Map<String, Object?>> runs,
@@ -948,6 +950,7 @@ Map<String, DocumentAlternative> _openAlternatives(
     final vbo = recordingFormatOf(displayPath(primary)) == RecordingFormat.vbo;
     final decision = _object(run['fusion']);
     Map<String, Object?>? source;
+    Map<String, Object?>? other;
     for (final value in telemetry) {
       final candidate = _object(value);
       final id = candidate?['id'];
@@ -962,7 +965,9 @@ Map<String, DocumentAlternative> _openAlternatives(
         source = candidate;
         if (chosen) break;
       }
+      if (decision == null) other ??= candidate;
     }
+    source ??= other;
     if (source == null) continue;
     final reference = fet.SourceReference.fromJson(_object(source['reference'])!);
     final stored = reference.resolve(path);
