@@ -339,5 +339,41 @@
         "example": "drive.rcz"
       }
     }
+  },
+  "fusionAddedNotCombined": "{format} added to {sessions}, but it could not be combined; it is kept and tried again when the day opens.",
+  "@fusionAddedNotCombined": {
+    "description": "After adding recordings: aligning an RCZ added to existing sessions failed. sessions is a list of session names.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "RCZ"
+      },
+      "sessions": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "fusionReasonFailed": "lining them up failed",
+  "@fusionReasonFailed": {
+    "description": "Why a session's other recording was not combined: aligning it stopped with an error."
+  },
+  "relinkDifferentRecordings": "{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}",
+  "@relinkDifferentRecordings": {
+    "description": "After Find recordings in a folder: files named like missing recordings that hold other recordings. files is the file names.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "files": {
+        "type": "String",
+        "example": "b.vbo"
+      }
+    }
+  },
+  "relinkNothingFound": "No missing recording was found in that folder.",
+  "@relinkNothingFound": {
+    "description": "After Find recordings in a folder: none of the missing recordings was there."
   }
 }

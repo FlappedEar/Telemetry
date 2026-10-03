@@ -55,6 +55,11 @@ abstract interface class FusionTask {
   void cancel();
 }
 
+/// The reason of a run's fusion when aligning its new recording failed
+/// (the job stopped with an error): the recording stays saved, and the day
+/// opened again tries once more.
+const fusionFailedReason = 'Aligning failed.';
+
 /// Starts a [FusionJob]. Replaced in widget tests, which run it on the
 /// test's own thread.
 typedef FusionRunner = FusionTask Function(FusionJob job);
@@ -358,7 +363,8 @@ final class DayResultsController extends ChangeNotifier {
             RunFusion(state: RunFusionState.unavailable, :final reason),
           )
           when alternative.sourceId ==
-              _fusions[named.run.id]!.alternativeSourceId)
+                  _fusions[named.run.id]!.alternativeSourceId &&
+              reason != fusionFailedReason)
         alternative.missing(named.name, reason),
   ];
 
@@ -568,6 +574,34 @@ final class DayResultsController extends ChangeNotifier {
     // [_pendingRecordings]: saved as the run's source, so the day opened
     // again tries once more.
     final named = _named(runId);
+    final recording = _pendingRecordings[runId];
+    if (result == null &&
+        fromRecording &&
+        recording != null &&
+        named != null &&
+        named.run.contentSha256 == primary.contentSha256) {
+      // The run shows that its new recording is not combined, not the
+      // fusion of the one it replaces (whose rules would not be saved).
+      _fusions[runId] = RunFusion.unavailable(
+        primarySourceId: primary.sourceId,
+        primaryRevision: primary.contentSha256,
+        alternativeSourceId: recording.sourceId,
+        alternativeFormat: recording.format,
+        reason: fusionFailedReason,
+      );
+      _fusionsChanged();
+      if (addition && !_disposed) {
+        if (_waitingAdditions > 0) {
+          // Said with the addition, which has not reported yet.
+          _notCombinedWhileAdding.add(named.name);
+        } else {
+          _lastAddition = DayAddition(
+            notes: const [],
+            notCombined: [named.name],
+          );
+        }
+      }
+    }
     if (result != null &&
         named != null &&
         named.run.contentSha256 == primary.contentSha256) {
@@ -881,6 +915,9 @@ final class DayResultsController extends ChangeNotifier {
   /// another, in the order asked. With [sameDayOnly], nothing is added
   /// unless every new recording started on the day's date
   /// ([DayAddition.otherDay]).
+  // Sessions whose added RCZ failed to align before their addition reported.
+  final List<String> _notCombinedWhileAdding = [];
+
   Future<DayAddition> addRecordings(
     List<String> paths, {
     bool sameDayOnly = false,
@@ -902,6 +939,10 @@ final class DayResultsController extends ChangeNotifier {
     try {
       if (previous != null) await previous;
       addition = await _add(paths, sameDayOnly: sameDayOnly);
+      if (_notCombinedWhileAdding.isNotEmpty) {
+        addition = addition._notCombined([..._notCombinedWhileAdding]);
+        _notCombinedWhileAdding.clear();
+      }
     } finally {
       --_waitingAdditions;
       done.complete();
@@ -1806,6 +1847,7 @@ final class DayAddition {
   const DayAddition({
     this.added = const [],
     this.combined = const [],
+    this.notCombined = const [],
     required this.notes,
     this.error = '',
     this.savedTo,
@@ -1827,6 +1869,26 @@ final class DayAddition {
   /// The day's sessions that got the RCZ added as their alternative
   /// recording.
   final List<String> combined;
+
+  /// The day's sessions whose added RCZ could not be combined after all
+  /// (aligning it failed). It stays saved with them.
+  final List<String> notCombined;
+
+  /// This addition, with [sessions] not combined after all.
+  DayAddition _notCombined(List<String> sessions) => DayAddition(
+    added: added,
+    combined: [
+      for (final name in combined)
+        if (!sessions.contains(name)) name,
+    ],
+    notCombined: sessions,
+    notes: notes,
+    error: error,
+    savedTo: savedTo,
+    saveError: saveError,
+    otherDay: otherDay,
+    closed: closed,
+  );
 
   /// What was skipped, already in the day or failed.
   final List<String> notes;

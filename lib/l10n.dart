@@ -91,6 +91,7 @@ extension FusionReasonText on AppLocalizations {
       ? switch (reason) {
           'Recording not found.' => fusionReasonNotFound,
           'The file found is a different recording.' => fusionReasonDifferent,
+          'Aligning failed.' => fusionReasonFailed,
           _ => fusionReasonUnreadable,
         }
       : switch (reason) {

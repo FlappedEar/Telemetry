@@ -385,6 +385,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not used, a different recording: {files}.'**
   String fusionRelinkDifferent(String files);
+
+  /// After adding recordings: aligning an RCZ added to existing sessions failed. sessions is a list of session names.
+  ///
+  /// In en, this message translates to:
+  /// **'{format} added to {sessions}, but it could not be combined; it is kept and tried again when the day opens.'**
+  String fusionAddedNotCombined(String format, String sessions);
+
+  /// Why a session's other recording was not combined: aligning it stopped with an error.
+  ///
+  /// In en, this message translates to:
+  /// **'lining them up failed'**
+  String get fusionReasonFailed;
+
+  /// After Find recordings in a folder: files named like missing recordings that hold other recordings. files is the file names.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{files} in that folder is a different recording and was not used.} other{{files} in that folder are different recordings and were not used.}}'**
+  String relinkDifferentRecordings(int count, String files);
+
+  /// After Find recordings in a folder: none of the missing recordings was there.
+  ///
+  /// In en, this message translates to:
+  /// **'No missing recording was found in that folder.'**
+  String get relinkNothingFound;
 }
 
 class _AppLocalizationsDelegate

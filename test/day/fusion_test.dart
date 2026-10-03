@@ -656,7 +656,8 @@ void main() {
     expect(fusion.alternative!.sourcePath, b);
   });
 
-  test('an RCZ whose alignment failed is still saved, to try again', () async {
+  test('an RCZ whose alignment job crashed is said not combined, and still '
+      'saved to try again', () async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final first = importDay([vbo]);
     final runId = first.runs.single.run.id;
@@ -669,10 +670,18 @@ void main() {
     addTearDown(controller.dispose);
     final path = '${directory.path}/Day.fetproject';
     await controller.save(path);
-    await controller.addRecordings([rcz]);
+    final addition = await controller.addRecordings([rcz]);
     await controller.fusionsSettled;
-    expect(controller.fusion(runId), isNull);
+    final fusion = controller.fusion(runId)!;
+    expect(fusion.state, RunFusionState.unavailable);
+    expect(fusion.reason, fusionFailedReason);
+    expect(fusion.alternativeSourceId, 'sha256:${_sha(rcz)}');
     expect(controller.fusionPending(runId), isNull);
+    expect(controller.missingAlternatives, isEmpty, reason: 'not missing');
+    // Reported as added but not combined, not as combined.
+    expect(controller.lastAddition!.notCombined, ['Session 1']);
+    expect(controller.lastAddition!.combined, isEmpty);
+    expect(addition.notCombined, ['Session 1']);
     // Saved again later, it is still the session's source.
     await controller.save(path);
     final sources = (_runJson(path)['sources'] as Map)['telemetry'] as List;
@@ -681,6 +690,64 @@ void main() {
     addTearDown(opened.dispose);
     await opened.fusionsSettled;
     expect(opened.fusion(runId)!.fused, isTrue, reason: 'tried again');
+  });
+
+  test('an RCZ whose alignment crashes after its addition reported is '
+      'said not combined', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final first = importDay([vbo]);
+    final runId = first.runs.single.run.id;
+    final tasks = <_HeldTask>[];
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      fusionRunner: (_) {
+        final task = _HeldTask((_) => throw StateError('out of memory'));
+        tasks.add(task);
+        return task;
+      },
+    );
+    addTearDown(controller.dispose);
+    final addition = await controller.addRecordings([rcz]);
+    expect(addition.combined, ['Session 1']);
+    expect(controller.lastAddition, same(addition));
+    tasks.single.run();
+    await controller.fusionsSettled;
+    expect(controller.fusion(runId)!.reason, fusionFailedReason);
+    expect(controller.lastAddition!.notCombined, ['Session 1']);
+  });
+
+  test('an RCZ that cannot be aligned is still saved as the source', () async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final first = importDay([vbo]);
+    final runId = first.runs.single.run.id;
+    final primary = first.runs.single.run;
+    // Whatever the job is, the alignment says: not aligned.
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+      fusionRunner: (_) {
+        final rczRun = prepareTelemetryImport([rcz]).runs.single;
+        final task = _HeldTask((_) => fuseRunRecordings(primary, _late(rczRun)))
+          ..run();
+        return task;
+      },
+    );
+    addTearDown(controller.dispose);
+    final path = '${directory.path}/Day.fetproject';
+    await controller.save(path);
+    await controller.addRecordings([rcz]);
+    await controller.fusionsSettled;
+    final fusion = controller.fusion(runId)!;
+    expect(fusion.state, RunFusionState.notAligned);
+    expect(fusion.alternative, isNotNull);
+    expect(controller.lastAddition!.notCombined, isEmpty);
+    expect(controller.dirty, isFalse, reason: 'saved again');
+    final run = _runJson(path);
+    expect((run['sources'] as Map)['telemetry'] as List, hasLength(2));
+    expect(run['fusion'], isNull);
   });
 
   group('a fusion isolate', () {
@@ -1297,3 +1364,31 @@ void main() {
     );
   }
 }
+
+/// [run] recorded on a clock that says 40 s later than it is: the declared
+/// clocks disagree with the speed traces, so it cannot be aligned.
+TelemetryRunProposal _late(TelemetryRunProposal run) => TelemetryRunProposal(
+  id: run.id,
+  sourceId: run.sourceId,
+  sourcePath: run.sourcePath,
+  format: run.format,
+  contentSha256: run.contentSha256,
+  laps: run.laps,
+  telemetry: TelemetrySession(
+    duration: run.telemetry.duration,
+    startTime: run.telemetry.startTime,
+    metadata: {
+      ...run.telemetry.metadata,
+      'firstTimestampMilliseconds': '${fusionPairOrigin + 40100}',
+    },
+    channels: run.telemetry.channels,
+    aliases: run.telemetry.aliases,
+    warnings: run.telemetry.warnings,
+    timingGates: run.telemetry.timingGates,
+    sampleCount: run.telemetry.sampleCount,
+  ),
+);
+
+/// The content SHA-256 of the file at [path].
+String _sha(String path) =>
+    prepareTelemetryImport([path]).runs.single.contentSha256;

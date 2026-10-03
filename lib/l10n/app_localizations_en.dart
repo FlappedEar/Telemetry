@@ -207,4 +207,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String fusionRelinkDifferent(String files) {
     return 'Not used, a different recording: $files.';
   }
+
+  @override
+  String fusionAddedNotCombined(String format, String sessions) {
+    return '$format added to $sessions, but it could not be combined; it is kept and tried again when the day opens.';
+  }
+
+  @override
+  String get fusionReasonFailed => 'lining them up failed';
+
+  @override
+  String relinkDifferentRecordings(int count, String files) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$files in that folder are different recordings and were not used.',
+      one: '$files in that folder is a different recording and was not used.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get relinkNothingFound =>
+      'No missing recording was found in that folder.';
 }

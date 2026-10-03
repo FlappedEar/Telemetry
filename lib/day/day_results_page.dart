@@ -148,10 +148,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (addition == null || identical(addition, _reported) || !mounted) return;
     _reported = addition;
     final added = addition.added;
+    final l10n = context.l10n;
     final lines = [
       if (addition.error.isNotEmpty)
         addition.error
-      else if (added.isEmpty && addition.combined.isEmpty)
+      else if (added.isEmpty &&
+          addition.combined.isEmpty &&
+          addition.notCombined.isEmpty)
         'Nothing was added.'
       else ...[
         if (added.isNotEmpty) '${added.join(', ')} added to the day.',
@@ -159,6 +162,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           context.l10n.fusionCombinedWith(
             RecordingFormat.rcz.name.toUpperCase(),
             addition.combined.map(context.l10n.session).join(', '),
+          ),
+        if (addition.notCombined.isNotEmpty)
+          l10n.fusionAddedNotCombined(
+            RecordingFormat.rcz.name.toUpperCase(),
+            addition.notCombined.map(l10n.session).join(', '),
           ),
       ],
       if (addition.savedTo != null)
@@ -339,15 +347,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
             if (search.different.containsKey(recording.runId))
               p.basename(search.different[recording.runId]!),
         ];
+        final l10n = context.l10n;
         _tell(
           [
             if (names.isNotEmpty)
-              '${names.join(', ')} in that folder '
-                  '${names.length == 1 ? 'is a different recording' : 'are different recordings'}'
-                  ' and ${names.length == 1 ? 'was' : 'were'} not used.',
+              l10n.relinkDifferentRecordings(names.length, names.join(', ')),
             ?rczMessage,
-            if (names.isEmpty && rczMessage == null)
-              'No missing recording was found in that folder.',
+            if (names.isEmpty && rczMessage == null) l10n.relinkNothingFound,
           ].join('\n'),
         );
         return;

@@ -47,5 +47,9 @@
   "fusionChannelLatitude": "Szerokość geograficzna",
   "fusionChannelLongitude": "Długość geograficzna",
   "fusionChannelSatellites": "Satelity",
-  "fusionRelinkDifferent": "Nie użyto, to inne nagranie: {files}."
+  "fusionRelinkDifferent": "Nie użyto, to inne nagranie: {files}.",
+  "fusionAddedNotCombined": "Dodano {format} do: {sessions}, ale nie udało się go połączyć; zostaje zapisany i zostanie połączony przy otwarciu dnia.",
+  "fusionReasonFailed": "dopasowanie się nie powiodło",
+  "relinkDifferentRecordings": "{count, plural, =1{{files} w tym folderze to inne nagranie i nie zostało użyte.} few{{count} pliki w tym folderze ({files}) to inne nagrania i nie zostały użyte.} many{{count} plików w tym folderze ({files}) to inne nagrania i nie zostały użyte.} other{{count} plików w tym folderze ({files}) to inne nagrania i nie zostały użyte.}}",
+  "relinkNothingFound": "W tym folderze nie znaleziono żadnego brakującego nagrania."
 }
