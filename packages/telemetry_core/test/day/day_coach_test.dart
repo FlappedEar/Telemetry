@@ -71,6 +71,7 @@ DayCoach _coach(
   double Function(double) Function(double slow) shape = _lap,
   bool coachedRecording = true,
   bool saved = false,
+  bool lateral = false,
 }) {
   final runs = [
     _run(
@@ -79,6 +80,7 @@ DayCoach _coach(
         [for (final slow in earlier) shape(slow)],
         firstTimestampMilliseconds: 1000,
         pedals: pedals,
+        lateral: lateral,
       ),
     ),
     _run(
@@ -87,6 +89,7 @@ DayCoach _coach(
         [for (final slow in latest) shape(slow)],
         firstTimestampMilliseconds: 4000000,
         pedals: pedals,
+        lateral: lateral,
       ),
     ),
   ];
@@ -1064,5 +1067,109 @@ void main() {
     expect(coach.plan, isEmpty);
     expect(coach.reason, CoachReason.noSegments);
     expect(coach.message, contains('segments'));
+  });
+
+  group('combined G', () {
+    CoachEvidence? combined(DayCoach coach) => coach.findings
+        .singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed)
+        .evidence
+        .where((e) => e.key == CoachMetric.combinedG)
+        .singleOrNull;
+
+    test('on a change: this session against the faster laps', () {
+      final g = combined(_coach([20, 20.5], [15, 15.2, 15.1], lateral: true))!;
+      expect(g.unit, 'g');
+      // Slower through the corner: less G than the faster laps.
+      expect(g.observed, lessThan(g.reference - 0.1));
+    });
+
+    test('combines the longitudinal and lateral G', () {
+      // 0.4 g along and 0.3 g across: 0.5 g combined, on every lap.
+      void steady(String runId, TelemetrySession session) {
+        _edit(session, 'longacc', 0.4, (d) => true);
+        _edit(session, 'latacc', 0.3, (d) => true);
+      }
+
+      final g = combined(_coach([20, 20.5], [15, 15.2, 15.1], lateral: true, edit: steady))!;
+      expect(g.observed, closeTo(0.5, 1e-6));
+      expect(g.reference, closeTo(0.5, 1e-6));
+    });
+
+    test('the median of this session\'s laps', () {
+      void spread(String runId, TelemetrySession session) {
+        _edit(session, 'longacc', 0, (d) => true);
+        _edit(session, 'latacc', 0.8, (d) => true);
+        if (runId == 'run2') {
+          for (final (lap, g) in [(1, 0.3), (2, 0.6), (3, 0.9)]) {
+            _edit(session, 'latacc', g, (d) => true, lap: lap);
+          }
+        }
+      }
+
+      final g = combined(_coach([20, 20.5], [15, 15.2, 15.1], lateral: true, edit: spread))!;
+      expect(g.observed, closeTo(0.6, 1e-6));
+      expect(g.reference, closeTo(0.8, 1e-6));
+    });
+
+    test('the highest today: slow laps left out, the faster laps compared in', () {
+      void spread(String runId, TelemetrySession session) {
+        _edit(session, 'longacc', 0, (d) => true);
+        _edit(session, 'latacc', 0.8, (d) => true);
+        if (runId == 'run1') _edit(session, 'latacc', 0.85, (d) => true, lap: 2);
+        if (runId == 'run2') {
+          for (final (lap, g) in [(1, 0.3), (2, 0.6), (3, 0.9), (4, 1.5)]) {
+            _edit(session, 'latacc', g, (d) => true, lap: lap);
+          }
+        }
+      }
+
+      // The latest session's fourth lap is a slow one, at 1.5 g.
+      final coach = _coach([20, 20.5], [15, 15.2, 15.1, 3], lateral: true, edit: spread);
+      final highest = coach.findings
+          .singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed)
+          .evidence
+          .singleWhere((e) => e.key == CoachMetric.highestCombinedG);
+      expect(highest.unit, 'g');
+      expect(highest.observed, closeTo(0.9, 1e-6));
+      expect(highest.reference, closeTo(0.9, 1e-6));
+    });
+
+    test('left out without a lateral acceleration', () {
+      expect(combined(_coach([20, 20.5], [15, 15.2, 15.1])), isNull);
+    });
+
+    test('left out when the lateral acceleration is zeros only', () {
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        lateral: true,
+        edit: (runId, session) => _edit(session, 'latacc', 0, (d) => true),
+      );
+      expect(combined(coach), isNull);
+    });
+
+    test('left out when one of this session\'s laps has no lateral acceleration', () {
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        lateral: true,
+        edit: (runId, session) {
+          if (runId == 'run2') _edit(session, 'latacc', double.nan, (d) => true, lap: 2);
+        },
+      );
+      expect(combined(coach), isNull);
+    });
+
+    test('left out when a lap compared has no lateral acceleration', () {
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        lateral: true,
+        edit: (runId, session) {
+          if (runId == 'run1') _edit(session, 'latacc', double.nan, (d) => true);
+        },
+      );
+      expect(combined(coach), isNull);
+    });
   });
 }

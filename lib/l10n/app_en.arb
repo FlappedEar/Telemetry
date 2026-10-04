@@ -405,6 +405,14 @@
   "@coachMetricEarlyThrottleShare": {
     "description": "The share of a session's laps (in percent) that picked up the throttle after the braking and released it again before the slow point."
   },
+  "coachMetricCombinedG": "Mean combined G",
+  "@coachMetricCombinedG": {
+    "description": "The mean of the longitudinal and lateral acceleration combined through a corner, in g: how hard the car was worked there, not a share of the grip available."
+  },
+  "coachMetricHighestCombinedG": "Highest here: this session against today",
+  "@coachMetricHighestCombinedG": {
+    "description": "The highest mean combined G at the corner on this session's laps, against the highest of the day's laps so far there (slow laps left out). Shown as '0.74 g against 0.80 g'."
+  },
   "coachMetricThrottleReturn": "Throttle return",
   "@coachMetricThrottleReturn": {
     "description": "Where the throttle is applied again after the slow point, in metres along the lap."

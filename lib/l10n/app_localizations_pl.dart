@@ -289,6 +289,13 @@ class AppLocalizationsPl extends AppLocalizations {
       'Okrążenia z przedwczesnym dodaniem gazu';
 
   @override
+  String get coachMetricCombinedG => 'Średnie łączne przeciążenie';
+
+  @override
+  String get coachMetricHighestCombinedG =>
+      'Najwyższe tutaj: ta sesja wobec całego dnia';
+
+  @override
   String get coachMetricThrottleReturn => 'Ponowne dodanie gazu';
 
   @override

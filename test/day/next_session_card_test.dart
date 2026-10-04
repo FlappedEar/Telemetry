@@ -724,6 +724,22 @@ void main() {
     );
   });
 
+  test('mean combined G with two decimals', () {
+    expect(coachValue(0.4867, 'g', 'km/h'), '0.49\u00a0g');
+    expect(coachValue(double.nan, 'g', 'km/h'), '—');
+    final en = lookupAppLocalizations(const Locale('en'));
+    expect(en.coachMetric(CoachMetric.combinedG), 'Mean combined G');
+    final pl = lookupAppLocalizations(const Locale('pl'));
+    expect(
+      pl.coachMetric(CoachMetric.combinedG),
+      'Średnie łączne przeciążenie',
+    );
+    expect(
+      en.coachMetric(CoachMetric.highestCombinedG),
+      'Highest here: this session against today',
+    );
+  });
+
   test('a braking item compares with the three fastest laps of the day', () {
     CoachFinding braking() => CoachFinding(
       kind: CoachKind.inconsistentBraking,

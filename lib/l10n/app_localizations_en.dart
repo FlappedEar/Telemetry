@@ -282,6 +282,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Laps picking up the throttle early';
 
   @override
+  String get coachMetricCombinedG => 'Mean combined G';
+
+  @override
+  String get coachMetricHighestCombinedG =>
+      'Highest here: this session against today';
+
+  @override
   String get coachMetricThrottleReturn => 'Throttle return';
 
   @override
