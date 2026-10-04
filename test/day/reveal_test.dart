@@ -57,10 +57,12 @@ void main() {
   testWidgets('a drag taking over the scroll is not undone', (tester) async {
     await build(tester);
     await start(tester);
+    final before = controller.offset;
     await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 400));
     final left = controller.offset;
     await tester.pumpAndSettle();
     expect(controller.offset, closeTo(left, 0.5));
+    expect(left, lessThan(before - 300));
     expect(top(tester), greaterThan(100));
   });
 
