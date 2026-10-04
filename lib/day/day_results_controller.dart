@@ -264,6 +264,7 @@ final class DayResultsController extends ChangeNotifier {
        _dirty = recovered || changed {
     declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
     _declaredSpeedUnits = declaredSpeedUnits;
+    speedUnitSetting.addListener(_speedUnitAssumed);
     _declareChannelSources();
     // A restored day is what its snapshot holds: written again only when it
     // changes, so a day restored and not taken leaves the snapshot as it was.
@@ -534,22 +535,62 @@ final class DayResultsController extends ChangeNotifier {
       ? _channelRuns!
       : _channelRuns = [
           for (final named in _runs)
-            if (_fusions[named.run.id]?.session case final fused?)
-              (
-                run: TelemetryRunProposal(
-                  id: named.run.id,
-                  sourceId: named.run.sourceId,
-                  sourcePath: named.run.sourcePath,
-                  format: named.run.format,
-                  contentSha256: named.run.contentSha256,
-                  telemetry: fused,
-                  laps: named.run.laps,
-                ),
-                name: named.name,
-              )
-            else
-              named,
+            _analysed(named, _fusions[named.run.id]?.session),
         ];
+
+  // [runs] as the analysis that does not read fused channels sees them
+  // (theoretical best, coach, segment review): each recording with its
+  // speeds in their effective unit (see [_analysed]).
+  // Kept while [_runs] holds the same runs it was built from.
+  List<NamedRun>? _recordingRuns;
+  List<NamedRun> _recordingRunsFor = const [];
+  List<NamedRun> get _unitRuns {
+    final built = _recordingRuns;
+    if (built != null &&
+        _recordingRunsFor.length == _runs.length &&
+        Iterable<int>.generate(_runs.length)
+            .every((i) => _recordingRunsFor[i] == _runs[i])) {
+      return built;
+    }
+    _recordingRunsFor = List.of(_runs);
+    return _recordingRuns = [for (final named in _runs) _analysed(named)];
+  }
+
+  // [named] (with [telemetry] in place of its recording) as every analysis
+  // reads it: each speed channel carrying the unit its recording declares,
+  // else the one assumed for unlabelled speeds in settings
+  // ([withEffectiveSpeedUnits]). The recording itself stays as parsed, so
+  // its saved fingerprint matches what Overlays writes.
+  static NamedRun _analysed(NamedRun named, [TelemetrySession? telemetry]) {
+    final session = withEffectiveSpeedUnits(
+      telemetry ?? named.run.telemetry,
+      assumed: speedUnitSetting.value.unit,
+    );
+    if (identical(session, named.run.telemetry)) return named;
+    return (
+      run: TelemetryRunProposal(
+        id: named.run.id,
+        sourceId: named.run.sourceId,
+        sourcePath: named.run.sourcePath,
+        format: named.run.format,
+        contentSha256: named.run.contentSha256,
+        telemetry: session,
+        laps: named.run.laps,
+      ),
+      name: named.name,
+    );
+  }
+
+  // The unit assumed for unlabelled speeds changed: what reads speeds is
+  // calculated again in the new unit.
+  void _speedUnitAssumed() {
+    if (_disposed) return;
+    _channelRuns = _recordingRuns = null;
+    _comparisons.clear();
+    _resetTheoreticalBest();
+    _resetChannelSummaries();
+    notifyListeners();
+  }
 
   NamedRun? _named(String runId) {
     for (final named in _runs) {
@@ -1211,7 +1252,7 @@ final class DayResultsController extends ChangeNotifier {
         !_analysis.groups.any((group) => group.id == _groupId)) {
       _groupId = _analysis.chosenGroupId;
     }
-    _channelRuns = null;
+    _channelRuns = _recordingRuns = null;
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
       _declaredSpeedUnits = declaredSpeedUnits;
@@ -1225,7 +1266,7 @@ final class DayResultsController extends ChangeNotifier {
 
   // The fused sessions changed: what reads channels is calculated again.
   void _fusionsChanged() {
-    _channelRuns = null;
+    _channelRuns = _recordingRuns = null;
     _comparisons.clear();
     _resetChannelSummaries();
     if (identical(dayChannelSources, _declaredChannelSources)) {
@@ -1823,7 +1864,7 @@ final class DayResultsController extends ChangeNotifier {
     final existing = {for (final named in _runs) named.run.id};
     _runs.addAll(outcome.runs);
     // What reads channels includes the new sessions.
-    _channelRuns = null;
+    _channelRuns = _recordingRuns = null;
     // The new session's speed unit counts as much as the others'.
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
@@ -1915,7 +1956,7 @@ final class DayResultsController extends ChangeNotifier {
   TelemetrySession? session(String runId) {
     for (final named in runs) {
       if (named.run.id == runId) {
-        return _fusions[runId]?.session ?? named.run.telemetry;
+        return _analysed(named, _fusions[runId]?.session).run.telemetry;
       }
     }
     return null;
@@ -2281,7 +2322,7 @@ final class DayResultsController extends ChangeNotifier {
     );
     if (name != named.name) {
       _runs[_runs.indexOf(named)] = (run: named.run, name: name);
-      _channelRuns = null;
+      _channelRuns = _recordingRuns = null;
       _analysis = renameDayRun(
         _analysis,
         runId,
@@ -2357,7 +2398,7 @@ final class DayResultsController extends ChangeNotifier {
     final clock = Stopwatch()..start();
     try {
       result = await _theoreticalBestRunner(
-        _theoreticalBestJob(_analysis, outingRuns(runs), documentRuns),
+        _theoreticalBestJob(_analysis, outingRuns(_unitRuns), documentRuns),
       );
       diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
     } on Object catch (error) {
@@ -2427,18 +2468,19 @@ final class DayResultsController extends ChangeNotifier {
     return latest.run.id;
   }
 
-  /// Whether the coach's speeds are converted values: a recording's speed
-  /// channel declares a unit other than km/h, which the coach converts to
-  /// km/h. Speeds are then not shown (see [coachSpeedLabel]).
+  /// Whether the coach's speeds are converted values: the recordings' speeds
+  /// are in different units (declared, or assumed in settings; unlabelled
+  /// read as km/h), so the coach reports them all in km/h. Speeds are then
+  /// not shown (see [coachSpeedLabel]).
   bool get coachSpeedsConverted {
-    for (final named in _runs) {
+    final units = <String>{};
+    for (final named in _unitRuns) {
       final session = named.run.telemetry;
       final own = session.channels[session.aliases['speed'] ?? '']?.unit.trim();
-      if (own != null && own.isNotEmpty && normalizedSpeedUnit(own) != 'km/h') {
-        return true;
-      }
+      if (own == null) continue;
+      units.add(own.isEmpty ? 'km/h' : normalizedSpeedUnit(own));
     }
-    return false;
+    return units.length > 1;
   }
 
   /// The name of [latestRunId]: "Session 4".
@@ -2487,7 +2529,7 @@ final class DayResultsController extends ChangeNotifier {
     try {
       coach = await _coachRunner(
         _coachJob(result, {
-          for (final named in _runs) named.run.id: named.run.telemetry,
+          for (final named in _unitRuns) named.run.id: named.run.telemetry,
         }, latestRunId),
       );
     } on Object catch (failure) {
@@ -2827,7 +2869,7 @@ final class DayResultsController extends ChangeNotifier {
     _segmentReviewLoading = true;
     notifyListeners();
     final lap = segmentReviewLap(result);
-    final run = lap == null ? null : outingRuns(runs)[lap.runId];
+    final run = lap == null ? null : outingRuns(_unitRuns)[lap.runId];
     DayProposalReview review;
     try {
       review = await _segmentReviewRunner(_segmentReviewJob(result, lap, run));
@@ -3018,6 +3060,7 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    speedUnitSetting.removeListener(_speedUnitAssumed);
     // Alignments not started are dropped; running ones are stopped.
     _fusionQueue.clear();
     for (final waiter in _slotWaiters) {

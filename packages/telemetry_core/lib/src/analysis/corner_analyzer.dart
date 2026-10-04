@@ -14,6 +14,7 @@
 // best, against the segmentation that result used. Δ is A − B.
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_metrics.dart';
 import 'channel_summary.dart';
@@ -548,6 +549,12 @@ final class CornerAnalyzer {
           segment.endMeters,
         ),
     ];
+    // Speeds are subtracted only in one unit (see [sameSpeedUnit]). Overlays
+    // (d4d1039) subtracts these whatever their units.
+    final speedChannel = a.session.aliases['speed'] ?? 'speed';
+    final speedUnitA = a.session.channels[speedChannel]?.unit ?? '';
+    final speedUnitB = b.session.channels[b.session.aliases['speed'] ?? 'speed']?.unit ?? '';
+    final speedsComparable = sameSpeedUnit(speedUnitA, speedUnitB);
     AnalyzerMetric row(double? valueA, double? valueB) => AnalyzerMetric(
       a: _value(
         valueA,
@@ -559,11 +566,14 @@ final class CornerAnalyzer {
         valueB != null ? metricMeasured : metricUnavailable,
         speeds[1].unavailableReason,
       ),
-      delta: _delta(valueA != null && valueB != null ? valueA - valueB : null),
+      delta: valueA == null || valueB == null
+          ? _delta(null)
+          : speedsComparable
+          ? _delta(valueA - valueB)
+          : _delta(null, cornerSpeedMixedProvenance),
     );
-    final speedChannel = a.session.aliases['speed'] ?? 'speed';
     final speedMetrics = SegmentSpeedMetrics(
-      unit: a.session.channels[speedChannel]?.unit ?? '',
+      unit: speedUnitA,
       entry: row(speeds[0].entry, speeds[1].entry),
       maximum: row(speeds[0].maximum, speeds[1].maximum),
       minimum: row(speeds[0].minimum, speeds[1].minimum),

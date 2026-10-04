@@ -247,10 +247,17 @@ void main() {
       check.states('states', states, expected['states']);
       final overlap = overlapOf(states.braking.active, states.cornering.active);
       check.intervals('overlap', overlap, expected['overlap']);
-      check.number('overlapMeters', travelledMeters(session, overlap), expected['overlapMeters']);
+      // Overlays (d4d1039) integrates every speed as km/h; Telemetry reads an
+      // mph speed as mph, so its distances are 1.609344 times Overlays'.
+      final overlays = session.channel('speed')?.unit == 'mph' ? 1.609344 : 1.0;
+      check.number(
+        'overlapMeters',
+        travelledMeters(session, overlap) / overlays,
+        expected['overlapMeters'],
+      );
       check.number(
         'brakingMeters',
-        travelledMeters(session, states.braking.active),
+        travelledMeters(session, states.braking.active) / overlays,
         expected['brakingMeters'],
       );
       check.coasting(

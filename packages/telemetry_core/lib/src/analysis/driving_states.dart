@@ -11,6 +11,7 @@
 // recording has no such pedal channel at all, and are labelled inferred.
 import 'dart:math' as math;
 
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_onset.dart' show BrakingThreshold;
 
@@ -439,11 +440,15 @@ double intervalSeconds(List<DrivingStateInterval> intervals) {
   return total;
 }
 
-/// Distance travelled over [intervals]: the `speed` alias (km/h) integrated
-/// between its samples; nothing is counted across a missing speed sample.
+/// Distance travelled over [intervals]: the `speed` alias integrated
+/// between its samples in its own unit; nothing is counted across a missing
+/// speed sample. 0 for a speed in a unit not known. Overlays (d4d1039) reads
+/// every speed as km/h here; an mph speed differs from it on purpose.
 double travelledMeters(TelemetrySession session, List<DrivingStateInterval> intervals) {
   final speed = session.channels[session.aliases['speed'] ?? ''];
   if (speed == null || speed.timestamps.length != speed.values.length) return 0.0;
+  final factor = metresPerSecondPerSpeedUnit(speed.unit);
+  if (factor == null) return 0.0;
   final times = speed.timestamps;
   var meters = 0.0;
   for (final interval in intervals) {
@@ -454,7 +459,7 @@ double travelledMeters(TelemetrySession session, List<DrivingStateInterval> inte
     ) {
       final double a = speed.values[index], b = speed.values[index + 1];
       if (a.isFinite && b.isFinite) {
-        meters += (a + b) / 2.0 / 3.6 * (times[index + 1] - times[index]);
+        meters += (a + b) / 2.0 * factor * (times[index + 1] - times[index]);
       }
     }
   }

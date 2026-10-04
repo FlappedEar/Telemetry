@@ -6,6 +6,7 @@
 // the group's best lap as Overlays' Corner Analyzer compares two laps
 // (ComparisonSegmentPanel): never across different channels, units or
 // methods.
+import '../speed_units.dart';
 import '../analysis/braking_metrics.dart';
 import '../analysis/corner_speeds.dart';
 import '../analysis/exit_metrics.dart';
@@ -112,7 +113,7 @@ final class DayCorner {
         final speeds = metrics.speeds;
         if (speeds.provenance != own.speeds.provenance ||
             speeds.channel != own.speeds.channel ||
-            speeds.unit != own.speeds.unit) {
+            !sameSpeedUnit(speeds.unit, own.speeds.unit)) {
           continue;
         }
         final value = read(speeds);

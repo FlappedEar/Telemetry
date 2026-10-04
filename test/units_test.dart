@@ -145,6 +145,69 @@ void main() {
     expect(declaredSpeedUnits, isEmpty);
   });
 
+  // Arek's second audit, finding 1: the analysis reads speeds in the unit
+  // the screens show, not in a unit of its own.
+  test('the analysis reads the declared or assumed speed unit', () async {
+    final declared = '${directory.path}/mph.vbo';
+    File(declared).writeAsStringSync(
+      circuitVbo([30, 28, 31]).replaceFirst(
+        '[header]\n',
+        '[header]\ntime\nlatitude\nlongitude\nvelocity mph\n',
+      ),
+    );
+    final unlabelled = '${directory.path}/none.vbo';
+    File(unlabelled).writeAsStringSync(circuitVbo([30, 29, 31]));
+    String unit(DayResultsController controller, String runId) {
+      final session = controller.session(runId)!;
+      return session.channels[session.aliases['speed']]!.unit;
+    }
+
+    // A unit the recording declares, whatever the setting.
+    var outcome = runDayImport((paths: [declared], includeSubfolders: false));
+    var controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final mphRun = outcome.runs.single.run;
+    expect(unit(controller, mphRun.id), 'mph');
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+    expect(unit(controller, mphRun.id), 'mph');
+    // The recording itself, which its fingerprint is taken from, is as parsed.
+    expect(mphRun.telemetry.channels['velocity']!.unit, '');
+    controller.dispose();
+
+    // An unlabelled recording takes the setting, and its results are
+    // calculated again when the setting changes.
+    speedUnitSetting.value = SpeedUnitSetting.automatic;
+    outcome = runDayImport((paths: [unlabelled], includeSubfolders: false));
+    controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final run = outcome.runs.single.run;
+    expect(unit(controller, run.id), '');
+    await controller.requestTheoreticalBest();
+    expect(controller.theoreticalBest, isNotNull);
+    var notified = 0;
+    controller.addListener(() => ++notified);
+    speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
+    expect(notified, greaterThan(0));
+    expect(unit(controller, run.id), 'mph');
+    expect(controller.theoreticalBest, isNull);
+    // One unit through the day: the coach reports speeds in it.
+    expect(controller.coachSpeedsConverted, isFalse);
+    await controller.requestTheoreticalBest();
+    expect(controller.theoreticalBest!.corners, isNotEmpty);
+    for (final corner in controller.theoreticalBest!.corners) {
+      for (final (_, metrics) in corner.laps) {
+        expect(metrics.speeds.unit, 'mph');
+      }
+    }
+    // A closed day no longer follows the setting.
+    controller.dispose();
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+  });
+
   Future<void> pumpApp(WidgetTester tester, {Locale? locale}) =>
       tester.pumpWidget(
         TelemetryApp(

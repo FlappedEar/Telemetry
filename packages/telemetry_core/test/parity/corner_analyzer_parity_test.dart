@@ -251,7 +251,11 @@ void _expectAnalyzer(_Check check, CornerAnalyzer analyzer, Map<String, Object?>
     final where = 'segment ${segment.id}';
     check.compare('$where row', _rowMap(segment), expected['row']);
     final analysis = analyzer.analyze(segment.id);
-    check.compare('$where metrics', _metricsMap(analysis), expected['metrics']);
+    check.compare(
+      '$where metrics',
+      _metricsMap(analysis),
+      _telemetrySpeedDeltas(analyzer, expected['metrics']),
+    );
     check.compare(
       '$where heart rate',
       _heartRateMap(analyzer.heartRate(segment.startMeters, segment.endMeters)),
@@ -279,6 +283,32 @@ void _expectAnalyzer(_Check check, CornerAnalyzer analyzer, Map<String, Object?>
   }
   check.compare('unknown segment', _metricsMap(analyzer.analyze('not-a-real-id')), want['unknown']);
   check.compare('time loss', _timeLossMap(analyzer.timeLosses()), want['timeLoss']);
+}
+
+// Overlays (d4d1039) subtracts two laps' segment speeds whatever their
+// units; Telemetry does not subtract speeds in different units, which it
+// reports as measured differently.
+Object? _telemetrySpeedDeltas(CornerAnalyzer analyzer, Object? metrics) {
+  String unit(CornerAnalyzerLap lap) => lap.session.channel('speed')?.unit ?? '';
+  if (metrics is! Map<String, Object?> || sameSpeedUnit(unit(analyzer.a), unit(analyzer.b))) {
+    return metrics;
+  }
+  final speeds = metrics['speeds'];
+  if (speeds is! Map<String, Object?>) return metrics;
+  return {
+    ...metrics,
+    'speeds': {
+      for (final MapEntry(:key, :value) in speeds.entries)
+        key: value is Map<String, Object?> && value['delta'] is Map
+            ? {
+                ...value,
+                'delta': (value['delta'] as Map).containsKey('value')
+                    ? {'unavailableReason': cornerSpeedMixedProvenance}
+                    : value['delta'],
+              }
+            : value,
+    },
+  };
 }
 
 // --- The Dart results in the shape the C++ tool writes ----------------------

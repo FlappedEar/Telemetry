@@ -37,35 +37,10 @@ final ValueNotifier<SpeedUnitSetting> speedUnitSetting = ValueNotifier(
 /// "mph", or empty when it declares none). Set when a day opens.
 List<String> declaredSpeedUnits = const [];
 
-/// "km/h" or "mph" for a unit as recordings write it (`kmh`, `km/h`, `kph`,
-/// `mph`), else empty.
-String normalizedSpeedUnit(String unit) => switch (unit.trim().toLowerCase()) {
-  'km/h' || 'kmh' || 'kph' || 'km/hr' => 'km/h',
-  'mph' || 'mi/h' => 'mph',
-  _ => '',
-};
-
-/// The speed unit [session] declares for channel [name]: the channel's own
-/// unit (RCZ), else the VBO `[header]` line naming the channel, such as
-/// `velocity kmh` (RaceChrono writes units there, which the parser keeps as
-/// header metadata). Empty when it declares none.
-String channelSpeedUnit(TelemetrySession session, String name) {
-  final own = normalizedSpeedUnit(session.channels[name]?.unit ?? '');
-  if (own.isNotEmpty) return own;
-  for (final MapEntry(:key, :value) in session.metadata.entries) {
-    if (!key.startsWith('header.')) continue;
-    final words = value.trim().split(RegExp(r'\s+'));
-    if (words.length == 2 && words.first.toLowerCase() == name.toLowerCase()) {
-      return normalizedSpeedUnit(words.last);
-    }
-  }
-  return '';
-}
-
 /// The speed unit [session] declares for its speed channel (see
-/// [channelSpeedUnit]).
+/// [declaredSpeedUnit]).
 String sessionSpeedUnit(TelemetrySession session) =>
-    channelSpeedUnit(session, session.aliases['speed'] ?? 'speed');
+    declaredSpeedUnit(session, session.aliases['speed'] ?? 'speed');
 
 /// The speed units the open day's recordings declare per speed channel,
 /// keyed by lower-case channel name: one entry per recording that has the
@@ -84,7 +59,7 @@ void declareDaySpeedUnits(Iterable<TelemetrySession> sessions) {
       if (!isSpeedChannel(name) && name != alias) continue;
       byChannel
           .putIfAbsent(name.toLowerCase(), () => [])
-          .add(channelSpeedUnit(session, name));
+          .add(declaredSpeedUnit(session, name));
     }
   }
   declaredSpeedUnits = List.unmodifiable(day);
@@ -116,13 +91,6 @@ String speedUnitLabel([String recorded = '']) {
     return normalized.isEmpty ? own : normalized;
   }
   return daySpeedUnit(declaredSpeedUnits, speedUnitSetting.value.unit);
-}
-
-/// Whether a channel called [name] is a speed (`speed`, `velocity`,
-/// `velocity-obd`, `velocity-calc`, …).
-bool isSpeedChannel(String name) {
-  final lower = name.toLowerCase();
-  return lower == 'speed' || lower.startsWith('velocity');
 }
 
 /// The unit shown for channel [name] recorded with [unit]: a speed channel

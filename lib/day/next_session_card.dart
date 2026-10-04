@@ -79,10 +79,10 @@ extension CoachText on AppLocalizations {
 
 /// The label for the coach's speeds in [context], following the unit
 /// setting: the day's speed unit, empty when nothing says. The coach reports
-/// speeds in km/h, which are the recorded numbers when every speed channel
-/// is in km/h or declares no unit. Null, so speeds are not shown, when they
-/// are converted ([converted]) or when the recordings' units disagree, as
-/// the coach would then compare numbers in different units.
+/// speeds in the unit every recording's speeds are in (unlabelled read as
+/// km/h), so they are the recorded numbers. Null, so speeds are not shown,
+/// when the recordings' units disagree: the coach then reports converted
+/// km/h ([converted]).
 String? coachSpeedLabel(BuildContext context, {required bool converted}) {
   final label = speedUnitOf(context);
   if (converted) return null;
@@ -99,7 +99,7 @@ String? coachSpeedLabel(BuildContext context, {required bool converted}) {
 String coachValue(double value, String unit, String? speedUnit) {
   if (!value.isFinite) return '—';
   if (unit == 'm') return '${value.round()}\u00a0m';
-  if (unit == 'km/h') {
+  if (unit == 'km/h' || unit == 'mph') {
     if (speedUnit == null) return '—';
     return speedUnit.isEmpty
         ? fixed(value, 1)
@@ -108,9 +108,10 @@ String coachValue(double value, String unit, String? speedUnit) {
   return '${fixed(value, 1)}\u00a0$unit';
 }
 
-/// Whether [finding] reports a speed, which the coach measures in km/h.
-bool _hasSpeed(CoachFinding finding) =>
-    finding.evidence.any((evidence) => evidence.unit == 'km/h');
+/// Whether [finding] reports a speed (in km/h or mph, see [coachSpeedLabel]).
+bool _hasSpeed(CoachFinding finding) => finding.evidence.any(
+  (evidence) => evidence.unit == 'km/h' || evidence.unit == 'mph',
+);
 
 /// The coach between sessions: at most three items for the next run, each
 /// a labelled suggestion with what was measured apart from what to try.

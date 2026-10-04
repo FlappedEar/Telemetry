@@ -5,6 +5,7 @@
 // the segment. The apex is never taken to be the minimum-speed point.
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'corner_phases.dart';
 import 'sector_timing.dart';
@@ -282,7 +283,8 @@ CornerSpeedsComparison compareCornerSpeeds(CornerSpeeds a, CornerSpeeds b) {
       a.stamp.trackConfigurationReference != b.stamp.trackConfigurationReference) {
     return const CornerSpeedsComparison(unavailableReason: cornerSpeedDifferentSegmentOrRevision);
   }
-  if (a.provenance != b.provenance || a.channel != b.channel || a.unit != b.unit) {
+  // Speeds in different units are measured differently (see [sameSpeedUnit]).
+  if (a.provenance != b.provenance || a.channel != b.channel || !sameSpeedUnit(a.unit, b.unit)) {
     return const CornerSpeedsComparison(unavailableReason: cornerSpeedMixedProvenance);
   }
   return CornerSpeedsComparison(
