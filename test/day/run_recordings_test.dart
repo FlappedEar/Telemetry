@@ -22,8 +22,11 @@ final class _GatedTask implements FusionTask {
   @override
   final Future<RunFusion?> result;
 
+  /// Whether [cancel] was called.
+  bool cancelled = false;
+
   @override
-  void cancel() {}
+  void cancel() => cancelled = true;
 }
 
 Map<String, Object?> _runJson(String path) =>
@@ -552,6 +555,9 @@ void main() {
   group('a running clock check or primary change can be stopped', () {
     // A day of two sessions with one slot: the first session's clock check
     // holds the slot until released, the second's primary change waits.
+    final tasks = <_GatedTask>[];
+    setUp(tasks.clear);
+
     Future<(DayResultsController, String, String, List<Completer<void>>)>
     held() async {
       final previous = DayResultsController.fusionSlots;
@@ -576,7 +582,9 @@ void main() {
         fusionRunner: (job) {
           final gate = Completer<void>();
           hold ? gates.add(gate) : gate.complete();
-          return _GatedTask(gate.future, job);
+          final task = _GatedTask(gate.future, job);
+          tasks.add(task);
+          return task;
         },
       );
       addTearDown(controller.dispose);
@@ -596,6 +604,7 @@ void main() {
       expect(controller.recordingsBusy, isTrue);
 
       controller.stopRecordingsWork(first);
+      expect(tasks.last.cancelled, isTrue, reason: 'the job is stopped');
       // At once: the day can be left again and the actions come back.
       expect(controller.clockChecking(first), isFalse);
       expect(controller.recordingsBusy, isFalse);
@@ -631,6 +640,41 @@ void main() {
       // It can be asked again.
       await controller.makePrimary(second);
       expect(controller.runs.last.run.format, RecordingFormat.rcz);
+    });
+
+    test('a check asked for again right after a stop is applied', () async {
+      final (controller, first, _, gates) = await held();
+      final stale = controller.checkClock(first);
+      await pumpEventQueue();
+      controller.stopRecordingsWork(first);
+      final again = controller.checkClock(first);
+      await pumpEventQueue();
+      expect(controller.clockChecking(first), isTrue);
+      // The stopped job still holds the only slot until it ends.
+      gates.first.complete();
+      await stale;
+      expect(controller.clockChecking(first), isTrue);
+      await pumpEventQueue();
+      gates.last.complete();
+      await again;
+      expect(gates, hasLength(2));
+      expect(controller.clockChecking(first), isFalse);
+      expect(controller.clockCheck(first), isNotNull);
+    });
+
+    test('a running primary change is stopped', () async {
+      final (controller, _, second, _) = await held();
+      // Inline under flutter test, the job stops at its next cancellation
+      // check; in the app its isolate is killed.
+      final change = controller.makePrimary(second);
+      expect(controller.primaryChanging(second), isTrue);
+      controller.stopRecordingsWork(second);
+      expect(controller.primaryChanging(second), isFalse);
+      expect(controller.recordingsBusy, isFalse);
+      await change;
+      expect(controller.runs.last.run.format, RecordingFormat.vbo);
+      expect(controller.recordingsProblem(second), isNull);
+      expect(controller.dirty, isFalse);
     });
 
     test('nothing to stop does nothing', () async {

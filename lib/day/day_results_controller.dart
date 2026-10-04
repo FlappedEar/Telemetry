@@ -903,6 +903,7 @@ final class DayResultsController extends ChangeNotifier {
     _fusionTasks.remove(runId)?.cancel();
     _primaryTasks.remove(runId)?.cancel();
     notifyListeners();
+    _settleFusions();
   }
 
   /// Whether [runId]'s recordings can be changed now: it has another
