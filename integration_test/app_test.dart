@@ -169,7 +169,11 @@ void main() {
         p.join((await getApplicationSupportDirectory()).path, 'incoming'),
       );
       await clearRecovery();
+      // Map tiles stay off the network: the emulator may have none, and a
+      // failed tile load fails the test.
+      debugTileProvider = BlankTiles.new;
       addTearDown(() async {
+        debugTileProvider = null;
         fixtures.deleteSync(recursive: true);
         if (incoming.existsSync()) incoming.deleteSync(recursive: true);
         await clearRecovery();
