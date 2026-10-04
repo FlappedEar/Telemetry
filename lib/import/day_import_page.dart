@@ -146,136 +146,6 @@ double? _bestSeconds(LapSession laps) {
   return fastest == null ? null : laps.timedLaps[fastest].durationSeconds;
 }
 
-// What the import says (`DayImportFailed.message`, the notes of a scan and
-// a plan) as written in `import_runner.dart`, `day_import_controller.dart`
-// and `telemetry_core`'s folder scan.
-final _folderTooMany = RegExp(
-  r'^The folder holds (\d+) recordings; import at most (\d+) at a time\. '
-  r'Choose a smaller folder\.$',
-);
-final _tooMany = RegExp(
-  r'^That is (\d+) recordings; import at most (\d+) at a time\.$',
-);
-final _stoppedAfter = RegExp(
-  r'^Stopped after (\d+) files and folders; recordings beyond that were '
-  r'not scanned\.$',
-);
-final _tooDeep = RegExp(
-  r'^(\d+) folder\(s\) deeper than (\d+) levels were not scanned\.$',
-);
-final _links = RegExp(r'^(\d+) link\(s\) were not followed\.$');
-final _others = RegExp(
-  r'^(\d+) other file\(s\) were ignored; only VBO and RCZ recordings are '
-  r'imported\.$',
-);
-final _sameContent = RegExp(r'^same content as (.+); imported once\.$');
-// Not the note of adding to a day, "... as Session 2 in the other format;
-// kept as ...".
-final _sameDrive = RegExp(
-  r'^the same drive as ((?:(?! in the other format;).)+); kept as its '
-  r'alternative source\.$',
-);
-
-/// The import's errors and notes in the app's language.
-extension ImportMessageText on AppLocalizations {
-  /// An error or a note of an import, also one about a file or folder
-  /// ("a.vbo: not found; not imported."), in the app's language; one the
-  /// app does not know, such as a reading error, is shown as written.
-  String importMessage(String message) {
-    if (_importMessage(message) case final known?) return known;
-    // "name: text", the name being the part before the first ": " whose
-    // text is known.
-    for (
-      var at = message.indexOf(': ');
-      at >= 0;
-      at = message.indexOf(': ', at + 2)
-    ) {
-      if (_importMessage(message.substring(at + 2)) case final known?) {
-        return '${message.substring(0, at)}: $known';
-      }
-    }
-    return message;
-  }
-
-  String? _importMessage(String message) {
-    int number(Match match, int group) => int.parse(match.group(group)!);
-    if (message.startsWith(unexpectedFileError)) {
-      return importUnexpectedError(
-        message.substring(unexpectedFileError.length),
-      );
-    }
-    const failed = 'The import failed: ';
-    if (message.startsWith(failed)) {
-      return importPageImportFailed(
-        importMessage(message.substring(failed.length)),
-      );
-    }
-    if (_folderTooMany.firstMatch(message) case final match?) {
-      return importPageFolderTooMany(number(match, 1), number(match, 2));
-    }
-    if (_tooMany.firstMatch(message) case final match?) {
-      return importPageTooMany(number(match, 1), number(match, 2));
-    }
-    if (_stoppedAfter.firstMatch(message) case final match?) {
-      return importPageStoppedAfter(number(match, 1));
-    }
-    if (_tooDeep.firstMatch(message) case final match?) {
-      return importPageTooDeep(number(match, 1), number(match, 2));
-    }
-    if (_links.firstMatch(message) case final match?) {
-      return importPageLinksSkipped(number(match, 1));
-    }
-    if (_others.firstMatch(message) case final match?) {
-      return importPageOtherFilesSkipped(number(match, 1));
-    }
-    if (_sameContent.firstMatch(message) case final match?) {
-      return importPageSameContent(match.group(1)!);
-    }
-    if (_sameDrive.firstMatch(message) case final match?) {
-      return importPageSameDrive(match.group(1)!);
-    }
-    return switch (message) {
-      'No recording could be imported.' => importPageNoRecording,
-      'Import failed.' => importPageFailed,
-      'Bad state: The import stopped unexpectedly.' =>
-        importPageStoppedUnexpectedly,
-      'The folder does not exist or is not a folder.' => importPageNoFolder,
-      'Choose the folder itself, not a link to it.' => importPageFolderLink,
-      'No VBO or RCZ recordings were found.' => importPageNoneFound,
-      'No VBO or RCZ recordings were found (subfolders were not included).' =>
-        importPageNoneFoundNoSubfolders,
-      'No VBO or RCZ recordings to import.' => importPageNothingToImport,
-      'not found; not imported.' => importPageFileNotFound,
-      'a macOS metadata file, not a recording; not imported.' =>
-        importPageMetadataFile,
-      'a link; not followed.' => importPageFileLink,
-      'not a VBO or RCZ recording; not imported.' => importPageNotRecording,
-      'Choose a VBO or RaceChrono RCZ telemetry file.' => importPageChooseFile,
-      'Telemetry source is not an existing regular file.' =>
-        importPageNotRegularFile,
-      'Too many files in one import; select a smaller batch.' =>
-        importPageTooManyFiles,
-      'Telemetry source path is too long.' => importPagePathTooLong,
-      'Telemetry file is empty or exceeds the per-file import limit.' =>
-        importPageFileSize,
-      'Batch input-byte limit exceeded; import fewer recordings.' =>
-        importPageBatchBytes,
-      'Identical file content already present in this batch.' =>
-        importPageIdenticalContent,
-      'Telemetry source changed during import; retry with a stable file.' =>
-        importPageSourceChanged,
-      'Telemetry source has an invalid time range.' =>
-        importPageInvalidTimeRange,
-      'Telemetry source has mismatched channel timestamps and values.' =>
-        importPageMismatchedChannels,
-      'Batch decoded-sample limit exceeded; import fewer recordings.' =>
-        importPageBatchSamples,
-      'Source grouping exceeds the import limit.' => importPageGroupingLimit,
-      _ => null,
-    };
-  }
-}
-
 /// [time] as local "2026-10-03 06:30".
 String _when(DateTime time) {
   final local = time.toLocal();
@@ -1128,7 +998,7 @@ class _DayImportPageState extends State<DayImportPage> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              l10n.importMessage(note),
+              l10n.coreText(note),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1171,7 +1041,7 @@ class _DayImportPageState extends State<DayImportPage> {
       ):
         return [
           Text(
-            reviewChanged ? l10n.reviewChanged : l10n.importMessage(message),
+            reviewChanged ? l10n.reviewChanged : l10n.coreText(message),
             style: TextStyle(color: theme.colorScheme.error),
           ),
           ...notes(failedNotes),

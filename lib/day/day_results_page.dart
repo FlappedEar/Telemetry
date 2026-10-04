@@ -202,7 +202,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ],
       if (addition.savedTo != null) l10n.savedAs(p.basename(addition.savedTo!)),
       if (addition.saveError.isNotEmpty) l10n.notSaved(addition.saveError),
-      ...addition.notes,
+      ...addition.notes.map(l10n.coreText),
     ];
     _tell(lines.join('\n'));
     if (added.isNotEmpty) _revealCoach();
@@ -270,7 +270,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (review == null || !mounted) return;
     if (plan == null) {
       _tell(
-        [context.l10n.additionError(review.error), ...review.notes].join('\n'),
+        [
+          context.l10n.additionError(review.error),
+          ...review.notes.map(context.l10n.coreText),
+        ].join('\n'),
       );
       return;
     }

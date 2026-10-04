@@ -4293,4 +4293,218 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get importBusy =>
       'Najpierw dokończ bieżący import. Niczego nie zaimportowano.';
+
+  @override
+  String coreVboOpenFailed(String detail) {
+    return 'Nie można otworzyć pliku VBO: $detail';
+  }
+
+  @override
+  String coreVboReadFailed(String detail) {
+    return 'Nie można odczytać pliku VBO: $detail';
+  }
+
+  @override
+  String coreVboUnreadable(String detail) {
+    return 'Nie można odczytać pliku VBO: $detail';
+  }
+
+  @override
+  String get coreVboNoData => 'Plik VBO nie ma wierszy danych [data].';
+
+  @override
+  String get coreVboNoValidRows =>
+      'Plik VBO nie zawiera prawidłowych wierszy danych ze znacznikiem czasu.';
+
+  @override
+  String get coreVboFileSize =>
+      'Plik VBO przekracza obsługiwany limit rozmiaru 128 MiB.';
+
+  @override
+  String get coreVboComplexity =>
+      'Tekst pliku VBO przekracza obsługiwany limit złożoności.';
+
+  @override
+  String get coreVboTooManyValues =>
+      'Plik VBO ma więcej wartości (wiersze × kolumny), niż obsługiwane 40 milionów.';
+
+  @override
+  String get coreVboLongLine =>
+      'Plik VBO zawiera linię dłuższą niż obsługiwany limit 1 MiB.';
+
+  @override
+  String get coreVboTooManyLines => 'Plik VBO ma za dużo linii.';
+
+  @override
+  String get coreVboLongSectionName =>
+      'Plik VBO zawiera nazwę sekcji dłuższą niż obsługiwane 256 znaków.';
+
+  @override
+  String get coreVboTooManyRows => 'Plik VBO ma za dużo wierszy danych.';
+
+  @override
+  String get coreVboHeaderSize =>
+      'Metadane nagłówka pliku VBO przekraczają obsługiwany rozmiar.';
+
+  @override
+  String get coreVboTooManyColumns => 'Plik VBO ma za dużo kolumn.';
+
+  @override
+  String get coreVboLongField =>
+      'Plik VBO zawiera pole dłuższe niż obsługiwany limit 64 KiB.';
+
+  @override
+  String coreRczUnreadable(String detail) {
+    return 'Nie można odczytać pliku RCZ: $detail';
+  }
+
+  @override
+  String coreRczMissing(String name) {
+    return 'W archiwum brakuje pliku $name.';
+  }
+
+  @override
+  String coreRczMemberTooLarge(String name) {
+    return 'Plik $name w archiwum przekracza swój limit rozmiaru.';
+  }
+
+  @override
+  String get coreRczArchiveSize => 'Rozmiar archiwum nie jest obsługiwany.';
+
+  @override
+  String get coreRczZip64 =>
+      'Archiwa ZIP64, dzielone lub przekraczające limity katalogu nie są obsługiwane.';
+
+  @override
+  String get coreRczSymlinks =>
+      'Dowiązania symboliczne w archiwum nie są obsługiwane.';
+
+  @override
+  String get coreRczDuplicateMember =>
+      'Powtórzony plik w archiwum albo przekroczony limit zasobów archiwum.';
+
+  @override
+  String get coreRczTruncated => 'Archiwum jest ucięte.';
+
+  @override
+  String get coreRczMetadataNesting =>
+      'Przekroczono limit zagnieżdżenia lub długości tekstu w metadanych.';
+
+  @override
+  String get coreRczMetadataArray =>
+      'Przekroczono limit długości listy w metadanych.';
+
+  @override
+  String get coreRczMetadataObject =>
+      'Przekroczono limit liczby pól w metadanych.';
+
+  @override
+  String get coreRczMultiSession =>
+      'Archiwa z kilkoma sesjami lub wznowione nie są obsługiwane; udostępnij jedną nieprzerwaną sesję.';
+
+  @override
+  String get coreRczSessionVersion => 'Ta wersja sesji nie jest obsługiwana.';
+
+  @override
+  String get coreRczResumed => 'Wznowione sesje nie są jeszcze obsługiwane.';
+
+  @override
+  String get coreRczMultiplePositions =>
+      'Nagrania z kilkoma kanałami pozycji nie są obsługiwane.';
+
+  @override
+  String coreRczMultipleSources(String channel) {
+    return 'Nagrania z kilkoma źródłami kanału $channel nie są obsługiwane.';
+  }
+
+  @override
+  String get coreRczGpsMissing => 'Brakuje zadeklarowanych kanałów GPS.';
+
+  @override
+  String get coreRczTimestamps =>
+      'Znaczniki czasu nie rosną albo wykraczają poza obsługiwaną 24-godzinną sesję.';
+
+  @override
+  String get coreRczChannelBudget =>
+      'Przekroczono limit liczby kanałów lub próbek.';
+
+  @override
+  String get coreRczGapBudget => 'Przekroczono limit liczby przerw lub próbek.';
+
+  @override
+  String get coreRczTooManyGates => 'Za dużo bramek pomiaru czasu.';
+
+  @override
+  String get coreRczInvalidGate =>
+      'Nieprawidłowe współrzędne lub kształt bramki pomiaru czasu.';
+
+  @override
+  String get coreRczInvalidGateEndpoint =>
+      'Nieprawidłowy koniec bramki pomiaru czasu.';
+
+  @override
+  String get coreSourceIdentitySize =>
+      'Plik nagrania przekracza limit rozmiaru przy sprawdzaniu zawartości.';
+
+  @override
+  String get coreSourceCannotRead => 'Nie można odczytać nagrania.';
+
+  @override
+  String get coreSourceChangedWhileReading =>
+      'Nagranie zmieniło się podczas odczytu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
+
+  @override
+  String get coreSourceReadFailed =>
+      'Odczyt nagrania nie powiódł się albo plik jest ucięty.';
+
+  @override
+  String get coreDayTooManyRecordings => 'Za dużo nagrań w tym dniu.';
+
+  @override
+  String get coreDayLapSectionLimit =>
+      'Ten dzień przekracza limit 20 000 odcinków okrążeń.';
+
+  @override
+  String get coreRouteTooManyTraces =>
+      'Za dużo śladów okrążeń do rozpoznania trasy.';
+
+  @override
+  String get coreRouteTooManyRuns => 'Za dużo sesji do pogrupowania tras.';
+
+  @override
+  String get coreProgressionTooMany =>
+      'Za dużo sesji lub odcinków okrążeń, by ocenić postęp.';
+
+  @override
+  String get coreRecordingTooManyLapSections =>
+      'Za dużo odcinków okrążeń w tym nagraniu.';
+
+  @override
+  String get coreDayTooManyLapSections =>
+      'Za dużo odcinków okrążeń w tym dniu.';
+
+  @override
+  String get coreRankingTooMany =>
+      'Za dużo okrążeń lub wykluczeń, by ułożyć ranking tego dnia.';
+
+  @override
+  String get coreTooManyPasses =>
+      'Wykrywanie okrążeń znalazło za dużo przecięć linii start/meta.';
+
+  @override
+  String get coreTooManyGpsPoints =>
+      'Ślady okrążeń zawierają za dużo punktów GPS.';
+
+  @override
+  String get additionAlreadyInDay => 'już jest w tym dniu.';
+
+  @override
+  String additionSameDriveKept(String session) {
+    return 'ten sam przejazd co $session w drugim formacie; zachowano jako jego alternatywne źródło.';
+  }
+
+  @override
+  String additionSameDriveNotAdded(String session) {
+    return 'ten sam przejazd co $session w drugim formacie; nie dodano ponownie.';
+  }
 }

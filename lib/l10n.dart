@@ -3,8 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'l10n/app_localizations.dart';
+import 'l10n_core.dart';
 
 export 'l10n/app_localizations.dart';
+export 'l10n_core.dart';
 
 /// The languages the app speaks, English first: it is the language used
 /// when the device prefers none of them.
@@ -117,8 +119,8 @@ extension LapIssueText on AppLocalizations {
 
 extension DayNoteText on AppLocalizations {
   /// A note of the day's analysis (`DayMessage.text`) in the app's
-  /// language; a note the app does not know, such as an error, is shown as
-  /// written.
+  /// language, also an error from `telemetry_core` ([CoreText.coreText]);
+  /// a note the app does not know is shown as written.
   String dayNote(String text) => switch (text) {
     'Recording date and time unavailable; listed after the dated '
         'recordings in import order.' =>
@@ -128,37 +130,41 @@ extension DayNoteText on AppLocalizations {
     _ when text.startsWith(unexpectedRunError) => noteUnexpectedError(
       text.substring(unexpectedRunError.length),
     ),
-    _ => routeReason(text),
+    _ when routeReason(text) != text => routeReason(text),
+    _ => coreText(text),
   };
 
-  /// Why adding recordings to the day failed (`DayAddition.error`); an
-  /// error the app does not know is shown as written.
+  /// Why adding recordings to the day failed (`DayAddition.error`), also
+  /// an error from `telemetry_core` ([CoreText.coreText]); an error the app
+  /// does not know is shown as written.
   String additionError(String error) => switch (error) {
     'Adding was cancelled.' => addingCancelled,
     'The day was closed.' => dayClosed,
     _ when error.startsWith('Nothing was added: ') => nothingAddedError(
-      error.substring('Nothing was added: '.length),
+      coreText(error.substring('Nothing was added: '.length)),
     ),
-    _ => error,
+    _ => coreText(error),
   };
 
-  /// Why background work failed (`BackgroundTaskFailed.message`); a
-  /// message the app does not know, such as an error, is shown as written.
+  /// Why background work failed (`BackgroundTaskFailed.message`), also an
+  /// error from `telemetry_core` ([CoreText.coreText]); a message the app
+  /// does not know is shown as written.
   String taskFailure(String message) => switch (message) {
     'The work stopped.' => taskStopped,
     'The work stopped unexpectedly.' => taskStoppedUnexpectedly,
-    _ => message,
+    _ => coreText(message),
   };
 
   /// Why a session of a saved day could not be opened
-  /// (`MissingRecording.reason`); any other reason, such as a read error,
-  /// is shown as written.
+  /// (`MissingRecording.reason`), also why its file could not be read
+  /// ([CoreText.coreText]); a reason the app does not know is shown as
+  /// written.
   String missingReason(String reason) => switch (reason) {
     'Recording not found.' => missingRecordingNotFound,
     'The same recording as another session of this day.' =>
       missingRecordingDuplicate,
     'The file found is a different recording.' => missingRecordingDifferent,
-    _ => reason,
+    _ => coreText(reason),
   };
 }
 

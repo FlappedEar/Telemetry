@@ -6230,5 +6230,279 @@
   "importBusy": "Finish the current import first. Nothing was imported.",
   "@importBusy": {
     "description": "An import was asked for while another runs or waits for its review; nothing was imported."
+  },
+  "coreVboOpenFailed": "Could not open VBO: {detail}",
+  "@coreVboOpenFailed": {
+    "description": "A VBO recording could not be opened; the system's reason follows.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "Permission denied"
+      }
+    }
+  },
+  "coreVboReadFailed": "Could not read VBO: {detail}",
+  "@coreVboReadFailed": {
+    "description": "A VBO recording could not be read; the system's reason follows.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "Input/output error"
+      }
+    }
+  },
+  "coreVboUnreadable": "{detail}",
+  "@coreVboUnreadable": {
+    "description": "A VBO recording is damaged or has a structure the app cannot read. The detail is the reader's own technical English text, kept as written; in English it is the whole message.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "VBO has no [column names] section."
+      }
+    }
+  },
+  "coreVboNoData": "VBO has no [data] rows.",
+  "@coreVboNoData": {
+    "description": "A VBO recording holds no data. '[data]' is the file's section name, not translated."
+  },
+  "coreVboNoValidRows": "VBO contains no valid timestamped data rows.",
+  "@coreVboNoValidRows": {
+    "description": "No data row of a VBO recording has a usable time."
+  },
+  "coreVboFileSize": "VBO exceeds the supported 128 MiB file size limit.",
+  "@coreVboFileSize": {
+    "description": "A VBO recording is too large to read."
+  },
+  "coreVboComplexity": "VBO text exceeds the supported complexity limit.",
+  "@coreVboComplexity": {
+    "description": "A VBO recording's text is too complex to read."
+  },
+  "coreVboTooManyValues": "VBO has more values (rows x columns) than the supported 40 million.",
+  "@coreVboTooManyValues": {
+    "description": "A VBO recording holds too many values to read."
+  },
+  "coreVboLongLine": "VBO contains a line longer than the supported 1 MiB limit.",
+  "@coreVboLongLine": {
+    "description": "A line of a VBO recording is too long to read."
+  },
+  "coreVboTooManyLines": "VBO contains too many lines.",
+  "@coreVboTooManyLines": {
+    "description": "A VBO recording has too many lines to read."
+  },
+  "coreVboLongSectionName": "VBO contains a section name longer than the supported 256 characters.",
+  "@coreVboLongSectionName": {
+    "description": "A section name of a VBO recording is too long."
+  },
+  "coreVboTooManyRows": "VBO contains too many data rows.",
+  "@coreVboTooManyRows": {
+    "description": "A VBO recording has too many data rows to read."
+  },
+  "coreVboHeaderSize": "VBO header metadata exceeds the supported size.",
+  "@coreVboHeaderSize": {
+    "description": "A VBO recording's header is too large to read."
+  },
+  "coreVboTooManyColumns": "VBO contains too many columns.",
+  "@coreVboTooManyColumns": {
+    "description": "A VBO recording has too many columns to read."
+  },
+  "coreVboLongField": "VBO contains a field longer than the supported 64 KiB limit.",
+  "@coreVboLongField": {
+    "description": "A field of a VBO recording is too long to read."
+  },
+  "coreRczUnreadable": "RCZ: {detail}",
+  "@coreRczUnreadable": {
+    "description": "A RaceChrono RCZ recording is damaged or has a structure the app cannot read. The detail is the reader's own technical English text, kept as written.",
+    "placeholders": {
+      "detail": {
+        "type": "String",
+        "example": "Corrupt compressed member."
+      }
+    }
+  },
+  "coreRczMissing": "Missing {name}.",
+  "@coreRczMissing": {
+    "description": "After 'RCZ: ': a file the RCZ archive must hold is missing.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "session.json"
+      }
+    }
+  },
+  "coreRczMemberTooLarge": "{name} exceeds its size limit.",
+  "@coreRczMemberTooLarge": {
+    "description": "After 'RCZ: ': a file inside the RCZ archive is too large.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "session.json"
+      }
+    }
+  },
+  "coreRczArchiveSize": "Archive size is unsupported.",
+  "@coreRczArchiveSize": {
+    "description": "After 'RCZ: ': the RCZ file is too small or too large."
+  },
+  "coreRczZip64": "Unsupported ZIP64, split archive or directory limits.",
+  "@coreRczZip64": {
+    "description": "After 'RCZ: ': the RCZ archive is of a kind the app cannot read."
+  },
+  "coreRczSymlinks": "Symbolic links are unsupported.",
+  "@coreRczSymlinks": {
+    "description": "After 'RCZ: ': the RCZ archive holds a symbolic link."
+  },
+  "coreRczDuplicateMember": "Duplicate member or archive resource limit exceeded.",
+  "@coreRczDuplicateMember": {
+    "description": "After 'RCZ: ': the RCZ archive repeats a file or holds too much."
+  },
+  "coreRczTruncated": "Truncated archive.",
+  "@coreRczTruncated": {
+    "description": "After 'RCZ: ': the RCZ file ends early, for example an unfinished copy."
+  },
+  "coreRczMetadataNesting": "Metadata nesting/string limit exceeded.",
+  "@coreRczMetadataNesting": {
+    "description": "After 'RCZ: ': the recording's metadata is too deep or a text in it too long."
+  },
+  "coreRczMetadataArray": "Metadata array limit exceeded.",
+  "@coreRczMetadataArray": {
+    "description": "After 'RCZ: ': a list in the recording's metadata is too long."
+  },
+  "coreRczMetadataObject": "Metadata object limit exceeded.",
+  "@coreRczMetadataObject": {
+    "description": "After 'RCZ: ': an object in the recording's metadata has too many fields."
+  },
+  "coreRczMultiSession": "Multi-session or resumed archives are not supported; share one uninterrupted session.",
+  "@coreRczMultiSession": {
+    "description": "After 'RCZ: ': the RCZ holds several sessions or a resumed one; the user should export one session."
+  },
+  "coreRczSessionVersion": "Unsupported session version.",
+  "@coreRczSessionVersion": {
+    "description": "After 'RCZ: ': the RCZ session was written by a version the app cannot read."
+  },
+  "coreRczResumed": "Resumed sessions are not supported yet.",
+  "@coreRczResumed": {
+    "description": "After 'RCZ: ': the RCZ session was paused and resumed."
+  },
+  "coreRczMultiplePositions": "Multiple position channels are unsupported.",
+  "@coreRczMultiplePositions": {
+    "description": "After 'RCZ: ': the RCZ has more than one position channel."
+  },
+  "coreRczMultipleSources": "Multiple sources for {channel} are unsupported.",
+  "@coreRczMultipleSources": {
+    "description": "After 'RCZ: ': the RCZ has a channel from more than one source. The channel name is the app's own, not translated.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "speed"
+      }
+    }
+  },
+  "coreRczGpsMissing": "Declared GPS channels are missing.",
+  "@coreRczGpsMissing": {
+    "description": "After 'RCZ: ': GPS channels the RCZ declares are not in it."
+  },
+  "coreRczTimestamps": "Timestamp channel is nonmonotonic or outside the supported 24-hour session.",
+  "@coreRczTimestamps": {
+    "description": "After 'RCZ: ': the RCZ's times go backwards or span more than 24 hours."
+  },
+  "coreRczChannelBudget": "Decoded channel/sample budget exceeded.",
+  "@coreRczChannelBudget": {
+    "description": "After 'RCZ: ': the RCZ holds too many channels or samples."
+  },
+  "coreRczGapBudget": "Decoded gap/sample budget exceeded.",
+  "@coreRczGapBudget": {
+    "description": "After 'RCZ: ': the RCZ holds too many gaps or samples."
+  },
+  "coreRczTooManyGates": "Too many timing gates.",
+  "@coreRczTooManyGates": {
+    "description": "After 'RCZ: ': the RCZ's track has too many timing gates."
+  },
+  "coreRczInvalidGate": "Invalid timing gate coordinates or geometry.",
+  "@coreRczInvalidGate": {
+    "description": "After 'RCZ: ': a timing gate of the RCZ's track is invalid."
+  },
+  "coreRczInvalidGateEndpoint": "Invalid timing gate endpoint.",
+  "@coreRczInvalidGateEndpoint": {
+    "description": "After 'RCZ: ': an end of a timing gate of the RCZ's track is invalid."
+  },
+  "coreSourceIdentitySize": "Telemetry file exceeds the content identity size limit.",
+  "@coreSourceIdentitySize": {
+    "description": "A recording is empty or too large to check its content."
+  },
+  "coreSourceCannotRead": "Cannot read telemetry source.",
+  "@coreSourceCannotRead": {
+    "description": "A recording could not be opened."
+  },
+  "coreSourceChangedWhileReading": "Telemetry source changed while reading; retry with a stable file.",
+  "@coreSourceChangedWhileReading": {
+    "description": "A recording changed while it was read, for example while still being copied."
+  },
+  "coreSourceReadFailed": "Telemetry source read failed or was truncated.",
+  "@coreSourceReadFailed": {
+    "description": "A recording could not be read to its end."
+  },
+  "coreDayTooManyRecordings": "Too many recordings in this day.",
+  "@coreDayTooManyRecordings": {
+    "description": "A day holds more recordings than the app supports."
+  },
+  "coreDayLapSectionLimit": "This day exceeds the 20,000 lap-section limit.",
+  "@coreDayLapSectionLimit": {
+    "description": "A day holds more lap sections (laps, out-laps and in-laps) than the app supports."
+  },
+  "coreRouteTooManyTraces": "Too many lap traces for route inference.",
+  "@coreRouteTooManyTraces": {
+    "description": "A day has too many laps to recognise its track layout."
+  },
+  "coreRouteTooManyRuns": "Too many runs for route grouping.",
+  "@coreRouteTooManyRuns": {
+    "description": "A day has too many sessions to group them by track layout."
+  },
+  "coreProgressionTooMany": "Too many runs or lap sections for progression.",
+  "@coreProgressionTooMany": {
+    "description": "A day is too large to show progress across its sessions."
+  },
+  "coreRecordingTooManyLapSections": "Too many lap sections in this recording.",
+  "@coreRecordingTooManyLapSections": {
+    "description": "A session's recording has more lap sections than the app supports."
+  },
+  "coreDayTooManyLapSections": "Too many lap sections in this day.",
+  "@coreDayTooManyLapSections": {
+    "description": "A day has more lap sections than the app supports."
+  },
+  "coreRankingTooMany": "Too many laps or exclusions to rank this day.",
+  "@coreRankingTooMany": {
+    "description": "A day is too large to rank its laps."
+  },
+  "coreTooManyPasses": "Lap detector produced too many accepted passes.",
+  "@coreTooManyPasses": {
+    "description": "A session's recording crosses the start/finish line too many times."
+  },
+  "coreTooManyGpsPoints": "Lap traces contain too many GPS points.",
+  "@coreTooManyGpsPoints": {
+    "description": "A session's laps hold too many GPS points."
+  },
+  "additionAlreadyInDay": "already in this day.",
+  "@additionAlreadyInDay": {
+    "description": "After a recording's name: adding it to a day did nothing, the day already has it."
+  },
+  "additionSameDriveKept": "the same drive as {session} in the other format; kept as its alternative source.",
+  "@additionSameDriveKept": {
+    "description": "After a recording's name, when adding to a day: it is the other format (VBO or RCZ) of a session of the day.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
+  },
+  "additionSameDriveNotAdded": "the same drive as {session} in the other format; not added again.",
+  "@additionSameDriveNotAdded": {
+    "description": "After a recording's name, when adding to a day: it is the other format (VBO or RCZ) of a session of the day, which already has one.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 2"
+      }
+    }
   }
 }
