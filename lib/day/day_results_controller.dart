@@ -1348,6 +1348,8 @@ final class DayResultsController extends ChangeNotifier {
           await _reviewedPairingsSettled();
         } finally {
           _saveWaiting = false;
+          // The page may be left again now, while the file is written.
+          if (!_disposed) notifyListeners();
         }
       }
       final pairingPending = _reviewedPairingPending;
