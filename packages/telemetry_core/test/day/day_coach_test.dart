@@ -297,6 +297,38 @@ void main() {
     expect(coach.reason, CoachReason.noFasterLap);
   });
 
+  test('faster laps within reach are preferred as references over the fastest', () {
+    // run1: lap 1 about 1.8 s faster than the latest laps, lap 2 about 1.7 s,
+    // lap 3 about 0.5 s.
+    final coach = _coach([25, 24, 13], [10, 10.2, 10.1]);
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+    final references = finding.evidence.first.referenceLaps;
+    expect(references.map((lap) => (lap.runId, lap.lapNumber)), [('run1', 2), ('run1', 3)]);
+    // Compared with laps slowing to 24 and 13 m/s (median 18.5), not 25 and 24.
+    expect(finding.evidence.first.reference, closeTo(18.5 * 3.6, 0.5 * 3.6));
+  });
+
+  test('the main focus is the first change, before an improvement to keep', () {
+    // The first corner improves lap by lap; the second stays slower than the
+    // earlier, faster laps.
+    double Function(double) shape(double slow) {
+      final first = _lap(slow);
+      final second = slow < 18 ? 15.0 : 20.0;
+      return (d) => d >= 307 && d <= 407 ? second + (30 - second) * (d - 357).abs() / 50 : first(d);
+    }
+
+    // One faster lap through the second corner (run1's second lap is slow):
+    // the change's confidence (0.78) is below the improvement's (0.79), so
+    // it ranks second but is still the focus.
+    final coach = _coach([20, 10], [15, 16, 17], shape: shape);
+    expect(coach.plan.map((item) => item.finding.kind), [
+      CoachKind.lowMinimumSpeed,
+      CoachKind.improving,
+    ]);
+    expect(coach.focus, same(coach.plan.first));
+    expect(coach.message, startsWith('Work on the main focus first.'));
+  });
+
   test('improvements in two corners: one is kept in the plan', () {
     final coach = _coach([20, 20.5], [15, 16, 17], shape: _twoCorners);
     expect(coach.findings.where((f) => f.kind == CoachKind.improving), hasLength(2));

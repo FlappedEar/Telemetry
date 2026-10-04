@@ -224,6 +224,14 @@
   "@coachLabel": {
     "description": "Label on each coach item, marking it as a suggestion from the coach rules, unlike the measured observations elsewhere on the page."
   },
+  "coachFocusLabel": "Main focus",
+  "@coachFocusLabel": {
+    "description": "Label on the first coach item: the one thing to work on in the next run."
+  },
+  "coachLaterLabel": "Once that feels settled",
+  "@coachLaterLabel": {
+    "description": "Label on the coach items after the main focus: to try only once the main focus feels settled."
+  },
   "coachMeasuredLabel": "Measured",
   "@coachMeasuredLabel": {
     "description": "Label before what was measured, in a coach item."
@@ -384,7 +392,7 @@
   "@coachMetricCoastDistance": {
     "description": "The distance driven with neither pedal pressed."
   },
-  "coachReasonReady": "Choose one focus at a time for your next run.",
+  "coachReasonReady": "Work on the main focus first. Try the others only once it feels settled.",
   "@coachReasonReady": {
     "description": "Above the coach items."
   },

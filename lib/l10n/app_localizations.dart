@@ -338,6 +338,18 @@ abstract class AppLocalizations {
   /// **'Coach suggestion'**
   String get coachLabel;
 
+  /// Label on the first coach item: the one thing to work on in the next run.
+  ///
+  /// In en, this message translates to:
+  /// **'Main focus'**
+  String get coachFocusLabel;
+
+  /// Label on the coach items after the main focus: to try only once the main focus feels settled.
+  ///
+  /// In en, this message translates to:
+  /// **'Once that feels settled'**
+  String get coachLaterLabel;
+
   /// Label before what was measured, in a coach item.
   ///
   /// In en, this message translates to:
@@ -503,7 +515,7 @@ abstract class AppLocalizations {
   /// Above the coach items.
   ///
   /// In en, this message translates to:
-  /// **'Choose one focus at a time for your next run.'**
+  /// **'Work on the main focus first. Try the others only once it feels settled.'**
   String get coachReasonReady;
 
   /// Why there is no plan.

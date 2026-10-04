@@ -164,6 +164,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachLabel => 'Coach suggestion';
 
   @override
+  String get coachFocusLabel => 'Main focus';
+
+  @override
+  String get coachLaterLabel => 'Once that feels settled';
+
+  @override
   String get coachMeasuredLabel => 'Measured';
 
   @override
@@ -261,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachReasonReady =>
-      'Choose one focus at a time for your next run.';
+      'Work on the main focus first. Try the others only once it feels settled.';
 
   @override
   String get coachReasonNoSegments =>
