@@ -29,7 +29,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String trackDialogTitle(String session) {
-    return '$session';
+    return 'Tor: $session';
   }
 
   @override
@@ -51,7 +51,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get trackDialogLayoutName => 'Konfiguracja toru';
+  String get trackDialogLayoutName => 'Nazwa konfiguracji toru';
 
   @override
   String get trackDialogLayoutHint => 'Jastrząb, pełna pętla';
@@ -66,15 +66,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get routeReasonTooFewLaps =>
-      'Za mało powtarzalnych, pełnych okrążeń GPS, aby automatycznie rozpoznać trasę.';
+      'Za mało powtarzalnych, pełnych okrążeń z danymi GPS, aby automatycznie rozpoznać trasę.';
 
   @override
   String get routeReasonConflictingLaps =>
-      'Pełne okrążenia prowadzą różnymi trasami; sprawdź konfigurację toru w tym nagraniu.';
+      'Pełne okrążenia prowadzą różnymi trasami; sprawdź konfigurację toru w tym zapisie.';
 
   @override
   String get routeReasonSeveralGroups =>
-      'Trasa GPS pasuje do kilku niezgodnych grup; sprawdź konfigurację toru w tym nagraniu.';
+      'Trasa GPS pasuje do kilku niezgodnych grup; sprawdź konfigurację toru w tym zapisie.';
 
   @override
   String sessionName(int number) {
@@ -90,7 +90,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsSpeedUnitHelp =>
-      'Używana tylko dla nagrań, które nie podają jednostki prędkości. Jednostka podana w nagraniu jest zawsze pokazywana tak, jak ją zapisano. Wartości nigdy nie są przeliczane.';
+      'Używana tylko dla zapisów, które nie podają jednostki prędkości. Jednostka podana w zapisie jest zawsze pokazywana tak, jak ją podano. Wartości nigdy nie są przeliczane.';
 
   @override
   String get speedUnitNone => 'Brak';
@@ -100,7 +100,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String settingsDeclaredUnits(String units) {
-    return 'Nagrania otwartego dnia podają $units.';
+    return 'Zapisy otwartego dnia podają $units.';
   }
 
   @override
@@ -108,16 +108,16 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsAllUnlabelled =>
-      'Jego nagrania nie podają jednostki prędkości.';
+      'Jego zapisy nie podają jednostki prędkości.';
 
   @override
   String settingsSomeUnlabelled(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count z jego nagrań nie podaje jednostki prędkości.',
-      few: '$count z jego nagrań nie podają jednostki prędkości.',
-      one: '1 z jego nagrań nie podaje jednostki prędkości.',
+      other: '$count z jego zapisów nie podaje jednostki prędkości.',
+      few: '$count z jego zapisów nie podają jednostki prędkości.',
+      one: '1 z jego zapisów nie podaje jednostki prędkości.',
     );
     return '$_temp0';
   }
@@ -150,7 +150,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get coachLoading => 'Przygotowywane po idealnym okrążeniu…';
+  String get coachLoading =>
+      'Przygotowywanie wskazówek po obliczeniu teoretycznego czasu okrążenia…';
 
   @override
   String coachFailed(String error) {
@@ -159,11 +160,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachNoTheoreticalBest =>
-      'Trener potrzebuje idealnego okrążenia, którego nie udało się obliczyć.';
+      'Nie udało się obliczyć teoretycznego czasu okrążenia. Bez tego wyniku nie można przygotować wskazówek.';
 
   @override
   String get coachSpeedHidden =>
-      'Prędkości nie są pokazane: jednostki prędkości w nagraniach się różnią lub trener przeliczył je na km/h, a prędkości nigdy nie są pokazywane po przeliczeniu ani w różnych jednostkach naraz.';
+      'Prędkości nie są pokazane: jednostki prędkości w zapisach się różnią lub trener przeliczył je na km/h, a prędkości nigdy nie są pokazywane po przeliczeniu ani w różnych jednostkach naraz.';
 
   @override
   String get coachLabel => 'Sugestia trenera';
@@ -182,17 +183,17 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachFooter =>
-      'Sugestie trenera opierają się na regułach DrivingCoach i wskazują możliwość, a nie obiecany zysk. Obszary poniżej to obserwacje.';
+      'Wskazówki trenera wynikają z reguł DrivingCoach i wskazują możliwości poprawy, a nie gwarantowany zysk. Poniższe obszary przedstawiają obserwacje.';
 
   @override
   String get coachKindEarlyLift => 'Spróbuj później odjąć gaz';
 
   @override
-  String get coachKindExcessiveCoasting => 'Mniej jazdy bez pedałów';
+  String get coachKindExcessiveCoasting => 'Skróć jazdę bez gazu i hamulca';
 
   @override
   String get coachKindLowMinimumSpeed =>
-      'Zachowaj więcej prędkości w najwolniejszym punkcie';
+      'Utrzymaj wyższą prędkość w najwolniejszym punkcie';
 
   @override
   String get coachKindLateThrottle => 'Wcześniej wróć na gaz';
@@ -207,19 +208,19 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachActionEarlyLift =>
-      'Spróbuj odjąć gaz nieco później, w ramach dojazdu, który już się sprawdził. Nie zmieniaj punktu hamowania.';
+      'Spróbuj odjąć gaz nieco później, zachowując sposób dojazdu do zakrętu, który udało Ci się już powtarzać. Nie zmieniaj punktu hamowania.';
 
   @override
   String get coachActionExcessiveCoasting =>
-      'Skróć odcinek bez wciśniętego pedału. Skup się na płynnym przejściu między pedałami. Nie zmieniaj punktu hamowania.';
+      'Skróć fragmenty jazdy bez użycia gazu ani hamulca. Skup się na płynnym przechodzeniu między użyciem gazu a hamowaniem. Nie zmieniaj punktu hamowania.';
 
   @override
   String get coachActionLowMinimumSpeed =>
-      'Powtórz tor jazdy i dojazd z szybszych okrążeń, celując w płynniejszą fazę najmniejszej prędkości. Sprawdzaj się po wyjściu z zakrętu.';
+      'Powtórz tor jazdy i sposób dojazdu do zakrętu z szybszych okrążeń. Staraj się płynniej przejechać najwolniejszy fragment zakrętu. Oceń efekt na wyjściu z zakrętu.';
 
   @override
   String get coachActionLateThrottle =>
-      'Dąż do płynnego, nieco wcześniejszego powrotu na gaz po najwolniejszym punkcie, wzorując się na szybszych okrążeniach.';
+      'Pracuj nad płynnym, nieco wcześniejszym ponownym dodaniem gazu po najwolniejszym punkcie. Wzoruj się na swoich szybszych okrążeniach.';
 
   @override
   String get coachActionImproving =>
@@ -244,13 +245,14 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricLiftPoint => 'Punkt odjęcia gazu';
 
   @override
-  String get coachMetricLongestCoast => 'Najdłuższa jazda bez pedałów';
+  String get coachMetricLongestCoast =>
+      'Najdłuższa faza jazdy bez gazu i hamulca';
 
   @override
-  String get coachMetricMinimumSpeed => 'Najmniejsza prędkość';
+  String get coachMetricMinimumSpeed => 'Prędkość minimalna';
 
   @override
-  String get coachMetricThrottleReturn => 'Powrót na gaz';
+  String get coachMetricThrottleReturn => 'Ponowne dodanie gazu';
 
   @override
   String get coachMetricSegmentTime => 'Czas odcinka';
@@ -259,10 +261,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricExitSpeed => 'Prędkość na wyjściu';
 
   @override
-  String get coachMetricBrakingStart => 'Początek hamowania';
+  String get coachMetricBrakingStart => 'Punkt rozpoczęcia hamowania';
 
   @override
-  String get coachMetricCoastDistance => 'Dystans bez pedałów';
+  String get coachMetricCoastDistance => 'Dystans jazdy bez gazu i hamulca';
 
   @override
   String get coachReasonReady =>
@@ -274,7 +276,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String coachReasonNoLapInGroup(String session) {
-    return '$session nie ma mierzonego okrążenia wśród porównywanych okrążeń.';
+    return '$session: wśród porównywanych okrążeń nie ma żadnego okrążenia tej sesji z pomiarem czasu.';
   }
 
   @override
@@ -283,22 +285,22 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String coachReasonNoRecording(String session) {
-    return 'Nagranie $session jest niedostępne, więc trener nie może jej ocenić.';
+    return 'Dane sesji $session są niedostępne, więc nie można przygotować wskazówek.';
   }
 
   @override
   String coachReasonNoCornerMeasurements(String session) {
-    return 'Żadnego okrążenia $session nie udało się zmierzyć w zakręcie.';
+    return 'Nie udało się wyznaczyć parametrów przejazdu zakrętu dla żadnego okrążenia sesji $session.';
   }
 
   @override
   String coachReasonNoFasterLap(String session) {
-    return 'Żadne okrążenie $session nie ma szybszego okrążenia dnia do porównania.';
+    return 'Dla żadnego okrążenia sesji $session nie ma szybszego okrążenia z tego dnia do porównania.';
   }
 
   @override
   String get coachReasonNoPedals =>
-      'Gaz i hamulec nie są rejestrowane, więc nie da się porównać odjęcia gazu, jazdy bez pedałów i powrotu na gaz, a prędkości nie pokazują powtarzalnego wzorca.';
+      'Nie zarejestrowano sygnałów gazu i hamulca, więc nie można porównać odjęcia gazu, jazdy bez gazu i hamulca ani ponownego dodania gazu. Dane prędkości nie pokazują powtarzalnego wzorca.';
 
   @override
   String get coachReasonNoPattern =>
@@ -306,7 +308,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String coachReasonTooFewLaps(String session) {
-    return 'Wzorzec pojawił się na mniej niż trzech okrążeniach $session, to za mało do planu.';
+    return 'Wzorzec wystąpił na mniej niż trzech okrążeniach sesji $session. To za mało, aby przygotować plan.';
   }
 
   @override
@@ -329,12 +331,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String coachWhySupport(String score) {
-    return 'Wsparcie $score z 0.9. Ostrożna ocena, jak dobrze okrążenia potwierdzają wzorzec, a nie prawdopodobieństwo.';
+    return 'Potwierdzenie wzorca: $score / 0.9. Ostrożna ocena zgodności okrążeń z wykrytym wzorcem; nie jest prawdopodobieństwem.';
   }
 
   @override
   String coachWhyMap(String segment) {
-    return 'Ślad najlepszego okrążenia z wyróżnionym: $segment';
+    return 'Ślad najlepszego okrążenia z wyróżnionym odcinkiem: $segment';
   }
 
   @override
@@ -351,7 +353,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get compareIntro =>
-      'Dwa okrążenia obok siebie: gdzie jedno zyskuje, a gdzie traci czas, segment po segmencie i zakręt po zakręcie.';
+      'Dwa okrążenia obok siebie: gdzie jedno zyskuje, a gdzie traci czas, odcinek po odcinku i zakręt po zakręcie.';
 
   @override
   String get compareNeedsTwoLaps =>
@@ -377,16 +379,16 @@ class AppLocalizationsPl extends AppLocalizations {
   String get dayBestLabel => 'Najlepsze okrążenie dnia';
 
   @override
-  String get theoreticalBestLabel => 'Teoretycznie najlepsze';
+  String get theoreticalBestLabel => 'Teoretyczny czas okrążenia';
 
   @override
-  String get theoreticalBestHint => 'Najszybszy czas każdego segmentu';
+  String get theoreticalBestHint => 'Suma najlepszych czasów odcinków';
 
   @override
   String get dayResultsTitle => 'Wyniki dnia';
 
   @override
-  String get addRecordings => 'Dodaj nagrania';
+  String get addRecordings => 'Dodaj zapisy telemetrii';
 
   @override
   String get dayReport => 'Raport dnia';
@@ -398,7 +400,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get saveAs => 'Zapisz jako…';
 
   @override
-  String get addingRecordings => 'Dodawanie nagrań';
+  String get addingRecordings => 'Dodawanie zapisów telemetrii';
 
   @override
   String get waitUntilSessionAdded => 'Poczekaj, aż sesja zostanie dodana.';
@@ -428,15 +430,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get waitThenFindRecordings =>
-      'Poczekaj, aż nagrania zostaną dodane, a potem wyszukaj pozostałe.';
+      'Poczekaj, aż zapisy zostaną dodane, a potem wyszukaj pozostałe.';
 
   @override
   String get saveThenFindRecordings =>
-      'Najpierw zapisz dzień, a potem wyszukaj jego nagrania.';
+      'Najpierw zapisz dzień, a potem wyszukaj jego zapisy danych.';
 
   @override
   String get recordingsAddedMeanwhile =>
-      'W międzyczasie dodano nagrania. Wyszukaj nagrania ponownie.';
+      'W międzyczasie dodano zapisy. Wyszukaj zapisy ponownie.';
 
   @override
   String dayReopenFailed(String error) {
@@ -462,7 +464,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lookingForRecordings => 'Szukam…';
 
   @override
-  String get findRecordingsInFolder => 'Znajdź nagrania w folderze…';
+  String get findRecordingsInFolder => 'Znajdź zapisy w folderze…';
 
   @override
   String lapsShareBestTime(int count) {
@@ -481,7 +483,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Ślad najlepszego okrążenia, pokolorowany według prędkości';
 
   @override
-  String get tapToOpenLap => 'Dotknij, aby otworzyć okrążenie.';
+  String get tapToOpenLap => 'Wybierz, aby otworzyć okrążenie.';
 
   @override
   String get comparedLaps => 'Porównywane okrążenia';
@@ -519,12 +521,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String typicalTime(String time) {
-    return 'typowo $time';
+    return 'typowy czas $time';
   }
 
   @override
   String get circuitNotIdentified =>
-      'Nie udało się rozpoznać toru, więc jej okrążenia nie są porównywane.';
+      'Nie udało się rozpoznać toru tej sesji, dlatego jej okrążenia nie są porównywane.';
 
   @override
   String get setCircuit => 'Ustaw tor…';
@@ -559,11 +561,11 @@ class AppLocalizationsPl extends AppLocalizations {
       'Brak najlepszego okrążenia: żadnego okrążenia tej grupy nie można sklasyfikować.';
 
   @override
-  String get bestOfDay => 'Najlepsze z dnia';
+  String get bestOfDay => 'Najlepsze okrążenie dnia';
 
   @override
   String bestOfSession(String session) {
-    return 'Najlepsze: $session';
+    return 'Najlepsze okrążenie: $session';
   }
 
   @override
@@ -580,7 +582,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get noStartFinishPass => 'Brak przejazdu przez linię start/meta';
+  String get noStartFinishPass => 'Brak przejazdu przez linię startu/mety';
 
   @override
   String get notTimed => 'Bez pomiaru czasu';
@@ -600,12 +602,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String outLapName(String session) {
-    return '$session · WYJAZD';
+    return '$session · OKR. WYJAZDOWE';
   }
 
   @override
   String inLapName(String session) {
-    return '$session · ZJAZD';
+    return '$session · OKR. ZJAZDOWE';
   }
 
   @override
@@ -625,15 +627,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get noteUndated =>
-      'Brak daty i godziny nagrania; pokazano je po nagraniach z datą, w kolejności importu.';
+      'Brak daty i godziny zapisu; pokazano go po zapisach z datą, w kolejności importu.';
 
   @override
   String get noteNoPasses =>
-      'Brak pewnych przejazdów przez linię start/meta; rodzaj okrążenia jest nieznany.';
+      'Brak pewnych przejazdów przez linię startu/mety; rodzaj okrążenia jest nieznany.';
 
   @override
   String get noteNoGps =>
-      'To nagranie nie ma pozycji GPS; nie da się zmierzyć okrążeń.';
+      'Ten zapis nie ma pozycji GPS; nie da się zmierzyć okrążeń.';
 
   @override
   String get lapIssueLayoutUnresolved => 'Konfiguracja toru do potwierdzenia';
@@ -654,10 +656,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lapIssueChangedTimingGate => 'Inne bramki pomiaru czasu';
 
   @override
-  String get lapIssueIncompleteGps => 'Niepełny GPS';
+  String get lapIssueIncompleteGps => 'Niepełne dane GPS';
 
   @override
-  String get lapIssueInvalidGps => 'Błędny GPS';
+  String get lapIssueInvalidGps => 'Nieprawidłowe dane GPS';
 
   @override
   String get lapIssueUserExclusion => 'Wykluczone przez użytkownika';
@@ -668,7 +670,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapIssueStaleSource =>
-      'Źródło się zmieniło; wczytaj nagranie ponownie';
+      'Źródło się zmieniło; wczytaj zapis ponownie';
 
   @override
   String get lapIssueIneligibleLap => 'Okrążenie się nie kwalifikuje';
@@ -679,7 +681,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get tbFailedElsewhere =>
-      'Niedostępne: nie udało się obliczyć teoretycznie najlepszego okrążenia.';
+      'Niedostępne: nie udało się obliczyć teoretycznego czasu okrążenia.';
 
   @override
   String get tbTiming => 'Pomiar czasu każdego okrążenia na wspólnej osi toru…';
@@ -689,27 +691,27 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       segments,
       locale: localeName,
-      other: '$segments segmentów',
-      one: '1 segmentu',
+      other: '$segments odcinków',
+      one: '1 odcinka',
     );
     String _temp1 = intl.Intl.pluralLogic(
       laps,
       locale: localeName,
-      other: '$laps okrążeniach',
-      one: '1 okrążeniu',
+      other: '$laps okrążeń',
+      one: '1 okrążenia',
     );
-    return 'Najszybszy czas każdego z $_temp0 na $_temp1. Łączy fragmenty różnych okrążeń, więc nie dowodzi, że całe okrążenie da się przejechać tak szybko.';
+    return 'Dla każdego z $_temp0 wybierany jest najlepszy czas spośród $_temp1. Suma czasów odcinków daje teoretyczny czas okrążenia. Wynik łączy fragmenty różnych okrążeń i nie oznacza, że całe okrążenie można przejechać w takim czasie.';
   }
 
   @override
   String get tbSegmentsProposed =>
-      'Segmenty zaproponowano na podstawie najlepszego okrążenia; zapisanie dnia je zachowa.';
+      'Odcinki zaproponowano na podstawie najlepszego okrążenia; zapisanie dnia je zachowa.';
 
   @override
-  String get tbSegmentsCorrected => 'Segmenty uwzględniają Twoje poprawki.';
+  String get tbSegmentsCorrected => 'Odcinki uwzględniają Twoje poprawki.';
 
   @override
-  String get tbEditSegments => 'Edytuj segmenty';
+  String get tbEditSegments => 'Edytuj odcinki';
 
   @override
   String get tbWhereTimeGoes => 'Gdzie ucieka czas';
@@ -721,40 +723,40 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String tbMapLabel(String lap) {
-    return 'Ślad najlepszego okrążenia, każdy segment pokolorowany według czasu, jaki traci tam $lap';
+    return 'Ślad najlepszego okrążenia, każdy odcinek pokolorowany według czasu, jaki traci tam $lap';
   }
 
   @override
   String get tbTapCorner =>
-      'Dotknij zakrętu, aby zobaczyć prędkości, hamowanie i powrót do gazu na tle najlepszego okrążenia.';
+      'Dotknij zakrętu, aby porównać prędkości, hamowanie i ponowne dodanie gazu z najlepszym okrążeniem.';
 
   @override
   String get tbCompareHint =>
-      'Przycisk porównania otwiera to okrążenie na tle najlepszego okrążenia w danym segmencie w Analizatorze zakrętów.';
+      'Przycisk porównania otwiera to okrążenie na tle najlepszego okrążenia w danym odcinku w Analizatorze zakrętów.';
 
   @override
   String get tbOpenInAnalyzer => 'Otwórz w Analizatorze zakrętów';
 
   @override
-  String get tbSectorTimes => 'Czasy sektorów';
+  String get tbSectorTimes => 'Czasy odcinków';
 
   @override
   String get tbSectorHint =>
-      'Najszybszy czas każdego segmentu jest wyróżniony. Dotknij okrążenia, aby pokazać jego straty na mapie.';
+      'Najlepszy czas każdego odcinka jest wyróżniony. Wybierz okrążenie, aby zobaczyć jego straty czasu na mapie.';
 
   @override
   String tbNotCovered(String time) {
-    return 'Nie w pełni pokryty na tym okrążeniu · najszybciej $time';
+    return 'Brak pełnego pomiaru czasu odcinka na tym okrążeniu · najlepszy czas $time';
   }
 
   @override
   String tbFastestHere(String time) {
-    return 'Najszybciej tutaj · $time';
+    return 'Najlepszy czas tego odcinka · $time';
   }
 
   @override
   String tbFastestBy(String time, String lap) {
-    return 'Najszybciej $time · $lap';
+    return 'Najlepszy czas $time · $lap';
   }
 
   @override
@@ -764,10 +766,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get tbBestLap => 'Najlepsze okrążenie';
 
   @override
-  String get tbBestLapSameSegments => 'Najlepsze okrążenie, te same segmenty';
+  String get tbBestLapSameSegments => 'Najlepsze okrążenie, te same odcinki';
 
   @override
-  String get tbAvailable => 'Rezerwa';
+  String get tbAvailable => 'Różnica do czasu teoretycznego';
 
   @override
   String get tbLapColumn => 'Okrążenie';
@@ -776,7 +778,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get tbTimeColumn => 'Czas';
 
   @override
-  String get tbFastestRow => 'Najszybciej';
+  String get tbFastestRow => 'Najlepsze czasy';
 
   @override
   String tbCellLabel(String column, String value) {
@@ -785,7 +787,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String tbFastestCell(String value) {
-    return '$value, najszybszy';
+    return '$value, najlepszy czas';
   }
 
   @override
@@ -805,27 +807,27 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get tbNoConfiguration =>
-      'Potwierdź zgodną konfigurację toru, aby obliczyć teoretycznie najlepsze okrążenie.';
+      'Potwierdź zgodną konfigurację toru, aby obliczyć teoretyczny czas okrążenia.';
 
   @override
   String get tbNoEligibleLaps =>
-      'W tej grupie nie ma okrążeń, z których można obliczyć teoretycznie najlepsze okrążenie.';
+      'W tej grupie nie ma okrążeń, które można uwzględnić w obliczeniu teoretycznego czasu okrążenia.';
 
   @override
   String get tbNoApprovedRun =>
-      'Żadna sesja w tej grupie nie ma jeszcze zatwierdzonych segmentów. Najpierw zatwierdź segmenty dla co najmniej jednej sesji.';
+      'Żadna sesja w tej grupie nie ma jeszcze zatwierdzonych odcinków. Najpierw zatwierdź odcinki dla co najmniej jednej sesji.';
 
   @override
   String get tbNoApprovedSegments =>
-      'Brak zatwierdzonych segmentów, według których można mierzyć sektory.';
+      'Brak zatwierdzonych odcinków potrzebnych do pomiaru czasów.';
 
   @override
   String get tbIncompleteCoverage =>
-      'Co najmniej jeden sektor nie ma w pełni pokrytego czasu na żadnym okrążeniu, więc suma nie jest pokazana.';
+      'Co najmniej jeden odcinek nie ma pełnego pomiaru czasu na żadnym okrążeniu uwzględnianym w obliczeniach, dlatego nie pokazano sumy.';
 
   @override
   String get tbCancelled =>
-      'Obliczanie teoretycznie najlepszego okrążenia zostało przerwane.';
+      'Obliczanie teoretycznego czasu okrążenia zostało anulowane.';
 
   @override
   String get consistencyHeading => 'Powtarzalność';
@@ -836,9 +838,10 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count okrążeń',
-      one: '1 okrążenia',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
     );
-    return 'Typowy czas to mediana; rozrzut to rozstęp międzykwartylowy, czyli szerokość środkowej połowy okrążeń, więc jedno wolne lub szybkie okrążenie go nie zdominuje. Potrzeba co najmniej $_temp0.';
+    return 'Typowy czas to mediana czasów okrążeń. Rozrzut to rozstęp międzykwartylowy, czyli różnica między górnym a dolnym kwartylem i szerokość zakresu obejmującego środkowe 50% czasów. Pojedyncze bardzo wolne lub szybkie okrążenie nie dominuje wyniku. Wymagane minimum: $_temp0.';
   }
 
   @override
@@ -848,11 +851,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get consistencyAllSessions => 'Wszystkie sesje';
 
   @override
-  String get consistencySegmentTimes => 'Czasy segmentów';
+  String get consistencySegmentTimes => 'Czasy odcinków';
 
   @override
   String get consistencyMeasuring =>
-      'Mierzone razem z teoretycznie najlepszym okrążeniem…';
+      'Obliczanie powtarzalności wraz z teoretycznym czasem okrążenia…';
 
   @override
   String consistencyNeedsLaps(int count) {
@@ -886,10 +889,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get timeLossTitle => 'Straty czasu';
 
   @override
-  String get timeLossLoading => 'Liczone razem z teoretycznie najlepszym…';
+  String get timeLossLoading =>
+      'Obliczanie strat czasu wraz z teoretycznym czasem okrążenia…';
 
   @override
-  String get timeLossScopeSessionBest => 'Najlepsze każdej sesji';
+  String get timeLossScopeSessionBest => 'Najlepsze okrążenia sesji';
 
   @override
   String get timeLossScopeEveryLap => 'Każde okrążenie';
@@ -925,16 +929,16 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String timeLossUntimedLeftOut(int count) {
-    return 'pominięte bez pełnego pomiaru: $count';
+    return 'Pominięte odcinki bez pełnego pomiaru czasu: $count';
   }
 
   @override
   String get timeLossExplanation =>
-      'Każda strata to dodatkowy czas, jaki jedno okrążenie potrzebowało na jeden segment w porównaniu z najlepszym okrążeniem; oba mierzone na jednej osi toru. Prosta tuż za zakrętem jest osobnym segmentem, więc czas stracony na wyjściu nie jest liczony w zakręcie. Zaobserwowana strata to nie gwarantowany ani koniecznie bezpieczny zysk.';
+      'Strata czasu to dodatkowy czas przejazdu danego odcinka względem najlepszego okrążenia. Oba okrążenia mierzone są na wspólnej osi odniesienia wzdłuż toru. Prosta bezpośrednio za zakrętem jest osobnym odcinkiem, dlatego czas stracony na niej nie jest doliczany do straty w zakręcie. Zaobserwowana strata nie oznacza gwarantowanego ani koniecznie bezpiecznego zysku.';
 
   @override
   String get timeLossNone =>
-      'Żadne okrążenie nie straciło czasu do najlepszego okrążenia w żadnym zmierzonym segmencie.';
+      'Żadne okrążenie nie straciło czasu do najlepszego okrążenia w żadnym zmierzonym odcinku.';
 
   @override
   String get timeLossOnlySessionBest =>
@@ -951,11 +955,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get timeLossReasonNoReference =>
-      'Najlepszego okrążenia nie udało się zmierzyć na segmentach.';
+      'Nie udało się wyznaczyć czasów odcinków dla najlepszego okrążenia.';
 
   @override
   String get timeLossReasonBestLapUntimed =>
-      'Najlepszego okrążenia grupy nie udało się zmierzyć na zatwierdzonych segmentach.';
+      'Nie udało się wyznaczyć czasów zatwierdzonych odcinków dla najlepszego okrążenia tej grupy.';
 
   @override
   String timeLossSegmentAfterCorner(String segment, String corner) {
@@ -989,20 +993,20 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String timeLossThrough(String segment, int start, int end) {
-    return '$segment: od $start m do $end m za linią start/meta.';
+    return '$segment: od $start m do $end m za linią startu/mety.';
   }
 
   @override
   String timeLossGap(String start, String end) {
-    return 'Różnica do najlepszego okrążenia: $start na początku segmentu, $end na jego końcu.';
+    return 'Różnica czasu względem najlepszego okrążenia: $start na początku odcinka, $end na jego końcu.';
   }
 
   @override
-  String get timeLossNoGps => 'Na jednym z okrążeń część segmentu nie ma GPS.';
+  String get timeLossNoGps => 'Na jednym z okrążeń część odcinka nie ma GPS.';
 
   @override
   String timeLossMapLabel(String segment) {
-    return 'Ślad najlepszego okrążenia z wyróżnionym segmentem $segment';
+    return 'Ślad najlepszego okrążenia z wyróżnionym odcinkiem $segment';
   }
 
   @override
@@ -1023,7 +1027,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get focusTitle => 'Co sprawdzić dalej';
 
   @override
-  String get focusLoading => 'Wybierane razem z teoretycznie najlepszym…';
+  String get focusLoading =>
+      'Wybieranie obszarów do analizy wraz z obliczaniem teoretycznego czasu okrążenia…';
 
   @override
   String get focusNone =>
@@ -1031,7 +1036,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get focusIntro =>
-      'Każdy obszar zaczyna się od tego, co zmierzono. Linia pod spodem to hipoteza do sprawdzenia na okrążeniach, a nie przyczyna ani instrukcja.';
+      'Każdy obszar zaczyna się od opisu zmierzonych wyników. Tekst poniżej przedstawia hipotezę do sprawdzenia na okrążeniach, a nie ustaloną przyczynę ani instrukcję.';
 
   @override
   String get focusKindSectorGap => 'Najlepsze okrążenie a najszybszy sektor';
@@ -1047,7 +1052,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String focusObserved(String text) {
-    return 'Zmierzono: $text';
+    return 'Zaobserwowano: $text';
   }
 
   @override
@@ -1065,11 +1070,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String focusThrough(String segment) {
-    return 'Segment: $segment';
+    return 'Odcinek: $segment';
   }
 
   @override
-  String get focusNotTimed => 'bez czasu';
+  String get focusNotTimed => 'bez pomiaru czasu';
 
   @override
   String get focusBrakingNotMeasured => 'punkt hamowania niezmierzony';
@@ -1089,7 +1094,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get focusDisclaimer =>
-      'Zmierzone tylko na tych okrążeniach. Nie mówi, który sposób jest szybszy ani bezpieczny.';
+      'Wyniki dotyczą wyłącznie tych okrążeń. Nie wskazują, który sposób jazdy jest szybszy lub bezpieczny.';
 
   @override
   String get focusCompareAB => 'Porównaj okrążenia A i B';
@@ -1101,12 +1106,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String segment,
     String sourceLap,
   ) {
-    return 'Twoje najlepsze okrążenie ($bestLap) było o $gap s wolniejsze w segmencie $segment niż $sourceLap, najszybsze zarejestrowane tam.';
+    return 'Na Twoim najlepszym okrążeniu ($bestLap) przejazd odcinka $segment trwał o $gap s dłużej niż na okrążeniu $sourceLap, na którym uzyskano najlepszy czas tego odcinka.';
   }
 
   @override
   String focusHypothesisSectorGap(String segment) {
-    return 'Porównanie obu okrążeń w segmencie $segment może pokazać, gdzie uciekł czas: gdzie zaczyna się hamowanie, jaka jest prędkość minimalna i kiedy wraca gaz.';
+    return 'Porównanie obu okrążeń na odcinku $segment może pokazać, gdzie stracono czas: w którym miejscu zaczyna się hamowanie, jaka jest prędkość minimalna i kiedy kierowca ponownie dodaje gazu.';
   }
 
   @override
@@ -1117,12 +1122,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String reference,
     String median,
   ) {
-    return 'Na $count z $total porównanych okrążeń czas uciekał w segmencie $segment względem $reference (mediana $median s).';
+    return 'Na $count z $total porównywanych okrążeń odnotowano stratę czasu na odcinku $segment względem $reference (mediana $median s).';
   }
 
   @override
   String focusHypothesisRepeatedLoss(String reference, String segment) {
-    return 'Ponieważ to się powtarza, porównanie typowego okrążenia z $reference w segmencie $segment może pokazać wzorzec, a nie jednorazowy przypadek.';
+    return 'Ponieważ to się powtarza, porównanie typowego okrążenia z $reference w odcinku $segment może pokazać wzorzec, a nie jednorazowy przypadek.';
   }
 
   @override
@@ -1131,12 +1136,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String spread,
     String count,
   ) {
-    return 'Punkt hamowania w segmencie $segment zmienia się o $spread m w środkowej połowie z $count okrążeń (zmierzony z sygnału hamulca).';
+    return 'Dla odcinka $segment rozrzut punktów rozpoczęcia hamowania wynosi $spread m (środkowe 50% wyników z $count okrążeń; pomiar z sygnału hamulca).';
   }
 
   @override
   String focusHypothesisBrakingSpread(String segment) {
-    return 'Warto sprawdzić bardziej powtarzalny punkt odniesienia do hamowania w segmencie $segment. To nie pokazuje, czy wcześniejsze czy późniejsze hamowanie jest szybsze lub bezpieczne; porównaj najwcześniejszy i najpóźniejszy przykład.';
+    return 'Warto sprawdzić bardziej powtarzalny punkt odniesienia do hamowania w odcinku $segment. To nie pokazuje, czy wcześniejsze czy późniejsze hamowanie jest szybsze lub bezpieczne; porównaj najwcześniejszy i najpóźniejszy przykład.';
   }
 
   @override
@@ -1146,16 +1151,16 @@ class AppLocalizationsPl extends AppLocalizations {
     String count,
     String median,
   ) {
-    return 'Prędkość minimalna w segmencie $segment zmienia się o $spread w środkowej połowie z $count okrążeń (mediana $median).';
+    return 'Dla odcinka $segment rozrzut prędkości minimalnej wynosi $spread (środkowe 50% wyników z $count okrążeń; mediana $median).';
   }
 
   @override
   String get focusObservationRecordingUnits =>
-      'Prędkości są w jednostkach z nagrania.';
+      'Prędkości są w jednostkach z zapisu.';
 
   @override
   String focusHypothesisMinimumSpeedSpread(String segment) {
-    return 'Porównanie najwolniejszego i najszybszego przykładu w segmencie $segment może pokazać, co się różni; wyższa prędkość minimalna sama w sobie nie jest lepsza.';
+    return 'Porównanie najwolniejszego i najszybszego przykładu w odcinku $segment może pokazać, co się różni; wyższa prędkość minimalna sama w sobie nie jest lepsza.';
   }
 
   @override
@@ -1165,17 +1170,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get progressionBySession => 'Według sesji';
 
   @override
-  String get progressionBySegment => 'Według segmentów';
+  String get progressionBySegment => 'Według odcinków';
 
   @override
   String get progressionSessionsIntro =>
-      'Sesje w kolejności nagrania; sesje bez czasu nagrania są na końcu, w kolejności dodania. Pasek biegnie od najszybszego do najwolniejszego sklasyfikowanego okrążenia na jednej skali czasu; środkowa połowa jest zaznaczona prostokątem, a typowe okrążenie kreską.';
+      'Sesje w kolejności zapisu; sesje bez daty i godziny zapisu znajdują się na końcu, w kolejności importu. Pasek pokazuje zakres od najszybszego do najwolniejszego sklasyfikowanego okrążenia na wspólnej skali czasu. Prostokąt obejmuje środkowe 50% czasów, a kreska wskazuje medianę.';
 
   @override
   String get progressionNoSession => 'Brak sesji do porównania.';
 
   @override
-  String get progressionRecordingTimeUnavailable => 'Brak czasu nagrania';
+  String get progressionRecordingTimeUnavailable =>
+      'Brak daty i godziny zapisu';
 
   @override
   String progressionRecordingClock(String time, String date) {
@@ -1183,7 +1189,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get progressionNoRecordedLaps => 'Brak nagranych okrążeń';
+  String get progressionNoRecordedLaps => 'Brak zarejestrowanych okrążeń';
 
   @override
   String progressionNoRankedLap(int count) {
@@ -1209,7 +1215,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String progressionTypical(String time) {
-    return 'Typowo $time';
+    return 'Typowy czas $time';
   }
 
   @override
@@ -1217,16 +1223,15 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          'Typowe okrążenie wymaga co najmniej $count sklasyfikowanych okrążeń',
-      one: 'Typowe okrążenie wymaga co najmniej 1 sklasyfikowanego okrążenia',
+      other: '$count sklasyfikowanych okrążeń',
+      one: '1 sklasyfikowanego okrążenia',
     );
-    return '$_temp0';
+    return 'Do obliczenia typowego czasu potrzeba co najmniej $_temp0';
   }
 
   @override
   String progressionBestAgainst(String delta, String session) {
-    return 'Najlepsze $delta w porównaniu z: $session';
+    return 'Różnica najlepszego czasu względem $session: $delta';
   }
 
   @override
@@ -1236,7 +1241,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String progressionSetup(String setup) {
-    return 'Ustawienia: $setup';
+    return 'Ustawienia samochodu: $setup';
   }
 
   @override
@@ -1250,7 +1255,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get progressionMeasuring => 'Liczone razem z teoretycznie najlepszym…';
+  String get progressionMeasuring =>
+      'Obliczanie postępu wraz z teoretycznym czasem okrążenia…';
 
   @override
   String progressionSegmentsIntro(int count) {
@@ -1258,10 +1264,10 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego segmentu w każdej sesji. Najszybszy typowy czas segmentu jest wyróżniony. Mniej niż $count okrążeń: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż $count okrążeń: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
       few:
-          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego segmentu w każdej sesji. Najszybszy typowy czas segmentu jest wyróżniony. Mniej niż $count okrążenia: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
-      one: 'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego segmentu w każdej sesji. Najszybszy typowy czas segmentu jest wyróżniony. Mniej niż 1 okrążenie: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż $count okrążenia: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+      one: 'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż 1 okrążenie: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
     );
     return '$_temp0';
   }
@@ -1271,7 +1277,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get progressionNoTimedSegments =>
-      'Żadna sesja nie ma zmierzonych segmentów.';
+      'Żadna sesja nie ma zmierzonych odcinków.';
 
   @override
   String progressionSpread(String seconds) {
@@ -1291,25 +1297,25 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get channelOil => 'Olej';
+  String get channelOil => 'Temperatura oleju';
 
   @override
-  String get channelCoolant => 'Płyn chłodzący';
+  String get channelCoolant => 'Temperatura płynu chłodzącego';
 
   @override
-  String get channelIntakeAir => 'Powietrze dolotowe';
+  String get channelIntakeAir => 'Temperatura powietrza dolotowego';
 
   @override
-  String get channelGearbox => 'Skrzynia biegów';
+  String get channelGearbox => 'Temperatura skrzyni biegów';
 
   @override
-  String get channelExhaust => 'Spaliny';
+  String get channelExhaust => 'Temperatura spalin';
 
   @override
-  String get channelAmbient => 'Otoczenie';
+  String get channelAmbient => 'Temperatura otoczenia';
 
   @override
-  String get channelNotRecorded => 'Nie nagrano';
+  String get channelNotRecorded => 'Nie zarejestrowano';
 
   @override
   String get channelNoValidSamples => 'Brak poprawnych próbek';
@@ -1321,7 +1327,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String maximum,
     int coverage,
   ) {
-    return 'średnio $mean · $minimum – $maximum · pokrycie $coverage%';
+    return 'średnio $mean · zakres $minimum–$maximum · dane przez $coverage% czasu';
   }
 
   @override
@@ -1329,18 +1335,18 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nieprawdopodobnych odczytów pominiętych',
-      few: '$count nieprawdopodobne odczyty pominięte',
-      one: '1 nieprawdopodobny odczyt pominięty',
+      other: 'Pominięto $count niewiarygodnych odczytów',
+      few: 'Pominięto $count niewiarygodne odczyty',
+      one: 'Pominięto 1 niewiarygodny odczyt',
     );
     return '$_temp0';
   }
 
   @override
-  String get channelOutLap => 'wyjazd';
+  String get channelOutLap => 'okrążenie wyjazdowe';
 
   @override
-  String get channelInLap => 'zjazd';
+  String get channelInLap => 'okrążenie zjazdowe';
 
   @override
   String channelLapSection(int number) {
@@ -1348,10 +1354,10 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get channelUnknownSection => 'nieznany odcinek';
+  String get channelUnknownSection => 'nieznany fragment zapisu';
 
   @override
-  String get channelCoolingNone => 'brak';
+  String get channelCoolingNone => 'nie zarejestrowano';
 
   @override
   String channelCoolingDrop(String drop, String duration) {
@@ -1371,19 +1377,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String channelAssociationNoSpread(String metric, int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          '$metric: temperatura (lub miara) nie zmieniała się w $count okrążeniach.',
-      one: '$metric: temperatura (lub miara) nie zmieniała się w 1 okrążeniu.',
-    );
-    return '$_temp0';
+    return '$metric: brak zróżnicowania temperatury lub analizowanego parametru w tej grupie okrążeń (liczba okrążeń: $count).';
   }
 
   @override
   String channelAssociationTooFew(String metric, int count, int minimum) {
-    return '$metric: porównywalne okrążenia z tą temperaturą: $count; potrzeba co najmniej $minimum.';
+    return '$metric: liczba porównywalnych okrążeń z danymi temperatury: $count; wymagane minimum: $minimum.';
   }
 
   @override
@@ -1417,36 +1416,38 @@ class AppLocalizationsPl extends AppLocalizations {
   String get channelMeaningLittle => 'niewielki związek';
 
   @override
-  String get channelMeaningQuicker => 'cieplejsze okrążenia były szybsze';
+  String get channelMeaningQuicker =>
+      'przy wyższej temperaturze rejestrowano krótsze czasy okrążeń';
 
   @override
-  String get channelMeaningSlower => 'cieplejsze okrążenia były wolniejsze';
+  String get channelMeaningSlower =>
+      'przy wyższej temperaturze rejestrowano dłuższe czasy okrążeń';
 
   @override
   String get channelMeaningHarder =>
-      'na cieplejszych okrążeniach przyspieszanie było mocniejsze';
+      'na okrążeniach z wyższą temperaturą przyspieszanie było mocniejsze';
 
   @override
   String get channelMeaningLess =>
-      'na cieplejszych okrążeniach przyspieszanie było słabsze';
+      'na okrążeniach z wyższą temperaturą przyspieszanie było słabsze';
 
   @override
   String get channelCarTitle => 'Samochód';
 
   @override
   String get channelCarReading =>
-      'Odczytywanie temperatur nagranych w każdej sesji…';
+      'Odczytywanie temperatur zarejestrowanych w każdej sesji…';
 
   @override
   String get channelCarNoChannels =>
-      'Żadne nagranie nie zawiera kanału temperatury.';
+      'Żaden zapis nie zawiera kanału temperatury.';
 
   @override
   String get channelCarIntro =>
-      'Każda sesja osobno, w kolejności nagrania. Przerwy w nagraniu nigdy nie są uzupełniane; nieprawdopodobne odczyty i zastępcze zera są pomijane i liczone. Chłodzenie to ciągle nagrany spadek o co najmniej 5° w ciągu co najmniej 30 s.';
+      'Każda sesja analizowana jest osobno, w kolejności zapisu. Luki w danych nie są uzupełniane; niewiarygodne odczyty i zera zastępujące brak danych są pomijane i zliczane. Za okres chłodzenia uznaje się spadek temperatury o co najmniej 5° w okresie trwającym co najmniej 30 s, z ciągłym zapisem danych.';
 
   @override
-  String get channelUnitsNotDeclared => 'nagranie nie podaje jednostki';
+  String get channelUnitsNotDeclared => 'zapis nie podaje jednostki';
 
   @override
   String get channelConfounded =>
@@ -1454,13 +1455,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get channelHeartRateIntro =>
-      'Zaobserwowane wartości z nagrania, nie ocena.';
+      'Zaobserwowane wartości z zapisu, nie ocena.';
 
   @override
-  String get channelEverySectionIntro => 'Każdy nagrany odcinek każdej sesji.';
+  String get channelEverySectionIntro =>
+      'Każdy zarejestrowany fragment każdej sesji.';
 
   @override
-  String get channelWithLapPerformance => 'Związek z osiągami na okrążeniu';
+  String get channelWithLapPerformance =>
+      'Związek z wynikami przejazdu okrążeń';
 
   @override
   String channelConfoundedRose(String rho) {
@@ -1474,7 +1477,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String channelSpearman(int coverage, int lowCoverage, int notRecorded) {
-    return 'Korelacja rang Spearmana dla porównywanych okrążeń dnia, w których czujnik objął co najmniej $coverage% okrążenia. Pominięte z powodu niskiego pokrycia: $lowCoverage, bez poprawnego odczytu: $notRecorded. Opisuje, jak obie wielkości zmieniały się razem tego dnia; nie wyznacza temperatury krytycznej ani przyczyny.';
+    return 'Korelacja rang Spearmana dla porównywanych okrążeń z tego dnia, dla których dane z czujnika obejmują co najmniej $coverage% okrążenia. Pominięte z powodu zbyt małej dostępności danych: $lowCoverage; bez poprawnego odczytu: $notRecorded. Opisuje wspólne zmiany obu wielkości tego dnia; nie wyznacza temperatury krytycznej ani przyczyny.';
   }
 
   @override
@@ -1482,14 +1485,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get channelDriverReading =>
-      'Odczytywanie tętna nagranego w każdej sesji…';
+      'Odczytywanie tętna zarejestrowanego w każdej sesji…';
 
   @override
-  String get channelDriverNoHeartRate => 'Nie nagrano tętna.';
+  String get channelDriverNoHeartRate => 'Nie zarejestrowano tętna.';
 
   @override
   String get channelDriverIntro =>
-      'Tętno z nagrań: zaobserwowane wartości, nie ocena. Dla okrążenia: średnie bpm; dotknij okrążenia, aby je otworzyć.';
+      'Tętno z zapisów: zaobserwowane wartości, nie ocena. Dla każdego okrążenia podano średnie tętno w bpm. Wybierz okrążenie, aby je otworzyć.';
 
   @override
   String get channelHeartRate => 'Tętno';
@@ -1503,7 +1506,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get channelRecordingUnavailable => 'Nagranie niedostępne.';
+  String get channelRecordingUnavailable => 'Zapis niedostępny.';
 
   @override
   String get channelSummariesCancelled =>
@@ -1521,22 +1524,22 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerSummaryBrakes(String where) {
-    return 'hamowanie $where';
+    return 'początek hamowania $where';
   }
 
   @override
   String cornerSummaryBrakesWithBest(String where, String position) {
-    return 'hamowanie $where ($position)';
+    return 'początek hamowania $where ($position)';
   }
 
   @override
   String cornerBeforeEntry(int metres) {
-    return '$metres m przed';
+    return '$metres m przed wejściem w zakręt';
   }
 
   @override
   String cornerIntoCorner(int metres) {
-    return '$metres m w zakręcie';
+    return '$metres m od wejścia w zakręt';
   }
 
   @override
@@ -1553,14 +1556,14 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get missingRecordingNotFound => 'Nie znaleziono nagrania.';
+  String get missingRecordingNotFound => 'Nie znaleziono zapisu.';
 
   @override
   String get missingRecordingDuplicate =>
-      'To samo nagranie co inna sesja tego dnia.';
+      'Ten sam zapis co inna sesja tego dnia.';
 
   @override
-  String get missingRecordingDifferent => 'Znaleziony plik to inne nagranie.';
+  String get missingRecordingDifferent => 'Znaleziony plik to inny zapis.';
 
   @override
   String get lapB => 'Okrążenie B';
@@ -1597,7 +1600,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Od uruchomienia aplikacji nie zaimportowano żadnego dnia.';
 
   @override
-  String get diagnosticsRecordingsRead => 'Odczytane nagrania';
+  String get diagnosticsRecordingsRead => 'Odczytane zapisy';
 
   @override
   String get diagnosticsSessions => 'Sesje';
@@ -1625,7 +1628,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pamięć rezydentna aplikacji według systemu; szczytowa liczona od uruchomienia aplikacji. Czasy to rzeczywisty czas na tym urządzeniu.';
 
   @override
-  String get diagnosticsStepScan => 'Wyszukiwanie nagrań';
+  String get diagnosticsStepScan => 'Wyszukiwanie zapisów';
 
   @override
   String get diagnosticsStepParse => 'Odczyt i import';
@@ -1637,7 +1640,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get diagnosticsStepImportTotal => 'Import, od startu do wyników';
 
   @override
-  String get diagnosticsStepTheoreticalBest => 'Segmenty i czas teoretyczny';
+  String get diagnosticsStepTheoreticalBest =>
+      'Odcinki i teoretyczny czas okrążenia';
 
   @override
   String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
@@ -1676,28 +1680,29 @@ class AppLocalizationsPl extends AppLocalizations {
       'Brak kwalifikujących się okrążeń do podsumowania.';
 
   @override
-  String get reportNoHeartRate => 'Nie nagrano tętna.';
+  String get reportNoHeartRate => 'Nie zarejestrowano tętna.';
 
   @override
-  String get reportNoTemperature => 'Nie nagrano temperatury.';
+  String get reportNoTemperature => 'Nie zarejestrowano temperatury.';
 
   @override
-  String get reportBestTitle => 'Najlepsze okrążenie i co zostało';
+  String get reportBestTitle =>
+      'Najlepsze okrążenie i różnica do czasu teoretycznego';
 
   @override
   String get reportBestLap => 'Najlepsze okrążenie';
 
   @override
-  String get reportTheoreticalBest => 'Teoretycznie najlepsze';
+  String get reportTheoreticalBest => 'Teoretyczny czas okrążenia';
 
   @override
   String reportTheoreticalAvailable(String seconds) {
-    return '$seconds s rezerwy na zatwierdzonych segmentach';
+    return '$seconds s różnicy do czasu teoretycznego na zatwierdzonych odcinkach';
   }
 
   @override
   String get reportTheoreticalNoTotal =>
-      'Część segmentów nie ma zmierzonego okrążenia; brak sumy.';
+      'Dla części odcinków brakuje pełnego pomiaru czasu; nie można obliczyć sumy.';
 
   @override
   String get reportOpenBestLap => 'Otwórz najlepsze okrążenie';
@@ -1734,7 +1739,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportSessionBest(String time) {
-    return 'najlepsze $time';
+    return 'najlepszy czas $time';
   }
 
   @override
@@ -1781,7 +1786,7 @@ class AppLocalizationsPl extends AppLocalizations {
       few: '$count okrążenia',
       one: '1 okrążenie',
     );
-    return 'Typowe okrążenie $time · środkowa połowa w granicach $spread s · $_temp0';
+    return 'Typowy czas okrążenia $time · rozstęp międzykwartylowy $spread s · $_temp0';
   }
 
   @override
@@ -1789,9 +1794,11 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       minimum,
       locale: localeName,
-      other: 'Mniej niż $minimum kwalifikujących się okrążeń; brak rozrzutu.',
-      few: 'Mniej niż $minimum kwalifikujące się okrążenia; brak rozrzutu.',
-      one: 'Mniej niż 1 kwalifikujące się okrążenie; brak rozrzutu.',
+      other:
+          'Mniej niż $minimum okrążeń kwalifikujących się do analizy; brak rozrzutu.',
+      few:
+          'Mniej niż $minimum okrążenia kwalifikujące się do analizy; brak rozrzutu.',
+      one: 'Mniej niż 1 okrążenie kwalifikujące się do analizy; brak rozrzutu.',
     );
     return '$_temp0';
   }
@@ -1806,15 +1813,15 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nagranych okresów chłodzenia',
-      few: '$count nagrane okresy chłodzenia',
-      one: '1 nagrany okres chłodzenia',
+      other: '$count zarejestrowanych okresów chłodzenia',
+      few: '$count zarejestrowane okresy chłodzenia',
+      one: '1 zarejestrowany okres chłodzenia',
     );
     return '$_temp0';
   }
 
   @override
-  String get reportNoCooling => 'brak nagranego chłodzenia';
+  String get reportNoCooling => 'nie zarejestrowano okresu chłodzenia';
 
   @override
   String get reportNoTemperatureSamples =>
@@ -1827,11 +1834,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportCovered(int percent) {
-    return 'pokrycie $percent%';
+    return 'dane przez $percent% czasu sesji';
   }
 
   @override
-  String get segmentEditorTitle => 'Edytuj segmenty';
+  String get segmentEditorTitle => 'Edytuj odcinki';
 
   @override
   String get segmentEditorUndo => 'Cofnij';
@@ -1845,46 +1852,46 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentEditorMapLabel =>
-      'Ślad najlepszego okrążenia z granicami segmentów';
+      'Ślad najlepszego okrążenia z granicami odcinków';
 
   @override
   String segmentEditorMapLabelHighlighted(String segment) {
-    return 'Ślad najlepszego okrążenia z granicami segmentów, wyróżniono: $segment';
+    return 'Ślad najlepszego okrążenia z granicami odcinków, wyróżniono: $segment';
   }
 
   @override
-  String get segmentEditorAutomatic => 'Segmenty automatyczne';
+  String get segmentEditorAutomatic => 'Automatycznie wyznaczone odcinki';
 
   @override
-  String get segmentEditorEdited => 'Poprawione segmenty';
+  String get segmentEditorEdited => 'Zmienione odcinki';
 
   @override
   String segmentEditorSummary(String time, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count segmentów',
-      few: '$count segmenty',
-      one: '1 segment',
+      other: '$count odcinków',
+      few: '$count odcinki',
+      one: '1 odcinek',
     );
-    return 'Teoretycznie najlepsze $time · $_temp0';
+    return 'Teoretyczny czas okrążenia $time · $_temp0';
   }
 
   @override
-  String get segmentEditorRestoreAutomatic => 'Przywróć automatyczne';
+  String get segmentEditorRestoreAutomatic => 'Przywróć automatyczny podział';
 
   @override
   String segmentEditorProposedFrom(String lap) {
-    return 'Zaproponowane na podstawie: $lap. Dotknij segmentu, aby go poprawić.';
+    return 'Zaproponowane na podstawie: $lap. Dotknij odcinka, aby go poprawić.';
   }
 
   @override
   String get segmentEditorProposedFromBestLap =>
-      'Zaproponowane na podstawie najlepszego okrążenia. Dotknij segmentu, aby go poprawić.';
+      'Zaproponowane na podstawie najlepszego okrążenia. Dotknij odcinka, aby go poprawić.';
 
   @override
   String get segmentEditorCorrectionsSaved =>
-      'Twoje poprawki są zapisywane z dniem i nigdy nie są zastępowane segmentami automatycznymi.';
+      'Twoje poprawki są zapisywane wraz z danymi dnia i nie są zastępowane odcinkami wyznaczonymi automatycznie.';
 
   @override
   String get segmentEditorTypeCorner => 'Zakręt';
@@ -1907,15 +1914,16 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorRowEdited(String row) {
-    return '$row · poprawiony';
+    return '$row · zmieniony';
   }
 
   @override
-  String get segmentEditorRestoreTitle => 'Przywrócić segmenty automatyczne?';
+  String get segmentEditorRestoreTitle =>
+      'Przywrócić automatyczny podział toru?';
 
   @override
   String get segmentEditorRestoreBody =>
-      'Twoje poprawki segmentów tego układu toru zostaną zastąpione segmentami zaproponowanymi na podstawie najlepszego okrążenia.';
+      'Twoje zmiany podziału tej konfiguracji toru zostaną zastąpione odcinkami zaproponowanymi na podstawie najlepszego okrążenia.';
 
   @override
   String get segmentEditorRestore => 'Przywróć';
@@ -1930,7 +1938,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get segmentEditorEnd => 'Koniec';
 
   @override
-  String get segmentEditorKeepJoined => 'Przesuń też sąsiedni segment';
+  String get segmentEditorKeepJoined =>
+      'Przesuń też granicę sąsiedniego odcinka';
 
   @override
   String get segmentEditorApply => 'Zastosuj';
@@ -1962,22 +1971,22 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentEditorErrorNotCalculated =>
-      'Segmenty można edytować, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+      'Odcinki można edytować po obliczeniu teoretycznego czasu okrążenia.';
 
   @override
   String get segmentEditorErrorAlreadyAutomatic =>
-      'Segmenty są już automatyczne.';
+      'Odcinki są już automatyczne.';
 
   @override
   String get segmentEditorErrorNotPossible => 'Ta zmiana nie jest możliwa.';
 
   @override
   String get segmentEditorErrorLastSegment =>
-      'Teoretycznie najlepsze okrążenie wymaga co najmniej jednego segmentu. Zamiast tego przywróć segmenty automatyczne.';
+      'Obliczenie teoretycznego czasu okrążenia wymaga co najmniej jednego odcinka. Przywróć automatyczny podział toru.';
 
   @override
   String get segmentEditorErrorNoLongerApproved =>
-      'Ten segment nie jest już zatwierdzony.';
+      'Ten odcinek nie jest już zatwierdzony.';
 
   @override
   String get segmentEditorErrorNothingToUndo => 'Nie ma czego cofnąć.';
@@ -1987,29 +1996,29 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentEditorErrorHistoryCleared =>
-      'Segmenty zmieniły się poza tym edytorem, więc historia zmian została wyczyszczona.';
+      'Odcinki zmieniły się poza tym edytorem, więc historia zmian została wyczyszczona.';
 
   @override
   String get segmentEditorErrorInvalidStored =>
-      'Zapisane zatwierdzone segmenty są nieprawidłowe.';
+      'Zapisane zatwierdzone odcinki są nieprawidłowe.';
 
   @override
   String get segmentEditorErrorOtherConfiguration =>
-      'Najpierw trzeba odrzucić segmenty zatwierdzone dla innej konfiguracji toru.';
+      'Najpierw trzeba odrzucić odcinki zatwierdzone dla innej konfiguracji toru.';
 
   @override
   String segmentEditorErrorWouldBeEmpty(String segment) {
-    return 'Segment „$segment” byłby pusty.';
+    return 'Odcinek „$segment” byłby pusty.';
   }
 
   @override
   String segmentEditorErrorWouldBeInvalid(String segment) {
-    return 'Segment „$segment” byłby nieprawidłowy.';
+    return 'Odcinek „$segment” byłby nieprawidłowy.';
   }
 
   @override
   String segmentEditorErrorWouldOverlap(String segment, String other) {
-    return 'Segment „$segment” nachodziłby na „$other”.';
+    return 'Odcinek „$segment” nachodziłby na „$other”.';
   }
 
   @override
@@ -2017,16 +2026,16 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Można zatwierdzić najwyżej $count segmentów.',
-      few: 'Można zatwierdzić najwyżej $count segmenty.',
-      one: 'Można zatwierdzić najwyżej 1 segment.',
+      other: 'Można zatwierdzić najwyżej $count odcinków.',
+      few: 'Można zatwierdzić najwyżej $count odcinki.',
+      one: 'Można zatwierdzić najwyżej 1 odcinek.',
     );
     return '$_temp0';
   }
 
   @override
   String get segmentEditorErrorCrossesGate =>
-      'Tylko jeden segment może przecinać linię startu/mety.';
+      'Tylko jeden odcinek może przecinać linię startu/mety.';
 
   @override
   String get segmentEditorErrorChooseType =>
@@ -2037,23 +2046,23 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentEditorErrorSplitInside =>
-      'Dziel wewnątrz segmentu, z dala od jego końców.';
+      'Dziel wewnątrz odcinka, z dala od jego końców.';
 
   @override
   String get segmentEditorErrorSplitName =>
-      'Wpisz nazwę nowego segmentu (1–160 znaków).';
+      'Wpisz nazwę nowego odcinka (1–160 znaków).';
 
   @override
   String get segmentEditorErrorMergeSame =>
-      'Wybierz dwa różne zatwierdzone segmenty.';
+      'Wybierz dwa różne zatwierdzone odcinki.';
 
   @override
   String get segmentEditorErrorMergeNotAdjacent =>
-      'Połączyć można tylko segmenty o wspólnej granicy.';
+      'Połączyć można tylko odcinki o wspólnej granicy.';
 
   @override
   String get segmentEditorErrorMergeWholeLap =>
-      'Połączenie objęłoby całe okrążenie; segment musi mieć różny początek i koniec.';
+      'Połączenie objęłoby całe okrążenie; odcinek musi mieć różny początek i koniec.';
 
   @override
   String get segmentEditorErrorName => 'Wpisz nazwę (1–160 znaków).';
@@ -2064,7 +2073,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get segmentEditorErrorEmpty => 'Segment nie może być pusty.';
+  String get segmentEditorErrorEmpty => 'Odcinek nie może być pusty.';
 
   @override
   String get reportStale =>
@@ -2113,10 +2122,10 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get fusionReasonNoSpeed => 'jedno z nagrań nie ma prędkości';
+  String get fusionReasonNoSpeed => 'jeden z zapisów nie ma prędkości';
 
   @override
-  String get fusionReasonShortOverlap => 'nagrania pokrywają się zbyt krótko';
+  String get fusionReasonShortOverlap => 'zapisy pokrywają się zbyt krótko';
 
   @override
   String get fusionReasonAmbiguous =>
@@ -2124,16 +2133,16 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get fusionReasonClockDisagrees =>
-      'zegary nagrań nie zgadzają się z przebiegami prędkości';
+      'zegary zapisów nie zgadzają się z przebiegami prędkości';
 
   @override
   String get fusionReasonInsufficient => 'za mało danych, by je dopasować';
 
   @override
-  String get fusionReasonNotFound => 'nie znaleziono nagrania';
+  String get fusionReasonNotFound => 'nie znaleziono zapisu';
 
   @override
-  String get fusionReasonDifferent => 'znaleziony plik to inne nagranie';
+  String get fusionReasonDifferent => 'znaleziony plik to inny zapis';
 
   @override
   String get fusionReasonUnreadable => 'nie udało się go odczytać';
@@ -2158,10 +2167,10 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Nie można użyć $format $count sesji',
-      many: 'Nie można użyć $format $count sesji',
-      few: 'Nie można użyć $format $count sesji',
-      one: 'Nie można użyć $format 1 sesji',
+      other: 'Nie można użyć plików $format dla $count sesji',
+      many: 'Nie można użyć plików $format dla $count sesji',
+      few: 'Nie można użyć plików $format dla $count sesji',
+      one: 'Nie można użyć pliku $format dla 1 sesji',
     );
     return '$_temp0';
   }
@@ -2185,12 +2194,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String fusionRelinkDifferent(String files) {
-    return 'Nie użyto, to inne nagranie: $files.';
+    return 'Nie użyto, to inny zapis: $files.';
   }
 
   @override
   String fusionAddedNotCombined(String format, String sessions) {
-    return 'Dodano $format do: $sessions, ale nie udało się go połączyć; zostaje zapisany i zostanie połączony przy otwarciu dnia.';
+    return 'Dodano $format do: $sessions, ale nie udało się połączyć danych. Plik pozostaje zapisany; przy ponownym otwarciu dnia aplikacja ponowi próbę połączenia.';
   }
 
   @override
@@ -2202,58 +2211,60 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count plików w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+          '$count plików w tym folderze ($files) to inne zapisy i nie zostały użyte.',
       many:
-          '$count plików w tym folderze ($files) to inne nagrania i nie zostały użyte.',
+          '$count plików w tym folderze ($files) to inne zapisy i nie zostały użyte.',
       few:
-          '$count pliki w tym folderze ($files) to inne nagrania i nie zostały użyte.',
-      one: '$files w tym folderze to inne nagranie i nie zostało użyte.',
+          '$count pliki w tym folderze ($files) to inne zapisy i nie zostały użyte.',
+      one: '$files w tym folderze to inny zapis i nie został użyty.',
     );
     return '$_temp0';
   }
 
   @override
   String get relinkNothingFound =>
-      'W tym folderze nie znaleziono żadnego brakującego nagrania.';
+      'W tym folderze nie znaleziono żadnego brakującego zapisu.';
 
   @override
   String get segmentPickOnMap => 'Wskaż na mapie';
 
   @override
-  String get segmentPickActive => 'Dotknij mapy… (anuluj)';
+  String get segmentPickActive => 'Wskaż punkt na mapie… (anuluj)';
 
   @override
   String get segmentPickBannerStart =>
-      'Dotknij linii toru, aby ustawić początek';
+      'Wskaż punkt na śladzie przejazdu, aby ustawić początek';
 
   @override
-  String get segmentPickBannerEnd => 'Dotknij linii toru, aby ustawić koniec';
+  String get segmentPickBannerEnd =>
+      'Wskaż punkt na śladzie przejazdu, aby ustawić koniec';
 
   @override
   String get segmentPickBannerSplit =>
-      'Dotknij linii toru, aby wskazać miejsce podziału';
+      'Wskaż punkt na śladzie przejazdu, aby ustawić miejsce podziału';
 
   @override
   String get segmentPickAmbiguous =>
       'W pobliżu przebiega inny fragment toru. Ustaw odległość przyciskami.';
 
   @override
-  String get segmentPickFar => 'Dotknij linii przejazdu okrążenia.';
+  String get segmentPickFar =>
+      'Wskaż punkt na śladzie przejazdu tego okrążenia.';
 
   @override
   String get segmentPickNoTrace =>
-      'Ślad okrążenia nie jest dostępny do wskazywania.';
+      'Nie można wskazać punktu: ślad tego okrążenia jest niedostępny.';
 
   @override
   String get segmentPickOutside =>
-      'Aby podzielić segment, wskaż punkt wewnątrz niego.';
+      'Aby podzielić odcinek, wskaż punkt wewnątrz niego.';
 
   @override
   String get variabilityHeading => 'Powtarzalność w zakrętach';
 
   @override
   String get variabilityIntro =>
-      'Jak bardzo każdy zakręt zmienia się z okrążenia na okrążenie w okrążeniach grupy: typowa to mediana, rozrzut to środkowa połowa okrążeń (rozstęp ćwiartkowy), z co najmniej 3 okrążeń. To obserwacje, nie przyczyny.';
+      'Porównanie parametrów przejazdu każdego zakrętu na kolejnych okrążeniach tej grupy. Wartość typowa to mediana, a rozrzut to rozstęp międzykwartylowy, czyli szerokość zakresu obejmującego środkowe 50% wartości. Obliczenia wymagają co najmniej 3 okrążeń. To obserwacje, a nie wyjaśnienie przyczyn.';
 
   @override
   String get variabilityNone =>
@@ -2279,7 +2290,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get variabilityMeasured => 'zmierzony';
 
   @override
-  String get variabilityInferred => 'wywnioskowany';
+  String get variabilityInferred => 'wyznaczony pośrednio';
 
   @override
   String variabilitySpread(String label, String spread, String tail) {
@@ -2302,7 +2313,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get variabilityBraking => 'Punkt hamowania';
+  String get variabilityBraking => 'Punkt rozpoczęcia hamowania';
 
   @override
   String get variabilityApex => 'Prędkość na wierzchołku';
@@ -2314,11 +2325,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get variabilityExit => 'Prędkość na wyjściu';
 
   @override
-  String get variabilityPickup => 'Powrót do gazu';
+  String get variabilityPickup => 'Punkt ponownego dodania gazu';
 
   @override
   String variabilityLine(String spread, String accuracy) {
-    return 'Linia: rozrzut $spread m · $accuracy';
+    return 'Tor jazdy: rozrzut $spread m · $accuracy';
   }
 
   @override
@@ -2336,18 +2347,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get calculateAgain => 'Oblicz ponownie';
 
   @override
-  String get retryRecordings => 'Ponów odczyt nagrań';
+  String get retryRecordings => 'Ponów odczyt zapisów';
 
   @override
   String get retryRecordingsLooking => 'Otwieranie…';
 
   @override
   String get retryRecordingsSaveFirst =>
-      'Najpierw zapisz dzień, potem ponów odczyt nagrań.';
+      'Najpierw zapisz dzień, potem ponów odczyt zapisów danych.';
 
   @override
   String get retryRecordingsStill =>
-      'Nagrania nadal nie są tam, gdzie wskazuje dzień.';
+      'Zapisy nadal nie są tam, gdzie wskazuje dzień.';
 
   @override
   String get sessionDetailsHeading => 'Szczegóły sesji';
@@ -2374,17 +2385,17 @@ class AppLocalizationsPl extends AppLocalizations {
   String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
 
   @override
-  String get sessionDetailsSetup => 'Zmiany w ustawieniach';
+  String get sessionDetailsSetup => 'Zmiany ustawień samochodu';
 
   @override
-  String get sessionDetailsSetupHint => 'Opony +0.1 bar';
+  String get sessionDetailsSetupHint => 'Ciśnienie w oponach +0.1 bar';
 
   @override
   String get sessionDetailsNotes => 'Notatki';
 
   @override
   String get sessionDetailsSaved =>
-      'Zapisywane w pliku dnia, który czyta też FlappedEar Overlays.';
+      'Zapisywane w pliku dnia, obsługiwanym także przez FlappedEar Overlays.';
 
   @override
   String get detailsInvalid => 'Tego tekstu nie można zapisać.';
@@ -2403,15 +2414,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get retryRecordingsWaitAdding =>
-      'Poczekaj, aż nagrania zostaną dodane, i spróbuj ponownie.';
+      'Poczekaj, aż zapisy zostaną dodane, i spróbuj ponownie.';
 
   @override
   String get retryRecordingsAddedMeanwhile =>
-      'W międzyczasie dodano nagrania. Ponów odczyt nagrań jeszcze raz.';
+      'W międzyczasie dodano zapisy. Ponów odczyt zapisów jeszcze raz.';
 
   @override
   String get retryRecordingsNone =>
-      'Nie udało się otworzyć żadnego nagrania dnia, więc dzień pozostaje bez zmian.';
+      'Nie udało się otworzyć żadnego zapisu dnia, więc dzień pozostaje bez zmian.';
 
   @override
   String retryRecordingsFailed(String reason) {
@@ -2420,7 +2431,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get retryRecordingsChangedMeanwhile =>
-      'W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt nagrań.';
+      'W międzyczasie zmieniono dzień. Zapisz go i ponów odczyt zapisów danych.';
 
   @override
   String get lapsCompareTwo => 'Porównaj dwa okrążenia';
@@ -2521,12 +2532,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String compareLapDelta(String delta) {
-    return 'Δ okrążenia $delta';
+    return 'Różnica czasu okrążenia: $delta';
   }
 
   @override
   String get compareDeltaExplained =>
-      'Δ to A − B: dodatnia, gdy A jest z tyłu.';
+      'Δ to różnica czasu A − B. Wartość dodatnia oznacza stratę A względem B; ujemna — przewagę A.';
 
   @override
   String get compareSwap => 'Zamień A i B';
@@ -2537,10 +2548,10 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get compareBestOfDayAsB => 'B: najlepsze z dnia';
+  String get compareBestOfDayAsB => 'B: najlepsze okrążenie dnia';
 
   @override
-  String get compareLayerLine => 'Linia: A / B';
+  String get compareLayerLine => 'Tor jazdy: A / B';
 
   @override
   String compareLayerOptionNotRecorded(String layer) {
@@ -2554,10 +2565,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get compareLayerDelta => 'Δ czasu (A−B)';
 
   @override
-  String get compareLayerLateralG => 'G poprzeczne';
+  String get compareLayerLateralG => 'Przeciążenie poprzeczne';
 
   @override
-  String get compareLayerLongitudinalG => 'G wzdłużne';
+  String get compareLayerLongitudinalG => 'Przeciążenie wzdłużne';
 
   @override
   String get compareLayerThrottle => 'Gaz';
@@ -2569,10 +2580,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get compareLayerTemperature => 'Temperatura';
 
   @override
-  String get compareLayerAAhead => 'A z przodu';
+  String get compareLayerAAhead => 'A z przewagą nad B';
 
   @override
-  String get compareLayerABehind => 'A z tyłu';
+  String get compareLayerABehind => 'A ze stratą do B';
 
   @override
   String get compareLayerBraking => 'hamowanie';
@@ -2603,7 +2614,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get compareDeltaChart => 'Δ czasu (A − B)';
 
   @override
-  String get compareDeltaNote => '+ = A z tyłu';
+  String get compareDeltaNote => '+ = A ze stratą do B';
 
   @override
   String compareOpenLapHere(String lap) {
@@ -2616,7 +2627,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get compareRecordingsUnavailable =>
-      'Nagrania tych okrążeń są niedostępne.';
+      'Zapisy tych okrążeń są niedostępne.';
 
   @override
   String get compareNoGps => 'Brak danych GPS na tym odcinku';
@@ -2645,7 +2656,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get chartBrakingUp => 'hamowanie rysowane w górę';
+  String get chartBrakingUp => 'Hamowanie na wykresie: w górę';
 
   @override
   String chartRemove(String channel) {
@@ -2687,21 +2698,22 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chartAddChannel => 'Dodaj kanał';
 
   @override
-  String get coastingTitle => 'Toczenie bez gazu i hamulca';
+  String get coastingTitle => 'Jazda bez gazu i hamulca';
 
   @override
-  String get coastingBySegment => 'Według segmentów';
+  String get coastingBySegment => 'Według odcinków';
 
   @override
   String get coastingBySegmentLoading =>
-      'Toczenie według segmentów pojawi się po obliczeniu segmentów dnia…';
+      'Analiza jazdy bez gazu i hamulca dla poszczególnych odcinków będzie dostępna po obliczeniu podziału toru…';
 
   @override
   String get coastingBySegmentNeedsSegments =>
-      'Toczenie według segmentów wymaga segmentów w grupie tego okrążenia.';
+      'Analiza jazdy bez gazu i hamulca dla poszczególnych odcinków wymaga podziału toru w grupie tego okrążenia.';
 
   @override
-  String get coastingEpisodes => 'Epizody · wybierz jeden, aby go zobaczyć';
+  String get coastingEpisodes =>
+      'Fragmenty jazdy bez gazu i hamulca · wybierz fragment, aby go zobaczyć';
 
   @override
   String coastingIntoLap(String seconds) {
@@ -2709,13 +2721,16 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get drivingGgNoLongitudinal => 'Nie zapisano G wzdłużnego';
+  String get drivingGgNoLongitudinal =>
+      'Nie zarejestrowano przeciążenia wzdłużnego';
 
   @override
-  String get drivingGgNoLateral => 'Nie zapisano G poprzecznego';
+  String get drivingGgNoLateral =>
+      'Nie zarejestrowano przeciążenia poprzecznego';
 
   @override
-  String get drivingGgUnsupportedUnit => 'G w nieobsługiwanej jednostce';
+  String get drivingGgUnsupportedUnit =>
+      'Nieobsługiwana jednostka przyspieszenia';
 
   @override
   String get drivingGgNoSamples => 'Brak próbek na tym odcinku';
@@ -2733,7 +2748,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get drivingCalculatedFromGps => 'obliczone z GPS';
 
   @override
-  String get drivingInferred => 'wywnioskowane';
+  String get drivingInferred => 'wyznaczone pośrednio';
 
   @override
   String get drivingUnexpectedUnit => 'nieoczekiwana jednostka';
@@ -2742,14 +2757,15 @@ class AppLocalizationsPl extends AppLocalizations {
   String get drivingNotRecorded => 'nie zapisano';
 
   @override
-  String get drivingPedalsUnknown => 'pedały nieznane';
+  String get drivingPedalsUnknown =>
+      'brak danych o użyciu pedału gazu i hamulca';
 
   @override
   String get drivingNoSpeed => 'brak prędkości';
 
   @override
   String get drivingBrakeMeasuredLateralGps =>
-      'hamulec zmierzony, G poprzeczne z GPS';
+      'sygnał hamulca z pomiaru, przeciążenie poprzeczne obliczone z GPS';
 
   @override
   String drivingUnexpectedUnitChannel(String channel) {
@@ -2767,24 +2783,24 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingBrakingInferred =>
-      'hamowanie wywnioskowane z opóźnienia (brak kanału hamulca)';
+      'hamowanie wyznaczone pośrednio z opóźnienia (brak kanału hamulca)';
 
   @override
   String get drivingAcceleratorRecorded => 'zapisano pedał gazu';
 
   @override
   String get drivingAcceleratingInferred =>
-      'przyspieszanie wywnioskowane z G wzdłużnego (brak kanału gazu)';
+      'przyspieszanie wyznaczone pośrednio z przeciążenia wzdłużnego (brak kanału gazu)';
 
   @override
-  String get drivingLateralMeasured => 'zmierzono G poprzeczne';
+  String get drivingLateralMeasured => 'zmierzono przeciążenie poprzeczne';
 
   @override
   String get drivingLateralCalculated =>
-      'G poprzeczne obliczone przez rejestrator z GPS';
+      'przeciążenie poprzeczne obliczone przez rejestrator z danych GPS';
 
   @override
-  String get drivingNoLateral => 'brak G poprzecznego';
+  String get drivingNoLateral => 'brak danych przeciążenia poprzecznego';
 
   @override
   String get drivingCoastingMeasured =>
@@ -2792,15 +2808,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingCoastingInferred =>
-      'Wywnioskowane z G wzdłużnego: to nagranie nie ma kanału pedału hamulca lub gazu.';
+      'Wyznaczone pośrednio z przeciążenia wzdłużnego: w zapisie brakuje kanału pedału hamulca lub gazu.';
 
   @override
   String get drivingCoastingNoPedals =>
-      'Nie da się określić: nagranie nie ma ani kanałów pedałów, ani G wzdłużnego.';
+      'Nie można określić: zapis nie zawiera ani kanałów pedału gazu i hamulca, ani przeciążenia wzdłużnego.';
 
   @override
   String get drivingCoastingNoSpeed =>
-      'Nie da się określić: nagranie nie ma prędkości.';
+      'Nie da się określić: zapis nie ma prędkości.';
 
   @override
   String get drivingCoastingUnitMismatch =>
@@ -2808,7 +2824,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingCoastingUnavailable =>
-      'Toczenie bez gazu i hamulca nie jest dostępne dla tego odcinka.';
+      'Analiza jazdy bez gazu i hamulca jest niedostępna dla tego odcinka.';
 
   @override
   String drivingCoastingSummaryLap(
@@ -2820,10 +2836,10 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count epizodach',
-      one: '1 epizodzie',
+      other: '$count fragmentach',
+      one: '1 fragmencie',
     );
-    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
+    return '$seconds s · $meters m w $_temp0 ($share % czasu okrążenia)';
   }
 
   @override
@@ -2836,19 +2852,19 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count epizodach',
-      one: '1 epizodzie',
+      other: '$count fragmentach',
+      one: '1 fragmencie',
     );
-    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
+    return '$seconds s · $meters m w $_temp0 ($share % czasu wybranego odcinka)';
   }
 
   @override
   String get drivingCoastingNote =>
-      'Toczenie bez gazu i hamulca to jazda z prędkością bez wciśniętego żadnego pedału. Samo w sobie nie jest błędem: odpuszczenie gazu może uspokoić samochód albo wynikać z ruchu na torze.';
+      'Jazda bez gazu i hamulca to ruch samochodu bez użycia pedału gazu ani hamulca. Sama w sobie nie jest błędem: odjęcie gazu może ustabilizować samochód albo wynikać z ruchu na torze.';
 
   @override
   String get drivingCoastingEpisodesHint =>
-      'Każdy epizod jest podany według miejsca jego początku na torze; wybierz jeden, aby przesunąć tam kursor.';
+      'Dla każdego fragmentu podano miejsce jego początku na torze. Wybierz fragment, aby przesunąć tam kursor.';
 
   @override
   String drivingSelectedStretch(String meters) {
@@ -2878,27 +2894,27 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String drivingGgSemantics(String a, String b) {
-    return 'Diagram G-G okrążeń A i B: maks. łączne $a i $b';
+    return 'Diagram G–G okrążeń A i B: maksymalne przeciążenie wypadkowe $a i $b';
   }
 
   @override
-  String get drivingPeakLateral => 'Maks. poprzeczne';
+  String get drivingPeakLateral => 'Maks. przeciążenie poprzeczne';
 
   @override
-  String get drivingPeakBraking => 'Maks. hamowanie';
+  String get drivingPeakBraking => 'Maks. opóźnienie';
 
   @override
-  String get drivingPeakAccelerating => 'Maks. przyspieszanie';
+  String get drivingPeakAccelerating => 'Maks. przyspieszenie';
 
   @override
-  String get drivingPeakCombined => 'Maks. łączne';
+  String get drivingPeakCombined => 'Maks. przeciążenie wypadkowe';
 
   @override
   String get drivingSamples => 'Próbki';
 
   @override
   String get drivingGgNote =>
-      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
+      'Zaobserwowane przyspieszenia nie określają procentu wykorzystania dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
 
   @override
   String get drivingGgAccelerating => 'przyspieszanie';
@@ -2918,7 +2934,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get drivingStripHint => 'Stuknij, aby przesunąć tam kursor';
+  String get drivingStripHint => 'Wybierz, aby przesunąć tam kursor';
 
   @override
   String get drivingStatesTitle => 'Stany jazdy';
@@ -2936,11 +2952,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get drivingAccelerating => 'Przyspieszanie';
 
   @override
-  String get drivingCoasting => 'Toczenie bez gazu i hamulca';
+  String get drivingCoasting => 'Jazda bez gazu i hamulca';
 
   @override
   String get drivingStatesNote =>
-      'Udział we własnym czasie każdego okrążenia na tym odcinku. Stany się nakładają: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie lub toczenie. Stuknij pasek, aby przesunąć tam kursor. Dłuższe hamowanie w zakręcie nie jest samo w sobie lepsze ani bezpieczniejsze.';
+      'Udziały obliczane są osobno dla każdego okrążenia, względem czasu przejazdu wybranego fragmentu. Stany mogą się nakładać: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie lub jazda bez gazu i hamulca. Dotknij paska, aby przesunąć tam kursor. Dłuższe hamowanie w zakręcie nie jest samo w sobie lepsze ani bezpieczniejsze.';
 
   @override
   String get cornerDetailsReasonNotMeasured => 'nie zmierzono';
@@ -2961,7 +2977,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonApproachClipped =>
-      'dojazd ucięty na linii start/meta';
+      'analizowany dojazd do zakrętu jest ucięty na linii startu/mety';
 
   @override
   String get cornerDetailsReasonApproachInPreviousCorner =>
@@ -2973,7 +2989,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonBrakingGap =>
-      'hamowanie przerwane luką w nagraniu';
+      'luka w danych uniemożliwia prześledzenie całego hamowania';
 
   @override
   String get cornerDetailsReasonNoSamplesHere => 'brak próbek w tym miejscu';
@@ -2984,13 +3000,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonNoLift =>
-      'brak odjęcia gazu przed powrotem do gazu';
+      'brak odjęcia gazu przed ponownym dodaniem gazu';
 
   @override
-  String get cornerDetailsReasonNoPickup => 'nie wykryto powrotu do gazu';
+  String get cornerDetailsReasonNoPickup =>
+      'nie wykryto ponownego dodania gazu';
 
   @override
-  String get cornerDetailsReasonAfterGap => 'po luce w nagraniu';
+  String get cornerDetailsReasonAfterGap => 'po luce w zapisie';
 
   @override
   String get cornerDetailsReasonCutAtLapEnd => 'ucięte na końcu okrążenia';
@@ -3000,7 +3017,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'okrążenie nie jest tu w pełni pokryte danymi';
 
   @override
-  String get cornerDetailsReasonCrossesGate => 'przecina linię start/meta';
+  String get cornerDetailsReasonCrossesGate => 'przecina linię startu/mety';
 
   @override
   String get cornerDetailsReasonUnitNotSupported =>
@@ -3014,23 +3031,24 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerDetailsReasonNoSpeedChannel => 'brak kanału prędkości';
 
   @override
-  String get cornerDetailsReasonMixedProvenance => 'zmierzone inaczej na A i B';
+  String get cornerDetailsReasonMixedProvenance =>
+      'parametr wyznaczono różnymi metodami na A i B';
 
   @override
   String get cornerDetailsReasonSegmentsDiffer =>
-      'segmenty różnią się między okrążeniami';
+      'odcinki różnią się między okrążeniami';
 
   @override
   String get cornerDetailsReasonDoubleApex =>
-      'podwójny wierzchołek: brak jednego punktu wierzchołka';
+      'podwójny wierzchołek: brak jednego jednoznacznego punktu';
 
   @override
   String get cornerDetailsReasonFlatSpeed =>
-      'brak najniższego punktu (stała prędkość)';
+      'brak jednoznacznego minimum prędkości (stała prędkość)';
 
   @override
   String get cornerDetailsReasonUnclearGeometry =>
-      'kształt zakrętu zbyt niewyraźny, by go wyznaczyć';
+      'geometria zakrętu jest zbyt niejednoznaczna do wyznaczenia punktu';
 
   @override
   String get cornerDetailsReasonInvalidInput =>
@@ -3038,7 +3056,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonBroadApex =>
-      'wierzchołek rozciągnięty na długim łuku';
+      'wierzchołek obejmuje długi odcinek łuku';
 
   @override
   String get cornerDetailsReasonAtBoundary => 'na skraju zakrętu';
@@ -3051,7 +3069,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonSegmentNotFound =>
-      'nie znaleziono segmentu na tym okrążeniu';
+      'nie znaleziono odcinka na tym okrążeniu';
 
   @override
   String get cornerDetailsReasonNotRecorded => 'nie zapisano';
@@ -3067,7 +3085,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonNoApprovedSegments =>
-      'brak zatwierdzonych segmentów';
+      'brak zatwierdzonych odcinków';
 
   @override
   String get cornerDetailsReasonDrivingStateUnknown => 'stan jazdy nieznany';
@@ -3076,20 +3094,22 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerDetailsReasonNotAvailable => 'niedostępne';
 
   @override
-  String get cornerDetailsFromDeceleration => 'Wywnioskowane z opóźnienia';
+  String get cornerDetailsFromDeceleration =>
+      'Wyznaczone pośrednio z opóźnienia';
 
   @override
   String get cornerDetailsFromBrakeChannel => 'Z kanału hamulca';
 
   @override
-  String get cornerDetailsFromAcceleration => 'Wywnioskowane z przyspieszenia';
+  String get cornerDetailsFromAcceleration =>
+      'Wyznaczone pośrednio z przyspieszenia';
 
   @override
   String get cornerDetailsFromThrottleChannel => 'Z kanału gazu';
 
   @override
   String cornerDetailsBestMeasuredDifferently(String how) {
-    return '$how; najlepsze okrążenie zmierzono inaczej';
+    return '$how; na najlepszym okrążeniu parametr wyznaczono inną metodą';
   }
 
   @override
@@ -3111,7 +3131,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerDetailsLatestBrakingPoint => 'Najpóźniejszy punkt hamowania';
 
   @override
-  String get cornerDetailsEarliestPickup => 'Najwcześniejszy powrót do gazu';
+  String get cornerDetailsEarliestPickup =>
+      'Najwcześniejsze ponowne dodanie gazu';
 
   @override
   String cornerDetailsMetresIn(int metres) {
@@ -3135,7 +3156,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerDetailsThisLap => 'To okrążenie';
 
   @override
-  String get cornerDetailsBestLap => 'Najlepsze';
+  String get cornerDetailsBestLap => 'Najlepsze okrążenie';
 
   @override
   String cornerDetailsEntrySpeed(String unit) {
@@ -3153,7 +3174,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get cornerDetailsBrakingPoint => 'Punkt hamowania, przed zakrętem';
+  String get cornerDetailsBrakingPoint =>
+      'Punkt rozpoczęcia hamowania (przed zakrętem)';
 
   @override
   String get cornerDetailsBrakingTime => 'Czas hamowania';
@@ -3164,7 +3186,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get cornerDetailsPickup => 'Powrót do gazu, w zakręcie';
+  String get cornerDetailsPickup => 'Punkt ponownego dodania gazu (w zakręcie)';
 
   @override
   String cornerDetailsBestOfLaps(int count) {
@@ -3180,7 +3202,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsExplanation =>
-      'Punkt hamowania i powrót do gazu to odległości od początku zakrętu na wspólnej osi toru. Późniejsze hamowanie ani wcześniejszy powrót do gazu nie oznacza automatycznie szybszej jazdy. Okrążenia zmierzone w inny sposób nie są porównywane.';
+      'Punkt rozpoczęcia hamowania i punkt ponownego dodania gazu określają odległości od początku zakrętu na wspólnej osi odniesienia wzdłuż toru. Późniejsze hamowanie lub wcześniejsze dodanie gazu nie oznaczają automatycznie szybszego przejazdu. Okrążenia, na których parametry wyznaczono różnymi metodami, nie są porównywane.';
 
   @override
   String cornerDetailsNotMeasured(String corner) {
@@ -3198,12 +3220,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerAnalyzerNoteProposed(String lap) {
-    return 'Segmenty zaproponowane na podstawie: $lap, jak w sektorowym teoretycznie najlepszym; zapisanie dnia je zatwierdza. Granice to odległości wzdłuż osi tamtego okrążenia, więc na tych okrążeniach mogą przesunąć się o kilka metrów.';
+    return 'Odcinki zaproponowano na podstawie: $lap. Są też używane do obliczania teoretycznego czasu okrążenia; zapisanie dnia je zatwierdza. Granice określa się jako odległości wzdłuż osi odniesienia tego okrążenia, dlatego na porównywanych okrążeniach mogą przesunąć się o kilka metrów.';
   }
 
   @override
   String cornerAnalyzerNoteApproved(String session) {
-    return 'Segmenty zatwierdzone dla: $session, jak w sektorowym teoretycznie najlepszym. Granice to odległości wzdłuż osi tamtej sesji, więc na tych okrążeniach mogą przesunąć się o kilka metrów.';
+    return 'Odcinki zatwierdzono dla: $session. Są też używane do obliczania teoretycznego czasu okrążenia. Granice określa się jako odległości wzdłuż osi odniesienia tej sesji, dlatego na porównywanych okrążeniach mogą przesunąć się o kilka metrów.';
   }
 
   @override
@@ -3239,28 +3261,28 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerAnalyzerEmpty =>
-      'Te dwa okrążenia nie mają wspólnych zatwierdzonych segmentów. Zatwierdź ten sam podział toru na obu, aby użyć Analizatora zakrętów.';
+      'Te dwa okrążenia nie mają wspólnych zatwierdzonych odcinków. Zatwierdź ten sam podział toru na obu, aby użyć Analizatora zakrętów.';
 
   @override
   String get cornerAnalyzerUseTheoreticalBest =>
-      'Użyj segmentów teoretycznie najlepszego';
+      'Użyj odcinków z obliczenia teoretycznego czasu okrążenia';
 
   @override
-  String get cornerAnalyzerPrevious => 'Poprzedni segment';
+  String get cornerAnalyzerPrevious => 'Poprzedni odcinek';
 
   @override
-  String get cornerAnalyzerNext => 'Następny segment';
+  String get cornerAnalyzerNext => 'Następny odcinek';
 
   @override
   String get cornerAnalyzerNoChart =>
-      'Brak wykresu prędkości: ten segment przecina linię start/meta.';
+      'Brak wykresu prędkości: ten odcinek przecina linię startu/mety.';
 
   @override
-  String get cornerAnalyzerNoFigures => 'Brak danych dla tego segmentu.';
+  String get cornerAnalyzerNoFigures => 'Brak danych dla tego odcinka.';
 
   @override
   String cornerAnalyzerHeartRateNote(String a, String b) {
-    return 'Tętno: średnia w tym segmencie · A $a · B $b. Tylko zaobserwowane wartości.';
+    return 'Tętno: średnia w tym odcinku · A $a · B $b. Tylko zaobserwowane wartości.';
   }
 
   @override
@@ -3268,11 +3290,11 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count próbek, pokrycie $percent%',
-      few: '$count próbki, pokrycie $percent%',
-      one: '1 próbka, pokrycie $percent%',
+      other: '$count próbek',
+      few: '$count próbki',
+      one: '1 próbka',
     );
-    return '$_temp0';
+    return '$_temp0 · dane przez $percent% czasu odcinka';
   }
 
   @override
@@ -3281,10 +3303,10 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerAnalyzerExplanationWithBraking =>
-      'Δ to A − B, w kolorze okrążenia, które jest szybsze lub ma wyższą prędkość. Hamowanie i powrót do gazu to odległości od wejścia w zakręt; późniejsze hamowanie lub wcześniejszy powrót do gazu nie oznacza automatycznie szybszej jazdy. To zaobserwowane różnice, nie instrukcje.';
+      'Δ to A − B, w kolorze okrążenia, które jest szybsze lub ma wyższą prędkość. Punkt rozpoczęcia hamowania i punkt ponownego dodania gazu określają odległości od wejścia w zakręt. Późniejsze hamowanie lub wcześniejsze dodanie gazu nie oznaczają automatycznie szybszego przejazdu. To zaobserwowane różnice, nie instrukcje.';
 
   @override
-  String get cornerAnalyzerZoom => 'Przybliż segment';
+  String get cornerAnalyzerZoom => 'Przybliż odcinek';
 
   @override
   String cornerAnalyzerOpenLap(String lap) {
@@ -3316,7 +3338,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerAnalyzerSectorTime => 'Czas sektora';
 
   @override
-  String get cornerAnalyzerBrakingPoint => 'Początek hamowania, przed wejściem';
+  String get cornerAnalyzerBrakingPoint =>
+      'Punkt rozpoczęcia hamowania (przed wejściem w zakręt)';
 
   @override
   String get cornerAnalyzerBrakingTime => 'Czas hamowania';
@@ -3331,28 +3354,29 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerAnalyzerApexSpeed => 'Prędkość na wierzchołku';
 
   @override
-  String get cornerAnalyzerMinimumSpeed => 'Prędkość minimalna';
+  String get cornerAnalyzerMinimumSpeed => 'Prędkość minimalna w zakręcie';
 
   @override
   String get cornerAnalyzerTopSpeed => 'Prędkość maksymalna';
 
   @override
-  String get cornerAnalyzerLowestSpeed => 'Najniższa prędkość';
+  String get cornerAnalyzerLowestSpeed => 'Najniższa prędkość na odcinku';
 
   @override
   String get cornerAnalyzerExitSpeed => 'Prędkość na wyjściu';
 
   @override
-  String get cornerAnalyzerPickup => 'Powrót do gazu, za wejściem';
+  String get cornerAnalyzerPickup =>
+      'Punkt ponownego dodania gazu (po wejściu w zakręt)';
 
   @override
   String get cornerAnalyzerHeartRate => 'Tętno';
 
   @override
-  String get cornerAnalyzerAHigher => 'A wyższa';
+  String get cornerAnalyzerAHigher => 'A: wyższa prędkość';
 
   @override
-  String get cornerAnalyzerBHigher => 'B wyższa';
+  String get cornerAnalyzerBHigher => 'B: wyższa prędkość';
 
   @override
   String get cornerAnalyzerAFaster => 'A szybsze';
@@ -3388,7 +3412,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerAnalyzerSame => 'tak samo';
 
   @override
-  String get cornerAnalyzerInferred => 'wywnioskowane';
+  String get cornerAnalyzerInferred => 'pośrednio';
 
   @override
   String cornerAnalyzerBothLaps(String reason) {
@@ -3402,15 +3426,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerAnalyzerUnitNoteSpeed =>
-      'To nagranie nie podaje jednostki prędkości: te wartości pokazano tak, jak je zapisano, bez jednostki.';
+      'Ten zapis nie podaje jednostki prędkości: wartości pokazano bez zmian, bez jednostki.';
 
   @override
   String get cornerAnalyzerUnitNoteDeceleration =>
-      'To nagranie nie podaje jednostki opóźnienia: te wartości pokazano tak, jak je zapisano, bez jednostki.';
+      'Ten zapis nie podaje jednostki opóźnienia: wartości pokazano bez zmian, bez jednostki.';
 
   @override
   String get cornerAnalyzerUnitNoteBoth =>
-      'To nagranie nie podaje jednostek prędkości i opóźnienia: te wartości pokazano tak, jak je zapisano, bez jednostki.';
+      'Ten zapis nie podaje jednostek prędkości i opóźnienia: wartości pokazano bez zmian, bez jednostki.';
 
   @override
   String get cornerAnalyzerChartNoSpeed =>
@@ -3418,7 +3442,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerAnalyzerChartNoSamples(String segment) {
-    return 'Żadne okrążenie nie ma próbek prędkości w segmencie $segment.';
+    return 'Żadne okrążenie nie ma próbek prędkości w odcinku $segment.';
   }
 
   @override
@@ -3460,21 +3484,21 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerAnalyzerAxisSegment =>
-      'Odległość od początku segmentu (m) · zacieniowano: segment';
+      'Odległość od początku odcinka (m) · zacieniowano: odcinek';
 
   @override
   String cornerAnalyzerAxisNoUnit(String axis) {
-    return '$axis · nagranie nie podaje jednostki prędkości';
+    return '$axis · zapis nie podaje jednostki prędkości';
   }
 
   @override
   String get cornerAnalyzerLegendBraking => 'Początek hamowania';
 
   @override
-  String get cornerAnalyzerLegendPickup => 'Powrót do gazu';
+  String get cornerAnalyzerLegendPickup => 'Ponowne dodanie gazu';
 
   @override
-  String get cornerAnalyzerLegendMinimum => 'Najniższa prędkość';
+  String get cornerAnalyzerLegendMinimum => 'Prędkość minimalna';
 
   @override
   String importPageLaps(int count) {
@@ -3490,23 +3514,23 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageNoGate =>
-      'Brak okrążeń: nagranie nie ma linii start/meta.';
+      'Brak okrążeń: zapis nie ma linii startu/mety.';
 
   @override
   String get importPageSeveralGates =>
-      'Brak okrążeń: nagranie ma więcej niż jedną linię start/meta.';
+      'Brak okrążeń: zapis ma więcej niż jedną linię startu/mety.';
 
   @override
   String get importPageInvalidGate =>
-      'Brak okrążeń: linia start/meta jest nieprawidłowa.';
+      'Brak okrążeń: linia startu/mety jest nieprawidłowa.';
 
   @override
   String get importPageNoGps =>
-      'Brak okrążeń: nagranie nie ma użytecznego sygnału GPS.';
+      'Brak okrążeń: zapis nie ma użytecznego sygnału GPS.';
 
   @override
   String get importPageTooFewPasses =>
-      'Brak pełnych okrążeń: linię start/meta przecięto zbyt mało razy.';
+      'Brak pełnych okrążeń: linię startu/mety przecięto zbyt mało razy.';
 
   @override
   String importPageImportFailed(String error) {
@@ -3519,11 +3543,11 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Folder zawiera $count nagrań; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
+          'Folder zawiera $count zapisów; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
       few:
-          'Folder zawiera $count nagrania; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
+          'Folder zawiera $count zapisy; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
       one:
-          'Folder zawiera 1 nagranie; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
+          'Folder zawiera 1 zapis; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
     );
     return '$_temp0';
   }
@@ -3533,16 +3557,16 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'To $count nagrań; importuj najwyżej $maximum naraz.',
-      few: 'To $count nagrania; importuj najwyżej $maximum naraz.',
-      one: 'To 1 nagranie; importuj najwyżej $maximum naraz.',
+      other: 'To $count zapisów; importuj najwyżej $maximum naraz.',
+      few: 'To $count zapisy; importuj najwyżej $maximum naraz.',
+      one: 'To 1 zapis; importuj najwyżej $maximum naraz.',
     );
     return '$_temp0';
   }
 
   @override
   String importPageStoppedAfter(int count) {
-    return 'Przerwano po $count plikach i folderach; dalszych nagrań nie przeszukano.';
+    return 'Przerwano po $count plikach i folderach; dalszych zapisów nie przeszukano.';
   }
 
   @override
@@ -3557,7 +3581,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String importPageOtherFilesSkipped(int count) {
-    return 'Pominięto inne pliki: $count; importowane są tylko nagrania VBO i RCZ.';
+    return 'Pominięto inne pliki: $count; importowane są tylko zapisy VBO i RCZ.';
   }
 
   @override
@@ -3572,7 +3596,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageNoRecording =>
-      'Nie udało się zaimportować żadnego nagrania.';
+      'Nie udało się zaimportować żadnego zapisu.';
 
   @override
   String get importPageFailed => 'Import nie powiódł się.';
@@ -3589,29 +3613,29 @@ class AppLocalizationsPl extends AppLocalizations {
       'Wybierz sam folder, a nie łącze do niego.';
 
   @override
-  String get importPageNoneFound => 'Nie znaleziono nagrań VBO ani RCZ.';
+  String get importPageNoneFound => 'Nie znaleziono zapisów VBO ani RCZ.';
 
   @override
   String get importPageNoneFoundNoSubfolders =>
-      'Nie znaleziono nagrań VBO ani RCZ (bez podfolderów).';
+      'Nie znaleziono zapisów VBO ani RCZ (bez podfolderów).';
 
   @override
   String get importPageNothingToImport =>
-      'Brak nagrań VBO ani RCZ do zaimportowania.';
+      'Brak zapisów VBO ani RCZ do zaimportowania.';
 
   @override
   String get importPageFileNotFound => 'nie znaleziono; nie zaimportowano.';
 
   @override
   String get importPageMetadataFile =>
-      'plik metadanych macOS, a nie nagranie; nie zaimportowano.';
+      'plik metadanych macOS, a nie zapis danych; nie zaimportowano.';
 
   @override
   String get importPageFileLink => 'łącze; pominięto.';
 
   @override
   String get importPageNotRecording =>
-      'to nie jest nagranie VBO ani RCZ; nie zaimportowano.';
+      'to nie jest zapis VBO ani RCZ; nie zaimportowano.';
 
   @override
   String importPageNotRestored(String error) {
@@ -3625,7 +3649,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageDiscardBody =>
-      'Niezapisane zmiany zostaną utracone. Nagrania i zapisane dni pozostaną nietknięte.';
+      'Niezapisane zmiany zostaną utracone. Pliki z danymi i zapisane dni pozostaną nietknięte.';
 
   @override
   String get importPageKeep => 'Zachowaj';
@@ -3645,15 +3669,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageNoneUsable =>
-      'Nie udało się użyć żadnego z jego nagrań:';
+      'Nie udało się użyć żadnego z jego zapisów:';
 
   @override
   String get importPageChooseFolderHint =>
-      'Wybierz folder z nagraniami, aby ich użyć, także gdy nie zostały przeniesione.';
+      'Wybierz folder z zapisami, aby ich użyć, także gdy nie zostały przeniesione.';
 
   @override
   String get importPageImportingBehind =>
-      'Importuję udostępnione nagrania. Wróć do ekranu Importuj dzień, aby je zobaczyć.';
+      'Importuję udostępnione zapisy. Wróć do ekranu Importuj dzień, aby je zobaczyć.';
 
   @override
   String get importPageOpenSavedTitle => 'Otwórz zapisany dzień';
@@ -3686,17 +3710,18 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageIntroDrop =>
-      'Wybierz nagrania VBO i RCZ z tego dnia albo folder lub upuść je tutaj.';
+      'Wybierz pliki telemetrii VBO i RCZ z tego dnia lub folder albo przeciągnij je tutaj.';
 
   @override
   String get importPageIntroFolder =>
-      'Wybierz nagrania VBO i RCZ z tego dnia albo folder.';
+      'Wybierz pliki telemetrii VBO i RCZ z tego dnia lub folder.';
 
   @override
-  String get importPageIntro => 'Wybierz nagrania VBO i RCZ z tego dnia.';
+  String get importPageIntro =>
+      'Wybierz pliki telemetrii VBO i RCZ z tego dnia.';
 
   @override
-  String get importPageChooseRecordings => 'Wybierz nagrania…';
+  String get importPageChooseRecordings => 'Wybierz zapisy telemetrii…';
 
   @override
   String get importPageChooseFolder => 'Wybierz folder…';
@@ -3708,11 +3733,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get importPageOpenSaved => 'Otwórz zapisany dzień…';
 
   @override
-  String get importPageProgress => 'Importowanie nagrań';
+  String get importPageProgress => 'Importowanie zapisów telemetrii';
 
   @override
   String get importPageChooseAgain =>
-      'Wybierz ponownie te same lub inne nagrania powyżej.';
+      'Wybierz ponownie te same lub inne zapisy telemetrii.';
 
   @override
   String get importPageIncludeSubfolders => 'Uwzględnij podfoldery';
@@ -3721,11 +3746,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get importPageNotes => 'Uwagi do importu';
 
   @override
-  String get importPageLooking => 'Szukam nagrań…';
+  String get importPageLooking => 'Wyszukiwanie zapisów telemetrii…';
 
   @override
   String importPagePreparing(int number, int total) {
-    return 'Przygotowuję nagranie $number z $total…';
+    return 'Przygotowywanie zapisu $number z $total…';
   }
 
   @override
@@ -3747,7 +3772,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get importPageShowResults => 'Pokaż wyniki dnia';
 
   @override
-  String get importPageRecordingTypes => 'Nagrania VBO i RCZ';
+  String get importPageRecordingTypes => 'Pliki telemetrii VBO i RCZ';
 
   @override
   String get importPageImportThisFolder => 'Importuj ten folder';
@@ -3765,15 +3790,16 @@ class AppLocalizationsPl extends AppLocalizations {
       'Za dużo plików w jednym imporcie; wybierz mniej.';
 
   @override
-  String get importPagePathTooLong => 'Ścieżka do nagrania jest za długa.';
+  String get importPagePathTooLong =>
+      'Ścieżka do pliku z zapisem jest za długa.';
 
   @override
   String get importPageFileSize =>
-      'Plik nagrania jest pusty albo przekracza limit rozmiaru pliku.';
+      'Plik z zapisem jest pusty albo przekracza limit rozmiaru pliku.';
 
   @override
   String get importPageBatchBytes =>
-      'Przekroczono limit rozmiaru importu; zaimportuj mniej nagrań.';
+      'Przekroczono limit rozmiaru importu; zaimportuj mniej zapisów.';
 
   @override
   String get importPageIdenticalContent =>
@@ -3781,23 +3807,23 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageSourceChanged =>
-      'Nagranie zmieniło się podczas importu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
+      'Zapis zmienił się podczas importu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
 
   @override
   String get importPageInvalidTimeRange =>
-      'Nagranie ma nieprawidłowy zakres czasu.';
+      'Zapis ma nieprawidłowy zakres czasu.';
 
   @override
   String get importPageMismatchedChannels =>
-      'W nagraniu znaczniki czasu kanałów nie pasują do wartości.';
+      'W zapisie znaczniki czasu kanałów nie pasują do wartości.';
 
   @override
   String get importPageBatchSamples =>
-      'Przekroczono limit liczby próbek w imporcie; zaimportuj mniej nagrań.';
+      'Przekroczono limit liczby próbek w imporcie; zaimportuj mniej zapisów.';
 
   @override
   String get importPageGroupingLimit =>
-      'Grupowanie nagrań przekracza limit importu.';
+      'Grupowanie zapisów przekracza limit importu.';
 
   @override
   String get segmentReviewOpen => 'Przejrzyj propozycje';
@@ -3813,7 +3839,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentReviewIntro =>
-      'Odcinki są zatwierdzane automatycznie, więc ten przegląd jest opcjonalny. Odrzucona propozycja jest pomijana przez Zatwierdź wszystkie i zapisuje się z dniem.';
+      'Odcinki są zatwierdzane automatycznie, więc ten przegląd jest opcjonalny. Odrzucone propozycje nie zostaną uwzględnione po wybraniu „Zatwierdź wszystkie”. Informacja o odrzuceniu jest zapisywana wraz z dniem.';
 
   @override
   String segmentReviewSummary(int count, String lap) {
@@ -3923,7 +3949,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentReviewApex(String at, String tolerance) {
-    return 'Geometryczny wierzchołek $at m ±$tolerance m';
+    return 'Geometryczny wierzchołek zakrętu: $at m ±$tolerance m';
   }
 
   @override
@@ -3954,7 +3980,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentReviewContinuousCorner =>
-      'Brak automatycznej propozycji: to okrążenie skręca bez przerwy, bez prostej między zakrętami.';
+      'Brak automatycznej propozycji: ślad okrążenia wykazuje ciągłą zmianę kierunku, bez prostej między zakrętami.';
 
   @override
   String get segmentReviewNoCorners =>
@@ -3973,7 +3999,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get segmentReviewSegmentsUnavailable =>
-      'Odcinki można zmienić, gdy teoretycznie najlepsze okrążenie zostanie obliczone.';
+      'Odcinki można zmieniać po obliczeniu teoretycznego czasu okrążenia.';
 
   @override
   String get segmentReviewNotReady => 'Propozycje nie są jeszcze gotowe.';
@@ -4024,7 +4050,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String recordingsChangingPrimary(String format) {
-    return 'Wczytywanie $format jako nagrania tej sesji…';
+    return 'Wczytywanie $format jako zapisu tej sesji…';
   }
 
   @override
@@ -4067,11 +4093,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String clockDeclared(String offset) {
-    return 'Zegary rejestratorów podają $offset';
+    return 'Różnica czasów rozpoczęcia zapisu podanych przez rejestratory: $offset';
   }
 
   @override
-  String get clockNoDeclared => 'Nie oba rejestratory podają czas startu';
+  String get clockNoDeclared =>
+      'Co najmniej jeden rejestrator nie podaje czasu rozpoczęcia zapisu.';
 
   @override
   String get clockAccept => 'Akceptuj i połącz';
@@ -4105,35 +4132,35 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String recordingsPrimaryFailed(String format) {
-    return 'Nie udało się wczytać $format jako nagrania tej sesji.';
+    return 'Nie udało się wczytać $format jako zapisu tej sesji.';
   }
 
   @override
   String get recordingsBusyFind =>
-      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem znajdź pozostałe.';
+      'Poczekaj na zakończenie sprawdzania lub zmiany zapisów sesji, a potem znajdź pozostałe.';
 
   @override
   String get recordingsBusyRetry =>
-      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem spróbuj ponownie.';
+      'Poczekaj na zakończenie sprawdzania lub zmiany zapisów sesji, a potem spróbuj ponownie.';
 
   @override
   String get recordingsBusyLeave =>
-      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji.';
+      'Poczekaj na zakończenie sprawdzania lub zmiany zapisów sesji.';
 
   @override
   String get recordingsUnsaved =>
-      'Zapisz dzień przed zmianą głównego nagrania.';
+      'Zapisz dzień przed zmianą głównego zapisu danych.';
 
   @override
   String get recordingsBusyAdd =>
-      'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.';
+      'Poczekaj na zakończenie sprawdzania lub zmiany zapisów sesji, a potem dodaj zapisy.';
 
   @override
   String get lapPageThisLap => 'To okrążenie';
 
   @override
   String lapPageGapToBest(String delta) {
-    return '$delta do najlepszego okrążenia dnia';
+    return 'Różnica względem najlepszego okrążenia dnia: $delta';
   }
 
   @override
@@ -4209,13 +4236,13 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get reviewImportIntro =>
-      'Wybierz, co stanie się z każdym nagraniem. Nic nie zostanie zaimportowane, dopóki nie potwierdzisz.';
+      'Wybierz, co stanie się z każdym zapisem. Nic nie zostanie zaimportowane, dopóki nie potwierdzisz.';
 
   @override
   String get reviewBeforeImport => 'Przejrzyj pliki przed importem';
 
   @override
-  String get addAndReviewRecordings => 'Dodaj i przejrzyj nagrania…';
+  String get addAndReviewRecordings => 'Dodaj i przejrzyj zapisy…';
 
   @override
   String get reviewChoiceNewSession => 'Importuj jako nową sesję';
@@ -4271,7 +4298,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get reviewSameRunHint =>
-      'Dwa eksporty tej samej sesji? Wybierz „Ta sama sesja co”. Okrążenia sesji pochodzą z pliku, który wskażesz; drugi plik zostaje przy niej jako nagranie alternatywne.';
+      'Dwa eksporty tej samej sesji? Wybierz „Ta sama sesja co”. Okrążenia sesji pochodzą z pliku, który wskażesz; drugi plik zostaje przy niej jako zapis alternatywny.';
 
   @override
   String get reviewConfirmImport => 'Importuj';
@@ -4302,7 +4329,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get reviewProblemTooMany =>
-      'Sesja może mieć najwyżej jedno dodatkowe nagranie.';
+      'Sesja może mieć najwyżej jeden dodatkowy zapis.';
 
   @override
   String get reviewProblemNothing =>
@@ -4310,15 +4337,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get reviewChoicesRefused =>
-      'Tych wyborów nie można dodać, więc niczego nie dodano. Przejrzyj nagrania ponownie.';
+      'Tych wyborów nie można dodać, więc niczego nie dodano. Przejrzyj zapisy ponownie.';
 
   @override
   String get waitUntilRecordingsSaved =>
-      'Poczekaj, aż nagrania zostaną dopasowane, a dzień zapisany.';
+      'Poczekaj, aż zapisy zostaną dopasowane, a dzień zapisany.';
 
   @override
   String get reviewChanged =>
-      'Nagrania zmieniły się po przeglądzie, więc niczego nie zaimportowano. Przejrzyj je ponownie.';
+      'Zapisy zmieniły się po przeglądzie, więc niczego nie zaimportowano. Przejrzyj je ponownie.';
 
   @override
   String get reviewPreparing => 'Przygotowywanie przeglądu…';
@@ -4443,11 +4470,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreRczMultiplePositions =>
-      'Nagrania z kilkoma kanałami pozycji nie są obsługiwane.';
+      'Zapisy z kilkoma kanałami pozycji nie są obsługiwane.';
 
   @override
   String coreRczMultipleSources(String channel) {
-    return 'Nagrania z kilkoma źródłami kanału $channel nie są obsługiwane.';
+    return 'Zapisy z kilkoma źródłami kanału $channel nie są obsługiwane.';
   }
 
   @override
@@ -4477,25 +4504,25 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreSourceIdentitySize =>
-      'Plik nagrania przekracza limit rozmiaru przy sprawdzaniu zawartości.';
+      'Plik z zapisem przekracza limit rozmiaru przy sprawdzaniu zawartości.';
 
   @override
-  String get coreSourceCannotRead => 'Nie można odczytać nagrania.';
+  String get coreSourceCannotRead => 'Nie można odczytać zapisu.';
 
   @override
   String get coreSourceChangedWhileReading =>
-      'Nagranie zmieniło się podczas odczytu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
+      'Zapis zmienił się podczas odczytu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
 
   @override
   String get coreSourceReadFailed =>
-      'Odczyt nagrania nie powiódł się albo plik jest ucięty.';
+      'Odczyt zapisu nie powiódł się albo plik jest ucięty.';
 
   @override
-  String get coreDayTooManyRecordings => 'Za dużo nagrań w tym dniu.';
+  String get coreDayTooManyRecordings => 'Za dużo zapisów w tym dniu.';
 
   @override
   String get coreDayLapSectionLimit =>
-      'Ten dzień przekracza limit 20 000 odcinków okrążeń.';
+      'Ten dzień przekracza limit 20 000 okrążeń (z wyjazdami i zjazdami).';
 
   @override
   String get coreRouteTooManyTraces =>
@@ -4507,15 +4534,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreProgressionTooMany =>
-      'Za dużo sesji lub odcinków okrążeń, by ocenić postęp.';
+      'Za dużo sesji lub okrążeń, by ocenić postęp.';
 
   @override
   String get coreRecordingTooManyLapSections =>
-      'Za dużo odcinków okrążeń w tym nagraniu.';
+      'Za dużo okrążeń (z wyjazdami i zjazdami) w tym zapisie.';
 
   @override
   String get coreDayTooManyLapSections =>
-      'Za dużo odcinków okrążeń w tym dniu.';
+      'Za dużo okrążeń (z wyjazdami i zjazdami) w tym dniu.';
 
   @override
   String get coreRankingTooMany =>
@@ -4523,7 +4550,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreTooManyPasses =>
-      'Wykrywanie okrążeń znalazło za dużo przecięć linii start/meta.';
+      'Wykrywanie okrążeń znalazło za dużo przecięć linii startu/mety.';
 
   @override
   String get coreTooManyGpsPoints =>

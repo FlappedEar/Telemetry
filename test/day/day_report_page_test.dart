@@ -154,7 +154,7 @@ void main() {
     expect(
       find.descendant(
         of: oil,
-        matching: find.textContaining('Olej · oil_temp'),
+        matching: find.textContaining('Temperatura oleju · oil_temp'),
       ),
       findsOneWidget,
     );
@@ -184,7 +184,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(oil);
     await tester.pumpAndSettle();
-    expect(find.text('Związek z osiągami na okrążeniu'), findsOneWidget);
+    expect(find.text('Związek z wynikami przejazdu okrążeń'), findsOneWidget);
     expect(find.textContaining('Chłodzenie: '), findsWidgets);
     expect(find.text('With lap performance'), findsNothing);
   });
@@ -367,10 +367,13 @@ void main() {
     expect(find.text('Raport dnia'), findsOneWidget);
     expect(find.text('Day report'), findsNothing);
     expect(find.textContaining('Grupa 1 · '), findsOneWidget);
-    expect(find.text('Najlepsze okrążenie i co zostało'), findsOneWidget);
+    expect(
+      find.text('Najlepsze okrążenie i różnica do czasu teoretycznego'),
+      findsOneWidget,
+    );
     expect(find.text('Best lap and what is left'), findsNothing);
     expect(find.textContaining('· OKR. '), findsWidgets);
-    expect(find.textContaining('Zmierzono: '), findsWidgets);
+    expect(find.textContaining('Zaobserwowano: '), findsWidgets);
     expect(find.textContaining('Observed: '), findsNothing);
     expect(find.textContaining('Your best lap'), findsNothing);
     expect(find.text('Największe straty czasu'), findsOneWidget);
@@ -378,8 +381,8 @@ void main() {
     expect(find.text('Sesje'), findsOneWidget);
     expect(find.textContaining('kwalifikuj'), findsWidgets);
     expect(find.text('Powtarzalność'), findsOneWidget);
-    expect(find.textContaining('Typowe okrążenie '), findsOneWidget);
-    expect(find.textContaining('Olej · maksimum'), findsOneWidget);
+    expect(find.textContaining('Typowy czas okrążenia '), findsOneWidget);
+    expect(find.textContaining('Temperatura oleju · maksimum'), findsOneWidget);
     expect(find.text('Tętno'), findsOneWidget);
     expect(find.textContaining('\u00a0bpm'), findsWidgets);
     expect(find.textContaining('laps'), findsNothing);

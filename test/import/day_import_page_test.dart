@@ -615,7 +615,7 @@ void main() {
   testWidgets('the pickers follow the device language', (tester) async {
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     tester.platformDispatcher.localesTestValue = const [Locale('pl', 'PL')];
-    expect(deviceL10n().importPageRecordingTypes, 'Nagrania VBO i RCZ');
+    expect(deviceL10n().importPageRecordingTypes, 'Pliki telemetrii VBO i RCZ');
     tester.platformDispatcher.localesTestValue = const [Locale('de')];
     expect(deviceL10n().importPageRecordingTypes, 'VBO and RCZ recordings');
     expect(recordingTypeGroup(TargetPlatform.macOS, label: 'X').label, 'X');
@@ -730,11 +730,11 @@ void main() {
     );
     expect(find.text('Importuj dzień'), findsOneWidget);
     expect(find.text('Import a day'), findsNothing);
-    expect(find.text('Wybierz nagrania…'), findsOneWidget);
+    expect(find.text('Wybierz zapisy telemetrii…'), findsOneWidget);
 
-    await tester.tap(find.text('Wybierz nagrania…'));
+    await tester.tap(find.text('Wybierz zapisy telemetrii…'));
     await tester.pump();
-    expect(find.text('Szukam nagrań…'), findsOneWidget);
+    expect(find.text('Wyszukiwanie zapisów telemetrii…'), findsOneWidget);
     importer.jobs.single.finish();
     await tester.pump();
     expect(find.text('Zaimportowano 1 sesję'), findsOneWidget);
@@ -747,9 +747,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        'notes.txt: to nie jest nagranie VBO ani RCZ; nie zaimportowano.',
-      ),
+      find.text('notes.txt: to nie jest zapis VBO ani RCZ; nie zaimportowano.'),
       findsOneWidget,
     );
   });
@@ -920,12 +918,12 @@ void main() {
         home: DayImportPage(controller: controller, pickers: pickers),
       ),
     );
-    await tester.tap(find.text('Wybierz nagrania…'));
+    await tester.tap(find.text('Wybierz zapisy telemetrii…'));
     await tester.pump();
     importer.jobs.single.finish();
     await tester.pump();
     expect(
-      find.text('Nie udało się zaimportować żadnego nagrania.'),
+      find.text('Nie udało się zaimportować żadnego zapisu.'),
       findsOneWidget,
     );
     // telemetry_core's English detail of a damaged file is kept after the

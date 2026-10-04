@@ -94,7 +94,9 @@ void main() {
     );
     expect(find.text('0 okrążeń'), findsOneWidget);
     expect(
-      find.text('Mierzone razem z teoretycznie najlepszym okrążeniem…'),
+      find.text(
+        'Obliczanie powtarzalności wraz z teoretycznym czasem okrążenia…',
+      ),
       findsOneWidget,
     );
   });
