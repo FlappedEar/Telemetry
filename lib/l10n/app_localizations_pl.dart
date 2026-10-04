@@ -3689,6 +3689,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get importPageOpenSaved => 'Otwórz zapisany dzień…';
 
   @override
+  String get importPageProgress => 'Importowanie nagrań';
+
+  @override
+  String get importPageChooseAgain =>
+      'Wybierz ponownie te same lub inne nagrania powyżej.';
+
+  @override
   String get importPageIncludeSubfolders => 'Uwzględnij podfoldery';
 
   @override

@@ -352,7 +352,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const LinearProgressIndicator(),
+                    LinearProgressIndicator(
+                      semanticsLabel: l10n.segmentEditorTiming,
+                    ),
                     const SizedBox(height: 8),
                     Text(l10n.segmentEditorTiming),
                   ],

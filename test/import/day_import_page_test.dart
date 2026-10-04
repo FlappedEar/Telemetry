@@ -832,7 +832,10 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byType(Checkbox).first);
+    // The label toggles the box too.
+    await tester.tap(find.text('Include subfolders'));
+    await tester.pump();
+    expect(tester.widget<Checkbox>(find.byType(Checkbox).first).value, isTrue);
     await tester.tap(find.text('Choose a folder…'));
     await tester.pump();
     expect(importer.jobs.last.request.includeSubfolders, isTrue);
@@ -855,7 +858,10 @@ void main() {
     await tester.pump();
     expect(job.cancelled, isTrue);
     expect(
-      find.text('Import cancelled. Nothing was imported.'),
+      find.descendant(
+        of: find.byKey(const ValueKey('importCancelled')),
+        matching: find.text('Import cancelled. Nothing was imported.'),
+      ),
       findsOneWidget,
     );
     // A late progress message from the stopped job changes nothing.
@@ -889,7 +895,18 @@ void main() {
     await tester.pump();
     importer.jobs.single.finish();
     await tester.pump();
-    expect(find.text('No recording could be imported.'), findsOneWidget);
+    // In a banner with what to do next.
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('importFailed')),
+        matching: find.text('No recording could be imported.'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Choose the recordings again, or other ones, above.'),
+      findsOneWidget,
+    );
     expect(find.textContaining('broken.vbo: '), findsOneWidget);
   });
 
@@ -919,6 +936,32 @@ void main() {
         'section.',
       ),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('on a large screen the page stays 840 wide, centred', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await show(tester);
+    final card = tester.getRect(find.byKey(const ValueKey('importChoices')));
+    expect(card.width, 840);
+    expect(card.center.dx, closeTo(960, 1));
+  });
+
+  testWidgets('the import progress is labelled for a screen reader', (
+    tester,
+  ) async {
+    pickers.recordings = [write('run.vbo', _datedVbo(hour: 9))];
+    await show(tester);
+    await tester.tap(find.text('Choose recordings…'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+          .semanticsLabel,
+      'Importing recordings',
     );
   });
 

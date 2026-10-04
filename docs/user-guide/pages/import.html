@@ -18,14 +18,14 @@
 <table>
   <tr><th>Button</th><th>What it does</th><th>Where</th></tr>
   <tr><td><strong>Choose recordings…</strong></td><td>Pick one or more VBO/RCZ files.</td><td>Everywhere</td></tr>
-  <tr><td><strong>Choose a folder…</strong></td><td>Import every recording in a folder. Tick <strong>Include subfolders</strong> first to look inside subfolders too.</td><td>Mac and PC</td></tr>
+  <tr><td><strong>Choose a folder…</strong></td><td>Import every recording in a folder. Tick <strong>Include subfolders</strong> (the box or its label) first to look inside subfolders too.</td><td>Mac and PC</td></tr>
   <tr><td>Drag and drop</td><td>Drop files or folders anywhere on the window. An amber border shows while you drag; it is grey when an import is already running.</td><td>Mac and PC</td></tr>
   <tr><td><strong>Open a saved day…</strong></td><td>Open a day you saved before. See <a href="saving.html#open">Opening a day</a>.</td><td>Everywhere</td></tr>
 </table>
 <p>On a phone there is no folder picker; select the files, or share them from RaceChrono. See <a href="phone.html">Phones and tablets</a>.</p>
 
 <h2 id="review">Reviewing the files before importing</h2>
-<p>The import is automatic: nothing asks for your approval. To decide yourself what happens to each file, tick <strong>Review the files before importing</strong>, then choose the recordings or a folder, or drop them. The files are read, and before anything is imported <strong>Review the import</strong> lists every file found:</p>
+<p>The import is automatic: nothing asks for your approval. To decide yourself what happens to each file, tick <strong>Review the files before importing</strong> (the box or its label), then choose the recordings or a folder, or drop them. The files are read, and before anything is imported <strong>Review the import</strong> lists every file found:</p>
 <figure>
   <img src="assets/screens/import-review.png" alt="Review the import: each recording with its length and complete laps, a choice such as Same run as recording-1.vbo or Import as a new session, a hint that the GPS traces agree, and an Import button with the number of new sessions" width="1280" height="800" loading="lazy">
   <figcaption>The review, with what the automatic import would do already chosen. The files were renamed for this picture.</figcaption>
@@ -48,7 +48,8 @@
 <div class="note"><p>The day file has no place to say that two recordings are still to be combined, and when a day opens the app combines only a VBO session's RCZ by itself. So when you link any other pair (an RCZ that supplies the laps with its VBO, or two VBOs, say) and save the day while they are still being lined up, saving waits until that is done, and the file records how they are combined. Meanwhile the day cannot be left: <em>Wait until the recordings are lined up and the day is saved.</em> If lining them up fails, nothing is combined, and the session shows it as the day will show it when it opens again: an RCZ session's VBO is kept beside it and not combined (<a href="day.html#combined">Check clock</a> tries again); any other pair stays in the day file with its session but is not shown or used.</p></div>
 
 <h2 id="progress">While it imports</h2>
-<p>The page shows <em>Looking for recordings…</em>, then <em>Preparing recording X of N…</em> with a progress bar. <strong>Cancel</strong> stops at once and imports nothing. You cannot start a second import while one runs.</p>
+<p>The page shows <em>Looking for recordings…</em>, then <em>Preparing recording X of N…</em> with a progress bar. <strong>Cancel</strong> stops at once and imports nothing; the page then says <em>Import cancelled. Nothing was imported.</em> You cannot start a second import while one runs.</p>
+<p>If nothing could be imported, a panel with a red mark says why, for example <em>No recording could be imported.</em>, and suggests choosing the recordings again, or other ones. The notes under it say what was wrong with each file.</p>
 
 <h2 id="result">The result</h2>
 <p>When it is done, the page says how many sessions were imported and lists each one:</p>

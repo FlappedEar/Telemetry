@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' as math;
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
@@ -819,13 +820,20 @@ class _DayImportPageState extends State<DayImportPage> {
                 : Theme.of(context).colorScheme.primary,
           ),
         ),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ..._choices(context),
-            const SizedBox(height: 16),
-            ..._status(context),
-          ],
+        // At most 840 wide, centred: on a large screen the buttons and the
+        // sessions stay together.
+        child: LayoutBuilder(
+          builder: (context, constraints) => ListView(
+            padding: EdgeInsets.symmetric(
+              horizontal: math.max(16, (constraints.maxWidth - 840) / 2),
+              vertical: 16,
+            ),
+            children: [
+              ..._choices(context),
+              const SizedBox(height: 16),
+              ..._status(context),
+            ],
+          ),
         ),
       ),
     );
@@ -936,7 +944,7 @@ class _DayImportPageState extends State<DayImportPage> {
                   ),
                   if (_picksFolders)
                     OutlinedButton.icon(
-                      onPressed: enabled ? _pickFolder : null,
+                      onPressed: enabled && !_opening ? _pickFolder : null,
                       icon: const Icon(Icons.folder_open_outlined),
                       label: Text(context.l10n.importPageChooseFolder),
                     ),
@@ -950,33 +958,23 @@ class _DayImportPageState extends State<DayImportPage> {
                     ),
                   ),
                   if (_picksFolders)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Checkbox(
-                          value: _includeSubfolders,
-                          onChanged: enabled
-                              ? (value) => setState(
-                                  () => _includeSubfolders = value ?? false,
-                                )
-                              : null,
-                        ),
-                        Text(context.l10n.importPageIncludeSubfolders),
-                      ],
+                    _option(
+                      key: const ValueKey('includeSubfolders'),
+                      value: _includeSubfolders,
+                      label: context.l10n.importPageIncludeSubfolders,
+                      onChanged: enabled
+                          ? (value) =>
+                                setState(() => _includeSubfolders = value)
+                          : null,
                     ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Checkbox(
-                        key: const ValueKey('reviewBeforeImport'),
-                        value: _review,
-                        onChanged: enabled
-                            ? (value) =>
-                                  setState(() => _review = value ?? false)
-                            : null,
-                      ),
-                      Flexible(child: Text(context.l10n.reviewBeforeImport)),
-                    ],
+                  _option(
+                    key: const ValueKey('reviewBeforeImportOption'),
+                    checkboxKey: const ValueKey('reviewBeforeImport'),
+                    value: _review,
+                    label: context.l10n.reviewBeforeImport,
+                    onChanged: enabled
+                        ? (value) => setState(() => _review = value)
+                        : null,
                   ),
                 ],
               ),
@@ -985,6 +983,84 @@ class _DayImportPageState extends State<DayImportPage> {
         ),
       ),
     ];
+  }
+
+  /// A checkbox whose label toggles it too, and wraps in a narrow window.
+  Widget _option({
+    required Key key,
+    Key? checkboxKey,
+    required bool value,
+    required String label,
+    required ValueChanged<bool>? onChanged,
+  }) => MergeSemantics(
+    child: InkWell(
+      key: key,
+      borderRadius: BorderRadius.circular(4),
+      onTap: onChanged == null ? null : () => onChanged(!value),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Checkbox(
+              key: checkboxKey,
+              value: value,
+              onChanged: onChanged == null
+                  ? null
+                  : (checked) => onChanged(checked ?? false),
+            ),
+            Flexible(child: Text(label)),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  /// A failed or cancelled import: what happened and, for a failure, what
+  /// to do next.
+  Widget _banner(
+    BuildContext context, {
+    required Key key,
+    required IconData icon,
+    required Color color,
+    required String text,
+    String? next,
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      key: key,
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    text,
+                    style: theme.textTheme.bodyLarge?.copyWith(color: color),
+                  ),
+                  if (next != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      next,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<Widget> _status(BuildContext context) {
@@ -1020,7 +1096,10 @@ class _DayImportPageState extends State<DayImportPage> {
                   ),
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(value: total == 0 ? null : processed / total),
+          LinearProgressIndicator(
+            value: total == 0 ? null : processed / total,
+            semanticsLabel: l10n.importPageProgress,
+          ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
@@ -1033,16 +1112,28 @@ class _DayImportPageState extends State<DayImportPage> {
       case DayImportReviewing():
         return const [];
       case DayImportCancelled():
-        return [Text(l10n.importPageCancelled)];
+        return [
+          _banner(
+            context,
+            key: const ValueKey('importCancelled'),
+            icon: Icons.info_outline,
+            color: theme.colorScheme.onSurfaceVariant,
+            text: l10n.importPageCancelled,
+          ),
+        ];
       case DayImportFailed(
         :final message,
         notes: final failedNotes,
         :final reviewChanged,
       ):
         return [
-          Text(
-            reviewChanged ? l10n.reviewChanged : l10n.coreText(message),
-            style: TextStyle(color: theme.colorScheme.error),
+          _banner(
+            context,
+            key: const ValueKey('importFailed'),
+            icon: Icons.error_outline,
+            color: theme.colorScheme.error,
+            text: reviewChanged ? l10n.reviewChanged : l10n.coreText(message),
+            next: reviewChanged ? null : l10n.importPageChooseAgain,
           ),
           ...notes(failedNotes),
         ];
