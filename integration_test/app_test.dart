@@ -55,7 +55,7 @@ Future<void> clearRecovery() async {
 }
 
 /// The best lap's time on the day page, under "Best lap of the day".
-// The time is the last text on the Best day bar, after its label and the
+// The time is the last text on the best-lap bar, after its label and the
 // lap's name.
 String bestLapTime(WidgetTester tester) => tester
     .widgetList<Text>(

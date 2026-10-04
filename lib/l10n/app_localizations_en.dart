@@ -913,11 +913,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timeLossOnlySessionBest =>
-      'With one session, its best lap is the best lap itself, so there is nothing to compare. Choose Every lap to compare all the laps.';
+      'With one session, its best lap is the best lap of the day, so there is nothing to compare. Choose Every lap to compare all the laps.';
 
   @override
   String get timeLossNoOtherLap =>
-      'There is no other lap to compare with the best lap.';
+      'No other lap could be compared with the best lap.';
 
   @override
   String timeLossShowAll(int count) {

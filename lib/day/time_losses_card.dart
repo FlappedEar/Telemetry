@@ -186,7 +186,10 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
       // Nothing compared is not "no loss": say why, and what shows more.
       else if (summary.comparedLapCount == 0)
         Text(
-          _allLaps ? l10n.timeLossNoOtherLap : l10n.timeLossOnlySessionBest,
+          !_allLaps &&
+                  {for (final lap in result.laps) lap.lap.runId}.length == 1
+              ? l10n.timeLossOnlySessionBest
+              : l10n.timeLossNoOtherLap,
           key: const ValueKey('timeLossNothingCompared'),
         )
       else ...[

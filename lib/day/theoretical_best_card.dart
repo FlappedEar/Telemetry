@@ -478,6 +478,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     );
     if (corner == null || comparison == null) return row;
     return ButtonRow(
+      // The analyze button stays its own, with its own action.
+      merge: analyze == null,
       child: InkWell(
         key: ValueKey('lossRow ${corner.name}'),
         onTap: () => showCornerDetails(

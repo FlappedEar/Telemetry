@@ -1421,13 +1421,13 @@ abstract class AppLocalizations {
   /// Time losses with the Each session's best scope on a one-session day: no lap is compared.
   ///
   /// In en, this message translates to:
-  /// **'With one session, its best lap is the best lap itself, so there is nothing to compare. Choose Every lap to compare all the laps.'**
+  /// **'With one session, its best lap is the best lap of the day, so there is nothing to compare. Choose Every lap to compare all the laps.'**
   String get timeLossOnlySessionBest;
 
-  /// Time losses with Every lap when the day has only the best lap.
+  /// Time losses when no lap gave a comparison: none other, or none timed through the segments.
   ///
   /// In en, this message translates to:
-  /// **'There is no other lap to compare with the best lap.'**
+  /// **'No other lap could be compared with the best lap.'**
   String get timeLossNoOtherLap;
 
   /// Button that shows every time loss instead of the first ones.

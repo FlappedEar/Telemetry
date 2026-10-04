@@ -2462,6 +2462,8 @@ final class DayResultsController extends ChangeNotifier {
   bool retryCoach() {
     final result = _theoreticalBest;
     if (result == null || _coachLoading || _coachError.isEmpty) return false;
+    // The card shows the coach preparing, not the old failure.
+    _coachError = '';
     unawaited(_requestCoach(result, _theoreticalBestGeneration));
     return true;
   }

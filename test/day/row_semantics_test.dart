@@ -75,6 +75,15 @@ void main() {
         isSemantics(isButton: true, hasTapAction: true),
         reason: key,
       );
+      if (key == 'lossRow Corner 1') {
+        // The row's own analyze button stays a separate button: a
+        // double-tap on it opens the analyzer, not the corner details.
+        final analyze = find.byKey(const ValueKey('lossAnalyze Corner 1'));
+        expect(analyze, findsOneWidget);
+        final node = tester.getSemantics(analyze);
+        expect(node, isSemantics(isButton: true, hasTapAction: true));
+        expect(node.id, isNot(tester.getSemantics(row).id));
+      }
     }
     handle.dispose();
   });

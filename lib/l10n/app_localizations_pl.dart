@@ -928,11 +928,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get timeLossOnlySessionBest =>
-      'Przy jednej sesji jej najlepsze okrążenie jest najlepszym okrążeniem dnia, więc nie ma czego porównać. Wybierz Każde okrążenie, aby porównać wszystkie okrążenia.';
+      'Przy jednej sesji jej najlepsze okrążenie jest najlepszym okrążeniem dnia, więc nie ma czego porównać. Wybierz Każde okrążenie, aby porównać wszystkie.';
 
   @override
   String get timeLossNoOtherLap =>
-      'Nie ma innego okrążenia do porównania z najlepszym.';
+      'Nie udało się porównać żadnego innego okrążenia z najlepszym.';
 
   @override
   String timeLossShowAll(int count) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -382,12 +383,14 @@ void main() {
   testWidgets('a coach that failed runs again from Calculate again, '
       'its failure in the app\'s language', (tester) async {
     var fail = true;
+    final release = Completer<void>();
     late DayResultsController controller;
     controller = await show(
       tester,
       locale: const Locale('pl'),
       coachRunner: (job) async {
         if (fail) throw const BackgroundTaskFailed('The work stopped.');
+        await release.future;
         return plan(controller.theoreticalBest!, controller.latestRunId);
       },
     );
@@ -403,6 +406,12 @@ void main() {
     );
     await reveal(tester, again);
     await tester.tap(again);
+    await tester.pump();
+    // While it runs again, the card no longer shows the old failure.
+    expect(controller.coachLoading, isTrue);
+    expect(controller.coachError, isEmpty);
+    expect(find.byKey(const ValueKey('coachReason')), findsNothing);
+    release.complete();
     await tester.pumpAndSettle();
     expect(controller.coachError, isEmpty);
     expect(controller.coach, isNotNull);
