@@ -58,9 +58,11 @@ gives the same file (SHA-256 `6f3c77ed…6e65`).
 These are Overlays' current behaviour, matched rather than fixed (owner
 decision "copy", 2 October 2026):
 
-- The gate-revision check is the regular expression `^gates-v1:[0-9a-f]{64}$`
-  in Qt (PCRE2), where `$` also matches before a final newline. A revision
-  followed by `\n` therefore counts as known and is hashed with the newline.
+- Gate revisions used to follow Qt's PCRE2 `$`, which also matches before a
+  final newline. Since KAN-181 (4 October 2026) both apps reject a revision
+  followed by `\n`: it is not a known revision, gives no compatibility group and
+  fails document validation. Other digest and id patterns still accept the
+  newline, as in Overlays.
 - A layout name is known when `QString::trimmed()` leaves something, it has at
   most 128 UTF-16 code units and no NUL. Qt's whitespace set (25 characters,
   listed in the vectors) is used, not Dart's `trim()`.
