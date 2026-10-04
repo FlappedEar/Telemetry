@@ -38,7 +38,12 @@ Future<void> waitFor(
   final end = DateTime.now().add(timeout);
   while (finder.evaluate().isEmpty) {
     if (DateTime.now().isAfter(end)) {
-      throw TestFailure('Timed out waiting for $finder');
+      // What the screen showed instead, for the CI log.
+      final shown = [
+        for (final element in find.byType(Text).evaluate())
+          (element.widget as Text).data ?? '',
+      ].where((text) => text.isNotEmpty).join(' | ');
+      throw TestFailure('Timed out waiting for $finder; shown: $shown');
     }
     await Future<void>.delayed(const Duration(milliseconds: 200));
     await tester.pump();
@@ -145,8 +150,14 @@ void main() {
     expect(find.textContaining('has unsaved changes'), findsNothing);
 
     await tester.tap(find.text('Open a saved day…'));
-    await waitFor(tester, find.text(name));
-    await tester.tap(find.text(name));
+    // The day's name ("Day") is also a place in the bottom bar: the one in
+    // the list of saved days.
+    final listed = find.descendant(
+      of: find.byType(SimpleDialog),
+      matching: find.text(name),
+    );
+    await waitFor(tester, listed);
+    await tester.tap(listed);
     await waitFor(tester, find.text('Best lap of the day'));
     await tester.pumpAndSettle();
     expect(bestLapTime(tester), best);

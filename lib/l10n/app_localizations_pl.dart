@@ -4930,4 +4930,13 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapsHideUnranked => 'Ukryj niesklasyfikowane okrążenia';
+
+  @override
+  String get navHome => 'Start';
+
+  @override
+  String get navLibrary => 'Biblioteka';
+
+  @override
+  String get navDay => 'Dzień';
 }

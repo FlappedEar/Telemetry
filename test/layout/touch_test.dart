@@ -197,14 +197,12 @@ void main() {
           final narrow = size.width < 900;
           await checkList(tester, inKey('dayResultsSummary'));
           if (narrow) {
-            await tester.tap(
-              find.widgetWithText(NavigationDestination, 'Laps'),
-            );
+            await tester.tap(find.byKey(const ValueKey('daySection-laps')));
             await tester.pumpAndSettle();
           }
           await checkList(tester, inKey('dayResultsLaps'));
           if (narrow) {
-            await tester.tap(find.widgetWithText(NavigationDestination, 'Day'));
+            await tester.tap(find.byKey(const ValueKey('daySection-day')));
             await tester.pumpAndSettle();
           }
           final summary = inKey('dayResultsSummary');
@@ -641,7 +639,7 @@ void main() {
       expect(find.byType(DayResultsPage), findsOneWidget);
 
       // A lap opened and closed with back: the day page is as it was.
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+      await tester.tap(find.byKey(const ValueKey('daySection-laps')));
       await tester.pumpAndSettle();
       await tester.tap(
         find
@@ -656,7 +654,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(LapPage), findsNothing);
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Day'));
+      await tester.tap(find.byKey(const ValueKey('daySection-day')));
       await tester.pumpAndSettle();
 
       // Scrolled to the end, which rebuilds the card on the way back.

@@ -170,19 +170,23 @@ void main() {
     WidgetTester tester, {
     bool? picksFolders = true,
     Locale? locale,
-  }) => tester.pumpWidget(
-    TelemetryApp(
-      locale: locale,
-      home: DayImportPage(
-        controller: controller,
-        pickers: pickers,
-        picksFolders: picksFolders,
-        recovery: recovery,
-        documents: _SavedDays(const []),
-        appender: _SyncAppender(),
+  }) async {
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: locale,
+        home: DayImportPage(
+          controller: controller,
+          pickers: pickers,
+          picksFolders: picksFolders,
+          recovery: recovery,
+          documents: _SavedDays(const []),
+          appender: _SyncAppender(),
+        ),
       ),
-    ),
-  );
+    );
+    // The places appear once the start page has been built.
+    await tester.pump();
+  }
 
   /// Lets file and isolate work run between frames until [done].
   Future<void> pumpUntil(WidgetTester tester, bool Function() done) async {
@@ -235,7 +239,7 @@ void main() {
       expect(find.text('Choose a folder…'), findsNothing);
       expect(find.text('Include subfolders'), findsNothing);
       // Sessions are imported one by one; the app makes the day.
-      expect(find.text('Import sessions'), findsOneWidget);
+      expect(find.text('Import sessions…'), findsOneWidget);
       expect(find.text('Review the files before importing'), findsNothing);
 
       await pick(tester);
@@ -395,6 +399,124 @@ void main() {
     expect(find.text('Day results'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await settleRecovery(tester);
+  });
+
+  testWidgets('Home, Library and Day are on every page, and Day shows the '
+      'day left at once', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    // The start page: the logo beside the app's name, and no day yet.
+    expect(find.byKey(const ValueKey('appLogo')), findsOneWidget);
+    expect(find.text('FlappedEar Telemetry'), findsOneWidget);
+    expect(find.byKey(const ValueKey('appPlaces')), findsOneWidget);
+    final day = find.byKey(const ValueKey('place-day'));
+    expect(
+      tester
+          .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+          .destinations
+          .last,
+      isA<NavigationDestination>().having((d) => d.enabled, 'enabled', false),
+    );
+
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    // The day page has the same places, Day chosen, and its own tabs.
+    expect(find.byKey(const ValueKey('appPlaces')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daySection-laps')), findsOneWidget);
+    final shown = tester
+        .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+        .selectedIndex;
+    expect(shown, 1);
+
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
+    );
+    expect(find.byType(DayResultsPage), findsNothing);
+
+    // Back to the same day, without opening it again.
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    expect(importer.jobs, hasLength(1));
+    // Its laps tab, then Home and back: the day is still the one shown.
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsLaps')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('openLastDay')));
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
+  testWidgets('Day tapped while the day is still leaving keeps it working', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    // Back to Day before the day page has finished closing.
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    // Still the live day: the next session is added to it and said.
+    pickers.recordings = [write('b.vbo', _datedVbo(hour: 11, speed: 80))];
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Import sessions…'));
+    await pumpUntil(
+      tester,
+      () => find.text('Session 2 added to the day.').evaluate().isNotEmpty,
+    );
+    expect(importer.jobs, hasLength(1));
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
+  testWidgets('the places do nothing while a dialog is open', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(DayResultsPage), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
+  testWidgets('a wide window has the places in a side rail', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await show(tester);
+    expect(
+      tester.widget(find.byKey(const ValueKey('appPlaces'))),
+      isA<NavigationRail>(),
+    );
   });
 
   testWidgets('a saved day closed here takes the next session', (tester) async {
@@ -962,8 +1084,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(800, 2000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await show(tester, locale: const Locale('pl'));
-    expect(find.text('Importuj sesje'), findsOneWidget);
-    expect(find.text('Import sessions'), findsNothing);
+    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Import sessions…'), findsNothing);
     expect(find.text('Importuj sesje…'), findsOneWidget);
 
     await pick(tester, button: 'Importuj sesje…');
@@ -1150,6 +1272,8 @@ void main() {
   testWidgets('a recording that cannot be read says why in Polish', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     pickers.recordings = [write('broken.vbo', 'not telemetry')];
     await show(tester, locale: const Locale('pl'));
     await pick(tester, button: 'Importuj sesje…');
@@ -1178,7 +1302,9 @@ void main() {
     await show(tester);
     final card = tester.getRect(find.byKey(const ValueKey('importChoices')));
     expect(card.width, 840);
-    expect(card.center.dx, closeTo(960, 1));
+    // Centred in what the side rail leaves.
+    final rail = tester.getRect(find.byKey(const ValueKey('appPlaces'))).width;
+    expect(card.center.dx, closeTo((1920 + rail + 1) / 2, 1));
   });
 
   testWidgets('the import progress is labelled for a screen reader', (

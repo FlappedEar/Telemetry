@@ -1187,5 +1187,8 @@
   "libraryDefaultCar": "Mój samochód",
   "libraryDefaultTrack": "Tor {number}",
   "lapsShowUnranked": "{count, plural, =1{Pokaż 1 niesklasyfikowane okrążenie} few{Pokaż {count} niesklasyfikowane okrążenia} other{Pokaż {count} niesklasyfikowanych okrążeń}}",
-  "lapsHideUnranked": "Ukryj niesklasyfikowane okrążenia"
+  "lapsHideUnranked": "Ukryj niesklasyfikowane okrążenia",
+  "navHome": "Start",
+  "navLibrary": "Biblioteka",
+  "navDay": "Dzień"
 }

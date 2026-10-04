@@ -82,6 +82,8 @@ flutter:
   assets:
     - assets/fonts/OFL-Sora.txt
     - assets/fonts/OFL-JetBrainsMono.txt
+    # The logo beside the app's name on the start page.
+    - assets/branding/splash-logo.png
 
   # Sora and JetBrains Mono, SIL Open Font License 1.1: assets/fonts/OFL-*.txt.
   fonts:

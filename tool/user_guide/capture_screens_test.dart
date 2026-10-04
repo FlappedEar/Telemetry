@@ -309,13 +309,21 @@ void main() {
       library: _library('${directory.path}/Profile'),
     );
     await tester.pumpWidget(app(page));
+    // The logo is read from the app's assets before the first picture.
+    await tester.runAsync(
+      () => precacheImage(
+        const AssetImage('assets/branding/splash-logo.png'),
+        tester.element(find.byType(DayImportPage)),
+      ),
+    );
+    await tester.pumpAndSettle();
     await shot(tester, 'import-empty');
     await importDayFrom(tester, page);
     await savedIn(tester, '${directory.path}/Profile');
     await backToImport(tester);
     await shot(tester, 'import-done');
     // The library, with the day just imported in it.
-    await tester.tap(find.byKey(const ValueKey('openLibrary')));
+    await tester.tap(find.byKey(const ValueKey('place-library')));
     await tester.pumpAndSettle();
     await shot(tester, 'library');
     await tester.pageBack();
@@ -654,7 +662,7 @@ void main() {
     debugDisableShadows = false;
     await showDay(tester, _phone, 2);
     await shot(tester, 'phone-results');
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-laps');
     final best = find.descendant(
@@ -673,7 +681,7 @@ void main() {
     await shot(tester, 'phone-lap-charts');
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Compare'));
+    await tester.tap(find.byKey(const ValueKey('daySection-compare')));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-compare');
     debugDisableShadows = true;

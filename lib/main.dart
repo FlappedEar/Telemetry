@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app/app_navigation.dart';
 import 'diagnostics/app_errors.dart';
 import 'import/day_import_page.dart';
 import 'l10n.dart';
@@ -55,11 +56,19 @@ class TelemetryApp extends StatelessWidget {
     return MaterialApp(
       // Unexpected errors say so from any page (installErrorHandlers).
       scaffoldMessengerKey: appMessengerKey,
+      // The places (Home, Library, Day) are drawn around every page.
+      navigatorKey: appNavigatorKey,
+      navigatorObservers: [appNavigation.observer],
       // Every speed label follows the setting at once. Dates
       // formatted without a context follow the app's language.
       builder: (context, child) {
         useFormattingLocale(Localizations.localeOf(context));
-        return SpeedUnitScope(child: child ?? const SizedBox.shrink());
+        return SpeedUnitScope(
+          child: AppFrame(
+            navigation: appNavigation,
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
       },
       // The name is the same in every language.
       title: 'FlappedEar Telemetry',

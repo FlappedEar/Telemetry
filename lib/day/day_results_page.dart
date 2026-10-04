@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../app/app_navigation.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
@@ -60,6 +61,7 @@ class DayResultsPage extends StatefulWidget {
     this.library,
   }) : replace = null,
        startNewDay = null,
+       disposesController = null,
        _create = (() => DayResultsController(
          runs: runs,
          analysis: analysis,
@@ -76,6 +78,7 @@ class DayResultsPage extends StatefulWidget {
     this.library,
   }) : replace = null,
        startNewDay = null,
+       disposesController = null,
        _create = (() => DayResultsController.opened(day, recovery: recovery));
 
   /// A day held by [controller], which the page then owns. With [replace],
@@ -91,6 +94,7 @@ class DayResultsPage extends StatefulWidget {
     this.replace,
     this.startNewDay,
     this.library,
+    this.disposesController,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
@@ -115,8 +119,24 @@ class DayResultsPage extends StatefulWidget {
   /// it started; only then does this page close. Not offered when null.
   final bool Function(List<String> paths, ImportChoices choices)? startNewDay;
 
+  /// Asked as the page closes whether it disposes its day; null always
+  /// does. The start page keeps a day left for another place.
+  final ValueGetter<bool>? disposesController;
+
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
+}
+
+/// The addition each day said last, so a day shown again on a new page
+/// does not say it again.
+final _reportedAdditions = Expando<DayAddition>();
+
+/// Treats [day]'s last addition as said, such as recordings it refused
+/// while not shown.
+void markAdditionReported(DayResultsController day) {
+  if (day.lastAddition case final addition?) {
+    _reportedAdditions[day] = addition;
+  }
 }
 
 class _DayResultsPageState extends State<DayResultsPage> {
@@ -135,8 +155,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
   DayLapReference? _mapReference;
   LapPath? _mapPath;
   (Offset, Offset)? _mapGate;
-
-  DayAddition? _reported;
 
   // Writes waiting changes for recovery when the app goes to the background
   // or is closed, where the operating system may end it without warning.
@@ -182,7 +200,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _autosave?.cancel();
     _lifecycle.dispose();
     _summaryScroll.dispose();
-    _controller.dispose();
+    if (widget.disposesController?.call() ?? true) _controller.dispose();
     super.dispose();
   }
 
@@ -190,8 +208,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// recording shared to the app while the day is open.
   void _reportAddition() {
     final addition = _controller.lastAddition;
-    if (addition == null || identical(addition, _reported) || !mounted) return;
-    _reported = addition;
+    if (addition == null ||
+        identical(addition, _reportedAdditions[_controller]) ||
+        !mounted) {
+      return;
+    }
+    _reportedAdditions[_controller] = addition;
     final l10n = context.l10n;
     final added = addition.added;
     final lines = [
@@ -792,7 +814,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   /// Two panes and a side rail from this width; below it the summary, the
   /// laps and Compare are sections of a bottom bar.
-  static const _twoPaneWidth = 900.0;
+  static const _twoPaneWidth = AppFrame.wideWidth;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -834,30 +856,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tab moves through one pane at a time, not across the three by
-        // position.
-        FocusTraversalGroup(
-          child: NavigationRail(
-            key: const ValueKey('daySections'),
-            selectedIndex: comparing ? 1 : 0,
-            labelType: NavigationRailLabelType.all,
-            onDestinationSelected: (index) => setState(
-              () => _section = index == 1 ? _Section.compare : _Section.day,
-            ),
-            destinations: [
-              NavigationRailDestination(
-                icon: const Icon(Icons.flag_outlined),
-                selectedIcon: const Icon(Icons.flag),
-                label: Text(context.l10n.daySectionDay),
-              ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.compare_arrows),
-                label: Text(context.l10n.daySectionCompare),
-              ),
-            ],
-          ),
-        ),
-        const VerticalDivider(width: 1),
         if (comparing)
           Expanded(
             child: Align(
@@ -916,7 +914,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   Widget _page(BuildContext context, double width) {
-    final wide = width >= _twoPaneWidth;
+    // The window's width, not the page's: the two panes come with the
+    // app's side rail, from the same width.
+    final wide = (AppFrame.widthOf(context) ?? width) >= _twoPaneWidth;
     // The trace keeps a similar shape from a small phone to a tablet in
     // portrait: about 0.6 of the card's width.
     final mapHeight = wide ? 360.0 : ((width - 64) * 0.6).clamp(200.0, 420.0);
@@ -924,6 +924,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final compact = width < 600;
     final scaffold = Scaffold(
       appBar: AppBar(
+        bottom: _SectionTabs(
+          key: const ValueKey('daySections'),
+          sections: [
+            (_Section.day, context.l10n.daySectionDay),
+            if (!wide) (_Section.laps, context.l10n.daySectionLaps),
+            (_Section.compare, context.l10n.daySectionCompare),
+          ],
+          // On a wide screen the laps are beside the summary.
+          selected: wide && _section == _Section.laps ? _Section.day : _section,
+          onSelected: (section) => setState(() => _section = section),
+        ),
         title: ListenableBuilder(
           listenable: _controller,
           builder: (context, _) => Text(
@@ -1016,29 +1027,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
         ],
       ),
-      bottomNavigationBar: wide
-          ? null
-          : NavigationBar(
-              key: const ValueKey('daySections'),
-              selectedIndex: _section.index,
-              onDestinationSelected: (index) =>
-                  setState(() => _section = _Section.values[index]),
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.flag_outlined),
-                  selectedIcon: const Icon(Icons.flag),
-                  label: context.l10n.daySectionDay,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.format_list_numbered),
-                  label: context.l10n.daySectionLaps,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.compare_arrows),
-                  label: context.l10n.daySectionCompare,
-                ),
-              ],
-            ),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) => Column(
@@ -1890,6 +1878,72 @@ class _DayResultsPageState extends State<DayResultsPage> {
 }
 
 enum _Section { day, laps, compare }
+
+/// The day's sections as tabs under its title, the same on a phone and a
+/// wide screen; the app's places stay in the bar or rail around the page.
+class _SectionTabs extends StatelessWidget implements PreferredSizeWidget {
+  const _SectionTabs({
+    super.key,
+    required this.sections,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<(_Section, String)> sections;
+  final _Section selected;
+  final ValueChanged<_Section> onSelected;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kMinInteractiveDimension);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            for (final (section, label) in sections)
+              Semantics(
+                selected: section == selected,
+                button: true,
+                child: InkWell(
+                  key: ValueKey('daySection-${section.name}'),
+                  onTap: () => onSelected(section),
+                  child: Container(
+                    height: kMinInteractiveDimension,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          width: 2,
+                          color: section == selected
+                              ? theme.colorScheme.primary
+                              : Colors.transparent,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: section == selected
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// The day saved at [path] opened again, as [DayResultsPage]'s "Retry
 /// recordings" runs it in the background: top-level, so that nothing of

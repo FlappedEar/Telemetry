@@ -4816,4 +4816,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapsHideUnranked => 'Hide laps not ranked';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navLibrary => 'Library';
+
+  @override
+  String get navDay => 'Day';
 }
