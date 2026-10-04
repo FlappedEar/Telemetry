@@ -309,6 +309,14 @@ void main() {
       library: _library('${directory.path}/Profile'),
     );
     await tester.pumpWidget(app(page));
+    // The logo is read from the app's assets before the first picture.
+    await tester.runAsync(
+      () => precacheImage(
+        const AssetImage('assets/branding/splash-logo.png'),
+        tester.element(find.byType(DayImportPage)),
+      ),
+    );
+    await tester.pumpAndSettle();
     await shot(tester, 'import-empty');
     await importDayFrom(tester, page);
     await savedIn(tester, '${directory.path}/Profile');

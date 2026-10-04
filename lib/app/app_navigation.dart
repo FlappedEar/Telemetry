@@ -236,27 +236,21 @@ class AppTitle extends StatelessWidget {
     children: [
       // The ears and the two laps; the name beside it is the label.
       ExcludeSemantics(
-        child: SizedBox.square(
-          dimension: 40,
-          // The logo fills about the middle half of its picture.
-          child: ClipRect(
-            child: OverflowBox(
-              maxWidth: 72,
-              maxHeight: 72,
-              child: Image.asset(
-                'assets/branding/splash-logo.png',
-                key: const ValueKey('appLogo'),
-                width: 72,
-                height: 72,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
+        child: Image.asset(
+          'assets/branding/splash-logo.png',
+          key: const ValueKey('appLogo'),
+          width: 48,
+          height: 48,
+          errorBuilder: (_, _, _) => const SizedBox.square(dimension: 48),
         ),
       ),
-      const SizedBox(width: 8),
+      const SizedBox(width: 4),
+      // A phone's bar keeps the whole name, smaller if need be.
       Flexible(
-        child: Text(context.l10n.appTitle, overflow: TextOverflow.ellipsis),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(context.l10n.appTitle),
+        ),
       ),
     ],
   );
