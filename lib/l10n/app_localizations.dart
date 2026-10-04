@@ -6380,6 +6380,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish the current import first. Nothing was imported.'**
   String get importBusy;
+
+  /// A VBO recording could not be opened; the system's reason follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open VBO: {detail}'**
+  String coreVboOpenFailed(String detail);
+
+  /// A VBO recording could not be read; the system's reason follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read VBO: {detail}'**
+  String coreVboReadFailed(String detail);
+
+  /// A VBO recording is damaged or has a structure the app cannot read. The detail is the reader's own technical English text, kept as written; in English it is the whole message.
+  ///
+  /// In en, this message translates to:
+  /// **'{detail}'**
+  String coreVboUnreadable(String detail);
+
+  /// A VBO recording holds no data. '[data]' is the file's section name, not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO has no [data] rows.'**
+  String get coreVboNoData;
+
+  /// No data row of a VBO recording has a usable time.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains no valid timestamped data rows.'**
+  String get coreVboNoValidRows;
+
+  /// A VBO recording is too large to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO exceeds the supported 128 MiB file size limit.'**
+  String get coreVboFileSize;
+
+  /// A VBO recording's text is too complex to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO text exceeds the supported complexity limit.'**
+  String get coreVboComplexity;
+
+  /// A VBO recording holds too many values to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO has more values (rows x columns) than the supported 40 million.'**
+  String get coreVboTooManyValues;
+
+  /// A line of a VBO recording is too long to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains a line longer than the supported 1 MiB limit.'**
+  String get coreVboLongLine;
+
+  /// A VBO recording has too many lines to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains too many lines.'**
+  String get coreVboTooManyLines;
+
+  /// A section name of a VBO recording is too long.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains a section name longer than the supported 256 characters.'**
+  String get coreVboLongSectionName;
+
+  /// A VBO recording has too many data rows to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains too many data rows.'**
+  String get coreVboTooManyRows;
+
+  /// A VBO recording's header is too large to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO header metadata exceeds the supported size.'**
+  String get coreVboHeaderSize;
+
+  /// A VBO recording has too many columns to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains too many columns.'**
+  String get coreVboTooManyColumns;
+
+  /// A field of a VBO recording is too long to read.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO contains a field longer than the supported 64 KiB limit.'**
+  String get coreVboLongField;
+
+  /// A RaceChrono RCZ recording is damaged or has a structure the app cannot read. The detail is the reader's own technical English text, kept as written.
+  ///
+  /// In en, this message translates to:
+  /// **'RCZ: {detail}'**
+  String coreRczUnreadable(String detail);
+
+  /// After 'RCZ: ': a file the RCZ archive must hold is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing {name}.'**
+  String coreRczMissing(String name);
+
+  /// After 'RCZ: ': a file inside the RCZ archive is too large.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} exceeds its size limit.'**
+  String coreRczMemberTooLarge(String name);
+
+  /// After 'RCZ: ': the RCZ file is too small or too large.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive size is unsupported.'**
+  String get coreRczArchiveSize;
+
+  /// After 'RCZ: ': the RCZ archive is of a kind the app cannot read.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported ZIP64, split archive or directory limits.'**
+  String get coreRczZip64;
+
+  /// After 'RCZ: ': the RCZ archive holds a symbolic link.
+  ///
+  /// In en, this message translates to:
+  /// **'Symbolic links are unsupported.'**
+  String get coreRczSymlinks;
+
+  /// After 'RCZ: ': the RCZ archive repeats a file or holds too much.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate member or archive resource limit exceeded.'**
+  String get coreRczDuplicateMember;
+
+  /// After 'RCZ: ': the RCZ file ends early, for example an unfinished copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Truncated archive.'**
+  String get coreRczTruncated;
+
+  /// After 'RCZ: ': the recording's metadata is too deep or a text in it too long.
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata nesting/string limit exceeded.'**
+  String get coreRczMetadataNesting;
+
+  /// After 'RCZ: ': a list in the recording's metadata is too long.
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata array limit exceeded.'**
+  String get coreRczMetadataArray;
+
+  /// After 'RCZ: ': an object in the recording's metadata has too many fields.
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata object limit exceeded.'**
+  String get coreRczMetadataObject;
+
+  /// After 'RCZ: ': the RCZ holds several sessions or a resumed one; the user should export one session.
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-session or resumed archives are not supported; share one uninterrupted session.'**
+  String get coreRczMultiSession;
+
+  /// After 'RCZ: ': the RCZ session was written by a version the app cannot read.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported session version.'**
+  String get coreRczSessionVersion;
+
+  /// After 'RCZ: ': the RCZ session was paused and resumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Resumed sessions are not supported yet.'**
+  String get coreRczResumed;
+
+  /// After 'RCZ: ': the RCZ has more than one position channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple position channels are unsupported.'**
+  String get coreRczMultiplePositions;
+
+  /// After 'RCZ: ': the RCZ has a channel from more than one source. The channel name is the app's own, not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple sources for {channel} are unsupported.'**
+  String coreRczMultipleSources(String channel);
+
+  /// After 'RCZ: ': GPS channels the RCZ declares are not in it.
+  ///
+  /// In en, this message translates to:
+  /// **'Declared GPS channels are missing.'**
+  String get coreRczGpsMissing;
+
+  /// After 'RCZ: ': the RCZ's times go backwards or span more than 24 hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Timestamp channel is nonmonotonic or outside the supported 24-hour session.'**
+  String get coreRczTimestamps;
+
+  /// After 'RCZ: ': the RCZ holds too many channels or samples.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded channel/sample budget exceeded.'**
+  String get coreRczChannelBudget;
+
+  /// After 'RCZ: ': the RCZ holds too many gaps or samples.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded gap/sample budget exceeded.'**
+  String get coreRczGapBudget;
+
+  /// After 'RCZ: ': the RCZ's track has too many timing gates.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many timing gates.'**
+  String get coreRczTooManyGates;
+
+  /// After 'RCZ: ': a timing gate of the RCZ's track is invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid timing gate coordinates or geometry.'**
+  String get coreRczInvalidGate;
+
+  /// After 'RCZ: ': an end of a timing gate of the RCZ's track is invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid timing gate endpoint.'**
+  String get coreRczInvalidGateEndpoint;
+
+  /// A recording is empty or too large to check its content.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry file exceeds the content identity size limit.'**
+  String get coreSourceIdentitySize;
+
+  /// A recording could not be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot read telemetry source.'**
+  String get coreSourceCannotRead;
+
+  /// A recording changed while it was read, for example while still being copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source changed while reading; retry with a stable file.'**
+  String get coreSourceChangedWhileReading;
+
+  /// A recording could not be read to its end.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry source read failed or was truncated.'**
+  String get coreSourceReadFailed;
+
+  /// A day holds more recordings than the app supports.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many recordings in this day.'**
+  String get coreDayTooManyRecordings;
+
+  /// A day holds more lap sections (laps, out-laps and in-laps) than the app supports.
+  ///
+  /// In en, this message translates to:
+  /// **'This day exceeds the 20,000 lap-section limit.'**
+  String get coreDayLapSectionLimit;
+
+  /// A day has too many laps to recognise its track layout.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many lap traces for route inference.'**
+  String get coreRouteTooManyTraces;
+
+  /// A day has too many sessions to group them by track layout.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many runs for route grouping.'**
+  String get coreRouteTooManyRuns;
+
+  /// A day is too large to show progress across its sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many runs or lap sections for progression.'**
+  String get coreProgressionTooMany;
+
+  /// A session's recording has more lap sections than the app supports.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many lap sections in this recording.'**
+  String get coreRecordingTooManyLapSections;
+
+  /// A day has more lap sections than the app supports.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many lap sections in this day.'**
+  String get coreDayTooManyLapSections;
+
+  /// A day is too large to rank its laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many laps or exclusions to rank this day.'**
+  String get coreRankingTooMany;
+
+  /// A session's recording crosses the start/finish line too many times.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap detector produced too many accepted passes.'**
+  String get coreTooManyPasses;
+
+  /// A session's laps hold too many GPS points.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap traces contain too many GPS points.'**
+  String get coreTooManyGpsPoints;
+
+  /// After a recording's name: adding it to a day did nothing, the day already has it.
+  ///
+  /// In en, this message translates to:
+  /// **'already in this day.'**
+  String get additionAlreadyInDay;
+
+  /// After a recording's name, when adding to a day: it is the other format (VBO or RCZ) of a session of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'the same drive as {session} in the other format; kept as its alternative source.'**
+  String additionSameDriveKept(String session);
+
+  /// After a recording's name, when adding to a day: it is the other format (VBO or RCZ) of a session of the day, which already has one.
+  ///
+  /// In en, this message translates to:
+  /// **'the same drive as {session} in the other format; not added again.'**
+  String additionSameDriveNotAdded(String session);
 }
 
 class _AppLocalizationsDelegate

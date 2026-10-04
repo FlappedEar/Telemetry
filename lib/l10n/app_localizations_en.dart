@@ -4218,4 +4218,211 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get importBusy =>
       'Finish the current import first. Nothing was imported.';
+
+  @override
+  String coreVboOpenFailed(String detail) {
+    return 'Could not open VBO: $detail';
+  }
+
+  @override
+  String coreVboReadFailed(String detail) {
+    return 'Could not read VBO: $detail';
+  }
+
+  @override
+  String coreVboUnreadable(String detail) {
+    return '$detail';
+  }
+
+  @override
+  String get coreVboNoData => 'VBO has no [data] rows.';
+
+  @override
+  String get coreVboNoValidRows =>
+      'VBO contains no valid timestamped data rows.';
+
+  @override
+  String get coreVboFileSize =>
+      'VBO exceeds the supported 128 MiB file size limit.';
+
+  @override
+  String get coreVboComplexity =>
+      'VBO text exceeds the supported complexity limit.';
+
+  @override
+  String get coreVboTooManyValues =>
+      'VBO has more values (rows x columns) than the supported 40 million.';
+
+  @override
+  String get coreVboLongLine =>
+      'VBO contains a line longer than the supported 1 MiB limit.';
+
+  @override
+  String get coreVboTooManyLines => 'VBO contains too many lines.';
+
+  @override
+  String get coreVboLongSectionName =>
+      'VBO contains a section name longer than the supported 256 characters.';
+
+  @override
+  String get coreVboTooManyRows => 'VBO contains too many data rows.';
+
+  @override
+  String get coreVboHeaderSize =>
+      'VBO header metadata exceeds the supported size.';
+
+  @override
+  String get coreVboTooManyColumns => 'VBO contains too many columns.';
+
+  @override
+  String get coreVboLongField =>
+      'VBO contains a field longer than the supported 64 KiB limit.';
+
+  @override
+  String coreRczUnreadable(String detail) {
+    return 'RCZ: $detail';
+  }
+
+  @override
+  String coreRczMissing(String name) {
+    return 'Missing $name.';
+  }
+
+  @override
+  String coreRczMemberTooLarge(String name) {
+    return '$name exceeds its size limit.';
+  }
+
+  @override
+  String get coreRczArchiveSize => 'Archive size is unsupported.';
+
+  @override
+  String get coreRczZip64 =>
+      'Unsupported ZIP64, split archive or directory limits.';
+
+  @override
+  String get coreRczSymlinks => 'Symbolic links are unsupported.';
+
+  @override
+  String get coreRczDuplicateMember =>
+      'Duplicate member or archive resource limit exceeded.';
+
+  @override
+  String get coreRczTruncated => 'Truncated archive.';
+
+  @override
+  String get coreRczMetadataNesting =>
+      'Metadata nesting/string limit exceeded.';
+
+  @override
+  String get coreRczMetadataArray => 'Metadata array limit exceeded.';
+
+  @override
+  String get coreRczMetadataObject => 'Metadata object limit exceeded.';
+
+  @override
+  String get coreRczMultiSession =>
+      'Multi-session or resumed archives are not supported; share one uninterrupted session.';
+
+  @override
+  String get coreRczSessionVersion => 'Unsupported session version.';
+
+  @override
+  String get coreRczResumed => 'Resumed sessions are not supported yet.';
+
+  @override
+  String get coreRczMultiplePositions =>
+      'Multiple position channels are unsupported.';
+
+  @override
+  String coreRczMultipleSources(String channel) {
+    return 'Multiple sources for $channel are unsupported.';
+  }
+
+  @override
+  String get coreRczGpsMissing => 'Declared GPS channels are missing.';
+
+  @override
+  String get coreRczTimestamps =>
+      'Timestamp channel is nonmonotonic or outside the supported 24-hour session.';
+
+  @override
+  String get coreRczChannelBudget => 'Decoded channel/sample budget exceeded.';
+
+  @override
+  String get coreRczGapBudget => 'Decoded gap/sample budget exceeded.';
+
+  @override
+  String get coreRczTooManyGates => 'Too many timing gates.';
+
+  @override
+  String get coreRczInvalidGate =>
+      'Invalid timing gate coordinates or geometry.';
+
+  @override
+  String get coreRczInvalidGateEndpoint => 'Invalid timing gate endpoint.';
+
+  @override
+  String get coreSourceIdentitySize =>
+      'Telemetry file exceeds the content identity size limit.';
+
+  @override
+  String get coreSourceCannotRead => 'Cannot read telemetry source.';
+
+  @override
+  String get coreSourceChangedWhileReading =>
+      'Telemetry source changed while reading; retry with a stable file.';
+
+  @override
+  String get coreSourceReadFailed =>
+      'Telemetry source read failed or was truncated.';
+
+  @override
+  String get coreDayTooManyRecordings => 'Too many recordings in this day.';
+
+  @override
+  String get coreDayLapSectionLimit =>
+      'This day exceeds the 20,000 lap-section limit.';
+
+  @override
+  String get coreRouteTooManyTraces =>
+      'Too many lap traces for route inference.';
+
+  @override
+  String get coreRouteTooManyRuns => 'Too many runs for route grouping.';
+
+  @override
+  String get coreProgressionTooMany =>
+      'Too many runs or lap sections for progression.';
+
+  @override
+  String get coreRecordingTooManyLapSections =>
+      'Too many lap sections in this recording.';
+
+  @override
+  String get coreDayTooManyLapSections => 'Too many lap sections in this day.';
+
+  @override
+  String get coreRankingTooMany =>
+      'Too many laps or exclusions to rank this day.';
+
+  @override
+  String get coreTooManyPasses =>
+      'Lap detector produced too many accepted passes.';
+
+  @override
+  String get coreTooManyGpsPoints => 'Lap traces contain too many GPS points.';
+
+  @override
+  String get additionAlreadyInDay => 'already in this day.';
+
+  @override
+  String additionSameDriveKept(String session) {
+    return 'the same drive as $session in the other format; kept as its alternative source.';
+  }
+
+  @override
+  String additionSameDriveNotAdded(String session) {
+    return 'the same drive as $session in the other format; not added again.';
+  }
 }

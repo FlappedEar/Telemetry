@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/l10n.dart';
 
 /// [path]'s source with adjacent string literals joined, so a text split
@@ -181,24 +180,30 @@ void main() {
       final shown = sample.isEmpty
           ? literal.substring(1, literal.length - 1)
           : sample;
-      expect(english.importMessage(shown), shown);
-      expect(polish.importMessage(shown), isNot(shown), reason: shown);
+      expect(english.coreText(shown), shown);
+      expect(polish.coreText(shown), isNot(shown), reason: shown);
     }
     expect(
-      polish.importMessage('The import failed: Import failed.'),
+      polish.coreText('The import failed: Import failed.'),
       'Import nie powiódł się: Import nie powiódł się.',
     );
     expect(
-      polish.importMessage('a: b.vbo: not found; not imported.'),
+      polish.coreText('a: b.vbo: not found; not imported.'),
       'a: b.vbo: nie znaleziono; nie zaimportowano.',
     );
-    // Adding to a day words it apart; not half translated.
+    // Adding to a day words it apart, with the session's name translated;
+    // not half translated as an import's note.
     const appended =
         'a.rcz: the same drive as Session 2 in the other format; kept as its '
         'alternative source.';
-    expect(polish.importMessage(appended), appended);
+    expect(english.coreText(appended), appended);
     expect(
-      polish.importMessage('broken.vbo: Unsupported format'),
+      polish.coreText(appended),
+      'a.rcz: ten sam przejazd co Sesja 2 w drugim formacie; zachowano jako '
+      'jego alternatywne źródło.',
+    );
+    expect(
+      polish.coreText('broken.vbo: Unsupported format'),
       'broken.vbo: Unsupported format',
     );
   });

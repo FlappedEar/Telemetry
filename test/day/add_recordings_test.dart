@@ -589,6 +589,38 @@ void main() {
     expect(controller.runs, hasLength(2));
   });
 
+  testWidgets('the notes of an addition speak Polish', (tester) async {
+    final a = write('a.vbo', [30, 28, 31]);
+    final copy = write('copy.vbo', [30, 28, 31]);
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      appender: _SyncAppender(),
+    );
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: FakeDocuments(),
+          pickers: _FakePickers([copy]),
+        ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const ValueKey('addRecordings')));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Nic nie dodano.\ncopy.vbo: już jest w tym dniu.'),
+      findsOneWidget,
+    );
+  });
+
   for (final (name, size) in [
     ('phone', const Size(412, 915)),
     ('wide window', const Size(1280, 800)),

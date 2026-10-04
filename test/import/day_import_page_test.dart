@@ -893,6 +893,35 @@ void main() {
     expect(find.textContaining('broken.vbo: '), findsOneWidget);
   });
 
+  testWidgets('a recording that cannot be read says why in Polish', (
+    tester,
+  ) async {
+    pickers.recordings = [write('broken.vbo', 'not telemetry')];
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayImportPage(controller: controller, pickers: pickers),
+      ),
+    );
+    await tester.tap(find.text('Wybierz nagrania…'));
+    await tester.pump();
+    importer.jobs.single.finish();
+    await tester.pump();
+    expect(
+      find.text('Nie udało się zaimportować żadnego nagrania.'),
+      findsOneWidget,
+    );
+    // telemetry_core's English detail of a damaged file is kept after the
+    // Polish sentence.
+    expect(
+      find.text(
+        'broken.vbo: Nie można odczytać pliku VBO: VBO has no [column names] '
+        'section.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   test('times read like the rest of the app', () {
     expect(displayTime(28.662), '28.662 s');
     expect(displayTime(109.898), '1:49.898');
