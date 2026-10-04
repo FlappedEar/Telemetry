@@ -421,7 +421,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(Dialog),
-        matching: find.text('Tor: Sesja 1'),
+        matching: find.text('Sesja 1'),
       ),
       findsOneWidget,
     );
