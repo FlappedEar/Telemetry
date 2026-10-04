@@ -111,6 +111,42 @@ void main() {
       expect(kept.single.readAsStringSync(), '{broken');
     });
 
+    test(
+      'keeps a newer version\'s profile as it is, without a library',
+      () async {
+        Directory(profileFolder()).createSync();
+        const newer = '{"format":"flappedear-driver-profile","version":99}';
+        final file = File(p.join(profileFolder(), profileFileName))
+          ..writeAsStringSync(newer);
+        final shelf = library();
+        await shelf.load();
+        expect(shelf.available, isFalse);
+        expect(await shelf.dayPath('e1'), isNull);
+        expect(file.readAsStringSync(), newer);
+        expect(Directory(profileFolder()).listSync(), hasLength(1));
+      },
+    );
+
+    test('lists the days in its folder that the profile does not', () async {
+      final days = Directory(p.join(profileFolder(), 'Days'))
+        ..createSync(recursive: true);
+      File(p.join(days.path, 'old.fetproject')).writeAsStringSync(
+        jsonEncode({
+          'event': {'id': 'old', 'name': 'Old day'},
+        }),
+      );
+      File(p.join(days.path, 'broken.fetproject')).writeAsStringSync('{');
+      final shelf = library();
+      await shelf.load();
+      await shelf.flush();
+      final read = decodeDriverProfile(
+        File(p.join(profileFolder(), profileFileName)).readAsStringSync(),
+      );
+      expect(read.days.single.eventId, 'old');
+      expect(read.days.single.name, 'Old day');
+      expect(read.days.single.file, 'Days/old.fetproject');
+    });
+
     test('without a folder there is no library', () async {
       final shelf = ProfileLibrary(
         store: const _NoFolder(),
@@ -181,6 +217,95 @@ void main() {
       // Export is offered on desktop, where Overlays runs.
       variant: TargetPlatformVariant.only(TargetPlatform.macOS),
     );
+
+    testWidgets('never exports over a day in the library', (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      await shelf.load();
+      final other = p.join(profileFolder(), 'Days', 'other.fetproject');
+      File(other)
+        ..createSync(recursive: true)
+        ..writeAsStringSync('kept');
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: writer,
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(location: other),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('moreMenu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Export for Overlays…'));
+      await tester.pumpAndSettle();
+      expect(File(other).readAsStringSync(), 'kept');
+      expect(
+        find.text('Not exported: choose a place outside the library.'),
+        findsOneWidget,
+      );
+      await shelf.flush();
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('going back during the first save waits for it and records '
+        'the day', (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      await shelf.load();
+      final gate = Completer<void>();
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: (path, document) async {
+          await gate.future;
+          await writer(path, document);
+        },
+      );
+      await tester.pumpWidget(
+        TelemetryApp(home: const Scaffold(body: Text('home'))),
+      );
+      unawaited(
+        Navigator.of(tester.element(find.text('home'))).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DayResultsPage.controller(
+              controller: controller,
+              documents: FakeDocuments(),
+              library: shelf,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(controller.saving, isTrue);
+      await tester.binding.handlePopRoute();
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('home'), findsNothing, reason: 'waits for the save');
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+      await shelf.flush();
+      expect(shelf.profile!.days.single.eventId, controller.eventId);
+      expect(
+        File(
+          p.join(profileFolder(), 'Days', '${controller.eventId}.fetproject'),
+        ).existsSync(),
+        isTrue,
+      );
+    });
 
     testWidgets('saves a change by itself once the day is left alone', (
       tester,

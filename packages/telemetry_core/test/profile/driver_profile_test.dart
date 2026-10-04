@@ -371,6 +371,10 @@ void main() {
       test('a newer or missing version', () {
         valid['version'] = 2;
         rejected(jsonEncode(valid), 'newer version');
+        expect(
+          () => decodeDriverProfile(jsonEncode(valid)),
+          throwsA(isA<ProfileFormatError>().having((e) => e.newerVersion, 'newerVersion', isTrue)),
+        );
         valid['version'] = '1';
         rejected(jsonEncode(valid), 'no valid version');
       });

@@ -150,10 +150,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     },
     // On desktop, quitting waits briefly for the write.
     onExitRequested: () async {
-      await _controller.flushRecovery().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {},
-      );
+      await Future.wait([
+        _controller.flushRecovery(),
+        if (widget.library case final library?) library.flush(),
+      ]).timeout(const Duration(seconds: 2), onTimeout: () => const []);
       return AppExitResponse.exit;
     },
   );
@@ -447,15 +447,29 @@ class _DayResultsPageState extends State<DayResultsPage> {
     });
   }
 
-  /// Whether going back first saves the day's changes in the library.
+  /// Whether going back first saves the day's changes in the library,
+  /// after the save running, if any.
   bool get _saveBeforeLeaving =>
-      _libraryReady && _inLibrary && _autosaveAllowed;
+      _libraryReady &&
+      _inLibrary &&
+      _controller.dirty &&
+      !_controller.adding &&
+      !_relinking &&
+      !_preparingReview;
+
+  bool _leaving = false;
 
   /// Saves the day in the library, then leaves it. Changes made while
   /// saving are kept for recovery, as on any day left unsaved.
   Future<void> _saveThenLeave() async {
+    if (_leaving) return;
+    _leaving = true;
     _autosave?.cancel();
-    await _save(quiet: true);
+    try {
+      await _save(quiet: true);
+    } finally {
+      _leaving = false;
+    }
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -467,18 +481,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
       !_preparingReview;
 
   /// After each save into the profile, the profile records the day.
-  void _recordSave({bool force = false}) {
-    final library = widget.library;
-    final path = _controller.documentPath;
+  void _recordSave({bool force = false}) =>
+      _record(widget.library, _controller, force: force);
+
+  /// Records [controller]'s day in [library] after a save; called with
+  /// what the page held, so a save finishing after the page was left is
+  /// recorded too.
+  void _record(
+    ProfileLibrary? library,
+    DayResultsController controller, {
+    bool force = false,
+  }) {
+    final path = controller.documentPath;
     if (library == null || path == null || !library.holds(path)) return;
-    if (!force && _controller.saveCount == _recordedSaves) return;
-    _recordedSaves = _controller.saveCount;
+    if (!force && controller.saveCount == _recordedSaves) return;
+    _recordedSaves = controller.saveCount;
     unawaited(
       library.recordDay(
-        eventId: _controller.eventId,
+        eventId: controller.eventId,
         path: path,
-        name: _controller.name,
-        analysis: _controller.analysis,
+        name: controller.name,
+        analysis: controller.analysis,
       ),
     );
   }
@@ -504,10 +527,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
               : await widget.documents.saveLocation(_controller.name)
         : _controller.documentPath;
     if (path == null || !mounted) return;
+    final library = widget.library;
+    final controller = _controller;
     try {
-      await _controller.save(path);
+      await controller.save(path);
+      _record(library, controller);
       if (mounted && !quiet) {
-        final library = widget.library;
         _tell(
           library != null && library.holds(path)
               ? (_controller.dirty
@@ -528,6 +553,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Future<void> _export() async {
     final path = await widget.documents.saveLocation(_controller.name);
     if (path == null || !mounted) return;
+    // The library's own files are never replaced by an export.
+    if (widget.library?.holds(path) ?? false) {
+      _tell(context.l10n.exportNotInLibrary);
+      return;
+    }
     try {
       await _controller.exportCopy(path);
       if (mounted) _tell(context.l10n.exportedAs(p.basename(path)));

@@ -4637,6 +4637,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get exportNotInLibrary =>
+      'Not exported: choose a place outside the library.';
+
+  @override
   String notExported(String error) {
     return 'Not exported: $error';
   }

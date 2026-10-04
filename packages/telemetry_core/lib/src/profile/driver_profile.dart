@@ -32,9 +32,13 @@ const maximumProfileTextCharacters = 4096;
 
 /// Why a profile cannot be read.
 final class ProfileFormatError implements Exception {
-  const ProfileFormatError(this.message);
+  const ProfileFormatError(this.message, {this.newerVersion = false});
 
   final String message;
+
+  /// Whether the profile was written by a newer version of the app: whole,
+  /// and never to be replaced by this version.
+  final bool newerVersion;
 
   @override
   String toString() => 'ProfileFormatError: $message';
@@ -594,7 +598,10 @@ DriverProfile decodeDriverProfile(String text) {
     throw const ProfileFormatError('The profile has no valid version.');
   }
   if (version > driverProfileVersion) {
-    throw const ProfileFormatError('The profile was written by a newer version of the app.');
+    throw const ProfileFormatError(
+      'The profile was written by a newer version of the app.',
+      newerVersion: true,
+    );
   }
   final driver = _map(json['driver'], 'driver');
   final cars = _list(json['cars'], 'cars', maximumProfileCars, _car);

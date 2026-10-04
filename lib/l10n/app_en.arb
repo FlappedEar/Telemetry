@@ -6812,6 +6812,10 @@
       }
     }
   },
+  "exportNotInLibrary": "Not exported: choose a place outside the library.",
+  "@exportNotInLibrary": {
+    "description": "Export for Overlays refused a file inside the library's own days folder."
+  },
   "notExported": "Not exported: {error}",
   "@notExported": {
     "description": "Exporting a copy of the day failed; the error follows.",

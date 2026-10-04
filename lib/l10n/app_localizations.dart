@@ -7035,6 +7035,12 @@ abstract class AppLocalizations {
   /// **'Exported as {file}.'**
   String exportedAs(String file);
 
+  /// Export for Overlays refused a file inside the library's own days folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not exported: choose a place outside the library.'**
+  String get exportNotInLibrary;
+
   /// Exporting a copy of the day failed; the error follows.
   ///
   /// In en, this message translates to:

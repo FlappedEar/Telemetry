@@ -1145,6 +1145,7 @@
   "savedToLibraryChangesPending": "Zapisano w bibliotece. Zmiany wprowadzone w trakcie zapisu nie są jeszcze zapisane.",
   "exportForOverlays": "Eksportuj do Overlays…",
   "exportedAs": "Wyeksportowano jako {file}.",
+  "exportNotInLibrary": "Nie wyeksportowano: wybierz miejsce poza biblioteką.",
   "notExported": "Nie wyeksportowano: {error}",
   "importPageLibrary": "Biblioteka",
   "libraryTitle": "Biblioteka",

@@ -4748,6 +4748,10 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get exportNotInLibrary =>
+      'Nie wyeksportowano: wybierz miejsce poza biblioteką.';
+
+  @override
   String notExported(String error) {
     return 'Nie wyeksportowano: $error';
   }

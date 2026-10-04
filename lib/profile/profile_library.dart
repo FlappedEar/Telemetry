@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -115,8 +116,11 @@ class ProfileLibrary extends ChangeNotifier {
       profile = file.existsSync()
           ? await background(() => decodeDriverProfile(file.readAsStringSync()))
           : DriverProfile.empty();
-    } on Object catch (error) {
-      debugPrint('Driver profile not read: $error');
+    } on ProfileFormatError catch (error) {
+      debugPrint('Driver profile not read: ${error.message}');
+      // A newer version's profile is whole: days are saved as before, with
+      // no library, until that version runs again.
+      if (error.newerVersion) return;
       try {
         file.renameSync(
           '${file.path}.unreadable-${DateTime.now().millisecondsSinceEpoch}',
@@ -127,10 +131,72 @@ class ProfileLibrary extends ChangeNotifier {
         return;
       }
       profile = DriverProfile.empty();
+    } on Object catch (error) {
+      // Not read this time (locked, say): left as it is, with no library
+      // until the app starts again.
+      debugPrint('Driver profile not read: $error');
+      return;
     }
     _folder = folder;
     _profile = profile;
+    await _recordUnlisted(folder, profile);
     notifyListeners();
+  }
+
+  /// Adds the days saved in the profile's days folder that the profile does
+  /// not list, such as a day whose page was left before the profile was
+  /// written, or a profile started again: by their name, until each is
+  /// opened and its sessions are recorded.
+  Future<void> _recordUnlisted(String folder, DriverProfile profile) async {
+    final listed = {for (final day in profile.days) day.file};
+    final List<({String eventId, String name, String file})> unlisted;
+    try {
+      unlisted = await background(() => _unlistedDays(folder, listed));
+    } on Object catch (error) {
+      debugPrint('Days folder not read: $error');
+      return;
+    }
+    for (final day in unlisted) {
+      _change(
+        (profile) => profile.days.any((known) => known.eventId == day.eventId)
+            ? profile
+            : addDayToProfile(
+                profile,
+                ProfileDayInput(
+                  eventId: day.eventId,
+                  file: day.file,
+                  name: day.name,
+                ),
+                defaultCarName: defaultCarName,
+                defaultTrackName: defaultTrackName(profile.tracks.length + 1),
+              ),
+      );
+    }
+  }
+
+  static List<({String eventId, String name, String file})> _unlistedDays(
+    String folder,
+    Set<String> listed,
+  ) {
+    final days = Directory(p.join(folder, profileDaysFolder));
+    if (!days.existsSync()) return const [];
+    final found = <({String eventId, String name, String file})>[];
+    for (final entry in days.listSync()) {
+      if (entry is! File || p.extension(entry.path) != '.fetproject') continue;
+      final file = p.relative(entry.path, from: folder).replaceAll(r'\', '/');
+      if (listed.contains(file)) continue;
+      try {
+        final document = jsonDecode(entry.readAsStringSync());
+        if (document case {
+          'event': {'id': final String eventId, 'name': final String name},
+        }) {
+          found.add((eventId: eventId, name: name, file: file));
+        }
+      } on Object catch (error) {
+        debugPrint('Day not listed in the profile: ${entry.path}: $error');
+      }
+    }
+    return found;
   }
 
   /// Where the day of [eventId] is saved in the profile; null when days are
