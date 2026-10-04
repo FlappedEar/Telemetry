@@ -1169,6 +1169,10 @@ Map<String, RunFusion> fuseOpenedDay(OpenedDay day, {CancellationCheck? cancelle
       named.run.id: resolveDocumentAlternative(named.run, alternative, cancelled: cancelled),
 };
 
-/// Writes [document] to [path] atomically (see [fet.writeFetproject]).
-Future<void> saveDayDocument(String path, Map<String, Object?> document) =>
-    fet.writeFetproject(path, document);
+/// Writes [document] to [path] atomically (see [fet.writeFetproject]),
+/// keeping it in [journalDirectory] while it is written in place.
+Future<void> saveDayDocument(
+  String path,
+  Map<String, Object?> document, {
+  String? journalDirectory,
+}) => fet.writeFetproject(path, document, journalDirectory: journalDirectory);

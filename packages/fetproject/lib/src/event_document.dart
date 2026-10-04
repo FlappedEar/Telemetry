@@ -4,6 +4,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart' show sha256;
+
 import 'hash_ids.dart';
 import 'qt_json.dart';
 import 'source_reference.dart';
@@ -676,8 +678,15 @@ Future<Map<String, Object?>> readFetproject(String path) async {
 /// not its folder, so there the temporary file failed with "Cannot open
 /// file" and nothing saved. The in-place write is read back; when it fails
 /// or reads back differently, the previous document is written back if it
-/// can be, and the save fails ([writeDocumentInPlace]).
-Future<void> writeFetproject(String path, Map<String, Object?> project) async {
+/// can be, and the save fails ([writeDocumentInPlace]). With
+/// [journalDirectory], the document is first kept there too, so a save the
+/// app did not live to finish is completed when the file is next opened
+/// ([completeInterruptedSave]).
+Future<void> writeFetproject(
+  String path,
+  Map<String, Object?> project, {
+  String? journalDirectory,
+}) async {
   if (path.isEmpty) throw const FetprojectError('Project path is empty.');
   final error = validateFetproject(project);
   if (error != null) throw FetprojectError(error);
@@ -695,7 +704,11 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
     await temporary.rename(path);
   } on FileSystemException catch (failure) {
     if (_permissionDenied(failure) && !await temporary.exists()) {
-      return writeDocumentInPlace(path, bytes);
+      return writeDocumentInPlace(
+        path,
+        bytes,
+        journalDirectory: journalDirectory,
+      );
     }
     try {
       if (await temporary.exists()) await temporary.delete();
@@ -712,11 +725,62 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
 /// whether the previous document is unchanged or the file may be
 /// incomplete. Not exported: `writeFetproject` uses it where the folder
 /// refuses a temporary file. [write] stands in for the file write in tests.
+///
+/// An in-place write is not crash-safe: the app ending partway (killed, a
+/// power cut) leaves a cut document and runs no restore. So with
+/// [journalDirectory] the new document is first written there, atomically,
+/// and removed once [path] reads back whole or is restored; one left behind
+/// (also after a failed write that left the file cut) is a save that never
+/// finished (see [completeInterruptedSave]).
 Future<void> writeDocumentInPlace(
   String path,
   List<int> bytes, {
   Future<void> Function(File file, List<int> bytes)? write,
+  String? journalDirectory,
 }) async {
+  final journal = journalDirectory == null
+      ? null
+      : await _journal(journalDirectory, path, bytes);
+  var incomplete = false;
+  try {
+    await _writeInPlace(path, bytes, write, () => incomplete = true);
+  } on FetprojectError {
+    // Restored, or a new file removed: nothing left to finish. A file the
+    // failed write may have left cut keeps the journal for the next open.
+    if (journal != null &&
+        !(incomplete && await _documentState(path) == _DocumentState.cut)) {
+      await _deleteJournal(journal);
+    }
+    rethrow;
+  }
+  if (journal != null) await _deleteJournal(journal);
+}
+
+enum _DocumentState { whole, cut, missing, unreadable }
+
+/// Whether [path] holds a valid document, one cut short (or no longer a
+/// document), no file, or a file that could not be read (an access
+/// glitch, a cloud file not downloaded): only a cut one is repaired.
+Future<_DocumentState> _documentState(String path) async {
+  final file = File(path);
+  try {
+    if (!await file.exists()) return _DocumentState.missing;
+    if (await file.length() > maximumProjectBytes) return _DocumentState.cut;
+    decodeFetproject(await file.readAsBytes());
+    return _DocumentState.whole;
+  } on FileSystemException {
+    return _DocumentState.unreadable;
+  } on FetprojectError {
+    return _DocumentState.cut;
+  }
+}
+
+Future<void> _writeInPlace(
+  String path,
+  List<int> bytes,
+  Future<void> Function(File file, List<int> bytes)? write, [
+  void Function()? leftIncomplete,
+]) async {
   final file = File(path);
   final writeBytes =
       write ??
@@ -739,12 +803,15 @@ Future<void> writeDocumentInPlace(
         if (await file.exists()) await file.delete();
         return '; nothing was saved';
       } on FileSystemException {
+        leftIncomplete?.call();
         return '; the file may be incomplete';
       }
     }
-    return await _restore(file, previous, writeBytes)
-        ? '; the previously saved version is unchanged'
-        : '; the file may be incomplete';
+    if (await _restore(file, previous, writeBytes)) {
+      return '; the previously saved version is unchanged';
+    }
+    leftIncomplete?.call();
+    return '; the file may be incomplete';
   }
 
   try {
@@ -791,6 +858,116 @@ Future<bool> _restore(
   } on FileSystemException {
     return false;
   }
+}
+
+/// The journal entry of a save of [path] in [directory]: the document and
+/// the path it is for, named by the path's SHA-256.
+(File, File) _journalFiles(String directory, String path) {
+  final key = sha256.convert(utf8.encode(path)).toString();
+  return (
+    File('$directory${Platform.pathSeparator}$key.fetproject'),
+    File('$directory${Platform.pathSeparator}$key.path'),
+  );
+}
+
+/// Keeps [bytes], the document about to be written over [path], in
+/// [directory]. Null when it could not be kept: the save goes ahead as it
+/// did before there was a journal.
+Future<(File, File)?> _journal(
+  String directory,
+  String path,
+  List<int> bytes,
+) async {
+  final (document, target) = _journalFiles(directory, path);
+  try {
+    await Directory(directory).create(recursive: true);
+    for (final (file, content) in [
+      (target, utf8.encode(path)),
+      (document, bytes),
+    ]) {
+      final temporary = File(
+        '${file.path}.${DateTime.now().microsecondsSinceEpoch}.$pid.tmp',
+      );
+      await temporary.writeAsBytes(content, flush: true);
+      await temporary.rename(file.path);
+    }
+    return (document, target);
+  } on FileSystemException {
+    return null;
+  }
+}
+
+Future<void> _deleteJournal((File, File) journal) async {
+  for (final file in [journal.$1, journal.$2]) {
+    try {
+      if (await file.exists()) await file.delete();
+    } on FileSystemException {
+      // A journal left behind is checked when the file is next opened and
+      // dropped when the file is whole.
+    }
+  }
+}
+
+/// What [completeInterruptedSave] found.
+enum InterruptedSave {
+  /// No save of the file was left unfinished.
+  none,
+
+  /// A save was left unfinished but the file is a whole document (the app
+  /// ended before writing it, or after): the file is kept as it is.
+  fileWhole,
+
+  /// The file was cut by a save the app did not finish, and the document
+  /// that save was writing has been written in full.
+  completed,
+
+  /// The file was cut by an unfinished save and could not be written; the
+  /// journal is kept to try again.
+  notCompleted,
+}
+
+/// Finishes a save of [path] that the app did not live to finish, from
+/// [journalDirectory] (see [writeDocumentInPlace]): when the file is no
+/// longer a valid document, the document that save was writing is written
+/// over it. A file that is a valid document, is missing or cannot be read
+/// is never replaced.
+Future<InterruptedSave> completeInterruptedSave(
+  String path, {
+  required String journalDirectory,
+}) async {
+  final (document, target) = _journalFiles(journalDirectory, path);
+  final List<int> bytes;
+  try {
+    if (!await document.exists() || await target.readAsString() != path) {
+      return InterruptedSave.none;
+    }
+    bytes = await document.readAsBytes();
+  } on FileSystemException {
+    return InterruptedSave.none;
+  }
+  switch (await _documentState(path)) {
+    case _DocumentState.whole:
+      await _deleteJournal((document, target));
+      return InterruptedSave.fileWhole;
+    case _DocumentState.missing:
+      // Deleted or moved since: a save is never finished by recreating it.
+      await _deleteJournal((document, target));
+      return InterruptedSave.none;
+    case _DocumentState.unreadable:
+      // Possibly a valid document that cannot be read just now: never
+      // overwritten; tried again on the next open.
+      return InterruptedSave.notCompleted;
+    case _DocumentState.cut:
+      break;
+  }
+  try {
+    decodeFetproject(bytes);
+    await _writeInPlace(path, bytes, null);
+  } on FetprojectError {
+    return InterruptedSave.notCompleted;
+  }
+  await _deleteJournal((document, target));
+  return InterruptedSave.completed;
 }
 
 bool _sameBytes(List<int> a, List<int> b) {

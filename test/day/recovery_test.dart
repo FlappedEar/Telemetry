@@ -89,6 +89,37 @@ void main() {
   });
 
   test(
+    'changes waiting for recovery are kept before the file is written',
+    () async {
+      final outcome = importDay();
+      final path = '${directory.path}/day.fetproject';
+      DayRecovery? keptWhenWriting;
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        recovery: store,
+        writer: (path, document) async {
+          // The app could end here, partway through an in-place write.
+          keptWhenWriting = await store.load();
+        },
+      );
+      await controller.flushRecovery();
+      final best = controller.ranking!.bestOfDay!;
+      final row = controller.analysis.rows.firstWhere(
+        (row) => row.reference == best.reference,
+      );
+      // Saved at once, before the recovery delay has passed.
+      expect(controller.exclude(row, 'Traffic'), isTrue);
+      await controller.save(path);
+      expect(openRecoveredDay(keptWhenWriting!).exclusions.values, ['Traffic']);
+      // Saved: the snapshot goes.
+      await controller.flushRecovery();
+      expect(await store.load(), isNull);
+      controller.dispose();
+    },
+  );
+
+  test(
     'a change made while saving keeps the day unsaved and recoverable',
     () async {
       final outcome = importDay();

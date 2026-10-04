@@ -1,5 +1,6 @@
 // Cases ported from FlappedEar Overlays' EventProjectTests (VBOOverlay
 // ca2bde5); every document here is synthetic.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -684,6 +685,215 @@ void main() {
         await writeFetproject(path, project());
         await writeDocumentInPlace(path, utf8.encode('replaced'));
         expect(File(path).readAsStringSync(), 'replaced');
+      });
+    });
+
+    // Arek's second audit, finding 3: an in-place write the app does not
+    // live to finish (killed, a power cut) runs no restore.
+    group('journal of an in-place write', () {
+      late String journal, path;
+      late List<int> next;
+      setUp(() async {
+        journal = p.join(directory.path, 'journal');
+        path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        next = utf8.encode(encodeFetproject(project()..['name'] = 'Renamed'));
+      });
+      List<String> journalled() => Directory(journal).existsSync()
+          ? [
+              for (final file in Directory(journal).listSync())
+                p.extension(file.path),
+            ]
+          : const [];
+
+      test('holds the new document while it is written, then goes', () async {
+        List<String>? during;
+        await writeDocumentInPlace(
+          path,
+          next,
+          journalDirectory: journal,
+          write: (file, bytes) async {
+            during = journalled()..sort();
+            await file.writeAsBytes(bytes, flush: true);
+          },
+        );
+        expect(during, ['.fetproject', '.path']);
+        expect(journalled(), isEmpty);
+        expect(File(path).readAsBytesSync(), next);
+      });
+
+      test('a failed write that is restored leaves no journal', () async {
+        await expectLater(
+          writeDocumentInPlace(
+            path,
+            next,
+            journalDirectory: journal,
+            write: (file, bytes) async =>
+                throw const FileSystemException('Permission denied'),
+          ),
+          throwsA(isA<FetprojectError>()),
+        );
+        expect(journalled(), isEmpty);
+      });
+
+      test(
+        'a failed write that leaves the file cut keeps the journal',
+        () async {
+          // The disk fills partway, and writing the old version back fails too.
+          await expectLater(
+            writeDocumentInPlace(
+              path,
+              next,
+              journalDirectory: journal,
+              write: (file, bytes) async {
+                file.writeAsBytesSync(bytes.sublist(0, 10), flush: true);
+                throw const FileSystemException('No space left on device');
+              },
+            ),
+            throwsA(
+              isA<FetprojectError>().having(
+                (error) => error.message,
+                'message',
+                contains('may be incomplete'),
+              ),
+            ),
+          );
+          expect(journalled(), hasLength(2));
+          expect(
+            await completeInterruptedSave(path, journalDirectory: journal),
+            InterruptedSave.completed,
+          );
+          expect(File(path).readAsBytesSync(), next);
+        },
+      );
+
+      test('a restored file that was no document is not replaced', () async {
+        File(path).writeAsStringSync('notes, not a document');
+        await expectLater(
+          writeDocumentInPlace(
+            path,
+            next,
+            journalDirectory: journal,
+            write: (file, bytes) async =>
+                throw const FileSystemException('Permission denied'),
+          ),
+          throwsA(isA<FetprojectError>()),
+        );
+        expect(journalled(), isEmpty);
+        expect(
+          await completeInterruptedSave(path, journalDirectory: journal),
+          InterruptedSave.none,
+        );
+        expect(File(path).readAsStringSync(), 'notes, not a document');
+      });
+
+      test('a file deleted after a cut save is not recreated', () async {
+        final cut = Completer<void>();
+        unawaited(
+          writeDocumentInPlace(
+            path,
+            next,
+            journalDirectory: journal,
+            write: (file, bytes) async {
+              file.writeAsBytesSync(bytes.sublist(0, 10), flush: true);
+              cut.complete();
+              await Completer<void>().future;
+            },
+          ),
+        );
+        await cut.future;
+        File(path).deleteSync();
+        expect(
+          await completeInterruptedSave(path, journalDirectory: journal),
+          InterruptedSave.none,
+        );
+        expect(File(path).existsSync(), isFalse);
+        expect(journalled(), isEmpty);
+      });
+
+      test('a save cut by the app ending is finished when opened', () async {
+        // The app ends partway through the write: the file is cut and
+        // nothing after the write runs.
+        final cut = Completer<void>();
+        unawaited(
+          writeDocumentInPlace(
+            path,
+            next,
+            journalDirectory: journal,
+            write: (file, bytes) async {
+              file.writeAsBytesSync(
+                bytes.sublist(0, bytes.length ~/ 3),
+                flush: true,
+              );
+              cut.complete();
+              await Completer<void>().future;
+            },
+          ),
+        );
+        await cut.future;
+        expect(
+          () => decodeFetproject(File(path).readAsBytesSync()),
+          throwsA(isA<FetprojectError>()),
+        );
+        expect(journalled(), hasLength(2));
+        expect(
+          await completeInterruptedSave(path, journalDirectory: journal),
+          InterruptedSave.completed,
+        );
+        expect(File(path).readAsBytesSync(), next);
+        expect(journalled(), isEmpty);
+        expect(
+          await completeInterruptedSave(path, journalDirectory: journal),
+          InterruptedSave.none,
+        );
+      });
+
+      test('a whole document is never replaced from the journal', () async {
+        final before = File(path).readAsBytesSync();
+        // The app ended before the write began: the file is the old one.
+        final writing = Completer<void>();
+        unawaited(
+          writeDocumentInPlace(
+            path,
+            next,
+            journalDirectory: journal,
+            write: (file, bytes) {
+              writing.complete();
+              return Completer<void>().future;
+            },
+          ),
+        );
+        await writing.future;
+        expect(
+          await completeInterruptedSave(path, journalDirectory: journal),
+          InterruptedSave.fileWhole,
+        );
+        expect(File(path).readAsBytesSync(), before);
+        expect(journalled(), isEmpty);
+      });
+
+      test('the journal of another file is left alone', () async {
+        final other = p.join(directory.path, 'other.fetproject');
+        await writeFetproject(other, project());
+        final cut = Completer<void>();
+        unawaited(
+          writeDocumentInPlace(
+            other,
+            next,
+            journalDirectory: journal,
+            write: (file, bytes) async {
+              file.writeAsBytesSync(bytes.sublist(0, 10), flush: true);
+              cut.complete();
+              await Completer<void>().future;
+            },
+          ),
+        );
+        await cut.future;
+        expect(
+          await completeInterruptedSave(path, journalDirectory: journal),
+          InterruptedSave.none,
+        );
+        expect(journalled(), hasLength(2));
       });
     });
   });

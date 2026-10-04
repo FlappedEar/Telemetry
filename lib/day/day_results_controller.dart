@@ -13,6 +13,7 @@ import '../units.dart';
 import 'background_task.dart';
 import 'channel_sources.dart';
 import 'recovery_store.dart';
+import 'save_journal.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
 typedef DocumentWriter = Future<void> Function(
@@ -260,7 +261,7 @@ final class DayResultsController extends ChangeNotifier {
        _documentPath = openedFrom,
        _document = openedDocument,
        _documentBase = documentBase ?? openedFrom ?? '',
-       _writer = writer ?? saveDayDocument,
+       _writer = writer ?? saveDayWithJournal,
        _dirty = recovered || changed {
     declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
     _declaredSpeedUnits = declaredSpeedUnits;
@@ -1342,8 +1343,14 @@ final class DayResultsController extends ChangeNotifier {
   // day has opened since.
   late List<String> _declaredSpeedUnits;
 
-  // The last recovery write or clear queued (see [queueRecovery]).
+  // The last recovery write or clear queued (see [queueRecovery]), and how
+  // many of this day's are not finished.
   Future<void> _recoveryWork = Future.value();
+  int _recoveryQueued = 0;
+
+  // Whether a recovery write is scheduled or not finished.
+  bool get _recoveryWaiting =>
+      (_recoveryTimer?.isActive ?? false) || _recoveryQueued > 0;
 
   /// How long changes wait before the unsaved day is written for recovery.
   static const recoveryDelay = Duration(milliseconds: 500);
@@ -1417,6 +1424,11 @@ final class DayResultsController extends ChangeNotifier {
         pendingAlternatives: _pendingRecordings,
         runMetadata: metadataNow,
       );
+      // Changes still waiting for the recovery snapshot are written to it
+      // first: where the file is written in place (the macOS sandbox), the
+      // app ending partway would cut it, and the snapshot then still holds
+      // every change (Arek's second audit, finding 3).
+      if (_recoveryWaiting) await flushRecovery();
       await _writer(path, document);
       _document = document;
       // The details saved are in the document now; later edits stay.
@@ -2987,6 +2999,7 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   void _enqueueRecovery(Future<void>? Function() operation) {
+    ++_recoveryQueued;
     _recoveryWork = queueRecovery(() async {
       try {
         await operation();
@@ -2994,6 +3007,8 @@ final class DayResultsController extends ChangeNotifier {
         debugPrint('Recovery snapshot not updated: $error');
         // The day is not protected until a write succeeds: say so.
         reportError(error, stack, context: 'Recovery snapshot not updated');
+      } finally {
+        --_recoveryQueued;
       }
     });
   }

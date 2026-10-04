@@ -15,6 +15,7 @@ import '../day/day_results_controller.dart';
 import '../day/day_results_page.dart';
 import '../day/document_pickers.dart';
 import '../day/recovery_store.dart';
+import '../day/save_journal.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../l10n.dart';
@@ -656,6 +657,7 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<DayResultsController?> _openSaved(String path) async {
     if (!_recent(File(path).lastModifiedSync())) return null;
     await widget.fileAccess.restore();
+    await completeInterruptedDaySave(path);
     final day = await Isolate.run(_openJob(path));
     return day.analysis == null
         ? null
@@ -790,6 +792,7 @@ class _DayImportPageState extends State<DayImportPage> {
     setState(() => _opening = true);
     try {
       await widget.fileAccess.restore();
+      await completeInterruptedDaySave(path);
       var day = await Isolate.run(_openJob(path));
       if (!mounted) return;
       // None of its recordings could be read: look for them in a folder the
