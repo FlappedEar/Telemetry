@@ -169,7 +169,11 @@ void main() {
         p.join((await getApplicationSupportDirectory()).path, 'incoming'),
       );
       await clearRecovery();
+      // The day page shows a map: its tiles stay off the network too, so a
+      // runner without network does not fail the test.
+      debugTileProvider = BlankTiles.new;
       addTearDown(() async {
+        debugTileProvider = null;
         fixtures.deleteSync(recursive: true);
         if (incoming.existsSync()) incoming.deleteSync(recursive: true);
         await clearRecovery();
