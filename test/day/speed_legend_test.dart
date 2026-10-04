@@ -17,18 +17,23 @@ void main() {
     speedUnit: 'km/h',
   );
 
-  Future<void> pump(WidgetTester tester, double scale) async {
+  Future<void> pump(
+    WidgetTester tester,
+    double scale, {
+    String label = 'Prędkość',
+    Locale locale = const Locale('pl'),
+  }) async {
     tester.platformDispatcher.textScaleFactorTestValue = scale;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     addTearDown(() => Intl.defaultLocale = null);
     await tester.pumpWidget(
       TelemetryApp(
-        locale: const Locale('pl'),
+        locale: locale,
         home: Scaffold(
           body: Center(
             child: SizedBox(
               width: 328,
-              child: LabelledSpeedLegend(label: 'Prędkość', path: path),
+              child: LabelledSpeedLegend(label: label, path: path),
             ),
           ),
         ),
@@ -47,10 +52,11 @@ void main() {
     );
   });
 
-  testWidgets('normal text keeps the label beside the scale', (tester) async {
-    await pump(tester, 1);
+  testWidgets('English text keeps the label beside the scale', (tester) async {
+    await pump(tester, 1, label: 'Speed', locale: const Locale('en'));
+    expect(tester.takeException(), isNull);
     expect(
-      tester.getCenter(find.text('Prędkość')).dy,
+      tester.getCenter(find.text('Speed')).dy,
       closeTo(tester.getCenter(find.byType(SpeedLegend)).dy, 4),
     );
   });

@@ -935,6 +935,21 @@ class SpeedLegend extends StatelessWidget {
 
   final LapPath path;
 
+  /// The width the values and a short bar need on one line.
+  static double minimumWidth(BuildContext context, LapPath path) {
+    final range = speedRange(path);
+    final style = Theme.of(context).textTheme.bodySmall;
+    if (range == null) {
+      return _textWidth(context, context.l10n.speedLegendNoSpeed, style);
+    }
+    final label = speedUnitOf(context, path.speedUnit);
+    final unit = label.isEmpty ? '' : '\u00a0$label';
+    return _textWidth(context, '${range.$1.toStringAsFixed(0)}$unit', style) +
+        _textWidth(context, '${range.$2.toStringAsFixed(0)}$unit', style) +
+        16 +
+        48;
+  }
+
   @override
   Widget build(BuildContext context) {
     final range = speedRange(path);
@@ -964,9 +979,9 @@ class SpeedLegend extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        // With very large text the values go under the bar, at its ends.
-        final scale = MediaQuery.textScalerOf(context).scale(1);
-        if (constraints.maxWidth / scale < 200) {
+        // When the values leave the bar too little room (very large text),
+        // they go under it, at its ends.
+        if (constraints.maxWidth < minimumWidth(context, path)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -997,6 +1012,19 @@ class SpeedLegend extends StatelessWidget {
   }
 }
 
+/// The width [text] takes in [style] at the text size in use.
+double _textWidth(BuildContext context, String text, TextStyle? style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
+}
+
 /// [SpeedLegend] after a [label], or under it when large text would leave
 /// the scale too little room.
 class LabelledSpeedLegend extends StatelessWidget {
@@ -1012,9 +1040,13 @@ class LabelledSpeedLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      final text = Text(label, style: Theme.of(context).textTheme.labelMedium);
-      final scale = MediaQuery.textScalerOf(context).scale(1);
-      if (constraints.maxWidth / scale < 300) {
+      final style = Theme.of(context).textTheme.labelMedium;
+      final text = Text(label, style: style);
+      final beside =
+          _textWidth(context, label, style) +
+          8 +
+          SpeedLegend.minimumWidth(context, path);
+      if (constraints.maxWidth < beside) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
