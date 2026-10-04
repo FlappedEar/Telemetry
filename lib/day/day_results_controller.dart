@@ -887,6 +887,25 @@ final class DayResultsController extends ChangeNotifier {
   bool get recordingsBusy =>
       _clocksChecking.isNotEmpty || _primaryChanging.isNotEmpty;
 
+  /// Whether [runId]'s clock check or primary change runs, so it can be
+  /// stopped ([stopRecordingsWork]).
+  bool recordingsWorking(String runId) =>
+      _clocksChecking.containsKey(runId) || _primaryChanging.containsKey(runId);
+
+  /// Stops [runId]'s clock check or primary change, which can take a while
+  /// on a long session: nothing changes, as if it had not been asked, and
+  /// the day can be left or closed again at once.
+  void stopRecordingsWork(String runId) {
+    if (_disposed || !recordingsWorking(runId)) return;
+    _nextRecordingGeneration(runId);
+    _clocksChecking.remove(runId);
+    _primaryChanging.remove(runId);
+    _fusionTasks.remove(runId)?.cancel();
+    _primaryTasks.remove(runId)?.cancel();
+    notifyListeners();
+    _settleFusions();
+  }
+
   /// Whether [runId]'s recordings can be changed now: it has another
   /// recording that was read, and nothing runs for it or adds to the day.
   bool recordingsEditable(String runId) =>
