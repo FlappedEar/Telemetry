@@ -67,7 +67,9 @@ final class ProfileTrack {
     required this.name,
     required this.route,
     Map<String, Object?> unknown = const {},
-  }) : unknown = Map.unmodifiable(unknown);
+    Map<String, Object?> unknownRoute = const {},
+  }) : unknown = Map.unmodifiable(unknown),
+       unknownRoute = Map.unmodifiable(unknownRoute);
 
   final String id;
   final String name;
@@ -76,8 +78,16 @@ final class ProfileTrack {
   final RouteShape route;
   final Map<String, Object?> unknown;
 
-  ProfileTrack copyWith({String? name}) =>
-      ProfileTrack(id: id, name: name ?? this.name, route: route, unknown: unknown);
+  /// `route` keys this version does not know.
+  final Map<String, Object?> unknownRoute;
+
+  ProfileTrack copyWith({String? name}) => ProfileTrack(
+    id: id,
+    name: name ?? this.name,
+    route: route,
+    unknown: unknown,
+    unknownRoute: unknownRoute,
+  );
 }
 
 /// One session of a day, as its last analysis found it.
@@ -375,24 +385,13 @@ DriverProfile addDayToProfile(
           name: _text(day.trackName ?? '', _text(defaultTrackName, 'Track')),
           route: route,
         );
+        _verified(_encodeTrack(track), _track);
         tracks.add(track);
         trackId = track.id;
       }
     }
   }
 
-  _checkText(day.eventId, 'day event id', allowEmpty: false);
-  _checkFile(day.file);
-  _checkText(day.name, 'day name');
-  _checkMilliseconds(day.startMilliseconds, 'day start');
-  if (day.sessions.length > maximumDayRuns) {
-    throw const ProfileFormatError('The profile has too many sessions.');
-  }
-  for (final session in day.sessions) {
-    _checkText(session.runId, 'session run id', allowEmpty: false);
-    _checkText(session.name, 'session name');
-    _checkMilliseconds(session.startMilliseconds, 'session start');
-  }
   final entry = ProfileDay(
     eventId: day.eventId,
     file: day.file,
@@ -404,6 +403,9 @@ DriverProfile addDayToProfile(
     bestLapSeconds: day.bestLapSeconds,
     unknown: existing?.unknown ?? const {},
   );
+  // What reading would refuse is refused here, so a profile is never
+  // written that cannot be read back.
+  _verified(_encodeDay(entry), _day);
   final days = [for (final other in profile.days) other.eventId == day.eventId ? entry : other];
   if (existing == null) {
     if (days.length >= maximumProfileDays) {
@@ -491,9 +493,10 @@ String _text(String value, String fallback) {
 // ---------------------------------------------------------------------------
 // Reading and writing
 
-/// [profile] as the text of a `.feprofile` file.
+/// [profile] as the text of a `.feprofile` file. Throws
+/// [ProfileFormatError] rather than write what [decodeDriverProfile] would
+/// refuse.
 String encodeDriverProfile(DriverProfile profile) {
-  num? number(double? value) => value;
   final json = <String, Object?>{
     ...profile.unknown,
     'format': driverProfileFormat,
@@ -503,38 +506,57 @@ String encodeDriverProfile(DriverProfile profile) {
       for (final car in profile.cars)
         {...car.unknown, 'id': car.id, 'name': car.name, 'notes': car.notes},
     ],
-    'tracks': [
-      for (final track in profile.tracks)
-        {...track.unknown, 'id': track.id, 'name': track.name, 'route': _encodeRoute(track.route)},
-    ],
-    'days': [
-      for (final day in profile.days)
-        {
-          ...day.unknown,
-          'eventId': day.eventId,
-          'file': day.file,
-          'name': day.name,
-          'carId': day.carId,
-          'trackId': day.trackId,
-          'startMilliseconds': day.startMilliseconds,
-          'bestLapSeconds': number(day.bestLapSeconds),
-          'sessions': [
-            for (final session in day.sessions)
-              {
-                ...session.unknown,
-                'runId': session.runId,
-                'name': session.name,
-                'startMilliseconds': session.startMilliseconds,
-                'lapCount': session.lapCount,
-                'bestLapSeconds': number(session.bestLapSeconds),
-              },
-          ],
-        },
-    ],
+    'tracks': [for (final track in profile.tracks) _encodeTrack(track)],
+    'days': [for (final day in profile.days) _encodeDay(day)],
     'lastCarId': profile.lastCarId,
   };
-  return const JsonEncoder.withIndent(' ').convert(json);
+  final String text;
+  try {
+    text = const JsonEncoder.withIndent(' ').convert(json);
+  } on JsonUnsupportedObjectError {
+    throw const ProfileFormatError('The profile holds a value that cannot be written.');
+  }
+  decodeDriverProfile(text);
+  return text;
 }
+
+/// [json] read back with [read] as it would be from a file.
+T _verified<T>(Map<String, Object?> json, T Function(Object?) read) {
+  try {
+    return read(jsonDecode(jsonEncode(json)));
+  } on JsonUnsupportedObjectError {
+    throw const ProfileFormatError('The profile holds a value that cannot be written.');
+  }
+}
+
+Map<String, Object?> _encodeTrack(ProfileTrack track) => {
+  ...track.unknown,
+  'id': track.id,
+  'name': track.name,
+  'route': {...track.unknownRoute, ..._encodeRoute(track.route)},
+};
+
+Map<String, Object?> _encodeDay(ProfileDay day) => {
+  ...day.unknown,
+  'eventId': day.eventId,
+  'file': day.file,
+  'name': day.name,
+  'carId': day.carId,
+  'trackId': day.trackId,
+  'startMilliseconds': day.startMilliseconds,
+  'bestLapSeconds': day.bestLapSeconds,
+  'sessions': [
+    for (final session in day.sessions)
+      {
+        ...session.unknown,
+        'runId': session.runId,
+        'name': session.name,
+        'startMilliseconds': session.startMilliseconds,
+        'lapCount': session.lapCount,
+        'bestLapSeconds': session.bestLapSeconds,
+      },
+  ],
+};
 
 double _round(double value) => (value * 10).roundToDouble() / 10;
 
@@ -627,6 +649,12 @@ ProfileTrack _track(Object? value) {
     name: _string(json['name'], 'track name', allowEmpty: false),
     route: _route(json['route']),
     unknown: _without(json, const ['id', 'name', 'route']),
+    unknownRoute: _without(_map(json['route'], 'route'), const [
+      'origin',
+      'lengthMeters',
+      'direction',
+      'points',
+    ]),
   );
 }
 
@@ -671,6 +699,10 @@ RouteShape _route(Object? value) {
 
 ProfileDay _day(Object? value) {
   final json = _map(value, 'day');
+  final sessions = _list(json['sessions'], 'sessions', maximumDayRuns, _session);
+  if ({for (final session in sessions) session.runId}.length != sessions.length) {
+    throw const ProfileFormatError('A day has the same session twice.');
+  }
   return ProfileDay(
     eventId: _string(json['eventId'], 'day event id', allowEmpty: false),
     file: _checkFile(_string(json['file'], 'day file', allowEmpty: false)),
@@ -679,7 +711,7 @@ ProfileDay _day(Object? value) {
     trackId: _optionalString(json['trackId'], 'day track'),
     startMilliseconds: _optionalInt(json['startMilliseconds'], 'day start'),
     bestLapSeconds: _optionalSeconds(json['bestLapSeconds'], 'day best lap'),
-    sessions: _list(json['sessions'], 'sessions', maximumDayRuns, _session),
+    sessions: sessions,
     unknown: _without(json, const [
       'eventId',
       'file',
@@ -746,8 +778,10 @@ int? _optionalInt(Object? value, String what) {
   return _checkMilliseconds(value, what);
 }
 
-/// The furthest time a [DateTime] holds, in milliseconds either side of 1970.
-const _maximumMilliseconds = 8640000000000000;
+/// The furthest time kept, in milliseconds either side of 1970: what a
+/// [DateTime] holds less two days, so its local date can still be built in
+/// any time zone.
+const _maximumMilliseconds = 8640000000000000 - 2 * 86400000;
 
 int? _checkMilliseconds(int? value, String what) {
   if (value != null && value.abs() > _maximumMilliseconds) {
@@ -763,10 +797,16 @@ void _checkText(String value, String what, {bool allowEmpty = true}) =>
 String _checkFile(String file) {
   _checkText(file, 'day file', allowEmpty: false);
   final parts = file.split(RegExp(r'[\\/]'));
-  if (file.startsWith('/') ||
-      file.startsWith(r'\') ||
-      RegExp(r'^[A-Za-z]:').hasMatch(file) ||
-      parts.any((part) => part == '..' || part.isEmpty)) {
+  // A leading or doubled separator leaves an empty part; ':' is a drive or
+  // an NTFS stream; Windows drops trailing dots and spaces from a name.
+  if (file.contains(':') ||
+      parts.any(
+        (part) =>
+            part.isEmpty ||
+            RegExp(r'^[. ]+$').hasMatch(part) ||
+            part.endsWith('.') ||
+            part.endsWith(' '),
+      )) {
     throw const ProfileFormatError('A day file is not inside the profile.');
   }
   return file;
@@ -789,6 +829,9 @@ Object? _bounded(Object? value) {
   final pending = <(Object?, int)>[(value, 1)];
   while (pending.isNotEmpty) {
     final (item, depth) = pending.removeLast();
+    if (item is double && !item.isFinite) {
+      throw const ProfileFormatError('The profile holds a number too large to keep.');
+    }
     if (item is! Map && item is! List) continue;
     if (depth > _maximumUnknownDepth) {
       throw const ProfileFormatError('The profile nests too deeply.');

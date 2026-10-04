@@ -140,6 +140,89 @@ void main() {
       expect(earlierVisits(profile, track!), hasLength(1));
     });
 
+    test('refuses values that could not be written or read back', () {
+      final profile = DriverProfile.empty(Random(1));
+      void refused(ProfileDayInput day) =>
+          expect(() => _add(profile, day), throwsA(isA<ProfileFormatError>()));
+      final good = _day('a');
+      ProfileDayInput like({double? best, List<ProfileSession>? sessions, RouteShape? route}) =>
+          ProfileDayInput(
+            eventId: 'a',
+            file: 'Days/a.fetproject',
+            name: 'Day',
+            bestLapSeconds: best,
+            sessions: sessions ?? const [],
+            route: route,
+          );
+      refused(like(best: double.nan));
+      refused(like(best: -1));
+      refused(
+        like(
+          sessions: [ProfileSession(runId: 'r', name: 'S', lapCount: -1)],
+        ),
+      );
+      refused(
+        like(
+          sessions: [ProfileSession(runId: 'r', name: 'S', bestLapSeconds: 0)],
+        ),
+      );
+      refused(
+        like(
+          sessions: [
+            ProfileSession(runId: 'r', name: 'S'),
+            ProfileSession(runId: 'r', name: 'T'),
+          ],
+        ),
+      );
+      final route = good.route!;
+      RouteShape changed({double? length, List<MetricPoint>? points, GeoCoordinate? origin}) =>
+          RouteShape(
+            origin: origin ?? route.origin,
+            points: points ?? route.points,
+            lengthMeters: length ?? route.lengthMeters,
+            direction: route.direction,
+          );
+      refused(like(route: changed(length: 50000)));
+      refused(like(route: changed(points: route.points.skip(1).toList())));
+      refused(like(route: changed(points: [const MetricPoint(1e308, 0), ...route.points.skip(1)])));
+      refused(like(route: changed(origin: const GeoCoordinate(91, 0))));
+      expect(_add(profile, good).days, hasLength(1));
+    });
+
+    test('a session on another layout that day keeps its best lap', () {
+      DayRunInput run(String id, double radius, int start) {
+        final session = circuitSession(
+          radius: radius,
+          speeds: [30, 29, 31, 30],
+          firstTimestampMilliseconds: start,
+        );
+        return DayRunInput(
+          runId: id,
+          name: 'Session $id',
+          contentSha256: _revision.replaceFirst('a', id),
+          session: session,
+          laps: deriveSourceLapSession(session),
+        );
+      }
+
+      final analysis = analyzeDay([
+        run('1', 100, 1756454400000),
+        run('2', 100, 1756458000000),
+        run('3', 150, 1756461600000),
+      ]);
+      expect(analysis.groups.where((group) => group.resolved), hasLength(2));
+      final day = ProfileDayInput.fromAnalysis(
+        eventId: 'a',
+        file: 'Days/a.fetproject',
+        name: 'Day',
+        analysis: analysis,
+      );
+      expect(day.sessions, hasLength(3));
+      for (final session in day.sessions) {
+        expect(session.bestLapSeconds, isNotNull, reason: session.name);
+      }
+    });
+
     test('refuses a day the profile could not read back', () {
       final profile = DriverProfile.empty(Random(1));
       void refused(ProfileDayInput day) =>
@@ -238,6 +321,9 @@ void main() {
       (json['driver'] as Map<String, Object?>)['photo'] = 'p.png';
       ((json['cars'] as List).single as Map<String, Object?>)['setup'] = [1, 2];
       ((json['tracks'] as List).single as Map<String, Object?>)['country'] = 'PL';
+      (((json['tracks'] as List).single as Map<String, Object?>)['route']
+              as Map<String, Object?>)['width'] =
+          12;
       final day = (json['days'] as List).single as Map<String, Object?>;
       day['weather'] = 'dry';
       ((day['sessions'] as List).first as Map<String, Object?>)['tyres'] = 'new';
@@ -340,8 +426,40 @@ void main() {
         rejected(jsonEncode(valid), 'out of range');
       });
       test('a day file outside the profile', () {
-        day()['file'] = '../../x.fetproject';
-        rejected(jsonEncode(valid), 'not inside the profile');
+        for (final file in [
+          '../../x.fetproject',
+          '/x.fetproject',
+          r'\\server\x.fetproject',
+          r'C:\x.fetproject',
+          'C:x.fetproject',
+          'Days//x.fetproject',
+          'Days/./x.fetproject',
+          'Days/.. /x.fetproject',
+          'Days/x.fetproject.',
+          'Days/x.fetproject ',
+          '...',
+          'x.fetproject:stream',
+        ]) {
+          day()['file'] = file;
+          rejected(jsonEncode(valid), 'not inside the profile');
+        }
+        day()['file'] = r'Days\x.fetproject';
+        expect(decodeDriverProfile(jsonEncode(valid)).days.single.file, r'Days\x.fetproject');
+      });
+      test('numbers too large to keep', () {
+        final text = jsonEncode(valid).replaceFirst('{', '{"future":1e400,');
+        rejected(text, 'too large to keep');
+      });
+      test('times a local date cannot be built for', () {
+        day()['startMilliseconds'] = 8640000000000000;
+        rejected(jsonEncode(valid), 'out of range');
+        day()['startMilliseconds'] = -8640000000000000;
+        rejected(jsonEncode(valid), 'out of range');
+      });
+      test('the same session twice', () {
+        final sessions = day()['sessions'] as List;
+        sessions.add(sessions.first);
+        rejected(jsonEncode(valid), 'same session twice');
       });
     });
   });
@@ -380,6 +498,26 @@ void main() {
       expect(undated.track, isNull);
       expect(undated.dates.single.date, isNull);
       expect(undated.dates.single.days.single.eventId, 'e');
+    });
+
+    test('the earliest and latest times kept have a date in any time zone', () {
+      final valid = jsonDecode(
+        encodeDriverProfile(_add(DriverProfile.empty(Random(1)), _day('a'))),
+      ) as Map<String, Object?>;
+      final day = (valid['days'] as List).single as Map<String, Object?>;
+      for (final time in [-8639999827200000, 8639999827200000]) {
+        day['startMilliseconds'] = time;
+        final profile = decodeDriverProfile(jsonEncode(valid));
+        for (final hours in [-14, 14]) {
+          final tree = profileTree(
+            profile,
+            localTime: (ms) =>
+                DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true).add(Duration(hours: hours)),
+          );
+          expect(tree.single.years.single.year, isNotNull);
+        }
+        expect(profileTree(profile).single.years.single.year, isNotNull);
+      }
     });
 
     test('a car without days has no node', () {

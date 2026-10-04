@@ -58,11 +58,13 @@ version does not know, so a newer app's additions survive a re-save.
 
 Limits: 64 cars, 1024 tracks, 10 000 days, 64 sessions a day, 4096 code units a
 text. A day names a car and (unless `null`) a track of the profile; ids are
-unique. `file` is a relative path inside the profile folder (no `..`).
-Times are within the range a date can hold; route points are within 50 km of
-the origin; values kept from a newer version nest at most 64 deep. Adding a day
-refuses what reading would refuse, so the app never writes a profile it cannot
-read back. A profile written by a newer version is refused, never rewritten.
+unique, and so are a day's session run ids. `file` is a relative path inside
+the profile folder: no drive, `:`, empty, dot-only or trailing-dot or -space
+segment. Times are within the range a date can hold less two days; route points are within 50 km of
+the origin; values kept from a newer version nest at most 64 deep and hold no number too
+large for a double. Adding a day
+and writing a profile refuse what reading would refuse, so the app never writes
+a profile it cannot read back. A profile written by a newer version is refused, never rewritten.
 
 ## Tracks across days
 
