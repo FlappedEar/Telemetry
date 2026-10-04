@@ -71,6 +71,8 @@
   "coachMetricMinimumSpeed": "Prędkość minimalna",
   "coachMetricFirstThrottle": "Pierwsze dodanie gazu",
   "coachMetricEarlyThrottleShare": "Okrążenia z przedwczesnym dodaniem gazu",
+  "coachMetricCombinedG": "Średnie łączne przeciążenie",
+  "coachMetricCombinedGShare": "Względem Twojego najwyższego tu dzisiaj",
   "coachMetricThrottleReturn": "Ponowne dodanie gazu",
   "coachMetricSegmentTime": "Czas odcinka",
   "coachMetricExitSpeed": "Prędkość na wyjściu",

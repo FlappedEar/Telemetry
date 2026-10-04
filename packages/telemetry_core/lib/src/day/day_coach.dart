@@ -34,6 +34,7 @@ import '../analysis/braking_onset.dart'
         brakingInterruptedByGap,
         brakingTruncatedAtWindowEnd;
 import '../analysis/coasting_analysis.dart';
+import '../analysis/gg_pairs.dart' show buildGgPairs, ggMagnitude;
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
 import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
 import '../analysis/exit_metrics.dart' show exitFollowsGap, exitTruncated;
@@ -143,6 +144,15 @@ enum CoachMetric {
   /// that lifted again before the slow point, against the faster laps'
   /// single pickup.
   firstThrottle,
+
+  /// The mean combined (longitudinal and lateral) G through the corner, in
+  /// g: how hard the car was worked there, not a share of the grip
+  /// available.
+  combinedG,
+
+  /// That mean against the highest of the day's laps so far at the corner,
+  /// in percent.
+  combinedGShare,
 }
 
 /// Why the plan is what it is, for the app to say in its language.
@@ -489,6 +499,7 @@ final class _Passage {
     this.nextSeconds,
     this.throttleKnown = false,
     this.earlyPickup,
+    this.combinedG,
   });
 
   final DayLapRow lap;
@@ -527,6 +538,9 @@ final class _Passage {
   /// again in between, or null when it was not.
   final bool throttleKnown;
   final double? earlyPickup;
+
+  /// The mean combined G through the segment ([coachCombinedG]).
+  final double? combinedG;
 
   double get lapSeconds => lap.durationSeconds;
 }
@@ -756,6 +770,30 @@ double? _liftProgress(
     }
   }
   return (at: null);
+}
+
+/// The fewest G pairs a segment's mean combined G is taken from.
+const int coachCombinedGMinimumPoints = 5;
+
+/// The mean combined G ([ggMagnitude] of the longitudinal and lateral
+/// acceleration pairs, [buildGgPairs]) from [start] to [end] along the
+/// lap; null without both channels in a supported unit or with fewer than
+/// [coachCombinedGMinimumPoints] pairs.
+double? _meanCombinedG(
+  TelemetrySession session,
+  List<ProgressSegment> trace,
+  double start,
+  double end,
+) {
+  final from = timeAtProgress(trace, start), to = timeAtProgress(trace, end);
+  if (from == null || to == null || to <= from) return null;
+  final pairs = buildGgPairs(session, from, to);
+  if (!pairs.valid || pairs.points.length < coachCombinedGMinimumPoints) return null;
+  var sum = 0.0;
+  for (final point in pairs.points) {
+    sum += ggMagnitude(point.longitudinalG, point.lateralG);
+  }
+  return sum / pairs.points.length;
 }
 
 /// The day's theoretical best as it stood before [runId] was added: of
@@ -1017,6 +1055,7 @@ DayCoach _dayCoach(
           nextSeconds: nextSeconds,
           throttleKnown: throttleKnown,
           earlyPickup: earlyPickup,
+          combinedG: _meanCombinedG(session, trace, start, end),
         ),
       );
     }
@@ -1445,6 +1484,13 @@ CoachFinding? _corrective(
   if (kind == CoachKind.excessiveCoasting) confidence -= 0.05;
 
   double medianOf(double Function(_Passage) read) => _median(now.map((o) => read(o.current)));
+  // The highest mean combined G of the day's laps at the corner, slow laps
+  // left out.
+  final highestG = passages
+      .where((p) => !slow.contains(p.lap.reference))
+      .map((p) => p.combinedG)
+      .whereType<double>()
+      .fold<double?>(null, (a, b) => a == null || b > a ? b : a);
   double referenceOf(double Function(_Passage) read) =>
       _median(now.map((o) => _median(o.references.map(read))));
   final evidence = [
@@ -1496,6 +1542,32 @@ CoachFinding? _corrective(
         referenceLaps: referenceLaps,
         detail: 'Speed at the segment\'s exit.',
       ),
+    if (now.every(
+          (o) => o.current.combinedG != null && o.references.every((r) => r.combinedG != null),
+        ) &&
+        highestG != null &&
+        highestG > 0) ...[
+      CoachEvidence(
+        key: CoachMetric.combinedG,
+        metric: 'Mean combined G',
+        observed: medianOf((p) => p.combinedG!),
+        reference: referenceOf((p) => p.combinedG!),
+        unit: 'g',
+        referenceLaps: referenceLaps,
+        detail:
+            'Mean of the longitudinal and lateral acceleration combined through the segment. '
+            'How hard the car was worked, not a share of the grip available.',
+      ),
+      CoachEvidence(
+        key: CoachMetric.combinedGShare,
+        metric: 'Of your highest here today',
+        observed: 100 * medianOf((p) => p.combinedG!) / highestG,
+        reference: 100 * referenceOf((p) => p.combinedG!) / highestG,
+        unit: '%',
+        referenceLaps: referenceLaps,
+        detail: 'Against the highest mean combined G of the day\'s laps so far at this segment.',
+      ),
+    ],
     if (kind == CoachKind.earlyLift)
       CoachEvidence(
         key: CoachMetric.brakingStart,

@@ -71,6 +71,7 @@ DayCoach _coach(
   double Function(double) Function(double slow) shape = _lap,
   bool coachedRecording = true,
   bool saved = false,
+  bool lateral = false,
 }) {
   final runs = [
     _run(
@@ -79,6 +80,7 @@ DayCoach _coach(
         [for (final slow in earlier) shape(slow)],
         firstTimestampMilliseconds: 1000,
         pedals: pedals,
+        lateral: lateral,
       ),
     ),
     _run(
@@ -87,6 +89,7 @@ DayCoach _coach(
         [for (final slow in latest) shape(slow)],
         firstTimestampMilliseconds: 4000000,
         pedals: pedals,
+        lateral: lateral,
       ),
     ),
   ];
@@ -1064,5 +1067,46 @@ void main() {
     expect(coach.plan, isEmpty);
     expect(coach.reason, CoachReason.noSegments);
     expect(coach.message, contains('segments'));
+  });
+
+  group('combined G', () {
+    test('on a change: this session against the faster laps and the highest today', () {
+      final coach = _coach([20, 20.5], [15, 15.2, 15.1], lateral: true);
+      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+      final g = finding.evidence.singleWhere((e) => e.key == CoachMetric.combinedG);
+      final share = finding.evidence.singleWhere((e) => e.key == CoachMetric.combinedGShare);
+      expect(g.unit, 'g');
+      expect(share.unit, '%');
+      // Slower through the corner: less G than the faster laps.
+      expect(g.observed, lessThan(g.reference - 0.1));
+      // The highest is the faster session's best lap: the faster laps' median
+      // is just under it.
+      expect(share.reference, inInclusiveRange(95, 100));
+      expect(share.observed, closeTo(share.reference * g.observed / g.reference, 1e-6));
+    });
+
+    test('left out without a lateral acceleration', () {
+      final coach = _coach([20, 20.5], [15, 15.2, 15.1]);
+      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+      expect(
+        finding.evidence.where(
+          (e) => e.key == CoachMetric.combinedG || e.key == CoachMetric.combinedGShare,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('left out when a lap compared has no lateral acceleration', () {
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        lateral: true,
+        edit: (runId, session) {
+          if (runId == 'run1') _edit(session, 'latacc', double.nan, (d) => true);
+        },
+      );
+      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+      expect(finding.evidence.where((e) => e.key == CoachMetric.combinedG), isEmpty);
+    });
   });
 }

@@ -86,12 +86,15 @@ TelemetrySession circuitSession({
 /// has four corners and four straights, so it gets segment proposals. With
 /// [pedals] it also records throttle and brake (%) and longitudinal G from
 /// the change of speed: braking when slowing by more than 0.4 m/s², full
-/// throttle when gaining more than 0.3 m/s², part throttle otherwise.
+/// throttle when gaining more than 0.3 m/s², part throttle otherwise. With
+/// [lateral] it records lateral G too: the speed squared over the corners'
+/// radius, on the straights as well.
 TelemetrySession rectangleSession(
   List<double Function(double distance)> speeds, {
   int? firstTimestampMilliseconds,
   GeoCoordinate centre = const GeoCoordinate(_lat0, _lon0),
   bool pedals = false,
+  bool lateral = false,
 }) {
   const width = 300.0, height = 150.0, radius = 30.0;
   // The outline from the gate, 0.5 m apart.
@@ -190,6 +193,10 @@ TelemetrySession rectangleSession(
         'brake': channel('brake', brake),
         'longacc': channel('longacc', longitudinal),
       },
+      if (lateral)
+        'latacc': channel('latacc', [
+          for (final v in speedValues) (v / 3.6) * (v / 3.6) / radius / standardGravity,
+        ]),
     },
     aliases: {
       'latitude': 'latitude',
@@ -200,6 +207,7 @@ TelemetrySession rectangleSession(
         'brake': 'brake',
         'longitudinalAcceleration': 'longacc',
       },
+      if (lateral) 'lateralAcceleration': 'latacc',
     },
     warnings: const [],
     timingGates: [circuitGate(centre: centre)],
