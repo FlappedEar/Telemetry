@@ -8,12 +8,18 @@
 # TestShareProvider serves (android/app/src/debug).
 #
 # Some runs started the app, connected to it, and then never received a test
-# result: the app's window was still Android's splash screen when the
-# 15-minute limit killed it, so Flutter never presented a frame. Each attempt
-# (build and tests) stops after 15 minutes; one that connected but never
-# reached the share test runs once more; any other failure fails the job at
-# once with the tool log and the device log.
+# result: the app's window was still Android's splash screen, so Flutter never
+# presented a frame. A healthy run finishes all tests within a minute of
+# connecting, so an attempt still running 4 minutes after connecting is
+# stopped (a third of runs hit this on 2026-10-04, and each waited for the
+# whole 15-minute limit). Each attempt (build and tests) also stops after 15
+# minutes. One that connected but never reached the share test runs again, up
+# to three attempts; any other failure fails the job at once with the tool log
+# and the device log.
 set -u
+
+# Seconds an attempt may run after the app connected.
+STALL_LIMIT=240
 
 # Sends the share once the test asks for it, until the test run ends.
 share_when_asked() {
@@ -35,17 +41,36 @@ share_when_asked() {
   done
 }
 
-for attempt in 1 2; do
+for attempt in 1 2 3; do
   status=0
+  stalled=0
   adb logcat -c
   # A killed attempt leaves its ready file behind, and a reinstall keeps the
   # cache: remove it so this attempt's share waits for its own test.
   adb shell run-as com.flappedear.telemetry \
     rm -f cache/share-fixtures/ready 2>/dev/null || true
+  # Empty the log first, so the checks below never read the last attempt's
+  # lines.
+  : > integration.log
   timeout 900 flutter test integration_test -d emulator-5554 -v \
     --dart-define=SHARE_TEST=true > integration.log 2>&1 &
   test_pid=$!
   share_when_asked "$test_pid" > share.log 2>&1 &
+  connected_at=
+  while kill -0 "$test_pid" 2>/dev/null; do
+    if [ -z "$connected_at" ] \
+      && grep -q 'now awaiting test result' integration.log; then
+      connected_at=$(date +%s)
+    fi
+    if [ -n "$connected_at" ] \
+      && [ $(($(date +%s) - connected_at)) -ge "$STALL_LIMIT" ]; then
+      echo "::warning::No test result ${STALL_LIMIT}s after the app connected (attempt $attempt); stopping it."
+      stalled=1
+      kill "$test_pid" 2>/dev/null || true
+      break
+    fi
+    sleep 5
+  done
   wait "$test_pid" || status=$?
   wait
   cat share.log
@@ -53,7 +78,8 @@ for attempt in 1 2; do
     tail -n 40 integration.log
     exit 0
   fi
-  if [ "$attempt" -eq 1 ] && [ "$status" -eq 124 ] \
+  if [ "$attempt" -lt 3 ] \
+    && { [ "$stalled" -eq 1 ] || [ "$status" -eq 124 ]; } \
     && grep -q 'now awaiting test result' integration.log \
     && ! grep -q 'Sending ACTION_SEND' share.log; then
     echo "::warning::The app connected but sent no test result (attempt $attempt); running it again."
