@@ -14,7 +14,9 @@ import 'compatibility.dart';
 /// The algorithm stamp of detected routes and their `gps-route-v1:` ids.
 const String trackInferenceVersion = 'gps-route-v1';
 
-const int _shapePoints = 256;
+/// The points of every [RouteShape].
+const int routeShapePointCount = 256;
+const int _shapePoints = routeShapePointCount;
 const int _maximumRepresentatives = 64;
 
 /// A lap that leaves the line the other laps took by more than this is off

@@ -134,7 +134,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licencesLegalese =>
-      'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.';
+      'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.\nWeather data by Open-Meteo.com (CC BY 4.0).';
 
   @override
   String get coachTitle => 'Next session';
@@ -4515,4 +4515,135 @@ class AppLocalizationsEn extends AppLocalizations {
   String additionSameDriveNotAdded(String session) {
     return 'the same drive as $session in the other format; not added again.';
   }
+
+  @override
+  String progressionWeather(String weather) {
+    return 'Weather: $weather';
+  }
+
+  @override
+  String get weatherCredit => 'Weather data by Open-Meteo.com';
+
+  @override
+  String get weatherModelled =>
+      'Modelled for the area around the track at the session\'s time, not measured at the track.';
+
+  @override
+  String weatherTemperature(String value) {
+    return '$value °C';
+  }
+
+  @override
+  String weatherTemperatureRange(String low, String high) {
+    return '$low–$high °C';
+  }
+
+  @override
+  String get weatherClear => 'clear';
+
+  @override
+  String get weatherPartlyCloudy => 'partly cloudy';
+
+  @override
+  String get weatherOvercast => 'overcast';
+
+  @override
+  String get weatherFog => 'fog';
+
+  @override
+  String get weatherDrizzle => 'drizzle';
+
+  @override
+  String get weatherRain => 'rain';
+
+  @override
+  String get weatherSnow => 'snow';
+
+  @override
+  String get weatherShowers => 'showers';
+
+  @override
+  String get weatherThunderstorm => 'thunderstorm';
+
+  @override
+  String weatherPrecipitation(String amount) {
+    return '$amount mm of rain';
+  }
+
+  @override
+  String get weatherNoPrecipitation => 'no rain';
+
+  @override
+  String weatherWind(String direction, String speed) {
+    return 'wind $direction $speed km/h';
+  }
+
+  @override
+  String weatherWindNoDirection(String speed) {
+    return 'wind $speed km/h';
+  }
+
+  @override
+  String weatherGusts(String speed) {
+    return 'gusts up to $speed km/h';
+  }
+
+  @override
+  String weatherHumidity(String value) {
+    return 'humidity $value%';
+  }
+
+  @override
+  String weatherCloudCover(String value) {
+    return 'cloud cover $value%';
+  }
+
+  @override
+  String weatherPressure(String value) {
+    return 'pressure $value hPa';
+  }
+
+  @override
+  String weatherAirTemperature(String temperature) {
+    return 'air $temperature';
+  }
+
+  @override
+  String weatherSky(String condition) {
+    return 'sky: $condition';
+  }
+
+  @override
+  String get weatherFetching => 'Looking up the weather…';
+
+  @override
+  String get weatherOff => 'Weather lookup is off in settings.';
+
+  @override
+  String get weatherUnavailable =>
+      'Not available: the weather service could not be reached or had no data for this session.';
+
+  @override
+  String get weatherNone =>
+      'Not available: the recording has no date and time or no GPS position.';
+
+  @override
+  String get weatherRetry => 'Try again';
+
+  @override
+  String get sessionDetailsWeather => 'Weather';
+
+  @override
+  String get settingsWeatherHeading => 'Session weather';
+
+  @override
+  String get settingsWeatherSwitch => 'Look up the weather for each session';
+
+  @override
+  String get settingsWeatherHelp =>
+      'Sends each session\'s position, rounded to about 1 km, and its date to Open-Meteo.com. Nothing else from your recordings leaves the device.';
+
+  @override
+  String get weatherKept =>
+      'Kept as stored: this day\'s weather was saved by a newer version of the app.';
 }

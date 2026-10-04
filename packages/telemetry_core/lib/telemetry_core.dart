@@ -47,6 +47,7 @@ export 'src/day/day_segment_review.dart';
 export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';
 export 'src/day/run_metadata.dart';
+export 'src/day/session_weather.dart';
 
 export 'package:fetproject/fetproject.dart'
     show FetprojectError, InterruptedSave, completeInterruptedSave;
@@ -78,6 +79,8 @@ export 'src/laps/lap_ranking.dart' show eligibleLapIndices, rankLaps, recomputeL
 export 'src/laps/lap_session.dart';
 export 'src/laps/lap_time_format.dart';
 export 'src/operation.dart';
+export 'src/profile/driver_profile.dart';
+export 'src/profile/profile_tree.dart';
 export 'src/rcz/rcz_archive.dart' show RczFormatError;
 export 'src/source_fingerprint.dart';
 export 'src/speed_units.dart';

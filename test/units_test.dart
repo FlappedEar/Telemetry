@@ -282,6 +282,7 @@ void main() {
     await pumpApp(tester);
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Open-source licences'));
     await tester.tap(find.text('Open-source licences'));
     await tester.pumpAndSettle();
     expect(find.byType(LicensePage), findsOneWidget);
@@ -291,6 +292,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('© MapTiler'), findsOneWidget);
+    expect(
+      find.textContaining('Weather data by Open-Meteo.com (CC BY 4.0)'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the licences entry is translated', (tester) async {
@@ -298,6 +303,7 @@ void main() {
     await tester.tap(find.byTooltip('Ustawienia'));
     await tester.pumpAndSettle();
     expect(find.text('O aplikacji'), findsOneWidget);
+    await tester.ensureVisible(find.text('Licencje open source'));
     await tester.tap(find.text('Licencje open source'));
     await tester.pumpAndSettle();
     expect(find.textContaining('współtwórcy OpenStreetMap'), findsOneWidget);

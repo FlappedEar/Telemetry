@@ -132,3 +132,19 @@ channels, and the overlay editor's sync, video, channels and scene.
 name the neutral folder it was built in (`/tmp/flappedear-roundtrip`); the
 relative paths are used. How it is made and checked is in
 `packages/telemetry_core/tool/README.md` (`cpp_project_roundtrip`).
+
+## Session weather (Telemetry only)
+
+Telemetry adds an optional `weather` object to a run (runs are open objects,
+so Overlays keeps it unchanged; its own test `boundsAndPreservesRunMetadata`
+keeps an unknown run object through validation, the editor and recovery).
+`session-weather-v1` holds `provider` (`open-meteo-archive`),
+`sourceRevision` (the primary recording's SHA-256 it was fetched for),
+`latitude` and `longitude` (the position sent, rounded to 0.01°), `start`,
+`end` and `fetchedAt` (ISO 8601 UTC) and up to 48 `hours`, each with `time`
+(on the hour, UTC); `temperatureC`, `relativeHumidityPercent`,
+`cloudCoverPercent`, `surfacePressureHpa`, `windSpeedKmh` and
+`windDirectionDegrees` at that time; and `precipitationMm`, `weatherCode`
+(WMO) and `windGustsKmh` of the hour before it (null is no data). A version this app does not read is
+kept as it is and not replaced. The model and its rules are in
+`packages/telemetry_core/lib/src/day/session_weather.dart`.
