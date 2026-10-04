@@ -47,6 +47,12 @@ const double coachApproachMeters = 150.0;
 /// Only findings this confident enter the plan.
 const double coachPlanConfidence = 0.65;
 
+/// A lap this much slower than its session's typical lap (the median, with
+/// at least three laps) is not read for a pattern: traffic, a cool-down or a
+/// warm-up lap says little about technique. It can still be a faster lap
+/// for another.
+const double coachSlowLapRatio = 1.05;
+
 enum CoachKind {
   earlyLift,
   excessiveCoasting,
@@ -243,8 +249,10 @@ final class DayCoach {
     List<CoachItem> plan = const [],
     required this.reason,
     this.speedsConverted = false,
+    List<DayLapRow> slowLaps = const [],
   }) : findings = List.unmodifiable(findings),
-       plan = List.unmodifiable(plan);
+       plan = List.unmodifiable(plan),
+       slowLaps = List.unmodifiable(slowLaps);
 
   /// The session coached; empty when none could be.
   final String runId;
@@ -255,6 +263,10 @@ final class DayCoach {
 
   /// Every finding, planned or not.
   final List<CoachFinding> findings;
+
+  /// The day's laps left out of the patterns as much slower than their
+  /// session's typical lap ([coachSlowLapRatio]), in recording order.
+  final List<DayLapRow> slowLaps;
 
   /// At most three items: at most two changes, in two different segments,
   /// and one improvement to keep when there is one.
@@ -459,6 +471,8 @@ DayCoach dayCoach(
     return DayCoach(runId: coached, reason: CoachReason.noCorners);
   }
   final shown = _shownSpeed(result.corners);
+  final slow = _slowLaps(laps);
+  final slowReferences = {for (final lap in slow) lap.reference};
   var pedals = false, faster = false, measured = false, earlier = false;
 
   // Each lap's coasting, once, by its approved segments.
@@ -581,6 +595,7 @@ DayCoach dayCoach(
         passages,
         coached,
         shown,
+        slow: slowReferences,
         onlyEarlier: () => earlier = true,
       );
       if (finding != null) findings.add(finding);
@@ -594,6 +609,7 @@ DayCoach dayCoach(
     findings: findings,
     plan: plan,
     speedsConverted: shown.converted,
+    slowLaps: slow,
     reason: plan.isNotEmpty
         ? CoachReason.ready
         : findings.any(
@@ -617,6 +633,25 @@ DayCoach dayCoach(
         ? CoachReason.noPedals
         : CoachReason.noPattern,
   );
+}
+
+/// The laps of [laps] (in recording order) much slower than their
+/// session's median lap, for sessions of at least three laps.
+List<DayLapRow> _slowLaps(List<DayLapRow> laps) {
+  final bySession = <String, List<double>>{};
+  for (final lap in laps) {
+    (bySession[lap.runId] ??= []).add(lap.durationSeconds);
+  }
+  final typical = {
+    for (final MapEntry(:key, :value) in bySession.entries)
+      if (value.length >= 3) key: _median(value),
+  };
+  return [
+    for (final lap in laps)
+      if (typical[lap.runId] case final median?
+          when lap.durationSeconds > median * coachSlowLapRatio)
+        lap,
+  ];
 }
 
 /// How far before the slow point a throttle return still counts as after
@@ -658,6 +693,7 @@ CoachFinding? _corrective(
   List<_Passage> passages,
   String coached,
   _ShownSpeed shown, {
+  required Set<DayLapReference> slow,
   required void Function() onlyEarlier,
 }) {
   final observations = <_Observation>[];
@@ -670,6 +706,7 @@ CoachFinding? _corrective(
   // pattern repeated across sessions counts; the session coached must still
   // show it (see the end).
   for (final current in passages) {
+    if (slow.contains(current.lap.reference)) continue;
     final faster = passages.where((p) => _isFaster(p, current)).toList()
       ..sort((a, b) => a.seconds.compareTo(b.seconds));
     final references = faster.take(2).toList();

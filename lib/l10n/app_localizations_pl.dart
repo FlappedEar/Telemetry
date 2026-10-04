@@ -319,6 +319,11 @@ class AppLocalizationsPl extends AppLocalizations {
       'Wzorce widoczne wcześniej dziś nie powtarzają się na większości okrążeń tej sesji.';
 
   @override
+  String coachSlowLaps(String laps) {
+    return 'Pominięte jako znacznie wolniejsze od typowego okrążenia swojej sesji (ruch na torze, rozgrzewka lub schładzanie): $laps.';
+  }
+
+  @override
   String get coachWhyAffected => 'Okrążenia tej sesji';
 
   @override

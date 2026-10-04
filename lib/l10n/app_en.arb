@@ -456,6 +456,16 @@
   "@coachReasonNotInSession": {
     "description": "Why there is no plan."
   },
+  "coachSlowLaps": "Left out as much slower than their session's typical lap (traffic, warm-up or cool-down): {laps}.",
+  "@coachSlowLaps": {
+    "description": "Laps the coach did not read for patterns because they are more than 5% slower than their session's median lap.",
+    "placeholders": {
+      "laps": {
+        "type": "String",
+        "example": "Session 1 · LAP 1, Session 5 · LAP 4"
+      }
+    }
+  },
   "coachWhyAffected": "This session's laps",
   "@coachWhyAffected": {
     "description": "Heading of the coached session's laps the pattern was seen on; the values shown come from them."

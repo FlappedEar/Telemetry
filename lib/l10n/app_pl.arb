@@ -79,6 +79,7 @@
   "coachReasonTooFewLaps": "Wzorzec wystąpił dziś na mniej niż trzech okrążeniach. To za mało, aby przygotować plan.",
   "coachReasonBelowThreshold": "Żaden powtarzalny wzorzec nie jest na tyle wyraźny, by sugerować zmianę.",
   "coachReasonNotInSession": "Wzorce widoczne wcześniej dziś nie powtarzają się na większości okrążeń tej sesji.",
+  "coachSlowLaps": "Pominięte jako znacznie wolniejsze od typowego okrążenia swojej sesji (ruch na torze, rozgrzewka lub schładzanie): {laps}.",
   "coachWhyAffected": "Okrążenia tej sesji",
   "coachWhyEarlier": "Wcześniejsze dzisiejsze okrążenia z tym wzorcem",
   "coachWhyFaster": "Porównane szybsze okrążenia",
