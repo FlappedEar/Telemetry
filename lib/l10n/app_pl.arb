@@ -192,6 +192,8 @@
   "tbLapColumn": "Okrążenie",
   "tbTimeColumn": "Czas",
   "tbFastestRow": "Najszybciej",
+  "tbCellLabel": "{column}: {value}",
+  "tbFastestCell": "{value}, najszybszy",
   "tbSegmentCorner": "Zakręt {number}",
   "tbSegmentCorners": "Zakręty {numbers}",
   "tbSegmentStraight": "Prosta {number}",

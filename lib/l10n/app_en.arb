@@ -1131,6 +1131,16 @@
   "@tbFastestRow": {
     "description": "Sector table last row: the fastest time of each segment."
   },
+  "tbCellLabel": "{column}: {value}",
+  "@tbCellLabel": {
+    "description": "One cell of a sector table row, as a screen reader says it.",
+    "placeholders": {"column": {"type": "String"}, "value": {"type": "String"}}
+  },
+  "tbFastestCell": "{value}, the fastest",
+  "@tbFastestCell": {
+    "description": "A sector table time that is the segment's fastest, as a screen reader says it.",
+    "placeholders": {"value": {"type": "String"}}
+  },
   "tbSegmentCorner": "Corner {number}",
   "@tbSegmentCorner": {
     "description": "An automatically named corner segment.",

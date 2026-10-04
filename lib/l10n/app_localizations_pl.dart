@@ -779,6 +779,16 @@ class AppLocalizationsPl extends AppLocalizations {
   String get tbFastestRow => 'Najszybciej';
 
   @override
+  String tbCellLabel(String column, String value) {
+    return '$column: $value';
+  }
+
+  @override
+  String tbFastestCell(String value) {
+    return '$value, najszybszy';
+  }
+
+  @override
   String tbSegmentCorner(String number) {
     return 'Zakręt $number';
   }

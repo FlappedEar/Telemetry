@@ -1250,6 +1250,18 @@ abstract class AppLocalizations {
   /// **'Fastest'**
   String get tbFastestRow;
 
+  /// One cell of a sector table row, as a screen reader says it.
+  ///
+  /// In en, this message translates to:
+  /// **'{column}: {value}'**
+  String tbCellLabel(String column, String value);
+
+  /// A sector table time that is the segment's fastest, as a screen reader says it.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}, the fastest'**
+  String tbFastestCell(String value);
+
   /// An automatically named corner segment.
   ///
   /// In en, this message translates to:

@@ -805,6 +805,21 @@ class _SectorTable extends StatelessWidget {
             color: lap.lap.reference == selected
                 ? scheme.secondaryContainer
                 : null,
+            selected: lap.lap.reference == selected,
+            semanticsLabel: [
+              _markBest(l10n, l10n.lap(lap.lap), lap.bestOfDay),
+              l10n.tbCellLabel(
+                l10n.tbTimeColumn,
+                displayTime(lap.lap.durationSeconds),
+              ),
+              for (var i = 0; i < segments.length; ++i)
+                l10n.tbCellLabel(
+                  l10n.tbSegmentName(segments[i].name),
+                  _fastest(lap, i)
+                      ? l10n.tbFastestCell(lap.seconds(i)!.toStringAsFixed(3))
+                      : lap.seconds(i)?.toStringAsFixed(3) ?? '—',
+                ),
+            ].join('; '),
             first: name(_markBest(l10n, l10n.lap(lap.lap), lap.bestOfDay)),
             cells: [
               TableCellText(
@@ -829,6 +844,20 @@ class _SectorTable extends StatelessWidget {
           ),
       ],
       footer: StickyRow(
+        semanticsLabel: [
+          l10n.tbFastestRow,
+          l10n.tbCellLabel(
+            l10n.tbTimeColumn,
+            result.theoreticalBestSeconds == null
+                ? '—'
+                : displayTime(result.theoreticalBestSeconds!),
+          ),
+          for (final segment in segments)
+            l10n.tbCellLabel(
+              l10n.tbSegmentName(segment.name),
+              segment.seconds?.toStringAsFixed(3) ?? '—',
+            ),
+        ].join('; '),
         first: name(l10n.tbFastestRow, style: label),
         cells: [
           TableCellText(
