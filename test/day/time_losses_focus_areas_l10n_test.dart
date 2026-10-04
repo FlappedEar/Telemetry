@@ -220,8 +220,8 @@ void main() {
       expect(find.text('Najlepsze okrążenie'), findsOneWidget);
       expect(find.text('Różnica'), findsOneWidget);
       expect(
-        find.textContaining('względem najlepszego okrążenia'),
-        findsWidgets,
+        find.textContaining('względem najlepszego okrążenia, '),
+        findsOneWidget,
       );
       expect(find.textContaining('against the best lap'), findsNothing);
     });

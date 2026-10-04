@@ -728,7 +728,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get tbTapCorner =>
-      'Dotknij zakrętu, aby porównać prędkości, hamowanie i ponowne dodanie gazu z najlepszym okrążeniem.';
+      'Wybierz zakręt, aby porównać prędkości, hamowanie i ponowne dodanie gazu z najlepszym okrążeniem.';
 
   @override
   String get tbCompareHint =>
@@ -1264,10 +1264,10 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż $count okrążeń: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż $count okrążeń: brak statystyk. Wybierz komórkę, aby zobaczyć jej okrążenia.',
       few:
-          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż $count okrążenia: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
-      one: 'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż 1 okrążenie: brak statystyk. Dotknij komórki, aby zobaczyć jej okrążenia.',
+          'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż $count okrążenia: brak statystyk. Wybierz komórkę, aby zobaczyć jej okrążenia.',
+      one: 'Typowy czas (mediana) i rozrzut (środkowa połowa) każdego odcinka w każdej sesji. Najszybszy typowy czas odcinka jest wyróżniony. Mniej niż 1 okrążenie: brak statystyk. Wybierz komórkę, aby zobaczyć jej okrążenia.',
     );
     return '$_temp0';
   }
@@ -1882,12 +1882,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorProposedFrom(String lap) {
-    return 'Zaproponowane na podstawie: $lap. Dotknij odcinka, aby go poprawić.';
+    return 'Zaproponowane na podstawie: $lap. Wybierz odcinek, aby go poprawić.';
   }
 
   @override
   String get segmentEditorProposedFromBestLap =>
-      'Zaproponowane na podstawie najlepszego okrążenia. Dotknij odcinka, aby go poprawić.';
+      'Zaproponowane na podstawie najlepszego okrążenia. Wybierz odcinek, aby go poprawić.';
 
   @override
   String get segmentEditorCorrectionsSaved =>
@@ -2934,7 +2934,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get drivingStripHint => 'Wybierz, aby przesunąć tam kursor';
+  String get drivingStripHint =>
+      'Wskaż miejsce na pasku, aby przesunąć tam kursor';
 
   @override
   String get drivingStatesTitle => 'Stany jazdy';
@@ -2956,7 +2957,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingStatesNote =>
-      'Udziały obliczane są osobno dla każdego okrążenia, względem czasu przejazdu wybranego fragmentu. Stany mogą się nakładać: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie lub jazda bez gazu i hamulca. Dotknij paska, aby przesunąć tam kursor. Dłuższe hamowanie w zakręcie nie jest samo w sobie lepsze ani bezpieczniejsze.';
+      'Udziały obliczane są osobno dla każdego okrążenia, względem czasu przejazdu wybranego fragmentu. Stany mogą się nakładać: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie lub jazda bez gazu i hamulca. Wskaż miejsce na pasku, aby przesunąć tam kursor. Dłuższe hamowanie w zakręcie nie jest samo w sobie lepsze ani bezpieczniejsze.';
 
   @override
   String get cornerDetailsReasonNotMeasured => 'nie zmierzono';
@@ -4534,7 +4535,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreProgressionTooMany =>
-      'Za dużo sesji lub okrążeń, by ocenić postęp.';
+      'Za dużo sesji lub okrążeń (z wyjazdami i zjazdami), by ocenić postęp.';
 
   @override
   String get coreRecordingTooManyLapSections =>
