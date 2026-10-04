@@ -45,10 +45,11 @@ class SessionFusion extends StatelessWidget {
       if (named.run.id == runId) primary = named.run.format.name.toUpperCase();
     }
     if (controller.primaryChanging(runId)) {
-      return Text(
-        l10n.recordingsChangingPrimary(alternative),
-        key: ValueKey('primaryChanging $runId'),
-        style: theme.textTheme.bodySmall,
+      return _Working(
+        text: l10n.recordingsChangingPrimary(alternative),
+        textKey: ValueKey('primaryChanging $runId'),
+        onStop: () => controller.stopRecordingsWork(runId),
+        stopKey: ValueKey('stopRecordingsWork $runId'),
       );
     }
     return Column(
@@ -79,10 +80,11 @@ class SessionFusion extends StatelessWidget {
         if (controller.clockChecking(runId))
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              l10n.clockChecking(primary, alternative),
-              key: ValueKey('clockChecking $runId'),
-              style: theme.textTheme.bodySmall,
+            child: _Working(
+              text: l10n.clockChecking(primary, alternative),
+              textKey: ValueKey('clockChecking $runId'),
+              onStop: () => controller.stopRecordingsWork(runId),
+              stopKey: ValueKey('stopRecordingsWork $runId'),
             ),
           )
         else if (controller.clockCheck(runId) case final check?)
@@ -339,3 +341,32 @@ String fusionChannelName(AppLocalizations l10n, FusedChannel channel) =>
       'sats' || 'satellites' => l10n.fusionChannelSatellites,
       _ => readableChannel(channel.name),
     };
+
+/// What runs for a session's recordings, with a button that stops it.
+class _Working extends StatelessWidget {
+  const _Working({
+    required this.text,
+    required this.textKey,
+    required this.onStop,
+    required this.stopKey,
+  });
+
+  final String text;
+  final Key textKey;
+  final VoidCallback onStop;
+  final Key stopKey;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 4,
+    children: [
+      Text(text, key: textKey, style: Theme.of(context).textTheme.bodySmall),
+      TextButton(
+        key: stopKey,
+        onPressed: onStop,
+        child: Text(context.l10n.cancel),
+      ),
+    ],
+  );
+}

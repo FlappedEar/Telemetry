@@ -549,6 +549,140 @@ void main() {
     expect(pairOf(controller), (laps[1].reference, laps[2].reference));
   });
 
+  group('a running clock check or primary change can be stopped', () {
+    // A day of two sessions with one slot: the first session's clock check
+    // holds the slot until released, the second's primary change waits.
+    Future<(DayResultsController, String, String, List<Completer<void>>)>
+    held() async {
+      final previous = DayResultsController.fusionSlots;
+      DayResultsController.fusionSlots = 1;
+      addTearDown(() => DayResultsController.fusionSlots = previous);
+      final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
+      final (vbo2, rcz2) = writeFusionPair(
+        directory.path,
+        name: 'second',
+        speeds: const [31, 28, 30, 27, 33, 29],
+      );
+      final day = runDayImport((
+        paths: [vbo1, rcz1, vbo2, rcz2],
+        includeSubfolders: false,
+      ));
+      final gates = <Completer<void>>[];
+      var hold = false;
+      final controller = DayResultsController(
+        runs: day.runs,
+        analysis: day.analysis!,
+        alternatives: day.alternatives,
+        fusionRunner: (job) {
+          final gate = Completer<void>();
+          hold ? gates.add(gate) : gate.complete();
+          return _GatedTask(gate.future, job);
+        },
+      );
+      addTearDown(controller.dispose);
+      await controller.fusionsSettled;
+      await controller.save('${directory.path}/Day.fetproject');
+      hold = true;
+      final [first, second] = [for (final named in day.runs) named.run.id];
+      return (controller, first, second, gates);
+    }
+
+    test('a stopped clock check changes nothing', () async {
+      final (controller, first, _, gates) = await held();
+      final fused = controller.fusion(first)!;
+      final check = controller.checkClock(first);
+      await pumpEventQueue();
+      expect(controller.recordingsWorking(first), isTrue);
+      expect(controller.recordingsBusy, isTrue);
+
+      controller.stopRecordingsWork(first);
+      // At once: the day can be left again and the actions come back.
+      expect(controller.clockChecking(first), isFalse);
+      expect(controller.recordingsBusy, isFalse);
+      expect(controller.recordingsEditable(first), isTrue);
+
+      // The job finishing later is not used.
+      gates.single.complete();
+      await check;
+      expect(controller.clockCheck(first), isNull);
+      expect(controller.recordingsProblem(first), isNull);
+      expect(identical(controller.fusion(first), fused), isTrue);
+      expect(controller.dirty, isFalse);
+    });
+
+    test('a stopped primary change keeps the primary', () async {
+      final (controller, first, second, gates) = await held();
+      final check = controller.checkClock(first);
+      final change = controller.makePrimary(second);
+      await pumpEventQueue();
+      expect(controller.primaryChanging(second), isTrue);
+
+      controller.stopRecordingsWork(second);
+      expect(controller.primaryChanging(second), isFalse);
+      // The first session's check still runs.
+      expect(controller.clockChecking(first), isTrue);
+
+      gates.single.complete();
+      await Future.wait([check, change]);
+      expect(controller.clockCheck(first), isNotNull);
+      expect(controller.runs.last.run.format, RecordingFormat.vbo);
+      expect(controller.recordingsProblem(second), isNull);
+      expect(controller.dirty, isFalse);
+      // It can be asked again.
+      await controller.makePrimary(second);
+      expect(controller.runs.last.run.format, RecordingFormat.rcz);
+    });
+
+    test('nothing to stop does nothing', () async {
+      final (controller, first, _, _) = await held();
+      final fused = controller.fusion(first);
+      controller.stopRecordingsWork(first);
+      expect(identical(controller.fusion(first), fused), isTrue);
+      expect(controller.recordingsEditable(first), isTrue);
+    });
+  });
+
+  testWidgets('Cancel next to a running clock check stops it', (tester) async {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = runDayImport((paths: [vbo, rcz], includeSubfolders: false));
+    final runId = both.runs.single.run.id;
+    var hold = false;
+    final gates = <Completer<void>>[];
+    final controller = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+      fusionRunner: (job) {
+        final gate = Completer<void>();
+        hold ? gates.add(gate) : gate.complete();
+        return _GatedTask(gate.future, job);
+      },
+    );
+    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    hold = true;
+    await tester.ensureVisible(find.text('Check clock'));
+    await tester.tap(find.text('Check clock'));
+    await tester.pump();
+    expect(find.byKey(ValueKey('clockChecking $runId')), findsOneWidget);
+
+    await tester.tap(find.byKey(ValueKey('stopRecordingsWork $runId')));
+    await tester.pump();
+    expect(find.byKey(ValueKey('clockChecking $runId')), findsNothing);
+    expect(find.text('Check clock'), findsOneWidget);
+    for (final gate in gates) {
+      gate.complete();
+    }
+    await tester.pumpAndSettle();
+    expect(find.text('The clocks line up.'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('the session shows its recordings\' actions, the clock check '
       'and the primary change', (tester) async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
