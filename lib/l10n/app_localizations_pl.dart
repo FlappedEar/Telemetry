@@ -285,6 +285,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricFirstThrottle => 'Pierwsze dodanie gazu';
 
   @override
+  String get coachMetricEarlyThrottleShare =>
+      'Okrążenia z przedwczesnym dodaniem gazu';
+
+  @override
   String get coachMetricThrottleReturn => 'Ponowne dodanie gazu';
 
   @override

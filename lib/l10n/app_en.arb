@@ -401,6 +401,10 @@
   "@coachMetricFirstThrottle": {
     "description": "Where the throttle was first picked up after the braking, in metres along the lap; on the session's laps it was released again before the slow point."
   },
+  "coachMetricEarlyThrottleShare": "Laps picking up the throttle early",
+  "@coachMetricEarlyThrottleShare": {
+    "description": "The share of a session's laps (in percent) that picked up the throttle after the braking and released it again before the slow point."
+  },
   "coachMetricThrottleReturn": "Throttle return",
   "@coachMetricThrottleReturn": {
     "description": "Where the throttle is applied again after the slow point, in metres along the lap."

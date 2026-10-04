@@ -706,6 +706,22 @@ void main() {
       pl.coachMeasured(finding, 'km/h'),
       startsWith('Pierwsze dodanie gazu: 475\u00a0m'),
     );
+    // Checked next session by the share of laps picking up early.
+    final goal = CoachGoalCheck(
+      runId: 'run1',
+      runName: 'Session 1',
+      finding: finding,
+      outcome: CoachGoalOutcome.better,
+      before: 200 / 3,
+      now: 0,
+    );
+    expect(en.coachMetric(goal.metric), 'Laps picking up the throttle early');
+    expect(coachValue(goal.before!, goal.unit, 'km/h'), '67%');
+    expect(coachValue(goal.now!, goal.unit, 'km/h'), '0%');
+    expect(
+      pl.coachMetric(goal.metric),
+      'Okrążenia z przedwczesnym dodaniem gazu',
+    );
   });
 
   test('a braking item compares with the three fastest laps of the day', () {

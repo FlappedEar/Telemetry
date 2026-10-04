@@ -70,6 +70,7 @@
   "coachMetricLongestCoast": "Najdłuższa faza jazdy bez gazu i hamulca",
   "coachMetricMinimumSpeed": "Prędkość minimalna",
   "coachMetricFirstThrottle": "Pierwsze dodanie gazu",
+  "coachMetricEarlyThrottleShare": "Okrążenia z przedwczesnym dodaniem gazu",
   "coachMetricThrottleReturn": "Ponowne dodanie gazu",
   "coachMetricSegmentTime": "Czas odcinka",
   "coachMetricExitSpeed": "Prędkość na wyjściu",

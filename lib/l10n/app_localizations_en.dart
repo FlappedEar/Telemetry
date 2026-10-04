@@ -278,6 +278,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMetricFirstThrottle => 'First throttle pickup';
 
   @override
+  String get coachMetricEarlyThrottleShare =>
+      'Laps picking up the throttle early';
+
+  @override
   String get coachMetricThrottleReturn => 'Throttle return';
 
   @override

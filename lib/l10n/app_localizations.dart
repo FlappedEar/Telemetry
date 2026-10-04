@@ -518,6 +518,12 @@ abstract class AppLocalizations {
   /// **'First throttle pickup'**
   String get coachMetricFirstThrottle;
 
+  /// The share of a session's laps (in percent) that picked up the throttle after the braking and released it again before the slow point.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps picking up the throttle early'**
+  String get coachMetricEarlyThrottleShare;
+
   /// Where the throttle is applied again after the slow point, in metres along the lap.
   ///
   /// In en, this message translates to:
