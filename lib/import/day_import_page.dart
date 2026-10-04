@@ -586,6 +586,11 @@ class _DayImportPageState extends State<DayImportPage> {
       final started = !_controller.isWorking;
       // Shares imported here and not opened stay one day: a later share is
       // imported together with them, not instead of them.
+      if (!started) {
+        // An import started meanwhile (a folder): these follow it.
+        (_afterImport ??= []).addAll([...paths, ...waiting]);
+        return;
+      }
       final all = [..._unopenedShares, ...paths, ...waiting];
       // Until their day is shown (cleared then), also when it cannot open by
       // itself because another page is on top.
@@ -613,15 +618,6 @@ class _DayImportPageState extends State<DayImportPage> {
   ) async {
     // From the share, opening the day included (see the diagnostics).
     final clock = Stopwatch()..start();
-    // The saved day just left here comes first, as the import page shows
-    // it: also when an older day's unsaved work waits for recovery. Adding
-    // to it saves it again in its file and leaves that work alone.
-    final closed = _lastDay;
-    final closedPath = closed?.documentPath;
-    if (closed != null && !closed.dirty && closedPath != null) {
-      final day = await _added(paths, clock, () => _openSaved(closedPath));
-      if (day != null) return (day: day, snapshotLeft: false);
-    }
     final recovery = await queueRecovery(widget.recovery.load);
     if (recovery != null) {
       if (!_recent(recovery.timestamp)) return (day: null, snapshotLeft: true);
@@ -638,6 +634,15 @@ class _DayImportPageState extends State<DayImportPage> {
               );
       });
       return (day: day, snapshotLeft: day == null);
+    }
+    // No unsaved work waits, so a saved day may open: the one just left
+    // here, saved anywhere (on desktop the app keeps no list of saved days),
+    // else the day saved last in the app.
+    final closed = _lastDay;
+    final closedPath = closed?.documentPath;
+    if (closed != null && !closed.dirty && closedPath != null) {
+      final day = await _added(paths, clock, () => _openSaved(closedPath));
+      if (day != null) return (day: day, snapshotLeft: false);
     }
     final day = await _added(paths, clock, () async {
       final saved = await widget.documents.savedDays();
@@ -700,7 +705,6 @@ class _DayImportPageState extends State<DayImportPage> {
   /// so the import then stays here, next to the offer to restore that work.
   Future<void> _startDay(List<String> paths) async {
     if (paths.isEmpty || !mounted) return;
-    _unopenedShares = const [];
     if (_controller.isWorking || _opening) {
       _start(paths);
       return;
@@ -716,6 +720,7 @@ class _DayImportPageState extends State<DayImportPage> {
       _start(paths);
       return;
     }
+    _unopenedShares = const [];
     _showWhenImported = nothingKept;
     _start(paths);
   }

@@ -752,8 +752,8 @@ void main() {
       expect(after.timestamp, before.timestamp);
     });
 
-    testWidgets('the saved day just left takes the session before older '
-        'unsaved work', (tester) async {
+    testWidgets('another day\'s unsaved work keeps the saved day just left '
+        'from opening by itself', (tester) async {
       // A saved day of 2 October, and unsaved work on another day.
       final saved = '${directory.path}/Saved.fetproject';
       await tester.runAsync(() async {
@@ -792,15 +792,15 @@ void main() {
 
       pickers.recordings = [write('b.vbo', _datedVbo(hour: 12, speed: 80))];
       await tester.tap(find.text('Import sessions…'));
-      await pumpUntil(
-        tester,
-        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
-      );
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      importer.jobs.single.finish();
       await tester.pumpAndSettle();
-      expect(importer.jobs, isEmpty);
+      // Opening a day here would let its changes replace that work: the
+      // session is imported and waits to be opened by hand.
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
       final runs = (readDayDocument(saved)['event'] as Map)['runs'] as List;
-      expect(runs, hasLength(2));
-      // The other day's unsaved work is as it was.
+      expect(runs, hasLength(1));
       final after = await tester.runAsync(store.load);
       expect(after!.eventId, before!.eventId);
       expect(after.timestamp, before.timestamp);
