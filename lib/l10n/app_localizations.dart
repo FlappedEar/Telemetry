@@ -5426,7 +5426,7 @@ abstract class AppLocalizations {
   /// Recordings shared from another app are imported behind the page shown.
   ///
   /// In en, this message translates to:
-  /// **'Importing the shared recordings. Go back to Import a day to see them.'**
+  /// **'Importing the shared recordings. Go back to Import sessions to see them.'**
   String get importPageImportingBehind;
 
   /// Title of the list of saved days.
@@ -5456,7 +5456,7 @@ abstract class AppLocalizations {
   /// Title of the import page, the app's first page.
   ///
   /// In en, this message translates to:
-  /// **'Import a day'**
+  /// **'Import sessions'**
   String get importPageTitle;
 
   /// A day with unsaved changes that can be restored, and when they were made.
@@ -5480,25 +5480,25 @@ abstract class AppLocalizations {
   /// Explains the import page on desktops.
   ///
   /// In en, this message translates to:
-  /// **'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.'**
+  /// **'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions recorded on the date of the day you worked on last are added to it.'**
   String get importPageIntroDrop;
 
   /// Explains the import page when folders can be picked.
   ///
   /// In en, this message translates to:
-  /// **'Choose the day\'s VBO and RCZ recordings or a folder.'**
+  /// **'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions recorded on the date of the day you worked on last are added to it.'**
   String get importPageIntroFolder;
 
   /// Explains the import page on phones.
   ///
   /// In en, this message translates to:
-  /// **'Choose the day\'s VBO and RCZ recordings.'**
+  /// **'Choose the VBO or RCZ recording of each session as you drive. Sessions recorded on the date of the day you worked on last are added to it.'**
   String get importPageIntro;
 
   /// Button: pick recordings to import.
   ///
   /// In en, this message translates to:
-  /// **'Choose recordings…'**
+  /// **'Import sessions…'**
   String get importPageChooseRecordings;
 
   /// Button: pick a folder to import.
@@ -5570,8 +5570,32 @@ abstract class AppLocalizations {
   /// Button: open the imported day.
   ///
   /// In en, this message translates to:
-  /// **'Show the day\'s results'**
+  /// **'Open the day'**
   String get importPageShowResults;
+
+  /// Under the day closed last: it has unsaved changes, kept since this time.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved yet; changes kept from {time}.'**
+  String importPageDayUnsaved(String time);
+
+  /// Under the day closed last: the file it is saved in.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as {file}.'**
+  String importPageDaySaved(String file);
+
+  /// Under the day closed last: it was neither saved nor kept for recovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved.'**
+  String get importPageDayNotKept;
+
+  /// A day is being opened, or recordings added to today's day before it shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the day…'**
+  String get importPageOpeningDay;
 
   /// The file type shown in the file picker when choosing recordings.
   ///
@@ -6272,12 +6296,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose what happens to each recording. Nothing is imported until you confirm.'**
   String get reviewImportIntro;
-
-  /// Checkbox on the import page: the next import stops at a review of the recordings found. Off by default and after each import.
-  ///
-  /// In en, this message translates to:
-  /// **'Review the files before importing'**
-  String get reviewBeforeImport;
 
   /// Menu item of a day: choose recordings to add and review what happens to each before they are added.
   ///

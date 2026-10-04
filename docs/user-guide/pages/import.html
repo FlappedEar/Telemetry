@@ -1,10 +1,10 @@
-<!-- title: Importing a day | nav: Importing a day -->
-<h1 id="import">Importing a day</h1>
-<p class="lead">The app opens on <strong>Import a day</strong>. Give it the day's recordings and it prepares the sessions, laps and analysis on its own.</p>
+<!-- title: Importing sessions | nav: Importing sessions -->
+<h1 id="import">Importing sessions</h1>
+<p class="lead">The app opens on <strong>Import sessions</strong>. Give it each session's recording as you drive, or a whole day at once, and it prepares the sessions, laps and analysis on its own.</p>
 
 <figure>
-  <img src="assets/screens/import-empty.png" alt="Import a day on a desktop: a panel with Choose recordings, Choose a folder, Open a saved day, Include subfolders and Review the files before importing" width="1280" height="800" loading="lazy">
-  <figcaption>Import a day on a Mac or PC.</figcaption>
+  <img src="assets/screens/import-empty.png" alt="Import sessions on a desktop: a panel with Import sessions, Choose a folder, Open a saved day and Include subfolders" width="1280" height="800" loading="lazy">
+  <figcaption>Import sessions on a Mac or PC.</figcaption>
 </figure>
 
 <h2 id="formats">What you can import</h2>
@@ -17,18 +17,26 @@
 <h2 id="choose">Choosing the recordings</h2>
 <table>
   <tr><th>Button</th><th>What it does</th><th>Where</th></tr>
-  <tr><td><strong>Choose recordings…</strong></td><td>Pick one or more VBO/RCZ files.</td><td>Everywhere</td></tr>
-  <tr><td><strong>Choose a folder…</strong></td><td>Import every recording in a folder. Tick <strong>Include subfolders</strong> (the box or its label) first to look inside subfolders too.</td><td>Mac and PC</td></tr>
-  <tr><td>Drag and drop</td><td>Drop files or folders anywhere on the window. An amber border shows while you drag; it is grey when an import is already running.</td><td>Mac and PC</td></tr>
+  <tr><td><strong>Import sessions…</strong></td><td>Pick one or more VBO/RCZ files: the session you just drove, or several. See <a href="#where">Where the sessions go</a>.</td><td>Everywhere</td></tr>
+  <tr><td><strong>Choose a folder…</strong></td><td>Import every recording in a folder as a new day. Tick <strong>Include subfolders</strong> (the box or its label) first to look inside subfolders too.</td><td>Mac and PC</td></tr>
+  <tr><td>Drag and drop</td><td>Drop files or folders anywhere on the window. Dropped files are handled like <strong>Import sessions…</strong>; a dropped folder starts a new day. An amber border shows while you drag; it is grey when an import is already running.</td><td>Mac and PC</td></tr>
   <tr><td><strong>Open a saved day…</strong></td><td>Open a day you saved before. See <a href="saving.html#open">Opening a day</a>.</td><td>Everywhere</td></tr>
 </table>
 <p>On a phone there is no folder picker; select the files, or share them from RaceChrono. See <a href="phone.html">Phones and tablets</a>.</p>
 
-<h2 id="review">Reviewing the files before importing</h2>
-<p>The import is automatic: nothing asks for your approval. To decide yourself what happens to each file, tick <strong>Review the files before importing</strong> (the box or its label), then choose the recordings or a folder, or drop them. The files are read, and before anything is imported <strong>Review the import</strong> lists every file found:</p>
+<h2 id="where">Where the sessions go</h2>
+<p>You do not choose a day: the app does.</p>
+<ul>
+  <li>If the day you worked on last (unsaved, the one you just left, or the newest day saved in the app) was in the last 24 hours and has recordings from the same date, the new sessions are added to it and it opens.</li>
+  <li>Otherwise the recordings are imported as a new day, which opens by itself. If another day has unsaved changes, the new day stays on <strong>Import sessions</strong> with an <strong>Open the day</strong> button instead, next to the offer to restore the other day, so nothing is replaced.</li>
+</ul>
+<p>So at the track, tap <strong>Import sessions…</strong> after each session and pick only the new recording: it becomes the next session of the day. The same happens when you share a recording from RaceChrono on a phone (see <a href="phone.html#share">Sharing from RaceChrono</a>), or use <strong>Add recordings</strong> on an open day (see <a href="day.html#add">Adding a session</a>).</p>
+
+<h2 id="review">Reviewing the files</h2>
+<p>The import is automatic: nothing asks for your approval. To decide yourself what happens to each file, open the day and choose <strong>More</strong> (⋮) › <strong>Add and review recordings…</strong> (see <a href="day.html#add-review">Adding with a review</a>). The files are read, and before anything is added <strong>Review the import</strong> lists every file found:</p>
 <figure>
   <img src="assets/screens/import-review.png" alt="Review the import: each recording with its length and complete laps, a choice such as Same run as recording-1.vbo or Import as a new session, a hint that the GPS traces agree, and an Import button with the number of new sessions" width="1280" height="800" loading="lazy">
-  <figcaption>The review, with what the automatic import would do already chosen. The files were renamed for this picture.</figcaption>
+  <figcaption>The review of recordings added to a day, with what the automatic import would do already chosen. The files were renamed for this picture.</figcaption>
 </figure>
 <ul>
   <li>Each file shows its length (minutes:seconds) and its complete laps. A duplicate says which file has the same content, and a file that could not be read says why; neither can be imported.</li>
@@ -44,24 +52,27 @@
   <li><strong>Import</strong> reads the files again and imports them as chosen. If they changed since the review (a file was replaced, or a folder has other files now), nothing is imported: <em>The recordings changed after the review, so nothing was imported. Review them again.</em></li>
   <li>Closing the review (✕) imports nothing: <em>Import cancelled. Nothing was imported.</em></li>
 </ul>
-<p>The box is cleared after each review, so the next import is automatic again. A single file can be reviewed too. Recordings shared from RaceChrono on a phone are never reviewed: they are added at once, as described in <a href="phone.html#share">Sharing from RaceChrono</a>. To review recordings for a day that is open, see <a href="day.html#add-review">Adding with a review</a>.</p>
+<p>A single file can be reviewed too. Recordings shared from RaceChrono on a phone are never reviewed: they are added at once, as described in <a href="phone.html#share">Sharing from RaceChrono</a>.</p>
 <div class="note"><p>The day file has no place to say that two recordings are still to be combined, and when a day opens the app combines only a VBO session's RCZ by itself. So when you link any other pair (an RCZ that supplies the laps with its VBO, or two VBOs, say) and save the day while they are still being lined up, saving waits until that is done, and the file records how they are combined. Meanwhile the day cannot be left: <em>Wait until the recordings are lined up and the day is saved.</em> If lining them up fails, nothing is combined, and the session shows it as the day will show it when it opens again: an RCZ session's VBO is kept beside it and not combined (<a href="day.html#combined">Check clock</a> tries again); any other pair stays in the day file with its session but is not shown or used.</p></div>
 
 <h2 id="progress">While it imports</h2>
-<p>The page shows <em>Looking for recordings…</em>, then <em>Preparing recording X of N…</em> with a progress bar. <strong>Cancel</strong> stops at once and imports nothing; the page then says <em>Import cancelled. Nothing was imported.</em> You cannot start a second import while one runs.</p>
+<p>While new sessions are added to the day you worked on last, or a day is opened, the page says <em>Opening the day…</em>. A new day shows <em>Looking for recordings…</em>, then <em>Preparing recording X of N…</em> with a progress bar. <strong>Cancel</strong> stops at once and imports nothing; the page then says <em>Import cancelled. Nothing was imported.</em> You cannot start a second import while one runs.</p>
 <p>If nothing could be imported, a panel with a red mark says why, for example <em>No recording could be imported.</em>, and suggests choosing the recordings again, or other ones. The notes under it say what was wrong with each file.</p>
 
 <h2 id="result">The result</h2>
-<p>When it is done, the page says how many sessions were imported and lists each one:</p>
+<p>When it is done, the day opens: the <a href="day.html">day results</a>, with <strong>Save</strong> (the disk icon) in the toolbar. When you go back, <strong>Import sessions</strong> shows the day you left at the top: its name, whether it is saved (<em>Saved as …</em>) or not yet (<em>Not saved yet; changes kept from …</em>), <strong>Open the day</strong> to go back to it, <strong>Discard…</strong> for unsaved changes (see <a href="#restore">Restoring unsaved work</a>), and its sessions:</p>
+<figure>
+  <img src="assets/screens/import-done.png" alt="Import sessions after going back from a day of six sessions: the day's name, Not saved yet, Open the day and Discard, and each session with its laps and best time" width="1280" height="800" loading="lazy">
+</figure>
 <ul>
   <li><strong>Session N</strong>, numbered in the order the sessions were recorded.</li>
   <li>Under it, the lap count, for example <em>7 laps</em>, or why it has no laps, for example <em>No laps: the recording has no start/finish line.</em></li>
   <li>On the right, the session's <strong>Best</strong> ranked lap time, as on the day results; the session with the best lap of the day is in bold purple. A session on another track layout shows its fastest lap.</li>
 </ul>
-<p>Tap <strong>Show the day's results</strong> to open the <a href="day.html">day results</a>. From then on the day is kept as a saved day or as unsaved work (see <a href="#restore">Restoring unsaved work</a>), so the import list is cleared when you come back.</p>
+<p>If the new day could not open by itself, because another day has unsaved changes, the page instead says how many sessions were imported, lists them the same way, and offers <strong>Open the day</strong>.</p>
 
 <h3 id="notes">Import notes</h3>
-<p>Anything that was skipped or combined is listed under <strong>Import notes</strong>, one line per file, for example a file that is not a recording, a duplicate, or a VBO and RCZ of the same drive.</p>
+<p>Anything that was skipped or combined is listed under <strong>Import notes</strong>, one line per file, for example a file that is not a recording, a duplicate, or a VBO and RCZ of the same drive. When the day opens, the notes show at the bottom of the day for a few seconds (✕ closes them); when it does not, they are listed under the sessions.</p>
 
 <h2 id="laps-found">How laps are found</h2>
 <p>Laps come from the start/finish line saved in the recording (the RaceChrono track's start line) and the GPS trace:</p>
@@ -74,10 +85,10 @@
 <p>The start/finish line cannot be placed by hand. If a session has no laps, see <a href="troubleshooting.html#no-laps">No laps</a>.</p>
 
 <h2 id="restore">Restoring unsaved work</h2>
-<p>While you work on a day that is not saved, the app keeps a copy of it. If the app closed before you saved, <strong>Import a day</strong> shows <em>&lt;day&gt; has unsaved changes from …</em> with two buttons:</p>
+<p>While you work on a day that is not saved, the app keeps a copy of it. If the app closed before you saved, <strong>Import sessions</strong> shows <em>&lt;day&gt; has unsaved changes from …</em> with two buttons:</p>
 <ul>
   <li><strong>Restore</strong> reopens the day with your changes.</li>
   <li><strong>Discard…</strong> deletes the copy after asking. Your recordings and saved days are not touched.</li>
 </ul>
 <p>The copy is updated half a second after each change, and straight away when you switch to another app or quit. If the app crashes or is stopped within that half second, the very last change can be missing from the copy, so save the day to be sure.</p>
-<p>Only one unsaved day is kept: working on another unsaved day replaces the copy. A day you just imported and never saved counts as unsaved, so the banner also appears when you go back from its results.</p>
+<p>Only one unsaved day is kept: working on another unsaved day replaces the copy. A day you just imported and never saved counts as unsaved: when you go back from it, it is the day listed at the top, with <strong>Open the day</strong> (which restores it) and <strong>Discard…</strong>.</p>

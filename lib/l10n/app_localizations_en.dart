@@ -3583,7 +3583,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPageImportingBehind =>
-      'Importing the shared recordings. Go back to Import a day to see them.';
+      'Importing the shared recordings. Go back to Import sessions to see them.';
 
   @override
   String get importPageOpenSavedTitle => 'Open a saved day';
@@ -3601,7 +3601,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get importPageTitle => 'Import a day';
+  String get importPageTitle => 'Import sessions';
 
   @override
   String importPageUnsaved(String day, String time) {
@@ -3616,17 +3616,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPageIntroDrop =>
-      'Choose the day\'s VBO and RCZ recordings or a folder, or drop them here.';
+      'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions recorded on the date of the day you worked on last are added to it.';
 
   @override
   String get importPageIntroFolder =>
-      'Choose the day\'s VBO and RCZ recordings or a folder.';
+      'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions recorded on the date of the day you worked on last are added to it.';
 
   @override
-  String get importPageIntro => 'Choose the day\'s VBO and RCZ recordings.';
+  String get importPageIntro =>
+      'Choose the VBO or RCZ recording of each session as you drive. Sessions recorded on the date of the day you worked on last are added to it.';
 
   @override
-  String get importPageChooseRecordings => 'Choose recordings…';
+  String get importPageChooseRecordings => 'Import sessions…';
 
   @override
   String get importPageChooseFolder => 'Choose a folder…';
@@ -3673,7 +3674,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get importPageShowResults => 'Show the day\'s results';
+  String get importPageShowResults => 'Open the day';
+
+  @override
+  String importPageDayUnsaved(String time) {
+    return 'Not saved yet; changes kept from $time.';
+  }
+
+  @override
+  String importPageDaySaved(String file) {
+    return 'Saved as $file.';
+  }
+
+  @override
+  String get importPageDayNotKept => 'Not saved.';
+
+  @override
+  String get importPageOpeningDay => 'Opening the day…';
 
   @override
   String get importPageRecordingTypes => 'VBO and RCZ recordings';
@@ -4139,9 +4156,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reviewImportIntro =>
       'Choose what happens to each recording. Nothing is imported until you confirm.';
-
-  @override
-  String get reviewBeforeImport => 'Review the files before importing';
 
   @override
   String get addAndReviewRecordings => 'Add and review recordings…';

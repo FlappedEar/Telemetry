@@ -5315,7 +5315,7 @@
   "@importPageChooseFolderHint": {
     "description": "How to find a day's recordings."
   },
-  "importPageImportingBehind": "Importing the shared recordings. Go back to Import a day to see them.",
+  "importPageImportingBehind": "Importing the shared recordings. Go back to Import sessions to see them.",
   "@importPageImportingBehind": {
     "description": "Recordings shared from another app are imported behind the page shown."
   },
@@ -5341,7 +5341,7 @@
       }
     }
   },
-  "importPageTitle": "Import a day",
+  "importPageTitle": "Import sessions",
   "@importPageTitle": {
     "description": "Title of the import page, the app's first page."
   },
@@ -5367,19 +5367,19 @@
   "@importPageDiscardEllipsis": {
     "description": "Button: asks before discarding the unsaved changes."
   },
-  "importPageIntroDrop": "Choose the day's VBO and RCZ recordings or a folder, or drop them here.",
+  "importPageIntroDrop": "Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions recorded on the date of the day you worked on last are added to it.",
   "@importPageIntroDrop": {
     "description": "Explains the import page on desktops."
   },
-  "importPageIntroFolder": "Choose the day's VBO and RCZ recordings or a folder.",
+  "importPageIntroFolder": "Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions recorded on the date of the day you worked on last are added to it.",
   "@importPageIntroFolder": {
     "description": "Explains the import page when folders can be picked."
   },
-  "importPageIntro": "Choose the day's VBO and RCZ recordings.",
+  "importPageIntro": "Choose the VBO or RCZ recording of each session as you drive. Sessions recorded on the date of the day you worked on last are added to it.",
   "@importPageIntro": {
     "description": "Explains the import page on phones."
   },
-  "importPageChooseRecordings": "Choose recordings…",
+  "importPageChooseRecordings": "Import sessions…",
   "@importPageChooseRecordings": {
     "description": "Button: pick recordings to import."
   },
@@ -5440,10 +5440,38 @@
       }
     }
   },
-  "importPageShowResults": "Show the day's results",
+  "importPageShowResults": "Open the day",
   "@importPageShowResults": {
     "description": "Button: open the imported day."
+  },  "importPageDayUnsaved": "Not saved yet; changes kept from {time}.",
+  "@importPageDayUnsaved": {
+    "description": "Under the day closed last: it has unsaved changes, kept since this time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "2026-10-03 06:30"
+      }
+    }
   },
+  "importPageDaySaved": "Saved as {file}.",
+  "@importPageDaySaved": {
+    "description": "Under the day closed last: the file it is saved in.",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrząb 2026-10-03.fetproject"
+      }
+    }
+  },
+  "importPageDayNotKept": "Not saved.",
+  "@importPageDayNotKept": {
+    "description": "Under the day closed last: it was neither saved nor kept for recovery."
+  },
+  "importPageOpeningDay": "Opening the day…",
+  "@importPageOpeningDay": {
+    "description": "A day is being opened, or recordings added to today's day before it shows."
+  },
+
   "importPageRecordingTypes": "VBO and RCZ recordings",
   "@importPageRecordingTypes": {
     "description": "The file type shown in the file picker when choosing recordings."
@@ -6125,10 +6153,6 @@
   "reviewImportIntro": "Choose what happens to each recording. Nothing is imported until you confirm.",
   "@reviewImportIntro": {
     "description": "Text at the top of the import review page."
-  },
-  "reviewBeforeImport": "Review the files before importing",
-  "@reviewBeforeImport": {
-    "description": "Checkbox on the import page: the next import stops at a review of the recordings found. Off by default and after each import."
   },
   "addAndReviewRecordings": "Add and review recordings…",
   "@addAndReviewRecordings": {

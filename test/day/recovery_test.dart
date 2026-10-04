@@ -191,12 +191,19 @@ void main() {
 
     await tester.pageBack();
     await settle();
-    expect(find.textContaining('Test day has unsaved changes'), findsOneWidget);
+    // The day just left is listed with its sessions, still unsaved.
+    expect(find.text('Test day'), findsOneWidget);
+    expect(find.textContaining('Not saved yet'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('importSession Session 1')),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Discard…'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Discard'));
     await settle();
     expect(find.textContaining('has unsaved changes'), findsNothing);
+    expect(find.text('Test day'), findsNothing);
     expect(File(store.file).existsSync(), isFalse);
   });
 }
