@@ -118,7 +118,7 @@ void main() {
           final narrow = size.width < 900;
           // A phone shows the laps as a tab, not below the analysis.
           expect(
-            find.widgetWithText(NavigationDestination, 'Laps'),
+            find.byKey(const ValueKey('daySection-laps')),
             narrow ? findsOneWidget : findsNothing,
           );
           await scrollThrough(tester);
@@ -175,9 +175,7 @@ void main() {
 
           if (narrow) {
             // The laps are one tap away on a phone, not below the analysis.
-            await tester.tap(
-              find.widgetWithText(NavigationDestination, 'Laps'),
-            );
+            await tester.tap(find.byKey(const ValueKey('daySection-laps')));
             await tester.pumpAndSettle();
             await scrollThrough(tester);
             expect(tester.takeException(), isNull, reason: 'laps scrolled');

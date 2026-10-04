@@ -635,7 +635,7 @@ void main() {
         ),
       );
       await settle();
-      await tester.tap(find.byKey(const ValueKey('openLibrary')));
+      await tester.tap(find.byKey(const ValueKey('place-library')));
       await settle();
       await tester.tap(find.textContaining('Test day'));
       await tester.runAsync(() async {

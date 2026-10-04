@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
@@ -34,7 +36,8 @@ final class AppNavigation extends ChangeNotifier {
     observer.reset();
     _host = host;
     _select = select;
-    notifyListeners();
+    // Attached while the host is first built: the frame redraws after it.
+    scheduleMicrotask(notifyListeners);
   }
 
   void detach(Object host) {
@@ -44,7 +47,8 @@ final class AppNavigation extends ChangeNotifier {
     _section = AppSection.home;
     _dayAvailable = false;
     _libraryAvailable = false;
-    notifyListeners();
+    // Detached while the tree is taken down.
+    scheduleMicrotask(notifyListeners);
   }
 
   /// Called by the host whenever what is shown changes.

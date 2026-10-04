@@ -143,7 +143,7 @@ void main() {
       expect(time.style?.fontWeight == FontWeight.w700, isBest);
     }
     // On a phone the laps are the second tab.
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
     await tester.pumpAndSettle();
     expect(find.text('Best of the day'), findsOneWidget);
     // Every other ranked lap shows its gap to the best of the day.
@@ -190,7 +190,7 @@ void main() {
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
     );
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
     await tester.pumpAndSettle();
     expect(hideUnrankedLapsSetting.value, isTrue);
     expect(find.byKey(const ValueKey('lapsUnrankedToggle')), findsNothing);
@@ -201,9 +201,9 @@ void main() {
     expect(controller.analysis.rows, hasLength(5));
   });
 
-  for (final (name, size, section) in [
-    ('phone', const Size(400, 900), NavigationDestination),
-    ('desktop', const Size(1200, 900), NavigationRailDestination),
+  for (final (name, size) in [
+    ('phone', const Size(400, 900)),
+    ('desktop', const Size(1200, 900)),
   ]) {
     testWidgets('Compare suggests each session best against the day ($name)', (
       tester,
@@ -226,16 +226,7 @@ void main() {
       );
       expect(find.byKey(const ValueKey('daySections')), findsOneWidget);
       expect(find.byKey(const ValueKey('comparePick')), findsNothing);
-      if (section == NavigationDestination) {
-        await tester.tap(find.widgetWithText(NavigationDestination, 'Compare'));
-      } else {
-        await tester.tap(
-          find.descendant(
-            of: find.byType(NavigationRail),
-            matching: find.text('Compare'),
-          ),
-        );
-      }
+      await tester.tap(find.byKey(const ValueKey('daySection-compare')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('comparePick')), findsOneWidget);
       final pair = find.byKey(ValueKey('comparePair-${other.reference}'));
@@ -269,9 +260,15 @@ void main() {
       ),
     );
     for (final label in ['Dzień', 'Okrążenia', 'Porównaj']) {
-      expect(find.widgetWithText(NavigationDestination, label), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('daySections')),
+          matching: find.text(label),
+        ),
+        findsOneWidget,
+      );
     }
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Porównaj'));
+    await tester.tap(find.byKey(const ValueKey('daySection-compare')));
     await tester.pumpAndSettle();
     expect(find.text('Porównaj dwa okrążenia'), findsOneWidget);
   });
@@ -650,7 +647,7 @@ void main() {
         home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
       ),
     );
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
     await tester.pumpAndSettle();
     // No overflow down to the best lap, whose mark is shown in full.
     await tester.scrollUntilVisible(
@@ -760,10 +757,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(documents.names, ['Day']);
     expect(find.text('Saved as Day.fetproject.'), findsOneWidget);
-    // The title, beside the bottom bar's Day section.
+    // The title, above the Day tab.
     expect(
       find.descendant(of: find.byType(AppBar), matching: find.text('Day')),
-      findsOneWidget,
+      findsNWidgets(2),
     );
     expect(saved, hasLength(1));
 
@@ -787,7 +784,7 @@ void main() {
     expect(find.text('Excluded: Traffic'), findsOneWidget);
     expect(
       find.descendant(of: find.byType(AppBar), matching: find.text('Day')),
-      findsOneWidget,
+      findsNWidgets(2),
     );
   });
 

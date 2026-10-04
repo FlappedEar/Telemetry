@@ -662,9 +662,17 @@ class _DayImportPageState extends State<DayImportPage> {
     final waiting = _waiting = [];
     setState(() => _opening = true);
     var taken = false;
+    var refused = false;
     try {
-      final addition = await kept.addRecordings(paths, sameDayOnly: true);
-      taken = !addition.otherDay && !addition.closed && addition.error.isEmpty;
+      // Another day's unsaved work waits for recovery: changing this day
+      // would replace it, so the recordings go on as without a kept day.
+      final recovery = await queueRecovery(widget.recovery.load);
+      if (recovery == null || recovery.eventId == kept.eventId) {
+        final addition = await kept.addRecordings(paths, sameDayOnly: true);
+        taken =
+            !addition.otherDay && !addition.closed && addition.error.isEmpty;
+        refused = !taken;
+      }
     } on Exception catch (error) {
       debugPrint('Kept day not continued: $error');
     } finally {
@@ -673,7 +681,7 @@ class _DayImportPageState extends State<DayImportPage> {
     }
     if (!mounted) return;
     // Recordings it refused are not said when it is shown again.
-    if (!taken) markAdditionReported(kept);
+    if (refused) markAdditionReported(kept);
     if (!taken || !identical(_keptDay, kept)) {
       // Not that day's: imported here as today's day would be.
       unawaited(_continueToday([...paths, ...waiting]));

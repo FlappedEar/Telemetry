@@ -170,19 +170,23 @@ void main() {
     WidgetTester tester, {
     bool? picksFolders = true,
     Locale? locale,
-  }) => tester.pumpWidget(
-    TelemetryApp(
-      locale: locale,
-      home: DayImportPage(
-        controller: controller,
-        pickers: pickers,
-        picksFolders: picksFolders,
-        recovery: recovery,
-        documents: _SavedDays(const []),
-        appender: _SyncAppender(),
+  }) async {
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: locale,
+        home: DayImportPage(
+          controller: controller,
+          pickers: pickers,
+          picksFolders: picksFolders,
+          recovery: recovery,
+          documents: _SavedDays(const []),
+          appender: _SyncAppender(),
+        ),
       ),
-    ),
-  );
+    );
+    // The places appear once the start page has been built.
+    await tester.pump();
+  }
 
   /// Lets file and isolate work run between frames until [done].
   Future<void> pumpUntil(WidgetTester tester, bool Function() done) async {
@@ -235,7 +239,7 @@ void main() {
       expect(find.text('Choose a folder…'), findsNothing);
       expect(find.text('Include subfolders'), findsNothing);
       // Sessions are imported one by one; the app makes the day.
-      expect(find.text('Import sessions'), findsOneWidget);
+      expect(find.text('Import sessions…'), findsOneWidget);
       expect(find.text('Review the files before importing'), findsNothing);
 
       await pick(tester);
@@ -1019,8 +1023,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(800, 2000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await show(tester, locale: const Locale('pl'));
-    expect(find.text('Importuj sesje'), findsOneWidget);
-    expect(find.text('Import sessions'), findsNothing);
+    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Import sessions…'), findsNothing);
     expect(find.text('Importuj sesje…'), findsOneWidget);
 
     await pick(tester, button: 'Importuj sesje…');
@@ -1207,6 +1211,8 @@ void main() {
   testWidgets('a recording that cannot be read says why in Polish', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     pickers.recordings = [write('broken.vbo', 'not telemetry')];
     await show(tester, locale: const Locale('pl'));
     await pick(tester, button: 'Importuj sesje…');
@@ -1235,7 +1241,9 @@ void main() {
     await show(tester);
     final card = tester.getRect(find.byKey(const ValueKey('importChoices')));
     expect(card.width, 840);
-    expect(card.center.dx, closeTo(960, 1));
+    // Centred in what the side rail leaves.
+    final rail = tester.getRect(find.byKey(const ValueKey('appPlaces'))).width;
+    expect(card.center.dx, closeTo((1920 + rail + 1) / 2, 1));
   });
 
   testWidgets('the import progress is labelled for a screen reader', (
