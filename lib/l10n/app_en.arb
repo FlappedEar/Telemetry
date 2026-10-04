@@ -5292,10 +5292,6 @@
   "@importPageImportingBehind": {
     "description": "Recordings shared from another app are imported behind the page shown."
   },
-  "importPageFinishFirst": "Finish the current import first. Nothing was imported.",
-  "@importPageFinishFirst": {
-    "description": "An import was asked for while another runs."
-  },
   "importPageOpenSavedTitle": "Open a saved day",
   "@importPageOpenSavedTitle": {
     "description": "Title of the list of saved days."

@@ -5399,12 +5399,6 @@ abstract class AppLocalizations {
   /// **'Importing the shared recordings. Go back to Import a day to see them.'**
   String get importPageImportingBehind;
 
-  /// An import was asked for while another runs.
-  ///
-  /// In en, this message translates to:
-  /// **'Finish the current import first. Nothing was imported.'**
-  String get importPageFinishFirst;
-
   /// Title of the list of saved days.
   ///
   /// In en, this message translates to:

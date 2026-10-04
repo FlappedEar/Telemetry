@@ -684,9 +684,8 @@ class _DayImportPageState extends State<DayImportPage> {
         ? _controller.review(paths, includeSubfolders: _includeSubfolders)
         : _controller.start(paths, includeSubfolders: _includeSubfolders);
     if (!started) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.importPageFinishFirst)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(context.l10n.importBusy)));
     }
   }
 

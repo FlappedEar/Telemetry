@@ -3633,10 +3633,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'Importuję udostępnione nagrania. Wróć do ekranu Importuj dzień, aby je zobaczyć.';
 
   @override
-  String get importPageFinishFirst =>
-      'Najpierw dokończ bieżący import. Nic nie zaimportowano.';
-
-  @override
   String get importPageOpenSavedTitle => 'Otwórz zapisany dzień';
 
   @override

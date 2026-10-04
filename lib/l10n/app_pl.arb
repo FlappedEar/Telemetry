@@ -875,7 +875,6 @@
   "importPageNoneUsable": "Nie udało się użyć żadnego z jego nagrań:",
   "importPageChooseFolderHint": "Wybierz folder z nagraniami, aby ich użyć, także gdy nie zostały przeniesione.",
   "importPageImportingBehind": "Importuję udostępnione nagrania. Wróć do ekranu Importuj dzień, aby je zobaczyć.",
-  "importPageFinishFirst": "Najpierw dokończ bieżący import. Nic nie zaimportowano.",
   "importPageOpenSavedTitle": "Otwórz zapisany dzień",
   "importPageAnotherFile": "Inny plik…",
   "importPageAnotherOpening": "Otwierany jest inny dzień. Spróbuj ponownie, gdy się otworzy.",
