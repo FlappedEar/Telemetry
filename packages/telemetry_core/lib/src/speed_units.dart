@@ -37,18 +37,26 @@ bool isSessionSpeedChannel(TelemetrySession session, String name) =>
 /// The speed unit [session] declares for channel [name]: the channel's own
 /// unit (RCZ), else the VBO `[header]` line naming the channel, such as
 /// `velocity kmh` (RaceChrono writes units there, which the parser keeps as
-/// header metadata). Empty when it declares none.
+/// header metadata). "km/h" and "mph" however written, any other unit as
+/// written. Empty when it declares none.
 String declaredSpeedUnit(TelemetrySession session, String name) {
-  final own = normalizedSpeedUnit(session.channels[name]?.unit ?? '');
+  final own = _declared(session.channels[name]?.unit ?? '');
   if (own.isNotEmpty) return own;
   for (final MapEntry(:key, :value) in session.metadata.entries) {
     if (!key.startsWith('header.')) continue;
     final words = value.trim().split(RegExp(r'\s+'));
     if (words.length == 2 && words.first.toLowerCase() == name.toLowerCase()) {
-      return normalizedSpeedUnit(words.last);
+      return _declared(words.last);
     }
   }
   return '';
+}
+
+// "km/h" or "mph" for those units however written; another unit (say
+// "m/s") as written, never dropped.
+String _declared(String unit) {
+  final known = normalizedSpeedUnit(unit);
+  return known.isNotEmpty ? known : unit.trim();
 }
 
 /// The unit analysis reads channel [name] of [session] in: for a speed,
@@ -61,9 +69,6 @@ String effectiveChannelUnit(TelemetrySession session, String name, {String assum
   if (!isSessionSpeedChannel(session, name)) return channel.unit;
   final declared = declaredSpeedUnit(session, name);
   if (declared.isNotEmpty) return declared;
-  final own = channel.unit.trim();
-  // A unit this module does not know (say "m/s") is kept as written.
-  if (own.isNotEmpty) return channel.unit;
   return normalizedSpeedUnit(assumed);
 }
 

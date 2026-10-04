@@ -176,6 +176,31 @@ void main() {
       expect(identical(withEffectiveSpeedUnits(recorded), recorded), isTrue);
     });
 
+    test('a unit the app does not name is kept as written, never assumed over', () {
+      final recorded = _as(base, _Format.unlabelledKmh);
+      final inMetres = TelemetrySession(
+        duration: recorded.duration,
+        startTime: recorded.startTime,
+        metadata: recorded.metadata,
+        channels: {
+          ...recorded.channels,
+          'velocity': TelemetryChannel(
+            name: 'velocity',
+            unit: 'm/s',
+            timestamps: recorded.channels['velocity']!.timestamps,
+            values: recorded.channels['velocity']!.values,
+          ),
+        },
+        aliases: recorded.aliases,
+        warnings: recorded.warnings,
+        timingGates: recorded.timingGates,
+        sampleCount: recorded.sampleCount,
+      );
+      expect(declaredSpeedUnit(inMetres, 'velocity'), 'm/s');
+      expect(withEffectiveSpeedUnits(inMetres, assumed: 'km/h').channel('speed')!.unit, 'm/s');
+      expect(sameSpeedUnit('m/s', 'km/h'), isFalse);
+    });
+
     test('only speeds are given a unit', () {
       final recorded = _as(rectangleSession([_lap(20)], pedals: true), _Format.unlabelledKmh);
       final analysed = withEffectiveSpeedUnits(recorded, assumed: 'mph');

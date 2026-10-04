@@ -1018,12 +1018,9 @@ class SegmentSpeedChart extends StatelessWidget {
       for (final line in series)
         if (line.hasData) line.unit,
     ];
-    final unit = speedUnitOf(
-      context,
-      withData.every((unit) => sameSpeedUnit(unit, withData.first))
-          ? (withData.firstOrNull ?? series.first.unit)
-          : '',
-    ).trim();
+    final unit = withData.every((unit) => sameSpeedUnit(unit, withData.first))
+        ? speedUnitOf(context, withData.firstOrNull ?? series.first.unit).trim()
+        : '';
     final segment = analysis.segment;
     final apex = analysis.phases?.apex;
     final apexes = apex == null

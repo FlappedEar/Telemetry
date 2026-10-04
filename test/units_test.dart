@@ -147,6 +147,19 @@ void main() {
 
   // Arek's second audit, finding 1: the analysis reads speeds in the unit
   // the screens show, not in a unit of its own.
+  test('a day with speeds in a unit the app does not name labels none', () {
+    // m/s against km/h: neither unit stands for the other.
+    declaredChannelSpeedUnits = const {
+      'speed': ['m/s', 'km/h'],
+    };
+    declaredSpeedUnits = const ['m/s', 'km/h'];
+    speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
+    expect(displayUnit('speed', ''), '');
+    expect(speedUnitLabel(), '');
+    declaredSpeedUnits = const ['m/s'];
+    expect(speedUnitLabel(), 'm/s');
+  });
+
   test('the analysis reads the declared or assumed speed unit', () async {
     final declared = '${directory.path}/mph.vbo';
     File(declared).writeAsStringSync(
