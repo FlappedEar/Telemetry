@@ -6,7 +6,7 @@ import '../l10n.dart';
 
 /// The app's places, the same on every screen: a bottom bar on a phone, a
 /// side rail on a wide screen.
-enum AppSection { home, library, day }
+enum AppSection { home, library, day, coach }
 
 /// Which place is shown and how to go to another; the start page drives it
 /// (see `DayImportPage`), and [AppFrame] draws it around every page.
@@ -22,7 +22,7 @@ final class AppNavigation extends ChangeNotifier {
 
   AppSection get section => _section;
 
-  /// Whether a day is open, so the Day place can be shown.
+  /// Whether a day is open, so the Day and Coach places can be shown.
   bool get dayAvailable => _dayAvailable;
 
   /// Whether there is a driver profile library to show.
@@ -153,6 +153,13 @@ class AppFrame extends StatelessWidget {
           Icons.flag_outlined,
           Icons.flag,
           l10n.navDay,
+          navigation.dayAvailable,
+        ),
+        (
+          AppSection.coach,
+          Icons.school_outlined,
+          Icons.school,
+          l10n.navCoach,
           navigation.dayAvailable,
         ),
       ];

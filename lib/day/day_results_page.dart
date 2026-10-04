@@ -5,7 +5,6 @@ import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
@@ -59,6 +58,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
     this.library,
+    this.coach,
   }) : replace = null,
        startNewDay = null,
        disposesController = null,
@@ -76,6 +76,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
     this.library,
+    this.coach,
   }) : replace = null,
        startNewDay = null,
        disposesController = null,
@@ -95,6 +96,7 @@ class DayResultsPage extends StatefulWidget {
     this.startNewDay,
     this.library,
     this.disposesController,
+    this.coach,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
@@ -122,6 +124,10 @@ class DayResultsPage extends StatefulWidget {
   /// Asked as the page closes whether it disposes its day; null always
   /// does. The start page keeps a day left for another place.
   final ValueGetter<bool>? disposesController;
+
+  /// Whether the day's coach is shown in place of its tabs: the app's Coach
+  /// place, which the start page sets; the page's own when null.
+  final ValueNotifier<bool>? coach;
 
   @override
   State<DayResultsPage> createState() => _DayResultsPageState();
@@ -180,9 +186,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
     },
   );
 
+  /// Whether the coach is shown; see [DayResultsPage.coach].
+  late final ValueNotifier<bool> _coach = widget.coach ?? ValueNotifier(false);
+
+  void _coachChanged() => setState(() {});
+
   @override
   void initState() {
     super.initState();
+    _coach.addListener(_coachChanged);
     _controller.addListener(_reportAddition);
     _controller.addListener(_libraryChanged);
     _startLibrary();
@@ -203,6 +215,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _autosave?.cancel();
     _lifecycle.dispose();
     _summaryScroll.dispose();
+    _coachScroll.dispose();
+    _coach.removeListener(_coachChanged);
+    if (widget.coach == null) _coach.dispose();
     if (widget.disposesController?.call() ?? true) _controller.dispose();
     super.dispose();
   }
@@ -254,31 +269,25 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   final _coachKey = GlobalKey();
 
-  /// The summary's scroll position, in a phone's Day section or the wide
+  /// The summary's scroll position, in a phone's Overview tab or the wide
   /// layout's left pane.
   final _summaryScroll = ScrollController();
 
-  /// The day opens on what to do in the next session: the Day section,
-  /// scrolled to the Next session card. Scrolled far below it, the card is
-  /// not built, so the summary first goes back to the top, near the card.
-  void _revealCoach() {
-    if (_section != _Section.overview) {
-      setState(() => _section = _Section.overview);
-    }
-    void reveal({required bool again}) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final card = _coachKey.currentContext;
-        if (card != null) {
-          revealSettled(card, current: () => _coachKey.currentContext);
-        } else if (again && _summaryScroll.hasClients) {
-          _summaryScroll.jumpTo(0);
-          reveal(again: false);
-        }
-      });
-    }
+  /// The coach's scroll position.
+  final _coachScroll = ScrollController();
 
-    reveal(again: true);
+  /// The day opens on what to do in the next session: the coach, from the
+  /// top, where its Next session card is.
+  void _revealCoach() {
+    _coach.value = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_coachScroll.hasClients) _coachScroll.jumpTo(0);
+      final card = _coachKey.currentContext;
+      if (card != null) {
+        revealSettled(card, current: () => _coachKey.currentContext);
+      }
+    });
   }
 
   Future<void> _addRecordings() async {
@@ -718,6 +727,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             documents: widget.documents,
             recovery: widget.recovery,
             library: widget.library,
+            coach: widget.coach,
           ),
         ),
       );
@@ -802,6 +812,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             documents: widget.documents,
             recovery: widget.recovery,
             library: widget.library,
+            coach: widget.coach,
           ),
         ),
       );
@@ -841,9 +852,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
             key: const ValueKey('dayResultsSummary'),
             controller: _summaryScroll,
             padding: const EdgeInsets.all(16),
-            // The headline bars and the best lap's map push the Next session
-            // card down; build it from the top so it can be revealed.
-            scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
             children: summary,
           ),
           ListView(
@@ -882,9 +890,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
                       constraints.maxWidth -
                           math.min(constraints.maxWidth * 4 / 9, 520),
                     ),
-                    // As on a phone: the Next session card is built from the
-                    // top.
-                    scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
                     children: summary,
                   ),
                 ),
@@ -941,12 +946,16 @@ class _DayResultsPageState extends State<DayResultsPage> {
             (_Section.report, context.l10n.daySectionReport),
           ],
           // On a wide screen the laps are beside the summary.
-          selected: wide && _section == _Section.laps
+          // None while the coach is shown.
+          selected: _coach.value
+              ? null
+              : wide && _section == _Section.laps
               ? _Section.overview
               : _section,
           onSelected: (section) => setState(() {
             _section = section;
             if (section == _Section.report) _reportOpened = true;
+            _coach.value = false;
           }),
         ),
         title: ListenableBuilder(
@@ -1049,7 +1058,16 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 key: const ValueKey('preparingReview'),
                 text: context.l10n.reviewPreparing,
               ),
-            Expanded(child: _body(context, wide, mapHeight)),
+            // The tabs, or the coach over them; each keeps its place.
+            Expanded(
+              child: IndexedStack(
+                index: _coach.value ? 1 : 0,
+                children: [
+                  _body(context, wide, mapHeight),
+                  _coachList(context, wide),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -1306,24 +1324,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
           style: theme.textTheme.bodyMedium,
         ),
       if (best != null) ...[
-        // What to do next first: the coach's suggestions, then the
-        // observations to look at.
-        const SizedBox(height: 12),
-        NextSessionCard(
-          key: _coachKey,
-          coach: _controller.coach,
-          result: _controller.theoreticalBest,
-          session: _controller.latestRunName,
-          lapLabel: _controller.lapLabel,
-          loading: _controller.coachLoading,
-          error: _controller.coachError,
-          path: path,
-          gate: _mapGate,
-          wide: wide,
-          speedsConverted: _controller.coachSpeedsConverted,
-          withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
-          onRetry: _controller.retryCoach,
-        ),
+        // The observations to look at first; what to try next is the
+        // coach's (_coachList).
         const SizedBox(height: 12),
         FocusAreasCard(
           result: _controller.theoreticalBest,
@@ -1603,6 +1605,42 @@ class _DayResultsPageState extends State<DayResultsPage> {
     context: context,
     builder: (_) => TrackDialog(controller: _controller, runId: runId),
   );
+
+  /// The coach (the app's Coach place): what to try in the next session.
+  /// Without a best lap there is nothing to coach against, and it says why.
+  Widget _coachList(BuildContext context, bool wide) {
+    final best = _controller.ranking?.bestOfDay;
+    return LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        key: const ValueKey('dayResultsCoach'),
+        controller: _coachScroll,
+        // At most 840 wide, centred, as the report.
+        padding: wide
+            ? readablePadding(constraints.maxWidth)
+            : const EdgeInsets.all(16),
+        children: [
+          if (best == null)
+            Text(_noBestReason(_controller.analysis, _controller.ranking))
+          else
+            NextSessionCard(
+              key: _coachKey,
+              coach: _controller.coach,
+              result: _controller.theoreticalBest,
+              session: _controller.latestRunName,
+              lapLabel: _controller.lapLabel,
+              loading: _controller.coachLoading,
+              error: _controller.coachError,
+              path: _bestPath(best),
+              gate: _mapGate,
+              wide: wide,
+              speedsConverted: _controller.coachSpeedsConverted,
+              withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
+              onRetry: _controller.retryCoach,
+            ),
+        ],
+      ),
+    );
+  }
 
   String _noBestReason(DayAnalysis analysis, DayRanking? ranking) {
     if (analysis.chosenGroup == null) return context.l10n.noBestLapNoCircuit;
@@ -1903,7 +1941,7 @@ class _SectionTabs extends StatelessWidget implements PreferredSizeWidget {
   final bool fill;
 
   final List<(_Section, String)> sections;
-  final _Section selected;
+  final _Section? selected;
   final ValueChanged<_Section> onSelected;
 
   @override

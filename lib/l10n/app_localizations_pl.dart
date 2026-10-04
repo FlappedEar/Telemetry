@@ -189,7 +189,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachFooter =>
-      'Wskazówki trenera wynikają z reguł DrivingCoach i wskazują możliwości poprawy, a nie gwarantowany zysk. Poniższe obszary przedstawiają obserwacje.';
+      'Wskazówki trenera wynikają z reguł DrivingCoach i wskazują możliwości poprawy, a nie gwarantowany zysk. Obszary w Przeglądzie przedstawiają obserwacje.';
 
   @override
   String get coachKindEarlyLift => 'Spróbuj później odjąć gaz';
@@ -4942,4 +4942,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get navDay => 'Dzień';
+
+  @override
+  String get navCoach => 'Trener';
 }
