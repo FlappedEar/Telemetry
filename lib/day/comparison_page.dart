@@ -106,6 +106,8 @@ Future<DayLapRow?> pickComparisonLap(
     }
 
     return SimpleDialog(
+      // A lap's time stays near its name on a large screen.
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 440),
       title: Text(title),
       children: [
         if (candidates.isEmpty)

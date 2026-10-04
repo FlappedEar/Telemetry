@@ -4,6 +4,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../l10n.dart';
 import 'touch.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton;
+import '../ui/readable_list.dart';
 
 /// The format of the other recording a session's channel came from ("RCZ"),
 /// or empty when it is the session's own (see
@@ -303,8 +304,7 @@ class ChannelPage extends StatelessWidget {
     final association = this.association;
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: ReadableListView(
         children: [
           Text(
             heartRate

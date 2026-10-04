@@ -8,6 +8,7 @@ import '../units.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton;
 import 'time_losses_card.dart' show TimeLossText;
 import 'track_map.dart';
+import '../ui/readable_list.dart';
 
 extension CoachText on AppLocalizations {
   /// What a coach item asks, as its heading.
@@ -376,8 +377,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
     );
     return Scaffold(
       appBar: AppBar(title: Text(finding.segmentName)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: ReadableListView(
         children: [
           Text(
             '${l10n.coachLabel} · ${l10n.coachKind(finding.kind)}',
