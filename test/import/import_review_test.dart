@@ -525,6 +525,50 @@ void main() {
       },
     );
 
+    test('the day can be left as soon as the recordings are lined up, while '
+        'the file is still being written', () async {
+      final request = (paths: [vbo, rcz, other], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      final outcome = runDayImport(
+        request,
+        choices: {
+          id['drive.rcz']!: id['drive.rcz']!,
+          id['drive.vbo']!: id['drive.rcz']!,
+          id['other.vbo']!: skipRecording,
+        },
+      );
+      final writing = Completer<void>();
+      final day = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        appender: _Appender(),
+        preparer: _Preparer(),
+        fusionRunner: held.call,
+        writer: (path, document) async {
+          await writing.future;
+          written.add(document);
+        },
+      );
+      addTearDown(day.dispose);
+      // What a listener (the page's close lock) sees at each change.
+      final seen = <bool>[];
+      day.addListener(() => seen.add(day.savingWaitsForRecordings));
+      final saving = day.save('day.fetproject');
+      await pumpEventQueue();
+      expect(day.savingWaitsForRecordings, isTrue);
+
+      held.tasks.single.run();
+      await pumpEventQueue();
+      expect(written, isEmpty, reason: 'still writing');
+      expect(day.savingWaitsForRecordings, isFalse);
+      expect(seen.last, isFalse, reason: 'listeners were told');
+
+      writing.complete();
+      await saving;
+      expect(written, hasLength(1));
+    });
+
     test('two VBOs whose lining up fails stay in the file, not shown, as '
         'the day opened again shows them', () async {
       final request = (paths: [vbo, other], includeSubfolders: false);
