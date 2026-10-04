@@ -12,6 +12,7 @@ import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
 import 'channel_sources.dart';
+import 'day_weather.dart';
 import 'recovery_store.dart';
 import 'recovery_writes.dart';
 import 'save_journal.dart';
@@ -241,7 +242,14 @@ final class DayResultsController extends ChangeNotifier {
     Map<String, RunFusion> fusions = const {},
     Map<String, TelemetryRunProposal> alternatives = const {},
     Map<String, DocumentAlternative> documentAlternatives = const {},
+    DayWeather? weather,
   }) : _runs = [...runs],
+       weather =
+           weather ??
+           DayWeather(
+             fetcher: defaultWeatherFetcher,
+             enabled: weatherLookupSetting,
+           ),
        _documentAlternatives = {...documentAlternatives},
        _fusions = {...fusions},
        _fusionRunner = fusionRunner ?? defaultFusionRunner,
@@ -279,6 +287,8 @@ final class DayResultsController extends ChangeNotifier {
     for (final MapEntry(:key, :value) in documentAlternatives.entries) {
       _startFusion(key, reference: value);
     }
+    this.weather.onFetched = _weatherFetched;
+    this.weather.sync(runs, _savedRuns);
   }
 
   /// A day opened from its document. A day whose recordings were found in
@@ -290,10 +300,12 @@ final class DayResultsController extends ChangeNotifier {
     DayAppender? appender,
     ImportPreparer? preparer,
     FusionRunner? fusionRunner,
+    DayWeather? weather,
   }) : this(
          appender: appender,
          preparer: preparer,
          fusionRunner: fusionRunner,
+         weather: weather,
          runs: day.runs,
          analysis: day.analysis!,
          eventId: day.eventId,
@@ -828,6 +840,49 @@ final class DayResultsController extends ChangeNotifier {
     _settleFusions();
   }
 
+  /// The weather of the day's sessions (see [DayWeather]).
+  final DayWeather weather;
+
+  // Runs added to the day while it is open.
+  final Set<String> _addedRunIds = {};
+
+  // A session's weather arrived. A session added to a saved day that has no
+  // other unsaved change is saved again with it, as the addition was; any
+  // other weather is written with the day's next save, and does not make
+  // the day unsaved (nor saves edits the user has not saved).
+  void _weatherFetched(String runId) {
+    if (_disposed) return;
+    notifyListeners();
+    final path = _documentPath;
+    if (path != null && _addedRunIds.contains(runId)) {
+      unawaited(_saveWeather(path, runId));
+    }
+  }
+
+  Future<void> _saveWeather(String path, String runId) async {
+    while (_saving) {
+      await _saveDone?.future;
+    }
+    if (_disposed || _documentPath == null || _dirty) return;
+    final wanted = weather.fetched[runId];
+    if (wanted == null) return;
+    for (final value in _savedRuns) {
+      if (value case final Map<String, Object?> run when run['id'] == runId) {
+        final saved = SessionWeather.fromJson(run[sessionWeatherKey]);
+        if (saved?.fetchedMilliseconds == wanted.fetchedMilliseconds &&
+            saved?.sourceRevision == wanted.sourceRevision) {
+          return;
+        }
+      }
+    }
+    try {
+      await save(_documentPath ?? path);
+    } on Exception catch (error) {
+      debugPrint('Weather not saved: $error');
+      if (!_disposed) _scheduleRecovery();
+    }
+  }
+
   // The alternative recording of an addition to a saved day: saved again,
   // as the addition was; kept for recovery when that fails.
   Future<void> _saveAfterFusion(String path) async {
@@ -1228,6 +1283,7 @@ final class DayResultsController extends ChangeNotifier {
     }
     final index = _runs.indexOf(named);
     _runs[index] = (run: primary, name: named.name);
+    weather.sync(runs, _savedRuns);
     _pendingRecordings.remove(runId);
     _fusions[runId] = RunFusion.primaryOnly(
       primary: primary,
@@ -1415,6 +1471,7 @@ final class DayResultsController extends ChangeNotifier {
         fusions: _fusions,
         pendingAlternatives: _pendingRecordings,
         runMetadata: metadataNow,
+        weather: weather.fetched,
       );
       // Changes still waiting for the recovery snapshot are written to it
       // first: where the file is written in place (the macOS sandbox), the
@@ -1872,6 +1929,8 @@ final class DayResultsController extends ChangeNotifier {
     }
     final existing = {for (final named in _runs) named.run.id};
     _runs.addAll(outcome.runs);
+    _addedRunIds.addAll([for (final named in outcome.runs) named.run.id]);
+    weather.sync(runs, _savedRuns);
     // What reads channels includes the new sessions.
     _channelRuns = _recordingRuns = null;
     // The new session's speed unit counts as much as the others'.
@@ -3011,6 +3070,7 @@ final class DayResultsController extends ChangeNotifier {
     final fusionsNow = {..._fusions};
     final pendingNow = {..._pendingRecordings};
     final metadataNow = {..._metadataEdits};
+    final weatherNow = weather.fetched;
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
@@ -3036,6 +3096,7 @@ final class DayResultsController extends ChangeNotifier {
             fusions: fusionsNow,
             pendingAlternatives: pendingNow,
             runMetadata: metadataNow,
+            weather: weatherNow,
           ),
           originalPath: original,
           basePath: base,
@@ -3060,6 +3121,7 @@ final class DayResultsController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     speedUnitSetting.removeListener(_speedUnitAssumed);
+    weather.dispose();
     // Alignments not started are dropped; running ones are stopped.
     _fusionQueue.clear();
     for (final waiter in _slotWaiters) {

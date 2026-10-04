@@ -4,6 +4,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../l10n.dart';
 import 'day_results_controller.dart';
+import 'weather_text.dart';
 
 /// Edits one session's name, conditions, setup changes and notes, as
 /// FlappedEar Overlays stores them in the day's document (FET-52). The day
@@ -127,6 +128,11 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
               ),
               const SizedBox(height: 12),
               _field(_notes, l10n.sessionDetailsNotes, maxLines: 6),
+              const SizedBox(height: 16),
+              SessionWeatherSection(
+                weather: widget.controller.weather,
+                runId: widget.runId,
+              ),
               const SizedBox(height: 12),
               // Any field can be refused (too long once counted as the file
               // stores it), so the message sits under all of them.

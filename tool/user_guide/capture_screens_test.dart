@@ -13,7 +13,8 @@
 // the app's bundled Sora and JetBrains Mono and icons with Material Icons from
 // the Flutter SDK, so they look like the app rather than the test font's
 // boxes. Maps show the street background's controls and attribution over
-// plain grey tiles (no network).
+// plain grey tiles (no network). Sessions' weather is the weather service's
+// answer for the day, recorded in jastrzab_weather.json.
 import 'dart:convert';
 import 'dart:io';
 
@@ -23,6 +24,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_controller.dart';
@@ -157,6 +159,12 @@ void main() {
     // ignore: invalid_use_of_visible_for_testing_member
     debugTileProvider = _PlainTiles.new;
     mapBackground.value = MapBackground.streets;
+    // The weather service's real answer for the day, recorded (tests have
+    // no network): every session of the Jastrząb day gets its weather.
+    final weather = jsonDecode(
+      File('tool/user_guide/jastrzab_weather.json').readAsStringSync(),
+    );
+    defaultWeatherFetcher = (_) async => weather;
     await _loadFonts();
     directory = Directory.systemTemp.createTempSync('user_guide');
     final real = Platform.environment['GUIDE_RECORDINGS'];
@@ -338,9 +346,8 @@ void main() {
         if (!first.contains(path)) path,
     ];
     // The import notes of the first session are not part of the picture.
-    ScaffoldMessenger.of(
-      tester.element(find.byType(DayResultsPage)),
-    ).removeCurrentSnackBar();
+    ScaffoldMessenger.of(tester.element(find.byType(DayResultsPage)))
+        .removeCurrentSnackBar();
     await tester.tap(find.byKey(const ValueKey('moreMenu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('addAndReviewRecordings')));

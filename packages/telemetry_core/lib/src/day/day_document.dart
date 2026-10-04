@@ -17,6 +17,7 @@ import 'day_analysis.dart';
 import 'day_fusion.dart';
 import 'day_laps.dart';
 import 'run_metadata.dart';
+import 'session_weather.dart';
 import 'track_inference.dart';
 
 /// A new event id: 32 random lowercase hex digits.
@@ -198,6 +199,10 @@ final class ComparisonDecisions {
 /// setup changes by run id, written as Overlays writes them
 /// ([applyRunMetadata]).
 ///
+/// [weather] is each run's weather fetched for it, by run id, written as
+/// the run's `weather` ([SessionWeather.toJson]); a run without an entry
+/// keeps what it stores.
+///
 /// Reads each recording's first, middle and last 64 KiB for its fingerprint.
 Map<String, Object?> dayDocument({
   required String eventId,
@@ -216,6 +221,7 @@ Map<String, Object?> dayDocument({
   Map<String, RunFusion> fusions = const {},
   Map<String, TelemetryRunProposal> pendingAlternatives = const {},
   Map<String, RunMetadata> runMetadata = const {},
+  Map<String, SessionWeather> weather = const {},
   Random? random,
 }) {
   final chosenGroup = analysis.chosenGroup;
@@ -349,6 +355,9 @@ Map<String, Object?> dayDocument({
   }
   for (final run in allRuns) {
     if (runMetadata[run['id']] case final metadata?) applyRunMetadata(run, metadata);
+    if (weather[run['id']] case final fetched?) {
+      run[sessionWeatherKey] = _copy(fetched.toJson());
+    }
   }
   if (automaticSegments) _approveAutomaticSegments(allRuns, opened, runs, analysis, random);
 

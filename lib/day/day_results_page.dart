@@ -40,6 +40,7 @@ import '../ui/headline_bar.dart';
 import '../ui/theme.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
+import 'weather_text.dart';
 
 /// The day at a glance, led by the best lap: "Best lap of the day · 1:49.898 ·
 /// Session 5 · LAP 2", the group compared, each session's best, and every
@@ -1180,6 +1181,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
           onOpenLap: _open,
+          weatherOf: _controller.weather.of,
         ),
       ],
       const SizedBox(height: 12),
@@ -1247,6 +1249,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
               runId: named.run.id,
             ),
           ),
+        ),
+      if (_controller.weather.any)
+        Text(
+          '${l10n.weatherModelled} ${weatherCredit(l10n)}',
+          key: const ValueKey('sessionDetailsWeatherCredit'),
+          style: theme.textTheme.bodySmall,
         ),
       const SizedBox(height: 12),
       Text(l10n.circuits, style: theme.textTheme.titleSmall),
@@ -1382,7 +1390,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     );
   }
 
-  // A session's conditions, setup changes and notes on one line each.
+  // A session's conditions, setup changes and notes on one line each, and
+  // its weather.
   String _detailsText(String runId) {
     final l10n = context.l10n;
     final details = _controller.runMetadata(runId);
@@ -1394,7 +1403,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ])
         if (text.trim().isNotEmpty) '$label: ${text.trim()}',
     ];
-    return lines.isEmpty ? l10n.sessionDetailsNone : lines.join('\n');
+    final weather = switch (_controller.weather.of(runId)) {
+      final shown? => weatherShortText(l10n, shown),
+      null => null,
+    };
+    return [
+      lines.isEmpty ? l10n.sessionDetailsNone : lines.join('\n'),
+      if (weather != null) l10n.progressionWeather(weather),
+    ].join('\n');
   }
 
   String _runName(String runId) {

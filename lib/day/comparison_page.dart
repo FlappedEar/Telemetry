@@ -20,6 +20,7 @@ import 'lap_page.dart';
 import 'telemetry_chart.dart';
 import 'touch.dart';
 import 'track_map.dart';
+import 'weather_text.dart';
 
 /// What a panel under a comparison's charts gets: the pair, its comparison
 /// and the shared cursor and range.
@@ -416,6 +417,12 @@ class _ComparisonPageState extends State<ComparisonPage> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final delta = _a.durationSeconds - _b.durationSeconds;
+    final weather = widget.controller.weather;
+    String? weatherText(DayLapRow row) => switch (weather.of(row.runId)) {
+      final shown? => weatherShortText(l10n, shown),
+      null => null,
+    };
+    final weatherShown = weatherText(_a) != null || weatherText(_b) != null;
     Widget badge(int slot) {
       final row = slot == 0 ? _a : _b;
       final color = slot == 0 ? lapAColor : lapBColor;
@@ -451,6 +458,14 @@ class _ComparisonPageState extends State<ComparisonPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(displayTime(row.durationSeconds)),
+                      if (weatherText(row) case final text?)
+                        Text(
+                          text,
+                          key: ValueKey(
+                            'comparisonWeather${slot == 0 ? 'A' : 'B'}',
+                          ),
+                          style: theme.textTheme.bodySmall,
+                        ),
                     ],
                   ),
                 ),
@@ -478,6 +493,12 @@ class _ComparisonPageState extends State<ComparisonPage> {
           style: theme.textTheme.titleLarge,
         ),
         Text(l10n.compareDeltaExplained, style: theme.textTheme.bodySmall),
+        if (weatherShown)
+          Text(
+            '${l10n.weatherModelled} ${weatherCredit(l10n)}',
+            key: const ValueKey('comparisonWeatherCredit'),
+            style: theme.textTheme.bodySmall,
+          ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,

@@ -180,7 +180,7 @@
   "@settingsLicences": {
     "description": "Button in Settings that opens the licences of the app and the software it uses."
   },
-  "licencesLegalese": "FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.",
+  "licencesLegalese": "FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.\nWeather data by Open-Meteo.com (CC BY 4.0).",
   "@licencesLegalese": {
     "description": "Shown at the top of the licences page: the app's own licence and the map credits. Keep 'Apache License 2.0', 'OpenStreetMap', 'ODbL' and 'MapTiler' as written."
   },
@@ -6587,5 +6587,207 @@
         "example": "Session 2"
       }
     }
+  },
+  "progressionWeather": "Weather: {weather}",
+  "@progressionWeather": {
+    "description": "A session's weather in the day's progression.",
+    "placeholders": {
+      "weather": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherCredit": "Weather data by Open-Meteo.com",
+  "@weatherCredit": {
+    "description": "The weather service's credit, required next to its data (CC BY 4.0)."
+  },
+  "weatherModelled": "Modelled for the area around the track at the session's time, not measured at the track.",
+  "@weatherModelled": {
+    "description": "Says what the weather values are."
+  },
+  "weatherTemperature": "{value} °C",
+  "@weatherTemperature": {
+    "description": "Air temperature.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherTemperatureRange": "{low}–{high} °C",
+  "@weatherTemperatureRange": {
+    "description": "Air temperature range during a session.",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherClear": "clear",
+  "@weatherClear": {
+    "description": "Sky condition."
+  },
+  "weatherPartlyCloudy": "partly cloudy",
+  "@weatherPartlyCloudy": {
+    "description": "Sky condition."
+  },
+  "weatherOvercast": "overcast",
+  "@weatherOvercast": {
+    "description": "Sky condition."
+  },
+  "weatherFog": "fog",
+  "@weatherFog": {
+    "description": "Sky condition."
+  },
+  "weatherDrizzle": "drizzle",
+  "@weatherDrizzle": {
+    "description": "Sky condition."
+  },
+  "weatherRain": "rain",
+  "@weatherRain": {
+    "description": "Sky condition."
+  },
+  "weatherSnow": "snow",
+  "@weatherSnow": {
+    "description": "Sky condition."
+  },
+  "weatherShowers": "showers",
+  "@weatherShowers": {
+    "description": "Sky condition."
+  },
+  "weatherThunderstorm": "thunderstorm",
+  "@weatherThunderstorm": {
+    "description": "Sky condition."
+  },
+  "weatherPrecipitation": "{amount} mm of rain",
+  "@weatherPrecipitation": {
+    "description": "Rain during the session.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherNoPrecipitation": "no rain",
+  "@weatherNoPrecipitation": {
+    "description": "No rain during the session."
+  },
+  "weatherWind": "wind {direction} {speed} km/h",
+  "@weatherWind": {
+    "description": "Wind; direction is a compass point such as SW, where the wind comes from.",
+    "placeholders": {
+      "direction": {
+        "type": "String"
+      },
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherWindNoDirection": "wind {speed} km/h",
+  "@weatherWindNoDirection": {
+    "description": "Wind without a direction.",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherGusts": "gusts up to {speed} km/h",
+  "@weatherGusts": {
+    "description": "Strongest gust during the session.",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherHumidity": "humidity {value}%",
+  "@weatherHumidity": {
+    "description": "Relative humidity.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherCloudCover": "cloud cover {value}%",
+  "@weatherCloudCover": {
+    "description": "Cloud cover.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherPressure": "pressure {value} hPa",
+  "@weatherPressure": {
+    "description": "Surface air pressure.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherAirTemperature": "air {temperature}",
+  "@weatherAirTemperature": {
+    "description": "Air temperature line in session details.",
+    "placeholders": {
+      "temperature": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherSky": "sky: {condition}",
+  "@weatherSky": {
+    "description": "The worst weather during the session.",
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherFetching": "Looking up the weather…",
+  "@weatherFetching": {
+    "description": "While the weather is fetched."
+  },
+  "weatherOff": "Weather lookup is off in settings.",
+  "@weatherOff": {
+    "description": "Weather lookup turned off."
+  },
+  "weatherUnavailable": "Not available: the weather service could not be reached or had no data for this session.",
+  "@weatherUnavailable": {
+    "description": "Weather lookup failed."
+  },
+  "weatherNone": "Not available: the recording has no date and time or no GPS position.",
+  "@weatherNone": {
+    "description": "No weather can be looked up."
+  },
+  "weatherRetry": "Try again",
+  "@weatherRetry": {
+    "description": "Retries the weather lookup."
+  },
+  "sessionDetailsWeather": "Weather",
+  "@sessionDetailsWeather": {
+    "description": "Heading of the weather in session details."
+  },
+  "settingsWeatherHeading": "Session weather",
+  "@settingsWeatherHeading": {
+    "description": "Settings heading."
+  },
+  "settingsWeatherSwitch": "Look up the weather for each session",
+  "@settingsWeatherSwitch": {
+    "description": "Settings switch."
+  },
+  "settingsWeatherHelp": "Sends each session's position, rounded to about 1 km, and its date to Open-Meteo.com. Nothing else from your recordings leaves the device.",
+  "@settingsWeatherHelp": {
+    "description": "Explains what the weather lookup sends."
+  },
+  "weatherKept": "Kept as stored: this day's weather was saved by a newer version of the app.",
+  "@weatherKept": {
+    "description": "The day keeps weather this version cannot read."
   }
 }
