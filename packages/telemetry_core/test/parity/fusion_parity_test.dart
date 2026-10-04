@@ -515,6 +515,16 @@ Map<String, _FusionCase> _fusionCases() {
       [rcz(_fusionAlternative(speedUnit: ' KM/H '))],
       _rule('speed', 'rcz', FusionRule.fillGaps),
     ),
+    'unitUndeclaredAgree': (
+      primary,
+      [rcz(_fusionAlternative(speedBias: 0.5, speedUnit: ''))],
+      _rule('speed', 'rcz', FusionRule.fillGaps),
+    ),
+    'unitUndeclaredConflict': (
+      primary,
+      [rcz(_fusionAlternative(speedBias: 8.0, speedUnit: ''))],
+      _rule('speed', 'rcz', FusionRule.fillGaps),
+    ),
     'twoAlternatives': (
       primary,
       [
