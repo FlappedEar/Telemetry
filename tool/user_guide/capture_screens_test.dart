@@ -24,6 +24,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/app/app_navigation.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
@@ -443,6 +444,15 @@ void main() {
 
   Future<void> showDay(WidgetTester tester, Size logical, double ratio) async {
     await size(tester, logical, ratio);
+    // The app's places around the day, as the start page shows them.
+    final host = Object();
+    appNavigation.attach(host, (_) {});
+    appNavigation.update(
+      section: AppSection.day,
+      dayAvailable: true,
+      libraryAvailable: true,
+    );
+    addTearDown(() => appNavigation.detach(host));
     final outcome = importDay();
     await tester.pumpWidget(
       app(DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!)),
@@ -529,7 +539,8 @@ void main() {
     await tester.tap(corner.first);
     await tester.pumpAndSettle();
     await shot(tester, 'corner-details');
-    await tester.tapAt(const Offset(4, 4));
+    // Beside the rail: the page's own top edge closes the details.
+    await tester.tapAt(const Offset(120, 4));
     await tester.pumpAndSettle();
 
     // The segment editor.
@@ -561,7 +572,7 @@ void main() {
 
     // The day report.
     await back(tester);
-    await tester.tap(find.byTooltip('Day report'));
+    await tester.tap(find.byKey(const ValueKey('daySection-report')));
     await tester.pumpAndSettle();
     await shot(tester, 'day-report');
     debugDisableShadows = true;

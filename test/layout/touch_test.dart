@@ -202,7 +202,7 @@ void main() {
           }
           await checkList(tester, inKey('dayResultsLaps'));
           if (narrow) {
-            await tester.tap(find.byKey(const ValueKey('daySection-day')));
+            await tester.tap(find.byKey(const ValueKey('daySection-overview')));
             await tester.pumpAndSettle();
           }
           final summary = inKey('dayResultsSummary');
@@ -251,10 +251,10 @@ void main() {
           await checkList(tester, firstList());
           await tester.pageBack();
           await tester.pumpAndSettle();
-          await tester.tap(find.byKey(const ValueKey('openDayReport')));
+          await tester.tap(find.byKey(const ValueKey('daySection-report')));
           await tester.pumpAndSettle();
           await checkList(tester, firstList());
-          await tester.pageBack();
+          await tester.tap(find.byKey(const ValueKey('daySection-overview')));
           await tester.pumpAndSettle();
 
           // A circuit's dialog.
@@ -654,7 +654,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(LapPage), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('daySection-day')));
+      await tester.tap(find.byKey(const ValueKey('daySection-overview')));
       await tester.pumpAndSettle();
 
       // Scrolled to the end, which rebuilds the card on the way back.

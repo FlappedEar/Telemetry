@@ -387,7 +387,7 @@ void main() {
           expect(tester.takeException(), isNull, reason: 'channel scrolled');
           await tester.pageBack();
           await tester.pumpAndSettle();
-          await tester.tap(find.byKey(const ValueKey('openDayReport')));
+          await tester.tap(find.byKey(const ValueKey('daySection-report')));
           await tester.pumpAndSettle();
           expect(find.byType(DayReportPage), findsOneWidget);
           expect(tester.takeException(), isNull, reason: 'day report');

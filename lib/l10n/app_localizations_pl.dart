@@ -454,7 +454,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appleMapLegal => 'Informacje prawne';
 
   @override
-  String get daySectionDay => 'Dzień';
+  String get daySectionOverview => 'Przegląd';
+
+  @override
+  String get daySectionReport => 'Raport';
 
   @override
   String get daySectionLaps => 'Okrążenia';
