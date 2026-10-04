@@ -27,6 +27,12 @@
 // gain: estimated time loss stays unknown, as in DrivingCoach.
 import 'dart:math' as math;
 
+import '../analysis/braking_onset.dart'
+    show
+        brakingAlreadyActive,
+        brakingFollowsGap,
+        brakingInterruptedByGap,
+        brakingTruncatedAtWindowEnd;
 import '../analysis/coasting_analysis.dart';
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
 import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
@@ -62,6 +68,23 @@ const double coachThrottleOff = 0.03;
 /// much farther apart than the day's three fastest laps', for the coach to
 /// suggest braking at one marker.
 const double coachBrakingSpreadMeters = 20.0;
+
+/// How far from the session's typical (median) braking point at a corner a
+/// lap's braking point is off it; at least two laps must be.
+const double coachBrakingOffMeters = 10.0;
+
+/// A braking onset shorter than this is a dab, not where the lap brakes for
+/// the corner, and is not read for braking consistency.
+const double coachBrakingMinSeconds = 0.5;
+
+/// Onsets that are not a clean start of braking: braking already under way,
+/// next to a gap in the data, or cut off by the window.
+const _unclearOnset = {
+  brakingAlreadyActive,
+  brakingFollowsGap,
+  brakingInterruptedByGap,
+  brakingTruncatedAtWindowEnd,
+};
 
 /// A faster lap at most this many seconds faster than the lap compared is
 /// preferred as its reference: a lap within reach, not only the day's best.
@@ -342,6 +365,7 @@ final class _Passage {
     this.exit,
     this.lift,
     this.braking,
+    this.onset,
     this.pickup,
     this.coastSeconds,
     this.coastMeters,
@@ -365,6 +389,10 @@ final class _Passage {
   /// Positions on the shared axis, metres.
   final double? lift;
   final double? braking;
+
+  /// [braking] when it is a clean, sustained start of braking (see
+  /// [_inconsistentBraking]).
+  final double? onset;
   final double? pickup;
 
   /// The longest coast from the approach to the exit.
@@ -578,6 +606,13 @@ DayCoach dayCoach(
       final braking = metrics.braking.method == 'measuredBrake'
           ? metrics.braking.brakingPointMeters
           : null;
+      // For braking consistency: a measured, clean and sustained onset only.
+      final onset =
+          braking != null &&
+              !metrics.braking.limitations.any(_unclearOnset.contains) &&
+              (metrics.braking.brakingSeconds ?? 0) >= coachBrakingMinSeconds
+          ? braking
+          : null;
       // The first sustained throttle rise at or after the slow point, not cut
       // off by the segment's end or following a gap in the data.
       final rise = metrics.exit.pickup;
@@ -654,6 +689,7 @@ DayCoach dayCoach(
           exit: shown.comparable ? _metersPerSecond(speeds.exit.value, speeds.unit) : null,
           lift: lift,
           braking: braking,
+          onset: onset,
           pickup: pickup,
           coastSeconds: coastSeconds,
           coastMeters: coastMeters,
@@ -991,10 +1027,13 @@ CoachFinding? _corrective(
   );
 }
 
-/// The session coached's braking points at [corner] spread over at least
-/// [coachBrakingSpreadMeters] (and four sample spacings), on at least
-/// three of its laps, and over [coachBrakingSpreadMeters] more than the
-/// spread of the day's three fastest laps there. Slow laps are left out.
+/// The session coached's braking points at [corner] spread out: at least
+/// two of its laps brake [coachBrakingOffMeters] (and two sample spacings)
+/// or more from its typical (median) braking point, from at least three
+/// laps with a clean, sustained, measured onset; the earliest and the latest
+/// are at least [coachBrakingSpreadMeters] (and four sample spacings)
+/// apart, and that much more than across the day's three fastest laps
+/// there. Slow laps are left out.
 CoachFinding? _inconsistentBraking(
   DayCorner corner,
   List<_Passage> passages,
@@ -1002,7 +1041,7 @@ CoachFinding? _inconsistentBraking(
   Set<DayLapReference> slow,
 ) {
   final measured = passages
-      .where((p) => p.braking != null && !slow.contains(p.lap.reference))
+      .where((p) => p.onset != null && !slow.contains(p.lap.reference))
       .toList();
   final own = measured.where((p) => p.lap.runId == coached).toList()
     ..sort((a, b) => a.order.compareTo(b.order));
@@ -1011,20 +1050,26 @@ CoachFinding? _inconsistentBraking(
     ...measured,
   ]..sort((a, b) => a.lapSeconds.compareTo(b.lapSeconds))).take(3).toList();
   double spread(List<_Passage> laps) {
-    final points = laps.map((p) => p.braking!);
+    final points = laps.map((p) => p.onset!);
     return points.reduce(math.max) - points.reduce(math.min);
   }
 
-  final observed = spread(own), reference = spread(fastest);
   final spacing = [
     ...own,
     ...fastest,
   ].map((p) => p.spacing).reduce((a, b) => !(a > 0) || !(b > 0) ? 0.0 : math.max(a, b));
-  if (observed < math.max(coachBrakingSpreadMeters, spacing * 4) ||
+  final typical = _median(own.map((p) => p.onset!));
+  final off = [
+    for (final p in own)
+      if ((p.onset! - typical).abs() >= math.max(coachBrakingOffMeters, spacing * 2)) p,
+  ];
+  final observed = spread(own), reference = spread(fastest);
+  if (off.length < 2 ||
+      observed < math.max(coachBrakingSpreadMeters, spacing * 4) ||
       observed - reference < coachBrakingSpreadMeters) {
     return null;
   }
-  var confidence = 0.48 + math.min(own.length, 3) * 0.09 + 0.08;
+  var confidence = 0.48 + math.min(off.length, 3) * 0.09 + 0.08;
   // An unknown spacing counts as sparse.
   if (!(spacing > 0) || spacing > 5) confidence -= 0.08;
   if (!(spacing > 0) || spacing > 10) confidence -= 0.12;
@@ -1038,21 +1083,24 @@ CoachFinding? _inconsistentBraking(
     evidence: [
       CoachEvidence(
         key: CoachMetric.brakingSpread,
-        metric: 'Braking point spread',
+        metric: 'Braking point range',
         observed: observed,
         reference: reference,
         unit: 'm',
         referenceLaps: referenceLaps,
         detail:
             'From the earliest to the latest braking start across ${own.length} laps of this '
-            'session, compared with the day\'s three fastest laps. Measured from the brake '
-            'channel; positions are along the lap on the day\'s shared axis.',
+            'session, ${off.length} of them ${coachBrakingOffMeters.round()} m or more from its '
+            'typical braking point; compared with the day\'s three fastest laps (this '
+            'session\'s among them when they are). Measured from the brake channel, clean '
+            'onsets of at least ${coachBrakingMinSeconds.toStringAsFixed(1)} s only; positions '
+            'are along the lap on the day\'s shared axis.',
       ),
       CoachEvidence(
         key: CoachMetric.brakingStart,
         metric: 'Braking start',
-        observed: _median(own.map((p) => p.braking!)),
-        reference: _median(fastest.map((p) => p.braking!)),
+        observed: typical,
+        reference: _median(fastest.map((p) => p.onset!)),
         unit: 'm',
         referenceLaps: referenceLaps,
         detail: 'The median braking start: where the fastest laps braked is a marker to try.',
@@ -1067,7 +1115,10 @@ CoachFinding? _inconsistentBraking(
         detail: 'Observed segment difference, not a predicted gain or a causal time-loss estimate.',
       ),
     ],
+    // Every lap read shows the spread; the laps off the typical point rank
+    // it among the session's patterns.
     affectedLaps: [for (final p in own) p.lap],
+    sessionLaps: [for (final p in off) p.lap],
   );
 }
 

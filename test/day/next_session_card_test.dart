@@ -9,6 +9,7 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/next_session_card.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -486,5 +487,40 @@ void main() {
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
     await tester.pumpAndSettle();
     expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
+  });
+
+  test('a braking item compares with the three fastest laps of the day', () {
+    CoachFinding braking() => CoachFinding(
+      kind: CoachKind.inconsistentBraking,
+      segmentId: 's',
+      segmentName: 'Corner 7',
+      confidence: 0.74,
+      affectedLaps: const [],
+      evidence: [
+        CoachEvidence(
+          key: CoachMetric.brakingSpread,
+          metric: 'Braking point range',
+          observed: 39.3,
+          reference: 4.7,
+          unit: 'm',
+          referenceLaps: const [],
+          detail: '',
+        ),
+      ],
+    );
+    final en = lookupAppLocalizations(const Locale('en'));
+    expect(
+      en.coachMeasured(braking(), 'km/h'),
+      'Braking point range: 39\u00a0m on this session\'s laps, 5\u00a0m on your three fastest laps today.',
+    );
+    expect(
+      en.coachKind(CoachKind.inconsistentBraking),
+      'Brake at the same point every lap',
+    );
+    final pl = lookupAppLocalizations(const Locale('pl'));
+    expect(
+      pl.coachMeasured(braking(), 'km/h'),
+      contains('trzech najszybszych okrążeniach dnia'),
+    );
   });
 }

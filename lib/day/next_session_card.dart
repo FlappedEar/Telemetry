@@ -75,6 +75,11 @@ extension CoachText on AppLocalizations {
     }
     final observed = coachValue(evidence.observed, evidence.unit, speedUnit);
     final reference = coachValue(evidence.reference, evidence.unit, speedUnit);
+    // Braking consistency compares with the day's three fastest laps,
+    // which can be this session's.
+    if (finding.kind == CoachKind.inconsistentBraking) {
+      return coachMeasuredFastest(metric, observed, reference);
+    }
     return evidence.referenceLaps.length == 1
         ? coachMeasuredOne(metric, observed, reference)
         : coachMeasuredMany(metric, observed, reference);
@@ -451,7 +456,11 @@ class _CoachItemPageState extends State<CoachItemPage> {
           ],
           const SizedBox(height: 8),
           Text(
-            keep ? l10n.coachWhyBefore : l10n.coachWhyFaster,
+            keep
+                ? l10n.coachWhyBefore
+                : finding.kind == CoachKind.inconsistentBraking
+                ? l10n.coachWhyFastest
+                : l10n.coachWhyFaster,
             style: theme.textTheme.labelLarge,
           ),
           Text(_laps(l10n, finding.evidence.first.referenceLaps)),

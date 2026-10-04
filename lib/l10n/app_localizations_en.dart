@@ -245,6 +245,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String coachMeasuredFastest(
+    String metric,
+    String observed,
+    String reference,
+  ) {
+    return '$metric: $observed on this session\'s laps, $reference on your three fastest laps today.';
+  }
+
+  @override
   String coachMeasuredImproving(String metric, String before, String after) {
     return '$metric improved on three laps in a row, from $before to $after, without losing exit speed.';
   }
@@ -274,7 +283,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMetricCoastDistance => 'Coast distance';
 
   @override
-  String get coachMetricBrakingSpread => 'Braking point spread';
+  String get coachMetricBrakingSpread => 'Braking point range';
 
   @override
   String get coachReasonReady =>
@@ -341,6 +350,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachWhyFaster => 'Faster laps compared';
+
+  @override
+  String get coachWhyFastest => 'Your three fastest laps today';
 
   @override
   String get coachWhyBefore => 'First of the three laps';

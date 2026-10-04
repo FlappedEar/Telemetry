@@ -251,6 +251,15 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String coachMeasuredFastest(
+    String metric,
+    String observed,
+    String reference,
+  ) {
+    return '$metric: $observed na okrążeniach tej sesji, $reference na Twoich trzech najszybszych okrążeniach dnia.';
+  }
+
+  @override
   String coachMeasuredImproving(String metric, String before, String after) {
     return '$metric: poprawa na trzech kolejnych okrążeniach, z $before do $after, bez utraty prędkości na wyjściu.';
   }
@@ -281,7 +290,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricCoastDistance => 'Dystans jazdy bez gazu i hamulca';
 
   @override
-  String get coachMetricBrakingSpread => 'Rozrzut punktu hamowania';
+  String get coachMetricBrakingSpread => 'Zakres punktów hamowania';
 
   @override
   String get coachReasonReady =>
@@ -349,6 +358,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachWhyFaster => 'Porównane szybsze okrążenia';
+
+  @override
+  String get coachWhyFastest => 'Twoje trzy najszybsze okrążenia dnia';
 
   @override
   String get coachWhyBefore => 'Pierwsze z trzech okrążeń';
