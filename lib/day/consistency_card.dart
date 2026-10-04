@@ -93,17 +93,22 @@ class ConsistencyCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(l10n.consistencyLapTimes, style: theme.textTheme.titleSmall),
+            // With one session the day and the session are the same laps:
+            // one row, named after the session.
             row(
-              l10n.consistencyAllSessions,
+              laps.runs.length == 1
+                  ? l10n.session(laps.runs.single.runName)
+                  : l10n.consistencyAllSessions,
               laps.day,
               const ValueKey('lapConsistency day'),
             ),
-            for (final run in laps.runs)
-              row(
-                l10n.session(run.runName),
-                run.laps,
-                ValueKey('lapConsistency ${run.runId}'),
-              ),
+            if (laps.runs.length > 1)
+              for (final run in laps.runs)
+                row(
+                  l10n.session(run.runName),
+                  run.laps,
+                  ValueKey('lapConsistency ${run.runId}'),
+                ),
             const SizedBox(height: 8),
             Text(
               l10n.consistencySegmentTimes,
