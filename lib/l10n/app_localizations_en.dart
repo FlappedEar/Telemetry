@@ -4795,4 +4795,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String libraryDefaultTrack(int number) {
     return 'Track $number';
   }
+
+  @override
+  String lapsShowUnranked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count laps not ranked',
+      one: 'Show 1 lap not ranked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lapsHideUnranked => 'Hide laps not ranked';
 }

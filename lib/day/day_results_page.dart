@@ -18,6 +18,7 @@ import '../import/import_review_page.dart';
 import '../l10n.dart';
 import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
+import '../units.dart' show hideUnrankedLapsSetting;
 import 'background_task.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
@@ -1732,7 +1733,45 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ),
         ],
       ),
-      for (final row in _controller.analysis.rows) _lapTile(context, row),
+      ..._lapRows(context),
+    ];
+  }
+
+  /// The lap list's rows. The laps that are not ranked (out and in laps,
+  /// sections without a start/finish pass, excluded laps, laps with an
+  /// issue) are hidden while the setting says so and the day has a ranked
+  /// lap to show instead; a button shows or hides them. The day keeps every
+  /// lap either way.
+  List<Widget> _lapRows(BuildContext context) {
+    final l10n = context.l10n;
+    final rows = _controller.analysis.rows;
+    final ranked = {
+      for (final row in rows)
+        if (row.type == LapSectionType.lap && _controller.issues(row).isEmpty)
+          row.reference,
+    };
+    final unranked = rows.length - ranked.length;
+    if (unranked == 0 || unranked == rows.length) {
+      return [for (final row in rows) _lapTile(context, row)];
+    }
+    final hide = hideUnrankedLapsSetting.value;
+    return [
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          key: const ValueKey('lapsUnrankedToggle'),
+          onPressed: () =>
+              setState(() => hideUnrankedLapsSetting.value = !hide),
+          icon: Icon(
+            hide ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          ),
+          label: Text(
+            hide ? l10n.lapsShowUnranked(unranked) : l10n.lapsHideUnranked,
+          ),
+        ),
+      ),
+      for (final row in rows)
+        if (!hide || ranked.contains(row.reference)) _lapTile(context, row),
     ];
   }
 

@@ -38,6 +38,13 @@ final ValueNotifier<SpeedUnitSetting> speedUnitSetting = ValueNotifier(
 /// and kept in `settings.json` with [speedUnitSetting]. On by default.
 final ValueNotifier<bool> weatherLookupSetting = ValueNotifier(true);
 
+/// Whether the lap list hides the laps that are not ranked (out and in
+/// laps, sections without a start/finish pass, excluded laps and laps with
+/// an issue), chosen with the list's
+/// show and hide button and kept in `settings.json`. On by default. Only
+/// the list changes: the day and its recordings keep every lap.
+final ValueNotifier<bool> hideUnrankedLapsSetting = ValueNotifier(true);
+
 /// The speed unit each of the open day's recordings declares ("km/h",
 /// "mph", or empty when it declares none). Set when a day opens.
 List<String> declaredSpeedUnits = const [];
@@ -109,7 +116,8 @@ String displayUnit(String name, String unit) {
   return daySpeedUnit(declared, speedUnitSetting.value.unit);
 }
 
-/// Reads and keeps [speedUnitSetting] and [weatherLookupSetting] in
+/// Reads and keeps [speedUnitSetting], [weatherLookupSetting] and
+/// [hideUnrankedLapsSetting] in
 /// `settings.json` in the app's support folder. Off in `flutter test`.
 Future<void> loadSettings() async {
   if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return;
@@ -132,6 +140,9 @@ Future<void> loadSettings() async {
       if (json is Map && json['weatherLookup'] is bool) {
         weatherLookupSetting.value = json['weatherLookup'] as bool;
       }
+      if (json is Map && json['hideUnrankedLaps'] is bool) {
+        hideUnrankedLapsSetting.value = json['hideUnrankedLaps'] as bool;
+      }
     }
   } on Exception catch (error) {
     debugPrint('Settings not read: $error');
@@ -143,6 +154,7 @@ Future<void> loadSettings() async {
         jsonEncode({
           'speedUnit': speedUnitSetting.value.name,
           'weatherLookup': weatherLookupSetting.value,
+          'hideUnrankedLaps': hideUnrankedLapsSetting.value,
         }),
       );
     } on Exception catch (error) {
@@ -152,6 +164,7 @@ Future<void> loadSettings() async {
 
   speedUnitSetting.addListener(write);
   weatherLookupSetting.addListener(write);
+  hideUnrankedLapsSetting.addListener(write);
 }
 
 /// Rebuilds what shows a speed unit when [speedUnitSetting] changes; put
