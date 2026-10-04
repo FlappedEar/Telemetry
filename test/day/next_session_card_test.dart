@@ -68,6 +68,7 @@ void main() {
     CoachGoalOutcome goal = CoachGoalOutcome.better,
     String? measuredName,
     bool lift = false,
+    bool braking = false,
   }) {
     final laps = [for (final sectors in result.laps) sectors.lap];
     final segment = result.segments.firstWhere(
@@ -113,17 +114,25 @@ void main() {
       ],
     );
     // With [lift], a lift point 47 m along the lap against 54 m.
-    final change = lift
+    final change = braking
+        ? finding(
+            CoachKind.inconsistentBraking,
+            CoachMetric.brakingStart,
+            'm',
+            [laps.last],
+          )
+        : lift
         ? finding(CoachKind.earlyLift, CoachMetric.liftPoint, 'm', [laps.last])
         : finding(CoachKind.lowMinimumSpeed, CoachMetric.minimumSpeed, 'km/h', [
             laps.last,
           ]);
-    final keep = finding(
-      CoachKind.improving,
-      CoachMetric.minimumSpeed,
-      'km/h',
-      [laps.first],
-    );
+    final keep = lift
+        ? finding(CoachKind.improving, CoachMetric.throttleReturn, 'm', [
+            laps.first,
+          ])
+        : finding(CoachKind.improving, CoachMetric.minimumSpeed, 'km/h', [
+            laps.first,
+          ]);
     return DayCoach(
       runId: runId,
       findings: [change, keep],
@@ -158,6 +167,7 @@ void main() {
     CoachGoalOutcome goal = CoachGoalOutcome.better,
     String? measuredName,
     bool lift = false,
+    bool braking = false,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -176,6 +186,7 @@ void main() {
                   goal: goal,
                   measuredName: measuredName,
                   lift: lift,
+                  braking: braking,
                 )
               : job(),
     );
@@ -366,7 +377,20 @@ void main() {
     await tester.pumpAndSettle();
     final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
     expect(map.marks.map((mark) => mark.color), [lapBColor, lapAColor]);
-    // Seven metres apart along the lap.
+    // On the best lap's line, where it was 54 m and 47 m along the lap.
+    final page = tester.widget<CoachItemPage>(find.byType(CoachItemPage));
+    final best = page.result.bestLap!;
+    for (final (mark, progress) in [
+      (map.marks[0], 53.71),
+      (map.marks[1], 46.94),
+    ]) {
+      final at = lapPathPointAt(
+        page.path!,
+        page.result.timeAt(best, progress)!,
+      )!;
+      expect(mark.east, closeTo(at.east, 1e-9));
+      expect(mark.north, closeTo(at.north, 1e-9));
+    }
     final [faster, own] = map.marks;
     final apart = sqrt(
       pow(faster.east - own.east, 2) + pow(faster.north - own.north, 2),
@@ -380,6 +404,36 @@ void main() {
       tester.widget<Text>(find.byKey(const ValueKey('coachMapFaster'))).data,
       'Lift point: your faster laps',
     );
+  });
+
+  testWidgets('Why? for the braking marker compares with the three fastest '
+      'laps', (tester) async {
+    await show(tester, braking: true);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
+    await tester.pumpAndSettle();
+    final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
+    expect(map.marks, hasLength(2));
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('coachMapFaster')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachMapFaster'))).data,
+      'Braking start: your three fastest laps today',
+    );
+  });
+
+  testWidgets('Why? for an improvement to keep has no points on the map', (
+    tester,
+  ) async {
+    await show(tester, lift: true);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    await tester.pumpAndSettle();
+    final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
+    expect(map.marks, isEmpty);
   });
 
   testWidgets('Why? for a speed item has no points on the map', (tester) async {

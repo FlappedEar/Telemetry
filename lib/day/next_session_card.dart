@@ -464,9 +464,13 @@ class _CoachItemPageState extends State<CoachItemPage> {
 
   // The item's points along the lap (a lift, a braking start or a throttle
   // return): this session's and the faster laps', on the best lap's path.
-  late final CoachEvidence? _points = widget.finding.evidence
-      .where((e) => e.unit == 'm' && _pointMetrics.contains(e.key))
-      .firstOrNull;
+  // A change only: an improvement compares the latest lap with an earlier
+  // one, not with faster laps.
+  late final CoachEvidence? _points = widget.finding.kind.corrective
+      ? widget.finding.evidence
+            .where((e) => e.unit == 'm' && _pointMetrics.contains(e.key))
+            .firstOrNull
+      : null;
   late final MapMark? _thisMark = _markAt(_points?.observed, lapAColor);
   late final MapMark? _fasterMark = _markAt(_points?.reference, lapBColor);
 
