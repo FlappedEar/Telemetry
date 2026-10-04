@@ -205,6 +205,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachKindLateThrottle => 'Wcześniej wróć na gaz';
 
   @override
+  String get coachKindInconsistentBraking =>
+      'Hamuj w tym samym miejscu na każdym okrążeniu';
+
+  @override
   String get coachKindImproving => 'Utrzymaj obecny sposób jazdy';
 
   @override
@@ -229,6 +233,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pracuj nad płynnym, nieco wcześniejszym ponownym dodaniem gazu po najwolniejszym punkcie. Wzoruj się na swoich szybszych okrążeniach.';
 
   @override
+  String get coachActionInconsistentBraking =>
+      'Wybierz jeden punkt odniesienia do hamowania i hamuj przy nim na każdym okrążeniu. Przesuń go dopiero, gdy trafiasz w niego regularnie.';
+
+  @override
   String get coachActionImproving =>
       'Utrzymaj sposób jazdy z ostatnich okrążeń. Powtórz go, zanim zmienisz coś innego.';
 
@@ -240,6 +248,15 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String coachMeasuredMany(String metric, String observed, String reference) {
     return '$metric: $observed na okrążeniach tej sesji, $reference na Twoich szybszych okrążeniach.';
+  }
+
+  @override
+  String coachMeasuredFastest(
+    String metric,
+    String observed,
+    String reference,
+  ) {
+    return '$metric: $observed na okrążeniach tej sesji, $reference na Twoich trzech najszybszych okrążeniach dnia.';
   }
 
   @override
@@ -271,6 +288,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachMetricCoastDistance => 'Dystans jazdy bez gazu i hamulca';
+
+  @override
+  String get coachMetricBrakingSpread => 'Zakres punktów hamowania';
 
   @override
   String get coachReasonReady =>
@@ -338,6 +358,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachWhyFaster => 'Porównane szybsze okrążenia';
+
+  @override
+  String get coachWhyFastest => 'Twoje trzy najszybsze okrążenia dnia';
 
   @override
   String get coachWhyBefore => 'Pierwsze z trzech okrążeń';

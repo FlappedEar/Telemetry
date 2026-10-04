@@ -404,6 +404,12 @@ abstract class AppLocalizations {
   /// **'Return to throttle sooner'**
   String get coachKindLateThrottle;
 
+  /// Coach item heading: the session's braking points at a corner are spread out.
+  ///
+  /// In en, this message translates to:
+  /// **'Brake at the same point every lap'**
+  String get coachKindInconsistentBraking;
+
   /// Coach item title: an improvement over the last laps to keep.
   ///
   /// In en, this message translates to:
@@ -440,6 +446,12 @@ abstract class AppLocalizations {
   /// **'Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.'**
   String get coachActionLateThrottle;
 
+  /// What to try when the braking points at a corner are spread out. A marker is a fixed point beside the track (a board, a cone, a kerb).
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one braking marker and brake at it every lap. Move it only once you hit it consistently.'**
+  String get coachActionInconsistentBraking;
+
   /// What to keep for an improvement.
   ///
   /// In en, this message translates to:
@@ -457,6 +469,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{metric}: {observed} on this session\'s laps, {reference} on your faster laps.'**
   String coachMeasuredMany(String metric, String observed, String reference);
+
+  /// What was measured for braking consistency, compared with the day's three fastest laps (which can include this session's).
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: {observed} on this session\'s laps, {reference} on your three fastest laps today.'**
+  String coachMeasuredFastest(String metric, String observed, String reference);
 
   /// What was measured for an improvement.
   ///
@@ -511,6 +529,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coast distance'**
   String get coachMetricCoastDistance;
+
+  /// How far apart the braking starts at a corner are, from the earliest to the latest.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point range'**
+  String get coachMetricBrakingSpread;
 
   /// Above the coach items.
   ///
@@ -607,6 +631,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Faster laps compared'**
   String get coachWhyFaster;
+
+  /// Heading of the laps compared for braking consistency: the day's three fastest laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Your three fastest laps today'**
+  String get coachWhyFastest;
 
   /// Heading of the lap an improvement started from.
   ///

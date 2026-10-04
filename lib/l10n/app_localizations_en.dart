@@ -199,6 +199,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachKindLateThrottle => 'Return to throttle sooner';
 
   @override
+  String get coachKindInconsistentBraking =>
+      'Brake at the same point every lap';
+
+  @override
   String get coachKindImproving => 'Keep current approach';
 
   @override
@@ -223,6 +227,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.';
 
   @override
+  String get coachActionInconsistentBraking =>
+      'Pick one braking marker and brake at it every lap. Move it only once you hit it consistently.';
+
+  @override
   String get coachActionImproving =>
       'Keep the approach from your latest laps. Repeat it before making another change.';
 
@@ -234,6 +242,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String coachMeasuredMany(String metric, String observed, String reference) {
     return '$metric: $observed on this session\'s laps, $reference on your faster laps.';
+  }
+
+  @override
+  String coachMeasuredFastest(
+    String metric,
+    String observed,
+    String reference,
+  ) {
+    return '$metric: $observed on this session\'s laps, $reference on your three fastest laps today.';
   }
 
   @override
@@ -264,6 +281,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachMetricCoastDistance => 'Coast distance';
+
+  @override
+  String get coachMetricBrakingSpread => 'Braking point range';
 
   @override
   String get coachReasonReady =>
@@ -330,6 +350,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachWhyFaster => 'Faster laps compared';
+
+  @override
+  String get coachWhyFastest => 'Your three fastest laps today';
 
   @override
   String get coachWhyBefore => 'First of the three laps';

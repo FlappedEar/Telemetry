@@ -17,6 +17,7 @@ extension CoachText on AppLocalizations {
     CoachKind.excessiveCoasting => coachKindExcessiveCoasting,
     CoachKind.lowMinimumSpeed => coachKindLowMinimumSpeed,
     CoachKind.lateThrottle => coachKindLateThrottle,
+    CoachKind.inconsistentBraking => coachKindInconsistentBraking,
     CoachKind.improving => coachKindImproving,
   };
 
@@ -26,6 +27,7 @@ extension CoachText on AppLocalizations {
     CoachKind.excessiveCoasting => coachActionExcessiveCoasting,
     CoachKind.lowMinimumSpeed => coachActionLowMinimumSpeed,
     CoachKind.lateThrottle => coachActionLateThrottle,
+    CoachKind.inconsistentBraking => coachActionInconsistentBraking,
     CoachKind.improving => coachActionImproving,
   };
 
@@ -38,6 +40,7 @@ extension CoachText on AppLocalizations {
     CoachMetric.exitSpeed => coachMetricExitSpeed,
     CoachMetric.brakingStart => coachMetricBrakingStart,
     CoachMetric.coastDistance => coachMetricCoastDistance,
+    CoachMetric.brakingSpread => coachMetricBrakingSpread,
   };
 
   /// Why the plan is what it is; [session] names the session coached.
@@ -72,6 +75,11 @@ extension CoachText on AppLocalizations {
     }
     final observed = coachValue(evidence.observed, evidence.unit, speedUnit);
     final reference = coachValue(evidence.reference, evidence.unit, speedUnit);
+    // Braking consistency compares with the day's three fastest laps,
+    // which can be this session's.
+    if (finding.kind == CoachKind.inconsistentBraking) {
+      return coachMeasuredFastest(metric, observed, reference);
+    }
     return evidence.referenceLaps.length == 1
         ? coachMeasuredOne(metric, observed, reference)
         : coachMeasuredMany(metric, observed, reference);
@@ -336,6 +344,17 @@ class NextSessionCard extends StatelessWidget {
   }
 }
 
+/// The laps of earlier sessions showing [finding]'s pattern too: never the
+/// session coached's own (a braking item reads all of them, but lists only
+/// those off the usual point as the session's).
+List<DayLapRow> coachEarlierLaps(CoachFinding finding) {
+  final coached = {for (final lap in finding.sessionLaps) lap.runId};
+  return [
+    for (final lap in finding.affectedLaps)
+      if (!coached.contains(lap.runId)) lap,
+  ];
+}
+
 /// One coach item opened: its measured values, the laps behind them and
 /// its corner on the best lap's trace.
 class CoachItemPage extends StatefulWidget {
@@ -383,11 +402,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
     };
   }
 
-  /// The laps of earlier sessions showing the pattern too.
-  List<DayLapRow> _earlier(CoachFinding finding) => [
-    for (final lap in finding.affectedLaps)
-      if (!finding.sessionLaps.contains(lap)) lap,
-  ];
+  List<DayLapRow> _earlier(CoachFinding finding) => coachEarlierLaps(finding);
 
   String _laps(AppLocalizations l10n, List<DayLapRow> laps) => [
     for (final lap in laps)
@@ -448,7 +463,11 @@ class _CoachItemPageState extends State<CoachItemPage> {
           ],
           const SizedBox(height: 8),
           Text(
-            keep ? l10n.coachWhyBefore : l10n.coachWhyFaster,
+            keep
+                ? l10n.coachWhyBefore
+                : finding.kind == CoachKind.inconsistentBraking
+                ? l10n.coachWhyFastest
+                : l10n.coachWhyFaster,
             style: theme.textTheme.labelLarge,
           ),
           Text(_laps(l10n, finding.evidence.first.referenceLaps)),

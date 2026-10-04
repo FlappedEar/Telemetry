@@ -9,6 +9,7 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/next_session_card.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -64,6 +65,8 @@ void main() {
       (s) => s.type == 'corner',
       orElse: () => result.segments.first,
     );
+    final earlier = laps.where((lap) => lap.runId != runId).toList();
+    final latest = laps.lastWhere((lap) => lap.runId == runId);
     CoachFinding finding(
       CoachKind kind,
       CoachMetric key,
@@ -74,9 +77,11 @@ void main() {
       segmentId: segment.segmentId,
       segmentName: segment.name,
       confidence: 0.78,
-      affectedLaps: laps.take(3).toList(),
-      // A change also seen on earlier laps of the day.
-      sessionLaps: kind.corrective ? laps.skip(2).take(1).toList() : null,
+      // A change also seen on laps of an earlier session.
+      affectedLaps: kind.corrective
+          ? [...earlier.take(2), latest]
+          : laps.take(3).toList(),
+      sessionLaps: kind.corrective ? [latest] : null,
       evidence: [
         CoachEvidence(
           key: key,
@@ -486,5 +491,71 @@ void main() {
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
     await tester.pumpAndSettle();
     expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
+  });
+
+  test('a braking item compares with the three fastest laps of the day', () {
+    CoachFinding braking() => CoachFinding(
+      kind: CoachKind.inconsistentBraking,
+      segmentId: 's',
+      segmentName: 'Corner 7',
+      confidence: 0.74,
+      affectedLaps: const [],
+      evidence: [
+        CoachEvidence(
+          key: CoachMetric.brakingSpread,
+          metric: 'Braking point range',
+          observed: 39.3,
+          reference: 4.7,
+          unit: 'm',
+          referenceLaps: const [],
+          detail: '',
+        ),
+      ],
+    );
+    final en = lookupAppLocalizations(const Locale('en'));
+    expect(
+      en.coachMeasured(braking(), 'km/h'),
+      'Braking point range: 39\u00a0m on this session\'s laps, 5\u00a0m on your three fastest laps today.',
+    );
+    expect(
+      en.coachKind(CoachKind.inconsistentBraking),
+      'Brake at the same point every lap',
+    );
+    final pl = lookupAppLocalizations(const Locale('pl'));
+    expect(
+      pl.coachMeasured(braking(), 'km/h'),
+      contains('trzech najszybszych okrążeniach dnia'),
+    );
+  });
+
+  test('earlier laps are never the session coached\'s own', () {
+    DayLapRow lap(String run, int number) => DayLapRow(
+      runId: run,
+      runName: run,
+      type: LapSectionType.lap,
+      lapNumber: number,
+      start: number * 100.0,
+      end: number * 100.0 + 90,
+      sourceRevision: '',
+    );
+    // A braking item reads every lap of the session and lists those off the
+    // usual point as the session's.
+    final finding = CoachFinding(
+      kind: CoachKind.inconsistentBraking,
+      segmentId: 's',
+      segmentName: 'Corner 7',
+      confidence: 0.74,
+      affectedLaps: [
+        lap('run1', 4),
+        lap('run2', 1),
+        lap('run2', 2),
+        lap('run2', 3),
+      ],
+      sessionLaps: [lap('run2', 1), lap('run2', 3)],
+      evidence: const [],
+    );
+    expect(coachEarlierLaps(finding).map((l) => (l.runId, l.lapNumber)), [
+      ('run1', 4),
+    ]);
   });
 }

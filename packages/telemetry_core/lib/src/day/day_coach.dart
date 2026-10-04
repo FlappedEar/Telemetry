@@ -27,6 +27,12 @@
 // gain: estimated time loss stays unknown, as in DrivingCoach.
 import 'dart:math' as math;
 
+import '../analysis/braking_onset.dart'
+    show
+        brakingAlreadyActive,
+        brakingFollowsGap,
+        brakingInterruptedByGap,
+        brakingTruncatedAtWindowEnd;
 import '../analysis/coasting_analysis.dart';
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
 import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
@@ -53,6 +59,33 @@ const double coachPlanConfidence = 0.65;
 /// for another.
 const double coachSlowLapRatio = 1.05;
 
+/// Throttle below this share of its travel is off for the coach's coasting:
+/// a stretch held at light throttle (the driving states' coasting ends only
+/// above 15 %) is not coasting.
+const double coachThrottleOff = 0.03;
+
+/// How far apart a session's braking points at a corner must be, and how
+/// much farther apart than the day's three fastest laps', for the coach to
+/// suggest braking at one marker.
+const double coachBrakingSpreadMeters = 20.0;
+
+/// How far from the session's typical (median) braking point at a corner a
+/// lap's braking point is off it; at least two laps must be.
+const double coachBrakingOffMeters = 10.0;
+
+/// A braking onset shorter than this is a dab, not where the lap brakes for
+/// the corner, and is not read for braking consistency.
+const double coachBrakingMinSeconds = 0.5;
+
+/// Onsets that are not a clean start of braking: braking already under way,
+/// next to a gap in the data, or cut off by the window.
+const _unclearOnset = {
+  brakingAlreadyActive,
+  brakingFollowsGap,
+  brakingInterruptedByGap,
+  brakingTruncatedAtWindowEnd,
+};
+
 /// A faster lap at most this many seconds faster than the lap compared is
 /// preferred as its reference: a lap within reach, not only the day's best.
 const double coachReachSeconds = 1.5;
@@ -62,6 +95,9 @@ enum CoachKind {
   excessiveCoasting,
   lowMinimumSpeed,
   lateThrottle,
+
+  /// The session's braking points at a corner are spread out.
+  inconsistentBraking,
   improving;
 
   /// Advice to change something; [improving] says to keep it.
@@ -78,6 +114,7 @@ enum CoachMetric {
   exitSpeed,
   brakingStart,
   coastDistance,
+  brakingSpread,
 }
 
 /// Why the plan is what it is, for the app to say in its language.
@@ -203,6 +240,9 @@ final class CoachFinding {
     CoachKind.lateThrottle =>
       'Work toward a smooth, slightly earlier throttle return after the slow '
           'point, using your faster laps as a reference.',
+    CoachKind.inconsistentBraking =>
+      'Pick one braking marker and brake at it every lap. Move it only once you '
+          'hit it consistently.',
     CoachKind.improving =>
       'Keep the approach from your latest laps. Repeat it before making '
           'another change.',
@@ -222,6 +262,7 @@ final class CoachItem {
       CoachKind.excessiveCoasting => 'Reduce coasting',
       CoachKind.lowMinimumSpeed => 'Keep more speed through the slow point',
       CoachKind.lateThrottle => 'Return to throttle sooner',
+      CoachKind.inconsistentBraking => 'Brake at the same point every lap',
       CoachKind.improving => 'Keep current approach',
     };
     return '${finding.segmentName} — $label';
@@ -324,6 +365,7 @@ final class _Passage {
     this.exit,
     this.lift,
     this.braking,
+    this.onset,
     this.pickup,
     this.coastSeconds,
     this.coastMeters,
@@ -347,6 +389,10 @@ final class _Passage {
   /// Positions on the shared axis, metres.
   final double? lift;
   final double? braking;
+
+  /// [braking] when it is a clean, sustained start of braking (see
+  /// [_inconsistentBraking]).
+  final double? onset;
   final double? pickup;
 
   /// The longest coast from the approach to the exit.
@@ -397,6 +443,56 @@ double _median(Iterable<double> values) {
   return sorted.length.isOdd ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+/// [channel]'s full travel: its values are a fraction (0..1) or a
+/// percentage.
+double _throttleScale(TelemetryChannel channel) {
+  var peak = 0.0;
+  for (final value in channel.values) {
+    if (value.isFinite && value > peak) peak = value;
+  }
+  return channel.unit.trim() == '%' || peak > 1.5 ? 100.0 : 1.0;
+}
+
+/// The longest stretch from [from] to [to] with the throttle off (below
+/// [coachThrottleOff]), in seconds and metres along [trace]: zero for none,
+/// null without a throttle channel. A sample that is not finite ends a
+/// stretch.
+({double seconds, double meters})? _offThrottle(
+  TelemetrySession session,
+  List<ProgressSegment> trace,
+  double from,
+  double to,
+) {
+  final channel = session.channels[session.aliases['throttle'] ?? ''];
+  if (channel == null || channel.sampleCount < 2) return null;
+  final times = channel.timestamps, values = channel.values;
+  final off = coachThrottleOff * _throttleScale(channel);
+  var best = (seconds: 0.0, meters: 0.0);
+  double? since;
+  void close(double end) {
+    final start = since;
+    since = null;
+    if (start == null || end - start <= best.seconds) return;
+    final a = progressAtTime(trace, start), b = progressAtTime(trace, end);
+    if (a == null || b == null) return;
+    best = (seconds: end - start, meters: math.max(0.0, b - a));
+  }
+
+  for (var i = 0; i < times.length; ++i) {
+    final t = times[i];
+    if (t < from) continue;
+    if (t > to) break;
+    final value = values[i];
+    if (value.isFinite && value < off) {
+      since ??= t;
+    } else {
+      close(t);
+    }
+  }
+  close(to);
+  return best;
+}
+
 /// The last sustained release of the throttle (from at least 20 % to at
 /// most 8 % for 0.2 s and 3 m) starting between [fromTime] and 0.3 s after
 /// [toTime], as a
@@ -410,12 +506,7 @@ double? _liftProgress(
   final channel = session.channels[session.aliases['throttle'] ?? ''];
   if (channel == null || channel.sampleCount < 2) return null;
   final times = channel.timestamps, values = channel.values;
-  var peak = 0.0;
-  for (final value in values) {
-    if (value.isFinite && value > peak) peak = value;
-  }
-  // A fraction (0..1) or a percentage.
-  final scale = channel.unit.trim() == '%' || peak > 1.5 ? 100.0 : 1.0;
+  final scale = _throttleScale(channel);
   final high = 0.20 * scale, low = 0.08 * scale;
   double? result;
   var established = false;
@@ -515,6 +606,13 @@ DayCoach dayCoach(
       final braking = metrics.braking.method == 'measuredBrake'
           ? metrics.braking.brakingPointMeters
           : null;
+      // For braking consistency: a measured, clean and sustained onset only.
+      final onset =
+          braking != null &&
+              !metrics.braking.limitations.any(_unclearOnset.contains) &&
+              (metrics.braking.brakingSeconds ?? 0) >= coachBrakingMinSeconds
+          ? braking
+          : null;
       // The first sustained throttle rise at or after the slow point, not cut
       // off by the segment's end or following a gap in the data.
       final rise = metrics.exit.pickup;
@@ -564,16 +662,20 @@ DayCoach dayCoach(
         // coasting rather than a gap in the data.
         coastSeconds = 0.0;
         coastMeters = 0.0;
-        // Each episode counts for its part inside the window, its distance in
-        // proportion.
+        // Each episode counts for its part inside the window, and within it
+        // only where the throttle is off: light throttle is not coasting.
         for (final episode in summary.episodes) {
           final from = math.max(episode.startTime, windowStart);
           final to = math.min(episode.endTime, windowEnd);
           if (to <= from) continue;
-          final inside = to - from;
-          if (inside > coastSeconds!) {
-            coastSeconds = inside;
-            coastMeters = episode.seconds > 0 ? episode.meters * inside / episode.seconds : 0.0;
+          final off = _offThrottle(session, trace, from, to);
+          if (off == null) {
+            coastSeconds = coastMeters = null;
+            break;
+          }
+          if (off.seconds > coastSeconds!) {
+            coastSeconds = off.seconds;
+            coastMeters = off.meters;
           }
         }
       }
@@ -587,6 +689,7 @@ DayCoach dayCoach(
           exit: shown.comparable ? _metersPerSecond(speeds.exit.value, speeds.unit) : null,
           lift: lift,
           braking: braking,
+          onset: onset,
           pickup: pickup,
           coastSeconds: coastSeconds,
           coastMeters: coastMeters,
@@ -597,7 +700,8 @@ DayCoach dayCoach(
     if (passages.length < 2) continue;
     if (_hasFasterLap(passages, coached)) faster = true;
     for (final kind in CoachKind.values) {
-      if (!kind.corrective) continue;
+      // Braking consistency reads the session's laps together (below).
+      if (!kind.corrective || kind == CoachKind.inconsistentBraking) continue;
       final finding = _corrective(
         kind,
         corner,
@@ -609,6 +713,8 @@ DayCoach dayCoach(
       );
       if (finding != null) findings.add(finding);
     }
+    final braking = _inconsistentBraking(corner, passages, coached, slowReferences);
+    if (braking != null) findings.add(braking);
     final improving = _improving(corner, passages, coached, shown, slowReferences);
     if (improving != null) findings.add(improving);
   }
@@ -797,7 +903,7 @@ CoachFinding? _corrective(
         values.addAll(references.map((r) => r.pickup!));
         count();
         if (values.any((v) => pickup - v < threshold)) continue;
-      case CoachKind.improving:
+      case CoachKind.inconsistentBraking || CoachKind.improving:
         continue;
     }
     observations.add((
@@ -918,6 +1024,101 @@ CoachFinding? _corrective(
       for (final o in [...now]..sort((a, b) => a.current.order.compareTo(b.current.order)))
         o.current.lap,
     ],
+  );
+}
+
+/// The session coached's braking points at [corner] spread out: at least
+/// two of its laps brake [coachBrakingOffMeters] (and two sample spacings)
+/// or more from its typical (median) braking point, from at least three
+/// laps with a clean, sustained, measured onset; the earliest and the latest
+/// are at least [coachBrakingSpreadMeters] (and four sample spacings)
+/// apart, and that much more than across the day's three fastest laps
+/// there. Slow laps are left out.
+CoachFinding? _inconsistentBraking(
+  DayCorner corner,
+  List<_Passage> passages,
+  String coached,
+  Set<DayLapReference> slow,
+) {
+  final measured = passages
+      .where((p) => p.onset != null && !slow.contains(p.lap.reference))
+      .toList();
+  final own = measured.where((p) => p.lap.runId == coached).toList()
+    ..sort((a, b) => a.order.compareTo(b.order));
+  if (own.length < 3) return null;
+  final fastest = ([
+    ...measured,
+  ]..sort((a, b) => a.lapSeconds.compareTo(b.lapSeconds))).take(3).toList();
+  double spread(List<_Passage> laps) {
+    final points = laps.map((p) => p.onset!);
+    return points.reduce(math.max) - points.reduce(math.min);
+  }
+
+  final spacing = [
+    ...own,
+    ...fastest,
+  ].map((p) => p.spacing).reduce((a, b) => !(a > 0) || !(b > 0) ? 0.0 : math.max(a, b));
+  final typical = _median(own.map((p) => p.onset!));
+  final off = [
+    for (final p in own)
+      if ((p.onset! - typical).abs() >= math.max(coachBrakingOffMeters, spacing * 2)) p,
+  ];
+  final observed = spread(own), reference = spread(fastest);
+  if (off.length < 2 ||
+      observed < math.max(coachBrakingSpreadMeters, spacing * 4) ||
+      observed - reference < coachBrakingSpreadMeters) {
+    return null;
+  }
+  var confidence = 0.48 + math.min(off.length, 3) * 0.09 + 0.08;
+  // An unknown spacing counts as sparse.
+  if (!(spacing > 0) || spacing > 5) confidence -= 0.08;
+  if (!(spacing > 0) || spacing > 10) confidence -= 0.12;
+  final referenceLaps = [for (final p in fastest) p.lap]
+    ..sort((a, b) => a.start.compareTo(b.start));
+  return CoachFinding(
+    kind: CoachKind.inconsistentBraking,
+    segmentId: corner.segmentId,
+    segmentName: corner.name,
+    confidence: confidence.clamp(0.0, 0.9),
+    evidence: [
+      CoachEvidence(
+        key: CoachMetric.brakingSpread,
+        metric: 'Braking point range',
+        observed: observed,
+        reference: reference,
+        unit: 'm',
+        referenceLaps: referenceLaps,
+        detail:
+            'From the earliest to the latest braking start across ${own.length} laps of this '
+            'session, ${off.length} of them ${coachBrakingOffMeters.round()} m (and two sample spacings) or more from its '
+            'typical braking point; compared with the day\'s three fastest laps (this '
+            'session\'s among them when they are). Measured from the brake channel, clean '
+            'onsets of at least ${coachBrakingMinSeconds.toStringAsFixed(1)} s only; positions '
+            'are along the lap on the day\'s shared axis.',
+      ),
+      CoachEvidence(
+        key: CoachMetric.brakingStart,
+        metric: 'Braking start',
+        observed: typical,
+        reference: _median(fastest.map((p) => p.onset!)),
+        unit: 'm',
+        referenceLaps: referenceLaps,
+        detail: 'The median braking start: where the fastest laps braked is a marker to try.',
+      ),
+      CoachEvidence(
+        key: CoachMetric.segmentTime,
+        metric: 'Segment time',
+        observed: _median(own.map((p) => p.seconds)),
+        reference: _median(fastest.map((p) => p.seconds)),
+        unit: 's',
+        referenceLaps: referenceLaps,
+        detail: 'Observed segment difference, not a predicted gain or a causal time-loss estimate.',
+      ),
+    ],
+    // Every lap read shows the spread; the laps off the typical point rank
+    // it among the session's patterns.
+    affectedLaps: [for (final p in own) p.lap],
+    sessionLaps: [for (final p in off) p.lap],
   );
 }
 
@@ -1060,6 +1261,11 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
     final changes = chosen.where((f) => f.kind.corrective).length;
     if (finding.kind.corrective && changes >= 2) continue;
     if (!finding.kind.corrective && chosen.any((f) => !f.kind.corrective)) continue;
+    // One braking marker to work on at a time.
+    if (finding.kind == CoachKind.inconsistentBraking &&
+        chosen.any((f) => f.kind == CoachKind.inconsistentBraking)) {
+      continue;
+    }
     chosen.add(finding);
   }
   // The first item is the main focus: the first change, or the improvement
