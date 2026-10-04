@@ -284,4 +284,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SettingsDialog), findsNothing);
   });
+
+  testWidgets('the settings dialog keeps a readable width on a desktop', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      const TelemetryApp(home: Scaffold(body: SettingsDialog())),
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('speedUnitSetting'))).width,
+      lessThanOrEqualTo(480),
+    );
+    expect(
+      tester.getSize(find.byType(SingleChildScrollView)).width,
+      lessThanOrEqualTo(480),
+    );
+  });
 }

@@ -103,12 +103,11 @@ void main() {
     }
     expect(find.text('1.84\u00a0s'), findsOneWidget);
     String trailing(String key) =>
-        ((tester.widget<ListTile>(find.byKey(ValueKey(key))).trailing!) as Text)
-            .data!;
+        tester.widget<Text>(find.byKey(ValueKey(key))).data!;
     expect(trailing('diagnosticsSessions'), '2');
     expect(trailing('diagnosticsSamples'), '$samples');
-    expect(trailing('diagnosticsCurrentMemory'), '96.0 MiB');
-    expect(trailing('diagnosticsPeakMemory'), '222.5 MiB');
+    expect(trailing('diagnosticsCurrentMemory'), '96.0\u00a0MiB');
+    expect(trailing('diagnosticsPeakMemory'), '222.5\u00a0MiB');
   });
 
   testWidgets('says what is not available', (tester) async {
@@ -170,7 +169,7 @@ void main() {
     expect(find.text('Segmenty i czas teoretyczny'), findsOneWidget);
     expect(find.text('Pamięć'), findsOneWidget);
     expect(find.text('Niedostępne'), findsOneWidget);
-    expect(find.text('96.0 MiB'), findsOneWidget);
+    expect(find.text('96.0\u00a0MiB'), findsOneWidget);
     expect(find.text('1.84\u00a0s'), findsOneWidget);
     expect(find.text('Diagnostics'), findsNothing);
     expect(find.text('Last import'), findsNothing);
@@ -222,5 +221,52 @@ void main() {
     await tester.tap(find.text('Diagnostics'));
     await tester.pumpAndSettle();
     expect(find.byType(DiagnosticsPage), findsOneWidget);
+  });
+
+  testWidgets('a phone with text ×2 keeps each label readable', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    addTearDown(() => Intl.defaultLocale = null);
+    for (final locale in const [Locale('en'), Locale('pl')]) {
+      await tester.pumpWidget(
+        TelemetryApp(
+          locale: locale,
+          home: DiagnosticsPage(
+            diagnostics: AppDiagnostics(),
+            memory: () => (current: 96 * _mib, peak: 222 * _mib),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final label = find.text(
+        locale.languageCode == 'en' ? 'Current' : 'Bieżąca',
+      );
+      // At least a few letters per line, not one.
+      expect(tester.getSize(label).width, greaterThan(80));
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  testWidgets('a desktop window keeps the page 720 wide', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DiagnosticsPage(
+          diagnostics: AppDiagnostics(),
+          memory: () => (current: 96 * _mib, peak: null),
+        ),
+      ),
+    );
+    final value = tester.getRect(
+      find.byKey(const ValueKey('diagnosticsCurrentMemory')),
+    );
+    expect(value.right, lessThanOrEqualTo((1600 + 720) / 2));
+    await tester.pumpWidget(const SizedBox());
   });
 }
