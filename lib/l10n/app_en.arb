@@ -444,23 +444,25 @@
   "@coachReasonNoPattern": {
     "description": "Why there is no plan."
   },
-  "coachReasonTooFewLaps": "A pattern was seen on fewer than three laps of {session}, too few to plan from.",
+  "coachReasonTooFewLaps": "A pattern was seen on fewer than three laps today, too few to plan from.",
   "@coachReasonTooFewLaps": {
-    "description": "Why there is no plan.",
-    "placeholders": {
-      "session": {
-        "type": "String",
-        "example": "Session 4"
-      }
-    }
+    "description": "Why there is no plan: laps of every session of the day so far count."
   },
   "coachReasonBelowThreshold": "No repeated pattern is clear enough to suggest a change.",
   "@coachReasonBelowThreshold": {
     "description": "Why there is no plan."
   },
+  "coachReasonNotInSession": "Patterns seen earlier today do not repeat on most of this session's laps.",
+  "@coachReasonNotInSession": {
+    "description": "Why there is no plan."
+  },
   "coachWhyAffected": "This session's laps",
   "@coachWhyAffected": {
-    "description": "Heading of the laps the pattern was seen on."
+    "description": "Heading of the coached session's laps the pattern was seen on; the values shown come from them."
+  },
+  "coachWhyEarlier": "Earlier laps showing it today",
+  "@coachWhyEarlier": {
+    "description": "Heading of the laps of earlier sessions of the day the pattern was also seen on."
   },
   "coachWhyFaster": "Faster laps compared",
   "@coachWhyFaster": {

@@ -198,18 +198,81 @@ void main() {
     expect(finding.evidence.first.observed, greaterThan(finding.evidence.first.reference + 8));
   });
 
-  test('a coast on a single lap is a finding but not a plan item', () {
-    void coastOnce(String runId, TelemetrySession session) {
-      if (runId != 'run2') return;
-      _edit(session, 'throttle', 0, (d) => d >= 20 && d < 60, lap: 1);
-      _edit(session, 'brake', 0, (d) => d >= 20 && d < 60, lap: 1);
-    }
+  void coastOnce(String runId, TelemetrySession session) {
+    if (runId != 'run2') return;
+    _edit(session, 'throttle', 0, (d) => d >= 20 && d < 60, lap: 1);
+    _edit(session, 'brake', 0, (d) => d >= 20 && d < 60, lap: 1);
+  }
 
-    final coach = _coach([20, 20.5], [17, 20.2, 20.4], edit: coastOnce);
+  test('a coast on a single lap is a finding but not a plan item', () {
+    final coach = _coach([20, 20.5], [17, 20.2], edit: coastOnce);
     final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.excessiveCoasting);
     expect(finding.repeated, isFalse);
-    expect(finding.evidence.first.detail, startsWith('One affected lap'));
+    expect(
+      finding.evidence.first.detail,
+      startsWith('One affected lap of this session (laps of the day so far showing it: 1)'),
+    );
     expect(coach.plan.any((item) => item.finding == finding), isFalse);
+  });
+
+  test('a pattern on fewer than half of the session\'s laps compared is not a finding', () {
+    // Every lap of the latest session has faster laps to compare with; only
+    // the first coasts.
+    final coach = _coach([24, 24.2], [17, 20.2, 20.4], edit: coastOnce);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+  });
+
+  test('patterns of earlier sessions the latest no longer repeats say so', () {
+    void coastEarlier(String runId, TelemetrySession session) {
+      if (runId != 'run1') return;
+      for (final lap in [1, 2, 3]) {
+        _edit(session, 'throttle', 0, (d) => d >= 20 && d < 60, lap: lap);
+        _edit(session, 'brake', 0, (d) => d >= 20 && d < 60, lap: lap);
+      }
+    }
+
+    // The earlier session coasts on every lap; the latest, faster than its
+    // first two laps and slower than its third, does not.
+    final coach = _coach([18, 18.2, 21.5], [20, 20.2, 20.4], edit: coastEarlier);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+    expect(coach.reason, CoachReason.notInSession);
+    expect(coach.message, contains('earlier today'));
+  });
+
+  test('a pattern repeated across sessions counts toward the plan', () {
+    // Two laps of the earlier session and one of the latest are slow through
+    // the corner; the latest session's other lap is the fastest.
+    final coach = _coach([12, 12.2], [15.1, 20.5]);
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+    expect(finding.affectedLaps.map((lap) => lap.runId), ['run1', 'run1', 'run2']);
+    expect(finding.sessionLaps.map((lap) => lap.runId), ['run2']);
+    expect(
+      finding.evidence.first.detail,
+      startsWith('One affected lap of this session (laps of the day so far showing it: 3)'),
+    );
+    // The values are the latest session's own: its slow lap (15.1 m/s, not
+    // the earlier 12) against its fast one.
+    expect(finding.evidence.first.observed, closeTo(15.1 * 3.6, 2.0));
+    expect(finding.evidence.first.referenceLaps.map((lap) => lap.runId).toSet(), {'run2'});
+    expect(coach.plan.map((item) => item.finding), contains(finding));
+    expect(coach.reason, CoachReason.ready);
+  });
+
+  test('laps of the session with no faster lap do not count against a pattern', () {
+    // The latest session holds the day's fastest laps: only its slow lap
+    // has faster laps to compare with, and it shows the pattern.
+    final coach = _coach([15, 15.2], [15.1, 20.5, 20.55]);
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+    expect(finding.sessionLaps, hasLength(1));
+    expect(finding.affectedLaps, hasLength(3));
+    expect(coach.plan.map((item) => item.finding), contains(finding));
+  });
+
+  test('a pattern the latest session has left behind is not advice', () {
+    final coach = _coach([15, 15.2, 15.1], [20, 20.5, 20.2]);
+    expect(coach.findings.where((f) => f.kind.corrective), isEmpty);
+    expect(coach.plan, isEmpty);
+    expect(coach.reason, CoachReason.noFasterLap);
   });
 
   test('improvements in two corners: one is kept in the plan', () {

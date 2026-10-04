@@ -53,8 +53,9 @@ extension CoachText on AppLocalizations {
     CoachReason.noFasterLap => coachReasonNoFasterLap(session),
     CoachReason.noPedals => coachReasonNoPedals,
     CoachReason.noPattern => coachReasonNoPattern,
-    CoachReason.tooFewLaps => coachReasonTooFewLaps(session),
+    CoachReason.tooFewLaps => coachReasonTooFewLaps,
     CoachReason.belowThreshold => coachReasonBelowThreshold,
+    CoachReason.notInSession => coachReasonNotInSession,
   };
 
   /// What was measured for [finding], in one sentence; speeds labelled
@@ -358,6 +359,12 @@ class _CoachItemPageState extends State<CoachItemPage> {
     };
   }
 
+  /// The laps of earlier sessions showing the pattern too.
+  List<DayLapRow> _earlier(CoachFinding finding) => [
+    for (final lap in finding.affectedLaps)
+      if (!finding.sessionLaps.contains(lap)) lap,
+  ];
+
   String _laps(AppLocalizations l10n, List<DayLapRow> laps) => [
     for (final lap in laps)
       widget.lapLabel(lap.reference).isEmpty
@@ -409,7 +416,12 @@ class _CoachItemPageState extends State<CoachItemPage> {
             Text(l10n.coachSpeedHidden, style: theme.textTheme.bodySmall),
           const SizedBox(height: 8),
           Text(l10n.coachWhyAffected, style: theme.textTheme.labelLarge),
-          Text(_laps(l10n, finding.affectedLaps)),
+          Text(_laps(l10n, finding.sessionLaps)),
+          if (_earlier(finding).isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(l10n.coachWhyEarlier, style: theme.textTheme.labelLarge),
+            Text(_laps(l10n, _earlier(finding))),
+          ],
           const SizedBox(height: 8),
           Text(
             keep ? l10n.coachWhyBefore : l10n.coachWhyFaster,

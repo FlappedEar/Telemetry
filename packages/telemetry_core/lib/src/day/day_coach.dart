@@ -17,8 +17,11 @@
 // - Coasting is this app's measured coasting (both pedals recorded, see
 //   driving_states.dart), which does not check longitudinal G; the
 //   confidence is lowered as DrivingCoach lowers it without G coverage.
-// - A lap is "affected" only in the session coached (the latest); references
-//   come from every eligible lap of the group.
+// - Patterns are looked for on every lap of the day so far, so one repeated
+//   across sessions counts (owner's choice, 2026-10-04); the session coached
+//   must still show it on at least half of its laps through the segment, and
+//   its own laps give the values reported. References come from every
+//   eligible lap of the group.
 //
 // A finding is a pattern that suggests an opportunity, never a promised
 // gain: estimated time loss stays unknown, as in DrivingCoach.
@@ -97,11 +100,16 @@ enum CoachReason {
   /// Faster laps were compared, and they show no pattern.
   noPattern,
 
-  /// A confident pattern was seen, but on fewer than three laps.
+  /// A confident pattern was seen, but on fewer than three laps of the day
+  /// so far.
   tooFewLaps,
 
   /// Patterns were found, but none is repeated and confident enough.
   belowThreshold,
+
+  /// Patterns seen earlier today are not repeated on at least half of the
+  /// session coached's laps compared (which do have faster laps).
+  notInSession,
 }
 
 /// One measured comparison behind a finding.
@@ -121,7 +129,8 @@ final class CoachEvidence {
   /// "Minimum speed", "Throttle return"... (English; the app maps [key]).
   final String metric;
 
-  /// The median over the affected laps (the value itself for one lap).
+  /// The median over the session coached's affected laps (the value
+  /// itself for one lap).
   final double observed;
 
   /// The median over the faster laps (for [CoachKind.improving], the first
@@ -144,8 +153,10 @@ final class CoachFinding {
     required this.confidence,
     required List<CoachEvidence> evidence,
     required List<DayLapRow> affectedLaps,
+    List<DayLapRow>? sessionLaps,
   }) : evidence = List.unmodifiable(evidence),
-       affectedLaps = List.unmodifiable(affectedLaps);
+       affectedLaps = List.unmodifiable(affectedLaps),
+       sessionLaps = List.unmodifiable(sessionLaps ?? affectedLaps);
 
   final CoachKind kind;
   final String segmentId;
@@ -157,7 +168,14 @@ final class CoachFinding {
   /// The first item is the pattern itself; then the segment time, the exit
   /// speed and, depending on [kind], the braking start or coasting distance.
   final List<CoachEvidence> evidence;
+
+  /// Every lap of the day so far showing the pattern, in recording order,
+  /// the session coached's among them.
   final List<DayLapRow> affectedLaps;
+
+  /// The session coached's laps among [affectedLaps]: the laps the values
+  /// reported come from.
+  final List<DayLapRow> sessionLaps;
 
   bool get repeated => affectedLaps.length >= 2;
 
@@ -257,8 +275,7 @@ final class DayCoach {
     CoachReason.noCornerMeasurements =>
       'No lap of this session could be measured through a corner.',
     CoachReason.tooFewLaps =>
-      'A pattern was seen on fewer than three laps of this session, too few to '
-          'plan from.',
+      'A pattern was seen on fewer than three laps today, too few to plan from.',
     CoachReason.noPattern =>
       'Compared with your faster laps, no pattern stands out. Keep building '
           'consistent laps.',
@@ -270,6 +287,8 @@ final class DayCoach {
     CoachReason.belowThreshold =>
       'No repeated pattern clears the confidence threshold. Repeat a consistent '
           'run to build a stronger comparison.',
+    CoachReason.notInSession =>
+      'Patterns seen earlier today do not repeat on most of this session\'s laps.',
   };
 }
 
@@ -440,7 +459,7 @@ DayCoach dayCoach(
     return DayCoach(runId: coached, reason: CoachReason.noCorners);
   }
   final shown = _shownSpeed(result.corners);
-  var pedals = false, faster = false, measured = false;
+  var pedals = false, faster = false, measured = false, earlier = false;
 
   // Each lap's coasting, once, by its approved segments.
   final coasting = <DayLapReference, CoastingSummary>{};
@@ -556,7 +575,14 @@ DayCoach dayCoach(
     if (_hasFasterLap(passages, coached)) faster = true;
     for (final kind in CoachKind.values) {
       if (!kind.corrective) continue;
-      final finding = _corrective(kind, corner, passages, coached, shown);
+      final finding = _corrective(
+        kind,
+        corner,
+        passages,
+        coached,
+        shown,
+        onlyEarlier: () => earlier = true,
+      );
       if (finding != null) findings.add(finding);
     }
     final improving = _improving(corner, passages, coached, shown);
@@ -585,6 +611,8 @@ DayCoach dayCoach(
         ? CoachReason.noCornerMeasurements
         : !faster
         ? CoachReason.noFasterLap
+        : earlier
+        ? CoachReason.notInSession
         : !pedals
         ? CoachReason.noPedals
         : CoachReason.noPattern,
@@ -629,17 +657,29 @@ CoachFinding? _corrective(
   DayCorner corner,
   List<_Passage> passages,
   String coached,
-  _ShownSpeed shown,
-) {
+  _ShownSpeed shown, {
+  required void Function() onlyEarlier,
+}) {
   final observations = <_Observation>[];
+  // The session coached's laps that could show the pattern: with a faster
+  // lap to compare with and the pattern's value measured.
+  var compared = 0;
   var metric = '', unit = '';
   var key = CoachMetric.segmentTime;
+  // Every lap of the day so far shows or does not show the pattern, so a
+  // pattern repeated across sessions counts; the session coached must still
+  // show it (see the end).
   for (final current in passages) {
-    if (current.lap.runId != coached) continue;
     final faster = passages.where((p) => _isFaster(p, current)).toList()
       ..sort((a, b) => a.seconds.compareTo(b.seconds));
     final references = faster.take(2).toList();
     if (references.isEmpty) continue;
+    // Once the lap and its references can be compared, before the pattern
+    // itself is tested.
+    void count() {
+      if (current.lap.runId == coached) ++compared;
+    }
+
     final resolution = references.map((r) => r.spacing).fold(current.spacing, math.max);
     final threshold = math.max(8.0, resolution * 2);
     double? observed;
@@ -647,7 +687,7 @@ CoachFinding? _corrective(
     switch (kind) {
       case CoachKind.earlyLift:
         final lift = current.lift, braking = current.braking;
-        if (lift == null || braking == null || braking - lift < 5) continue;
+        if (lift == null || braking == null) continue;
         observed = lift;
         metric = 'Lift point';
         key = CoachMetric.liftPoint;
@@ -660,18 +700,22 @@ CoachFinding? _corrective(
           }
           values.add(r.lift!);
         }
-        if (values.length != references.length || values.any((v) => v - lift < threshold)) {
-          continue;
-        }
+        if (values.length != references.length) continue;
+        count();
+        if (braking - lift < 5 || values.any((v) => v - lift < threshold)) continue;
       case CoachKind.excessiveCoasting:
         final coast = current.coastSeconds;
         metric = 'Longest coast';
         key = CoachMetric.longestCoast;
         unit = 's';
-        if (coast == null || coast < 0.7 || current.coastMeters! < threshold) continue;
+        if (coast == null) continue;
         observed = coast;
         values.addAll(references.map((r) => r.coastSeconds).whereType<double>());
-        if (values.length != references.length || values.any((v) => coast - v < 0.4)) continue;
+        if (values.length != references.length) continue;
+        count();
+        if (coast < 0.7 || current.coastMeters! < threshold || values.any((v) => coast - v < 0.4)) {
+          continue;
+        }
       case CoachKind.lowMinimumSpeed:
         final minimum = current.minimum, exit = current.exit;
         metric = 'Minimum speed';
@@ -679,13 +723,11 @@ CoachFinding? _corrective(
         unit = shown.unit;
         if (minimum == null ||
             exit == null ||
-            references.any(
-              (r) =>
-                  r.minimum == null ||
-                  r.exit == null ||
-                  r.minimum! - minimum < 1.4 ||
-                  exit > r.exit! + 0.5,
-            )) {
+            references.any((r) => r.minimum == null || r.exit == null)) {
+          continue;
+        }
+        count();
+        if (references.any((r) => r.minimum! - minimum < 1.4 || exit > r.exit! + 0.5)) {
           continue;
         }
         observed = minimum * shown.perMetrePerSecond;
@@ -700,6 +742,7 @@ CoachFinding? _corrective(
         }
         observed = pickup;
         values.addAll(references.map((r) => r.pickup!));
+        count();
         if (values.any((v) => pickup - v < threshold)) continue;
       case CoachKind.improving:
         continue;
@@ -713,9 +756,22 @@ CoachFinding? _corrective(
   }
   final repeatedRequired = kind == CoachKind.lowMinimumSpeed || kind == CoachKind.lateThrottle;
   if (observations.isEmpty || (repeatedRequired && observations.length < 2)) return null;
+  // The session coached must still show it, on at least half of its laps
+  // compared: a pattern it has left behind is not advice for the next
+  // session. Its laps give the values; the day's give the repetition and
+  // the confidence (with the coarsest sample spacing of every lap used).
+  final now = observations.where((o) => o.current.lap.runId == coached).toList();
+  if (now.isEmpty || now.length * 2 < compared) {
+    // Said only where the session could have shown it and earlier laps
+    // repeated it.
+    if (compared > 0 && observations.where((o) => o.current.lap.runId != coached).length >= 2) {
+      onlyEarlier();
+    }
+    return null;
+  }
 
   final referenceLaps = <DayLapRow>[];
-  for (final o in observations) {
+  for (final o in now) {
     for (final r in o.references) {
       if (!referenceLaps.any((lap) => lap.reference == r.lap.reference)) {
         referenceLaps.add(r.lap);
@@ -734,20 +790,20 @@ CoachFinding? _corrective(
   // This app's coasting does not check longitudinal G.
   if (kind == CoachKind.excessiveCoasting) confidence -= 0.05;
 
-  double medianOf(double Function(_Passage) read) =>
-      _median(observations.map((o) => read(o.current)));
+  double medianOf(double Function(_Passage) read) => _median(now.map((o) => read(o.current)));
   double referenceOf(double Function(_Passage) read) =>
-      _median(observations.map((o) => _median(o.references.map(read))));
+      _median(now.map((o) => _median(o.references.map(read))));
   final evidence = [
     CoachEvidence(
       key: key,
       metric: metric,
-      observed: _median(observations.map((o) => o.observed)),
-      reference: _median(observations.map((o) => o.reference)),
+      observed: _median(now.map((o) => o.observed)),
+      reference: _median(now.map((o) => o.reference)),
       unit: unit,
       referenceLaps: referenceLaps,
       detail:
-          '${observations.length == 1 ? 'One affected lap' : 'Median across ${observations.length} affected laps'}; '
+          '${now.length == 1 ? 'One affected lap' : 'Median across ${now.length} affected laps'} '
+          'of this session (laps of the day so far showing it: ${observations.length}); '
           '${referenceLaps.length == 1 ? 'compared with one faster lap' : 'median of the faster laps'}; '
           'every comparison uses a faster lap and a faster '
           'passage through this segment. Positions are along the lap from start/finish on '
@@ -762,9 +818,7 @@ CoachFinding? _corrective(
       referenceLaps: referenceLaps,
       detail: 'Observed segment difference, not a predicted gain or a causal time-loss estimate.',
     ),
-    if (observations.every(
-      (o) => o.current.exit != null && o.references.every((r) => r.exit != null),
-    ))
+    if (now.every((o) => o.current.exit != null && o.references.every((r) => r.exit != null)))
       CoachEvidence(
         key: CoachMetric.exitSpeed,
         metric: 'Exit speed',
@@ -803,7 +857,14 @@ CoachFinding? _corrective(
     segmentName: corner.name,
     confidence: confidence.clamp(0.0, 0.9),
     evidence: evidence,
-    affectedLaps: [for (final o in observations) o.current.lap],
+    affectedLaps: [
+      for (final o in [...observations]..sort((a, b) => a.current.order.compareTo(b.current.order)))
+        o.current.lap,
+    ],
+    sessionLaps: [
+      for (final o in [...now]..sort((a, b) => a.current.order.compareTo(b.current.order)))
+        o.current.lap,
+    ],
   );
 }
 
@@ -895,9 +956,9 @@ CoachFinding? _improving(
 
 /// DrivingCoach's plan, with this app's rule that a typical value needs at
 /// least three laps: findings at or above [coachPlanConfidence], a change
-/// only when seen on three or more laps of the session, an
+/// only when seen on three or more laps of the day so far, an
 /// improvement suppressing changes in its segment, repeated patterns first,
-/// then confidence and the observed segment-time gap; one item per segment,
+/// then those on more laps of the session coached, then confidence and the observed segment-time gap; one item per segment,
 /// at most two changes and one improvement kept when there is one.
 List<CoachItem> _plan(List<CoachFinding> findings) {
   final eligible = findings
@@ -922,6 +983,9 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
   eligible.sort((a, b) {
     final repeated = (b.repeated ? 1 : 0).compareTo(a.repeated ? 1 : 0);
     if (repeated != 0) return repeated;
+    // A pattern more of the session coached's laps show comes first.
+    final session = b.sessionLaps.length.compareTo(a.sessionLaps.length);
+    if (session != 0) return session;
     final confidence = b.confidence.compareTo(a.confidence);
     if (confidence != 0) return confidence;
     final effect = gap(b).compareTo(gap(a));

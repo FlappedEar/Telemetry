@@ -307,16 +307,23 @@ class AppLocalizationsPl extends AppLocalizations {
       'Na tle szybszych okrążeń nie wyróżnia się żaden wzorzec.';
 
   @override
-  String coachReasonTooFewLaps(String session) {
-    return 'Wzorzec wystąpił na mniej niż trzech okrążeniach sesji $session. To za mało, aby przygotować plan.';
-  }
+  String get coachReasonTooFewLaps =>
+      'Wzorzec wystąpił dziś na mniej niż trzech okrążeniach. To za mało, aby przygotować plan.';
 
   @override
   String get coachReasonBelowThreshold =>
       'Żaden powtarzalny wzorzec nie jest na tyle wyraźny, by sugerować zmianę.';
 
   @override
+  String get coachReasonNotInSession =>
+      'Wzorce widoczne wcześniej dziś nie powtarzają się na większości okrążeń tej sesji.';
+
+  @override
   String get coachWhyAffected => 'Okrążenia tej sesji';
+
+  @override
+  String get coachWhyEarlier =>
+      'Wcześniejsze dzisiejsze okrążenia z tym wzorcem';
 
   @override
   String get coachWhyFaster => 'Porównane szybsze okrążenia';

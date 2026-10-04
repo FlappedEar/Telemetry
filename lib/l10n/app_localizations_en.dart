@@ -300,16 +300,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Compared with your faster laps, no pattern stands out.';
 
   @override
-  String coachReasonTooFewLaps(String session) {
-    return 'A pattern was seen on fewer than three laps of $session, too few to plan from.';
-  }
+  String get coachReasonTooFewLaps =>
+      'A pattern was seen on fewer than three laps today, too few to plan from.';
 
   @override
   String get coachReasonBelowThreshold =>
       'No repeated pattern is clear enough to suggest a change.';
 
   @override
+  String get coachReasonNotInSession =>
+      'Patterns seen earlier today do not repeat on most of this session\'s laps.';
+
+  @override
   String get coachWhyAffected => 'This session\'s laps';
+
+  @override
+  String get coachWhyEarlier => 'Earlier laps showing it today';
 
   @override
   String get coachWhyFaster => 'Faster laps compared';

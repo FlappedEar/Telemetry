@@ -554,11 +554,11 @@ abstract class AppLocalizations {
   /// **'Compared with your faster laps, no pattern stands out.'**
   String get coachReasonNoPattern;
 
-  /// Why there is no plan.
+  /// Why there is no plan: laps of every session of the day so far count.
   ///
   /// In en, this message translates to:
-  /// **'A pattern was seen on fewer than three laps of {session}, too few to plan from.'**
-  String coachReasonTooFewLaps(String session);
+  /// **'A pattern was seen on fewer than three laps today, too few to plan from.'**
+  String get coachReasonTooFewLaps;
 
   /// Why there is no plan.
   ///
@@ -566,11 +566,23 @@ abstract class AppLocalizations {
   /// **'No repeated pattern is clear enough to suggest a change.'**
   String get coachReasonBelowThreshold;
 
-  /// Heading of the laps the pattern was seen on.
+  /// Why there is no plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Patterns seen earlier today do not repeat on most of this session\'s laps.'**
+  String get coachReasonNotInSession;
+
+  /// Heading of the coached session's laps the pattern was seen on; the values shown come from them.
   ///
   /// In en, this message translates to:
   /// **'This session\'s laps'**
   String get coachWhyAffected;
+
+  /// Heading of the laps of earlier sessions of the day the pattern was also seen on.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier laps showing it today'**
+  String get coachWhyEarlier;
 
   /// Heading of the faster laps used as reference.
   ///

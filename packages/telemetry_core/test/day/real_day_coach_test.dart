@@ -65,7 +65,10 @@ void main() {
         );
         for (final finding in coach.findings) {
           expect(finding.confidence, inInclusiveRange(0, 0.9));
-          expect(finding.affectedLaps.every((lap) => lap.runId == day.last.runId), isTrue);
+          // Laps of the whole day so far count, the latest session's among them.
+          final runIds = {for (final run in day) run.runId};
+          expect(finding.affectedLaps.every((lap) => runIds.contains(lap.runId)), isTrue);
+          expect(finding.affectedLaps.any((lap) => lap.runId == day.last.runId), isTrue);
         }
         for (final item in coach.plan) {
           expect(item.finding.confidence, greaterThanOrEqualTo(coachPlanConfidence));
