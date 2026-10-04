@@ -90,8 +90,8 @@ const _unclearOnset = {
 /// preferred as its reference: a lap within reach, not only the day's best.
 const double coachReachSeconds = 1.5;
 
-/// Plan items losing time within this many seconds of each other are
-/// ranked by how many laps show them instead (see [dayCoach]'s plan).
+/// Plan items are ranked by time lost in steps of this many seconds; within
+/// a step, by how many laps show them (see [dayCoach]'s plan).
 const double coachRankSeconds = 0.1;
 
 enum CoachKind {
@@ -609,7 +609,12 @@ DayCoach dayCoach(
     final passages = <_Passage>[];
     // The straight right after the corner, within the lap.
     final segments = computed.approved.segments;
-    final next = index + 1 < segments.length && segments[index + 1]['type'] == 'straight'
+    final next =
+        index + 1 < segments.length &&
+            segments[index + 1]['type'] == 'straight' &&
+            (((segments[index + 1]['startProgressMeters'] as num?)?.toDouble() ?? -1.0) - end)
+                    .abs() <=
+                1e-6
         ? index + 1
         : null;
     for (final sectors in result.laps) {
@@ -1007,8 +1012,8 @@ CoachFinding? _corrective(
         unit: 's',
         referenceLaps: referenceLaps,
         detail:
-            'Time through the straight right after this segment: time lost on the exit shows '
-            'there. Observed, not a predicted gain.',
+            'Time through the straight right after this segment, counted with it. Observed, not '
+            'proof that this segment caused it, and not a predicted gain.',
       ),
     if (now.every((o) => o.current.exit != null && o.references.every((r) => r.exit != null)))
       CoachEvidence(
@@ -1147,6 +1152,18 @@ CoachFinding? _inconsistentBraking(
         referenceLaps: referenceLaps,
         detail: 'Observed segment difference, not a predicted gain or a causal time-loss estimate.',
       ),
+      if ([...own, ...fastest].every((p) => p.nextSeconds != null))
+        CoachEvidence(
+          key: CoachMetric.nextStraightTime,
+          metric: 'Straight after it',
+          observed: _median(own.map((p) => p.nextSeconds!)),
+          reference: _median(fastest.map((p) => p.nextSeconds!)),
+          unit: 's',
+          referenceLaps: referenceLaps,
+          detail:
+              'Time through the straight right after this segment, counted with it. Observed, '
+              'not proof that this segment caused it, and not a predicted gain.',
+        ),
     ],
     // Every lap read shows the spread; the laps off the typical point rank
     // it among the session's patterns.
@@ -1279,10 +1296,10 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
   eligible.sort((a, b) {
     final repeated = (b.repeated ? 1 : 0).compareTo(a.repeated ? 1 : 0);
     if (repeated != 0) return repeated;
-    // More time lost comes first; differences under coachRankSeconds are
-    // within the noise of the sector times.
-    final lost = gap(b) - gap(a);
-    if (lost.abs() >= coachRankSeconds) return lost > 0 ? 1 : -1;
+    // More time lost comes first, in steps of coachRankSeconds: smaller
+    // differences are within the noise of the sector times.
+    final lost = (gap(b) / coachRankSeconds).floor().compareTo((gap(a) / coachRankSeconds).floor());
+    if (lost != 0) return lost;
     // A pattern more of the session coached's laps show comes first.
     final session = b.sessionLaps.length.compareTo(a.sessionLaps.length);
     if (session != 0) return session;

@@ -212,6 +212,7 @@ void main() {
       CoachMetric.brakingSpread,
       CoachMetric.brakingStart,
       CoachMetric.segmentTime,
+      CoachMetric.nextStraightTime,
     ]);
     // About 40 m in this session; the day's three fastest laps agree.
     expect(finding.evidence.first.observed, greaterThan(35));
@@ -333,6 +334,54 @@ void main() {
     expect(first.sessionLaps, hasLength(3));
     expect(later.sessionLaps, hasLength(4));
     expect(coach.focus!.finding, same(first));
+  });
+
+  test('time lost on the straight after a corner counts toward its rank', () {
+    // Both corners as slow on the latest laps; out of the second they then
+    // also gain speed slowly, down the straight after it.
+    double Function(double) shape(double slow) {
+      final latest = slow < 19;
+      double corner(double d, double apex, bool lazy) {
+        final x = d - apex;
+        if (x <= 25) return slow + (30 - slow) * x.abs() / 50;
+        if (!lazy) return min(30.0, slow + (30 - slow) * x / 50);
+        final turnIn = slow + (30 - slow) * 25 / 50;
+        return min(30.0, turnIn + (30 - turnIn) * (x - 25) / 125);
+      }
+
+      return (d) => d >= 20 && d <= 120
+          ? corner(d, 70, false)
+          : d >= 307 && d <= 507
+          ? corner(d, 357, latest)
+          : 30.0;
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], shape: shape);
+    expect(coach.plan, hasLength(2));
+    double lost(CoachFinding f, CoachMetric key) {
+      final e = f.evidence.singleWhere((e) => e.key == key);
+      return e.observed - e.reference;
+    }
+
+    final [first, later] = [for (final item in coach.plan) item.finding];
+    // The corners alone lose about the same; the straight decides.
+    expect(
+      (lost(first, CoachMetric.segmentTime) - lost(later, CoachMetric.segmentTime)).abs(),
+      lessThan(coachRankSeconds),
+    );
+    expect(lost(first, CoachMetric.nextStraightTime), greaterThan(0.3));
+    expect(lost(later, CoachMetric.nextStraightTime), lessThan(0.1));
+    expect(first.segmentId, isNot(later.segmentId));
+  });
+
+  test('the straight after a corner is timed apart from the corner', () {
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1]);
+    final evidence = coach.plan.first.finding.evidence;
+    final corner = evidence.singleWhere((e) => e.key == CoachMetric.segmentTime);
+    final straight = evidence.singleWhere((e) => e.key == CoachMetric.nextStraightTime);
+    // Most of the 240 m straight at up to 30 m/s, not the corner again.
+    expect(straight.reference, inInclusiveRange(200 / 30, 240 / 25));
+    expect(straight.observed, isNot(closeTo(corner.observed, 0.5)));
   });
 
   test('braking points that agree make no braking item', () {
