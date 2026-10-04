@@ -406,13 +406,15 @@ class _DayImportPageState extends State<DayImportPage> {
 
   /// Shows the day of [controller], then checks again for an unsaved day
   /// left behind.
-  Future<void> _show(DayResultsController controller) async {
-    // Only one day is kept: another one shown replaces it, and opens on
-    // its tabs.
-    if (!identical(_keptDay, controller)) {
-      _dropKept();
-      _coachShown.value = false;
-    }
+  /// Shows [controller]'s day, on its coach when [coach] (the Coach place)
+  /// and otherwise on its tabs.
+  Future<void> _show(
+    DayResultsController controller, {
+    bool coach = false,
+  }) async {
+    _coachShown.value = coach;
+    // Only one day is kept: another one shown replaces it.
+    if (!identical(_keptDay, controller)) _dropKept();
     // A day opened again with its recordings found elsewhere is shown in
     // its place, and takes the recordings shared from then on.
     DayResultsController? next = controller;
@@ -548,8 +550,7 @@ class _DayImportPageState extends State<DayImportPage> {
           // Not while a day is being opened or a share added: that work
           // shows its own day.
           closeLibrary();
-          _coachShown.value = coach;
-          unawaited(_show(kept));
+          unawaited(_show(kept, coach: coach));
         }
     }
   }
@@ -686,6 +687,9 @@ class _DayImportPageState extends State<DayImportPage> {
     _lifecycle.dispose();
     appNavigation.detach(this);
     _coachShown.removeListener(_syncNav);
+    // A day page closing after this removes its listener, which a disposed
+    // notifier allows.
+    _coachShown.dispose();
     // The app closes: the day shown goes with its page, or now if its
     // page closed first.
     final shown = _shownDay;

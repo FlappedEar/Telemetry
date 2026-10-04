@@ -506,6 +506,21 @@ void main() {
     expect(find.byKey(const ValueKey('dayResultsCoach')), findsNothing);
     expect(find.byKey(const ValueKey('dayResultsSummary')), findsOneWidget);
     expect(selected(), 1);
+
+    // Left on its coach, the day opened again from Home shows its tabs.
+    await tester.tap(coach);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find.byKey(const ValueKey('openLastDay')).evaluate().isNotEmpty,
+    );
+    await tester.tap(find.byKey(const ValueKey('openLastDay')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsNothing);
+    expect(find.byKey(const ValueKey('dayResultsSummary')), findsOneWidget);
+    expect(selected(), 1);
     await tester.pumpWidget(const SizedBox());
     await settleRecovery(tester);
   });
@@ -564,11 +579,22 @@ void main() {
   testWidgets('a wide window has the places in a side rail', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await show(tester);
-    expect(
-      tester.widget(find.byKey(const ValueKey('appPlaces'))),
-      isA<NavigationRail>(),
-    );
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    NavigationRail rail() =>
+        tester.widget<NavigationRail>(find.byKey(const ValueKey('appPlaces')));
+    // Day and Coach are greyed out until a day is open.
+    expect(rail().destinations.skip(1).map((d) => d.disabled), [true, true]);
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    expect(rail().selectedIndex, 1);
+    await tester.tap(find.byKey(const ValueKey('place-coach')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsOneWidget);
+    expect(rail().selectedIndex, 2);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('a saved day closed here takes the next session', (tester) async {
@@ -702,6 +728,14 @@ void main() {
     expect(importer.jobs, hasLength(1));
     expect(find.text('Session 2 added to the day.'), findsOneWidget);
     expect(find.text('Day results'), findsOneWidget);
+    // The day moves to its coach, and the bar with it.
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsOneWidget);
+    expect(
+      tester
+          .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+          .selectedIndex,
+      2,
+    );
     await tester.pumpWidget(const SizedBox());
     await settleRecovery(tester);
   });

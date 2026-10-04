@@ -5,7 +5,6 @@ import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
@@ -728,6 +727,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             documents: widget.documents,
             recovery: widget.recovery,
             library: widget.library,
+            coach: widget.coach,
           ),
         ),
       );
@@ -812,6 +812,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             documents: widget.documents,
             recovery: widget.recovery,
             library: widget.library,
+            coach: widget.coach,
           ),
         ),
       );
@@ -851,9 +852,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
             key: const ValueKey('dayResultsSummary'),
             controller: _summaryScroll,
             padding: const EdgeInsets.all(16),
-            // The headline bars and the best lap's map push the Next session
-            // card down; build it from the top so it can be revealed.
-            scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
             children: summary,
           ),
           ListView(
@@ -892,9 +890,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
                       constraints.maxWidth -
                           math.min(constraints.maxWidth * 4 / 9, 520),
                     ),
-                    // As on a phone: the Next session card is built from the
-                    // top.
-                    scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
                     children: summary,
                   ),
                 ),
