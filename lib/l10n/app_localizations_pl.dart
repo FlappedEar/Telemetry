@@ -315,7 +315,15 @@ class AppLocalizationsPl extends AppLocalizations {
       'Żaden powtarzalny wzorzec nie jest na tyle wyraźny, by sugerować zmianę.';
 
   @override
-  String get coachWhyAffected => 'Dzisiejsze okrążenia z tym wzorcem';
+  String get coachReasonNotInSession =>
+      'Wzorce widoczne wcześniej dziś nie powtarzają się na większości okrążeń tej sesji.';
+
+  @override
+  String get coachWhyAffected => 'Okrążenia tej sesji';
+
+  @override
+  String get coachWhyEarlier =>
+      'Wcześniejsze dzisiejsze okrążenia z tym wzorcem';
 
   @override
   String get coachWhyFaster => 'Porównane szybsze okrążenia';

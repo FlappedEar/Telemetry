@@ -75,6 +75,8 @@ void main() {
       segmentName: segment.name,
       confidence: 0.78,
       affectedLaps: laps.take(3).toList(),
+      // A change also seen on earlier laps of the day.
+      sessionLaps: kind.corrective ? laps.skip(2).take(1).toList() : null,
       evidence: [
         CoachEvidence(
           key: key,
@@ -237,6 +239,8 @@ void main() {
     expect(find.byType(CoachItemPage), findsOneWidget);
     expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
     expect(find.text('4.2\u00a0s against 4.0\u00a0s'), findsOneWidget);
+    expect(find.text("This session's laps"), findsOneWidget);
+    expect(find.text('Earlier laps showing it today'), findsOneWidget);
     expect(find.byKey(const ValueKey('coachMap')), findsOneWidget);
     await tester.scrollUntilVisible(
       find.textContaining('not a probability'),

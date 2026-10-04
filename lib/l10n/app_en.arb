@@ -452,9 +452,17 @@
   "@coachReasonBelowThreshold": {
     "description": "Why there is no plan."
   },
-  "coachWhyAffected": "Laps showing it today",
+  "coachReasonNotInSession": "Patterns seen earlier today do not repeat on most of this session's laps.",
+  "@coachReasonNotInSession": {
+    "description": "Why there is no plan."
+  },
+  "coachWhyAffected": "This session's laps",
   "@coachWhyAffected": {
-    "description": "Heading of the laps the pattern was seen on, from every session of the day so far."
+    "description": "Heading of the coached session's laps the pattern was seen on; the values shown come from them."
+  },
+  "coachWhyEarlier": "Earlier laps showing it today",
+  "@coachWhyEarlier": {
+    "description": "Heading of the laps of earlier sessions of the day the pattern was also seen on."
   },
   "coachWhyFaster": "Faster laps compared",
   "@coachWhyFaster": {

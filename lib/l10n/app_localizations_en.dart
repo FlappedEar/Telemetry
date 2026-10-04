@@ -308,7 +308,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'No repeated pattern is clear enough to suggest a change.';
 
   @override
-  String get coachWhyAffected => 'Laps showing it today';
+  String get coachReasonNotInSession =>
+      'Patterns seen earlier today do not repeat on most of this session\'s laps.';
+
+  @override
+  String get coachWhyAffected => 'This session\'s laps';
+
+  @override
+  String get coachWhyEarlier => 'Earlier laps showing it today';
 
   @override
   String get coachWhyFaster => 'Faster laps compared';
