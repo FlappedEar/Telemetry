@@ -233,9 +233,15 @@ jobs:
             if [ -f "$notes" ]; then cat "$notes"; echo; fi
             echo "Install steps: https://flappedear.github.io/Telemetry/install.html"
           } > "$RUNNER_TEMP/notes.md"
+          # GitHub may skip pre-releases when it picks the previous release;
+          # start the list of pull requests at the newest release there is.
+          since=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 \
+            --exclude-drafts --json tagName --jq '.[0].tagName // ""')
+          start=()
+          [ -n "$since" ] && start=(--notes-start-tag "$since")
           gh release create "$tag" dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "FlappedEar Telemetry $VERSION" \
-            --generate-notes $prerelease \
+            --generate-notes "${start[@]}" $prerelease \
             --notes-file "$RUNNER_TEMP/notes.md"
