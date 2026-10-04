@@ -1885,7 +1885,8 @@ final class DayResultsController extends ChangeNotifier {
     if (adding) {
       // The day's corners stay the ones in use when sessions are added: the
       // automatic segments are kept, as saving would keep them, rather than
-      // proposed again from a new best lap.
+      // proposed again from a new best lap. Before the first theoretical
+      // best is ready no corners were shown yet, so there are none to keep.
       if (_theoreticalBest case final best?) _segmentEdits.keepAutomatic(best);
       _resetTheoreticalBest();
     }

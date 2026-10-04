@@ -59,7 +59,6 @@ void main() {
     final edits = DaySegmentEdits();
     final result = calculate(edits);
     expect(edits.keepAutomatic(result), isTrue);
-    expect(edits.keepAutomatic(result), isFalse);
     expect(edits.canUndo, isFalse);
     final kept = calculate(edits);
     expect(kept.automaticSegments, isFalse);
@@ -70,6 +69,32 @@ void main() {
     );
     // Approved segments are not automatic, so there is nothing more to keep.
     expect(DaySegmentEdits().keepAutomatic(kept), isFalse);
+  });
+
+  test('automatic segments are kept after a restore of the automatic ones', () {
+    final edits = DaySegmentEdits();
+    var result = calculate(edits);
+    final segment = result.segments[0];
+    final id = result.approvedSegment(0)!['id']! as String;
+    edits.edit(
+      result,
+      id,
+      name: 'Hairpin',
+      type: segment.type,
+      startMeters: segment.startProgressMeters,
+      endMeters: segment.endProgressMeters,
+    );
+    result = calculate(edits);
+    expect(edits.restoreAutomatic(const [], result.groupId), isTrue);
+    result = calculate(edits);
+    expect(result.automaticSegments, isTrue);
+    expect(edits.keepAutomatic(result), isTrue);
+    final kept = calculate(edits);
+    expect(kept.automaticSegments, isFalse);
+    expect(
+      [for (final s in kept.runSegments) s['id']],
+      [for (final s in result.runSegments) s['id']],
+    );
   });
 
   test('a rename keeps the automatic bounds but is an edit', () {

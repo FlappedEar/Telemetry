@@ -280,6 +280,16 @@ void main() {
     expect(finding.affectedLaps.any((lap) => lap.lapNumber == 3 && lap.runId == 'run2'), isFalse);
   });
 
+  test('a slow lap does not make an improvement to keep', () {
+    // The latest session's first lap is a slow warm-up: without it there are
+    // only two laps, so no improvement, and the change is not suppressed.
+    double Function(double) shape(double slow) =>
+        slow == 14 ? (d) => min(_lap(slow)(d), 22.0) : _lap(slow);
+    final coach = _coach([20, 20.5], [14, 16, 17], shape: shape);
+    expect(coach.slowLaps.map((lap) => (lap.runId, lap.lapNumber)), [('run2', 1)]);
+    expect(coach.findings.where((f) => f.kind == CoachKind.improving), isEmpty);
+  });
+
   test('a pattern the latest session has left behind is not advice', () {
     final coach = _coach([15, 15.2, 15.1], [20, 20.5, 20.2]);
     expect(coach.findings.where((f) => f.kind.corrective), isEmpty);

@@ -600,7 +600,7 @@ DayCoach dayCoach(
       );
       if (finding != null) findings.add(finding);
     }
-    final improving = _improving(corner, passages, coached, shown);
+    final improving = _improving(corner, passages, coached, shown, slowReferences);
     if (improving != null) findings.add(improving);
   }
   final plan = _plan(findings);
@@ -913,9 +913,13 @@ CoachFinding? _improving(
   List<_Passage> passages,
   String coached,
   _ShownSpeed shown,
+  Set<DayLapReference> slow,
 ) {
-  final own = passages.where((p) => p.lap.runId == coached).toList()
-    ..sort((a, b) => a.order.compareTo(b.order));
+  // Slow laps are not read for a pattern; one among the last laps breaks
+  // the run of consecutive laps.
+  final own =
+      passages.where((p) => p.lap.runId == coached && !slow.contains(p.lap.reference)).toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
   if (own.length < 3) return null;
   final recent = own.sublist(own.length - 3);
   final a = recent[0], b = recent[1], c = recent[2];

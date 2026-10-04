@@ -147,14 +147,14 @@ final class DaySegmentEdits {
   /// Keeps [result]'s automatic segments (proposed from the best lap
   /// because the group had none yet) as approved, as saving the day would,
   /// so the day's corners stay the same when sessions are added and the
-  /// best lap moves. Not an edit: nothing to undo. Returns whether they
-  /// were kept.
+  /// best lap moves. Not an edit: nothing to undo. [result] already carries
+  /// this run's edits (an edit resets it), including a restore, which it
+  /// replaces. Returns whether they were kept.
   bool keepAutomatic(DayTheoreticalBest result) {
     if (!result.automaticSegments ||
         result.state != DayTheoreticalBestState.ready ||
         result.segmentRunId.isEmpty ||
-        result.runSegments.isEmpty ||
-        _runs.containsKey(result.segmentRunId)) {
+        result.runSegments.isEmpty) {
       return false;
     }
     _runs[result.segmentRunId] = [

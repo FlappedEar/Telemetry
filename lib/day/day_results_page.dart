@@ -227,16 +227,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
         if (!mounted) return;
         final card = _coachKey.currentContext;
         if (card != null) {
-          // Once there, again without animating: the card can change size
-          // while it scrolls (its plan arriving), which moves its top.
+          // Once there, again without animating: what is above the card can
+          // still settle while it scrolls, which moves the card's top. Not
+          // when the person took over the scroll (the animation then stops
+          // early, with their drag still going).
           Scrollable.ensureVisible(
             card,
             duration: const Duration(milliseconds: 300),
           ).then((_) {
             final settled = _coachKey.currentContext;
-            if (mounted && settled != null && settled.mounted) {
-              Scrollable.ensureVisible(settled);
-            }
+            if (!mounted || settled == null || !settled.mounted) return;
+            final position = Scrollable.maybeOf(settled)?.position;
+            if (position == null || position.isScrollingNotifier.value) return;
+            Scrollable.ensureVisible(settled);
           });
         } else if (again && _summaryScroll.hasClients) {
           _summaryScroll.jumpTo(0);
