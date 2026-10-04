@@ -20,6 +20,7 @@ import 'background_task.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
+import 'reveal.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
 import 'day_report_page.dart';
@@ -227,20 +228,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         if (!mounted) return;
         final card = _coachKey.currentContext;
         if (card != null) {
-          // Once there, again without animating: what is above the card can
-          // still settle while it scrolls, which moves the card's top. Not
-          // when the person took over the scroll (the animation then stops
-          // early, with their drag still going).
-          Scrollable.ensureVisible(
-            card,
-            duration: const Duration(milliseconds: 300),
-          ).then((_) {
-            final settled = _coachKey.currentContext;
-            if (!mounted || settled == null || !settled.mounted) return;
-            final position = Scrollable.maybeOf(settled)?.position;
-            if (position == null || position.isScrollingNotifier.value) return;
-            Scrollable.ensureVisible(settled);
-          });
+          revealSettled(card, current: () => _coachKey.currentContext);
         } else if (again && _summaryScroll.hasClients) {
           _summaryScroll.jumpTo(0);
           reveal(again: false);
