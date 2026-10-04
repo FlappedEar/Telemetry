@@ -48,7 +48,6 @@ extension CoachText on AppLocalizations {
     CoachMetric.firstThrottle => coachMetricFirstThrottle,
     CoachMetric.earlyThrottleShare => coachMetricEarlyThrottleShare,
     CoachMetric.combinedG => coachMetricCombinedG,
-    CoachMetric.combinedGShare => coachMetricCombinedGShare,
   };
 
   /// Why the plan is what it is; [session] names the session coached.
@@ -109,8 +108,8 @@ String? coachSpeedLabel(BuildContext context, {required bool converted}) {
   return label;
 }
 
-/// A coach value with its unit: positions in whole metres, shares in whole
-/// percent, G with two decimals, the rest with one decimal ("46.9 km/h",
+/// A coach value with its unit: positions in whole metres, shares of laps in
+/// whole percent, G with two decimals, the rest with one decimal ("46.9 km/h",
 /// "3.3 s", "412 m", "67%", "0.72 g"). Speeds are labelled
 /// [speedUnit] (unlabelled when it is empty) and not shown when it is null
 /// (see [coachSpeedLabel]).

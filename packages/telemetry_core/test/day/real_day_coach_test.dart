@@ -66,9 +66,7 @@ void main() {
             '  ${item.title} (${item.finding.confidence.toStringAsFixed(2)}): '
             '${item.explanation}',
           );
-          for (final e in item.finding.evidence.where(
-            (e) => e.key == CoachMetric.combinedG || e.key == CoachMetric.combinedGShare,
-          )) {
+          for (final e in item.finding.evidence.where((e) => e.key == CoachMetric.combinedG)) {
             print(
               '    ${e.metric}: ${e.observed.toStringAsFixed(2)} ${e.unit} against '
               '${e.reference.toStringAsFixed(2)} ${e.unit}',

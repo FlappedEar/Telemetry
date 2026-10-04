@@ -87,8 +87,8 @@ TelemetrySession circuitSession({
 /// [pedals] it also records throttle and brake (%) and longitudinal G from
 /// the change of speed: braking when slowing by more than 0.4 m/s², full
 /// throttle when gaining more than 0.3 m/s², part throttle otherwise. With
-/// [lateral] it records lateral G too: the speed squared over the corners'
-/// radius, on the straights as well.
+/// [lateral] it records lateral G too: the speed squared over the radius in
+/// the corners, 0 on the straights.
 TelemetrySession rectangleSession(
   List<double Function(double distance)> speeds, {
   int? firstTimestampMilliseconds,
@@ -99,11 +99,14 @@ TelemetrySession rectangleSession(
   const width = 300.0, height = 150.0, radius = 30.0;
   // The outline from the gate, 0.5 m apart.
   final outline = <(double, double)>[];
+  // Whether each outline point is on a corner's arc.
+  final arc = <bool>[];
   void straight(double x0, double y0, double x1, double y1) {
     final length = math.sqrt(math.pow(x1 - x0, 2) + math.pow(y1 - y0, 2));
     final steps = (length / 0.5).round();
     for (var i = 0; i < steps; ++i) {
       outline.add((x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps));
+      arc.add(false);
     }
   }
 
@@ -112,6 +115,7 @@ TelemetrySession rectangleSession(
     for (var i = 0; i < steps; ++i) {
       final a = from + math.pi / 2 * i / steps;
       outline.add((cx + radius * math.cos(a), cy + radius * math.sin(a)));
+      arc.add(true);
     }
   }
 
@@ -139,7 +143,7 @@ TelemetrySession rectangleSession(
   }
 
   final times = <double>[], latitudes = <double>[], longitudes = <double>[];
-  final speedValues = <double>[];
+  final speedValues = <double>[], lateralValues = <double>[];
   var distance = -20.0, t = 0.0;
   final end = (speeds.length + 0.3) * perimeter;
   while (distance < end) {
@@ -151,6 +155,8 @@ TelemetrySession rectangleSession(
     latitudes.add(coordinate.latitudeDegrees);
     longitudes.add(coordinate.longitudeDegrees);
     speedValues.add(speed * 3.6);
+    final onArc = arc[((distance % perimeter) / 0.5).floor() % arc.length];
+    lateralValues.add(onArc ? speed * speed / radius / standardGravity : 0.0);
     distance += speed / 10.0;
     t += 0.1;
   }
@@ -193,10 +199,7 @@ TelemetrySession rectangleSession(
         'brake': channel('brake', brake),
         'longacc': channel('longacc', longitudinal),
       },
-      if (lateral)
-        'latacc': channel('latacc', [
-          for (final v in speedValues) (v / 3.6) * (v / 3.6) / radius / standardGravity,
-        ]),
+      if (lateral) 'latacc': channel('latacc', lateralValues),
     },
     aliases: {
       'latitude': 'latitude',

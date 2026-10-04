@@ -149,10 +149,6 @@ enum CoachMetric {
   /// g: how hard the car was worked there, not a share of the grip
   /// available.
   combinedG,
-
-  /// That mean against the highest of the day's laps so far at the corner,
-  /// in percent.
-  combinedGShare,
 }
 
 /// Why the plan is what it is, for the app to say in its language.
@@ -777,8 +773,9 @@ const int coachCombinedGMinimumPoints = 5;
 
 /// The mean combined G ([ggMagnitude] of the longitudinal and lateral
 /// acceleration pairs, [buildGgPairs]) from [start] to [end] along the
-/// lap; null without both channels in a supported unit or with fewer than
-/// [coachCombinedGMinimumPoints] pairs.
+/// lap; null without both channels in a supported unit, with fewer than
+/// [coachCombinedGMinimumPoints] pairs or with a lateral acceleration of
+/// zeros only.
 double? _meanCombinedG(
   TelemetrySession session,
   List<ProgressSegment> trace,
@@ -789,6 +786,8 @@ double? _meanCombinedG(
   if (from == null || to == null || to <= from) return null;
   final pairs = buildGgPairs(session, from, to);
   if (!pairs.valid || pairs.points.length < coachCombinedGMinimumPoints) return null;
+  // A lateral channel of zeros is a placeholder, not a measurement.
+  if (pairs.points.every((point) => point.lateralG == 0)) return null;
   var sum = 0.0;
   for (final point in pairs.points) {
     sum += ggMagnitude(point.longitudinalG, point.lateralG);
@@ -1484,13 +1483,6 @@ CoachFinding? _corrective(
   if (kind == CoachKind.excessiveCoasting) confidence -= 0.05;
 
   double medianOf(double Function(_Passage) read) => _median(now.map((o) => read(o.current)));
-  // The highest mean combined G of the day's laps at the corner, slow laps
-  // left out.
-  final highestG = passages
-      .where((p) => !slow.contains(p.lap.reference))
-      .map((p) => p.combinedG)
-      .whereType<double>()
-      .fold<double?>(null, (a, b) => a == null || b > a ? b : a);
   double referenceOf(double Function(_Passage) read) =>
       _median(now.map((o) => _median(o.references.map(read))));
   final evidence = [
@@ -1543,10 +1535,8 @@ CoachFinding? _corrective(
         detail: 'Speed at the segment\'s exit.',
       ),
     if (now.every(
-          (o) => o.current.combinedG != null && o.references.every((r) => r.combinedG != null),
-        ) &&
-        highestG != null &&
-        highestG > 0) ...[
+      (o) => o.current.combinedG != null && o.references.every((r) => r.combinedG != null),
+    ))
       CoachEvidence(
         key: CoachMetric.combinedG,
         metric: 'Mean combined G',
@@ -1558,16 +1548,6 @@ CoachFinding? _corrective(
             'Mean of the longitudinal and lateral acceleration combined through the segment. '
             'How hard the car was worked, not a share of the grip available.',
       ),
-      CoachEvidence(
-        key: CoachMetric.combinedGShare,
-        metric: 'Of your highest here today',
-        observed: 100 * medianOf((p) => p.combinedG!) / highestG,
-        reference: 100 * referenceOf((p) => p.combinedG!) / highestG,
-        unit: '%',
-        referenceLaps: referenceLaps,
-        detail: 'Against the highest mean combined G of the day\'s laps so far at this segment.',
-      ),
-    ],
     if (kind == CoachKind.earlyLift)
       CoachEvidence(
         key: CoachMetric.brakingStart,

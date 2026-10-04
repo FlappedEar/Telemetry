@@ -285,9 +285,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMetricCombinedG => 'Mean combined G';
 
   @override
-  String get coachMetricCombinedGShare => 'Of your highest here today';
-
-  @override
   String get coachMetricThrottleReturn => 'Throttle return';
 
   @override

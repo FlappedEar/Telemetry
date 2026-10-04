@@ -409,10 +409,6 @@
   "@coachMetricCombinedG": {
     "description": "The mean of the longitudinal and lateral acceleration combined through a corner, in g: how hard the car was worked there, not a share of the grip available."
   },
-  "coachMetricCombinedGShare": "Of your highest here today",
-  "@coachMetricCombinedGShare": {
-    "description": "The mean combined G through the corner against the highest of the day's laps so far at that corner, in percent. Shown as 'Of your highest here today: 81% on this session's laps, 100% on your faster laps.'"
-  },
   "coachMetricThrottleReturn": "Throttle return",
   "@coachMetricThrottleReturn": {
     "description": "Where the throttle is applied again after the slow point, in metres along the lap."

@@ -1070,30 +1070,59 @@ void main() {
   });
 
   group('combined G', () {
-    test('on a change: this session against the faster laps and the highest today', () {
-      final coach = _coach([20, 20.5], [15, 15.2, 15.1], lateral: true);
-      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
-      final g = finding.evidence.singleWhere((e) => e.key == CoachMetric.combinedG);
-      final share = finding.evidence.singleWhere((e) => e.key == CoachMetric.combinedGShare);
+    CoachEvidence? combined(DayCoach coach) => coach.findings
+        .singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed)
+        .evidence
+        .where((e) => e.key == CoachMetric.combinedG)
+        .singleOrNull;
+
+    test('on a change: this session against the faster laps', () {
+      final g = combined(_coach([20, 20.5], [15, 15.2, 15.1], lateral: true))!;
       expect(g.unit, 'g');
-      expect(share.unit, '%');
       // Slower through the corner: less G than the faster laps.
       expect(g.observed, lessThan(g.reference - 0.1));
-      // The highest is the faster session's best lap: the faster laps' median
-      // is just under it.
-      expect(share.reference, inInclusiveRange(95, 100));
-      expect(share.observed, closeTo(share.reference * g.observed / g.reference, 1e-6));
+    });
+
+    test('combines the longitudinal and lateral G', () {
+      // 0.4 g along and 0.3 g across: 0.5 g combined, on every lap.
+      void steady(String runId, TelemetrySession session) {
+        _edit(session, 'longacc', 0.4, (d) => true);
+        _edit(session, 'latacc', 0.3, (d) => true);
+      }
+
+      final g = combined(_coach([20, 20.5], [15, 15.2, 15.1], lateral: true, edit: steady))!;
+      expect(g.observed, closeTo(0.5, 1e-6));
+      expect(g.reference, closeTo(0.5, 1e-6));
+    });
+
+    test('the median of this session\'s laps', () {
+      void spread(String runId, TelemetrySession session) {
+        _edit(session, 'longacc', 0, (d) => true);
+        _edit(session, 'latacc', 0.8, (d) => true);
+        if (runId == 'run2') {
+          for (final (lap, g) in [(1, 0.3), (2, 0.6), (3, 0.9)]) {
+            _edit(session, 'latacc', g, (d) => true, lap: lap);
+          }
+        }
+      }
+
+      final g = combined(_coach([20, 20.5], [15, 15.2, 15.1], lateral: true, edit: spread))!;
+      expect(g.observed, closeTo(0.6, 1e-6));
+      expect(g.reference, closeTo(0.8, 1e-6));
     });
 
     test('left out without a lateral acceleration', () {
-      final coach = _coach([20, 20.5], [15, 15.2, 15.1]);
-      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
-      expect(
-        finding.evidence.where(
-          (e) => e.key == CoachMetric.combinedG || e.key == CoachMetric.combinedGShare,
-        ),
-        isEmpty,
+      expect(combined(_coach([20, 20.5], [15, 15.2, 15.1])), isNull);
+    });
+
+    test('left out when the lateral acceleration is zeros only', () {
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        lateral: true,
+        edit: (runId, session) => _edit(session, 'latacc', 0, (d) => true),
       );
+      expect(combined(coach), isNull);
     });
 
     test('left out when a lap compared has no lateral acceleration', () {
@@ -1105,8 +1134,7 @@ void main() {
           if (runId == 'run1') _edit(session, 'latacc', double.nan, (d) => true);
         },
       );
-      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
-      expect(finding.evidence.where((e) => e.key == CoachMetric.combinedG), isEmpty);
+      expect(combined(coach), isNull);
     });
   });
 }

@@ -530,12 +530,6 @@ abstract class AppLocalizations {
   /// **'Mean combined G'**
   String get coachMetricCombinedG;
 
-  /// The mean combined G through the corner against the highest of the day's laps so far at that corner, in percent. Shown as 'Of your highest here today: 81% on this session's laps, 100% on your faster laps.'
-  ///
-  /// In en, this message translates to:
-  /// **'Of your highest here today'**
-  String get coachMetricCombinedGShare;
-
   /// Where the throttle is applied again after the slow point, in metres along the lap.
   ///
   /// In en, this message translates to:
