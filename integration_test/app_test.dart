@@ -38,7 +38,12 @@ Future<void> waitFor(
   final end = DateTime.now().add(timeout);
   while (finder.evaluate().isEmpty) {
     if (DateTime.now().isAfter(end)) {
-      throw TestFailure('Timed out waiting for $finder');
+      // What the screen showed instead, for the CI log.
+      final shown = [
+        for (final element in find.byType(Text).evaluate())
+          (element.widget as Text).data ?? '',
+      ].where((text) => text.isNotEmpty).join(' | ');
+      throw TestFailure('Timed out waiting for $finder; shown: $shown');
     }
     await Future<void>.delayed(const Duration(milliseconds: 200));
     await tester.pump();
