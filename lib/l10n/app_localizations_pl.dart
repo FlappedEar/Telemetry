@@ -311,6 +311,10 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get coachGoalNoCorner =>
+      'Nie zmierzono: tego zakrętu nie ma w dzisiejszym podziale toru.';
+
+  @override
   String get coachGoalBetter => 'Lepiej.';
 
   @override

@@ -256,6 +256,9 @@ class NextSessionCard extends StatelessWidget {
       CoachGoalOutcome.better => l10n.coachGoalBetter,
       CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
       CoachGoalOutcome.worse => l10n.coachGoalWorse,
+      // No corner of today's overlaps the focus's.
+      CoachGoalOutcome.notMeasured when goal.measuredName.isEmpty =>
+        l10n.coachGoalNoCorner,
       CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
     };
     return Padding(

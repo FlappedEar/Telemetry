@@ -560,6 +560,12 @@ abstract class AppLocalizations {
   /// **'Measured at {segment}, as today\'s corners divide the track.'**
   String coachGoalMeasuredAt(String segment);
 
+  /// No corner of today's segments overlaps the focus's corner as it was drawn then.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: today\'s corners no longer include it.'**
+  String get coachGoalNoCorner;
+
   /// The focus's measure improved since the session before.
   ///
   /// In en, this message translates to:

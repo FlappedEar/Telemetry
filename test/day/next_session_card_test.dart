@@ -334,6 +334,14 @@ void main() {
     );
   });
 
+  testWidgets('a focus no corner of today\'s matches says so', (tester) async {
+    await show(tester, goal: CoachGoalOutcome.notMeasured, measuredName: '');
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      "Not measured: today's corners no longer include it.",
+    );
+  });
+
   testWidgets('a focus not measured again says so, without values', (
     tester,
   ) async {

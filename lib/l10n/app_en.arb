@@ -455,6 +455,10 @@
       }
     }
   },
+  "coachGoalNoCorner": "Not measured: today's corners no longer include it.",
+  "@coachGoalNoCorner": {
+    "description": "No corner of today's segments overlaps the focus's corner as it was drawn then."
+  },
   "coachGoalBetter": "Better.",
   "@coachGoalBetter": {
     "description": "The focus's measure improved since the session before."

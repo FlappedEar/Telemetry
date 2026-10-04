@@ -70,6 +70,7 @@ DayCoach _coach(
   String runId = 'run2',
   double Function(double) Function(double slow) shape = _lap,
   bool coachedRecording = true,
+  bool saved = false,
 }) {
   final runs = [
     _run(
@@ -94,8 +95,16 @@ DayCoach _coach(
   }
   final analysis = analyzeDay(runs);
   final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
-  final result = dayTheoreticalBest(analysis, outing, random: Random(1));
+  var result = dayTheoreticalBest(analysis, outing, random: Random(1));
   expect(result.state, DayTheoreticalBestState.ready);
+  // Saved: the automatic segments are stored on the best lap's run.
+  final documentRuns = [
+    if (saved) {'id': result.segmentRunId, 'trackSegments': result.runSegments},
+  ];
+  if (saved) {
+    result = dayTheoreticalBest(analysis, outing, documentRuns: documentRuns, random: Random(1));
+    expect(result.state, DayTheoreticalBestState.ready);
+  }
   return dayCoach(
     result,
     {
@@ -103,7 +112,7 @@ DayCoach _coach(
         run.runId: run.runId == 'run2' && !coachedRecording ? null : run.session,
     },
     runId: runId,
-    before: dayBeforeRun(analysis, outing, runId, random: Random(1)),
+    before: dayBeforeRun(analysis, outing, runId, documentRuns: documentRuns, random: Random(1)),
   );
 }
 
@@ -448,6 +457,28 @@ void main() {
         coachGoalOutcome(CoachKind.lowMinimumSpeed, 30, 33.5, perMetrePerSecond: 2.237),
         CoachGoalOutcome.better,
       );
+    });
+
+    test('in a saved day whose best lap is this session\'s', () {
+      // The segments saved on this session's run were not there then.
+      final coach = _coach(before, [21, 21.5, 21.2], saved: true);
+      expect(coach.goal?.outcome, CoachGoalOutcome.better);
+    });
+
+    test('at today\'s corner overlapping it most', () {
+      const shown = (start: 100.0, end: 160.0);
+      // The same corner, merged into a longer one, or drawn a little apart.
+      expect(coachMatchingSegment(shown, [(start: 0.0, end: 90.0), (start: 95.0, end: 165.0)]), 1);
+      expect(coachMatchingSegment(shown, [(start: 80.0, end: 300.0)]), 0);
+      // Split in two: the larger part.
+      expect(
+        coachMatchingSegment(shown, [(start: 90.0, end: 120.0), (start: 120.0, end: 170.0)]),
+        1,
+      );
+      // Less than half of the shorter overlaps: not the same corner.
+      expect(coachMatchingSegment(shown, [(start: 140.0, end: 200.0)]), isNull);
+      expect(coachMatchingSegment(shown, [(start: 200.0, end: 260.0)]), isNull);
+      expect(coachMatchingSegment(shown, []), isNull);
     });
 
     test('worse', () {

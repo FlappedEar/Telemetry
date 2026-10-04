@@ -304,6 +304,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get coachGoalNoCorner =>
+      'Not measured: today\'s corners no longer include it.';
+
+  @override
   String get coachGoalBetter => 'Better.';
 
   @override

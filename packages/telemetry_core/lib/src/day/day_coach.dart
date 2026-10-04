@@ -670,7 +670,12 @@ DayTheoreticalBest? dayBeforeRun(
       for (final MapEntry(:key, :value) in runs.entries)
         if (earlier.contains(key)) key: value,
     },
-    documentRuns: documentRuns,
+    // Segments saved on a later run (the best lap's, when it is later)
+    // were not there then.
+    documentRuns: [
+      for (final run in documentRuns)
+        if (run is Map && earlier.contains(run['id'])) run,
+    ],
     random: random,
     cancelled: cancelled,
   );
@@ -955,29 +960,17 @@ CoachGoalCheck? _goalCheck(
     measuredName: measuredName,
   );
 
-  // Today's corner overlapping the focus's most, at least half of the
-  // shorter of the two.
   final shownCorner = before.corners.where((c) => c.segmentId == focus.segmentId).firstOrNull;
   if (shownCorner == null) return unmeasured();
-  DayCorner? corner;
-  var most = 0.0;
-  for (final candidate in result.corners) {
-    final overlap =
-        math.min(candidate.endProgressMeters, shownCorner.endProgressMeters) -
-        math.max(candidate.startProgressMeters, shownCorner.startProgressMeters);
-    final shorter = math.min(
-      candidate.endProgressMeters - candidate.startProgressMeters,
-      shownCorner.endProgressMeters - shownCorner.startProgressMeters,
-    );
-    if (overlap > most && overlap >= shorter / 2) {
-      most = overlap;
-      corner = candidate;
-    }
-  }
+  final match = coachMatchingSegment(
+    (start: shownCorner.startProgressMeters, end: shownCorner.endProgressMeters),
+    [for (final c in result.corners) (start: c.startProgressMeters, end: c.endProgressMeters)],
+  );
+  final corner = match == null ? null : result.corners[match];
   if (corner == null) return unmeasured();
   final slow = {for (final lap in _slowLaps(laps)) lap.reference};
   List<_Passage> of(String runId) => [
-    for (final p in passages[corner!.segmentId] ?? const <_Passage>[])
+    for (final p in passages[corner.segmentId] ?? const <_Passage>[])
       if (p.lap.runId == runId && !slow.contains(p.lap.reference)) p,
   ];
   final shown = _shownSpeed(result.corners);
@@ -1001,6 +994,27 @@ CoachGoalCheck? _goalCheck(
     beforeLaps: earlier.laps,
     nowLaps: now.laps,
   );
+}
+
+/// The index of the range in [today] overlapping [shown] most, by at
+/// least half of the shorter of the two; null when none does. Ranges are
+/// positions along the lap, in metres.
+int? coachMatchingSegment(
+  ({double start, double end}) shown,
+  List<({double start, double end})> today,
+) {
+  int? best;
+  var most = 0.0;
+  for (var i = 0; i < today.length; ++i) {
+    final range = today[i];
+    final overlap = math.min(range.end, shown.end) - math.max(range.start, shown.start);
+    final shorter = math.min(range.end - range.start, shown.end - shown.start);
+    if (overlap > most && overlap >= shorter / 2) {
+      most = overlap;
+      best = i;
+    }
+  }
+  return best;
 }
 
 /// Whether [now] is better than [before] for a focus of [kind], by a clear
