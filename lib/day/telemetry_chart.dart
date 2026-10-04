@@ -305,12 +305,21 @@ class TelemetryChart extends StatelessWidget {
                               ),
                               dark: theme.brightness == Brightness.dark,
                               delta: delta,
+                              // One axis: labelled only when every line
+                              // shown is in one unit.
                               unit: shown.isEmpty
                                   ? ''
                                   : displayUnitOf(
                                       context,
                                       title,
-                                      shown.first.series.unit,
+                                      shown.every(
+                                            (line) => sameSpeedUnit(
+                                              line.series.unit,
+                                              shown.first.series.unit,
+                                            ),
+                                          )
+                                          ? shown.first.series.unit
+                                          : '',
                                     ),
                             ),
                           ),
