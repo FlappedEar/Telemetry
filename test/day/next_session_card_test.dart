@@ -63,6 +63,7 @@ void main() {
     DayTheoreticalBest result,
     String runId, {
     CoachGoalOutcome goal = CoachGoalOutcome.better,
+    String? measuredName,
   }) {
     final laps = [for (final sectors in result.laps) sectors.lap];
     final segment = result.segments.firstWhere(
@@ -132,8 +133,9 @@ void main() {
         runName: earlier.first.runName,
         finding: change,
         outcome: goal,
-        before: goal == CoachGoalOutcome.notMeasured ? double.nan : 44.04,
-        now: goal == CoachGoalOutcome.notMeasured ? double.nan : 46.94,
+        measuredName: measuredName ?? segment.name,
+        before: goal == CoachGoalOutcome.notMeasured ? null : 44.04,
+        now: goal == CoachGoalOutcome.notMeasured ? null : 46.94,
       ),
     );
   }
@@ -150,6 +152,7 @@ void main() {
     CoachRunner? coachRunner,
     TheoreticalBestRunner? theoreticalBestRunner,
     CoachGoalOutcome goal = CoachGoalOutcome.better,
+    String? measuredName,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -166,6 +169,7 @@ void main() {
                   controller.theoreticalBest!,
                   controller.latestRunId,
                   goal: goal,
+                  measuredName: measuredName,
                 )
               : job(),
     );
@@ -310,10 +314,23 @@ void main() {
       'Minimum speed: 44.0\u00a0km/h then, 46.9\u00a0km/h in this session. '
       'Better.',
     );
+    // Measured at the same corner: nothing more to say.
+    expect(find.byKey(const ValueKey('coachGoalMeasuredAt')), findsNothing);
     // Above the plan.
     expect(
       tester.getTopLeft(goal).dy,
       lessThan(tester.getTopLeft(find.byKey(const ValueKey('coachItem 0'))).dy),
+    );
+  });
+
+  testWidgets('a focus measured at a corner drawn differently today says '
+      'where', (tester) async {
+    await show(tester, measuredName: 'Corners 5–8');
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('coachGoalMeasuredAt')))
+          .data,
+      "Measured at Corners 5–8, as today's corners divide the track.",
     );
   });
 
@@ -329,13 +346,10 @@ void main() {
 
   testWidgets('in Polish', (tester) async {
     await show(tester, locale: const Locale('pl'));
-    expect(
-      find.text('Główny cel z poprzedniej sesji (Sesja 1)'),
-      findsOneWidget,
-    );
+    expect(find.text('Główny cel po sesji: Sesja 1'), findsOneWidget);
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
-      'Prędkość minimalna: wtedy 44.0\u00a0km/h, w tej sesji 46.9\u00a0km/h. '
+      'Prędkość minimalna: w poprzedniej sesji 44.0\u00a0km/h, w tej 46.9\u00a0km/h. '
       'Lepiej.',
     );
     expect(find.text('Następna sesja'), findsOneWidget);

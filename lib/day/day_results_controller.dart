@@ -2569,12 +2569,30 @@ final class DayResultsController extends ChangeNotifier {
     return '';
   }
 
+  // [analysis], [runs], [documentRuns] and [exclusions] rebuild the day as
+  // it stood before [runId], to check the main focus given then.
   static DayCoach Function() _coachJob(
     DayTheoreticalBest result,
     Map<String, TelemetrySession?> sessions,
-    String runId,
-  ) =>
-      () => dayCoach(result, sessions, runId: runId);
+    String runId, {
+    required DayAnalysis analysis,
+    required Map<String, OutingRun> runs,
+    required List<Object?> documentRuns,
+    required Map<DayLapReference, String> exclusions,
+  }) =>
+      () => dayCoach(
+        result,
+        sessions,
+        runId: runId,
+        before: dayBeforeRun(
+          analysis,
+          runs,
+          runId,
+          documentRuns: documentRuns,
+          exclusions: exclusions,
+          groupId: result.groupId,
+        ),
+      );
 
   /// Prepares the coach's plan again after it failed. Returns whether it
   /// started.
@@ -2605,9 +2623,15 @@ final class DayResultsController extends ChangeNotifier {
     final clock = Stopwatch()..start();
     try {
       coach = await _coachRunner(
-        _coachJob(result, {
-          for (final named in _unitRuns) named.run.id: named.run.telemetry,
-        }, latestRunId),
+        _coachJob(
+          result,
+          {for (final named in _unitRuns) named.run.id: named.run.telemetry},
+          latestRunId,
+          analysis: _analysis,
+          runs: outingRuns(_unitRuns),
+          documentRuns: _documentRuns,
+          exclusions: {..._exclusions},
+        ),
       );
     } on Object catch (failure) {
       error = '$failure';

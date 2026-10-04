@@ -554,6 +554,12 @@ abstract class AppLocalizations {
   /// **'{metric}: {before} then, {now} in this session.'**
   String coachGoalMeasured(String metric, String before, String now);
 
+  /// The focus's corner was drawn differently when it was given; today's corner overlapping it most was measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured at {segment}, as today\'s corners divide the track.'**
+  String coachGoalMeasuredAt(String segment);
+
   /// The focus's measure improved since the session before.
   ///
   /// In en, this message translates to:

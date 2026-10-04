@@ -445,6 +445,16 @@
       }
     }
   },
+  "coachGoalMeasuredAt": "Measured at {segment}, as today's corners divide the track.",
+  "@coachGoalMeasuredAt": {
+    "description": "The focus's corner was drawn differently when it was given; today's corner overlapping it most was measured.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corners 5–8"
+      }
+    }
+  },
   "coachGoalBetter": "Better.",
   "@coachGoalBetter": {
     "description": "The focus's measure improved since the session before."

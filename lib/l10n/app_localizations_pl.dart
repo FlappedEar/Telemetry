@@ -297,12 +297,17 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String coachGoalLabel(String session) {
-    return 'Główny cel z poprzedniej sesji ($session)';
+    return 'Główny cel po sesji: $session';
   }
 
   @override
   String coachGoalMeasured(String metric, String before, String now) {
-    return '$metric: wtedy $before, w tej sesji $now.';
+    return '$metric: w poprzedniej sesji $before, w tej $now.';
+  }
+
+  @override
+  String coachGoalMeasuredAt(String segment) {
+    return 'Zmierzono na odcinku $segment, według dzisiejszego podziału toru.';
   }
 
   @override
@@ -315,7 +320,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachGoalWorse => 'Gorzej.';
 
   @override
-  String get coachGoalNotMeasured => 'W tej sesji nie zmierzono.';
+  String get coachGoalNotMeasured => 'Nie udało się tego zmierzyć w tej sesji.';
 
   @override
   String get coachReasonReady =>

@@ -96,10 +96,15 @@ DayCoach _coach(
   final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
   final result = dayTheoreticalBest(analysis, outing, random: Random(1));
   expect(result.state, DayTheoreticalBestState.ready);
-  return dayCoach(result, {
-    for (final run in runs)
-      run.runId: run.runId == 'run2' && !coachedRecording ? null : run.session,
-  }, runId: runId);
+  return dayCoach(
+    result,
+    {
+      for (final run in runs)
+        run.runId: run.runId == 'run2' && !coachedRecording ? null : run.session,
+    },
+    runId: runId,
+    before: dayBeforeRun(analysis, outing, runId, random: Random(1)),
+  );
 }
 
 void main() {
@@ -397,14 +402,52 @@ void main() {
       expect(goal.finding.kind, CoachKind.lowMinimumSpeed);
       expect(goal.metric, CoachMetric.minimumSpeed);
       expect(goal.outcome, CoachGoalOutcome.better);
-      expect(goal.now, greaterThan(goal.before));
+      expect(goal.now, greaterThan(goal.before!));
       expect((goal.beforeLaps, goal.nowLaps), (4, 3));
+      expect(goal.measuredName, goal.finding.segmentName);
     });
 
     test('leaves out a much slower lap', () {
       final goal = _coach(before, [19, 19.5, 19.2, 3]).goal!;
       expect(goal.nowLaps, 3);
       expect(goal.outcome, CoachGoalOutcome.better);
+    });
+
+    test('better or worse by a clear step, in each kind\'s direction', () {
+      final cases = <(CoachKind, double, double, CoachGoalOutcome)>[
+        // A later lift is better; 8 m is the step.
+        (CoachKind.earlyLift, 200, 210, CoachGoalOutcome.better),
+        (CoachKind.earlyLift, 200, 190, CoachGoalOutcome.worse),
+        (CoachKind.earlyLift, 200, 205, CoachGoalOutcome.unchanged),
+        // Less coasting is better; 0.4 s.
+        (CoachKind.excessiveCoasting, 2.1, 1.6, CoachGoalOutcome.better),
+        (CoachKind.excessiveCoasting, 1.3, 2.1, CoachGoalOutcome.worse),
+        (CoachKind.excessiveCoasting, 2.0, 1.8, CoachGoalOutcome.unchanged),
+        // A higher minimum speed is better; 1.4 m/s, about 5 km/h.
+        (CoachKind.lowMinimumSpeed, 45, 51, CoachGoalOutcome.better),
+        (CoachKind.lowMinimumSpeed, 45, 39, CoachGoalOutcome.worse),
+        (CoachKind.lowMinimumSpeed, 45, 48, CoachGoalOutcome.unchanged),
+        // An earlier throttle return is better; 8 m.
+        (CoachKind.lateThrottle, 400, 390, CoachGoalOutcome.better),
+        (CoachKind.lateThrottle, 400, 410, CoachGoalOutcome.worse),
+        (CoachKind.lateThrottle, 400, 395, CoachGoalOutcome.unchanged),
+        // A smaller braking range is better; 10 m.
+        (CoachKind.inconsistentBraking, 40, 25, CoachGoalOutcome.better),
+        (CoachKind.inconsistentBraking, 25, 40, CoachGoalOutcome.worse),
+        (CoachKind.inconsistentBraking, 40, 33, CoachGoalOutcome.unchanged),
+      ];
+      for (final (kind, before, now, outcome) in cases) {
+        expect(coachGoalOutcome(kind, before, now), outcome, reason: '$kind $before → $now');
+      }
+      // In mph, 1.4 m/s is about 3.1 mph.
+      expect(
+        coachGoalOutcome(CoachKind.lowMinimumSpeed, 30, 32, perMetrePerSecond: 2.237),
+        CoachGoalOutcome.unchanged,
+      );
+      expect(
+        coachGoalOutcome(CoachKind.lowMinimumSpeed, 30, 33.5, perMetrePerSecond: 2.237),
+        CoachGoalOutcome.better,
+      );
     });
 
     test('worse', () {
@@ -418,7 +461,7 @@ void main() {
     test('not measured without the session\'s recording', () {
       final goal = _coach(before, [19, 19.5, 19.2], coachedRecording: false).goal!;
       expect(goal.outcome, CoachGoalOutcome.notMeasured);
-      expect(goal.before.isNaN, isTrue);
+      expect((goal.before, goal.now), (null, null));
     });
 
     test('none for the first session', () {

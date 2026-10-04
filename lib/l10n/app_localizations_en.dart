@@ -299,6 +299,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String coachGoalMeasuredAt(String segment) {
+    return 'Measured at $segment, as today\'s corners divide the track.';
+  }
+
+  @override
   String get coachGoalBetter => 'Better.';
 
   @override

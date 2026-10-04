@@ -278,12 +278,19 @@ class NextSessionCard extends StatelessWidget {
             ),
             style: theme.textTheme.titleSmall,
           ),
-          Text(
-            goal.outcome == CoachGoalOutcome.notMeasured
-                ? outcome
-                : '${l10n.coachGoalMeasured(l10n.coachMetric(goal.metric), coachValue(goal.before, goal.unit, speedUnit), coachValue(goal.now, goal.unit, speedUnit))} $outcome',
-            key: const ValueKey('coachGoalResult'),
-          ),
+          Text(switch ((goal.before, goal.now)) {
+            (final before?, final now?) =>
+              '${l10n.coachGoalMeasured(l10n.coachMetric(goal.metric), coachValue(before, goal.unit, speedUnit), coachValue(now, goal.unit, speedUnit))} $outcome',
+            _ => outcome,
+          }, key: const ValueKey('coachGoalResult')),
+          // Today's corners can differ from those of the focus.
+          if (goal.measuredName.isNotEmpty &&
+              goal.measuredName != finding.segmentName)
+            Text(
+              l10n.coachGoalMeasuredAt(goal.measuredName),
+              key: const ValueKey('coachGoalMeasuredAt'),
+              style: theme.textTheme.bodySmall,
+            ),
         ],
       ),
     );
