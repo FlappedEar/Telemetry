@@ -143,9 +143,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
   bool _relinking = false;
 
-  // The section shown: on a phone the bottom bar's Day, Laps or Compare; on a
-  // wide screen the rail's Day (summary and laps side by side) or Compare.
+  // The tab shown under the title: on a phone Overview, Laps, Compare or
+  // Report; on a wide screen Overview (summary and laps side by side),
+  // Compare or Report.
   _Section _section = _Section.overview;
+  // Whether the Report tab was opened: the report is built from then on.
+  bool _reportOpened = false;
   // Reading the recordings again ("Retry recordings"): the running task and
   // its generation, so a result after the page moved on is dropped.
   BackgroundTask<OpenedDay>? _retryTask;
@@ -400,19 +403,22 @@ class _DayResultsPageState extends State<DayResultsPage> {
     await _compare(a, b, null);
   }
 
-  /// The day report as the Report tab shows it, kept up to date.
-  Widget _report() => ListenableBuilder(
-    listenable: _controller,
-    builder: (context, _) => DayReportPage(
-      key: const ValueKey('dayResultsReport'),
-      embedded: true,
-      report: _controller.dayReportDocument,
-      onOpenLap: (reference) {
-        final row = _controller.lapRow(reference);
-        if (row != null) _open(row);
-      },
-    ),
-  );
+  /// The day report as the Report tab shows it, kept up to date; nothing
+  /// until the tab is first opened.
+  Widget _report() => !_reportOpened
+      ? const SizedBox.shrink()
+      : ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => DayReportPage(
+            key: const ValueKey('dayResultsReport'),
+            embedded: true,
+            report: _controller.dayReportDocument,
+            onOpenLap: (reference) {
+              final row = _controller.lapRow(reference);
+              if (row != null) _open(row);
+            },
+          ),
+        );
 
   LapPath? _bestPath(DayLapRow best) {
     if (_mapReference != best.reference) {
@@ -813,8 +819,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
-  /// Two panes and a side rail from this width; below it the summary, the
-  /// laps and Compare are sections of a bottom bar.
+  /// Two panes and a side rail from this width; below it the overview, the
+  /// laps, Compare and Report are tabs of their own.
   static const _twoPaneWidth = AppFrame.wideWidth;
 
   @override
@@ -854,64 +860,62 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ],
       );
     }
-    if (_section == _Section.report) return _report();
-    final comparing = _section == _Section.compare;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    // As on a phone, every tab stays built and keeps its scroll position.
+    return IndexedStack(
+      index: switch (_section) {
+        _Section.overview || _Section.laps => 0,
+        _Section.compare => 1,
+        _Section.report => 2,
+      },
       children: [
-        if (comparing)
-          Expanded(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: ListView(
-                  key: const ValueKey('dayResultsCompare'),
-                  padding: const EdgeInsets.all(16),
-                  children: compare,
+        LayoutBuilder(
+          builder: (context, constraints) => Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: FocusTraversalGroup(
+                  child: ListView(
+                    key: const ValueKey('dayResultsSummary'),
+                    controller: _summaryScroll,
+                    // At most 840 wide, centred in what the laps leave.
+                    padding: readablePadding(
+                      constraints.maxWidth -
+                          math.min(constraints.maxWidth * 4 / 9, 520),
+                    ),
+                    // As on a phone: the Next session card is built from the
+                    // top.
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+                    children: summary,
+                  ),
                 ),
               ),
-            ),
-          )
-        else
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) => Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: FocusTraversalGroup(
-                      child: ListView(
-                        key: const ValueKey('dayResultsSummary'),
-                        controller: _summaryScroll,
-                        // At most 840 wide, centred in what the laps leave.
-                        padding: readablePadding(
-                          constraints.maxWidth -
-                              math.min(constraints.maxWidth * 4 / 9, 520),
-                        ),
-                        // As on a phone: the Next session card is built from
-                        // the top.
-                        scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
-                        children: summary,
-                      ),
-                    ),
+              // Four ninths of the width, at most 520: on a large screen a
+              // lap's time stays near its name.
+              SizedBox(
+                width: math.min(constraints.maxWidth * 4 / 9, 520),
+                child: FocusTraversalGroup(
+                  child: ListView(
+                    key: const ValueKey('dayResultsLaps'),
+                    padding: const EdgeInsets.all(16),
+                    children: laps,
                   ),
-                  // Four ninths of the width, at most 520: on a large screen
-                  // a lap's time stays near its name.
-                  SizedBox(
-                    width: math.min(constraints.maxWidth * 4 / 9, 520),
-                    child: FocusTraversalGroup(
-                      child: ListView(
-                        key: const ValueKey('dayResultsLaps'),
-                        padding: const EdgeInsets.all(16),
-                        children: laps,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: ListView(
+              key: const ValueKey('dayResultsCompare'),
+              padding: const EdgeInsets.all(16),
+              children: compare,
             ),
           ),
+        ),
+        _report(),
       ],
     );
   }
@@ -940,7 +944,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
           selected: wide && _section == _Section.laps
               ? _Section.overview
               : _section,
-          onSelected: (section) => setState(() => _section = section),
+          onSelected: (section) => setState(() {
+            _section = section;
+            if (section == _Section.report) _reportOpened = true;
+          }),
         ),
         title: ListenableBuilder(
           listenable: _controller,

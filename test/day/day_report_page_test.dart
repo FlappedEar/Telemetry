@@ -255,6 +255,63 @@ void main() {
     expect(group.right, lessThanOrEqualTo(1380));
   });
 
+  testWidgets('a wide screen has the report as a tab beside Compare', (
+    tester,
+  ) async {
+    await open(tester, importDay());
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    await tester.pumpAndSettle();
+    final tabs = find.byKey(const ValueKey('daySections'));
+    for (final label in ['Overview', 'Compare', 'Report']) {
+      expect(
+        find.descendant(of: tabs, matching: find.text(label)),
+        findsOneWidget,
+      );
+    }
+    // The laps are beside the overview, not a tab; the report is no longer
+    // a toolbar button.
+    expect(
+      find.descendant(of: tabs, matching: find.text('Laps')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('openDayReport')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('daySection-report')));
+    await tester.pumpAndSettle();
+    // At most 840 wide, centred in the page.
+    final group = tester.getRect(find.byKey(const ValueKey('dayReportGroup')));
+    expect(group.left, 540);
+    expect(group.right, lessThanOrEqualTo(1380));
+    final list = find
+        .descendant(
+          of: find.byKey(const ValueKey('dayReport')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final session = find.byKey(const ValueKey('dayReportSession0'));
+    await tester.scrollUntilVisible(session, 200, scrollable: list);
+    await tester.ensureVisible(session);
+    await tester.pumpAndSettle();
+    final offset = tester.state<ScrollableState>(list).position.pixels;
+    expect(offset, greaterThan(0));
+    // Evidence opens its lap; back on the day, the report is where it was.
+    await tester.tap(session);
+    await tester.pumpAndSettle();
+    expect(find.byType(LapPage), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('dayReportGroup')).hitTestable(),
+      findsNothing,
+    );
+    expect(tester.state<ScrollableState>(list).position.pixels, offset);
+    // Overview and back keeps the place too.
+    await tester.tap(find.byKey(const ValueKey('daySection-overview')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daySection-report')));
+    await tester.pumpAndSettle();
+    expect(tester.state<ScrollableState>(list).position.pixels, offset);
+  });
+
   testWidgets('the day report presents what was calculated', (tester) async {
     final controller = await open(tester, importDay());
     final report = controller.dayReportDocument;
@@ -268,6 +325,7 @@ void main() {
     expect(statuses['focusAreas'], 'available');
     expect(statuses['temperatures'], 'available');
     expect(statuses['heartRate'], 'available');
+    expect(find.byKey(const ValueKey('openDayReport')), findsNothing);
     // The day page's Report tab.
     await tester.tap(find.byKey(const ValueKey('daySection-report')));
     await tester.pumpAndSettle();
