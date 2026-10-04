@@ -4,6 +4,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import '../l10n.dart';
 import 'day_results_controller.dart';
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// The optional review of the automatic segment proposals (FET-56), as
 /// FlappedEar Overlays' segment review shows them: each proposal of the lap
@@ -158,7 +159,8 @@ class _SegmentReviewPageState extends State<SegmentReviewPage> {
     if (result.state != DayTheoreticalBestState.ready) {
       return Padding(
         padding: const EdgeInsets.all(16),
-        child: Text(result.message),
+        // In the app's language, as on the Theoretical best card.
+        child: Text(l10n.tbMessage(result.message)),
       );
     }
     if (review == null) return waiting(l10n.segmentReviewComputing);

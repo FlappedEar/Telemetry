@@ -33,6 +33,7 @@ import 'segment_editor_page.dart';
 import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
+import '../ui/readable_list.dart';
 import '../ui/headline_bar.dart';
 import '../ui/theme.dart';
 import 'track_dialog.dart';
@@ -705,7 +706,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     child: ListView(
                       key: const ValueKey('dayResultsSummary'),
                       controller: _summaryScroll,
-                      padding: const EdgeInsets.all(16),
+                      // At most 840 wide, centred in what the laps leave.
+                      padding: readablePadding(
+                        constraints.maxWidth -
+                            math.min(constraints.maxWidth * 4 / 9, 520),
+                      ),
                       // As on a phone: the Next session card is built from
                       // the top.
                       scrollCacheExtent: const ScrollCacheExtent.pixels(2000),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../ui/readable_list.dart';
 import '../l10n.dart';
 import 'import_runner.dart' show ReviewSession;
 
@@ -185,76 +186,85 @@ class _ImportReviewPageState extends State<ImportReviewPage> {
         : l10n.reviewConfirmAdd;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.reviewImportTitle)),
-      body: ListView(
-        key: const ValueKey('importReviewList'),
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(l10n.reviewImportIntro, style: theme.textTheme.bodyLarge),
-          if (widget.adding && widget.automaticNewDay != null) ...[
-            const SizedBox(height: 12),
-            SegmentedButton<bool>(
-              key: const ValueKey('reviewDestination'),
-              segments: [
-                ButtonSegment(
-                  value: false,
-                  label: Text(l10n.reviewDestinationAppend),
-                ),
-                ButtonSegment(
-                  value: true,
-                  enabled: !widget.newDayBlocked,
-                  label: Text(l10n.reviewDestinationNewDay),
-                ),
-              ],
-              selected: {_newDay},
-              onSelectionChanged: (selected) =>
-                  _setDestination(selected.single),
-            ),
-            if (widget.newDayBlocked)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  l10n.reviewNewDayNeedsSave,
-                  style: theme.textTheme.bodySmall,
-                ),
+      // At most 840 wide, as on the import page it opens from.
+      body: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          key: const ValueKey('importReviewList'),
+          padding: readablePadding(constraints.maxWidth),
+          children: [
+            Text(l10n.reviewImportIntro, style: theme.textTheme.bodyLarge),
+            if (widget.adding && widget.automaticNewDay != null) ...[
+              const SizedBox(height: 12),
+              SegmentedButton<bool>(
+                key: const ValueKey('reviewDestination'),
+                segments: [
+                  ButtonSegment(
+                    value: false,
+                    label: Text(l10n.reviewDestinationAppend),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    enabled: !widget.newDayBlocked,
+                    label: Text(l10n.reviewDestinationNewDay),
+                  ),
+                ],
+                selected: {_newDay},
+                onSelectionChanged: (selected) =>
+                    _setDestination(selected.single),
               ),
+              if (widget.newDayBlocked)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    l10n.reviewNewDayNeedsSave,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+            ],
+            const SizedBox(height: 8),
+            for (final (index, file) in widget.plan.files.indexed)
+              _file(context, index, file),
+            const SizedBox(height: 12),
+            Text(l10n.reviewSameRunHint, style: theme.textTheme.bodySmall),
           ],
-          const SizedBox(height: 8),
-          for (final (index, file) in widget.plan.files.indexed)
-            _file(context, index, file),
-          const SizedBox(height: 12),
-          Text(l10n.reviewSameRunHint, style: theme.textTheme.bodySmall),
-        ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  problem == null
-                      ? l10n.reviewSessionCount(_newSessions)
-                      : _problemText(problem),
-                  key: const ValueKey('reviewSummary'),
-                  style: problem == null
-                      ? null
-                      : TextStyle(color: theme.colorScheme.error),
-                ),
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: readableWidth),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      problem == null
+                          ? l10n.reviewSessionCount(_newSessions)
+                          : _problemText(problem),
+                      key: const ValueKey('reviewSummary'),
+                      style: problem == null
+                          ? null
+                          : TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton(
+                    key: const ValueKey('confirmReview'),
+                    onPressed: problem != null
+                        ? null
+                        : () => Navigator.of(context).pop(
+                            ImportReviewResult(
+                              choices: Map.unmodifiable(_choices),
+                              newDay: _newDay,
+                            ),
+                          ),
+                    child: Text(confirm),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              FilledButton(
-                key: const ValueKey('confirmReview'),
-                onPressed: problem != null
-                    ? null
-                    : () => Navigator.of(context).pop(
-                        ImportReviewResult(
-                          choices: Map.unmodifiable(_choices),
-                          newDay: _newDay,
-                        ),
-                      ),
-                child: Text(confirm),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -343,7 +353,7 @@ class _ImportReviewPageState extends State<ImportReviewPage> {
     } else {
       lines.add(
         Text(
-          l10n.reviewFailed(file.message),
+          l10n.reviewFailed(l10n.coreText(file.message)),
           style: TextStyle(color: theme.colorScheme.error),
         ),
       );

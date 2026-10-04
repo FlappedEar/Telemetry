@@ -10,6 +10,7 @@ import 'corner_details.dart' show lapAColor, lapBColor;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'time_losses_card.dart' show CompareLaps, TimeLossText, lapStretch;
 import 'track_map.dart';
+import '../ui/readable_list.dart';
 
 final _english = lookupAppLocalizations(const Locale('en'));
 
@@ -411,8 +412,7 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
     );
     return Scaffold(
       appBar: AppBar(title: Text(segment)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: ReadableListView(
         children: [
           Text(
             l10n.focusAreaKind(area.kind),
