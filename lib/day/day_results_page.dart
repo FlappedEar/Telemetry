@@ -916,7 +916,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   Widget _page(BuildContext context, double width) {
     // The window's width, not the page's: the two panes come with the
     // app's side rail, from the same width.
-    final wide = MediaQuery.sizeOf(context).width >= _twoPaneWidth;
+    final wide = (AppFrame.widthOf(context) ?? width) >= _twoPaneWidth;
     // The trace keeps a similar shape from a small phone to a tablet in
     // portrait: about 0.6 of the card's width.
     final mapHeight = wide ? 360.0 : ((width - 64) * 0.6).clamp(200.0, 420.0);

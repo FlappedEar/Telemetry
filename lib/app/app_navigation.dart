@@ -126,6 +126,11 @@ class AppFrame extends StatelessWidget {
   final AppNavigation navigation;
   final Widget child;
 
+  /// The width the places are drawn for (the window's); null for a page
+  /// shown without them.
+  static double? widthOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_FrameWidth>()?.width;
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: navigation,
@@ -155,6 +160,7 @@ class AppFrame extends StatelessWidget {
       void go(int index) => navigation.select(places[index].$1);
       return LayoutBuilder(
         builder: (context, constraints) {
+          child = _FrameWidth(width: constraints.maxWidth, child: child!);
           if (constraints.maxWidth >= wideWidth) {
             return Row(
               children: [
@@ -224,6 +230,17 @@ class AppFrame extends StatelessWidget {
       );
     },
   );
+}
+
+/// The width the places were laid out for, so a page decides its own
+/// layout with them.
+class _FrameWidth extends InheritedWidget {
+  const _FrameWidth({required this.width, required super.child});
+
+  final double width;
+
+  @override
+  bool updateShouldNotify(_FrameWidth old) => width != old.width;
 }
 
 /// The app's logo beside its name, for the start page's title.
