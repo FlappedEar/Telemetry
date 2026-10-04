@@ -2783,7 +2783,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingBrakingInferred =>
-      'hamowanie wyznaczone pośrednio z opóźnienia (brak kanału hamulca)';
+      'hamowanie wyznaczone pośrednio z przeciążenia wzdłużnego (brak kanału hamulca)';
 
   @override
   String get drivingAcceleratorRecorded => 'zapisano pedał gazu';
@@ -2894,20 +2894,20 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String drivingGgSemantics(String a, String b) {
-    return 'Diagram G–G okrążeń A i B: maksymalne przeciążenie wypadkowe $a i $b';
+    return 'Diagram G–G okrążeń A i B: maksymalne łączne przeciążenie $a i $b';
   }
 
   @override
   String get drivingPeakLateral => 'Maks. przeciążenie poprzeczne';
 
   @override
-  String get drivingPeakBraking => 'Maks. opóźnienie';
+  String get drivingPeakBraking => 'Maks. hamowanie';
 
   @override
   String get drivingPeakAccelerating => 'Maks. przyspieszenie';
 
   @override
-  String get drivingPeakCombined => 'Maks. przeciążenie wypadkowe';
+  String get drivingPeakCombined => 'Maks. łączne przeciążenie';
 
   @override
   String get drivingSamples => 'Próbki';
@@ -2967,14 +2967,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsReasonNoBrakeOrDeceleration =>
-      'brak kanału hamulca i opóźnienia';
+      'brak kanału hamulca i przeciążenia wzdłużnego';
 
   @override
   String get cornerDetailsReasonNoBrakeChannel => 'brak kanału hamulca';
 
   @override
   String get cornerDetailsReasonNoDecelerationChannel =>
-      'brak kanału opóźnienia';
+      'brak kanału przeciążenia wzdłużnego';
 
   @override
   String get cornerDetailsReasonApproachClipped =>
@@ -3096,7 +3096,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerDetailsFromDeceleration =>
-      'Wyznaczone pośrednio z opóźnienia';
+      'Wyznaczone pośrednio z przeciążenia przy hamowaniu';
 
   @override
   String get cornerDetailsFromBrakeChannel => 'Z kanału hamulca';
@@ -3183,7 +3183,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerDetailsPeakDeceleration(String unit) {
-    return 'Maksymalne opóźnienie$unit';
+    return 'Maksymalne hamowanie$unit';
   }
 
   @override
@@ -3346,7 +3346,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerAnalyzerBrakingTime => 'Czas hamowania';
 
   @override
-  String get cornerAnalyzerPeakDeceleration => 'Maksymalne opóźnienie';
+  String get cornerAnalyzerPeakDeceleration => 'Maksymalne hamowanie';
 
   @override
   String get cornerAnalyzerEntrySpeed => 'Prędkość na wejściu';
@@ -3431,11 +3431,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerAnalyzerUnitNoteDeceleration =>
-      'Ten zapis nie podaje jednostki opóźnienia: wartości pokazano bez zmian, bez jednostki.';
+      'Ten zapis nie podaje jednostki hamowania (przeciążenia wzdłużnego): wartości pokazano bez zmian, bez jednostki.';
 
   @override
   String get cornerAnalyzerUnitNoteBoth =>
-      'Ten zapis nie podaje jednostek prędkości i opóźnienia: wartości pokazano bez zmian, bez jednostki.';
+      'Ten zapis nie podaje jednostek prędkości i hamowania (przeciążenia wzdłużnego): wartości pokazano bez zmian, bez jednostki.';
 
   @override
   String get cornerAnalyzerChartNoSpeed =>

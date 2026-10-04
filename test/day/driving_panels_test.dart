@@ -283,7 +283,7 @@ void main() {
     expect(find.text('Stany jazdy'), findsOneWidget);
     expect(find.text('Driving states'), findsNothing);
     expect(find.text('Hamowanie w zakręcie'), findsOneWidget);
-    expect(find.text('Maks. przeciążenie wypadkowe'), findsOneWidget);
+    expect(find.text('Maks. łączne przeciążenie'), findsOneWidget);
     expect(find.text('Okrążenie A'), findsOneWidget);
     for (final lap in const ['A', 'B']) {
       expect(

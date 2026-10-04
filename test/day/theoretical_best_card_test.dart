@@ -371,7 +371,7 @@ void main() {
     expect(find.textContaining('Sesja '), findsWidgets);
     expect(find.textContaining('the best lap'), findsNothing);
     expect(
-      find.textContaining('brak kanału hamulca i opóźnienia'),
+      find.textContaining('brak kanału hamulca i przeciążenia wzdłużnego'),
       findsOneWidget,
     );
     expect(
