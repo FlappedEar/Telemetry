@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n.dart';
 import '../format.dart';
+import '../ui/label_value_row.dart';
 import 'app_diagnostics.dart';
 import 'app_errors.dart';
 
@@ -19,7 +21,7 @@ String diagnosticDuration(Duration duration) {
 /// "123.4 MiB", or "Not available" in the app's language.
 String diagnosticMemory(AppLocalizations l10n, int? bytes) => bytes == null
     ? l10n.diagnosticsNotAvailable
-    : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MiB';
+    : '${(bytes / (1024 * 1024)).toStringAsFixed(1)}\u00a0MiB';
 
 /// A step's name ([DiagnosticSteps]) in the app's language; a step the app
 /// does not know is shown as written. The names themselves stay English:
@@ -88,11 +90,24 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(text, style: theme.textTheme.titleMedium),
     );
-    Widget row(String label, String value, {Key? key}) => ListTile(
-      key: key,
-      dense: true,
-      title: Text(label),
-      trailing: Text(value, style: theme.textTheme.bodyLarge),
+    // The label and the value share the row; with large text the value
+    // wraps under its own half instead of crushing the label.
+    Widget row(String label, String value, {Key? key}) => MergeSemantics(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: LabelValueRow(
+            label: Text(label),
+            value: Text(
+              value,
+              key: key,
+              textAlign: TextAlign.end,
+              style: theme.textTheme.bodyLarge,
+            ),
+          ),
+        ),
+      ),
     );
     return Scaffold(
       appBar: AppBar(
@@ -106,98 +121,105 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
           ),
         ],
       ),
-      body: ListView(
-        key: const ValueKey('diagnostics'),
-        padding: const EdgeInsets.only(bottom: 16),
-        children: [
-          heading(l10n.diagnosticsLastImport),
-          if (last == null)
-            ListTile(title: Text(l10n.diagnosticsNoImport))
-          else ...[
-            for (final step in diagnostics.steps)
+      // At most 720 wide, centred, so a value stays near its label.
+      body: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          key: const ValueKey('diagnostics'),
+          padding: EdgeInsets.only(
+            left: math.max(0, (constraints.maxWidth - 720) / 2),
+            right: math.max(0, (constraints.maxWidth - 720) / 2),
+            bottom: 16,
+          ),
+          children: [
+            heading(l10n.diagnosticsLastImport),
+            if (last == null)
+              ListTile(title: Text(l10n.diagnosticsNoImport))
+            else ...[
+              for (final step in diagnostics.steps)
+                row(
+                  _stepName(l10n, step.name),
+                  diagnosticDuration(step.duration),
+                ),
+              row(l10n.diagnosticsRecordingsRead, '${last.recordings}'),
               row(
-                _stepName(l10n, step.name),
-                diagnosticDuration(step.duration),
+                l10n.diagnosticsSessions,
+                '${last.sessions}',
+                key: const ValueKey('diagnosticsSessions'),
               ),
-            row(l10n.diagnosticsRecordingsRead, '${last.recordings}'),
+              row(
+                l10n.diagnosticsSamples,
+                '${last.samples}',
+                key: const ValueKey('diagnosticsSamples'),
+              ),
+              row(l10n.diagnosticsChannelValues, '${last.channelSamples}'),
+            ],
+            heading(l10n.diagnosticsMemory),
             row(
-              l10n.diagnosticsSessions,
-              '${last.sessions}',
-              key: const ValueKey('diagnosticsSessions'),
+              l10n.diagnosticsCurrentMemory,
+              diagnosticMemory(l10n, _memory.current),
+              key: const ValueKey('diagnosticsCurrentMemory'),
             ),
             row(
-              l10n.diagnosticsSamples,
-              '${last.samples}',
-              key: const ValueKey('diagnosticsSamples'),
+              l10n.diagnosticsPeakMemory,
+              diagnosticMemory(l10n, _memory.peak),
+              key: const ValueKey('diagnosticsPeakMemory'),
             ),
-            row(l10n.diagnosticsChannelValues, '${last.channelSamples}'),
-          ],
-          heading(l10n.diagnosticsMemory),
-          row(
-            l10n.diagnosticsCurrentMemory,
-            diagnosticMemory(l10n, _memory.current),
-            key: const ValueKey('diagnosticsCurrentMemory'),
-          ),
-          row(
-            l10n.diagnosticsPeakMemory,
-            diagnosticMemory(l10n, _memory.peak),
-            key: const ValueKey('diagnosticsPeakMemory'),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              l10n.diagnosticsMemoryNote,
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-          heading(l10n.diagnosticsErrors),
-          if (records.isEmpty)
-            ListTile(
-              key: const ValueKey('diagnosticsNoErrors'),
-              title: Text(l10n.diagnosticsNoErrors),
-            )
-          else ...[
-            for (final record in records.reversed)
-              ListTile(
-                dense: true,
-                title: Text(
-                  record.summary,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  record.count > 1
-                      ? '${displayDateTime(record.time)} · '
-                            '${l10n.diagnosticsErrorCount(record.count)}'
-                      : displayDateTime(record.time),
-                ),
-              ),
-            if (errors.dropped > 0)
-              ListTile(
-                dense: true,
-                title: Text(l10n.diagnosticsErrorsDropped(errors.dropped)),
-              ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: OutlinedButton(
-                  key: const ValueKey('copyErrors'),
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    await Clipboard.setData(
-                      ClipboardData(text: errors.report()),
-                    );
-                    messenger.showSnackBar(
-                      SnackBar(content: Text(l10n.diagnosticsErrorsCopied)),
-                    );
-                  },
-                  child: Text(l10n.diagnosticsCopyErrors),
-                ),
+              child: Text(
+                l10n.diagnosticsMemoryNote,
+                style: theme.textTheme.bodySmall,
               ),
             ),
+            heading(l10n.diagnosticsErrors),
+            if (records.isEmpty)
+              ListTile(
+                key: const ValueKey('diagnosticsNoErrors'),
+                title: Text(l10n.diagnosticsNoErrors),
+              )
+            else ...[
+              for (final record in records.reversed)
+                ListTile(
+                  dense: true,
+                  title: Text(
+                    record.summary,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    record.count > 1
+                        ? '${displayDateTime(record.time)} · '
+                              '${l10n.diagnosticsErrorCount(record.count)}'
+                        : displayDateTime(record.time),
+                  ),
+                ),
+              if (errors.dropped > 0)
+                ListTile(
+                  dense: true,
+                  title: Text(l10n.diagnosticsErrorsDropped(errors.dropped)),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: OutlinedButton(
+                    key: const ValueKey('copyErrors'),
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      await Clipboard.setData(
+                        ClipboardData(text: errors.report()),
+                      );
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(l10n.diagnosticsErrorsCopied)),
+                      );
+                    },
+                    child: Text(l10n.diagnosticsCopyErrors),
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

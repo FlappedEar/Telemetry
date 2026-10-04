@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../l10n.dart';
+import '../ui/label_value_row.dart';
 import 'day_results_controller.dart';
 import 'driving_panels.dart'
     show
@@ -162,24 +163,21 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                 for (final segment in summary.segments)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.tbSegmentName(segment.name),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    child: LabelValueRow(
+                      label: Text(
+                        l10n.tbSegmentName(segment.name),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      // Wraps at its "·" with very large text.
+                      value: Text(
+                        segment.seconds > 0.05
+                            ? amount(segment.seconds, segment.meters)
+                            : '—',
+                        key: ValueKey(
+                          'lapCoastingSegment ${segment.segmentId}',
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          segment.seconds > 0.05
-                              ? amount(segment.seconds, segment.meters)
-                              : '—',
-                          key: ValueKey(
-                            'lapCoastingSegment ${segment.segmentId}',
-                          ),
-                        ),
-                      ],
+                        textAlign: TextAlign.end,
+                      ),
                     ),
                   ),
               ] else if (known && summary.episodes.isNotEmpty)

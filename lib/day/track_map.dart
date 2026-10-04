@@ -935,6 +935,20 @@ class SpeedLegend extends StatelessWidget {
 
   final LapPath path;
 
+  /// The width the values and a short bar need on one line.
+  static double minimumWidth(BuildContext context, LapPath path) {
+    final range = speedRange(path);
+    final style = Theme.of(context).textTheme.bodySmall;
+    // The no-speed note wraps; it needs no more than a short bar.
+    if (range == null) return 48;
+    final label = speedUnitOf(context, path.speedUnit);
+    final unit = label.isEmpty ? '' : '\u00a0$label';
+    return _textWidth(context, '${range.$1.toStringAsFixed(0)}$unit', style) +
+        _textWidth(context, '${range.$2.toStringAsFixed(0)}$unit', style) +
+        16 +
+        48;
+  }
+
   @override
   Widget build(BuildContext context) {
     final range = speedRange(path);
@@ -947,28 +961,107 @@ class SpeedLegend extends StatelessWidget {
     }
     final label = speedUnitOf(context, path.speedUnit);
     final unit = label.isEmpty ? '' : '\u00a0$label';
-    return Row(
-      children: [
-        Text(
-          '${range.$1.toStringAsFixed(0)}$unit',
-          style: theme.textTheme.bodySmall,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Container(
-            height: 10,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-              gradient: const LinearGradient(colors: speedRamp),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '${range.$2.toStringAsFixed(0)}$unit',
-          style: theme.textTheme.bodySmall,
-        ),
-      ],
+    final slow = Text(
+      '${range.$1.toStringAsFixed(0)}$unit',
+      style: theme.textTheme.bodySmall,
+    );
+    final fast = Text(
+      '${range.$2.toStringAsFixed(0)}$unit',
+      style: theme.textTheme.bodySmall,
+    );
+    final bar = Container(
+      height: 10,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        gradient: const LinearGradient(colors: speedRamp),
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // When the values leave the bar too little room (very large text),
+        // they go under it, at its ends.
+        if (constraints.maxWidth < minimumWidth(context, path)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              bar,
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(child: slow),
+                  const SizedBox(width: 8),
+                  Flexible(child: fast),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            slow,
+            const SizedBox(width: 8),
+            Expanded(child: bar),
+            const SizedBox(width: 8),
+            fast,
+          ],
+        );
+      },
     );
   }
+}
+
+/// The width [text] takes in [style] at the text size in use.
+double _textWidth(BuildContext context, String text, TextStyle? style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
+}
+
+/// [SpeedLegend] after a [label], or under it when large text would leave
+/// the scale too little room.
+class LabelledSpeedLegend extends StatelessWidget {
+  const LabelledSpeedLegend({
+    super.key,
+    required this.label,
+    required this.path,
+  });
+
+  final String label;
+  final LapPath path;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final style = Theme.of(context).textTheme.labelMedium;
+      final text = Text(label, style: style);
+      final beside =
+          _textWidth(context, label, style) +
+          8 +
+          SpeedLegend.minimumWidth(context, path);
+      if (constraints.maxWidth < beside) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            text,
+            const SizedBox(height: 4),
+            SpeedLegend(path: path),
+          ],
+        );
+      }
+      return Row(
+        children: [
+          text,
+          const SizedBox(width: 8),
+          Expanded(child: SpeedLegend(path: path)),
+        ],
+      );
+    },
+  );
 }

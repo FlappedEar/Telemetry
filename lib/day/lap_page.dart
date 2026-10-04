@@ -418,13 +418,7 @@ class _LapPageState extends State<LapPage> {
                 );
           final legend = <Widget>[
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(l10n.lapPageSpeed, style: theme.textTheme.labelMedium),
-                const SizedBox(width: 8),
-                Expanded(child: SpeedLegend(path: _path)),
-              ],
-            ),
+            LabelledSpeedLegend(label: l10n.lapPageSpeed, path: _path),
             if (best != null && best.reference != row.reference)
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
