@@ -4310,7 +4310,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get coreVboNoData => 'Plik VBO nie ma wierszy danych [data].';
+  String get coreVboNoData => 'Plik VBO nie ma wierszy w sekcji [data].';
 
   @override
   String get coreVboNoValidRows =>
@@ -4326,7 +4326,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreVboTooManyValues =>
-      'Plik VBO ma więcej wartości (wiersze × kolumny), niż obsługiwane 40 milionów.';
+      'Plik VBO ma więcej wartości (wiersze × kolumny) niż obsługiwane 40 milionów.';
 
   @override
   String get coreVboLongLine =>
@@ -4422,7 +4422,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreRczTimestamps =>
-      'Znaczniki czasu nie rosną albo wykraczają poza obsługiwaną 24-godzinną sesję.';
+      'Znaczniki czasu nie rosną monotonicznie albo wykraczają poza obsługiwaną 24-godzinną sesję.';
 
   @override
   String get coreRczChannelBudget =>
@@ -4469,7 +4469,8 @@ class AppLocalizationsPl extends AppLocalizations {
       'Za dużo śladów okrążeń do rozpoznania trasy.';
 
   @override
-  String get coreRouteTooManyRuns => 'Za dużo sesji do pogrupowania tras.';
+  String get coreRouteTooManyRuns =>
+      'Za dużo sesji, by pogrupować je według trasy.';
 
   @override
   String get coreProgressionTooMany =>
