@@ -357,15 +357,53 @@ class _DayImportPageState extends State<DayImportPage> {
   /// What to do once the day shown is left (going to the library).
   VoidCallback? _afterDayLeft;
 
+  /// How many day pages show each day, the one leaving included until its
+  /// exit animation ends; the last of them disposes the day, unless it is
+  /// shown or kept again by then.
+  final _dayPages = <DayResultsController, int>{};
+
+  /// Days given up while a page still showed them: disposed, without
+  /// writing their recovery snapshot when [discard], once it closes.
+  final _dropped = <DayResultsController, bool>{};
+
+  /// Called as a day page closes: whether it disposes [day].
+  bool _dayPageClosed(DayResultsController day) {
+    final pages = (_dayPages[day] ?? 1) - 1;
+    if (pages > 0) {
+      _dayPages[day] = pages;
+      return false;
+    }
+    _dayPages.remove(day);
+    if (_dropped.remove(day) case final discard?) {
+      // Disposed here, as discard() says, not by the page.
+      if (discard) {
+        day.discard();
+        return false;
+      }
+      return true;
+    }
+    return !identical(_keptDay, day) && !identical(_shownDay, day);
+  }
+
+  /// Gives up the kept day: disposed now, or by its page once that closes.
+  void _dropKept({bool discard = false}) {
+    final kept = _keptDay;
+    if (kept == null) return;
+    _keptDay = null;
+    if (_dayPages.containsKey(kept)) {
+      _dropped[kept] = discard;
+    } else if (discard) {
+      kept.discard();
+    } else {
+      kept.dispose();
+    }
+  }
+
   /// Shows the day of [controller], then checks again for an unsaved day
   /// left behind.
   Future<void> _show(DayResultsController controller) async {
     // Only one day is kept: another one shown replaces it.
-    final kept = _keptDay;
-    if (kept != null && !identical(kept, controller)) {
-      _keptDay = null;
-      kept.dispose();
-    }
+    if (!identical(_keptDay, controller)) _dropKept();
     // A day opened again with its recordings found elsewhere is shown in
     // its place, and takes the recordings shared from then on.
     DayResultsController? next = controller;
@@ -375,6 +413,8 @@ class _DayImportPageState extends State<DayImportPage> {
       next = null;
       _shownDay = shown;
       _keptDay = null;
+      _dropped.remove(shown);
+      _dayPages[shown] = (_dayPages[shown] ?? 0) + 1;
       final route = MaterialPageRoute<void>(
         builder: (_) => DayResultsPage.controller(
           controller: shown,
@@ -385,7 +425,7 @@ class _DayImportPageState extends State<DayImportPage> {
           startNewDay: _startNewDay,
           library: widget.library,
           // Kept when left for another place; see _keptDay.
-          disposesController: () => !identical(_keptDay, shown),
+          disposesController: () => _dayPageClosed(shown),
         ),
       );
       _dayRoute = route;
@@ -418,6 +458,16 @@ class _DayImportPageState extends State<DayImportPage> {
     if (after != null && mounted && _shownDay == null) after();
     final recovered = await queueRecovery(widget.recovery.load);
     if (!mounted) return;
+    // Another day's unsaved work waits in the recovery slot: a day kept
+    // with work still running could write over it, so it is closed, as
+    // leaving a day did before it was kept.
+    if (last != null &&
+        identical(_keptDay, last) &&
+        recovered != null &&
+        recovered.eventId != last.eventId) {
+      _dropKept();
+      _syncNav();
+    }
     setState(() {
       _recovered = recovered;
       if (closed != null) _lastDay = closed;
@@ -446,21 +496,32 @@ class _DayImportPageState extends State<DayImportPage> {
   void _go(AppSection section) {
     final navigator = appNavigatorKey.currentState;
     if (navigator == null || !mounted) return;
+    final library = _libraryRoute;
+    void closeLibrary() {
+      if (library == null || !identical(_libraryRoute, library)) return;
+      navigator.popUntil((r) => r == library || r.isFirst);
+      if (library.isCurrent) navigator.pop();
+    }
+
     switch (section) {
       case AppSection.home:
-        _afterDayLeft = null;
         if (_dayRoute case final route?) {
+          // The day leaves first, as going back does; then the library a
+          // shared day opened over.
+          _afterDayLeft = library == null ? null : closeLibrary;
           _leaveDay(navigator, route);
-        } else if (_libraryRoute case final route?) {
-          navigator.popUntil((r) => r == route || r.isFirst);
-          if (route.isCurrent) navigator.pop();
+        } else {
+          _afterDayLeft = null;
+          closeLibrary();
         }
       case AppSection.library:
-        if (_libraryRoute case final route?) {
-          navigator.popUntil((r) => r == route || r.isFirst);
-        } else if (_dayRoute case final route?) {
-          _afterDayLeft = () => unawaited(_openLibrary());
+        if (_dayRoute case final route?) {
+          _afterDayLeft = library != null
+              ? null
+              : () => unawaited(_openLibrary());
           _leaveDay(navigator, route);
+        } else if (library != null) {
+          navigator.popUntil((r) => r == library || r.isFirst);
         } else {
           unawaited(_openLibrary());
         }
@@ -468,11 +529,10 @@ class _DayImportPageState extends State<DayImportPage> {
         if (_dayRoute case final route?) {
           // From a page opened over the day, back to the day.
           navigator.popUntil((r) => r == route || r.isFirst);
-        } else if (_keptDay case final kept?) {
-          if (_libraryRoute case final route?) {
-            navigator.popUntil((r) => r == route || r.isFirst);
-            if (route.isCurrent) navigator.pop();
-          }
+        } else if (_keptDay case final kept? when !_opening) {
+          // Not while a day is being opened or a share added: that work
+          // shows its own day.
+          closeLibrary();
           unawaited(_show(kept));
         }
     }
@@ -555,8 +615,7 @@ class _DayImportPageState extends State<DayImportPage> {
       setState(() => _lastDay = null);
     }
     if (_keptDay case final kept? when kept.eventId == recovery.eventId) {
-      _keptDay = null;
-      kept.discard();
+      _dropKept(discard: true);
       _syncNav();
     }
     try {
@@ -610,8 +669,12 @@ class _DayImportPageState extends State<DayImportPage> {
     _incoming.cancel();
     _lifecycle.dispose();
     appNavigation.detach(this);
-    _keptDay?.dispose();
-    _keptDay = null;
+    // The app closes: the day shown goes with its page, or now if its
+    // page closed first.
+    final shown = _shownDay;
+    _shownDay = null;
+    if (shown != null && !_dayPages.containsKey(shown)) shown.dispose();
+    _dropKept();
     _controller.removeListener(_imported);
     if (widget.controller == null) _controller.dispose();
     super.dispose();
@@ -682,6 +745,8 @@ class _DayImportPageState extends State<DayImportPage> {
     if (!mounted) return;
     // Recordings it refused are not said when it is shown again.
     if (refused) markAdditionReported(kept);
+    // Shown meanwhile (Day was tapped): the recordings are in it already.
+    if (taken && identical(_shownDay, kept)) return;
     if (!taken || !identical(_keptDay, kept)) {
       // Not that day's: imported here as today's day would be.
       unawaited(_continueToday([...paths, ...waiting]));

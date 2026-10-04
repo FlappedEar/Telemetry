@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../app/app_navigation.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
@@ -813,7 +814,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   /// Two panes and a side rail from this width; below it the summary, the
   /// laps and Compare are sections of a bottom bar.
-  static const _twoPaneWidth = 900.0;
+  static const _twoPaneWidth = AppFrame.wideWidth;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -913,7 +914,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   Widget _page(BuildContext context, double width) {
-    final wide = width >= _twoPaneWidth;
+    // The window's width, not the page's: the two panes come with the
+    // app's side rail, from the same width.
+    final wide = MediaQuery.sizeOf(context).width >= _twoPaneWidth;
     // The trace keeps a similar shape from a small phone to a tablet in
     // portrait: about 0.6 of the card's width.
     final mapHeight = wide ? 360.0 : ((width - 64) * 0.6).clamp(200.0, 420.0);

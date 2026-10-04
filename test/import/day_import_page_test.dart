@@ -458,6 +458,67 @@ void main() {
     await settleRecovery(tester);
   });
 
+  testWidgets('Day tapped while the day is still leaving keeps it working', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    // Back to Day before the day page has finished closing.
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    // Still the live day: the next session is added to it and said.
+    pickers.recordings = [write('b.vbo', _datedVbo(hour: 11, speed: 80))];
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Import sessions…'));
+    await pumpUntil(
+      tester,
+      () => find.text('Session 2 added to the day.').evaluate().isNotEmpty,
+    );
+    expect(importer.jobs, hasLength(1));
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
+  testWidgets('the places do nothing while a dialog is open', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(DayResultsPage), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
+  testWidgets('a wide window has the places in a side rail', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await show(tester);
+    expect(
+      tester.widget(find.byKey(const ValueKey('appPlaces'))),
+      isA<NavigationRail>(),
+    );
+  });
+
   testWidgets('a saved day closed here takes the next session', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
