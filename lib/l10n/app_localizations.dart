@@ -542,6 +542,42 @@ abstract class AppLocalizations {
   /// **'Straight after it'**
   String get coachMetricNextStraightTime;
 
+  /// Heading of the check of the main focus the coach gave for the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Main focus from {session}'**
+  String coachGoalLabel(String session);
+
+  /// The focus's measure in the session before and in this one: the median of each session's laps at that corner (the range, for braking points).
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: {before} then, {now} in this session.'**
+  String coachGoalMeasured(String metric, String before, String now);
+
+  /// The focus's measure improved since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Better.'**
+  String get coachGoalBetter;
+
+  /// The focus's measure changed too little to tell.
+  ///
+  /// In en, this message translates to:
+  /// **'About the same.'**
+  String get coachGoalUnchanged;
+
+  /// The focus's measure got worse since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Worse.'**
+  String get coachGoalWorse;
+
+  /// Too few laps of either session have the focus's measure at that corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured in this session.'**
+  String get coachGoalNotMeasured;
+
   /// Above the coach items.
   ///
   /// In en, this message translates to:

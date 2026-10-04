@@ -295,6 +295,75 @@ final class CoachItem {
 }
 
 /// The coach's view of one session of a day.
+/// How a session did on the main focus of the session before it.
+enum CoachGoalOutcome {
+  /// Better than in the session before.
+  better,
+
+  /// About the same as in the session before.
+  unchanged,
+
+  /// Worse than in the session before.
+  worse,
+
+  /// Fewer than two laps (three for the braking range) of either session
+  /// have the measure at that segment.
+  notMeasured,
+}
+
+/// The main focus the coach gave after the session before ([runName]),
+/// measured again on the session coached: the median across each session's
+/// laps at that segment (the braking range for the braking marker), slow
+/// laps left out. Observed, not proof the advice caused it.
+final class CoachGoalCheck {
+  const CoachGoalCheck({
+    required this.runId,
+    required this.runName,
+    required this.finding,
+    required this.outcome,
+    this.before = double.nan,
+    this.now = double.nan,
+    this.beforeLaps = 0,
+    this.nowLaps = 0,
+  });
+
+  /// The session before, whose main focus this is.
+  final String runId;
+  final String runName;
+
+  /// That focus, as the coach gives it with the day's laps up to the
+  /// session before; its first evidence row names the measure.
+  final CoachFinding finding;
+
+  final CoachGoalOutcome outcome;
+
+  /// The measure across the session before's laps, and the session
+  /// coached's ([finding]'s first evidence unit); NaN when not measured.
+  final double before;
+  final double now;
+  final int beforeLaps;
+  final int nowLaps;
+
+  CoachMetric get metric => finding.evidence.first.key;
+  String get unit => finding.evidence.first.unit;
+
+  /// In English (the app words it from the fields).
+  String get summary {
+    final what = '${finding.segmentName}, ${finding.evidence.first.metric.toLowerCase()}';
+    if (outcome == CoachGoalOutcome.notMeasured) {
+      return 'Focus from $runName ($what): not measured in this session.';
+    }
+    String value(double v) => unit == 'm' ? '${v.round()} m' : '${v.toStringAsFixed(1)} $unit';
+    final verdict = switch (outcome) {
+      CoachGoalOutcome.better => 'better',
+      CoachGoalOutcome.unchanged => 'about the same',
+      CoachGoalOutcome.worse => 'worse',
+      CoachGoalOutcome.notMeasured => '',
+    };
+    return 'Focus from $runName ($what): ${value(before)} then, ${value(now)} now: $verdict.';
+  }
+}
+
 final class DayCoach {
   DayCoach({
     this.runId = '',
@@ -303,6 +372,7 @@ final class DayCoach {
     required this.reason,
     this.speedsConverted = false,
     List<DayLapRow> slowLaps = const [],
+    this.goal,
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan),
        slowLaps = List.unmodifiable(slowLaps);
@@ -329,6 +399,10 @@ final class DayCoach {
 
   /// The one thing to work on first; null when the plan is empty.
   CoachItem? get focus => plan.isEmpty ? null : plan.first;
+
+  /// How the session coached did on the main focus the coach gave for the
+  /// session before it; null when there was no such change to work on.
+  final CoachGoalCheck? goal;
 
   final CoachReason reason;
 
@@ -563,12 +637,40 @@ DayCoach dayCoach(
   Map<String, TelemetrySession?> sessions, {
   required String runId,
 }) {
+  final passages = <String, List<_Passage>>{};
+  final coach = _dayCoach(result, sessions, runId: runId, passages: passages);
+  if (coach.reason == CoachReason.noSegments) return coach;
+  final goal = _goalCheck(result, sessions, runId, passages);
+  if (goal == null) return coach;
+  return DayCoach(
+    runId: coach.runId,
+    findings: coach.findings,
+    plan: coach.plan,
+    reason: coach.reason,
+    speedsConverted: coach.speedsConverted,
+    slowLaps: coach.slowLaps,
+    goal: goal,
+  );
+}
+
+/// The coach of [runId] (see [dayCoach]) with the day's laps up to index
+/// [upTo] in recording order (all when null); each corner's passages go in
+/// [passages] by segment id.
+DayCoach _dayCoach(
+  DayTheoreticalBest result,
+  Map<String, TelemetrySession?> sessions, {
+  required String runId,
+  int? upTo,
+  Map<String, List<_Passage>>? passages,
+}) {
+  final passagesOut = passages;
   final computed = result.computed;
   if (result.state != DayTheoreticalBestState.ready || computed == null) {
     return DayCoach(runId: runId, reason: CoachReason.noSegments);
   }
   // The group's laps in recording order, with their traces on the axis.
-  final laps = [for (final sectors in result.laps) sectors.lap];
+  final all = [for (final sectors in result.laps) sectors.lap];
+  final laps = upTo == null ? all : all.sublist(0, upTo + 1);
   final order = {for (var i = 0; i < laps.length; ++i) laps[i].reference: i};
   final traces = <DayLapReference, List<ProgressSegment>>{};
   for (var i = 0; i < computed.population.length; ++i) {
@@ -619,6 +721,8 @@ DayCoach dayCoach(
         : null;
     for (final sectors in result.laps) {
       final lap = sectors.lap;
+      // Laps after the day as it stood are left out.
+      if (!order.containsKey(lap.reference)) continue;
       final seconds = sectors.seconds(index);
       final nextSeconds = next == null ? null : sectors.seconds(next);
       final metrics = corner.metrics(lap.reference);
@@ -720,6 +824,7 @@ DayCoach dayCoach(
         ),
       );
     }
+    passagesOut?[corner.segmentId] = passages;
     if (passages.any((p) => p.lap.runId == coached)) measured = true;
     if (passages.length < 2) continue;
     if (_hasFasterLap(passages, coached)) faster = true;
@@ -771,6 +876,98 @@ DayCoach dayCoach(
         : !pedals
         ? CoachReason.noPedals
         : CoachReason.noPattern,
+  );
+}
+
+/// How the session coached did on the main focus the coach gave for the
+/// session before it, with the day's laps as they stood then; null when
+/// there is no session before, or its focus was not a change.
+CoachGoalCheck? _goalCheck(
+  DayTheoreticalBest result,
+  Map<String, TelemetrySession?> sessions,
+  String coached,
+  Map<String, List<_Passage>> passages,
+) {
+  final laps = [for (final sectors in result.laps) sectors.lap];
+  final runs = <String>[];
+  for (final lap in laps) {
+    if (!runs.contains(lap.runId)) runs.add(lap.runId);
+  }
+  final at = runs.indexOf(coached);
+  if (at < 1) return null;
+  final previous = runs[at - 1];
+  final last = laps.lastIndexWhere((lap) => lap.runId == previous);
+  final focus = _dayCoach(result, sessions, runId: previous, upTo: last).focus?.finding;
+  if (focus == null || !focus.kind.corrective) return null;
+  final slow = {for (final lap in _slowLaps(laps)) lap.reference};
+  List<_Passage> of(String runId) => [
+    for (final p in passages[focus.segmentId] ?? const <_Passage>[])
+      if (p.lap.runId == runId && !slow.contains(p.lap.reference)) p,
+  ];
+  final shown = _shownSpeed(result.corners);
+  final before = _goalValue(focus.kind, of(previous), shown);
+  final now = _goalValue(focus.kind, of(coached), shown);
+  final runName = laps.firstWhere((lap) => lap.runId == previous).runName;
+  if (before == null || now == null) {
+    return CoachGoalCheck(
+      runId: previous,
+      runName: runName,
+      finding: focus,
+      outcome: CoachGoalOutcome.notMeasured,
+    );
+  }
+  // Positive when better: a later lift, a higher minimum speed; less
+  // coasting, an earlier throttle return, a smaller braking range.
+  final sign = switch (focus.kind) {
+    CoachKind.earlyLift || CoachKind.lowMinimumSpeed => 1.0,
+    _ => -1.0,
+  };
+  final tolerance = switch (focus.kind) {
+    CoachKind.excessiveCoasting => 0.4,
+    CoachKind.lowMinimumSpeed => 1.4 * shown.perMetrePerSecond,
+    CoachKind.inconsistentBraking => coachBrakingOffMeters,
+    _ => 8.0,
+  };
+  final change = sign * (now.value - before.value);
+  final outcome = change >= tolerance
+      ? CoachGoalOutcome.better
+      : change <= -tolerance
+      ? CoachGoalOutcome.worse
+      : CoachGoalOutcome.unchanged;
+  return CoachGoalCheck(
+    runId: previous,
+    runName: runName,
+    finding: focus,
+    outcome: outcome,
+    before: before.value,
+    now: now.value,
+    beforeLaps: before.laps,
+    nowLaps: now.laps,
+  );
+}
+
+/// The goal's measure across [passages] (a session's laps at the goal's
+/// segment): the median of the lap values, or the braking range; null
+/// when fewer than two laps (three for the braking range) have it.
+({double value, int laps})? _goalValue(CoachKind kind, List<_Passage> passages, _ShownSpeed shown) {
+  double? read(_Passage p) => switch (kind) {
+    CoachKind.earlyLift => p.lift,
+    CoachKind.excessiveCoasting => p.coastSeconds,
+    CoachKind.lowMinimumSpeed => p.minimum,
+    CoachKind.lateThrottle => p.pickup,
+    CoachKind.inconsistentBraking => p.onset,
+    CoachKind.improving => null,
+  };
+  final values = [for (final p in passages) ?read(p)];
+  if (kind == CoachKind.inconsistentBraking) {
+    if (values.length < 3) return null;
+    return (value: values.reduce(math.max) - values.reduce(math.min), laps: values.length);
+  }
+  if (values.length < 2) return null;
+  final median = _median(values);
+  return (
+    value: kind == CoachKind.lowMinimumSpeed ? median * shown.perMetrePerSecond : median,
+    laps: values.length,
   );
 }
 

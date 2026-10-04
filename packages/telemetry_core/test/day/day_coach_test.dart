@@ -384,6 +384,60 @@ void main() {
     expect(straight.observed, isNot(closeTo(corner.observed, 0.5)));
   });
 
+  group('the session before\'s main focus', () {
+    // The session before is slow through the first corner on three laps,
+    // with one faster lap: keep more speed there.
+    const before = [15.0, 15.2, 15.1, 20.0];
+
+    test('is checked again: better', () {
+      final coach = _coach(before, [19, 19.5, 19.2]);
+      final goal = coach.goal!;
+      expect(goal.runId, 'run1');
+      expect(goal.runName, 'Session 1');
+      expect(goal.finding.kind, CoachKind.lowMinimumSpeed);
+      expect(goal.metric, CoachMetric.minimumSpeed);
+      expect(goal.outcome, CoachGoalOutcome.better);
+      expect(goal.now, greaterThan(goal.before));
+      expect((goal.beforeLaps, goal.nowLaps), (4, 3));
+    });
+
+    test('leaves out a much slower lap', () {
+      final goal = _coach(before, [19, 19.5, 19.2, 3]).goal!;
+      expect(goal.nowLaps, 3);
+      expect(goal.outcome, CoachGoalOutcome.better);
+    });
+
+    test('worse', () {
+      expect(_coach(before, [12, 12.2, 12.1]).goal!.outcome, CoachGoalOutcome.worse);
+    });
+
+    test('about the same', () {
+      expect(_coach(before, [15.1, 15.3, 15]).goal!.outcome, CoachGoalOutcome.unchanged);
+    });
+
+    test('not measured without the session\'s recording', () {
+      final goal = _coach(before, [19, 19.5, 19.2], coachedRecording: false).goal!;
+      expect(goal.outcome, CoachGoalOutcome.notMeasured);
+      expect(goal.before.isNaN, isTrue);
+    });
+
+    test('none for the first session', () {
+      expect(_coach(before, [19, 19.5, 19.2], runId: 'run1').goal, isNull);
+    });
+
+    test('none when the session before had no change to work on', () {
+      expect(_coach([20, 20.5], [19, 19.5, 19.2]).goal, isNull);
+    });
+
+    test('is the focus the day gave then, not with later laps', () {
+      // With this session's much faster laps, the session before's laps
+      // would all show the slow corner, but its focus is the same.
+      final goal = _coach(before, [25, 25.2, 25.1]).goal!;
+      expect(goal.finding.sessionLaps, hasLength(3));
+      expect(goal.finding.evidence.first.referenceLaps.map((lap) => lap.runId), ['run1']);
+    });
+  });
+
   test('braking points that agree make no braking item', () {
     final coach = _coach([20, 20.5], [17, 17.2, 17.1]);
     expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);

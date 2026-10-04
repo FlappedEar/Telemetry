@@ -289,6 +289,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMetricNextStraightTime => 'Straight after it';
 
   @override
+  String coachGoalLabel(String session) {
+    return 'Main focus from $session';
+  }
+
+  @override
+  String coachGoalMeasured(String metric, String before, String now) {
+    return '$metric: $before then, $now in this session.';
+  }
+
+  @override
+  String get coachGoalBetter => 'Better.';
+
+  @override
+  String get coachGoalUnchanged => 'About the same.';
+
+  @override
+  String get coachGoalWorse => 'Worse.';
+
+  @override
+  String get coachGoalNotMeasured => 'Not measured in this session.';
+
+  @override
   String get coachReasonReady =>
       'Work on the main focus first. Try the others only once it feels settled.';
 

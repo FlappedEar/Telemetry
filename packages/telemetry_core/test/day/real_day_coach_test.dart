@@ -47,6 +47,7 @@ void main() {
           'After ${day.last.name}: ${coach.findings.length} findings, '
           '${coach.plan.length} planned. ${coach.message}',
         );
+        if (coach.goal case final goal?) print('  ${goal.summary}');
         for (final item in coach.plan) {
           print(
             '  ${item.title} (${item.finding.confidence.toStringAsFixed(2)}): '

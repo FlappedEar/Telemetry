@@ -59,7 +59,11 @@ void main() {
 
   // A plan with one change and one improvement, on the day's own laps and
   // first corner, as the coach would give it.
-  DayCoach plan(DayTheoreticalBest result, String runId) {
+  DayCoach plan(
+    DayTheoreticalBest result,
+    String runId, {
+    CoachGoalOutcome goal = CoachGoalOutcome.better,
+  }) {
     final laps = [for (final sectors in result.laps) sectors.lap];
     final segment = result.segments.firstWhere(
       (s) => s.type == 'corner',
@@ -122,6 +126,15 @@ void main() {
       plan: [CoachItem(change), CoachItem(keep)],
       reason: CoachReason.ready,
       slowLaps: [laps.last],
+      // The session before's focus, checked again.
+      goal: CoachGoalCheck(
+        runId: earlier.first.runId,
+        runName: earlier.first.runName,
+        finding: change,
+        outcome: goal,
+        before: goal == CoachGoalOutcome.notMeasured ? double.nan : 44.04,
+        now: goal == CoachGoalOutcome.notMeasured ? double.nan : 46.94,
+      ),
     );
   }
 
@@ -136,6 +149,7 @@ void main() {
     List<NamedRun> Function(List<NamedRun> runs)? editRuns,
     CoachRunner? coachRunner,
     TheoreticalBestRunner? theoreticalBestRunner,
+    CoachGoalOutcome goal = CoachGoalOutcome.better,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -148,7 +162,11 @@ void main() {
       coachRunner:
           coachRunner ??
           (job) async => withPlan
-              ? plan(controller.theoreticalBest!, controller.latestRunId)
+              ? plan(
+                  controller.theoreticalBest!,
+                  controller.latestRunId,
+                  goal: goal,
+                )
               : job(),
     );
     await tester.pumpWidget(
@@ -274,8 +292,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the session before\'s main focus is checked again', (
+    tester,
+  ) async {
+    await show(tester);
+    final goal = find.byKey(const ValueKey('coachGoal'));
+    expect(goal, findsOneWidget);
+    expect(
+      find.descendant(
+        of: goal,
+        matching: find.text('Main focus from Session 1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      'Minimum speed: 44.0\u00a0km/h then, 46.9\u00a0km/h in this session. '
+      'Better.',
+    );
+    // Above the plan.
+    expect(
+      tester.getTopLeft(goal).dy,
+      lessThan(tester.getTopLeft(find.byKey(const ValueKey('coachItem 0'))).dy),
+    );
+  });
+
+  testWidgets('a focus not measured again says so, without values', (
+    tester,
+  ) async {
+    await show(tester, goal: CoachGoalOutcome.notMeasured);
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      'Not measured in this session.',
+    );
+  });
+
   testWidgets('in Polish', (tester) async {
     await show(tester, locale: const Locale('pl'));
+    expect(
+      find.text('Główny cel z poprzedniej sesji (Sesja 1)'),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      'Prędkość minimalna: wtedy 44.0\u00a0km/h, w tej sesji 46.9\u00a0km/h. '
+      'Lepiej.',
+    );
     expect(find.text('Następna sesja'), findsOneWidget);
     expect(find.text('Główny cel'), findsOneWidget);
     expect(find.text('Gdy to już wychodzi'), findsOneWidget);

@@ -206,10 +206,14 @@ class NextSessionCard extends StatelessWidget {
                 l10n.coachReason(coach.reason, session),
                 key: const ValueKey('coachReason'),
               ),
+              if (coach.goal case final goal?) _goal(context, goal, speedUnit),
               for (var i = 0; i < coach.plan.length; ++i)
                 _item(context, coach.plan[i].finding, i, speedUnit),
               if (speedUnit == null &&
-                  coach.plan.any((item) => _hasSpeed(item.finding))) ...[
+                  [
+                    ...coach.plan.map((item) => item.finding),
+                    ?coach.goal?.finding,
+                  ].any(_hasSpeed)) ...[
                 const SizedBox(height: 8),
                 Text(
                   l10n.coachSpeedHidden,
@@ -239,6 +243,48 @@ class NextSessionCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// How this session did on the main focus of the session before.
+  Widget _goal(BuildContext context, CoachGoalCheck goal, String? speedUnit) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final finding = goal.finding;
+    final outcome = switch (goal.outcome) {
+      CoachGoalOutcome.better => l10n.coachGoalBetter,
+      CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
+      CoachGoalOutcome.worse => l10n.coachGoalWorse,
+      CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
+    };
+    return Padding(
+      key: const ValueKey('coachGoal'),
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.coachGoalLabel(l10n.session(goal.runName)),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l10n.coachItemTitle(
+              finding.segmentName,
+              l10n.coachKind(finding.kind),
+            ),
+            style: theme.textTheme.titleSmall,
+          ),
+          Text(
+            goal.outcome == CoachGoalOutcome.notMeasured
+                ? outcome
+                : '${l10n.coachGoalMeasured(l10n.coachMetric(goal.metric), coachValue(goal.before, goal.unit, speedUnit), coachValue(goal.now, goal.unit, speedUnit))} $outcome',
+            key: const ValueKey('coachGoalResult'),
+          ),
+        ],
       ),
     );
   }

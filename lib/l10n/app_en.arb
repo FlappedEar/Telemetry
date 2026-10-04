@@ -417,6 +417,50 @@
   "@coachMetricNextStraightTime": {
     "description": "Time through the straight right after the corner; a slow exit loses time there too."
   },
+  "coachGoalLabel": "Main focus from {session}",
+  "@coachGoalLabel": {
+    "description": "Heading of the check of the main focus the coach gave for the session before.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 4"
+      }
+    }
+  },
+  "coachGoalMeasured": "{metric}: {before} then, {now} in this session.",
+  "@coachGoalMeasured": {
+    "description": "The focus's measure in the session before and in this one: the median of each session's laps at that corner (the range, for braking points).",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Longest coast"
+      },
+      "before": {
+        "type": "String",
+        "example": "2.1 s"
+      },
+      "now": {
+        "type": "String",
+        "example": "1.6 s"
+      }
+    }
+  },
+  "coachGoalBetter": "Better.",
+  "@coachGoalBetter": {
+    "description": "The focus's measure improved since the session before."
+  },
+  "coachGoalUnchanged": "About the same.",
+  "@coachGoalUnchanged": {
+    "description": "The focus's measure changed too little to tell."
+  },
+  "coachGoalWorse": "Worse.",
+  "@coachGoalWorse": {
+    "description": "The focus's measure got worse since the session before."
+  },
+  "coachGoalNotMeasured": "Not measured in this session.",
+  "@coachGoalNotMeasured": {
+    "description": "Too few laps of either session have the focus's measure at that corner."
+  },
   "coachReasonReady": "Work on the main focus first. Try the others only once it feels settled.",
   "@coachReasonReady": {
     "description": "Above the coach items."
