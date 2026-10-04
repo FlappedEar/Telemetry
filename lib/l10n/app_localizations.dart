@@ -2070,7 +2070,7 @@ abstract class AppLocalizations {
   /// Explains the car card.
   ///
   /// In en, this message translates to:
-  /// **'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.'**
+  /// **'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.'**
   String get channelCarIntro;
 
   /// A channel whose recording gives no unit.
@@ -3395,7 +3395,7 @@ abstract class AppLocalizations {
   /// Example conditions in the empty text field.
   ///
   /// In en, this message translates to:
-  /// **'Dry, 18 °C'**
+  /// **'Dry, 18 °C'**
   String get sessionDetailsConditionsHint;
 
   /// Text field label and list label: what was changed on the car before the session.
@@ -4127,7 +4127,7 @@ abstract class AppLocalizations {
   /// A lap's coasting: its time, distance, episodes and share of the lap time.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)'**
+  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)'**
   String drivingCoastingSummaryLap(
     String seconds,
     String meters,
@@ -4138,7 +4138,7 @@ abstract class AppLocalizations {
   /// A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)'**
+  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)'**
   String drivingCoastingSummaryStretch(
     String seconds,
     String meters,
@@ -4232,7 +4232,7 @@ abstract class AppLocalizations {
   /// Under the G-G diagram.
   ///
   /// In en, this message translates to:
-  /// **'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.'**
+  /// **'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.'**
   String get drivingGgNote;
 
   /// Top of the G-G diagram.
@@ -6007,7 +6007,7 @@ abstract class AppLocalizations {
   /// How fast the two recordings' clocks drift apart, in parts per million, as measured.
   ///
   /// In en, this message translates to:
-  /// **'Clock drift: {ppm} ppm'**
+  /// **'Clock drift: {ppm} ppm'**
   String clockDrift(String ppm);
 
   /// Evidence of a clock check: how closely the two speed traces match, over how long both recordings run, and how many stretches of that overlap give the same offset.

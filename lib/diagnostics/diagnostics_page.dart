@@ -12,7 +12,7 @@ import 'app_errors.dart';
 String diagnosticDuration(Duration duration) {
   final milliseconds = duration.inMicroseconds / 1000.0;
   return milliseconds < 1000
-      ? '${milliseconds.round()} ms'
+      ? '${milliseconds.round()}\u00a0ms'
       : '${(milliseconds / 1000).toStringAsFixed(2)}\u00a0s';
 }
 

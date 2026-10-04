@@ -1405,7 +1405,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelCarIntro =>
-      'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.';
+      'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.';
 
   @override
   String get channelUnitsNotDeclared => 'units not declared by the recording';
@@ -2304,7 +2304,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailsConditions => 'Conditions';
 
   @override
-  String get sessionDetailsConditionsHint => 'Dry, 18 °C';
+  String get sessionDetailsConditionsHint => 'Dry, 18 °C';
 
   @override
   String get sessionDetailsSetup => 'Setup changes';
@@ -2748,7 +2748,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count episodes',
       one: '1 episode',
     );
-    return '$seconds s · $meters m over $_temp0 ($share % of the lap)';
+    return '$seconds s · $meters m over $_temp0 ($share % of the lap)';
   }
 
   @override
@@ -2764,7 +2764,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count episodes',
       one: '1 episode',
     );
-    return '$seconds s · $meters m over $_temp0 ($share % of the stretch)';
+    return '$seconds s · $meters m over $_temp0 ($share % of the stretch)';
   }
 
   @override
@@ -2823,7 +2823,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get drivingGgNote =>
-      'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.';
+      'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.';
 
   @override
   String get drivingGgAccelerating => 'accelerating';
@@ -3956,7 +3956,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String clockDrift(String ppm) {
-    return 'Clock drift: $ppm ppm';
+    return 'Clock drift: $ppm ppm';
   }
 
   @override

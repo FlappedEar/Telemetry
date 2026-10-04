@@ -1425,7 +1425,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get channelCarIntro =>
-      'Każda sesja osobno, w kolejności nagrania. Przerwy w nagraniu nigdy nie są uzupełniane; nieprawdopodobne odczyty i zastępcze zera są pomijane i liczone. Chłodzenie to ciągle nagrany spadek o co najmniej 5° w ciągu co najmniej 30 s.';
+      'Każda sesja osobno, w kolejności nagrania. Przerwy w nagraniu nigdy nie są uzupełniane; nieprawdopodobne odczyty i zastępcze zera są pomijane i liczone. Chłodzenie to ciągle nagrany spadek o co najmniej 5° w ciągu co najmniej 30 s.';
 
   @override
   String get channelUnitsNotDeclared => 'nagranie nie podaje jednostki';
@@ -2353,7 +2353,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get sessionDetailsConditions => 'Warunki';
 
   @override
-  String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
+  String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
 
   @override
   String get sessionDetailsSetup => 'Zmiany w ustawieniach';
@@ -2800,7 +2800,7 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count epizodach',
       one: '1 epizodzie',
     );
-    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
+    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
   }
 
   @override
@@ -2816,7 +2816,7 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count epizodach',
       one: '1 epizodzie',
     );
-    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
+    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
   }
 
   @override
@@ -2875,7 +2875,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingGgNote =>
-      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
+      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
 
   @override
   String get drivingGgAccelerating => 'przyspieszanie';
@@ -4033,7 +4033,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String clockDrift(String ppm) {
-    return 'Dryf zegara: $ppm ppm';
+    return 'Dryf zegara: $ppm ppm';
   }
 
   @override

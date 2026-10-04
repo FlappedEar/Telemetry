@@ -2091,7 +2091,7 @@
   "@channelCarNoChannels": {
     "description": "Car card without temperature channels."
   },
-  "channelCarIntro": "Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.",
+  "channelCarIntro": "Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.",
   "@channelCarIntro": {
     "description": "Explains the car card."
   },
@@ -3473,7 +3473,7 @@
   "@sessionDetailsConditions": {
     "description": "Text field label and list label: the weather and track conditions of a session."
   },
-  "sessionDetailsConditionsHint": "Dry, 18 °C",
+  "sessionDetailsConditionsHint": "Dry, 18 °C",
   "@sessionDetailsConditionsHint": {
     "description": "Example conditions in the empty text field."
   },
@@ -4072,7 +4072,7 @@
   "@drivingCoastingUnavailable": {
     "description": "Why a lap's coasting is unknown."
   },
-  "drivingCoastingSummaryLap": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)",
+  "drivingCoastingSummaryLap": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)",
   "@drivingCoastingSummaryLap": {
     "description": "A lap's coasting: its time, distance, episodes and share of the lap time.",
     "placeholders": {
@@ -4094,7 +4094,7 @@
       }
     }
   },
-  "drivingCoastingSummaryStretch": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)",
+  "drivingCoastingSummaryStretch": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)",
   "@drivingCoastingSummaryStretch": {
     "description": "A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.",
     "placeholders": {
@@ -4208,7 +4208,7 @@
   "@drivingSamples": {
     "description": "Row of the G-G table: the number of G pairs."
   },
-  "drivingGgNote": "Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap's peaks.",
+  "drivingGgNote": "Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap's peaks.",
   "@drivingGgNote": {
     "description": "Under the G-G diagram."
   },
@@ -5853,7 +5853,7 @@
       }
     }
   },
-  "clockDrift": "Clock drift: {ppm} ppm",
+  "clockDrift": "Clock drift: {ppm} ppm",
   "@clockDrift": {
     "description": "How fast the two recordings' clocks drift apart, in parts per million, as measured.",
     "placeholders": {
