@@ -53,7 +53,7 @@ extension CoachText on AppLocalizations {
     CoachReason.noFasterLap => coachReasonNoFasterLap(session),
     CoachReason.noPedals => coachReasonNoPedals,
     CoachReason.noPattern => coachReasonNoPattern,
-    CoachReason.tooFewLaps => coachReasonTooFewLaps(session),
+    CoachReason.tooFewLaps => coachReasonTooFewLaps,
     CoachReason.belowThreshold => coachReasonBelowThreshold,
   };
 
