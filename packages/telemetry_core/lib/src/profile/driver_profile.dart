@@ -245,9 +245,12 @@ final class ProfileDayInput {
     String? trackName,
   }) {
     final ranking = analysis.ranking;
+    // Each run's best lap from the ranking of its own group, so a session
+    // on another layout that day keeps its best lap too.
     final best = <String, double?>{
-      for (final run in ranking?.runs ?? const <RunRanking>[])
-        run.runId: run.bestLap?.durationSeconds,
+      for (final group in analysis.groups)
+        for (final run in group.ranking?.runs ?? const <RunRanking>[])
+          run.runId: run.bestLap?.durationSeconds,
     };
     final order = <String>[];
     final names = <String, String>{};
@@ -317,12 +320,14 @@ ProfileTrack? matchProfileTrack(DriverProfile profile, RouteShape route) =>
 
 /// [profile] with [day] added, or updated when its event is already there.
 ///
-/// A new day is driven in the car of the day added last ([lastCarId]), else
+/// A new day is driven in the car of the day added or moved to another car
+/// last ([DriverProfile.lastCarId]), else
 /// the first car, else a new car named [defaultCarName]: adding a day never
 /// asks. An updated day keeps its car. Its track is the profile track its
 /// route matches; a route no track matches adds a track named
 /// [ProfileDayInput.trackName] or [defaultTrackName]. An updated day whose
-/// route still matches its track keeps it.
+/// route still matches its track, or that has no route, keeps it. Throws
+/// [ProfileFormatError] for text or times [decodeDriverProfile] would refuse.
 DriverProfile addDayToProfile(
   DriverProfile profile,
   ProfileDayInput day, {
@@ -351,7 +356,9 @@ DriverProfile addDayToProfile(
     }
   }
 
-  String? trackId;
+  // Without a route (recordings missing, every lap left out) the day keeps
+  // the track it had: the profile is authoritative for it.
+  var trackId = existing?.trackId;
   final route = day.route;
   if (route != null) {
     final kept = existing?.trackId == null ? null : profile.track(existing!.trackId!);
@@ -374,6 +381,18 @@ DriverProfile addDayToProfile(
     }
   }
 
+  _checkText(day.eventId, 'day event id', allowEmpty: false);
+  _checkFile(day.file);
+  _checkText(day.name, 'day name');
+  _checkMilliseconds(day.startMilliseconds, 'day start');
+  if (day.sessions.length > maximumDayRuns) {
+    throw const ProfileFormatError('The profile has too many sessions.');
+  }
+  for (final session in day.sessions) {
+    _checkText(session.runId, 'session run id', allowEmpty: false);
+    _checkText(session.name, 'session name');
+    _checkMilliseconds(session.startMilliseconds, 'session start');
+  }
   final entry = ProfileDay(
     eventId: day.eventId,
     file: day.file,
@@ -392,7 +411,14 @@ DriverProfile addDayToProfile(
     }
     days.add(entry);
   }
-  return profile._copy(cars: cars, tracks: tracks, days: days, lastCarId: carId);
+  // Only a new day sets the car new days take: adding a day again, such
+  // as when it is opened, never changes it.
+  return profile._copy(
+    cars: cars,
+    tracks: tracks,
+    days: days,
+    lastCarId: existing == null ? carId : profile.lastCarId,
+  );
 }
 
 /// [profile] with a new car named [name]; the car is the last element of
@@ -636,7 +662,7 @@ RouteShape _route(Object? value) {
     points: List.unmodifiable([
       for (final point in points)
         if (point is List && point.length == 2)
-          MetricPoint(_double(point[0], 'route point'), _double(point[1], 'route point'))
+          MetricPoint(_coordinate(point[0]), _coordinate(point[1]))
         else
           throw const ProfileFormatError('A track route has an invalid point.'),
     ]),
@@ -647,7 +673,7 @@ ProfileDay _day(Object? value) {
   final json = _map(value, 'day');
   return ProfileDay(
     eventId: _string(json['eventId'], 'day event id', allowEmpty: false),
-    file: _string(json['file'], 'day file', allowEmpty: false),
+    file: _checkFile(_string(json['file'], 'day file', allowEmpty: false)),
     name: _string(json['name'], 'day name'),
     carId: _string(json['carId'], 'day car', allowEmpty: false),
     trackId: _optionalString(json['trackId'], 'day track'),
@@ -717,6 +743,61 @@ String? _optionalString(Object? value, String what) =>
 int? _optionalInt(Object? value, String what) {
   if (value == null) return null;
   if (value is! int) throw ProfileFormatError('The $what is not a whole number.');
+  return _checkMilliseconds(value, what);
+}
+
+/// The furthest time a [DateTime] holds, in milliseconds either side of 1970.
+const _maximumMilliseconds = 8640000000000000;
+
+int? _checkMilliseconds(int? value, String what) {
+  if (value != null && value.abs() > _maximumMilliseconds) {
+    throw ProfileFormatError('The $what is out of range.');
+  }
+  return value;
+}
+
+void _checkText(String value, String what, {bool allowEmpty = true}) =>
+    _string(value, what, allowEmpty: allowEmpty);
+
+/// [file] when it is a relative path inside the profile's folder.
+String _checkFile(String file) {
+  _checkText(file, 'day file', allowEmpty: false);
+  final parts = file.split(RegExp(r'[\\/]'));
+  if (file.startsWith('/') ||
+      file.startsWith(r'\') ||
+      RegExp(r'^[A-Za-z]:').hasMatch(file) ||
+      parts.any((part) => part == '..' || part.isEmpty)) {
+    throw const ProfileFormatError('A day file is not inside the profile.');
+  }
+  return file;
+}
+
+/// A route point's coordinate: at most 50 km from the origin, as a route is
+/// at most 30 km long.
+double _coordinate(Object? value) {
+  final metres = _double(value, 'route point');
+  if (metres.abs() > 50000) throw const ProfileFormatError('A track route point is too far.');
+  return metres;
+}
+
+/// The deepest nesting of a value kept from a newer version.
+const _maximumUnknownDepth = 64;
+
+/// [value] when it nests at most [_maximumUnknownDepth] deep, checked
+/// without recursion, so writing it back cannot overflow the stack.
+Object? _bounded(Object? value) {
+  final pending = <(Object?, int)>[(value, 1)];
+  while (pending.isNotEmpty) {
+    final (item, depth) = pending.removeLast();
+    if (item is! Map && item is! List) continue;
+    if (depth > _maximumUnknownDepth) {
+      throw const ProfileFormatError('The profile nests too deeply.');
+    }
+    final children = item is Map ? item.values : item as List;
+    for (final child in children) {
+      pending.add((child, depth + 1));
+    }
+  }
   return value;
 }
 
@@ -740,5 +821,5 @@ void _unique(List<String> ids, String what) {
 
 Map<String, Object?> _without(Map<String, Object?> json, List<String> known) => {
   for (final MapEntry(:key, :value) in json.entries)
-    if (!known.contains(key)) key: value,
+    if (!known.contains(key)) key: _bounded(value),
 };

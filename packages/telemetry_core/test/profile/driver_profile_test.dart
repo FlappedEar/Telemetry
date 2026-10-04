@@ -111,13 +111,62 @@ void main() {
 
     test('adding a day again updates it and keeps its car and track', () {
       var profile = _add(DriverProfile.empty(Random(1)), _day('a'));
-      profile = addProfileCar(profile, 'Civic', random: Random(2));
       final first = profile.cars.first.id;
+      profile = addProfileCar(profile, 'Civic', random: Random(2));
+      final civic = profile.cars.last.id;
+      profile = _add(profile, _day('b', start: 1759132800000));
+      profile = setProfileDayCar(profile, 'b', civic);
+      expect(profile.lastCarId, civic);
       profile = _add(profile, _day('a', sessions: 3));
-      expect(profile.days, hasLength(1));
-      expect(profile.days.single.sessions, hasLength(3));
-      expect(profile.days.single.carId, first);
+      expect(profile.days, hasLength(2));
+      expect(profile.day('a')!.sessions, hasLength(3));
+      expect(profile.day('a')!.carId, first);
       expect(profile.tracks, hasLength(1));
+      // Adding an older day again does not change the car new days take.
+      expect(profile.lastCarId, civic);
+      profile = _add(profile, _day('c', start: 1759219200000));
+      expect(profile.day('c')!.carId, civic);
+    });
+
+    test('a day added again without a route keeps its track', () {
+      var profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final track = profile.day('a')!.trackId;
+      expect(track, isNotNull);
+      profile = _add(
+        profile,
+        ProfileDayInput(eventId: 'a', file: 'Days/a.fetproject', name: 'Day a'),
+      );
+      expect(profile.day('a')!.trackId, track);
+      expect(earlierVisits(profile, track!), hasLength(1));
+    });
+
+    test('refuses a day the profile could not read back', () {
+      final profile = DriverProfile.empty(Random(1));
+      void refused(ProfileDayInput day) =>
+          expect(() => _add(profile, day), throwsA(isA<ProfileFormatError>()));
+      refused(ProfileDayInput(eventId: ' ', file: 'Days/a.fetproject', name: 'Day'));
+      refused(ProfileDayInput(eventId: 'a', file: 'Days/a.fetproject', name: 'a\u0000b'));
+      refused(ProfileDayInput(eventId: 'a', file: '../a.fetproject', name: 'Day'));
+      refused(ProfileDayInput(eventId: 'a', file: '/tmp/a.fetproject', name: 'Day'));
+      refused(ProfileDayInput(eventId: 'a', file: r'C:\a.fetproject', name: 'Day'));
+      refused(
+        ProfileDayInput(
+          eventId: 'a',
+          file: 'Days/a.fetproject',
+          name: 'Day',
+          startMilliseconds: 9007199254740991,
+        ),
+      );
+      refused(
+        ProfileDayInput(
+          eventId: 'a',
+          file: 'Days/a.fetproject',
+          name: 'Day',
+          sessions: [
+            for (var i = 0; i <= maximumDayRuns; ++i) ProfileSession(runId: 'r$i', name: 'S'),
+          ],
+        ),
+      );
     });
 
     test('a day without complete laps has no track', () {
@@ -276,6 +325,23 @@ void main() {
           for (var i = 0; i <= maximumProfileCars; ++i) {'id': 'c$i', 'name': 'Car'},
         ];
         rejected(jsonEncode(valid), 'too many cars');
+      });
+      test('unknown values nested too deeply', () {
+        // Written by hand: encoding it here would overflow the stack too.
+        final deep = '${'[' * 10000}${']' * 10000}';
+        rejected(jsonEncode(valid).replaceFirst('{', '{"future":$deep,'), 'nests too deeply');
+      });
+      test('route points too far to write back', () {
+        (route()['points'] as List)[0] = [1e308, 0];
+        rejected(jsonEncode(valid), 'too far');
+      });
+      test('times a date cannot hold', () {
+        day()['startMilliseconds'] = 9007199254740991;
+        rejected(jsonEncode(valid), 'out of range');
+      });
+      test('a day file outside the profile', () {
+        day()['file'] = '../../x.fetproject';
+        rejected(jsonEncode(valid), 'not inside the profile');
       });
     });
   });

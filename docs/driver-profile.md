@@ -58,7 +58,11 @@ version does not know, so a newer app's additions survive a re-save.
 
 Limits: 64 cars, 1024 tracks, 10 000 days, 64 sessions a day, 4096 code units a
 text. A day names a car and (unless `null`) a track of the profile; ids are
-unique. A profile written by a newer version is refused, never rewritten.
+unique. `file` is a relative path inside the profile folder (no `..`).
+Times are within the range a date can hold; route points are within 50 km of
+the origin; values kept from a newer version nest at most 64 deep. Adding a day
+refuses what reading would refuse, so the app never writes a profile it cannot
+read back. A profile written by a newer version is refused, never rewritten.
 
 ## Tracks across days
 
@@ -68,13 +72,16 @@ the track: the 256-point lap shape from track inference, in metres east and
 north of the start line, rounded to 0.1 m. A new day's route belongs to the
 first track it matches with `routesMatch` (same direction, length within 5 %,
 every point within 25 m of the other path, RMS at most 10 m); a route no track
-matches adds a track.
+matches adds a track. A day added again without a route (recordings missing,
+every lap left out) keeps its track. The first match wins; choosing the closest
+of several matching tracks, and merging tracks, are left for later.
 
 ## Cars
 
-Adding a day never asks. A new day takes the car of the day added or changed
-last (`lastCarId`), else the first car, else a new car with the name the app
-passes (`defaultCarName`). A day added again keeps its car.
+Adding a day never asks. A new day takes the car of the last new day or the
+last day moved to another car (`lastCarId`), else the first car, else a new car
+with the name the app passes (`defaultCarName`). A day added again keeps its car
+and does not change `lastCarId`.
 
 ## The library tree
 
