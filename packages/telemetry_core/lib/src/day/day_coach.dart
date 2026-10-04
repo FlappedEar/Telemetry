@@ -697,6 +697,8 @@ double? _liftProgress(
   final times = channel.timestamps, values = channel.values;
   final scale = _throttleScale(channel);
   final high = 0.20 * scale, low = 0.08 * scale;
+  // The throttle's scale heuristic suits the brake: a measured braking
+  // (needed for the window) has the brake in % (see brakingUnitMismatch).
   final braking = 0.10 * _throttleScale(brake);
   // The slowest the car has been since [fromTime] or the last reset.
   var slowest = double.infinity;
