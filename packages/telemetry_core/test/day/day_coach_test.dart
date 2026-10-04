@@ -171,6 +171,69 @@ void main() {
     expect(finding.evidence.map((e) => e.key), contains(CoachMetric.coastDistance));
   });
 
+  test('a coast held at light throttle is not coasting', () {
+    // The same stretch as above, with the throttle held at 5 %: the driving
+    // states call it coasting (below 8 %), the coach does not.
+    void light(String runId, TelemetrySession session) {
+      if (runId != 'run2') return;
+      _edit(session, 'throttle', 5, (d) => d >= 20 && d < 60);
+      _edit(session, 'brake', 0, (d) => d >= 20 && d < 60);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: light);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+  });
+
+  // The latest session's first lap brakes 20 m early and its third about
+  // 25 m late into the first corner (and, with [second], the second).
+  void Function(String, TelemetrySession) spread({bool second = false}) => (runId, session) {
+    if (runId != 'run2') return;
+    for (final at in [0.0, if (second) 287.0]) {
+      _edit(session, 'brake', 30, (d) => d >= at && d < at + 20, lap: 1);
+      _edit(session, 'brake', 0, (d) => d >= at + 15 && d < at + 45, lap: 3);
+    }
+  };
+
+  test('braking points spread over a session suggest one marker', () {
+    // The earlier laps are a little faster, not enough for another pattern.
+    final coach = _coach([17.3, 17.4, 17.3], [17, 17.2, 17.1], edit: spread());
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.inconsistentBraking);
+    expect(finding.affectedLaps.map((lap) => (lap.runId, lap.lapNumber)), [
+      ('run2', 1),
+      ('run2', 2),
+      ('run2', 3),
+    ]);
+    expect(finding.evidence.map((e) => e.key), [
+      CoachMetric.brakingSpread,
+      CoachMetric.brakingStart,
+      CoachMetric.segmentTime,
+    ]);
+    // About 44 m in this session; the day's three fastest laps agree.
+    expect(finding.evidence.first.observed, greaterThan(40));
+    expect(finding.evidence.first.reference, lessThan(5));
+    expect(finding.evidence.first.referenceLaps, hasLength(3));
+    expect(finding.confidence, closeTo(0.83, 1e-9));
+    final item = coach.plan.singleWhere((i) => i.finding == finding);
+    expect(item.title, endsWith('— Brake at the same point every lap'));
+    expect(item.action, startsWith('Pick one braking marker'));
+  });
+
+  test('braking points that agree make no braking item', () {
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1]);
+    expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);
+  });
+
+  test('one braking marker at a time in the plan', () {
+    final coach = _coach(
+      [17.3, 17.4, 17.3],
+      [17, 17.2, 17.1],
+      edit: spread(second: true),
+      shape: _twoCorners,
+    );
+    expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), hasLength(2));
+    expect(coach.plan.where((i) => i.finding.kind == CoachKind.inconsistentBraking), hasLength(1));
+  });
+
   test('a faster lap whose brake drops out has no coast, not a zero coast', () {
     void coastAndDropout(String runId, TelemetrySession session) {
       if (runId == 'run2') {

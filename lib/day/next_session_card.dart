@@ -17,6 +17,7 @@ extension CoachText on AppLocalizations {
     CoachKind.excessiveCoasting => coachKindExcessiveCoasting,
     CoachKind.lowMinimumSpeed => coachKindLowMinimumSpeed,
     CoachKind.lateThrottle => coachKindLateThrottle,
+    CoachKind.inconsistentBraking => coachKindInconsistentBraking,
     CoachKind.improving => coachKindImproving,
   };
 
@@ -26,6 +27,7 @@ extension CoachText on AppLocalizations {
     CoachKind.excessiveCoasting => coachActionExcessiveCoasting,
     CoachKind.lowMinimumSpeed => coachActionLowMinimumSpeed,
     CoachKind.lateThrottle => coachActionLateThrottle,
+    CoachKind.inconsistentBraking => coachActionInconsistentBraking,
     CoachKind.improving => coachActionImproving,
   };
 
@@ -38,6 +40,7 @@ extension CoachText on AppLocalizations {
     CoachMetric.exitSpeed => coachMetricExitSpeed,
     CoachMetric.brakingStart => coachMetricBrakingStart,
     CoachMetric.coastDistance => coachMetricCoastDistance,
+    CoachMetric.brakingSpread => coachMetricBrakingSpread,
   };
 
   /// Why the plan is what it is; [session] names the session coached.

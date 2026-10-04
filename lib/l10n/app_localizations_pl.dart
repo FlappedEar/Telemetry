@@ -205,6 +205,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachKindLateThrottle => 'Wcześniej wróć na gaz';
 
   @override
+  String get coachKindInconsistentBraking =>
+      'Hamuj w tym samym miejscu na każdym okrążeniu';
+
+  @override
   String get coachKindImproving => 'Utrzymaj obecny sposób jazdy';
 
   @override
@@ -227,6 +231,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get coachActionLateThrottle =>
       'Pracuj nad płynnym, nieco wcześniejszym ponownym dodaniem gazu po najwolniejszym punkcie. Wzoruj się na swoich szybszych okrążeniach.';
+
+  @override
+  String get coachActionInconsistentBraking =>
+      'Wybierz jeden punkt odniesienia do hamowania i hamuj przy nim na każdym okrążeniu. Przesuń go dopiero, gdy trafiasz w niego regularnie.';
 
   @override
   String get coachActionImproving =>
@@ -271,6 +279,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachMetricCoastDistance => 'Dystans jazdy bez gazu i hamulca';
+
+  @override
+  String get coachMetricBrakingSpread => 'Rozrzut punktu hamowania';
 
   @override
   String get coachReasonReady =>

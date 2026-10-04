@@ -404,6 +404,12 @@ abstract class AppLocalizations {
   /// **'Return to throttle sooner'**
   String get coachKindLateThrottle;
 
+  /// Coach item heading: the session's braking points at a corner are spread out.
+  ///
+  /// In en, this message translates to:
+  /// **'Brake at the same point every lap'**
+  String get coachKindInconsistentBraking;
+
   /// Coach item title: an improvement over the last laps to keep.
   ///
   /// In en, this message translates to:
@@ -439,6 +445,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.'**
   String get coachActionLateThrottle;
+
+  /// What to try when the braking points at a corner are spread out. A marker is a fixed point beside the track (a board, a cone, a kerb).
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one braking marker and brake at it every lap. Move it only once you hit it consistently.'**
+  String get coachActionInconsistentBraking;
 
   /// What to keep for an improvement.
   ///
@@ -511,6 +523,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coast distance'**
   String get coachMetricCoastDistance;
+
+  /// How far apart the braking starts at a corner are, from the earliest to the latest.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point spread'**
+  String get coachMetricBrakingSpread;
 
   /// Above the coach items.
   ///

@@ -268,6 +268,10 @@
   "@coachKindLateThrottle": {
     "description": "Coach item title: throttle back on later than on faster laps."
   },
+  "coachKindInconsistentBraking": "Brake at the same point every lap",
+  "@coachKindInconsistentBraking": {
+    "description": "Coach item heading: the session's braking points at a corner are spread out."
+  },
   "coachKindImproving": "Keep current approach",
   "@coachKindImproving": {
     "description": "Coach item title: an improvement over the last laps to keep."
@@ -301,6 +305,10 @@
   "coachActionLateThrottle": "Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.",
   "@coachActionLateThrottle": {
     "description": "What to try for a late throttle return."
+  },
+  "coachActionInconsistentBraking": "Pick one braking marker and brake at it every lap. Move it only once you hit it consistently.",
+  "@coachActionInconsistentBraking": {
+    "description": "What to try when the braking points at a corner are spread out. A marker is a fixed point beside the track (a board, a cone, a kerb)."
   },
   "coachActionImproving": "Keep the approach from your latest laps. Repeat it before making another change.",
   "@coachActionImproving": {
@@ -391,6 +399,10 @@
   "coachMetricCoastDistance": "Coast distance",
   "@coachMetricCoastDistance": {
     "description": "The distance driven with neither pedal pressed."
+  },
+  "coachMetricBrakingSpread": "Braking point spread",
+  "@coachMetricBrakingSpread": {
+    "description": "How far apart the braking starts at a corner are, from the earliest to the latest."
   },
   "coachReasonReady": "Work on the main focus first. Try the others only once it feels settled.",
   "@coachReasonReady": {

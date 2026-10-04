@@ -199,6 +199,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachKindLateThrottle => 'Return to throttle sooner';
 
   @override
+  String get coachKindInconsistentBraking =>
+      'Brake at the same point every lap';
+
+  @override
   String get coachKindImproving => 'Keep current approach';
 
   @override
@@ -221,6 +225,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get coachActionLateThrottle =>
       'Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.';
+
+  @override
+  String get coachActionInconsistentBraking =>
+      'Pick one braking marker and brake at it every lap. Move it only once you hit it consistently.';
 
   @override
   String get coachActionImproving =>
@@ -264,6 +272,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachMetricCoastDistance => 'Coast distance';
+
+  @override
+  String get coachMetricBrakingSpread => 'Braking point spread';
 
   @override
   String get coachReasonReady =>
