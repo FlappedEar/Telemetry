@@ -556,7 +556,16 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     ];
     final progress = SizedBox(
       height: 4,
-      child: busy ? const LinearProgressIndicator() : null,
+      // Said when it appears: the strip alone says nothing to a screen
+      // reader.
+      child: busy
+          ? Semantics(
+              liveRegion: true,
+              child: LinearProgressIndicator(
+                semanticsLabel: context.l10n.segmentEditorTiming,
+              ),
+            )
+          : null,
     );
     return LayoutBuilder(
       builder: (context, constraints) {
