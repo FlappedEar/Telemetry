@@ -29,7 +29,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String trackDialogTitle(String session) {
-    return 'Tor: $session';
+    return '$session';
   }
 
   @override

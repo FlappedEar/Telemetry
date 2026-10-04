@@ -5,7 +5,7 @@
   "directionCounterclockwise": "Przeciwnie do ruchu wskazówek zegara",
   "directionClockwiseInSentence": "zgodnie z ruchem wskazówek zegara",
   "directionCounterclockwiseInSentence": "przeciwnie do ruchu wskazówek zegara",
-  "trackDialogTitle": "Tor: {session}",
+  "trackDialogTitle": "{session}",
   "trackDialogNoRoute": "Nie wykryto trasy: {reason}",
   "trackDialogNoLaps": "brak okrążeń",
   "trackDialogDetectedRoute": "Wykryta trasa: {length} m, {direction} (na podstawie GPS).",
