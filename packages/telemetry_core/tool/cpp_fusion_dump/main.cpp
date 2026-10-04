@@ -451,6 +451,12 @@ QJsonObject fusionCases()
     // Units compare trimmed and case-insensitively.
     cases.insert("unitCase", fusionCase("unitCase", primary, {{"rcz", fusionAlternative(0.0, " KM/H "), five}},
         rule("speed", "rcz", FusionRule::FillGaps)));
+    // A unit only one side declares (KAN-184): agreeing values are compared and
+    // fused, disagreeing ones are a unit mismatch.
+    cases.insert("unitUndeclaredAgree", fusionCase("unitUndeclaredAgree", primary,
+        {{"rcz", fusionAlternative(0.5, ""), five}}, rule("speed", "rcz", FusionRule::FillGaps)));
+    cases.insert("unitUndeclaredConflict", fusionCase("unitUndeclaredConflict", primary,
+        {{"rcz", fusionAlternative(8.0, ""), five}}, rule("speed", "rcz", FusionRule::FillGaps)));
     // Two alternatives: the second's rule applies while the first left the
     // channel the primary's; an added channel is not compared again.
     {
@@ -475,8 +481,8 @@ QJsonObject fusionCases()
         cases.insert("keysAndNames", fusionCase("keysAndNames", primary, {{"rcz", alternative, five}},
             rule("lateralAcceleration", "rcz", FusionRule::FillGaps)));
     }
-    // Temperatures: "C" has a fixed tolerance (2), "°C" falls back to 5 % of
-    // the range (about 2.4 here), so a 2.2 difference conflicts only in "oil".
+    // Temperatures: "C" and, since KAN-184, "°C" have a fixed tolerance (2),
+    // so a 2.2 difference conflicts in both.
     {
         auto withTemperatures = primary;
         add(withTemperatures, makeChannel("oil", "C", 0.0, 100.0, 1.0, [](double t) { return 100.0 + 0.5 * t; }));

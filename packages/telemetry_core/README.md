@@ -286,8 +286,9 @@ a background isolate.
   added, one both have keeps the primary unless a `FusionPolicy` rule
   (`primaryOnly`, `fillGaps`, `preferAlternative`) says otherwise, a
   disagreement without a rule is reported as unresolved
-  (`fusionConflictTolerance`), units must match exactly and samples are
-  never resampled; every output segment keeps its source and clock.
+  (`fusionConflictTolerance`), units must match exactly (a unit only one side
+  declares, as VBO channels declare none, counts as matching when at least
+  10 samples agree; KAN-184) and samples are never resampled; every output segment keeps its source and clock.
   `fusedSession` gives the primary session with the fusion applied.
 - A day's source fusion without a review (`day_fusion.dart`, FET-51):
   `importedAlternatives` names the RCZ grouped under each VBO run;
@@ -373,7 +374,8 @@ states and coasting (`GgPairs.cpp`, `DrivingStates.cpp`,
 `test/parity/driving` (`tool/generate_driving_corpus.py`).
 `test/parity/fusion_parity_test.dart` does the same for recording alignment
 and channel fusion (`TelemetrySyncEngine.cpp`, `RecordingAlignment.cpp` and
-`ChannelFusion.cpp`, `d4d1039`) against `test/parity/fusion_reference.json`
+`ChannelFusion.cpp`, `d4d1039`, with KAN-184 from `f7111ba`) against
+`test/parity/fusion_reference.json`
 from `tool/cpp_fusion_dump`, over synthetic sessions built identically on
 both sides; every value is equal, with no tolerance.
 

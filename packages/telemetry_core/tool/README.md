@@ -746,7 +746,7 @@ periodic, flat and unrelated traces, no speed, insufficient overlap and too
 few samples; `fuseChannels` and `fusedSession` on the sessions of
 `ChannelFusionTests.cpp` under no rule, `primaryOnly`, `fillGaps` and
 `preferAlternative` (with drift and a fractional offset), unresolved
-conflicts, refused sources, unit mismatches and case, two alternatives,
+conflicts, refused sources, unit mismatches, case and units only one side declares, two alternatives,
 alias and name clashes, temperatures and missing values; and
 `fusionConflictTolerance` for fixed units. `inputs` holds a digest of every
 input session. The synthetic traces use a sine made of `+ - * /` and
@@ -789,5 +789,6 @@ FET_FUSION_DAY=<folder> FET_FUSION_REFERENCE=/tmp/fusion_day.json \
 ```
 
 The committed `test/parity/fusion_reference.json` was generated from
-FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
+FlappedEar/Overlay `f7111ba` (KAN-184: units only one side declares, and
+"°C") with Qt 6.8.3 from conda-forge and g++ 13.3 on Ubuntu 24.04; the
 other references are unchanged. Never edit the JSON by hand.

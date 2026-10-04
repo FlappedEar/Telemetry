@@ -44,8 +44,11 @@ TelemetrySession _session(List<(TelemetryChannel, String?)> channels) => Telemet
 double _speedAt(double t) => 100.0 + 20.0 * math.sin(0.1 * t);
 
 // The primary (a VBO): GPS speed, missing from 40 to 50 s.
-TelemetrySession _primary() => _session([
-  (_channel('velocity', 'km/h', 0.0, 100.0, 10.0, _speedAt, (t) => t < 40.0 || t > 50.0), 'speed'),
+TelemetrySession _primary({String speedUnit = 'km/h'}) => _session([
+  (
+    _channel('velocity', speedUnit, 0.0, 100.0, 10.0, _speedAt, (t) => t < 40.0 || t > 50.0),
+    'speed',
+  ),
   (_channel('latacc-calc', 'g', 0.0, 100.0, 10.0, math.sin), 'lateralAcceleration'),
 ]);
 
@@ -270,6 +273,41 @@ void main() {
     expect(fusionConflictTolerance('km/h', 50.0), 2.0);
     expect(fusionConflictTolerance('g', 2.0), 0.05);
     expect(fusionConflictTolerance('bar', 2.0), 0.1);
+    expect(fusionConflictTolerance('\u00b0C', 50.0), 2.0); // KAN-184
+    expect(fusionConflictTolerance(' degC ', 50.0), 2.0);
+  });
+
+  test('compares a channel with an undeclared unit (KAN-184)', () {
+    // VBO channels declare no unit, RCZ channels do.
+    final primary = _primary(speedUnit: '');
+    // Agreeing values: the same unit, compared with km/h's tolerance and fusable.
+    final agreeing = _alternative(speedBias: 1.5);
+    var result = fuseChannels(primary, 'vbo', _rcz(agreeing));
+    expect(result.unitMismatches, isEmpty);
+    expect(_find(result, 'speed')!.comparedSourceId, 'rcz');
+    expect(_find(result, 'speed')!.conflicting, isFalse);
+    final policy = _rule('speed', 'rcz', FusionRule.fillGaps);
+    result = fuseChannels(primary, 'vbo', _rcz(agreeing), policy: policy);
+    expect(_find(result, 'speed')!.rule, 'fillGaps');
+    expect(_find(result, 'speed')!.unit, ''); // the primary's unit is kept
+    // Disagreeing values may be another scale: a mismatch, never fused, even with a rule.
+    result = fuseChannels(primary, 'vbo', _rcz(_alternative(speedBias: 8.0)), policy: policy);
+    expect(result.unitMismatches, ['speed: rcz']);
+    expect(_find(result, 'speed')!.rule, 'primary');
+    expect(_find(result, 'speed')!.comparedSourceId, '');
+    expect(_find(result, 'speed')!.channel.timestamps, primary.channels['velocity']!.timestamps);
+    // Fewer than 10 overlapping samples cannot show the units agree.
+    final brief = fuseChannels(
+      primary,
+      'vbo',
+      _rcz(agreeing, clock: const SourceClock(offsetSeconds: 98.5)),
+      policy: policy,
+    );
+    expect(brief.unitMismatches, ['speed: rcz']);
+    // The undeclared side may be the alternative.
+    result = fuseChannels(_primary(), 'vbo', _rcz(_alternative(speedBias: 1.5, speedUnit: '')));
+    expect(result.unitMismatches, isEmpty);
+    expect(_find(result, 'speed')!.comparedSourceId, 'rcz');
   });
 
   test('the fused session carries the merged and added channels', () {

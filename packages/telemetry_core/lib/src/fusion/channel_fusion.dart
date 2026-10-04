@@ -260,14 +260,14 @@ String _foldCase(String text) {
 /// unit: km/h 2, % 3, g 0.05, C 2, rpm 100; otherwise 5 % of the primary's
 /// range in the overlap.
 ///
-/// Overlays also lists "°c", but as a Latin-1 view of its UTF-8 source, so
-/// that spelling never matches and "°C" takes the 5 % rule; ported as is.
+/// "°C" matches since KAN-184 in both apps (Overlays had compared it with a
+/// Latin-1 view of its UTF-8 source, so it took the 5 % rule).
 double fusionConflictTolerance(String unit, double overlapRange) {
   final u = unit.trim().toLowerCase();
   if (u == 'km/h' || u == 'kmh' || u == 'kph') return 2.0;
   if (u == '%') return 3.0;
   if (u == 'g') return 0.05;
-  if (u == 'c' || u == 'Â°c' || u == 'degc') return 2.0;
+  if (u == 'c' || u == '\u00b0c' || u == 'degc') return 2.0;
   if (u == 'rpm') return 100.0;
   return stdMax(1e-9, 0.05 * overlapRange.abs());
 }
@@ -370,7 +370,9 @@ ChannelFusionResult fuseChannels(
       final fused = result.channels[existing];
       // Already decided by an earlier alternative.
       if (fused.rule != 'primary') continue;
-      if (_foldCase(fused.unit.trim()) != _foldCase(channel.unit.trim())) {
+      final primaryUnit = fused.unit.trim(), alternativeUnit = channel.unit.trim();
+      final oneUndeclared = primaryUnit.isEmpty != alternativeUnit.isEmpty;
+      if (!oneUndeclared && _foldCase(primaryUnit) != _foldCase(alternativeUnit)) {
         result.unitMismatches.add('$key: ${source.sourceId}');
         continue;
       }
@@ -386,15 +388,31 @@ ChannelFusionResult fuseChannels(
         low = stdMin(low, reference);
         high = stdMax(high, reference);
       }
-      fused.comparedSourceId = source.sourceId;
-      fused.comparedSamples = differences.length;
+      var medianDifference = 0.0;
+      var conflicting = false;
       if (differences.isNotEmpty) {
         differences.sort();
-        fused.medianDifference = differences[differences.length ~/ 2];
-        fused.conflicting =
+        medianDifference = differences[differences.length ~/ 2];
+        // An undeclared unit takes the declared side's tolerance.
+        conflicting =
             differences.length >= 10 &&
-            fused.medianDifference > fusionConflictTolerance(fused.unit, high - low);
+            medianDifference >
+                fusionConflictTolerance(
+                  primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
+                  high - low,
+                );
       }
+      // A unit only one side declares (VBO declares none, KAN-184) counts as
+      // the same unit only when at least 10 samples agree; otherwise it is a
+      // mismatch, so values in another scale are never fused.
+      if (oneUndeclared && (differences.length < 10 || conflicting)) {
+        result.unitMismatches.add('$key: ${source.sourceId}');
+        continue;
+      }
+      fused.comparedSourceId = source.sourceId;
+      fused.comparedSamples = differences.length;
+      fused.medianDifference = medianDifference;
+      fused.conflicting = conflicting;
 
       final chosen = policy.rules[key];
       final ruled = chosen != null && chosen.sourceId == source.sourceId;
