@@ -316,7 +316,8 @@ class TrackMap extends StatelessWidget {
         gate: gate,
         referenceColor: scheme.outlineVariant,
         noSpeedColor: scheme.onSurface,
-        gateColor: scheme.error,
+        // Neutral, so the line stays apart from the red loss scale.
+        gateColor: scheme.onSurface,
         pointColor: pointColor,
         marks: marks,
       ),
@@ -557,7 +558,6 @@ class _TiledMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final all = [
       for (final candidate in [path, ?reference])
         for (final segment in candidate.segments)
@@ -639,8 +639,12 @@ class _TiledMap extends StatelessWidget {
                     pathLatLng(path.origin, a.dx, a.dy),
                     pathLatLng(path.origin, b.dx, b.dy),
                   ],
-                  color: scheme.error,
+                  // Black on a white edge: apart from the red loss scale and
+                  // from the white direction arrow drawn on it.
+                  color: Colors.black,
                   strokeWidth: 4,
+                  borderStrokeWidth: 1.5,
+                  borderColor: Colors.white,
                 ),
               ],
             ),

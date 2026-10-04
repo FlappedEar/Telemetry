@@ -135,10 +135,9 @@ void main() {
       final time = tester.widget<Text>(
         find.byKey(ValueKey('sessionBest ${run.runId}')),
       );
-      expect(
-        time.style?.color == FetColors.dark.dayBest,
-        run.bestLap!.reference == best.reference,
-      );
+      final isBest = run.bestLap!.reference == best.reference;
+      expect(time.style?.color == FetColors.dark.dayBest, isBest);
+      expect(time.style?.fontWeight == FontWeight.w700, isBest);
     }
     // On a phone the laps are the second tab.
     await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));

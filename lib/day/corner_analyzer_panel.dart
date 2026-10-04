@@ -1151,7 +1151,7 @@ class SegmentSpeedChart extends StatelessWidget {
                       apexLabel: l10n.cornerAnalyzerApex,
                       unit: unit,
                       cursor: cursor,
-                      cursorColor: theme.colorScheme.tertiary,
+                      cursorColor: theme.colorScheme.onSurface,
                       grid: theme.colorScheme.outlineVariant.withValues(
                         alpha: 0.5,
                       ),

@@ -328,6 +328,7 @@ class DayReportPage extends StatelessWidget {
         for (final (index, area) in areas.indexed) ...[
           const SizedBox(height: 8),
           Text(
+            key: ValueKey('dayReportFocusKind$index'),
             '${_kind(l10n, area['kind'])} · '
             '${l10n.timeLossSegment('${area['name']}')}',
             style: theme.textTheme.labelMedium?.copyWith(
