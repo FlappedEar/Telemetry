@@ -556,6 +556,13 @@ class _ExcludeDialogState extends State<_ExcludeDialog> {
         hintText: context.l10n.lapPageReasonHint,
       ),
       onChanged: (_) => setState(() {}),
+      // Enter excludes, as the button does, once there is a reason.
+      textInputAction: TextInputAction.done,
+      // Enter with no reason keeps the typing where it is.
+      onEditingComplete: () {},
+      onSubmitted: (text) {
+        if (text.trim().isNotEmpty) Navigator.pop(context, text.trim());
+      },
     ),
     actions: [
       TextButton(

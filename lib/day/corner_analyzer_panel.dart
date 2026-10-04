@@ -1119,49 +1119,62 @@ class SegmentSpeedChart extends StatelessWidget {
             child: LayoutBuilder(
               // Sideways drags and taps move the cursor; upward and downward
               // drags scroll the page.
-              builder: (context, constraints) => GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: (details) =>
-                    move(details.localPosition.dx, constraints.maxWidth),
-                onHorizontalDragStart: (details) =>
-                    move(details.localPosition.dx, constraints.maxWidth),
-                onHorizontalDragUpdate: (details) =>
-                    move(details.localPosition.dx, constraints.maxWidth),
-                child: ValueListenableBuilder<double>(
-                  valueListenable: window.cursor,
-                  builder: (context, cursor, _) => CustomPaint(
-                    key: const ValueKey('cornerAnalyzerChartPlot'),
-                    size: Size(constraints.maxWidth, height),
-                    painter: SegmentSpeedPainter(
-                      start: start,
-                      end: end,
-                      segmentStart: segment.startMeters,
-                      segmentEnd: segment.endMeters,
-                      series: series,
-                      markers: markers,
-                      minimumSpeeds: [
-                        for (final slot in const [0, 1])
-                          analysis.cornerSpeeds?[slot].minimum.value,
-                      ],
-                      apexes: apexes,
-                      boundaryNames: corner
-                          ? (l10n.cornerAnalyzerEntry, l10n.cornerAnalyzerExit)
-                          : (l10n.cornerAnalyzerStart, l10n.cornerAnalyzerEnd),
-                      speedLabel: l10n.cornerAnalyzerSpeedAxis,
-                      apexLabel: l10n.cornerAnalyzerApex,
-                      unit: unit,
-                      cursor: cursor,
-                      cursorColor: theme.colorScheme.onSurface,
-                      grid: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.5,
+              // A mouse or a trackpad moves the cursor without a click.
+              builder: (context, constraints) => MouseRegion(
+                key: const ValueKey('cornerAnalyzerChartHover'),
+                cursor: SystemMouseCursors.precise,
+                onHover: (event) =>
+                    move(event.localPosition.dx, constraints.maxWidth),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (details) =>
+                      move(details.localPosition.dx, constraints.maxWidth),
+                  onHorizontalDragStart: (details) =>
+                      move(details.localPosition.dx, constraints.maxWidth),
+                  onHorizontalDragUpdate: (details) =>
+                      move(details.localPosition.dx, constraints.maxWidth),
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: window.cursor,
+                    builder: (context, cursor, _) => CustomPaint(
+                      key: const ValueKey('cornerAnalyzerChartPlot'),
+                      size: Size(constraints.maxWidth, height),
+                      painter: SegmentSpeedPainter(
+                        start: start,
+                        end: end,
+                        segmentStart: segment.startMeters,
+                        segmentEnd: segment.endMeters,
+                        series: series,
+                        markers: markers,
+                        minimumSpeeds: [
+                          for (final slot in const [0, 1])
+                            analysis.cornerSpeeds?[slot].minimum.value,
+                        ],
+                        apexes: apexes,
+                        boundaryNames: corner
+                            ? (
+                                l10n.cornerAnalyzerEntry,
+                                l10n.cornerAnalyzerExit,
+                              )
+                            : (
+                                l10n.cornerAnalyzerStart,
+                                l10n.cornerAnalyzerEnd,
+                              ),
+                        speedLabel: l10n.cornerAnalyzerSpeedAxis,
+                        apexLabel: l10n.cornerAnalyzerApex,
+                        unit: unit,
+                        cursor: cursor,
+                        cursorColor: theme.colorScheme.onSurface,
+                        grid: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                        boundary: theme.colorScheme.outline,
+                        shade: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.06,
+                        ),
+                        ink: theme.colorScheme.onSurfaceVariant,
+                        surface: theme.colorScheme.surfaceContainerLow,
+                        textStyle: painterStyle,
                       ),
-                      boundary: theme.colorScheme.outline,
-                      shade: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.06,
-                      ),
-                      ink: theme.colorScheme.onSurfaceVariant,
-                      surface: theme.colorScheme.surfaceContainerLow,
-                      textStyle: painterStyle,
                     ),
                   ),
                 ),

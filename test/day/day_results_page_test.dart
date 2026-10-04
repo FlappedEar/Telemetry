@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
@@ -284,6 +285,121 @@ void main() {
       expect(best.reference, isNot(second.reference));
     },
   );
+
+  testWidgets('on a desktop, Ctrl+S or Cmd+S saves and Enter excludes a lap', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    final saved = <Map<String, Object?>>[];
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      writer: (path, document) async => saved.add(document),
+    );
+    final documents = FakeDocuments(
+      location: '${directory.path}/Day.fetproject',
+    );
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: documents,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    Future<void> save(LogicalKeyboardKey modifier) async {
+      await tester.sendKeyDownEvent(modifier);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(modifier);
+      await tester.pumpAndSettle();
+    }
+
+    expect(controller.dirty, isTrue);
+    await save(LogicalKeyboardKey.controlLeft);
+    expect(documents.names, ['Day']);
+    expect(saved, hasLength(1));
+    expect(controller.dirty, isFalse);
+    // Nothing more to save: the shortcut does nothing.
+    await save(LogicalKeyboardKey.controlLeft);
+    expect(saved, hasLength(1));
+
+    await tester.tap(find.text('Tap to open the lap.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Exclude from ranking…'));
+    await tester.pumpAndSettle();
+    // Enter with no reason keeps the dialog open.
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isTrue,
+    );
+    await tester.enterText(find.byType(TextField), 'Traffic');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Not ranked: excluded (“Traffic”)'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(controller.dirty, isTrue);
+
+    // Cmd+S on a Mac.
+    await save(LogicalKeyboardKey.metaLeft);
+    expect(saved, hasLength(2));
+    expect(controller.dirty, isFalse);
+  });
+
+  testWidgets('on a wide window, Tab goes through one pane at a time', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.pumpAndSettle();
+    const panes = ['daySections', 'dayResultsSummary', 'dayResultsLaps'];
+    String? paneOf(BuildContext? context) {
+      String? found;
+      context?.visitAncestorElements((element) {
+        final key = element.widget.key;
+        if (key is ValueKey<String> && panes.contains(key.value)) {
+          found = key.value;
+          return false;
+        }
+        return true;
+      });
+      return found;
+    }
+
+    final runs = <String>[];
+    FocusNode? first;
+    // Once round the page.
+    for (var i = 0; i < 300; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final focus = FocusManager.instance.primaryFocus;
+      if (focus == first) break;
+      first ??= focus;
+      final pane = paneOf(FocusManager.instance.primaryFocus?.context);
+      if (pane != null && (runs.isEmpty || runs.last != pane)) runs.add(pane);
+    }
+    // Each pane is gone through in one go, not visited back and forth.
+    expect(runs.toSet(), hasLength(runs.length), reason: '$runs');
+    expect(runs.toSet(), containsAll(panes));
+  });
 
   testWidgets('the circuit dialog speaks Polish on a phone', (tester) async {
     addTearDown(() => Intl.defaultLocale = null);

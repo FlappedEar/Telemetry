@@ -5,6 +5,7 @@ import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -662,24 +663,28 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        NavigationRail(
-          key: const ValueKey('daySections'),
-          selectedIndex: comparing ? 1 : 0,
-          labelType: NavigationRailLabelType.all,
-          onDestinationSelected: (index) => setState(
-            () => _section = index == 1 ? _Section.compare : _Section.day,
+        // Tab moves through one pane at a time, not across the three by
+        // position.
+        FocusTraversalGroup(
+          child: NavigationRail(
+            key: const ValueKey('daySections'),
+            selectedIndex: comparing ? 1 : 0,
+            labelType: NavigationRailLabelType.all,
+            onDestinationSelected: (index) => setState(
+              () => _section = index == 1 ? _Section.compare : _Section.day,
+            ),
+            destinations: [
+              NavigationRailDestination(
+                icon: const Icon(Icons.flag_outlined),
+                selectedIcon: const Icon(Icons.flag),
+                label: Text(context.l10n.daySectionDay),
+              ),
+              NavigationRailDestination(
+                icon: const Icon(Icons.compare_arrows),
+                label: Text(context.l10n.daySectionCompare),
+              ),
+            ],
           ),
-          destinations: [
-            NavigationRailDestination(
-              icon: const Icon(Icons.flag_outlined),
-              selectedIcon: const Icon(Icons.flag),
-              label: Text(context.l10n.daySectionDay),
-            ),
-            NavigationRailDestination(
-              icon: const Icon(Icons.compare_arrows),
-              label: Text(context.l10n.daySectionCompare),
-            ),
-          ],
         ),
         const VerticalDivider(width: 1),
         if (comparing)
@@ -703,28 +708,32 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: ListView(
-                      key: const ValueKey('dayResultsSummary'),
-                      controller: _summaryScroll,
-                      // At most 840 wide, centred in what the laps leave.
-                      padding: readablePadding(
-                        constraints.maxWidth -
-                            math.min(constraints.maxWidth * 4 / 9, 520),
+                    child: FocusTraversalGroup(
+                      child: ListView(
+                        key: const ValueKey('dayResultsSummary'),
+                        controller: _summaryScroll,
+                        // At most 840 wide, centred in what the laps leave.
+                        padding: readablePadding(
+                          constraints.maxWidth -
+                              math.min(constraints.maxWidth * 4 / 9, 520),
+                        ),
+                        // As on a phone: the Next session card is built from
+                        // the top.
+                        scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+                        children: summary,
                       ),
-                      // As on a phone: the Next session card is built from
-                      // the top.
-                      scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
-                      children: summary,
                     ),
                   ),
                   // Four ninths of the width, at most 520: on a large screen
                   // a lap's time stays near its name.
                   SizedBox(
                     width: math.min(constraints.maxWidth * 4 / 9, 520),
-                    child: ListView(
-                      key: const ValueKey('dayResultsLaps'),
-                      padding: const EdgeInsets.all(16),
-                      children: laps,
+                    child: FocusTraversalGroup(
+                      child: ListView(
+                        key: const ValueKey('dayResultsLaps'),
+                        padding: const EdgeInsets.all(16),
+                        children: laps,
+                      ),
                     ),
                   ),
                 ],
@@ -858,21 +867,34 @@ class _DayResultsPageState extends State<DayResultsPage> {
         builder: (context, _) => Column(
           children: [
             if (_controller.adding)
-              LinearProgressIndicator(
+              _Working(
                 key: const ValueKey('addingRecordings'),
-                semanticsLabel: context.l10n.addingRecordings,
+                text: context.l10n.addingRecordings,
               )
             else if (_preparingReview)
-              LinearProgressIndicator(
+              _Working(
                 key: const ValueKey('preparingReview'),
-                semanticsLabel: context.l10n.reviewPreparing,
+                text: context.l10n.reviewPreparing,
               ),
             Expanded(child: _body(context, wide, mapHeight)),
           ],
         ),
       ),
     );
-    final page = scaffold;
+    // Ctrl+S (Cmd+S on a Mac) saves, like the Save button.
+    void saveShortcut() {
+      if (!_controller.saving && _controller.dirty) unawaited(_save());
+    }
+
+    final page = CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true):
+            saveShortcut,
+        const SingleActivator(LogicalKeyboardKey.keyS, meta: true):
+            saveShortcut,
+      },
+      child: Focus(autofocus: true, child: scaffold),
+    );
     // A session being added is part of the day: the day stays open until it
     // is in, so it is saved or kept for recovery with it.
     return ListenableBuilder(
@@ -1639,3 +1661,25 @@ enum _Section { day, laps, compare }
 /// the page goes with it to the other isolate.
 OpenedDay reopenDay(String path, CancellationCheck cancelled) =>
     openDay(path, cancelled: cancelled);
+
+/// Work under way on the whole day: a strip and what it is, readable at a
+/// glance on a large window.
+class _Working extends StatelessWidget {
+  const _Working({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      LinearProgressIndicator(semanticsLabel: text),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+        child: ExcludeSemantics(
+          child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+        ),
+      ),
+    ],
+  );
+}
