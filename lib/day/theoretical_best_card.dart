@@ -719,7 +719,7 @@ class _LossLegend extends StatelessWidget {
     final style = Theme.of(context).textTheme.bodySmall;
     return Row(
       children: [
-        Text('0 s', style: style),
+        Text('0\u00a0s', style: style),
         const SizedBox(width: 8),
         Expanded(
           child: Container(
