@@ -164,7 +164,8 @@ String? sessionGateRevision(TelemetrySession session) => fet.gatesV1Revision([
 ], westPositive: _westPositive(session));
 
 /// Whether [session] has GPS positions to time laps from: latitude and
-/// longitude channels, and (given its [laps]) at least one usable fix. Lap
+/// longitude channels, and its [laps] did not report
+/// [LapSessionStatus.noUsableGps] (only checked when there is a line). Lap
 /// detection checks the start/finish line first, as FlappedEar Overlays
 /// does, so a recording without GPS reports a missing line.
 bool hasGpsPositions(TelemetrySession session, LapSession laps) =>
