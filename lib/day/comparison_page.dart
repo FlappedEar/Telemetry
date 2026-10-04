@@ -82,17 +82,29 @@ Future<DayLapRow?> pickComparisonLap(
   builder: (context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    Widget option(DayLapRow row, {bool best = false}) => ListTile(
-      key: ValueKey('${best ? 'suggestedLap' : 'pickLap'} ${row.displayName}'),
-      leading: best ? const Icon(Icons.emoji_events_outlined) : null,
-      title: Text(l10n.lap(row)),
-      subtitle: best ? Text(l10n.suggestedFastest) : null,
-      trailing: Text(
-        displayTime(row.durationSeconds),
-        style: theme.textTheme.titleSmall,
-      ),
-      onTap: () => Navigator.pop(context, row),
-    );
+    // With very large text the time goes under the lap's name, which would
+    // otherwise be squeezed to a letter per line.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) > 1.5;
+    Widget option(DayLapRow row, {bool best = false}) {
+      final time = displayTime(row.durationSeconds);
+      return ListTile(
+        key: ValueKey(
+          '${best ? 'suggestedLap' : 'pickLap'} ${row.displayName}',
+        ),
+        leading: best ? const Icon(Icons.emoji_events_outlined) : null,
+        title: Text(l10n.lap(row)),
+        subtitle: stacked
+            ? Text(best ? '$time · ${l10n.suggestedFastest}' : time)
+            : best
+            ? Text(l10n.suggestedFastest)
+            : null,
+        trailing: stacked
+            ? null
+            : Text(time, style: theme.textTheme.titleSmall),
+        onTap: () => Navigator.pop(context, row),
+      );
+    }
+
     return SimpleDialog(
       title: Text(title),
       children: [

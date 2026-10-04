@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../l10n.dart';
+import '../ui/label_value_row.dart';
 import '../units.dart';
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 
@@ -374,25 +375,26 @@ class CornerDetails extends StatelessWidget {
           Padding(
             key: ValueKey('cornerBest $label'),
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
+            child: LabelValueRow(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: Text(text)),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
+              label: Text(text),
+              // Wraps under large text instead of running off the sheet.
+              value: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    value == null ? '—' : format(value.value),
+                    textAlign: TextAlign.end,
+                    style: strong,
+                  ),
+                  if (value != null)
                     Text(
-                      value == null ? '—' : format(value.value),
-                      style: strong,
+                      l10n.lap(value.lap),
+                      textAlign: TextAlign.end,
+                      style: theme.textTheme.bodySmall,
                     ),
-                    if (value != null)
-                      Text(
-                        l10n.lap(value.lap),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         const SizedBox(height: 8),

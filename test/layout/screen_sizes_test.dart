@@ -86,9 +86,11 @@ void main() {
   }
 
   // Every size at the normal text size and at 1.3 times it, a common
-  // larger-text setting on phones.
-  for (final scale in const [1.0, 1.3]) {
+  // larger-text setting on phones; the small phone also at twice the size,
+  // the largest common setting.
+  for (final scale in const [1.0, 1.3, 2.0]) {
     for (final MapEntry(key: name, value: size) in sizes.entries) {
+      if (scale == 2 && name != 'small phone portrait') continue;
       group(scale == 1 ? name : '$name, text ×$scale', () {
         testWidgets('the import page fits', (tester) async {
           await fit(tester, size, scale);
@@ -201,10 +203,16 @@ void main() {
             tester.getSize(find.byType(TrackMap)).height,
             greaterThanOrEqualTo(200),
           );
+          // The lap's charts are there, under the map.
+          final page = find.byType(Scrollable).hitTestable().first;
+          for (var step = 0; step < 100; step++) {
+            if (find.byType(TelemetryChart).evaluate().isNotEmpty) break;
+            await tester.drag(page, const Offset(0, -300));
+            await tester.pump();
+          }
+          expect(find.byType(TelemetryChart), findsWidgets);
           await scrollThrough(tester);
           expect(tester.takeException(), isNull, reason: 'lap scrolled');
-          // The lap's charts are there, under the map.
-          expect(find.byType(TelemetryChart), findsWidgets);
 
           // The lap against the next fastest, from the lap page.
           final compare = find.byKey(const ValueKey('lapCompare'));
@@ -224,6 +232,9 @@ void main() {
                   'suggestedLap ',
                 ),
           );
+          // The picker scrolls when large text makes it taller than a phone.
+          await tester.ensureVisible(partner);
+          await tester.pumpAndSettle();
           await tester.tap(partner);
           await tester.pumpAndSettle();
           expect(find.byType(ComparisonPage), findsOneWidget);
@@ -343,7 +354,11 @@ void main() {
             );
             await tester.ensureVisible(target);
             await tester.pumpAndSettle();
-            await tester.tap(target);
+            // Near its top: with very large text a row can be taller than
+            // the screen.
+            await tester.tapAt(
+              tester.getTopLeft(target) + const Offset(24, 24),
+            );
             await tester.pumpAndSettle();
           }
 

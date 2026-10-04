@@ -34,73 +34,77 @@ class SettingsDialog extends StatelessWidget {
     final unlabelled = declaredSpeedUnits.where((unit) => unit.isEmpty).length;
     return AlertDialog(
       title: Text(l10n.settings),
-      content: ValueListenableBuilder(
-        valueListenable: speedUnitSetting,
-        builder: (context, setting, _) => SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.settingsSpeedUnitHeading,
-                style: theme.textTheme.titleSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.settingsSpeedUnitHelp,
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<SpeedUnitSetting>(
-                key: const ValueKey('speedUnitSetting'),
-                showSelectedIcon: false,
-                segments: [
-                  for (final value in SpeedUnitSetting.values)
-                    ButtonSegment(
-                      value: value,
-                      label: Text(
-                        value == SpeedUnitSetting.automatic
-                            ? l10n.speedUnitNone
-                            : value.label,
-                      ),
-                    ),
-                ],
-                selected: {setting},
-                onSelectionChanged: (choice) =>
-                    speedUnitSetting.value = choice.first,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                key: const ValueKey('speedUnitDetected'),
-                declaredSpeedUnits.isEmpty
-                    ? l10n.settingsNoDayOpen
-                    : [
-                        if (declared.isNotEmpty)
-                          l10n.settingsDeclaredUnits(
-                            declared.join(l10n.unitsAnd),
-                          ),
-                        if (unlabelled > 0)
-                          unlabelled == declaredSpeedUnits.length
-                              ? l10n.settingsAllUnlabelled
-                              : l10n.settingsSomeUnlabelled(unlabelled),
-                      ].join(' '),
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                context.l10n.settingsAbout,
-                style: theme.textTheme.titleSmall,
-              ),
-              TextButton(
-                key: const ValueKey('openLicences'),
-                onPressed: () => showLicensePage(
-                  context: context,
-                  applicationName: context.l10n.appTitle,
-                  applicationLegalese: context.l10n.licencesLegalese,
+      // A readable line length on a desktop.
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: ValueListenableBuilder(
+          valueListenable: speedUnitSetting,
+          builder: (context, setting, _) => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.settingsSpeedUnitHeading,
+                  style: theme.textTheme.titleSmall,
                 ),
-                child: Text(context.l10n.settingsLicences),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  l10n.settingsSpeedUnitHelp,
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<SpeedUnitSetting>(
+                  key: const ValueKey('speedUnitSetting'),
+                  showSelectedIcon: false,
+                  segments: [
+                    for (final value in SpeedUnitSetting.values)
+                      ButtonSegment(
+                        value: value,
+                        label: Text(
+                          value == SpeedUnitSetting.automatic
+                              ? l10n.speedUnitNone
+                              : value.label,
+                        ),
+                      ),
+                  ],
+                  selected: {setting},
+                  onSelectionChanged: (choice) =>
+                      speedUnitSetting.value = choice.first,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  key: const ValueKey('speedUnitDetected'),
+                  declaredSpeedUnits.isEmpty
+                      ? l10n.settingsNoDayOpen
+                      : [
+                          if (declared.isNotEmpty)
+                            l10n.settingsDeclaredUnits(
+                              declared.join(l10n.unitsAnd),
+                            ),
+                          if (unlabelled > 0)
+                            unlabelled == declaredSpeedUnits.length
+                                ? l10n.settingsAllUnlabelled
+                                : l10n.settingsSomeUnlabelled(unlabelled),
+                        ].join(' '),
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.l10n.settingsAbout,
+                  style: theme.textTheme.titleSmall,
+                ),
+                TextButton(
+                  key: const ValueKey('openLicences'),
+                  onPressed: () => showLicensePage(
+                    context: context,
+                    applicationName: context.l10n.appTitle,
+                    applicationLegalese: context.l10n.licencesLegalese,
+                  ),
+                  child: Text(context.l10n.settingsLicences),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -165,7 +165,8 @@ scrolls on a short screen, such as a phone held sideways; a comparison shows
 its map and its charts side by side on a wide screen and one under the other
 on a phone. `test/layout/screen_sizes_test.dart` opens
 every screen at small phone, Pixel and tablet sizes in both orientations, at
-the normal text size and at 1.3 times it, and fails on any overflow.
+the normal text size and at 1.3 times it, the small phone also at twice it,
+and fails on any overflow.
 
 The screens are made for fingers: nothing depends on hovering, and every
 button, row and strip is at least 48 dp square with a label for screen

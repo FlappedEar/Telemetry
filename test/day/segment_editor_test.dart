@@ -500,4 +500,122 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets(
+    'a phone with text ×2 keeps the segments in view, under the map',
+    (tester) async {
+      addTearDown(() => Intl.defaultLocale = null);
+      final outcome = importDay();
+      await tester.binding.setSurfaceSize(const Size(360, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+      );
+      addTearDown(controller.dispose);
+      final best = controller.ranking!.bestOfDay!;
+      final session = controller.session(best.runId)!;
+      final origin = mapOrigin(session);
+      final path = lapPath(session, best.start, best.end, origin: origin);
+      for (final locale in const [Locale('en'), Locale('pl')]) {
+        await tester.pumpWidget(
+          TelemetryApp(
+            locale: locale,
+            home: SegmentEditorPage(controller: controller, path: path),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$locale');
+        expect(find.byType(TrackMap), findsOneWidget);
+        // The list, header included, scrolls: its first segment is reached.
+        final id0 =
+            controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+        await tester.scrollUntilVisible(
+          find.byKey(ValueKey('segment $id0')),
+          100,
+          scrollable: find
+              .descendant(
+                of: find.byKey(const ValueKey('segmentList')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(tester.takeException(), isNull, reason: '$locale scrolled');
+        await tester.pumpWidget(const SizedBox());
+      }
+    },
+  );
+
+  testWidgets('a desktop window keeps the segments 760 wide', (tester) async {
+    final outcome = importDay();
+    await tester.binding.setSurfaceSize(const Size(1600, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      TelemetryApp(home: SegmentEditorPage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('segmentList'))).width,
+      lessThanOrEqualTo(760),
+    );
+    final id0 =
+        controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+    await tester.tap(find.byKey(ValueKey('segment $id0')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('applySegment'))).width,
+      lessThan(760),
+    );
+  });
+
+  testWidgets('the keyboard opening keeps the name being typed', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    final best = controller.ranking!.bestOfDay!;
+    final session = controller.session(best.runId)!;
+    final path = lapPath(
+      session,
+      best.start,
+      best.end,
+      origin: mapOrigin(session),
+    );
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: SegmentEditorPage(controller: controller, path: path),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final id0 =
+        controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+    await tester.tap(find.byKey(ValueKey('segment $id0')));
+    await tester.pumpAndSettle();
+    final name = find.byKey(const ValueKey('segmentName'));
+    await tester.ensureVisible(name);
+    await tester.pumpAndSettle();
+    await tester.enterText(name, 'Hairpin X');
+    await tester.pump();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+    expect(find.text('Hairpin X'), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isTrue,
+    );
+  });
 }
