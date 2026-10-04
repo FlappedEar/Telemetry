@@ -47,6 +47,7 @@ export 'src/day/day_segment_review.dart';
 export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';
 export 'src/day/run_metadata.dart';
+export 'src/day/session_weather.dart';
 
 export 'package:fetproject/fetproject.dart'
     show FetprojectError, InterruptedSave, completeInterruptedSave;

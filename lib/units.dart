@@ -33,6 +33,11 @@ final ValueNotifier<SpeedUnitSetting> speedUnitSetting = ValueNotifier(
   SpeedUnitSetting.automatic,
 );
 
+/// Whether the weather of sessions is looked up (the session's rounded
+/// position and date are sent to the weather service), chosen in settings
+/// and kept in `settings.json` with [speedUnitSetting]. On by default.
+final ValueNotifier<bool> weatherLookupSetting = ValueNotifier(true);
+
 /// The speed unit each of the open day's recordings declares ("km/h",
 /// "mph", or empty when it declares none). Set when a day opens.
 List<String> declaredSpeedUnits = const [];
@@ -104,8 +109,8 @@ String displayUnit(String name, String unit) {
   return daySpeedUnit(declared, speedUnitSetting.value.unit);
 }
 
-/// Reads and keeps [speedUnitSetting] in `settings.json` in the app's
-/// support folder. Off in `flutter test`.
+/// Reads and keeps [speedUnitSetting] and [weatherLookupSetting] in
+/// `settings.json` in the app's support folder. Off in `flutter test`.
 Future<void> loadSettings() async {
   if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return;
   final File file;
@@ -124,20 +129,29 @@ Future<void> loadSettings() async {
           if (value.name == json['speedUnit']) speedUnitSetting.value = value;
         }
       }
+      if (json is Map && json['weatherLookup'] is bool) {
+        weatherLookupSetting.value = json['weatherLookup'] as bool;
+      }
     }
   } on Exception catch (error) {
     debugPrint('Settings not read: $error');
   }
-  speedUnitSetting.addListener(() async {
+  Future<void> write() async {
     try {
       await file.parent.create(recursive: true);
       await file.writeAsString(
-        jsonEncode({'speedUnit': speedUnitSetting.value.name}),
+        jsonEncode({
+          'speedUnit': speedUnitSetting.value.name,
+          'weatherLookup': weatherLookupSetting.value,
+        }),
       );
     } on Exception catch (error) {
       debugPrint('Settings not saved: $error');
     }
-  });
+  }
+
+  speedUnitSetting.addListener(write);
+  weatherLookupSetting.addListener(write);
 }
 
 /// Rebuilds what shows a speed unit when [speedUnitSetting] changes; put

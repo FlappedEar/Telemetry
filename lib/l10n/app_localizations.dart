@@ -293,7 +293,7 @@ abstract class AppLocalizations {
   /// Shown at the top of the licences page: the app's own licence and the map credits. Keep 'Apache License 2.0', 'OpenStreetMap', 'ODbL' and 'MapTiler' as written.
   ///
   /// In en, this message translates to:
-  /// **'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.'**
+  /// **'FlappedEar Telemetry is released under the Apache License 2.0.\nMaps © OpenStreetMap contributors (ODbL) and © MapTiler.\nWeather data by Open-Meteo.com (CC BY 4.0).'**
   String get licencesLegalese;
 
   /// Heading of the coach card on the day page.
@@ -6794,6 +6794,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'the same drive as {session} in the other format; not added again.'**
   String additionSameDriveNotAdded(String session);
+
+  /// A session's weather in the day's progression.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather: {weather}'**
+  String progressionWeather(String weather);
+
+  /// The weather service's credit, required next to its data (CC BY 4.0).
+  ///
+  /// In en, this message translates to:
+  /// **'Weather data by Open-Meteo.com'**
+  String get weatherCredit;
+
+  /// Says what the weather values are.
+  ///
+  /// In en, this message translates to:
+  /// **'Modelled for the area around the track at the session\'s time, not measured at the track.'**
+  String get weatherModelled;
+
+  /// Air temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} °C'**
+  String weatherTemperature(String value);
+
+  /// Air temperature range during a session.
+  ///
+  /// In en, this message translates to:
+  /// **'{low}–{high} °C'**
+  String weatherTemperatureRange(String low, String high);
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'clear'**
+  String get weatherClear;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'partly cloudy'**
+  String get weatherPartlyCloudy;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'overcast'**
+  String get weatherOvercast;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'fog'**
+  String get weatherFog;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'drizzle'**
+  String get weatherDrizzle;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'rain'**
+  String get weatherRain;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'snow'**
+  String get weatherSnow;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'showers'**
+  String get weatherShowers;
+
+  /// Sky condition.
+  ///
+  /// In en, this message translates to:
+  /// **'thunderstorm'**
+  String get weatherThunderstorm;
+
+  /// Rain during the session.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} mm of rain'**
+  String weatherPrecipitation(String amount);
+
+  /// No rain during the session.
+  ///
+  /// In en, this message translates to:
+  /// **'no rain'**
+  String get weatherNoPrecipitation;
+
+  /// Wind; direction is a compass point such as SW, where the wind comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'wind {direction} {speed} km/h'**
+  String weatherWind(String direction, String speed);
+
+  /// Wind without a direction.
+  ///
+  /// In en, this message translates to:
+  /// **'wind {speed} km/h'**
+  String weatherWindNoDirection(String speed);
+
+  /// Strongest gust during the session.
+  ///
+  /// In en, this message translates to:
+  /// **'gusts up to {speed} km/h'**
+  String weatherGusts(String speed);
+
+  /// Relative humidity.
+  ///
+  /// In en, this message translates to:
+  /// **'humidity {value}%'**
+  String weatherHumidity(String value);
+
+  /// Cloud cover.
+  ///
+  /// In en, this message translates to:
+  /// **'cloud cover {value}%'**
+  String weatherCloudCover(String value);
+
+  /// Surface air pressure.
+  ///
+  /// In en, this message translates to:
+  /// **'pressure {value} hPa'**
+  String weatherPressure(String value);
+
+  /// Air temperature line in session details.
+  ///
+  /// In en, this message translates to:
+  /// **'air {temperature}'**
+  String weatherAirTemperature(String temperature);
+
+  /// The worst weather during the session.
+  ///
+  /// In en, this message translates to:
+  /// **'sky: {condition}'**
+  String weatherSky(String condition);
+
+  /// While the weather is fetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking up the weather…'**
+  String get weatherFetching;
+
+  /// Weather lookup turned off.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather lookup is off in settings.'**
+  String get weatherOff;
+
+  /// Weather lookup failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available: the weather service could not be reached or had no data for this session.'**
+  String get weatherUnavailable;
+
+  /// No weather can be looked up.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available: the recording has no date and time or no GPS position.'**
+  String get weatherNone;
+
+  /// Retries the weather lookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get weatherRetry;
+
+  /// Heading of the weather in session details.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get sessionDetailsWeather;
+
+  /// Settings heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Session weather'**
+  String get settingsWeatherHeading;
+
+  /// Settings switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up the weather for each session'**
+  String get settingsWeatherSwitch;
+
+  /// Explains what the weather lookup sends.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends each session\'s position, rounded to about 1 km, and its date to Open-Meteo.com. Nothing else from your recordings leaves the device.'**
+  String get settingsWeatherHelp;
 }
 
 class _AppLocalizationsDelegate

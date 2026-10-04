@@ -139,7 +139,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get licencesLegalese =>
-      'FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler.';
+      'FlappedEar Telemetry jest udostępniana na licencji Apache License 2.0.\nMapy © współtwórcy OpenStreetMap (ODbL) i © MapTiler.\nDane pogodowe: Open-Meteo.com (CC BY 4.0).';
 
   @override
   String get coachTitle => 'Następna sesja';
@@ -4594,4 +4594,131 @@ class AppLocalizationsPl extends AppLocalizations {
   String additionSameDriveNotAdded(String session) {
     return 'ten sam przejazd co $session w drugim formacie; nie dodano ponownie.';
   }
+
+  @override
+  String progressionWeather(String weather) {
+    return 'Pogoda: $weather';
+  }
+
+  @override
+  String get weatherCredit => 'Dane pogodowe: Open-Meteo.com';
+
+  @override
+  String get weatherModelled =>
+      'Model pogody dla okolicy toru w czasie sesji, nie pomiar na torze.';
+
+  @override
+  String weatherTemperature(String value) {
+    return '$value °C';
+  }
+
+  @override
+  String weatherTemperatureRange(String low, String high) {
+    return '$low–$high °C';
+  }
+
+  @override
+  String get weatherClear => 'bezchmurnie';
+
+  @override
+  String get weatherPartlyCloudy => 'częściowe zachmurzenie';
+
+  @override
+  String get weatherOvercast => 'pochmurno';
+
+  @override
+  String get weatherFog => 'mgła';
+
+  @override
+  String get weatherDrizzle => 'mżawka';
+
+  @override
+  String get weatherRain => 'deszcz';
+
+  @override
+  String get weatherSnow => 'śnieg';
+
+  @override
+  String get weatherShowers => 'przelotne opady';
+
+  @override
+  String get weatherThunderstorm => 'burza';
+
+  @override
+  String weatherPrecipitation(String amount) {
+    return '$amount mm opadu';
+  }
+
+  @override
+  String get weatherNoPrecipitation => 'bez opadów';
+
+  @override
+  String weatherWind(String direction, String speed) {
+    return 'wiatr $direction $speed km/h';
+  }
+
+  @override
+  String weatherWindNoDirection(String speed) {
+    return 'wiatr $speed km/h';
+  }
+
+  @override
+  String weatherGusts(String speed) {
+    return 'porywy do $speed km/h';
+  }
+
+  @override
+  String weatherHumidity(String value) {
+    return 'wilgotność $value%';
+  }
+
+  @override
+  String weatherCloudCover(String value) {
+    return 'zachmurzenie $value%';
+  }
+
+  @override
+  String weatherPressure(String value) {
+    return 'ciśnienie $value hPa';
+  }
+
+  @override
+  String weatherAirTemperature(String temperature) {
+    return 'powietrze $temperature';
+  }
+
+  @override
+  String weatherSky(String condition) {
+    return 'niebo: $condition';
+  }
+
+  @override
+  String get weatherFetching => 'Pobieranie pogody…';
+
+  @override
+  String get weatherOff => 'Pobieranie pogody jest wyłączone w ustawieniach.';
+
+  @override
+  String get weatherUnavailable =>
+      'Niedostępna: brak połączenia z serwisem pogodowym albo brak danych dla tej sesji.';
+
+  @override
+  String get weatherNone =>
+      'Niedostępna: zapis nie ma daty i godziny albo pozycji GPS.';
+
+  @override
+  String get weatherRetry => 'Spróbuj ponownie';
+
+  @override
+  String get sessionDetailsWeather => 'Pogoda';
+
+  @override
+  String get settingsWeatherHeading => 'Pogoda w sesjach';
+
+  @override
+  String get settingsWeatherSwitch => 'Pobieraj pogodę dla każdej sesji';
+
+  @override
+  String get settingsWeatherHelp =>
+      'Wysyła do Open-Meteo.com pozycję sesji zaokrągloną do około 1 km i jej datę. Nic innego z Twoich zapisów nie opuszcza urządzenia.';
 }

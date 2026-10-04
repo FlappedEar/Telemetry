@@ -8,6 +8,7 @@ import '../format.dart';
 import '../l10n.dart';
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
+import 'weather_text.dart';
 
 /// "11:20:05 UTC on 19 Aug 2026" from a recording clock, in the app's
 /// language ("11:20:05 UTC, 19 sie 2026").
@@ -28,6 +29,7 @@ class ProgressionCard extends StatefulWidget {
     required this.result,
     this.loading = false,
     this.onOpenLap,
+    this.weatherOf,
   });
 
   final DayProgression progression;
@@ -37,6 +39,9 @@ class ProgressionCard extends StatefulWidget {
   final DayTheoreticalBest? result;
   final bool loading;
   final void Function(DayLapRow lap)? onOpenLap;
+
+  /// A session's weather by run id, or null.
+  final SessionWeather? Function(String runId)? weatherOf;
 
   @override
   State<ProgressionCard> createState() => _ProgressionCardState();
@@ -91,11 +96,20 @@ class _ProgressionCardState extends State<ProgressionCard> {
     final l10n = context.l10n;
     final progression = widget.progression;
     final low = progression.minimumSeconds, high = progression.maximumSeconds;
+    final weatherShown = progression.runs.any(
+      (run) => widget.weatherOf?.call(run.runId) != null,
+    );
     return [
       Text(l10n.progressionSessionsIntro, style: theme.textTheme.bodySmall),
       if (progression.runs.isEmpty) Text(l10n.progressionNoSession),
       for (var i = 0; i < progression.runs.length; ++i)
         _session(context, progression.runs[i], i, low, high),
+      if (weatherShown)
+        Text(
+          '${l10n.weatherModelled} ${weatherCredit(l10n)}',
+          key: const ValueKey('progressionWeatherCredit'),
+          style: theme.textTheme.bodySmall,
+        ),
     ];
   }
 
@@ -136,6 +150,9 @@ class _ProgressionCardState extends State<ProgressionCard> {
           displayDelta(delta),
           l10n.session(run.previousListedRunName ?? ''),
         ),
+      if (widget.weatherOf?.call(run.runId) case final weather?)
+        if (weatherShortText(l10n, weather) case final text?)
+          l10n.progressionWeather(text),
       if (run.run.conditions case final conditions?)
         l10n.progressionConditions(conditions),
       if (run.run.setupChanges case final setup?) l10n.progressionSetup(setup),

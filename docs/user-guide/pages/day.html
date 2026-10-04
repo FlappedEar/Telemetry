@@ -79,7 +79,7 @@
 <p>One row per session with its best ranked lap, for example <em>LAP 2 · 5 of 7 laps ranked · typical 1:50.123</em>. The best lap of the day's time is in bold purple. Tap a row to open that lap.</p>
 
 <h2 id="details">Session details</h2>
-<p>One row per session with its conditions, setup changes and notes, or <em>No conditions, setup changes or notes</em>. Tap a row to open <strong>Details of Session N</strong>:</p>
+<p>One row per session with its conditions, setup changes and notes, or <em>No conditions, setup changes or notes</em>, and its <a href="#weather">weather</a> when the app has it. Tap a row to open <strong>Details of Session N</strong>:</p>
 <figure>
   <img src="assets/screens/session-details-dialog.png" alt="Details of Session 1 dialog with Name, Conditions, Setup changes and Notes fields" width="1280" height="800" loading="lazy">
 </figure>
@@ -90,6 +90,20 @@
   <li><strong>Notes</strong>: anything else about the session.</li>
 </ul>
 <p><strong>Save</strong> keeps the change and the day then has unsaved changes; save the day to write it to the file. Each text can be up to 4096 characters; a text you clear is saved as empty. FlappedEar Overlays reads and edits the same details (see <a href="overlays.html">Working with FlappedEar Overlays</a>).</p>
+<p>Below the fields, <strong>Weather</strong> shows the session's weather (see <a href="#weather">Weather</a>), or why there is none.</p>
+
+<h2 id="weather">Weather</h2>
+<p>For each session with a recording time and a GPS position, the app looks up the weather once, in the background, from <a href="https://open-meteo.com/">Open-Meteo.com</a>, a free weather service. Nothing is waited for: the results show at once, and the weather appears when it arrives. Each session then shows a line such as <em>Weather: 18 °C, overcast, no rain, wind SW 12 km/h</em> in <a href="#details">Session details</a>, in <a href="day-report.html#progression">Progression</a> and under each lap in <a href="compare.html#header">Compare</a>, so you can see whether a quicker session also had different weather.</p>
+<ul>
+  <li><strong>What it is.</strong> A weather model's hourly values for the area around the track (about a 1–10 km grid), at the session's time. It is not measured at the track: there is no track temperature, and <em>no rain</em> does not mean the track was dry (it may still be wet from earlier rain).</li>
+  <li><strong>What is shown.</strong> The air temperature (a range such as <em>19–22 °C</em> when it changed by a degree or more during the session), the worst weather of the hours the session ran in (clear, partly cloudy, overcast, fog, drizzle, rain, showers, snow or thunderstorm), the rain in those hours in mm, and the wind (direction it comes from and speed at the middle of the session). Session details adds the strongest gust, humidity, cloud cover and air pressure.</li>
+  <li><strong>What leaves your device.</strong> Only the session's first GPS position, rounded to 0.01° (about 1 km), and its date, sent to Open-Meteo.com over an encrypted connection. Nothing else from your recordings is sent, and no account or key is used.</li>
+  <li><strong>Where it is kept.</strong> In the day's file, with the session, so a day opened later or offline shows it without asking again. A session whose recording you replace gets its weather looked up again. FlappedEar Overlays keeps it in the file unchanged.</li>
+  <li><strong>Offline.</strong> Session details says <em>Not available</em> and offers <strong>Try again</strong>; the app also asks again the next time the day opens.</li>
+  <li><strong>Turning it off.</strong> Open <strong>Settings</strong> (the gear in the toolbar; on the day page on a narrow screen, such as a phone, in the ⋮ menu) and turn off <strong>Look up the weather for each session</strong>. Weather already in a day stays shown.</li>
+</ul>
+<p>When a session added to a saved day gets its weather, the day is saved again on its own, as the addition was. For a day you open, the weather is written with your next save and does not make the day unsaved.</p>
+<p>Weather data by Open-Meteo.com, under the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0</a> licence; the app shows this credit next to the weather.</p>
 
 <h2 id="circuits">Circuits</h2>
 <p>One row per session says which circuit and direction it was matched to, and whether that was inferred from GPS or set by you. Tap the pencil to open <strong>Circuit of Session N</strong>:</p>
