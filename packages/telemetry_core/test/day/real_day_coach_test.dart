@@ -35,18 +35,32 @@ void main() {
             );
           }(),
       ];
+      // The main focus shown after the session before.
+      CoachFinding? shown;
       for (var count = 2; count <= runs.length; count++) {
         final day = runs.take(count).toList();
         final analysis = analyzeDay(day);
         final outing = {for (final run in day) run.runId: OutingRun(run.session, run.laps)};
         final best = dayTheoreticalBest(analysis, outing, random: Random(1));
-        final coach = dayCoach(best, {
-          for (final run in day) run.runId: run.session,
-        }, runId: day.last.runId);
+        final coach = dayCoach(
+          best,
+          {for (final run in day) run.runId: run.session},
+          runId: day.last.runId,
+          before: dayBeforeRun(analysis, outing, day.last.runId, random: Random(1)),
+        );
         print(
           'After ${day.last.name}: ${coach.findings.length} findings, '
           '${coach.plan.length} planned. ${coach.message}',
         );
+        if (coach.goal case final goal?) {
+          print('  ${goal.summary} Measured at ${goal.measuredName}.');
+        }
+        // The goal is the focus the driver saw then.
+        if (shown != null && shown.kind.corrective) {
+          expect(coach.goal?.finding.kind, shown.kind);
+          expect(coach.goal?.finding.segmentName, shown.segmentName);
+        }
+        shown = coach.focus?.finding;
         for (final item in coach.plan) {
           print(
             '  ${item.title} (${item.finding.confidence.toStringAsFixed(2)}): '

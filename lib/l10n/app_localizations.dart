@@ -542,6 +542,72 @@ abstract class AppLocalizations {
   /// **'Straight after it'**
   String get coachMetricNextStraightTime;
 
+  /// Heading of the check of the main focus the coach gave for the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Main focus from {session}'**
+  String coachGoalLabel(String session);
+
+  /// The focus's measure in the session before and in this one: the median of each session's laps at that corner (the range, for braking points).
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: {before} then, {now} in this session.'**
+  String coachGoalMeasured(String metric, String before, String now);
+
+  /// The focus's corner was drawn differently when it was given; today's corner overlapping it most was measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured at {segment}, as today\'s corners divide the track.'**
+  String coachGoalMeasuredAt(String segment);
+
+  /// No corner of today's segments overlaps the focus's corner as it was drawn then.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: today\'s corners no longer include it.'**
+  String get coachGoalNoCorner;
+
+  /// Map legend: the amber mark is the point (median) on this session's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: this session\'s laps'**
+  String coachMapThis(String metric);
+
+  /// Map legend: the blue mark is the point (median) on the faster laps compared.
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: your faster laps'**
+  String coachMapFaster(String metric);
+
+  /// Map legend for the braking marker: the blue mark is the point on the day's three fastest laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: your three fastest laps today'**
+  String coachMapFastest(String metric);
+
+  /// The focus's measure improved since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Better.'**
+  String get coachGoalBetter;
+
+  /// The focus's measure changed too little to tell.
+  ///
+  /// In en, this message translates to:
+  /// **'About the same.'**
+  String get coachGoalUnchanged;
+
+  /// The focus's measure got worse since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Worse.'**
+  String get coachGoalWorse;
+
+  /// Too few laps of either session have the focus's measure at that corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured in this session.'**
+  String get coachGoalNotMeasured;
+
   /// Above the coach items.
   ///
   /// In en, this message translates to:

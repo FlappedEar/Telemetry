@@ -296,6 +296,52 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricNextStraightTime => 'Prosta za zakrętem';
 
   @override
+  String coachGoalLabel(String session) {
+    return 'Główny cel po sesji: $session';
+  }
+
+  @override
+  String coachGoalMeasured(String metric, String before, String now) {
+    return '$metric: w poprzedniej sesji $before, w tej $now.';
+  }
+
+  @override
+  String coachGoalMeasuredAt(String segment) {
+    return 'Zmierzono na odcinku $segment, według dzisiejszego podziału toru.';
+  }
+
+  @override
+  String get coachGoalNoCorner =>
+      'Nie zmierzono: tego zakrętu nie ma w dzisiejszym podziale toru.';
+
+  @override
+  String coachMapThis(String metric) {
+    return '$metric: okrążenia tej sesji';
+  }
+
+  @override
+  String coachMapFaster(String metric) {
+    return '$metric: Twoje szybsze okrążenia';
+  }
+
+  @override
+  String coachMapFastest(String metric) {
+    return '$metric: Twoje trzy najszybsze okrążenia dnia';
+  }
+
+  @override
+  String get coachGoalBetter => 'Lepiej.';
+
+  @override
+  String get coachGoalUnchanged => 'Mniej więcej bez zmian.';
+
+  @override
+  String get coachGoalWorse => 'Gorzej.';
+
+  @override
+  String get coachGoalNotMeasured => 'Nie udało się tego zmierzyć w tej sesji.';
+
+  @override
   String get coachReasonReady =>
       'Najpierw pracuj nad głównym celem. Po pozostałe sięgnij dopiero, gdy on już wychodzi.';
 

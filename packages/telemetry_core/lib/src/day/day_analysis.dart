@@ -477,6 +477,43 @@ DayAnalysis _group(
   );
 }
 
+/// [day] with only the runs [runIds]: the day as it stood before the
+/// other runs were added. Grouped again, as adding them would.
+DayAnalysis dayWithRuns(
+  DayAnalysis day,
+  Set<String> runIds, {
+  Map<DayLapReference, String> exclusions = const {},
+  String? preferredGroupId,
+  CancellationCheck? cancelled,
+}) => _group(
+  [
+    for (final row in day.rows)
+      if (runIds.contains(row.runId)) row.offRoute ? row.copyWith(offRoute: false) : row,
+  ],
+  {
+    for (final MapEntry(:key, :value) in day.inferences.entries)
+      if (runIds.contains(key)) key: value,
+  },
+  [
+    for (final source in day.sources)
+      if (runIds.contains(source.runId)) source,
+  ],
+  [
+    for (final message in day.runMessages)
+      if (runIds.contains(message.runId)) message,
+  ],
+  {
+    for (final MapEntry(:key, :value) in day.manualTracks.entries)
+      if (runIds.contains(key)) key: value,
+  },
+  {
+    for (final MapEntry(:key, :value) in exclusions.entries)
+      if (runIds.contains(key.runId)) key: value,
+  },
+  preferredGroupId,
+  cancelled,
+);
+
 /// [day] ranked again with new [exclusions] or another [preferredGroupId].
 /// Rows, routes and groups are kept, so this is cheap enough for the
 /// interface thread.
