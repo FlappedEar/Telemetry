@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../l10n.dart';
 import '../format.dart';
+import '../ui/label_value_row.dart';
 import 'app_diagnostics.dart';
 import 'app_errors.dart';
 
@@ -96,19 +97,14 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
         constraints: const BoxConstraints(minHeight: 48),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(child: Text(label)),
-              const SizedBox(width: 16),
-              Flexible(
-                child: Text(
-                  value,
-                  key: key,
-                  textAlign: TextAlign.end,
-                  style: theme.textTheme.bodyLarge,
-                ),
-              ),
-            ],
+          child: LabelValueRow(
+            label: Text(label),
+            value: Text(
+              value,
+              key: key,
+              textAlign: TextAlign.end,
+              style: theme.textTheme.bodyLarge,
+            ),
           ),
         ),
       ),

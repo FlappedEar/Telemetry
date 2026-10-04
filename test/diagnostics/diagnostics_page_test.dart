@@ -266,7 +266,8 @@ void main() {
     final value = tester.getRect(
       find.byKey(const ValueKey('diagnosticsCurrentMemory')),
     );
-    expect(value.right, lessThanOrEqualTo((1600 + 720) / 2));
+    // At the right edge of the centred page, near its label.
+    expect(value.right, closeTo((1600 + 720) / 2 - 16, 1));
     await tester.pumpWidget(const SizedBox());
   });
 }

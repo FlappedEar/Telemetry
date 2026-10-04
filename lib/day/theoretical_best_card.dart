@@ -413,6 +413,18 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     final comparison = corner?.compare(lap.lap.reference);
     speedUnitOf(context); // The summary's speeds follow the setting.
     final summary = comparison == null ? null : cornerSummary(l10n, comparison);
+    final loss = Text(
+      lap.lossSeconds[index] == null
+          ? '—'
+          : '+${lap.lossSeconds[index]!.toStringAsFixed(3)}\u00a0s',
+      textAlign: TextAlign.end,
+      style: theme.textTheme.titleSmall?.copyWith(
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+    // With very large text the loss goes under the segment's name, so the
+    // row still fits a phone.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) > 1.5;
     final row = Padding(
       // 36 + 12: a 48 dp row to tap.
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -434,6 +446,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(l10n.tbSegmentName(segment.name)),
+                if (stacked) loss,
                 // Wraps at 360 dp: the lap that set the time matters.
                 Text(
                   _lossDetail(l10n, result, lap, index),
@@ -448,16 +461,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            lap.lossSeconds[index] == null
-                ? '—'
-                : '+${lap.lossSeconds[index]!.toStringAsFixed(3)}\u00a0s',
-            textAlign: TextAlign.end,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
+          if (!stacked) ...[const SizedBox(width: 8), loss],
           if (analyze != null)
             IconButton(
               key: ValueKey('lossAnalyze ${segment.name}'),

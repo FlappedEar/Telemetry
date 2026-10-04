@@ -947,28 +947,90 @@ class SpeedLegend extends StatelessWidget {
     }
     final label = speedUnitOf(context, path.speedUnit);
     final unit = label.isEmpty ? '' : '\u00a0$label';
-    return Row(
-      children: [
-        Text(
-          '${range.$1.toStringAsFixed(0)}$unit',
-          style: theme.textTheme.bodySmall,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Container(
-            height: 10,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-              gradient: const LinearGradient(colors: speedRamp),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '${range.$2.toStringAsFixed(0)}$unit',
-          style: theme.textTheme.bodySmall,
-        ),
-      ],
+    final slow = Text(
+      '${range.$1.toStringAsFixed(0)}$unit',
+      style: theme.textTheme.bodySmall,
+    );
+    final fast = Text(
+      '${range.$2.toStringAsFixed(0)}$unit',
+      style: theme.textTheme.bodySmall,
+    );
+    final bar = Container(
+      height: 10,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        gradient: const LinearGradient(colors: speedRamp),
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // With very large text the values go under the bar, at its ends.
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        if (constraints.maxWidth / scale < 200) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              bar,
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(child: slow),
+                  const SizedBox(width: 8),
+                  Flexible(child: fast),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            slow,
+            const SizedBox(width: 8),
+            Expanded(child: bar),
+            const SizedBox(width: 8),
+            fast,
+          ],
+        );
+      },
     );
   }
+}
+
+/// [SpeedLegend] after a [label], or under it when large text would leave
+/// the scale too little room.
+class LabelledSpeedLegend extends StatelessWidget {
+  const LabelledSpeedLegend({
+    super.key,
+    required this.label,
+    required this.path,
+  });
+
+  final String label;
+  final LapPath path;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final text = Text(label, style: Theme.of(context).textTheme.labelMedium);
+      final scale = MediaQuery.textScalerOf(context).scale(1);
+      if (constraints.maxWidth / scale < 300) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            text,
+            const SizedBox(height: 4),
+            SpeedLegend(path: path),
+          ],
+        );
+      }
+      return Row(
+        children: [
+          text,
+          const SizedBox(width: 8),
+          Expanded(child: SpeedLegend(path: path)),
+        ],
+      );
+    },
+  );
 }
