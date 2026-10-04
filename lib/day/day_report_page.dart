@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -134,26 +136,32 @@ class DayReportPage extends StatelessWidget {
     final groupLabel = report['groupLabel'] as String? ?? '';
     return Scaffold(
       appBar: AppBar(title: Text(l10n.dayReport)),
-      body: ListView(
-        key: const ValueKey('dayReport'),
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            groupLabel.isEmpty
-                ? l10n.reportGroupNone
-                : _groupLabel(l10n, groupLabel),
-            key: const ValueKey('dayReportGroup'),
-            style: theme.textTheme.titleMedium,
+      // At most 840 wide, centred, so lines stay readable on a large screen.
+      body: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          key: const ValueKey('dayReport'),
+          padding: EdgeInsets.symmetric(
+            horizontal: math.max(16, (constraints.maxWidth - 840) / 2),
+            vertical: 16,
           ),
-          const SizedBox(height: 12),
-          _best(context),
-          _focus(context),
-          _losses(context),
-          _sessions(context),
-          _consistency(context),
-          _car(context),
-          _heartRate(context),
-        ],
+          children: [
+            Text(
+              groupLabel.isEmpty
+                  ? l10n.reportGroupNone
+                  : _groupLabel(l10n, groupLabel),
+              key: const ValueKey('dayReportGroup'),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            _best(context),
+            _focus(context),
+            _losses(context),
+            _sessions(context),
+            _consistency(context),
+            _car(context),
+            _heartRate(context),
+          ],
+        ),
       ),
     );
   }

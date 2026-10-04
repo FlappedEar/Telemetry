@@ -235,6 +235,20 @@ void main() {
     expect(find.byType(LapPage), findsOneWidget);
   });
 
+  testWidgets('on a large screen the report stays 840 wide, centred', (
+    tester,
+  ) async {
+    final controller = await open(tester, importDay());
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayReportPage(report: controller.dayReportDocument)),
+    );
+    await tester.pumpAndSettle();
+    final group = tester.getRect(find.byKey(const ValueKey('dayReportGroup')));
+    expect(group.left, 540);
+    expect(group.right, lessThanOrEqualTo(1380));
+  });
+
   testWidgets('the day report presents what was calculated', (tester) async {
     final controller = await open(tester, importDay());
     final report = controller.dayReportDocument;

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
@@ -174,6 +175,40 @@ void main() {
       chart(const ChartSeries.failed(chartReasonChannelMissing)),
     );
     expect(find.text('Not available · A: not recorded'), findsOneWidget);
+  });
+
+  testWidgets('with very large text a lap header wraps, keeping the lap', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: analysis,
+    );
+    final best = analysis.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(360, 740));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: ComparisonPage(controller: controller, a: a, b: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final header in [
+      find.textContaining('A · '),
+      find.textContaining('B · '),
+    ]) {
+      final paragraph = tester.renderObject<RenderParagraph>(header.first);
+      expect(paragraph.didExceedMaxLines, isFalse);
+    }
   });
 
   testWidgets('compares two laps by track position, A − B', (tester) async {

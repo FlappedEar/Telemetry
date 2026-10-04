@@ -1,6 +1,10 @@
 import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+/// Between a number and its unit: a no-break space, so "0.650 s" never
+/// wraps before the "s".
+const unitSpace = '\u00a0';
+
 /// [value] with [digits] decimals: "12.5". Every language, Polish included,
 /// uses a decimal point (the owner's choice, 2026-10-03), and there is no
 /// grouping, so digits stay aligned.
@@ -8,12 +12,12 @@ String fixed(double value, int digits) => value.toStringAsFixed(digits);
 
 /// A time as the app shows it: "28.662 s" below a minute, "1:49.898" from one
 /// minute, "—" when there is no finite value. Rounded before minutes are
-/// split.
+/// split. A no-break space keeps the unit with its number when text wraps.
 String displayTime(double seconds) {
   if (!seconds.isFinite || seconds < 0) return '—';
   final milliseconds = (seconds * 1000).round();
   if (milliseconds < 60000) {
-    return '${fixed(milliseconds / 1000, 3)} s';
+    return '${fixed(milliseconds / 1000, 3)}${unitSpace}s';
   }
   return formatLapTime(milliseconds / 1000, 3) ?? '—';
 }
@@ -27,7 +31,7 @@ String displayDelta(double seconds) {
       : milliseconds < 0
       ? '−'
       : '±';
-  return '$sign${fixed(milliseconds.abs() / 1000, 3)} s';
+  return '$sign${fixed(milliseconds.abs() / 1000, 3)}${unitSpace}s';
 }
 
 /// A local date and time in the app's language: "Oct 3, 2026, 06:30" in
