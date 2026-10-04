@@ -452,7 +452,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
           Text(
             lap.lossSeconds[index] == null
                 ? '—'
-                : '+${lap.lossSeconds[index]!.toStringAsFixed(3)} s',
+                : '+${lap.lossSeconds[index]!.toStringAsFixed(3)}\u00a0s',
             textAlign: TextAlign.end,
             style: theme.textTheme.titleSmall?.copyWith(
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -549,14 +549,14 @@ List<String> variabilityLines(
   CornerVariability variability,
   String speedUnit,
 ) {
-  final unit = speedUnit.trim().isEmpty ? '' : ' ${speedUnit.trim()}';
+  final unit = speedUnit.trim().isEmpty ? '' : '\u00a0${speedUnit.trim()}';
   String? spread(String label, ConsistencySummary summary, String provenance) {
     if (summary.count == 0) return null;
     final tail = '${l10n.variabilityLaps(summary.count)} · $provenance';
     if (!summary.available) return l10n.variabilityTooFew(label, tail);
     return l10n.variabilitySpread(
       label,
-      '${fixed(summary.interquartileRange!, 1)} m',
+      '${fixed(summary.interquartileRange!, 1)}\u00a0m',
       tail,
     );
   }
@@ -700,7 +700,7 @@ class _Headline extends StatelessWidget {
         ),
         stat(
           l10n.tbAvailable,
-          available == null ? '—' : '${available.toStringAsFixed(3)} s',
+          available == null ? '—' : '${available.toStringAsFixed(3)}\u00a0s',
           const ValueKey('availableTime'),
           FetColors.of(context).gain,
         ),
@@ -731,7 +731,7 @@ class _LossLegend extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text('+${maximum.toStringAsFixed(3)} s', style: style),
+        Text('+${maximum.toStringAsFixed(3)}\u00a0s', style: style),
       ],
     );
   }

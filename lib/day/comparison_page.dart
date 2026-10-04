@@ -598,7 +598,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
       ),
       ChartWindowControls(
         window: window,
-        axisText: (meters) => '${meters.round()} m',
+        axisText: (meters) => '${meters.round()}\u00a0m',
       ),
       ValueListenableBuilder(
         valueListenable: window.range,

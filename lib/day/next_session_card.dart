@@ -96,14 +96,14 @@ String? coachSpeedLabel(BuildContext context, {required bool converted}) {
 /// (see [coachSpeedLabel]).
 String coachValue(double value, String unit, String? speedUnit) {
   if (!value.isFinite) return '—';
-  if (unit == 'm') return '${value.round()} m';
+  if (unit == 'm') return '${value.round()}\u00a0m';
   if (unit == 'km/h') {
     if (speedUnit == null) return '—';
     return speedUnit.isEmpty
         ? fixed(value, 1)
-        : '${fixed(value, 1)} $speedUnit';
+        : '${fixed(value, 1)}\u00a0$speedUnit';
   }
-  return '${fixed(value, 1)} $unit';
+  return '${fixed(value, 1)}\u00a0$unit';
 }
 
 /// Whether [finding] reports a speed, which the coach measures in km/h.

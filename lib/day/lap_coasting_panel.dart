@@ -129,7 +129,7 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
         segment.segmentId: l10n.tbSegmentName(segment.name),
     };
     String amount(double seconds, double meters) =>
-        '${seconds.toStringAsFixed(1)} s · ${meters.round()} m';
+        '${seconds.toStringAsFixed(1)} s · ${meters.round()}\u00a0m';
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Card(

@@ -101,7 +101,7 @@ void main() {
     ]) {
       expect(find.text(step), findsOneWidget);
     }
-    expect(find.text('1.84 s'), findsOneWidget);
+    expect(find.text('1.84\u00a0s'), findsOneWidget);
     String trailing(String key) =>
         ((tester.widget<ListTile>(find.byKey(ValueKey(key))).trailing!) as Text)
             .data!;
@@ -171,7 +171,7 @@ void main() {
     expect(find.text('Pamięć'), findsOneWidget);
     expect(find.text('Niedostępne'), findsOneWidget);
     expect(find.text('96.0 MiB'), findsOneWidget);
-    expect(find.text('1.84 s'), findsOneWidget);
+    expect(find.text('1.84\u00a0s'), findsOneWidget);
     expect(find.text('Diagnostics'), findsNothing);
     expect(find.text('Last import'), findsNothing);
     expect(find.text(DiagnosticSteps.scan), findsNothing);

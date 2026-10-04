@@ -46,7 +46,7 @@ String chartValueText(double value, double scale, String unit) {
       : magnitude >= 10
       ? 1
       : 2;
-  return '${value.toStringAsFixed(digits)}${unit.isEmpty ? '' : ' $unit'}';
+  return '${value.toStringAsFixed(digits)}${unit.isEmpty ? '' : '\u00a0$unit'}';
 }
 
 /// The value axis of a chart, fixed over the whole lap so zooming does not
@@ -166,66 +166,78 @@ class TelemetryChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (note.isNotEmpty ||
-                      provenance.isNotEmpty ||
-                      braking ||
-                      (shown.isNotEmpty && failed.isNotEmpty))
-                    Text(
-                      [
-                        if (note.isNotEmpty) note,
-                        if (provenance.isNotEmpty) provenance,
-                        if (braking) l10n.chartBrakingUp,
-                        if (shown.isNotEmpty) ...failed,
-                      ].join(' · '),
-                      style: theme.textTheme.bodySmall,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    ),
-                ],
-              ),
-            ),
-            ValueListenableBuilder(
-              valueListenable: cursor,
-              builder: (context, value, _) {
-                final fraction = _fraction(value);
-                final inside = fraction >= 0 && fraction <= 1;
-                return Wrap(
-                  spacing: 10,
+        LayoutBuilder(
+          builder: (context, constraints) => Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final line in lines)
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (note.isNotEmpty ||
+                        provenance.isNotEmpty ||
+                        braking ||
+                        (shown.isNotEmpty && failed.isNotEmpty))
                       Text(
-                        '${line.label.isEmpty ? '' : '${line.label} '}'
-                        '${inside ? _value(line, fraction, displayUnitOf(context, title, line.series.unit)) : '–'}',
-                        key: ValueKey('chartValue $title ${line.label}'),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: line.color == deltaLineColor
-                              ? null
-                              : readableOn(context, line.color),
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                        [
+                          if (note.isNotEmpty) note,
+                          if (provenance.isNotEmpty) provenance,
+                          if (braking) l10n.chartBrakingUp,
+                          if (shown.isNotEmpty) ...failed,
+                        ].join(' · '),
+                        style: theme.textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
                       ),
                   ],
-                );
-              },
-            ),
-            if (onRemove != null)
-              IconButton(
-                tooltip: l10n.chartRemove(title),
-                icon: const Icon(Icons.close),
-                onPressed: onRemove,
+                ),
               ),
-          ],
+              // At most 60 % of the row, wrapping with large text rather
+              // than overflowing it.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: constraints.maxWidth * 0.6,
+                ),
+                child: ValueListenableBuilder(
+                  valueListenable: cursor,
+                  builder: (context, value, _) {
+                    final fraction = _fraction(value);
+                    final inside = fraction >= 0 && fraction <= 1;
+                    return Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 10,
+                      children: [
+                        for (final line in lines)
+                          Text(
+                            '${line.label.isEmpty ? '' : '${line.label} '}'
+                            '${inside ? _value(line, fraction, displayUnitOf(context, title, line.series.unit)) : '–'}',
+                            key: ValueKey('chartValue $title ${line.label}'),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: line.color == deltaLineColor
+                                  ? null
+                                  : readableOn(context, line.color),
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              if (onRemove != null)
+                IconButton(
+                  tooltip: l10n.chartRemove(title),
+                  icon: const Icon(Icons.close),
+                  onPressed: onRemove,
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 4),
         SizedBox(
@@ -711,7 +723,7 @@ class AddChannelButton extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: 8),
-            Text(label),
+            Flexible(child: Text(label)),
           ],
         ),
       ),

@@ -13,7 +13,7 @@ String diagnosticDuration(Duration duration) {
   final milliseconds = duration.inMicroseconds / 1000.0;
   return milliseconds < 1000
       ? '${milliseconds.round()} ms'
-      : '${(milliseconds / 1000).toStringAsFixed(2)} s';
+      : '${(milliseconds / 1000).toStringAsFixed(2)}\u00a0s';
 }
 
 /// "123.4 MiB", or "Not available" in the app's language.

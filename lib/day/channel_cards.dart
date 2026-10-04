@@ -55,7 +55,7 @@ String unitText(String unit) => switch (unit.trim()) {
 String channelValueText(double? value, String unit) {
   if (value == null || !value.isFinite) return '—';
   final suffix = unitText(unit);
-  return '${value.toStringAsFixed(0)}${suffix.isEmpty ? '' : ' $suffix'}';
+  return '${value.toStringAsFixed(0)}${suffix.isEmpty ? '' : '\u00a0$suffix'}';
 }
 
 /// "mean 104 °C · 98 – 112 · 97% covered", "No valid samples" or "Not

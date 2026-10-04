@@ -46,12 +46,16 @@ _FocusTexts? _focusTexts(AppLocalizations l10n, FocusArea area) {
   final english = _focusTextsIn(_english, area, translate: false);
   if (texts == null ||
       english == null ||
-      english.observation != area.observation ||
-      english.hypothesis != area.hypothesis) {
+      // The app keeps a unit with its number by a no-break space; the core
+      // writes a plain one.
+      _plain(english.observation) != area.observation ||
+      _plain(english.hypothesis) != area.hypothesis) {
     return null;
   }
   return texts;
 }
+
+String _plain(String text) => text.replaceAll(unitSpace, ' ');
 
 _FocusTexts? _focusTextsIn(
   AppLocalizations l10n,
@@ -354,7 +358,7 @@ class _FocusAreaPageState extends State<FocusAreaPage> {
       case FocusAreaKind.minimumSpeedSpread:
         final speed = observation?.minimumSpeed;
         final label = speedUnitOf(context, widget.area.unit);
-        final unit = label.isEmpty ? '' : ' $label';
+        final unit = label.isEmpty ? '' : '\u00a0$label';
         parts.add(
           speed == null
               ? l10n.focusLowestSpeedNotMeasured

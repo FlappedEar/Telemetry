@@ -156,7 +156,7 @@ class _LapPageState extends State<LapPage> {
   );
 
   String _axisText(double time) =>
-      '${(time - widget.row.start).toStringAsFixed(1)} s';
+      '${(time - widget.row.start).toStringAsFixed(1)}\u00a0s';
 
   List<Widget> _charts(BuildContext context) {
     final session = _session;

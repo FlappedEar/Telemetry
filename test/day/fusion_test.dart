@@ -1071,7 +1071,7 @@ void main() {
     expect(
       find.text(
         'Lined up with its RCZ (${offset < 0 ? '−' : '+'}'
-        '${offset.abs().toStringAsFixed(2)} s); nothing to add',
+        '${offset.abs().toStringAsFixed(2)}\u00a0s); nothing to add',
       ),
       findsOneWidget,
     );

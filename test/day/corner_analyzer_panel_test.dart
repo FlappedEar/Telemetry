@@ -141,7 +141,7 @@ void main() {
     // The charts show the segment, with the cursor in its middle.
     expect(
       textOf(tester, const ValueKey('chartRange')),
-      startsWith('${segment.startMeters.round()} m'),
+      startsWith('${segment.startMeters.round()}\u00a0m'),
     );
 
     // The next segment: the charts follow it.
@@ -158,7 +158,7 @@ void main() {
     );
     expect(
       textOf(tester, const ValueKey('chartRange')),
-      startsWith('${next.startMeters.round()} m'),
+      startsWith('${next.startMeters.round()}\u00a0m'),
     );
 
     // A corner: speeds, braking point and pickup rows, each missing value
@@ -190,7 +190,7 @@ void main() {
           ),
         );
       } else {
-        expect(shown, '${(corner.startMeters - value.value!).round()} m');
+        expect(shown, '${(corner.startMeters - value.value!).round()}\u00a0m');
       }
     }
 
@@ -251,7 +251,7 @@ void main() {
     // Lap A opens at the segment's start.
     await tapKey(tester, const ValueKey('cornerAnalyzerOpenLapA'));
     expect(find.byType(LapPage), findsOneWidget);
-    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0 s'));
+    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0\u00a0s'));
   });
 
   testWidgets('laps without shared segments can use the theoretical best\'s', (
@@ -442,24 +442,24 @@ void main() {
     );
     expect(
       segmentPickerLabel(english, segment('Corner 1', 'corner'), 2000),
-      'Corner 1 · 170 m',
+      'Corner 1 · 170\u00a0m',
     );
     expect(
       segmentPickerLabel(english, segment('Corners 2–3', 'corner'), 2000),
-      'Corners 2–3 · 170 m',
+      'Corners 2–3 · 170\u00a0m',
     );
     expect(
       segmentPickerLabel(english, segment('S1', 'sector'), 2000),
-      'S1 · sector · 170 m',
+      'S1 · sector · 170\u00a0m',
     );
     final polish = lookupAppLocalizations(const Locale('pl'));
     expect(
       segmentPickerLabel(polish, segment('Corner 1', 'corner'), 2000),
-      'Zakręt 1 · 170 m',
+      'Zakręt 1 · 170\u00a0m',
     );
     expect(
       segmentPickerLabel(polish, segment('S1', 'sector'), 2000),
-      'S1 · sektor · 170 m',
+      'S1 · sektor · 170\u00a0m',
     );
   });
 

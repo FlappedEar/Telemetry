@@ -946,7 +946,7 @@ class SpeedLegend extends StatelessWidget {
       );
     }
     final label = speedUnitOf(context, path.speedUnit);
-    final unit = label.isEmpty ? '' : ' $label';
+    final unit = label.isEmpty ? '' : '\u00a0$label';
     return Row(
       children: [
         Text(

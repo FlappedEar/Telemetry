@@ -955,7 +955,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
         key: ValueKey(
           '$key ${delta > 0 ? '+' : ''}${delta.toStringAsFixed(0)}',
         ),
-        tooltip: '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(0)} m',
+        tooltip: '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(0)}\u00a0m',
         onPressed: widget.busy
             ? null
             : () {
@@ -978,7 +978,7 @@ class _SegmentToolsState extends State<_SegmentTools> {
             children: [
               Text(label, style: theme.textTheme.bodySmall),
               Text(
-                '${value.toStringAsFixed(1)} m',
+                '${value.toStringAsFixed(1)}\u00a0m',
                 key: ValueKey('$key value'),
                 style: theme.textTheme.titleSmall,
               ),

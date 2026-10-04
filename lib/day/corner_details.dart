@@ -63,8 +63,9 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
 
 String _speed(double? value) => value == null ? '—' : value.toStringAsFixed(1);
 
-String _meters(double? value) =>
-    value == null ? '—' : '${value < 0 ? '−' : ''}${value.abs().round()} m';
+String _meters(double? value) => value == null
+    ? '—'
+    : '${value < 0 ? '−' : ''}${value.abs().round()}\u00a0m';
 
 // A braking point as metres before the corner's start; negative is inside.
 String _beforeEntry(AppLocalizations l10n, double value) => value.round() >= 0
@@ -336,11 +337,11 @@ class CornerDetails extends StatelessWidget {
         if (braking.brakingSeconds != null)
           row(
             l10n.cornerDetailsBrakingTime,
-            '${braking.brakingSeconds!.toStringAsFixed(2)} s',
+            '${braking.brakingSeconds!.toStringAsFixed(2)}\u00a0s',
             bestBraking?.brakingSeconds == null
                 ? '—'
-                : '${bestBraking!.brakingSeconds!.toStringAsFixed(2)} s',
-            _signed(comparison.braking.brakingSecondsDelta, 2, ' s'),
+                : '${bestBraking!.brakingSeconds!.toStringAsFixed(2)}\u00a0s',
+            _signed(comparison.braking.brakingSecondsDelta, 2, '\u00a0s'),
             key: const ValueKey('cornerBrakingTime'),
           ),
         if (braking.peakDeceleration != null)
@@ -465,7 +466,7 @@ String cornerSummary(AppLocalizations l10n, DayCornerComparison comparison) {
   final minimum = own.speeds.minimum.value;
   if (minimum != null) {
     final bestMinimum = best?.speeds.minimum.value;
-    final speed = '${_speed(minimum)}${unit.isEmpty ? '' : ' $unit'}';
+    final speed = '${_speed(minimum)}${unit.isEmpty ? '' : '\u00a0$unit'}';
     parts.add(
       isBest || bestMinimum == null || comparison.speeds.minimumDelta == null
           ? l10n.cornerSummaryMin(speed)

@@ -44,7 +44,7 @@
   "@trackDialogNoLaps": {
     "description": "Reason shown when a session has no laps."
   },
-  "trackDialogDetectedRoute": "Detected route: {length} m, {direction} (inferred from GPS).",
+  "trackDialogDetectedRoute": "Detected route: {length} m, {direction} (inferred from GPS).",
   "@trackDialogDetectedRoute": {
     "description": "The circuit found from GPS: its length in metres and direction.",
     "placeholders": {
@@ -1223,7 +1223,7 @@
       }
     }
   },
-  "consistencyValue": "{time} · spread {spread} s",
+  "consistencyValue": "{time} · spread {spread} s",
   "@consistencyValue": {
     "description": "A typical (median) time and its spread (interquartile range) in seconds.",
     "placeholders": {
@@ -1382,7 +1382,7 @@
   "@timeLossDifference": {
     "description": "Label of the time difference between the two laps through the segment."
   },
-  "timeLossThrough": "Through {segment}, from {start} m to {end} m after the line.",
+  "timeLossThrough": "Through {segment}, from {start} m to {end} m after the line.",
   "@timeLossThrough": {
     "description": "Where the segment of a time loss is on the track.",
     "placeholders": {
@@ -1536,7 +1536,7 @@
   "@focusBrakingNotMeasured": {
     "description": "A lap's braking point could not be measured."
   },
-  "focusBrakingStarts": "braking starts at {meters} m",
+  "focusBrakingStarts": "braking starts at {meters} m",
   "@focusBrakingStarts": {
     "description": "Where braking starts on a lap, in meters along the lap.",
     "placeholders": {
@@ -1567,7 +1567,7 @@
   "@focusCompareAB": {
     "description": "Button that compares the focus area's two laps."
   },
-  "focusObservationSectorGap": "Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.",
+  "focusObservationSectorGap": "Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.",
   "@focusObservationSectorGap": {
     "description": "What a sector-gap focus area measured.",
     "placeholders": {
@@ -1599,7 +1599,7 @@
       }
     }
   },
-  "focusObservationRepeatedLoss": "In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).",
+  "focusObservationRepeatedLoss": "In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).",
   "@focusObservationRepeatedLoss": {
     "description": "What a repeated-loss focus area measured.",
     "placeholders": {
@@ -1639,7 +1639,7 @@
       }
     }
   },
-  "focusObservationBrakingSpread": "Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).",
+  "focusObservationBrakingSpread": "Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).",
   "@focusObservationBrakingSpread": {
     "description": "What a braking-spread focus area measured.",
     "placeholders": {
@@ -1856,7 +1856,7 @@
   "@progressionNoTimedSegments": {
     "description": "Progression by segment without timed segments."
   },
-  "progressionSpread": "spread {seconds} s",
+  "progressionSpread": "spread {seconds} s",
   "@progressionSpread": {
     "description": "A segment's spread (interquartile range) in a session.",
     "placeholders": {
@@ -2243,7 +2243,7 @@
       }
     }
   },
-  "cornerBeforeEntry": "{metres} m before",
+  "cornerBeforeEntry": "{metres} m before",
   "@cornerBeforeEntry": {
     "description": "A braking point before the corner's start.",
     "placeholders": {
@@ -2252,7 +2252,7 @@
       }
     }
   },
-  "cornerIntoCorner": "{metres} m into the corner",
+  "cornerIntoCorner": "{metres} m into the corner",
   "@cornerIntoCorner": {
     "description": "A braking point inside the corner.",
     "placeholders": {
@@ -2265,7 +2265,7 @@
   "@cornerSamePosition": {
     "description": "A braking point at the same place as on the best lap."
   },
-  "cornerLater": "{metres} m later",
+  "cornerLater": "{metres} m later",
   "@cornerLater": {
     "description": "A braking point later than on the best lap.",
     "placeholders": {
@@ -2274,7 +2274,7 @@
       }
     }
   },
-  "cornerEarlier": "{metres} m earlier",
+  "cornerEarlier": "{metres} m earlier",
   "@cornerEarlier": {
     "description": "A braking point earlier than on the best lap.",
     "placeholders": {
@@ -2461,7 +2461,7 @@
   "@reportTheoreticalBest": {
     "description": "Label above the theoretical best time."
   },
-  "reportTheoreticalAvailable": "{seconds} s available across the approved segments",
+  "reportTheoreticalAvailable": "{seconds} s available across the approved segments",
   "@reportTheoreticalAvailable": {
     "description": "Time left between the best lap and the theoretical best.",
     "placeholders": {
@@ -2541,7 +2541,7 @@
   "@reportSameAsPrevious": {
     "description": "A session's best lap equal to the previous session's."
   },
-  "reportFasterThanPrevious": "{seconds} s faster than the previous session",
+  "reportFasterThanPrevious": "{seconds} s faster than the previous session",
   "@reportFasterThanPrevious": {
     "description": "A session's best lap against the previous session's.",
     "placeholders": {
@@ -2551,7 +2551,7 @@
       }
     }
   },
-  "reportSlowerThanPrevious": "{seconds} s slower than the previous session",
+  "reportSlowerThanPrevious": "{seconds} s slower than the previous session",
   "@reportSlowerThanPrevious": {
     "description": "A session's best lap against the previous session's.",
     "placeholders": {
@@ -2585,7 +2585,7 @@
       }
     }
   },
-  "reportConsistencyDay": "Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}",
+  "reportConsistencyDay": "Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}",
   "@reportConsistencyDay": {
     "description": "The day's lap time consistency: median and interquartile range.",
     "placeholders": {
@@ -2649,7 +2649,7 @@
   "@reportNoTemperatureSamples": {
     "description": "The day report has no valid temperature."
   },
-  "reportHeartRateSummary": "mean {mean} bpm · {minimum} – {maximum}",
+  "reportHeartRateSummary": "mean {mean} bpm · {minimum} – {maximum}",
   "@reportHeartRateSummary": {
     "description": "A session's heart rate: mean, minimum and maximum.",
     "placeholders": {
@@ -2762,7 +2762,7 @@
   "@segmentEditorTypeSector": {
     "description": "Segment type."
   },
-  "segmentEditorRow": "{type} · {start}–{end} m · {length} m",
+  "segmentEditorRow": "{type} · {start}–{end} m · {length} m",
   "@segmentEditorRow": {
     "description": "A segment row: its type, start and end along the track and its length, in metres.",
     "placeholders": {
@@ -2830,7 +2830,7 @@
   "@segmentEditorReset": {
     "description": "Discards the segment changes not applied yet."
   },
-  "segmentEditorSplitAt": "Split at {meters} m",
+  "segmentEditorSplitAt": "Split at {meters} m",
   "@segmentEditorSplitAt": {
     "description": "Where the segment is split, in metres along the track.",
     "placeholders": {
@@ -2985,7 +2985,7 @@
   "@segmentEditorErrorName": {
     "description": "Why a segment edit is refused."
   },
-  "segmentEditorErrorBounds": "Bounds must lie between 0 and {length} m.",
+  "segmentEditorErrorBounds": "Bounds must lie between 0 and {length} m.",
   "@segmentEditorErrorBounds": {
     "description": "Why a segment edit is refused; length is the track axis length.",
     "placeholders": {
@@ -3391,7 +3391,7 @@
   "@variabilityPickup": {
     "description": "Label: where the driver goes back on the throttle."
   },
-  "variabilityLine": "Line: spread {spread} m · {accuracy}",
+  "variabilityLine": "Line: spread {spread} m · {accuracy}",
   "@variabilityLine": {
     "description": "How far apart the laps' lines are at the apex.",
     "placeholders": {
@@ -3405,7 +3405,7 @@
       }
     }
   },
-  "variabilityGpsAccuracy": "GPS accuracy about {meters} m",
+  "variabilityGpsAccuracy": "GPS accuracy about {meters} m",
   "@variabilityGpsAccuracy": {
     "description": "The recording's typical GPS accuracy.",
     "placeholders": {
@@ -3936,7 +3936,7 @@
   "@coastingEpisodes": {
     "description": "Heading of a lap's coasting episodes."
   },
-  "coastingIntoLap": "{seconds} s into the lap",
+  "coastingIntoLap": "{seconds} s into the lap",
   "@coastingIntoLap": {
     "description": "Where an episode starts, outside any segment.",
     "placeholders": {
@@ -4072,7 +4072,7 @@
   "@drivingCoastingUnavailable": {
     "description": "Why a lap's coasting is unknown."
   },
-  "drivingCoastingSummaryLap": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)",
+  "drivingCoastingSummaryLap": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)",
   "@drivingCoastingSummaryLap": {
     "description": "A lap's coasting: its time, distance, episodes and share of the lap time.",
     "placeholders": {
@@ -4094,7 +4094,7 @@
       }
     }
   },
-  "drivingCoastingSummaryStretch": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)",
+  "drivingCoastingSummaryStretch": "{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)",
   "@drivingCoastingSummaryStretch": {
     "description": "A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.",
     "placeholders": {
@@ -4124,7 +4124,7 @@
   "@drivingCoastingEpisodesHint": {
     "description": "Under the comparison's coasting episodes."
   },
-  "drivingSelectedStretch": "Selected stretch · {meters} m",
+  "drivingSelectedStretch": "Selected stretch · {meters} m",
   "@drivingSelectedStretch": {
     "description": "The zoomed stretch a panel covers, with its length.",
     "placeholders": {
@@ -4478,7 +4478,7 @@
   "@cornerDetailsEarliestPickup": {
     "description": "The best value of every lap of the group: earliest throttle pickup."
   },
-  "cornerDetailsMetresIn": "{metres} m in",
+  "cornerDetailsMetresIn": "{metres} m in",
   "@cornerDetailsMetresIn": {
     "description": "A throttle pickup: metres after the corner's start.",
     "placeholders": {
@@ -4994,7 +4994,7 @@
       }
     }
   },
-  "cornerAnalyzerCursor": "Cursor {offset} m: ",
+  "cornerAnalyzerCursor": "Cursor {offset} m: ",
   "@cornerAnalyzerCursor": {
     "description": "Before both laps' speed at the cursor; offset is metres from the segment's start, with its sign. Keep the trailing space.",
     "placeholders": {
@@ -5589,7 +5589,7 @@
       }
     }
   },
-  "segmentReviewBounds": "{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)",
+  "segmentReviewBounds": "{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)",
   "@segmentReviewBounds": {
     "description": "A proposal's start and end in metres from the line with their tolerance, and its length.",
     "placeholders": {
@@ -5651,7 +5651,7 @@
   "@segmentReviewGpsGap": {
     "description": "Uncertainty: the lap has no GPS near this boundary."
   },
-  "segmentReviewApex": "Geometric apex {at} m ±{tolerance} m",
+  "segmentReviewApex": "Geometric apex {at} m ±{tolerance} m",
   "@segmentReviewApex": {
     "description": "Where the corner turns most, from the track's shape (not from speed).",
     "placeholders": {

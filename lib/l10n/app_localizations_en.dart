@@ -39,7 +39,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String trackDialogDetectedRoute(String length, String direction) {
-    return 'Detected route: $length m, $direction (inferred from GPS).';
+    return 'Detected route: $length m, $direction (inferred from GPS).';
   }
 
   @override
@@ -845,7 +845,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String consistencyValue(String time, String spread) {
-    return '$time · spread $spread s';
+    return '$time · spread $spread s';
   }
 
   @override
@@ -956,7 +956,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String timeLossThrough(String segment, int start, int end) {
-    return 'Through $segment, from $start m to $end m after the line.';
+    return 'Through $segment, from $start m to $end m after the line.';
   }
 
   @override
@@ -1044,7 +1044,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String focusBrakingStarts(int meters) {
-    return 'braking starts at $meters m';
+    return 'braking starts at $meters m';
   }
 
   @override
@@ -1069,7 +1069,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String segment,
     String sourceLap,
   ) {
-    return 'Your best lap ($bestLap) was $gap s slower through $segment than $sourceLap, the fastest recorded there.';
+    return 'Your best lap ($bestLap) was $gap s slower through $segment than $sourceLap, the fastest recorded there.';
   }
 
   @override
@@ -1085,7 +1085,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String reference,
     String median,
   ) {
-    return 'In $count of $total compared laps you lost time through $segment against $reference (median $median s).';
+    return 'In $count of $total compared laps you lost time through $segment against $reference (median $median s).';
   }
 
   @override
@@ -1099,7 +1099,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String spread,
     String count,
   ) {
-    return 'Where braking starts for $segment varies by $spread m across the middle half of $count laps (measured from the brake signal).';
+    return 'Where braking starts for $segment varies by $spread m across the middle half of $count laps (measured from the brake signal).';
   }
 
   @override
@@ -1240,7 +1240,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String progressionSpread(String seconds) {
-    return 'spread $seconds s';
+    return 'spread $seconds s';
   }
 
   @override
@@ -1493,12 +1493,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cornerBeforeEntry(int metres) {
-    return '$metres m before';
+    return '$metres m before';
   }
 
   @override
   String cornerIntoCorner(int metres) {
-    return '$metres m into the corner';
+    return '$metres m into the corner';
   }
 
   @override
@@ -1506,12 +1506,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cornerLater(int metres) {
-    return '$metres m later';
+    return '$metres m later';
   }
 
   @override
   String cornerEarlier(int metres) {
-    return '$metres m earlier';
+    return '$metres m earlier';
   }
 
   @override
@@ -1652,7 +1652,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportTheoreticalAvailable(String seconds) {
-    return '$seconds s available across the approved segments';
+    return '$seconds s available across the approved segments';
   }
 
   @override
@@ -1701,12 +1701,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportFasterThanPrevious(String seconds) {
-    return '$seconds s faster than the previous session';
+    return '$seconds s faster than the previous session';
   }
 
   @override
   String reportSlowerThanPrevious(String seconds) {
-    return '$seconds s slower than the previous session';
+    return '$seconds s slower than the previous session';
   }
 
   @override
@@ -1733,7 +1733,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count laps',
       one: '1 lap',
     );
-    return 'Typical lap $time · middle half within $spread s · $_temp0';
+    return 'Typical lap $time · middle half within $spread s · $_temp0';
   }
 
   @override
@@ -1771,7 +1771,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportHeartRateSummary(String mean, String minimum, String maximum) {
-    return 'mean $mean bpm · $minimum – $maximum';
+    return 'mean $mean bpm · $minimum – $maximum';
   }
 
   @override
@@ -1849,7 +1849,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String end,
     String length,
   ) {
-    return '$type · $start–$end m · $length m';
+    return '$type · $start–$end m · $length m';
   }
 
   @override
@@ -1887,7 +1887,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String segmentEditorSplitAt(String meters) {
-    return 'Split at $meters m';
+    return 'Split at $meters m';
   }
 
   @override
@@ -2006,7 +2006,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String segmentEditorErrorBounds(String length) {
-    return 'Bounds must lie between 0 and $length m.';
+    return 'Bounds must lie between 0 and $length m.';
   }
 
   @override
@@ -2251,12 +2251,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String variabilityLine(String spread, String accuracy) {
-    return 'Line: spread $spread m · $accuracy';
+    return 'Line: spread $spread m · $accuracy';
   }
 
   @override
   String variabilityGpsAccuracy(String meters) {
-    return 'GPS accuracy about $meters m';
+    return 'GPS accuracy about $meters m';
   }
 
   @override
@@ -2630,7 +2630,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String coastingIntoLap(String seconds) {
-    return '$seconds s into the lap';
+    return '$seconds s into the lap';
   }
 
   @override
@@ -2748,7 +2748,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count episodes',
       one: '1 episode',
     );
-    return '$seconds s · $meters m over $_temp0 ($share % of the lap)';
+    return '$seconds s · $meters m over $_temp0 ($share % of the lap)';
   }
 
   @override
@@ -2764,7 +2764,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count episodes',
       one: '1 episode',
     );
-    return '$seconds s · $meters m over $_temp0 ($share % of the stretch)';
+    return '$seconds s · $meters m over $_temp0 ($share % of the stretch)';
   }
 
   @override
@@ -2777,7 +2777,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String drivingSelectedStretch(String meters) {
-    return 'Selected stretch · $meters m';
+    return 'Selected stretch · $meters m';
   }
 
   @override
@@ -3034,7 +3034,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cornerDetailsMetresIn(int metres) {
-    return '$metres m in';
+    return '$metres m in';
   }
 
   @override
@@ -3350,7 +3350,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cornerAnalyzerCursor(String offset) {
-    return 'Cursor $offset m: ';
+    return 'Cursor $offset m: ';
   }
 
   @override
@@ -3801,7 +3801,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String endTolerance,
     String length,
   ) {
-    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
+    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
   }
 
   @override
@@ -3829,7 +3829,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String segmentReviewApex(String at, String tolerance) {
-    return 'Geometric apex $at m ±$tolerance m';
+    return 'Geometric apex $at m ±$tolerance m';
   }
 
   @override

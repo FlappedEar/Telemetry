@@ -90,8 +90,8 @@ void main() {
     expect(find.text('Whole lap'), findsNWidgets(3));
     for (final lap in const ['A', 'B']) {
       // Peaks from every pair, in g, and how many pairs there are.
-      expect(textOf(tester, ValueKey('ggBraking $lap')), endsWith(' g'));
-      expect(textOf(tester, ValueKey('ggCombined $lap')), endsWith(' g'));
+      expect(textOf(tester, ValueKey('ggBraking $lap')), endsWith('\u00a0g'));
+      expect(textOf(tester, ValueKey('ggCombined $lap')), endsWith('\u00a0g'));
       expect(
         int.parse(textOf(tester, ValueKey('ggSamples $lap'))),
         greaterThan(100),
@@ -248,7 +248,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(episode);
     await tester.pumpAndSettle();
-    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0 s'));
+    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0\u00a0s'));
   });
 
   testWidgets('the driving panels speak Polish', (tester) async {
@@ -339,7 +339,7 @@ void main() {
     expect(find.textContaining('Corner'), findsNothing);
   });
 
-  test('the G-G scale grows past 1 g in half steps', () {
+  test('the G-G scale grows past 1\u00a0g in half steps', () {
     expect(ggScale([null, 0.4]), 1.5);
     expect(ggScale([1.2]), 1.5);
     expect(ggScale([0.9, 1.4]), 1.5);

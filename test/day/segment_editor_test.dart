@@ -198,7 +198,7 @@ void main() {
         tester
             .widget<Text>(find.byKey(const ValueKey('segmentEnd value')))
             .data,
-        '${(before.segments[0].endProgressMeters + 11).toStringAsFixed(1)} m',
+        '${(before.segments[0].endProgressMeters + 11).toStringAsFixed(1)}\u00a0m',
       );
       await tapKey('applySegment');
       result = controller.theoreticalBest!;
@@ -472,7 +472,7 @@ void main() {
     final picked = double.parse(chosenProgress!.toStringAsFixed(1));
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('segmentEnd value'))).data,
-      '${picked.toStringAsFixed(1)} m',
+      '${picked.toStringAsFixed(1)}\u00a0m',
     );
     expect(
       controller.theoreticalBest!.segments[1].endProgressMeters,

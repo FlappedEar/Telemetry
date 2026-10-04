@@ -78,15 +78,22 @@ void main() {
       final areas = everyKind(speedUnit: unit);
       expect(areas.map((area) => area.kind).toSet(), FocusAreaKind.values);
       for (final area in areas) {
-        expect(english.focusAreaObservation(area), area.observation);
-        expect(english.focusAreaHypothesis(area), area.hypothesis);
+        // The same text, with a no-break space before each unit.
+        expect(
+          english.focusAreaObservation(area).replaceAll('\u00a0', ' '),
+          area.observation,
+        );
+        expect(
+          english.focusAreaHypothesis(area).replaceAll('\u00a0', ' '),
+          area.hypothesis,
+        );
         expect(polish.focusAreaObservation(area), isNot(area.observation));
         expect(polish.focusAreaHypothesis(area), isNot(area.hypothesis));
       }
       final byKind = {for (final area in areas) area.kind: area};
       expect(
         polish.focusAreaObservation(byKind[FocusAreaKind.sectorGap]!),
-        'Twoje najlepsze okrążenie (Sesja 1 · OKR. 2) było o 0.200 s '
+        'Twoje najlepsze okrążenie (Sesja 1 · OKR. 2) było o 0.200\u00a0s '
         'wolniejsze w segmencie Prosta 1 niż Sesja 2 · OKR. 1, najszybsze '
         'zarejestrowane tam.',
       );
