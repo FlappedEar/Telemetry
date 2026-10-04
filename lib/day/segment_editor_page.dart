@@ -567,11 +567,19 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
         // A short screen (or large text) keeps room for the list.
         final mapHeight = (constraints.maxHeight * 0.35).clamp(140.0, 240.0);
         // The header scrolls with the segments when it would leave them
-        // less than about two rows at the text size in use.
+        // less than about two rows at the text size in use. Measured
+        // without the on-screen keyboard: typing a name must not move the
+        // header and rebuild the field being typed in.
+        final view = View.of(context);
+        final height =
+            constraints.maxHeight +
+            view.viewInsets.bottom / view.devicePixelRatio;
         final room =
-            constraints.maxHeight -
+            height -
             4 -
-            (map != null && !sideways ? mapHeight : 0);
+            (map != null && !sideways
+                ? (height * 0.35).clamp(140.0, 240.0)
+                : 0);
         final short = room / MediaQuery.textScalerOf(context).scale(1) < 380;
         // Sideways (a phone in landscape): the map beside the list, so
         // the list keeps its height.

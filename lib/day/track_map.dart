@@ -939,9 +939,8 @@ class SpeedLegend extends StatelessWidget {
   static double minimumWidth(BuildContext context, LapPath path) {
     final range = speedRange(path);
     final style = Theme.of(context).textTheme.bodySmall;
-    if (range == null) {
-      return _textWidth(context, context.l10n.speedLegendNoSpeed, style);
-    }
+    // The no-speed note wraps; it needs no more than a short bar.
+    if (range == null) return 48;
     final label = speedUnitOf(context, path.speedUnit);
     final unit = label.isEmpty ? '' : '\u00a0$label';
     return _textWidth(context, '${range.$1.toStringAsFixed(0)}$unit', style) +

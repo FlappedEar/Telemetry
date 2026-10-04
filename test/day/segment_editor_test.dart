@@ -574,4 +574,48 @@ void main() {
       lessThan(760),
     );
   });
+
+  testWidgets('the keyboard opening keeps the name being typed', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    final best = controller.ranking!.bestOfDay!;
+    final session = controller.session(best.runId)!;
+    final path = lapPath(
+      session,
+      best.start,
+      best.end,
+      origin: mapOrigin(session),
+    );
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: SegmentEditorPage(controller: controller, path: path),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final id0 =
+        controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+    await tester.tap(find.byKey(ValueKey('segment $id0')));
+    await tester.pumpAndSettle();
+    final name = find.byKey(const ValueKey('segmentName'));
+    await tester.ensureVisible(name);
+    await tester.pumpAndSettle();
+    await tester.enterText(name, 'Hairpin X');
+    await tester.pump();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+    expect(find.text('Hairpin X'), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isTrue,
+    );
+  });
 }

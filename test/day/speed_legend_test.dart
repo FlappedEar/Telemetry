@@ -22,6 +22,7 @@ void main() {
     double scale, {
     String label = 'Prędkość',
     Locale locale = const Locale('pl'),
+    double width = 328,
   }) async {
     tester.platformDispatcher.textScaleFactorTestValue = scale;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
@@ -32,7 +33,7 @@ void main() {
         home: Scaffold(
           body: Center(
             child: SizedBox(
-              width: 328,
+              width: width,
               child: LabelledSpeedLegend(label: label, path: path),
             ),
           ),
@@ -57,6 +58,17 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(
       tester.getCenter(find.text('Speed')).dy,
+      closeTo(tester.getCenter(find.byType(SpeedLegend)).dy, 4),
+    );
+  });
+
+  testWidgets('Polish text keeps the label beside the scale when it fits', (
+    tester,
+  ) async {
+    await pump(tester, 1, width: 400);
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getCenter(find.text('Prędkość')).dy,
       closeTo(tester.getCenter(find.byType(SpeedLegend)).dy, 4),
     );
   });
