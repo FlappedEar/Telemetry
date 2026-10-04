@@ -246,10 +246,10 @@ void main() {
         validateFetproject(configured('gateRevision', 'gates-v1:$_a64')),
         isNull,
       );
-      // As in Qt (PCRE2 `$`), a final newline passes the pattern-only check.
+      // A final newline is rejected in both apps (KAN-181).
       expect(
         validateFetproject(configured('gateRevision', 'gates-v1:$_a64\n')),
-        isNull,
+        isNotNull,
       );
     });
 

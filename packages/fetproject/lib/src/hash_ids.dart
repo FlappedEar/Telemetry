@@ -28,7 +28,8 @@ typedef TimingGateEndpoints = ({
 /// Most gates a recording may declare for the revision to be resolved.
 const maximumRevisionGates = 128;
 
-final _gatesPattern = RegExp(r'^gates-v1:[0-9a-f]{64}\n?$');
+// Strict: a trailing newline is not a known revision (KAN-181).
+final _gatesPattern = RegExp(r'^gates-v1:[0-9a-f]{64}$');
 
 String _sha256(Object? basis) =>
     sha256.convert(qtCompactJsonBytes(basis)).toString();

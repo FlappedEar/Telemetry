@@ -58,8 +58,8 @@ final _compatibility = RegExp(r'^compatibility-v1:[0-9a-f]{64}$');
 // Where Overlays checks only a regular expression, PCRE2's `$` also matches
 // before a final newline, so a value ending in `\n` passes (matched as found;
 // see README). Where it also checks the length, the strict forms above apply.
+// Gate revisions are strict in both apps since KAN-181.
 final _digestOrNewline = RegExp(r'^[0-9a-f]{64}\n?$');
-final _gatesOrNewline = RegExp(r'^gates-v1:[0-9a-f]{64}\n?$');
 final _compatibilityOrNewline = RegExp(r'^compatibility-v1:[0-9a-f]{64}\n?$');
 
 bool _isNumber(Object? value) => value is num;
@@ -283,8 +283,7 @@ bool _validConfiguration(Map<String, Object?> run) {
       (layout == null || _isText(layout, maximumIdCharacters)) &&
       const ['unknown', 'clockwise', 'counterclockwise'].contains(direction) &&
       config.containsKey('gateRevision') &&
-      (revision == null ||
-          (revision is String && _gatesOrNewline.hasMatch(revision))) &&
+      (revision == null || (revision is String && _gates.hasMatch(revision))) &&
       config['sourceId'] == run['primaryTelemetrySourceId'] &&
       config['sourceFingerprint'] is Map &&
       _jsonEquals(config['sourceFingerprint'], primaryFingerprint(run));
