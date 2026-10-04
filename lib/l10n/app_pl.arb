@@ -628,6 +628,7 @@
   "chartBrakingUp": "hamowanie rysowane w górę",
   "chartRemove": "Usuń {channel}",
   "chartSemantics": "Wykres: {channel}",
+  "chartSemanticsRange": "{line}od {low} do {high}",
   "chartZoomOut": "Pomniejsz",
   "chartZoomIn": "Powiększ wokół kursora",
   "chartWholeLap": "Całe okrążenie",

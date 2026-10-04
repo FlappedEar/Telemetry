@@ -165,6 +165,12 @@ void main() {
     tester,
   ) async {
     await openComparison(tester, importDay(accelerations: false));
+    // The reason in place of empty axes.
+    expect(find.byKey(const ValueKey('ggPlot')), findsNothing);
+    expect(
+      textOf(tester, const ValueKey('ggEmpty')),
+      'A: No longitudinal G recorded · B: No longitudinal G recorded',
+    );
     for (final lap in const ['A', 'B']) {
       expect(textOf(tester, ValueKey('ggCombined $lap')), '—');
       expect(

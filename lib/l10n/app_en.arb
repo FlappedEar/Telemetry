@@ -3908,6 +3908,15 @@
       }
     }
   },
+  "chartSemanticsRange": "{line}from {low} to {high}",
+  "@chartSemanticsRange": {
+    "description": "Screen reader summary of one chart line: its lowest and highest value in the range shown. line is empty or a lap label with a colon, like 'A: '.",
+    "placeholders": {
+      "line": {"type": "String"},
+      "low": {"type": "String", "example": "45 km/h"},
+      "high": {"type": "String", "example": "182 km/h"}
+    }
+  },
   "chartZoomOut": "Zoom out",
   "@chartZoomOut": {
     "description": "Tooltip of the zoom out button of the charts."

@@ -3902,6 +3902,12 @@ abstract class AppLocalizations {
   /// **'{channel} chart'**
   String chartSemantics(String channel);
 
+  /// Screen reader summary of one chart line: its lowest and highest value in the range shown. line is empty or a lap label with a colon, like 'A: '.
+  ///
+  /// In en, this message translates to:
+  /// **'{line}from {low} to {high}'**
+  String chartSemanticsRange(String line, String low, String high);
+
   /// Tooltip of the zoom out button of the charts.
   ///
   /// In en, this message translates to:

@@ -2658,6 +2658,11 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String chartSemanticsRange(String line, String low, String high) {
+    return '${line}od $low do $high';
+  }
+
+  @override
   String get chartZoomOut => 'Pomniejsz';
 
   @override
