@@ -263,7 +263,7 @@ class _CornerAnalyzerPanelState extends State<CornerAnalyzerPanel> {
                   ),
                   key: const ValueKey('cornerAnalyzerNote'),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.tertiary,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),

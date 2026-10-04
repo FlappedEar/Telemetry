@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'day_results_controller.dart' show offersCalculateAgain;
 import '../format.dart';
 import '../l10n.dart';
+import '../ui/theme.dart';
 import '../units.dart';
 import 'corner_details.dart';
 import 'time_losses_card.dart' show CompareLaps, lapStretch;
@@ -13,15 +14,14 @@ import 'touch.dart';
 import 'track_map.dart';
 
 /// The colour of a loss of [fraction] (0 to 1) of the largest: one hue, dim
-/// to bright, as in Overlays' "Where your best lap can improve".
+/// to bright, as in Overlays' "Where your best lap can improve", ending in
+/// the app's loss red (`FetColors.loss`) so it never reads as lap A's amber.
 Color lossColor(double fraction) {
-  final t = fraction.clamp(0.0, 1.0);
-  return Color.from(
-    alpha: 1,
-    red: 0.30 + 0.70 * t,
-    green: 0.36 + 0.24 * t,
-    blue: 0.42 - 0.22 * t,
-  );
+  return Color.lerp(
+    Color.from(alpha: 1, red: 0.30, green: 0.36, blue: 0.42),
+    FetColors.dark.loss,
+    fraction.clamp(0.0, 1.0),
+  )!;
 }
 
 /// "C1" for "Corner 1", "S2" for "Straight 2", "C3–4" for "Corners 3–4".
@@ -688,13 +688,14 @@ class _Headline extends StatelessWidget {
           l10n.theoreticalBestLabel,
           total == null ? '—' : displayTime(total),
           const ValueKey('theoreticalBestTime'),
-          theme.colorScheme.primary,
+          // Blue, as the day page's Theoretical best bar.
+          FetColors.of(context).reference,
         ),
         stat(
           l10n.tbAvailable,
           available == null ? '—' : '${available.toStringAsFixed(3)} s',
           const ValueKey('availableTime'),
-          theme.colorScheme.tertiary,
+          FetColors.of(context).gain,
         ),
       ],
     );

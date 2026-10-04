@@ -1041,7 +1041,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 ? null
                 : Text(
                     displayTime(run.bestLap!.durationSeconds),
-                    style: theme.textTheme.titleMedium,
+                    key: ValueKey('sessionBest ${run.runId}'),
+                    // The best lap of the day in purple, as in the lap list.
+                    style: _controller.isBestOfDay(run.bestLap!)
+                        ? theme.textTheme.titleMedium?.copyWith(
+                            color: FetColors.of(context).dayBest,
+                            fontWeight: FontWeight.w700,
+                          )
+                        : theme.textTheme.titleMedium,
                   ),
             onTap: run.bestLap == null ? null : () => _open(run.bestLap!),
           ),

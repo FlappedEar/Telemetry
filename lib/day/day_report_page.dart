@@ -331,7 +331,7 @@ class DayReportPage extends StatelessWidget {
             '${_kind(l10n, area['kind'])} · '
             '${l10n.timeLossSegment('${area['name']}')}',
             style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.primary,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           Text(
