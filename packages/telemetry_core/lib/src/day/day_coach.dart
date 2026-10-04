@@ -97,11 +97,19 @@ const double coachReachSeconds = 1.5;
 /// a step, by how many laps show them (see [dayCoach]'s plan).
 const double coachRankSeconds = 0.1;
 
+/// A throttle pickup the car gains this many m/s on before it is released
+/// drives out of an earlier apex (see [CoachKind.earlyThrottle]).
+const double coachPickupGain = 1.5;
+
 enum CoachKind {
   earlyLift,
   excessiveCoasting,
   lowMinimumSpeed,
   lateThrottle,
+
+  /// The throttle is picked up after the braking, before the slow point,
+  /// and released again.
+  earlyThrottle,
 
   /// The session's braking points at a corner are spread out.
   inconsistentBraking,
@@ -126,6 +134,11 @@ enum CoachMetric {
   /// The time through the straight right after the corner: a slow exit
   /// loses time there too.
   nextStraightTime,
+
+  /// Where the throttle was first picked up after the braking: on a lap
+  /// that lifted again before the slow point, against the faster laps'
+  /// single pickup.
+  firstThrottle,
 }
 
 /// Why the plan is what it is, for the app to say in its language.
@@ -251,6 +264,9 @@ final class CoachFinding {
     CoachKind.lateThrottle =>
       'Work toward a smooth, slightly earlier throttle return after the slow '
           'point, using your faster laps as a reference.',
+    CoachKind.earlyThrottle =>
+      'Wait to pick up the throttle until you can keep it on: one smooth '
+          'pickup from the slow point, as on your faster laps.',
     CoachKind.inconsistentBraking =>
       'Pick one braking marker and brake at it every lap. Move it only once you '
           'hit it consistently.',
@@ -273,6 +289,7 @@ final class CoachItem {
       CoachKind.excessiveCoasting => 'Reduce coasting',
       CoachKind.lowMinimumSpeed => 'Keep more speed through the slow point',
       CoachKind.lateThrottle => 'Return to throttle sooner',
+      CoachKind.earlyThrottle => 'Pick up the throttle once',
       CoachKind.inconsistentBraking => 'Brake at the same point every lap',
       CoachKind.improving => 'Keep current approach',
     };
@@ -460,6 +477,8 @@ final class _Passage {
     this.coastSeconds,
     this.coastMeters,
     this.nextSeconds,
+    this.throttleKnown = false,
+    this.earlyPickup,
   });
 
   final DayLapRow lap;
@@ -492,6 +511,12 @@ final class _Passage {
 
   /// Through the straight right after the segment, when one follows it.
   final double? nextSeconds;
+
+  /// Whether the throttle is known from the end of the braking to the slow
+  /// point; then [earlyPickup] is where it was picked up and released
+  /// again in between, or null when it was not.
+  final bool throttleKnown;
+  final double? earlyPickup;
 
   double get lapSeconds => lap.durationSeconds;
 }
@@ -635,6 +660,57 @@ double? _liftProgress(
     }
   }
   return result;
+}
+
+/// The first throttle pickup (to at least 20 %) from [fromTime] to
+/// [toTime] that is released again (to at most 8 % for 0.2 s and 3 m)
+/// before [toTime], as a position on [trace]: `at` is null when there is
+/// none. A pickup the car gains [coachPickupGain] or more on before the
+/// release (speed in m/s by [speedAt]) is a drive out of an earlier apex in
+/// a complex, not a stab, and does not count. Null without a throttle
+/// channel or a speed there, or when a sample in between is not finite.
+({double? at})? _pickupThenLift(
+  TelemetrySession session,
+  List<ProgressSegment> trace,
+  double fromTime,
+  double toTime,
+  double? Function(double time) speedAt,
+) {
+  final channel = session.channels[session.aliases['throttle'] ?? ''];
+  if (channel == null || channel.sampleCount < 2) return null;
+  final times = channel.timestamps, values = channel.values;
+  final scale = _throttleScale(channel);
+  final high = 0.20 * scale, low = 0.08 * scale;
+  double? pickedUp, releasedAt;
+  for (var i = 0; i < times.length; ++i) {
+    final t = times[i];
+    if (t < fromTime) continue;
+    if (t > toTime) break;
+    final value = values[i];
+    if (!value.isFinite) return null;
+    if (value >= high) {
+      pickedUp ??= t;
+      releasedAt = null;
+    } else if (value <= low && pickedUp != null) {
+      releasedAt ??= t;
+      final start = progressAtTime(trace, releasedAt);
+      final now = progressAtTime(trace, t);
+      if (t - releasedAt >= 0.2 && start != null && now != null && now - start >= 3.0) {
+        final from = speedAt(pickedUp), to = speedAt(releasedAt);
+        if (from == null || to == null) return null;
+        if (to - from >= coachPickupGain) {
+          // Driven out of an earlier apex: look for a stab after it.
+          pickedUp = releasedAt = null;
+          continue;
+        }
+        final at = progressAtTime(trace, pickedUp);
+        return at == null ? null : (at: at);
+      }
+    } else {
+      releasedAt = null;
+    }
+  }
+  return (at: null);
 }
 
 /// The day's theoretical best as it stood before [runId] was added: of
@@ -817,6 +893,30 @@ DayCoach _dayCoach(
           lift = _liftProgress(session, trace, fromTime, toTime);
         }
       }
+      // A pickup between the end of the braking and the slow point,
+      // released again.
+      var throttleKnown = false;
+      double? earlyPickup;
+      final released =
+          metrics.braking.method == 'measuredBrake' &&
+              metrics.braking.brakingPointTime != null &&
+              metrics.braking.brakingSeconds != null
+          ? metrics.braking.brakingPointTime! + metrics.braking.brakingSeconds!
+          : null;
+      final slowTime = slowPoint == null ? null : timeAtProgress(trace, slowPoint);
+      if (released != null && slowTime != null && slowTime > released) {
+        final found = _pickupThenLift(
+          session,
+          trace,
+          released,
+          slowTime,
+          (t) => _metersPerSecond(session.valueAt('speed', t), speeds.unit),
+        );
+        if (found != null) {
+          throttleKnown = true;
+          earlyPickup = found.at;
+        }
+      }
       double? coastSeconds, coastMeters;
       final summary = coastingOf(lap);
       // An approach reaching back past start/finish starts at the lap's start;
@@ -869,6 +969,8 @@ DayCoach _dayCoach(
           coastSeconds: coastSeconds,
           coastMeters: coastMeters,
           nextSeconds: nextSeconds,
+          throttleKnown: throttleKnown,
+          earlyPickup: earlyPickup,
         ),
       );
     }
@@ -1056,6 +1158,7 @@ CoachGoalOutcome coachGoalOutcome(
     CoachKind.excessiveCoasting => p.coastSeconds,
     CoachKind.lowMinimumSpeed => p.minimum,
     CoachKind.lateThrottle => p.pickup,
+    CoachKind.earlyThrottle => p.earlyPickup,
     CoachKind.inconsistentBraking => p.onset,
     CoachKind.improving => null,
   };
@@ -1225,6 +1328,19 @@ CoachFinding? _corrective(
         values.addAll(references.map((r) => r.pickup!));
         count();
         if (values.any((v) => pickup - v < threshold)) continue;
+      case CoachKind.earlyThrottle:
+        final early = current.earlyPickup;
+        metric = 'First throttle pickup';
+        key = CoachMetric.firstThrottle;
+        unit = 'm';
+        if (!current.throttleKnown || references.any((r) => !r.throttleKnown || r.pickup == null)) {
+          continue;
+        }
+        count();
+        // The faster laps pick up once.
+        if (early == null || references.any((r) => r.earlyPickup != null)) continue;
+        observed = early;
+        values.addAll(references.map((r) => r.pickup!));
       case CoachKind.inconsistentBraking || CoachKind.improving:
         continue;
     }
@@ -1235,7 +1351,10 @@ CoachFinding? _corrective(
       reference: _median(values),
     ));
   }
-  final repeatedRequired = kind == CoachKind.lowMinimumSpeed || kind == CoachKind.lateThrottle;
+  final repeatedRequired =
+      kind == CoachKind.lowMinimumSpeed ||
+      kind == CoachKind.lateThrottle ||
+      kind == CoachKind.earlyThrottle;
   if (observations.isEmpty || (repeatedRequired && observations.length < 2)) return null;
   // The session coached must still show it, on at least half of its laps
   // compared: a pattern it has left behind is not advice for the next

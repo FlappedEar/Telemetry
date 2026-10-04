@@ -512,6 +512,69 @@ void main() {
     });
   });
 
+  group('throttle picked up early, then lifted', () {
+    // Every lap stops braking 15 m before the slow point (70 m) and coasts
+    // to it; the latest session's laps pick up the throttle at 45 m and
+    // lift again at 55 m.
+    void stab(String runId, TelemetrySession session, {bool earlier = false}) {
+      _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+      _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+      if (runId == 'run2' || earlier) {
+        _edit(session, 'brake', 0, (d) => d >= 45 && d < 55);
+        _edit(session, 'throttle', 40, (d) => d >= 45 && d < 55);
+      }
+    }
+
+    test('is a pattern against faster laps that pick up once', () {
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: stab);
+      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.earlyThrottle);
+      expect(finding.affectedLaps, hasLength(3));
+      final evidence = finding.evidence.first;
+      expect(evidence.key, CoachMetric.firstThrottle);
+      expect(evidence.unit, 'm');
+      // Picked up near 45 m along the corner's approach; the faster laps
+      // after the slow point.
+      expect(evidence.observed, lessThan(evidence.reference - 15));
+      expect(finding.confidence, greaterThanOrEqualTo(coachPlanConfidence));
+    });
+
+    test('not when the faster laps do it too', () {
+      final coach = _coach(
+        [20, 20.5],
+        [17, 17.2, 17.1],
+        edit: (runId, session) => stab(runId, session, earlier: true),
+      );
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a drive out of an earlier apex', () {
+      // The latest laps gain about 2 m/s (10 km/h less the slowing) while on
+      // the throttle, then slow again.
+      double Function(double) shape(double slow) {
+        final base = _lap(slow);
+        return (d) =>
+            slow < 19 && d >= 45 && d < 65 ? base(d) + 10 * (1 - (d - 55).abs() / 10) : base(d);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: stab, shape: shape);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not when the throttle stays on', () {
+      void held(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'brake', 0, (d) => d >= 45 && d < 70);
+          _edit(session, 'throttle', 40, (d) => d >= 45 && d < 70);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: held);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+  });
+
   test('braking points that agree make no braking item', () {
     final coach = _coach([20, 20.5], [17, 17.2, 17.1]);
     expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);

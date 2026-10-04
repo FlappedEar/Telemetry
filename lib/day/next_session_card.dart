@@ -18,6 +18,7 @@ extension CoachText on AppLocalizations {
     CoachKind.excessiveCoasting => coachKindExcessiveCoasting,
     CoachKind.lowMinimumSpeed => coachKindLowMinimumSpeed,
     CoachKind.lateThrottle => coachKindLateThrottle,
+    CoachKind.earlyThrottle => coachKindEarlyThrottle,
     CoachKind.inconsistentBraking => coachKindInconsistentBraking,
     CoachKind.improving => coachKindImproving,
   };
@@ -28,6 +29,7 @@ extension CoachText on AppLocalizations {
     CoachKind.excessiveCoasting => coachActionExcessiveCoasting,
     CoachKind.lowMinimumSpeed => coachActionLowMinimumSpeed,
     CoachKind.lateThrottle => coachActionLateThrottle,
+    CoachKind.earlyThrottle => coachActionEarlyThrottle,
     CoachKind.inconsistentBraking => coachActionInconsistentBraking,
     CoachKind.improving => coachActionImproving,
   };
@@ -43,6 +45,7 @@ extension CoachText on AppLocalizations {
     CoachMetric.coastDistance => coachMetricCoastDistance,
     CoachMetric.brakingSpread => coachMetricBrakingSpread,
     CoachMetric.nextStraightTime => coachMetricNextStraightTime,
+    CoachMetric.firstThrottle => coachMetricFirstThrottle,
   };
 
   /// Why the plan is what it is; [session] names the session coached.
@@ -478,6 +481,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
     CoachMetric.liftPoint,
     CoachMetric.brakingStart,
     CoachMetric.throttleReturn,
+    CoachMetric.firstThrottle,
   };
 
   MapMark? _markAt(double? progress, Color color) {

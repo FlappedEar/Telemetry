@@ -202,6 +202,9 @@ class AppLocalizationsPl extends AppLocalizations {
       'Utrzymaj wyższą prędkość w najwolniejszym punkcie';
 
   @override
+  String get coachKindEarlyThrottle => 'Dodaj gaz raz';
+
+  @override
   String get coachKindLateThrottle => 'Wcześniej wróć na gaz';
 
   @override
@@ -227,6 +230,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get coachActionLowMinimumSpeed =>
       'Powtórz tor jazdy i sposób dojazdu do zakrętu z szybszych okrążeń. Staraj się płynniej przejechać najwolniejszy fragment zakrętu. Oceń efekt na wyjściu z zakrętu.';
+
+  @override
+  String get coachActionEarlyThrottle =>
+      'Dodaj gaz dopiero wtedy, gdy możesz go już utrzymać: jedno płynne dodanie od najwolniejszego punktu, jak na Twoich szybszych okrążeniach.';
 
   @override
   String get coachActionLateThrottle =>
@@ -273,6 +280,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachMetricMinimumSpeed => 'Prędkość minimalna';
+
+  @override
+  String get coachMetricFirstThrottle => 'Pierwsze dodanie gazu';
 
   @override
   String get coachMetricThrottleReturn => 'Ponowne dodanie gazu';

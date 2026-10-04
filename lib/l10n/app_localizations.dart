@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Keep more speed through the slow point'**
   String get coachKindLowMinimumSpeed;
 
+  /// Coach item title: the throttle was picked up before the slow point and released again.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up the throttle once'**
+  String get coachKindEarlyThrottle;
+
   /// Coach item title: throttle back on later than on faster laps.
   ///
   /// In en, this message translates to:
@@ -439,6 +445,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Repeat the line and approach from your faster laps, aiming for a smoother minimum-speed phase. Keep the exit as your check.'**
   String get coachActionLowMinimumSpeed;
+
+  /// What to try when the throttle is picked up early and released again.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait to pick up the throttle until you can keep it on: one smooth pickup from the slow point, as on your faster laps.'**
+  String get coachActionEarlyThrottle;
 
   /// What to try for a late throttle return.
   ///
@@ -499,6 +511,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Minimum speed'**
   String get coachMetricMinimumSpeed;
+
+  /// Where the throttle was first picked up after the braking, in metres along the lap; on the session's laps it was released again before the slow point.
+  ///
+  /// In en, this message translates to:
+  /// **'First throttle pickup'**
+  String get coachMetricFirstThrottle;
 
   /// Where the throttle is applied again after the slow point, in metres along the lap.
   ///
