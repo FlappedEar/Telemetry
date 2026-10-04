@@ -573,12 +573,11 @@ String newDocumentId([Random? random]) {
 final _maximumRevision = BigInt.parse('18446744073709551615');
 
 /// The `documentState` of the next save after [previous]: the same `id`
-/// (a new one when it is missing or malformed, as Overlays does) and
-/// `savedRevision` one higher, so Overlays treats its own older recovery
-/// snapshot of this document as stale. `saveId` is new on every save
-/// (KAN-183): Overlays compares it with the `saveId` of its own last save, so
-/// a save here at the revision of an Overlays recovery snapshot no longer
-/// makes that snapshot stale. Other keys are kept.
+/// (a new one when it is missing or malformed, as Overlays does),
+/// `savedRevision` one higher and a new `saveId` on every save (KAN-183).
+/// Overlays compares `saveId` with the one of its own last save, so a save
+/// here never makes an Overlays recovery snapshot stale, at or above its
+/// revision. Other keys are kept.
 Map<String, Object?> nextDocumentState(Map<String, Object?>? previous) {
   final state = _copy(previous);
   state['saveId'] = newDocumentId();

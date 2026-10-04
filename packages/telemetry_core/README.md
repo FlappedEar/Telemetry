@@ -99,10 +99,10 @@ a background isolate.
   found elsewhere lists them in `OpenedDay.relinked`; saving writes their new
   paths. `openDayDocument` does the same for a
   document already in memory. Each save keeps Overlays' `documentState.id`
-  and raises `documentState.savedRevision` by one (`nextDocumentState`), so
-  Overlays treats its own older recovery snapshot of the document as stale.
-  Each save also writes a new `documentState.saveId` (KAN-183): when this save
-  reaches the revision of an Overlays recovery snapshot, Overlays sees a
+  and raises `documentState.savedRevision` by one (`nextDocumentState`).
+  Each save also writes a new `documentState.saveId` (KAN-183). Overlays
+  treats a recovery snapshot as stale only after a save of its own, so when a
+  save here reaches or passes the snapshot's revision, Overlays sees a
   `saveId` that is not its own and offers the snapshot instead of dropping it.
   `test/day/overlays_check_test.dart` opens a saved day with Overlays' C++
   code, and `test/day/overlays_roundtrip_test.dart` takes days through both
