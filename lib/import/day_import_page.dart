@@ -231,6 +231,7 @@ class _DayImportPageState extends State<DayImportPage> {
         .received
         .listen(_receive);
     _controller.addListener(_imported);
+    _coachShown.addListener(_syncNav);
     _checkRecovery();
     appNavigation.attach(this, _go);
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncNav());
@@ -366,6 +367,10 @@ class _DayImportPageState extends State<DayImportPage> {
   /// writing their recovery snapshot when [discard], once it closes.
   final _dropped = <DayResultsController, bool>{};
 
+  /// Whether the day shown shows its coach (the Coach place) rather than
+  /// its tabs (the Day place).
+  final _coachShown = ValueNotifier(false);
+
   /// Called as a day page closes: whether it disposes [day].
   bool _dayPageClosed(DayResultsController day) {
     final pages = (_dayPages[day] ?? 1) - 1;
@@ -402,8 +407,12 @@ class _DayImportPageState extends State<DayImportPage> {
   /// Shows the day of [controller], then checks again for an unsaved day
   /// left behind.
   Future<void> _show(DayResultsController controller) async {
-    // Only one day is kept: another one shown replaces it.
-    if (!identical(_keptDay, controller)) _dropKept();
+    // Only one day is kept: another one shown replaces it, and opens on
+    // its tabs.
+    if (!identical(_keptDay, controller)) {
+      _dropKept();
+      _coachShown.value = false;
+    }
     // A day opened again with its recordings found elsewhere is shown in
     // its place, and takes the recordings shared from then on.
     DayResultsController? next = controller;
@@ -426,6 +435,7 @@ class _DayImportPageState extends State<DayImportPage> {
           library: widget.library,
           // Kept when left for another place; see _keptDay.
           disposesController: () => _dayPageClosed(shown),
+          coach: _coachShown,
         ),
       );
       _dayRoute = route;
@@ -485,7 +495,7 @@ class _DayImportPageState extends State<DayImportPage> {
     if (!mounted) return;
     appNavigation.update(
       section: _shownDay != null
-          ? AppSection.day
+          ? (_coachShown.value ? AppSection.coach : AppSection.day)
           : _libraryRoute != null
           ? AppSection.library
           : AppSection.home,
@@ -527,14 +537,18 @@ class _DayImportPageState extends State<DayImportPage> {
         } else {
           unawaited(_openLibrary());
         }
-      case AppSection.day:
+      case AppSection.day || AppSection.coach:
+        // The same day page, with its tabs or its coach.
+        final coach = section == AppSection.coach;
         if (_dayRoute case final route?) {
+          _coachShown.value = coach;
           // From a page opened over the day, back to the day.
           navigator.popUntil((r) => r == route || r.isFirst);
         } else if (_keptDay case final kept? when !_opening) {
           // Not while a day is being opened or a share added: that work
           // shows its own day.
           closeLibrary();
+          _coachShown.value = coach;
           unawaited(_show(kept));
         }
     }
@@ -671,6 +685,7 @@ class _DayImportPageState extends State<DayImportPage> {
     _incoming.cancel();
     _lifecycle.dispose();
     appNavigation.detach(this);
+    _coachShown.removeListener(_syncNav);
     // The app closes: the day shown goes with its page, or now if its
     // page closed first.
     final shown = _shownDay;

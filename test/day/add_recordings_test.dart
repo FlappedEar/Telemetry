@@ -688,8 +688,8 @@ void main() {
         );
         await tester.pumpAndSettle();
         final card = find.byKey(const ValueKey('nextSessionCard'));
-        // Far down the summary, where the card is no longer built, and on a
-        // phone then in the Laps section.
+        // Far down the overview, and on a phone then in the Laps tab: the
+        // coach is not shown.
         final summary = find
             .descendant(
               of: find.byKey(const ValueKey('dayResultsSummary')),

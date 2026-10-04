@@ -458,6 +458,58 @@ void main() {
     await settleRecovery(tester);
   });
 
+  testWidgets('Coach shows the day open now on its coach', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    final coach = find.byKey(const ValueKey('place-coach'));
+    int selected() => tester
+        .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+        .selectedIndex;
+    // Greyed out until a day is open.
+    expect(
+      tester
+          .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+          .destinations
+          .last,
+      isA<NavigationDestination>().having((d) => d.enabled, 'enabled', false),
+    );
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsNothing);
+
+    // From the day's tabs to its coach, and back with a tab.
+    await tester.tap(coach);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsOneWidget);
+    expect(find.byKey(const ValueKey('dayResultsSummary')), findsNothing);
+    expect(selected(), 2);
+    await tester.tap(find.byKey(const ValueKey('daySection-overview')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsNothing);
+    expect(selected(), 1);
+
+    // From Home straight to the coach of the day left, without opening it
+    // again; Day then shows its tabs.
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    expect(find.byType(DayResultsPage), findsNothing);
+    await tester.tap(coach);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsOneWidget);
+    expect(importer.jobs, hasLength(1));
+    expect(selected(), 2);
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsCoach')), findsNothing);
+    expect(find.byKey(const ValueKey('dayResultsSummary')), findsOneWidget);
+    expect(selected(), 1);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
   testWidgets('Day tapped while the day is still leaving keeps it working', (
     tester,
   ) async {

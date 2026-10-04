@@ -183,7 +183,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachFooter =>
-      'Coach suggestions follow DrivingCoach\'s rules and suggest an opportunity, not a promised gain. The areas below are observations.';
+      'Coach suggestions follow DrivingCoach\'s rules and suggest an opportunity, not a promised gain. The Overview\'s areas are observations.';
 
   @override
   String get coachKindEarlyLift => 'Try a later lift';
@@ -4828,4 +4828,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navDay => 'Day';
+
+  @override
+  String get navCoach => 'Coach';
 }

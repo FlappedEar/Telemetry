@@ -198,7 +198,11 @@ void main() {
         ),
         child: TelemetryApp(
           locale: locale,
-          home: DayResultsPage.controller(controller: controller),
+          // The app's Coach place.
+          home: DayResultsPage.controller(
+            controller: controller,
+            coach: ValueNotifier(true),
+          ),
         ),
       ),
     );
@@ -208,7 +212,7 @@ void main() {
 
   Finder summary() => find
       .descendant(
-        of: find.byKey(const ValueKey('dayResultsSummary')),
+        of: find.byKey(const ValueKey('dayResultsCoach')),
         matching: find.byType(Scrollable),
       )
       .first;
@@ -285,8 +289,21 @@ void main() {
         startsWith("Left out as much slower than their session's typical lap"),
       );
       expect(slow.data, contains('Session 2'));
-      // The observations follow it, labelled as such.
-      await reveal(tester, find.text('Where to look next'));
+      // The observations are the Overview's, labelled as such.
+      expect(find.text('Where to look next'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('daySection-overview')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('nextSessionCard')), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Where to look next'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const ValueKey('dayResultsSummary')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.text('Where to look next'), findsOneWidget);
     },
   );

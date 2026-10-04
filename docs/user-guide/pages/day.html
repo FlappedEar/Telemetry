@@ -1,6 +1,6 @@
 <!-- title: Day results | nav: Day results -->
 <h1 id="day">Day results</h1>
-<p class="lead">The day page leads with your best lap and its map, then explains where the time is. Tabs under the day's name switch between <strong>Overview</strong>, <strong>Laps</strong>, <strong>Compare</strong> and <strong>Report</strong>; on a wide screen the overview is on the left and the laps on the right, so the tabs are <strong>Overview</strong>, <strong>Compare</strong> and <strong>Report</strong>. <strong>Report</strong> is the whole day on one page; see <a href="day-report.html">Day report</a>. The app's own places (<strong>Home</strong>, <strong>Library</strong>, <strong>Day</strong>) stay in the bar at the bottom or the rail at the side; see <a href="import.html#places">Home</a>.</p>
+<p class="lead">The day page leads with your best lap and its map, then explains where the time is. Tabs under the day's name switch between <strong>Overview</strong>, <strong>Laps</strong>, <strong>Compare</strong> and <strong>Report</strong>; on a wide screen the overview is on the left and the laps on the right, so the tabs are <strong>Overview</strong>, <strong>Compare</strong> and <strong>Report</strong>. <strong>Report</strong> is the whole day on one page; see <a href="day-report.html">Day report</a>. The app's own places (<strong>Home</strong>, <strong>Library</strong>, <strong>Day</strong>, <strong>Coach</strong>) stay in the bar at the bottom or the rail at the side; see <a href="import.html#places">Home</a>. <strong>Coach</strong> shows this day's <a href="#next">Next session</a> card.</p>
 
 <figure>
   <img src="assets/screens/day-wide.png" alt="Day results with the amber Best lap of the day and blue Theoretical best bars, the best lap's speed-coloured map, and the lap list" width="1280" height="800" loading="lazy">
@@ -20,7 +20,7 @@
 <ol class="steps">
   <li>On the day page, tap <strong>Add recordings</strong> and choose the new VBO/RCZ file. On a phone you can also share it from RaceChrono; see <a href="phone.html#share">Sharing from RaceChrono</a>.</li>
   <li>Only the new file is read. It becomes the next session (<em>Session 4</em> after three), and every card, ranking and the best day update.</li>
-  <li>A message says <em>Session 4 added to the day.</em> and the page moves to the <a href="#next">Next session</a> card, which coaches the session recorded last: the one just added, unless it was recorded before the others. A recording already in the day is not added again. The RCZ of a session added as VBO joins that session as its alternative source instead (<em>RCZ added to Session 2.</em>, see <a href="#combined">VBO and RCZ of one session</a>); a VBO for a session added as RCZ is not added. The message says so.</li>
+  <li>A message says <em>Session 4 added to the day.</em> and the page moves to <strong>Coach</strong> and its <a href="#next">Next session</a> card, which coaches the session recorded last: the one just added, unless it was recorded before the others. A recording already in the day is not added again. The RCZ of a session added as VBO joins that session as its alternative source instead (<em>RCZ added to Session 2.</em>, see <a href="#combined">VBO and RCZ of one session</a>); a VBO for a session added as RCZ is not added. The message says so.</li>
   <li>While the bar shows a session being added, the day stays open: <strong>Back</strong> asks you to wait until the session is in.</li>
 </ol>
 <p>Excluded laps, circuit names and your chosen group are kept. A day that was saved is saved again at once with the new session; a day never saved is kept as unsaved work (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
@@ -39,7 +39,7 @@
 <p>If there is no best lap, the card says why, for example that no session has enough complete GPS laps to identify its circuit. In that case <strong>Set the circuit…</strong> opens the circuit of the first such session (see <a href="#circuits">Circuits</a>).</p>
 
 <h2 id="next">Next session</h2>
-<p>Between sessions, the <strong>Next session</strong> card suggests what to try in the next run. It looks at the session recorded last, or the one added last when that recording has no time (the line under the heading names it, for example <em>Coaching Session 6 against the day's faster laps</em>), and compares its laps with the faster laps of the whole day, corner by corner. It compares each lap with up to two faster laps, preferring laps at most 1.5 s faster than it, so a suggestion is usually something you have already done close to your pace; when fewer than two are that close, it uses the faster laps nearest in lap time.</p>
+<p>Between sessions, the <strong>Next session</strong> card, under <strong>Coach</strong> in the bar or rail, suggests what to try in the next run. It looks at the session recorded last, or the one added last when that recording has no time (the line under the heading names it, for example <em>Coaching Session 6 against the day's faster laps</em>), and compares its laps with the faster laps of the whole day, corner by corner. It compares each lap with up to two faster laps, preferring laps at most 1.5 s faster than it, so a suggestion is usually something you have already done close to your pace; when fewer than two are that close, it uses the faster laps nearest in lap time.</p>
 <figure>
   <img src="assets/screens/next-session.png" alt="Next session card: how this session did on the session before's main focus, then the main focus, keep more speed through the slow point at Corner 4, then, once that feels settled, keep the approach at Corner 1, each with what was measured, what to try or keep, and a Why? button" width="1280" height="800" loading="lazy">
 </figure>
@@ -65,7 +65,6 @@
 <p>Below the best lap, when the group has a best lap:</p>
 <table>
   <tr><th>Card</th><th>What it answers</th></tr>
-  <tr><td><a href="#next">Next session</a></td><td>What to try in the next run, from the session recorded last.</td></tr>
   <tr><td><a href="theoretical-best.html#look-next">Where to look next</a></td><td>Up to three places worth a closer look.</td></tr>
   <tr><td><a href="theoretical-best.html">Theoretical best</a></td><td>How fast the best segments of the day add up to, and where each lap loses time.</td></tr>
   <tr><td><a href="theoretical-best.html#time-losses">Time losses</a></td><td>The largest losses to the best lap, segment by segment.</td></tr>

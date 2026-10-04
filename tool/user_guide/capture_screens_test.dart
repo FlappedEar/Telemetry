@@ -445,17 +445,31 @@ void main() {
   Future<void> showDay(WidgetTester tester, Size logical, double ratio) async {
     await size(tester, logical, ratio);
     // The app's places around the day, as the start page shows them.
+    // Day and Coach switch the page between its tabs and its coach.
     final host = Object();
-    appNavigation.attach(host, (_) {});
-    appNavigation.update(
-      section: AppSection.day,
+    final coach = ValueNotifier(false);
+    void sync() => appNavigation.update(
+      section: coach.value ? AppSection.coach : AppSection.day,
       dayAvailable: true,
       libraryAvailable: true,
     );
+    appNavigation.attach(host, (section) {
+      if (section == AppSection.day || section == AppSection.coach) {
+        coach.value = section == AppSection.coach;
+      }
+    });
+    coach.addListener(sync);
+    sync();
     addTearDown(() => appNavigation.detach(host));
     final outcome = importDay();
     await tester.pumpWidget(
-      app(DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!)),
+      app(
+        DayResultsPage(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          coach: coach,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -472,7 +486,8 @@ void main() {
     final summary = list('dayResultsSummary');
 
     // The coach's card and its first item's measured values.
-    await scrollIn(tester, summary, find.text('Next session'));
+    await tester.tap(find.byKey(const ValueKey('place-coach')));
+    await tester.pumpAndSettle();
     await shot(tester, 'next-session');
     final why = find.byKey(const ValueKey('coachWhy 0'));
     if (why.evaluate().isNotEmpty) {
@@ -483,7 +498,9 @@ void main() {
       await shot(tester, 'coach-why');
       await back(tester);
     }
-    // The observations, under the coach's card.
+    // The observations, on the Overview.
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
     await scrollIn(tester, summary, find.text('Where to look next'));
     await shot(tester, 'where-to-look-next');
 

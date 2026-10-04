@@ -377,7 +377,7 @@ abstract class AppLocalizations {
   /// Note under the coach items. DrivingCoach is a name; do not translate.
   ///
   /// In en, this message translates to:
-  /// **'Coach suggestions follow DrivingCoach\'s rules and suggest an opportunity, not a promised gain. The areas below are observations.'**
+  /// **'Coach suggestions follow DrivingCoach\'s rules and suggest an opportunity, not a promised gain. The Overview\'s areas are observations.'**
   String get coachFooter;
 
   /// Coach item title: lifting off the throttle earlier than on faster laps.
@@ -7316,6 +7316,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Day'**
   String get navDay;
+
+  /// Place in the app navigation: the coach of the day open now, what to try in the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get navCoach;
 }
 
 class _AppLocalizationsDelegate
