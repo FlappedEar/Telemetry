@@ -7046,6 +7046,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kept as stored: this day\'s weather was saved by a newer version of the app.'**
   String get weatherKept;
+
+  /// Button above the lap list that shows the hidden laps that are not ranked: out laps, in laps, laps the driver excluded and laps with an issue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Show 1 lap not ranked} other{Show {count} laps not ranked}}'**
+  String lapsShowUnranked(int count);
+
+  /// Button above the lap list that hides the laps that are not ranked (out laps, in laps, excluded laps, laps with an issue). The day keeps them.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide laps not ranked'**
+  String get lapsHideUnranked;
 }
 
 class _AppLocalizationsDelegate

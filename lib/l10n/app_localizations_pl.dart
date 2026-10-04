@@ -4757,4 +4757,19 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get weatherKept =>
       'Zachowana bez zmian: pogodę w tym dniu zapisała nowsza wersja aplikacji.';
+
+  @override
+  String lapsShowUnranked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pokaż $count niesklasyfikowanych okrążeń',
+      few: 'Pokaż $count niesklasyfikowane okrążenia',
+      one: 'Pokaż 1 niesklasyfikowane okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lapsHideUnranked => 'Ukryj niesklasyfikowane okrążenia';
 }

@@ -19,6 +19,7 @@ import 'package:telemetry/format.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/ui/theme.dart';
+import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'blank_tiles.dart';
@@ -151,9 +152,53 @@ void main() {
       find.text(displayDelta(second.durationSeconds - best.durationSeconds)),
       findsOneWidget,
     );
-    // OUT, 3 laps, IN; OUT, 2 laps, IN.
+    // OUT, 3 laps, IN; OUT, 2 laps, IN: the out and in laps are not
+    // ranked, so the list hides them until asked.
+    addTearDown(() => hideUnrankedLapsSetting.value = true);
+    expect(hideUnrankedLapsSetting.value, isTrue);
+    expect(find.textContaining(' · OUT'), findsNothing);
+    expect(find.textContaining(' · IN'), findsNothing);
+    expect(find.textContaining(' · LAP '), findsNWidgets(5));
+    await tester.tap(find.text('Show 4 laps not ranked'));
+    await tester.pumpAndSettle();
     expect(find.textContaining(' · OUT'), findsNWidgets(2));
     expect(find.textContaining(' · IN'), findsNWidgets(2));
+    // The choice is the device's setting.
+    expect(hideUnrankedLapsSetting.value, isFalse);
+    await tester.tap(find.text('Hide laps not ranked'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(' · OUT'), findsNothing);
+    expect(hideUnrankedLapsSetting.value, isTrue);
+  });
+
+  testWidgets('with no ranked lap, the lap list shows every lap', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    for (final lap in outcome.analysis!.ranking!.eligibleLaps.toList()) {
+      expect(controller.exclude(lap, 'Traffic'), isTrue);
+    }
+    expect(controller.ranking?.eligibleLaps ?? const [], isEmpty);
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: controller)),
+    );
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.pumpAndSettle();
+    expect(hideUnrankedLapsSetting.value, isTrue);
+    expect(find.byKey(const ValueKey('lapsUnrankedToggle')), findsNothing);
+    expect(find.text('Excluded: Traffic'), findsNWidgets(3));
+    expect(find.textContaining(' · OUT'), findsOneWidget);
+    expect(find.textContaining(' · IN'), findsOneWidget);
+    // Hiding never changed the day.
+    expect(controller.analysis.rows, hasLength(5));
   });
 
   for (final (name, size, section) in [
@@ -279,6 +324,12 @@ void main() {
       );
 
       await tester.pageBack();
+      await tester.pumpAndSettle();
+      // The excluded lap leaves the list with the out and in laps, until
+      // they are shown.
+      addTearDown(() => hideUnrankedLapsSetting.value = true);
+      expect(find.text('Excluded: Traffic'), findsNothing);
+      await tester.tap(find.text('Show 3 laps not ranked'));
       await tester.pumpAndSettle();
       expect(find.text('Excluded: Traffic'), findsOneWidget);
       expect(find.text(second.displayName), findsWidgets);
@@ -477,6 +528,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Porównaj dwa okrążenia'), findsOneWidget);
     expect(find.text('Najlepsze okrążenie dnia'), findsOneWidget);
+    expect(find.text('Sesja 2 · OKR. WYJAZDOWE'), findsNothing);
+    addTearDown(() => hideUnrankedLapsSetting.value = true);
+    await tester.tap(find.text('Pokaż 4 niesklasyfikowane okrążenia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ukryj niesklasyfikowane okrążenia'), findsOneWidget);
     expect(find.text('Sesja 2 · OKR. WYJAZDOWE'), findsOneWidget);
     expect(find.text('Sesja 1 · OKR. 2'), findsWidgets);
 
@@ -725,6 +781,11 @@ void main() {
         home: DayResultsPage.opened(day: opened, documents: documents),
       ),
     );
+    await tester.pumpAndSettle();
+    // Hidden with the laps that are not ranked, and there when shown.
+    addTearDown(() => hideUnrankedLapsSetting.value = true);
+    expect(find.text('Excluded: Traffic'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('lapsUnrankedToggle')));
     await tester.pumpAndSettle();
     expect(find.text('Excluded: Traffic'), findsOneWidget);
     expect(

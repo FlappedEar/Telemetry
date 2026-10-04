@@ -4646,4 +4646,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get weatherKept =>
       'Kept as stored: this day\'s weather was saved by a newer version of the app.';
+
+  @override
+  String lapsShowUnranked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count laps not ranked',
+      one: 'Show 1 lap not ranked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lapsHideUnranked => 'Hide laps not ranked';
 }

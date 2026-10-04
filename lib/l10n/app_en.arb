@@ -6818,5 +6818,18 @@
   "weatherKept": "Kept as stored: this day's weather was saved by a newer version of the app.",
   "@weatherKept": {
     "description": "The day keeps weather this version cannot read."
+  },
+  "lapsShowUnranked": "{count, plural, =1{Show 1 lap not ranked} other{Show {count} laps not ranked}}",
+  "@lapsShowUnranked": {
+    "description": "Button above the lap list that shows the hidden laps that are not ranked: out laps, in laps, laps the driver excluded and laps with an issue.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lapsHideUnranked": "Hide laps not ranked",
+  "@lapsHideUnranked": {
+    "description": "Button above the lap list that hides the laps that are not ranked (out laps, in laps, excluded laps, laps with an issue). The day keeps them."
   }
 }
