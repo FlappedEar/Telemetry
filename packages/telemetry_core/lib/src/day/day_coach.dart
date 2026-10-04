@@ -674,16 +674,12 @@ CoachFinding? _corrective(
       ..sort((a, b) => a.seconds.compareTo(b.seconds));
     final references = faster.take(2).toList();
     if (references.isEmpty) continue;
-    if (current.lap.runId == coached &&
-        switch (kind) {
-          CoachKind.earlyLift => current.lift != null && current.braking != null,
-          CoachKind.excessiveCoasting => current.coastSeconds != null,
-          CoachKind.lowMinimumSpeed => current.minimum != null && current.exit != null,
-          CoachKind.lateThrottle => current.pickup != null,
-          CoachKind.improving => false,
-        }) {
-      ++compared;
+    // Once the lap and its references can be compared, before the pattern
+    // itself is tested.
+    void count() {
+      if (current.lap.runId == coached) ++compared;
     }
+
     final resolution = references.map((r) => r.spacing).fold(current.spacing, math.max);
     final threshold = math.max(8.0, resolution * 2);
     double? observed;
@@ -691,7 +687,7 @@ CoachFinding? _corrective(
     switch (kind) {
       case CoachKind.earlyLift:
         final lift = current.lift, braking = current.braking;
-        if (lift == null || braking == null || braking - lift < 5) continue;
+        if (lift == null || braking == null) continue;
         observed = lift;
         metric = 'Lift point';
         key = CoachMetric.liftPoint;
@@ -704,18 +700,22 @@ CoachFinding? _corrective(
           }
           values.add(r.lift!);
         }
-        if (values.length != references.length || values.any((v) => v - lift < threshold)) {
-          continue;
-        }
+        if (values.length != references.length) continue;
+        count();
+        if (braking - lift < 5 || values.any((v) => v - lift < threshold)) continue;
       case CoachKind.excessiveCoasting:
         final coast = current.coastSeconds;
         metric = 'Longest coast';
         key = CoachMetric.longestCoast;
         unit = 's';
-        if (coast == null || coast < 0.7 || current.coastMeters! < threshold) continue;
+        if (coast == null) continue;
         observed = coast;
         values.addAll(references.map((r) => r.coastSeconds).whereType<double>());
-        if (values.length != references.length || values.any((v) => coast - v < 0.4)) continue;
+        if (values.length != references.length) continue;
+        count();
+        if (coast < 0.7 || current.coastMeters! < threshold || values.any((v) => coast - v < 0.4)) {
+          continue;
+        }
       case CoachKind.lowMinimumSpeed:
         final minimum = current.minimum, exit = current.exit;
         metric = 'Minimum speed';
@@ -723,13 +723,11 @@ CoachFinding? _corrective(
         unit = shown.unit;
         if (minimum == null ||
             exit == null ||
-            references.any(
-              (r) =>
-                  r.minimum == null ||
-                  r.exit == null ||
-                  r.minimum! - minimum < 1.4 ||
-                  exit > r.exit! + 0.5,
-            )) {
+            references.any((r) => r.minimum == null || r.exit == null)) {
+          continue;
+        }
+        count();
+        if (references.any((r) => r.minimum! - minimum < 1.4 || exit > r.exit! + 0.5)) {
           continue;
         }
         observed = minimum * shown.perMetrePerSecond;
@@ -744,6 +742,7 @@ CoachFinding? _corrective(
         }
         observed = pickup;
         values.addAll(references.map((r) => r.pickup!));
+        count();
         if (values.any((v) => pickup - v < threshold)) continue;
       case CoachKind.improving:
         continue;
@@ -763,7 +762,11 @@ CoachFinding? _corrective(
   // the confidence (with the coarsest sample spacing of every lap used).
   final now = observations.where((o) => o.current.lap.runId == coached).toList();
   if (now.isEmpty || now.length * 2 < compared) {
-    if (observations.any((o) => o.current.lap.runId != coached)) onlyEarlier();
+    // Said only where the session could have shown it and earlier laps
+    // repeated it.
+    if (compared > 0 && observations.where((o) => o.current.lap.runId != coached).length >= 2) {
+      onlyEarlier();
+    }
     return null;
   }
 
@@ -858,7 +861,10 @@ CoachFinding? _corrective(
       for (final o in [...observations]..sort((a, b) => a.current.order.compareTo(b.current.order)))
         o.current.lap,
     ],
-    sessionLaps: [for (final o in now) o.current.lap],
+    sessionLaps: [
+      for (final o in [...now]..sort((a, b) => a.current.order.compareTo(b.current.order)))
+        o.current.lap,
+    ],
   );
 }
 
