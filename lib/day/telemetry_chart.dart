@@ -252,85 +252,93 @@ class TelemetryChart extends StatelessWidget {
             // A tap (on lifting the finger, so the start of a page scroll
             // does not move it) or a sideways drag moves the cursor; an
             // upward or downward drag scrolls the page.
-            builder: (context, constraints) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapUp: (details) =>
-                  move(details.localPosition, constraints.maxWidth),
-              onHorizontalDragStart: (details) =>
-                  move(details.localPosition, constraints.maxWidth),
-              onHorizontalDragUpdate: (details) =>
-                  move(details.localPosition, constraints.maxWidth),
-              child: Semantics(
-                // What the lines show, not just their name: each line's
-                // lowest and highest value in the range shown.
-                label: [
-                  l10n.chartSemantics(title),
-                  for (final line in shown)
-                    l10n.chartSemanticsRange(
-                      line.label.isEmpty ? '' : '${line.label}: ',
-                      _summaryValue(
-                        line.series.minimum,
-                        displayUnitOf(context, title, line.series.unit),
+            // With a mouse or a trackpad the cursor also follows the
+            // pointer, as in other telemetry tools; touch is unchanged.
+            builder: (context, constraints) => MouseRegion(
+              key: ValueKey('chartHover $title'),
+              cursor: SystemMouseCursors.precise,
+              onHover: (event) =>
+                  move(event.localPosition, constraints.maxWidth),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (details) =>
+                    move(details.localPosition, constraints.maxWidth),
+                onHorizontalDragStart: (details) =>
+                    move(details.localPosition, constraints.maxWidth),
+                onHorizontalDragUpdate: (details) =>
+                    move(details.localPosition, constraints.maxWidth),
+                child: Semantics(
+                  // What the lines show, not just their name: each line's
+                  // lowest and highest value in the range shown.
+                  label: [
+                    l10n.chartSemantics(title),
+                    for (final line in shown)
+                      l10n.chartSemanticsRange(
+                        line.label.isEmpty ? '' : '${line.label}: ',
+                        _summaryValue(
+                          line.series.minimum,
+                          displayUnitOf(context, title, line.series.unit),
+                        ),
+                        _summaryValue(
+                          line.series.maximum,
+                          displayUnitOf(context, title, line.series.unit),
+                        ),
                       ),
-                      _summaryValue(
-                        line.series.maximum,
-                        displayUnitOf(context, title, line.series.unit),
-                      ),
-                    ),
-                ].join(', '),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: RepaintBoundary(
-                        child: CustomPaint(
-                          painter: _SeriesPainter(
-                            lines: shown,
-                            axis: valueAxis,
-                            zeroLine: zeroLine,
-                            gridColor: scheme.outlineVariant,
-                            zeroColor: scheme.outline,
-                            labelStyle: theme.textTheme.labelSmall!.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              // Readable where a line runs under it.
-                              backgroundColor: scheme.surface.withValues(
-                                alpha: 0.8,
+                  ].join(', '),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          child: CustomPaint(
+                            painter: _SeriesPainter(
+                              lines: shown,
+                              axis: valueAxis,
+                              zeroLine: zeroLine,
+                              gridColor: scheme.outlineVariant,
+                              zeroColor: scheme.outline,
+                              labelStyle: theme.textTheme.labelSmall!.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                // Readable where a line runs under it.
+                                backgroundColor: scheme.surface.withValues(
+                                  alpha: 0.8,
+                                ),
                               ),
+                              dark: theme.brightness == Brightness.dark,
+                              delta: delta,
+                              unit: shown.isEmpty
+                                  ? ''
+                                  : displayUnitOf(
+                                      context,
+                                      title,
+                                      shown.first.series.unit,
+                                    ),
                             ),
-                            dark: theme.brightness == Brightness.dark,
-                            delta: delta,
-                            unit: shown.isEmpty
-                                ? ''
-                                : displayUnitOf(
-                                    context,
-                                    title,
-                                    shown.first.series.unit,
-                                  ),
                           ),
                         ),
                       ),
-                    ),
-                    if (message != null)
-                      Center(
-                        child: Text(
-                          message,
-                          key: ValueKey('chartMessage $title'),
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall,
+                      if (message != null)
+                        Center(
+                          child: Text(
+                            message,
+                            key: ValueKey('chartMessage $title'),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ),
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _CursorPainter(
+                            cursor: cursor,
+                            start: start,
+                            end: end,
+                            lines: shown,
+                            axis: valueAxis,
+                            color: scheme.onSurface,
+                          ),
                         ),
                       ),
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _CursorPainter(
-                          cursor: cursor,
-                          start: start,
-                          end: end,
-                          lines: shown,
-                          axis: valueAxis,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

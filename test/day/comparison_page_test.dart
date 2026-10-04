@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_map/flutter_map.dart';
@@ -175,6 +176,49 @@ void main() {
       chart(const ChartSeries.failed(chartReasonChannelMissing)),
     );
     expect(find.text('Not available · A: not recorded'), findsOneWidget);
+  });
+
+  testWidgets('a mouse moves the chart cursor without a click', (tester) async {
+    final cursor = ValueNotifier(0.0);
+    addTearDown(cursor.dispose);
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: TelemetryChart(
+            title: 'speed',
+            lines: [
+              ChartLine(
+                'A',
+                const ChartSeries(
+                  segments: [
+                    [(x: 0, y: 45), (x: 1, y: 182)],
+                  ],
+                  minimum: 45,
+                  maximum: 182,
+                  unit: 'km/h',
+                ),
+                lapAColorForTest,
+              ),
+            ],
+            start: 0,
+            end: 100,
+            cursor: cursor,
+            onCursor: (value) => cursor.value = value,
+            valueAxis: (40, 190),
+          ),
+        ),
+      ),
+    );
+    final area = tester.getRect(find.byKey(const ValueKey('chartHover speed')));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: area.centerLeft + const Offset(1, 0));
+    await mouse.moveTo(area.center);
+    await tester.pump();
+    expect(cursor.value, closeTo(50, 0.5));
+    await mouse.moveTo(area.centerLeft + Offset(area.width * 0.25, 0));
+    await tester.pump();
+    expect(cursor.value, closeTo(25, 0.5));
   });
 
   testWidgets('a screen reader hears each line\'s lowest and highest value', (
