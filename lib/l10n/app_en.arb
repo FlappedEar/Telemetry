@@ -933,6 +933,10 @@
   "@noteNoPasses": {
     "description": "Analysis note about a recording without start/finish passes."
   },
+  "noteNoGps": "No GPS positions in this recording; laps cannot be timed.",
+  "@noteNoGps": {
+    "description": "Analysis note about a recording without GPS positions."
+  },
   "lapIssueLayoutUnresolved": "Layout needs confirmation",
   "@lapIssueLayoutUnresolved": {
     "description": "Why a lap is not ranked."

@@ -193,6 +193,10 @@ void main() {
       pl.dayNote('${unexpectedRunError}boom'),
       'Nieoczekiwany błąd podczas analizy tej sesji: boom',
     );
+    expect(
+      pl.dayNote(noGpsNote),
+      'To nagranie nie ma pozycji GPS; nie da się zmierzyć okrążeń.',
+    );
   });
 
   group('FailedPart', () {

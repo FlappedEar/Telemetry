@@ -621,6 +621,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No reliable start/finish passes; lap type is unknown.';
 
   @override
+  String get noteNoGps =>
+      'No GPS positions in this recording; laps cannot be timed.';
+
+  @override
   String get lapIssueLayoutUnresolved => 'Layout needs confirmation';
 
   @override

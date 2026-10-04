@@ -153,6 +153,7 @@
   "circuitGroupUnresolved": "Nierozpoznane · {session}",
   "noteUndated": "Brak daty i godziny nagrania; pokazano je po nagraniach z datą, w kolejności importu.",
   "noteNoPasses": "Brak pewnych przejazdów przez linię start/meta; rodzaj okrążenia jest nieznany.",
+  "noteNoGps": "To nagranie nie ma pozycji GPS; nie da się zmierzyć okrążeń.",
   "lapIssueLayoutUnresolved": "Konfiguracja toru do potwierdzenia",
   "lapIssueDirectionUnresolved": "Kierunek do potwierdzenia",
   "lapIssueTimingGateUnresolved": "Nieustalone bramki pomiaru czasu",

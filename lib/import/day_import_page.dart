@@ -111,7 +111,17 @@ final class PlatformRecordingPickers implements RecordingPickers {
   }
 }
 
-String _lapSummary(AppLocalizations l10n, LapSession laps) {
+String _lapSummary(
+  AppLocalizations l10n,
+  LapSession laps,
+  TelemetrySession session,
+) {
+  // Lap detection looks for the start/finish line before GPS; without GPS
+  // the line is not what is missing.
+  if (laps.status != LapSessionStatus.available &&
+      !hasGpsPositions(session, laps)) {
+    return l10n.importPageNoGps;
+  }
   switch (laps.status) {
     case LapSessionStatus.available:
       return l10n.importPageLaps(laps.timedLaps.length);
@@ -1227,7 +1237,7 @@ class _DayImportPageState extends State<DayImportPage> {
               laps.status == LapSessionStatus.available &&
               laps.timedLaps.isNotEmpty
           ? l10n.noRankedLap(laps.timedLaps.length)
-          : _lapSummary(l10n, laps);
+          : _lapSummary(l10n, laps, runs[i].run.telemetry);
     }
 
     return Card(
