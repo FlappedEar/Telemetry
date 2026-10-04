@@ -113,7 +113,8 @@ void main() {
     return DayCoach(
       runId: runId,
       findings: [change, keep],
-      plan: [CoachItem(keep), CoachItem(change)],
+      // The change first: the main focus.
+      plan: [CoachItem(change), CoachItem(keep)],
       reason: CoachReason.ready,
       slowLaps: [laps.last],
     );
@@ -191,30 +192,38 @@ void main() {
       find.byKey(const ValueKey('coachReason')),
     );
     expect(reason.data, isNotEmpty);
-    expect(reason.data, isNot('Choose one focus at a time for your next run.'));
+    expect(reason.data, isNot(startsWith('Work on the main focus first.')));
   });
 
   testWidgets(
     'each item is a labelled suggestion: measured apart from what to try',
     (tester) async {
       await show(tester);
-      expect(find.text('Coach suggestion'), findsNWidgets(2));
+      // The first item is the main focus, the other for once it feels settled.
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('coachLabel 0'))).data,
+        'Main focus',
+      );
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('coachLabel 1'))).data,
+        'Once that feels settled',
+      );
       final measured = tester.widget<Text>(
-        find.byKey(const ValueKey('coachMeasured 1')),
+        find.byKey(const ValueKey('coachMeasured 0')),
       );
       expect(
         measured.textSpan!.toPlainText(),
         'Measured: Minimum speed: 46.9\u00a0km/h on this session\'s laps, 53.7\u00a0km/h on your faster lap.',
       );
       final action = tester.widget<Text>(
-        find.byKey(const ValueKey('coachAction 1')),
+        find.byKey(const ValueKey('coachAction 0')),
       );
       expect(
         action.textSpan!.toPlainText(),
         startsWith('Try: Repeat the line'),
       );
       final keep = tester.widget<Text>(
-        find.byKey(const ValueKey('coachAction 0')),
+        find.byKey(const ValueKey('coachAction 1')),
       );
       expect(
         keep.textSpan!.toPlainText(),
@@ -242,8 +251,8 @@ void main() {
     tester,
   ) async {
     await show(tester);
-    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
-    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
     await tester.pumpAndSettle();
     expect(find.byType(CoachItemPage), findsOneWidget);
     expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
@@ -263,9 +272,10 @@ void main() {
   testWidgets('in Polish', (tester) async {
     await show(tester, locale: const Locale('pl'));
     expect(find.text('Następna sesja'), findsOneWidget);
-    expect(find.text('Sugestia trenera'), findsNWidgets(2));
+    expect(find.text('Główny cel'), findsOneWidget);
+    expect(find.text('Gdy to już wychodzi'), findsOneWidget);
     final measured = tester.widget<Text>(
-      find.byKey(const ValueKey('coachMeasured 1')),
+      find.byKey(const ValueKey('coachMeasured 0')),
     );
     expect(
       measured.textSpan!.toPlainText(),
@@ -275,7 +285,7 @@ void main() {
 
   testWidgets('fits a small phone with large text, one-handed', (tester) async {
     await show(tester, size: const Size(360, 640), textScale: 1.3);
-    final why = find.byKey(const ValueKey('coachWhy 1'));
+    final why = find.byKey(const ValueKey('coachWhy 0'));
     await reveal(tester, why);
     expect(tester.takeException(), isNull);
     expect(tester.getSize(why).height, greaterThanOrEqualTo(48));
@@ -296,7 +306,7 @@ void main() {
   ) async {
     await show(tester, header: 'velocity mph');
     expect(
-      measured(tester, 1),
+      measured(tester, 0),
       'Measured: Minimum speed: 46.9\u00a0mph on this session\'s laps, 53.7\u00a0mph on your faster lap.',
     );
     expect(find.textContaining('km/h'), findsNothing);
@@ -307,7 +317,7 @@ void main() {
   ) async {
     await show(tester, header: '');
     expect(
-      measured(tester, 1),
+      measured(tester, 0),
       'Measured: Minimum speed: 46.9 on this session\'s laps, 53.7 on your faster lap.',
     );
     expect(find.byKey(const ValueKey('coachSpeedHidden')), findsNothing);
@@ -316,7 +326,7 @@ void main() {
   testWidgets('speeds of recordings declaring km/h say km/h', (tester) async {
     speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
     await show(tester, header: 'velocity kmh');
-    expect(measured(tester, 1), contains('46.9\u00a0km/h'));
+    expect(measured(tester, 0), contains('46.9\u00a0km/h'));
   });
 
   testWidgets('converted speeds are not shown, and the card says why', (
@@ -366,12 +376,12 @@ void main() {
     );
     expect(controller.coachSpeedsConverted, isTrue);
     expect(
-      measured(tester, 1),
+      measured(tester, 0),
       'Measured: Minimum speed: — on this session\'s laps, — on your faster lap.',
     );
     expect(find.byKey(const ValueKey('coachSpeedHidden')), findsOneWidget);
-    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
-    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
     await tester.pumpAndSettle();
     expect(find.text('— against —'), findsOneWidget);
     expect(find.text('4.2\u00a0s against 4.0\u00a0s'), findsOneWidget);
@@ -457,7 +467,7 @@ void main() {
 
   testWidgets('speeds of a day in mph and km/h are not shown', (tester) async {
     await show(tester, header: 'velocity kmh', mixed: 'velocity mph');
-    expect(measured(tester, 1), contains('— on this session'));
+    expect(measured(tester, 0), contains('— on this session'));
     expect(find.byKey(const ValueKey('coachSpeedHidden')), findsOneWidget);
   });
 
@@ -465,12 +475,12 @@ void main() {
     tester,
   ) async {
     await show(tester, header: '');
-    expect(measured(tester, 1), contains('46.9 on this session'));
+    expect(measured(tester, 0), contains('46.9 on this session'));
     speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
     await tester.pumpAndSettle();
-    expect(measured(tester, 1), contains('46.9\u00a0mph on this session'));
-    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
-    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    expect(measured(tester, 0), contains('46.9\u00a0mph on this session'));
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
     await tester.pumpAndSettle();
     expect(find.text('46.9\u00a0mph against 53.7\u00a0mph'), findsOneWidget);
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;

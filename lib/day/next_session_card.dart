@@ -266,16 +266,23 @@ class NextSessionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  l10n.coachLabel,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    // The first item is the main focus (see DayCoach.focus).
+                    index == 0 ? l10n.coachFocusLabel : l10n.coachLaterLabel,
+                    key: ValueKey('coachLabel $index'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -287,7 +294,9 @@ class NextSessionCard extends StatelessWidget {
               finding.segmentName,
               l10n.coachKind(finding.kind),
             ),
-            style: theme.textTheme.titleSmall,
+            style: index == 0
+                ? theme.textTheme.titleMedium
+                : theme.textTheme.titleSmall,
           ),
           labelled(
             l10n.coachMeasuredLabel,

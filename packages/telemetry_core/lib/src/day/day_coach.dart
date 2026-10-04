@@ -53,6 +53,10 @@ const double coachPlanConfidence = 0.65;
 /// for another.
 const double coachSlowLapRatio = 1.05;
 
+/// A faster lap at most this many seconds faster than the lap compared is
+/// preferred as its reference: a lap within reach, not only the day's best.
+const double coachReachSeconds = 1.5;
+
 enum CoachKind {
   earlyLift,
   excessiveCoasting,
@@ -269,15 +273,20 @@ final class DayCoach {
   final List<DayLapRow> slowLaps;
 
   /// At most three items: at most two changes, in two different segments,
-  /// and one improvement to keep when there is one.
+  /// and one improvement to keep when there is one. The first is the main
+  /// focus ([focus]): the first change, or the improvement when there is no
+  /// change; the others are for once it feels settled.
   final List<CoachItem> plan;
+
+  /// The one thing to work on first; null when the plan is empty.
+  CoachItem? get focus => plan.isEmpty ? null : plan.first;
 
   final CoachReason reason;
 
   /// Why the plan is empty, or how to use it (English; the app maps
   /// [reason]).
   String get message => switch (reason) {
-    CoachReason.ready => 'Choose one focus at a time for your next run.',
+    CoachReason.ready => 'Work on the main focus first. Try the others only once it feels settled.',
     CoachReason.noSegments => 'The coach needs the day\'s segments and sector times first.',
     CoachReason.noLapInGroup => 'This session has no timed lap in the group compared.',
     CoachReason.noCorners => 'The group compared has no approved corner.',
@@ -707,8 +716,15 @@ CoachFinding? _corrective(
   // show it (see the end).
   for (final current in passages) {
     if (slow.contains(current.lap.reference)) continue;
+    // Faster laps within reach first, by their time through the segment;
+    // then the others, nearest in lap time first.
+    bool reach(_Passage p) => current.lapSeconds - p.lapSeconds <= coachReachSeconds;
     final faster = passages.where((p) => _isFaster(p, current)).toList()
-      ..sort((a, b) => a.seconds.compareTo(b.seconds));
+      ..sort((a, b) {
+        final near = (reach(b) ? 1 : 0).compareTo(reach(a) ? 1 : 0);
+        if (near != 0) return near;
+        return reach(a) ? a.seconds.compareTo(b.seconds) : b.lapSeconds.compareTo(a.lapSeconds);
+      });
     final references = faster.take(2).toList();
     if (references.isEmpty) continue;
     // Once the lap and its references can be compared, before the pattern
@@ -1000,7 +1016,8 @@ CoachFinding? _improving(
 /// only when seen on three or more laps of the day so far, an
 /// improvement suppressing changes in its segment, repeated patterns first,
 /// then those on more laps of the session coached, then confidence and the observed segment-time gap; one item per segment,
-/// at most two changes and one improvement kept when there is one.
+/// at most two changes and one improvement kept when there is one, the changes
+/// first (the first item is the main focus).
 List<CoachItem> _plan(List<CoachFinding> findings) {
   final eligible = findings
       .where(
@@ -1045,6 +1062,11 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
     if (!finding.kind.corrective && chosen.any((f) => !f.kind.corrective)) continue;
     chosen.add(finding);
   }
-  chosen.sort((a, b) => eligible.indexOf(a).compareTo(eligible.indexOf(b)));
+  // The first item is the main focus: the first change, or the improvement
+  // to keep when there is no change.
+  chosen.sort((a, b) {
+    final change = (b.kind.corrective ? 1 : 0).compareTo(a.kind.corrective ? 1 : 0);
+    return change != 0 ? change : eligible.indexOf(a).compareTo(eligible.indexOf(b));
+  });
   return [for (final finding in chosen) CoachItem(finding)];
 }

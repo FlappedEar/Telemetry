@@ -170,6 +170,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachLabel => 'Sugestia trenera';
 
   @override
+  String get coachFocusLabel => 'Główny cel';
+
+  @override
+  String get coachLaterLabel => 'Gdy to już wychodzi';
+
+  @override
   String get coachMeasuredLabel => 'Zmierzono';
 
   @override
@@ -268,7 +274,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coachReasonReady =>
-      'Na następny wyjazd wybierz jedną rzecz naraz.';
+      'Najpierw pracuj nad głównym celem. Po pozostałe sięgnij dopiero, gdy on już wychodzi.';
 
   @override
   String get coachReasonNoSegments =>
