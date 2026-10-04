@@ -1106,6 +1106,12 @@ abstract class AppLocalizations {
   /// **'Lap leaves the route the other laps took (off track, a detour or the pit lane)'**
   String get lapIssueDifferentRoute;
 
+  /// In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available: the theoretical best could not be calculated.'**
+  String get tbFailedElsewhere;
+
   /// Theoretical best card while it is calculated.
   ///
   /// In en, this message translates to:

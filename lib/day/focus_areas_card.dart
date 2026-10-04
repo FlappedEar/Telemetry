@@ -180,7 +180,7 @@ class FocusAreasCard extends StatelessWidget {
             if (loading || result == null)
               Text(l10n.focusLoading)
             else if (result.state != DayTheoreticalBestState.ready)
-              Text(l10n.tbMessage(result.message))
+              Text(l10n.tbDependent(result))
             else if (result.computed?.actualBest == null)
               Text(l10n.timeLossReasonBestLapUntimed)
             else if (areas.isEmpty)

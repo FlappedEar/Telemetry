@@ -1137,7 +1137,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
           wide: wide,
           onOpenLap: _open,
           onCompare: _compare,
-          onRetry: _controller.retryTheoreticalBest,
         ),
         const SizedBox(height: 12),
         ConsistencyCard(

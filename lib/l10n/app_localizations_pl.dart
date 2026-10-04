@@ -678,6 +678,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Okrążenie zjeżdża z trasy pozostałych okrążeń (wyjazd poza tor, objazd lub aleja serwisowa)';
 
   @override
+  String get tbFailedElsewhere =>
+      'Niedostępne: nie udało się obliczyć teoretycznie najlepszego okrążenia.';
+
+  @override
   String get tbTiming => 'Pomiar czasu każdego okrążenia na wspólnej osi toru…';
 
   @override

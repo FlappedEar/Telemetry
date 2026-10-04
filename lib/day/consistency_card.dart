@@ -112,7 +112,7 @@ class ConsistencyCard extends StatelessWidget {
             if (loading || result == null)
               Text(l10n.consistencyMeasuring)
             else if (result.state != DayTheoreticalBestState.ready)
-              Text(l10n.tbMessage(result.message))
+              Text(l10n.tbDependent(result))
             else
               for (final segment in result.segments)
                 row(

@@ -993,6 +993,10 @@
   "@lapIssueDifferentRoute": {
     "description": "Why a lap is not ranked."
   },
+  "tbFailedElsewhere": "Not available: the theoretical best could not be calculated.",
+  "@tbFailedElsewhere": {
+    "description": "In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card."
+  },
   "tbTiming": "Timing every lap on one track axis…",
   "@tbTiming": {
     "description": "Theoretical best card while it is calculated."

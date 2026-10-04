@@ -668,6 +668,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lap leaves the route the other laps took (off track, a detour or the pit lane)';
 
   @override
+  String get tbFailedElsewhere =>
+      'Not available: the theoretical best could not be calculated.';
+
+  @override
   String get tbTiming => 'Timing every lap on one track axis…';
 
   @override
