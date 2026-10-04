@@ -214,7 +214,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             Text(l10n.theoreticalBestLabel, style: theme.textTheme.labelLarge),
             if (widget.loading || result == null) ...[
               const SizedBox(height: 8),
-              const LinearProgressIndicator(),
+              LinearProgressIndicator(semanticsLabel: l10n.tbTiming),
               const SizedBox(height: 8),
               Text(l10n.tbTiming),
             ] else if (result.state != DayTheoreticalBestState.ready) ...[

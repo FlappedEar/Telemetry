@@ -5372,6 +5372,14 @@
   "@importPageOpenSaved": {
     "description": "Button: open a saved day."
   },
+  "importPageProgress": "Importing recordings",
+  "@importPageProgress": {
+    "description": "Screen-reader label of the import's progress bar."
+  },
+  "importPageChooseAgain": "Choose the recordings again, or other ones, above.",
+  "@importPageChooseAgain": {
+    "description": "Under a failed import: what to do next."
+  },
   "importPageIncludeSubfolders": "Include subfolders",
   "@importPageIncludeSubfolders": {
     "description": "Checkbox: also import a folder's subfolders."

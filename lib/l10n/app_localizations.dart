@@ -5495,6 +5495,18 @@ abstract class AppLocalizations {
   /// **'Open a saved day…'**
   String get importPageOpenSaved;
 
+  /// Screen-reader label of the import's progress bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing recordings'**
+  String get importPageProgress;
+
+  /// Under a failed import: what to do next.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the recordings again, or other ones, above.'**
+  String get importPageChooseAgain;
+
   /// Checkbox: also import a folder's subfolders.
   ///
   /// In en, this message translates to:

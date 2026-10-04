@@ -3619,6 +3619,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importPageOpenSaved => 'Open a saved day…';
 
   @override
+  String get importPageProgress => 'Importing recordings';
+
+  @override
+  String get importPageChooseAgain =>
+      'Choose the recordings again, or other ones, above.';
+
+  @override
   String get importPageIncludeSubfolders => 'Include subfolders';
 
   @override

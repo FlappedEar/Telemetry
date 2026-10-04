@@ -891,6 +891,8 @@
   "importPageChooseFolder": "Wybierz folder…",
   "importPageOpening": "Otwieranie…",
   "importPageOpenSaved": "Otwórz zapisany dzień…",
+  "importPageProgress": "Importowanie nagrań",
+  "importPageChooseAgain": "Wybierz ponownie te same lub inne nagrania powyżej.",
   "importPageIncludeSubfolders": "Uwzględnij podfoldery",
   "importPageNotes": "Uwagi do importu",
   "importPageLooking": "Szukam nagrań…",
