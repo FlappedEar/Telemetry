@@ -336,6 +336,10 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isTrue,
+    );
     await tester.enterText(find.byType(TextField), 'Traffic');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
