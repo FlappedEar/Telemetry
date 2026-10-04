@@ -1025,18 +1025,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     style: theme.textTheme.titleMedium,
                   ),
                   // The way out: the circuit the app could not identify.
-                  if (analysis.groups
-                          .where((group) => !group.resolved)
-                          .firstOrNull
-                      case final group?) ...[
-                    const SizedBox(height: 8),
-                    FilledButton.tonalIcon(
-                      key: const ValueKey('setCircuit'),
-                      onPressed: () => _editCircuit(group.runIds.first),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(l10n.setCircuit),
-                    ),
-                  ],
+                  if (analysis.chosenGroup == null)
+                    if (analysis.groups
+                            .where((group) => !group.resolved)
+                            .firstOrNull
+                        case final group?) ...[
+                      const SizedBox(height: 8),
+                      FilledButton.tonalIcon(
+                        key: const ValueKey('setCircuit'),
+                        onPressed: () => _editCircuit(group.runIds.first),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: Text(l10n.setCircuit),
+                      ),
+                    ],
                 ] else ...[
                   if (ranking!.tieCount > 1)
                     Text(l10n.lapsShareBestTime(ranking.tieCount)),
@@ -1558,45 +1559,60 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
       // A row rather than a ListTile, which fixes its height: with large
       // text the time and its gap grow the row instead of overflowing it.
-      child: InkWell(
-        onTap: () => _open(row),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 0, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.lap(row), style: theme.textTheme.bodyLarge),
-                      if (marks.isNotEmpty)
-                        Text(
-                          marks.join(' · '),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+      // A button to a screen reader, as the ListTile was.
+      child: MergeSemantics(
+        child: Semantics(
+          button: true,
+          child: InkWell(
+            onTap: () => _open(row),
+            child: ConstrainedBox(
+              // A ListTile's heights: 56 for one line, 72 for two, less on a
+              // desktop's compact density.
+              constraints: BoxConstraints(
+                minHeight:
+                    (marks.isEmpty ? 56 : 72) +
+                    theme.visualDensity.baseSizeAdjustment.dy,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 0, 8),
+                child: Row(
                   children: [
-                    Text(displayTime(row.durationSeconds), style: timeStyle),
-                    if (delta != null)
-                      Text(
-                        displayDelta(delta),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontFamily: FetTheme.mono,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.lap(row), style: theme.textTheme.bodyLarge),
+                          if (marks.isNotEmpty)
+                            Text(
+                              marks.join(' · '),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          displayTime(row.durationSeconds),
+                          style: timeStyle,
+                        ),
+                        if (delta != null)
+                          Text(
+                            displayDelta(delta),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontFamily: FetTheme.mono,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

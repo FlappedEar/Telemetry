@@ -492,6 +492,16 @@ void main() {
           .first,
     );
     expect(tester.takeException(), isNull);
+    // Each row is a button to a screen reader.
+    final semantics = tester.ensureSemantics();
+    expect(
+      tester
+          .getSemantics(find.text('Best of the day'))
+          .flagsCollection
+          .isButton,
+      isTrue,
+    );
+    semantics.dispose();
   });
 
   testWidgets('names the circuit of a session and its route', (tester) async {
