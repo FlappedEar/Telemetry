@@ -150,8 +150,14 @@ void main() {
     expect(find.textContaining('has unsaved changes'), findsNothing);
 
     await tester.tap(find.text('Open a saved day…'));
-    await waitFor(tester, find.text(name));
-    await tester.tap(find.text(name));
+    // The day's name ("Day") is also a place in the bottom bar: the one in
+    // the list of saved days.
+    final listed = find.descendant(
+      of: find.byType(SimpleDialog),
+      matching: find.text(name),
+    );
+    await waitFor(tester, listed);
+    await tester.tap(listed);
     await waitFor(tester, find.text('Best lap of the day'));
     await tester.pumpAndSettle();
     expect(bestLapTime(tester), best);
