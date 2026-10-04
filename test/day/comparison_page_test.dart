@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry/day/apple_map.dart';
 import 'package:telemetry/day/comparison_page.dart';
@@ -154,7 +155,7 @@ void main() {
   testWidgets('a chart tells no data apart from a failure', (tester) async {
     final cursor = ValueNotifier(0.0);
     addTearDown(cursor.dispose);
-    Widget chart(ChartSeries series) => MaterialApp(
+    Widget chart(ChartSeries series) => TelemetryApp(
       home: Scaffold(
         body: TelemetryChart(
           title: 'speed',
@@ -640,6 +641,244 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   }
+
+  testWidgets('a lap page shows the best of the day in blue and compares '
+      'with it', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    final row = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Color barColor(String key) => tester
+        .widget<Material>(
+          find
+              .descendant(
+                of: find.byKey(ValueKey(key)),
+                matching: find.byType(Material),
+              )
+              .first,
+        )
+        .color!;
+    expect(barColor('lapTimeBar'), lapAColorForTest);
+    expect(barColor('lapBestBar'), lapBColorForTest);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('lapTimeBar')),
+        matching: find.text(displayTime(row.durationSeconds)),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('lapBestBar')),
+        matching: find.text(displayTime(best.durationSeconds)),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        '${displayDelta(row.durationSeconds - best.durationSeconds)} '
+        'to the best of the day',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('lapBestBar')));
+    await tester.pumpAndSettle();
+    final page = tester.widget<ComparisonPage>(find.byType(ComparisonPage));
+    expect(page.a.reference, row.reference);
+    expect(page.b.reference, best.reference);
+  });
+
+  testWidgets('an excluded lap\'s best bar does not compare, and an out '
+      'lap has none', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    final row = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    controller.exclude(row, 'Traffic');
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<InkWell>(
+            find.descendant(
+              of: find.byKey(const ValueKey('lapBestBar')),
+              matching: find.byType(InkWell),
+            ),
+          )
+          .onTap,
+      isNull,
+    );
+
+    final out = controller.analysis.rows.firstWhere(
+      (row) => row.type != LapSectionType.lap,
+    );
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: out),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('lapTimeBar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('lapBestBar')), findsNothing);
+    expect(find.byKey(const ValueKey('lapGapToBest')), findsNothing);
+  });
+
+  testWidgets('the best lap of the day has no second bar', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('lapTimeBar')),
+        matching: find.text('Best lap of the day'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('lapBestBar')), findsNothing);
+    expect(find.byKey(const ValueKey('lapGapToBest')), findsNothing);
+  });
+
+  testWidgets('a lap page speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final best = outcome.analysis!.ranking!.bestOfDay!;
+    final row = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Kanały'), findsOneWidget);
+    expect(find.text('Channels'), findsNothing);
+    expect(find.text('Prędkość'), findsOneWidget);
+    expect(find.text('Porównaj z…'), findsOneWidget);
+    expect(find.text('Wyklucz z rankingu…'), findsOneWidget);
+    expect(
+      find.textContaining('do najlepszego okrążenia dnia'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('OKR.'), findsWidgets);
+    expect(find.textContaining('Session'), findsNothing);
+    expect(find.byTooltip('Pomniejsz'), findsOneWidget);
+    expect(find.text('Dodaj kanał'), findsOneWidget);
+
+    await tester.tap(find.text('Wyklucz z rankingu…'));
+    await tester.pumpAndSettle();
+    expect(find.text('Wyklucz to okrążenie'), findsOneWidget);
+    expect(find.text('Powód'), findsOneWidget);
+    expect(find.text('Anuluj'), findsOneWidget);
+  });
+
+  testWidgets('a comparison speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: analysis,
+    );
+    final best = analysis.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: ComparisonPage(controller: controller, a: a, b: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Porównanie okrążeń'), findsOneWidget);
+    expect(find.text('Compare laps'), findsNothing);
+    expect(
+      textOf(tester, const ValueKey('comparisonLapDelta')),
+      'Δ okrążenia ${displayDelta(a.durationSeconds - best.durationSeconds)}',
+    );
+    expect(find.text('Zamień A i B'), findsOneWidget);
+    expect(find.text('B: najlepsze z dnia'), findsOneWidget);
+    expect(find.text('Kanały według pozycji na torze'), findsOneWidget);
+    expect(find.text('Linia: A / B'), findsOneWidget);
+    expect(find.text('Otwórz okrążenie A w tym miejscu'), findsOneWidget);
+    expect(find.textContaining('Session'), findsNothing);
+  });
+
+  testWidgets('a chart speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final cursor = ValueNotifier(0.0);
+    addTearDown(cursor.dispose);
+    Widget chart(ChartSeries series) => TelemetryApp(
+      locale: const Locale('pl'),
+      home: Scaffold(
+        body: TelemetryChart(
+          title: 'speed',
+          lines: [ChartLine('A', series, lapAColorForTest)],
+          start: 0,
+          end: 1,
+          cursor: cursor,
+          onCursor: (value) => cursor.value = value,
+          valueAxis: (0, 1),
+          onRemove: () {},
+        ),
+      ),
+    );
+    await tester.pumpWidget(chart(ChartSeries.empty));
+    expect(find.text('Brak danych w tym zakresie'), findsOneWidget);
+    expect(find.text('No data in this range'), findsNothing);
+    expect(find.byTooltip('Usuń speed'), findsOneWidget);
+    await tester.pumpWidget(
+      chart(const ChartSeries.failed(chartReasonChannelMissing)),
+    );
+    expect(find.text('Niedostępne · A: nie zapisano'), findsOneWidget);
+  });
 
   test('the Δ time map runs from lap A\'s colour to lap B\'s', () {
     const layer = ComparisonMapLayer(

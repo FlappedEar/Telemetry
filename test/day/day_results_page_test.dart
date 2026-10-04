@@ -16,6 +16,7 @@ import 'package:telemetry/import/file_access.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/format.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/ui/theme.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'blank_tiles.dart';
@@ -129,6 +130,16 @@ void main() {
     }
     expect(find.byType(TrackMap), findsOneWidget);
     expect(find.text('Best lap of each session'), findsOneWidget);
+    // Only the best lap of the day's session best is purple.
+    for (final run in outcome.analysis!.ranking!.runs) {
+      final time = tester.widget<Text>(
+        find.byKey(ValueKey('sessionBest ${run.runId}')),
+      );
+      expect(
+        time.style?.color == FetColors.dark.dayBest,
+        run.bestLap!.reference == best.reference,
+      );
+    }
     // On a phone the laps are the second tab.
     await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
     await tester.pumpAndSettle();
@@ -250,8 +261,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Not ranked: excluded (“Traffic”)'), findsOneWidget);
       expect(find.text('Include in ranking'), findsOneWidget);
+      // The best of the day is now the second lap, in the blue bar.
       expect(
-        find.textContaining('to the best of the day (${second.displayName})'),
+        find.descendant(
+          of: find.byKey(const ValueKey('lapBestBar')),
+          matching: find.text(second.displayName),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          '${displayDelta(best.durationSeconds - second.durationSeconds)} '
+          'to the best of the day',
+        ),
         findsOneWidget,
       );
 
@@ -719,6 +741,33 @@ void main() {
     );
     expect(find.text('1 session could not be opened'), findsOneWidget);
     expect(find.text('Track day'), findsOneWidget);
+  });
+
+  testWidgets('the map background menu speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    mapBackground.value = MapBackground.streets;
+    debugTileProvider = BlankTiles.new;
+    addTearDown(() {
+      mapBackground.value = MapBackground.none;
+      debugTileProvider = null;
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.tap(find.text('Dotknij, aby otworzyć okrążenie.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Tło mapy'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ulice'), findsOneWidget);
+    expect(find.text('Streets'), findsNothing);
   });
 
   testWidgets('draws the trace over street tiles with attribution', (

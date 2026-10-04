@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/ui/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/corner_details.dart';
@@ -16,6 +17,8 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+
+final english = lookupAppLocalizations(const Locale('en'));
 
 void main() {
   late Directory directory;
@@ -72,6 +75,21 @@ void main() {
       expect(
         tester.widget<Text>(find.byKey(const ValueKey('availableTime'))).data,
         '${expected.availableSeconds!.toStringAsFixed(3)} s',
+      );
+      // Blue as the Theoretical best bar; what is available as a gain.
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('theoreticalBestTime')))
+            .style
+            ?.color,
+        FetColors.dark.reference,
+      );
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('availableTime')))
+            .style
+            ?.color,
+        FetColors.dark.gain,
       );
       expect(find.byKey(const ValueKey('lossMap')), findsOneWidget);
       expect(find.byKey(const ValueKey('sectorTable')), findsOneWidget);
@@ -298,8 +316,37 @@ void main() {
       find.textContaining('no throttle or acceleration channel'),
       findsOneWidget,
     );
-    expect(cornerReasonText('noBrakingDetected'), 'no braking detected');
-    expect(cornerReasonText('somethingNew'), 'not available');
+    expect(
+      cornerReasonText(english, 'noBrakingDetected'),
+      'no braking detected',
+    );
+    expect(cornerReasonText(english, 'somethingNew'), 'not available');
+    expect(tester.takeException(), isNull);
+
+    // In Polish.
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: CornerDetails(corner: corner, comparison: best),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('najlepsze okrążenie'), findsWidgets);
+    expect(find.textContaining('Sesja '), findsWidgets);
+    expect(find.textContaining('the best lap'), findsNothing);
+    expect(
+      find.textContaining('brak kanału hamulca i opóźnienia'),
+      findsOneWidget,
+    );
+    expect(find.text('Punkt hamowania, przed zakrętem'), findsOneWidget);
+    expect(
+      find.text('Najlepsze z ${corner.laps.length} okrążeń'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -411,5 +458,7 @@ void main() {
     expect(shortSegmentName('Corners 1–2'), 'C1–2');
     expect(shortSegmentName('Pit'), 'Pit');
     expect(lossColor(0), isNot(lossColor(1)));
+    // The largest loss is the app's loss red, never lap A's amber.
+    expect(lossColor(1), FetColors.dark.loss);
   });
 }

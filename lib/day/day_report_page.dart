@@ -43,7 +43,7 @@ String _reason(AppLocalizations l10n, String reason) => switch (reason) {
 };
 
 final _resolvedGroup = RegExp(
-  r'^Group (\d+) · (.+) · (Clockwise|Counterclockwise)$',
+  r'^Group (\d{1,9}) · (.+) · (Clockwise|Counterclockwise)$',
 );
 final _unresolvedGroup = RegExp(r'^Unresolved · (.+)$');
 
@@ -331,7 +331,7 @@ class DayReportPage extends StatelessWidget {
             '${_kind(l10n, area['kind'])} · '
             '${l10n.timeLossSegment('${area['name']}')}',
             style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.primary,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           Text(

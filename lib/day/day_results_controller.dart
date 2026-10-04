@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../diagnostics/app_diagnostics.dart';
+import '../diagnostics/app_errors.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
@@ -1295,8 +1296,9 @@ final class DayResultsController extends ChangeNotifier {
   /// Saves the day to [path]: the event, its runs and recordings, the
   /// layouts set by the user and the excluded laps. Throws
   /// [FetprojectError] when the document cannot be written; the previous
-  /// file is then left as it was, except where only the file itself may be
-  /// written, such as in the macOS sandbox (see `writeFetproject`).
+  /// file is then left as it was. Where only the file itself may be
+  /// written, such as in the macOS sandbox, it is written in place and,
+  /// after a failure, restored when possible (see `writeFetproject`).
   ///
   /// A recording paired with a session in a review that the day opened
   /// again would not fuse by itself (anything but a VBO session's RCZ) is
@@ -1757,6 +1759,10 @@ final class DayResultsController extends ChangeNotifier {
       return DayAddition(notes: outcome.notes, reviewChanged: true);
     }
     final part = outcome.part;
+    appErrorReporter.coreDefects(
+      messages: part?.messages ?? const [],
+      notes: outcome.notes,
+    );
     if (_disposed) {
       return const DayAddition(
         notes: [],
@@ -2894,8 +2900,10 @@ final class DayResultsController extends ChangeNotifier {
     _recoveryWork = queueRecovery(() async {
       try {
         await operation();
-      } on Exception catch (error) {
+      } on Object catch (error, stack) {
         debugPrint('Recovery snapshot not updated: $error');
+        // The day is not protected until a write succeeds: say so.
+        reportError(error, stack, context: 'Recovery snapshot not updated');
       }
     });
   }

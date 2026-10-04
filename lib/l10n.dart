@@ -22,6 +22,12 @@ Locale resolveAppLocale(List<Locale>? preferred) {
   return supportedLocales.first;
 }
 
+/// The texts in the device's language, for the few places without a
+/// [BuildContext], such as the system file pickers.
+AppLocalizations deviceL10n() => lookupAppLocalizations(
+  resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locales),
+);
+
 /// Makes [locale] the language of dates formatted without a
 /// [BuildContext] (format.dart). Called by the app when its language is
 /// chosen.
@@ -65,7 +71,7 @@ extension RouteReasonText on AppLocalizations {
   };
 }
 
-final _sessionName = RegExp(r'^Session (\d+)$');
+final _sessionName = RegExp(r'^Session (\d{1,9})$');
 
 extension SessionNameText on AppLocalizations {
   /// A run name from `telemetry_core` ("Session 2") in the app's language
@@ -118,6 +124,9 @@ extension DayNoteText on AppLocalizations {
         'recordings in import order.' =>
       noteUndated,
     'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
+    _ when text.startsWith(unexpectedRunError) => noteUnexpectedError(
+      text.substring(unexpectedRunError.length),
+    ),
     _ => routeReason(text),
   };
 

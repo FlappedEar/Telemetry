@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../l10n.dart';
 import 'day_results_controller.dart';
 import 'driving_panels.dart'
     show
@@ -9,6 +10,7 @@ import 'driving_panels.dart'
         coastingSummaryText,
         inferredColor;
 import 'telemetry_chart.dart';
+import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
 
 /// The lap page's coasting panel, or null without the lap's recording.
@@ -119,10 +121,12 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final summary = _current();
     final known = summary.valid && summary.provenance != drivingStateUnknown;
     final names = {
-      for (final segment in summary.segments) segment.segmentId: segment.name,
+      for (final segment in summary.segments)
+        segment.segmentId: l10n.tbSegmentName(segment.name),
     };
     String amount(double seconds, double meters) =>
         '${seconds.toStringAsFixed(1)} s · ${meters.round()} m';
@@ -134,16 +138,16 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Coasting', style: theme.textTheme.titleMedium),
+              Text(l10n.coastingTitle, style: theme.textTheme.titleMedium),
               const SizedBox(height: 4),
               if (known)
                 Text(
-                  coastingSummaryText(summary, 'the lap'),
+                  coastingSummaryText(l10n, summary),
                   key: const ValueKey('lapCoastingSummary'),
                   style: theme.textTheme.titleSmall,
                 ),
               Text(
-                coastingProvenanceText(summary),
+                coastingProvenanceText(l10n, summary),
                 key: const ValueKey('lapCoastingProvenance'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: summary.provenance == drivingStateInferred
@@ -151,10 +155,10 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                       : null,
                 ),
               ),
-              Text(coastingNote, style: theme.textTheme.bodySmall),
+              Text(coastingNote(l10n), style: theme.textTheme.bodySmall),
               if (known && _segmented) ...[
                 const SizedBox(height: 8),
-                Text('By segment', style: theme.textTheme.titleSmall),
+                Text(l10n.coastingBySegment, style: theme.textTheme.titleSmall),
                 for (final segment in summary.segments)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
@@ -162,7 +166,7 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                       children: [
                         Expanded(
                           child: Text(
-                            segment.name,
+                            l10n.tbSegmentName(segment.name),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -183,20 +187,15 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     widget.controller.theoreticalBestLoading
-                        ? 'Coasting by segment follows once the day\'s '
-                              'segments are calculated…'
-                        : 'Coasting by segment needs this lap\'s group to '
-                              'have segments.',
+                        ? l10n.coastingBySegmentLoading
+                        : l10n.coastingBySegmentNeedsSegments,
                     key: const ValueKey('lapCoastingNoSegments'),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
               if (known && summary.episodes.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(
-                  'Episodes · select one to see it',
-                  style: theme.textTheme.titleSmall,
-                ),
+                Text(l10n.coastingEpisodes, style: theme.textTheme.titleSmall),
                 for (final (index, episode) in summary.episodes.indexed)
                   InkWell(
                     key: ValueKey('lapCoastingEpisode $index'),
@@ -209,7 +208,7 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '${names[episode.segmentId] ?? '${(episode.startTime - widget.row.start).toStringAsFixed(1)} s into the lap'}'
+                              '${names[episode.segmentId] ?? l10n.coastingIntoLap((episode.startTime - widget.row.start).toStringAsFixed(1))}'
                               ' · ${amount(episode.seconds, episode.meters)}',
                             ),
                           ),

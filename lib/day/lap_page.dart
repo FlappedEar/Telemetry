@@ -3,6 +3,8 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../ui/headline_bar.dart';
+import '../ui/theme.dart';
 import 'comparison_page.dart';
 import 'day_results_controller.dart';
 import 'lap_coasting_panel.dart';
@@ -159,19 +161,17 @@ class _LapPageState extends State<LapPage> {
   List<Widget> _charts(BuildContext context) {
     final session = _session;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     if (session == null || !(widget.row.end > widget.row.start)) {
       return const [];
     }
     return [
       const SizedBox(height: 16),
-      Text('Channels', style: theme.textTheme.titleMedium),
+      Text(l10n.lapPageChannels, style: theme.textTheme.titleMedium),
       Text(
         isTouchPlatform(context)
-            ? 'Tap a chart or drag sideways across it to move the cursor; the '
-                  'white dot shows it on the map. Two fingers zoom and move '
-                  'the map.'
-            : 'Drag across a chart to move the cursor; the white dot shows it '
-                  'on the map.',
+            ? l10n.lapPageCursorHintTouch
+            : l10n.lapPageCursorHint,
         style: theme.textTheme.bodySmall,
       ),
       ChartWindowControls(window: _window, axisText: _axisText),
@@ -211,7 +211,7 @@ class _LapPageState extends State<LapPage> {
         ),
       ),
       if (_channels.isEmpty)
-        Text('No channel shown.', style: theme.textTheme.bodySmall),
+        Text(l10n.lapPageNoChannel, style: theme.textTheme.bodySmall),
       AddChannelButton(
         channels: _chartable,
         shown: _channels,
@@ -235,16 +235,32 @@ class _LapPageState extends State<LapPage> {
       suggested: partner,
     );
     if (other == null || !mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            ComparisonPage(controller: controller, a: row, b: other),
+    await _openComparison(other);
+  }
+
+  // This lap as A against [other] as B.
+  Future<void> _openComparison(DayLapRow other) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ComparisonPage(
+        controller: widget.controller,
+        a: widget.row,
+        b: other,
       ),
-    );
+    ),
+  );
+
+  // The best lap of the day for this lap's own track layout; for an out or
+  // in section, which has no layout of its own, that of the layout shown.
+  DayLapRow? get _dayBest {
+    final controller = widget.controller;
+    final row = widget.row;
+    return row.type == LapSectionType.lap
+        ? dayBestComparisonLap(controller.analysis, row)
+        : controller.ranking?.bestOfDay;
   }
 
   LapPath? _best() {
-    final best = widget.controller.ranking?.bestOfDay;
+    final best = _dayBest;
     if (best == null || best.reference == widget.row.reference) return null;
     if (_bestReference != best.reference) {
       final session = widget.controller.session(best.runId);
@@ -273,75 +289,123 @@ class _LapPageState extends State<LapPage> {
   Widget build(BuildContext context) {
     final row = widget.row;
     final controller = widget.controller;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(row.displayName)),
+      appBar: AppBar(title: Text(l10n.lap(row))),
       body: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
           final theme = Theme.of(context);
-          final best = controller.ranking?.bestOfDay;
+          final best = _dayBest;
           final issues = controller.issues(row);
           final reason = controller.exclusionReason(row);
           final bestPath = _showBest ? _best() : null;
           final comparable = controller
               .comparisonCandidates(row)
               .any((candidate) => candidate.reference == row.reference);
-          final summary = <Widget>[
-            Text(
-              displayTime(row.durationSeconds),
-              style: theme.textTheme.displaySmall,
+          final colors = FetColors.of(context);
+          final timed = row.type == LapSectionType.lap;
+          final bestOfDay = timed && best?.reference == row.reference;
+          final bestOfRun =
+              timed &&
+              dayBestComparisonLap(
+                    controller.analysis,
+                    row,
+                    sameRun: true,
+                  )?.reference ==
+                  row.reference;
+          final against = timed && best != null && !bestOfDay ? best : null;
+          // Rounded as shown, so "±0.000 s" is never red.
+          final gapMilliseconds = against == null
+              ? 0
+              : ((row.durationSeconds - against.durationSeconds) * 1000)
+                    .round();
+          // This lap in amber, as "you", over the best lap of the day in
+          // the reference blue; tapping the blue bar compares the two.
+          final bars = <Widget>[
+            HeadlineBar(
+              key: const ValueKey('lapTimeBar'),
+              label: bestOfDay
+                  ? l10n.lapPageBestOfDay
+                  : bestOfRun
+                  ? l10n.lapPageBestOfSession(l10n.session(row.runName))
+                  : l10n.lapPageThisLap,
+              title: l10n.lap(row),
+              time: displayTime(row.durationSeconds),
+              color: colors.you,
+              onColor: colors.onLap,
             ),
-            const SizedBox(height: 4),
-            if (controller.isBestOfDay(row))
-              const Text('Best lap of the day')
-            else if (best != null && row.type == LapSectionType.lap)
-              Text(
-                '${displayDelta(row.durationSeconds - best.durationSeconds)} '
-                'to the best of the day (${best.displayName})',
+            if (against != null) ...[
+              const SizedBox(height: 4),
+              HeadlineBar(
+                key: const ValueKey('lapBestBar'),
+                label: l10n.dayBestLabel,
+                title: l10n.lap(against),
+                time: displayTime(against.durationSeconds),
+                color: colors.reference,
+                onColor: colors.onLap,
+                onTap: controller.comparable(row, against)
+                    ? () => _openComparison(against)
+                    : null,
               ),
-            if (controller.isBestOfRun(row) && !controller.isBestOfDay(row))
-              Text('Best lap of ${row.runName}'),
+              const SizedBox(height: 6),
+              Text(
+                l10n.lapPageGapToBest(
+                  displayDelta(row.durationSeconds - against.durationSeconds),
+                ),
+                key: const ValueKey('lapGapToBest'),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontFamily: FetTheme.mono,
+                  color: gapMilliseconds > 0
+                      ? colors.loss
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ];
+          final summary = <Widget>[
+            ...bars,
             for (final issue in issues)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   issue == LapIssue.userExclusion && reason != null
-                      ? 'Not ranked: excluded (“$reason”)'
-                      : 'Not ranked: ${issue.label}',
+                      ? l10n.lapPageNotRankedExcluded(reason)
+                      : l10n.lapNotRanked(l10n.lapIssue(issue)),
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
-            if (row.type == LapSectionType.lap) ...[
-              const SizedBox(height: 12),
+          ];
+          final actions = <Widget>[
+            if (timed)
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  if (reason == null)
-                    OutlinedButton.icon(
-                      onPressed: _exclude,
-                      icon: const Icon(Icons.block),
-                      label: const Text('Exclude from ranking…'),
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: () => controller.include(row),
-                      icon: const Icon(Icons.undo),
-                      label: const Text('Include in ranking'),
-                    ),
                   if (comparable)
                     OutlinedButton.icon(
                       key: const ValueKey('lapCompare'),
                       onPressed: _compare,
                       icon: const Icon(Icons.compare_arrows),
-                      label: const Text('Compare with…'),
+                      label: Text(l10n.lapPageCompareWith),
+                    ),
+                  if (reason == null)
+                    OutlinedButton.icon(
+                      onPressed: _exclude,
+                      icon: const Icon(Icons.block),
+                      label: Text(l10n.lapPageExclude),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: () => controller.include(row),
+                      icon: const Icon(Icons.undo),
+                      label: Text(l10n.lapPageInclude),
                     ),
                 ],
               ),
-            ],
           ];
           final trace = _path.isEmpty
-              ? const Center(child: Text('No GPS recorded for this section.'))
+              ? Center(child: Text(l10n.lapPageNoGps))
               : Card(
                   clipBehavior: Clip.antiAlias,
                   child: TrackMap(
@@ -349,15 +413,14 @@ class _LapPageState extends State<LapPage> {
                     reference: bestPath,
                     gate: _gate,
                     movingMarks: _cursorMarks,
-                    semanticLabel:
-                        'Trace of ${row.displayName}, coloured by speed',
+                    semanticLabel: l10n.lapPageTraceLabel(l10n.lap(row)),
                   ),
                 );
           final legend = <Widget>[
             const SizedBox(height: 8),
             Row(
               children: [
-                Text('Speed', style: theme.textTheme.labelMedium),
+                Text(l10n.lapPageSpeed, style: theme.textTheme.labelMedium),
                 const SizedBox(width: 8),
                 Expanded(child: SpeedLegend(path: _path)),
               ],
@@ -367,7 +430,7 @@ class _LapPageState extends State<LapPage> {
                 contentPadding: EdgeInsets.zero,
                 value: _showBest,
                 onChanged: (value) => setState(() => _showBest = value),
-                title: Text('Show the best lap (${best.displayName}) in grey'),
+                title: Text(l10n.lapPageShowBest(l10n.lap(best))),
               ),
           ];
           final charts = [
@@ -377,23 +440,65 @@ class _LapPageState extends State<LapPage> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final height = constraints.maxHeight;
-              if (constraints.maxWidth >= 800) {
+              // A wide window that is also tall enough; a phone sideways
+              // scrolls the page instead, so the map keeps its size.
+              if (constraints.maxWidth >= 800 && height >= 600) {
+                // The summary across the top; the map stays in view on the
+                // left while the charts scroll on the right, so the cursor
+                // on a chart is always visible on the trace.
                 return Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(width: 300, child: ListView(children: summary)),
-                      const SizedBox(width: 16),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: height * 0.45),
+                        child: SingleChildScrollView(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: summary,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: actions,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Expanded(
-                        child: ListView(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              height: (height * 0.55).clamp(240.0, 560.0),
-                              child: trace,
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(child: trace),
+                                  ...legend,
+                                ],
+                              ),
                             ),
-                            ...legend,
-                            ...charts,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 6,
+                              child: ListView(
+                                key: const ValueKey('lapCharts'),
+                                children: charts,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -408,6 +513,8 @@ class _LapPageState extends State<LapPage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   ...summary,
+                  if (actions.isNotEmpty) const SizedBox(height: 12),
+                  ...actions,
                   const SizedBox(height: 12),
                   SizedBox(
                     height: height >= 600
@@ -445,27 +552,27 @@ class _ExcludeDialogState extends State<_ExcludeDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Exclude this lap'),
+    title: Text(context.l10n.lapPageExcludeTitle),
     content: TextField(
       controller: _reason,
       autofocus: true,
       maxLength: 256,
-      decoration: const InputDecoration(
-        labelText: 'Reason',
-        hintText: 'Traffic, yellow flag…',
+      decoration: InputDecoration(
+        labelText: context.l10n.lapPageReason,
+        hintText: context.l10n.lapPageReasonHint,
       ),
       onChanged: (_) => setState(() {}),
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.cancel),
       ),
       FilledButton(
         onPressed: _reason.text.trim().isEmpty
             ? null
             : () => Navigator.pop(context, _reason.text.trim()),
-        child: const Text('Exclude'),
+        child: Text(context.l10n.lapPageExcludeAction),
       ),
     ],
   );

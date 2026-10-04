@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../import/file_access.dart';
+import '../l10n.dart';
 
 /// Chooses where days are saved and which one opens. Replaced by a fake in
 /// widget tests.
@@ -41,9 +42,9 @@ String documentFileName(String name) {
 final class PlatformDocumentPickers implements DocumentPickers {
   const PlatformDocumentPickers();
 
-  static const _documents = XTypeGroup(
-    label: 'FlappedEar day',
-    extensions: ['fetproject'],
+  static XTypeGroup get _documents => XTypeGroup(
+    label: deviceL10n().documentPickerDays,
+    extensions: const ['fetproject'],
   );
 
   static Future<Directory> _daysFolder() async {
@@ -60,7 +61,7 @@ final class PlatformDocumentPickers implements DocumentPickers {
     if (_desktop) {
       final location = await getSaveLocation(
         suggestedName: fileName,
-        acceptedTypeGroups: const [_documents],
+        acceptedTypeGroups: [_documents],
       );
       if (location == null) return null;
       final path = location.path;
@@ -78,14 +79,14 @@ final class PlatformDocumentPickers implements DocumentPickers {
   }
 
   @override
-  Future<String?> pickDocument() async => (await openFile(
-    acceptedTypeGroups: _desktop ? const [_documents] : const [],
-  ))?.path;
+  Future<String?> pickDocument() async =>
+      (await openFile(acceptedTypeGroups: _desktop ? [_documents] : const []))
+          ?.path;
 
   @override
   Future<String?> pickFolder() async {
     final folder = await getDirectoryPath(
-      confirmButtonText: 'Look in this folder',
+      confirmButtonText: deviceL10n().documentPickerLookInFolder,
     );
     if (folder != null) await const PlatformFileAccess().remember([folder]);
     return folder;

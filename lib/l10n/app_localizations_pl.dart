@@ -2406,6 +2406,1363 @@ class AppLocalizationsPl extends AppLocalizations {
   String get taskStoppedUnexpectedly => 'Praca nieoczekiwanie się przerwała.';
 
   @override
+  String get lapPageChannels => 'Kanały';
+
+  @override
+  String get lapPageCursorHintTouch =>
+      'Stuknij wykres lub przeciągnij po nim w bok, aby przesunąć kursor; biała kropka pokazuje go na mapie. Dwoma palcami powiększasz i przesuwasz mapę.';
+
+  @override
+  String get lapPageCursorHint =>
+      'Przeciągnij po wykresie, aby przesunąć kursor; biała kropka pokazuje go na mapie.';
+
+  @override
+  String get lapPageNoChannel => 'Nie pokazano żadnego kanału.';
+
+  @override
+  String get lapPageBestOfDay => 'Najlepsze okrążenie dnia';
+
+  @override
+  String lapPageBestOfSession(String session) {
+    return 'Najlepsze okrążenie – $session';
+  }
+
+  @override
+  String lapPageNotRankedExcluded(String reason) {
+    return 'Niesklasyfikowane: wykluczone („$reason”)';
+  }
+
+  @override
+  String get lapPageExclude => 'Wyklucz z rankingu…';
+
+  @override
+  String get lapPageInclude => 'Przywróć do rankingu';
+
+  @override
+  String get lapPageCompareWith => 'Porównaj z…';
+
+  @override
+  String get lapPageNoGps => 'Brak zapisu GPS dla tego odcinka.';
+
+  @override
+  String lapPageTraceLabel(String lap) {
+    return 'Ślad: $lap, w kolorach prędkości';
+  }
+
+  @override
+  String get lapPageSpeed => 'Prędkość';
+
+  @override
+  String lapPageShowBest(String lap) {
+    return 'Pokaż najlepsze okrążenie ($lap) na szaro';
+  }
+
+  @override
+  String get lapPageExcludeTitle => 'Wyklucz to okrążenie';
+
+  @override
+  String get lapPageReason => 'Powód';
+
+  @override
+  String get lapPageReasonHint => 'Ruch na torze, żółta flaga…';
+
+  @override
+  String get lapPageExcludeAction => 'Wyklucz';
+
+  @override
+  String get compareTitle => 'Porównanie okrążeń';
+
+  @override
+  String get compareLayerNotRecordedEither =>
+      'Nie zapisano na żadnym okrążeniu.';
+
+  @override
+  String compareLayerNotRecordedOn(String lap) {
+    return 'Nie zapisano na okrążeniu $lap.';
+  }
+
+  @override
+  String compareLayerNoSamples(String lap) {
+    return 'Brak użytecznych próbek na okrążeniu $lap.';
+  }
+
+  @override
+  String get compareNoSharedPosition =>
+      'Ta para okrążeń nie ma wspólnej pozycji na torze.';
+
+  @override
+  String compareLapDelta(String delta) {
+    return 'Δ okrążenia $delta';
+  }
+
+  @override
+  String get compareDeltaExplained =>
+      'Δ to A − B: dodatnia, gdy A jest z tyłu.';
+
+  @override
+  String get compareSwap => 'Zamień A i B';
+
+  @override
+  String compareBestOfSessionAsB(String session) {
+    return 'B: najlepsze okrążenie – $session';
+  }
+
+  @override
+  String get compareBestOfDayAsB => 'B: najlepsze z dnia';
+
+  @override
+  String get compareLayerLine => 'Linia: A / B';
+
+  @override
+  String compareLayerOptionNotRecorded(String layer) {
+    return '$layer · nie zapisano';
+  }
+
+  @override
+  String get compareLayerSpeed => 'Prędkość';
+
+  @override
+  String get compareLayerDelta => 'Δ czasu (A−B)';
+
+  @override
+  String get compareLayerLateralG => 'G poprzeczne';
+
+  @override
+  String get compareLayerLongitudinalG => 'G wzdłużne';
+
+  @override
+  String get compareLayerThrottle => 'Gaz';
+
+  @override
+  String get compareLayerBrake => 'Hamulec (zmierzony)';
+
+  @override
+  String get compareLayerTemperature => 'Temperatura';
+
+  @override
+  String get compareLayerAAhead => 'A z przodu';
+
+  @override
+  String get compareLayerABehind => 'A z tyłu';
+
+  @override
+  String get compareLayerBraking => 'hamowanie';
+
+  @override
+  String get compareLayerAccelerating => 'przyspieszanie';
+
+  @override
+  String compareLegendLap(String layer, String lap) {
+    return '$layer · okrążenie $lap';
+  }
+
+  @override
+  String get compareLegendCalculated => 'obliczone';
+
+  @override
+  String get compareChannelsByPosition => 'Kanały według pozycji na torze';
+
+  @override
+  String get compareCursorHintTouch =>
+      'Oba okrążenia w tym samym miejscu toru. Stuknij wykres lub przeciągnij po nim w bok, aby przesunąć kursor; kropki pokazują oba okrążenia na mapie, którą dwoma palcami powiększasz i przesuwasz.';
+
+  @override
+  String get compareCursorHint =>
+      'Oba okrążenia w tym samym miejscu toru. Przeciągnij po wykresie, aby przesunąć kursor; kropki pokazują oba okrążenia na mapie.';
+
+  @override
+  String get compareDeltaChart => 'Δ czasu (A − B)';
+
+  @override
+  String get compareDeltaNote => '+ = A z tyłu';
+
+  @override
+  String compareOpenLapHere(String lap) {
+    return 'Otwórz okrążenie $lap w tym miejscu';
+  }
+
+  @override
+  String get compareDisclaimer =>
+      'Zaobserwowane różnice między dwoma okrążeniami, nie instrukcje.';
+
+  @override
+  String get compareRecordingsUnavailable =>
+      'Nagrania tych okrążeń są niedostępne.';
+
+  @override
+  String get compareNoGps => 'Brak danych GPS na tym odcinku';
+
+  @override
+  String get compareMapLabel => 'Okrążenia A i B na jednej mapie';
+
+  @override
+  String get chartReasonNotRecorded => 'nie zapisano';
+
+  @override
+  String get chartReasonInvalidRange => 'nieprawidłowy zakres';
+
+  @override
+  String get chartReasonUnreadable => 'nie udało się odczytać';
+
+  @override
+  String get chartNoDataInRange => 'brak danych w tym zakresie';
+
+  @override
+  String get chartNoData => 'Brak danych w tym zakresie';
+
+  @override
+  String chartNotAvailable(String reasons) {
+    return 'Niedostępne · $reasons';
+  }
+
+  @override
+  String get chartBrakingUp => 'hamowanie rysowane w górę';
+
+  @override
+  String chartRemove(String channel) {
+    return 'Usuń $channel';
+  }
+
+  @override
+  String chartSemantics(String channel) {
+    return 'Wykres: $channel';
+  }
+
+  @override
+  String get chartZoomOut => 'Pomniejsz';
+
+  @override
+  String get chartZoomIn => 'Powiększ wokół kursora';
+
+  @override
+  String get chartWholeLap => 'Całe okrążenie';
+
+  @override
+  String chartAtMost(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Najwyżej $count wykresów',
+      few: 'Najwyżej $count wykresy',
+      one: 'Najwyżej 1 wykres',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chartAddChannel => 'Dodaj kanał';
+
+  @override
+  String get coastingTitle => 'Toczenie bez gazu i hamulca';
+
+  @override
+  String get coastingBySegment => 'Według segmentów';
+
+  @override
+  String get coastingBySegmentLoading =>
+      'Toczenie według segmentów pojawi się po obliczeniu segmentów dnia…';
+
+  @override
+  String get coastingBySegmentNeedsSegments =>
+      'Toczenie według segmentów wymaga segmentów w grupie tego okrążenia.';
+
+  @override
+  String get coastingEpisodes => 'Epizody · wybierz jeden, aby go zobaczyć';
+
+  @override
+  String coastingIntoLap(String seconds) {
+    return '$seconds s od początku okrążenia';
+  }
+
+  @override
+  String get drivingGgNoLongitudinal => 'Nie zapisano G wzdłużnego';
+
+  @override
+  String get drivingGgNoLateral => 'Nie zapisano G poprzecznego';
+
+  @override
+  String get drivingGgUnsupportedUnit => 'G w nieobsługiwanej jednostce';
+
+  @override
+  String get drivingGgNoSamples => 'Brak próbek na tym odcinku';
+
+  @override
+  String get drivingNoCoverage => 'Nie obejmuje tego odcinka';
+
+  @override
+  String get drivingNotAvailable => 'Niedostępne';
+
+  @override
+  String get drivingMeasured => 'zmierzone';
+
+  @override
+  String get drivingCalculatedFromGps => 'obliczone z GPS';
+
+  @override
+  String get drivingInferred => 'wywnioskowane';
+
+  @override
+  String get drivingUnexpectedUnit => 'nieoczekiwana jednostka';
+
+  @override
+  String get drivingNotRecorded => 'nie zapisano';
+
+  @override
+  String get drivingPedalsUnknown => 'pedały nieznane';
+
+  @override
+  String get drivingNoSpeed => 'brak prędkości';
+
+  @override
+  String get drivingBrakeMeasuredLateralGps =>
+      'hamulec zmierzony, G poprzeczne z GPS';
+
+  @override
+  String drivingUnexpectedUnitChannel(String channel) {
+    return '$channel ma nieoczekiwaną jednostkę';
+  }
+
+  @override
+  String get drivingNoBrakeChannel => 'brak kanału hamulca';
+
+  @override
+  String get drivingNoAcceleratorChannel => 'brak kanału gazu';
+
+  @override
+  String get drivingBrakeRecorded => 'zapisano pedał hamulca';
+
+  @override
+  String get drivingBrakingInferred =>
+      'hamowanie wywnioskowane z opóźnienia (brak kanału hamulca)';
+
+  @override
+  String get drivingAcceleratorRecorded => 'zapisano pedał gazu';
+
+  @override
+  String get drivingAcceleratingInferred =>
+      'przyspieszanie wywnioskowane z G wzdłużnego (brak kanału gazu)';
+
+  @override
+  String get drivingLateralMeasured => 'zmierzono G poprzeczne';
+
+  @override
+  String get drivingLateralCalculated =>
+      'G poprzeczne obliczone przez rejestrator z GPS';
+
+  @override
+  String get drivingNoLateral => 'brak G poprzecznego';
+
+  @override
+  String get drivingCoastingMeasured =>
+      'Zmierzone: z zapisanych pedałów hamulca i gazu.';
+
+  @override
+  String get drivingCoastingInferred =>
+      'Wywnioskowane z G wzdłużnego: to nagranie nie ma kanału pedału hamulca lub gazu.';
+
+  @override
+  String get drivingCoastingNoPedals =>
+      'Nie da się określić: nagranie nie ma ani kanałów pedałów, ani G wzdłużnego.';
+
+  @override
+  String get drivingCoastingNoSpeed =>
+      'Nie da się określić: nagranie nie ma prędkości.';
+
+  @override
+  String get drivingCoastingUnitMismatch =>
+      'Nie da się określić: kanał pedału lub prędkości ma nieoczekiwaną jednostkę.';
+
+  @override
+  String get drivingCoastingUnavailable =>
+      'Toczenie bez gazu i hamulca nie jest dostępne dla tego odcinka.';
+
+  @override
+  String drivingCoastingSummaryLap(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizodach',
+      one: '1 epizodzie',
+    );
+    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
+  }
+
+  @override
+  String drivingCoastingSummaryStretch(
+    String seconds,
+    String meters,
+    int count,
+    String share,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count epizodach',
+      one: '1 epizodzie',
+    );
+    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
+  }
+
+  @override
+  String get drivingCoastingNote =>
+      'Toczenie bez gazu i hamulca to jazda z prędkością bez wciśniętego żadnego pedału. Samo w sobie nie jest błędem: odpuszczenie gazu może uspokoić samochód albo wynikać z ruchu na torze.';
+
+  @override
+  String get drivingCoastingEpisodesHint =>
+      'Każdy epizod jest podany według miejsca jego początku na torze; wybierz jeden, aby przesunąć tam kursor.';
+
+  @override
+  String drivingSelectedStretch(String meters) {
+    return 'Wybrany odcinek · $meters m';
+  }
+
+  @override
+  String get drivingWholeLap => 'Całe okrążenie';
+
+  @override
+  String get drivingGgCalculated => 'obliczone przez rejestrator z GPS';
+
+  @override
+  String drivingGgSource(
+    String lap,
+    String longitudinal,
+    String lateral,
+    String provenance,
+  ) {
+    return '$lap: $longitudinal / $lateral, $provenance';
+  }
+
+  @override
+  String drivingLap(String lap) {
+    return 'Okrążenie $lap';
+  }
+
+  @override
+  String drivingGgSemantics(String a, String b) {
+    return 'Diagram G-G okrążeń A i B: maks. łączne $a i $b';
+  }
+
+  @override
+  String get drivingPeakLateral => 'Maks. poprzeczne';
+
+  @override
+  String get drivingPeakBraking => 'Maks. hamowanie';
+
+  @override
+  String get drivingPeakAccelerating => 'Maks. przyspieszanie';
+
+  @override
+  String get drivingPeakCombined => 'Maks. łączne';
+
+  @override
+  String get drivingSamples => 'Próbki';
+
+  @override
+  String get drivingGgNote =>
+      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
+
+  @override
+  String get drivingGgAccelerating => 'przyspieszanie';
+
+  @override
+  String get drivingGgBraking => 'hamowanie';
+
+  @override
+  String get drivingGgLeft => 'lewo';
+
+  @override
+  String get drivingGgRight => 'prawo';
+
+  @override
+  String drivingStripLabel(String lap) {
+    return 'Okrążenie $lap wzdłuż toru';
+  }
+
+  @override
+  String get drivingStripHint => 'Stuknij, aby przesunąć tam kursor';
+
+  @override
+  String get drivingStatesTitle => 'Stany jazdy';
+
+  @override
+  String get drivingBraking => 'Hamowanie';
+
+  @override
+  String get drivingTrailBraking => 'Hamowanie w zakręcie';
+
+  @override
+  String get drivingCornering => 'Jazda w zakręcie';
+
+  @override
+  String get drivingAccelerating => 'Przyspieszanie';
+
+  @override
+  String get drivingCoasting => 'Toczenie bez gazu i hamulca';
+
+  @override
+  String get drivingStatesNote =>
+      'Udział we własnym czasie każdego okrążenia na tym odcinku. Stany się nakładają: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie lub toczenie. Stuknij pasek, aby przesunąć tam kursor. Dłuższe hamowanie w zakręcie nie jest samo w sobie lepsze ani bezpieczniejsze.';
+
+  @override
+  String get cornerDetailsReasonNotMeasured => 'nie zmierzono';
+
+  @override
+  String get cornerDetailsReasonNoBraking => 'nie wykryto hamowania';
+
+  @override
+  String get cornerDetailsReasonNoBrakeOrDeceleration =>
+      'brak kanału hamulca i opóźnienia';
+
+  @override
+  String get cornerDetailsReasonNoBrakeChannel => 'brak kanału hamulca';
+
+  @override
+  String get cornerDetailsReasonNoDecelerationChannel =>
+      'brak kanału opóźnienia';
+
+  @override
+  String get cornerDetailsReasonApproachClipped =>
+      'dojazd ucięty na linii start/meta';
+
+  @override
+  String get cornerDetailsReasonApproachInPreviousCorner =>
+      'dojazd zaczyna się w poprzednim zakręcie';
+
+  @override
+  String get cornerDetailsReasonAlreadyBraking =>
+      'hamowanie trwało już przed dojazdem';
+
+  @override
+  String get cornerDetailsReasonBrakingGap =>
+      'hamowanie przerwane luką w nagraniu';
+
+  @override
+  String get cornerDetailsReasonNoSamplesHere => 'brak próbek w tym miejscu';
+
+  @override
+  String get cornerDetailsReasonNoThrottleOrAcceleration =>
+      'brak kanału gazu i przyspieszenia';
+
+  @override
+  String get cornerDetailsReasonNoLift =>
+      'brak odjęcia gazu przed powrotem do gazu';
+
+  @override
+  String get cornerDetailsReasonNoPickup => 'nie wykryto powrotu do gazu';
+
+  @override
+  String get cornerDetailsReasonAfterGap => 'po luce w nagraniu';
+
+  @override
+  String get cornerDetailsReasonCutAtLapEnd => 'ucięte na końcu okrążenia';
+
+  @override
+  String get cornerDetailsReasonNotCovered =>
+      'okrążenie nie jest tu w pełni pokryte danymi';
+
+  @override
+  String get cornerDetailsReasonCrossesGate => 'przecina linię start/meta';
+
+  @override
+  String get cornerDetailsReasonUnitNotSupported =>
+      'nieobsługiwana jednostka kanału';
+
+  @override
+  String get cornerDetailsReasonUnitNotRecorded =>
+      'jednostka kanału nie jest zapisana';
+
+  @override
+  String get cornerDetailsReasonNoSpeedChannel => 'brak kanału prędkości';
+
+  @override
+  String get cornerDetailsReasonMixedProvenance => 'zmierzone inaczej na A i B';
+
+  @override
+  String get cornerDetailsReasonSegmentsDiffer =>
+      'segmenty różnią się między okrążeniami';
+
+  @override
+  String get cornerDetailsReasonDoubleApex =>
+      'podwójny wierzchołek: brak jednego punktu wierzchołka';
+
+  @override
+  String get cornerDetailsReasonFlatSpeed =>
+      'brak najniższego punktu (stała prędkość)';
+
+  @override
+  String get cornerDetailsReasonUnclearGeometry =>
+      'kształt zakrętu zbyt niewyraźny, by go wyznaczyć';
+
+  @override
+  String get cornerDetailsReasonInvalidInput =>
+      'nie udało się zmierzyć zakrętu';
+
+  @override
+  String get cornerDetailsReasonBroadApex =>
+      'wierzchołek rozciągnięty na długim łuku';
+
+  @override
+  String get cornerDetailsReasonAtBoundary => 'na skraju zakrętu';
+
+  @override
+  String get cornerDetailsReasonNotACorner => 'to nie jest zakręt';
+
+  @override
+  String get cornerDetailsReasonSparseSamples => 'za mało próbek';
+
+  @override
+  String get cornerDetailsReasonSegmentNotFound =>
+      'nie znaleziono segmentu na tym okrążeniu';
+
+  @override
+  String get cornerDetailsReasonNotRecorded => 'nie zapisano';
+
+  @override
+  String get cornerDetailsReasonNoValidSamples => 'brak poprawnych próbek';
+
+  @override
+  String get cornerDetailsReasonNoReference => 'brak okrążenia odniesienia';
+
+  @override
+  String get cornerDetailsReasonNotTimed => 'bez pomiaru czasu';
+
+  @override
+  String get cornerDetailsReasonNoApprovedSegments =>
+      'brak zatwierdzonych segmentów';
+
+  @override
+  String get cornerDetailsReasonDrivingStateUnknown => 'stan jazdy nieznany';
+
+  @override
+  String get cornerDetailsReasonNotAvailable => 'niedostępne';
+
+  @override
+  String get cornerDetailsFromDeceleration => 'Wywnioskowane z opóźnienia';
+
+  @override
+  String get cornerDetailsFromBrakeChannel => 'Z kanału hamulca';
+
+  @override
+  String get cornerDetailsFromAcceleration => 'Wywnioskowane z przyspieszenia';
+
+  @override
+  String get cornerDetailsFromThrottleChannel => 'Z kanału gazu';
+
+  @override
+  String cornerDetailsBestMeasuredDifferently(String how) {
+    return '$how; najlepsze okrążenie zmierzono inaczej';
+  }
+
+  @override
+  String get cornerDetailsBestSpeedDifferent =>
+      'Prędkość najlepszego okrążenia zapisano inaczej';
+
+  @override
+  String cornerDetailsMinimumMissing(String reason) {
+    return 'Prędkość minimalna: $reason';
+  }
+
+  @override
+  String get cornerDetailsHighestMinimumSpeed => 'Najwyższa prędkość minimalna';
+
+  @override
+  String get cornerDetailsHighestExitSpeed => 'Najwyższa prędkość na wyjściu';
+
+  @override
+  String get cornerDetailsLatestBrakingPoint => 'Najpóźniejszy punkt hamowania';
+
+  @override
+  String get cornerDetailsEarliestPickup => 'Najwcześniejszy powrót do gazu';
+
+  @override
+  String cornerDetailsMetresIn(int metres) {
+    return '$metres m od wejścia';
+  }
+
+  @override
+  String cornerDetailsIsBestLap(String lap) {
+    return '$lap · najlepsze okrążenie';
+  }
+
+  @override
+  String cornerDetailsAgainstBestLap(String lap, String best) {
+    return '$lap na tle najlepszego okrążenia, $best';
+  }
+
+  @override
+  String get cornerDetailsBestLapUnavailable => 'niedostępne';
+
+  @override
+  String get cornerDetailsThisLap => 'To okrążenie';
+
+  @override
+  String get cornerDetailsBestLap => 'Najlepsze';
+
+  @override
+  String cornerDetailsEntrySpeed(String unit) {
+    return 'Prędkość na wejściu$unit';
+  }
+
+  @override
+  String cornerDetailsMinimumSpeed(String unit) {
+    return 'Prędkość minimalna$unit';
+  }
+
+  @override
+  String cornerDetailsExitSpeed(String unit) {
+    return 'Prędkość na wyjściu$unit';
+  }
+
+  @override
+  String get cornerDetailsBrakingPoint => 'Punkt hamowania, przed zakrętem';
+
+  @override
+  String get cornerDetailsBrakingTime => 'Czas hamowania';
+
+  @override
+  String cornerDetailsPeakDeceleration(String unit) {
+    return 'Maksymalne opóźnienie$unit';
+  }
+
+  @override
+  String get cornerDetailsPickup => 'Powrót do gazu, w zakręcie';
+
+  @override
+  String cornerDetailsBestOfLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Najlepsze z $count okrążeń',
+      few: 'Najlepsze z $count okrążeń',
+      one: 'Najlepsze z 1 okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerDetailsExplanation =>
+      'Punkt hamowania i powrót do gazu to odległości od początku zakrętu na wspólnej osi toru. Późniejsze hamowanie ani wcześniejszy powrót do gazu nie oznacza automatycznie szybszej jazdy. Okrążenia zmierzone w inny sposób nie są porównywane.';
+
+  @override
+  String cornerDetailsNotMeasured(String corner) {
+    return '$corner: tego okrążenia tu nie zmierzono.';
+  }
+
+  @override
+  String get cornerAnalyzerTypeCorner => 'zakręt';
+
+  @override
+  String get cornerAnalyzerTypeStraight => 'prosta';
+
+  @override
+  String get cornerAnalyzerTypeSector => 'sektor';
+
+  @override
+  String cornerAnalyzerNoteProposed(String lap) {
+    return 'Segmenty zaproponowane na podstawie: $lap, jak w sektorowym teoretycznie najlepszym; zapisanie dnia je zatwierdza. Granice to odległości wzdłuż osi tamtego okrążenia, więc na tych okrążeniach mogą przesunąć się o kilka metrów.';
+  }
+
+  @override
+  String cornerAnalyzerNoteApproved(String session) {
+    return 'Segmenty zatwierdzone dla: $session, jak w sektorowym teoretycznie najlepszym. Granice to odległości wzdłuż osi tamtej sesji, więc na tych okrążeniach mogą przesunąć się o kilka metrów.';
+  }
+
+  @override
+  String get cornerAnalyzerSummarySame => 'A i B mają tu ten sam czas.';
+
+  @override
+  String cornerAnalyzerSummaryFaster(String lap, String time) {
+    return '$lap jest tu szybsze o $time.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryEntry(String lap, String time, String speed) {
+    return '$lap jest tu szybsze o $time i ma o $speed wyższą prędkość na wejściu.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryMinimum(String lap, String time, String speed) {
+    return '$lap jest tu szybsze o $time i ma o $speed wyższą prędkość minimalną.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryLowest(String lap, String time, String speed) {
+    return '$lap jest tu szybsze o $time i ma o $speed wyższą najniższą prędkość.';
+  }
+
+  @override
+  String cornerAnalyzerSummaryExit(String lap, String time, String speed) {
+    return '$lap jest tu szybsze o $time i ma o $speed wyższą prędkość na wyjściu.';
+  }
+
+  @override
+  String get cornerAnalyzerTitle => 'Analizator zakrętów';
+
+  @override
+  String get cornerAnalyzerEmpty =>
+      'Te dwa okrążenia nie mają wspólnych zatwierdzonych segmentów. Zatwierdź ten sam podział toru na obu, aby użyć Analizatora zakrętów.';
+
+  @override
+  String get cornerAnalyzerUseTheoreticalBest =>
+      'Użyj segmentów teoretycznie najlepszego';
+
+  @override
+  String get cornerAnalyzerPrevious => 'Poprzedni segment';
+
+  @override
+  String get cornerAnalyzerNext => 'Następny segment';
+
+  @override
+  String get cornerAnalyzerNoChart =>
+      'Brak wykresu prędkości: ten segment przecina linię start/meta.';
+
+  @override
+  String get cornerAnalyzerNoFigures => 'Brak danych dla tego segmentu.';
+
+  @override
+  String cornerAnalyzerHeartRateNote(String a, String b) {
+    return 'Tętno: średnia w tym segmencie · A $a · B $b. Tylko zaobserwowane wartości.';
+  }
+
+  @override
+  String cornerAnalyzerCoverage(int count, int percent) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count próbek, pokrycie $percent%',
+      few: '$count próbki, pokrycie $percent%',
+      one: '1 próbka, pokrycie $percent%',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerAnalyzerExplanation =>
+      'Δ to A − B, w kolorze okrążenia, które jest szybsze lub ma wyższą prędkość. To zaobserwowane różnice, nie instrukcje.';
+
+  @override
+  String get cornerAnalyzerExplanationWithBraking =>
+      'Δ to A − B, w kolorze okrążenia, które jest szybsze lub ma wyższą prędkość. Hamowanie i powrót do gazu to odległości od wejścia w zakręt; późniejsze hamowanie lub wcześniejszy powrót do gazu nie oznacza automatycznie szybszej jazdy. To zaobserwowane różnice, nie instrukcje.';
+
+  @override
+  String get cornerAnalyzerZoom => 'Przybliż segment';
+
+  @override
+  String cornerAnalyzerOpenLap(String lap) {
+    return 'Okrążenie $lap w tym miejscu';
+  }
+
+  @override
+  String get cornerAnalyzerGroupTime => 'Czas';
+
+  @override
+  String get cornerAnalyzerGroupBraking => 'Hamowanie';
+
+  @override
+  String get cornerAnalyzerGroupCorner => 'Zakręt';
+
+  @override
+  String get cornerAnalyzerGroupSpeed => 'Prędkość';
+
+  @override
+  String get cornerAnalyzerGroupExit => 'Wyjście';
+
+  @override
+  String get cornerAnalyzerGroupDriver => 'Kierowca';
+
+  @override
+  String get cornerAnalyzerTimeThroughCorner => 'Czas przejazdu zakrętu';
+
+  @override
+  String get cornerAnalyzerSectorTime => 'Czas sektora';
+
+  @override
+  String get cornerAnalyzerBrakingPoint => 'Początek hamowania, przed wejściem';
+
+  @override
+  String get cornerAnalyzerBrakingTime => 'Czas hamowania';
+
+  @override
+  String get cornerAnalyzerPeakDeceleration => 'Maksymalne opóźnienie';
+
+  @override
+  String get cornerAnalyzerEntrySpeed => 'Prędkość na wejściu';
+
+  @override
+  String get cornerAnalyzerApexSpeed => 'Prędkość na wierzchołku';
+
+  @override
+  String get cornerAnalyzerMinimumSpeed => 'Prędkość minimalna';
+
+  @override
+  String get cornerAnalyzerTopSpeed => 'Prędkość maksymalna';
+
+  @override
+  String get cornerAnalyzerLowestSpeed => 'Najniższa prędkość';
+
+  @override
+  String get cornerAnalyzerExitSpeed => 'Prędkość na wyjściu';
+
+  @override
+  String get cornerAnalyzerPickup => 'Powrót do gazu, za wejściem';
+
+  @override
+  String get cornerAnalyzerHeartRate => 'Tętno';
+
+  @override
+  String get cornerAnalyzerAHigher => 'A wyższa';
+
+  @override
+  String get cornerAnalyzerBHigher => 'B wyższa';
+
+  @override
+  String get cornerAnalyzerAFaster => 'A szybsze';
+
+  @override
+  String get cornerAnalyzerBFaster => 'B szybsze';
+
+  @override
+  String get cornerAnalyzerABrakesEarlier => 'A hamuje wcześniej';
+
+  @override
+  String get cornerAnalyzerABrakesLater => 'A hamuje później';
+
+  @override
+  String get cornerAnalyzerALonger => 'A dłużej';
+
+  @override
+  String get cornerAnalyzerAShorter => 'A krócej';
+
+  @override
+  String get cornerAnalyzerAHarder => 'A mocniej';
+
+  @override
+  String get cornerAnalyzerASofter => 'A słabiej';
+
+  @override
+  String get cornerAnalyzerALater => 'A później';
+
+  @override
+  String get cornerAnalyzerAEarlier => 'A wcześniej';
+
+  @override
+  String get cornerAnalyzerSame => 'tak samo';
+
+  @override
+  String get cornerAnalyzerInferred => 'wywnioskowane';
+
+  @override
+  String cornerAnalyzerBothLaps(String reason) {
+    return '$reason (oba okrążenia)';
+  }
+
+  @override
+  String cornerAnalyzerNotCompared(String reason) {
+    return 'Nie porównano: $reason';
+  }
+
+  @override
+  String get cornerAnalyzerUnitNoteSpeed =>
+      'To nagranie nie podaje jednostki prędkości: te wartości pokazano tak, jak je zapisano, bez jednostki.';
+
+  @override
+  String get cornerAnalyzerUnitNoteDeceleration =>
+      'To nagranie nie podaje jednostki opóźnienia: te wartości pokazano tak, jak je zapisano, bez jednostki.';
+
+  @override
+  String get cornerAnalyzerUnitNoteBoth =>
+      'To nagranie nie podaje jednostek prędkości i opóźnienia: te wartości pokazano tak, jak je zapisano, bez jednostki.';
+
+  @override
+  String get cornerAnalyzerChartNoSpeed =>
+      'Na żadnym okrążeniu nie zapisano prędkości: brak wykresu prędkości.';
+
+  @override
+  String cornerAnalyzerChartNoSamples(String segment) {
+    return 'Żadne okrążenie nie ma próbek prędkości w segmencie $segment.';
+  }
+
+  @override
+  String cornerAnalyzerChartTitle(String segment) {
+    return 'Prędkość · $segment';
+  }
+
+  @override
+  String cornerAnalyzerChartLabel(String segment) {
+    return 'Wykres prędkości · $segment';
+  }
+
+  @override
+  String cornerAnalyzerCursor(String offset) {
+    return 'Kursor $offset m: ';
+  }
+
+  @override
+  String get cornerAnalyzerEntry => 'Wejście';
+
+  @override
+  String get cornerAnalyzerExit => 'Wyjście';
+
+  @override
+  String get cornerAnalyzerStart => 'Początek';
+
+  @override
+  String get cornerAnalyzerEnd => 'Koniec';
+
+  @override
+  String get cornerAnalyzerSpeedAxis => 'prędkość';
+
+  @override
+  String get cornerAnalyzerApex => 'Wierzchołek';
+
+  @override
+  String get cornerAnalyzerAxisCorner =>
+      'Odległość od wejścia w zakręt (m) · zacieniowano: zakręt';
+
+  @override
+  String get cornerAnalyzerAxisSegment =>
+      'Odległość od początku segmentu (m) · zacieniowano: segment';
+
+  @override
+  String cornerAnalyzerAxisNoUnit(String axis) {
+    return '$axis · nagranie nie podaje jednostki prędkości';
+  }
+
+  @override
+  String get cornerAnalyzerLegendBraking => 'Początek hamowania';
+
+  @override
+  String get cornerAnalyzerLegendPickup => 'Powrót do gazu';
+
+  @override
+  String get cornerAnalyzerLegendMinimum => 'Najniższa prędkość';
+
+  @override
+  String importPageLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importPageNoGate =>
+      'Brak okrążeń: nagranie nie ma linii start/meta.';
+
+  @override
+  String get importPageSeveralGates =>
+      'Brak okrążeń: nagranie ma więcej niż jedną linię start/meta.';
+
+  @override
+  String get importPageInvalidGate =>
+      'Brak okrążeń: linia start/meta jest nieprawidłowa.';
+
+  @override
+  String get importPageNoGps =>
+      'Brak okrążeń: nagranie nie ma użytecznego sygnału GPS.';
+
+  @override
+  String get importPageTooFewPasses =>
+      'Brak pełnych okrążeń: linię start/meta przecięto zbyt mało razy.';
+
+  @override
+  String importPageImportFailed(String error) {
+    return 'Import nie powiódł się: $error';
+  }
+
+  @override
+  String importPageFolderTooMany(int count, int maximum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Folder zawiera $count nagrań; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
+      few:
+          'Folder zawiera $count nagrania; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
+      one:
+          'Folder zawiera 1 nagranie; importuj najwyżej $maximum naraz. Wybierz mniejszy folder.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPageTooMany(int count, int maximum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'To $count nagrań; importuj najwyżej $maximum naraz.',
+      few: 'To $count nagrania; importuj najwyżej $maximum naraz.',
+      one: 'To 1 nagranie; importuj najwyżej $maximum naraz.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPageStoppedAfter(int count) {
+    return 'Przerwano po $count plikach i folderach; dalszych nagrań nie przeszukano.';
+  }
+
+  @override
+  String importPageTooDeep(int count, int depth) {
+    return 'Nie przeszukano folderów poniżej poziomu $depth: $count.';
+  }
+
+  @override
+  String importPageLinksSkipped(int count) {
+    return 'Pominięto łącza: $count.';
+  }
+
+  @override
+  String importPageOtherFilesSkipped(int count) {
+    return 'Pominięto inne pliki: $count; importowane są tylko nagrania VBO i RCZ.';
+  }
+
+  @override
+  String importPageSameContent(String other) {
+    return 'ta sama zawartość co $other; zaimportowano raz.';
+  }
+
+  @override
+  String importPageSameDrive(String other) {
+    return 'ten sam przejazd co $other; zachowano jako jego alternatywne źródło.';
+  }
+
+  @override
+  String get importPageNoRecording =>
+      'Nie udało się zaimportować żadnego nagrania.';
+
+  @override
+  String get importPageFailed => 'Import nie powiódł się.';
+
+  @override
+  String get importPageStoppedUnexpectedly =>
+      'Import nieoczekiwanie się zatrzymał.';
+
+  @override
+  String get importPageNoFolder => 'Folder nie istnieje lub nie jest folderem.';
+
+  @override
+  String get importPageFolderLink =>
+      'Wybierz sam folder, a nie łącze do niego.';
+
+  @override
+  String get importPageNoneFound => 'Nie znaleziono nagrań VBO ani RCZ.';
+
+  @override
+  String get importPageNoneFoundNoSubfolders =>
+      'Nie znaleziono nagrań VBO ani RCZ (bez podfolderów).';
+
+  @override
+  String get importPageNothingToImport =>
+      'Brak nagrań VBO ani RCZ do zaimportowania.';
+
+  @override
+  String get importPageFileNotFound => 'nie znaleziono; nie zaimportowano.';
+
+  @override
+  String get importPageMetadataFile =>
+      'plik metadanych macOS, a nie nagranie; nie zaimportowano.';
+
+  @override
+  String get importPageFileLink => 'łącze; pominięto.';
+
+  @override
+  String get importPageNotRecording =>
+      'to nie jest nagranie VBO ani RCZ; nie zaimportowano.';
+
+  @override
+  String importPageNotRestored(String error) {
+    return 'Nie udało się przywrócić dnia: $error';
+  }
+
+  @override
+  String importPageDiscardTitle(String day) {
+    return 'Odrzucić zmiany w dniu $day?';
+  }
+
+  @override
+  String get importPageDiscardBody =>
+      'Niezapisane zmiany zostaną utracone. Nagrania i zapisane dni pozostaną nietknięte.';
+
+  @override
+  String get importPageKeep => 'Zachowaj';
+
+  @override
+  String get importPageDiscard => 'Odrzuć';
+
+  @override
+  String importPageNotDiscarded(String error) {
+    return 'Nie odrzucono: $error';
+  }
+
+  @override
+  String importPageCannotOpenTitle(String day) {
+    return 'Nie udało się otworzyć dnia $day';
+  }
+
+  @override
+  String get importPageNoneUsable =>
+      'Nie udało się użyć żadnego z jego nagrań:';
+
+  @override
+  String get importPageChooseFolderHint =>
+      'Wybierz folder z nagraniami, aby ich użyć, także gdy nie zostały przeniesione.';
+
+  @override
+  String get importPageImportingBehind =>
+      'Importuję udostępnione nagrania. Wróć do ekranu Importuj dzień, aby je zobaczyć.';
+
+  @override
+  String get importPageFinishFirst =>
+      'Najpierw dokończ bieżący import. Nic nie zaimportowano.';
+
+  @override
+  String get importPageOpenSavedTitle => 'Otwórz zapisany dzień';
+
+  @override
+  String get importPageAnotherFile => 'Inny plik…';
+
+  @override
+  String get importPageAnotherOpening =>
+      'Otwierany jest inny dzień. Spróbuj ponownie, gdy się otworzy.';
+
+  @override
+  String importPageNotOpened(String error) {
+    return 'Nie udało się otworzyć dnia: $error';
+  }
+
+  @override
+  String get importPageTitle => 'Importuj dzień';
+
+  @override
+  String importPageUnsaved(String day, String time) {
+    return '$day: niezapisane zmiany z $time.';
+  }
+
+  @override
+  String get importPageRestore => 'Przywróć';
+
+  @override
+  String get importPageDiscardEllipsis => 'Odrzuć…';
+
+  @override
+  String get importPageIntroDrop =>
+      'Wybierz nagrania VBO i RCZ z tego dnia albo folder lub upuść je tutaj.';
+
+  @override
+  String get importPageIntroFolder =>
+      'Wybierz nagrania VBO i RCZ z tego dnia albo folder.';
+
+  @override
+  String get importPageIntro => 'Wybierz nagrania VBO i RCZ z tego dnia.';
+
+  @override
+  String get importPageChooseRecordings => 'Wybierz nagrania…';
+
+  @override
+  String get importPageChooseFolder => 'Wybierz folder…';
+
+  @override
+  String get importPageOpening => 'Otwieranie…';
+
+  @override
+  String get importPageOpenSaved => 'Otwórz zapisany dzień…';
+
+  @override
+  String get importPageIncludeSubfolders => 'Uwzględnij podfoldery';
+
+  @override
+  String get importPageNotes => 'Uwagi do importu';
+
+  @override
+  String get importPageLooking => 'Szukam nagrań…';
+
+  @override
+  String importPagePreparing(int number, int total) {
+    return 'Przygotowuję nagranie $number z $total…';
+  }
+
+  @override
+  String get importPageCancelled => 'Import anulowano. Nic nie zaimportowano.';
+
+  @override
+  String importPageSessionsImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Zaimportowano $count sesji',
+      few: 'Zaimportowano $count sesje',
+      one: 'Zaimportowano 1 sesję',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importPageShowResults => 'Pokaż wyniki dnia';
+
+  @override
+  String get importPageRecordingTypes => 'Nagrania VBO i RCZ';
+
+  @override
+  String get importPageImportThisFolder => 'Importuj ten folder';
+
+  @override
+  String get importPageChooseFile =>
+      'Wybierz plik telemetrii VBO lub RaceChrono RCZ.';
+
+  @override
+  String get importPageNotRegularFile =>
+      'Wybrany plik nie istnieje albo nie jest zwykłym plikiem.';
+
+  @override
+  String get importPageTooManyFiles =>
+      'Za dużo plików w jednym imporcie; wybierz mniej.';
+
+  @override
+  String get importPagePathTooLong => 'Ścieżka do nagrania jest za długa.';
+
+  @override
+  String get importPageFileSize =>
+      'Plik nagrania jest pusty albo przekracza limit rozmiaru pliku.';
+
+  @override
+  String get importPageBatchBytes =>
+      'Przekroczono limit rozmiaru importu; zaimportuj mniej nagrań.';
+
+  @override
+  String get importPageIdenticalContent =>
+      'Plik o tej samej zawartości jest już w tym imporcie.';
+
+  @override
+  String get importPageSourceChanged =>
+      'Nagranie zmieniło się podczas importu; spróbuj ponownie, gdy plik przestanie się zmieniać.';
+
+  @override
+  String get importPageInvalidTimeRange =>
+      'Nagranie ma nieprawidłowy zakres czasu.';
+
+  @override
+  String get importPageMismatchedChannels =>
+      'W nagraniu znaczniki czasu kanałów nie pasują do wartości.';
+
+  @override
+  String get importPageBatchSamples =>
+      'Przekroczono limit liczby próbek w imporcie; zaimportuj mniej nagrań.';
+
+  @override
+  String get importPageGroupingLimit =>
+      'Grupowanie nagrań przekracza limit importu.';
+
+  @override
   String get segmentReviewOpen => 'Przejrzyj propozycje';
 
   @override
@@ -2733,6 +4090,82 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get recordingsBusyAdd =>
       'Poczekaj na zakończenie sprawdzania lub zmiany nagrań sesji, a potem dodaj nagrania.';
+
+  @override
+  String get lapPageThisLap => 'To okrążenie';
+
+  @override
+  String lapPageGapToBest(String delta) {
+    return '$delta do najlepszego okrążenia dnia';
+  }
+
+  @override
+  String get importPageBest => 'Najlepsze';
+
+  @override
+  String get mapBackgroundMenu => 'Tło mapy';
+
+  @override
+  String get mapBackgroundStreets => 'Ulice';
+
+  @override
+  String get mapBackgroundSatellite => 'Satelita';
+
+  @override
+  String get mapBackgroundApple => 'Apple Maps';
+
+  @override
+  String get mapBackgroundPlain => 'Bez tła';
+
+  @override
+  String get documentPickerDays => 'Dzień FlappedEar';
+
+  @override
+  String get documentPickerLookInFolder => 'Szukaj w tym folderze';
+
+  @override
+  String get speedLegendNoSpeed =>
+      'Nie zapisano prędkości; ślad jest w jednym kolorze.';
+
+  @override
+  String get appErrorNotice =>
+      'Coś poszło nie tak. Szczegóły są w Diagnostyce.';
+
+  @override
+  String get appErrorPart => 'Nie udało się wyświetlić tej części.';
+
+  @override
+  String get diagnosticsErrors => 'Błędy';
+
+  @override
+  String get diagnosticsNoErrors => 'Brak błędów od uruchomienia aplikacji.';
+
+  @override
+  String get diagnosticsCopyErrors => 'Kopiuj błędy';
+
+  @override
+  String get diagnosticsErrorsCopied =>
+      'Skopiowano błędy. Wklej je do zgłoszenia błędu.';
+
+  @override
+  String diagnosticsErrorsDropped(int count) {
+    return 'Wcześniejsze błędy, których nie zachowano: $count';
+  }
+
+  @override
+  String importUnexpectedError(String error) {
+    return 'Nieoczekiwany błąd podczas odczytu tego pliku: $error';
+  }
+
+  @override
+  String noteUnexpectedError(String error) {
+    return 'Nieoczekiwany błąd podczas analizy tej sesji: $error';
+  }
+
+  @override
+  String diagnosticsErrorCount(int count) {
+    return 'Liczba wystąpień: $count';
+  }
 
   @override
   String get reviewImportTitle => 'Przejrzyj import';

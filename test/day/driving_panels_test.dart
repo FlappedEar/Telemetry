@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/driving_panels.dart';
@@ -248,6 +249,94 @@ void main() {
     await tester.tap(episode);
     await tester.pumpAndSettle();
     expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0 s'));
+  });
+
+  testWidgets('the driving panels speak Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: analysis,
+    );
+    final best = analysis.ranking!.bestOfDay!;
+    final other = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(1200, 4000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: ComparisonPage(controller: controller, a: other, b: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Całe okrążenie'), findsNWidgets(3));
+    expect(find.text('Whole lap'), findsNothing);
+    expect(find.text('Stany jazdy'), findsOneWidget);
+    expect(find.text('Driving states'), findsNothing);
+    expect(find.text('Hamowanie w zakręcie'), findsOneWidget);
+    expect(find.text('Maks. łączne'), findsOneWidget);
+    expect(find.text('Okrążenie A'), findsOneWidget);
+    for (final lap in const ['A', 'B']) {
+      expect(
+        textOf(tester, ValueKey('drivingSource braking $lap')),
+        'zmierzone',
+      );
+      expect(
+        textOf(tester, ValueKey('coastingSummary $lap')),
+        contains('% okrążenia)'),
+      );
+      expect(
+        textOf(tester, ValueKey('coastingSource $lap')),
+        startsWith('Zmierzone'),
+      );
+      expect(
+        textOf(tester, ValueKey('drivingSources $lap')),
+        startsWith('$lap: Zapisano pedał hamulca; zapisano pedał gazu;'),
+      );
+    }
+  });
+
+  testWidgets('the coasting of a lap speaks Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      theoreticalBestRunner: (job) async => job(),
+    );
+    final row = outcome.analysis!.ranking!.bestOfDay!;
+    await tester.binding.setSurfaceSize(const Size(1200, 4000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Toczenie bez gazu i hamulca'), findsOneWidget);
+    expect(find.text('Coasting'), findsNothing);
+    expect(
+      textOf(tester, const ValueKey('lapCoastingSummary')),
+      contains('% okrążenia)'),
+    );
+    expect(
+      textOf(tester, const ValueKey('lapCoastingNoSegments')),
+      'Toczenie według segmentów wymaga segmentów w grupie tego okrążenia.',
+    );
+    expect(
+      find.text('Epizody · wybierz jeden, aby go zobaczyć'),
+      findsOneWidget,
+    );
+
+    await controller.requestTheoreticalBest();
+    await tester.pumpAndSettle();
+    expect(find.text('Według segmentów'), findsOneWidget);
+    expect(find.textContaining('Zakręt'), findsWidgets);
+    expect(find.textContaining('Corner'), findsNothing);
   });
 
   test('the G-G scale grows past 1 g in half steps', () {
