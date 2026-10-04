@@ -6789,5 +6789,121 @@
   "weatherKept": "Kept as stored: this day's weather was saved by a newer version of the app.",
   "@weatherKept": {
     "description": "The day keeps weather this version cannot read."
+  },
+  "savedToLibrary": "Saved in your library.",
+  "@savedToLibrary": {
+    "description": "After saving the day in the driver profile's library."
+  },
+  "savedToLibraryChangesPending": "Saved in your library. Changes made while saving are not saved yet.",
+  "@savedToLibraryChangesPending": {
+    "description": "After saving the day in the library while it changed."
+  },
+  "exportForOverlays": "Export for Overlays…",
+  "@exportForOverlays": {
+    "description": "Menu item that writes a copy of the day as a .fetproject file for FlappedEar Overlays; the day stays in the library."
+  },
+  "exportedAs": "Exported as {file}.",
+  "@exportedAs": {
+    "description": "After exporting a copy of the day: its file name.",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrzab.fetproject"
+      }
+    }
+  },
+  "notExported": "Not exported: {error}",
+  "@notExported": {
+    "description": "Exporting a copy of the day failed; the error follows.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "disk full"
+      }
+    }
+  },
+  "importPageLibrary": "Library",
+  "@importPageLibrary": {
+    "description": "Button on the start page that opens the library of every day kept in the driver profile."
+  },
+  "libraryTitle": "Library",
+  "@libraryTitle": {
+    "description": "Title of the page listing every day kept in the driver profile, by car, year, track and date."
+  },
+  "libraryUnavailable": "The library is not available on this device.",
+  "@libraryUnavailable": {
+    "description": "Library page when the app has no folder for the driver profile."
+  },
+  "libraryEmpty": "Days you import are kept here, by car, year and track.",
+  "@libraryEmpty": {
+    "description": "Library page with no days yet."
+  },
+  "libraryRenameCar": "Rename car",
+  "@libraryRenameCar": {
+    "description": "Button and dialog title for renaming a car in the library."
+  },
+  "libraryRenameTrack": "Rename track",
+  "@libraryRenameTrack": {
+    "description": "Button and dialog title for renaming a track in the library."
+  },
+  "libraryUndated": "No date",
+  "@libraryUndated": {
+    "description": "Year or date heading for days whose recordings have no date."
+  },
+  "libraryUnknownTrack": "Track not recognised",
+  "@libraryUnknownTrack": {
+    "description": "Heading for days whose track could not be recognised (no complete laps)."
+  },
+  "librarySessions": "{count, plural, =1{1 session} other{{count} sessions}}",
+  "@librarySessions": {
+    "description": "How many sessions a day in the library has.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "libraryBestLap": "Best {time}",
+  "@libraryBestLap": {
+    "description": "A day's best lap in the library.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "1:49.898"
+      }
+    }
+  },
+  "libraryChangeCar": "Change car",
+  "@libraryChangeCar": {
+    "description": "Button on a day in the library that moves it to another car."
+  },
+  "libraryChooseCar": "Car for {day}",
+  "@libraryChooseCar": {
+    "description": "Title of the dialog choosing the car a day was driven in.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "Day 2026-08-29"
+      }
+    }
+  },
+  "libraryNewCar": "New car…",
+  "@libraryNewCar": {
+    "description": "Option that adds a car and moves the day to it."
+  },
+  "libraryDefaultCar": "My car",
+  "@libraryDefaultCar": {
+    "description": "Name of the first car, made when the first day is kept in the library."
+  },
+  "libraryDefaultTrack": "Track {number}",
+  "@libraryDefaultTrack": {
+    "description": "Name of a track recognised for the first time; the user can rename it.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "1"
+      }
+    }
   }
 }

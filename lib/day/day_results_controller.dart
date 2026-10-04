@@ -1412,6 +1412,47 @@ final class DayResultsController extends ChangeNotifier {
   bool get dirty => _dirty || _documentPath == null;
   bool get saving => _saving;
 
+  /// The day as a document written at [path], with [metadata] as the
+  /// sessions' details.
+  Map<String, Object?> _documentAt(
+    String path,
+    Map<String, RunMetadata> metadata,
+  ) => dayDocument(
+    eventId: eventId,
+    name: _name,
+    runs: runs,
+    analysis: _analysis,
+    exclusions: _exclusions,
+    projectPath: path,
+    previous: _document,
+    previousPath: _documentBase,
+    trackSegments: _segmentEdits.runs,
+    trackSegmentReviews: _segmentEdits.reviews,
+    groupChosen: _groupDecided,
+    comparison: _comparisonChoice,
+    fusions: _fusions,
+    pendingAlternatives: _pendingRecordings,
+    runMetadata: metadata,
+    weather: weather.fetched,
+  );
+
+  int _saveCount = 0;
+
+  /// How many times the day was saved by [save]; a listener sees it change
+  /// when a save finished.
+  int get saveCount => _saveCount;
+
+  /// Writes a copy of the day, as it is now, to [path] for FlappedEar
+  /// Overlays: its recordings referenced from there. The day itself stays
+  /// where it is saved, with its changes still to save. Throws
+  /// [FetprojectError] when the copy cannot be written.
+  Future<void> exportCopy(String path) async {
+    while (_saving) {
+      await _saveDone?.future;
+    }
+    await _writer(path, _documentAt(path, {..._metadataEdits}));
+  }
+
   /// Saves the day to [path]: the event, its runs and recordings, the
   /// layouts set by the user and the excluded laps. Throws
   /// [FetprojectError] when the document cannot be written; the previous
@@ -1455,24 +1496,7 @@ final class DayResultsController extends ChangeNotifier {
       final pairingPending = _reviewedPairingPending;
       final revision = _revision;
       final metadataNow = {..._metadataEdits};
-      final document = dayDocument(
-        eventId: eventId,
-        name: _name,
-        runs: runs,
-        analysis: _analysis,
-        exclusions: _exclusions,
-        projectPath: path,
-        previous: _document,
-        previousPath: _documentBase,
-        trackSegments: _segmentEdits.runs,
-        trackSegmentReviews: _segmentEdits.reviews,
-        groupChosen: _groupDecided,
-        comparison: _comparisonChoice,
-        fusions: _fusions,
-        pendingAlternatives: _pendingRecordings,
-        runMetadata: metadataNow,
-        weather: weather.fetched,
-      );
+      final document = _documentAt(path, metadataNow);
       // Changes still waiting for the recovery snapshot are written to it
       // first: where the file is written in place (the macOS sandbox), the
       // app ending partway would cut it, and the snapshot then still holds
@@ -1486,6 +1510,7 @@ final class DayResultsController extends ChangeNotifier {
       }
       _documentPath = path;
       _documentBase = path;
+      ++_saveCount;
       // Segment edits wait while saving, so the saved ones are all of them.
       _segmentEdits.clear();
       // Automatic segments were approved by the save with their own ids:

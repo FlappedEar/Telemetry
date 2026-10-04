@@ -1,0 +1,339 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/main.dart';
+import 'package:telemetry/profile/library_page.dart';
+import 'package:telemetry/profile/profile_library.dart';
+import 'package:telemetry_core/telemetry_core.dart';
+
+import '../day/day_results_page_test.dart' show FakeDocuments, circuitVbo;
+import '../support/temp_directory.dart';
+
+void main() {
+  late Directory directory;
+  setUp(() => directory = Directory.systemTemp.createTempSync('profile'));
+  tearDown(() => deleteTemporaryDirectory(directory));
+
+  String profileFolder() => p.join(directory.path, 'Profile');
+
+  ProfileLibrary library() => ProfileLibrary(
+    store: FolderProfileStore(profileFolder()),
+    defaultCarName: 'My car',
+    defaultTrackName: (number) => 'Track $number',
+    background: _inPlace,
+  );
+
+  DayImportOutcome importDay(Map<String, List<double>> files) {
+    final paths = <String>[];
+    files.forEach((name, speeds) {
+      final path = p.join(directory.path, name);
+      File(path).writeAsStringSync(circuitVbo(speeds));
+      paths.add(path);
+    });
+    return runDayImport((paths: paths, includeSubfolders: false));
+  }
+
+  // Writes as the app does, without the isolate and journal of the real
+  // writer, so a widget test's fake clock can run it.
+  Future<void> writer(String path, Map<String, Object?> document) async {
+    // No folder is made here: the library makes the day's folder.
+    File(path).writeAsStringSync(jsonEncode(document));
+  }
+
+  group('ProfileLibrary', () {
+    test(
+      'records a day saved in the profile and writes a profile that reads back',
+      () async {
+        final outcome = importDay({
+          'a.vbo': [30, 28, 31],
+          'b.vbo': [29, 32],
+        });
+        final shelf = library();
+        final path = (await shelf.dayPath('e1'))!;
+        expect(path, p.join(profileFolder(), 'Days', 'e1.fetproject'));
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        await shelf.flush();
+        final read = decodeDriverProfile(
+          File(p.join(profileFolder(), profileFileName)).readAsStringSync(),
+        );
+        expect(read.days.single.file, 'Days/e1.fetproject');
+        expect(read.cars.single.name, 'My car');
+        expect(read.tracks.single.name, 'Track 1');
+        expect(
+          read.days.single.bestLapSeconds,
+          outcome.analysis!.ranking!.bestOfDay!.durationSeconds,
+        );
+      },
+    );
+
+    test('ignores a day saved elsewhere', () async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: p.join(directory.path, 'Elsewhere.fetproject'),
+        name: 'Day',
+        analysis: outcome.analysis!,
+      );
+      expect(shelf.profile!.days, isEmpty);
+    });
+
+    test('keeps an unreadable profile beside and starts a new one', () async {
+      Directory(profileFolder()).createSync();
+      final file = File(p.join(profileFolder(), profileFileName))
+        ..writeAsStringSync('{broken');
+      final shelf = library();
+      await shelf.load();
+      expect(shelf.available, isTrue);
+      expect(shelf.profile!.days, isEmpty);
+      expect(file.existsSync(), isFalse);
+      final kept = Directory(profileFolder())
+          .listSync()
+          .whereType<File>()
+          .where(
+            (f) =>
+                p.basename(f.path).startsWith('$profileFileName.unreadable-'),
+          );
+      expect(kept.single.readAsStringSync(), '{broken');
+    });
+
+    test('without a folder there is no library', () async {
+      final shelf = ProfileLibrary(
+        store: const _NoFolder(),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+      );
+      await shelf.load();
+      expect(shelf.available, isFalse);
+      expect(await shelf.dayPath('e1'), isNull);
+    });
+  });
+
+  group('day page with a library', () {
+    testWidgets(
+      'saves a new day in the library by itself, and exports a copy',
+      (tester) async {
+        final outcome = importDay({
+          'a.vbo': [30, 28, 31],
+          'b.vbo': [29, 32],
+        });
+        final shelf = library();
+        await shelf.load();
+        final controller = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          writer: writer,
+        );
+        final export = p.join(directory.path, 'Export.fetproject');
+        final documents = FakeDocuments(location: export);
+        await tester.binding.setSurfaceSize(const Size(1200, 1600));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: DayResultsPage.controller(
+              controller: controller,
+              documents: documents,
+              library: shelf,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final saved = p.join(
+          profileFolder(),
+          'Days',
+          '${controller.eventId}.fetproject',
+        );
+        expect(controller.documentPath, saved);
+        expect(File(saved).existsSync(), isTrue);
+        expect(documents.names, isEmpty, reason: 'no save dialog');
+        expect(find.text('Saved in your library.'), findsOneWidget);
+        expect(shelf.profile!.days.single.eventId, controller.eventId);
+        expect(shelf.profile!.days.single.sessions, hasLength(2));
+
+        await tester.tap(find.byKey(const ValueKey('moreMenu')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Export for Overlays…'));
+        await tester.pumpAndSettle();
+        expect(documents.names, [controller.name]);
+        expect(File(export).existsSync(), isTrue);
+        expect(find.text('Exported as Export.fetproject.'), findsOneWidget);
+        expect(
+          controller.documentPath,
+          saved,
+          reason: 'the day stays in the library',
+        );
+        await shelf.flush();
+      },
+      // Export is offered on desktop, where Overlays runs.
+      variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+    );
+
+    testWidgets('saves a change by itself once the day is left alone', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      await shelf.load();
+      final saved = <Map<String, Object?>>[];
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: (path, document) async {
+          saved.add(document);
+          await writer(path, document);
+        },
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(saved, hasLength(1));
+      // The first save says so; its message goes after a while.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      final best = outcome.analysis!.ranking!.bestOfDay!;
+      expect(controller.exclude(best, 'Traffic'), isTrue);
+      await tester.pump();
+      expect(controller.dirty, isTrue);
+      await tester.pump(const Duration(seconds: 1));
+      expect(saved, hasLength(1), reason: 'not while changes may follow');
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(saved, hasLength(2));
+      expect(controller.dirty, isFalse);
+      expect(find.text('Saved in your library.'), findsNothing);
+      await shelf.flush();
+    });
+
+    testWidgets('without a library a new day waits for Save, as before', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: writer,
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(controller.documentPath, isNull);
+    });
+  });
+
+  group('LibraryPage', () {
+    testWidgets('lists days by car and track, renames and opens them', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      await (() async {
+        final path = (await shelf.dayPath('e1'))!;
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Test day',
+          analysis: outcome.analysis!,
+        );
+      })();
+      final opened = <String>[];
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: shelf, open: opened.add),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('My car'), findsOneWidget);
+      expect(find.text('Track 1'), findsOneWidget);
+      expect(find.textContaining('Test day'), findsOneWidget);
+      expect(find.textContaining('2 sessions'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Rename track'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('libraryRenameField')),
+        'Jastrząb',
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('Jastrząb'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Change car'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryNewCar')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('libraryRenameField')),
+        'Civic',
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('Civic'), findsOneWidget);
+      expect(
+        find.text('My car'),
+        findsNothing,
+        reason: 'a car without days is not listed',
+      );
+
+      await tester.tap(find.byKey(const ValueKey('libraryDay-e1')));
+      expect(opened, [p.join(profileFolder(), 'Days', 'e1.fetproject')]);
+      await shelf.flush();
+    });
+
+    testWidgets('says where days will go while it is empty', (tester) async {
+      final shelf = library();
+      await shelf.load();
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: shelf, open: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('libraryEmpty')), findsOneWidget);
+    });
+  });
+}
+
+Future<R> _inPlace<R>(FutureOr<R> Function() computation) async =>
+    computation();
+
+final class _NoFolder implements ProfileStore {
+  const _NoFolder();
+
+  @override
+  Future<String?> folder() async => null;
+}

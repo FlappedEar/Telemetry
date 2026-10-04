@@ -4731,4 +4731,87 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get weatherKept =>
       'Zachowana bez zmian: pogodę w tym dniu zapisała nowsza wersja aplikacji.';
+
+  @override
+  String get savedToLibrary => 'Zapisano w bibliotece.';
+
+  @override
+  String get savedToLibraryChangesPending =>
+      'Zapisano w bibliotece. Zmiany wprowadzone w trakcie zapisu nie są jeszcze zapisane.';
+
+  @override
+  String get exportForOverlays => 'Eksportuj do Overlays…';
+
+  @override
+  String exportedAs(String file) {
+    return 'Wyeksportowano jako $file.';
+  }
+
+  @override
+  String notExported(String error) {
+    return 'Nie wyeksportowano: $error';
+  }
+
+  @override
+  String get importPageLibrary => 'Biblioteka';
+
+  @override
+  String get libraryTitle => 'Biblioteka';
+
+  @override
+  String get libraryUnavailable =>
+      'Biblioteka nie jest dostępna na tym urządzeniu.';
+
+  @override
+  String get libraryEmpty =>
+      'Tutaj trafiają zaimportowane dni, według samochodu, roku i toru.';
+
+  @override
+  String get libraryRenameCar => 'Zmień nazwę samochodu';
+
+  @override
+  String get libraryRenameTrack => 'Zmień nazwę toru';
+
+  @override
+  String get libraryUndated => 'Bez daty';
+
+  @override
+  String get libraryUnknownTrack => 'Nie rozpoznano toru';
+
+  @override
+  String librarySessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sesji',
+      many: '$count sesji',
+      few: '$count sesje',
+      one: '1 sesja',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryBestLap(String time) {
+    return 'Najlepsze $time';
+  }
+
+  @override
+  String get libraryChangeCar => 'Zmień samochód';
+
+  @override
+  String libraryChooseCar(String day) {
+    return 'Samochód dla: $day';
+  }
+
+  @override
+  String get libraryNewCar => 'Nowy samochód…';
+
+  @override
+  String get libraryDefaultCar => 'Mój samochód';
+
+  @override
+  String libraryDefaultTrack(int number) {
+    return 'Tor $number';
+  }
 }

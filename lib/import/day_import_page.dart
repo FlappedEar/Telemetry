@@ -19,6 +19,8 @@ import '../day/save_journal.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../l10n.dart';
+import '../profile/library_page.dart';
+import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../ui/theme.dart';
 import 'day_import_controller.dart';
@@ -163,7 +165,12 @@ class DayImportPage extends StatefulWidget {
     this.incoming,
     this.fileAccess = const PlatformFileAccess(),
     this.appender = const IsolateDayAppender(),
+    this.library,
   });
+
+  /// The driver profile days are kept in; when null, there is no library
+  /// and days are saved where [documents] says.
+  final ProfileLibrary? library;
 
   /// Prepares recordings added to an open day.
   final DayAppender appender;
@@ -341,6 +348,7 @@ class _DayImportPageState extends State<DayImportPage> {
               recovery: widget.recovery,
               replace: (day) => next = day,
               startNewDay: _startNewDay,
+              library: widget.library,
             ),
           ),
         );
@@ -646,7 +654,7 @@ class _DayImportPageState extends State<DayImportPage> {
       if (day != null) return (day: day, snapshotLeft: false);
     }
     final day = await _added(paths, clock, () async {
-      final saved = await widget.documents.savedDays();
+      final saved = await _savedDays();
       return saved.isEmpty ? null : _openSaved(saved.first);
     });
     return (day: day, snapshotLeft: false);
@@ -735,6 +743,40 @@ class _DayImportPageState extends State<DayImportPage> {
     if (paths.isEmpty || !mounted) return;
     _unopenedShares = const [];
     _receive(paths);
+  }
+
+  /// Days saved in the app and in the library, the latest changed first.
+  Future<List<String>> _savedDays() async {
+    final days = [...await widget.documents.savedDays()];
+    final library = widget.library;
+    if (library != null) {
+      await library.load();
+      for (final day in library.profile?.days ?? const <ProfileDay>[]) {
+        final path = library.pathOf(day);
+        if (path != null && !days.contains(path) && File(path).existsSync()) {
+          days.add(path);
+        }
+      }
+    }
+    final modified = {
+      for (final path in days) path: File(path).lastModifiedSync(),
+    };
+    return days..sort((a, b) => modified[b]!.compareTo(modified[a]!));
+  }
+
+  /// Shows the library; a day chosen there opens here.
+  Future<void> _openLibrary() async {
+    final library = widget.library;
+    if (library == null) return;
+    final chosen = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => LibraryPage(
+          library: library,
+          open: (path) => Navigator.of(context).pop(path),
+        ),
+      ),
+    );
+    if (chosen != null && mounted) await _openDay(chosen);
   }
 
   // Built outside the state so the isolate's closure holds only the path.
@@ -971,6 +1013,13 @@ class _DayImportPageState extends State<DayImportPage> {
                           : context.l10n.importPageOpenSaved,
                     ),
                   ),
+                  if (widget.library != null)
+                    OutlinedButton.icon(
+                      key: const ValueKey('openLibrary'),
+                      onPressed: enabled && !_opening ? _openLibrary : null,
+                      icon: const Icon(Icons.collections_bookmark_outlined),
+                      label: Text(context.l10n.importPageLibrary),
+                    ),
                   if (_picksFolders)
                     _option(
                       key: const ValueKey('includeSubfolders'),
@@ -1069,6 +1118,8 @@ class _DayImportPageState extends State<DayImportPage> {
                     ? l10n.importPageDayUnsaved(_when(recovered.timestamp))
                     : day.dirty
                     ? l10n.importPageDayNotKept
+                    : widget.library?.holds(path!) ?? false
+                    ? l10n.savedToLibrary
                     : l10n.importPageDaySaved(p.basename(path!)),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
