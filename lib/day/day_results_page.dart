@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:isolate';
 import 'dart:ui' show AppExitResponse;
 
@@ -691,27 +692,37 @@ class _DayResultsPageState extends State<DayResultsPage> {
               ),
             ),
           )
-        else ...[
+        else
           Expanded(
-            flex: 5,
-            child: ListView(
-              key: const ValueKey('dayResultsSummary'),
-              controller: _summaryScroll,
-              padding: const EdgeInsets.all(16),
-              // As on a phone: the Next session card is built from the top.
-              scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
-              children: summary,
+            child: LayoutBuilder(
+              builder: (context, constraints) => Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: ListView(
+                      key: const ValueKey('dayResultsSummary'),
+                      controller: _summaryScroll,
+                      padding: const EdgeInsets.all(16),
+                      // As on a phone: the Next session card is built from
+                      // the top.
+                      scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+                      children: summary,
+                    ),
+                  ),
+                  // Four ninths of the width, at most 520: on a large screen
+                  // a lap's time stays near its name.
+                  SizedBox(
+                    width: math.min(constraints.maxWidth * 4 / 9, 520),
+                    child: ListView(
+                      key: const ValueKey('dayResultsLaps'),
+                      padding: const EdgeInsets.all(16),
+                      children: laps,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          Expanded(
-            flex: 4,
-            child: ListView(
-              key: const ValueKey('dayResultsLaps'),
-              padding: const EdgeInsets.all(16),
-              children: laps,
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -721,6 +732,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     // The trace keeps a similar shape from a small phone to a tablet in
     // portrait: about 0.6 of the card's width.
     final mapHeight = wide ? 360.0 : ((width - 64) * 0.6).clamp(200.0, 420.0);
+    // On a phone Settings moves into the menu, so the day's name has room.
+    final compact = width < 600;
     final scaffold = Scaffold(
       appBar: AppBar(
         title: ListenableBuilder(
@@ -732,7 +745,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           ),
         ),
         actions: [
-          const SettingsButton(),
+          if (!compact) const SettingsButton(),
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) => IconButton(
@@ -769,6 +782,16 @@ class _DayResultsPageState extends State<DayResultsPage> {
             key: const ValueKey('moreMenu'),
             tooltip: context.l10n.moreActions,
             itemBuilder: (context) => [
+              if (compact)
+                PopupMenuItem(
+                  key: const ValueKey('settingsMenuItem'),
+                  height: kMinInteractiveDimension,
+                  onTap: () => showDialog<void>(
+                    context: this.context,
+                    builder: (_) => const SettingsDialog(),
+                  ),
+                  child: Text(context.l10n.settings),
+                ),
               PopupMenuItem(
                 height: kMinInteractiveDimension,
                 onTap: () => _save(choose: true),
@@ -1001,6 +1024,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     _noBestReason(analysis, ranking),
                     style: theme.textTheme.titleMedium,
                   ),
+                  // The way out: the circuit the app could not identify.
+                  if (analysis.groups
+                          .where((group) => !group.resolved)
+                          .firstOrNull
+                      case final group?) ...[
+                    const SizedBox(height: 8),
+                    FilledButton.tonalIcon(
+                      key: const ValueKey('setCircuit'),
+                      onPressed: () => _editCircuit(group.runIds.first),
+                      icon: const Icon(Icons.edit_outlined),
+                      label: Text(l10n.setCircuit),
+                    ),
+                  ],
                 ] else ...[
                   if (ranking!.tieCount > 1)
                     Text(l10n.lapsShareBestTime(ranking.tieCount)),
@@ -1151,10 +1187,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ],
       for (final group in analysis.groups.where((group) => !group.resolved))
         ListTile(
+          key: ValueKey('unresolved ${group.id}'),
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.help_outline),
           title: Text(_groupLabel(group)),
           subtitle: Text(l10n.circuitNotIdentified),
+          trailing: const Icon(Icons.edit_outlined),
+          onTap: () => _editCircuit(group.runIds.first),
         ),
       const SizedBox(height: 12),
       Text(
@@ -1188,11 +1227,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           title: Text(l10n.session(named.name)),
           subtitle: Text(_circuitText(named.run.id)),
           trailing: const Icon(Icons.edit_outlined),
-          onTap: () => showDialog<void>(
-            context: context,
-            builder: (_) =>
-                TrackDialog(controller: _controller, runId: named.run.id),
-          ),
+          onTap: () => _editCircuit(named.run.id),
         ),
         SessionFusion(controller: _controller, runId: named.run.id),
       ],
@@ -1337,6 +1372,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
     return '';
   }
+
+  void _editCircuit(String runId) => showDialog<void>(
+    context: context,
+    builder: (_) => TrackDialog(controller: _controller, runId: runId),
+  );
 
   String _noBestReason(DayAnalysis analysis, DayRanking? ranking) {
     if (analysis.chosenGroup == null) return context.l10n.noBestLapNoCircuit;
@@ -1517,27 +1557,50 @@ class _DayResultsPageState extends State<DayResultsPage> {
           left: BorderSide(color: mark ?? Colors.transparent, width: 3),
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.only(left: 12),
-        title: Text(l10n.lap(row)),
-        subtitle: marks.isEmpty ? null : Text(marks.join(' · ')),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(displayTime(row.durationSeconds), style: timeStyle),
-            if (delta != null)
-              Text(
-                displayDelta(delta),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontFamily: FetTheme.mono,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-          ],
-        ),
+      // A row rather than a ListTile, which fixes its height: with large
+      // text the time and its gap grow the row instead of overflowing it.
+      child: InkWell(
         onTap: () => _open(row),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 0, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.lap(row), style: theme.textTheme.bodyLarge),
+                      if (marks.isNotEmpty)
+                        Text(
+                          marks.join(' · '),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(displayTime(row.durationSeconds), style: timeStyle),
+                    if (delta != null)
+                      Text(
+                        displayDelta(delta),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontFamily: FetTheme.mono,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -527,6 +527,9 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie udało się rozpoznać toru, więc jej okrążenia nie są porównywane.';
 
   @override
+  String get setCircuit => 'Ustaw tor…';
+
+  @override
   String get circuits => 'Tory';
 
   @override

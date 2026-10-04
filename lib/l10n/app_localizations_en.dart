@@ -519,6 +519,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Its circuit could not be identified, so its laps are not compared.';
 
   @override
+  String get setCircuit => 'Set the circuit…';
+
+  @override
   String get circuits => 'Circuits';
 
   @override

@@ -860,6 +860,12 @@ abstract class AppLocalizations {
   /// **'Its circuit could not be identified, so its laps are not compared.'**
   String get circuitNotIdentified;
 
+  /// Button under "No best lap": opens the circuit dialog of a session whose circuit could not be identified.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the circuit…'**
+  String get setCircuit;
+
   /// Heading of the list of each session's circuit.
   ///
   /// In en, this message translates to:

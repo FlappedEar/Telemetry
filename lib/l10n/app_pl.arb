@@ -127,6 +127,7 @@
   "noRankedLap": "{count, plural, =1{Brak sklasyfikowanego okrążenia · 1 okrążenie} few{Brak sklasyfikowanego okrążenia · {count} okrążenia} other{Brak sklasyfikowanego okrążenia · {count} okrążeń}}",
   "typicalTime": "typowo {time}",
   "circuitNotIdentified": "Nie udało się rozpoznać toru, więc jej okrążenia nie są porównywane.",
+  "setCircuit": "Ustaw tor…",
   "circuits": "Tory",
   "notes": "Uwagi",
   "circuitNotIdentifiedShort": "Nie rozpoznano",

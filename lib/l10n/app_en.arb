@@ -759,6 +759,10 @@
   "@circuitNotIdentified": {
     "description": "Under a group whose circuit is unknown."
   },
+  "setCircuit": "Set the circuit…",
+  "@setCircuit": {
+    "description": "Button under \"No best lap\": opens the circuit dialog of a session whose circuit could not be identified."
+  },
   "circuits": "Circuits",
   "@circuits": {
     "description": "Heading of the list of each session's circuit."
