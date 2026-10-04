@@ -173,9 +173,15 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(controller.theoreticalBest!.state, DayTheoreticalBestState.error);
-    // On the theoretical best and the time losses cards.
-    expect(find.byKey(const ValueKey('calculateAgain')), findsNWidgets(2));
-    await tester.tap(find.byKey(const ValueKey('calculateAgain')).first);
+    // The error and its retry once, on the theoretical best card; the cards
+    // built on it say only that it is not available.
+    expect(find.byKey(const ValueKey('calculateAgain')), findsOneWidget);
+    expect(find.textContaining('Out of memory'), findsOneWidget);
+    expect(
+      find.text('Not available: the theoretical best could not be calculated.'),
+      findsWidgets,
+    );
+    await tester.tap(find.byKey(const ValueKey('calculateAgain')));
     await tester.pumpAndSettle();
     expect(calls, 2);
     expect(controller.theoreticalBest!.state, DayTheoreticalBestState.ready);

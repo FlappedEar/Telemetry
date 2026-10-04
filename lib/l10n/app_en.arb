@@ -759,6 +759,10 @@
   "@circuitNotIdentified": {
     "description": "Under a group whose circuit is unknown."
   },
+  "setCircuit": "Set the circuit…",
+  "@setCircuit": {
+    "description": "Button under \"No best lap\": opens the circuit dialog of a session whose circuit could not be identified."
+  },
   "circuits": "Circuits",
   "@circuits": {
     "description": "Heading of the list of each session's circuit."
@@ -988,6 +992,10 @@
   "lapIssueDifferentRoute": "Lap leaves the route the other laps took (off track, a detour or the pit lane)",
   "@lapIssueDifferentRoute": {
     "description": "Why a lap is not ranked."
+  },
+  "tbFailedElsewhere": "Not available: the theoretical best could not be calculated.",
+  "@tbFailedElsewhere": {
+    "description": "In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card."
   },
   "tbTiming": "Timing every lap on one track axis…",
   "@tbTiming": {

@@ -16,6 +16,7 @@ import 'package:telemetry/import/file_access.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/format.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/ui/theme.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -379,6 +380,128 @@ void main() {
         reason: english,
       );
     }
+  });
+
+  testWidgets('with no best lap the card opens the circuit to set', (
+    tester,
+  ) async {
+    // A single lap: too few to identify the circuit.
+    final outcome = importDay({
+      'a.vbo': [30],
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    expect(find.textContaining('No best lap'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('setCircuit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Circuit of Session 1'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    // The unresolved session's row opens it too.
+    final unresolved = outcome.analysis!.groups.firstWhere(
+      (group) => !group.resolved,
+    );
+    await tester.tap(find.byKey(ValueKey('unresolved ${unresolved.id}')));
+    await tester.pumpAndSettle();
+    expect(find.text('Circuit of Session 1'), findsOneWidget);
+  });
+
+  testWidgets('a phone keeps Settings in the menu; a laptop in the bar', (
+    tester,
+  ) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    for (final (size, inBar) in [
+      (const Size(360, 740), false),
+      (const Size(1280, 800), true),
+    ]) {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          key: ValueKey(size),
+          home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+        ),
+      );
+      expect(find.byTooltip('Settings'), inBar ? findsOneWidget : findsNothing);
+      await tester.tap(find.byKey(const ValueKey('moreMenu')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('settingsMenuItem')),
+        inBar ? findsNothing : findsOneWidget,
+      );
+      if (!inBar) {
+        await tester.tap(find.byKey(const ValueKey('settingsMenuItem')));
+        await tester.pumpAndSettle();
+        expect(find.byType(SettingsDialog), findsOneWidget);
+      }
+      await tester.tapAt(Offset.zero);
+      await tester.pumpAndSettle();
+    }
+  });
+
+  testWidgets('the laps pane stays narrow on a large screen', (tester) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('dayResultsLaps'))).width,
+      520,
+    );
+  });
+
+  testWidgets('a lap row grows with very large text', (tester) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    await tester.binding.setSurfaceSize(const Size(360, 740));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.pumpAndSettle();
+    // No overflow down to the best lap, whose mark is shown in full.
+    await tester.scrollUntilVisible(
+      find.text('Best of the day'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('dayResultsLaps')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(tester.takeException(), isNull);
+    // Each row is a button to a screen reader.
+    final semantics = tester.ensureSemantics();
+    expect(
+      tester
+          .getSemantics(find.text('Best of the day'))
+          .flagsCollection
+          .isButton,
+      isTrue,
+    );
+    semantics.dispose();
   });
 
   testWidgets('names the circuit of a session and its route', (tester) async {

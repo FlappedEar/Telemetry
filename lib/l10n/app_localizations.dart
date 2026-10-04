@@ -860,6 +860,12 @@ abstract class AppLocalizations {
   /// **'Its circuit could not be identified, so its laps are not compared.'**
   String get circuitNotIdentified;
 
+  /// Button under "No best lap": opens the circuit dialog of a session whose circuit could not be identified.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the circuit…'**
+  String get setCircuit;
+
   /// Heading of the list of each session's circuit.
   ///
   /// In en, this message translates to:
@@ -1099,6 +1105,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lap leaves the route the other laps took (off track, a detour or the pit lane)'**
   String get lapIssueDifferentRoute;
+
+  /// In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available: the theoretical best could not be calculated.'**
+  String get tbFailedElsewhere;
 
   /// Theoretical best card while it is calculated.
   ///

@@ -527,6 +527,9 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie udało się rozpoznać toru, więc jej okrążenia nie są porównywane.';
 
   @override
+  String get setCircuit => 'Ustaw tor…';
+
+  @override
   String get circuits => 'Tory';
 
   @override
@@ -673,6 +676,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get lapIssueDifferentRoute =>
       'Okrążenie zjeżdża z trasy pozostałych okrążeń (wyjazd poza tor, objazd lub aleja serwisowa)';
+
+  @override
+  String get tbFailedElsewhere =>
+      'Niedostępne: nie udało się obliczyć teoretycznie najlepszego okrążenia.';
 
   @override
   String get tbTiming => 'Pomiar czasu każdego okrążenia na wspólnej osi toru…';

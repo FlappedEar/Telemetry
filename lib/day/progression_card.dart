@@ -208,7 +208,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
       return [Text(l10n.progressionMeasuring)];
     }
     if (result.state != DayTheoreticalBestState.ready) {
-      return [Text(l10n.tbMessage(result.message))];
+      return [Text(l10n.tbDependent(result))];
     }
     final sections = result.sectionProgression([
       for (final run in widget.progression.runs) run.run,

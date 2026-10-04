@@ -57,6 +57,13 @@ extension TheoreticalBestText on AppLocalizations {
     };
   }
 
+  /// Why a card built on the theoretical best shows nothing: a failure is
+  /// shown, with its retry, only on the Theoretical best card.
+  String tbDependent(DayTheoreticalBest result) =>
+      result.state == DayTheoreticalBestState.error
+      ? tbFailedElsewhere
+      : tbMessage(result.message);
+
   /// Why there is no theoretical best, or no total or segment time
   /// (`DayTheoreticalBest.message`, a segment's `unavailableReason`); a
   /// message the app does not know, such as an error, is shown as written.
