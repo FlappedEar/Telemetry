@@ -346,9 +346,8 @@ void main() {
         if (!first.contains(path)) path,
     ];
     // The import notes of the first session are not part of the picture.
-    ScaffoldMessenger.of(
-      tester.element(find.byType(DayResultsPage)),
-    ).removeCurrentSnackBar();
+    ScaffoldMessenger.of(tester.element(find.byType(DayResultsPage)))
+        .removeCurrentSnackBar();
     await tester.tap(find.byKey(const ValueKey('moreMenu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('addAndReviewRecordings')));

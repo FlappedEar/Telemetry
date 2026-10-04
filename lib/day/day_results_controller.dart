@@ -846,9 +846,10 @@ final class DayResultsController extends ChangeNotifier {
   // Runs added to the day while it is open.
   final Set<String> _addedRunIds = {};
 
-  // A session's weather arrived. A session added to a saved day is saved
-  // again with it, as the addition was; any other session's weather is
-  // written with the day's next save, and does not make the day unsaved.
+  // A session's weather arrived. A session added to a saved day that has no
+  // other unsaved change is saved again with it, as the addition was; any
+  // other weather is written with the day's next save, and does not make
+  // the day unsaved (nor saves edits the user has not saved).
   void _weatherFetched(String runId) {
     if (_disposed) return;
     notifyListeners();
@@ -862,7 +863,7 @@ final class DayResultsController extends ChangeNotifier {
     while (_saving) {
       await _saveDone?.future;
     }
-    if (_disposed || _documentPath == null) return;
+    if (_disposed || _documentPath == null || _dirty) return;
     final wanted = weather.fetched[runId];
     if (wanted == null) return;
     for (final value in _savedRuns) {

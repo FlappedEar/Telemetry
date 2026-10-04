@@ -1137,5 +1137,6 @@
   "sessionDetailsWeather": "Pogoda",
   "settingsWeatherHeading": "Pogoda w sesjach",
   "settingsWeatherSwitch": "Pobieraj pogodę dla każdej sesji",
-  "settingsWeatherHelp": "Wysyła do Open-Meteo.com pozycję sesji zaokrągloną do około 1 km i jej datę. Nic innego z Twoich zapisów nie opuszcza urządzenia."
+  "settingsWeatherHelp": "Wysyła do Open-Meteo.com pozycję sesji zaokrągloną do około 1 km i jej datę. Nic innego z Twoich zapisów nie opuszcza urządzenia.",
+  "weatherKept": "Zachowana bez zmian: pogodę w tym dniu zapisała nowsza wersja aplikacji."
 }

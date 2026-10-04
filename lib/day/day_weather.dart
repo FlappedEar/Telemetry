@@ -10,9 +10,12 @@ typedef WeatherFetcher = Future<Object?> Function(Uri uri);
 
 /// Where a session's weather is.
 enum SessionWeatherState {
-  /// The recording has no time or no GPS fix, or the day keeps weather
-  /// this app does not read.
+  /// The recording has no time or no GPS fix.
   none,
+
+  /// The day keeps weather of a version this app does not read; it is kept
+  /// as it is.
+  kept,
 
   /// Weather lookup is off in settings.
   off,
@@ -151,12 +154,24 @@ final class DayWeather extends ChangeNotifier {
       final saved = SessionWeather.fromJson(stored[id]);
       if (saved != null && saved.sourceRevision == revision) {
         _show(id, saved);
+        // Fetched before the history was final: replaced once it is.
+        final request = weatherRequest(named.run.telemetry);
+        if (saved.preliminary &&
+            _clock() >=
+                saved.endMilliseconds + weatherSettleDays * 24 * 3600 * 1000 &&
+            request != null &&
+            _fetcher != null &&
+            _on &&
+            _failed[id] != revision) {
+          _wanted[id] = (revision, request);
+          if (!_queue.contains(id)) _queue.add(id);
+        }
         continue;
       }
       _shown.remove(id);
       // Weather of a newer version is kept as it is, not replaced.
       if (saved == null && present.contains(id) && stored[id] != null) {
-        _set(id, SessionWeatherState.none);
+        _set(id, SessionWeatherState.kept);
         continue;
       }
       if (_failed[id] == revision) {
@@ -233,7 +248,7 @@ final class DayWeather extends ChangeNotifier {
         }
         if (_disposed) return;
         // The run's recording changed or the lookup was turned off meanwhile.
-        if (_wanted[id]?.$1 != revision) continue;
+        if (_wanted[id]?.$1 != revision || !_on) continue;
         if (weather == null || weather.summary.isEmpty) {
           // Nothing for the session: not kept, so asked again next time
           // the day opens.

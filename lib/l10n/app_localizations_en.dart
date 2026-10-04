@@ -4610,4 +4610,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsWeatherHelp =>
       'Sends each session\'s position, rounded to about 1 km, and its date to Open-Meteo.com. Nothing else from your recordings leaves the device.';
+
+  @override
+  String get weatherKept =>
+      'Kept as stored: this day\'s weather was saved by a newer version of the app.';
 }

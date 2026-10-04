@@ -227,7 +227,7 @@ void main() {
         ]);
         await settle();
         expect(service.asked, hasLength(1));
-        expect(newer.stateOf(run.id), SessionWeatherState.none);
+        expect(newer.stateOf(run.id), SessionWeatherState.kept);
       },
     );
 
@@ -454,5 +454,210 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('weatherLookupSetting')));
     await tester.pump();
     expect(weatherLookupSetting.value, isFalse);
+  });
+
+  group('review fixes', () {
+    test(
+      'weather fetched before the history was final is fetched again later',
+      () async {
+        final day = importDay([
+          write('a.vbo', [30, 28]),
+        ]);
+        final run = day.runs.single.run;
+        final end = DateTime.utc(2026, 8, 29, 11).millisecondsSinceEpoch;
+        const days5 = 5 * 24 * 3600 * 1000;
+        final service = _Service();
+        final early = DayWeather(fetcher: service.fetch, clock: () => end);
+        addTearDown(early.dispose);
+        early.sync(day.runs, const []);
+        await settle();
+        final stored = early.of(run.id)!;
+        expect(stored.preliminary, isTrue);
+        // Opened again within five days: shown, not asked again.
+        final soon = DayWeather(
+          fetcher: service.fetch,
+          clock: () => end + days5 ~/ 2,
+        );
+        addTearDown(soon.dispose);
+        soon.sync(day.runs, [
+          {'id': run.id, sessionWeatherKey: stored.toJson()},
+        ]);
+        await settle();
+        expect(service.asked, hasLength(1));
+        expect(soon.fetched, isEmpty);
+        // Opened after five days: shown, and asked once more.
+        final later = DayWeather(
+          fetcher: service.fetch,
+          clock: () => end + 2 * days5,
+        );
+        addTearDown(later.dispose);
+        later.sync(day.runs, [
+          {'id': run.id, sessionWeatherKey: stored.toJson()},
+        ]);
+        expect(later.of(run.id), isNotNull);
+        await settle();
+        expect(service.asked, hasLength(2));
+        expect(later.fetched[run.id]!.preliminary, isFalse);
+        // The final weather is not asked for again.
+        final last = DayWeather(
+          fetcher: service.fetch,
+          clock: () => end + 3 * days5,
+        );
+        addTearDown(last.dispose);
+        last.sync(day.runs, [
+          {'id': run.id, sessionWeatherKey: later.fetched[run.id]!.toJson()},
+        ]);
+        await settle();
+        expect(service.asked, hasLength(2));
+      },
+    );
+
+    test(
+      'an answer arriving after the lookup was turned off is dropped',
+      () async {
+        final day = importDay([
+          write('a.vbo', [30, 28]),
+        ]);
+        final id = day.runs.single.run.id;
+        final service = _Service()..gate = Completer<void>();
+        final enabled = ValueNotifier(true);
+        final weather = DayWeather(fetcher: service.fetch, enabled: enabled);
+        addTearDown(weather.dispose);
+        weather.sync(day.runs, const []);
+        await settle();
+        expect(service.asked, hasLength(1));
+        enabled.value = false;
+        service.gate!.complete();
+        await settle();
+        expect(weather.of(id), isNull);
+        expect(weather.fetched, isEmpty);
+        expect(weather.stateOf(id), SessionWeatherState.off);
+      },
+    );
+
+    test(
+      'an answer for a replaced recording or after the day closed is dropped',
+      () async {
+        final a = importDay([
+          write('a.vbo', [30, 28]),
+        ]);
+        final b = importDay([
+          write('b.vbo', [29, 31]),
+        ]);
+        final service = _Service()..gate = Completer<void>();
+        final weather = DayWeather(fetcher: service.fetch);
+        addTearDown(weather.dispose);
+        weather.sync(a.runs, const []);
+        await settle();
+        // The same session now reads another recording.
+        final id = a.runs.single.run.id;
+        final other = b.runs.single.run;
+        final swapped = [
+          (
+            run: TelemetryRunProposal(
+              id: id,
+              sourceId: other.sourceId,
+              sourcePath: other.sourcePath,
+              format: other.format,
+              contentSha256: other.contentSha256,
+              telemetry: other.telemetry,
+              laps: other.laps,
+            ),
+            name: a.runs.single.name,
+          ),
+        ];
+        weather.sync(swapped, const []);
+        service.gate!.complete();
+        await settle();
+        expect(weather.of(id)!.sourceRevision, other.contentSha256);
+        expect(service.asked, hasLength(2));
+
+        final closing = DayWeather(fetcher: _Service().fetch);
+        var fetched = 0;
+        closing.onFetched = (_) => ++fetched;
+        closing.sync(a.runs, const []);
+        closing.dispose();
+        await settle();
+        expect(fetched, 0);
+      },
+    );
+
+    test('a weather of a newer version survives a save', () async {
+      final path = '${directory.path}/Day.fetproject';
+      final first = importDay([
+        write('a.vbo', [30, 28]),
+      ]);
+      final id = first.runs.single.run.id;
+      final saving = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        writer: saveDayDocument,
+        weather: DayWeather(),
+      );
+      await saving.save(path);
+      saving.dispose();
+      final document = openDay(path).document;
+      documentRun(document, id)[sessionWeatherKey] = {
+        'version': 'session-weather-v2',
+        'future': [1, 2],
+      };
+      await saveDayDocument(path, document);
+      final service = _Service();
+      final opened = DayResultsController.opened(
+        openDay(path),
+        writer: saveDayDocument,
+        weather: DayWeather(fetcher: service.fetch),
+      );
+      addTearDown(opened.dispose);
+      await settle();
+      expect(service.asked, isEmpty);
+      expect(opened.weather.stateOf(id), SessionWeatherState.kept);
+      await opened.save(path);
+      expect(documentRun(openDay(path).document, id)[sessionWeatherKey], {
+        'version': 'session-weather-v2',
+        'future': [1, 2],
+      });
+    });
+
+    test('weather arriving while the day has unsaved edits waits for the next save', () async {
+      final path = '${directory.path}/Day.fetproject';
+      final first = importDay([
+        write('a.vbo', [30, 28]),
+      ]);
+      final service = _Service()..offline = true;
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        writer: saveDayDocument,
+        appender: _SyncAppender(),
+        weather: DayWeather(fetcher: service.fetch),
+      );
+      addTearDown(controller.dispose);
+      await settle();
+      await controller.save(path);
+      service
+        ..offline = false
+        ..gate = Completer<void>();
+      await controller.addRecordings([
+        write('b.vbo', [29, 31]),
+      ]);
+      final added = controller.runs.last.run.id;
+      expect(controller.renameDay('Not saved yet'), isNull);
+      expect(controller.dirty, isTrue);
+      service.gate!.complete();
+      await settle();
+      expect(controller.weather.of(added), isNotNull);
+      final saved = openDay(path);
+      expect(saved.name, isNot('Not saved yet'));
+      expect(
+        documentRun(saved.document, added).containsKey(sessionWeatherKey),
+        isFalse,
+      );
+      await controller.save(path);
+      expect(
+        documentRun(openDay(path).document, added)[sessionWeatherKey],
+        isNotNull,
+      );
+    });
   });
 }

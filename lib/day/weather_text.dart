@@ -139,6 +139,7 @@ class SessionWeatherSection extends StatelessWidget {
                 SessionWeatherState.fetching => l10n.weatherFetching,
                 SessionWeatherState.off => l10n.weatherOff,
                 SessionWeatherState.unavailable => l10n.weatherUnavailable,
+                SessionWeatherState.kept => l10n.weatherKept,
                 _ => l10n.weatherNone,
               }, style: small),
             if (shown == null && state == SessionWeatherState.unavailable)

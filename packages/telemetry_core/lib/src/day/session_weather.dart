@@ -19,6 +19,10 @@ const sessionWeatherKey = 'weather';
 /// The weather service, Open-Meteo's historical weather API (CC BY 4.0).
 const openMeteoProvider = 'open-meteo-archive';
 
+/// Days after a session until its weather history is final; weather fetched
+/// sooner is fetched again once they have passed.
+const weatherSettleDays = 5;
+
 /// The most hours a session's weather holds; a longer recording gets none.
 const maximumWeatherHours = 48;
 
@@ -304,6 +308,11 @@ final class SessionWeather {
 
   /// The weather during the session.
   WeatherSummary get summary => WeatherSummary._of(this);
+
+  /// Whether it was fetched before the model's history for the session was
+  /// final: the service fills recent days from forecasts and replaces them
+  /// with reanalysis within about [weatherSettleDays] days.
+  bool get preliminary => fetchedMilliseconds < endMilliseconds + weatherSettleDays * 24 * _hour;
 }
 
 int? _parse(Object? value) {
@@ -341,8 +350,9 @@ enum WeatherCondition {
 }
 
 /// The weather during a session: instant values at its middle, the air
-/// temperature's range from start to end, and the rain, strongest gust and
-/// worst weather of the hours it ran in. Null is "no data".
+/// temperature's range from start to end, the rain and strongest gust of the
+/// hours it ran in, and the worst weather of the hours nearest it. Null is
+/// "no data".
 final class WeatherSummary {
   const WeatherSummary({
     this.temperatureC,
@@ -401,7 +411,12 @@ final class WeatherSummary {
       for (final hour in hours)
         if (hour.time > start && hour.time < end) ?hour.temperatureC,
     ];
-    final codes = [for (final hour in during) ?hour.weatherCode];
+    // The weather code of the hours nearest the session (within half an
+    // hour of it), whether the model gives it for the hour or the instant.
+    final codes = [
+      for (final hour in hours)
+        if (hour.time >= start - _hour ~/ 2 && hour.time <= end + _hour ~/ 2) ?hour.weatherCode,
+    ];
     // The worst weather: higher WMO codes are heavier weather.
     WeatherCondition? condition;
     if (codes.isNotEmpty) condition = WeatherCondition.ofCode(codes.reduce(math.max));

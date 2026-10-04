@@ -6777,5 +6777,9 @@
   "settingsWeatherHelp": "Sends each session's position, rounded to about 1 km, and its date to Open-Meteo.com. Nothing else from your recordings leaves the device.",
   "@settingsWeatherHelp": {
     "description": "Explains what the weather lookup sends."
+  },
+  "weatherKept": "Kept as stored: this day's weather was saved by a newer version of the app.",
+  "@weatherKept": {
+    "description": "The day keeps weather this version cannot read."
   }
 }

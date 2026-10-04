@@ -6992,6 +6992,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sends each session\'s position, rounded to about 1 km, and its date to Open-Meteo.com. Nothing else from your recordings leaves the device.'**
   String get settingsWeatherHelp;
+
+  /// The day keeps weather this version cannot read.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept as stored: this day\'s weather was saved by a newer version of the app.'**
+  String get weatherKept;
 }
 
 class _AppLocalizationsDelegate
