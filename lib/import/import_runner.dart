@@ -18,9 +18,19 @@ final class DayImportOutcome {
     this.analysis,
     this.alternatives = const {},
     this.steps = const [],
+    this.choices,
+    this.reviewChanged = false,
   });
 
   final TelemetryFolderScan scan;
+
+  /// What the user chose in a review (FET-58); null for an automatic
+  /// import.
+  final ImportChoices? choices;
+
+  /// Nothing was imported: the recordings found are not the ones reviewed
+  /// (a file changed, or a folder has other files now).
+  final bool reviewChanged;
 
   /// Null when the scan found nothing to import.
   final TelemetryImportPlan? plan;
@@ -40,14 +50,16 @@ final class DayImportOutcome {
 }
 
 /// The runs a plan imports: one per drive, the VBO when a VBO and an RCZ of
-/// the same drive were recorded.
-List<TelemetryRunProposal> primaryRuns(TelemetryImportPlan plan) {
-  final groups = automaticVboPrimaries(plan);
-  return [
-    for (final run in plan.runs)
-      if (groups[run.id] == run.id) run,
-  ];
-}
+/// the same drive were recorded; with [choices], the ones the user chose.
+List<TelemetryRunProposal> primaryRuns(
+  TelemetryImportPlan plan, {
+  ImportChoices? choices,
+}) => chosenRuns(plan, choices ?? automaticImportChoices(plan));
+
+/// Whether [choices] were made for exactly the ready recordings of [plan].
+bool _reviewed(TelemetryImportPlan plan, ImportChoices choices) =>
+    choices.length == plan.runs.length &&
+    plan.runs.every((run) => choices.containsKey(run.id));
 
 /// A running import. [result] completes with [OperationCancelled] after
 /// [cancel].
@@ -58,19 +70,24 @@ abstract interface class DayImportJob {
 
 /// Starts imports. Replaced by a fake in widget tests.
 abstract interface class DayImporter {
-  /// [progress] receives (processed, total) recordings.
+  /// [progress] receives (processed, total) recordings. With [choices], the
+  /// recordings are imported as the user chose in a review.
   DayImportJob start(
     DayImportRequest request,
-    void Function(int processed, int total) progress,
-  );
+    void Function(int processed, int total) progress, {
+    ImportChoices? choices,
+  });
 }
 
 /// Scans, prepares and analyses a day synchronously: the work done in the
-/// background isolate.
+/// background isolate. With [choices] (a review), the runs are the ones the
+/// user chose; when the recordings found are not the ones reviewed, nothing
+/// is imported ([DayImportOutcome.reviewChanged]).
 DayImportOutcome runDayImport(
   DayImportRequest request, {
   CancellationCheck? cancelled,
   void Function(int processed, int total)? progress,
+  ImportChoices? choices,
 }) {
   final steps = <DiagnosticStep>[];
   final clock = Stopwatch()..start();
@@ -92,7 +109,10 @@ DayImportOutcome runDayImport(
     cancelled: cancelled,
     progress: progress,
   );
-  final runs = nameRunsInRecordingOrder(primaryRuns(plan));
+  if (choices != null && !_reviewed(plan, choices)) {
+    return DayImportOutcome(scan: scan, plan: plan, reviewChanged: true);
+  }
+  final runs = nameRunsInRecordingOrder(primaryRuns(plan, choices: choices));
   step(DiagnosticSteps.parse);
   final analysis = runs.isEmpty
       ? null
@@ -114,9 +134,86 @@ DayImportOutcome runDayImport(
     analysis: analysis,
     alternatives: importedAlternatives(plan, [
       for (final named in runs) named.run,
-    ]),
+    ], choices: choices),
     steps: steps,
+    choices: choices,
   );
+}
+
+/// A session of the open day that a recording may be made the same run as
+/// ("Same run as Session 2"), when recordings are added to a day.
+typedef ReviewSession = ({String runId, String name});
+
+/// The recordings of a request, prepared for a review (FET-58): nothing is
+/// analysed or committed.
+final class ImportPreview {
+  const ImportPreview({required this.scan, this.plan});
+
+  final TelemetryFolderScan scan;
+
+  /// Null when the scan found nothing to import.
+  final TelemetryImportPlan? plan;
+}
+
+/// Scans and prepares [request] for a review: the work done in the
+/// background isolate.
+ImportPreview runImportPreview(
+  DayImportRequest request, {
+  CancellationCheck? cancelled,
+  void Function(int processed, int total)? progress,
+}) {
+  final scan = scanTelemetrySources(
+    request.paths,
+    includeSubfolders: request.includeSubfolders,
+    cancelled: cancelled,
+  );
+  if (scan.cancelled) throw const OperationCancelled();
+  if (scan.error.isNotEmpty) return ImportPreview(scan: scan);
+  return ImportPreview(
+    scan: scan,
+    plan: prepareTelemetryImport(
+      scan.files,
+      cancelled: cancelled,
+      progress: progress,
+    ),
+  );
+}
+
+/// A running preparation for a review. [result] completes with
+/// [OperationCancelled] after [cancel].
+abstract interface class ImportPreviewJob {
+  Future<ImportPreview> get result;
+  void cancel();
+}
+
+/// Prepares recordings for a review. Replaced by a fake in widget tests.
+abstract interface class ImportPreparer {
+  ImportPreviewJob start(
+    DayImportRequest request,
+    void Function(int processed, int total) progress,
+  );
+}
+
+/// Prepares each review in its own isolate, like [IsolateDayImporter].
+final class IsolateImportPreparer implements ImportPreparer {
+  const IsolateImportPreparer();
+
+  @override
+  ImportPreviewJob start(
+    DayImportRequest request,
+    void Function(int, int) progress,
+  ) => _IsolatePreviewJob(request, progress);
+}
+
+final class _IsolatePreviewJob
+    extends _IsolateJob<DayImportRequest, ImportPreview>
+    implements ImportPreviewJob {
+  _IsolatePreviewJob(super.request, super.progress) : super(entry: _run);
+
+  static ImportPreview _run(
+    DayImportRequest request,
+    void Function(int, int) progress,
+  ) => runImportPreview(request, progress: progress);
 }
 
 /// What the user should know about a prepared plan: recordings skipped,
@@ -124,8 +221,9 @@ DayImportOutcome runDayImport(
 /// alternative source.
 List<String> importPlanNotes(
   TelemetryFolderScan scan,
-  TelemetryImportPlan plan,
-) {
+  TelemetryImportPlan plan, {
+  ImportChoices? choices,
+}) {
   final notes = [...scan.notes];
   final names = {
     for (final run in plan.runs) run.id: p.basename(run.sourcePath),
@@ -143,10 +241,15 @@ List<String> importPlanNotes(
         notes.add('$name: ${file.message}');
     }
   }
-  final groups = automaticVboPrimaries(plan);
+  final groups = choices ?? automaticImportChoices(plan);
   for (final run in plan.runs) {
     final primary = groups[run.id];
-    if (primary != null && primary != run.id) {
+    // A recording skipped in a review, or made the same run as one of the
+    // day's sessions (said by the addition), is not noted here.
+    if (primary != null &&
+        primary != run.id &&
+        primary != skipRecording &&
+        names.containsKey(primary)) {
       notes.add(
         '${names[run.id]}: the same drive as ${names[primary]}; kept as its '
         'alternative source.',
@@ -164,7 +267,10 @@ List<String> importPlanNotes(
 /// day's session it is the other format of (a VBO and an RCZ of one drive);
 /// those are not added. [alternativeOf] maps those that are an RCZ to the
 /// day's VBO run they become the alternative recording of (aligned and
-/// fused in the background once added).
+/// fused in the background once added). [choices], from a review (FET-58),
+/// decide instead of the automatic grouping: a recording the user made the
+/// same run as one of the day's sessions is then in [alternativeOf], with
+/// that session's name in [alternatives].
 typedef DayAppendRequest = ({
   List<String> paths,
   Set<String> runIds,
@@ -173,6 +279,7 @@ typedef DayAppendRequest = ({
   int? sameDayAs,
   Map<String, String> alternatives,
   Map<String, String> alternativeOf,
+  ImportChoices? choices,
 });
 
 /// Whether [a] and [b] (milliseconds since the epoch) fall on one local
@@ -192,7 +299,11 @@ final class DayAppendOutcome {
     this.alternatives = const {},
     this.error = '',
     this.otherDay = false,
+    this.reviewChanged = false,
   });
+
+  /// Nothing was added: the recordings found are not the ones reviewed.
+  final bool reviewChanged;
 
   /// Nothing was added: a new recording did not start on the day's date
   /// (or has no date), as [DayAppendRequest.sameDayAs] asked.
@@ -237,10 +348,22 @@ DayAppendOutcome runDayAppend(
     cancelled: cancelled,
     progress: progress,
   );
-  final notes = importPlanNotes(scan, plan);
+  final choices = request.choices;
+  if (choices != null && !_reviewed(plan, choices)) {
+    return DayAppendOutcome(notes: scan.notes, reviewChanged: true);
+  }
+  final notes = importPlanNotes(scan, plan, choices: choices);
   final added = <TelemetryRunProposal>[];
   final alternatives = <String, TelemetryRunProposal>{};
-  for (final run in primaryRuns(plan)) {
+  final candidates = choices == null
+      ? primaryRuns(plan)
+      : [
+          for (final run in plan.runs)
+            if (choices[run.id] == run.id ||
+                choices[run.id] == request.alternativeOf[run.id])
+              run,
+        ];
+  for (final run in candidates) {
     final session = request.alternatives[run.id];
     final primary = request.alternativeOf[run.id];
     if (request.runIds.contains(run.id)) {
@@ -287,7 +410,7 @@ DayAppendOutcome runDayAppend(
     existingRows: request.rowCount,
     cancelled: cancelled,
   );
-  alternatives.addAll(importedAlternatives(plan, added));
+  alternatives.addAll(importedAlternatives(plan, added, choices: choices));
   return DayAppendOutcome(
     notes: notes,
     runs: runs,
@@ -341,19 +464,20 @@ final class IsolateDayImporter implements DayImporter {
   @override
   DayImportJob start(
     DayImportRequest request,
-    void Function(int, int) progress,
-  ) => _IsolateImportJob(request, progress);
+    void Function(int, int) progress, {
+    ImportChoices? choices,
+  }) => _IsolateImportJob((request, choices), progress);
 }
 
 final class _IsolateImportJob
-    extends _IsolateJob<DayImportRequest, DayImportOutcome>
+    extends _IsolateJob<(DayImportRequest, ImportChoices?), DayImportOutcome>
     implements DayImportJob {
   _IsolateImportJob(super.request, super.progress) : super(entry: _run);
 
   static DayImportOutcome _run(
-    DayImportRequest request,
+    (DayImportRequest, ImportChoices?) request,
     void Function(int, int) progress,
-  ) => runDayImport(request, progress: progress);
+  ) => runDayImport(request.$1, progress: progress, choices: request.$2);
 }
 
 /// Runs [entry] on a request in its own isolate. Cancel stops the isolate at

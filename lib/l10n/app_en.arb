@@ -6074,5 +6074,157 @@
         "type": "int"
       }
     }
+  },
+  "reviewImportTitle": "Review the import",
+  "@reviewImportTitle": {
+    "description": "Title of the page that lists every recording found before an import or an addition to a day is committed."
+  },
+  "reviewImportIntro": "Choose what happens to each recording. Nothing is imported until you confirm.",
+  "@reviewImportIntro": {
+    "description": "Text at the top of the import review page."
+  },
+  "reviewBeforeImport": "Review the files before importing",
+  "@reviewBeforeImport": {
+    "description": "Checkbox on the import page: the next import stops at a review of the recordings found. Off by default and after each import."
+  },
+  "addAndReviewRecordings": "Add and review recordings…",
+  "@addAndReviewRecordings": {
+    "description": "Menu item of a day: choose recordings to add and review what happens to each before they are added."
+  },
+  "reviewChoiceNewSession": "Import as a new session",
+  "@reviewChoiceNewSession": {
+    "description": "Choice for a recording in the import review: it becomes a session of its own."
+  },
+  "reviewChoiceSkip": "Skip this file",
+  "@reviewChoiceSkip": {
+    "description": "Choice for a recording in the import review: it is not imported."
+  },
+  "reviewChoiceSameRunAs": "Same run as {name}",
+  "@reviewChoiceSameRunAs": {
+    "description": "Choice for a recording in the import review: it is another recording of the same run (for example the RCZ of a VBO) and is kept with that session. name is a file name or a session name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "drive.vbo"
+      }
+    }
+  },
+  "reviewRecordingSummary": "{duration} · {count, plural, =0{no complete laps} =1{1 complete lap} other{{count} complete laps}}",
+  "@reviewRecordingSummary": {
+    "description": "A recording in the import review: its length (minutes:seconds) and its complete laps.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "14:05"
+      },
+      "count": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "reviewDuplicate": "Same content as {name}; imported once.",
+  "@reviewDuplicate": {
+    "description": "A recording in the import review whose content is identical to another file of the same import.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "drive.vbo"
+      }
+    }
+  },
+  "reviewFailed": "Not imported: {reason}",
+  "@reviewFailed": {
+    "description": "A recording in the import review that could not be read; reason says why (English from the reader).",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Telemetry file is empty."
+      }
+    }
+  },
+  "reviewAlreadyInDay": "Already in this day; skipped.",
+  "@reviewAlreadyInDay": {
+    "description": "A recording in the review of an addition that the day already has."
+  },
+  "reviewPossibleSameRun": "Possibly the same run as {name}: the GPS traces agree.",
+  "@reviewPossibleSameRun": {
+    "description": "Hint under a recording in the import review: another file's GPS trace matches it. Evidence, not an automatic choice.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "drive.rcz"
+      }
+    }
+  },
+  "reviewDestinationAppend": "Add to this day",
+  "@reviewDestinationAppend": {
+    "description": "Destination in the review of an addition: the recordings become sessions of the open day."
+  },
+  "reviewDestinationNewDay": "Start a new day",
+  "@reviewDestinationNewDay": {
+    "description": "Destination in the review of an addition: the recordings become a new day instead of the open one."
+  },
+  "reviewNewDayNeedsSave": "Save this day before starting a new one.",
+  "@reviewNewDayNeedsSave": {
+    "description": "Why 'Start a new day' is not available in the review: the open day has unsaved changes."
+  },
+  "reviewSameRunHint": "Two exports of the same run? Choose “Same run as”. The session's laps come from the file you link to; the other file is kept with it as its alternative recording.",
+  "@reviewSameRunHint": {
+    "description": "Hint at the bottom of the import review page."
+  },
+  "reviewConfirmImport": "Import",
+  "@reviewConfirmImport": {
+    "description": "Button of the import review page that imports the recordings as chosen."
+  },
+  "reviewConfirmAdd": "Add to the day",
+  "@reviewConfirmAdd": {
+    "description": "Button of the review of an addition that adds the recordings as chosen."
+  },
+  "reviewConfirmNewDay": "Start the new day",
+  "@reviewConfirmNewDay": {
+    "description": "Button of the review of an addition, with 'Start a new day' chosen."
+  },
+  "reviewSessionCount": "{count, plural, =0{No new session} =1{1 new session} other{{count} new sessions}}",
+  "@reviewSessionCount": {
+    "description": "Summary at the bottom of the import review page: the sessions the choices create.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "reviewProblemTarget": "A file is the same run as a file that is not imported as a session of its own.",
+  "@reviewProblemTarget": {
+    "description": "Why the import review cannot be confirmed."
+  },
+  "reviewProblemTooMany": "A session keeps one other recording at most.",
+  "@reviewProblemTooMany": {
+    "description": "Why the import review cannot be confirmed: two files were made the same run as one session."
+  },
+  "reviewProblemNothing": "Choose at least one file to import.",
+  "@reviewProblemNothing": {
+    "description": "Why the import review cannot be confirmed: every file is skipped."
+  },
+  "reviewChoicesRefused": "These choices cannot be added, so nothing was added. Review the recordings again.",
+  "@reviewChoicesRefused": {
+    "description": "Said when recordings were to be added to a day with choices the review does not accept (for example every file skipped)."
+  },
+  "waitUntilRecordingsSaved": "Wait until the recordings are lined up and the day is saved.",
+  "@waitUntilRecordingsSaved": {
+    "description": "Said when leaving a day while its save waits for two recordings paired in the review to be lined up."
+  },
+  "reviewChanged": "The recordings changed after the review, so nothing was imported. Review them again.",
+  "@reviewChanged": {
+    "description": "An import or addition after a review found other recordings than the ones reviewed (a file changed or a folder has other files)."
+  },
+  "reviewPreparing": "Preparing the review…",
+  "@reviewPreparing": {
+    "description": "Shown on a day while the recordings chosen for 'Add and review recordings…' are read."
+  },
+  "importBusy": "Finish the current import first. Nothing was imported.",
+  "@importBusy": {
+    "description": "An import was asked for while another runs or waits for its review; nothing was imported."
   }
 }

@@ -55,6 +55,15 @@
 //       primary, as Run details' "Check clock" does (KAN-101:
 //       checkRunRecordingAlignment), and prints the alignment. Nothing is
 //       saved.
+//   cpp_project_roundtrip review <project> <name> <recording>=<choice>...
+//   cpp_project_roundtrip review-append <project> <recording>=<choice>...
+//       Overlays' advanced import review (BatchImportDialog: beginBatchImport,
+//       then confirmBatchImport with one choice per file) imports the
+//       recordings as a new day named <name>, or adds them to the day at
+//       <project>, and saves it there (FET-58). A choice is "new" (Import as
+//       a run), "skip" (Skip this file) or "same:<k>" (Same run as the k-th
+//       recording, 1-based). Prints the review rows and the saved day's
+//       inspect.
 //
 // Nothing is copied from Overlays: its sources are compiled from a read-only
 // checkout (see CMakeLists.txt).
@@ -527,6 +536,59 @@ void importDay(const QString &path, const QString &name, const QStringList &reco
     settle(*controller);
 }
 
+// Overlays' advanced import review of [specs] ("<recording>=<choice>") and
+// its commit: a new day named [name], or an addition to the open day when
+// [append]. Returns the review rows Overlays showed.
+QJsonArray reviewImport(TelemetryController &controller, const QString &name, const QStringList &specs, const bool append)
+{
+    auto &document = *controller.document();
+    QStringList paths;
+    QStringList choices;
+    for (const auto &spec : specs) {
+        const auto split = spec.lastIndexOf('=');
+        if (split <= 0) fail(QStringLiteral("A recording needs =new, =skip or =same:<k>: %1").arg(spec));
+        paths.append(QFileInfo(spec.left(split)).absoluteFilePath());
+        choices.append(spec.mid(split + 1));
+    }
+    QList<QUrl> urls;
+    for (const auto &path : paths) urls.append(QUrl::fromLocalFile(path));
+    if (!document.beginBatchImport(urls)) fail(QStringLiteral("Overlays refused the review: %1").arg(document.batchImportError()));
+    if (!waitFor([&] { return document.batchImportState() == "review" || document.batchImportState() == "error"; }, 120'000)
+        || document.batchImportState() != "review")
+        fail(QStringLiteral("Overlays did not prepare the review: %1").arg(document.batchImportError()));
+    const auto rows = document.batchImportRows();
+    if (rows.size() != paths.size()) fail(QStringLiteral("Overlays reviewed %1 files, not %2.").arg(rows.size()).arg(paths.size()));
+    QJsonArray reviewed;
+    QVariantList submitted;
+    for (int i = 0; i < rows.size(); ++i) {
+        const auto row = rows[i].toMap();
+        reviewed.append(QJsonObject{{"name", row.value("name").toString()}, {"status", row.value("status").toString()},
+            {"existing", row.value("existing").toBool()}});
+        if (row.value("status").toString() != "ready") continue;
+        const QString id = row.value("proposalId").toString();
+        QString group;
+        if (choices[i] == "new") {
+            group = id;
+        } else if (choices[i].startsWith("same:")) {
+            const int target = choices[i].mid(5).toInt() - 1;
+            if (target < 0 || target >= rows.size()) fail(QStringLiteral("No recording %1.").arg(choices[i]));
+            group = rows[target].toMap().value("proposalId").toString();
+        } else if (choices[i] != "skip") {
+            fail(QStringLiteral("Unknown choice %1.").arg(choices[i]));
+        }
+        submitted.append(QVariantMap{{"proposalId", id}, {"groupId", group}});
+    }
+    int committed = 0;
+    const auto connection = QObject::connect(&document, &DocumentController::batchImportCommitted, [&committed] { ++committed; });
+    if (!document.confirmBatchImport(name, append, submitted))
+        fail(QStringLiteral("Overlays refused the choices: %1").arg(document.batchImportError()));
+    if (!waitFor([&] { return committed > 0 || document.batchImportState() != "validating"; }, 120'000) || committed == 0)
+        fail(QStringLiteral("Overlays did not commit the review: %1").arg(document.batchImportError()));
+    QObject::disconnect(connection);
+    settle(controller);
+    return reviewed;
+}
+
 // The id of [run]: a run id of the day, or its 1-based position.
 QString runIdOf(DocumentController &document, const QString &run)
 {
@@ -729,7 +791,7 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QStringLiteral("cpp_project_roundtrip"));
     QSettings().clear();
     const QStringList arguments = application.arguments().mid(1);
-    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|attach|fuse|primary|unfuse|clock|compare ..."));
+    if (arguments.isEmpty()) fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|review|review-append|attach|fuse|primary|unfuse|clock|compare ..."));
     QTemporaryDir scratch;
     if (!scratch.isValid()) fail(QStringLiteral("No temporary folder."));
     const QString command = arguments.first();
@@ -752,6 +814,25 @@ int main(int argc, char **argv)
     } else if (command == "import" && arguments.size() >= 4) {
         importDay(arguments[1], arguments[2], arguments.mid(3), scratch);
         print(inspect(arguments[1], scratch));
+    } else if (command == "review" && arguments.size() >= 4) {
+        QJsonArray rows;
+        {
+            auto controller = newController(scratch);
+            rows = reviewImport(*controller, arguments[2], arguments.mid(3), false);
+            save(*controller, arguments[1]);
+            settle(*controller);
+        }
+        print(QJsonObject{{"rows", rows}, {"inspected", inspect(arguments[1], scratch)}});
+    } else if (command == "review-append" && arguments.size() >= 3) {
+        QJsonArray rows;
+        {
+            auto controller = newController(scratch);
+            open(*controller, arguments[1]);
+            rows = reviewImport(*controller, {}, arguments.mid(2), true);
+            save(*controller, arguments[1]);
+            settle(*controller);
+        }
+        print(QJsonObject{{"rows", rows}, {"inspected", inspect(arguments[1], scratch)}});
     } else if (command == "attach" && arguments.size() == 4) {
         auto result = attach(arguments[1], arguments[2], arguments[3], scratch);
         result.insert("inspected", inspect(arguments[1], scratch));
@@ -782,7 +863,7 @@ int main(int argc, char **argv)
         for (const auto &path : arguments.mid(1)) results.append(inspect(path, scratch));
         print(results);
     } else {
-        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|attach|fuse|primary|unfuse|clock|compare ..."));
+        fail(QStringLiteral("usage: cpp_project_roundtrip fingerprint|create|resave|metadata|inspect|import|review|review-append|attach|fuse|primary|unfuse|clock|compare ..."));
     }
     QSettings().clear();
     return 0;

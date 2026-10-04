@@ -288,6 +288,15 @@ Commands (each prints JSON):
   `checkRunRecordingAlignment`), and prints the alignment (status, reason,
   offset, uncertainty, drift, correlation, windows, declared offset).
   Nothing is saved.
+- `review <project> <name> <recording>=<choice>...` and
+  `review-append <project> <recording>=<choice>...`: Overlays' advanced
+  import review (FET-58: `BatchImportDialog`, `beginBatchImport`, then
+  `confirmBatchImport` with one choice per ready file) imports the
+  recordings as a new day named `<name>`, or adds them to the day at
+  `<project>`, and saves it there. A choice is `new` (Import as a run),
+  `skip` (Skip this file) or `same:<k>` (Same run as the k-th recording,
+  1-based). Prints the review rows (name, status, already in the day) and
+  `inspect`.
 
 `test/day/overlays_roundtrip_test.dart` (skipped unless
 `FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) runs both directions on the shared
@@ -354,6 +363,23 @@ writes, and Overlays sees the same day in it; Telemetry refusing the
 alignment writes the document Overlays' `unfuse` writes; and Telemetry's
 clock check measures what Overlays' `clock` measures, and accepting it saves
 the decision Overlays approved.
+
+`test/day/overlays_review_roundtrip_test.dart` (also skipped unless
+`FLAPPEDEAR_OVERLAYS_ROUNDTRIP` is set) checks the reviewed import (FET-58)
+on synthetic recordings: Overlays' review makes the RCZ of
+`writeFusionPair` the run, its VBO "Same run as" the RCZ (overriding the
+automatic pairing) and skips a third file. Telemetry opens the day with the
+RCZ's laps and the VBO kept beside the run, not fused (Overlays decided no
+fusion; FET-57's rule), and its re-save groups the sources as Overlays did
+and writes no `fusion`; Overlays then adds the skipped file in its own
+review and recognises the RCZ as already in the day. Telemetry's review
+with the same choices fuses the pair at import and saves the run as
+Overlays does (one run, the same primary, the same sources with content,
+fingerprint and import provenance) plus the fusion decision, which
+Telemetry applies again on open without aligning; Overlays lists the same
+recordings. Two VBOs made one run in Overlays' review are kept and never
+fused, and Telemetry's re-save writes no `fusion`. Last run against
+FlappedEar/Overlay `d4d1039`: passed.
 
 The committed day in `../fetproject/test/fixtures/roundtrip` was built by
 `create` from FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on
