@@ -312,6 +312,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Patterns seen earlier today do not repeat on most of this session\'s laps.';
 
   @override
+  String coachSlowLaps(String laps) {
+    return 'Left out as much slower than their session\'s typical lap (traffic, warm-up or cool-down): $laps.';
+  }
+
+  @override
   String get coachWhyAffected => 'This session\'s laps';
 
   @override

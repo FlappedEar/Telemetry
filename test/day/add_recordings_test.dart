@@ -139,6 +139,41 @@ void main() {
     expect(controller.ranking!.bestOfDay!.displayName, 'Session 2 · LAP 2');
   });
 
+  test(
+    'the day keeps its corners when a session with a new best lap is added',
+    () async {
+      final a = write('a.vbo', [30, 28, 31]);
+      final b = write('b.vbo', [33, 34]);
+      final first = runDayImport((paths: [a], includeSubfolders: false));
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+      );
+      await controller.requestTheoreticalBest();
+      final before = controller.theoreticalBest!;
+      expect(before.automaticSegments, isTrue);
+      final ids = [for (final s in before.runSegments) s['id']];
+
+      expect((await controller.addRecordings([b])).added, ['Session 2']);
+      expect(
+        controller.ranking!.bestOfDay!.displayName,
+        startsWith('Session 2'),
+      );
+      await controller.requestTheoreticalBest();
+      final after = controller.theoreticalBest!;
+      // The segments in use before are kept as approved, not proposed again
+      // from the new best lap.
+      expect(after.automaticSegments, isFalse);
+      expect(after.segmentRunId, before.segmentRunId);
+      expect([for (final s in after.runSegments) s['id']], ids);
+      expect(
+        [for (final s in after.segments) s.name],
+        [for (final s in before.segments) s.name],
+      );
+    },
+  );
+
   test('a recording already in the day is not added twice', () async {
     final a = write('a.vbo', [30, 28, 31]);
     final copy = write('copy.vbo', [30, 28, 31]);

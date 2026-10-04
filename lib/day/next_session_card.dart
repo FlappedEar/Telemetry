@@ -208,6 +208,21 @@ class NextSessionCard extends StatelessWidget {
                   style: theme.textTheme.bodySmall,
                 ),
               ],
+              if (coach.slowLaps.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.coachSlowLaps(
+                    [
+                      for (final lap in coach.slowLaps)
+                        lapLabel(lap.reference).isEmpty
+                            ? l10n.lap(lap)
+                            : l10n.timeLossLapLabel(lapLabel(lap.reference)),
+                    ].join(', '),
+                  ),
+                  key: const ValueKey('coachSlowLaps'),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
               if (coach.plan.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(l10n.coachFooter, style: theme.textTheme.bodySmall),

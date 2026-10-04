@@ -115,6 +115,7 @@ void main() {
       findings: [change, keep],
       plan: [CoachItem(keep), CoachItem(change)],
       reason: CoachReason.ready,
+      slowLaps: [laps.last],
     );
   }
 
@@ -223,6 +224,14 @@ void main() {
         find.textContaining('suggest an opportunity, not a promised gain'),
         findsOneWidget,
       );
+      final slow = tester.widget<Text>(
+        find.byKey(const ValueKey('coachSlowLaps')),
+      );
+      expect(
+        slow.data,
+        startsWith("Left out as much slower than their session's typical lap"),
+      );
+      expect(slow.data, contains('Session 2'));
       // The observations follow it, labelled as such.
       await reveal(tester, find.text('Where to look next'));
       expect(find.text('Where to look next'), findsOneWidget);

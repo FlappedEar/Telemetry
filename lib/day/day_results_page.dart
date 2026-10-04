@@ -30,6 +30,7 @@ import 'next_session_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
+import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
@@ -227,10 +228,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         if (!mounted) return;
         final card = _coachKey.currentContext;
         if (card != null) {
-          Scrollable.ensureVisible(
-            card,
-            duration: const Duration(milliseconds: 300),
-          );
+          revealSettled(card, current: () => _coachKey.currentContext);
         } else if (again && _summaryScroll.hasClients) {
           _summaryScroll.jumpTo(0);
           reveal(again: false);

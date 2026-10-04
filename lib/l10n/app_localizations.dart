@@ -572,6 +572,12 @@ abstract class AppLocalizations {
   /// **'Patterns seen earlier today do not repeat on most of this session\'s laps.'**
   String get coachReasonNotInSession;
 
+  /// Laps the coach did not read for patterns because they are more than 5% slower than their session's median lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Left out as much slower than their session\'s typical lap (traffic, warm-up or cool-down): {laps}.'**
+  String coachSlowLaps(String laps);
+
   /// Heading of the coached session's laps the pattern was seen on; the values shown come from them.
   ///
   /// In en, this message translates to:
