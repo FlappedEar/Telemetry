@@ -89,7 +89,11 @@ map.
 
 `writeFetproject` validates, writes indented JSON (Qt's layout, keys in code
 point order) to a temporary file in the same folder, flushes it and renames
-it over the document, so a failed save leaves the old document whole.
+it over the document, so a failed save leaves the old document whole. Where
+the folder refuses the temporary file but the document itself may be written
+(the macOS sandbox grants only the file chosen in the save panel), it writes
+the document in place, reads it back, and on a failure writes the previous
+document back (a new document is removed again); the error says what is left.
 
 `SourceReference` ports `ProjectSourceReferenceCodec`: a relative path is
 saved only when the recording is at most two folders above the document, and

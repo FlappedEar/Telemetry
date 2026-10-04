@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fetproject/fetproject.dart';
+import 'package:fetproject/src/event_document.dart' show writeDocumentInPlace;
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -578,6 +579,113 @@ void main() {
           ? 'Needs folder permissions that bind this user'
           : false,
     );
+
+    group('in place', () {
+      // A write that stops partway, as a full disk does: the file is cut.
+      Future<void> cutWrite(File file, List<int> bytes) async {
+        await file.writeAsBytes(bytes.sublist(0, bytes.length ~/ 3));
+        throw const FileSystemException('No space left on device');
+      }
+
+      test('a write cut partway restores the previous document', () async {
+        final path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        final before = File(path).readAsBytesSync();
+        var calls = 0;
+        await expectLater(
+          writeDocumentInPlace(
+            path,
+            utf8.encode('{"replacement": true}' * 50),
+            write: (file, bytes) async {
+              // The first call is the save, the second the restore.
+              if (calls++ == 0) return cutWrite(file, bytes);
+              await file.writeAsBytes(bytes, flush: true);
+            },
+          ),
+          throwsA(
+            isA<FetprojectError>().having(
+              (error) => error.message,
+              'message',
+              'Could not save the project: No space left on device; '
+                  'the previously saved version is unchanged',
+            ),
+          ),
+        );
+        expect(File(path).readAsBytesSync(), before);
+      });
+
+      test('a write that reads back differently restores it too', () async {
+        final path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        final before = File(path).readAsBytesSync();
+        var calls = 0;
+        await expectLater(
+          writeDocumentInPlace(
+            path,
+            utf8.encode('new document'),
+            write: (file, bytes) async => file.writeAsBytes(
+              calls++ == 0 ? utf8.encode('new docu') : bytes,
+              flush: true,
+            ),
+          ),
+          throwsA(
+            isA<FetprojectError>().having(
+              (error) => error.message,
+              'message',
+              endsWith(
+                'reads back differently; '
+                'the previously saved version is unchanged',
+              ),
+            ),
+          ),
+        );
+        expect(File(path).readAsBytesSync(), before);
+      });
+
+      test('a new document cut partway is removed', () async {
+        final path = p.join(directory.path, 'new.fetproject');
+        await expectLater(
+          writeDocumentInPlace(path, utf8.encode('x' * 90), write: cutWrite),
+          throwsA(
+            isA<FetprojectError>().having(
+              (error) => error.message,
+              'message',
+              endsWith('; nothing was saved'),
+            ),
+          ),
+        );
+        expect(File(path).existsSync(), isFalse);
+      });
+
+      test('a write refused before it starts leaves the document', () async {
+        final path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        final before = File(path).readAsBytesSync();
+        await expectLater(
+          writeDocumentInPlace(
+            path,
+            utf8.encode('new'),
+            write: (file, bytes) async =>
+                throw const FileSystemException('Permission denied'),
+          ),
+          throwsA(
+            isA<FetprojectError>().having(
+              (error) => error.message,
+              'message',
+              endsWith('; the previously saved version is unchanged'),
+            ),
+          ),
+        );
+        expect(File(path).readAsBytesSync(), before);
+      });
+
+      test('a successful write replaces the document', () async {
+        final path = p.join(directory.path, 'day.fetproject');
+        await writeFetproject(path, project());
+        await writeDocumentInPlace(path, utf8.encode('replaced'));
+        expect(File(path).readAsStringSync(), 'replaced');
+      });
+    });
   });
 }
 
