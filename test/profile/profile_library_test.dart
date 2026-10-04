@@ -147,6 +147,29 @@ void main() {
       expect(read.days.single.file, 'Days/old.fetproject');
     });
 
+    test('lists unlisted days off the UI thread too', () async {
+      final days = Directory(p.join(profileFolder(), 'Days'))
+        ..createSync(recursive: true);
+      File(p.join(days.path, 'old.fetproject')).writeAsStringSync(
+        jsonEncode({
+          'event': {'id': 'old', 'name': 'Old day'},
+        }),
+      );
+      // The real isolate: its jobs must hold nothing that cannot be sent.
+      final shelf = ProfileLibrary(
+        store: FolderProfileStore(profileFolder()),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+      );
+      await shelf.load();
+      await shelf.flush();
+      expect(shelf.profile!.days.single.eventId, 'old');
+      final read = decodeDriverProfile(
+        File(p.join(profileFolder(), profileFileName)).readAsStringSync(),
+      );
+      expect(read.days.single.eventId, 'old');
+    });
+
     test('without a folder there is no library', () async {
       final shelf = ProfileLibrary(
         store: const _NoFolder(),
@@ -305,6 +328,96 @@ void main() {
         ).existsSync(),
         isTrue,
       );
+    });
+
+    testWidgets('a save that fails still lets the day be left', (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      // The days folder cannot be made: a file has its name.
+      File(p.join(profileFolder(), 'Days'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('');
+      final shelf = library();
+      await shelf.load();
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: writer,
+      );
+      await tester.pumpWidget(
+        TelemetryApp(home: const Scaffold(body: Text('home'))),
+      );
+      unawaited(
+        Navigator.of(tester.element(find.text('home'))).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DayResultsPage.controller(
+              controller: controller,
+              documents: FakeDocuments(),
+              library: shelf,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(controller.documentPath, isNull);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a page opened over the day while it saves to leave stays', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      await shelf.load();
+      final gate = Completer<void>();
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: (path, document) async {
+          await gate.future;
+          await writer(path, document);
+        },
+      );
+      await tester.pumpWidget(
+        TelemetryApp(home: const Scaffold(body: Text('home'))),
+      );
+      final navigator = Navigator.of(tester.element(find.text('home')));
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => DayResultsPage.controller(
+              controller: controller,
+              documents: FakeDocuments(),
+              library: shelf,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('on top')),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('on top'), findsOneWidget);
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(DayResultsPage), findsOneWidget);
+      await shelf.flush();
     });
 
     testWidgets('saves a change by itself once the day is left alone', (

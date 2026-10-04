@@ -95,6 +95,9 @@ class ProfileLibrary extends ChangeNotifier {
 
   bool _loaded = false;
 
+  /// Whether [load] finished, with or without a profile.
+  bool get loaded => _loaded;
+
   /// Reads the profile once; later calls wait for the first. Once read, a
   /// call returns a future of the caller's own zone.
   Future<void> load() => _loaded ? Future.value() : _loading ??= _load();
@@ -151,7 +154,7 @@ class ProfileLibrary extends ChangeNotifier {
     final listed = {for (final day in profile.days) day.file};
     final List<({String eventId, String name, String file})> unlisted;
     try {
-      unlisted = await background(() => _unlistedDays(folder, listed));
+      unlisted = await background(_unlistedJob(folder, listed));
     } on Object catch (error) {
       debugPrint('Days folder not read: $error');
       return;
@@ -173,6 +176,12 @@ class ProfileLibrary extends ChangeNotifier {
       );
     }
   }
+
+  // Built outside the instance so the isolate's closure holds only its
+  // inputs.
+  static List<({String eventId, String name, String file})> Function()
+  _unlistedJob(String folder, Set<String> listed) =>
+      () => _unlistedDays(folder, listed);
 
   static List<({String eventId, String name, String file})> _unlistedDays(
     String folder,
@@ -233,7 +242,9 @@ class ProfileLibrary extends ChangeNotifier {
     required String name,
     required DayAnalysis analysis,
   }) async {
-    await load();
+    // Once loaded, the change is asked for at once, so a [flush] right
+    // after waits for it.
+    if (!_loaded) await load();
     final folder = _folder;
     final profile = _profile;
     if (folder == null || profile == null || !holds(path)) return;

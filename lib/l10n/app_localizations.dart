@@ -7041,6 +7041,12 @@ abstract class AppLocalizations {
   /// **'Not exported: choose a place outside the library.'**
   String get exportNotInLibrary;
 
+  /// Save as… refused a file inside the library's own days folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved: choose a place outside the library.'**
+  String get notSavedInLibrary;
+
   /// Exporting a copy of the day failed; the error follows.
   ///
   /// In en, this message translates to:
@@ -7062,7 +7068,7 @@ abstract class AppLocalizations {
   /// Library page when the app has no folder for the driver profile.
   ///
   /// In en, this message translates to:
-  /// **'The library is not available on this device.'**
+  /// **'The library cannot be used now, for example because a newer version of the app made it. Until then, days are saved as files.'**
   String get libraryUnavailable;
 
   /// Library page with no days yet.

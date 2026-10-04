@@ -92,7 +92,7 @@ class _LibraryPageState extends State<LibraryPage> {
           final profile = widget.library.profile;
           if (profile == null) {
             return Center(
-              child: widget.library.folder == null
+              child: widget.library.loaded
                   ? Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(l10n.libraryUnavailable),

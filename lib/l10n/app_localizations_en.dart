@@ -4641,6 +4641,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not exported: choose a place outside the library.';
 
   @override
+  String get notSavedInLibrary =>
+      'Not saved: choose a place outside the library.';
+
+  @override
   String notExported(String error) {
     return 'Not exported: $error';
   }
@@ -4653,7 +4657,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryUnavailable =>
-      'The library is not available on this device.';
+      'The library cannot be used now, for example because a newer version of the app made it. Until then, days are saved as files.';
 
   @override
   String get libraryEmpty =>

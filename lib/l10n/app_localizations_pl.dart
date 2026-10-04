@@ -4752,6 +4752,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie wyeksportowano: wybierz miejsce poza biblioteką.';
 
   @override
+  String get notSavedInLibrary =>
+      'Nie zapisano: wybierz miejsce poza biblioteką.';
+
+  @override
   String notExported(String error) {
     return 'Nie wyeksportowano: $error';
   }
@@ -4764,7 +4768,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get libraryUnavailable =>
-      'Biblioteka nie jest dostępna na tym urządzeniu.';
+      'Nie można teraz użyć biblioteki, na przykład dlatego, że utworzyła ją nowsza wersja aplikacji. Do tego czasu dni są zapisywane jako pliki.';
 
   @override
   String get libraryEmpty =>
@@ -4797,7 +4801,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String libraryBestLap(String time) {
-    return 'Najlepsze $time';
+    return 'Najlepsze okrążenie $time';
   }
 
   @override

@@ -454,23 +454,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
       _inLibrary &&
       _controller.dirty &&
       !_controller.adding &&
+      !_controller.recordingsBusy &&
+      !_controller.savingWaitsForRecordings &&
       !_relinking &&
       !_preparingReview;
 
   bool _leaving = false;
 
-  /// Saves the day in the library, then leaves it. Changes made while
-  /// saving are kept for recovery, as on any day left unsaved.
+  /// Saves the day in the library, then leaves it, saved or not: changes
+  /// not saved are kept for recovery, as on any day left unsaved. Stays
+  /// when a page was opened over the day meanwhile.
   Future<void> _saveThenLeave() async {
     if (_leaving) return;
     _leaving = true;
     _autosave?.cancel();
+    final route = ModalRoute.of(context);
     try {
       await _save(quiet: true);
     } finally {
       _leaving = false;
+      if (mounted && (route?.isCurrent ?? false)) Navigator.of(context).pop();
     }
-    if (mounted) Navigator.of(context).pop();
   }
 
   bool get _autosaveAllowed =>
@@ -521,15 +525,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// Saves the day; with [quiet] (a save by itself) only a failure is said.
   Future<void> _save({bool choose = false, bool quiet = false}) async {
     if (choose && _inLibrary) return _export();
-    final path = choose || _controller.documentPath == null
-        ? _inLibrary
-              ? await widget.library!.dayPath(_controller.eventId)
-              : await widget.documents.saveLocation(_controller.name)
-        : _controller.documentPath;
-    if (path == null || !mounted) return;
     final library = widget.library;
     final controller = _controller;
     try {
+      final path = choose || controller.documentPath == null
+          ? _inLibrary
+                ? await library!.dayPath(controller.eventId)
+                : await widget.documents.saveLocation(controller.name)
+          : controller.documentPath;
+      if (path == null || !mounted) return;
+      // A day saved as a file never replaces one of the library's days.
+      if (!_inLibrary && (library?.holds(path) ?? false)) {
+        _tell(context.l10n.notSavedInLibrary);
+        return;
+      }
       await controller.save(path);
       _record(library, controller);
       if (mounted && !quiet) {

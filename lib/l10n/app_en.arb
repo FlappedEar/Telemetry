@@ -6816,6 +6816,10 @@
   "@exportNotInLibrary": {
     "description": "Export for Overlays refused a file inside the library's own days folder."
   },
+  "notSavedInLibrary": "Not saved: choose a place outside the library.",
+  "@notSavedInLibrary": {
+    "description": "Save as… refused a file inside the library's own days folder."
+  },
   "notExported": "Not exported: {error}",
   "@notExported": {
     "description": "Exporting a copy of the day failed; the error follows.",
@@ -6834,7 +6838,7 @@
   "@libraryTitle": {
     "description": "Title of the page listing every day kept in the driver profile, by car, year, track and date."
   },
-  "libraryUnavailable": "The library is not available on this device.",
+  "libraryUnavailable": "The library cannot be used now, for example because a newer version of the app made it. Until then, days are saved as files.",
   "@libraryUnavailable": {
     "description": "Library page when the app has no folder for the driver profile."
   },
