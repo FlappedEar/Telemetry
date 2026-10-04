@@ -268,7 +268,8 @@ void main() {
     expect(statuses['focusAreas'], 'available');
     expect(statuses['temperatures'], 'available');
     expect(statuses['heartRate'], 'available');
-    await tester.tap(find.byKey(const ValueKey('openDayReport')));
+    // The day page's Report tab.
+    await tester.tap(find.byKey(const ValueKey('daySection-report')));
     await tester.pumpAndSettle();
     expect(find.byType(DayReportPage), findsOneWidget);
     final best = controller.ranking!.bestOfDay!;
@@ -286,7 +287,12 @@ void main() {
       tester.widget<Text>(kind).style?.color,
       Theme.of(tester.element(kind)).colorScheme.onSurfaceVariant,
     );
-    final list = find.byType(Scrollable).first;
+    final list = find
+        .descendant(
+          of: find.byKey(const ValueKey('dayReport')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
     for (final key in [
       'dayReportLosses',
       'dayReportSessions',

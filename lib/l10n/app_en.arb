@@ -669,9 +669,13 @@
   "@appleMapLegal": {
     "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."
   },
-  "daySectionDay": "Day",
-  "@daySectionDay": {
-    "description": "Section of the day page with the best lap and the analysis; bottom bar and side rail label."
+  "daySectionOverview": "Overview",
+  "@daySectionOverview": {
+    "description": "Tab of the day page with the best lap, the coach and the analysis."
+  },
+  "daySectionReport": "Report",
+  "@daySectionReport": {
+    "description": "Tab of the day page with the day report: the day's results, each leading to its evidence."
   },
   "daySectionLaps": "Laps",
   "@daySectionLaps": {

@@ -114,7 +114,16 @@ String _time(Object? seconds) {
 /// elsewhere, each card leading to its evidence. Nothing is recalculated
 /// here, and a card without a result says exactly why.
 class DayReportPage extends StatelessWidget {
-  const DayReportPage({super.key, required this.report, this.onOpenLap});
+  const DayReportPage({
+    super.key,
+    required this.report,
+    this.onOpenLap,
+    this.embedded = false,
+  });
+
+  /// Shown as the day page's Report tab: the cards alone, without a page
+  /// and a title of their own.
+  final bool embedded;
 
   /// The document of [buildOutingDayReport].
   final Map<String, Object?> report;
@@ -135,35 +144,37 @@ class DayReportPage extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final groupLabel = report['groupLabel'] as String? ?? '';
+    // At most 840 wide, centred, so lines stay readable on a large screen.
+    final body = LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        key: const ValueKey('dayReport'),
+        padding: EdgeInsets.symmetric(
+          horizontal: math.max(16, (constraints.maxWidth - 840) / 2),
+          vertical: 16,
+        ),
+        children: [
+          Text(
+            groupLabel.isEmpty
+                ? l10n.reportGroupNone
+                : _groupLabel(l10n, groupLabel),
+            key: const ValueKey('dayReportGroup'),
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          _best(context),
+          _focus(context),
+          _losses(context),
+          _sessions(context),
+          _consistency(context),
+          _car(context),
+          _heartRate(context),
+        ],
+      ),
+    );
+    if (embedded) return body;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.dayReport)),
-      // At most 840 wide, centred, so lines stay readable on a large screen.
-      body: LayoutBuilder(
-        builder: (context, constraints) => ListView(
-          key: const ValueKey('dayReport'),
-          padding: EdgeInsets.symmetric(
-            horizontal: math.max(16, (constraints.maxWidth - 840) / 2),
-            vertical: 16,
-          ),
-          children: [
-            Text(
-              groupLabel.isEmpty
-                  ? l10n.reportGroupNone
-                  : _groupLabel(l10n, groupLabel),
-              key: const ValueKey('dayReportGroup'),
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            _best(context),
-            _focus(context),
-            _losses(context),
-            _sessions(context),
-            _consistency(context),
-            _car(context),
-            _heartRate(context),
-          ],
-        ),
-      ),
+      body: body,
     );
   }
 

@@ -145,7 +145,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   // The section shown: on a phone the bottom bar's Day, Laps or Compare; on a
   // wide screen the rail's Day (summary and laps side by side) or Compare.
-  _Section _section = _Section.day;
+  _Section _section = _Section.overview;
   // Reading the recordings again ("Retry recordings"): the running task and
   // its generation, so a result after the page moved on is dropped.
   BackgroundTask<OpenedDay>? _retryTask;
@@ -259,7 +259,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// scrolled to the Next session card. Scrolled far below it, the card is
   /// not built, so the summary first goes back to the top, near the card.
   void _revealCoach() {
-    if (_section != _Section.day) setState(() => _section = _Section.day);
+    if (_section != _Section.overview) {
+      setState(() => _section = _Section.overview);
+    }
     void reveal({required bool again}) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -398,18 +400,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
     await _compare(a, b, null);
   }
 
-  void _openReport() => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => DayReportPage(
-          report: _controller.dayReportDocument,
-          onOpenLap: (reference) {
-            final row = _controller.lapRow(reference);
-            if (row != null) _open(row);
-          },
-        ),
-      ),
+  /// The day report as the Report tab shows it, kept up to date.
+  Widget _report() => ListenableBuilder(
+    listenable: _controller,
+    builder: (context, _) => DayReportPage(
+      key: const ValueKey('dayResultsReport'),
+      embedded: true,
+      report: _controller.dayReportDocument,
+      onOpenLap: (reference) {
+        final row = _controller.lapRow(reference);
+        if (row != null) _open(row);
+      },
     ),
   );
 
@@ -849,9 +850,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             children: compare,
           ),
+          _report(),
         ],
       );
     }
+    if (_section == _Section.report) return _report();
     final comparing = _section == _Section.compare;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -926,13 +929,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
       appBar: AppBar(
         bottom: _SectionTabs(
           key: const ValueKey('daySections'),
+          fill: !wide,
           sections: [
-            (_Section.day, context.l10n.daySectionDay),
+            (_Section.overview, context.l10n.daySectionOverview),
             if (!wide) (_Section.laps, context.l10n.daySectionLaps),
             (_Section.compare, context.l10n.daySectionCompare),
+            (_Section.report, context.l10n.daySectionReport),
           ],
           // On a wide screen the laps are beside the summary.
-          selected: wide && _section == _Section.laps ? _Section.day : _section,
+          selected: wide && _section == _Section.laps
+              ? _Section.overview
+              : _section,
           onSelected: (section) => setState(() => _section = section),
         ),
         title: ListenableBuilder(
@@ -970,12 +977,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   ? null
                   : _addRecordings,
             ),
-          ),
-          IconButton(
-            key: const ValueKey('openDayReport'),
-            tooltip: context.l10n.dayReport,
-            icon: const Icon(Icons.summarize_outlined),
-            onPressed: _openReport,
           ),
           PopupMenuButton<void>(
             key: const ValueKey('moreMenu'),
@@ -1877,7 +1878,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 }
 
-enum _Section { day, laps, compare }
+/// The day's tabs; on a phone in this order, which [IndexedStack] follows.
+enum _Section { overview, laps, compare, report }
 
 /// The day's sections as tabs under its title, the same on a phone and a
 /// wide screen; the app's places stay in the bar or rail around the page.
@@ -1887,7 +1889,11 @@ class _SectionTabs extends StatelessWidget implements PreferredSizeWidget {
     required this.sections,
     required this.selected,
     required this.onSelected,
+    this.fill = false,
   });
+
+  /// The tabs share the whole width, as on a phone.
+  final bool fill;
 
   final List<(_Section, String)> sections;
   final _Section selected;
@@ -1899,6 +1905,58 @@ class _SectionTabs extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    Widget tab(_Section section, String label) {
+      final chosen = section == selected;
+      return Semantics(
+        selected: chosen,
+        button: true,
+        child: InkWell(
+          key: ValueKey('daySection-${section.name}'),
+          onTap: () => onSelected(section),
+          child: Container(
+            height: kMinInteractiveDimension,
+            padding: EdgeInsets.symmetric(horizontal: fill ? 4 : 16),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  width: 2,
+                  color: chosen
+                      ? theme.colorScheme.primary
+                      : Colors.transparent,
+                ),
+              ),
+            ),
+            // On a phone every tab stays in sight, its name smaller if need
+            // be.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: chosen
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (fill) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            for (final (section, label) in sections)
+              Expanded(child: tab(section, label)),
+          ],
+        ),
+      );
+    }
     return Align(
       alignment: Alignment.centerLeft,
       child: SingleChildScrollView(
@@ -1906,38 +1964,7 @@ class _SectionTabs extends StatelessWidget implements PreferredSizeWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            for (final (section, label) in sections)
-              Semantics(
-                selected: section == selected,
-                button: true,
-                child: InkWell(
-                  key: ValueKey('daySection-${section.name}'),
-                  onTap: () => onSelected(section),
-                  child: Container(
-                    height: kMinInteractiveDimension,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          width: 2,
-                          color: section == selected
-                              ? theme.colorScheme.primary
-                              : Colors.transparent,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      label,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: section == selected
-                            ? theme.colorScheme.onSurface
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            for (final (section, label) in sections) tab(section, label),
           ],
         ),
       ),

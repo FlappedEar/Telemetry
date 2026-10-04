@@ -446,7 +446,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appleMapLegal => 'Legal';
 
   @override
-  String get daySectionDay => 'Day';
+  String get daySectionOverview => 'Overview';
+
+  @override
+  String get daySectionReport => 'Report';
 
   @override
   String get daySectionLaps => 'Laps';

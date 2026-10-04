@@ -259,7 +259,7 @@ void main() {
         home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
       ),
     );
-    for (final label in ['Dzień', 'Okrążenia', 'Porównaj']) {
+    for (final label in ['Przegląd', 'Okrążenia', 'Porównaj', 'Raport']) {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('daySections')),
@@ -757,10 +757,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(documents.names, ['Day']);
     expect(find.text('Saved as Day.fetproject.'), findsOneWidget);
-    // The title, above the Day tab.
     expect(
       find.descendant(of: find.byType(AppBar), matching: find.text('Day')),
-      findsNWidgets(2),
+      findsOneWidget,
     );
     expect(saved, hasLength(1));
 
@@ -784,7 +783,7 @@ void main() {
     expect(find.text('Excluded: Traffic'), findsOneWidget);
     expect(
       find.descendant(of: find.byType(AppBar), matching: find.text('Day')),
-      findsNWidgets(2),
+      findsOneWidget,
     );
   });
 

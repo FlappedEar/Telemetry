@@ -776,11 +776,17 @@ abstract class AppLocalizations {
   /// **'Legal'**
   String get appleMapLegal;
 
-  /// Section of the day page with the best lap and the analysis; bottom bar and side rail label.
+  /// Tab of the day page with the best lap, the coach and the analysis.
   ///
   /// In en, this message translates to:
-  /// **'Day'**
-  String get daySectionDay;
+  /// **'Overview'**
+  String get daySectionOverview;
+
+  /// Tab of the day page with the day report: the day's results, each leading to its evidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get daySectionReport;
 
   /// Section of the day page listing every lap; bottom bar label.
   ///
