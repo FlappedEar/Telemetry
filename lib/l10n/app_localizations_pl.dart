@@ -3653,7 +3653,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageImportingBehind =>
-      'Importuję udostępnione nagrania. Wróć do ekranu Importuj dzień, aby je zobaczyć.';
+      'Importuję udostępnione nagrania. Wróć do ekranu Importuj sesje, aby je zobaczyć.';
 
   @override
   String get importPageOpenSavedTitle => 'Otwórz zapisany dzień';
@@ -3671,7 +3671,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get importPageTitle => 'Importuj dzień';
+  String get importPageTitle => 'Importuj sesje';
 
   @override
   String importPageUnsaved(String day, String time) {
@@ -3686,17 +3686,18 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get importPageIntroDrop =>
-      'Wybierz nagrania VBO i RCZ z tego dnia albo folder lub upuść je tutaj.';
+      'Wybierz nagranie VBO lub RCZ każdej sesji, gdy jeździsz, albo folder z całym dniem, lub upuść je tutaj. Sesje z tej samej daty co dzień otwarty ostatnio, w ciągu ostatnich 24 godzin, są do niego dodawane.';
 
   @override
   String get importPageIntroFolder =>
-      'Wybierz nagrania VBO i RCZ z tego dnia albo folder.';
+      'Wybierz nagranie VBO lub RCZ każdej sesji, gdy jeździsz, albo folder z całym dniem. Sesje z tej samej daty co dzień otwarty ostatnio, w ciągu ostatnich 24 godzin, są do niego dodawane.';
 
   @override
-  String get importPageIntro => 'Wybierz nagrania VBO i RCZ z tego dnia.';
+  String get importPageIntro =>
+      'Wybierz nagranie VBO lub RCZ każdej sesji, gdy jeździsz. Sesje z tej samej daty co dzień otwarty ostatnio, w ciągu ostatnich 24 godzin, są do niego dodawane.';
 
   @override
-  String get importPageChooseRecordings => 'Wybierz nagrania…';
+  String get importPageChooseRecordings => 'Importuj sesje…';
 
   @override
   String get importPageChooseFolder => 'Wybierz folder…';
@@ -3744,7 +3745,23 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get importPageShowResults => 'Pokaż wyniki dnia';
+  String get importPageShowResults => 'Otwórz dzień';
+
+  @override
+  String importPageDayUnsaved(String time) {
+    return 'Jeszcze niezapisany; zmiany zachowane z $time.';
+  }
+
+  @override
+  String importPageDaySaved(String file) {
+    return 'Zapisany jako $file.';
+  }
+
+  @override
+  String get importPageDayNotKept => 'Niezapisany.';
+
+  @override
+  String get importPageOpeningDay => 'Otwieranie dnia…';
 
   @override
   String get importPageRecordingTypes => 'Nagrania VBO i RCZ';
@@ -4210,9 +4227,6 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get reviewImportIntro =>
       'Wybierz, co stanie się z każdym nagraniem. Nic nie zostanie zaimportowane, dopóki nie potwierdzisz.';
-
-  @override
-  String get reviewBeforeImport => 'Przejrzyj pliki przed importem';
 
   @override
   String get addAndReviewRecordings => 'Dodaj i przejrzyj nagrania…';

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/l10n.dart';
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry/import/day_import_controller.dart';
@@ -57,23 +58,6 @@ final class _FakeImporter implements DayImporter {
     jobs.add(job);
     return job;
   }
-}
-
-/// Prepares reviews on the test's own thread.
-final class _SyncPreparer implements ImportPreparer {
-  @override
-  ImportPreviewJob start(DayImportRequest request, void Function(int, int) _) =>
-      _SyncPreviewJob(runImportPreview(request));
-}
-
-final class _SyncPreviewJob implements ImportPreviewJob {
-  _SyncPreviewJob(ImportPreview preview) : result = Future.value(preview);
-
-  @override
-  final Future<ImportPreview> result;
-
-  @override
-  void cancel() {}
 }
 
 /// Prepares additions to a day on the test's own thread.
@@ -157,6 +141,7 @@ void main() {
   late _FakeImporter importer;
   late _FakePickers pickers;
   late DayImportController controller;
+  late FileRecoveryStore recovery;
 
   setUp(() {
     // An earlier test left recovery work running: fail here, not in a
@@ -166,6 +151,7 @@ void main() {
     importer = _FakeImporter();
     pickers = _FakePickers();
     controller = DayImportController(importer: importer);
+    recovery = FileRecoveryStore('${directory.path}/recovery.json');
   });
   tearDown(() {
     controller.dispose();
@@ -179,16 +165,61 @@ void main() {
   }
 
   /// Desktop choices by default; [picksFolders] null follows the platform.
-  Future<void> show(WidgetTester tester, {bool? picksFolders = true}) =>
-      tester.pumpWidget(
-        TelemetryApp(
-          home: DayImportPage(
-            controller: controller,
-            pickers: pickers,
-            picksFolders: picksFolders,
-          ),
-        ),
+  /// No day is kept or saved yet.
+  Future<void> show(
+    WidgetTester tester, {
+    bool? picksFolders = true,
+    Locale? locale,
+  }) => tester.pumpWidget(
+    TelemetryApp(
+      locale: locale,
+      home: DayImportPage(
+        controller: controller,
+        pickers: pickers,
+        picksFolders: picksFolders,
+        recovery: recovery,
+        documents: _SavedDays(const []),
+        appender: _SyncAppender(),
+      ),
+    ),
+  );
+
+  /// Lets file and isolate work run between frames until [done].
+  Future<void> pumpUntil(WidgetTester tester, bool Function() done) async {
+    for (var i = 0; i < 200 && !done(); ++i) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
       );
+      await tester.pump();
+    }
+    expect(done(), isTrue);
+  }
+
+  /// Taps [button] and waits for the import it starts: with no day of
+  /// today to continue, the picked recordings are imported as a new day.
+  Future<void> pick(
+    WidgetTester tester, {
+    String button = 'Import sessions…',
+  }) async {
+    final before = importer.jobs.length;
+    await tester.tap(find.text(button));
+    await pumpUntil(tester, () => importer.jobs.length > before);
+    await tester.pump();
+  }
+
+  /// Finishes the import, whose day opens by itself, and goes back to the
+  /// import page, which then lists the day's sessions.
+  Future<void> finishAndGoBack(WidgetTester tester) async {
+    importer.jobs.last.finish();
+    await tester.pumpAndSettle();
+    expect(find.byType(DayResultsPage), findsOneWidget);
+    Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
+    );
+  }
 
   testWidgets(
     'phones and tablets offer recordings only, not a folder',
@@ -198,18 +229,24 @@ void main() {
       await show(tester, picksFolders: null);
 
       expect(
-        find.text('Choose the day\'s VBO and RCZ recordings.'),
+        find.textContaining('Choose the VBO or RCZ recording of each session'),
         findsOneWidget,
       );
       expect(find.text('Choose a folder…'), findsNothing);
       expect(find.text('Include subfolders'), findsNothing);
+      // Sessions are imported one by one; the app makes the day.
+      expect(find.text('Import sessions'), findsOneWidget);
+      expect(find.text('Review the files before importing'), findsNothing);
 
-      await tester.tap(find.text('Choose recordings…'));
-      await tester.pump();
+      await pick(tester);
       expect(controller.isWorking, isTrue);
+      // The day opens by itself, with its Save button.
       importer.jobs.single.finish();
       await tester.pumpAndSettle();
-      expect(find.text('1 session imported'), findsOneWidget);
+      expect(find.text('Day results'), findsOneWidget);
+      expect(find.byTooltip('Save'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await settleRecovery(tester);
     },
     variant: const TargetPlatformVariant({
       TargetPlatform.iOS,
@@ -305,57 +342,121 @@ void main() {
     await settleRecovery(tester);
   });
 
-  testWidgets('a recording shared during a review is imported after it', (
+  testWidgets('sessions picked one by one make one day, listed here', (
     tester,
   ) async {
-    final incoming = _FakeIncoming();
-    final reviewing = DayImportController(
-      importer: importer,
-      preparer: _SyncPreparer(),
-    );
-    addTearDown(reviewing.dispose);
-    pickers.recordings = [write('reviewed.vbo', _datedVbo(hour: 9))];
-    final shared = write('shared.vbo', _datedVbo(hour: 11, speed: 80));
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    await pick(tester);
+    await finishAndGoBack(tester);
+    // Back from the day, its sessions are still here, with a way back in.
+    final card = find.byKey(const ValueKey('lastDay'));
+    expect(
+      find.descendant(of: card, matching: find.textContaining('Not saved yet')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('importSession Session 1')),
+      findsOneWidget,
+    );
+
+    // The next session is added to that day, not imported instead of it.
+    pickers.recordings = [write('b.vbo', _datedVbo(hour: 11, speed: 80))];
+    await tester.tap(find.text('Import sessions…'));
+    await pumpUntil(
+      tester,
+      () => find.text('Session 2 added to the day.').evaluate().isNotEmpty,
+    );
+    expect(importer.jobs, hasLength(1));
+    expect(find.text('Day results'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find
+          .byKey(const ValueKey('importSession Session 2'))
+          .evaluate()
+          .isNotEmpty,
+    );
+    expect(
+      find.byKey(const ValueKey('importSession Session 1')),
+      findsOneWidget,
+    );
+
+    // Opened again from here, with both sessions.
+    await tester.tap(find.byKey(const ValueKey('openLastDay')));
+    await pumpUntil(
+      tester,
+      () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
+  testWidgets('a saved day closed here takes the next session', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final saved = '${directory.path}/Today.fetproject';
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    // Saved anywhere, as on a desktop, where the app lists no saved days.
     await tester.pumpWidget(
       TelemetryApp(
         home: DayImportPage(
-          controller: reviewing,
+          controller: controller,
           pickers: pickers,
-          incoming: incoming,
           picksFolders: false,
+          recovery: recovery,
+          documents: _SavedDays(const [], saveTo: saved),
+          appender: _SyncAppender(),
         ),
       ),
     );
-    await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pumpAndSettle();
-    expect(find.text('Review the import'), findsOneWidget);
-
-    // The next session is shared while the review is open: it waits.
-    incoming.controller.add([shared]);
-    await tester.pump();
-    expect(importer.jobs, isEmpty);
-
-    await tester.tap(find.byKey(const ValueKey('confirmReview')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(importer.jobs, hasLength(1));
-    expect(importer.jobs.single.choices, isNotNull);
-    expect(find.textContaining('Nothing was imported'), findsNothing);
+    await pick(tester);
     importer.jobs.single.finish();
-    for (var i = 0; i < 20 && importer.jobs.length < 2; ++i) {
+    await tester.pumpAndSettle();
+    // The day's background analysis finishes first, so the save keeps all.
+    for (var i = 0; i < 50; ++i) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 20)),
       );
       await tester.pump();
     }
-    // Not refused and not dropped: imported once the reviewed one is in.
-    expect(find.textContaining('Nothing was imported'), findsNothing);
-    expect(importer.jobs, hasLength(2));
-    expect(importer.jobs.last.request.paths, contains(shared));
-    expect(importer.jobs.last.choices, isNull);
+    await tester.tap(find.byTooltip('Save'));
+    // Saved once the day takes its file's name.
+    await pumpUntil(tester, () => find.text('Day results').evaluate().isEmpty);
+    await tester.pumpAndSettle();
+    final page = find.byType(DayResultsPage);
+    Navigator.of(tester.element(page)).pop();
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find
+          .descendant(
+            of: find.byKey(const ValueKey('lastDay')),
+            matching: find.text('Saved as Today.fetproject.'),
+          )
+          .evaluate()
+          .isNotEmpty,
+    );
+
+    pickers.recordings = [write('b.vbo', _datedVbo(hour: 11, speed: 80))];
+    await tester.tap(find.text('Import sessions…'));
+    await pumpUntil(
+      tester,
+      () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Session 2 added to the day.'), findsOneWidget);
+    expect(importer.jobs, hasLength(1));
+    // Added and saved again in its file.
+    final runs = (readDayDocument(saved)['event'] as Map)['runs'] as List;
+    expect(runs, hasLength(2));
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('a share while a day is open imports behind it and says so', (
@@ -387,7 +488,8 @@ void main() {
     expect(find.text('An open day'), findsOneWidget);
     expect(
       find.text(
-        'Importing the shared recordings. Go back to Import a day to see them.',
+        'Importing the shared recordings. Go back to Import sessions to see '
+        'them.',
       ),
       findsOneWidget,
     );
@@ -408,14 +510,13 @@ void main() {
           pickers: pickers,
           incoming: incoming,
           appender: _SyncAppender(),
+          recovery: recovery,
+          documents: _SavedDays(const []),
         ),
       ),
     );
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
+    await pick(tester);
     importer.jobs.single.finish();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Show the day\'s results'));
     await tester.pumpAndSettle();
 
     await tester.runAsync(() async {
@@ -427,6 +528,8 @@ void main() {
     expect(importer.jobs, hasLength(1));
     expect(find.text('Session 2 added to the day.'), findsOneWidget);
     expect(find.text('Day results'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   group('a share with no day shown', () {
@@ -586,6 +689,125 @@ void main() {
       expect(importer.jobs.last.request.paths, [shared, next]);
     });
 
+    /// The import page with [store] and desktop choices; [open] is the day
+    /// "Open a saved day…" picks.
+    Future<void> showDesktop(WidgetTester tester, {String? open}) async {
+      await tester.binding.setSurfaceSize(const Size(800, 3000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            controller: controller,
+            pickers: pickers,
+            picksFolders: true,
+            recovery: store,
+            appender: _SyncAppender(),
+            documents: _SavedDays(const [], open: open),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('a folder does not replace another day\'s unsaved work', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => keepUnsaved(write('a.vbo', _datedVbo(hour: 10))),
+      );
+      final before = await tester.runAsync(store.load);
+      Directory('${directory.path}/day').createSync();
+      write('day/run.vbo', _datedVbo(hour: 9, day: 5));
+      pickers.folder = '${directory.path}/day';
+      await showDesktop(tester);
+      await tester.tap(find.text('Choose a folder…'));
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      importer.jobs.single.finish();
+      await tester.pumpAndSettle();
+      // Imported, but not opened: it stays here to be opened by hand.
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
+      expect(find.text('Open the day'), findsOneWidget);
+      final after = await tester.runAsync(store.load);
+      expect(after!.eventId, before!.eventId);
+      expect(after.timestamp, before.timestamp);
+    });
+
+    testWidgets('a picked recording of another date leaves unsaved work', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => keepUnsaved(write('a.vbo', _datedVbo(hour: 10))),
+      );
+      final before = await tester.runAsync(store.load);
+      pickers.recordings = [write('b.vbo', _datedVbo(hour: 12, day: 5))];
+      await showDesktop(tester);
+      await tester.tap(find.text('Import sessions…'));
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      importer.jobs.single.finish();
+      await tester.pumpAndSettle();
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
+      final after = await tester.runAsync(store.load);
+      expect(after!.eventId, before!.eventId);
+      expect(after.timestamp, before.timestamp);
+    });
+
+    testWidgets('another day\'s unsaved work keeps the saved day just left '
+        'from opening by itself', (tester) async {
+      // A saved day of 2 October, and unsaved work on another day.
+      final saved = '${directory.path}/Saved.fetproject';
+      await tester.runAsync(() async {
+        final outcome = runDayImport((
+          paths: [write('a.vbo', _datedVbo(hour: 10))],
+          includeSubfolders: false,
+        ));
+        final day = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+        );
+        await day.save(saved);
+        day.dispose();
+        await keepUnsaved(write('x.vbo', _datedVbo(hour: 9, day: 5)));
+      });
+      final before = await tester.runAsync(store.load);
+      await showDesktop(tester, open: saved);
+      await tester.tap(find.text('Open a saved day…'));
+      await pumpUntil(
+        tester,
+        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+      await tester.pumpAndSettle();
+      await pumpUntil(
+        tester,
+        () => find
+            .descendant(
+              of: find.byKey(const ValueKey('lastDay')),
+              matching: find.text('Saved as Saved.fetproject.'),
+            )
+            .evaluate()
+            .isNotEmpty,
+      );
+
+      pickers.recordings = [write('b.vbo', _datedVbo(hour: 12, speed: 80))];
+      await tester.tap(find.text('Import sessions…'));
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      importer.jobs.single.finish();
+      await tester.pumpAndSettle();
+      // Opening a day here would let its changes replace that work: the
+      // session is imported and waits to be opened by hand.
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
+      final runs = (readDayDocument(saved)['event'] as Map)['runs'] as List;
+      expect(runs, hasLength(1));
+      final after = await tester.runAsync(store.load);
+      expect(after!.eventId, before!.eventId);
+      expect(after.timestamp, before.timestamp);
+      await tester.pumpWidget(const SizedBox());
+      await settleRecovery(tester);
+    });
+
     testWidgets('a recording of another date starts its own day', (
       tester,
     ) async {
@@ -655,10 +877,8 @@ void main() {
       ),
     ];
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
-    importer.jobs.single.finish();
-    await tester.pump();
+    await pick(tester);
+    await finishAndGoBack(tester);
     expect(
       find.text('No laps: the recording has no usable GPS.'),
       findsOneWidget,
@@ -667,6 +887,8 @@ void main() {
       find.text('No laps: the recording has no start/finish line.'),
       findsNothing,
     );
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('imports picked recordings as sessions in recording order', (
@@ -681,8 +903,7 @@ void main() {
     pickers.recordings = [late, early, copy, other];
     await show(tester);
 
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
+    await pick(tester);
     expect(find.text('Looking for recordings…'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     final job = importer.jobs.single;
@@ -693,28 +914,44 @@ void main() {
     expect(find.text('Preparing recording 2 of 3…'), findsOneWidget);
 
     job.finish();
-    await tester.pump();
-    expect(find.text('2 sessions imported'), findsOneWidget);
+    await tester.pumpAndSettle();
+    // The day opens and says what was skipped.
+    expect(find.text('Day results'), findsOneWidget);
+    final notes = find.byKey(const ValueKey('importNotes'));
+    expect(
+      find.descendant(
+        of: notes,
+        matching: find.textContaining('copy.vbo: same content as a-early.vbo'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: notes,
+        matching: find.textContaining('notes.txt: not a VBO or RCZ recording'),
+      ),
+      findsOneWidget,
+    );
+    Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
+    );
     final session1 = tester.getTopLeft(find.text('Session 1'));
     final session2 = tester.getTopLeft(find.text('Session 2'));
     expect(session1.dy, lessThan(session2.dy));
     // Session 1 is the 09:00 recording, whatever the selection order.
-    final finished = controller.state as DayImportFinished;
-    expect(finished.runs.first.run.sourcePath, endsWith('a-early.vbo'));
-    expect(finished.runs.last.run.sourcePath, endsWith('b-late.vbo'));
+    final outcome = runDayImport(job.request);
+    expect(outcome.runs.first.run.sourcePath, endsWith('a-early.vbo'));
+    expect(outcome.runs.last.run.sourcePath, endsWith('b-late.vbo'));
     expect(
       find.text('No laps: the recording has no start/finish line.'),
       findsNWidgets(2),
     );
-    expect(
-      find.textContaining('copy.vbo: same content as a-early.vbo'),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining('notes.txt: not a VBO or RCZ recording'),
-      findsOneWidget,
-    );
     expect(find.text('Cancel'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('the import page speaks Polish', (tester) async {
@@ -722,45 +959,44 @@ void main() {
     final copy = write('copy.vbo', _lapsVbo);
     final other = write('notes.txt', 'not a recording');
     pickers.recordings = [laps, copy, other];
-    await tester.pumpWidget(
-      TelemetryApp(
-        locale: const Locale('pl'),
-        home: DayImportPage(controller: controller, pickers: pickers),
-      ),
-    );
-    expect(find.text('Importuj dzień'), findsOneWidget);
-    expect(find.text('Import a day'), findsNothing);
-    expect(find.text('Wybierz nagrania…'), findsOneWidget);
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await show(tester, locale: const Locale('pl'));
+    expect(find.text('Importuj sesje'), findsOneWidget);
+    expect(find.text('Import sessions'), findsNothing);
+    expect(find.text('Importuj sesje…'), findsOneWidget);
 
-    await tester.tap(find.text('Wybierz nagrania…'));
-    await tester.pump();
+    await pick(tester, button: 'Importuj sesje…');
     expect(find.text('Szukam nagrań…'), findsOneWidget);
     importer.jobs.single.finish();
-    await tester.pump();
-    expect(find.text('Zaimportowano 1 sesję'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Uwagi do importu'), findsOneWidget);
+    expect(
+      find.textContaining('copy.vbo: ta sama zawartość co laps.vbo'),
+      findsOneWidget,
+    );
+    Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
+    );
+    expect(find.text('Otwórz dzień'), findsOneWidget);
+    expect(find.textContaining('Jeszcze niezapisany'), findsOneWidget);
     expect(find.text('Sesja 1'), findsOneWidget);
     expect(find.text('3 okrążenia'), findsOneWidget);
     expect(find.text('Najlepsze'), findsOneWidget);
-    expect(find.text('Uwagi do importu'), findsOneWidget);
-    expect(
-      find.text('copy.vbo: ta sama zawartość co laps.vbo; zaimportowano raz.'),
-      findsOneWidget,
-    );
-    expect(
-      find.text(
-        'notes.txt: to nie jest nagranie VBO ani RCZ; nie zaimportowano.',
-      ),
-      findsOneWidget,
-    );
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('a session shows its laps and best lap', (tester) async {
     pickers.recordings = [write('laps.vbo', _lapsVbo)];
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
-    importer.jobs.single.finish();
-    await tester.pump();
+    await pick(tester);
+    await finishAndGoBack(tester);
     final row = find.byKey(const ValueKey('importSession Session 1'));
     Finder inRow(String text) =>
         find.descendant(of: row, matching: find.text(text));
@@ -768,6 +1004,8 @@ void main() {
     expect(inRow('3 laps'), findsOneWidget);
     expect(inRow('Best'), findsOneWidget);
     expect(inRow('4.000\u00a0s'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('only the session of the best lap of the day is purple, and '
@@ -777,12 +1015,12 @@ void main() {
       write('b.vbo', circuitVbo([29, 32])),
       write('nogate.vbo', _datedVbo(hour: 9)),
     ];
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
-    importer.jobs.single.finish();
-    await tester.pump();
-    final finished = controller.state as DayImportFinished;
+    await pick(tester);
+    final finished = runDayImport(importer.jobs.single.request);
+    await finishAndGoBack(tester);
     final ranking = finished.analysis!.ranking!;
     final sessions = find.byKey(const ValueKey('importSessions'));
     final purple = tester
@@ -811,6 +1049,8 @@ void main() {
       findsNWidgets(ranking.runs.length),
     );
     expect(finished.runs, hasLength(ranking.runs.length + 1));
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('a folder is imported with or without subfolders', (
@@ -823,8 +1063,7 @@ void main() {
     pickers.folder = '${directory.path}/day';
     await show(tester);
 
-    await tester.tap(find.text('Choose a folder…'));
-    await tester.pump();
+    await pick(tester, button: 'Choose a folder…');
     importer.jobs.last.finish();
     await tester.pump();
     expect(
@@ -836,13 +1075,13 @@ void main() {
     await tester.tap(find.text('Include subfolders'));
     await tester.pump();
     expect(tester.widget<Checkbox>(find.byType(Checkbox).first).value, isTrue);
-    await tester.tap(find.text('Choose a folder…'));
-    await tester.pump();
+    await pick(tester, button: 'Choose a folder…');
     expect(importer.jobs.last.request.includeSubfolders, isTrue);
-    importer.jobs.last.finish();
-    await tester.pump();
-    expect(find.text('1 session imported'), findsOneWidget);
+    // A folder is a whole day, which opens by itself.
+    await finishAndGoBack(tester);
     expect(find.text('Session 1'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
   });
 
   testWidgets('cancel keeps nothing, even if the result arrives later', (
@@ -850,8 +1089,7 @@ void main() {
   ) async {
     pickers.recordings = [write('run.vbo', _datedVbo(hour: 9))];
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
+    await pick(tester);
     final job = importer.jobs.single;
 
     await tester.tap(find.text('Cancel'));
@@ -871,14 +1109,14 @@ void main() {
       find.text('Import cancelled. Nothing was imported.'),
       findsOneWidget,
     );
-    expect(find.textContaining('Session'), findsNothing);
+    expect(find.textContaining('Session 1'), findsNothing);
+    expect(find.byKey(const ValueKey('lastDay')), findsNothing);
   });
 
   testWidgets('a second import is refused while one runs', (tester) async {
     pickers.recordings = [write('run.vbo', _datedVbo(hour: 9))];
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
+    await pick(tester);
     expect(
       controller.start(pickers.recordings, includeSubfolders: false),
       isFalse,
@@ -891,8 +1129,7 @@ void main() {
   testWidgets('a failed batch says why and lists each file', (tester) async {
     pickers.recordings = [write('broken.vbo', 'not telemetry')];
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
+    await pick(tester);
     importer.jobs.single.finish();
     await tester.pump();
     // In a banner with what to do next.
@@ -914,14 +1151,8 @@ void main() {
     tester,
   ) async {
     pickers.recordings = [write('broken.vbo', 'not telemetry')];
-    await tester.pumpWidget(
-      TelemetryApp(
-        locale: const Locale('pl'),
-        home: DayImportPage(controller: controller, pickers: pickers),
-      ),
-    );
-    await tester.tap(find.text('Wybierz nagrania…'));
-    await tester.pump();
+    await show(tester, locale: const Locale('pl'));
+    await pick(tester, button: 'Importuj sesje…');
     importer.jobs.single.finish();
     await tester.pump();
     expect(
@@ -955,8 +1186,7 @@ void main() {
   ) async {
     pickers.recordings = [write('run.vbo', _datedVbo(hour: 9))];
     await show(tester);
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pump();
+    await pick(tester);
     expect(
       tester
           .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
@@ -975,15 +1205,21 @@ void main() {
 
 /// Answers with fixed saved days, newest first.
 final class _SavedDays implements DocumentPickers {
-  _SavedDays(this.days);
+  _SavedDays(this.days, {this.saveTo, this.open});
 
   final List<String> days;
 
-  @override
-  Future<String?> saveLocation(String name) async => null;
+  /// Where Save puts a day; null as if the dialog was closed.
+  final String? saveTo;
+
+  /// The day "Open a saved day…" picks; null as if the dialog was closed.
+  final String? open;
 
   @override
-  Future<String?> pickDocument() async => null;
+  Future<String?> saveLocation(String name) async => saveTo;
+
+  @override
+  Future<String?> pickDocument() async => open;
 
   @override
   Future<String?> pickFolder() async => null;

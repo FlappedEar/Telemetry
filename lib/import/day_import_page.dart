@@ -22,7 +22,6 @@ import '../settings_dialog.dart';
 import '../ui/theme.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
-import 'import_review_page.dart';
 import 'import_runner.dart' show DayAppender, IsolateDayAppender;
 import 'incoming_recordings.dart';
 
@@ -112,20 +111,15 @@ final class PlatformRecordingPickers implements RecordingPickers {
   }
 }
 
-String _lapSummary(
-  AppLocalizations l10n,
-  LapSession laps,
-  TelemetrySession session,
-) {
+String _lapSummary(AppLocalizations l10n, _SessionRow row) {
   // Lap detection looks for the start/finish line before GPS; without GPS
   // the line is not what is missing.
-  if (laps.status != LapSessionStatus.available &&
-      !hasGpsPositions(session, laps)) {
+  if (row.status != LapSessionStatus.available && !row.hasGps) {
     return l10n.importPageNoGps;
   }
-  switch (laps.status) {
+  switch (row.status) {
     case LapSessionStatus.available:
-      return l10n.importPageLaps(laps.timedLaps.length);
+      return l10n.importPageLaps(row.lapCount);
     case LapSessionStatus.noSourceStartGate:
       return l10n.importPageNoGate;
     case LapSessionStatus.ambiguousSourceStartGate:
@@ -209,20 +203,16 @@ class _DayImportPageState extends State<DayImportPage> {
   late final DayImportController _controller =
       widget.controller ?? DayImportController();
   bool _includeSubfolders = false;
-
-  /// The next import the user starts stops at a review of the recordings
-  /// found (FET-58). Off by default and again after each review, so the
-  /// next session needs no approval; recordings shared from another app are
-  /// never reviewed.
-  bool _review = false;
-
-  // Whether the review of the import waiting for it is shown.
-  bool _reviewShown = false;
   bool _dragging = false;
   bool _opening = false;
 
   /// An unsaved day kept from before, offered for restoring.
   DayRecovery? _recovered;
+
+  /// The day shown last and closed, with its sessions, so coming back here
+  /// still shows them and offers to open the day again; null before a day
+  /// was shown, or once its unsaved changes were discarded.
+  _ClosedDay? _lastDay;
   late final StreamSubscription<List<String>> _incoming;
 
   @override
@@ -261,6 +251,21 @@ class _DayImportPageState extends State<DayImportPage> {
     _controller.clearFinished();
     _unopenedShares = const [];
     unawaited(_show(day));
+    // What was skipped or grouped is said over the day, which shows at once.
+    final notes = state is DayImportFinished ? state.notes : const <String>[];
+    if (notes.isNotEmpty) {
+      final l10n = context.l10n;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          key: const ValueKey('importNotes'),
+          duration: const Duration(seconds: 10),
+          showCloseIcon: true,
+          content: Text(
+            [l10n.importPageNotes, ...notes.map(l10n.coreText)].join('\n'),
+          ),
+        ),
+      );
+    }
     return day;
   }
 
@@ -270,10 +275,6 @@ class _DayImportPageState extends State<DayImportPage> {
 
   void _imported() {
     if (_controller.isWorking || !mounted) return;
-    if (_controller.state case final DayImportReviewing review) {
-      unawaited(_openReview(review));
-      return;
-    }
     // A share import that was cancelled or failed is not tried again with
     // the next share.
     if (_controller.state is DayImportCancelled ||
@@ -294,28 +295,6 @@ class _DayImportPageState extends State<DayImportPage> {
       }
     }
     if (pending.isNotEmpty) _receive(pending);
-  }
-
-  /// Shows the review of [review]'s recordings; the import goes on as the
-  /// user confirms, or ends with nothing imported.
-  Future<void> _openReview(DayImportReviewing review) async {
-    if (_reviewShown) return;
-    _reviewShown = true;
-    setState(() => _review = false);
-    ImportReviewResult? result;
-    try {
-      result = await showImportReview(
-        context,
-        plan: review.plan,
-        automatic: automaticImportChoices(review.plan),
-      );
-    } finally {
-      _reviewShown = false;
-    }
-    if (!identical(_controller.state, review)) return;
-    if (result == null || !_controller.confirm(result.choices)) {
-      _controller.cancel();
-    }
   }
 
   /// Starts importing [paths], reviewed on a day shown here, as a new day,
@@ -346,6 +325,7 @@ class _DayImportPageState extends State<DayImportPage> {
     // A day opened again with its recordings found elsewhere is shown in
     // its place, and takes the recordings shared from then on.
     DayResultsController? next = controller;
+    DayResultsController? last;
     while (next != null && mounted) {
       final shown = next!;
       next = null;
@@ -366,12 +346,22 @@ class _DayImportPageState extends State<DayImportPage> {
       } finally {
         if (identical(_shownDay, shown)) _shownDay = null;
       }
+      last = shown;
     }
     if (!mounted) {
       next?.dispose();
       return;
     }
-    await _checkRecovery();
+    // What the day held when it was left, listed here with its recovery
+    // snapshot, written first: the page may not have closed it yet.
+    final closed = last == null ? null : _ClosedDay.of(last);
+    await last?.flushRecovery();
+    final recovered = await queueRecovery(widget.recovery.load);
+    if (!mounted) return;
+    setState(() {
+      _recovered = recovered;
+      if (closed != null) _lastDay = closed;
+    });
   }
 
   // Built outside the state so the isolate's closure holds only the snapshot.
@@ -435,6 +425,9 @@ class _DayImportPageState extends State<DayImportPage> {
       ),
     );
     if (discard != true) return;
+    if (_lastDay?.eventId == recovery.eventId) {
+      setState(() => _lastDay = null);
+    }
     try {
       await queueRecovery(widget.recovery.clear);
     } on Exception catch (error) {
@@ -507,11 +500,11 @@ class _DayImportPageState extends State<DayImportPage> {
     final behind = ModalRoute.of(context)?.isCurrent == false;
     // Also with a dialog or another page over this one: today's day is
     // continued, and shown over them.
-    if (!_controller.isWorking && !_controller.isReviewing && !_opening) {
+    if (!_controller.isWorking && !_opening) {
       unawaited(_continueToday(paths));
       return;
     }
-    if (_controller.isWorking || _controller.isReviewing) {
+    if (_controller.isWorking) {
       // Not refused: they follow the import running now.
       (_afterImport ??= []).addAll(paths);
       return;
@@ -574,6 +567,9 @@ class _DayImportPageState extends State<DayImportPage> {
     var snapshotLeft = true;
     try {
       (day: today, :snapshotLeft) = await _todayWith(paths);
+    } on Exception catch (error) {
+      // Today's day could not be looked for: the recordings are imported.
+      debugPrint('Today\'s day not looked for: $error');
     } finally {
       _waiting = null;
       if (mounted) setState(() => _opening = false);
@@ -590,6 +586,11 @@ class _DayImportPageState extends State<DayImportPage> {
       final started = !_controller.isWorking;
       // Shares imported here and not opened stay one day: a later share is
       // imported together with them, not instead of them.
+      if (!started) {
+        // An import started meanwhile (a folder): these follow it.
+        (_afterImport ??= []).addAll([...paths, ...waiting]);
+        return;
+      }
       final all = [..._unopenedShares, ...paths, ...waiting];
       // Until their day is shown (cleared then), also when it cannot open by
       // itself because another page is on top.
@@ -634,22 +635,35 @@ class _DayImportPageState extends State<DayImportPage> {
       });
       return (day: day, snapshotLeft: day == null);
     }
+    // No unsaved work waits, so a saved day may open: the one just left
+    // here, saved anywhere (on desktop the app keeps no list of saved days),
+    // else the day saved last in the app.
+    final closed = _lastDay;
+    final closedPath = closed?.documentPath;
+    if (closed != null && !closed.dirty && closedPath != null) {
+      final day = await _added(paths, clock, () => _openSaved(closedPath));
+      if (day != null) return (day: day, snapshotLeft: false);
+    }
     final day = await _added(paths, clock, () async {
       final saved = await widget.documents.savedDays();
-      if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
-        return null;
-      }
-      await widget.fileAccess.restore();
-      final day = await Isolate.run(_openJob(saved.first));
-      return day.analysis == null
-          ? null
-          : DayResultsController.opened(
-              day,
-              recovery: widget.recovery,
-              appender: widget.appender,
-            );
+      return saved.isEmpty ? null : _openSaved(saved.first);
     });
     return (day: day, snapshotLeft: false);
+  }
+
+  /// The day saved at [path] when it was saved in the last day; null
+  /// otherwise or when none of its recordings can be read.
+  Future<DayResultsController?> _openSaved(String path) async {
+    if (!_recent(File(path).lastModifiedSync())) return null;
+    await widget.fileAccess.restore();
+    final day = await Isolate.run(_openJob(path));
+    return day.analysis == null
+        ? null
+        : DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: widget.appender,
+          );
   }
 
   /// The day [open] gives with [paths] added as recordings of its date;
@@ -677,23 +691,48 @@ class _DayImportPageState extends State<DayImportPage> {
     return null;
   }
 
-  /// Imports [paths]; with [review], after the user's review of what was
-  /// found.
-  void _start(List<String> paths, {bool review = false}) {
+  /// Imports [paths].
+  void _start(List<String> paths) {
     if (paths.isEmpty) return;
-    final started = review
-        ? _controller.review(paths, includeSubfolders: _includeSubfolders)
-        : _controller.start(paths, includeSubfolders: _includeSubfolders);
-    if (!started) {
+    if (!_controller.start(paths, includeSubfolders: _includeSubfolders)) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(context.l10n.importBusy)));
     }
   }
 
+  /// Imports a folder as a new day, which opens by itself, unless a day's
+  /// unsaved work waits for recovery: opening the new day would replace it,
+  /// so the import then stays here, next to the offer to restore that work.
+  Future<void> _startDay(List<String> paths) async {
+    if (paths.isEmpty || !mounted) return;
+    if (_controller.isWorking || _opening) {
+      _start(paths);
+      return;
+    }
+    var nothingKept = false;
+    try {
+      nothingKept = await queueRecovery(widget.recovery.load) == null;
+    } on Exception catch (error) {
+      debugPrint('Recovery not checked before importing a folder: $error');
+    }
+    if (!mounted) return;
+    if (_controller.isWorking || _opening) {
+      _start(paths);
+      return;
+    }
+    _unopenedShares = const [];
+    _showWhenImported = nothingKept;
+    _start(paths);
+  }
+
+  /// Recordings the user picked or dropped are the next sessions of today's
+  /// day, as when shared from another app: added to it and shown, or
+  /// imported as a new day that opens by itself.
   Future<void> _pickRecordings() async {
     final paths = await widget.pickers.pickRecordings();
-    if (paths.isNotEmpty) _unopenedShares = const [];
-    _start(paths, review: _review);
+    if (paths.isEmpty || !mounted) return;
+    _unopenedShares = const [];
+    _receive(paths);
   }
 
   // Built outside the state so the isolate's closure holds only the path.
@@ -736,8 +775,9 @@ class _DayImportPageState extends State<DayImportPage> {
     return choice;
   }
 
-  Future<void> _openDay() async {
-    final path = await _chooseDocument();
+  /// Opens the day saved at [chosen], or one the user chooses.
+  Future<void> _openDay([String? chosen]) async {
+    final path = chosen ?? await _chooseDocument();
     if (path == null || !mounted) return;
     if (_opening || _shownDay != null) {
       // A shared recording opened a day while the choice was made.
@@ -800,8 +840,7 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _pickFolder() async {
     final folder = await widget.pickers.pickFolder();
     if (folder == null) return;
-    _unopenedShares = const [];
-    _start([folder], review: _review);
+    await _startDay([folder]);
   }
 
   @override
@@ -850,7 +889,14 @@ class _DayImportPageState extends State<DayImportPage> {
                 setState(() => _dragging = false);
                 final paths = [for (final file in details.files) file.path];
                 unawaited(widget.fileAccess.remember(paths));
-                _start(paths, review: _review);
+                if (paths.isEmpty) return;
+                // A folder is a day; recordings are its next sessions.
+                if (paths.any(FileSystemEntity.isDirectorySync)) {
+                  unawaited(_startDay(paths));
+                } else {
+                  _unopenedShares = const [];
+                  _receive(paths);
+                }
               },
               child: content,
             ),
@@ -858,47 +904,13 @@ class _DayImportPageState extends State<DayImportPage> {
   }
 
   List<Widget> _choices(BuildContext context) {
-    final enabled = !_controller.isWorking && !_controller.isReviewing;
+    final enabled = !_controller.isWorking;
     final recovered = _recovered;
     return [
-      if (recovered != null) ...[
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.importPageUnsaved(
-                    recovered.name,
-                    _when(recovered.timestamp),
-                  ),
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    FilledButton.tonal(
-                      onPressed: enabled && !_opening
-                          ? () => _restore(recovered)
-                          : null,
-                      child: Text(context.l10n.importPageRestore),
-                    ),
-                    TextButton(
-                      onPressed: enabled && !_opening
-                          ? () => _discard(recovered)
-                          : null,
-                      child: Text(context.l10n.importPageDiscardEllipsis),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
+      if (_lastDay case final day?)
+        ..._dayCard(context, day, enabled: enabled)
+      else if (recovered != null)
+        ..._recoveryCard(context, recovered, enabled: enabled),
       // Where a day starts: the recordings, a folder or a saved day, in one
       // panel the recordings can also be dropped on.
       Card(
@@ -966,21 +978,127 @@ class _DayImportPageState extends State<DayImportPage> {
                                 setState(() => _includeSubfolders = value)
                           : null,
                     ),
-                  _option(
-                    key: const ValueKey('reviewBeforeImportOption'),
-                    checkboxKey: const ValueKey('reviewBeforeImport'),
-                    value: _review,
-                    label: context.l10n.reviewBeforeImport,
-                    onChanged: enabled
-                        ? (value) => setState(() => _review = value)
-                        : null,
-                  ),
                 ],
               ),
             ],
           ),
         ),
       ),
+    ];
+  }
+
+  /// The unsaved day kept from before, to restore or discard.
+  List<Widget> _recoveryCard(
+    BuildContext context,
+    DayRecovery recovered, {
+    required bool enabled,
+  }) => [
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.importPageUnsaved(
+                recovered.name,
+                _when(recovered.timestamp),
+              ),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              children: [
+                FilledButton.tonal(
+                  onPressed: enabled && !_opening
+                      ? () => _restore(recovered)
+                      : null,
+                  child: Text(context.l10n.importPageRestore),
+                ),
+                TextButton(
+                  onPressed: enabled && !_opening
+                      ? () => _discard(recovered)
+                      : null,
+                  child: Text(context.l10n.importPageDiscardEllipsis),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+    const SizedBox(height: 16),
+  ];
+
+  /// The day closed last, with its sessions: opened again from its unsaved
+  /// changes or its file. Unsaved changes of another day are offered too.
+  List<Widget> _dayCard(
+    BuildContext context,
+    _ClosedDay day, {
+    required bool enabled,
+  }) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final recovered = _recovered;
+    final own = recovered != null && recovered.eventId == day.eventId;
+    final path = day.documentPath;
+    final VoidCallback? open = own
+        ? () => _restore(recovered)
+        : path == null
+        ? null
+        : () => _openDay(path);
+    return [
+      if (recovered != null && !own)
+        ..._recoveryCard(context, recovered, enabled: enabled),
+      Card(
+        key: const ValueKey('lastDay'),
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(day.name, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                own
+                    ? l10n.importPageDayUnsaved(_when(recovered.timestamp))
+                    : day.dirty
+                    ? l10n.importPageDayNotKept
+                    : l10n.importPageDaySaved(p.basename(path!)),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  if (open != null)
+                    FilledButton.icon(
+                      key: const ValueKey('openLastDay'),
+                      onPressed: enabled && !_opening ? open : null,
+                      icon: const Icon(Icons.flag_outlined),
+                      label: Text(l10n.importPageShowResults),
+                    ),
+                  if (own)
+                    TextButton(
+                      onPressed: enabled && !_opening
+                          ? () => _discard(recovered)
+                          : null,
+                      child: Text(l10n.importPageDiscardEllipsis),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      _sessions(context, day.rows, day.ranking),
+      const SizedBox(height: 16),
     ];
   }
 
@@ -1085,6 +1203,9 @@ class _DayImportPageState extends State<DayImportPage> {
       ],
     ];
     switch (_controller.state) {
+      case DayImportIdle() when _opening:
+        // Opening a day, or adding recordings to today's day before it shows.
+        return [Text(l10n.importPageOpeningDay)];
       case DayImportIdle():
         return const [];
       case DayImportWorking(:final processed, :final total):
@@ -1111,8 +1232,6 @@ class _DayImportPageState extends State<DayImportPage> {
             ),
           ),
         ];
-      case DayImportReviewing():
-        return const [];
       case DayImportCancelled():
         return [
           _banner(
@@ -1161,7 +1280,9 @@ class _DayImportPageState extends State<DayImportPage> {
             ),
           ],
           const SizedBox(height: 12),
-          _sessions(context, runs, analysis),
+          _sessions(context, [
+            for (final named in runs) _SessionRow.of(named),
+          ], analysis?.ranking),
           ...notes(finishedNotes),
         ];
     }
@@ -1174,33 +1295,32 @@ class _DayImportPageState extends State<DayImportPage> {
   // its recording's fastest lap.
   Widget _sessions(
     BuildContext context,
-    List<NamedRun> runs,
-    DayAnalysis? analysis,
+    List<_SessionRow> runs,
+    DayRanking? ranking,
   ) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final colors = FetColors.of(context);
-    final ranking = analysis?.ranking;
     final bests = [
-      for (final named in runs)
-        switch (ranking?.runs.where((run) => run.runId == named.run.id)) {
+      for (final row in runs)
+        switch (ranking?.runs.where((run) => run.runId == row.runId)) {
           final ranked? when ranked.isNotEmpty =>
             ranked.first.bestLap?.durationSeconds,
-          _ => _bestSeconds(named.run.laps),
+          _ => row.fastest,
         },
     ];
     final dayBestRun = ranking?.bestOfDay?.runId;
     // A ranked session with laps but none ranked says so, as on the day page.
     String summary(int i) {
-      final laps = runs[i].run.laps;
-      final ranked = ranking?.runs.where((run) => run.runId == runs[i].run.id);
+      final row = runs[i];
+      final ranked = ranking?.runs.where((run) => run.runId == row.runId);
       return ranked != null &&
               ranked.isNotEmpty &&
               bests[i] == null &&
-              laps.status == LapSessionStatus.available &&
-              laps.timedLaps.isNotEmpty
-          ? l10n.noRankedLap(laps.timedLaps.length)
-          : _lapSummary(l10n, laps, runs[i].run.telemetry);
+              row.status == LapSessionStatus.available &&
+              row.lapCount > 0
+          ? l10n.noRankedLap(row.lapCount)
+          : _lapSummary(l10n, row);
     }
 
     return Card(
@@ -1247,10 +1367,10 @@ class _DayImportPageState extends State<DayImportPage> {
                           displayTime(seconds),
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontFamily: FetTheme.mono,
-                            fontWeight: runs[i].run.id == dayBestRun
+                            fontWeight: runs[i].runId == dayBestRun
                                 ? FontWeight.w700
                                 : null,
-                            color: runs[i].run.id == dayBestRun
+                            color: runs[i].runId == dayBestRun
                                 ? colors.dayBest
                                 : null,
                           ),
@@ -1265,4 +1385,55 @@ class _DayImportPageState extends State<DayImportPage> {
       ),
     );
   }
+}
+
+/// What a day held when its page closed: its sessions for the import page,
+/// and where to open it again.
+final class _ClosedDay {
+  _ClosedDay.of(DayResultsController day)
+    : eventId = day.eventId,
+      name = day.name,
+      rows = [for (final named in day.runs) _SessionRow.of(named)],
+      ranking = day.ranking,
+      documentPath = day.documentPath,
+      dirty = day.dirty;
+
+  final String eventId;
+  final String name;
+
+  /// The sessions as listed; not their telemetry, which the day keeps.
+  final List<_SessionRow> rows;
+  final DayRanking? ranking;
+
+  /// Where the day was saved or opened from; null when never saved.
+  final String? documentPath;
+
+  /// Whether it had changes not in [documentPath], kept for recovery.
+  final bool dirty;
+}
+
+/// What the import page lists of a session.
+final class _SessionRow {
+  _SessionRow.of(NamedRun named)
+    : name = named.name,
+      runId = named.run.id,
+      status = named.run.laps.status,
+      lapCount = named.run.laps.status == LapSessionStatus.available
+          ? named.run.laps.timedLaps.length
+          : 0,
+      fastest = _bestSeconds(named.run.laps),
+      hasGps =
+          named.run.laps.status == LapSessionStatus.available ||
+          hasGpsPositions(named.run.telemetry, named.run.laps);
+
+  final String name;
+  final String runId;
+  final LapSessionStatus status;
+
+  /// Timed laps; 0 without laps.
+  final int lapCount;
+
+  /// The recording's fastest timed lap, in seconds; null without one.
+  final double? fastest;
+  final bool hasGps;
 }

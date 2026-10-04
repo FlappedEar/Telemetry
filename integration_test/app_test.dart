@@ -113,11 +113,8 @@ void main() {
       TelemetryApp(home: DayImportPage(pickers: _Picked([recording.path]))),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Choose recordings…'));
-    await waitFor(tester, find.text('Show the day\'s results'));
-    expect(find.text('1 session imported'), findsOneWidget);
-
-    await tester.tap(find.text('Show the day\'s results'));
+    // The imported day opens by itself.
+    await tester.tap(find.text('Import sessions…'));
     await waitFor(tester, find.text('Best lap of the day'));
     await tester.pumpAndSettle();
     final best = bestLapTime(tester);
