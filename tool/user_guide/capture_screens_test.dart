@@ -29,7 +29,14 @@ import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
-import 'package:telemetry_core/telemetry_core.dart' show ImportChoices;
+import 'package:telemetry/day/recovery_store.dart';
+import 'package:telemetry_core/telemetry_core.dart'
+    show
+        DayRecovery,
+        ImportChoices,
+        clearDayRecovery,
+        readDayRecovery,
+        writeDayRecovery;
 import 'package:telemetry/ui/theme.dart';
 
 import 'demo_day.dart';
@@ -61,23 +68,24 @@ final class _DirectImporter implements DayImporter {
   }) => _DirectJob(runDayImport(request, choices: choices));
 }
 
-/// Prepares reviews on the test's own thread.
-final class _DirectPreparer implements ImportPreparer {
-  @override
-  ImportPreviewJob start(
-    DayImportRequest request,
-    void Function(int, int) progress,
-  ) => _DirectPreview(runImportPreview(request));
-}
+/// Keeps the unsaved day in a file, as the app does, so the import page
+/// shows the day left with its sessions.
+final class _FileRecovery implements RecoveryStore {
+  _FileRecovery(this.file);
 
-final class _DirectPreview implements ImportPreviewJob {
-  _DirectPreview(ImportPreview preview) : result = Future.value(preview);
+  final String file;
 
   @override
-  final Future<ImportPreview> result;
+  Future<String?> path() async => file;
 
   @override
-  void cancel() {}
+  Future<DayRecovery?> load() async => readDayRecovery(file);
+
+  @override
+  Future<void> write(DayRecovery recovery) => writeDayRecovery(file, recovery);
+
+  @override
+  Future<void> clear() => clearDayRecovery(file);
 }
 
 final class _DirectJob implements DayImportJob {
@@ -93,7 +101,7 @@ final class _DirectJob implements DayImportJob {
 final class _Pickers implements RecordingPickers {
   _Pickers(this.recordings);
 
-  final List<String> recordings;
+  List<String> recordings;
 
   @override
   Future<List<String>> pickRecordings() async => recordings;
@@ -202,25 +210,71 @@ void main() {
     child: TelemetryApp(home: home),
   );
 
+  /// Lets file and isolate work run between frames until [done].
+  Future<void> until(WidgetTester tester, bool Function() done) async {
+    for (var i = 0; i < 500 && !done(); ++i) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    expect(done(), isTrue);
+    await tester.pumpAndSettle();
+  }
+
+  /// Imports [pickers]' recordings from [page]; their day opens by itself.
+  Future<void> importDayFrom(WidgetTester tester, DayImportPage page) async {
+    await tester.pumpWidget(app(page));
+    await tester.tap(find.text('Import sessions…'));
+    await until(
+      tester,
+      () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+    );
+  }
+
+  /// Goes back from the day to the import page, which lists its sessions.
+  Future<void> backToImport(WidgetTester tester) async {
+    Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+    await until(
+      tester,
+      () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
+    );
+    // The snackbar of the import notes, if any, is not part of the picture.
+    ScaffoldMessenger.of(tester.element(find.byType(DayImportPage)))
+        .removeCurrentSnackBar();
+    await tester.pumpAndSettle();
+  }
+
+  /// Closes the day page and waits for its recovery file, so nothing is
+  /// left running for the next test.
+  Future<void> close(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    for (var i = 0; i < 25; ++i) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+  }
+
   testWidgets('import page', (tester) async {
     debugDisableShadows = false;
     await size(tester, _desktop, 1.5);
     final controller = DayImportController(importer: _DirectImporter());
     addTearDown(controller.dispose);
-    await tester.pumpWidget(
-      app(
-        DayImportPage(
-          controller: controller,
-          pickers: _Pickers(recordings),
-          picksFolders: true,
-          acceptsDrops: true,
-        ),
-      ),
+    final page = DayImportPage(
+      controller: controller,
+      pickers: _Pickers(recordings),
+      picksFolders: true,
+      acceptsDrops: true,
+      recovery: _FileRecovery('${directory.path}/import-recovery.json'),
     );
+    await tester.pumpWidget(app(page));
     await shot(tester, 'import-empty');
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pumpAndSettle();
+    await importDayFrom(tester, page);
+    await backToImport(tester);
     await shot(tester, 'import-done');
+    await close(tester);
     debugDisableShadows = true;
   });
 
@@ -230,19 +284,19 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     final controller = DayImportController(importer: _DirectImporter());
     addTearDown(controller.dispose);
-    await tester.pumpWidget(
-      app(
-        DayImportPage(
-          controller: controller,
-          pickers: _Pickers(recordings),
-          picksFolders: false,
-          acceptsDrops: false,
-        ),
+    await importDayFrom(
+      tester,
+      DayImportPage(
+        controller: controller,
+        pickers: _Pickers(recordings),
+        picksFolders: false,
+        acceptsDrops: false,
+        recovery: _FileRecovery('${directory.path}/phone-recovery.json'),
       ),
     );
-    await tester.tap(find.text('Choose recordings…'));
-    await tester.pumpAndSettle();
+    await backToImport(tester);
     await shot(tester, 'phone-import-done');
+    await close(tester);
     debugDefaultTargetPlatformOverride = null;
     debugDisableShadows = true;
   });
@@ -263,26 +317,39 @@ void main() {
             )
             .path,
     ];
-    final controller = DayImportController(
-      importer: _DirectImporter(),
-      preparer: _DirectPreparer(),
-    );
+    // The day's first session, then the rest added with a review.
+    final controller = DayImportController(importer: _DirectImporter());
     addTearDown(controller.dispose);
-    await tester.pumpWidget(
-      app(
-        DayImportPage(
-          controller: controller,
-          pickers: _Pickers(copies),
-          picksFolders: true,
-          acceptsDrops: true,
-        ),
+    final first = copies
+        .where((path) => path.contains('recording-1.'))
+        .toList();
+    final pickers = _Pickers(first);
+    await importDayFrom(
+      tester,
+      DayImportPage(
+        controller: controller,
+        pickers: pickers,
+        picksFolders: true,
+        acceptsDrops: true,
       ),
     );
-    await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
-    await tester.pump();
-    await tester.tap(find.text('Choose recordings…'));
+    pickers.recordings = [
+      for (final path in copies)
+        if (!first.contains(path)) path,
+    ];
+    // The import notes of the first session are not part of the picture.
+    ScaffoldMessenger.of(
+      tester.element(find.byType(DayResultsPage)),
+    ).removeCurrentSnackBar();
+    await tester.tap(find.byKey(const ValueKey('moreMenu')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('addAndReviewRecordings')));
+    await until(
+      tester,
+      () => find.text('Review the import').evaluate().isNotEmpty,
+    );
     await shot(tester, 'import-review');
+    await close(tester);
     debugDisableShadows = true;
   });
 

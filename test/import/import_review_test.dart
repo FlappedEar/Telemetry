@@ -11,6 +11,7 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
+import 'package:telemetry/import/import_review_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -167,39 +168,6 @@ void main() {
       expect(outcome.runs, isEmpty);
       expect(outcome.analysis, isNull);
     });
-
-    test(
-      'the controller waits for the review and imports as confirmed',
-      () async {
-        final importer = _Importer();
-        final preparer = _Preparer();
-        final controller = DayImportController(
-          importer: importer,
-          preparer: preparer,
-        );
-        addTearDown(controller.dispose);
-        expect(controller.review([vbo, rcz], includeSubfolders: false), isTrue);
-        await pumpEventQueue();
-        final review = controller.state as DayImportReviewing;
-        expect(importer.choices, isEmpty, reason: 'nothing imported yet');
-        // A second import waits until the review ends.
-        expect(controller.start([other], includeSubfolders: false), isFalse);
-        final id = review.plan.runs.map((run) => run.id).toList();
-        expect(controller.confirm({id[0]: skipRecording}), isFalse);
-        expect(controller.confirm({for (final run in id) run: run}), isTrue);
-        await pumpEventQueue();
-        final finished = controller.state as DayImportFinished;
-        expect(finished.runs, hasLength(2));
-        expect(finished.alternatives, isEmpty);
-
-        expect(controller.review([other], includeSubfolders: false), isTrue);
-        await pumpEventQueue();
-        expect(controller.isReviewing, isTrue);
-        controller.cancel();
-        expect(controller.state, isA<DayImportCancelled>());
-        expect(importer.choices, hasLength(1));
-      },
-    );
   });
 
   group('an addition as reviewed', () {
@@ -693,30 +661,49 @@ void main() {
 
   group('the review page', () {
     late _Importer importer;
-    late _Pickers pickers;
     late DayImportController controller;
     setUp(() {
       importer = _Importer();
-      pickers = _Pickers();
-      controller = DayImportController(
-        importer: importer,
-        preparer: _Preparer(),
-      );
+      controller = DayImportController(importer: importer);
     });
     tearDown(() => controller.dispose());
 
-    Future<void> show(WidgetTester tester) async {
+    /// A page that reviews [paths] and imports them as chosen, as the
+    /// review of recordings added to a day does.
+    Future<void> show(WidgetTester tester, List<String> paths) async {
       await tester.binding.setSurfaceSize(const Size(400, 1600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         TelemetryApp(
-          home: DayImportPage(
-            controller: controller,
-            pickers: pickers,
-            picksFolders: false,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  final plan = runImportPreview((
+                    paths: paths,
+                    includeSubfolders: false,
+                  )).plan!;
+                  final result = await showImportReview(
+                    context,
+                    plan: plan,
+                    automatic: automaticImportChoices(plan),
+                  );
+                  if (result != null) {
+                    controller.start(
+                      paths,
+                      includeSubfolders: false,
+                      choices: result.choices,
+                    );
+                  }
+                },
+                child: const Text('Review'),
+              ),
+            ),
           ),
         ),
       );
+      await tester.tap(find.text('Review'));
+      await tester.pumpAndSettle();
     }
 
     Future<void> choose(WidgetTester tester, int file, String choice) async {
@@ -727,19 +714,7 @@ void main() {
     }
 
     testWidgets('lists every file and imports as chosen', (tester) async {
-      pickers.recordings = [rcz, vbo, other];
-      await show(tester);
-      // Automatic by default: no review unless asked for.
-      expect(
-        tester
-            .widget<Checkbox>(find.byKey(const ValueKey('reviewBeforeImport')))
-            .value,
-        isFalse,
-      );
-      await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
-      await tester.pump();
-      await tester.tap(find.text('Choose recordings…'));
-      await tester.pumpAndSettle();
+      await show(tester, [rcz, vbo, other]);
 
       expect(find.text('Review the import'), findsOneWidget);
       for (final file in [rcz, vbo, other]) {
@@ -764,24 +739,12 @@ void main() {
       final finished = controller.state as DayImportFinished;
       expect(finished.runs.single.run.format, RecordingFormat.rcz);
       expect(finished.alternatives.values.single.format, RecordingFormat.vbo);
-      expect(find.text('1 session imported'), findsOneWidget);
-      // The next import needs no approval again.
-      expect(
-        tester
-            .widget<Checkbox>(find.byKey(const ValueKey('reviewBeforeImport')))
-            .value,
-        isFalse,
-      );
     });
 
     testWidgets('a single file can be reviewed, and closing imports nothing', (
       tester,
     ) async {
-      pickers.recordings = [other];
-      await show(tester);
-      await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
-      await tester.tap(find.text('Choose recordings…'));
-      await tester.pumpAndSettle();
+      await show(tester, [other]);
       expect(find.byKey(const ValueKey('reviewFile:0')), findsOneWidget);
       expect(find.byKey(const ValueKey('reviewFile:1')), findsNothing);
       expect(find.text('Import'), findsOneWidget);
@@ -796,18 +759,8 @@ void main() {
       );
       await tester.tap(find.byType(CloseButton));
       await tester.pumpAndSettle();
-      expect(
-        find.text('Import cancelled. Nothing was imported.'),
-        findsOneWidget,
-      );
-      expect(importer.choices, isEmpty);
-
-      // Without the box, the same file is imported at once.
-      await tester.tap(find.text('Choose recordings…'));
-      await tester.pumpAndSettle();
       expect(find.text('Review the import'), findsNothing);
-      expect(find.text('1 session imported'), findsOneWidget);
-      expect(importer.choices, [null]);
+      expect(importer.choices, isEmpty);
     });
   });
 
