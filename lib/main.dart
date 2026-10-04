@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'diagnostics/app_errors.dart';
 import 'import/day_import_page.dart';
 import 'l10n.dart';
+import 'profile/profile_library.dart';
 import 'ui/theme.dart';
 import 'units.dart';
 
@@ -13,7 +14,17 @@ Future<void> main() async {
   installErrorHandlers();
   await loadSettings();
   LicenseRegistry.addLicense(_fontLicenses);
-  runApp(const TelemetryApp());
+  final l10n = deviceL10n();
+  runApp(
+    TelemetryApp(
+      home: DayImportPage(
+        library: ProfileLibrary(
+          defaultCarName: l10n.libraryDefaultCar,
+          defaultTrackName: l10n.libraryDefaultTrack,
+        ),
+      ),
+    ),
+  );
 }
 
 /// The bundled fonts' SIL Open Font License texts, which must ship with them.

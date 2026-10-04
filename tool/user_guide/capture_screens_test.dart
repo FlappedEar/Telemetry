@@ -15,6 +15,7 @@
 // boxes. Maps show the street background's controls and attribution over
 // plain grey tiles (no network). Sessions' weather is the weather service's
 // answer for the day, recorded in jastrzab_weather.json.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -31,6 +32,7 @@ import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry_core/telemetry_core.dart'
     show
@@ -59,6 +61,14 @@ final class _PlainTiles extends TileProvider {
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
       MemoryImage(_png);
 }
+
+/// The driver profile in [folder], read and written on the test's thread.
+ProfileLibrary _library(String folder) => ProfileLibrary(
+  store: FolderProfileStore(folder),
+  defaultCarName: 'My car',
+  defaultTrackName: (number) => 'Track $number',
+  background: <R>(FutureOr<R> Function() computation) async => computation(),
+);
 
 /// Imports on the test's own thread, so the page shows real results.
 final class _DirectImporter implements DayImporter {
@@ -240,9 +250,29 @@ void main() {
     );
   }
 
+  /// Waits until the day shown is saved in the library at [folder] by
+  /// itself, as the app does, and its recordings are lined up and saved too.
+  Future<void> savedIn(WidgetTester tester, String folder) async {
+    await until(tester, () {
+      final days = Directory('$folder/Days');
+      return days.existsSync() &&
+          days.listSync().any((file) => file.path.endsWith('.fetproject'));
+    });
+    // The RCZs are lined up in the background, and the day saves again by
+    // itself a moment after.
+    for (var i = 0; i < 40; ++i) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+    await tester.pumpAndSettle();
+  }
+
   /// Goes back from the day to the import page, which lists its sessions.
   Future<void> backToImport(WidgetTester tester) async {
-    Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+    // As the back button does: a day in the library saves its changes first.
+    await Navigator.of(tester.element(find.byType(DayResultsPage))).maybePop();
     await until(
       tester,
       () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
@@ -276,12 +306,20 @@ void main() {
       picksFolders: true,
       acceptsDrops: true,
       recovery: _FileRecovery('${directory.path}/import-recovery.json'),
+      library: _library('${directory.path}/Profile'),
     );
     await tester.pumpWidget(app(page));
     await shot(tester, 'import-empty');
     await importDayFrom(tester, page);
+    await savedIn(tester, '${directory.path}/Profile');
     await backToImport(tester);
     await shot(tester, 'import-done');
+    // The library, with the day just imported in it.
+    await tester.tap(find.byKey(const ValueKey('openLibrary')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'library');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await close(tester);
     debugDisableShadows = true;
   });
@@ -300,8 +338,10 @@ void main() {
         picksFolders: false,
         acceptsDrops: false,
         recovery: _FileRecovery('${directory.path}/phone-recovery.json'),
+        library: _library('${directory.path}/PhoneProfile'),
       ),
     );
+    await savedIn(tester, '${directory.path}/PhoneProfile');
     await backToImport(tester);
     await shot(tester, 'phone-import-done');
     await close(tester);

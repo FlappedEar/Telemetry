@@ -7046,6 +7046,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kept as stored: this day\'s weather was saved by a newer version of the app.'**
   String get weatherKept;
+
+  /// After saving the day in the driver profile's library.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved in your library.'**
+  String get savedToLibrary;
+
+  /// After saving the day in the library while it changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved in your library. Changes made while saving are not saved yet.'**
+  String get savedToLibraryChangesPending;
+
+  /// Menu item that writes a copy of the day as a .fetproject file for FlappedEar Overlays; the day stays in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Export for Overlays…'**
+  String get exportForOverlays;
+
+  /// After exporting a copy of the day: its file name.
+  ///
+  /// In en, this message translates to:
+  /// **'Exported as {file}.'**
+  String exportedAs(String file);
+
+  /// Export for Overlays refused a file inside the library's own days folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not exported: choose a place outside the library.'**
+  String get exportNotInLibrary;
+
+  /// Save as… refused a file inside the library's own days folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved: choose a place outside the library.'**
+  String get notSavedInLibrary;
+
+  /// Exporting a copy of the day failed; the error follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Not exported: {error}'**
+  String notExported(String error);
+
+  /// Button on the start page that opens the library of every day kept in the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get importPageLibrary;
+
+  /// Title of the page listing every day kept in the driver profile, by car, year, track and date.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get libraryTitle;
+
+  /// Library page when the app has no folder for the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The library cannot be used now, for example because a newer version of the app made it. Until then, days are saved as files.'**
+  String get libraryUnavailable;
+
+  /// Library page with no days yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Days you import are kept here, by car, year and track.'**
+  String get libraryEmpty;
+
+  /// Button and dialog title for renaming a car in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename car'**
+  String get libraryRenameCar;
+
+  /// Button and dialog title for renaming a track in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename track'**
+  String get libraryRenameTrack;
+
+  /// Year or date heading for days whose recordings have no date.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get libraryUndated;
+
+  /// Heading for days whose track could not be recognised (no complete laps).
+  ///
+  /// In en, this message translates to:
+  /// **'Track not recognised'**
+  String get libraryUnknownTrack;
+
+  /// How many sessions a day in the library has.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 session} other{{count} sessions}}'**
+  String librarySessions(int count);
+
+  /// A day's best lap in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {time}'**
+  String libraryBestLap(String time);
+
+  /// Button on a day in the library that moves it to another car.
+  ///
+  /// In en, this message translates to:
+  /// **'Change car'**
+  String get libraryChangeCar;
+
+  /// Title of the dialog choosing the car a day was driven in.
+  ///
+  /// In en, this message translates to:
+  /// **'Car for {day}'**
+  String libraryChooseCar(String day);
+
+  /// Option that adds a car and moves the day to it.
+  ///
+  /// In en, this message translates to:
+  /// **'New car…'**
+  String get libraryNewCar;
+
+  /// Name of the first car, made when the first day is kept in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'My car'**
+  String get libraryDefaultCar;
+
+  /// Name of a track recognised for the first time; the user can rename it.
+  ///
+  /// In en, this message translates to:
+  /// **'Track {number}'**
+  String libraryDefaultTrack(int number);
 }
 
 class _AppLocalizationsDelegate
