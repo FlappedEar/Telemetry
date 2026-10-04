@@ -41,6 +41,7 @@ extension CoachText on AppLocalizations {
     CoachMetric.brakingStart => coachMetricBrakingStart,
     CoachMetric.coastDistance => coachMetricCoastDistance,
     CoachMetric.brakingSpread => coachMetricBrakingSpread,
+    CoachMetric.nextStraightTime => coachMetricNextStraightTime,
   };
 
   /// Why the plan is what it is; [session] names the session coached.

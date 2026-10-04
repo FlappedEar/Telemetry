@@ -413,6 +413,10 @@
   "@coachMetricBrakingSpread": {
     "description": "How far apart the braking starts at a corner are, from the earliest to the latest."
   },
+  "coachMetricNextStraightTime": "Straight after it",
+  "@coachMetricNextStraightTime": {
+    "description": "Time through the straight right after the corner; a slow exit loses time there too."
+  },
   "coachReasonReady": "Work on the main focus first. Try the others only once it feels settled.",
   "@coachReasonReady": {
     "description": "Above the coach items."

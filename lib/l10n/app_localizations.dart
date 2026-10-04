@@ -536,6 +536,12 @@ abstract class AppLocalizations {
   /// **'Braking point range'**
   String get coachMetricBrakingSpread;
 
+  /// Time through the straight right after the corner; a slow exit loses time there too.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight after it'**
+  String get coachMetricNextStraightTime;
+
   /// Above the coach items.
   ///
   /// In en, this message translates to:

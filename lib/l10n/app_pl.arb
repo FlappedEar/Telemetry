@@ -73,6 +73,7 @@
   "coachMetricBrakingStart": "Punkt rozpoczęcia hamowania",
   "coachMetricCoastDistance": "Dystans jazdy bez gazu i hamulca",
   "coachMetricBrakingSpread": "Zakres punktów hamowania",
+  "coachMetricNextStraightTime": "Prosta za zakrętem",
   "coachReasonReady": "Najpierw pracuj nad głównym celem. Po pozostałe sięgnij dopiero, gdy on już wychodzi.",
   "coachReasonNoSegments": "Trener najpierw potrzebuje odcinków i czasów sektorów dnia.",
   "coachReasonNoLapInGroup": "{session}: wśród porównywanych okrążeń nie ma żadnego okrążenia tej sesji z pomiarem czasu.",

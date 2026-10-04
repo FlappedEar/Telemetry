@@ -293,6 +293,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricBrakingSpread => 'Zakres punktów hamowania';
 
   @override
+  String get coachMetricNextStraightTime => 'Prosta za zakrętem';
+
+  @override
   String get coachReasonReady =>
       'Najpierw pracuj nad głównym celem. Po pozostałe sięgnij dopiero, gdy on już wychodzi.';
 

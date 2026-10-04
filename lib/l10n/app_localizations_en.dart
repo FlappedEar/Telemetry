@@ -286,6 +286,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMetricBrakingSpread => 'Braking point range';
 
   @override
+  String get coachMetricNextStraightTime => 'Straight after it';
+
+  @override
   String get coachReasonReady =>
       'Work on the main focus first. Try the others only once it feels settled.';
 
