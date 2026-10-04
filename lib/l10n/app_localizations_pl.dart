@@ -629,6 +629,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Brak pewnych przejazdów przez linię start/meta; rodzaj okrążenia jest nieznany.';
 
   @override
+  String get noteNoGps =>
+      'To nagranie nie ma pozycji GPS; nie da się zmierzyć okrążeń.';
+
+  @override
   String get lapIssueLayoutUnresolved => 'Konfiguracja toru do potwierdzenia';
 
   @override

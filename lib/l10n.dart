@@ -123,7 +123,8 @@ extension DayNoteText on AppLocalizations {
     'Recording date and time unavailable; listed after the dated '
         'recordings in import order.' =>
       noteUndated,
-    'No reliable start/finish passes; lap type is unknown.' => noteNoPasses,
+    noPassesNote => noteNoPasses,
+    noGpsNote => noteNoGps,
     _ when text.startsWith(unexpectedRunError) => noteUnexpectedError(
       text.substring(unexpectedRunError.length),
     ),

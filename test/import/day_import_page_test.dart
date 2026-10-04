@@ -647,6 +647,28 @@ void main() {
     expect(calls, ['pick', 'pick']);
   });
 
+  testWidgets('a recording without GPS says GPS is missing', (tester) async {
+    pickers.recordings = [
+      write(
+        'no-gps.vbo',
+        '[column names]\ntime velocity\n[data]\n0 10\n1 11\n2 12\n',
+      ),
+    ];
+    await show(tester);
+    await tester.tap(find.text('Choose recordings…'));
+    await tester.pump();
+    importer.jobs.single.finish();
+    await tester.pump();
+    expect(
+      find.text('No laps: the recording has no usable GPS.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('No laps: the recording has no start/finish line.'),
+      findsNothing,
+    );
+  });
+
   testWidgets('imports picked recordings as sessions in recording order', (
     tester,
   ) async {

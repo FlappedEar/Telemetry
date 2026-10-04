@@ -1016,6 +1016,12 @@ abstract class AppLocalizations {
   /// **'No reliable start/finish passes; lap type is unknown.'**
   String get noteNoPasses;
 
+  /// Analysis note about a recording without GPS positions.
+  ///
+  /// In en, this message translates to:
+  /// **'No GPS positions in this recording; laps cannot be timed.'**
+  String get noteNoGps;
+
   /// Why a lap is not ranked.
   ///
   /// In en, this message translates to:

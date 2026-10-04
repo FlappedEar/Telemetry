@@ -59,6 +59,14 @@ final class DayMessage {
 /// [Error]); the error follows.
 const unexpectedRunError = 'Unexpected error while analysing this session: ';
 
+/// [DayMessage.text] of a session whose laps could not be timed: the
+/// start/finish line was not crossed reliably.
+const noPassesNote = 'No reliable start/finish passes; lap type is unknown.';
+
+/// [DayMessage.text] of a session without GPS positions, so no laps can be
+/// timed whatever the start/finish line.
+const noGpsNote = 'No GPS positions in this recording; laps cannot be timed.';
+
 /// Runs whose laps can be compared, with their ranking.
 final class DayGroup {
   const DayGroup({
@@ -154,6 +162,16 @@ String? sessionGateRevision(TelemetrySession session) => fet.gatesV1Revision([
       bLongitude: gate.endpointB.longitudeDegrees,
     ),
 ], westPositive: _westPositive(session));
+
+/// Whether [session] has GPS positions to time laps from: latitude and
+/// longitude channels, and its [laps] did not report
+/// [LapSessionStatus.noUsableGps] (only checked when there is a line). Lap
+/// detection checks the start/finish line first, as FlappedEar Overlays
+/// does, so a recording without GPS reports a missing line.
+bool hasGpsPositions(TelemetrySession session, LapSession laps) =>
+    laps.status != LapSessionStatus.noUsableGps &&
+    session.channels.containsKey(session.aliases['latitude']) &&
+    session.channels.containsKey(session.aliases['longitude']);
 
 bool _westPositive(TelemetrySession session) =>
     session.metadata['gpsLongitudeConvention'] == 'west-positive';
@@ -257,8 +275,9 @@ DayRunsPart analyzeDayRuns(
         );
       }
       if (run.laps.acceptedPasses.isEmpty) {
+        // Without GPS no start/finish line could help; say what is missing.
         messages.add(
-          DayMessage(run.runId, 'No reliable start/finish passes; lap type is unknown.'),
+          DayMessage(run.runId, hasGpsPositions(run.session, run.laps) ? noPassesNote : noGpsNote),
         );
       }
       rows.addAll(runRows);
