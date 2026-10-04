@@ -500,4 +500,78 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets(
+    'a phone with text ×2 keeps the segments in view, under the map',
+    (tester) async {
+      addTearDown(() => Intl.defaultLocale = null);
+      final outcome = importDay();
+      await tester.binding.setSurfaceSize(const Size(360, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+      );
+      addTearDown(controller.dispose);
+      final best = controller.ranking!.bestOfDay!;
+      final session = controller.session(best.runId)!;
+      final origin = mapOrigin(session);
+      final path = lapPath(session, best.start, best.end, origin: origin);
+      for (final locale in const [Locale('en'), Locale('pl')]) {
+        await tester.pumpWidget(
+          TelemetryApp(
+            locale: locale,
+            home: SegmentEditorPage(controller: controller, path: path),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$locale');
+        expect(find.byType(TrackMap), findsOneWidget);
+        // The list, header included, scrolls: its first segment is reached.
+        final id0 =
+            controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+        await tester.scrollUntilVisible(
+          find.byKey(ValueKey('segment $id0')),
+          100,
+          scrollable: find
+              .descendant(
+                of: find.byKey(const ValueKey('segmentList')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(tester.takeException(), isNull, reason: '$locale scrolled');
+        await tester.pumpWidget(const SizedBox());
+      }
+    },
+  );
+
+  testWidgets('a desktop window keeps the segments 760 wide', (tester) async {
+    final outcome = importDay();
+    await tester.binding.setSurfaceSize(const Size(1600, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      TelemetryApp(home: SegmentEditorPage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('segmentList'))).width,
+      lessThanOrEqualTo(760),
+    );
+    final id0 =
+        controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+    await tester.tap(find.byKey(ValueKey('segment $id0')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('applySegment'))).width,
+      lessThan(760),
+    );
+  });
 }

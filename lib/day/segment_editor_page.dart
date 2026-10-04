@@ -5,6 +5,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../ui/theme.dart';
 import 'day_results_controller.dart';
 import 'segment_review_page.dart';
 import 'theoretical_best_card.dart';
@@ -436,7 +437,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
                 ),
             ],
           );
-    final list = <Widget>[
+    // The state, its summary and the review: above the segments, or
+    // scrolling with them when the room left for the list is short.
+    final header = <Widget>[
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
         child: Row(
@@ -513,16 +516,40 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
         ),
       ),
       const Divider(height: 1),
+    ];
+    // At most 760 wide, like the review page, so a desktop form stays
+    // readable.
+    List<Widget> list({required bool scrollHeader}) => [
       Expanded(
-        child: ListView.builder(
-          key: const ValueKey('segmentList'),
-          itemCount: result.segments.length,
-          itemBuilder: (context, index) => _segmentRow(
-            context,
-            result,
-            index,
-            selected: index == selected,
-            busy: busy,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!scrollHeader) ...header,
+                Expanded(
+                  child: ListView.builder(
+                    key: const ValueKey('segmentList'),
+                    itemCount:
+                        (scrollHeader ? header.length : 0) +
+                        result.segments.length,
+                    itemBuilder: (context, index) {
+                      final first = scrollHeader ? header.length : 0;
+                      if (index < first) return header[index];
+                      return _segmentRow(
+                        context,
+                        result,
+                        index - first,
+                        selected: index - first == selected,
+                        busy: busy,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -533,11 +560,22 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
+        final sideways =
+            map != null &&
+            constraints.maxWidth > constraints.maxHeight &&
+            constraints.maxWidth >= 600;
+        // A short screen (or large text) keeps room for the list.
+        final mapHeight = (constraints.maxHeight * 0.35).clamp(140.0, 240.0);
+        // The header scrolls with the segments when it would leave them
+        // less than about two rows at the text size in use.
+        final room =
+            constraints.maxHeight -
+            4 -
+            (map != null && !sideways ? mapHeight : 0);
+        final short = room / MediaQuery.textScalerOf(context).scale(1) < 380;
         // Sideways (a phone in landscape): the map beside the list, so
         // the list keeps its height.
-        if (map != null &&
-            constraints.maxWidth > constraints.maxHeight &&
-            constraints.maxWidth >= 600) {
+        if (sideways) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -551,7 +589,7 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
                       flex: 3,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: list,
+                        children: list(scrollHeader: short),
                       ),
                     ),
                   ],
@@ -564,13 +602,8 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             progress,
-            if (map != null)
-              SizedBox(
-                // A short screen (or large text) keeps room for the list.
-                height: (constraints.maxHeight * 0.35).clamp(140.0, 240.0),
-                child: map,
-              ),
-            ...list,
+            if (map != null) SizedBox(height: mapHeight, child: map),
+            ...list(scrollHeader: short),
           ],
         );
       },
@@ -647,7 +680,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
             MapMark(
               point.eastMeters,
               point.northMeters,
-              const Color(0xffd95926),
+              // Purple: apart from every segment colour (amber, green,
+              // blue) on the map.
+              FetColors.of(context).dayBest,
               radius: 7,
             ),
           );
