@@ -344,7 +344,8 @@ class StickyTable extends StatelessWidget {
                   container: true,
                   excludeSemantics: true,
                   button: row.onTap != null,
-                  selected: row.selected,
+                  // Only a row that can be picked has a picked state.
+                  selected: row.onTap == null ? null : row.selected,
                   label: label,
                   onTap: row.onTap,
                   child: tappable,

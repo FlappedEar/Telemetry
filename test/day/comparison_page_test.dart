@@ -214,7 +214,7 @@ void main() {
     expect(
       find.bySemanticsLabel(
         RegExp(
-          r'^speed chart\. A: from 45(\.0)?\u00a0km/h to 182(\.0)?\u00a0km/h$',
+          r'^speed chart, A: from 45(\.0)?\u00a0km/h to 182(\.0)?\u00a0km/h$',
         ),
       ),
       findsOneWidget,

@@ -277,7 +277,7 @@ class TelemetryChart extends StatelessWidget {
                         displayUnitOf(context, title, line.series.unit),
                       ),
                     ),
-                ].join('. '),
+                ].join(', '),
                 child: Stack(
                   children: [
                     Positioned.fill(
