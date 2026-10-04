@@ -358,7 +358,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Do porównania potrzebne są dwa sklasyfikowane okrążenia jednego toru.';
 
   @override
-  String get comparePickTwoLaps => 'Wybierz dwa okrążenia';
+  String get comparePickTwoLaps => 'Porównaj dwa okrążenia';
 
   @override
   String get compareAgainstBest => 'Względem najlepszego okrążenia dnia';
@@ -925,6 +925,14 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get timeLossNone =>
       'Żadne okrążenie nie straciło czasu do najlepszego okrążenia w żadnym zmierzonym segmencie.';
+
+  @override
+  String get timeLossOnlySessionBest =>
+      'Przy jednej sesji jej najlepsze okrążenie jest najlepszym okrążeniem dnia, więc nie ma czego porównać. Wybierz Każde okrążenie, aby porównać wszystkie okrążenia.';
+
+  @override
+  String get timeLossNoOtherLap =>
+      'Nie ma innego okrążenia do porównania z najlepszym.';
 
   @override
   String timeLossShowAll(int count) {

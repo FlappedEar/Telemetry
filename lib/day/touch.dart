@@ -397,3 +397,19 @@ class TableCellText extends StatelessWidget {
     ),
   );
 }
+
+/// [child], a tappable row, read by a screen reader as one button with its
+/// text: what an InkWell alone does not say.
+class ButtonRow extends StatelessWidget {
+  const ButtonRow({super.key, required this.child, this.enabled = true});
+
+  final Widget child;
+
+  /// False when the row does nothing on a tap.
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) => MergeSemantics(
+    child: Semantics(button: true, enabled: enabled, child: child),
+  );
+}

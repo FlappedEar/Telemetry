@@ -5,6 +5,7 @@ import '../format.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
 import '../units.dart';
+import 'theoretical_best_card.dart' show CalculateAgainButton;
 import 'time_losses_card.dart' show TimeLossText;
 import 'track_map.dart';
 
@@ -128,6 +129,7 @@ class NextSessionCard extends StatelessWidget {
     this.wide = false,
     this.speedsConverted = false,
     this.withoutTheoreticalBest = false,
+    this.onRetry,
   });
 
   /// Null while it is prepared.
@@ -150,6 +152,9 @@ class NextSessionCard extends StatelessWidget {
 
   /// The theoretical best failed, so the coach cannot run.
   final bool withoutTheoreticalBest;
+
+  /// Prepares the plan again after [error].
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -176,9 +181,13 @@ class NextSessionCard extends StatelessWidget {
                 l10n.coachNoTheoreticalBest,
                 key: const ValueKey('coachReason'),
               )
-            else if (error.isNotEmpty)
-              Text(l10n.coachFailed(error), key: const ValueKey('coachReason'))
-            else if (loading || coach == null)
+            else if (error.isNotEmpty) ...[
+              Text(
+                l10n.coachFailed(l10n.taskFailure(error)),
+                key: const ValueKey('coachReason'),
+              ),
+              if (onRetry case final retry?) CalculateAgainButton(retry),
+            ] else if (loading || coach == null)
               Text(l10n.coachLoading)
             else ...[
               Text(

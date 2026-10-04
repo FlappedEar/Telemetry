@@ -195,22 +195,25 @@ class _LapCoastingPanelState extends State<LapCoastingPanel> {
                 const SizedBox(height: 8),
                 Text(l10n.coastingEpisodes, style: theme.textTheme.titleSmall),
                 for (final (index, episode) in summary.episodes.indexed)
-                  InkWell(
-                    key: ValueKey('lapCoastingEpisode $index'),
-                    onTap: () => widget.window.cursor.value = episode.startTime,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.my_location, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${names[episode.segmentId] ?? l10n.coastingIntoLap((episode.startTime - widget.row.start).toStringAsFixed(1))}'
-                              ' · ${amount(episode.seconds, episode.meters)}',
+                  ButtonRow(
+                    child: InkWell(
+                      key: ValueKey('lapCoastingEpisode $index'),
+                      onTap: () =>
+                          widget.window.cursor.value = episode.startTime,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.my_location, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${names[episode.segmentId] ?? l10n.coastingIntoLap((episode.startTime - widget.row.start).toStringAsFixed(1))}'
+                                ' · ${amount(episode.seconds, episode.meters)}',
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

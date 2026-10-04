@@ -1117,6 +1117,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           wide: wide,
           speedsConverted: _controller.coachSpeedsConverted,
           withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
+          onRetry: _controller.retryCoach,
         ),
         const SizedBox(height: 12),
         FocusAreasCard(
@@ -1263,12 +1264,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channels: channels,
         associations: _controller.temperatureAssociations,
         loading: loading,
+        onRetry: _controller.retryChannelSummaries,
         channelSource: _controller.channelSource,
       ),
       const SizedBox(height: 12),
       DriverCard(
         channels: channels,
         loading: loading,
+        onRetry: _controller.retryChannelSummaries,
         onOpenLap: _open,
         channelSource: _controller.channelSource,
       ),

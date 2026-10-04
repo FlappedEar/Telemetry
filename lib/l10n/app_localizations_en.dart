@@ -353,7 +353,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Comparing needs two ranked laps of one circuit.';
 
   @override
-  String get comparePickTwoLaps => 'Pick two laps';
+  String get comparePickTwoLaps => 'Compare two laps';
 
   @override
   String get compareAgainstBest => 'Against the best of the day';
@@ -369,7 +369,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get dayBestLabel => 'Best day';
+  String get dayBestLabel => 'Best lap of the day';
 
   @override
   String get theoreticalBestLabel => 'Theoretical best';
@@ -910,6 +910,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get timeLossNone =>
       'No lap lost time to the best lap in any timed segment.';
+
+  @override
+  String get timeLossOnlySessionBest =>
+      'With one session, its best lap is the best lap itself, so there is nothing to compare. Choose Every lap to compare all the laps.';
+
+  @override
+  String get timeLossNoOtherLap =>
+      'There is no other lap to compare with the best lap.';
 
   @override
   String timeLossShowAll(int count) {

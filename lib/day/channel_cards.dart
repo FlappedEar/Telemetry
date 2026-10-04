@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../l10n.dart';
+import 'touch.dart';
+import 'theoretical_best_card.dart' show CalculateAgainButton;
 
 /// The format of the other recording a session's channel came from ("RCZ"),
 /// or empty when it is the session's own (see
@@ -38,11 +40,11 @@ String channelLabel(AppLocalizations l10n, String name) =>
     };
 
 /// A reason or error from `telemetry_core` channel summaries in the app's
-/// language; one the app does not know is shown as written.
+/// language; a failure of the work itself is translated where it is known.
 String _channelReason(AppLocalizations l10n, String reason) => switch (reason) {
   channelRecordingUnavailable => l10n.channelRecordingUnavailable,
   'Channel summaries were cancelled.' => l10n.channelSummariesCancelled,
-  _ => reason,
+  _ => l10n.taskFailure(reason),
 };
 
 /// The unit as shown: "°C" for a recording's "C".
@@ -156,6 +158,7 @@ class CarCard extends StatelessWidget {
     required this.channels,
     this.associations,
     this.loading = false,
+    this.onRetry,
     this.channelSource,
   });
 
@@ -163,6 +166,9 @@ class CarCard extends StatelessWidget {
   final DayChannelSummaries? channels;
   final TemperatureAssociations? associations;
   final bool loading;
+
+  /// Summarizes the channels again after they failed.
+  final VoidCallback? onRetry;
 
   /// Where a session's channel came from; its own recording when null.
   final ChannelSource? channelSource;
@@ -183,9 +189,10 @@ class CarCard extends StatelessWidget {
             const SizedBox(height: 4),
             if (loading || channels == null)
               Text(l10n.channelCarReading)
-            else if (channels.error.isNotEmpty)
-              Text(_channelReason(l10n, channels.error))
-            else if (names.isEmpty)
+            else if (channels.error.isNotEmpty) ...[
+              Text(_channelReason(l10n, channels.error)),
+              if (onRetry case final retry?) CalculateAgainButton(retry),
+            ] else if (names.isEmpty)
               Text(
                 l10n.channelCarNoChannels,
                 key: const ValueKey('carNoChannels'),
@@ -214,53 +221,55 @@ class CarCard extends StatelessWidget {
       final channel = run.channel(name);
       if (channel != null && unit.isEmpty) unit = channel.unit;
     }
-    return InkWell(
-      key: ValueKey('carChannel $name'),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => ChannelPage(
-            title: channelLabel(l10n, name),
-            channel: name,
-            channels: channels,
-            association: association,
+    return ButtonRow(
+      child: InkWell(
+        key: ValueKey('carChannel $name'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ChannelPage(
+              title: channelLabel(l10n, name),
+              channel: name,
+              channels: channels,
+              association: association,
+            ),
           ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${channelLabel(l10n, name)} · $name'
-                    '${unit.isEmpty ? ' · ${l10n.channelUnitsNotDeclared}' : ''}',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  for (final run in channels.runs)
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      '${l10n.session(run.runName)}: ${run.unavailableReason.isNotEmpty ? _channelReason(l10n, run.unavailableReason) : channelSummaryText(l10n, run.channel(name)?.run, unit)}'
-                      '${channelSourceSuffix(context, channelSource?.call(run.runId, name) ?? '')}',
-                      style: theme.textTheme.bodySmall,
+                      '${channelLabel(l10n, name)} · $name'
+                      '${unit.isEmpty ? ' · ${l10n.channelUnitsNotDeclared}' : ''}',
+                      style: theme.textTheme.titleSmall,
                     ),
-                  if (association != null) ...[
-                    Text(
-                      associationText(l10n, 'lapTime', association.lapTime),
-                      key: ValueKey('carAssociation $name'),
-                    ),
-                    if (association.confoundedByOrder)
+                    for (final run in channels.runs)
                       Text(
-                        l10n.channelConfounded,
+                        '${l10n.session(run.runName)}: ${run.unavailableReason.isNotEmpty ? _channelReason(l10n, run.unavailableReason) : channelSummaryText(l10n, run.channel(name)?.run, unit)}'
+                        '${channelSourceSuffix(context, channelSource?.call(run.runId, name) ?? '')}',
                         style: theme.textTheme.bodySmall,
                       ),
+                    if (association != null) ...[
+                      Text(
+                        associationText(l10n, 'lapTime', association.lapTime),
+                        key: ValueKey('carAssociation $name'),
+                      ),
+                      if (association.confoundedByOrder)
+                        Text(
+                          l10n.channelConfounded,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: theme.colorScheme.outline),
-          ],
+              Icon(Icons.chevron_right, color: theme.colorScheme.outline),
+            ],
+          ),
         ),
       ),
     );
@@ -375,6 +384,7 @@ class DriverCard extends StatelessWidget {
     super.key,
     required this.channels,
     this.loading = false,
+    this.onRetry,
     this.onOpenLap,
     this.channelSource,
   });
@@ -382,6 +392,9 @@ class DriverCard extends StatelessWidget {
   /// Null until the channel summaries are calculated.
   final DayChannelSummaries? channels;
   final bool loading;
+
+  /// Summarizes the channels again after they failed.
+  final VoidCallback? onRetry;
   final void Function(DayLapRow lap)? onOpenLap;
 
   /// Where a session's heart rate came from; its own recording when null.
@@ -402,9 +415,10 @@ class DriverCard extends StatelessWidget {
             const SizedBox(height: 4),
             if (loading || channels == null)
               Text(l10n.channelDriverReading)
-            else if (channels.error.isNotEmpty)
-              Text(_channelReason(l10n, channels.error))
-            else if (!channels.hasHeartRate)
+            else if (channels.error.isNotEmpty) ...[
+              Text(_channelReason(l10n, channels.error)),
+              if (onRetry case final retry?) CalculateAgainButton(retry),
+            ] else if (!channels.hasHeartRate)
               Text(
                 l10n.channelDriverNoHeartRate,
                 key: const ValueKey('driverNoHeartRate'),

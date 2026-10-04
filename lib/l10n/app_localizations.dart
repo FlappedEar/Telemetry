@@ -641,7 +641,7 @@ abstract class AppLocalizations {
   /// Button that asks for lap A, then lap B, and opens their comparison.
   ///
   /// In en, this message translates to:
-  /// **'Pick two laps'**
+  /// **'Compare two laps'**
   String get comparePickTwoLaps;
 
   /// Heading over suggested comparisons: each session's best lap against the day's best lap.
@@ -665,7 +665,7 @@ abstract class AppLocalizations {
   /// Label of the day's best lap, at the top of the day page and on the lap page's blue bar.
   ///
   /// In en, this message translates to:
-  /// **'Best day'**
+  /// **'Best lap of the day'**
   String get dayBestLabel;
 
   /// Label of the theoretical best: the fastest time of each segment added up.
@@ -1417,6 +1417,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No lap lost time to the best lap in any timed segment.'**
   String get timeLossNone;
+
+  /// Time losses with the Each session's best scope on a one-session day: no lap is compared.
+  ///
+  /// In en, this message translates to:
+  /// **'With one session, its best lap is the best lap itself, so there is nothing to compare. Choose Every lap to compare all the laps.'**
+  String get timeLossOnlySessionBest;
+
+  /// Time losses with Every lap when the day has only the best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no other lap to compare with the best lap.'**
+  String get timeLossNoOtherLap;
 
   /// Button that shows every time loss instead of the first ones.
   ///

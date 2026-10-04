@@ -5,6 +5,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'touch.dart';
 import 'channel_cards.dart';
 import 'focus_areas_card.dart';
 import 'theoretical_best_card.dart' show TheoreticalBestText;
@@ -212,26 +213,29 @@ class DayReportPage extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final open = onOpenLap;
-    return InkWell(
-      key: key,
-      onTap: open == null || reference == null ? null : () => open(reference),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(primary),
-                  if (secondary.isNotEmpty)
-                    Text(secondary, style: theme.textTheme.bodySmall),
-                ],
+    return ButtonRow(
+      enabled: open != null && reference != null,
+      child: InkWell(
+        key: key,
+        onTap: open == null || reference == null ? null : () => open(reference),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(primary),
+                    if (secondary.isNotEmpty)
+                      Text(secondary, style: theme.textTheme.bodySmall),
+                  ],
+                ),
               ),
-            ),
-            if (open != null && reference != null)
-              Icon(Icons.chevron_right, color: theme.colorScheme.outline),
-          ],
+              if (open != null && reference != null)
+                Icon(Icons.chevron_right, color: theme.colorScheme.outline),
+            ],
+          ),
         ),
       ),
     );

@@ -3,7 +3,7 @@
 <p class="lead">The day page leads with your best lap and its map, then explains where the time is. On a wide screen the analysis is on the left and the laps on the right, with <strong>Day</strong> and <strong>Compare</strong> in a rail at the side; on a phone the bar at the bottom switches between <strong>Day</strong>, <strong>Laps</strong> and <strong>Compare</strong>.</p>
 
 <figure>
-  <img src="assets/screens/day-wide.png" alt="Day results with the amber Best day and blue Theoretical best bars, the best lap's speed-coloured map, and the lap list" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/day-wide.png" alt="Day results with the amber Best lap of the day and blue Theoretical best bars, the best lap's speed-coloured map, and the lap list" width="1280" height="800" loading="lazy">
 </figure>
 
 <h2 id="toolbar">The toolbar</h2>
@@ -35,8 +35,8 @@
   <li><strong>Add to the day</strong> (or <strong>Start the new day</strong>) confirms. If a session was added to the day meanwhile, for example one shared from RaceChrono, or the files changed, nothing is added and the message asks you to review them again.</li>
 </ul>
 
-<h2 id="best">Best day</h2>
-<p>The page opens with two bars. The amber <strong>Best day</strong> bar names the best lap of the day and its time; tap it to open the lap. The blue <strong>Theoretical best</strong> bar adds up the fastest time of every segment, once it has been calculated (see <a href="theoretical-best.html">Theoretical best</a>). Below them, the best lap's trace is coloured by speed (purple slow, yellow fast) with the speed range underneath; tap it to open the lap too.</p>
+<h2 id="best">Best lap of the day</h2>
+<p>The page opens with two bars. The amber <strong>Best lap of the day</strong> bar names that lap and its time; tap it to open the lap. The blue <strong>Theoretical best</strong> bar adds up the fastest time of every segment, once it has been calculated (see <a href="theoretical-best.html">Theoretical best</a>). Below them, the best lap's trace is coloured by speed (purple slow, yellow fast) with the speed range underneath; tap it to open the lap too.</p>
 <p>If there is no best lap, the card says why, for example that no session has enough complete GPS laps to identify its circuit. In that case <strong>Set the circuit…</strong> opens the circuit of the first such session (see <a href="#circuits">Circuits</a>).</p>
 
 <h2 id="next">Next session</h2>
@@ -53,6 +53,7 @@
 <p>There are at most three items: at most two changes, each in a different corner, and one thing to keep. Choose one at a time. The suggestions look for an early lift, too much coasting, a low minimum speed and a late throttle return, using the rules of the earlier DrivingCoach app on this app's own laps and corners. They suggest an opportunity, not a promised gain. A change is only suggested when it was seen on at least three laps of the session.</p>
 <p>Speeds carry the unit your recordings declare, without a unit when they declare none, and are never converted. They follow the speed unit setting for recordings that declare no unit. If the recordings declare different units, or a speed channel declares a unit other than km/h, the coach's speeds are left out (shown as —) and the card says why.</p>
 <p>When there is nothing to suggest, the card says why: for example that a pattern was seen on fewer than three laps, that no lap of the session has a faster lap to compare with, or that throttle and brake are not recorded (lift, coasting and throttle return then cannot be compared). The <a href="theoretical-best.html#look-next">Where to look next</a> card under it lists observations: places worth a closer look, without telling you what to do.</p>
+<p>If the suggestions could not be prepared, the card says why; <strong>Calculate again</strong> tries once more.</p>
 
 <h2 id="groups">Compared laps (groups)</h2>
 <p>Laps are only ranked against laps driven on the same layout, in the same direction, with the same start/finish line. The app forms these groups by itself. Under the best lap a line such as <em>Group 1 · Detected route · Counterclockwise · 15 of 15 laps ranked</em> says which group the page shows.</p>

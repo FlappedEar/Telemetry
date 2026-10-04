@@ -528,7 +528,7 @@
   "@compareNeedsTwoLaps": {
     "description": "Shown in the Compare section when the day has fewer than two comparable laps."
   },
-  "comparePickTwoLaps": "Pick two laps",
+  "comparePickTwoLaps": "Compare two laps",
   "@comparePickTwoLaps": {
     "description": "Button that asks for lap A, then lap B, and opens their comparison."
   },
@@ -556,7 +556,7 @@
       }
     }
   },
-  "dayBestLabel": "Best day",
+  "dayBestLabel": "Best lap of the day",
   "@dayBestLabel": {
     "description": "Label of the day's best lap, at the top of the day page and on the lap page's blue bar."
   },
@@ -1306,6 +1306,14 @@
   "timeLossNone": "No lap lost time to the best lap in any timed segment.",
   "@timeLossNone": {
     "description": "Shown when no lap lost time anywhere."
+  },
+  "timeLossOnlySessionBest": "With one session, its best lap is the best lap itself, so there is nothing to compare. Choose Every lap to compare all the laps.",
+  "@timeLossOnlySessionBest": {
+    "description": "Time losses with the Each session's best scope on a one-session day: no lap is compared."
+  },
+  "timeLossNoOtherLap": "There is no other lap to compare with the best lap.",
+  "@timeLossNoOtherLap": {
+    "description": "Time losses with Every lap when the day has only the best lap."
   },
   "timeLossShowAll": "Show all {count}",
   "@timeLossShowAll": {
