@@ -177,6 +177,51 @@ void main() {
     expect(find.text('Not available · A: not recorded'), findsOneWidget);
   });
 
+  testWidgets('a screen reader hears each line\'s lowest and highest value', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final cursor = ValueNotifier(0.0);
+    addTearDown(cursor.dispose);
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: TelemetryChart(
+            title: 'speed',
+            lines: [
+              ChartLine(
+                'A',
+                const ChartSeries(
+                  segments: [
+                    [(x: 0, y: 45), (x: 1, y: 182)],
+                  ],
+                  minimum: 45,
+                  maximum: 182,
+                  unit: 'km/h',
+                ),
+                lapAColorForTest,
+              ),
+            ],
+            start: 0,
+            end: 1,
+            cursor: cursor,
+            onCursor: (value) => cursor.value = value,
+            valueAxis: (40, 190),
+          ),
+        ),
+      ),
+    );
+    expect(
+      find.bySemanticsLabel(
+        RegExp(
+          r'^speed chart, A: from 45(\.0)?\u00a0km/h to 182(\.0)?\u00a0km/h$',
+        ),
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
+  });
+
   testWidgets('with very large text a lap header wraps, keeping the lap', (
     tester,
   ) async {

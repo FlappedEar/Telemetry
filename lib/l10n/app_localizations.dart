@@ -1250,6 +1250,18 @@ abstract class AppLocalizations {
   /// **'Fastest'**
   String get tbFastestRow;
 
+  /// One cell of a sector table row, as a screen reader says it.
+  ///
+  /// In en, this message translates to:
+  /// **'{column}: {value}'**
+  String tbCellLabel(String column, String value);
+
+  /// A sector table time that is the segment's fastest, as a screen reader says it.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}, the fastest'**
+  String tbFastestCell(String value);
+
   /// An automatically named corner segment.
   ///
   /// In en, this message translates to:
@@ -3889,6 +3901,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{channel} chart'**
   String chartSemantics(String channel);
+
+  /// Screen reader summary of one chart line: its lowest and highest value in the range shown. line is empty or a lap label with a colon, like 'A: '.
+  ///
+  /// In en, this message translates to:
+  /// **'{line}from {low} to {high}'**
+  String chartSemanticsRange(String line, String low, String high);
 
   /// Tooltip of the zoom out button of the charts.
   ///

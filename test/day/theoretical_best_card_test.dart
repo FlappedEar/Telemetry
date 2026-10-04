@@ -93,12 +93,44 @@ void main() {
       );
       expect(find.byKey(const ValueKey('lossMap')), findsOneWidget);
       expect(find.byKey(const ValueKey('sectorTable')), findsOneWidget);
+      final semantics = tester.ensureSemantics();
+      var picked = 0;
       for (final lap in expected.laps) {
+        final row = find.byKey(ValueKey('sectorRow ${lap.lap.displayName}'));
+        expect(row, findsOneWidget);
+        // One button per row, which names every column with its time.
+        final node = tester.getSemantics(row);
+        expect(node, isSemantics(isButton: true, hasTapAction: true));
+        expect(node.label, startsWith(english.lap(lap.lap)));
         expect(
-          find.byKey(ValueKey('sectorRow ${lap.lap.displayName}')),
-          findsOneWidget,
+          node.label,
+          contains('Time: ${displayTime(lap.lap.durationSeconds)}'),
         );
+        expect(node.label, contains('Corner 1: '));
+        if (node.flagsCollection.isSelected.toBoolOrNull() ?? false) ++picked;
       }
+      // The lap shown on the map, and no other.
+      expect(picked, 1);
+      // The footer adds up to the theoretical best, and is not a button.
+      final footer = find.bySemanticsLabel(RegExp('^Fastest; Time: '));
+      expect(footer, findsOneWidget);
+      expect(tester.getSemantics(footer), isNot(isSemantics(isButton: true)));
+      final fastest = expected.segments.first;
+      final source = expected.laps.firstWhere(
+        (lap) => lap.lap.reference == fastest.sourceLapReference,
+      );
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(ValueKey('sectorRow ${source.lap.displayName}')),
+            )
+            .label,
+        contains(
+          '${english.tbSegmentName(fastest.name)}: '
+          '${fastest.seconds!.toStringAsFixed(3)}, the fastest',
+        ),
+      );
+      semantics.dispose();
       expect(find.text('Corner 1'), findsWidgets);
       expect(tester.takeException(), isNull);
     },

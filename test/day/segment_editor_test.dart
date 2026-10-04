@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -617,5 +618,53 @@ void main() {
       tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
       isTrue,
     );
+  });
+
+  testWidgets('a screen reader hears that the laps are being timed', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final gate = Completer<void>();
+    var calls = 0;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      theoreticalBestRunner: (job) async {
+        // The first timing at once, the one after the edit held.
+        if (++calls > 1) await gate.future;
+        return job();
+      },
+    );
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      TelemetryApp(home: SegmentEditorPage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    final id0 =
+        controller.theoreticalBest!.approvedSegment(0)!['id']! as String;
+    await tester.tap(find.byKey(ValueKey('segment $id0')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('segmentName')),
+      'Hairpin',
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('applySegment')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('applySegment')));
+    await tester.pump();
+    expect(controller.theoreticalBestLoading, isTrue);
+    expect(
+      find.bySemanticsLabel('Timing every lap on one track axis…'),
+      findsOneWidget,
+    );
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel('Timing every lap on one track axis…'),
+      findsNothing,
+    );
+    semantics.dispose();
   });
 }

@@ -137,6 +137,12 @@ class TelemetryChart extends StatelessWidget {
     return chartValueText(value, scale, unit);
   }
 
+  String _summaryValue(double value, String unit) {
+    if (delta) return displayDelta(value);
+    final scale = math.max(valueAxis.$1.abs(), valueAxis.$2.abs());
+    return chartValueText(value, scale, unit);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -255,7 +261,23 @@ class TelemetryChart extends StatelessWidget {
               onHorizontalDragUpdate: (details) =>
                   move(details.localPosition, constraints.maxWidth),
               child: Semantics(
-                label: l10n.chartSemantics(title),
+                // What the lines show, not just their name: each line's
+                // lowest and highest value in the range shown.
+                label: [
+                  l10n.chartSemantics(title),
+                  for (final line in shown)
+                    l10n.chartSemanticsRange(
+                      line.label.isEmpty ? '' : '${line.label}: ',
+                      _summaryValue(
+                        line.series.minimum,
+                        displayUnitOf(context, title, line.series.unit),
+                      ),
+                      _summaryValue(
+                        line.series.maximum,
+                        displayUnitOf(context, title, line.series.unit),
+                      ),
+                    ),
+                ].join(', '),
                 child: Stack(
                   children: [
                     Positioned.fill(

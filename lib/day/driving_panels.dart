@@ -317,38 +317,48 @@ class _ComparisonGgPanelState
           ],
         ),
         const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final side = math.min(constraints.maxWidth, 360.0);
-            return Center(
-              child: SizedBox.square(
-                dimension: side,
-                child: Semantics(
-                  label: l10n.drivingGgSemantics(
-                    peak(0, (p) => p.combined),
-                    peak(1, (p) => p.combined),
-                  ),
-                  child: CustomPaint(
-                    key: const ValueKey('ggPlot'),
-                    painter: GgPainter(
-                      laps: laps,
-                      axisLabels: [
-                        l10n.drivingGgAccelerating,
-                        l10n.drivingGgBraking,
-                        l10n.drivingGgLeft,
-                        l10n.drivingGgRight,
-                      ],
-                      gridColor: theme.colorScheme.outlineVariant,
-                      labelStyle: theme.textTheme.labelSmall!.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+        // No lap to draw: say why in place of empty axes.
+        if (!laps.any((lap) => lap.valid))
+          Text(
+            [
+              for (final slot in const [0, 1])
+                '${_lapNames[slot]}: ${samples(slot)}',
+            ].join(' · '),
+            key: const ValueKey('ggEmpty'),
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final side = math.min(constraints.maxWidth, 360.0);
+              return Center(
+                child: SizedBox.square(
+                  dimension: side,
+                  child: Semantics(
+                    label: l10n.drivingGgSemantics(
+                      peak(0, (p) => p.combined),
+                      peak(1, (p) => p.combined),
+                    ),
+                    child: CustomPaint(
+                      key: const ValueKey('ggPlot'),
+                      painter: GgPainter(
+                        laps: laps,
+                        axisLabels: [
+                          l10n.drivingGgAccelerating,
+                          l10n.drivingGgBraking,
+                          l10n.drivingGgLeft,
+                          l10n.drivingGgRight,
+                        ],
+                        gridColor: theme.colorScheme.outlineVariant,
+                        labelStyle: theme.textTheme.labelSmall!.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
         const SizedBox(height: 8),
         Table(
           columnWidths: const {

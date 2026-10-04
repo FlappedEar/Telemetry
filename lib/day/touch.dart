@@ -250,6 +250,8 @@ final class StickyRow {
     required this.cells,
     this.onTap,
     this.color,
+    this.semanticsLabel,
+    this.selected = false,
   });
 
   final Key? key;
@@ -257,6 +259,13 @@ final class StickyRow {
   final List<Widget> cells;
   final VoidCallback? onTap;
   final Color? color;
+
+  /// The whole row as a screen reader says it, in place of its cells one
+  /// by one, which say a column of numbers with no column names.
+  final String? semanticsLabel;
+
+  /// Whether the row is the one picked.
+  final bool selected;
 }
 
 /// A table whose first column stays in place while the other columns scroll
@@ -319,6 +328,31 @@ class StickyTable extends StatelessWidget {
       final colored = row.color == null
           ? content
           : ColoredBox(color: row.color!, child: content);
+      if (row.semanticsLabel case final label?) {
+        final tappable = row.onTap == null
+            ? colored
+            : InkWell(
+                onTap: row.onTap,
+                excludeFromSemantics: true,
+                child: colored,
+              );
+        // One node for the row, on its first part.
+        return KeyedSubtree(
+          key: key,
+          child: lead
+              ? Semantics(
+                  container: true,
+                  excludeSemantics: true,
+                  button: row.onTap != null,
+                  // Only a row that can be picked has a picked state.
+                  selected: row.onTap == null ? null : row.selected,
+                  label: label,
+                  onTap: row.onTap,
+                  child: tappable,
+                )
+              : ExcludeSemantics(child: tappable),
+        );
+      }
       if (row.onTap == null) return KeyedSubtree(key: key, child: colored);
       return InkWell(
         key: key,

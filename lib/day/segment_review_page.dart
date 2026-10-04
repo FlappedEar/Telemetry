@@ -227,7 +227,16 @@ class _SegmentReviewPageState extends State<SegmentReviewPage> {
       children: [
         SizedBox(
           height: 4,
-          child: busy ? const LinearProgressIndicator() : null,
+          // Said when it appears: the strip alone says nothing to a screen
+          // reader.
+          child: busy
+              ? Semantics(
+                  liveRegion: true,
+                  child: LinearProgressIndicator(
+                    semanticsLabel: context.l10n.segmentEditorTiming,
+                  ),
+                )
+              : null,
         ),
         Expanded(
           child: ListView.builder(

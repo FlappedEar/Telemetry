@@ -779,6 +779,16 @@ class AppLocalizationsPl extends AppLocalizations {
   String get tbFastestRow => 'Najszybciej';
 
   @override
+  String tbCellLabel(String column, String value) {
+    return '$column: $value';
+  }
+
+  @override
+  String tbFastestCell(String value) {
+    return '$value, najszybszy';
+  }
+
+  @override
   String tbSegmentCorner(String number) {
     return 'Zakręt $number';
   }
@@ -2645,6 +2655,11 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String chartSemantics(String channel) {
     return 'Wykres: $channel';
+  }
+
+  @override
+  String chartSemanticsRange(String line, String low, String high) {
+    return '${line}od $low do $high';
   }
 
   @override
