@@ -107,6 +107,8 @@ class ProfileLibrary extends ChangeNotifier {
       await _read();
     } finally {
       _loaded = true;
+      // Also when there is no profile, so a page waiting for it says so.
+      notifyListeners();
     }
   }
 

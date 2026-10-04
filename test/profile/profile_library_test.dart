@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/library_page.dart';
@@ -14,6 +15,7 @@ import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../day/day_results_page_test.dart' show FakeDocuments, circuitVbo;
+import '../day/recovery_test.dart' show FileRecoveryStore;
 import '../support/temp_directory.dart';
 
 void main() {
@@ -550,6 +552,103 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('libraryDay-e1')));
       expect(opened, [p.join(profileFolder(), 'Days', 'e1.fetproject')]);
       await shelf.flush();
+    });
+
+    testWidgets('says the library cannot be used once it is read', (
+      tester,
+    ) async {
+      final shelf = ProfileLibrary(
+        store: const _NoFolder(),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: _inPlace,
+      );
+      // Not read before the page opens, as when it is opened first.
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: shelf, open: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.textContaining('cannot be used now'), findsOneWidget);
+    });
+
+    testWidgets('opens a day with its changes kept for recovery', (
+      tester,
+    ) async {
+      final store = FileRecoveryStore(
+        p.join(directory.path, 'support', 'day-recovery.json'),
+      );
+      final shelf = library();
+      late String saved;
+      late Future<void> Function() recorded;
+      await tester.runAsync(() async {
+        final outcome = importDay({
+          'a.vbo': [30, 28, 31],
+          'b.vbo': [29, 32],
+        });
+        final controller = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          name: 'Test day',
+          recovery: store,
+          writer: writer,
+        );
+        saved = (await shelf.dayPath(controller.eventId))!;
+        await controller.save(saved);
+        recorded = () => shelf.recordDay(
+          eventId: controller.eventId,
+          path: saved,
+          name: controller.name,
+          analysis: controller.analysis,
+        );
+        // A change the app ended before saving: kept for recovery only.
+        expect(
+          controller.exclude(outcome.analysis!.ranking!.bestOfDay!, 'Traffic'),
+          isTrue,
+        );
+        await controller.flushRecovery();
+        controller.dispose();
+      });
+      // Recorded on the test's clock, where the library's writes run.
+      await recorded();
+      await shelf.flush();
+      Future<void> settle() async {
+        for (var i = 0; i < 10; ++i) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pumpAndSettle();
+        }
+      }
+
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            documents: FakeDocuments(),
+            recovery: store,
+            library: shelf,
+          ),
+        ),
+      );
+      await settle();
+      await tester.tap(find.byKey(const ValueKey('openLibrary')));
+      await settle();
+      await tester.tap(find.textContaining('Test day'));
+      await tester.runAsync(() async {
+        for (var i = 0; i < 100; ++i) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          if (find.byType(DayResultsPage).evaluate().isNotEmpty) break;
+          await tester.pump();
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(DayResultsPage), findsOneWidget);
+      // The restored change has the day's mark of unsaved changes.
+      expect(find.textContaining('Test day •'), findsOneWidget);
     });
 
     testWidgets('says where days will go while it is empty', (tester) async {

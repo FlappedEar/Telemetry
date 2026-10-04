@@ -758,10 +758,16 @@ class _DayImportPageState extends State<DayImportPage> {
         }
       }
     }
-    final modified = {
-      for (final path in days) path: File(path).lastModifiedSync(),
-    };
-    return days..sort((a, b) => modified[b]!.compareTo(modified[a]!));
+    final modified = <String, DateTime>{};
+    for (final path in days) {
+      try {
+        modified[path] = File(path).lastModifiedSync();
+      } on FileSystemException {
+        // Gone meanwhile: not listed.
+      }
+    }
+    return modified.keys.toList()
+      ..sort((a, b) => modified[b]!.compareTo(modified[a]!));
   }
 
   /// Shows the library; a day chosen there opens here.
@@ -776,7 +782,20 @@ class _DayImportPageState extends State<DayImportPage> {
         ),
       ),
     );
-    if (chosen != null && mounted) await _openDay(chosen);
+    if (chosen == null || !mounted) return;
+    // Changes to that day not saved yet (the app ended before its save)
+    // are opened with it, as Restore does, so its next save keeps them.
+    final eventId = [
+      for (final day in library.profile?.days ?? const <ProfileDay>[])
+        if (library.pathOf(day) == chosen) day.eventId,
+    ].firstOrNull;
+    final recovered = await queueRecovery(widget.recovery.load);
+    if (!mounted) return;
+    if (eventId != null && recovered?.eventId == eventId) {
+      await _restore(recovered!);
+    } else {
+      await _openDay(chosen);
+    }
   }
 
   // Built outside the state so the isolate's closure holds only the path.

@@ -473,7 +473,16 @@ class _DayResultsPageState extends State<DayResultsPage> {
       await _save(quiet: true);
     } finally {
       _leaving = false;
-      if (mounted && (route?.isCurrent ?? false)) Navigator.of(context).pop();
+      // Not while work begun meanwhile holds the day open (see canPop).
+      if (mounted &&
+          (route?.isCurrent ?? false) &&
+          !_controller.adding &&
+          !_controller.recordingsBusy &&
+          !_controller.savingWaitsForRecordings &&
+          !_relinking &&
+          !_preparingReview) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
