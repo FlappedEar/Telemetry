@@ -55,6 +55,23 @@ void main() {
     expect(result.axisLengthMeters, greaterThan(0));
   });
 
+  test('automatic segments can be kept as approved, once, without history', () {
+    final edits = DaySegmentEdits();
+    final result = calculate(edits);
+    expect(edits.keepAutomatic(result), isTrue);
+    expect(edits.keepAutomatic(result), isFalse);
+    expect(edits.canUndo, isFalse);
+    final kept = calculate(edits);
+    expect(kept.automaticSegments, isFalse);
+    expect(kept.segmentRunId, result.segmentRunId);
+    expect(
+      [for (final s in kept.runSegments) s['id']],
+      [for (final s in result.runSegments) s['id']],
+    );
+    // Approved segments are not automatic, so there is nothing more to keep.
+    expect(DaySegmentEdits().keepAutomatic(kept), isFalse);
+  });
+
   test('a rename keeps the automatic bounds but is an edit', () {
     final edits = DaySegmentEdits();
     var result = calculate(edits);

@@ -1882,7 +1882,13 @@ final class DayResultsController extends ChangeNotifier {
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
     _revision++;
-    if (adding) _resetTheoreticalBest();
+    if (adding) {
+      // The day's corners stay the ones in use when sessions are added: the
+      // automatic segments are kept, as saving would keep them, rather than
+      // proposed again from a new best lap.
+      if (_theoreticalBest case final best?) _segmentEdits.keepAutomatic(best);
+      _resetTheoreticalBest();
+    }
     _resetChannelSummaries();
     // Each RCZ is aligned and fused once the sessions show. One added to a
     // session that already names an RCZ (one that was not found, say) takes
