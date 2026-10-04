@@ -111,20 +111,15 @@ final class PlatformRecordingPickers implements RecordingPickers {
   }
 }
 
-String _lapSummary(
-  AppLocalizations l10n,
-  LapSession laps,
-  TelemetrySession session,
-) {
+String _lapSummary(AppLocalizations l10n, _SessionRow row) {
   // Lap detection looks for the start/finish line before GPS; without GPS
   // the line is not what is missing.
-  if (laps.status != LapSessionStatus.available &&
-      !hasGpsPositions(session, laps)) {
+  if (row.status != LapSessionStatus.available && !row.hasGps) {
     return l10n.importPageNoGps;
   }
-  switch (laps.status) {
+  switch (row.status) {
     case LapSessionStatus.available:
-      return l10n.importPageLaps(laps.timedLaps.length);
+      return l10n.importPageLaps(row.lapCount);
     case LapSessionStatus.noSourceStartGate:
       return l10n.importPageNoGate;
     case LapSessionStatus.ambiguousSourceStartGate:
@@ -505,11 +500,11 @@ class _DayImportPageState extends State<DayImportPage> {
     final behind = ModalRoute.of(context)?.isCurrent == false;
     // Also with a dialog or another page over this one: today's day is
     // continued, and shown over them.
-    if (!_controller.isWorking && !_controller.isReviewing && !_opening) {
+    if (!_controller.isWorking && !_opening) {
       unawaited(_continueToday(paths));
       return;
     }
-    if (_controller.isWorking || _controller.isReviewing) {
+    if (_controller.isWorking) {
       // Not refused: they follow the import running now.
       (_afterImport ??= []).addAll(paths);
       return;
@@ -618,6 +613,15 @@ class _DayImportPageState extends State<DayImportPage> {
   ) async {
     // From the share, opening the day included (see the diagnostics).
     final clock = Stopwatch()..start();
+    // The saved day just left here comes first, as the import page shows
+    // it: also when an older day's unsaved work waits for recovery. Adding
+    // to it saves it again in its file and leaves that work alone.
+    final closed = _lastDay;
+    final closedPath = closed?.documentPath;
+    if (closed != null && !closed.dirty && closedPath != null) {
+      final day = await _added(paths, clock, () => _openSaved(closedPath));
+      if (day != null) return (day: day, snapshotLeft: false);
+    }
     final recovery = await queueRecovery(widget.recovery.load);
     if (recovery != null) {
       if (!_recent(recovery.timestamp)) return (day: null, snapshotLeft: true);
@@ -636,24 +640,25 @@ class _DayImportPageState extends State<DayImportPage> {
       return (day: day, snapshotLeft: day == null);
     }
     final day = await _added(paths, clock, () async {
-      // The day closed last here, saved anywhere (on desktop the app keeps
-      // no list of saved days), else the day saved last in the app.
-      final closed = _lastDay?.documentPath;
-      final saved = [?closed, ...await widget.documents.savedDays()];
-      if (saved.isEmpty || !_recent(File(saved.first).lastModifiedSync())) {
-        return null;
-      }
-      await widget.fileAccess.restore();
-      final day = await Isolate.run(_openJob(saved.first));
-      return day.analysis == null
-          ? null
-          : DayResultsController.opened(
-              day,
-              recovery: widget.recovery,
-              appender: widget.appender,
-            );
+      final saved = await widget.documents.savedDays();
+      return saved.isEmpty ? null : _openSaved(saved.first);
     });
     return (day: day, snapshotLeft: false);
+  }
+
+  /// The day saved at [path] when it was saved in the last day; null
+  /// otherwise or when none of its recordings can be read.
+  Future<DayResultsController?> _openSaved(String path) async {
+    if (!_recent(File(path).lastModifiedSync())) return null;
+    await widget.fileAccess.restore();
+    final day = await Isolate.run(_openJob(path));
+    return day.analysis == null
+        ? null
+        : DayResultsController.opened(
+            day,
+            recovery: widget.recovery,
+            appender: widget.appender,
+          );
   }
 
   /// The day [open] gives with [paths] added as recordings of its date;
@@ -690,15 +695,28 @@ class _DayImportPageState extends State<DayImportPage> {
     }
   }
 
-  /// Imports a folder as a new day, which opens by itself.
-  void _startDay(List<String> paths) {
+  /// Imports a folder as a new day, which opens by itself, unless a day's
+  /// unsaved work waits for recovery: opening the new day would replace it,
+  /// so the import then stays here, next to the offer to restore that work.
+  Future<void> _startDay(List<String> paths) async {
     if (paths.isEmpty || !mounted) return;
     _unopenedShares = const [];
-    if (_controller.isWorking || _controller.isReviewing || _opening) {
+    if (_controller.isWorking || _opening) {
       _start(paths);
       return;
     }
-    _showWhenImported = true;
+    var nothingKept = false;
+    try {
+      nothingKept = await queueRecovery(widget.recovery.load) == null;
+    } on Exception catch (error) {
+      debugPrint('Recovery not checked before importing a folder: $error');
+    }
+    if (!mounted) return;
+    if (_controller.isWorking || _opening) {
+      _start(paths);
+      return;
+    }
+    _showWhenImported = nothingKept;
     _start(paths);
   }
 
@@ -817,7 +835,7 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _pickFolder() async {
     final folder = await widget.pickers.pickFolder();
     if (folder == null) return;
-    _startDay([folder]);
+    await _startDay([folder]);
   }
 
   @override
@@ -869,7 +887,7 @@ class _DayImportPageState extends State<DayImportPage> {
                 if (paths.isEmpty) return;
                 // A folder is a day; recordings are its next sessions.
                 if (paths.any(FileSystemEntity.isDirectorySync)) {
-                  _startDay(paths);
+                  unawaited(_startDay(paths));
                 } else {
                   _unopenedShares = const [];
                   _receive(paths);
@@ -881,7 +899,7 @@ class _DayImportPageState extends State<DayImportPage> {
   }
 
   List<Widget> _choices(BuildContext context) {
-    final enabled = !_controller.isWorking && !_controller.isReviewing;
+    final enabled = !_controller.isWorking;
     final recovered = _recovered;
     return [
       if (_lastDay case final day?)
@@ -1074,7 +1092,7 @@ class _DayImportPageState extends State<DayImportPage> {
         ),
       ),
       const SizedBox(height: 12),
-      _sessions(context, day.runs, day.analysis),
+      _sessions(context, day.rows, day.ranking),
       const SizedBox(height: 16),
     ];
   }
@@ -1209,8 +1227,6 @@ class _DayImportPageState extends State<DayImportPage> {
             ),
           ),
         ];
-      case DayImportReviewing():
-        return const [];
       case DayImportCancelled():
         return [
           _banner(
@@ -1259,7 +1275,9 @@ class _DayImportPageState extends State<DayImportPage> {
             ),
           ],
           const SizedBox(height: 12),
-          _sessions(context, runs, analysis),
+          _sessions(context, [
+            for (final named in runs) _SessionRow.of(named),
+          ], analysis?.ranking),
           ...notes(finishedNotes),
         ];
     }
@@ -1272,33 +1290,32 @@ class _DayImportPageState extends State<DayImportPage> {
   // its recording's fastest lap.
   Widget _sessions(
     BuildContext context,
-    List<NamedRun> runs,
-    DayAnalysis? analysis,
+    List<_SessionRow> runs,
+    DayRanking? ranking,
   ) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final colors = FetColors.of(context);
-    final ranking = analysis?.ranking;
     final bests = [
-      for (final named in runs)
-        switch (ranking?.runs.where((run) => run.runId == named.run.id)) {
+      for (final row in runs)
+        switch (ranking?.runs.where((run) => run.runId == row.runId)) {
           final ranked? when ranked.isNotEmpty =>
             ranked.first.bestLap?.durationSeconds,
-          _ => _bestSeconds(named.run.laps),
+          _ => row.fastest,
         },
     ];
     final dayBestRun = ranking?.bestOfDay?.runId;
     // A ranked session with laps but none ranked says so, as on the day page.
     String summary(int i) {
-      final laps = runs[i].run.laps;
-      final ranked = ranking?.runs.where((run) => run.runId == runs[i].run.id);
+      final row = runs[i];
+      final ranked = ranking?.runs.where((run) => run.runId == row.runId);
       return ranked != null &&
               ranked.isNotEmpty &&
               bests[i] == null &&
-              laps.status == LapSessionStatus.available &&
-              laps.timedLaps.isNotEmpty
-          ? l10n.noRankedLap(laps.timedLaps.length)
-          : _lapSummary(l10n, laps, runs[i].run.telemetry);
+              row.status == LapSessionStatus.available &&
+              row.lapCount > 0
+          ? l10n.noRankedLap(row.lapCount)
+          : _lapSummary(l10n, row);
     }
 
     return Card(
@@ -1345,10 +1362,10 @@ class _DayImportPageState extends State<DayImportPage> {
                           displayTime(seconds),
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontFamily: FetTheme.mono,
-                            fontWeight: runs[i].run.id == dayBestRun
+                            fontWeight: runs[i].runId == dayBestRun
                                 ? FontWeight.w700
                                 : null,
-                            color: runs[i].run.id == dayBestRun
+                            color: runs[i].runId == dayBestRun
                                 ? colors.dayBest
                                 : null,
                           ),
@@ -1371,19 +1388,47 @@ final class _ClosedDay {
   _ClosedDay.of(DayResultsController day)
     : eventId = day.eventId,
       name = day.name,
-      runs = day.runs,
-      analysis = day.analysis,
+      rows = [for (final named in day.runs) _SessionRow.of(named)],
+      ranking = day.ranking,
       documentPath = day.documentPath,
       dirty = day.dirty;
 
   final String eventId;
   final String name;
-  final List<NamedRun> runs;
-  final DayAnalysis analysis;
+
+  /// The sessions as listed; not their telemetry, which the day keeps.
+  final List<_SessionRow> rows;
+  final DayRanking? ranking;
 
   /// Where the day was saved or opened from; null when never saved.
   final String? documentPath;
 
   /// Whether it had changes not in [documentPath], kept for recovery.
   final bool dirty;
+}
+
+/// What the import page lists of a session.
+final class _SessionRow {
+  _SessionRow.of(NamedRun named)
+    : name = named.name,
+      runId = named.run.id,
+      status = named.run.laps.status,
+      lapCount = named.run.laps.status == LapSessionStatus.available
+          ? named.run.laps.timedLaps.length
+          : 0,
+      fastest = _bestSeconds(named.run.laps),
+      hasGps =
+          named.run.laps.status == LapSessionStatus.available ||
+          hasGpsPositions(named.run.telemetry, named.run.laps);
+
+  final String name;
+  final String runId;
+  final LapSessionStatus status;
+
+  /// Timed laps; 0 without laps.
+  final int lapCount;
+
+  /// The recording's fastest timed lap, in seconds; null without one.
+  final double? fastest;
+  final bool hasGps;
 }

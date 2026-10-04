@@ -5480,19 +5480,19 @@ abstract class AppLocalizations {
   /// Explains the import page on desktops.
   ///
   /// In en, this message translates to:
-  /// **'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions recorded on the date of the day you worked on last are added to it.'**
+  /// **'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.'**
   String get importPageIntroDrop;
 
   /// Explains the import page when folders can be picked.
   ///
   /// In en, this message translates to:
-  /// **'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions recorded on the date of the day you worked on last are added to it.'**
+  /// **'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.'**
   String get importPageIntroFolder;
 
   /// Explains the import page on phones.
   ///
   /// In en, this message translates to:
-  /// **'Choose the VBO or RCZ recording of each session as you drive. Sessions recorded on the date of the day you worked on last are added to it.'**
+  /// **'Choose the VBO or RCZ recording of each session as you drive. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.'**
   String get importPageIntro;
 
   /// Button: pick recordings to import.
@@ -5567,7 +5567,7 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 session imported} other{{count} sessions imported}}'**
   String importPageSessionsImported(int count);
 
-  /// Button: open the imported day.
+  /// Button: open an imported day, or the day closed last.
   ///
   /// In en, this message translates to:
   /// **'Open the day'**

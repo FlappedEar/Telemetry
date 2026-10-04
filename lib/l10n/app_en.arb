@@ -5367,15 +5367,15 @@
   "@importPageDiscardEllipsis": {
     "description": "Button: asks before discarding the unsaved changes."
   },
-  "importPageIntroDrop": "Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions recorded on the date of the day you worked on last are added to it.",
+  "importPageIntroDrop": "Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.",
   "@importPageIntroDrop": {
     "description": "Explains the import page on desktops."
   },
-  "importPageIntroFolder": "Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions recorded on the date of the day you worked on last are added to it.",
+  "importPageIntroFolder": "Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.",
   "@importPageIntroFolder": {
     "description": "Explains the import page when folders can be picked."
   },
-  "importPageIntro": "Choose the VBO or RCZ recording of each session as you drive. Sessions recorded on the date of the day you worked on last are added to it.",
+  "importPageIntro": "Choose the VBO or RCZ recording of each session as you drive. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.",
   "@importPageIntro": {
     "description": "Explains the import page on phones."
   },
@@ -5442,8 +5442,9 @@
   },
   "importPageShowResults": "Open the day",
   "@importPageShowResults": {
-    "description": "Button: open the imported day."
-  },  "importPageDayUnsaved": "Not saved yet; changes kept from {time}.",
+    "description": "Button: open an imported day, or the day closed last."
+  },
+  "importPageDayUnsaved": "Not saved yet; changes kept from {time}.",
   "@importPageDayUnsaved": {
     "description": "Under the day closed last: it has unsaved changes, kept since this time.",
     "placeholders": {
@@ -5471,7 +5472,6 @@
   "@importPageOpeningDay": {
     "description": "A day is being opened, or recordings added to today's day before it shows."
   },
-
   "importPageRecordingTypes": "VBO and RCZ recordings",
   "@importPageRecordingTypes": {
     "description": "The file type shown in the file picker when choosing recordings."

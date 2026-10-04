@@ -689,6 +689,125 @@ void main() {
       expect(importer.jobs.last.request.paths, [shared, next]);
     });
 
+    /// The import page with [store] and desktop choices; [open] is the day
+    /// "Open a saved day…" picks.
+    Future<void> showDesktop(WidgetTester tester, {String? open}) async {
+      await tester.binding.setSurfaceSize(const Size(800, 3000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            controller: controller,
+            pickers: pickers,
+            picksFolders: true,
+            recovery: store,
+            appender: _SyncAppender(),
+            documents: _SavedDays(const [], open: open),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('a folder does not replace another day\'s unsaved work', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => keepUnsaved(write('a.vbo', _datedVbo(hour: 10))),
+      );
+      final before = await tester.runAsync(store.load);
+      Directory('${directory.path}/day').createSync();
+      write('day/run.vbo', _datedVbo(hour: 9, day: 5));
+      pickers.folder = '${directory.path}/day';
+      await showDesktop(tester);
+      await tester.tap(find.text('Choose a folder…'));
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      importer.jobs.single.finish();
+      await tester.pumpAndSettle();
+      // Imported, but not opened: it stays here to be opened by hand.
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
+      expect(find.text('Open the day'), findsOneWidget);
+      final after = await tester.runAsync(store.load);
+      expect(after!.eventId, before!.eventId);
+      expect(after.timestamp, before.timestamp);
+    });
+
+    testWidgets('a picked recording of another date leaves unsaved work', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => keepUnsaved(write('a.vbo', _datedVbo(hour: 10))),
+      );
+      final before = await tester.runAsync(store.load);
+      pickers.recordings = [write('b.vbo', _datedVbo(hour: 12, day: 5))];
+      await showDesktop(tester);
+      await tester.tap(find.text('Import sessions…'));
+      await pumpUntil(tester, () => importer.jobs.isNotEmpty);
+      importer.jobs.single.finish();
+      await tester.pumpAndSettle();
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
+      final after = await tester.runAsync(store.load);
+      expect(after!.eventId, before!.eventId);
+      expect(after.timestamp, before.timestamp);
+    });
+
+    testWidgets('the saved day just left takes the session before older '
+        'unsaved work', (tester) async {
+      // A saved day of 2 October, and unsaved work on another day.
+      final saved = '${directory.path}/Saved.fetproject';
+      await tester.runAsync(() async {
+        final outcome = runDayImport((
+          paths: [write('a.vbo', _datedVbo(hour: 10))],
+          includeSubfolders: false,
+        ));
+        final day = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+        );
+        await day.save(saved);
+        day.dispose();
+        await keepUnsaved(write('x.vbo', _datedVbo(hour: 9, day: 5)));
+      });
+      final before = await tester.runAsync(store.load);
+      await showDesktop(tester, open: saved);
+      await tester.tap(find.text('Open a saved day…'));
+      await pumpUntil(
+        tester,
+        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      Navigator.of(tester.element(find.byType(DayResultsPage))).pop();
+      await tester.pumpAndSettle();
+      await pumpUntil(
+        tester,
+        () => find
+            .descendant(
+              of: find.byKey(const ValueKey('lastDay')),
+              matching: find.text('Saved as Saved.fetproject.'),
+            )
+            .evaluate()
+            .isNotEmpty,
+      );
+
+      pickers.recordings = [write('b.vbo', _datedVbo(hour: 12, speed: 80))];
+      await tester.tap(find.text('Import sessions…'));
+      await pumpUntil(
+        tester,
+        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      expect(importer.jobs, isEmpty);
+      final runs = (readDayDocument(saved)['event'] as Map)['runs'] as List;
+      expect(runs, hasLength(2));
+      // The other day's unsaved work is as it was.
+      final after = await tester.runAsync(store.load);
+      expect(after!.eventId, before!.eventId);
+      expect(after.timestamp, before.timestamp);
+      await tester.pumpWidget(const SizedBox());
+      await settleRecovery(tester);
+    });
+
     testWidgets('a recording of another date starts its own day', (
       tester,
     ) async {
@@ -944,8 +1063,7 @@ void main() {
     pickers.folder = '${directory.path}/day';
     await show(tester);
 
-    await tester.tap(find.text('Choose a folder…'));
-    await tester.pump();
+    await pick(tester, button: 'Choose a folder…');
     importer.jobs.last.finish();
     await tester.pump();
     expect(
@@ -957,8 +1075,7 @@ void main() {
     await tester.tap(find.text('Include subfolders'));
     await tester.pump();
     expect(tester.widget<Checkbox>(find.byType(Checkbox).first).value, isTrue);
-    await tester.tap(find.text('Choose a folder…'));
-    await tester.pump();
+    await pick(tester, button: 'Choose a folder…');
     expect(importer.jobs.last.request.includeSubfolders, isTrue);
     // A folder is a whole day, which opens by itself.
     await finishAndGoBack(tester);
@@ -1088,18 +1205,21 @@ void main() {
 
 /// Answers with fixed saved days, newest first.
 final class _SavedDays implements DocumentPickers {
-  _SavedDays(this.days, {this.saveTo});
+  _SavedDays(this.days, {this.saveTo, this.open});
 
   final List<String> days;
 
   /// Where Save puts a day; null as if the dialog was closed.
   final String? saveTo;
 
+  /// The day "Open a saved day…" picks; null as if the dialog was closed.
+  final String? open;
+
   @override
   Future<String?> saveLocation(String name) async => saveTo;
 
   @override
-  Future<String?> pickDocument() async => null;
+  Future<String?> pickDocument() async => open;
 
   @override
   Future<String?> pickFolder() async => null;

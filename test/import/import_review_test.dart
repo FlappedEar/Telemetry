@@ -168,39 +168,6 @@ void main() {
       expect(outcome.runs, isEmpty);
       expect(outcome.analysis, isNull);
     });
-
-    test(
-      'the controller waits for the review and imports as confirmed',
-      () async {
-        final importer = _Importer();
-        final preparer = _Preparer();
-        final controller = DayImportController(
-          importer: importer,
-          preparer: preparer,
-        );
-        addTearDown(controller.dispose);
-        expect(controller.review([vbo, rcz], includeSubfolders: false), isTrue);
-        await pumpEventQueue();
-        final review = controller.state as DayImportReviewing;
-        expect(importer.choices, isEmpty, reason: 'nothing imported yet');
-        // A second import waits until the review ends.
-        expect(controller.start([other], includeSubfolders: false), isFalse);
-        final id = review.plan.runs.map((run) => run.id).toList();
-        expect(controller.confirm({id[0]: skipRecording}), isFalse);
-        expect(controller.confirm({for (final run in id) run: run}), isTrue);
-        await pumpEventQueue();
-        final finished = controller.state as DayImportFinished;
-        expect(finished.runs, hasLength(2));
-        expect(finished.alternatives, isEmpty);
-
-        expect(controller.review([other], includeSubfolders: false), isTrue);
-        await pumpEventQueue();
-        expect(controller.isReviewing, isTrue);
-        controller.cancel();
-        expect(controller.state, isA<DayImportCancelled>());
-        expect(importer.choices, hasLength(1));
-      },
-    );
   });
 
   group('an addition as reviewed', () {

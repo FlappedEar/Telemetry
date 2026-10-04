@@ -3616,15 +3616,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importPageIntroDrop =>
-      'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions recorded on the date of the day you worked on last are added to it.';
+      'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day, or drop them here. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.';
 
   @override
   String get importPageIntroFolder =>
-      'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions recorded on the date of the day you worked on last are added to it.';
+      'Choose the VBO or RCZ recording of each session as you drive, or a folder with a whole day. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.';
 
   @override
   String get importPageIntro =>
-      'Choose the VBO or RCZ recording of each session as you drive. Sessions recorded on the date of the day you worked on last are added to it.';
+      'Choose the VBO or RCZ recording of each session as you drive. Sessions of the same date as the day you worked on last, in the last 24 hours, are added to it.';
 
   @override
   String get importPageChooseRecordings => 'Import sessions…';
