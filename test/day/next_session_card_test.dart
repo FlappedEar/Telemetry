@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,7 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:telemetry/day/background_task.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/corner_details.dart' show lapAColor, lapBColor;
 import 'package:telemetry/day/next_session_card.dart';
+import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
@@ -59,7 +62,14 @@ void main() {
 
   // A plan with one change and one improvement, on the day's own laps and
   // first corner, as the coach would give it.
-  DayCoach plan(DayTheoreticalBest result, String runId) {
+  DayCoach plan(
+    DayTheoreticalBest result,
+    String runId, {
+    CoachGoalOutcome goal = CoachGoalOutcome.better,
+    String? measuredName,
+    bool lift = false,
+    bool braking = false,
+  }) {
     final laps = [for (final sectors in result.laps) sectors.lap];
     final segment = result.segments.firstWhere(
       (s) => s.type == 'corner',
@@ -103,18 +113,26 @@ void main() {
         ),
       ],
     );
-    final change = finding(
-      CoachKind.lowMinimumSpeed,
-      CoachMetric.minimumSpeed,
-      'km/h',
-      [laps.last],
-    );
-    final keep = finding(
-      CoachKind.improving,
-      CoachMetric.minimumSpeed,
-      'km/h',
-      [laps.first],
-    );
+    // With [lift], a lift point 46.94 m along the lap against 53.71 m.
+    final change = braking
+        ? finding(
+            CoachKind.inconsistentBraking,
+            CoachMetric.brakingStart,
+            'm',
+            [laps.last],
+          )
+        : lift
+        ? finding(CoachKind.earlyLift, CoachMetric.liftPoint, 'm', [laps.last])
+        : finding(CoachKind.lowMinimumSpeed, CoachMetric.minimumSpeed, 'km/h', [
+            laps.last,
+          ]);
+    final keep = lift
+        ? finding(CoachKind.improving, CoachMetric.throttleReturn, 'm', [
+            laps.first,
+          ])
+        : finding(CoachKind.improving, CoachMetric.minimumSpeed, 'km/h', [
+            laps.first,
+          ]);
     return DayCoach(
       runId: runId,
       findings: [change, keep],
@@ -122,6 +140,16 @@ void main() {
       plan: [CoachItem(change), CoachItem(keep)],
       reason: CoachReason.ready,
       slowLaps: [laps.last],
+      // The session before's focus, checked again.
+      goal: CoachGoalCheck(
+        runId: earlier.first.runId,
+        runName: earlier.first.runName,
+        finding: change,
+        outcome: goal,
+        measuredName: measuredName ?? segment.name,
+        before: goal == CoachGoalOutcome.notMeasured ? null : 44.04,
+        now: goal == CoachGoalOutcome.notMeasured ? null : 46.94,
+      ),
     );
   }
 
@@ -136,6 +164,10 @@ void main() {
     List<NamedRun> Function(List<NamedRun> runs)? editRuns,
     CoachRunner? coachRunner,
     TheoreticalBestRunner? theoreticalBestRunner,
+    CoachGoalOutcome goal = CoachGoalOutcome.better,
+    String? measuredName,
+    bool lift = false,
+    bool braking = false,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -148,7 +180,14 @@ void main() {
       coachRunner:
           coachRunner ??
           (job) async => withPlan
-              ? plan(controller.theoreticalBest!, controller.latestRunId)
+              ? plan(
+                  controller.theoreticalBest!,
+                  controller.latestRunId,
+                  goal: goal,
+                  measuredName: measuredName,
+                  lift: lift,
+                  braking: braking,
+                )
               : job(),
     );
     await tester.pumpWidget(
@@ -274,8 +313,147 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the session before\'s main focus is checked again', (
+    tester,
+  ) async {
+    await show(tester);
+    final goal = find.byKey(const ValueKey('coachGoal'));
+    expect(goal, findsOneWidget);
+    expect(
+      find.descendant(
+        of: goal,
+        matching: find.text('Main focus from Session 1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      'Minimum speed: 44.0\u00a0km/h then, 46.9\u00a0km/h in this session. '
+      'Better.',
+    );
+    // Measured at the same corner: nothing more to say.
+    expect(find.byKey(const ValueKey('coachGoalMeasuredAt')), findsNothing);
+    // Above the plan.
+    expect(
+      tester.getTopLeft(goal).dy,
+      lessThan(tester.getTopLeft(find.byKey(const ValueKey('coachItem 0'))).dy),
+    );
+  });
+
+  testWidgets('a focus measured at a corner drawn differently today says '
+      'where', (tester) async {
+    await show(tester, measuredName: 'Corners 5–8');
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('coachGoalMeasuredAt')))
+          .data,
+      "Measured at Corners 5–8, as today's corners divide the track.",
+    );
+  });
+
+  testWidgets('a focus no corner of today\'s matches says so', (tester) async {
+    await show(tester, goal: CoachGoalOutcome.notMeasured, measuredName: '');
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      "Not measured: today's corners no longer include it.",
+    );
+  });
+
+  testWidgets('a focus not measured again says so, without values', (
+    tester,
+  ) async {
+    await show(tester, goal: CoachGoalOutcome.notMeasured);
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      'Not measured in this session.',
+    );
+  });
+
+  testWidgets('Why? marks this session\'s point and the faster laps\' on '
+      'the map', (tester) async {
+    await show(tester, lift: true);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
+    await tester.pumpAndSettle();
+    final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
+    expect(map.marks.map((mark) => mark.color), [lapBColor, lapAColor]);
+    // On the best lap's line, where it was 54 m and 47 m along the lap.
+    final page = tester.widget<CoachItemPage>(find.byType(CoachItemPage));
+    final best = page.result.bestLap!;
+    for (final (mark, progress) in [
+      (map.marks[0], 53.71),
+      (map.marks[1], 46.94),
+    ]) {
+      final at = lapPathPointAt(
+        page.path!,
+        page.result.timeAt(best, progress)!,
+      )!;
+      expect(mark.east, closeTo(at.east, 1e-9));
+      expect(mark.north, closeTo(at.north, 1e-9));
+    }
+    final [faster, own] = map.marks;
+    final apart = sqrt(
+      pow(faster.east - own.east, 2) + pow(faster.north - own.north, 2),
+    );
+    expect(apart, inInclusiveRange(4, 8));
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachMapThis'))).data,
+      "Lift point: this session's laps",
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachMapFaster'))).data,
+      'Lift point: your faster laps',
+    );
+  });
+
+  testWidgets('Why? for the braking marker compares with the three fastest '
+      'laps', (tester) async {
+    await show(tester, braking: true);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
+    await tester.pumpAndSettle();
+    final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
+    expect(map.marks, hasLength(2));
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('coachMapFaster')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachMapFaster'))).data,
+      'Braking start: your three fastest laps today',
+    );
+  });
+
+  testWidgets('Why? for an improvement to keep has no points on the map', (
+    tester,
+  ) async {
+    await show(tester, lift: true);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
+    await tester.pumpAndSettle();
+    final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
+    expect(map.marks, isEmpty);
+  });
+
+  testWidgets('Why? for a speed item has no points on the map', (tester) async {
+    await show(tester);
+    await reveal(tester, find.byKey(const ValueKey('coachWhy 0')));
+    await tester.tap(find.byKey(const ValueKey('coachWhy 0')));
+    await tester.pumpAndSettle();
+    final map = tester.widget<TrackMap>(find.byKey(const ValueKey('coachMap')));
+    expect(map.marks, isEmpty);
+    expect(find.byKey(const ValueKey('coachMapThis')), findsNothing);
+  });
+
   testWidgets('in Polish', (tester) async {
     await show(tester, locale: const Locale('pl'));
+    expect(find.text('Główny cel po sesji: Sesja 1'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
+      'Prędkość minimalna: w poprzedniej sesji 44.0\u00a0km/h, w tej 46.9\u00a0km/h. '
+      'Lepiej.',
+    );
     expect(find.text('Następna sesja'), findsOneWidget);
     expect(find.text('Główny cel'), findsOneWidget);
     expect(find.text('Gdy to już wychodzi'), findsOneWidget);

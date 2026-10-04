@@ -37,9 +37,12 @@ import '../analysis/coasting_analysis.dart';
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
 import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
 import '../analysis/exit_metrics.dart' show exitFollowsGap, exitTruncated;
+import '../analysis/outing_theoretical_best.dart' show OutingRun;
+import '../operation.dart';
 import '../analysis/track_progress.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
+import 'day_analysis.dart';
 import 'day_corners.dart';
 import 'day_laps.dart';
 import 'day_theoretical_best.dart';
@@ -294,6 +297,80 @@ final class CoachItem {
   String get action => finding.action;
 }
 
+/// How a session did on the main focus of the session before it.
+enum CoachGoalOutcome {
+  /// Better than in the session before.
+  better,
+
+  /// About the same as in the session before.
+  unchanged,
+
+  /// Worse than in the session before.
+  worse,
+
+  /// Fewer than two laps (three for the braking range) of either session
+  /// have the measure at that segment.
+  notMeasured,
+}
+
+/// The main focus the coach gave after the session before ([runName]),
+/// measured again on the session coached: the median across each session's
+/// laps at that segment (the braking range for the braking marker), slow
+/// laps left out. Observed, not proof the advice caused it.
+final class CoachGoalCheck {
+  const CoachGoalCheck({
+    required this.runId,
+    required this.runName,
+    required this.finding,
+    required this.outcome,
+    this.measuredName = '',
+    this.before,
+    this.now,
+    this.beforeLaps = 0,
+    this.nowLaps = 0,
+  });
+
+  /// The session before, whose main focus this is.
+  final String runId;
+  final String runName;
+
+  /// That focus, as the coach gives it with the day's laps up to the
+  /// session before; its first evidence row names the measure.
+  final CoachFinding finding;
+
+  final CoachGoalOutcome outcome;
+
+  /// Today's corner the focus was measured at: the one overlapping it
+  /// most, by name; empty when none does.
+  final String measuredName;
+
+  /// The measure across the session before's laps, and the session
+  /// coached's ([finding]'s first evidence unit); null when not measured.
+  final double? before;
+  final double? now;
+  final int beforeLaps;
+  final int nowLaps;
+
+  CoachMetric get metric => finding.evidence.first.key;
+  String get unit => finding.evidence.first.unit;
+
+  /// In English (the app words it from the fields).
+  String get summary {
+    final what = '${finding.segmentName}, ${finding.evidence.first.metric.toLowerCase()}';
+    if (outcome == CoachGoalOutcome.notMeasured) {
+      return 'Focus from $runName ($what): not measured in this session.';
+    }
+    String value(double v) => unit == 'm' ? '${v.round()} m' : '${v.toStringAsFixed(1)} $unit';
+    final verdict = switch (outcome) {
+      CoachGoalOutcome.better => 'better',
+      CoachGoalOutcome.unchanged => 'about the same',
+      CoachGoalOutcome.worse => 'worse',
+      CoachGoalOutcome.notMeasured => '',
+    };
+    return 'Focus from $runName ($what): ${value(before!)} then, ${value(now!)} now: $verdict.';
+  }
+}
+
 /// The coach's view of one session of a day.
 final class DayCoach {
   DayCoach({
@@ -303,6 +380,7 @@ final class DayCoach {
     required this.reason,
     this.speedsConverted = false,
     List<DayLapRow> slowLaps = const [],
+    this.goal,
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan),
        slowLaps = List.unmodifiable(slowLaps);
@@ -329,6 +407,10 @@ final class DayCoach {
 
   /// The one thing to work on first; null when the plan is empty.
   CoachItem? get focus => plan.isEmpty ? null : plan.first;
+
+  /// How the session coached did on the main focus the coach gave for the
+  /// session before it; null when there was no such change to work on.
+  final CoachGoalCheck? goal;
 
   final CoachReason reason;
 
@@ -555,6 +637,50 @@ double? _liftProgress(
   return result;
 }
 
+/// The day's theoretical best as it stood before [runId] was added: of
+/// the runs recorded before it ([dayWithRuns]), in the group [groupId] when
+/// it is chosen again; null when no run comes before it. What [dayCoach]
+/// takes as `before`.
+DayTheoreticalBest? dayBeforeRun(
+  DayAnalysis analysis,
+  Map<String, OutingRun> runs,
+  String runId, {
+  Iterable<Object?> documentRuns = const [],
+  Map<DayLapReference, String> exclusions = const {},
+  String? groupId,
+  math.Random? random,
+  CancellationCheck? cancelled,
+}) {
+  final earlier = <String>{};
+  for (final row in analysis.rows) {
+    if (row.runId == runId) break;
+    earlier.add(row.runId);
+  }
+  if (earlier.isEmpty) return null;
+  final day = dayWithRuns(
+    analysis,
+    earlier,
+    exclusions: exclusions,
+    preferredGroupId: groupId,
+    cancelled: cancelled,
+  );
+  return dayTheoreticalBest(
+    day,
+    {
+      for (final MapEntry(:key, :value) in runs.entries)
+        if (earlier.contains(key)) key: value,
+    },
+    // Segments saved on a later run (the best lap's, when it is later)
+    // were not there then.
+    documentRuns: [
+      for (final run in documentRuns)
+        if (run is Map && earlier.contains(run['id'])) run,
+    ],
+    random: random,
+    cancelled: cancelled,
+  );
+}
+
 /// What the coach suggests for the next session after session [runId] (the
 /// day's latest), from [result]'s laps and corners and the day's recordings
 /// in [sessions] by run id.
@@ -562,7 +688,33 @@ DayCoach dayCoach(
   DayTheoreticalBest result,
   Map<String, TelemetrySession?> sessions, {
   required String runId,
+  DayTheoreticalBest? before,
 }) {
+  final passages = <String, List<_Passage>>{};
+  final coach = _dayCoach(result, sessions, runId: runId, passages: passages);
+  if (coach.reason == CoachReason.noSegments || before == null) return coach;
+  final goal = _goalCheck(result, before, sessions, runId, passages);
+  if (goal == null) return coach;
+  return DayCoach(
+    runId: coach.runId,
+    findings: coach.findings,
+    plan: coach.plan,
+    reason: coach.reason,
+    speedsConverted: coach.speedsConverted,
+    slowLaps: coach.slowLaps,
+    goal: goal,
+  );
+}
+
+/// The coach of [runId] (see [dayCoach]); each corner's passages go in
+/// [passages] by segment id.
+DayCoach _dayCoach(
+  DayTheoreticalBest result,
+  Map<String, TelemetrySession?> sessions, {
+  required String runId,
+  Map<String, List<_Passage>>? passages,
+}) {
+  final passagesOut = passages;
   final computed = result.computed;
   if (result.state != DayTheoreticalBestState.ready || computed == null) {
     return DayCoach(runId: runId, reason: CoachReason.noSegments);
@@ -720,6 +872,7 @@ DayCoach dayCoach(
         ),
       );
     }
+    passagesOut?[corner.segmentId] = passages;
     if (passages.any((p) => p.lap.runId == coached)) measured = true;
     if (passages.length < 2) continue;
     if (_hasFasterLap(passages, coached)) faster = true;
@@ -771,6 +924,151 @@ DayCoach dayCoach(
         : !pedals
         ? CoachReason.noPedals
         : CoachReason.noPattern,
+  );
+}
+
+/// How the session coached did on the main focus the coach gave for the
+/// session before it, with [before], the day as it stood then; null when
+/// there is no session before, [before] is not the day up to it, or its
+/// focus was not a change. The focus is measured at the corner of today's
+/// segments overlapping it most ([passages]).
+CoachGoalCheck? _goalCheck(
+  DayTheoreticalBest result,
+  DayTheoreticalBest before,
+  Map<String, TelemetrySession?> sessions,
+  String coached,
+  Map<String, List<_Passage>> passages,
+) {
+  final laps = [for (final sectors in result.laps) sectors.lap];
+  final runs = <String>[];
+  for (final lap in laps) {
+    if (!runs.contains(lap.runId)) runs.add(lap.runId);
+  }
+  final at = runs.indexOf(coached);
+  if (at < 1) return null;
+  final previous = runs[at - 1];
+  final then = {for (final sectors in before.laps) sectors.lap.runId};
+  if (!then.contains(previous) || then.contains(coached)) return null;
+  final focus = _dayCoach(before, sessions, runId: previous).focus?.finding;
+  if (focus == null || !focus.kind.corrective) return null;
+  final runName = laps.firstWhere((lap) => lap.runId == previous).runName;
+  CoachGoalCheck unmeasured([String measuredName = '']) => CoachGoalCheck(
+    runId: previous,
+    runName: runName,
+    finding: focus,
+    outcome: CoachGoalOutcome.notMeasured,
+    measuredName: measuredName,
+  );
+
+  final shownCorner = before.corners.where((c) => c.segmentId == focus.segmentId).firstOrNull;
+  if (shownCorner == null) return unmeasured();
+  final match = coachMatchingSegment(
+    (start: shownCorner.startProgressMeters, end: shownCorner.endProgressMeters),
+    [for (final c in result.corners) (start: c.startProgressMeters, end: c.endProgressMeters)],
+  );
+  final corner = match == null ? null : result.corners[match];
+  if (corner == null) return unmeasured();
+  final slow = {for (final lap in _slowLaps(laps)) lap.reference};
+  List<_Passage> of(String runId) => [
+    for (final p in passages[corner.segmentId] ?? const <_Passage>[])
+      if (p.lap.runId == runId && !slow.contains(p.lap.reference)) p,
+  ];
+  final shown = _shownSpeed(result.corners);
+  final earlier = _goalValue(focus.kind, of(previous), shown);
+  final now = _goalValue(focus.kind, of(coached), shown);
+  if (earlier == null || now == null) return unmeasured(corner.name);
+  final outcome = coachGoalOutcome(
+    focus.kind,
+    earlier.value,
+    now.value,
+    perMetrePerSecond: shown.perMetrePerSecond,
+  );
+  return CoachGoalCheck(
+    runId: previous,
+    runName: runName,
+    finding: focus,
+    outcome: outcome,
+    measuredName: corner.name,
+    before: earlier.value,
+    now: now.value,
+    beforeLaps: earlier.laps,
+    nowLaps: now.laps,
+  );
+}
+
+/// The index of the range in [today] overlapping [shown] most, by at
+/// least half of the shorter of the two; null when none does. Ranges are
+/// positions along the lap, in metres.
+int? coachMatchingSegment(
+  ({double start, double end}) shown,
+  List<({double start, double end})> today,
+) {
+  int? best;
+  var most = 0.0;
+  for (var i = 0; i < today.length; ++i) {
+    final range = today[i];
+    final overlap = math.min(range.end, shown.end) - math.max(range.start, shown.start);
+    final shorter = math.min(range.end - range.start, shown.end - shown.start);
+    if (overlap > most && overlap >= shorter / 2) {
+      most = overlap;
+      best = i;
+    }
+  }
+  return best;
+}
+
+/// Whether [now] is better than [before] for a focus of [kind], by a clear
+/// step: a later lift and a higher minimum speed are better, and less
+/// coasting, an earlier throttle return and a smaller braking range. The
+/// step is 8 m for positions, 0.4 s of coasting, 1.4 m/s of minimum speed
+/// (in the speeds' unit: [perMetrePerSecond] per m/s) and
+/// [coachBrakingOffMeters] of braking range.
+CoachGoalOutcome coachGoalOutcome(
+  CoachKind kind,
+  double before,
+  double now, {
+  double perMetrePerSecond = 3.6,
+}) {
+  final sign = switch (kind) {
+    CoachKind.earlyLift || CoachKind.lowMinimumSpeed => 1.0,
+    _ => -1.0,
+  };
+  final step = switch (kind) {
+    CoachKind.excessiveCoasting => 0.4,
+    CoachKind.lowMinimumSpeed => 1.4 * perMetrePerSecond,
+    CoachKind.inconsistentBraking => coachBrakingOffMeters,
+    _ => 8.0,
+  };
+  final change = sign * (now - before);
+  return change >= step
+      ? CoachGoalOutcome.better
+      : change <= -step
+      ? CoachGoalOutcome.worse
+      : CoachGoalOutcome.unchanged;
+}
+
+/// The goal's measure across [passages] (a session's laps at the goal's
+/// segment): the median of the lap values, or the braking range; null
+/// when fewer than two laps (three for the braking range) have it.
+({double value, int laps})? _goalValue(CoachKind kind, List<_Passage> passages, _ShownSpeed shown) {
+  double? read(_Passage p) => switch (kind) {
+    CoachKind.earlyLift => p.lift,
+    CoachKind.excessiveCoasting => p.coastSeconds,
+    CoachKind.lowMinimumSpeed => p.minimum,
+    CoachKind.lateThrottle => p.pickup,
+    CoachKind.inconsistentBraking => p.onset,
+    CoachKind.improving => null,
+  };
+  final values = [for (final p in passages) ?read(p)];
+  if (kind == CoachKind.inconsistentBraking) {
+    if (values.length < 3) return null;
+    return (value: values.reduce(math.max) - values.reduce(math.min), laps: values.length);
+  }
+  if (values.length < 2) return null;
+  final median = _median(values);
+  return (
+    value: kind == CoachKind.lowMinimumSpeed ? median * shown.perMetrePerSecond : median,
+    laps: values.length,
   );
 }
 

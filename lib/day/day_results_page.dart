@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:isolate';
 import 'dart:ui' show AppExitResponse;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
@@ -12,9 +13,10 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
-    show PlatformRecordingPickers, RecordingPickers;
+    show PlatformRecordingPickers, RecordingPickers, isDesktopPlatform;
 import '../import/import_review_page.dart';
 import '../l10n.dart';
+import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../units.dart' show hideUnrankedLapsSetting;
 import 'background_task.dart';
@@ -55,6 +57,7 @@ class DayResultsPage extends StatefulWidget {
     this.documents = const PlatformDocumentPickers(),
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
+    this.library,
   }) : replace = null,
        startNewDay = null,
        _create = (() => DayResultsController(
@@ -70,6 +73,7 @@ class DayResultsPage extends StatefulWidget {
     this.documents = const PlatformDocumentPickers(),
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
+    this.library,
   }) : replace = null,
        startNewDay = null,
        _create = (() => DayResultsController.opened(day, recovery: recovery));
@@ -86,6 +90,7 @@ class DayResultsPage extends StatefulWidget {
     this.recovery,
     this.replace,
     this.startNewDay,
+    this.library,
   }) : _create = (() => controller);
 
   final DayResultsController Function() _create;
@@ -96,6 +101,10 @@ class DayResultsPage extends StatefulWidget {
 
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
+
+  /// The driver profile the day is saved in, by itself and without a save
+  /// dialog; when null, days are saved where [documents] says.
+  final ProfileLibrary? library;
 
   /// Takes the day opened again in place of this one; see
   /// [DayResultsPage.controller].
@@ -142,10 +151,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     },
     // On desktop, quitting waits briefly for the write.
     onExitRequested: () async {
-      await _controller.flushRecovery().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {},
-      );
+      await Future.wait([
+        _controller.flushRecovery(),
+        if (widget.library case final library?) library.flush(),
+      ]).timeout(const Duration(seconds: 2), onTimeout: () => const []);
       return AppExitResponse.exit;
     },
   );
@@ -154,6 +163,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
   void initState() {
     super.initState();
     _controller.addListener(_reportAddition);
+    _controller.addListener(_libraryChanged);
+    _startLibrary();
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
     if (_controller.lastAddition != null) {
@@ -167,6 +178,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     ++_retryGeneration;
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
+    _controller.removeListener(_libraryChanged);
+    _autosave?.cancel();
     _lifecycle.dispose();
     _summaryScroll.dispose();
     _controller.dispose();
@@ -393,26 +406,182 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return _mapPath;
   }
 
+  int _recordedSaves = -1;
+
+  /// Whether the library was read, so the day is kept in it.
+  bool _libraryReady = false;
+  Timer? _autosave;
+
+  /// How long the day stays unchanged before a change is saved by itself.
+  static const _autosaveDelay = Duration(seconds: 2);
+
+  /// Keeps the day in the driver profile: a day shown from the profile has
+  /// its summary brought up to date, a new day is saved in it at once, and
+  /// every change after that is saved by itself, without asking (session
+  /// preparation is automatic).
+  Future<void> _startLibrary() async {
+    final library = widget.library;
+    if (library == null) return;
+    await library.load();
+    if (!mounted || !library.available) return;
+    _libraryReady = true;
+    _recordSave(force: true);
+    if (_controller.documentPath == null && !_controller.saving) {
+      await _save();
+    } else {
+      _scheduleAutosave();
+    }
+  }
+
+  void _libraryChanged() {
+    _recordSave();
+    _scheduleAutosave();
+  }
+
+  /// Saves a day kept in the library once it stayed unchanged for
+  /// [_autosaveDelay].
+  void _scheduleAutosave() {
+    if (!_libraryReady || !_inLibrary || !_autosaveAllowed) return;
+    _autosave?.cancel();
+    _autosave = Timer(_autosaveDelay, () {
+      if (mounted && _autosaveAllowed) unawaited(_save(quiet: true));
+    });
+  }
+
+  /// Whether going back first saves the day's changes in the library,
+  /// after the save running, if any.
+  bool get _saveBeforeLeaving =>
+      _libraryReady &&
+      _inLibrary &&
+      _controller.dirty &&
+      !_controller.adding &&
+      !_controller.recordingsBusy &&
+      !_controller.savingWaitsForRecordings &&
+      !_relinking &&
+      !_preparingReview;
+
+  bool _leaving = false;
+
+  /// Saves the day in the library, then leaves it, saved or not: changes
+  /// not saved are kept for recovery, as on any day left unsaved. Stays
+  /// when a page was opened over the day meanwhile.
+  Future<void> _saveThenLeave() async {
+    if (_leaving) return;
+    _leaving = true;
+    _autosave?.cancel();
+    final route = ModalRoute.of(context);
+    try {
+      await _save(quiet: true);
+    } finally {
+      _leaving = false;
+      // Not while work begun meanwhile holds the day open (see canPop).
+      if (mounted &&
+          (route?.isCurrent ?? false) &&
+          !_controller.adding &&
+          !_controller.recordingsBusy &&
+          !_controller.savingWaitsForRecordings &&
+          !_relinking &&
+          !_preparingReview) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
+  bool get _autosaveAllowed =>
+      _controller.dirty &&
+      !_controller.saving &&
+      !_controller.adding &&
+      !_relinking &&
+      !_preparingReview;
+
+  /// After each save into the profile, the profile records the day.
+  void _recordSave({bool force = false}) =>
+      _record(widget.library, _controller, force: force);
+
+  /// Records [controller]'s day in [library] after a save; called with
+  /// what the page held, so a save finishing after the page was left is
+  /// recorded too.
+  void _record(
+    ProfileLibrary? library,
+    DayResultsController controller, {
+    bool force = false,
+  }) {
+    final path = controller.documentPath;
+    if (library == null || path == null || !library.holds(path)) return;
+    if (!force && controller.saveCount == _recordedSaves) return;
+    _recordedSaves = controller.saveCount;
+    unawaited(
+      library.recordDay(
+        eventId: controller.eventId,
+        path: path,
+        name: controller.name,
+        analysis: controller.analysis,
+      ),
+    );
+  }
+
   void _tell(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message)));
 
-  Future<void> _save({bool choose = false}) async {
-    final path = choose || _controller.documentPath == null
-        ? await widget.documents.saveLocation(_controller.name)
-        : _controller.documentPath;
-    if (path == null || !mounted) return;
+  /// Whether the day is saved in the driver profile, or will be.
+  bool get _inLibrary {
+    final library = widget.library;
+    if (library == null || !library.available) return false;
+    final path = _controller.documentPath;
+    return path == null || library.holds(path);
+  }
+
+  /// Saves the day; with [quiet] (a save by itself) only a failure is said.
+  Future<void> _save({bool choose = false, bool quiet = false}) async {
+    if (choose && _inLibrary) return _export();
+    final library = widget.library;
+    final controller = _controller;
     try {
-      await _controller.save(path);
-      if (mounted) {
+      final path = choose || controller.documentPath == null
+          ? _inLibrary
+                ? await library!.dayPath(controller.eventId)
+                : await widget.documents.saveLocation(controller.name)
+          : controller.documentPath;
+      if (path == null || !mounted) return;
+      // A day saved as a file never replaces one of the library's days.
+      if (!_inLibrary && (library?.holds(path) ?? false)) {
+        _tell(context.l10n.notSavedInLibrary);
+        return;
+      }
+      await controller.save(path);
+      _record(library, controller);
+      if (mounted && !quiet) {
         _tell(
-          _controller.dirty
+          library != null && library.holds(path)
+              ? (_controller.dirty
+                    ? context.l10n.savedToLibraryChangesPending
+                    : context.l10n.savedToLibrary)
+              : _controller.dirty
               ? context.l10n.savedAsChangesPending(p.basename(path))
               : context.l10n.savedAs(p.basename(path)),
         );
       }
     } on Exception catch (error) {
       if (mounted) _tell(context.l10n.notSaved('$error'));
+    }
+  }
+
+  /// Writes a copy of the day for FlappedEar Overlays where the user
+  /// chooses; the day stays in the profile.
+  Future<void> _export() async {
+    final path = await widget.documents.saveLocation(_controller.name);
+    if (path == null || !mounted) return;
+    // The library's own files are never replaced by an export.
+    if (widget.library?.holds(path) ?? false) {
+      _tell(context.l10n.exportNotInLibrary);
+      return;
+    }
+    try {
+      await _controller.exportCopy(path);
+      if (mounted) _tell(context.l10n.exportedAs(p.basename(path)));
+    } on Exception catch (error) {
+      if (mounted) _tell(context.l10n.notExported('$error'));
     }
   }
 
@@ -519,6 +688,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             day: day,
             documents: widget.documents,
             recovery: widget.recovery,
+            library: widget.library,
           ),
         ),
       );
@@ -602,6 +772,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             day: day,
             documents: widget.documents,
             recovery: widget.recovery,
+            library: widget.library,
           ),
         ),
       );
@@ -809,11 +980,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   ),
                   child: Text(context.l10n.settings),
                 ),
-              PopupMenuItem(
-                height: kMinInteractiveDimension,
-                onTap: () => _save(choose: true),
-                child: Text(context.l10n.saveAs),
-              ),
+              if (!_inLibrary || isDesktopPlatform(defaultTargetPlatform))
+                PopupMenuItem(
+                  key: const ValueKey('saveAsOrExport'),
+                  height: kMinInteractiveDimension,
+                  onTap: () => _save(choose: true),
+                  child: Text(
+                    _inLibrary
+                        ? context.l10n.exportForOverlays
+                        : context.l10n.saveAs,
+                  ),
+                ),
               PopupMenuItem(
                 key: const ValueKey('addAndReviewRecordings'),
                 height: kMinInteractiveDimension,
@@ -903,9 +1080,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
         canPop:
             !_controller.adding &&
             !_controller.recordingsBusy &&
-            !_controller.savingWaitsForRecordings,
+            !_controller.savingWaitsForRecordings &&
+            !_saveBeforeLeaving,
         onPopInvokedWithResult: (didPop, _) {
           if (didPop) return;
+          if (_saveBeforeLeaving) {
+            unawaited(_saveThenLeave());
+            return;
+          }
           _tell(
             _controller.adding
                 ? context.l10n.waitUntilSessionAdded

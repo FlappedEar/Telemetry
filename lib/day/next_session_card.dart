@@ -7,6 +7,7 @@ import '../ui/theme.dart';
 import '../units.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton;
 import 'time_losses_card.dart' show TimeLossText;
+import 'corner_details.dart' show lapAColor, lapBColor;
 import 'track_map.dart';
 import '../ui/readable_list.dart';
 
@@ -206,10 +207,14 @@ class NextSessionCard extends StatelessWidget {
                 l10n.coachReason(coach.reason, session),
                 key: const ValueKey('coachReason'),
               ),
+              if (coach.goal case final goal?) _goal(context, goal, speedUnit),
               for (var i = 0; i < coach.plan.length; ++i)
                 _item(context, coach.plan[i].finding, i, speedUnit),
               if (speedUnit == null &&
-                  coach.plan.any((item) => _hasSpeed(item.finding))) ...[
+                  [
+                    ...coach.plan.map((item) => item.finding),
+                    ?coach.goal?.finding,
+                  ].any(_hasSpeed)) ...[
                 const SizedBox(height: 8),
                 Text(
                   l10n.coachSpeedHidden,
@@ -239,6 +244,58 @@ class NextSessionCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// How this session did on the main focus of the session before.
+  Widget _goal(BuildContext context, CoachGoalCheck goal, String? speedUnit) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final finding = goal.finding;
+    final outcome = switch (goal.outcome) {
+      CoachGoalOutcome.better => l10n.coachGoalBetter,
+      CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
+      CoachGoalOutcome.worse => l10n.coachGoalWorse,
+      // No corner of today's overlaps the focus's.
+      CoachGoalOutcome.notMeasured when goal.measuredName.isEmpty =>
+        l10n.coachGoalNoCorner,
+      CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
+    };
+    return Padding(
+      key: const ValueKey('coachGoal'),
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.coachGoalLabel(l10n.session(goal.runName)),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l10n.coachItemTitle(
+              finding.segmentName,
+              l10n.coachKind(finding.kind),
+            ),
+            style: theme.textTheme.titleSmall,
+          ),
+          Text(switch ((goal.before, goal.now)) {
+            (final before?, final now?) =>
+              '${l10n.coachGoalMeasured(l10n.coachMetric(goal.metric), coachValue(before, goal.unit, speedUnit), coachValue(now, goal.unit, speedUnit))} $outcome',
+            _ => outcome,
+          }, key: const ValueKey('coachGoalResult')),
+          // Today's corners can differ from those of the focus.
+          if (goal.measuredName.isNotEmpty &&
+              goal.measuredName != finding.segmentName)
+            Text(
+              l10n.coachGoalMeasuredAt(goal.measuredName),
+              key: const ValueKey('coachGoalMeasuredAt'),
+              style: theme.textTheme.bodySmall,
+            ),
+        ],
       ),
     );
   }
@@ -405,6 +462,48 @@ class _CoachItemPageState extends State<CoachItemPage> {
 
   List<DayLapRow> _earlier(CoachFinding finding) => coachEarlierLaps(finding);
 
+  // The item's points along the lap (a lift, a braking start or a throttle
+  // return): this session's and the faster laps', on the best lap's path.
+  // A change only: an improvement compares the latest lap with an earlier
+  // one, not with faster laps.
+  late final CoachEvidence? _points = widget.finding.kind.corrective
+      ? widget.finding.evidence
+            .where((e) => e.unit == 'm' && _pointMetrics.contains(e.key))
+            .firstOrNull
+      : null;
+  late final MapMark? _thisMark = _markAt(_points?.observed, lapAColor);
+  late final MapMark? _fasterMark = _markAt(_points?.reference, lapBColor);
+
+  static const _pointMetrics = {
+    CoachMetric.liftPoint,
+    CoachMetric.brakingStart,
+    CoachMetric.throttleReturn,
+  };
+
+  MapMark? _markAt(double? progress, Color color) {
+    final result = widget.result, path = widget.path, best = result.bestLap;
+    if (progress == null || path == null || best == null) return null;
+    final time = result.timeAt(best, progress);
+    if (time == null) return null;
+    final at = lapPathPointAt(path, time);
+    return at == null ? null : MapMark(at.east, at.north, color, radius: 7);
+  }
+
+  Widget _legend(Color color, String text, Key key) => Padding(
+    padding: const EdgeInsets.only(top: 4),
+    child: Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, key: key)),
+      ],
+    ),
+  );
+
   String _laps(AppLocalizations l10n, List<DayLapRow> laps) => [
     for (final lap in laps)
       widget.lapLabel(lap.reference).isEmpty
@@ -488,9 +587,26 @@ class _CoachItemPageState extends State<CoachItemPage> {
                       ? FetColors.of(context).dayBest
                       : theme.colorScheme.outlineVariant,
                   semanticLabel: l10n.coachWhyMap(finding.segmentName),
+                  marks: [?_fasterMark, ?_thisMark],
                 ),
               ),
             ),
+            if (_points case final points?) ...[
+              if (_thisMark != null)
+                _legend(
+                  lapAColor,
+                  l10n.coachMapThis(l10n.coachMetric(points.key)),
+                  const ValueKey('coachMapThis'),
+                ),
+              if (_fasterMark != null)
+                _legend(
+                  lapBColor,
+                  finding.kind == CoachKind.inconsistentBraking
+                      ? l10n.coachMapFastest(l10n.coachMetric(points.key))
+                      : l10n.coachMapFaster(l10n.coachMetric(points.key)),
+                  const ValueKey('coachMapFaster'),
+                ),
+            ],
           ],
           const SizedBox(height: 12),
           Text(

@@ -20,7 +20,8 @@
   <tr><td><strong>Import sessions…</strong></td><td>Pick one or more VBO/RCZ files: the session you just drove, or several. See <a href="#where">Where the sessions go</a>.</td><td>Everywhere</td></tr>
   <tr><td><strong>Choose a folder…</strong></td><td>Import every recording in a folder as a new day. Tick <strong>Include subfolders</strong> (the box or its label) first to look inside subfolders too.</td><td>Mac and PC</td></tr>
   <tr><td>Drag and drop</td><td>Drop files or folders anywhere on the window. Dropped files are handled like <strong>Import sessions…</strong>; a dropped folder starts a new day. An amber border shows while you drag; it is grey when an import is already running.</td><td>Mac and PC</td></tr>
-  <tr><td><strong>Open a saved day…</strong></td><td>Open a day you saved before. See <a href="saving.html#open">Opening a day</a>.</td><td>Everywhere</td></tr>
+  <tr><td><strong>Library</strong></td><td>Every day you imported, by car, year and track. Tap one to open it. See <a href="saving.html#library">Your library</a>.</td><td>Everywhere</td></tr>
+  <tr><td><strong>Open a saved day…</strong></td><td>Open a <code>.fetproject</code> file, for example one saved by Overlays. See <a href="saving.html#open">Opening a day</a>.</td><td>Everywhere</td></tr>
 </table>
 <p>On a phone there is no folder picker; select the files, or share them from RaceChrono. See <a href="phone.html">Phones and tablets</a>.</p>
 
@@ -29,9 +30,9 @@
 <ul>
   <li>the day with unsaved changes kept for recovery;</li>
   <li>otherwise the saved day you just left on <strong>Import sessions</strong>, if it was saved in the last 24 hours;</li>
-  <li>otherwise the newest day saved in the app in the last 24 hours (on a phone or tablet).</li>
+  <li>otherwise the newest day saved in your library (or, on a phone or tablet, in the app) in the last 24 hours.</li>
 </ul>
-<p>The new sessions are added to that day and it opens. A saved day is saved again in its file with them. Otherwise the recordings are imported as a new day, which opens by itself. A folder is always imported as a new day.</p>
+<p>The new sessions are added to that day and it opens. A saved day is saved again with them. Otherwise the recordings are imported as a new day, which opens by itself. A folder is always imported as a new day.</p>
 <p>No day opens by itself while another day's unsaved changes are kept for recovery, because working on it would replace them. The recordings are then imported as a new day that stays on <strong>Import sessions</strong> with an <strong>Open the day</strong> button, so you can restore or discard the other day first.</p>
 <p>So at the track, tap <strong>Import sessions…</strong> after each session and pick only the new recording: it becomes the next session of the day. The same happens when you share a recording from RaceChrono on a phone (see <a href="phone.html#share">Sharing from RaceChrono</a>), or use <strong>Add recordings</strong> on an open day (see <a href="day.html#add">Adding a session</a>).</p>
 
@@ -63,16 +64,16 @@
 <p>If nothing could be imported, a panel with a red mark says why, for example <em>No recording could be imported.</em>, and suggests choosing the recordings again, or other ones. The notes under it say what was wrong with each file.</p>
 
 <h2 id="result">The result</h2>
-<p>When it is done, the day opens: the <a href="day.html">day results</a>, with <strong>Save</strong> (the disk icon) in the toolbar. When you go back, <strong>Import sessions</strong> shows the day you left at the top: its name, whether it is saved (<em>Saved as …</em>) or not yet (<em>Not saved yet; changes kept from …</em>), <strong>Open the day</strong> to go back to it, <strong>Discard…</strong> for unsaved changes (see <a href="#restore">Restoring unsaved work</a>), and its sessions:</p>
+<p>When it is done, the day opens: the <a href="day.html">day results</a>. It is saved in your <a href="saving.html#library">library</a> by itself. When you go back, <strong>Import sessions</strong> shows the day you left at the top: its name, where it is saved (<em>Saved in your library.</em>, or <em>Saved as …</em> for a day opened from a file) or that it is not yet (<em>Not saved yet; changes kept from …</em>), <strong>Open the day</strong> to go back to it, <strong>Discard…</strong> for unsaved changes (see <a href="#restore">Restoring unsaved work</a>), and its sessions:</p>
 <figure>
-  <img src="assets/screens/import-done.png" alt="Import sessions after going back from a day of six sessions: the day's name, Not saved yet, Open the day and Discard, and each session with its laps and best time" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/import-done.png" alt="Import sessions after going back from a day of six sessions: the day's name, Saved in your library, Open the day, and each session with its laps and best time" width="1280" height="800" loading="lazy">
 </figure>
 <ul>
   <li><strong>Session N</strong>, numbered in the order the sessions were recorded.</li>
   <li>Under it, the lap count, for example <em>7 laps</em>, or why it has no laps, for example <em>No laps: the recording has no start/finish line.</em></li>
   <li>On the right, the session's <strong>Best</strong> ranked lap time, as on the day results; the session with the best lap of the day is in bold purple. A session on another track layout shows its fastest lap.</li>
 </ul>
-<p>The day you left is listed while the app stays open. After the app was closed, a day with unsaved changes shows as described in <a href="#restore">Restoring unsaved work</a>, and a saved day is under <strong>Open a saved day…</strong>.</p>
+<p>The day you left is listed while the app stays open. After the app was closed, a day with unsaved changes shows as described in <a href="#restore">Restoring unsaved work</a>, and the other days are in the <strong>Library</strong>.</p>
 <p>If the new day could not open by itself, because another day has unsaved changes, the page instead says how many sessions were imported, lists them the same way, and offers <strong>Open the day</strong>.</p>
 
 <h3 id="notes">Import notes</h3>
@@ -95,4 +96,4 @@
   <li><strong>Discard…</strong> deletes the copy after asking. Your recordings and saved days are not touched.</li>
 </ul>
 <p>The copy is updated half a second after each change, and straight away when you switch to another app or quit. If the app crashes or is stopped within that half second, the very last change can be missing from the copy, so save the day to be sure.</p>
-<p>Only one unsaved day is kept: working on another unsaved day replaces the copy. A day you just imported and never saved counts as unsaved: when you go back from it, it is the day listed at the top, with <strong>Open the day</strong> (which restores it) and <strong>Discard…</strong>.</p>
+<p>Only one unsaved day is kept: working on another unsaved day replaces the copy. A day opened from a file and not saved counts as unsaved: when you go back from it, it is the day listed at the top, with <strong>Open the day</strong> (which restores it) and <strong>Discard…</strong>.</p>

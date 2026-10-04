@@ -289,6 +289,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMetricNextStraightTime => 'Straight after it';
 
   @override
+  String coachGoalLabel(String session) {
+    return 'Main focus from $session';
+  }
+
+  @override
+  String coachGoalMeasured(String metric, String before, String now) {
+    return '$metric: $before then, $now in this session.';
+  }
+
+  @override
+  String coachGoalMeasuredAt(String segment) {
+    return 'Measured at $segment, as today\'s corners divide the track.';
+  }
+
+  @override
+  String get coachGoalNoCorner =>
+      'Not measured: today\'s corners no longer include it.';
+
+  @override
+  String coachMapThis(String metric) {
+    return '$metric: this session\'s laps';
+  }
+
+  @override
+  String coachMapFaster(String metric) {
+    return '$metric: your faster laps';
+  }
+
+  @override
+  String coachMapFastest(String metric) {
+    return '$metric: your three fastest laps today';
+  }
+
+  @override
+  String get coachGoalBetter => 'Better.';
+
+  @override
+  String get coachGoalUnchanged => 'About the same.';
+
+  @override
+  String get coachGoalWorse => 'Worse.';
+
+  @override
+  String get coachGoalNotMeasured => 'Not measured in this session.';
+
+  @override
   String get coachReasonReady =>
       'Work on the main focus first. Try the others only once it feels settled.';
 
@@ -4646,6 +4692,95 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get weatherKept =>
       'Kept as stored: this day\'s weather was saved by a newer version of the app.';
+
+  @override
+  String get savedToLibrary => 'Saved in your library.';
+
+  @override
+  String get savedToLibraryChangesPending =>
+      'Saved in your library. Changes made while saving are not saved yet.';
+
+  @override
+  String get exportForOverlays => 'Export for Overlays…';
+
+  @override
+  String exportedAs(String file) {
+    return 'Exported as $file.';
+  }
+
+  @override
+  String get exportNotInLibrary =>
+      'Not exported: choose a place outside the library.';
+
+  @override
+  String get notSavedInLibrary =>
+      'Not saved: choose a place outside the library.';
+
+  @override
+  String notExported(String error) {
+    return 'Not exported: $error';
+  }
+
+  @override
+  String get importPageLibrary => 'Library';
+
+  @override
+  String get libraryTitle => 'Library';
+
+  @override
+  String get libraryUnavailable =>
+      'The library cannot be used now, for example because a newer version of the app made it. Until then, days are saved as files.';
+
+  @override
+  String get libraryEmpty =>
+      'Days you import are kept here, by car, year and track.';
+
+  @override
+  String get libraryRenameCar => 'Rename car';
+
+  @override
+  String get libraryRenameTrack => 'Rename track';
+
+  @override
+  String get libraryUndated => 'No date';
+
+  @override
+  String get libraryUnknownTrack => 'Track not recognised';
+
+  @override
+  String librarySessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions',
+      one: '1 session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryBestLap(String time) {
+    return 'Best $time';
+  }
+
+  @override
+  String get libraryChangeCar => 'Change car';
+
+  @override
+  String libraryChooseCar(String day) {
+    return 'Car for $day';
+  }
+
+  @override
+  String get libraryNewCar => 'New car…';
+
+  @override
+  String get libraryDefaultCar => 'My car';
+
+  @override
+  String libraryDefaultTrack(int number) {
+    return 'Track $number';
+  }
 
   @override
   String lapsShowUnranked(int count) {

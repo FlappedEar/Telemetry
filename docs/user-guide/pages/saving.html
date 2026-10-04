@@ -1,6 +1,6 @@
-<!-- title: Saving and opening days | nav: Saving and opening -->
-<h1 id="saving">Saving and opening days</h1>
-<p class="lead">A day is saved as a <code>.fetproject</code> file. It holds your sessions and your choices, and it points to the recording files rather than copying them.</p>
+<!-- title: Your library, saving and opening | nav: Library and saving -->
+<h1 id="saving">Your library, saving and opening</h1>
+<p class="lead">Every day is kept in your library by itself. A day is a <code>.fetproject</code> file: it holds your sessions and your choices, and it points to the recording files rather than copying them.</p>
 
 <h2 id="what">What a saved day keeps</h2>
 <ul>
@@ -17,22 +17,34 @@
 <h3 id="rename">Renaming the day</h3>
 <p>The day is named <em>Day YYYY-MM-DD</em> from its first dated recording. To change it, open <strong>⋮ › Rename day…</strong>, type the new name (up to 160 characters) and tap <strong>Save</strong>. A blank name cannot be saved. The day then has unsaved changes. A saved day shows the new name in its title at once; a new day shows it from its first save, which offers it as the file name. Renaming the day does not rename a file already saved: on a Mac or PC the file name stays yours to choose.</p>
 
+<h2 id="library">Your library</h2>
+<p>Every day you import is kept in your <strong>library</strong>, inside the app, on every device. You do not save it and nothing asks: a new day is saved there as soon as it opens, and every change after that is saved by itself once you leave the day alone for two seconds, or when you go back to <strong>Import sessions</strong>. The app confirms the first save with <em>Saved in your library.</em></p>
+<p>The library is also your driver profile: it knows which car each day was driven in and recognises a circuit by its shape, so days at the same track are grouped together however the recording named it. The coach will use it to compare you with your earlier days there.</p>
+<p>On <strong>Import sessions</strong>, tap <strong>Library</strong> to see every day:</p>
+<figure>
+  <img src="assets/screens/library.png" alt="The library: My car, the year 2026, Track 1, and the day of 29 August 2026 with 6 sessions and its best lap" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li>Days are grouped by <strong>car</strong>, then <strong>year</strong> (newest first), then <strong>track</strong>, newest day first. Each day shows its date, name, number of sessions and best lap. Tap a day to open it.</li>
+  <li>The first car is called <em>My car</em> and tracks are called <em>Track 1</em>, <em>Track 2</em> and so on. Tap the pencil next to a car or a track to rename it.</li>
+  <li>To say which car a day was driven in, tap <strong>Change car</strong> (the arrows) on the day and choose a car, or <strong>New car…</strong> to name a new one. New days then go to that car.</li>
+  <li>A day whose circuit could not be recognised, for example because no session has laps, is listed under <em>Track not recognised</em>.</li>
+</ul>
+<p>If the library cannot be used, for example because a newer version of the app made it and you went back to an older one, the <strong>Library</strong> page says so and days are saved as files, as described in <a href="#outside">A day opened from a file</a>, until it can be used again. The library itself is left as it is.</p>
+<p>Days saved on a phone or tablet before the app had a library are not in it: open them with <strong>Open a saved day…</strong>. Removing days from the library, and copying the whole library to another device, are not available yet.</p>
+
 <h2 id="save">Saving</h2>
 <ul>
-  <li><strong>Save</strong> (disk icon) writes to the file the day came from. The first time, it asks where to save. It is greyed out when nothing changed. On a Mac or PC, <kbd>Cmd</kbd>+<kbd>S</kbd> or <kbd>Ctrl</kbd>+<kbd>S</kbd> does the same.</li>
-  <li><strong>Save as…</strong> (under ⋮) always asks.</li>
-  <li>Adding a session to a saved day saves it again on its own. See <a href="day.html#add">Adding a session</a>.</li>
+  <li><strong>Save</strong> (disk icon) saves straight away, without waiting. It is greyed out when nothing changed. On a Mac or PC, <kbd>Cmd</kbd>+<kbd>S</kbd> or <kbd>Ctrl</kbd>+<kbd>S</kbd> does the same.</li>
+  <li><strong>Export for Overlays…</strong> (under ⋮, on a Mac or PC) writes a copy of the day as a <code>.fetproject</code> file where you choose, for <a href="overlays.html">FlappedEar Overlays</a>. The day stays in your library; later changes are not in the copy, so export again after changing it. The app confirms with <em>Exported as &lt;file&gt;.fetproject.</em></li>
+  <li>Adding a session to a day saves it again on its own. See <a href="day.html#add">Adding a session</a>.</li>
 </ul>
-<p>The app confirms with <em>Saved as &lt;file&gt;.fetproject.</em> or says why it could not save. When a save fails, for example because the device is full, the app keeps the file saved before whenever it can. A change you make while the save is still running (excluding a lap, say) is not in that file: the app then adds <em>Changes made while saving are not saved yet.</em>, the day stays unsaved, and saving again includes it.</p>
-<table>
-  <tr><th></th><th>Mac and PC</th><th>Phone and tablet</th></tr>
-  <tr><td>Where days go</td><td>Anywhere, with the system save dialog.</td><td>Inside the app, in its own <em>Days</em> folder. There is no save dialog.</td></tr>
-  <tr><td>Save as…</td><td>Choose a new file.</td><td>Writes another copy, named <em>&lt;name&gt; (2)</em>, and so on.</td></tr>
-</table>
-<div class="note"><p>Leaving a day with unsaved changes does not ask you to save. The app keeps one unsaved day for you; see <a href="import.html#restore">Restoring unsaved work</a>. Save before starting on another day.</p></div>
+<p>When a save fails, for example because the device is full, the app says why and keeps the file saved before whenever it can. A change you make while the save is still running (excluding a lap, say) is saved with the next save.</p>
+<h3 id="outside">A day opened from a file</h3>
+<p>A <code>.fetproject</code> file opened with <strong>Open a saved day…</strong> from outside the library is saved back to that file, as before: <strong>Save</strong> writes to it and confirms with <em>Saved as &lt;file&gt;.fetproject.</em>, and <strong>Save as…</strong> (under ⋮) writes it somewhere else (on a phone, another copy named <em>&lt;name&gt; (2)</em>). Such a day is not saved by itself: leaving it with unsaved changes keeps them for you (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
 
 <h2 id="open">Opening a day</h2>
-<p>On <strong>Import sessions</strong>, tap <strong>Open a saved day…</strong>.</p>
+<p>On <strong>Import sessions</strong>, tap <strong>Library</strong> and then the day. <strong>Open a saved day…</strong> opens a <code>.fetproject</code> file:</p>
 <ul>
   <li>Mac and PC: the system open dialog shows <em>FlappedEar day</em> files.</li>
   <li>Phone: a list of the days saved in the app, newest first, and <strong>Another file…</strong> to pick a file from elsewhere.</li>

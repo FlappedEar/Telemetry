@@ -70,6 +70,7 @@ DayCoach _coach(
   String runId = 'run2',
   double Function(double) Function(double slow) shape = _lap,
   bool coachedRecording = true,
+  bool saved = false,
 }) {
   final runs = [
     _run(
@@ -94,12 +95,25 @@ DayCoach _coach(
   }
   final analysis = analyzeDay(runs);
   final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
-  final result = dayTheoreticalBest(analysis, outing, random: Random(1));
+  var result = dayTheoreticalBest(analysis, outing, random: Random(1));
   expect(result.state, DayTheoreticalBestState.ready);
-  return dayCoach(result, {
-    for (final run in runs)
-      run.runId: run.runId == 'run2' && !coachedRecording ? null : run.session,
-  }, runId: runId);
+  // Saved: the automatic segments are stored on the best lap's run.
+  final documentRuns = [
+    if (saved) {'id': result.segmentRunId, 'trackSegments': result.runSegments},
+  ];
+  if (saved) {
+    result = dayTheoreticalBest(analysis, outing, documentRuns: documentRuns, random: Random(1));
+    expect(result.state, DayTheoreticalBestState.ready);
+  }
+  return dayCoach(
+    result,
+    {
+      for (final run in runs)
+        run.runId: run.runId == 'run2' && !coachedRecording ? null : run.session,
+    },
+    runId: runId,
+    before: dayBeforeRun(analysis, outing, runId, documentRuns: documentRuns, random: Random(1)),
+  );
 }
 
 void main() {
@@ -382,6 +396,120 @@ void main() {
     // Most of the 240 m straight at up to 30 m/s, not the corner again.
     expect(straight.reference, inInclusiveRange(200 / 30, 240 / 25));
     expect(straight.observed, isNot(closeTo(corner.observed, 0.5)));
+  });
+
+  group('the session before\'s main focus', () {
+    // The session before is slow through the first corner on three laps,
+    // with one faster lap: keep more speed there.
+    const before = [15.0, 15.2, 15.1, 20.0];
+
+    test('is checked again: better', () {
+      final coach = _coach(before, [19, 19.5, 19.2]);
+      final goal = coach.goal!;
+      expect(goal.runId, 'run1');
+      expect(goal.runName, 'Session 1');
+      expect(goal.finding.kind, CoachKind.lowMinimumSpeed);
+      expect(goal.metric, CoachMetric.minimumSpeed);
+      expect(goal.outcome, CoachGoalOutcome.better);
+      expect(goal.now, greaterThan(goal.before!));
+      expect((goal.beforeLaps, goal.nowLaps), (4, 3));
+      expect(goal.measuredName, goal.finding.segmentName);
+    });
+
+    test('leaves out a much slower lap', () {
+      final goal = _coach(before, [19, 19.5, 19.2, 3]).goal!;
+      expect(goal.nowLaps, 3);
+      expect(goal.outcome, CoachGoalOutcome.better);
+    });
+
+    test('better or worse by a clear step, in each kind\'s direction', () {
+      final cases = <(CoachKind, double, double, CoachGoalOutcome)>[
+        // A later lift is better; 8 m is the step.
+        (CoachKind.earlyLift, 200, 210, CoachGoalOutcome.better),
+        (CoachKind.earlyLift, 200, 190, CoachGoalOutcome.worse),
+        (CoachKind.earlyLift, 200, 205, CoachGoalOutcome.unchanged),
+        // Less coasting is better; 0.4 s.
+        (CoachKind.excessiveCoasting, 2.1, 1.6, CoachGoalOutcome.better),
+        (CoachKind.excessiveCoasting, 1.3, 2.1, CoachGoalOutcome.worse),
+        (CoachKind.excessiveCoasting, 2.0, 1.8, CoachGoalOutcome.unchanged),
+        // A higher minimum speed is better; 1.4 m/s, about 5 km/h.
+        (CoachKind.lowMinimumSpeed, 45, 51, CoachGoalOutcome.better),
+        (CoachKind.lowMinimumSpeed, 45, 39, CoachGoalOutcome.worse),
+        (CoachKind.lowMinimumSpeed, 45, 48, CoachGoalOutcome.unchanged),
+        // An earlier throttle return is better; 8 m.
+        (CoachKind.lateThrottle, 400, 390, CoachGoalOutcome.better),
+        (CoachKind.lateThrottle, 400, 410, CoachGoalOutcome.worse),
+        (CoachKind.lateThrottle, 400, 395, CoachGoalOutcome.unchanged),
+        // A smaller braking range is better; 10 m.
+        (CoachKind.inconsistentBraking, 40, 25, CoachGoalOutcome.better),
+        (CoachKind.inconsistentBraking, 25, 40, CoachGoalOutcome.worse),
+        (CoachKind.inconsistentBraking, 40, 33, CoachGoalOutcome.unchanged),
+      ];
+      for (final (kind, before, now, outcome) in cases) {
+        expect(coachGoalOutcome(kind, before, now), outcome, reason: '$kind $before → $now');
+      }
+      // In mph, 1.4 m/s is about 3.1 mph.
+      expect(
+        coachGoalOutcome(CoachKind.lowMinimumSpeed, 30, 32, perMetrePerSecond: 2.237),
+        CoachGoalOutcome.unchanged,
+      );
+      expect(
+        coachGoalOutcome(CoachKind.lowMinimumSpeed, 30, 33.5, perMetrePerSecond: 2.237),
+        CoachGoalOutcome.better,
+      );
+    });
+
+    test('in a saved day whose best lap is this session\'s', () {
+      // The segments saved on this session's run were not there then.
+      final coach = _coach(before, [21, 21.5, 21.2], saved: true);
+      expect(coach.goal?.outcome, CoachGoalOutcome.better);
+    });
+
+    test('at today\'s corner overlapping it most', () {
+      const shown = (start: 100.0, end: 160.0);
+      // The same corner, merged into a longer one, or drawn a little apart.
+      expect(coachMatchingSegment(shown, [(start: 0.0, end: 90.0), (start: 95.0, end: 165.0)]), 1);
+      expect(coachMatchingSegment(shown, [(start: 80.0, end: 300.0)]), 0);
+      // Split in two: the larger part.
+      expect(
+        coachMatchingSegment(shown, [(start: 90.0, end: 120.0), (start: 120.0, end: 170.0)]),
+        1,
+      );
+      // Less than half of the shorter overlaps: not the same corner.
+      expect(coachMatchingSegment(shown, [(start: 140.0, end: 200.0)]), isNull);
+      expect(coachMatchingSegment(shown, [(start: 200.0, end: 260.0)]), isNull);
+      expect(coachMatchingSegment(shown, []), isNull);
+    });
+
+    test('worse', () {
+      expect(_coach(before, [12, 12.2, 12.1]).goal!.outcome, CoachGoalOutcome.worse);
+    });
+
+    test('about the same', () {
+      expect(_coach(before, [15.1, 15.3, 15]).goal!.outcome, CoachGoalOutcome.unchanged);
+    });
+
+    test('not measured without the session\'s recording', () {
+      final goal = _coach(before, [19, 19.5, 19.2], coachedRecording: false).goal!;
+      expect(goal.outcome, CoachGoalOutcome.notMeasured);
+      expect((goal.before, goal.now), (null, null));
+    });
+
+    test('none for the first session', () {
+      expect(_coach(before, [19, 19.5, 19.2], runId: 'run1').goal, isNull);
+    });
+
+    test('none when the session before had no change to work on', () {
+      expect(_coach([20, 20.5], [19, 19.5, 19.2]).goal, isNull);
+    });
+
+    test('is the focus the day gave then, not with later laps', () {
+      // With this session's much faster laps, the session before's laps
+      // would all show the slow corner, but its focus is the same.
+      final goal = _coach(before, [25, 25.2, 25.1]).goal!;
+      expect(goal.finding.sessionLaps, hasLength(3));
+      expect(goal.finding.evidence.first.referenceLaps.map((lap) => lap.runId), ['run1']);
+    });
   });
 
   test('braking points that agree make no braking item', () {
