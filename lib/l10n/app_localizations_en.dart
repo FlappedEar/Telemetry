@@ -308,6 +308,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not measured: today\'s corners no longer include it.';
 
   @override
+  String coachMapThis(String metric) {
+    return '$metric: this session\'s laps';
+  }
+
+  @override
+  String coachMapFaster(String metric) {
+    return '$metric: your faster laps';
+  }
+
+  @override
+  String coachMapFastest(String metric) {
+    return '$metric: your three fastest laps today';
+  }
+
+  @override
   String get coachGoalBetter => 'Better.';
 
   @override

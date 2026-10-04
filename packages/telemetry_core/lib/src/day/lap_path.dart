@@ -96,3 +96,28 @@ LapPath lapPath(
     speedUnit: speedChannel?.unit ?? '',
   );
 }
+
+/// Where [path] was at [telemetryTime], between the two fixes around it;
+/// null outside its runs of fixes (in a GPS gap, before or after the lap).
+({double east, double north})? lapPathPointAt(LapPath path, double telemetryTime) {
+  for (final segment in path.segments) {
+    if (segment.isEmpty ||
+        telemetryTime < segment.first.telemetryTime ||
+        telemetryTime > segment.last.telemetryTime) {
+      continue;
+    }
+    var low = 0, high = segment.length - 1;
+    while (high - low > 1) {
+      final middle = (low + high) ~/ 2;
+      segment[middle].telemetryTime <= telemetryTime ? low = middle : high = middle;
+    }
+    final a = segment[low], b = segment[high];
+    final span = b.telemetryTime - a.telemetryTime;
+    final t = span > 0 ? (telemetryTime - a.telemetryTime) / span : 0.0;
+    return (
+      east: a.eastMeters + (b.eastMeters - a.eastMeters) * t,
+      north: a.northMeters + (b.northMeters - a.northMeters) * t,
+    );
+  }
+  return null;
+}

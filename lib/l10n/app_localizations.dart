@@ -566,6 +566,24 @@ abstract class AppLocalizations {
   /// **'Not measured: today\'s corners no longer include it.'**
   String get coachGoalNoCorner;
 
+  /// Map legend: the amber mark is the point (median) on this session's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: this session\'s laps'**
+  String coachMapThis(String metric);
+
+  /// Map legend: the blue mark is the point (median) on the faster laps compared.
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: your faster laps'**
+  String coachMapFaster(String metric);
+
+  /// Map legend for the braking marker: the blue mark is the point on the day's three fastest laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{metric}: your three fastest laps today'**
+  String coachMapFastest(String metric);
+
   /// The focus's measure improved since the session before.
   ///
   /// In en, this message translates to:

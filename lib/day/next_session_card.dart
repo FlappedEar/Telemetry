@@ -7,6 +7,7 @@ import '../ui/theme.dart';
 import '../units.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton;
 import 'time_losses_card.dart' show TimeLossText;
+import 'corner_details.dart' show lapAColor, lapBColor;
 import 'track_map.dart';
 import '../ui/readable_list.dart';
 
@@ -461,6 +462,44 @@ class _CoachItemPageState extends State<CoachItemPage> {
 
   List<DayLapRow> _earlier(CoachFinding finding) => coachEarlierLaps(finding);
 
+  // The item's points along the lap (a lift, a braking start or a throttle
+  // return): this session's and the faster laps', on the best lap's path.
+  late final CoachEvidence? _points = widget.finding.evidence
+      .where((e) => e.unit == 'm' && _pointMetrics.contains(e.key))
+      .firstOrNull;
+  late final MapMark? _thisMark = _markAt(_points?.observed, lapAColor);
+  late final MapMark? _fasterMark = _markAt(_points?.reference, lapBColor);
+
+  static const _pointMetrics = {
+    CoachMetric.liftPoint,
+    CoachMetric.brakingStart,
+    CoachMetric.throttleReturn,
+  };
+
+  MapMark? _markAt(double? progress, Color color) {
+    final result = widget.result, path = widget.path, best = result.bestLap;
+    if (progress == null || path == null || best == null) return null;
+    final time = result.timeAt(best, progress);
+    if (time == null) return null;
+    final at = lapPathPointAt(path, time);
+    return at == null ? null : MapMark(at.east, at.north, color, radius: 7);
+  }
+
+  Widget _legend(Color color, String text, Key key) => Padding(
+    padding: const EdgeInsets.only(top: 4),
+    child: Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, key: key)),
+      ],
+    ),
+  );
+
   String _laps(AppLocalizations l10n, List<DayLapRow> laps) => [
     for (final lap in laps)
       widget.lapLabel(lap.reference).isEmpty
@@ -544,9 +583,26 @@ class _CoachItemPageState extends State<CoachItemPage> {
                       ? FetColors.of(context).dayBest
                       : theme.colorScheme.outlineVariant,
                   semanticLabel: l10n.coachWhyMap(finding.segmentName),
+                  marks: [?_fasterMark, ?_thisMark],
                 ),
               ),
             ),
+            if (_points case final points?) ...[
+              if (_thisMark != null)
+                _legend(
+                  lapAColor,
+                  l10n.coachMapThis(l10n.coachMetric(points.key)),
+                  const ValueKey('coachMapThis'),
+                ),
+              if (_fasterMark != null)
+                _legend(
+                  lapBColor,
+                  finding.kind == CoachKind.inconsistentBraking
+                      ? l10n.coachMapFastest(l10n.coachMetric(points.key))
+                      : l10n.coachMapFaster(l10n.coachMetric(points.key)),
+                  const ValueKey('coachMapFaster'),
+                ),
+            ],
           ],
           const SizedBox(height: 12),
           Text(

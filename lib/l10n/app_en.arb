@@ -459,6 +459,36 @@
   "@coachGoalNoCorner": {
     "description": "No corner of today's segments overlaps the focus's corner as it was drawn then."
   },
+  "coachMapThis": "{metric}: this session's laps",
+  "@coachMapThis": {
+    "description": "Map legend: the amber mark is the point (median) on this session's laps.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lift point"
+      }
+    }
+  },
+  "coachMapFaster": "{metric}: your faster laps",
+  "@coachMapFaster": {
+    "description": "Map legend: the blue mark is the point (median) on the faster laps compared.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lift point"
+      }
+    }
+  },
+  "coachMapFastest": "{metric}: your three fastest laps today",
+  "@coachMapFastest": {
+    "description": "Map legend for the braking marker: the blue mark is the point on the day's three fastest laps.",
+    "placeholders": {
+      "metric": {
+        "type": "String",
+        "example": "Lift point"
+      }
+    }
+  },
   "coachGoalBetter": "Better.",
   "@coachGoalBetter": {
     "description": "The focus's measure improved since the session before."

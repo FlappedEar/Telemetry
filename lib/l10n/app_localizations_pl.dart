@@ -315,6 +315,21 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie zmierzono: tego zakrętu nie ma w dzisiejszym podziale toru.';
 
   @override
+  String coachMapThis(String metric) {
+    return '$metric: okrążenia tej sesji';
+  }
+
+  @override
+  String coachMapFaster(String metric) {
+    return '$metric: Twoje szybsze okrążenia';
+  }
+
+  @override
+  String coachMapFastest(String metric) {
+    return '$metric: Twoje trzy najszybsze okrążenia dnia';
+  }
+
+  @override
   String get coachGoalBetter => 'Lepiej.';
 
   @override
