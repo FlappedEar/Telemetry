@@ -792,6 +792,13 @@ class _DayImportPageState extends State<DayImportPage> {
     final recovered = await queueRecovery(widget.recovery.load);
     if (!mounted) return;
     if (eventId != null && recovered?.eventId == eventId) {
+      if (_opening || _shownDay != null) {
+        // A shared recording opened a day while the choice was made.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.importPageAnotherOpening)),
+        );
+        return;
+      }
       await _restore(recovered!);
     } else {
       await _openDay(chosen);

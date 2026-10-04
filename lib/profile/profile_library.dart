@@ -232,7 +232,8 @@ class ProfileLibrary extends ChangeNotifier {
   /// The full path of [day]'s document.
   String? pathOf(ProfileDay day) {
     final folder = _folder;
-    return folder == null ? null : p.join(folder, day.file);
+    // The profile keeps '/' separators; the path uses the platform's.
+    return folder == null ? null : p.joinAll([folder, ...day.file.split('/')]);
   }
 
   /// Records the day of [eventId] saved at [path] with [analysis] in the
