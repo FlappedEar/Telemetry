@@ -21,6 +21,7 @@ import '../settings_dialog.dart';
 import '../ui/theme.dart';
 import 'day_import_controller.dart';
 import 'file_access.dart';
+import 'import_review_page.dart';
 import 'import_runner.dart' show DayAppender, IsolateDayAppender;
 import 'incoming_recordings.dart';
 
@@ -327,6 +328,15 @@ class _DayImportPageState extends State<DayImportPage> {
   late final DayImportController _controller =
       widget.controller ?? DayImportController();
   bool _includeSubfolders = false;
+
+  /// The next import the user starts stops at a review of the recordings
+  /// found (FET-58). Off by default and again after each review, so the
+  /// next session needs no approval; recordings shared from another app are
+  /// never reviewed.
+  bool _review = false;
+
+  // Whether the review of the import waiting for it is shown.
+  bool _reviewShown = false;
   bool _dragging = false;
   bool _opening = false;
 
@@ -379,6 +389,10 @@ class _DayImportPageState extends State<DayImportPage> {
 
   void _imported() {
     if (_controller.isWorking || !mounted) return;
+    if (_controller.state case final DayImportReviewing review) {
+      unawaited(_openReview(review));
+      return;
+    }
     // A share import that was cancelled or failed is not tried again with
     // the next share.
     if (_controller.state is DayImportCancelled ||
@@ -399,6 +413,41 @@ class _DayImportPageState extends State<DayImportPage> {
       }
     }
     if (pending.isNotEmpty) _receive(pending);
+  }
+
+  /// Shows the review of [review]'s recordings; the import goes on as the
+  /// user confirms, or ends with nothing imported.
+  Future<void> _openReview(DayImportReviewing review) async {
+    if (_reviewShown) return;
+    _reviewShown = true;
+    setState(() => _review = false);
+    ImportReviewResult? result;
+    try {
+      result = await showImportReview(
+        context,
+        plan: review.plan,
+        automatic: automaticImportChoices(review.plan),
+      );
+    } finally {
+      _reviewShown = false;
+    }
+    if (!identical(_controller.state, review)) return;
+    if (result == null || !_controller.confirm(result.choices)) {
+      _controller.cancel();
+    }
+  }
+
+  /// Starts importing [paths], reviewed on a day shown here, as a new day,
+  /// which opens by itself when imported. Returns false, changing nothing,
+  /// while another import runs or waits for its review.
+  bool _startNewDay(List<String> paths, ImportChoices choices) {
+    if (!mounted ||
+        !_controller.start(paths, includeSubfolders: false, choices: choices)) {
+      return false;
+    }
+    _unopenedShares = const [];
+    _showWhenImported = true;
+    return true;
   }
 
   Future<void> _checkRecovery() async {
@@ -429,6 +478,7 @@ class _DayImportPageState extends State<DayImportPage> {
               pickers: widget.pickers,
               recovery: widget.recovery,
               replace: (day) => next = day,
+              startNewDay: _startNewDay,
             ),
           ),
         );
@@ -576,11 +626,11 @@ class _DayImportPageState extends State<DayImportPage> {
     final behind = ModalRoute.of(context)?.isCurrent == false;
     // Also with a dialog or another page over this one: today's day is
     // continued, and shown over them.
-    if (!_controller.isWorking && !_opening) {
+    if (!_controller.isWorking && !_controller.isReviewing && !_opening) {
       unawaited(_continueToday(paths));
       return;
     }
-    if (_controller.isWorking) {
+    if (_controller.isWorking || _controller.isReviewing) {
       // Not refused: they follow the import running now.
       (_afterImport ??= []).addAll(paths);
       return;
@@ -746,9 +796,14 @@ class _DayImportPageState extends State<DayImportPage> {
     return null;
   }
 
-  void _start(List<String> paths) {
+  /// Imports [paths]; with [review], after the user's review of what was
+  /// found.
+  void _start(List<String> paths, {bool review = false}) {
     if (paths.isEmpty) return;
-    if (!_controller.start(paths, includeSubfolders: _includeSubfolders)) {
+    final started = review
+        ? _controller.review(paths, includeSubfolders: _includeSubfolders)
+        : _controller.start(paths, includeSubfolders: _includeSubfolders);
+    if (!started) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.importPageFinishFirst)),
       );
@@ -758,7 +813,7 @@ class _DayImportPageState extends State<DayImportPage> {
   Future<void> _pickRecordings() async {
     final paths = await widget.pickers.pickRecordings();
     if (paths.isNotEmpty) _unopenedShares = const [];
-    _start(paths);
+    _start(paths, review: _review);
   }
 
   // Built outside the state so the isolate's closure holds only the path.
@@ -866,7 +921,7 @@ class _DayImportPageState extends State<DayImportPage> {
     final folder = await widget.pickers.pickFolder();
     if (folder == null) return;
     _unopenedShares = const [];
-    _start([folder]);
+    _start([folder], review: _review);
   }
 
   @override
@@ -908,7 +963,7 @@ class _DayImportPageState extends State<DayImportPage> {
                 setState(() => _dragging = false);
                 final paths = [for (final file in details.files) file.path];
                 unawaited(widget.fileAccess.remember(paths));
-                _start(paths);
+                _start(paths, review: _review);
               },
               child: content,
             ),
@@ -916,7 +971,7 @@ class _DayImportPageState extends State<DayImportPage> {
   }
 
   List<Widget> _choices(BuildContext context) {
-    final enabled = !_controller.isWorking;
+    final enabled = !_controller.isWorking && !_controller.isReviewing;
     final recovered = _recovered;
     return [
       if (recovered != null) ...[
@@ -1029,6 +1084,20 @@ class _DayImportPageState extends State<DayImportPage> {
                         Text(context.l10n.importPageIncludeSubfolders),
                       ],
                     ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Checkbox(
+                        key: const ValueKey('reviewBeforeImport'),
+                        value: _review,
+                        onChanged: enabled
+                            ? (value) =>
+                                  setState(() => _review = value ?? false)
+                            : null,
+                      ),
+                      Flexible(child: Text(context.l10n.reviewBeforeImport)),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -1081,12 +1150,18 @@ class _DayImportPageState extends State<DayImportPage> {
             ),
           ),
         ];
+      case DayImportReviewing():
+        return const [];
       case DayImportCancelled():
         return [Text(l10n.importPageCancelled)];
-      case DayImportFailed(:final message, notes: final failedNotes):
+      case DayImportFailed(
+        :final message,
+        notes: final failedNotes,
+        :final reviewChanged,
+      ):
         return [
           Text(
-            l10n.importMessage(message),
+            reviewChanged ? l10n.reviewChanged : l10n.importMessage(message),
             style: TextStyle(color: theme.colorScheme.error),
           ),
           ...notes(failedNotes),

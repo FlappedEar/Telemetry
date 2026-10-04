@@ -10,6 +10,7 @@
 <ul>
   <li>The title is <strong>Day results</strong> for a day never saved, otherwise the day's name. A <strong>•</strong> after the name means there are unsaved changes.</li>
   <li><strong>Save</strong> (disk icon) and, under <strong>More</strong> (⋮), <strong>Save as…</strong>. See <a href="saving.html">Saving</a>.</li>
+  <li>Under <strong>More</strong> (⋮), <strong>Add and review recordings…</strong>: add recordings after choosing what happens to each. See <a href="#add-review">Adding with a review</a>.</li>
   <li><strong>Add recordings</strong> (list icon with a plus): add the next session to this day. See <a href="#add">Adding a session</a>.</li>
   <li><strong>Day report</strong>: the whole day on one page. See <a href="day-report.html">Day report</a>.</li>
 </ul>
@@ -23,6 +24,15 @@
   <li>While the bar shows a session being added, the day stays open: <strong>Back</strong> asks you to wait until the session is in.</li>
 </ol>
 <p>Excluded laps, circuit names and your chosen group are kept. A day that was saved is saved again at once with the new session; a day never saved is kept as unsaved work (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
+
+<h3 id="add-review">Adding with a review</h3>
+<p><strong>Add recordings</strong> needs no approval. To choose yourself, open <strong>More</strong> (⋮) › <strong>Add and review recordings…</strong> and pick the files. The bar under the toolbar shows while they are read, then <strong>Review the import</strong> lists them as described in <a href="import.html#review">Reviewing the files before importing</a>, with these differences:</p>
+<ul>
+  <li><strong>Same run as</strong> also offers the day's sessions (<em>Same run as Session 2</em>) that have no other recording in any form yet (combined, kept beside it, or saved but not found): the file is kept with that session as its alternative recording. A session's other recording is never replaced from here.</li>
+  <li>A file the day already has says <em>Already in this day; skipped.</em></li>
+  <li>At the top, <strong>Add to this day</strong> (the default) or <strong>Start a new day</strong>. A new day closes this one and imports the files as a day of their own, which then opens. It is only available when this day has no unsaved changes: <em>Save this day before starting a new one.</em> If another import is still running, this day stays open and says <em>Finish the current import first. Nothing was imported.</em> Changing where the files go starts the choices again from the automatic ones.</li>
+  <li><strong>Add to the day</strong> (or <strong>Start the new day</strong>) confirms. If a session was added to the day meanwhile, for example one shared from RaceChrono, or the files changed, nothing is added and the message asks you to review them again.</li>
+</ul>
 
 <h2 id="best">Best day</h2>
 <p>The page opens with two bars. The amber <strong>Best day</strong> bar names the best lap of the day and its time; tap it to open the lap. The blue <strong>Theoretical best</strong> bar adds up the fastest time of every segment, once it has been calculated (see <a href="theoretical-best.html">Theoretical best</a>). Below them, the best lap's trace is coloured by speed (purple slow, yellow fast) with the speed range underneath; tap it to open the lap too.</p>

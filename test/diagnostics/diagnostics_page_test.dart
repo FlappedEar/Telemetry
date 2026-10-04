@@ -10,6 +10,7 @@ import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry_core/telemetry_core.dart' show ImportChoices;
 
 import '../day/rectangle_vbo.dart';
 import '../support/temp_directory.dart';
@@ -30,8 +31,9 @@ final class _Importer implements DayImporter {
   @override
   DayImportJob start(
     DayImportRequest request,
-    void Function(int, int) progress,
-  ) => _Job(request);
+    void Function(int, int) progress, {
+    ImportChoices? choices,
+  }) => _Job(request);
 }
 
 const _mib = 1024 * 1024;
