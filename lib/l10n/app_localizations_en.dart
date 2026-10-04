@@ -3563,10 +3563,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Importing the shared recordings. Go back to Import a day to see them.';
 
   @override
-  String get importPageFinishFirst =>
-      'Finish the current import first. Nothing was imported.';
-
-  @override
   String get importPageOpenSavedTitle => 'Open a saved day';
 
   @override
