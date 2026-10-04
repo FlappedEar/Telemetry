@@ -81,7 +81,9 @@ extension TheoreticalBestText on AppLocalizations {
         'no total is shown.' =>
       tbIncompleteCoverage,
     'Theoretical best calculation was cancelled.' => tbCancelled,
-    _ => message,
+    // A failure of the work itself ("The work stopped.") or another core
+    // message, in the app's language where it is known.
+    _ => taskFailure(message),
   };
 }
 
@@ -475,15 +477,19 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
       ),
     );
     if (corner == null || comparison == null) return row;
-    return InkWell(
-      key: ValueKey('lossRow ${corner.name}'),
-      onTap: () => showCornerDetails(
-        context,
-        corner,
-        lap.lap.reference,
-        onAnalyze: analyze,
+    return ButtonRow(
+      // The analyze button stays its own, with its own action.
+      merge: analyze == null,
+      child: InkWell(
+        key: ValueKey('lossRow ${corner.name}'),
+        onTap: () => showCornerDetails(
+          context,
+          corner,
+          lap.lap.reference,
+          onAnalyze: analyze,
+        ),
+        child: row,
       ),
-      child: row,
     );
   }
 

@@ -2457,6 +2457,17 @@ final class DayResultsController extends ChangeNotifier {
   ) =>
       () => dayCoach(result, sessions, runId: runId);
 
+  /// Prepares the coach's plan again after it failed. Returns whether it
+  /// started.
+  bool retryCoach() {
+    final result = _theoreticalBest;
+    if (result == null || _coachLoading || _coachError.isEmpty) return false;
+    // The card shows the coach preparing, not the old failure.
+    _coachError = '';
+    unawaited(_requestCoach(result, _theoreticalBestGeneration));
+    return true;
+  }
+
   Future<void> _requestCoach(DayTheoreticalBest result, int generation) async {
     if (result.state == DayTheoreticalBestState.error) {
       // The coach needs the sector times, which failed (see
@@ -2590,13 +2601,23 @@ final class DayResultsController extends ChangeNotifier {
         }),
       );
       diagnostics.recordStep(DiagnosticSteps.channelSummaries, clock.elapsed);
-    } on Exception catch (error) {
+    } on Object catch (error) {
       result = DayChannelSummaries(error: '$error');
     }
     if (_disposed || generation != _channelSummariesGeneration) return;
     _channelSummaries = result;
     _channelSummariesLoading = false;
     notifyListeners();
+  }
+
+  /// Summarizes the channels again after they failed. Returns whether it
+  /// started.
+  bool retryChannelSummaries() {
+    final failed = _channelSummaries;
+    if (failed == null || failed.error.isEmpty) return false;
+    _channelSummaries = null;
+    unawaited(requestChannelSummaries());
+    return true;
   }
 
   /// How each recorded temperature moves with lap time and strong

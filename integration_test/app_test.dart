@@ -54,8 +54,8 @@ Future<void> clearRecovery() async {
   if (file.existsSync()) file.deleteSync();
 }
 
-/// The best lap's time on the day page, under "Best day".
-// The time is the last text on the Best day bar, after its label and the
+/// The best lap's time on the day page, under "Best lap of the day".
+// The time is the last text on the best-lap bar, after its label and the
 // lap's name.
 String bestLapTime(WidgetTester tester) => tester
     .widgetList<Text>(
@@ -118,7 +118,7 @@ void main() {
     expect(find.text('1 session imported'), findsOneWidget);
 
     await tester.tap(find.text('Show the day\'s results'));
-    await waitFor(tester, find.text('Best day'));
+    await waitFor(tester, find.text('Best lap of the day'));
     await tester.pumpAndSettle();
     final best = bestLapTime(tester);
     // "22.440 s" under a minute, "1:49.898" above.
@@ -150,7 +150,7 @@ void main() {
     await tester.tap(find.text('Open a saved day…'));
     await waitFor(tester, find.text(name));
     await tester.tap(find.text(name));
-    await waitFor(tester, find.text('Best day'));
+    await waitFor(tester, find.text('Best lap of the day'));
     await tester.pumpAndSettle();
     expect(bestLapTime(tester), best);
     expect(find.textContaining('could not be opened'), findsNothing);
@@ -190,7 +190,7 @@ void main() {
       // day straight away, so the day page is what appears.
       await waitFor(
         tester,
-        find.text('Best day'),
+        find.text('Best lap of the day'),
         timeout: const Duration(minutes: 2),
       );
       await tester.pumpAndSettle();

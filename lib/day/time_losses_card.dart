@@ -183,6 +183,15 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
       const SizedBox(height: 8),
       if (!summary.available)
         Text(l10n.timeLossReason(summary.message))
+      // Nothing compared is not "no loss": say why, and what shows more.
+      else if (summary.comparedLapCount == 0)
+        Text(
+          !_allLaps &&
+                  {for (final lap in result.laps) lap.lap.runId}.length == 1
+              ? l10n.timeLossOnlySessionBest
+              : l10n.timeLossNoOtherLap,
+          key: const ValueKey('timeLossNothingCompared'),
+        )
       else ...[
         Text(
           [
@@ -221,56 +230,58 @@ class _TimeLossesCardState extends State<TimeLossesCard> {
   ) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    return InkWell(
-      key: ValueKey('timeLoss $index'),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => TimeLossPage(
-            result: result,
-            loss: loss,
-            path: widget.path,
-            gate: widget.gate,
-            wide: widget.wide,
-            onOpenLap: widget.onOpenLap,
-            onCompare: widget.onCompare,
+    return ButtonRow(
+      child: InkWell(
+        key: ValueKey('timeLoss $index'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => TimeLossPage(
+              result: result,
+              loss: loss,
+              path: widget.path,
+              gate: widget.gate,
+              wide: widget.wide,
+              onOpenLap: widget.onOpenLap,
+              onCompare: widget.onCompare,
+            ),
           ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 28,
-              child: Text(
-                '${index + 1}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 28,
+                child: Text(
+                  '${index + 1}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Wraps rather than cut "after Corner 4" at 360 dp.
-                  Text(l10n.timeLossWindow(loss)),
-                  Text(
-                    _lapName(l10n, result, loss.lapReference),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Wraps rather than cut "after Corner 4" at 360 dp.
+                    Text(l10n.timeLossWindow(loss)),
+                    Text(
+                      _lapName(l10n, result, loss.lapReference),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              displayDelta(loss.lossSeconds),
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
+              const SizedBox(width: 8),
+              Text(
+                displayDelta(loss.lossSeconds),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: theme.colorScheme.outline),
-          ],
+              Icon(Icons.chevron_right, color: theme.colorScheme.outline),
+            ],
+          ),
         ),
       ),
     );

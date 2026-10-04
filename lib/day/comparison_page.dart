@@ -417,44 +417,49 @@ class _ComparisonPageState extends State<ComparisonPage> {
     Widget badge(int slot) {
       final row = slot == 0 ? _a : _b;
       final color = slot == 0 ? lapAColor : lapBColor;
-      return InkWell(
-        key: ValueKey('comparisonLap${slot == 0 ? 'A' : 'B'}'),
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => _change(slot),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${slot == 0 ? 'A' : 'B'} · ${l10n.lap(row)}',
-                      style: theme.textTheme.titleSmall,
-                      // Wraps rather than cutting off the lap, which tells
-                      // A from B.
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(displayTime(row.durationSeconds)),
-                  ],
+      return ButtonRow(
+        child: InkWell(
+          key: ValueKey('comparisonLap${slot == 0 ? 'A' : 'B'}'),
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _change(slot),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: theme.colorScheme.outline,
-              ),
-            ],
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${slot == 0 ? 'A' : 'B'} · ${l10n.lap(row)}',
+                        style: theme.textTheme.titleSmall,
+                        // Wraps rather than cutting off the lap, which tells
+                        // A from B.
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(displayTime(row.durationSeconds)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: theme.colorScheme.outline,
+                ),
+              ],
+            ),
           ),
         ),
       );

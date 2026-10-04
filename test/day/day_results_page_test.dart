@@ -123,7 +123,7 @@ void main() {
     // The best lap leads, as a bar with its name and time.
     final bar = find.byKey(const ValueKey('dayBestBar'));
     for (final text in [
-      'Best day',
+      'Best lap of the day',
       best.displayName,
       displayTime(best.durationSeconds),
     ]) {
@@ -227,7 +227,7 @@ void main() {
     }
     await tester.tap(find.widgetWithText(NavigationDestination, 'Porównaj'));
     await tester.pumpAndSettle();
-    expect(find.text('Wybierz dwa okrążenia'), findsOneWidget);
+    expect(find.text('Porównaj dwa okrążenia'), findsOneWidget);
   });
 
   testWidgets(

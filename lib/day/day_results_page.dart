@@ -38,7 +38,7 @@ import '../ui/theme.dart';
 import 'track_dialog.dart';
 import 'track_map.dart';
 
-/// The day at a glance, led by the best lap: "Best day · 1:49.898 ·
+/// The day at a glance, led by the best lap: "Best lap of the day · 1:49.898 ·
 /// Session 5 · LAP 2", the group compared, each session's best, and every
 /// lap section in recording order.
 class DayResultsPage extends StatefulWidget {
@@ -1117,6 +1117,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
           wide: wide,
           speedsConverted: _controller.coachSpeedsConverted,
           withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
+          onRetry: _controller.retryCoach,
         ),
         const SizedBox(height: 12),
         FocusAreasCard(
@@ -1263,12 +1264,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channels: channels,
         associations: _controller.temperatureAssociations,
         loading: loading,
+        onRetry: _controller.retryChannelSummaries,
         channelSource: _controller.channelSource,
       ),
       const SizedBox(height: 12),
       DriverCard(
         channels: channels,
         loading: loading,
+        onRetry: _controller.retryChannelSummaries,
         onOpenLap: _open,
         channelSource: _controller.channelSource,
       ),

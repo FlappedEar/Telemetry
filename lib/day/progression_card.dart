@@ -141,60 +141,63 @@ class _ProgressionCardState extends State<ProgressionCard> {
       if (run.run.setupChanges case final setup?) l10n.progressionSetup(setup),
       if (run.run.notes case final notes?) l10n.progressionNotes(notes),
     ];
-    return InkWell(
-      key: ValueKey('progressionRun ${run.runId}'),
-      onTap: best == null || widget.onOpenLap == null
-          ? null
-          : () => widget.onOpenLap!(best),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${index + 1}. ${l10n.session(run.runName)}',
-                    style: theme.textTheme.titleSmall,
-                    overflow: TextOverflow.ellipsis,
+    return ButtonRow(
+      enabled: best != null && widget.onOpenLap != null,
+      child: InkWell(
+        key: ValueKey('progressionRun ${run.runId}'),
+        onTap: best == null || widget.onOpenLap == null
+            ? null
+            : () => widget.onOpenLap!(best),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${index + 1}. ${l10n.session(run.runName)}',
+                      style: theme.textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
+                  Text(
+                    best == null ? '—' : displayTime(best.durationSeconds),
+                    key: ValueKey('progressionBest ${run.runId}'),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              ),
+              if (best != null)
                 Text(
-                  best == null ? '—' : displayTime(best.durationSeconds),
-                  key: ValueKey('progressionBest ${run.runId}'),
-                  style: theme.textTheme.titleMedium,
+                  l10n.progressionBestLap(best.lapNumber),
+                  style: theme.textTheme.bodySmall,
+                ),
+              for (final line in details)
+                Text(line, style: theme.textTheme.bodySmall),
+              if (typical && low != null && high != null) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 18,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    key: ValueKey('progressionBar ${run.runId}'),
+                    painter: _RangePainter(
+                      distribution: distribution,
+                      low: low,
+                      high: high,
+                      line: theme.colorScheme.outline,
+                      box: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.7,
+                      ),
+                      mark: theme.colorScheme.onSurface,
+                    ),
+                  ),
                 ),
               ],
-            ),
-            if (best != null)
-              Text(
-                l10n.progressionBestLap(best.lapNumber),
-                style: theme.textTheme.bodySmall,
-              ),
-            for (final line in details)
-              Text(line, style: theme.textTheme.bodySmall),
-            if (typical && low != null && high != null) ...[
-              const SizedBox(height: 4),
-              SizedBox(
-                height: 18,
-                width: double.infinity,
-                child: CustomPaint(
-                  key: ValueKey('progressionBar ${run.runId}'),
-                  painter: _RangePainter(
-                    distribution: distribution,
-                    low: low,
-                    high: high,
-                    line: theme.colorScheme.outline,
-                    box: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.7,
-                    ),
-                    mark: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

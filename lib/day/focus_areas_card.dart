@@ -3,6 +3,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'touch.dart';
 import '../ui/theme.dart';
 import '../units.dart';
 import 'corner_details.dart' show lapAColor, lapBColor;
@@ -208,59 +209,61 @@ class FocusAreasCard extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    return InkWell(
-      key: ValueKey('focusArea $index'),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => FocusAreaPage(
-            result: result,
-            area: area,
-            lapLabel: lapLabel,
-            path: path,
-            gate: gate,
-            wide: wide,
-            onOpenLap: onOpenLap,
-            onCompare: onCompare,
+    return ButtonRow(
+      child: InkWell(
+        key: ValueKey('focusArea $index'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => FocusAreaPage(
+              result: result,
+              area: area,
+              lapLabel: lapLabel,
+              path: path,
+              gate: gate,
+              wide: wide,
+              onOpenLap: onOpenLap,
+              onCompare: onCompare,
+            ),
           ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${l10n.focusAreaKind(area.kind)} · '
-                    '${l10n.timeLossSegment(area.name)}',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${l10n.focusAreaKind(area.kind)} · '
+                      '${l10n.timeLossSegment(area.name)}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(l10n.focusObserved(l10n.focusAreaObservation(area))),
-                  const SizedBox(height: 2),
-                  Text(
-                    l10n.focusHypothesis(l10n.focusAreaHypothesis(area)),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontStyle: FontStyle.italic,
+                    const SizedBox(height: 2),
+                    Text(l10n.focusObserved(l10n.focusAreaObservation(area))),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.focusHypothesis(l10n.focusAreaHypothesis(area)),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    l10n.focusCompareLaps(
-                      _label(l10n, area.lap),
-                      _label(l10n, area.against),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.focusCompareLaps(
+                        _label(l10n, area.lap),
+                        _label(l10n, area.against),
+                      ),
+                      style: theme.textTheme.bodySmall,
                     ),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: theme.colorScheme.outline),
-          ],
+              Icon(Icons.chevron_right, color: theme.colorScheme.outline),
+            ],
+          ),
         ),
       ),
     );
