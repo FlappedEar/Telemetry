@@ -308,6 +308,18 @@ void main() {
     expect(finding.evidence.first.reference, closeTo(18.5 * 3.6, 0.5 * 3.6));
   });
 
+  test('within reach means at most 1.5 s faster', () {
+    // run1's laps are about 1.1, 1.2, 1.4 and 1.6 s faster than the latest
+    // laps. The two fastest through the corner within reach are compared:
+    // the third and the second, not the fourth (out of reach) or the first.
+    final coach = _coach([16, 18, 19.5, 22], [10, 10.2, 10.1]);
+    final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed);
+    expect(finding.evidence.first.referenceLaps.map((lap) => (lap.runId, lap.lapNumber)), [
+      ('run1', 2),
+      ('run1', 3),
+    ]);
+  });
+
   test('the main focus is the first change, before an improvement to keep', () {
     // The first corner improves lap by lap; the second stays slower than the
     // earlier, faster laps.
