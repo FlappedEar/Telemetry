@@ -142,11 +142,11 @@ apply whatever the app's architecture.
 
 **Documents**
 
-- Saves are atomic. Where the macOS sandbox forces a save in place, the
-  recovery snapshot is brought up to date first and the document is kept in
-  the app's `save-journal` folder until it reads back whole (or the old
-  version is written back); a save cut by
-  the app ending is finished when the file is next opened.
+- Saves are atomic. Where the macOS sandbox forces a save in place,
+  recovery changes still waiting are written first, and the document is
+  kept in the app's `save-journal` folder until it reads back whole (or the
+  old version is written back); a save cut by the app ending is finished
+  when the file is next opened.
 - A day marked clean can be rebuilt from its saved document; a day with
   edits has them in the recovery snapshot, apart from the recovery delay
   (500 ms) before a change is written there (recordings added to a saved

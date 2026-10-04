@@ -13,6 +13,7 @@ import '../units.dart';
 import 'background_task.dart';
 import 'channel_sources.dart';
 import 'recovery_store.dart';
+import 'recovery_writes.dart';
 import 'save_journal.dart';
 
 /// Saves a document. Replaced by a fake in widget tests.
@@ -1320,7 +1321,7 @@ final class DayResultsController extends ChangeNotifier {
 
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
-  Timer? _recoveryTimer;
+  final _recoveryWrites = RecoveryWrites(recoveryDelay);
 
   /// The user's unsaved corrections to the segments.
   final DaySegmentEdits _segmentEdits = DaySegmentEdits();
@@ -1342,15 +1343,6 @@ final class DayResultsController extends ChangeNotifier {
   // This day's [declaredSpeedUnits], cleared when it closes unless another
   // day has opened since.
   late List<String> _declaredSpeedUnits;
-
-  // The last recovery write or clear queued (see [queueRecovery]), and how
-  // many of this day's are not finished.
-  Future<void> _recoveryWork = Future.value();
-  int _recoveryQueued = 0;
-
-  // Whether a recovery write is scheduled or not finished.
-  bool get _recoveryWaiting =>
-      (_recoveryTimer?.isActive ?? false) || _recoveryQueued > 0;
 
   /// How long changes wait before the unsaved day is written for recovery.
   static const recoveryDelay = Duration(milliseconds: 500);
@@ -1428,7 +1420,7 @@ final class DayResultsController extends ChangeNotifier {
       // first: where the file is written in place (the macOS sandbox), the
       // app ending partway would cut it, and the snapshot then still holds
       // every change (Arek's second audit, finding 3).
-      if (_recoveryWaiting) await flushRecovery();
+      if (_recoveryWrites.waiting) await flushRecovery();
       await _writer(path, document);
       _document = document;
       // The details saved are in the document now; later edits stay.
@@ -1444,8 +1436,9 @@ final class DayResultsController extends ChangeNotifier {
       if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
       if (_revision == revision && !pairingPending) {
         _dirty = false;
-        _recoveryTimer?.cancel();
-        _enqueueRecovery(() => _clearOwnRecovery(recovery, eventId));
+        _recoveryWrites
+          ..cancel()
+          ..enqueue(() => _clearOwnRecovery(recovery, eventId));
       } else {
         // The day changed while the snapshot was written: those changes
         // are not in the file, so the day stays unsaved and recoverable.
@@ -2994,23 +2987,7 @@ final class DayResultsController extends ChangeNotifier {
   /// Writes the unsaved day for recovery shortly, once changes settle.
   void _scheduleRecovery() {
     if (recovery == null || !dirty) return;
-    _recoveryTimer?.cancel();
-    _recoveryTimer = Timer(recoveryDelay, _writeRecovery);
-  }
-
-  void _enqueueRecovery(Future<void>? Function() operation) {
-    ++_recoveryQueued;
-    _recoveryWork = queueRecovery(() async {
-      try {
-        await operation();
-      } on Object catch (error, stack) {
-        debugPrint('Recovery snapshot not updated: $error');
-        // The day is not protected until a write succeeds: say so.
-        reportError(error, stack, context: 'Recovery snapshot not updated');
-      } finally {
-        --_recoveryQueued;
-      }
-    });
+    _recoveryWrites.schedule(_writeRecovery);
   }
 
   void _writeRecovery() {
@@ -3030,7 +3007,7 @@ final class DayResultsController extends ChangeNotifier {
     final previous = _document;
     final previousBase = _documentBase;
     final original = _documentPath ?? '';
-    _enqueueRecovery(() async {
+    _recoveryWrites.enqueue(() async {
       final path = await store.path();
       if (path == null) return;
       final base = original.isEmpty ? path : original;
@@ -3062,19 +3039,13 @@ final class DayResultsController extends ChangeNotifier {
   }
 
   /// Finishes recovery writes still waiting; for tests and app exit.
-  Future<void> flushRecovery() {
-    if (_recoveryTimer?.isActive ?? false) {
-      _recoveryTimer!.cancel();
-      _writeRecovery();
-    }
-    return _recoveryWork;
-  }
+  Future<void> flushRecovery() => _recoveryWrites.flush(_writeRecovery);
 
   /// Disposes a day that was never shown without writing its recovery
   /// snapshot, so the snapshot it may have been restored from stays as it
   /// was.
   void discard() {
-    _recoveryTimer?.cancel();
+    _recoveryWrites.cancel();
     dispose();
   }
 
