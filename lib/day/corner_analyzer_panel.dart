@@ -1013,11 +1013,16 @@ class SegmentSpeedChart extends StatelessWidget {
         comparison.channelSeries(slot, 'speed', start, end, 300),
     ];
     final hasData = series.any((series) => series.hasData);
+    // Both laps share one axis: labelled only when they share a unit.
+    final withData = [
+      for (final line in series)
+        if (line.hasData) line.unit,
+    ];
     final unit = speedUnitOf(
       context,
-      series
-          .firstWhere((series) => series.hasData, orElse: () => series.first)
-          .unit,
+      withData.every((unit) => sameSpeedUnit(unit, withData.first))
+          ? (withData.firstOrNull ?? series.first.unit)
+          : '',
     ).trim();
     final segment = analysis.segment;
     final apex = analysis.phases?.apex;

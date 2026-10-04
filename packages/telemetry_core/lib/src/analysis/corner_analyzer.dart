@@ -572,8 +572,9 @@ final class CornerAnalyzer {
           ? _delta(valueA - valueB)
           : _delta(null, cornerSpeedMixedProvenance),
     );
+    // Two laps in different units share no unit label.
     final speedMetrics = SegmentSpeedMetrics(
-      unit: speedUnitA,
+      unit: speedsComparable ? speedUnitA : '',
       entry: row(speeds[0].entry, speeds[1].entry),
       maximum: row(speeds[0].maximum, speeds[1].maximum),
       minimum: row(speeds[0].minimum, speeds[1].minimum),
@@ -621,7 +622,7 @@ final class CornerAnalyzer {
       final speedsA = cornerSpeeds[0], speedsB = cornerSpeeds[1];
       corner = CornerSpeedMetrics(
         channel: speedsA.channel,
-        unit: speedsA.unit,
+        unit: sameSpeedUnit(speedsA.unit, speedsB.unit) ? speedsA.unit : '',
         entry: phase(speedsA.entry, speedsB.entry, comparison.entryDelta),
         apex: phase(speedsA.apex, speedsB.apex, comparison.apexDelta),
         minimum: phase(speedsA.minimum, speedsB.minimum, comparison.minimumDelta),

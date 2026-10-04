@@ -587,6 +587,10 @@ final class DayResultsController extends ChangeNotifier {
     if (_disposed) return;
     _channelRuns = _recordingRuns = null;
     _comparisons.clear();
+    // A review on its way was measured in the old unit.
+    ++_segmentReviewGeneration;
+    _segmentReviewLoading = false;
+    _segmentReviewFor = null;
     _resetTheoreticalBest();
     _resetChannelSummaries();
     notifyListeners();
@@ -2468,11 +2472,13 @@ final class DayResultsController extends ChangeNotifier {
     return latest.run.id;
   }
 
-  /// Whether the coach's speeds are converted values: the recordings' speeds
-  /// are in different units (declared, or assumed in settings; unlabelled
-  /// read as km/h), so the coach reports them all in km/h. Speeds are then
-  /// not shown (see [coachSpeedLabel]).
+  /// Whether the coach's speeds are converted values: the laps it compared
+  /// are in different units (declared, or assumed in settings), so it
+  /// reports them all in km/h. Speeds are then not shown (see
+  /// [coachSpeedLabel]). Also when the day's recordings are in different
+  /// units, whichever laps the coach compared.
   bool get coachSpeedsConverted {
+    if (_coach?.speedsConverted ?? false) return true;
     final units = <String>{};
     for (final named in _unitRuns) {
       final session = named.run.telemetry;

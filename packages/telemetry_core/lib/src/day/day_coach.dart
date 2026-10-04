@@ -224,11 +224,16 @@ final class DayCoach {
     List<CoachFinding> findings = const [],
     List<CoachItem> plan = const [],
     required this.reason,
+    this.speedsConverted = false,
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan);
 
   /// The session coached; empty when none could be.
   final String runId;
+
+  /// Whether the speeds reported are converted to km/h because the laps
+  /// compared are in different units; the app then does not show them.
+  final bool speedsConverted;
 
   /// Every finding, planned or not.
   final List<CoachFinding> findings;
@@ -312,19 +317,34 @@ final class _Passage {
 }
 
 /// The unit the coach reports speeds in: the one every corner's speeds are
-/// in (an unlabelled speed read as km/h), else km/h. Speeds are compared in
-/// metres per second whatever their units.
-typedef _ShownSpeed = ({String unit, double perMetrePerSecond});
+/// in (an unlabelled speed read as km/h), else km/h, [converted]. Speeds are
+/// compared in metres per second whatever their units, but not at all when
+/// some laps declare a unit and others have none ([comparable]): the
+/// unlabelled ones may be in either unit.
+typedef _ShownSpeed = ({String unit, double perMetrePerSecond, bool converted, bool comparable});
 
 _ShownSpeed _shownSpeed(List<DayCorner> corners) {
   final units = {
     for (final corner in corners)
       for (final (_, metrics) in corner.laps)
-        if (metrics.speeds.valid)
-          normalizedSpeedUnit(metrics.speeds.unit.trim().isEmpty ? 'km/h' : metrics.speeds.unit),
+        if (metrics.speeds.valid) metrics.speeds.unit.trim(),
   };
-  final unit = units.length == 1 && units.single.isNotEmpty ? units.single : 'km/h';
-  return (unit: unit, perMetrePerSecond: 1 / metresPerSecondPerSpeedUnit(unit)!);
+  final keys = {
+    for (final unit in units)
+      unit.isEmpty
+          ? 'km/h'
+          : normalizedSpeedUnit(unit).isNotEmpty
+          ? normalizedSpeedUnit(unit)
+          : unit.toLowerCase(),
+  };
+  final single = keys.length == 1 ? keys.single : null;
+  final unit = single != null && metresPerSecondPerSpeedUnit(single) != null ? single : 'km/h';
+  return (
+    unit: unit,
+    perMetrePerSecond: 1 / metresPerSecondPerSpeedUnit(unit)!,
+    converted: unit != single && keys.isNotEmpty,
+    comparable: !(units.contains('') && units.any((unit) => unit.isNotEmpty)),
+  );
 }
 
 /// Metres per second from a speed in [unit]; null for a unit not known.
@@ -521,8 +541,8 @@ DayCoach dayCoach(
           order: order[lap.reference]!,
           seconds: seconds,
           spacing: speeds.meanSampleSpacingMeters,
-          minimum: _metersPerSecond(speeds.minimum.value, speeds.unit),
-          exit: _metersPerSecond(speeds.exit.value, speeds.unit),
+          minimum: shown.comparable ? _metersPerSecond(speeds.minimum.value, speeds.unit) : null,
+          exit: shown.comparable ? _metersPerSecond(speeds.exit.value, speeds.unit) : null,
           lift: lift,
           braking: braking,
           pickup: pickup,
@@ -547,6 +567,7 @@ DayCoach dayCoach(
     runId: coached,
     findings: findings,
     plan: plan,
+    speedsConverted: shown.converted,
     reason: plan.isNotEmpty
         ? CoachReason.ready
         : findings.any(

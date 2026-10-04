@@ -11,6 +11,7 @@
 import 'dart:math' as math;
 
 import '../geometry.dart';
+import '../speed_units.dart';
 import 'consistency.dart';
 import 'track_progress.dart';
 
@@ -28,6 +29,9 @@ final class CornerLapObservation {
   double? apexSpeed;
   double? minimumSpeed;
   double? exitSpeed;
+
+  /// The unit of the speeds.
+  String speedUnit = '';
   double? pickupMeters;
 
   /// `measured` or `inferred`.
@@ -87,6 +91,15 @@ CornerVariability summarizeCornerVariability(
   final apex = <double>[], minimum = <double>[], exit = <double>[];
   final pickupMeasured = <double>[], pickupInferred = <double>[];
   final line = <double>[], accuracy = <double>[];
+  // Speeds are pooled only in one unit (see [sameSpeedUnit]); a corner
+  // whose laps are in different units has no speed spread.
+  String? speedUnit;
+  var mixedUnits = false;
+  for (final lap in observations) {
+    if (lap.apexSpeed == null && lap.minimumSpeed == null && lap.exitSpeed == null) continue;
+    final unit = speedUnit ??= lap.speedUnit;
+    if (!sameSpeedUnit(unit, lap.speedUnit)) mixedUnits = true;
+  }
   for (final lap in observations) {
     if (lap.brakingPointMeters case final braking?) {
       if (lap.brakingProvenance == 'measured') {
@@ -102,9 +115,11 @@ CornerVariability summarizeCornerVariability(
         pickupInferred.add(pickup);
       }
     }
-    if (lap.apexSpeed case final value?) apex.add(value);
-    if (lap.minimumSpeed case final value?) minimum.add(value);
-    if (lap.exitSpeed case final value?) exit.add(value);
+    if (!mixedUnits) {
+      if (lap.apexSpeed case final value?) apex.add(value);
+      if (lap.minimumSpeed case final value?) minimum.add(value);
+      if (lap.exitSpeed case final value?) exit.add(value);
+    }
     if (lap.lineOffsetMeters case final value?) line.add(value);
     if (lap.gpsAccuracyMeters case final value? when value.isFinite && value >= 0.0) {
       accuracy.add(value);

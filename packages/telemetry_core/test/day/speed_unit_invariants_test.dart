@@ -77,6 +77,16 @@ DayRunInput _run(String id, TelemetrySession session) => DayRunInput(
 /// The coach of a day of two sessions recorded as [earlier] and [latest],
 /// analysed with [assumed] for unlabelled speeds, as the app runs it.
 DayCoach _coach(_Format earlier, _Format latest, {String assumed = ''}) {
+  final (result, sessions) = _theoreticalBest(earlier, latest, assumed: assumed);
+  return dayCoach(result, sessions, runId: 'run2');
+}
+
+/// The theoretical best of that day, and its sessions by run.
+(DayTheoreticalBest, Map<String, TelemetrySession>) _theoreticalBest(
+  _Format earlier,
+  _Format latest, {
+  String assumed = '',
+}) {
   final runs = [
     _run(
       'run1',
@@ -107,7 +117,7 @@ DayCoach _coach(_Format earlier, _Format latest, {String assumed = ''}) {
   final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
   final result = dayTheoreticalBest(analysis, outing, random: Random(1));
   expect(result.state, DayTheoreticalBestState.ready);
-  return dayCoach(result, {for (final run in runs) run.runId: run.session}, runId: 'run2');
+  return (result, {for (final run in runs) run.runId: run.session});
 }
 
 /// What the coach concluded, with its speeds in km/h, rounded.
@@ -208,13 +218,32 @@ void main() {
       });
     }
 
+    test('a declared unit is not compared with speeds that have none', () {
+      // Nothing assumed: the unlabelled session could be in either unit.
+      final coach = _coach(_Format.vboMph, _Format.unlabelledMph);
+      expect(_speedUnits(coach), isEmpty);
+      expect(coach.findings.where((f) => f.kind == CoachKind.lowMinimumSpeed), isEmpty);
+    });
+
+    test('a corner\'s speed spread is never pooled across units', () {
+      bool spread(_Format earlier, _Format latest) => _theoreticalBest(
+        earlier,
+        latest,
+      ).$1.segments.any((row) => row.variability?.minimumSpeed.available ?? false);
+      expect(spread(_Format.vboKmh, _Format.rczKmh), isTrue);
+      expect(spread(_Format.vboMph, _Format.rczKmh), isFalse);
+    });
+
     test('speeds are reported in the day\'s own unit, km/h when it mixes units', () {
       expect(_speedUnits(_coach(_Format.vboKmh, _Format.vboKmh)), {'km/h'});
       expect(_speedUnits(_coach(_Format.vboMph, _Format.vboMph)), {'mph'});
       expect(_speedUnits(_coach(_Format.unlabelledMph, _Format.unlabelledMph, assumed: 'mph')), {
         'mph',
       });
-      expect(_speedUnits(_coach(_Format.vboMph, _Format.rczKmh)), {'km/h'});
+      final mixed = _coach(_Format.vboMph, _Format.rczKmh);
+      expect(_speedUnits(mixed), {'km/h'});
+      expect(mixed.speedsConverted, isTrue);
+      expect(_coach(_Format.vboMph, _Format.vboMph).speedsConverted, isFalse);
     });
   });
 
@@ -293,6 +322,9 @@ void main() {
           expect(row.delta.unavailableReason, cornerSpeedMixedProvenance, reason: '$a $b');
         }
         expect(metrics.corner!.entry.delta.value, isNull, reason: '$a $b');
+        // No unit of one lap labels the other's speeds.
+        expect(metrics.speeds.unit, '', reason: '$a $b');
+        expect(metrics.corner!.unit, '', reason: '$a $b');
       }
     });
   });
