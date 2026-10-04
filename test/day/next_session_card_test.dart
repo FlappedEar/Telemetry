@@ -734,6 +734,10 @@ void main() {
       pl.coachMetric(CoachMetric.combinedG),
       'Średnie łączne przeciążenie',
     );
+    expect(
+      en.coachMetric(CoachMetric.highestCombinedG),
+      'Highest here: this session against today',
+    );
   });
 
   test('a braking item compares with the three fastest laps of the day', () {

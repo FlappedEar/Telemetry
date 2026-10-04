@@ -1111,6 +1111,29 @@ void main() {
       expect(g.reference, closeTo(0.8, 1e-6));
     });
 
+    test('the highest today: slow laps left out, the faster laps compared in', () {
+      void spread(String runId, TelemetrySession session) {
+        _edit(session, 'longacc', 0, (d) => true);
+        _edit(session, 'latacc', 0.8, (d) => true);
+        if (runId == 'run1') _edit(session, 'latacc', 0.85, (d) => true, lap: 2);
+        if (runId == 'run2') {
+          for (final (lap, g) in [(1, 0.3), (2, 0.6), (3, 0.9), (4, 1.5)]) {
+            _edit(session, 'latacc', g, (d) => true, lap: lap);
+          }
+        }
+      }
+
+      // The latest session's fourth lap is a slow one, at 1.5 g.
+      final coach = _coach([20, 20.5], [15, 15.2, 15.1, 3], lateral: true, edit: spread);
+      final highest = coach.findings
+          .singleWhere((f) => f.kind == CoachKind.lowMinimumSpeed)
+          .evidence
+          .singleWhere((e) => e.key == CoachMetric.highestCombinedG);
+      expect(highest.unit, 'g');
+      expect(highest.observed, closeTo(0.9, 1e-6));
+      expect(highest.reference, closeTo(0.9, 1e-6));
+    });
+
     test('left out without a lateral acceleration', () {
       expect(combined(_coach([20, 20.5], [15, 15.2, 15.1])), isNull);
     });
@@ -1121,6 +1144,18 @@ void main() {
         [15, 15.2, 15.1],
         lateral: true,
         edit: (runId, session) => _edit(session, 'latacc', 0, (d) => true),
+      );
+      expect(combined(coach), isNull);
+    });
+
+    test('left out when one of this session\'s laps has no lateral acceleration', () {
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        lateral: true,
+        edit: (runId, session) {
+          if (runId == 'run2') _edit(session, 'latacc', double.nan, (d) => true, lap: 2);
+        },
       );
       expect(combined(coach), isNull);
     });

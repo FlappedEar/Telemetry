@@ -292,6 +292,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get coachMetricCombinedG => 'Średnie łączne przeciążenie';
 
   @override
+  String get coachMetricHighestCombinedG =>
+      'Najwyższe tutaj: ta sesja wobec całego dnia';
+
+  @override
   String get coachMetricThrottleReturn => 'Ponowne dodanie gazu';
 
   @override

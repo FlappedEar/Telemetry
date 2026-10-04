@@ -149,6 +149,11 @@ enum CoachMetric {
   /// g: how hard the car was worked there, not a share of the grip
   /// available.
   combinedG,
+
+  /// The highest mean combined G at the corner: of this session's laps
+  /// compared, against the day's laps so far (slow laps left out, the
+  /// faster laps compared always in).
+  highestCombinedG,
 }
 
 /// Why the plan is what it is, for the app to say in its language.
@@ -1547,6 +1552,25 @@ CoachFinding? _corrective(
         detail:
             'Mean of the longitudinal and lateral acceleration combined through the segment. '
             'How hard the car was worked, not a share of the grip available.',
+      ),
+    if (now.every(
+      (o) => o.current.combinedG != null && o.references.every((r) => r.combinedG != null),
+    ))
+      CoachEvidence(
+        key: CoachMetric.highestCombinedG,
+        metric: 'Highest mean combined G here',
+        observed: now.map((o) => o.current.combinedG!).reduce(math.max),
+        reference: [
+          for (final p in passages)
+            if (!slow.contains(p.lap.reference)) ?p.combinedG,
+          for (final o in now)
+            for (final r in o.references) r.combinedG!,
+        ].reduce(math.max),
+        unit: 'g',
+        referenceLaps: referenceLaps,
+        detail:
+            'The highest on this session\'s laps compared, against the highest of the day\'s '
+            'laps so far at this segment (slow laps left out).',
       ),
     if (kind == CoachKind.earlyLift)
       CoachEvidence(

@@ -48,6 +48,7 @@ extension CoachText on AppLocalizations {
     CoachMetric.firstThrottle => coachMetricFirstThrottle,
     CoachMetric.earlyThrottleShare => coachMetricEarlyThrottleShare,
     CoachMetric.combinedG => coachMetricCombinedG,
+    CoachMetric.highestCombinedG => coachMetricHighestCombinedG,
   };
 
   /// Why the plan is what it is; [session] names the session coached.
