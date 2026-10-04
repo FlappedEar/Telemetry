@@ -90,6 +90,10 @@ const _unclearOnset = {
 /// preferred as its reference: a lap within reach, not only the day's best.
 const double coachReachSeconds = 1.5;
 
+/// Plan items losing time within this many seconds of each other are
+/// ranked by how many laps show them instead (see [dayCoach]'s plan).
+const double coachRankSeconds = 0.1;
+
 enum CoachKind {
   earlyLift,
   excessiveCoasting,
@@ -115,6 +119,10 @@ enum CoachMetric {
   brakingStart,
   coastDistance,
   brakingSpread,
+
+  /// The time through the straight right after the corner: a slow exit
+  /// loses time there too.
+  nextStraightTime,
 }
 
 /// Why the plan is what it is, for the app to say in its language.
@@ -369,6 +377,7 @@ final class _Passage {
     this.pickup,
     this.coastSeconds,
     this.coastMeters,
+    this.nextSeconds,
   });
 
   final DayLapRow lap;
@@ -398,6 +407,9 @@ final class _Passage {
   /// The longest coast from the approach to the exit.
   final double? coastSeconds;
   final double? coastMeters;
+
+  /// Through the straight right after the segment, when one follows it.
+  final double? nextSeconds;
 
   double get lapSeconds => lap.durationSeconds;
 }
@@ -595,9 +607,15 @@ DayCoach dayCoach(
     final index = corner.segmentIndex;
     final start = corner.startProgressMeters, end = corner.endProgressMeters;
     final passages = <_Passage>[];
+    // The straight right after the corner, within the lap.
+    final segments = computed.approved.segments;
+    final next = index + 1 < segments.length && segments[index + 1]['type'] == 'straight'
+        ? index + 1
+        : null;
     for (final sectors in result.laps) {
       final lap = sectors.lap;
       final seconds = sectors.seconds(index);
+      final nextSeconds = next == null ? null : sectors.seconds(next);
       final metrics = corner.metrics(lap.reference);
       final trace = traces[lap.reference];
       final session = sessions[lap.runId];
@@ -693,6 +711,7 @@ DayCoach dayCoach(
           pickup: pickup,
           coastSeconds: coastSeconds,
           coastMeters: coastMeters,
+          nextSeconds: nextSeconds,
         ),
       );
     }
@@ -977,6 +996,20 @@ CoachFinding? _corrective(
       referenceLaps: referenceLaps,
       detail: 'Observed segment difference, not a predicted gain or a causal time-loss estimate.',
     ),
+    if (now.every(
+      (o) => o.current.nextSeconds != null && o.references.every((r) => r.nextSeconds != null),
+    ))
+      CoachEvidence(
+        key: CoachMetric.nextStraightTime,
+        metric: 'Straight after it',
+        observed: medianOf((p) => p.nextSeconds!),
+        reference: referenceOf((p) => p.nextSeconds!),
+        unit: 's',
+        referenceLaps: referenceLaps,
+        detail:
+            'Time through the straight right after this segment: time lost on the exit shows '
+            'there. Observed, not a predicted gain.',
+      ),
     if (now.every((o) => o.current.exit != null && o.references.every((r) => r.exit != null)))
       CoachEvidence(
         key: CoachMetric.exitSpeed,
@@ -1232,16 +1265,24 @@ List<CoachItem> _plan(List<CoachFinding> findings) {
       if (!f.kind.corrective) f.segmentId,
   };
   eligible.removeWhere((f) => f.kind.corrective && improving.contains(f.segmentId));
+  // The time lost through the segment and the straight right after it.
   double gap(CoachFinding f) {
+    var lost = 0.0;
     for (final e in f.evidence) {
-      if (e.key == CoachMetric.segmentTime) return e.observed - e.reference;
+      if (e.key == CoachMetric.segmentTime || e.key == CoachMetric.nextStraightTime) {
+        lost += e.observed - e.reference;
+      }
     }
-    return 0.0;
+    return lost;
   }
 
   eligible.sort((a, b) {
     final repeated = (b.repeated ? 1 : 0).compareTo(a.repeated ? 1 : 0);
     if (repeated != 0) return repeated;
+    // More time lost comes first; differences under coachRankSeconds are
+    // within the noise of the sector times.
+    final lost = gap(b) - gap(a);
+    if (lost.abs() >= coachRankSeconds) return lost > 0 ? 1 : -1;
     // A pattern more of the session coached's laps show comes first.
     final session = b.sessionLaps.length.compareTo(a.sessionLaps.length);
     if (session != 0) return session;

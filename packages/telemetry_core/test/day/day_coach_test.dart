@@ -310,6 +310,31 @@ void main() {
     expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);
   });
 
+  test('a corner shows the time through the straight after it', () {
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1]);
+    final evidence = coach.plan.first.finding.evidence;
+    final straight = evidence.singleWhere((e) => e.key == CoachMetric.nextStraightTime);
+    expect(straight.observed, greaterThan(straight.reference));
+  });
+
+  test('the corner losing more time leads the plan, even on fewer laps', () {
+    // The second corner is far slower on three laps, the first a little
+    // slower on all four.
+    final second = {20.0: 20.0, 20.5: 20.5, 17.0: 11.0, 17.2: 11.2, 17.1: 11.1, 17.3: 20.0};
+    double Function(double) shape(double slow) {
+      final first = _lap(slow);
+      final other = second[slow]!;
+      return (d) => d >= 307 && d <= 407 ? other + (30 - other) * (d - 357).abs() / 50 : first(d);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1, 17.3], shape: shape);
+    expect(coach.plan, hasLength(2));
+    final [first, later] = [for (final item in coach.plan) item.finding];
+    expect(first.sessionLaps, hasLength(3));
+    expect(later.sessionLaps, hasLength(4));
+    expect(coach.focus!.finding, same(first));
+  });
+
   test('braking points that agree make no braking item', () {
     final coach = _coach([20, 20.5], [17, 17.2, 17.1]);
     expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);
