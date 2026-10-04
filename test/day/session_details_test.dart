@@ -92,7 +92,7 @@ void main() {
     );
     await tester.enterText(
       find.widgetWithText(TextField, 'Conditions'),
-      'Dry, 18 °C',
+      'Dry, 18\u00a0°C',
     );
     await tester.enterText(
       find.widgetWithText(TextField, 'Setup changes'),
@@ -108,7 +108,7 @@ void main() {
     expect(controller.dirty, isTrue);
     expect(
       find.text(
-        'Conditions: Dry, 18 °C\nSetup changes: Tyres +0.1 bar\n'
+        'Conditions: Dry, 18\u00a0°C\nSetup changes: Tyres +0.1 bar\n'
         'Notes: Brake earlier into T1',
       ),
       findsOneWidget,
@@ -131,7 +131,7 @@ void main() {
     await tester.pumpAndSettle();
     final run = documentRun(saved.single, first);
     expect(run['name'], 'Warm-up');
-    expect(run['conditions'], 'Dry, 18 °C');
+    expect(run['conditions'], 'Dry, 18\u00a0°C');
     expect(run['setupChanges'], 'Tyres +0.1 bar');
     expect(run['notes'], 'Brake earlier into T1');
     final other = documentRun(saved.single, outcome.runs.last.run.id);
@@ -152,7 +152,7 @@ void main() {
     final cleared = documentRun(saved.last, first);
     expect(cleared.containsKey('notes'), isTrue);
     expect(cleared['notes'], isNull);
-    expect(cleared['conditions'], 'Dry, 18 °C');
+    expect(cleared['conditions'], 'Dry, 18\u00a0°C');
 
     // Saving with nothing changed leaves the day clean.
     await tester.tap(detailsTile(first));

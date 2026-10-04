@@ -76,11 +76,11 @@ void main() {
         'km/h',
       );
       expect(lines, [
-        'Braking point: spread 4.2 m · 5 laps · measured',
+        'Braking point: spread 4.2\u00a0m · 5 laps · measured',
         'Braking point: too few laps (2 laps · inferred)',
-        'Minimum speed: typical 72.4 km/h · spread 1.8 km/h · 5 laps',
-        'Throttle pickup: spread 3.0 m · 4 laps · inferred',
-        'Line: spread 1.4 m · GPS accuracy about 0.80 m',
+        'Minimum speed: typical 72.4\u00a0km/h · spread 1.8\u00a0km/h · 5 laps',
+        'Throttle pickup: spread 3.0\u00a0m · 4 laps · inferred',
+        'Line: spread 1.4\u00a0m · GPS accuracy about 0.80\u00a0m',
       ]);
       expect(
         variabilityLines(
@@ -89,7 +89,7 @@ void main() {
           '',
         ),
         [
-          'Line: spread 0.5 m · GPS accuracy not recorded'
+          'Line: spread 0.5\u00a0m · GPS accuracy not recorded'
               ' · not distinguishable from GPS error',
         ],
       );
@@ -109,7 +109,7 @@ void main() {
         ),
         [
           'Prędkość na wierzchołku: za mało okrążeń (2 okrążenia)',
-          'Prędkość na wyjściu: typowa 90.0 km/h · rozrzut 2.0 km/h · '
+          'Prędkość na wyjściu: typowa 90.0\u00a0km/h · rozrzut 2.0\u00a0km/h · '
               '3 okrążenia',
         ],
       );

@@ -767,7 +767,7 @@ void main() {
     expect(inRow('Session 1'), findsOneWidget);
     expect(inRow('3 laps'), findsOneWidget);
     expect(inRow('Best'), findsOneWidget);
-    expect(inRow('4.000 s'), findsOneWidget);
+    expect(inRow('4.000\u00a0s'), findsOneWidget);
   });
 
   testWidgets('only the session of the best lap of the day is purple, and '
@@ -966,7 +966,7 @@ void main() {
   });
 
   test('times read like the rest of the app', () {
-    expect(displayTime(28.662), '28.662 s');
+    expect(displayTime(28.662), '28.662\u00a0s');
     expect(displayTime(109.898), '1:49.898');
     expect(displayTime(59.9996), '1:00.000');
     expect(displayTime(double.nan), '—');

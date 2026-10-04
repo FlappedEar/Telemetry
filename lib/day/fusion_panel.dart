@@ -257,14 +257,14 @@ class _ClockReview extends StatelessWidget {
           primary,
           alternative,
           _offset(offset),
-          '${fixed(alignment!.uncertaintySeconds ?? 0, 2)} s',
+          '${fixed(alignment!.uncertaintySeconds ?? 0, 2)}\u00a0s',
         ),
       if (alignment?.driftPpm case final drift?)
         l10n.clockDrift(fixed(drift, 0)),
       if (alignment != null && alignment.correlation > -1)
         l10n.clockCorrelation(
           fixed(alignment.correlation, 3),
-          '${fixed(alignment.overlapSeconds, 0)} s',
+          '${fixed(alignment.overlapSeconds, 0)}\u00a0s',
           alignment.usedWindows,
           alignment.windows.length,
         ),
@@ -328,7 +328,7 @@ String _offset(double seconds) {
       : hundredths < 0
       ? '−'
       : '±';
-  return '$sign${fixed(hundredths.abs() / 100, 2)} s';
+  return '$sign${fixed(hundredths.abs() / 100, 2)}\u00a0s';
 }
 
 /// A channel both recordings measured, as the user knows it: "Speed",

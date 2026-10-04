@@ -208,7 +208,12 @@ void main() {
     expect(
       find.descendant(
         of: first,
-        matching: find.text('Observed: ${areas.first.observation}'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              widget.data?.replaceAll('\u00a0', ' ') ==
+                  'Observed: ${areas.first.observation}',
+        ),
       ),
       findsOneWidget,
     );
@@ -233,6 +238,21 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('focusOpenLapB')));
     await tester.pumpAndSettle();
     expect(find.byType(LapPage), findsOneWidget);
+  });
+
+  testWidgets('on a large screen the report stays 840 wide, centred', (
+    tester,
+  ) async {
+    final controller = await open(tester, importDay());
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayReportPage(report: controller.dayReportDocument)),
+    );
+    await tester.pumpAndSettle();
+    final group = tester.getRect(find.byKey(const ValueKey('dayReportGroup')));
+    expect(group.left, 540);
+    expect(group.right, lessThanOrEqualTo(1380));
   });
 
   testWidgets('the day report presents what was calculated', (tester) async {
@@ -329,7 +349,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.textContaining(' 0 s'), findsNothing);
+    expect(find.textContaining(' 0\u00a0s'), findsNothing);
   });
 
   testWidgets('the day report speaks Polish', (tester) async {
@@ -361,7 +381,7 @@ void main() {
     expect(find.textContaining('Typowe okrążenie '), findsOneWidget);
     expect(find.textContaining('Olej · maksimum'), findsOneWidget);
     expect(find.text('Tętno'), findsOneWidget);
-    expect(find.textContaining(' bpm'), findsWidgets);
+    expect(find.textContaining('\u00a0bpm'), findsWidgets);
     expect(find.textContaining('laps'), findsNothing);
 
     // A result not calculated yet says why in Polish.

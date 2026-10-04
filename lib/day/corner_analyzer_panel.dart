@@ -50,7 +50,7 @@ String segmentPickerLabel(
   double axisLength,
 ) {
   final type = segment.type.trim();
-  final length = '${segmentLengthMeters(segment, axisLength).round()} m';
+  final length = '${segmentLengthMeters(segment, axisLength).round()}\u00a0m';
   final name = l10n.tbSegmentName(segment.name.trim());
   if (type.isEmpty ||
       segment.name.trim().toLowerCase().contains(type.toLowerCase())) {
@@ -117,7 +117,7 @@ String? cornerAnalyzerSummary(AppLocalizations l10n, SegmentAnalysis analysis) {
   if (delta == null || !delta.isFinite) return null;
   if (_rounded(delta, 3)) return l10n.cornerAnalyzerSummarySame;
   final faster = delta < 0 ? 'A' : 'B';
-  final time = '${delta.abs().toStringAsFixed(3)} s';
+  final time = '${delta.abs().toStringAsFixed(3)}\u00a0s';
   final corner = analysis.corner;
   final unit = speedUnitLabel(corner?.unit ?? analysis.speeds.unit);
   final speeds = corner != null
@@ -485,8 +485,8 @@ class AnalyzerTable extends StatelessWidget {
     );
     String speed(double v) => '${v.toStringAsFixed(1)}$speedUnit';
     String speedDelta(double d) => _signed(d, 1, speedUnit);
-    String meters(double v) => '${v.round()} m';
-    String metersDelta(double d) => _signed(d, 0, ' m');
+    String meters(double v) => '${v.round()}\u00a0m';
+    String metersDelta(double d) => _signed(d, 0, '\u00a0m');
 
     _Row speedRow(String id, String label, AnalyzerMetric metric) => (
       id: id,
@@ -565,8 +565,8 @@ class AnalyzerTable extends StatelessWidget {
             id: 'brakingTime',
             label: l10n.cornerAnalyzerBrakingTime,
             metric: braking.seconds,
-            value: (v) => '${v.toStringAsFixed(2)} s',
-            delta: (d) => _signed(d, 2, ' s'),
+            value: (v) => '${v.toStringAsFixed(2)}\u00a0s',
+            delta: (d) => _signed(d, 2, '\u00a0s'),
             shownDelta: _same,
             compare: _Compare.amount,
             words: (l10n.cornerAnalyzerALonger, l10n.cornerAnalyzerAShorter),
@@ -851,7 +851,7 @@ class AnalyzerTable extends StatelessWidget {
     final laps = heartRate?.laps ?? const <HeartRateLap>[];
     final heartRateShown = laps.length == 2 && laps.any((lap) => lap.valid);
     String bpm(HeartRateLap lap) =>
-        lap.valid ? '${lap.summary.mean!.toStringAsFixed(0)} bpm' : '—';
+        lap.valid ? '${lap.summary.mean!.toStringAsFixed(0)}\u00a0bpm' : '—';
 
     final decelerationMissing =
         decelerationUnitMissing && analysis.braking != null;
@@ -906,7 +906,7 @@ class AnalyzerTable extends StatelessWidget {
                       _signed(
                         laps[0].summary.mean! - laps[1].summary.mean!,
                         0,
-                        ' bpm',
+                        '\u00a0bpm',
                       ),
                       style: numbers?.copyWith(fontWeight: FontWeight.w600),
                     )
@@ -1103,7 +1103,7 @@ class SegmentSpeedChart extends StatelessWidget {
                         text: 'B ${at(1)}',
                         style: const TextStyle(color: lapBColor),
                       ),
-                      TextSpan(text: unit.isEmpty ? '' : ' $unit'),
+                      TextSpan(text: unit.isEmpty ? '' : '\u00a0$unit'),
                     ],
                   ),
                 );

@@ -42,7 +42,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String trackDialogDetectedRoute(String length, String direction) {
-    return 'Wykryta trasa: $length m, $direction (na podstawie GPS).';
+    return 'Wykryta trasa: $length m, $direction (na podstawie GPS).';
   }
 
   @override
@@ -857,7 +857,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String consistencyValue(String time, String spread) {
-    return '$time · rozrzut $spread s';
+    return '$time · rozrzut $spread s';
   }
 
   @override
@@ -971,7 +971,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String timeLossThrough(String segment, int start, int end) {
-    return '$segment: od $start m do $end m za linią start/meta.';
+    return '$segment: od $start m do $end m za linią start/meta.';
   }
 
   @override
@@ -1058,7 +1058,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String focusBrakingStarts(int meters) {
-    return 'hamowanie zaczyna się na $meters m';
+    return 'hamowanie zaczyna się na $meters m';
   }
 
   @override
@@ -1083,7 +1083,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String segment,
     String sourceLap,
   ) {
-    return 'Twoje najlepsze okrążenie ($bestLap) było o $gap s wolniejsze w segmencie $segment niż $sourceLap, najszybsze zarejestrowane tam.';
+    return 'Twoje najlepsze okrążenie ($bestLap) było o $gap s wolniejsze w segmencie $segment niż $sourceLap, najszybsze zarejestrowane tam.';
   }
 
   @override
@@ -1099,7 +1099,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String reference,
     String median,
   ) {
-    return 'Na $count z $total porównanych okrążeń czas uciekał w segmencie $segment względem $reference (mediana $median s).';
+    return 'Na $count z $total porównanych okrążeń czas uciekał w segmencie $segment względem $reference (mediana $median s).';
   }
 
   @override
@@ -1113,7 +1113,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String spread,
     String count,
   ) {
-    return 'Punkt hamowania w segmencie $segment zmienia się o $spread m w środkowej połowie z $count okrążeń (zmierzony z sygnału hamulca).';
+    return 'Punkt hamowania w segmencie $segment zmienia się o $spread m w środkowej połowie z $count okrążeń (zmierzony z sygnału hamulca).';
   }
 
   @override
@@ -1257,7 +1257,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String progressionSpread(String seconds) {
-    return 'rozrzut $seconds s';
+    return 'rozrzut $seconds s';
   }
 
   @override
@@ -1425,7 +1425,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get channelCarIntro =>
-      'Każda sesja osobno, w kolejności nagrania. Przerwy w nagraniu nigdy nie są uzupełniane; nieprawdopodobne odczyty i zastępcze zera są pomijane i liczone. Chłodzenie to ciągle nagrany spadek o co najmniej 5° w ciągu co najmniej 30 s.';
+      'Każda sesja osobno, w kolejności nagrania. Przerwy w nagraniu nigdy nie są uzupełniane; nieprawdopodobne odczyty i zastępcze zera są pomijane i liczone. Chłodzenie to ciągle nagrany spadek o co najmniej 5° w ciągu co najmniej 30 s.';
 
   @override
   String get channelUnitsNotDeclared => 'nagranie nie podaje jednostki';
@@ -1513,12 +1513,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerBeforeEntry(int metres) {
-    return '$metres m przed';
+    return '$metres m przed';
   }
 
   @override
   String cornerIntoCorner(int metres) {
-    return '$metres m w zakręcie';
+    return '$metres m w zakręcie';
   }
 
   @override
@@ -1526,12 +1526,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerLater(int metres) {
-    return '$metres m później';
+    return '$metres m później';
   }
 
   @override
   String cornerEarlier(int metres) {
-    return '$metres m wcześniej';
+    return '$metres m wcześniej';
   }
 
   @override
@@ -1674,7 +1674,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportTheoreticalAvailable(String seconds) {
-    return '$seconds s rezerwy na zatwierdzonych segmentach';
+    return '$seconds s rezerwy na zatwierdzonych segmentach';
   }
 
   @override
@@ -1724,12 +1724,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportFasterThanPrevious(String seconds) {
-    return '$seconds s szybciej niż w poprzedniej sesji';
+    return '$seconds s szybciej niż w poprzedniej sesji';
   }
 
   @override
   String reportSlowerThanPrevious(String seconds) {
-    return '$seconds s wolniej niż w poprzedniej sesji';
+    return '$seconds s wolniej niż w poprzedniej sesji';
   }
 
   @override
@@ -1763,7 +1763,7 @@ class AppLocalizationsPl extends AppLocalizations {
       few: '$count okrążenia',
       one: '1 okrążenie',
     );
-    return 'Typowe okrążenie $time · środkowa połowa w granicach $spread s · $_temp0';
+    return 'Typowe okrążenie $time · środkowa połowa w granicach $spread s · $_temp0';
   }
 
   @override
@@ -1804,7 +1804,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String reportHeartRateSummary(String mean, String minimum, String maximum) {
-    return 'średnio $mean bpm · $minimum – $maximum';
+    return 'średnio $mean bpm · $minimum – $maximum';
   }
 
   @override
@@ -1884,7 +1884,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String end,
     String length,
   ) {
-    return '$type · $start–$end m · $length m';
+    return '$type · $start–$end m · $length m';
   }
 
   @override
@@ -1922,7 +1922,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorSplitAt(String meters) {
-    return 'Podział w punkcie $meters m';
+    return 'Podział w punkcie $meters m';
   }
 
   @override
@@ -2042,7 +2042,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentEditorErrorBounds(String length) {
-    return 'Granice muszą leżeć między 0 a $length m.';
+    return 'Granice muszą leżeć między 0 a $length m.';
   }
 
   @override
@@ -2300,12 +2300,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String variabilityLine(String spread, String accuracy) {
-    return 'Linia: rozrzut $spread m · $accuracy';
+    return 'Linia: rozrzut $spread m · $accuracy';
   }
 
   @override
   String variabilityGpsAccuracy(String meters) {
-    return 'dokładność GPS około $meters m';
+    return 'dokładność GPS około $meters m';
   }
 
   @override
@@ -2353,7 +2353,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get sessionDetailsConditions => 'Warunki';
 
   @override
-  String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
+  String get sessionDetailsConditionsHint => 'Sucho, 18 °C';
 
   @override
   String get sessionDetailsSetup => 'Zmiany w ustawieniach';
@@ -2682,7 +2682,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String coastingIntoLap(String seconds) {
-    return '$seconds s od początku okrążenia';
+    return '$seconds s od początku okrążenia';
   }
 
   @override
@@ -2800,7 +2800,7 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count epizodach',
       one: '1 epizodzie',
     );
-    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
+    return '$seconds s · $meters m w $_temp0 ($share % okrążenia)';
   }
 
   @override
@@ -2816,7 +2816,7 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count epizodach',
       one: '1 epizodzie',
     );
-    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
+    return '$seconds s · $meters m w $_temp0 ($share % odcinka)';
   }
 
   @override
@@ -2829,7 +2829,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String drivingSelectedStretch(String meters) {
-    return 'Wybrany odcinek · $meters m';
+    return 'Wybrany odcinek · $meters m';
   }
 
   @override
@@ -2875,7 +2875,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get drivingGgNote =>
-      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
+      'Zaobserwowane przyspieszenia, nie udział dostępnej przyczepności. Okręgi co 0.5 g; kółko oznacza maksima każdego okrążenia.';
 
   @override
   String get drivingGgAccelerating => 'przyspieszanie';
@@ -3092,7 +3092,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerDetailsMetresIn(int metres) {
-    return '$metres m od wejścia';
+    return '$metres m od wejścia';
   }
 
   @override
@@ -3410,7 +3410,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerAnalyzerCursor(String offset) {
-    return 'Kursor $offset m: ';
+    return 'Kursor $offset m: ';
   }
 
   @override
@@ -3873,7 +3873,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String endTolerance,
     String length,
   ) {
-    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
+    return '$start m ±$startTolerance → $end m ±$endTolerance ($length m)';
   }
 
   @override
@@ -3900,7 +3900,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String segmentReviewApex(String at, String tolerance) {
-    return 'Geometryczny wierzchołek $at m ±$tolerance m';
+    return 'Geometryczny wierzchołek $at m ±$tolerance m';
   }
 
   @override
@@ -4029,7 +4029,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String clockDrift(String ppm) {
-    return 'Dryf zegara: $ppm ppm';
+    return 'Dryf zegara: $ppm ppm';
   }
 
   @override

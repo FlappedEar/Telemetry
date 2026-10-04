@@ -152,11 +152,11 @@ void main() {
       );
       expect(
         text(
-          '${proposal.start.progressMeters.toStringAsFixed(1)} m '
+          '${proposal.start.progressMeters.toStringAsFixed(1)}\u00a0m '
           '±${proposal.start.toleranceMeters.toStringAsFixed(0)} → '
-          '${proposal.end.progressMeters.toStringAsFixed(1)} m '
+          '${proposal.end.progressMeters.toStringAsFixed(1)}\u00a0m '
           '±${proposal.end.toleranceMeters.toStringAsFixed(0)} '
-          '(${proposal.lengthMeters.toStringAsFixed(1)} m)',
+          '(${proposal.lengthMeters.toStringAsFixed(1)}\u00a0m)',
         ),
         findsOneWidget,
       );
@@ -164,8 +164,8 @@ void main() {
       expect(apex.resolved, isTrue);
       expect(
         text(
-          'Geometric apex ${apex.progressMeters.toStringAsFixed(1)} m '
-          '±${apex.toleranceMeters.toStringAsFixed(0)} m',
+          'Geometric apex ${apex.progressMeters.toStringAsFixed(1)}\u00a0m '
+          '±${apex.toleranceMeters.toStringAsFixed(0)}\u00a0m',
         ),
         findsOneWidget,
       );

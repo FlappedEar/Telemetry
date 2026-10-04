@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
@@ -106,13 +107,13 @@ void main() {
     for (final channel in expected) {
       expect(find.byKey(ValueKey('lapChart $channel')), findsOneWidget);
     }
-    expect(textOf(tester, const ValueKey('chartCursor')), '0.0 s');
+    expect(textOf(tester, const ValueKey('chartCursor')), '0.0\u00a0s');
 
     // A drag moves the cursor, and the dot on the map with it.
     final map = tester.widget<TrackMap>(find.byType(TrackMap));
     final chart = find.byKey(const ValueKey('lapChart velocity'));
     await dragAcross(tester, chart, 0.05);
-    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0 s'));
+    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0\u00a0s'));
     final before = map.movingMarks!.value.single;
     await dragAcross(tester, chart, 0.4);
     final after = map.movingMarks!.value.single;
@@ -131,13 +132,13 @@ void main() {
     await tester.pump();
     expect(
       textOf(tester, const ValueKey('chartRange')),
-      isNot('0.0 s – ${(row.end - row.start).toStringAsFixed(1)} s'),
+      isNot('0.0\u00a0s – ${(row.end - row.start).toStringAsFixed(1)}\u00a0s'),
     );
     await tester.tap(find.byKey(const ValueKey('chartZoomReset')));
     await tester.pump();
     expect(
       textOf(tester, const ValueKey('chartRange')),
-      '0.0 s – ${(row.end - row.start).toStringAsFixed(1)} s',
+      '0.0\u00a0s – ${(row.end - row.start).toStringAsFixed(1)}\u00a0s',
     );
 
     // Removing a chart is remembered for the next lap.
@@ -174,6 +175,48 @@ void main() {
       chart(const ChartSeries.failed(chartReasonChannelMissing)),
     );
     expect(find.text('Not available · A: not recorded'), findsOneWidget);
+  });
+
+  testWidgets('with very large text a lap header wraps, keeping the lap', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: analysis,
+    );
+    final best = analysis.ranking!.bestOfDay!;
+    final a = controller
+        .comparisonCandidates(best)
+        .firstWhere((row) => row.reference != best.reference);
+    await tester.binding.setSurfaceSize(const Size(360, 740));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: ComparisonPage(controller: controller, a: a, b: best),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final header in [
+      find.textContaining('A · '),
+      find.textContaining('B · '),
+    ]) {
+      final paragraph = tester.renderObject<RenderParagraph>(header.first);
+      expect(paragraph.didExceedMaxLines, isFalse);
+    }
+    // Down to the last chart's Add a channel, nothing overflows.
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('addChartChannel')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('compares two laps by track position, A − B', (tester) async {
@@ -270,7 +313,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('comparisonOpenLapA')));
     await tester.pumpAndSettle();
     expect(find.byType(LapPage), findsOneWidget);
-    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0 s'));
+    expect(textOf(tester, const ValueKey('chartCursor')), isNot('0.0\u00a0s'));
   });
 
   testWidgets('a time loss and the lap list open a comparison', (tester) async {
@@ -294,11 +337,14 @@ void main() {
     expect(find.byType(ComparisonPage), findsOneWidget);
     // The loss's segment is shown first, not the whole lap.
     final range = textOf(tester, const ValueKey('chartRange'));
-    expect(range, isNot(startsWith('0 m –')));
+    expect(range, isNot(startsWith('0\u00a0m –')));
     expect(loss.window.endProgressMeters, greaterThan(0));
     await tester.tap(find.byKey(const ValueKey('chartZoomReset')));
     await tester.pump();
-    expect(textOf(tester, const ValueKey('chartRange')), startsWith('0 m –'));
+    expect(
+      textOf(tester, const ValueKey('chartRange')),
+      startsWith('0\u00a0m –'),
+    );
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.pageBack();

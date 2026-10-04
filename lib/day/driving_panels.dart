@@ -263,7 +263,7 @@ class _ComparisonGgPanelState
     String peak(int slot, GgPeak? Function(GgPeaks) pick) {
       if (slot >= laps.length || !laps[slot].valid) return '—';
       final value = pick(laps[slot].peaks);
-      return value == null ? '—' : '${value.value.toStringAsFixed(2)} g';
+      return value == null ? '—' : '${value.value.toStringAsFixed(2)}\u00a0g';
     }
 
     String samples(int slot) {
@@ -483,7 +483,7 @@ class GgPainter extends CustomPainter {
       Alignment.bottomRight,
     );
     label(
-      '${scale.toStringAsFixed(1)} g',
+      '${scale.toStringAsFixed(1)}\u00a0g',
       Offset(centre.dx + radius * 0.72, centre.dy - radius * 0.72),
       Alignment.bottomLeft,
     );
@@ -1085,8 +1085,8 @@ class _ComparisonCoastingPanelState
                                 'coastingEpisode ${_lapNames[slot]} $index',
                               ),
                               label: Text(
-                                '${episode.startProgressMeters!.round()} m · '
-                                '${episode.seconds.toStringAsFixed(1)} s',
+                                '${episode.startProgressMeters!.round()}\u00a0m · '
+                                '${episode.seconds.toStringAsFixed(1)}\u00a0s',
                               ),
                               onPressed: () => window.cursor.value =
                                   episode.startProgressMeters!,

@@ -198,7 +198,9 @@ void main() {
     testWidgets('English uses a decimal point', (tester) async {
       await tester.pumpWidget(probe(all, locale: const Locale('en')));
       expect(
-        find.text('1:49.898 | 28.662 s | −1.340 s | 12.5 | Clockwise'),
+        find.text(
+          '1:49.898 | 28.662\u00a0s | −1.340\u00a0s | 12.5 | Clockwise',
+        ),
         findsOneWidget,
       );
     });
@@ -207,7 +209,7 @@ void main() {
       await tester.pumpWidget(probe(all, locale: const Locale('pl')));
       expect(
         find.text(
-          '1:49.898 | 28.662 s | −1.340 s | 12.5 | Zgodnie z ruchem wskazówek zegara',
+          '1:49.898 | 28.662\u00a0s | −1.340\u00a0s | 12.5 | Zgodnie z ruchem wskazówek zegara',
         ),
         findsOneWidget,
       );

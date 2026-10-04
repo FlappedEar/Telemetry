@@ -176,7 +176,7 @@ void main() {
       expect(
         textOf(tester, const ValueKey('lapConsistency day')),
         '${displayTime(consistency.day.median!)} · spread '
-        '${consistency.day.interquartileRange!.toStringAsFixed(3)} s',
+        '${consistency.day.interquartileRange!.toStringAsFixed(3)}\u00a0s',
       );
       expect(
         textOf(tester, ValueKey('lapConsistency ${long.runId}')),

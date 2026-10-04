@@ -1001,12 +1001,15 @@ class _DayImportPageState extends State<DayImportPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Checkbox(
-              key: checkboxKey,
-              value: value,
-              onChanged: onChanged == null
-                  ? null
-                  : (checked) => onChanged(checked ?? false),
+            // One focus stop per option: the row takes the focus.
+            ExcludeFocus(
+              child: Checkbox(
+                key: checkboxKey,
+                value: value,
+                onChanged: onChanged == null
+                    ? null
+                    : (checked) => onChanged(checked ?? false),
+              ),
             ),
             Flexible(child: Text(label)),
           ],

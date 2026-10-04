@@ -149,7 +149,7 @@ abstract class AppLocalizations {
   /// The circuit found from GPS: its length in metres and direction.
   ///
   /// In en, this message translates to:
-  /// **'Detected route: {length} m, {direction} (inferred from GPS).'**
+  /// **'Detected route: {length} m, {direction} (inferred from GPS).'**
   String trackDialogDetectedRoute(String length, String direction);
 
   /// Screen reader label of the map showing a session's GPS trace.
@@ -1349,7 +1349,7 @@ abstract class AppLocalizations {
   /// A typical (median) time and its spread (interquartile range) in seconds.
   ///
   /// In en, this message translates to:
-  /// **'{time} · spread {spread} s'**
+  /// **'{time} · spread {spread} s'**
   String consistencyValue(String time, String spread);
 
   /// How many laps a consistency is measured over.
@@ -1487,7 +1487,7 @@ abstract class AppLocalizations {
   /// Where the segment of a time loss is on the track.
   ///
   /// In en, this message translates to:
-  /// **'Through {segment}, from {start} m to {end} m after the line.'**
+  /// **'Through {segment}, from {start} m to {end} m after the line.'**
   String timeLossThrough(String segment, int start, int end);
 
   /// The running gap to the best lap at both ends of the segment.
@@ -1619,7 +1619,7 @@ abstract class AppLocalizations {
   /// Where braking starts on a lap, in meters along the lap.
   ///
   /// In en, this message translates to:
-  /// **'braking starts at {meters} m'**
+  /// **'braking starts at {meters} m'**
   String focusBrakingStarts(int meters);
 
   /// A lap's lowest speed could not be measured.
@@ -1649,7 +1649,7 @@ abstract class AppLocalizations {
   /// What a sector-gap focus area measured.
   ///
   /// In en, this message translates to:
-  /// **'Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.'**
+  /// **'Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.'**
   String focusObservationSectorGap(
     String bestLap,
     String gap,
@@ -1666,7 +1666,7 @@ abstract class AppLocalizations {
   /// What a repeated-loss focus area measured.
   ///
   /// In en, this message translates to:
-  /// **'In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).'**
+  /// **'In {count} of {total} compared laps you lost time through {segment} against {reference} (median {median} s).'**
   String focusObservationRepeatedLoss(
     String count,
     String total,
@@ -1684,7 +1684,7 @@ abstract class AppLocalizations {
   /// What a braking-spread focus area measured.
   ///
   /// In en, this message translates to:
-  /// **'Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).'**
+  /// **'Where braking starts for {segment} varies by {spread} m across the middle half of {count} laps (measured from the brake signal).'**
   String focusObservationBrakingSpread(
     String segment,
     String spread,
@@ -1849,7 +1849,7 @@ abstract class AppLocalizations {
   /// A segment's spread (interquartile range) in a session.
   ///
   /// In en, this message translates to:
-  /// **'spread {seconds} s'**
+  /// **'spread {seconds} s'**
   String progressionSpread(String seconds);
 
   /// A segment cell with too few laps for statistics.
@@ -2070,7 +2070,7 @@ abstract class AppLocalizations {
   /// Explains the car card.
   ///
   /// In en, this message translates to:
-  /// **'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.'**
+  /// **'Each session on its own, in recording order. Gaps in a recording are never bridged; implausible readings and placeholder zeros are left out and counted. Cooling is a continuously recorded drop of at least 5° over at least 30 s.'**
   String get channelCarIntro;
 
   /// A channel whose recording gives no unit.
@@ -2202,13 +2202,13 @@ abstract class AppLocalizations {
   /// A braking point before the corner's start.
   ///
   /// In en, this message translates to:
-  /// **'{metres} m before'**
+  /// **'{metres} m before'**
   String cornerBeforeEntry(int metres);
 
   /// A braking point inside the corner.
   ///
   /// In en, this message translates to:
-  /// **'{metres} m into the corner'**
+  /// **'{metres} m into the corner'**
   String cornerIntoCorner(int metres);
 
   /// A braking point at the same place as on the best lap.
@@ -2220,13 +2220,13 @@ abstract class AppLocalizations {
   /// A braking point later than on the best lap.
   ///
   /// In en, this message translates to:
-  /// **'{metres} m later'**
+  /// **'{metres} m later'**
   String cornerLater(int metres);
 
   /// A braking point earlier than on the best lap.
   ///
   /// In en, this message translates to:
-  /// **'{metres} m earlier'**
+  /// **'{metres} m earlier'**
   String cornerEarlier(int metres);
 
   /// Why a session of a saved day could not be opened.
@@ -2490,7 +2490,7 @@ abstract class AppLocalizations {
   /// Time left between the best lap and the theoretical best.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s available across the approved segments'**
+  /// **'{seconds} s available across the approved segments'**
   String reportTheoreticalAvailable(String seconds);
 
   /// Why the theoretical best has no total.
@@ -2556,13 +2556,13 @@ abstract class AppLocalizations {
   /// A session's best lap against the previous session's.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s faster than the previous session'**
+  /// **'{seconds} s faster than the previous session'**
   String reportFasterThanPrevious(String seconds);
 
   /// A session's best lap against the previous session's.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s slower than the previous session'**
+  /// **'{seconds} s slower than the previous session'**
   String reportSlowerThanPrevious(String seconds);
 
   /// How many of a session's laps are eligible.
@@ -2580,7 +2580,7 @@ abstract class AppLocalizations {
   /// The day's lap time consistency: median and interquartile range.
   ///
   /// In en, this message translates to:
-  /// **'Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}'**
+  /// **'Typical lap {time} · middle half within {spread} s · {count, plural, =1{1 lap} other{{count} laps}}'**
   String reportConsistencyDay(String time, String spread, int count);
 
   /// Why the day has no lap time spread.
@@ -2616,7 +2616,7 @@ abstract class AppLocalizations {
   /// A session's heart rate: mean, minimum and maximum.
   ///
   /// In en, this message translates to:
-  /// **'mean {mean} bpm · {minimum} – {maximum}'**
+  /// **'mean {mean} bpm · {minimum} – {maximum}'**
   String reportHeartRateSummary(String mean, String minimum, String maximum);
 
   /// How much of a session the heart rate covers.
@@ -2724,7 +2724,7 @@ abstract class AppLocalizations {
   /// A segment row: its type, start and end along the track and its length, in metres.
   ///
   /// In en, this message translates to:
-  /// **'{type} · {start}–{end} m · {length} m'**
+  /// **'{type} · {start}–{end} m · {length} m'**
   String segmentEditorRow(String type, String start, String end, String length);
 
   /// A segment row of a segment the driver changed.
@@ -2790,7 +2790,7 @@ abstract class AppLocalizations {
   /// Where the segment is split, in metres along the track.
   ///
   /// In en, this message translates to:
-  /// **'Split at {meters} m'**
+  /// **'Split at {meters} m'**
   String segmentEditorSplitAt(String meters);
 
   /// Splits the segment at the chosen point.
@@ -2964,7 +2964,7 @@ abstract class AppLocalizations {
   /// Why a segment edit is refused; length is the track axis length.
   ///
   /// In en, this message translates to:
-  /// **'Bounds must lie between 0 and {length} m.'**
+  /// **'Bounds must lie between 0 and {length} m.'**
   String segmentEditorErrorBounds(String length);
 
   /// Why a segment edit is refused.
@@ -3305,13 +3305,13 @@ abstract class AppLocalizations {
   /// How far apart the laps' lines are at the apex.
   ///
   /// In en, this message translates to:
-  /// **'Line: spread {spread} m · {accuracy}'**
+  /// **'Line: spread {spread} m · {accuracy}'**
   String variabilityLine(String spread, String accuracy);
 
   /// The recording's typical GPS accuracy.
   ///
   /// In en, this message translates to:
-  /// **'GPS accuracy about {meters} m'**
+  /// **'GPS accuracy about {meters} m'**
   String variabilityGpsAccuracy(String meters);
 
   /// The recording does not state its GPS accuracy.
@@ -3395,7 +3395,7 @@ abstract class AppLocalizations {
   /// Example conditions in the empty text field.
   ///
   /// In en, this message translates to:
-  /// **'Dry, 18 °C'**
+  /// **'Dry, 18 °C'**
   String get sessionDetailsConditionsHint;
 
   /// Text field label and list label: what was changed on the car before the session.
@@ -3941,7 +3941,7 @@ abstract class AppLocalizations {
   /// Where an episode starts, outside any segment.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s into the lap'**
+  /// **'{seconds} s into the lap'**
   String coastingIntoLap(String seconds);
 
   /// Why a lap has no G-G.
@@ -4127,7 +4127,7 @@ abstract class AppLocalizations {
   /// A lap's coasting: its time, distance, episodes and share of the lap time.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)'**
+  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the lap)'**
   String drivingCoastingSummaryLap(
     String seconds,
     String meters,
@@ -4138,7 +4138,7 @@ abstract class AppLocalizations {
   /// A lap's coasting over a zoomed stretch: its time, distance, episodes and share of the stretch time.
   ///
   /// In en, this message translates to:
-  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)'**
+  /// **'{seconds} s · {meters} m over {count, plural, =1{1 episode} other{{count} episodes}} ({share} % of the stretch)'**
   String drivingCoastingSummaryStretch(
     String seconds,
     String meters,
@@ -4161,7 +4161,7 @@ abstract class AppLocalizations {
   /// The zoomed stretch a panel covers, with its length.
   ///
   /// In en, this message translates to:
-  /// **'Selected stretch · {meters} m'**
+  /// **'Selected stretch · {meters} m'**
   String drivingSelectedStretch(String meters);
 
   /// A panel covers the whole lap.
@@ -4232,7 +4232,7 @@ abstract class AppLocalizations {
   /// Under the G-G diagram.
   ///
   /// In en, this message translates to:
-  /// **'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.'**
+  /// **'Observed accelerations, not a share of available grip. Rings every 0.5 g; a circle marks each lap\'s peaks.'**
   String get drivingGgNote;
 
   /// Top of the G-G diagram.
@@ -4610,7 +4610,7 @@ abstract class AppLocalizations {
   /// A throttle pickup: metres after the corner's start.
   ///
   /// In en, this message translates to:
-  /// **'{metres} m in'**
+  /// **'{metres} m in'**
   String cornerDetailsMetresIn(int metres);
 
   /// Under the corner's name: the lap shown is the group's best lap.
@@ -5102,7 +5102,7 @@ abstract class AppLocalizations {
   /// Before both laps' speed at the cursor; offset is metres from the segment's start, with its sign. Keep the trailing space.
   ///
   /// In en, this message translates to:
-  /// **'Cursor {offset} m: '**
+  /// **'Cursor {offset} m: '**
   String cornerAnalyzerCursor(String offset);
 
   /// Chart label of the corner's entry line.
@@ -5756,7 +5756,7 @@ abstract class AppLocalizations {
   /// A proposal's start and end in metres from the line with their tolerance, and its length.
   ///
   /// In en, this message translates to:
-  /// **'{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)'**
+  /// **'{start} m ±{startTolerance} → {end} m ±{endTolerance} ({length} m)'**
   String segmentReviewBounds(
     String start,
     String startTolerance,
@@ -5804,7 +5804,7 @@ abstract class AppLocalizations {
   /// Where the corner turns most, from the track's shape (not from speed).
   ///
   /// In en, this message translates to:
-  /// **'Geometric apex {at} m ±{tolerance} m'**
+  /// **'Geometric apex {at} m ±{tolerance} m'**
   String segmentReviewApex(String at, String tolerance);
 
   /// The corner has more than one apex, so none is proposed.
@@ -6001,7 +6001,7 @@ abstract class AppLocalizations {
   /// How fast the two recordings' clocks drift apart, in parts per million, as measured.
   ///
   /// In en, this message translates to:
-  /// **'Clock drift: {ppm} ppm'**
+  /// **'Clock drift: {ppm} ppm'**
   String clockDrift(String ppm);
 
   /// Evidence of a clock check: how closely the two speed traces match, over how long both recordings run, and how many stretches of that overlap give the same offset.

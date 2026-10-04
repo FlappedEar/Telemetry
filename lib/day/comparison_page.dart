@@ -427,6 +427,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
                     Text(
                       '${slot == 0 ? 'A' : 'B'} · ${l10n.lap(row)}',
                       style: theme.textTheme.titleSmall,
+                      // Wraps rather than cutting off the lap, which tells
+                      // A from B.
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(displayTime(row.durationSeconds)),
@@ -595,7 +598,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
       ),
       ChartWindowControls(
         window: window,
-        axisText: (meters) => '${meters.round()} m',
+        axisText: (meters) => '${meters.round()}\u00a0m',
       ),
       ValueListenableBuilder(
         valueListenable: window.range,

@@ -98,4 +98,65 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('a one-session day has one lap-time row, named after it', (
+    tester,
+  ) async {
+    const summary = ConsistencySummary(
+      count: 4,
+      median: 90.5,
+      interquartileRange: 0.25,
+      available: true,
+    );
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: ConsistencyCard(
+            laps: LapConsistency(
+              day: summary,
+              runs: const [
+                RunLapConsistency(
+                  runId: 'r1',
+                  runName: 'Session 1',
+                  laps: summary,
+                ),
+              ],
+            ),
+            result: null,
+            loading: true,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Session 1'), findsOneWidget);
+    expect(find.text('All sessions'), findsNothing);
+    expect(find.byKey(const ValueKey('lapConsistency r1')), findsNothing);
+    expect(find.textContaining('· spread'), findsOneWidget);
+  });
+
+  testWidgets('a one-session day names its row in Polish', (tester) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: Scaffold(
+          body: ConsistencyCard(
+            laps: LapConsistency(
+              runs: const [
+                RunLapConsistency(
+                  runId: 'r1',
+                  runName: 'Session 1',
+                  laps: ConsistencySummary(),
+                ),
+              ],
+            ),
+            result: null,
+            loading: true,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Sesja 1'), findsOneWidget);
+    expect(find.text('Wszystkie sesje'), findsNothing);
+  });
 }

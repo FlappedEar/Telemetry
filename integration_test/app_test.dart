@@ -122,7 +122,7 @@ void main() {
     await tester.pumpAndSettle();
     final best = bestLapTime(tester);
     // "22.440 s" under a minute, "1:49.898" above.
-    expect(best, matches(RegExp(r'^(\d+:\d\d\.\d{3}|\d+\.\d{3} s)$')));
+    expect(best, matches(RegExp(r'^(\d+:\d\d\.\d{3}|\d+\.\d{3}\u00a0s)$')));
 
     await tester.tap(find.byTooltip('Save'));
     await waitFor(tester, find.textContaining('Saved as'));
@@ -196,7 +196,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         bestLapTime(tester),
-        matches(RegExp(r'^(\d+:\d\d\.\d{3}|\d+\.\d{3} s)$')),
+        matches(RegExp(r'^(\d+:\d\d\.\d{3}|\d+\.\d{3}\u00a0s)$')),
       );
     },
     skip: !Platform.isAndroid || !const bool.fromEnvironment('SHARE_TEST'),

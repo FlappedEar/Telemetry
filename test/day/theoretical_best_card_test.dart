@@ -74,7 +74,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(find.byKey(const ValueKey('availableTime'))).data,
-        '${expected.availableSeconds!.toStringAsFixed(3)} s',
+        '${expected.availableSeconds!.toStringAsFixed(3)}\u00a0s',
       );
       // Blue as the Theoretical best bar; what is available as a gain.
       expect(
@@ -165,7 +165,7 @@ void main() {
       final largest = other.lossSeconds.whereType<double>().reduce(
         (a, b) => a > b ? a : b,
       );
-      expect(find.text('+${largest.toStringAsFixed(3)} s'), findsWidgets);
+      expect(find.text('+${largest.toStringAsFixed(3)}\u00a0s'), findsWidgets);
       expect(bestLap.totalLossSeconds, closeTo(result.availableSeconds!, 1e-9));
     },
   );
@@ -252,8 +252,8 @@ void main() {
       expect(
         rowText('cornerBrakingPoint'),
         allOf(
-          contains('${before.round()} m'),
-          contains('${delta.abs().round()} m earlier'),
+          contains('${before.round()}\u00a0m'),
+          contains('${delta.abs().round()}\u00a0m earlier'),
           contains('From the brake channel'),
         ),
       );
@@ -264,7 +264,7 @@ void main() {
       expect(
         rowText('cornerPickup'),
         allOf(
-          contains('— | ${bestPickup.round()} m | —'),
+          contains('— | ${bestPickup.round()}\u00a0m | —'),
           contains('no lift before the pickup'),
         ),
       );

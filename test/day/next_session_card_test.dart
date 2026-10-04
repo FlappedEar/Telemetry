@@ -198,7 +198,7 @@ void main() {
       );
       expect(
         measured.textSpan!.toPlainText(),
-        'Measured: Minimum speed: 46.9 km/h on this session\'s laps, 53.7 km/h on your faster lap.',
+        'Measured: Minimum speed: 46.9\u00a0km/h on this session\'s laps, 53.7\u00a0km/h on your faster lap.',
       );
       final action = tester.widget<Text>(
         find.byKey(const ValueKey('coachAction 1')),
@@ -232,8 +232,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
     await tester.pumpAndSettle();
     expect(find.byType(CoachItemPage), findsOneWidget);
-    expect(find.text('46.9 km/h against 53.7 km/h'), findsOneWidget);
-    expect(find.text('4.2 s against 4.0 s'), findsOneWidget);
+    expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
+    expect(find.text('4.2\u00a0s against 4.0\u00a0s'), findsOneWidget);
     expect(find.byKey(const ValueKey('coachMap')), findsOneWidget);
     await tester.scrollUntilVisible(
       find.textContaining('not a probability'),
@@ -253,7 +253,7 @@ void main() {
     );
     expect(
       measured.textSpan!.toPlainText(),
-      startsWith('Zmierzono: Najmniejsza prędkość: 46.9 km/h'),
+      startsWith('Zmierzono: Najmniejsza prędkość: 46.9\u00a0km/h'),
     );
   });
 
@@ -281,7 +281,7 @@ void main() {
     await show(tester, header: 'velocity mph');
     expect(
       measured(tester, 1),
-      'Measured: Minimum speed: 46.9 mph on this session\'s laps, 53.7 mph on your faster lap.',
+      'Measured: Minimum speed: 46.9\u00a0mph on this session\'s laps, 53.7\u00a0mph on your faster lap.',
     );
     expect(find.textContaining('km/h'), findsNothing);
   });
@@ -300,7 +300,7 @@ void main() {
   testWidgets('speeds of recordings declaring km/h say km/h', (tester) async {
     speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
     await show(tester, header: 'velocity kmh');
-    expect(measured(tester, 1), contains('46.9 km/h'));
+    expect(measured(tester, 1), contains('46.9\u00a0km/h'));
   });
 
   testWidgets('converted speeds are not shown, and the card says why', (
@@ -358,7 +358,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
     await tester.pumpAndSettle();
     expect(find.text('— against —'), findsOneWidget);
-    expect(find.text('4.2 s against 4.0 s'), findsOneWidget);
+    expect(find.text('4.2\u00a0s against 4.0\u00a0s'), findsOneWidget);
     expect(find.textContaining('Speeds are not shown'), findsOneWidget);
   });
 
@@ -414,13 +414,13 @@ void main() {
     expect(measured(tester, 1), contains('46.9 on this session'));
     speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
     await tester.pumpAndSettle();
-    expect(measured(tester, 1), contains('46.9 mph on this session'));
+    expect(measured(tester, 1), contains('46.9\u00a0mph on this session'));
     await reveal(tester, find.byKey(const ValueKey('coachWhy 1')));
     await tester.tap(find.byKey(const ValueKey('coachWhy 1')));
     await tester.pumpAndSettle();
-    expect(find.text('46.9 mph against 53.7 mph'), findsOneWidget);
+    expect(find.text('46.9\u00a0mph against 53.7\u00a0mph'), findsOneWidget);
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
     await tester.pumpAndSettle();
-    expect(find.text('46.9 km/h against 53.7 km/h'), findsOneWidget);
+    expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
   });
 }
