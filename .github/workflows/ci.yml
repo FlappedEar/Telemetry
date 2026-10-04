@@ -137,22 +137,49 @@ jobs:
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
       # flutter test starts reading the simulator log only after it launches
       # the app, so it can miss the line with the Dart VM service URL and wait
-      # for it forever ("Waiting for VM Service port to be available"). That
-      # attempt is stopped after 15 minutes and run once more; any other
-      # failure, including a failing test, fails the step at once. On failure
-      # the verbose tool log and the simulator's log for the app are printed.
+      # for it forever ("Waiting for VM Service port to be available"). The
+      # tool prints that line after the build and launch, and a healthy app
+      # answers within seconds, so an attempt still waiting 3 minutes later is
+      # stopped and run again, up to three attempts (almost half of the runs
+      # on 2026-10-04 hit this, and each waited the whole 15-minute limit).
+      # Each attempt also stops after 15 minutes. Any other failure, including
+      # a failing test, fails the step at once. On failure the verbose tool
+      # log and the simulator's log for the app are printed.
       - name: Integration tests on the simulator
         run: |
           udid="${{ steps.simulator.outputs.udid }}"
-          for attempt in 1 2; do
+          stall_limit=180
+          for attempt in 1 2 3; do
             # macOS has no timeout(1); perl's alarm does the same.
             status=0
-            perl -e 'alarm shift; exec @ARGV' 900 flutter test integration_test -d "$udid" -v > integration.log 2>&1 || status=$?
+            # Empty the log first, so the checks below never read the last
+            # attempt's lines.
+            : > integration.log
+            perl -e 'alarm shift; exec @ARGV' 900 flutter test integration_test -d "$udid" -v > integration.log 2>&1 &
+            test_pid=$!
+            waiting_since=
+            while kill -0 "$test_pid" 2>/dev/null; do
+              if grep -q 'connected to test device' integration.log; then
+                waiting_since=
+              elif [ -z "$waiting_since" ] \
+                && grep -q 'Waiting for VM Service port to be available' integration.log; then
+                waiting_since=$(date +%s)
+              fi
+              if [ -n "$waiting_since" ] \
+                && [ $(($(date +%s) - waiting_since)) -ge "$stall_limit" ] \
+                && ! grep -q 'connected to test device' integration.log; then
+                echo "::warning::Still waiting for the app's VM service after ${stall_limit}s (attempt $attempt); stopping it."
+                kill "$test_pid" 2>/dev/null || true
+                break
+              fi
+              sleep 5
+            done
+            wait "$test_pid" || status=$?
             if [ "$status" -eq 0 ]; then
               tail -n 40 integration.log
               exit 0
             fi
-            if [ "$attempt" -eq 1 ] \
+            if [ "$attempt" -lt 3 ] \
               && grep -q 'Waiting for VM Service port to be available' integration.log \
               && ! grep -q 'connected to test device' integration.log; then
               echo "::warning::flutter test missed the app's VM service URL (attempt $attempt); running it again."
@@ -169,7 +196,8 @@ jobs:
   android-emulator:
     name: Android emulator (build and integration test)
     runs-on: ubuntu-latest
-    # The build and unit tests, then up to two 15-minute test attempts.
+    # The build and unit tests, then up to three test attempts (one that
+    # connects but stalls stops after 4 minutes, any attempt after 15).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
