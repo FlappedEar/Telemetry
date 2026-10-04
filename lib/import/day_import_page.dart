@@ -465,7 +465,9 @@ class _DayImportPageState extends State<DayImportPage> {
         identical(_keptDay, last) &&
         recovered != null &&
         recovered.eventId != last.eventId) {
-      _dropKept();
+      // Its own changes are not waiting (the slot holds the other day's
+      // after the flush above): nothing it writes from now on is kept.
+      _dropKept(discard: true);
       _syncNav();
     }
     setState(() {
@@ -745,7 +747,8 @@ class _DayImportPageState extends State<DayImportPage> {
     if (!mounted) return;
     // Recordings it refused are not said when it is shown again.
     if (refused) markAdditionReported(kept);
-    // Shown meanwhile (Day was tapped): the recordings are in it already.
+    // Defensive: Day is not taken while this runs, but a day shown
+    // meanwhile has the recordings already.
     if (taken && identical(_shownDay, kept)) return;
     if (!taken || !identical(_keptDay, kept)) {
       // Not that day's: imported here as today's day would be.
