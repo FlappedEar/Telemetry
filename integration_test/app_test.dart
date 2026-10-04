@@ -169,8 +169,8 @@ void main() {
         p.join((await getApplicationSupportDirectory()).path, 'incoming'),
       );
       await clearRecovery();
-      // Map tiles stay off the network: the emulator may have none, and a
-      // failed tile load fails the test.
+      // The day page shows a map: its tiles stay off the network too, so a
+      // runner without network does not fail the test.
       debugTileProvider = BlankTiles.new;
       addTearDown(() async {
         debugTileProvider = null;

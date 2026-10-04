@@ -1,0 +1,896 @@
+// The review before an import or an addition is committed (FET-58), on
+// synthetic recordings only: a VBO and an RCZ of one drive
+// (writeFusionPair) and other drives (circuitVbo).
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/import/day_import_controller.dart';
+import 'package:telemetry/import/day_import_page.dart';
+import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/main.dart';
+import 'package:telemetry_core/telemetry_core.dart';
+
+import '../../packages/telemetry_core/test/support/fusion_pair.dart';
+import '../day/day_results_page_test.dart' show circuitVbo;
+import '../support/temp_directory.dart';
+
+final class _Done<T> {
+  _Done(T value) : result = Future.value(value);
+  final Future<T> result;
+  void cancel() {}
+}
+
+final class _ImportJob extends _Done<DayImportOutcome> implements DayImportJob {
+  _ImportJob(super.value);
+}
+
+final class _PreviewJob extends _Done<ImportPreview>
+    implements ImportPreviewJob {
+  _PreviewJob(super.value);
+}
+
+final class _AppendJob extends _Done<DayAppendOutcome> implements DayAppendJob {
+  _AppendJob(super.value);
+}
+
+/// Imports on the test's own thread.
+final class _Importer implements DayImporter {
+  final choices = <ImportChoices?>[];
+
+  @override
+  DayImportJob start(
+    DayImportRequest request,
+    void Function(int, int) progress, {
+    ImportChoices? choices,
+  }) {
+    this.choices.add(choices);
+    return _ImportJob(runDayImport(request, choices: choices));
+  }
+}
+
+/// Prepares reviews on the test's own thread.
+final class _Preparer implements ImportPreparer {
+  final requests = <DayImportRequest>[];
+
+  @override
+  ImportPreviewJob start(DayImportRequest request, void Function(int, int) _) {
+    requests.add(request);
+    return _PreviewJob(runImportPreview(request));
+  }
+}
+
+/// Prepares additions on the test's own thread.
+final class _Appender implements DayAppender {
+  final requests = <DayAppendRequest>[];
+
+  @override
+  DayAppendJob start(DayAppendRequest request, void Function(int, int) _) {
+    requests.add(request);
+    return _AppendJob(runDayAppend(request));
+  }
+}
+
+/// Fusion jobs that wait for the test: run, or failed with an error.
+final class _HeldFusions {
+  final tasks = <_HeldTask>[];
+
+  FusionTask call(FusionJob job) => _HeldTask(job)..addTo(tasks);
+}
+
+final class _HeldTask implements FusionTask {
+  _HeldTask(this.job);
+
+  final FusionJob job;
+  final _done = Completer<RunFusion?>();
+
+  void addTo(List<_HeldTask> tasks) => tasks.add(this);
+
+  void run() => _done.complete(job(() => false));
+
+  void fail() => _done.completeError(StateError('The job stopped.'));
+
+  @override
+  Future<RunFusion?> get result => _done.future;
+
+  @override
+  void cancel() {}
+}
+
+final class _Pickers implements RecordingPickers {
+  List<String> recordings = const [];
+
+  @override
+  Future<List<String>> pickRecordings() async => recordings;
+
+  @override
+  Future<String?> pickFolder() async => null;
+}
+
+void main() {
+  late Directory directory;
+  late String vbo, rcz, other;
+  setUp(() {
+    directory = Directory.systemTemp.createTempSync('import_review');
+    (vbo, rcz) = writeFusionPair(directory.path);
+    other = p.join(directory.path, 'other.vbo');
+    File(other).writeAsStringSync(circuitVbo([30, 28, 31]));
+  });
+  tearDown(() => deleteTemporaryDirectory(directory));
+
+  /// The run ids of the plan's recordings, by file name.
+  Map<String, String> ids(TelemetryImportPlan plan) => {
+    for (final run in plan.runs) p.basename(run.sourcePath): run.id,
+  };
+
+  group('an import as reviewed', () {
+    test('the RCZ is the session, the VBO kept with it, a file skipped', () {
+      final request = (paths: [vbo, rcz, other], includeSubfolders: false);
+      final preview = runImportPreview(request);
+      final id = ids(preview.plan!);
+      final outcome = runDayImport(
+        request,
+        choices: {
+          id['drive.rcz']!: id['drive.rcz']!,
+          id['drive.vbo']!: id['drive.rcz']!,
+          id['other.vbo']!: skipRecording,
+        },
+      );
+      expect(outcome.reviewChanged, isFalse);
+      expect(outcome.runs.map((named) => named.run.id), [id['drive.rcz']!]);
+      expect(outcome.runs.single.name, 'Session 1');
+      expect(outcome.alternatives.keys, [id['drive.rcz']!]);
+      expect(outcome.alternatives[id['drive.rcz']!]!.id, id['drive.vbo']!);
+      // Without review the VBO leads, with the RCZ as its alternative.
+      final automatic = runDayImport(request);
+      expect(automatic.runs.map((named) => named.run.id), [
+        id['drive.vbo']!,
+        id['other.vbo']!,
+      ]);
+      expect(automatic.alternatives[id['drive.vbo']!]!.id, id['drive.rcz']!);
+    });
+
+    test('nothing is imported when the files are not the ones reviewed', () {
+      final reviewed = runImportPreview((
+        paths: [vbo, rcz],
+        includeSubfolders: false,
+      ));
+      final outcome = runDayImport((
+        paths: [vbo, rcz, other],
+        includeSubfolders: false,
+      ), choices: automaticImportChoices(reviewed.plan!));
+      expect(outcome.reviewChanged, isTrue);
+      expect(outcome.runs, isEmpty);
+      expect(outcome.analysis, isNull);
+    });
+
+    test(
+      'the controller waits for the review and imports as confirmed',
+      () async {
+        final importer = _Importer();
+        final preparer = _Preparer();
+        final controller = DayImportController(
+          importer: importer,
+          preparer: preparer,
+        );
+        addTearDown(controller.dispose);
+        expect(controller.review([vbo, rcz], includeSubfolders: false), isTrue);
+        await pumpEventQueue();
+        final review = controller.state as DayImportReviewing;
+        expect(importer.choices, isEmpty, reason: 'nothing imported yet');
+        // A second import waits until the review ends.
+        expect(controller.start([other], includeSubfolders: false), isFalse);
+        final id = review.plan.runs.map((run) => run.id).toList();
+        expect(controller.confirm({id[0]: skipRecording}), isFalse);
+        expect(controller.confirm({for (final run in id) run: run}), isTrue);
+        await pumpEventQueue();
+        final finished = controller.state as DayImportFinished;
+        expect(finished.runs, hasLength(2));
+        expect(finished.alternatives, isEmpty);
+
+        expect(controller.review([other], includeSubfolders: false), isTrue);
+        await pumpEventQueue();
+        expect(controller.isReviewing, isTrue);
+        controller.cancel();
+        expect(controller.state, isA<DayImportCancelled>());
+        expect(importer.choices, hasLength(1));
+      },
+    );
+  });
+
+  group('an addition as reviewed', () {
+    late _Appender appender;
+    late DayResultsController day;
+    setUp(() {
+      final first = runDayImport((paths: [vbo], includeSubfolders: false));
+      appender = _Appender();
+      day = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: appender,
+        preparer: _Preparer(),
+      );
+    });
+    tearDown(() => day.dispose());
+
+    test('offers what adding without review would do', () async {
+      final review = (await day.reviewAddition([rcz, other, vbo]))!;
+      final id = ids(review.plan!);
+      final session = day.runs.single;
+      // The RCZ joins the day's VBO session; the VBO is in the day already.
+      expect(review.automatic, {
+        id['drive.rcz']!: session.run.id,
+        id['other.vbo']!: id['other.vbo']!,
+        id['drive.vbo']!: skipRecording,
+      });
+      expect(review.alreadyInDay, contains(id['drive.vbo']!));
+      expect(review.sessions, [(runId: session.run.id, name: 'Session 1')]);
+      expect(review.automaticNewDay[id['drive.rcz']!], id['drive.vbo']!);
+
+      final addition = await day.addRecordings(
+        [rcz, other, vbo],
+        review: review,
+        choices: review.automatic,
+      );
+      expect(addition.reviewChanged, isFalse);
+      expect(addition.added, ['Session 2']);
+      expect(addition.combined, ['Session 1']);
+      expect(appender.requests.single.choices, review.automatic);
+    });
+
+    test('adds only what the user chose', () async {
+      final review = (await day.reviewAddition([rcz, other]))!;
+      final id = ids(review.plan!);
+      final addition = await day.addRecordings(
+        [rcz, other],
+        review: review,
+        choices: {
+          id['drive.rcz']!: skipRecording,
+          id['other.vbo']!: id['other.vbo']!,
+        },
+      );
+      expect(addition.added, ['Session 2']);
+      expect(addition.combined, isEmpty);
+      expect(day.runs.map((named) => named.run.id), [
+        day.runs.first.run.id,
+        id['other.vbo']!,
+      ]);
+    });
+
+    test(
+      'never gives a session that has another recording a new one',
+      () async {
+        // The RCZ joins Session 1 without review; it then has two recordings.
+        expect((await day.addRecordings([rcz])).combined, ['Session 1']);
+        final sessionId = day.runs.single.run.id;
+        final (_, rcz2) = writeFusionPair(
+          (Directory(p.join(directory.path, 'again'))..createSync()).path,
+          name: 'again',
+        );
+        final review = (await day.reviewAddition([rcz2]))!;
+        final id = ids(review.plan!);
+        expect(review.alreadyGrouped, {sessionId});
+        // Not offered as "Same run as Session 1", and refused if asked for.
+        expect(review.automatic[id['again.rcz']!], isNot(sessionId));
+        final addition = await day.addRecordings(
+          [rcz2],
+          review: review,
+          choices: {id['again.rcz']!: sessionId},
+        );
+        expect(addition.reviewChanged, isTrue);
+        // Compared as paths: Windows writes the separator differently.
+        expect(
+          p.equals(day.fusion(sessionId)!.alternative!.sourcePath, rcz),
+          isTrue,
+        );
+        // Nothing was added: the day still has its one session.
+        expect(day.runs.map((named) => named.run.id), [sessionId]);
+      },
+    );
+
+    test(
+      'a session whose saved RCZ is missing keeps it: no new one is offered',
+      () async {
+        expect((await day.addRecordings([rcz])).combined, ['Session 1']);
+        await day.fusionsSettled;
+        final path = p.join(directory.path, 'day.fetproject');
+        await day.save(path);
+        File(rcz).deleteSync();
+        final opened = DayResultsController.opened(
+          openDay(path),
+          appender: _Appender(),
+          preparer: _Preparer(),
+        );
+        addTearDown(opened.dispose);
+        final sessionId = opened.runs.single.run.id;
+        final (_, again) = writeFusionPair(
+          (Directory(p.join(directory.path, 'same'))..createSync()).path,
+        );
+        final review = (await opened.reviewAddition([again]))!;
+        expect(review.alreadyGrouped, {sessionId});
+        expect(review.automatic.values, isNot(contains(sessionId)));
+      },
+    );
+
+    test(
+      'adds nothing when a session got another recording during the review',
+      () async {
+        final review = (await day.reviewAddition([other]))!;
+        final id = ids(review.plan!);
+        // Same number of sessions, but Session 1 now has its RCZ.
+        expect((await day.addRecordings([rcz])).combined, ['Session 1']);
+        final addition = await day.addRecordings(
+          [other],
+          review: review,
+          choices: {id['other.vbo']!: id['other.vbo']!},
+        );
+        expect(addition.reviewChanged, isTrue);
+        expect(day.runs, hasLength(1));
+      },
+    );
+
+    test('adds nothing when the choices would not pass the review', () async {
+      final review = (await day.reviewAddition([rcz, other]))!;
+      final id = ids(review.plan!);
+      final session = day.runs.single.run.id;
+      for (final choices in <ImportChoices>[
+        // Everything skipped.
+        {id['drive.rcz']!: skipRecording, id['other.vbo']!: skipRecording},
+        // The same run as a recording that is not a run itself.
+        {id['drive.rcz']!: id['other.vbo']!, id['other.vbo']!: skipRecording},
+        // A recording the review did not list.
+        {id['other.vbo']!: id['other.vbo']!},
+        // A session that would get three recordings.
+        {id['drive.rcz']!: session, id['other.vbo']!: session},
+      ]) {
+        final addition = await day.addRecordings(
+          [rcz, other],
+          review: review,
+          choices: choices,
+        );
+        expect(addition.choicesRefused, isTrue, reason: '$choices');
+        expect(addition.reviewChanged, isFalse, reason: '$choices');
+      }
+      expect(appender.requests, isEmpty);
+      expect(day.runs.map((named) => named.run.id), [session]);
+      expect(day.fusion(session), isNull);
+    });
+
+    test('adds nothing when the day changed during the review', () async {
+      final review = (await day.reviewAddition([rcz]))!;
+      final id = ids(review.plan!);
+      expect((await day.addRecordings([other])).added, ['Session 2']);
+      final addition = await day.addRecordings(
+        [rcz],
+        review: review,
+        choices: {id['drive.rcz']!: id['drive.rcz']!},
+      );
+      expect(addition.reviewChanged, isTrue);
+      expect(day.runs, hasLength(2));
+    });
+  });
+
+  group('a pairing only a review makes, saved while it is aligned', () {
+    // The RCZ leads and the VBO is the same run: a pair the day opened
+    // again keeps beside the session rather than fusing by itself.
+    late _HeldFusions held;
+    late DayResultsController day;
+    late String runId;
+    late String path;
+    setUp(() {
+      final request = (paths: [vbo, rcz], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      runId = id['drive.rcz']!;
+      final outcome = runDayImport(
+        request,
+        choices: {runId: runId, id['drive.vbo']!: runId},
+      );
+      held = _HeldFusions();
+      day = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        fusionRunner: held.call,
+      );
+      path = p.join(directory.path, 'day.fetproject');
+    });
+    tearDown(() => day.dispose());
+
+    test('is saved once fused, and the day opened again fuses it', () async {
+      expect(day.fusionPending(runId), 'VBO');
+      // Saved at once: the save waits for the alignment.
+      final saving = day.save(path);
+      await pumpEventQueue();
+      expect(File(path).existsSync(), isFalse);
+      held.tasks.single.run();
+      await saving;
+      expect(day.fusion(runId)!.fused, isTrue);
+      expect(day.dirty, isFalse);
+
+      final opened = DayResultsController.opened(openDay(path));
+      addTearDown(opened.dispose);
+      await opened.fusionsSettled;
+      final fusion = opened.fusion(runId)!;
+      expect(fusion.fused, isTrue);
+      expect(fusion.fromDocument, isTrue);
+      expect(p.basename(fusion.alternative!.sourcePath), 'drive.vbo');
+    });
+
+    test(
+      'kept beside the session when aligning fails, as it opens again',
+      () async {
+        final saving = day.save(path);
+        await pumpEventQueue();
+        held.tasks.single.fail();
+        await saving;
+        final kept = day.fusion(runId)!;
+        expect(kept.state, RunFusionState.primaryOnly);
+        expect(p.basename(kept.alternative!.sourcePath), 'drive.vbo');
+        expect(day.dirty, isFalse);
+
+        final opened = DayResultsController.opened(openDay(path));
+        addTearDown(opened.dispose);
+        await opened.fusionsSettled;
+        final reopened = opened.fusion(runId)!;
+        expect(reopened.state, RunFusionState.primaryOnly);
+        expect(p.basename(reopened.alternative!.sourcePath), 'drive.vbo');
+      },
+    );
+  });
+
+  group('saving a day whose recordings are being lined up', () {
+    late _HeldFusions held;
+    late List<Map<String, Object?>> written;
+    setUp(() {
+      held = _HeldFusions();
+      written = [];
+    });
+
+    /// The single run of [document].
+    Map<String, Object?> runOf(Map<String, Object?> document) =>
+        ((document['event']! as Map)['runs']! as List).single
+            as Map<String, Object?>;
+
+    int sources(Map<String, Object?> document) =>
+        ((runOf(document)['sources']! as Map)['telemetry']! as List).length;
+
+    DayResultsController importDay(
+      ImportChoices Function(Map<String, String>) choose,
+    ) {
+      final request = (paths: [vbo, rcz, other], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      final outcome = runDayImport(request, choices: choose(id));
+      return DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        appender: _Appender(),
+        preparer: _Preparer(),
+        fusionRunner: held.call,
+        writer: (path, document) async => written.add(document),
+      );
+    }
+
+    test('a VBO session\'s RCZ is saved at once, without waiting, and '
+        'fused after', () async {
+      final day = importDay(
+        (id) => {
+          id['drive.vbo']!: id['drive.vbo']!,
+          id['drive.rcz']!: id['drive.vbo']!,
+          id['other.vbo']!: skipRecording,
+        },
+      );
+      addTearDown(day.dispose);
+      await day.save('day.fetproject');
+      expect(written, hasLength(1));
+      expect(runOf(written.single).containsKey('fusion'), isFalse);
+      expect(sources(written.single), 2);
+      expect(day.dirty, isFalse);
+      expect(day.savingWaitsForRecordings, isFalse);
+      held.tasks.single.run();
+      await day.fusionsSettled;
+      // Fused now: a change, saved with the day the next time.
+      expect(day.dirty, isTrue);
+    });
+
+    test(
+      'two saves asked for meanwhile both wait and record the fusion',
+      () async {
+        final day = importDay(
+          (id) => {
+            id['drive.rcz']!: id['drive.rcz']!,
+            id['drive.vbo']!: id['drive.rcz']!,
+            id['other.vbo']!: skipRecording,
+          },
+        );
+        addTearDown(day.dispose);
+        final first = day.save('day.fetproject');
+        final second = day.save('copy.fetproject');
+        await pumpEventQueue();
+        expect(written, isEmpty);
+        expect(day.savingWaitsForRecordings, isTrue);
+        held.tasks.single.run();
+        await Future.wait([first, second]);
+        expect(written, hasLength(2));
+        for (final document in written) {
+          expect(runOf(document)['fusion'], isA<Map<String, Object?>>());
+        }
+        expect(day.documentPath, 'copy.fetproject');
+        expect(day.dirty, isFalse);
+        expect(day.savingWaitsForRecordings, isFalse);
+      },
+    );
+
+    test('two VBOs whose lining up fails stay in the file, not shown, as '
+        'the day opened again shows them', () async {
+      final request = (paths: [vbo, other], includeSubfolders: false);
+      final id = ids(runImportPreview(request).plan!);
+      final runId = id['drive.vbo']!;
+      final outcome = runDayImport(
+        request,
+        choices: {runId: runId, id['other.vbo']!: runId},
+      );
+      final day = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        alternatives: outcome.alternatives,
+        fusionRunner: held.call,
+      );
+      addTearDown(day.dispose);
+      final path = p.join(directory.path, 'day.fetproject');
+      final saving = day.save(path);
+      await pumpEventQueue();
+      held.tasks.single.fail();
+      await saving;
+      expect(day.fusion(runId), isNull);
+      expect(day.fusionPending(runId), isNull);
+      expect(day.dirty, isFalse);
+      final saved = readDayDocument(path);
+      expect(sources(saved), 2);
+      expect(runOf(saved).containsKey('fusion'), isFalse);
+
+      final opened = DayResultsController.opened(openDay(path));
+      addTearDown(opened.dispose);
+      await opened.fusionsSettled;
+      expect(opened.fusion(runId), isNull);
+      expect(opened.fusionPending(runId), isNull);
+    });
+
+    test('the save right after an addition writes at once, and again once '
+        'the recordings are lined up', () async {
+      final first = runDayImport((paths: [rcz], includeSubfolders: false));
+      final day = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _Appender(),
+        preparer: _Preparer(),
+        fusionRunner: held.call,
+        writer: (path, document) async => written.add(document),
+      );
+      addTearDown(day.dispose);
+      final sessionId = day.runs.single.run.id;
+      await day.save('day.fetproject');
+      expect(written, hasLength(1));
+
+      final review = (await day.reviewAddition([vbo]))!;
+      final id = ids(review.plan!);
+      final addition = await day.addRecordings(
+        [vbo],
+        review: review,
+        choices: {id['drive.vbo']!: sessionId},
+      );
+      expect(addition.combined, ['Session 1']);
+      expect(addition.savedTo, 'day.fetproject');
+      // Written without waiting, the VBO with its session; still unsaved.
+      expect(written, hasLength(2));
+      expect(sources(written.last), 2);
+      expect(runOf(written.last).containsKey('fusion'), isFalse);
+      expect(day.dirty, isTrue);
+      expect(day.fusionPending(sessionId), 'VBO');
+
+      held.tasks.single.run();
+      await day.fusionsSettled;
+      expect(written, hasLength(3));
+      expect(runOf(written.last)['fusion'], isA<Map<String, Object?>>());
+      expect(day.dirty, isFalse);
+    });
+
+    testWidgets('the day is not left while a save waits', (tester) async {
+      final day = importDay(
+        (id) => {
+          id['drive.rcz']!: id['drive.rcz']!,
+          id['drive.vbo']!: id['drive.rcz']!,
+          id['other.vbo']!: skipRecording,
+        },
+      );
+      await tester.binding.setSurfaceSize(const Size(400, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        const TelemetryApp(home: Scaffold(body: Text('Import a day'))),
+      );
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                DayResultsPage.controller(controller: day, pickers: _Pickers()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final saving = day.save('day.fetproject');
+      await tester.pump();
+      expect(day.savingWaitsForRecordings, isTrue);
+      await navigator.maybePop();
+      await tester.pump();
+      expect(
+        find.text(
+          'Wait until the recordings are lined up and the day is saved.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Import a day'), findsNothing);
+      expect(written, isEmpty);
+
+      held.tasks.single.run();
+      await tester.pump();
+      await saving;
+      expect(written, hasLength(1));
+      expect(day.savingWaitsForRecordings, isFalse);
+      await navigator.maybePop();
+      await tester.pumpAndSettle();
+      expect(find.text('Import a day'), findsOneWidget);
+    });
+  });
+
+  group('the review page', () {
+    late _Importer importer;
+    late _Pickers pickers;
+    late DayImportController controller;
+    setUp(() {
+      importer = _Importer();
+      pickers = _Pickers();
+      controller = DayImportController(
+        importer: importer,
+        preparer: _Preparer(),
+      );
+    });
+    tearDown(() => controller.dispose());
+
+    Future<void> show(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            controller: controller,
+            pickers: pickers,
+            picksFolders: false,
+          ),
+        ),
+      );
+    }
+
+    Future<void> choose(WidgetTester tester, int file, String choice) async {
+      await tester.tap(find.byKey(ValueKey('reviewChoice:$file')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(choice).last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lists every file and imports as chosen', (tester) async {
+      pickers.recordings = [rcz, vbo, other];
+      await show(tester);
+      // Automatic by default: no review unless asked for.
+      expect(
+        tester
+            .widget<Checkbox>(find.byKey(const ValueKey('reviewBeforeImport')))
+            .value,
+        isFalse,
+      );
+      await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
+      await tester.pump();
+      await tester.tap(find.text('Choose recordings…'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review the import'), findsOneWidget);
+      for (final file in [rcz, vbo, other]) {
+        expect(find.text(p.basename(file)), findsOneWidget);
+      }
+      // The RCZ is the same run as the VBO, as without review.
+      expect(find.text('Same run as drive.vbo'), findsOneWidget);
+      expect(find.text('2 new sessions'), findsOneWidget);
+      expect(
+        find.text('Possibly the same run as drive.vbo: the GPS traces agree.'),
+        findsOneWidget,
+      );
+
+      // The VBO joins the RCZ instead; the other drive is skipped.
+      await choose(tester, 0, 'Import as a new session');
+      await choose(tester, 1, 'Same run as drive.rcz');
+      await choose(tester, 2, 'Skip this file');
+      expect(find.text('1 new session'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('confirmReview')));
+      await tester.pumpAndSettle();
+
+      final finished = controller.state as DayImportFinished;
+      expect(finished.runs.single.run.format, RecordingFormat.rcz);
+      expect(finished.alternatives.values.single.format, RecordingFormat.vbo);
+      expect(find.text('1 session imported'), findsOneWidget);
+      // The next import needs no approval again.
+      expect(
+        tester
+            .widget<Checkbox>(find.byKey(const ValueKey('reviewBeforeImport')))
+            .value,
+        isFalse,
+      );
+    });
+
+    testWidgets('a single file can be reviewed, and closing imports nothing', (
+      tester,
+    ) async {
+      pickers.recordings = [other];
+      await show(tester);
+      await tester.tap(find.byKey(const ValueKey('reviewBeforeImport')));
+      await tester.tap(find.text('Choose recordings…'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('reviewFile:0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('reviewFile:1')), findsNothing);
+      expect(find.text('Import'), findsOneWidget);
+
+      await choose(tester, 0, 'Skip this file');
+      expect(find.text('Choose at least one file to import.'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const ValueKey('confirmReview')))
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.byType(CloseButton));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Import cancelled. Nothing was imported.'),
+        findsOneWidget,
+      );
+      expect(importer.choices, isEmpty);
+
+      // Without the box, the same file is imported at once.
+      await tester.tap(find.text('Choose recordings…'));
+      await tester.pumpAndSettle();
+      expect(find.text('Review the import'), findsNothing);
+      expect(find.text('1 session imported'), findsOneWidget);
+      expect(importer.choices, [null]);
+    });
+  });
+
+  group('"Add and review recordings…" on a day', () {
+    Future<(DayResultsController, _Appender)> showDay(
+      WidgetTester tester,
+      _Pickers pickers, {
+      bool Function(List<String>, ImportChoices)? startNewDay,
+    }) async {
+      final first = runDayImport((paths: [vbo], includeSubfolders: false));
+      final appender = _Appender();
+      final day = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: appender,
+        preparer: _Preparer(),
+      );
+      await tester.binding.setSurfaceSize(const Size(400, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        const TelemetryApp(home: Scaffold(body: Text('Import a day'))),
+      );
+      unawaited(
+        tester
+            .state<NavigatorState>(find.byType(Navigator))
+            .push(
+              MaterialPageRoute<void>(
+                builder: (_) => DayResultsPage.controller(
+                  controller: day,
+                  pickers: pickers,
+                  startNewDay: startNewDay,
+                ),
+              ),
+            ),
+      );
+      await tester.pumpAndSettle();
+      return (day, appender);
+    }
+
+    Future<void> openReview(WidgetTester tester) async {
+      await tester.tap(find.byKey(const ValueKey('moreMenu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add and review recordings…'));
+      await tester.pump();
+      await tester.runAsync(() => pumpEventQueue());
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('adds the recordings to the day as reviewed', (tester) async {
+      final pickers = _Pickers()..recordings = [rcz, other];
+      final (day, appender) = await showDay(tester, pickers);
+      await openReview(tester);
+      expect(find.text('Review the import'), findsOneWidget);
+      // Only "Add to this day": no new day was offered by the caller.
+      expect(find.byKey(const ValueKey('reviewDestination')), findsNothing);
+      expect(find.text('Same run as Session 1'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('confirmReview')));
+      await tester.pumpAndSettle();
+      expect(appender.requests.single.choices, isNotNull);
+      expect(day.runs.map((named) => named.name), ['Session 1', 'Session 2']);
+    });
+
+    testWidgets('can start a new day instead, with no unsaved changes', (
+      tester,
+    ) async {
+      final pickers = _Pickers()..recordings = [rcz, other];
+      final started = <(List<String>, ImportChoices)>[];
+      // The first start is refused, as while another import runs.
+      var accept = false;
+      final (day, appender) = await showDay(
+        tester,
+        pickers,
+        startNewDay: (paths, choices) {
+          started.add((paths, choices));
+          return accept;
+        },
+      );
+      // An unsaved day is not left for a new one.
+      expect(day.dirty, isTrue);
+      await openReview(tester);
+      expect(
+        find.text('Save this day before starting a new one.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Start a new day'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add to the day'), findsOneWidget);
+      await tester.tap(find.byType(CloseButton));
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => day.save(p.join(directory.path, 'day.fetproject')),
+      );
+      await tester.pumpAndSettle();
+      expect(day.dirty, isFalse);
+
+      await openReview(tester);
+      expect(
+        find.text('Save this day before starting a new one.'),
+        findsNothing,
+      );
+      await tester.tap(find.text('Start a new day'));
+      await tester.pumpAndSettle();
+      // As without review: the RCZ is a session of its own in a new day.
+      expect(find.text('Same run as Session 1'), findsNothing);
+      expect(find.text('2 new sessions'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('confirmReview')));
+      await tester.pumpAndSettle();
+      // Refused: the day stays open and says why; nothing was added.
+      expect(started, hasLength(1));
+      expect(
+        find.text('Finish the current import first. Nothing was imported.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('moreMenu')), findsOneWidget);
+      expect(appender.requests, isEmpty);
+      started.clear();
+      accept = true;
+
+      await openReview(tester);
+      await tester.tap(find.text('Start a new day'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('confirmReview')));
+      await tester.pumpAndSettle();
+      expect(started.single.$1, [rcz, other]);
+      expect(started.single.$2.values.toSet(), started.single.$2.keys.toSet());
+      expect(appender.requests, isEmpty);
+      expect(find.text('Import a day'), findsOneWidget, reason: 'day closed');
+    });
+  });
+}

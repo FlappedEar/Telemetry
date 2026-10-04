@@ -671,10 +671,12 @@ Future<Map<String, Object?>> readFetproject(String path) async {
 /// save leaves the previous document whole.
 ///
 /// Where the folder refuses the temporary file but [path] itself may be
-/// written, [path] is written in place, which is not atomic: a failure
-/// partway can leave it incomplete. The macOS sandbox grants the app only
-/// the file chosen in the save or open panel, not its folder, so there the
-/// temporary file failed with "Cannot open file" and nothing saved.
+/// written, [path] is written in place, which is not atomic. The macOS
+/// sandbox grants the app only the file chosen in the save or open panel,
+/// not its folder, so there the temporary file failed with "Cannot open
+/// file" and nothing saved. The in-place write is read back; when it fails
+/// or reads back differently, the previous document is written back if it
+/// can be, and the save fails ([writeDocumentInPlace]).
 Future<void> writeFetproject(String path, Map<String, Object?> project) async {
   if (path.isEmpty) throw const FetprojectError('Project path is empty.');
   final error = validateFetproject(project);
@@ -693,12 +695,7 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
     await temporary.rename(path);
   } on FileSystemException catch (failure) {
     if (_permissionDenied(failure) && !await temporary.exists()) {
-      try {
-        await File(path).writeAsBytes(bytes, flush: true);
-        return;
-      } on FileSystemException catch (inPlace) {
-        throw FetprojectError('Could not save the project: ${inPlace.message}');
-      }
+      return writeDocumentInPlace(path, bytes);
     }
     try {
       if (await temporary.exists()) await temporary.delete();
@@ -707,6 +704,101 @@ Future<void> writeFetproject(String path, Map<String, Object?> project) async {
     }
     throw FetprojectError('Could not save the project: ${failure.message}');
   }
+}
+
+/// Writes [bytes] over [path] and reads them back. On a failure (a full
+/// disk partway, say) the previous content is written back when possible,
+/// so a failed save does not leave a cut document behind; the error says
+/// whether the previous document is unchanged or the file may be
+/// incomplete. Not exported: `writeFetproject` uses it where the folder
+/// refuses a temporary file. [write] stands in for the file write in tests.
+Future<void> writeDocumentInPlace(
+  String path,
+  List<int> bytes, {
+  Future<void> Function(File file, List<int> bytes)? write,
+}) async {
+  final file = File(path);
+  final writeBytes =
+      write ??
+      (File file, List<int> bytes) => file.writeAsBytes(bytes, flush: true);
+  // The previous document, when it can be read and is not larger than a
+  // document may be (a large file chosen in Save As is not kept).
+  List<int>? previous;
+  try {
+    if (await file.length() <= maximumProjectBytes) {
+      previous = await file.readAsBytes();
+    }
+  } on FileSystemException {
+    previous = null; // A new document, or not readable.
+  }
+  final existed = previous != null || await file.exists();
+  // What is left after a failed write, for the message.
+  Future<String> outcome() async {
+    if (!existed) {
+      try {
+        if (await file.exists()) await file.delete();
+        return '; nothing was saved';
+      } on FileSystemException {
+        return '; the file may be incomplete';
+      }
+    }
+    return await _restore(file, previous, writeBytes)
+        ? '; the previously saved version is unchanged'
+        : '; the file may be incomplete';
+  }
+
+  try {
+    await writeBytes(file, bytes);
+  } on FileSystemException catch (failure) {
+    final system = failure.osError?.message ?? '';
+    throw FetprojectError(
+      'Could not save the project: ${failure.message}'
+      '${system.isEmpty ? '' : ' ($system)'}${await outcome()}',
+    );
+  }
+  final List<int> written;
+  try {
+    written = await file.readAsBytes();
+  } on FileSystemException {
+    // Writable but not readable: the write itself succeeded.
+    return;
+  }
+  if (!_sameBytes(written, bytes)) {
+    throw FetprojectError(
+      'Could not save the project: the saved document reads back differently'
+      '${await outcome()}',
+    );
+  }
+}
+
+/// Writes [previous] back over [file] when there is one; whether [file]
+/// now holds exactly [previous] (also when the failed write never touched
+/// it).
+Future<bool> _restore(
+  File file,
+  List<int>? previous,
+  Future<void> Function(File file, List<int> bytes) write,
+) async {
+  if (previous == null) return false;
+  try {
+    if (_sameBytes(await file.readAsBytes(), previous)) return true;
+  } on FileSystemException {
+    // Not readable now: try writing it back.
+  }
+  try {
+    await write(file, previous);
+    return _sameBytes(await file.readAsBytes(), previous);
+  } on FileSystemException {
+    return false;
+  }
+}
+
+bool _sameBytes(List<int> a, List<int> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 /// Whether [failure] is the system refusing access (EPERM or EACCES on
