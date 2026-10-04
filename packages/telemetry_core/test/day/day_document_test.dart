@@ -99,7 +99,9 @@ void main() {
     );
     final state = opened.document['documentState'] as Map;
     expect(state['savedRevision'], '1');
-    expect(again['documentState'], {'id': state['id'], 'savedRevision': '2'});
+    final againState = again['documentState'] as Map;
+    expect(againState, {'id': state['id'], 'savedRevision': '2', 'saveId': againState['saveId']});
+    expect(againState['saveId'], isNot(state['saveId'])); // KAN-183
     expect(
       fet.qtCompactJson({...again, 'documentState': state}),
       fet.qtCompactJson(opened.document),
@@ -294,8 +296,21 @@ void main() {
     final first = nextDocumentState(null);
     expect(first['id'], matches(uuid));
     expect(first['savedRevision'], '1');
+    expect(first['saveId'], matches(uuid));
     final second = nextDocumentState({...first, 'extra': true});
-    expect(second, {'id': first['id'], 'savedRevision': '2', 'extra': true});
+    expect(second, {
+      'id': first['id'],
+      'savedRevision': '2',
+      'extra': true,
+      'saveId': second['saveId'],
+    });
+    // KAN-183: a new saveId on every save, never Overlays' value carried over.
+    expect(second['saveId'], matches(uuid));
+    expect(second['saveId'], isNot(first['saveId']));
+    expect(
+      nextDocumentState({'id': 'o', 'savedRevision': '4', 'saveId': 'overlays-save'})['saveId'],
+      isNot('overlays-save'),
+    );
     expect(nextDocumentState({'id': 'overlays-id', 'savedRevision': '41'})['savedRevision'], '42');
     expect(
       nextDocumentState({'id': 'x', 'savedRevision': '18446744073709551615'})['savedRevision'],
