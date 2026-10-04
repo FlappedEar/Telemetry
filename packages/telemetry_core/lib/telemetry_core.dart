@@ -79,6 +79,7 @@ export 'src/laps/lap_time_format.dart';
 export 'src/operation.dart';
 export 'src/rcz/rcz_archive.dart' show RczFormatError;
 export 'src/source_fingerprint.dart';
+export 'src/speed_units.dart';
 export 'src/rcz/rcz_parser.dart' show RczParser, rczAccelerationNote;
 export 'src/telemetry_session.dart'
     show InterpolationMode, SamplePoint, TelemetryChannel, TelemetrySession, telemetryGapThreshold;

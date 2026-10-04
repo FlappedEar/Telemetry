@@ -116,7 +116,14 @@ class CornerDetails extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final own = comparison.metrics;
-    final best = comparison.bestLapMetrics;
+    // The best lap's speeds are shown beside this lap's only in its unit.
+    final bestMetrics = comparison.bestLapMetrics;
+    final bestSpeeds =
+        bestMetrics != null &&
+            sameSpeedUnit(bestMetrics.speeds.unit, own.speeds.unit)
+        ? bestMetrics.speeds
+        : null;
+    final best = bestMetrics;
     final isBest = comparison.bestLap?.reference == comparison.lap.reference;
     final unit = speedUnitOf(context, own.speeds.unit).trim();
     final speedUnit = unit.isEmpty ? '' : ' ($unit)';
@@ -307,21 +314,21 @@ class CornerDetails extends StatelessWidget {
         row(
           l10n.cornerDetailsEntrySpeed(speedUnit),
           _speed(own.speeds.entry.value),
-          _speed(best?.speeds.entry.value),
+          _speed(bestSpeeds?.entry.value),
           _signed(comparison.speeds.entryDelta, 1),
           key: const ValueKey('cornerEntrySpeed'),
         ),
         row(
           l10n.cornerDetailsMinimumSpeed(speedUnit),
           _speed(own.speeds.minimum.value),
-          _speed(best?.speeds.minimum.value),
+          _speed(bestSpeeds?.minimum.value),
           _signed(comparison.speeds.minimumDelta, 1),
           key: const ValueKey('cornerMinimumSpeed'),
         ),
         row(
           l10n.cornerDetailsExitSpeed(speedUnit),
           _speed(own.speeds.exit.value),
-          _speed(best?.speeds.exit.value),
+          _speed(bestSpeeds?.exit.value),
           _signed(comparison.speeds.exitDelta, 1),
           note: speedNote(),
           key: const ValueKey('cornerExitSpeed'),

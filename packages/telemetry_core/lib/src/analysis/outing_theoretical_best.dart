@@ -150,7 +150,8 @@ CornerLapMetrics measureCornerLap(
     observation
       ..apexSpeed = speeds.apex.value
       ..minimumSpeed = speeds.minimum.value
-      ..exitSpeed = speeds.exit.value;
+      ..exitSpeed = speeds.exit.value
+      ..speedUnit = speeds.unit;
   }
   final braking = computeBrakingMetrics(
     axis.lengthMeters,

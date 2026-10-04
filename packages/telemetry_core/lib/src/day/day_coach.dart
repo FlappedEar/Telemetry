@@ -29,6 +29,7 @@ import '../analysis/corner_speeds.dart' show CornerSpeeds;
 import '../analysis/driving_states.dart' show DrivingStateInterval, drivingStateMeasured;
 import '../analysis/exit_metrics.dart' show exitFollowsGap, exitTruncated;
 import '../analysis/track_progress.dart';
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'day_corners.dart';
 import 'day_laps.dart';
@@ -223,11 +224,16 @@ final class DayCoach {
     List<CoachFinding> findings = const [],
     List<CoachItem> plan = const [],
     required this.reason,
+    this.speedsConverted = false,
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan);
 
   /// The session coached; empty when none could be.
   final String runId;
+
+  /// Whether the speeds reported are converted to km/h because the laps
+  /// compared are in different units; the app then does not show them.
+  final bool speedsConverted;
 
   /// Every finding, planned or not.
   final List<CoachFinding> findings;
@@ -310,17 +316,39 @@ final class _Passage {
   double get lapSeconds => lap.durationSeconds;
 }
 
-/// Metres per second from a speed in [unit]; null for a unit not known.
-double? _metersPerSecond(double? value, String unit) {
-  if (value == null) return null;
-  return switch (unit.trim().toLowerCase()) {
-    '' || 'km/h' || 'kmh' || 'kph' => value / 3.6,
-    'mph' => value * 0.44704,
-    'm/s' => value,
-    'kn' || 'kt' || 'knots' => value * 0.514444,
-    _ => null,
+/// The unit the coach reports speeds in: the one every corner's speeds are
+/// in (an unlabelled speed read as km/h), else km/h, [converted]. Speeds are
+/// compared in metres per second whatever their units, but not at all when
+/// some laps declare a unit and others have none ([comparable]): the
+/// unlabelled ones may be in either unit.
+typedef _ShownSpeed = ({String unit, double perMetrePerSecond, bool converted, bool comparable});
+
+_ShownSpeed _shownSpeed(List<DayCorner> corners) {
+  final units = {
+    for (final corner in corners)
+      for (final (_, metrics) in corner.laps)
+        if (metrics.speeds.valid) metrics.speeds.unit.trim(),
   };
+  final keys = {
+    for (final unit in units)
+      unit.isEmpty
+          ? 'km/h'
+          : normalizedSpeedUnit(unit).isNotEmpty
+          ? normalizedSpeedUnit(unit)
+          : unit.toLowerCase(),
+  };
+  final single = keys.length == 1 ? keys.single : null;
+  final unit = single != null && metresPerSecondPerSpeedUnit(single) != null ? single : 'km/h';
+  return (
+    unit: unit,
+    perMetrePerSecond: 1 / metresPerSecondPerSpeedUnit(unit)!,
+    converted: unit != single && keys.isNotEmpty,
+    comparable: !(units.contains('') && units.any((unit) => unit.isNotEmpty)),
+  );
 }
+
+/// Metres per second from a speed in [unit]; null for a unit not known.
+double? _metersPerSecond(double? value, String unit) => speedInMetresPerSecond(value, unit);
 
 double _median(Iterable<double> values) {
   final sorted = values.toList()..sort();
@@ -411,6 +439,7 @@ DayCoach dayCoach(
   if (result.corners.isEmpty) {
     return DayCoach(runId: coached, reason: CoachReason.noCorners);
   }
+  final shown = _shownSpeed(result.corners);
   var pedals = false, faster = false, measured = false;
 
   // Each lap's coasting, once, by its approved segments.
@@ -512,8 +541,8 @@ DayCoach dayCoach(
           order: order[lap.reference]!,
           seconds: seconds,
           spacing: speeds.meanSampleSpacingMeters,
-          minimum: _metersPerSecond(speeds.minimum.value, speeds.unit),
-          exit: _metersPerSecond(speeds.exit.value, speeds.unit),
+          minimum: shown.comparable ? _metersPerSecond(speeds.minimum.value, speeds.unit) : null,
+          exit: shown.comparable ? _metersPerSecond(speeds.exit.value, speeds.unit) : null,
           lift: lift,
           braking: braking,
           pickup: pickup,
@@ -527,10 +556,10 @@ DayCoach dayCoach(
     if (_hasFasterLap(passages, coached)) faster = true;
     for (final kind in CoachKind.values) {
       if (!kind.corrective) continue;
-      final finding = _corrective(kind, corner, passages, coached);
+      final finding = _corrective(kind, corner, passages, coached, shown);
       if (finding != null) findings.add(finding);
     }
-    final improving = _improving(corner, passages, coached);
+    final improving = _improving(corner, passages, coached, shown);
     if (improving != null) findings.add(improving);
   }
   final plan = _plan(findings);
@@ -538,6 +567,7 @@ DayCoach dayCoach(
     runId: coached,
     findings: findings,
     plan: plan,
+    speedsConverted: shown.converted,
     reason: plan.isNotEmpty
         ? CoachReason.ready
         : findings.any(
@@ -599,6 +629,7 @@ CoachFinding? _corrective(
   DayCorner corner,
   List<_Passage> passages,
   String coached,
+  _ShownSpeed shown,
 ) {
   final observations = <_Observation>[];
   var metric = '', unit = '';
@@ -645,7 +676,7 @@ CoachFinding? _corrective(
         final minimum = current.minimum, exit = current.exit;
         metric = 'Minimum speed';
         key = CoachMetric.minimumSpeed;
-        unit = 'km/h';
+        unit = shown.unit;
         if (minimum == null ||
             exit == null ||
             references.any(
@@ -657,8 +688,8 @@ CoachFinding? _corrective(
             )) {
           continue;
         }
-        observed = minimum * 3.6;
-        values.addAll(references.map((r) => r.minimum! * 3.6));
+        observed = minimum * shown.perMetrePerSecond;
+        values.addAll(references.map((r) => r.minimum! * shown.perMetrePerSecond));
       case CoachKind.lateThrottle:
         final pickup = current.pickup;
         metric = 'Throttle return';
@@ -737,9 +768,9 @@ CoachFinding? _corrective(
       CoachEvidence(
         key: CoachMetric.exitSpeed,
         metric: 'Exit speed',
-        observed: medianOf((p) => p.exit! * 3.6),
-        reference: referenceOf((p) => p.exit! * 3.6),
-        unit: 'km/h',
+        observed: medianOf((p) => p.exit! * shown.perMetrePerSecond),
+        reference: referenceOf((p) => p.exit! * shown.perMetrePerSecond),
+        unit: shown.unit,
         referenceLaps: referenceLaps,
         detail: 'Speed at the segment\'s exit.',
       ),
@@ -779,7 +810,12 @@ CoachFinding? _corrective(
 /// The last three consecutive laps of the coached session improving the
 /// minimum speed or the throttle return, with the segment time, and
 /// without losing exit speed.
-CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coached) {
+CoachFinding? _improving(
+  DayCorner corner,
+  List<_Passage> passages,
+  String coached,
+  _ShownSpeed shown,
+) {
   final own = passages.where((p) => p.lap.runId == coached).toList()
     ..sort((a, b) => a.order.compareTo(b.order));
   if (own.length < 3) return null;
@@ -809,9 +845,9 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
       mc - ma >= 1.4) {
     metric = 'Minimum speed';
     key = CoachMetric.minimumSpeed;
-    unit = 'km/h';
-    before = ma * 3.6;
-    after = mc * 3.6;
+    unit = shown.unit;
+    before = ma * shown.perMetrePerSecond;
+    after = mc * shown.perMetrePerSecond;
   } else if (pa != null &&
       pb != null &&
       pc != null &&
@@ -846,9 +882,9 @@ CoachFinding? _improving(DayCorner corner, List<_Passage> passages, String coach
       CoachEvidence(
         key: CoachMetric.exitSpeed,
         metric: 'Exit speed',
-        observed: c.exit! * 3.6,
-        reference: a.exit! * 3.6,
-        unit: 'km/h',
+        observed: c.exit! * shown.perMetrePerSecond,
+        reference: a.exit! * shown.perMetrePerSecond,
+        unit: shown.unit,
         referenceLaps: [a.lap],
         detail: 'No exit-speed drop greater than 1.8 km/h from one lap to the next.',
       ),

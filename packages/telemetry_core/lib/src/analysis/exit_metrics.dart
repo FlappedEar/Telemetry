@@ -14,6 +14,7 @@
 // cause is assigned to any difference.
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'corner_speeds.dart' show approvedSegmentById;
 import 'sector_timing.dart';
@@ -389,7 +390,7 @@ ExitComparison compareExitMetrics(ExitMetrics a, ExitMetrics b) {
       a.intervalEndMeters != b.intervalEndMeters) {
     return const ExitComparison();
   }
-  final sameSpeed = a.speedChannel == b.speedChannel && a.speedUnit == b.speedUnit;
+  final sameSpeed = a.speedChannel == b.speedChannel && sameSpeedUnit(a.speedUnit, b.speedUnit);
   double? pickupDelta;
   var pickupReason = '';
   if (a.pickup.method != b.pickup.method || a.pickup.channel != b.pickup.channel) {

@@ -9,6 +9,7 @@
 // its evidence.
 import 'dart:math' as math;
 
+import '../speed_units.dart';
 import 'consistency.dart';
 import 'driving_variability.dart';
 
@@ -236,6 +237,11 @@ List<FocusArea> _variabilityAreas(FocusInputs inputs, {required bool braking}) {
       if (!braking && observation.minimumSpeed != null) {
         values.add((observation.minimumSpeed!, observation));
       }
+    }
+    // Speeds in different units are not one spread (see [sameSpeedUnit]).
+    if (!braking &&
+        values.any((value) => !sameSpeedUnit(value.$2.speedUnit, values.first.$2.speedUnit))) {
+      continue;
     }
     final numbers = [for (final value in values) value.$1];
     final summary = summarizeConsistency(numbers);
