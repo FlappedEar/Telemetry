@@ -113,7 +113,7 @@ void main() {
         ),
       ],
     );
-    // With [lift], a lift point 47 m along the lap against 54 m.
+    // With [lift], a lift point 46.94 m along the lap against 53.71 m.
     final change = braking
         ? finding(
             CoachKind.inconsistentBraking,
