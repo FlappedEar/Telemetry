@@ -140,7 +140,8 @@ final class ProfileDay {
   final String name;
   final String carId;
 
-  /// Null when no route was recognised (no complete laps).
+  /// Null when no route was recognised (the chosen group had no run with
+  /// enough complete laps on one line).
   final String? trackId;
 
   /// The first session's start in Unix milliseconds; null when undated.
@@ -269,7 +270,8 @@ final class ProfileDayInput {
     for (final row in analysis.rows) {
       if (!names.containsKey(row.runId)) order.add(row.runId);
       names[row.runId] = row.runName;
-      final time = row.timestampMilliseconds;
+      // A time a profile cannot keep (a hostile recording clock) is undated.
+      final time = _keptMilliseconds(row.timestampMilliseconds);
       if (time != null && (starts[row.runId] == null || time < starts[row.runId]!)) {
         starts[row.runId] = time;
       }
@@ -512,7 +514,7 @@ String encodeDriverProfile(DriverProfile profile) {
   };
   final String text;
   try {
-    text = const JsonEncoder.withIndent(' ').convert(json);
+    text = jsonEncode(json);
   } on JsonUnsupportedObjectError {
     throw const ProfileFormatError('The profile holds a value that cannot be written.');
   }
@@ -579,7 +581,7 @@ DriverProfile decodeDriverProfile(String text) {
   }
   final Object? decoded;
   try {
-    decoded = jsonDecode(text);
+    decoded = jsonDecode(text.startsWith('\uFEFF') ? text.substring(1) : text);
   } on FormatException catch (error) {
     throw ProfileFormatError('The profile is not valid JSON: ${error.message}');
   }
@@ -782,6 +784,9 @@ int? _optionalInt(Object? value, String what) {
 /// [DateTime] holds less two days, so its local date can still be built in
 /// any time zone.
 const _maximumMilliseconds = 8640000000000000 - 2 * 86400000;
+
+int? _keptMilliseconds(int? value) =>
+    value != null && value.abs() <= _maximumMilliseconds ? value : null;
 
 int? _checkMilliseconds(int? value, String what) {
   if (value != null && value.abs() > _maximumMilliseconds) {

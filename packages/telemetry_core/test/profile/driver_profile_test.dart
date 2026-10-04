@@ -331,6 +331,14 @@ void main() {
       expect(written, json);
     });
 
+    test('a byte order mark is ignored', () {
+      final profile = DriverProfile.empty(Random(1));
+      expect(
+        decodeDriverProfile('\uFEFF${encodeDriverProfile(profile)}').driverId,
+        profile.driverId,
+      );
+    });
+
     test('an empty profile reads back', () {
       final profile = DriverProfile.empty(Random(1));
       final read = decodeDriverProfile(encodeDriverProfile(profile));
