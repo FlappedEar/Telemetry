@@ -7067,5 +7067,17 @@
   "lapsHideUnranked": "Hide laps not ranked",
   "@lapsHideUnranked": {
     "description": "Button above the lap list that hides the laps that are not ranked (out laps, in laps, excluded laps, laps with an issue). The day keeps them."
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Place in the app navigation (bottom bar or side rail): the start page."
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Place in the app navigation: the library of days kept in the driver profile."
+  },
+  "navDay": "Day",
+  "@navDay": {
+    "description": "Place in the app navigation: the day open now."
   }
 }

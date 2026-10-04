@@ -315,7 +315,7 @@ void main() {
     await backToImport(tester);
     await shot(tester, 'import-done');
     // The library, with the day just imported in it.
-    await tester.tap(find.byKey(const ValueKey('openLibrary')));
+    await tester.tap(find.byKey(const ValueKey('place-library')));
     await tester.pumpAndSettle();
     await shot(tester, 'library');
     await tester.pageBack();
@@ -654,7 +654,7 @@ void main() {
     debugDisableShadows = false;
     await showDay(tester, _phone, 2);
     await shot(tester, 'phone-results');
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Laps'));
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-laps');
     final best = find.descendant(
@@ -673,7 +673,7 @@ void main() {
     await shot(tester, 'phone-lap-charts');
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Compare'));
+    await tester.tap(find.byKey(const ValueKey('daySection-compare')));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-compare');
     debugDisableShadows = true;

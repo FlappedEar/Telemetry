@@ -470,10 +470,7 @@ void main() {
     await tester.tap(find.text('Sesja 1').last);
     await tester.pumpAndSettle();
     expect(
-      find.descendant(
-        of: find.byType(Dialog),
-        matching: find.text('Sesja 1'),
-      ),
+      find.descendant(of: find.byType(Dialog), matching: find.text('Sesja 1')),
       findsOneWidget,
     );
     expect(

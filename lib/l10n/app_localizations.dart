@@ -7292,6 +7292,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide laps not ranked'**
   String get lapsHideUnranked;
+
+  /// Place in the app navigation (bottom bar or side rail): the start page.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// Place in the app navigation: the library of days kept in the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get navLibrary;
+
+  /// Place in the app navigation: the day open now.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get navDay;
 }
 
 class _AppLocalizationsDelegate

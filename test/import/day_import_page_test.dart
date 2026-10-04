@@ -397,6 +397,63 @@ void main() {
     await settleRecovery(tester);
   });
 
+  testWidgets('Home, Library and Day are on every page, and Day shows the '
+      'day left at once', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    pickers.recordings = [write('a.vbo', _datedVbo(hour: 9))];
+    await show(tester, picksFolders: false);
+    // The start page: the logo beside the app's name, and no day yet.
+    expect(find.byKey(const ValueKey('appLogo')), findsOneWidget);
+    expect(find.text('FlappedEar Telemetry'), findsOneWidget);
+    expect(find.byKey(const ValueKey('appPlaces')), findsOneWidget);
+    final day = find.byKey(const ValueKey('place-day'));
+    expect(
+      tester
+          .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+          .destinations
+          .last,
+      isA<NavigationDestination>().having((d) => d.enabled, 'enabled', false),
+    );
+
+    await pick(tester);
+    importer.jobs.single.finish();
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    // The day page has the same places, Day chosen, and its own tabs.
+    expect(find.byKey(const ValueKey('appPlaces')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daySection-laps')), findsOneWidget);
+    final shown = tester
+        .widget<NavigationBar>(find.byKey(const ValueKey('appPlaces')))
+        .selectedIndex;
+    expect(shown, 1);
+
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await pumpUntil(
+      tester,
+      () => find.byKey(const ValueKey('lastDay')).evaluate().isNotEmpty,
+    );
+    expect(find.byType(DayResultsPage), findsNothing);
+
+    // Back to the same day, without opening it again.
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    expect(importer.jobs, hasLength(1));
+    // Its laps tab, then Home and back: the day is still the one shown.
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsLaps')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('place-home')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('openLastDay')));
+    await tester.pumpAndSettle();
+    expect(find.text('Day results'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await settleRecovery(tester);
+  });
+
   testWidgets('a saved day closed here takes the next session', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
