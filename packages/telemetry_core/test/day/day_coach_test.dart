@@ -444,6 +444,10 @@ void main() {
         (CoachKind.inconsistentBraking, 40, 25, CoachGoalOutcome.better),
         (CoachKind.inconsistentBraking, 25, 40, CoachGoalOutcome.worse),
         (CoachKind.inconsistentBraking, 40, 33, CoachGoalOutcome.unchanged),
+        // Fewer laps picking up the throttle early is better; 25 points.
+        (CoachKind.earlyThrottle, 100, 33, CoachGoalOutcome.better),
+        (CoachKind.earlyThrottle, 33, 67, CoachGoalOutcome.worse),
+        (CoachKind.earlyThrottle, 67, 50, CoachGoalOutcome.unchanged),
       ];
       for (final (kind, before, now, outcome) in cases) {
         expect(coachGoalOutcome(kind, before, now), outcome, reason: '$kind $before → $now');
@@ -509,6 +513,256 @@ void main() {
       final goal = _coach(before, [25, 25.2, 25.1]).goal!;
       expect(goal.finding.sessionLaps, hasLength(3));
       expect(goal.finding.evidence.first.referenceLaps.map((lap) => lap.runId), ['run1']);
+    });
+  });
+
+  group('throttle picked up early, then lifted', () {
+    // Every lap stops braking 15 m before the slow point (70 m) and coasts
+    // to it; the latest session's laps pick up the throttle at 45 m and
+    // lift again at 55 m.
+    void stab(String runId, TelemetrySession session, {bool earlier = false}) {
+      _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+      _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+      if (runId == 'run2' || earlier) {
+        _edit(session, 'brake', 0, (d) => d >= 45 && d < 55);
+        _edit(session, 'throttle', 40, (d) => d >= 45 && d < 55);
+      }
+    }
+
+    test('is a pattern against faster laps that pick up once', () {
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: stab);
+      final finding = coach.findings.singleWhere((f) => f.kind == CoachKind.earlyThrottle);
+      expect(finding.affectedLaps, hasLength(3));
+      final evidence = finding.evidence.first;
+      expect(evidence.key, CoachMetric.firstThrottle);
+      expect(evidence.unit, 'm');
+      // Picked up near 45 m along the corner's approach; the faster laps
+      // after the slow point.
+      expect(evidence.observed, lessThan(evidence.reference - 15));
+      expect(finding.confidence, greaterThanOrEqualTo(coachPlanConfidence));
+    });
+
+    test('not when the faster laps do it too', () {
+      final coach = _coach(
+        [20, 20.5],
+        [17, 17.2, 17.1],
+        edit: (runId, session) => stab(runId, session, earlier: true),
+      );
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a drive out of an earlier apex', () {
+      // The latest laps gain about 2 m/s (10 km/h less the slowing) while on
+      // the throttle, then slow again.
+      double Function(double) shape(double slow) {
+        final base = _lap(slow);
+        return (d) =>
+            slow < 19 && d >= 45 && d < 65 ? base(d) + 10 * (1 - (d - 55).abs() / 10) : base(d);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: stab, shape: shape);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a blip while braking (heel and toe)', () {
+      void blip(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'brake', 0, (d) => d >= 45 && d < 55);
+          _edit(session, 'throttle', 0, (d) => d >= 52 && d < 55);
+          _edit(session, 'throttle', 40, (d) => d >= 48 && d < 52);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: blip);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a release too short to be a lift', () {
+      void dip(String runId, TelemetrySession session) {
+        stab(runId, session);
+        // Off for 2 m (about 0.1 s), then back on the throttle.
+        if (runId == 'run2') _edit(session, 'throttle', 40, (d) => d >= 57 && d < 70);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: dip);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not without a measured brake', () {
+      void noBrake(String runId, TelemetrySession session) {
+        stab(runId, session);
+        _edit(session, 'brake', double.nan, (d) => true);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: noBrake);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not against faster laps whose throttle is unknown', () {
+      void unknown(String runId, TelemetrySession session) {
+        stab(runId, session);
+        if (runId == 'run1') _edit(session, 'throttle', double.nan, (d) => d >= 40 && d < 140);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: unknown);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not on one lap alone', () {
+      void once(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'brake', 0, (d) => d >= 45 && d < 55, lap: 1);
+          _edit(session, 'throttle', 40, (d) => d >= 45 && d < 55, lap: 1);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2], edit: once);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('checked next session by the share of laps picking up early', () {
+      // The session before picks up early on four of its six laps (not on
+      // the two faster ones); this one on none.
+      void before(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+        if (runId == 'run1') {
+          for (var lap = 1; lap <= 4; ++lap) {
+            _edit(session, 'brake', 0, (d) => d >= 45 && d < 55, lap: lap);
+            _edit(session, 'throttle', 40, (d) => d >= 45 && d < 55, lap: lap);
+          }
+        }
+      }
+
+      final goal = _coach([17, 17.2, 17.1, 17.05, 18, 18.1], [17, 17.2, 17.1], edit: before).goal;
+      expect(goal?.finding.kind, CoachKind.earlyThrottle);
+      expect(goal!.metric, CoachMetric.earlyThrottleShare);
+      expect(goal.unit, '%');
+      expect(goal.before, closeTo(100 * 4 / 6, 0.01));
+      expect(goal.now, 0);
+      expect(goal.outcome, CoachGoalOutcome.better);
+    });
+
+    test('not when the faster laps stab the throttle briefly too', () {
+      // The faster laps pick up for about a second (6 m), lift and pick up
+      // again after the slow point.
+      void brief(String runId, TelemetrySession session) {
+        stab(runId, session);
+        if (runId == 'run1') {
+          _edit(session, 'brake', 0, (d) => d >= 45 && d < 55);
+          _edit(session, 'throttle', 0, (d) => d >= 52 && d < 55);
+          _edit(session, 'throttle', 40, (d) => d >= 48 && d < 52);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: brief);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a spike too short to be a pickup', () {
+      void spike(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 45 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 45 && d < 70);
+        // One sample at 40 %.
+        if (runId == 'run2') _edit(session, 'throttle', 40, (d) => d >= 45 && d < 45.4);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: spike);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not when the brake pressure never shows the braking', () {
+      void silent(String runId, TelemetrySession session) {
+        stab(runId, session);
+        _edit(session, 'brake', 0, (d) => true);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: silent);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a release shorter than 3 m', () {
+      // Slower corners, so 0.2 s off the throttle covers less than 3 m: off
+      // for about 0.25 s, from 60 m to 63 m along the lap.
+      void dip(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 45 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 45 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'throttle', 40, (d) => d >= 45 && d < 60);
+          _edit(session, 'throttle', 40, (d) => d >= 63 && d < 70);
+        }
+      }
+
+      final coach = _coach([10, 10.5], [8, 8.2, 8.1], edit: dip);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a pickup once past an earlier apex', () {
+      // The latest laps slow to a first minimum at 47 m and gain about 2 m/s
+      // by 50 m, where they pick up the throttle until 57 m.
+      double Function(double) shape(double slow) {
+        final base = _lap(slow);
+        return (d) => slow < 19 && d >= 47 && d < 65
+            ? base(d) + 3 * (d < 50 ? (d - 47) / 3 : (d < 60 ? 1 : (65 - d) / 5))
+            : base(d);
+      }
+
+      void late(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 45 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 45 && d < 70);
+        if (runId == 'run2') _edit(session, 'throttle', 40, (d) => d >= 50 && d < 57);
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: late, shape: shape);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not a pickup ended by braking again', () {
+      void again(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 45 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 45 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'throttle', 40, (d) => d >= 45 && d < 52);
+          _edit(session, 'brake', 30, (d) => d >= 52 && d < 55);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: again);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not while still on the brake lightly', () {
+      // The latest laps trail the brake at 5 % to 55 m with the throttle at
+      // 40 % from 40 m to 48 m: both pedals, still braking.
+      void overlap(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 40 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'brake', 5, (d) => d >= 40 && d < 55);
+          _edit(session, 'throttle', 40, (d) => d >= 40 && d < 48);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: overlap);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
+    });
+
+    test('not when the throttle stays on', () {
+      void held(String runId, TelemetrySession session) {
+        _edit(session, 'brake', 0, (d) => d >= 55 && d < 70);
+        _edit(session, 'throttle', 0, (d) => d >= 55 && d < 70);
+        if (runId == 'run2') {
+          _edit(session, 'brake', 0, (d) => d >= 45 && d < 70);
+          _edit(session, 'throttle', 40, (d) => d >= 45 && d < 70);
+        }
+      }
+
+      final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: held);
+      expect(coach.findings.where((f) => f.kind == CoachKind.earlyThrottle), isEmpty);
     });
   });
 

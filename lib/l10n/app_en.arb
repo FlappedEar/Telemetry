@@ -264,6 +264,10 @@
   "@coachKindLowMinimumSpeed": {
     "description": "Coach item title: lower minimum speed than on faster laps."
   },
+  "coachKindEarlyThrottle": "Pick up the throttle once",
+  "@coachKindEarlyThrottle": {
+    "description": "Coach item title: the throttle was picked up before the slow point and released again."
+  },
   "coachKindLateThrottle": "Return to throttle sooner",
   "@coachKindLateThrottle": {
     "description": "Coach item title: throttle back on later than on faster laps."
@@ -301,6 +305,10 @@
   "coachActionLowMinimumSpeed": "Repeat the line and approach from your faster laps, aiming for a smoother minimum-speed phase. Keep the exit as your check.",
   "@coachActionLowMinimumSpeed": {
     "description": "What to try for a low minimum speed."
+  },
+  "coachActionEarlyThrottle": "Wait to pick up the throttle until you can keep it on: one smooth pickup from the slow point, as on your faster laps.",
+  "@coachActionEarlyThrottle": {
+    "description": "What to try when the throttle is picked up early and released again."
   },
   "coachActionLateThrottle": "Work toward a smooth, slightly earlier throttle return after the slow point, using your faster laps as a reference.",
   "@coachActionLateThrottle": {
@@ -388,6 +396,14 @@
   "coachMetricMinimumSpeed": "Minimum speed",
   "@coachMetricMinimumSpeed": {
     "description": "The lowest speed through a corner."
+  },
+  "coachMetricFirstThrottle": "First throttle pickup",
+  "@coachMetricFirstThrottle": {
+    "description": "Where the throttle was first picked up after the braking, in metres along the lap; on the session's laps it was released again before the slow point."
+  },
+  "coachMetricEarlyThrottleShare": "Laps picking up the throttle early",
+  "@coachMetricEarlyThrottleShare": {
+    "description": "The share of a session's laps (in percent) that picked up the throttle after the braking and released it again before the slow point."
   },
   "coachMetricThrottleReturn": "Throttle return",
   "@coachMetricThrottleReturn": {

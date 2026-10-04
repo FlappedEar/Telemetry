@@ -196,6 +196,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keep more speed through the slow point';
 
   @override
+  String get coachKindEarlyThrottle => 'Pick up the throttle once';
+
+  @override
   String get coachKindLateThrottle => 'Return to throttle sooner';
 
   @override
@@ -221,6 +224,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get coachActionLowMinimumSpeed =>
       'Repeat the line and approach from your faster laps, aiming for a smoother minimum-speed phase. Keep the exit as your check.';
+
+  @override
+  String get coachActionEarlyThrottle =>
+      'Wait to pick up the throttle until you can keep it on: one smooth pickup from the slow point, as on your faster laps.';
 
   @override
   String get coachActionLateThrottle =>
@@ -266,6 +273,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coachMetricMinimumSpeed => 'Minimum speed';
+
+  @override
+  String get coachMetricFirstThrottle => 'First throttle pickup';
+
+  @override
+  String get coachMetricEarlyThrottleShare =>
+      'Laps picking up the throttle early';
 
   @override
   String get coachMetricThrottleReturn => 'Throttle return';

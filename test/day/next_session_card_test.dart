@@ -671,6 +671,59 @@ void main() {
     expect(find.text('46.9\u00a0km/h against 53.7\u00a0km/h'), findsOneWidget);
   });
 
+  test('an early throttle item: picked up once, against the faster laps', () {
+    final finding = CoachFinding(
+      kind: CoachKind.earlyThrottle,
+      segmentId: 's',
+      segmentName: 'Corners 2–3',
+      confidence: 0.83,
+      affectedLaps: const [],
+      evidence: [
+        CoachEvidence(
+          key: CoachMetric.firstThrottle,
+          metric: 'First throttle pickup',
+          observed: 475.2,
+          reference: 541.4,
+          unit: 'm',
+          referenceLaps: const [],
+          detail: '',
+        ),
+      ],
+    );
+    final en = lookupAppLocalizations(const Locale('en'));
+    expect(en.coachKind(CoachKind.earlyThrottle), 'Pick up the throttle once');
+    expect(
+      en.coachMeasured(finding, 'km/h'),
+      'First throttle pickup: 475\u00a0m on this session\'s laps, 541\u00a0m on your faster laps.',
+    );
+    expect(
+      en.coachAction(CoachKind.earlyThrottle),
+      startsWith('Wait to pick up'),
+    );
+    final pl = lookupAppLocalizations(const Locale('pl'));
+    expect(pl.coachKind(CoachKind.earlyThrottle), 'Dodaj gaz raz');
+    expect(
+      pl.coachMeasured(finding, 'km/h'),
+      startsWith('Pierwsze dodanie gazu: 475\u00a0m'),
+    );
+    // Checked next session by the share of laps picking up early.
+    final goal = CoachGoalCheck(
+      runId: 'run1',
+      runName: 'Session 1',
+      finding: finding,
+      outcome: CoachGoalOutcome.better,
+      before: 200 / 3,
+      now: 0,
+    );
+    expect(en.coachMetric(goal.metric), 'Laps picking up the throttle early');
+    expect(coachValue(goal.before!, goal.unit, 'km/h'), '67%');
+    expect(coachValue(goal.now!, goal.unit, 'km/h'), '0%');
+    expect(
+      pl.coachMetric(goal.metric),
+      'Okrążenia z przedwczesnym dodaniem gazu',
+    );
+  });
+
   test('a braking item compares with the three fastest laps of the day', () {
     CoachFinding braking() => CoachFinding(
       kind: CoachKind.inconsistentBraking,

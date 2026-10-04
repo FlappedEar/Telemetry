@@ -87,6 +87,9 @@ void main() {
         for (final item in coach.plan) {
           expect(item.finding.confidence, greaterThanOrEqualTo(coachPlanConfidence));
         }
+        // The reference day picks up the throttle early on a minority of
+        // laps at any corner: not a pattern to plan.
+        expect(coach.plan.where((item) => item.finding.kind == CoachKind.earlyThrottle), isEmpty);
       }
     },
     skip: skip,
