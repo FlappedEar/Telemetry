@@ -280,6 +280,31 @@ void main() {
     expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);
   });
 
+  test('a lap a few metres off the usual braking point is not off it', () {
+    void near(String runId, TelemetrySession session) {
+      if (runId != 'run2') return;
+      // Lap 1 brakes about 7 m early, lap 3 about 25 m late: one lap off.
+      _edit(session, 'brake', 30, (d) => d >= 13 && d < 20, lap: 1);
+      _edit(session, 'brake', 0, (d) => d >= 15 && d < 45, lap: 3);
+    }
+
+    final coach = _coach([17.3, 17.4, 17.3], [17, 17.2, 17.1], edit: near);
+    expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);
+  });
+
+  test('a much slower lap is not read for braking consistency', () {
+    void slowLate(String runId, TelemetrySession session) {
+      if (runId != 'run2') return;
+      _edit(session, 'brake', 30, (d) => d >= 5 && d < 20, lap: 1);
+      // Lap 4, much slower than the session's typical lap, brakes late.
+      _edit(session, 'brake', 0, (d) => d >= 15 && d < 45, lap: 4);
+    }
+
+    final coach = _coach([17.3, 17.4, 17.3], [17, 17.2, 17.1, 3], edit: slowLate);
+    expect(coach.slowLaps.map((lap) => (lap.runId, lap.lapNumber)), [('run2', 4)]);
+    expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);
+  });
+
   test('without pedals there is no braking item', () {
     final coach = _coach([17.3, 17.4, 17.3], [17, 17.2, 17.1], pedals: false);
     expect(coach.findings.where((f) => f.kind == CoachKind.inconsistentBraking), isEmpty);

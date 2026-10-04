@@ -349,7 +349,8 @@
         "example": "53.7 km/h"
       }
     }
-  },  "coachMeasuredFastest": "{metric}: {observed} on this session's laps, {reference} on your three fastest laps today.",
+  },
+  "coachMeasuredFastest": "{metric}: {observed} on this session's laps, {reference} on your three fastest laps today.",
   "@coachMeasuredFastest": {
     "description": "What was measured for braking consistency, compared with the day's three fastest laps (which can include this session's).",
     "placeholders": {
@@ -358,7 +359,6 @@
       "reference": {"type": "String"}
     }
   },
-
   "coachMeasuredImproving": "{metric} improved on three laps in a row, from {before} to {after}, without losing exit speed.",
   "@coachMeasuredImproving": {
     "description": "What was measured for an improvement.",
@@ -506,11 +506,11 @@
   "coachWhyFaster": "Faster laps compared",
   "@coachWhyFaster": {
     "description": "Heading of the faster laps used as reference."
-  },  "coachWhyFastest": "Your three fastest laps today",
+  },
+  "coachWhyFastest": "Your three fastest laps today",
   "@coachWhyFastest": {
     "description": "Heading of the laps compared for braking consistency: the day's three fastest laps."
   },
-
   "coachWhyBefore": "First of the three laps",
   "@coachWhyBefore": {
     "description": "Heading of the lap an improvement started from."

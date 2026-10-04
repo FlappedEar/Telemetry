@@ -65,6 +65,8 @@ void main() {
       (s) => s.type == 'corner',
       orElse: () => result.segments.first,
     );
+    final earlier = laps.where((lap) => lap.runId != runId).toList();
+    final latest = laps.lastWhere((lap) => lap.runId == runId);
     CoachFinding finding(
       CoachKind kind,
       CoachMetric key,
@@ -75,9 +77,11 @@ void main() {
       segmentId: segment.segmentId,
       segmentName: segment.name,
       confidence: 0.78,
-      affectedLaps: laps.take(3).toList(),
-      // A change also seen on earlier laps of the day.
-      sessionLaps: kind.corrective ? laps.skip(2).take(1).toList() : null,
+      // A change also seen on laps of an earlier session.
+      affectedLaps: kind.corrective
+          ? [...earlier.take(2), latest]
+          : laps.take(3).toList(),
+      sessionLaps: kind.corrective ? [latest] : null,
       evidence: [
         CoachEvidence(
           key: key,
@@ -522,5 +526,36 @@ void main() {
       pl.coachMeasured(braking(), 'km/h'),
       contains('trzech najszybszych okrążeniach dnia'),
     );
+  });
+
+  test('earlier laps are never the session coached\'s own', () {
+    DayLapRow lap(String run, int number) => DayLapRow(
+      runId: run,
+      runName: run,
+      type: LapSectionType.lap,
+      lapNumber: number,
+      start: number * 100.0,
+      end: number * 100.0 + 90,
+      sourceRevision: '',
+    );
+    // A braking item reads every lap of the session and lists those off the
+    // usual point as the session's.
+    final finding = CoachFinding(
+      kind: CoachKind.inconsistentBraking,
+      segmentId: 's',
+      segmentName: 'Corner 7',
+      confidence: 0.74,
+      affectedLaps: [
+        lap('run1', 4),
+        lap('run2', 1),
+        lap('run2', 2),
+        lap('run2', 3),
+      ],
+      sessionLaps: [lap('run2', 1), lap('run2', 3)],
+      evidence: const [],
+    );
+    expect(coachEarlierLaps(finding).map((l) => (l.runId, l.lapNumber)), [
+      ('run1', 4),
+    ]);
   });
 }

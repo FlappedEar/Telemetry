@@ -344,6 +344,17 @@ class NextSessionCard extends StatelessWidget {
   }
 }
 
+/// The laps of earlier sessions showing [finding]'s pattern too: never the
+/// session coached's own (a braking item reads all of them, but lists only
+/// those off the usual point as the session's).
+List<DayLapRow> coachEarlierLaps(CoachFinding finding) {
+  final coached = {for (final lap in finding.sessionLaps) lap.runId};
+  return [
+    for (final lap in finding.affectedLaps)
+      if (!coached.contains(lap.runId)) lap,
+  ];
+}
+
 /// One coach item opened: its measured values, the laps behind them and
 /// its corner on the best lap's trace.
 class CoachItemPage extends StatefulWidget {
@@ -391,11 +402,7 @@ class _CoachItemPageState extends State<CoachItemPage> {
     };
   }
 
-  /// The laps of earlier sessions showing the pattern too.
-  List<DayLapRow> _earlier(CoachFinding finding) => [
-    for (final lap in finding.affectedLaps)
-      if (!finding.sessionLaps.contains(lap)) lap,
-  ];
+  List<DayLapRow> _earlier(CoachFinding finding) => coachEarlierLaps(finding);
 
   String _laps(AppLocalizations l10n, List<DayLapRow> laps) => [
     for (final lap in laps)

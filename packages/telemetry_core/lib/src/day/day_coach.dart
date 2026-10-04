@@ -1090,7 +1090,7 @@ CoachFinding? _inconsistentBraking(
         referenceLaps: referenceLaps,
         detail:
             'From the earliest to the latest braking start across ${own.length} laps of this '
-            'session, ${off.length} of them ${coachBrakingOffMeters.round()} m or more from its '
+            'session, ${off.length} of them ${coachBrakingOffMeters.round()} m (and two sample spacings) or more from its '
             'typical braking point; compared with the day\'s three fastest laps (this '
             'session\'s among them when they are). Measured from the brake channel, clean '
             'onsets of at least ${coachBrakingMinSeconds.toStringAsFixed(1)} s only; positions '
