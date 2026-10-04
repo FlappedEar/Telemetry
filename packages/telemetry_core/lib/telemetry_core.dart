@@ -48,7 +48,8 @@ export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';
 export 'src/day/run_metadata.dart';
 
-export 'package:fetproject/fetproject.dart' show FetprojectError;
+export 'package:fetproject/fetproject.dart'
+    show FetprojectError, InterruptedSave, completeInterruptedSave;
 
 export 'src/day/day_laps.dart';
 export 'src/day/day_progression.dart';

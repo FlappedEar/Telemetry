@@ -33,6 +33,18 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
   right requirement. The author never
   reviews their own change. The verdict and what was done about each finding
   go in the pull request description.
+- A reviewer does not stop at the changed files. For anything that touches
+  recorded data, analysis, saving or the day's state, the review traces the
+  change through input (parsers, import, fusion), model (sessions, the day's
+  runs), persistence (document, fingerprints, recovery), analysis and
+  presentation, and checks the cross-layer invariants below. The owner's
+  second audit found a speed unit the screens knew but the analysis did not:
+  every file was right on its own.
+- `DayResultsController` gets no new state machine of its own (its own
+  generation counter, queue, cache or background job). New stateful work goes
+  in its own class, which the controller holds and calls; existing parts move
+  out the same way when they are next changed (candidates: persistence and
+  recovery, fusion jobs, derived analysis, comparison state).
 - A newer run never cancels a CI run (`ci.yml`) on `main`, so every `main`
   revision gets a full result; runs on a pull request cancel when a newer push
   arrives. The user guide's Pages deploy still lets the newest `main` win.
@@ -120,9 +132,26 @@ apply whatever the app's architecture.
 - Never invent brake telemetry, and never substitute another channel silently.
 - Analysis never depends on video or frame rate; all timing is time based.
 
+- Every speed analysis reads has a unit: the one the recording declares (an
+  RCZ channel's unit, a VBO `[header]` line), else the unit assumed in
+  settings for unlabelled speeds (`withEffectiveSpeedUnits` in
+  `telemetry_core`). Speeds in different units are never subtracted or
+  pooled (`sameSpeedUnit`); a physical scale comes from
+  `speedInMetresPerSecond`. Parsed recordings keep units as written, so their
+  fingerprints match Overlays.
+
 **Documents**
 
-- Saves are atomic. New, open and quit respect unsaved changes. Opening validates
+- Saves are atomic. Where the macOS sandbox forces a save in place,
+  recovery changes still waiting are written first, and the document is
+  kept in the app's `save-journal` folder until it reads back whole (or the
+  old version is written back); a save cut by the app ending is finished
+  when the file is next opened.
+- A day marked clean can be rebuilt from its saved document; a day with
+  edits has them in the recovery snapshot, apart from the recovery delay
+  (500 ms) before a change is written there (recordings added to a saved
+  day are not, so they never take the shared recovery slot). New, open and
+  quit respect unsaved changes. Opening validates
   and commits a document as one transaction.
 - A document and its recordings are separate. A missing or moved recording never
   prevents a valid document from opening. Relative references are preferred, and a
