@@ -837,7 +837,7 @@ void main() {
   testWidgets('the pickers follow the device language', (tester) async {
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     tester.platformDispatcher.localesTestValue = const [Locale('pl', 'PL')];
-    expect(deviceL10n().importPageRecordingTypes, 'Nagrania VBO i RCZ');
+    expect(deviceL10n().importPageRecordingTypes, 'Pliki telemetrii VBO i RCZ');
     tester.platformDispatcher.localesTestValue = const [Locale('de')];
     expect(deviceL10n().importPageRecordingTypes, 'VBO and RCZ recordings');
     expect(recordingTypeGroup(TargetPlatform.macOS, label: 'X').label, 'X');
@@ -967,7 +967,7 @@ void main() {
     expect(find.text('Importuj sesje…'), findsOneWidget);
 
     await pick(tester, button: 'Importuj sesje…');
-    expect(find.text('Szukam nagrań…'), findsOneWidget);
+    expect(find.text('Wyszukiwanie zapisów telemetrii…'), findsOneWidget);
     importer.jobs.single.finish();
     await tester.pumpAndSettle();
     expect(find.textContaining('Uwagi do importu'), findsOneWidget);
@@ -1156,7 +1156,7 @@ void main() {
     importer.jobs.single.finish();
     await tester.pump();
     expect(
-      find.text('Nie udało się zaimportować żadnego nagrania.'),
+      find.text('Nie udało się zaimportować żadnego zapisu.'),
       findsOneWidget,
     );
     // telemetry_core's English detail of a damaged file is kept after the

@@ -368,7 +368,7 @@ void main() {
     expect(find.text('Analizator zakrętów'), findsOneWidget);
     expect(find.text('Corner Analyzer'), findsNothing);
     final note = textOf(tester, const ValueKey('cornerAnalyzerNote'));
-    expect(note, startsWith('Segmenty zaproponowane na podstawie: Sesja '));
+    expect(note, startsWith('Odcinki zaproponowano na podstawie: Sesja '));
     expect(note, contains(' · OKR. '));
     expect(find.byKey(const ValueKey('cornerAnalyzerGroup Time')), findsOne);
     expect(find.text('CZAS'), findsOneWidget);
@@ -382,7 +382,7 @@ void main() {
     await pickSegment(tester, corner.name);
     expect(find.text('HAMOWANIE'), findsOneWidget);
     expect(find.text('Prędkość na wejściu'), findsOneWidget);
-    expect(find.text('Przybliż segment'), findsOneWidget);
+    expect(find.text('Przybliż odcinek'), findsOneWidget);
     expect(
       textOf(tester, const ValueKey('cornerAnalyzerChartTitle')),
       startsWith('Prędkość · Zakręt '),
@@ -428,7 +428,7 @@ void main() {
         'shift by a few metres on these laps.',
         const [],
       ),
-      startsWith('Segmenty zatwierdzone dla: Sesja 2,'),
+      startsWith('Odcinki zatwierdzono dla: Sesja 2.'),
     );
   });
 

@@ -274,8 +274,8 @@ void main() {
     expect(find.text('Jednostka dla prędkości bez oznaczenia'), findsOneWidget);
     expect(
       find.text(
-        'Nagrania otwartego dnia podają km/h i mph. '
-        '2 z jego nagrań nie podają jednostki prędkości.',
+        'Zapisy otwartego dnia podają km/h i mph. '
+        '2 z jego zapisów nie podają jednostki prędkości.',
       ),
       findsOneWidget,
     );

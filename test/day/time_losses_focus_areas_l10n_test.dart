@@ -93,25 +93,30 @@ void main() {
       final byKind = {for (final area in areas) area.kind: area};
       expect(
         polish.focusAreaObservation(byKind[FocusAreaKind.sectorGap]!),
-        'Twoje najlepsze okrążenie (Sesja 1 · OKR. 2) było o 0.200\u00a0s '
-        'wolniejsze w segmencie Prosta 1 niż Sesja 2 · OKR. 1, najszybsze '
-        'zarejestrowane tam.',
+        'Na Twoim najlepszym okrążeniu (Sesja 1 · OKR. 2) przejazd odcinka '
+        'Prosta 1 trwał o 0.200\u00a0s dłużej niż na okrążeniu Sesja 2 · '
+        'OKR. 1, na którym uzyskano najlepszy czas tego odcinka.',
       );
       expect(
         polish.focusAreaHypothesis(byKind[FocusAreaKind.repeatedLoss]!),
-        contains('z Sesja 1 · OKR. 2 w segmencie Zakręt 1'),
+        contains('z Sesja 1 · OKR. 2 w odcinku Zakręt 1'),
       );
       expect(
         polish.focusAreaObservation(byKind[FocusAreaKind.brakingSpread]!),
-        startsWith('Punkt hamowania w segmencie Zakręty 2–3 zmienia się o'),
+        startsWith(
+          'Dla odcinka Zakręty 2–3 rozrzut punktów rozpoczęcia hamowania wynosi',
+        ),
       );
       final speed = polish.focusAreaObservation(
         byKind[FocusAreaKind.minimumSpeedSpread]!,
       );
-      expect(speed, startsWith('Prędkość minimalna w segmencie Hairpin'));
+      expect(
+        speed,
+        startsWith('Dla odcinka Hairpin rozrzut prędkości minimalnej'),
+      );
       expect(speed.contains('km/h'), unit.isNotEmpty);
       expect(
-        speed.endsWith('Prędkości są w jednostkach z nagrania.'),
+        speed.endsWith('Prędkości są w jednostkach z zapisu.'),
         unit.isEmpty,
       );
     }
@@ -203,7 +208,7 @@ void main() {
       await reveal(tester, summaryText);
       expect(find.text('Straty czasu'), findsOneWidget);
       expect(find.text('Time losses'), findsNothing);
-      expect(find.text('Najlepsze każdej sesji'), findsOneWidget);
+      expect(find.text('Najlepsze okrążenia sesji'), findsOneWidget);
       final text = tester.widget<Text>(summaryText).data!;
       expect(text, startsWith('Względem: Sesja '));
       expect(text, contains('OKR. '));
@@ -214,7 +219,10 @@ void main() {
       expect(find.text('To okrążenie'), findsOneWidget);
       expect(find.text('Najlepsze okrążenie'), findsOneWidget);
       expect(find.text('Różnica'), findsOneWidget);
-      expect(find.textContaining('względem najlepszego okrążenia'), findsOne);
+      expect(
+        find.textContaining('względem najlepszego okrążenia, '),
+        findsOneWidget,
+      );
       expect(find.textContaining('against the best lap'), findsNothing);
     });
 
@@ -230,7 +238,7 @@ void main() {
         find.descendant(
           of: first,
           matching: find.text(
-            'Zmierzono: ${polish.focusAreaObservation(area)}',
+            'Zaobserwowano: ${polish.focusAreaObservation(area)}',
           ),
         ),
         findsOneWidget,
@@ -241,10 +249,20 @@ void main() {
       await tester.tap(first);
       await tester.pumpAndSettle();
       expect(find.byType(FocusAreaPage), findsOneWidget);
-      expect(
-        find.textContaining('Zmierzone tylko na tych okrążeniach'),
-        findsOneWidget,
+      final disclaimer = find.textContaining(
+        'Wyniki dotyczą wyłącznie tych okrążeń',
       );
+      await tester.scrollUntilVisible(
+        disclaimer,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(FocusAreaPage),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(disclaimer, findsOneWidget);
       expect(find.textContaining('A · Sesja '), findsOneWidget);
     });
   });

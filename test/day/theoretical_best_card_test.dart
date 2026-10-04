@@ -374,7 +374,10 @@ void main() {
       find.textContaining('brak kanału hamulca i opóźnienia'),
       findsOneWidget,
     );
-    expect(find.text('Punkt hamowania, przed zakrętem'), findsOneWidget);
+    expect(
+      find.text('Punkt rozpoczęcia hamowania (przed zakrętem)'),
+      findsOneWidget,
+    );
     expect(
       find.text('Najlepsze z ${corner.laps.length} okrążeń'),
       findsOneWidget,
@@ -439,11 +442,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Teoretycznie najlepsze'), findsWidgets);
+    expect(find.text('Teoretyczny czas okrążenia'), findsWidgets);
     expect(find.text('Gdzie ucieka czas'), findsOneWidget);
-    expect(find.text('Czasy sektorów'), findsOneWidget);
+    expect(find.text('Czasy odcinków'), findsOneWidget);
     expect(find.text('Zakręt 1'), findsWidgets);
-    expect(find.text('Najszybciej'), findsOneWidget);
+    expect(find.text('Najlepsze czasy'), findsOneWidget);
     expect(find.textContaining('OKR. '), findsWidgets);
     expect(find.textContaining('najlepsze'), findsWidgets);
     expect(

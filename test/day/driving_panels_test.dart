@@ -283,7 +283,7 @@ void main() {
     expect(find.text('Stany jazdy'), findsOneWidget);
     expect(find.text('Driving states'), findsNothing);
     expect(find.text('Hamowanie w zakręcie'), findsOneWidget);
-    expect(find.text('Maks. łączne'), findsOneWidget);
+    expect(find.text('Maks. przeciążenie wypadkowe'), findsOneWidget);
     expect(find.text('Okrążenie A'), findsOneWidget);
     for (final lap in const ['A', 'B']) {
       expect(
@@ -292,7 +292,7 @@ void main() {
       );
       expect(
         textOf(tester, ValueKey('coastingSummary $lap')),
-        contains('% okrążenia)'),
+        contains('% czasu okrążenia)'),
       );
       expect(
         textOf(tester, ValueKey('coastingSource $lap')),
@@ -323,24 +323,26 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Toczenie bez gazu i hamulca'), findsOneWidget);
+    expect(find.text('Jazda bez gazu i hamulca'), findsOneWidget);
     expect(find.text('Coasting'), findsNothing);
     expect(
       textOf(tester, const ValueKey('lapCoastingSummary')),
-      contains('% okrążenia)'),
+      contains('% czasu okrążenia)'),
     );
     expect(
       textOf(tester, const ValueKey('lapCoastingNoSegments')),
-      'Toczenie według segmentów wymaga segmentów w grupie tego okrążenia.',
+      'Analiza jazdy bez gazu i hamulca dla poszczególnych odcinków wymaga podziału toru w grupie tego okrążenia.',
     );
     expect(
-      find.text('Epizody · wybierz jeden, aby go zobaczyć'),
+      find.text(
+        'Fragmenty jazdy bez gazu i hamulca · wybierz fragment, aby go zobaczyć',
+      ),
       findsOneWidget,
     );
 
     await controller.requestTheoreticalBest();
     await tester.pumpAndSettle();
-    expect(find.text('Według segmentów'), findsOneWidget);
+    expect(find.text('Według odcinków'), findsOneWidget);
     expect(find.textContaining('Zakręt'), findsWidgets);
     expect(find.textContaining('Corner'), findsNothing);
   });

@@ -195,7 +195,7 @@ void main() {
     );
     expect(
       pl.dayNote(noGpsNote),
-      'To nagranie nie ma pozycji GPS; nie da się zmierzyć okrążeń.',
+      'Ten zapis nie ma pozycji GPS; nie da się zmierzyć okrążeń.',
     );
   });
 

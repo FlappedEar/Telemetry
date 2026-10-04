@@ -337,17 +337,17 @@ void main() {
     expect(find.text('Progression'), findsNothing);
     expect(find.text('Według sesji'), findsOneWidget);
     expect(find.text('1. Sesja 1'), findsOneWidget);
-    expect(find.text('Brak czasu nagrania'), findsWidgets);
+    expect(find.text('Brak daty i godziny zapisu'), findsWidgets);
     expect(
       find.text(
-        'Typowe okrążenie wymaga co najmniej 3 sklasyfikowanych okrążeń',
+        'Do obliczenia typowego czasu potrzeba co najmniej 3 sklasyfikowanych okrążeń',
       ),
       findsOneWidget,
     );
 
-    await tester.ensureVisible(find.text('Według segmentów'));
+    await tester.ensureVisible(find.text('Według odcinków'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Według segmentów'));
+    await tester.tap(find.text('Według odcinków'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('sectionTable')), findsOneWidget);
     expect(find.textContaining('rozrzut '), findsWidgets);

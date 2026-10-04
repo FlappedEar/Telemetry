@@ -419,7 +419,10 @@ void main() {
     await tester.tap(find.text('Sesja 1').last);
     await tester.pumpAndSettle();
     expect(
-      find.descendant(of: find.byType(Dialog), matching: find.text('Sesja 1')),
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('Tor: Sesja 1'),
+      ),
       findsOneWidget,
     );
     expect(
@@ -473,8 +476,8 @@ void main() {
     await tester.tap(find.text('Okrążenia'));
     await tester.pumpAndSettle();
     expect(find.text('Porównaj dwa okrążenia'), findsOneWidget);
-    expect(find.text('Najlepsze z dnia'), findsOneWidget);
-    expect(find.text('Sesja 2 · WYJAZD'), findsOneWidget);
+    expect(find.text('Najlepsze okrążenie dnia'), findsOneWidget);
+    expect(find.text('Sesja 2 · OKR. WYJAZDOWE'), findsOneWidget);
     expect(find.text('Sesja 1 · OKR. 2'), findsWidgets);
 
     await tester.tap(find.text('Porównaj dwa okrążenia'));
@@ -1000,7 +1003,7 @@ void main() {
         home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
       ),
     );
-    await tester.tap(find.text('Dotknij, aby otworzyć okrążenie.'));
+    await tester.tap(find.text('Wybierz, aby otworzyć okrążenie.'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Tło mapy'));
     await tester.pumpAndSettle();

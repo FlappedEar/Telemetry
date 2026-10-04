@@ -256,7 +256,7 @@ void main() {
     );
     expect(
       measured.textSpan!.toPlainText(),
-      startsWith('Zmierzono: Najmniejsza prędkość: 46.9\u00a0km/h'),
+      startsWith('Zmierzono: Prędkość minimalna: 46.9\u00a0km/h'),
     );
   });
 

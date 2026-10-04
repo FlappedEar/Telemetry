@@ -278,9 +278,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Edytuj segmenty'), findsOneWidget);
-    expect(find.text('Segmenty automatyczne'), findsOneWidget);
-    expect(find.textContaining('Teoretycznie najlepsze '), findsOneWidget);
+    expect(find.text('Edytuj odcinki'), findsOneWidget);
+    expect(find.text('Automatycznie wyznaczone odcinki'), findsOneWidget);
+    expect(find.textContaining('Teoretyczny czas okrążenia '), findsOneWidget);
     expect(find.textContaining('Zaproponowane na podstawie: '), findsOneWidget);
     expect(find.textContaining('OKR.'), findsOneWidget);
     // Automatic segment names and types.
@@ -296,7 +296,10 @@ void main() {
     expect(find.text('Nazwa'), findsOneWidget);
     expect(find.text('Sektor'), findsOneWidget);
     expect(find.text('Początek'), findsOneWidget);
-    expect(find.text('Przesuń też sąsiedni segment'), findsOneWidget);
+    expect(
+      find.text('Przesuń też granicę sąsiedniego odcinka'),
+      findsOneWidget,
+    );
     expect(find.text('Zastosuj'), findsOneWidget);
     expect(find.text('Podziel tutaj'), findsOneWidget);
     expect(find.textContaining('Połącz z '), findsOneWidget);

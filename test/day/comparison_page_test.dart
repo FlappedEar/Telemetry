@@ -936,7 +936,7 @@ void main() {
     expect(find.text('Porównaj z…'), findsOneWidget);
     expect(find.text('Wyklucz z rankingu…'), findsOneWidget);
     expect(
-      find.textContaining('do najlepszego okrążenia dnia'),
+      find.textContaining('Różnica względem najlepszego okrążenia dnia'),
       findsOneWidget,
     );
     expect(find.textContaining('OKR.'), findsWidgets);
@@ -976,12 +976,12 @@ void main() {
     expect(find.text('Compare laps'), findsNothing);
     expect(
       textOf(tester, const ValueKey('comparisonLapDelta')),
-      'Δ okrążenia ${displayDelta(a.durationSeconds - best.durationSeconds)}',
+      'Różnica czasu okrążenia: ${displayDelta(a.durationSeconds - best.durationSeconds)}',
     );
     expect(find.text('Zamień A i B'), findsOneWidget);
-    expect(find.text('B: najlepsze z dnia'), findsOneWidget);
+    expect(find.text('B: najlepsze okrążenie dnia'), findsOneWidget);
     expect(find.text('Kanały według pozycji na torze'), findsOneWidget);
-    expect(find.text('Linia: A / B'), findsOneWidget);
+    expect(find.text('Tor jazdy: A / B'), findsOneWidget);
     expect(find.text('Otwórz okrążenie A w tym miejscu'), findsOneWidget);
     expect(find.textContaining('Session'), findsNothing);
   });
