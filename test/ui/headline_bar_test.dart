@@ -13,7 +13,7 @@ void main() {
             width: width,
             child: const HeadlineBar(
               key: ValueKey('bar'),
-              label: 'Best day',
+              label: 'Best lap of the day',
               title: 'Session 5 · LAP 2',
               time: '1:49.898',
               color: Color(0xFFFCB203),

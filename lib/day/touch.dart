@@ -419,12 +419,9 @@ class ButtonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final row = Semantics(
-      container: !merge,
-      button: true,
-      enabled: enabled,
-      child: child,
-    );
+    // A row that does nothing on a tap is plain text, not a disabled button.
+    if (!enabled) return child;
+    final row = Semantics(container: !merge, button: true, child: child);
     return merge ? MergeSemantics(child: row) : row;
   }
 }
