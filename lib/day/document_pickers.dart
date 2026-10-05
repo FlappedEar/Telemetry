@@ -8,14 +8,13 @@ import 'package:path_provider/path_provider.dart';
 import '../import/file_access.dart';
 import '../l10n.dart';
 
-/// Chooses where days are saved and which one opens. Replaced by a fake in
-/// widget tests.
 /// Where the user chose to save a day. [replacesUnasked] when a file is
-/// already there and the save dialog did not ask before replacing it: the
-/// app added the extension to the typed name, or the dialog never asks
-/// (Linux).
+/// already there and the save dialog did not ask before replacing it (see
+/// [replacesUnasked]).
 typedef SaveLocation = ({String path, bool replacesUnasked});
 
+/// Chooses where days are saved and which one opens. Replaced by a fake in
+/// widget tests.
 abstract interface class DocumentPickers {
   /// Where to save a day called [name]; null when the user cancelled.
   Future<SaveLocation?> saveLocation(String name);
@@ -59,6 +58,18 @@ String suggestedSaveName(String fileName, {required bool macOS}) =>
 String withDocumentExtension(String path) =>
     p.extension(path).toLowerCase() == _extension ? path : '$path$_extension';
 
+/// Whether saving to [path] replaces a file the save dialog did not ask
+/// about. The Windows and macOS dialogs ask for the name the user [chose],
+/// so only when the app added the extension to it; the Linux (GTK) dialog
+/// never asks. On Linux through a desktop portal the portal may ask too,
+/// and asking twice beats replacing a day silently.
+bool replacesUnasked(
+  String chose,
+  String path, {
+  required bool linux,
+  required bool exists,
+}) => (path != chose || linux) && exists;
+
 /// On desktop, the system save and open dialogs (the macOS sandbox grants
 /// write access to what the user picks). On phones, which have no save
 /// dialog here, days are saved in the app's own documents folder and opened
@@ -91,9 +102,12 @@ final class PlatformDocumentPickers implements DocumentPickers {
       final path = withDocumentExtension(location.path);
       return (
         path: path,
-        replacesUnasked:
-            (path != location.path || Platform.isLinux) &&
-            File(path).existsSync(),
+        replacesUnasked: replacesUnasked(
+          location.path,
+          path,
+          linux: Platform.isLinux,
+          exists: File(path).existsSync(),
+        ),
       );
     }
     final folder = await _daysFolder();

@@ -287,7 +287,8 @@ void main() {
         TelemetryApp(
           home: DayResultsPage.controller(
             controller: controller,
-            documents: FakeDocuments(location: other),
+            // Refused before any question about replacing it.
+            documents: FakeDocuments(location: other, replacesUnasked: true),
             library: shelf,
           ),
         ),
@@ -299,11 +300,60 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Export for Overlays…'));
       await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
       expect(File(other).readAsStringSync(), 'kept');
       expect(
         find.text('Not exported: choose a place outside the library.'),
         findsOneWidget,
       );
+      await shelf.flush();
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('asks before an export replaces a file the save dialog did '
+        'not ask about', (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      await shelf.load();
+      final existing = p.join(directory.path, 'Export.fetproject');
+      File(existing).writeAsStringSync('kept');
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: writer,
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(location: existing, replacesUnasked: true),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      Future<void> export() async {
+        await tester.tap(find.byKey(const ValueKey('moreMenu')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Export for Overlays…'));
+        await tester.pumpAndSettle();
+      }
+
+      await export();
+      expect(find.text('Replace Export.fetproject?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(File(existing).readAsStringSync(), 'kept');
+      expect(find.textContaining('Exported as'), findsNothing);
+
+      await export();
+      await tester.tap(find.byKey(const ValueKey('replaceDayFile')));
+      await tester.pumpAndSettle();
+      expect(File(existing).readAsStringSync(), isNot('kept'));
+      expect(find.text('Exported as Export.fetproject.'), findsOneWidget);
       await shelf.flush();
     }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 

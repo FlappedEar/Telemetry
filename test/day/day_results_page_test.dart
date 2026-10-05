@@ -35,11 +35,11 @@ final class FakeDocuments implements DocumentPickers {
   });
 
   final String? location;
+  final String? folder;
+  final String? document;
 
   /// Whether [location] holds a file the save dialog did not ask about.
   final bool replacesUnasked;
-  final String? folder;
-  final String? document;
   final names = <String>[];
 
   @override
@@ -894,6 +894,19 @@ void main() {
       suggestedSaveName(documentFileName('Round 1.5'), macOS: true),
       'Round 1.5',
     );
+  });
+
+  test('asks before replacing only a file the save dialog did not ask '
+      'about', () {
+    const typed = '/d/Foo', added = '/d/Foo.fetproject';
+    // Windows and macOS: the dialog asked for the name as chosen.
+    expect(replacesUnasked(typed, added, linux: false, exists: true), isTrue);
+    expect(replacesUnasked(added, added, linux: false, exists: true), isFalse);
+    expect(replacesUnasked(typed, added, linux: false, exists: false), isFalse);
+    // Linux: the dialog never asks.
+    expect(replacesUnasked(typed, added, linux: true, exists: true), isTrue);
+    expect(replacesUnasked(added, added, linux: true, exists: true), isTrue);
+    expect(replacesUnasked(added, added, linux: true, exists: false), isFalse);
   });
 
   test('a chosen save path ends in .fetproject once', () {

@@ -7045,7 +7045,7 @@
   },
   "replaceDayFileTitle": "Replace {file}?",
   "@replaceDayFileTitle": {
-    "description": "Title of the dialog asking before Save as… or Export for Overlays replaces a file the system save dialog did not warn about (the app added .fetproject to the typed name).",
+    "description": "Title of the dialog asking before Save as… or Export for Overlays replaces a file the system save dialog did not warn about (the app added .fetproject to the typed name, or the dialog never asks, as on Linux).",
     "placeholders": {
       "file": {
         "type": "String",

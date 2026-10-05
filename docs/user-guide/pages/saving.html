@@ -36,12 +36,13 @@
 <h2 id="save">Saving</h2>
 <ul>
   <li><strong>Save</strong> (disk icon) saves straight away, without waiting. It is greyed out when nothing changed. On a Mac or PC, <kbd>Cmd</kbd>+<kbd>S</kbd> or <kbd>Ctrl</kbd>+<kbd>S</kbd> does the same.</li>
-  <li><strong>Export for Overlays…</strong> (under ⋮, on a Mac or PC) writes a copy of the day as a <code>.fetproject</code> file where you choose, for <a href="overlays.html">FlappedEar Overlays</a>. The day stays in your library; later changes are not in the copy, so export again after changing it. The app confirms with <em>Exported as &lt;file&gt;.fetproject.</em> If you type a name without <code>.fetproject</code> and a file with that name plus <code>.fetproject</code> is already there (on Windows), or any file of that name is already there (on Linux), the app asks <em>Replace &lt;file&gt;.fetproject?</em> before writing over it; <strong>Cancel</strong> leaves it untouched.</li>
+  <li><strong>Export for Overlays…</strong> (under ⋮, on a Mac or PC) writes a copy of the day as a <code>.fetproject</code> file where you choose, for <a href="overlays.html">FlappedEar Overlays</a>. The day stays in your library; later changes are not in the copy, so export again after changing it. The app confirms with <em>Exported as &lt;file&gt;.fetproject.</em></li>
   <li>Adding a session to a day saves it again on its own. See <a href="day.html#add">Adding a session</a>.</li>
 </ul>
 <p>When a save fails, for example because the device is full, the app says why and keeps the file saved before whenever it can. A change you make while the save is still running (excluding a lap, say) is saved with the next save.</p>
 <h3 id="outside">A day opened from a file</h3>
 <p>A <code>.fetproject</code> file opened with <strong>Open a saved day…</strong> from outside the library is saved back to that file, as before: <strong>Save</strong> writes to it and confirms with <em>Saved as &lt;file&gt;.fetproject.</em>, and <strong>Save as…</strong> (under ⋮) writes it somewhere else (on a phone, another copy named <em>&lt;name&gt; (2)</em>). Such a day is not saved by itself: leaving it with unsaved changes keeps them for you (see <a href="import.html#restore">Restoring unsaved work</a>).</p>
+<p>On a PC, if you type a name in <strong>Save as…</strong> or <strong>Export for Overlays…</strong> without <code>.fetproject</code>, the app adds it. When a file of that name is already in the folder, the app asks <em>Replace &lt;file&gt;.fetproject?</em> before writing over it; <strong>Cancel</strong> leaves the file untouched and saves nothing.</p>
 
 <h2 id="open">Opening a day</h2>
 <p>Tap <strong>Library</strong> and then the day. <strong>Open a saved day…</strong> opens a <code>.fetproject</code> file:</p>
