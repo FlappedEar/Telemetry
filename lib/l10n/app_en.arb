@@ -7443,6 +7443,30 @@
   },
   "profileTracksNone": "No track recognised yet in your days.",
   "@profileTracksNone": {"description": "Tracks card on the Profile page with no recognised track."},
+  "settingsLookHeading": "Look",
+  "@settingsLookHeading": {
+    "description": "Settings heading for the app's colours: dark, or sunlight for reading outdoors."
+  },
+  "lookDark": "Dark",
+  "@lookDark": {
+    "description": "Settings choice: the dark theme (default)."
+  },
+  "lookSunlight": "Sunlight",
+  "@lookSunlight": {
+    "description": "Settings choice: a high-contrast light theme for reading in direct sun at the track."
+  },
+  "settingsLookHelp": "Sunlight is black on white with stronger colours, easier to read outdoors in bright sun.",
+  "@settingsLookHelp": {
+    "description": "Help under the look choice in settings."
+  },
+  "settingsKeepScreenOnSwitch": "Keep the screen on while Coach is shown",
+  "@settingsKeepScreenOnSwitch": {
+    "description": "Settings switch: the screen does not sleep while the Coach place is on screen."
+  },
+  "settingsKeepScreenOnHelp": "The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.",
+  "@settingsKeepScreenOnHelp": {
+    "description": "Help under the keep-screen-on switch in settings."
+  },
   "settingsUpdatesHeading": "Updates",
   "@settingsUpdatesHeading": {
     "description": "Settings heading for checking GitHub for a newer version of the app."

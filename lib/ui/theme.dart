@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+/// How the app looks, chosen in settings: [dark] by default, [sunlight] for
+/// reading outdoors.
+enum AppLook { dark, sunlight }
+
 /// The app's look: a dark track-day dashboard of charcoal panels, with the
-/// FlappedEar amber for your lap and blue for the reference lap.
+/// FlappedEar amber for your lap and blue for the reference lap; or, for
+/// reading in the sun at the track, [sunlight]: black on white with the same
+/// lap colours.
 ///
 /// Screens use [ColorScheme] roles and [TextTheme] styles, plus
 /// [FetColors] for the lap and timing colours, so the look changes here only.
@@ -11,6 +17,12 @@ abstract final class FetTheme {
 
   /// FlappedEar amber, from the brand logo.
   static const amber = Color(0xfffcb203);
+
+  /// The theme [look] chooses.
+  static ThemeData of(AppLook look) => switch (look) {
+    AppLook.dark => dark(),
+    AppLook.sunlight => sunlight(),
+  };
 
   static ThemeData dark() {
     const scheme = ColorScheme(
@@ -46,19 +58,63 @@ abstract final class FetTheme {
       shadow: Colors.black,
       scrim: Colors.black,
     );
+    return _build(scheme, FetColors.dark);
+  }
+
+  /// High contrast for direct sunlight: black text on white, darker panel
+  /// edges, and a deep amber for text, buttons and tabs. Lines keep the lap
+  /// colours; `readableOn` darkens them where they colour text.
+  static ThemeData sunlight() {
+    const scheme = ColorScheme(
+      brightness: Brightness.light,
+      primary: Color(0xff7a5100),
+      onPrimary: Colors.white,
+      primaryContainer: Color(0xffffe08a),
+      onPrimaryContainer: Color(0xff2b1f00),
+      secondary: Color(0xff1d5fcc),
+      onSecondary: Colors.white,
+      secondaryContainer: Color(0xffd6e6ff),
+      onSecondaryContainer: Color(0xff04122b),
+      tertiary: Color(0xff17704f),
+      onTertiary: Colors.white,
+      error: Color(0xffb3261e),
+      onError: Colors.white,
+      errorContainer: Color(0xffffdad5),
+      onErrorContainer: Color(0xff410002),
+      surface: Colors.white,
+      onSurface: Colors.black,
+      onSurfaceVariant: Color(0xff33363b),
+      surfaceContainerLowest: Colors.white,
+      surfaceContainerLow: Color(0xfff4f5f6),
+      surfaceContainer: Color(0xffeceef0),
+      surfaceContainerHigh: Color(0xffdfe1e5),
+      surfaceContainerHighest: Color(0xffd3d6da),
+      outline: Color(0xff4a4d53),
+      outlineVariant: Color(0xffb5b9bf),
+      inverseSurface: Color(0xff1b1c1f),
+      onInverseSurface: Color(0xfff2f2f2),
+      inversePrimary: amber,
+      surfaceTint: Colors.transparent,
+      shadow: Colors.black,
+      scrim: Colors.black,
+    );
+    return _build(scheme, FetColors.sunlight);
+  }
+
+  static ThemeData _build(ColorScheme scheme, FetColors colors) {
     final text = _text(scheme);
     const corner = BorderRadius.all(Radius.circular(3));
     const shape = RoundedRectangleBorder(borderRadius: corner);
     const buttonSize = Size(64, 44);
     return ThemeData(
-      brightness: Brightness.dark,
+      brightness: scheme.brightness,
       colorScheme: scheme,
       fontFamily: sans,
       fontFamilyFallback: const [mono],
       textTheme: text,
       scaffoldBackgroundColor: scheme.surface,
       canvasColor: scheme.surface,
-      extensions: const [FetColors.dark],
+      extensions: [colors],
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
@@ -126,13 +182,14 @@ abstract final class FetTheme {
         side: BorderSide.none,
         labelStyle: text.labelLarge,
       ),
-      // Tabs: filled amber for the selected one, as on a timing screen.
+      // Tabs: the selected one filled with the primary colour (amber, deep
+      // amber in sunlight), as on a timing screen.
       tabBarTheme: TabBarThemeData(
         labelColor: scheme.onPrimary,
         unselectedLabelColor: scheme.onSurfaceVariant,
         labelStyle: text.titleSmall,
         unselectedLabelStyle: text.titleSmall,
-        indicator: const BoxDecoration(color: amber, borderRadius: corner),
+        indicator: BoxDecoration(color: scheme.primary, borderRadius: corner),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         splashFactory: NoSplash.splashFactory,
@@ -143,14 +200,14 @@ abstract final class FetTheme {
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? amber
+                ? scheme.primary
                 : scheme.onSurfaceVariant,
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => text.labelSmall?.copyWith(
             color: states.contains(WidgetState.selected)
-                ? amber
+                ? scheme.primary
                 : scheme.onSurfaceVariant,
           ),
         ),
@@ -158,9 +215,11 @@ abstract final class FetTheme {
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: scheme.surface,
         indicatorColor: Colors.transparent,
-        selectedIconTheme: const IconThemeData(color: amber),
+        selectedIconTheme: IconThemeData(color: scheme.primary),
         unselectedIconTheme: IconThemeData(color: scheme.onSurfaceVariant),
-        selectedLabelTextStyle: text.labelMedium?.copyWith(color: amber),
+        selectedLabelTextStyle: text.labelMedium?.copyWith(
+          color: scheme.primary,
+        ),
         unselectedLabelTextStyle: text.labelMedium?.copyWith(
           color: scheme.onSurfaceVariant,
         ),
@@ -291,6 +350,17 @@ class FetColors extends ThemeExtension<FetColors> {
     loss: Color(0xffff6b5c),
     gain: Color(0xff53bc94),
     dayBest: Color(0xffb37bff),
+    onLap: Color(0xff111214),
+  );
+
+  /// The lap colours stay; loss, gain and the day's best are darker, so
+  /// they read on white.
+  static const sunlight = FetColors(
+    you: FetTheme.amber,
+    reference: Color(0xff3d8bff),
+    loss: Color(0xffc62828),
+    gain: Color(0xff17704f),
+    dayBest: Color(0xff7b3fd1),
     onLap: Color(0xff111214),
   );
 

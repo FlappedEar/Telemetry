@@ -48,6 +48,7 @@ dependencies:
   url_launcher: ^6.3.3
   crypto: ^3.0.7
   share_plus: ^13.3.1
+  wakelock_plus: ^1.8.0
 
 
 dev_dependencies:

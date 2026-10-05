@@ -8,6 +8,7 @@ import 'diagnostics/app_errors.dart';
 import 'import/day_import_page.dart';
 import 'l10n.dart';
 import 'profile/profile_library.dart';
+import 'ui/keep_screen_on.dart';
 import 'ui/theme.dart';
 import 'units.dart';
 import 'update/update_dialog.dart';
@@ -56,7 +57,12 @@ class TelemetryApp extends StatelessWidget {
   final Locale? locale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: appLookSetting,
+    builder: (context, look, _) => _app(look),
+  );
+
+  Widget _app(AppLook look) {
     return MaterialApp(
       // Unexpected errors say so from any page (installErrorHandlers).
       scaffoldMessengerKey: appMessengerKey,
@@ -69,9 +75,13 @@ class TelemetryApp extends StatelessWidget {
         useFormattingLocale(Localizations.localeOf(context));
         return SpeedUnitScope(
           child: ChannelNamesScope(
-            child: AppFrame(
+            child: KeepScreenOn(
               navigation: appNavigation,
-              child: child ?? const SizedBox.shrink(),
+              setting: keepScreenOnSetting,
+              child: AppFrame(
+                navigation: appNavigation,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         );
@@ -84,7 +94,7 @@ class TelemetryApp extends StatelessWidget {
       localeListResolutionCallback: (preferred, _) =>
           resolveAppLocale(preferred),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: FetTheme.dark(),
+      theme: FetTheme.of(look),
       home: home,
     );
   }

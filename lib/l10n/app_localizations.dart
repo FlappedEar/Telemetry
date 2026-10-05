@@ -7653,6 +7653,42 @@ abstract class AppLocalizations {
   /// **'No track recognised yet in your days.'**
   String get profileTracksNone;
 
+  /// Settings heading for the app's colours: dark, or sunlight for reading outdoors.
+  ///
+  /// In en, this message translates to:
+  /// **'Look'**
+  String get settingsLookHeading;
+
+  /// Settings choice: the dark theme (default).
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get lookDark;
+
+  /// Settings choice: a high-contrast light theme for reading in direct sun at the track.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight'**
+  String get lookSunlight;
+
+  /// Help under the look choice in settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight is black on white with stronger colours, easier to read outdoors in bright sun.'**
+  String get settingsLookHelp;
+
+  /// Settings switch: the screen does not sleep while the Coach place is on screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the screen on while Coach is shown'**
+  String get settingsKeepScreenOnSwitch;
+
+  /// Help under the keep-screen-on switch in settings.
+  ///
+  /// In en, this message translates to:
+  /// **'The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.'**
+  String get settingsKeepScreenOnHelp;
+
   /// Settings heading for checking GitHub for a newer version of the app.
   ///
   /// In en, this message translates to:

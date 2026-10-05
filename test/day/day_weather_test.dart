@@ -451,6 +451,11 @@ void main() {
     await tester.tap(find.byType(SettingsButton));
     await tester.pumpAndSettle();
     expect(find.textContaining('rounded to about 1 km'), findsOneWidget);
+    // Below the look settings, so scrolled to first.
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('weatherLookupSetting')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('weatherLookupSetting')));
     await tester.pump();
     expect(weatherLookupSetting.value, isFalse);
