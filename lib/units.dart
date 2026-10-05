@@ -48,6 +48,15 @@ final ValueNotifier<bool> weatherLookupSetting = ValueNotifier(true);
 /// the list changes: the day and its recordings keep every lap.
 final ValueNotifier<bool> hideUnrankedLapsSetting = ValueNotifier(true);
 
+/// Whether the app looks for a newer release on GitHub when it starts (at
+/// most once a day), chosen in settings and kept in `settings.json`. On by
+/// default; "Check for updates" in settings works either way.
+final ValueNotifier<bool> updateCheckSetting = ValueNotifier(true);
+
+/// When the app last looked for a newer release on its own; kept in
+/// `settings.json` so the check on launch runs at most once a day.
+final ValueNotifier<DateTime?> lastUpdateCheck = ValueNotifier(null);
+
 /// The speed unit each of the open day's recordings declares ("km/h",
 /// "mph", or empty when it declares none). Set when a day opens.
 List<String> declaredSpeedUnits = const [];
@@ -120,8 +129,8 @@ String displayUnit(String name, String unit) {
 }
 
 /// Reads and keeps [speedUnitSetting], [weatherLookupSetting],
-/// [hideUnrankedLapsSetting], [channelNamesSetting] and
-/// [listedChannelsSetting] in
+/// [hideUnrankedLapsSetting], [updateCheckSetting], [lastUpdateCheck],
+/// [channelNamesSetting] and [listedChannelsSetting] in
 /// `settings.json` in the app's support folder. Off in `flutter test`.
 Future<void> loadSettings() async {
   if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return;
@@ -143,6 +152,14 @@ Future<void> loadSettings() async {
       }
       if (json is Map && json['weatherLookup'] is bool) {
         weatherLookupSetting.value = json['weatherLookup'] as bool;
+      }
+      if (json is Map && json['updateCheck'] is bool) {
+        updateCheckSetting.value = json['updateCheck'] as bool;
+      }
+      if (json is Map && json['lastUpdateCheck'] is String) {
+        lastUpdateCheck.value = DateTime.tryParse(
+          json['lastUpdateCheck'] as String,
+        );
       }
       if (json is Map && json['hideUnrankedLaps'] is bool) {
         hideUnrankedLapsSetting.value = json['hideUnrankedLaps'] as bool;
@@ -166,6 +183,9 @@ Future<void> loadSettings() async {
       'speedUnit': speedUnitSetting.value.name,
       'weatherLookup': weatherLookupSetting.value,
       'hideUnrankedLaps': hideUnrankedLapsSetting.value,
+      'updateCheck': updateCheckSetting.value,
+      if (lastUpdateCheck.value case final checked?)
+        'lastUpdateCheck': checked.toUtc().toIso8601String(),
       'channelNames': channelNamesSetting.value,
       'listedChannels': listedChannelsSetting.value,
     });
@@ -204,6 +224,8 @@ Future<void> loadSettings() async {
   speedUnitSetting.addListener(write);
   weatherLookupSetting.addListener(write);
   hideUnrankedLapsSetting.addListener(write);
+  updateCheckSetting.addListener(write);
+  lastUpdateCheck.addListener(write);
   channelNamesSetting.addListener(write);
   listedChannelsSetting.addListener(write);
 }

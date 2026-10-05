@@ -3,6 +3,7 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   private let fileAccess = FileAccess()
+  private let appUpdate = AppUpdate()
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
@@ -12,9 +13,40 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
     fileAccess.register(with: flutterViewController.engine.binaryMessenger)
+    appUpdate.register(with: flutterViewController.engine.binaryMessenger)
     AppleMapPlugin.register(with: flutterViewController.registrar(forPlugin: "AppleMapPlugin"))
 
     super.awakeFromNib()
+  }
+}
+
+/// Shows an update the app downloaded (lib/update/app_updater.dart) in
+/// Finder. The user chose where to save it, so the sandbox lets the app
+/// point at it.
+final class AppUpdate {
+  static let channelName = "com.flappedear.telemetry/app_update"
+
+  private var channel: FlutterMethodChannel?
+
+  func register(with messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: Self.channelName, binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "reveal":
+        guard let arguments = call.arguments as? [String: Any],
+          let path = arguments["path"] as? String,
+          FileManager.default.fileExists(atPath: path)
+        else {
+          result(false)
+          return
+        }
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+        result(true)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    self.channel = channel
   }
 }
 

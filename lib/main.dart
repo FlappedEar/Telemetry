@@ -10,6 +10,7 @@ import 'l10n.dart';
 import 'profile/profile_library.dart';
 import 'ui/theme.dart';
 import 'units.dart';
+import 'update/update_dialog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,8 @@ Future<void> main() async {
       ),
     ),
   );
+  // After the first frame, so the message has a page to show on.
+  WidgetsBinding.instance.addPostFrameCallback((_) => checkForUpdateOnLaunch());
 }
 
 /// The bundled fonts' SIL Open Font License texts, which must ship with them.

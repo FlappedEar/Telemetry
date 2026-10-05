@@ -41,6 +41,15 @@ flutter run -d macos</code></pre>
 <h2 id="windows">Windows</h2>
 <p>The app needs Windows 10 or 11 (64-bit). It builds for Windows, but there is no download yet.</p>
 
+<h2 id="updates">Updates</h2>
+<p>When it starts, the app asks GitHub whether a newer release is out, at most once a day. If one is, a message says so; tap <strong>Details</strong>. To check at any time, open <strong>Settings</strong> (the gear in the toolbar; on the day page on a narrow screen, such as a phone, in the ⋮ menu) and choose <strong>Check for updates</strong>. Turn off <strong>Check for a new version when the app starts</strong> there to stop the check on launch. Only requests for the releases and their files go to GitHub; none of your recordings or settings are sent. Without a connection, or when GitHub has had too many checks from your network, the check on launch says nothing and tries again next time.</p>
+<ul>
+  <li><strong>Android:</strong> tap <strong>Download and install</strong>. The first time, Android asks you to allow FlappedEar Telemetry to install apps: turn it on in the settings that open, go back and tap <strong>Continue</strong> (if the app started again, open <strong>Settings</strong> and tap <strong>Check for updates</strong>). The app then downloads the APK, checks it against the release's <code>SHA256SUMS.txt</code> and opens Android's installer; confirm the update there. Your saved days stay.</li>
+  <li><strong>Mac:</strong> tap <strong>Download</strong> and choose where to save the zip (Downloads is suggested). The app checks it against <code>SHA256SUMS.txt</code> and shows it in Finder. Open it and move <strong>FlappedEar Telemetry</strong> to <strong>Applications</strong>, replacing the old one. macOS refuses the first start of the new copy, as after the first install: allow it as described in <a href="#mac">macOS</a>.</li>
+  <li><strong>iPhone, iPad and Windows:</strong> the releases have no download for these yet, so the app only says that a newer version exists; <strong>What's new</strong> opens the release on GitHub.</li>
+</ul>
+<p>A download that does not match the release's checksum is deleted and never installed.</p>
+
 <h2 id="maps">Map backgrounds</h2>
 <p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the releases and the Android builds from CI have one, a Mac build you run yourself does not. On iPhone, iPad and Mac the layers button also offers Apple Maps, which needs no key; other platforms do not have it. Maps need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>
 

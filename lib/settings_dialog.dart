@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'channel_names.dart';
 import 'l10n.dart';
 import 'units.dart';
+import 'update/update_dialog.dart';
 
 /// The settings button for an app bar.
 class SettingsButton extends StatelessWidget {
@@ -126,6 +127,27 @@ class SettingsDialog extends StatelessWidget {
                     ),
                   ),
                   child: Text(l10n.settingsChannelNamesOpen),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.settingsUpdatesHeading,
+                  style: theme.textTheme.titleSmall,
+                ),
+                ValueListenableBuilder(
+                  valueListenable: updateCheckSetting,
+                  builder: (context, on, _) => SwitchListTile(
+                    key: const ValueKey('updateCheckSetting'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.settingsUpdateSwitch),
+                    value: on,
+                    onChanged: (value) => updateCheckSetting.value = value,
+                  ),
+                ),
+                Text(l10n.settingsUpdateHelp, style: theme.textTheme.bodySmall),
+                TextButton(
+                  key: const ValueKey('checkForUpdates'),
+                  onPressed: () => showUpdateDialog(context),
+                  child: Text(l10n.settingsUpdateCheckNow),
                 ),
                 const SizedBox(height: 16),
                 Text(
