@@ -648,6 +648,21 @@ void main() {
         }
       }
 
+      // Settles until [done] holds, on the real clock: leaving the day
+      // saves it with real file writes first, which take as long as the
+      // machine takes. A fixed wait failed once on a slow Windows runner.
+      Future<void> settleUntil(bool Function() done) async {
+        final clock = Stopwatch()..start();
+        while (clock.elapsed < const Duration(seconds: 15)) {
+          await tester.pumpAndSettle();
+          if (done()) return settle();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 50)),
+          );
+        }
+        fail('The app did not get there in 15 seconds.');
+      }
+
       await tester.binding.setSurfaceSize(const Size(1200, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
@@ -663,14 +678,9 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('place-library')));
       await settle();
       await tester.tap(find.textContaining('Test day'));
-      await tester.runAsync(() async {
-        for (var i = 0; i < 100; ++i) {
-          await Future<void>.delayed(const Duration(milliseconds: 50));
-          if (find.byType(DayResultsPage).evaluate().isNotEmpty) break;
-          await tester.pump();
-        }
-      });
-      await tester.pumpAndSettle();
+      await settleUntil(
+        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+      );
       expect(find.byType(DayResultsPage), findsOneWidget);
       // The restored change has the day's mark of unsaved changes.
       expect(find.textContaining('Test day •'), findsOneWidget);
@@ -686,18 +696,31 @@ void main() {
           .widget<NavigationRail>(find.byKey(const ValueKey('appPlaces')))
           .selectedIndex;
       await tester.tap(find.byKey(const ValueKey('place-profile')));
-      await settle();
+      await settleUntil(
+        () =>
+            find.byType(DayResultsPage).evaluate().isEmpty &&
+            find.byType(ProfilePage).evaluate().isNotEmpty,
+      );
       expect(find.byType(DayResultsPage), findsNothing);
       expect(find.byType(LibraryPage), findsNothing);
       expect(find.byType(ProfilePage), findsOneWidget);
       expect(selected(), 4);
+      // What it waited for: the day saved its restored change on leaving.
+      expect(await tester.runAsync(store.load), isNull);
+      expect(File(saved).readAsStringSync(), contains('Traffic'));
       // And back to the day kept, then to Library.
       await tester.tap(find.byKey(const ValueKey('place-day')));
-      await settle();
+      await settleUntil(
+        () => find.byType(DayResultsPage).evaluate().isNotEmpty,
+      );
       expect(find.byType(DayResultsPage), findsOneWidget);
       expect(find.byType(ProfilePage), findsNothing);
       await tester.tap(find.byKey(const ValueKey('place-library')));
-      await settle();
+      await settleUntil(
+        () =>
+            find.byType(DayResultsPage).evaluate().isEmpty &&
+            find.byType(LibraryPage).evaluate().isNotEmpty,
+      );
       expect(find.byType(LibraryPage), findsOneWidget);
       expect(find.byType(ProfilePage), findsNothing);
       expect(selected(), 1);
