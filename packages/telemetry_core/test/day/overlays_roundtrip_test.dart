@@ -187,24 +187,39 @@ void main() {
       final overlaysSaved = readDayDocument(path);
       expect(fet.validateFetproject(overlaysSaved), isNull);
       // Nothing lost or changed; Overlays only adds its own default settings,
-      // so no closed object gains a key. An unchanged document keeps its revision.
+      // so no closed object gains a key. An unchanged document keeps its
+      // revision; every save writes a new saveId (KAN-183).
+      final telemetrySaveId = _object(telemetrySaved['documentState'])['saveId'];
+      final overlaysState = _object(overlaysSaved['documentState']);
+      expect(
+        overlaysState['saveId'],
+        isA<String>().having((id) => id.isNotEmpty, 'not empty', isTrue),
+      );
+      expect(overlaysState['saveId'], isNot(telemetrySaveId));
       expect(
         jsonDifferences(telemetrySaved, {
           for (final entry in overlaysSaved.entries)
             if (!_overlaysDefaults.contains(entry.key) || telemetrySaved.containsKey(entry.key))
-              entry.key: entry.value,
+              entry.key: entry.key == 'documentState'
+                  ? {...overlaysState, 'saveId': telemetrySaveId}
+                  : entry.value,
         }),
         isEmpty,
       );
+      // What Overlays saved: the same day under its own new saveId.
+      final afterOverlays = {
+        ...before,
+        'documentState': {..._object(before['documentState']), 'saveId': overlaysState['saveId']},
+      };
       expect(
-        jsonDifferences(overlaysView(_object(resaved['saved'])), before, tolerance: 1e-9),
+        jsonDifferences(overlaysView(_object(resaved['saved'])), afterOverlays, tolerance: 1e-9),
         isEmpty,
       );
 
       // Telemetry opens it again: the same day and analysis.
       final again = openDay(path);
       expect(again.missing, isEmpty);
-      expect(jsonDifferences(telemetryView(again), before, tolerance: 1e-9), isEmpty);
+      expect(jsonDifferences(telemetryView(again), afterOverlays, tolerance: 1e-9), isEmpty);
       final next = dayDocument(
         eventId: again.eventId,
         name: again.name,
