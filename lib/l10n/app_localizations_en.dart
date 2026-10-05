@@ -4831,4 +4831,240 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navCoach => 'Coach';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get profileEmpty =>
+      'No days yet. Every day you import is added to your profile, and its totals, records and skills appear here.';
+
+  @override
+  String get profileTotals => 'All days';
+
+  @override
+  String get profileDays => 'Days';
+
+  @override
+  String get profileSessions => 'Sessions';
+
+  @override
+  String get profileLaps => 'Timed laps';
+
+  @override
+  String get profileDistance => 'Distance';
+
+  @override
+  String get profileDrivingTime => 'Time on track';
+
+  @override
+  String get profileTracks => 'Tracks';
+
+  @override
+  String get profileCars => 'Cars';
+
+  @override
+  String profileMeasured(int measured, int sessions) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sessions,
+      locale: localeName,
+      other: '$sessions sessions',
+      one: '1 session',
+    );
+    return 'Distance and time cover $measured of $_temp0: a day saved before this version adds them when you open it again.';
+  }
+
+  @override
+  String get profileSkills => 'Skills';
+
+  @override
+  String get profileSkillsIntro =>
+      'Each skill over your last 3 days that measured it, against fixed bands: level 5 is the best. Confidence comes from the ranked laps measured.';
+
+  @override
+  String skillName(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'liftTiming': 'Lift timing',
+      'brakePointConsistency': 'Brake point consistency',
+      'brakeReleaseTiming': 'Brake release timing',
+      'brakingEffectiveness': 'Braking effectiveness',
+      'turnInConsistency': 'Turn-in consistency',
+      'minimumSpeedControl': 'Minimum speed control',
+      'lineConsistency': 'Line consistency',
+      'throttleReapplication': 'Throttle reapplication',
+      'throttleCommitment': 'Throttle commitment',
+      'exitSpeedExecution': 'Exit speed execution',
+      'cornerSequenceManagement': 'Corner sequence management',
+      'paceConsistency': 'Pace consistency',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillGroup(String group) {
+    String _temp0 = intl.Intl.selectLogic(group, {
+      'braking': 'Braking',
+      'corner': 'Corner',
+      'exit': 'Exit',
+      'lap': 'Lap',
+      'other': '$group',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillMeasured(String id, String value) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'brakePointConsistency': 'Braking-point spread: $value',
+      'minimumSpeedControl': 'Minimum speed below your best: $value',
+      'exitSpeedExecution': 'Exit speed below your best: $value',
+      'paceConsistency': 'Lap time spread: $value',
+      'other': '$value',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillLevel(int level) {
+    return 'Level $level of 5';
+  }
+
+  @override
+  String skillConfidence(String confidence) {
+    String _temp0 = intl.Intl.selectLogic(confidence, {
+      'low': 'Low confidence',
+      'medium': 'Medium confidence',
+      'high': 'High confidence',
+      'other': '$confidence',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillEvidence(int laps, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: '$laps ranked laps',
+      one: '1 ranked lap',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0 over $_temp1';
+  }
+
+  @override
+  String skillTrend(String trend) {
+    String _temp0 = intl.Intl.selectLogic(trend, {
+      'improving': 'Improving',
+      'steady': 'Steady',
+      'declining': 'Declining',
+      'other': '$trend',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get skillNeedsEvidence => 'Needs more evidence';
+
+  @override
+  String get skillNotMeasured => 'Not measured by the app yet';
+
+  @override
+  String profileDrivenOn(int days, String distance, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0 · $distance · $time';
+  }
+
+  @override
+  String profileVisits(int visits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      visits,
+      locale: localeName,
+      other: '$visits visits',
+      one: '1 visit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String profileBestLap(String time, String when) {
+    return 'Best lap: $time · $when';
+  }
+
+  @override
+  String profileTheoreticalBest(String time, String when) {
+    return 'Best theoretical: $time · $when';
+  }
+
+  @override
+  String profileTypicalLap(String time, String when) {
+    return 'Best typical lap: $time · $when';
+  }
+
+  @override
+  String profileFaster(String time) {
+    return 'Last visit: best lap $time faster than the visit before';
+  }
+
+  @override
+  String profileSlower(String time) {
+    return 'Last visit: best lap $time slower than the visit before';
+  }
+
+  @override
+  String get profileUndated => 'Undated';
+
+  @override
+  String get profileRepeated => 'Corners that keep costing time';
+
+  @override
+  String profileRepeatedLoss(String loss, int visits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      visits,
+      locale: localeName,
+      other: '$visits visits',
+      one: '1 visit',
+    );
+    return '$loss lost on average, on $_temp0';
+  }
+
+  @override
+  String profileRepeatedState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'active': 'Still costing time',
+      'fading': 'Fading: not measured on the last two visits',
+      'fixed': 'Not lost on the last two visits',
+      'other': '$state',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get profileRepeatedNone =>
+      'No corner has been among a visit\'s costliest on two visits yet.';
+
+  @override
+  String profileDrivenOnUnmeasured(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0 · distance and time not measured yet';
+  }
+
+  @override
+  String get profileTracksNone => 'No track recognised yet in your days.';
 }

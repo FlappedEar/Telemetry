@@ -12,6 +12,7 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/library_page.dart';
 import 'package:telemetry/profile/profile_library.dart';
+import 'package:telemetry/profile/profile_page.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../day/day_results_page_test.dart' show FakeDocuments, circuitVbo;
@@ -673,6 +674,74 @@ void main() {
       expect(find.byType(DayResultsPage), findsOneWidget);
       // The restored change has the day's mark of unsaved changes.
       expect(find.textContaining('Test day •'), findsOneWidget);
+
+      // Coach shows the skills across days under what to try next.
+      await tester.tap(find.byKey(const ValueKey('place-coach')));
+      await settle();
+      expect(find.byKey(const ValueKey('skillLevels')), findsOneWidget);
+
+      // Profile from the day: the day leaves first, then the library it
+      // was opened from closes and the profile shows, alone.
+      int? selected() => tester
+          .widget<NavigationRail>(find.byKey(const ValueKey('appPlaces')))
+          .selectedIndex;
+      await tester.tap(find.byKey(const ValueKey('place-profile')));
+      await settle();
+      expect(find.byType(DayResultsPage), findsNothing);
+      expect(find.byType(LibraryPage), findsNothing);
+      expect(find.byType(ProfilePage), findsOneWidget);
+      expect(selected(), 4);
+      // And back to the day kept, then to Library.
+      await tester.tap(find.byKey(const ValueKey('place-day')));
+      await settle();
+      expect(find.byType(DayResultsPage), findsOneWidget);
+      expect(find.byType(ProfilePage), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('place-library')));
+      await settle();
+      expect(find.byType(LibraryPage), findsOneWidget);
+      expect(find.byType(ProfilePage), findsNothing);
+      expect(selected(), 1);
+    });
+
+    testWidgets('Profile is a place beside Library and Home', (tester) async {
+      final shelf = library();
+      await shelf.load();
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            documents: FakeDocuments(),
+            recovery: FileRecoveryStore(
+              p.join(directory.path, 'support', 'day-recovery.json'),
+            ),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      int? selected() => tester
+          .widget<NavigationRail>(find.byKey(const ValueKey('appPlaces')))
+          .selectedIndex;
+      await tester.tap(find.byKey(const ValueKey('place-profile')));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfilePage), findsOneWidget);
+      expect(find.byKey(const ValueKey('profileEmpty')), findsOneWidget);
+      expect(selected(), 4);
+      // One of them at a time: Library takes Profile's place, and back.
+      await tester.tap(find.byKey(const ValueKey('place-library')));
+      await tester.pumpAndSettle();
+      expect(find.byType(LibraryPage), findsOneWidget);
+      expect(find.byType(ProfilePage), findsNothing);
+      expect(selected(), 1);
+      await tester.tap(find.byKey(const ValueKey('place-profile')));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfilePage), findsOneWidget);
+      expect(find.byType(LibraryPage), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('place-home')));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfilePage), findsNothing);
+      expect(selected(), 0);
     });
 
     testWidgets('says where days will go while it is empty', (tester) async {

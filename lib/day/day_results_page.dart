@@ -30,6 +30,7 @@ import 'document_pickers.dart';
 import 'focus_areas_card.dart';
 import 'fusion_panel.dart';
 import 'next_session_card.dart';
+import '../profile/skill_levels_card.dart';
 import 'lap_page.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
@@ -1653,6 +1654,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
+            ),
+          // Below what to try next: the driver's skills across days, from
+          // the profile.
+          if (widget.library case final library?)
+            ProfileSkillLevels(
+              library: library,
+              padding: const EdgeInsets.only(top: 12),
             ),
         ],
       ),

@@ -21,6 +21,7 @@ import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../profile/library_page.dart';
+import '../profile/profile_page.dart';
 import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../ui/theme.dart';
@@ -355,8 +356,9 @@ class _DayImportPageState extends State<DayImportPage> {
   /// The library shown on top of this page; null while it is not.
   Route<String>? _libraryRoute;
 
-  /// What to do once the day shown is left (going to the library).
-  VoidCallback? _afterDayLeft;
+  /// The place to go once the day shown is left (Home, Library or
+  /// Profile), with the pages open when the day has gone.
+  AppSection? _afterDayLeft;
 
   /// How many day pages show each day, the one leaving included until its
   /// exit animation ends; the last of them disposes the day, unless it is
@@ -467,7 +469,7 @@ class _DayImportPageState extends State<DayImportPage> {
     await last?.flushRecovery();
     final after = _afterDayLeft;
     _afterDayLeft = null;
-    if (after != null && mounted && _shownDay == null) after();
+    if (after != null && mounted && _shownDay == null) _go(after);
     final recovered = await queueRecovery(widget.recovery.load);
     if (!mounted) return;
     // Another day's unsaved work waits in the recovery slot: a day kept
@@ -498,6 +500,8 @@ class _DayImportPageState extends State<DayImportPage> {
     appNavigation.update(
       section: _shownDay != null
           ? (_coachShown.value ? AppSection.coach : AppSection.day)
+          : _profileRoute != null && (_libraryRoute == null || _profileOnTop)
+          ? AppSection.profile
           : _libraryRoute != null
           ? AppSection.library
           : AppSection.home,
@@ -511,44 +515,58 @@ class _DayImportPageState extends State<DayImportPage> {
     final navigator = appNavigatorKey.currentState;
     if (navigator == null || !mounted) return;
     final library = _libraryRoute;
-    void closeLibrary() {
-      if (library == null || !identical(_libraryRoute, library)) return;
-      navigator.popUntil((r) => r == library || r.isFirst);
-      if (library.isCurrent) navigator.pop();
+    final profile = _profileRoute;
+    // Closes the library or the profile, and the pages over it.
+    void close(Route<Object?>? route, Route<Object?>? Function() current) {
+      if (route == null || !identical(current(), route)) return;
+      navigator.popUntil((r) => r == route || r.isFirst);
+      if (route.isCurrent) navigator.pop();
     }
 
+    void closeLibrary() => close(library, () => _libraryRoute);
+    void closeProfile() => close(profile, () => _profileRoute);
+
+    final day = _dayRoute;
+    if (section != AppSection.day && section != AppSection.coach) {
+      if (day != null) {
+        // The day leaves first, as going back does; then the place is
+        // shown over the pages open then.
+        _afterDayLeft = section;
+        _leaveDay(navigator, day);
+        return;
+      }
+      _afterDayLeft = null;
+    }
     switch (section) {
       case AppSection.home:
-        if (_dayRoute case final route?) {
-          // The day leaves first, as going back does; then the library a
-          // shared day opened over.
-          _afterDayLeft = library == null ? null : closeLibrary;
-          _leaveDay(navigator, route);
-        } else {
-          _afterDayLeft = null;
-          closeLibrary();
-        }
+        closeProfile();
+        closeLibrary();
       case AppSection.library:
-        if (_dayRoute case final route?) {
-          _afterDayLeft = library != null
-              ? null
-              : () => unawaited(_openLibrary());
-          _leaveDay(navigator, route);
-        } else if (library != null) {
+        closeProfile();
+        if (library != null) {
           navigator.popUntil((r) => r == library || r.isFirst);
         } else {
           unawaited(_openLibrary());
         }
+      case AppSection.profile:
+        closeLibrary();
+        if (profile != null) {
+          navigator.popUntil((r) => r == profile || r.isFirst);
+        } else {
+          _openProfile();
+        }
       case AppSection.day || AppSection.coach:
         // The same day page, with its tabs or its coach.
+        _afterDayLeft = null;
         final coach = section == AppSection.coach;
-        if (_dayRoute case final route?) {
+        if (day != null) {
           _coachShown.value = coach;
           // From a page opened over the day, back to the day.
-          navigator.popUntil((r) => r == route || r.isFirst);
+          navigator.popUntil((r) => r == day || r.isFirst);
         } else if (_keptDay case final kept? when !_opening) {
           // Not while a day is being opened or a share added: that work
           // shows its own day.
+          closeProfile();
           closeLibrary();
           unawaited(_show(kept, coach: coach));
         }
@@ -1027,6 +1045,30 @@ class _DayImportPageState extends State<DayImportPage> {
       ..sort((a, b) => modified[b]!.compareTo(modified[a]!));
   }
 
+  /// The profile shown on top of this page; null while it is not.
+  Route<void>? _profileRoute;
+
+  /// Whether the profile was opened after the library, when both are open.
+  bool _profileOnTop = false;
+
+  /// Shows the driver's profile: totals, records and progress across days.
+  void _openProfile() {
+    final library = widget.library;
+    if (library == null || _profileRoute != null || !mounted) return;
+    final route = MaterialPageRoute<void>(
+      builder: (_) => ProfilePage(library: library),
+    );
+    _profileRoute = route;
+    _profileOnTop = true;
+    _syncNav();
+    unawaited(
+      Navigator.of(context).push(route).whenComplete(() {
+        if (identical(_profileRoute, route)) _profileRoute = null;
+        _syncNav();
+      }),
+    );
+  }
+
   /// Shows the library; a day chosen there opens here.
   Future<void> _openLibrary() async {
     final library = widget.library;
@@ -1039,6 +1081,7 @@ class _DayImportPageState extends State<DayImportPage> {
       ),
     );
     _libraryRoute = route;
+    _profileOnTop = false;
     _syncNav();
     final String? chosen;
     try {

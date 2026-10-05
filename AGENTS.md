@@ -188,7 +188,9 @@ From the handover, section "How results are presented".
   never reads "x:60".
 - A missing result says why and is never shown as zero.
 - Typical means the median, spread means the interquartile range, and at least
-  three laps are needed. No percentage scores.
+  three laps are needed. No percentage scores. Skill levels 1–5 (owner's
+  choice, 2026-10-04) come from fixed bands per skill in `telemetry_core`
+  and are always shown with the measured value and the confidence.
 - Results are observations, not causes or driving instructions. The one
   exception is the coach between sessions (`day_coach.dart`, FET-45): the owner
   chose "both, labelled" (2026-10-03), so each coach item shows the measured

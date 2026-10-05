@@ -7322,6 +7322,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coach'**
   String get navCoach;
+
+  /// Place in the app navigation: the driver's totals, records and progress across every day.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// Profile page with no day in the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'No days yet. Every day you import is added to your profile, and its totals, records and skills appear here.'**
+  String get profileEmpty;
+
+  /// Heading of the profile's totals over every day.
+  ///
+  /// In en, this message translates to:
+  /// **'All days'**
+  String get profileTotals;
+
+  /// Totals: number of days.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get profileDays;
+
+  /// Totals: number of sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get profileSessions;
+
+  /// Totals: number of timed laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Timed laps'**
+  String get profileLaps;
+
+  /// Totals: distance driven.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get profileDistance;
+
+  /// Totals: time moving on track.
+  ///
+  /// In en, this message translates to:
+  /// **'Time on track'**
+  String get profileDrivingTime;
+
+  /// Totals: number of tracks; also the heading of the per-track records.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks'**
+  String get profileTracks;
+
+  /// Totals: number of cars; also the heading of each car's mileage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cars'**
+  String get profileCars;
+
+  /// Totals note when some sessions have no measured distance and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance and time cover {measured} of {sessions, plural, =1{1 session} other{{sessions} sessions}}: a day saved before this version adds them when you open it again.'**
+  String profileMeasured(int measured, int sessions);
+
+  /// Heading of the skill levels, on the Profile and in the coach.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get profileSkills;
+
+  /// Explains how skill levels are worked out.
+  ///
+  /// In en, this message translates to:
+  /// **'Each skill over your last 3 days that measured it, against fixed bands: level 5 is the best. Confidence comes from the ranked laps measured.'**
+  String get profileSkillsIntro;
+
+  /// A driving skill's name, from the 12-skill model.
+  ///
+  /// In en, this message translates to:
+  /// **'{id, select, liftTiming{Lift timing} brakePointConsistency{Brake point consistency} brakeReleaseTiming{Brake release timing} brakingEffectiveness{Braking effectiveness} turnInConsistency{Turn-in consistency} minimumSpeedControl{Minimum speed control} lineConsistency{Line consistency} throttleReapplication{Throttle reapplication} throttleCommitment{Throttle commitment} exitSpeedExecution{Exit speed execution} cornerSequenceManagement{Corner sequence management} paceConsistency{Pace consistency} other{{id}}}'**
+  String skillName(String id);
+
+  /// The group a skill belongs to.
+  ///
+  /// In en, this message translates to:
+  /// **'{group, select, braking{Braking} corner{Corner} exit{Exit} lap{Lap} other{{group}}}'**
+  String skillGroup(String group);
+
+  /// What a skill's measured value is, with the value and its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'{id, select, brakePointConsistency{Braking-point spread: {value}} minimumSpeedControl{Minimum speed below your best: {value}} exitSpeedExecution{Exit speed below your best: {value}} paceConsistency{Lap time spread: {value}} other{{value}}}'**
+  String skillMeasured(String id, String value);
+
+  /// A skill's level.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level} of 5'**
+  String skillLevel(int level);
+
+  /// How sure a skill level is, from the laps measured.
+  ///
+  /// In en, this message translates to:
+  /// **'{confidence, select, low{Low confidence} medium{Medium confidence} high{High confidence} other{{confidence}}}'**
+  String skillConfidence(String confidence);
+
+  /// The evidence behind a skill level.
+  ///
+  /// In en, this message translates to:
+  /// **'{laps, plural, =1{1 ranked lap} other{{laps} ranked laps}} over {days, plural, =1{1 day} other{{days} days}}'**
+  String skillEvidence(int laps, int days);
+
+  /// A skill level against the days before.
+  ///
+  /// In en, this message translates to:
+  /// **'{trend, select, improving{Improving} steady{Steady} declining{Declining} other{{trend}}}'**
+  String skillTrend(String trend);
+
+  /// A measured skill with no lap measured yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs more evidence'**
+  String get skillNeedsEvidence;
+
+  /// A skill of the model the app has no measure for yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured by the app yet'**
+  String get skillNotMeasured;
+
+  /// A car's or track's totals.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}} · {distance} · {time}'**
+  String profileDrivenOn(int days, String distance, String time);
+
+  /// How often a track was driven.
+  ///
+  /// In en, this message translates to:
+  /// **'{visits, plural, =1{1 visit} other{{visits} visits}}'**
+  String profileVisits(int visits);
+
+  /// A track's personal best lap, its date and session.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap: {time} · {when}'**
+  String profileBestLap(String time, String when);
+
+  /// A track's best theoretical lap time and its date.
+  ///
+  /// In en, this message translates to:
+  /// **'Best theoretical: {time} · {when}'**
+  String profileTheoreticalBest(String time, String when);
+
+  /// A track's best median lap time of a visit, and its date.
+  ///
+  /// In en, this message translates to:
+  /// **'Best typical lap: {time} · {when}'**
+  String profileTypicalLap(String time, String when);
+
+  /// The last visit's best lap against the visit before, faster.
+  ///
+  /// In en, this message translates to:
+  /// **'Last visit: best lap {time} faster than the visit before'**
+  String profileFaster(String time);
+
+  /// The last visit's best lap against the visit before, slower.
+  ///
+  /// In en, this message translates to:
+  /// **'Last visit: best lap {time} slower than the visit before'**
+  String profileSlower(String time);
+
+  /// A day with no recording time.
+  ///
+  /// In en, this message translates to:
+  /// **'Undated'**
+  String get profileUndated;
+
+  /// Heading of the corners among a visit's costliest on two or more visits.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners that keep costing time'**
+  String get profileRepeated;
+
+  /// A repeated loss: the mean time lost and on how many visits.
+  ///
+  /// In en, this message translates to:
+  /// **'{loss} lost on average, on {visits, plural, =1{1 visit} other{{visits} visits}}'**
+  String profileRepeatedLoss(String loss, int visits);
+
+  /// Whether a repeated loss is still there.
+  ///
+  /// In en, this message translates to:
+  /// **'{state, select, active{Still costing time} fading{Fading: not measured on the last two visits} fixed{Not lost on the last two visits} other{{state}}}'**
+  String profileRepeatedState(String state);
+
+  /// No repeated loss across visits.
+  ///
+  /// In en, this message translates to:
+  /// **'No corner has been among a visit\'s costliest on two visits yet.'**
+  String get profileRepeatedNone;
+
+  /// A car's days on the Profile page when no session of them has distance and time yet.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}} · distance and time not measured yet'**
+  String profileDrivenOnUnmeasured(int days);
+
+  /// Tracks card on the Profile page with no recognised track.
+  ///
+  /// In en, this message translates to:
+  /// **'No track recognised yet in your days.'**
+  String get profileTracksNone;
 }
 
 class _AppLocalizationsDelegate
