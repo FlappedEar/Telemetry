@@ -841,8 +841,10 @@ class _DayImportPageState extends State<DayImportPage> {
 
   /// Adds recordings shared while no day is shown to today's day, as the
   /// driver does after each session even when the system closed the app in
-  /// between: the unsaved day kept for recovery, else the day saved last in
-  /// the app, when every recording started on its date. The day then opens
+  /// between: the unsaved day kept for recovery, else the saved day just
+  /// left here, else one of the days saved in the app or the library in the
+  /// last day (newest first, up to [_savedDaysTried]), when every recording
+  /// started on its date. The day then opens
   /// and says what was added. Otherwise the recordings start an import.
   Future<void> _continueToday(List<String> paths) async {
     final waiting = _waiting = [];
@@ -921,19 +923,48 @@ class _DayImportPageState extends State<DayImportPage> {
     }
     // No unsaved work waits, so a saved day may open: the one just left
     // here, saved anywhere (on desktop the app keeps no list of saved days),
-    // else the day saved last in the app.
+    // else the days saved in the app or the library in the last day, newest
+    // first, up to [_savedDaysTried] of them. A day of another date saved
+    // since (an earlier visit opened and changed between sessions) does not
+    // stop today's from taking the recordings.
+    final tried = <String>{};
     final closed = _lastDay;
     final closedPath = closed?.documentPath;
     if (closed != null && !closed.dirty && closedPath != null) {
+      tried.add(closedPath);
       final day = await _added(paths, clock, () => _openSaved(closedPath));
       if (day != null) return (day: day, snapshotLeft: false);
     }
-    final day = await _added(paths, clock, () async {
-      final saved = await _savedDays();
-      return saved.isEmpty ? null : _openSaved(saved.first);
-    });
-    return (day: day, snapshotLeft: false);
+    List<String> saved;
+    try {
+      saved = await _savedDays();
+    } on Exception catch (error) {
+      debugPrint('Saved days not listed: $error');
+      return (day: null, snapshotLeft: false);
+    }
+    var opened = 0;
+    for (final path in saved) {
+      if (opened >= _savedDaysTried) break;
+      final DateTime modified;
+      try {
+        modified = File(path).lastModifiedSync();
+      } on FileSystemException {
+        continue; // Gone since it was listed.
+      }
+      // Newest first: once one is too old, so are the rest.
+      if (!_recent(modified)) break;
+      if (!tried.add(path)) continue;
+      opened++;
+      final day = await _added(paths, clock, () => _openSaved(path));
+      if (day != null) return (day: day, snapshotLeft: false);
+    }
+    return (day: null, snapshotLeft: false);
   }
+
+  /// At most this many saved days of the list are opened to find today's,
+  /// besides the day just left: each opening reads all of that day's
+  /// recordings.
+  static const _savedDaysTried = 3;
 
   /// The day saved at [path] when it was saved in the last day; null
   /// otherwise or when none of its recordings can be read.
