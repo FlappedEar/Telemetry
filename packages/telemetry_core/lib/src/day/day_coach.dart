@@ -492,7 +492,9 @@ final class _Passage {
     this.minimum,
     this.exit,
     this.lift,
+    this.liftSeconds,
     this.braking,
+    this.release,
     this.onset,
     this.pickup,
     this.coastSeconds,
@@ -521,6 +523,12 @@ final class _Passage {
   /// Positions on the shared axis, metres.
   final double? lift;
   final double? braking;
+
+  /// From [lift] to [braking], seconds; 0 when the pedals overlap.
+  final double? liftSeconds;
+
+  /// Where a measured braking ended, when nothing broke it up.
+  final double? release;
 
   /// [braking] when it is a clean, sustained start of braking (see
   /// [_inconsistentBraking]).
@@ -869,6 +877,79 @@ DayCoach dayCoach(
   );
 }
 
+/// One lap through one corner as the coach reads it, for a driver profile:
+/// positions on the shared axis, metres. Each is null where the pedals
+/// that show it were not recorded or not clear.
+final class CoachCornerPassage {
+  const CoachCornerPassage({
+    required this.lap,
+    this.liftSeconds,
+    this.releaseMeters,
+    this.pickupMeters,
+    this.throttleKnown = false,
+    this.pickupReleased = false,
+  });
+
+  final DayLapRow lap;
+
+  /// From the last lift off the throttle to a measured braking point; 0
+  /// when the pedals overlap.
+  final double? liftSeconds;
+
+  /// Where a measured braking ended.
+  final double? releaseMeters;
+
+  /// The measured throttle pickup at or after the slow point.
+  final double? pickupMeters;
+
+  /// Whether the throttle is known from the end of the braking to the slow
+  /// point; then [pickupReleased] is whether the throttle was picked up and
+  /// released again in between.
+  final bool throttleKnown;
+  final bool pickupReleased;
+}
+
+/// Every lap's passages through each corner of [result], by segment id,
+/// read as [dayCoach] reads them; empty when [result] is not ready.
+Map<String, List<CoachCornerPassage>> coachCornerPassages(
+  DayTheoreticalBest result,
+  Map<String, TelemetrySession?> sessions,
+) {
+  if (result.laps.isEmpty) return const {};
+  // A day is measured again after every save; the coach's reading of the
+  // same result and recordings does not change.
+  final cached = _cornerPassages[result];
+  if (cached != null &&
+      cached.sessions.length == sessions.length &&
+      sessions.entries.every((e) => identical(cached.sessions[e.key], e.value))) {
+    return cached.passages;
+  }
+  final passages = <String, List<_Passage>>{};
+  // Which session is coached changes the findings, never the passages.
+  _dayCoach(result, sessions, runId: result.laps.first.lap.runId, passages: passages);
+  final read = {
+    for (final MapEntry(key: id, value: list) in passages.entries)
+      id: List<CoachCornerPassage>.unmodifiable([
+        for (final p in list)
+          CoachCornerPassage(
+            lap: p.lap,
+            liftSeconds: p.liftSeconds,
+            releaseMeters: p.release,
+            pickupMeters: p.pickup,
+            throttleKnown: p.throttleKnown,
+            pickupReleased: p.earlyPickup != null,
+          ),
+      ]),
+  };
+  _cornerPassages[result] = (sessions: Map.of(sessions), passages: read);
+  return read;
+}
+
+final _cornerPassages =
+    Expando<
+      ({Map<String, TelemetrySession?> sessions, Map<String, List<CoachCornerPassage>> passages})
+    >('coach passages');
+
 /// The coach of [runId] (see [dayCoach]); each corner's passages go in
 /// [passages] by segment id.
 DayCoach _dayCoach(
@@ -971,13 +1052,15 @@ DayCoach _dayCoach(
               session.channels.containsKey(session.aliases['brake'] ?? ''))) {
         pedals = true;
       }
-      double? lift;
+      double? lift, liftSeconds;
       final from = start - coachApproachMeters;
       if (braking != null && end > start && from >= 0) {
         final fromTime = timeAtProgress(trace, from);
         final toTime = timeAtProgress(trace, braking);
         if (fromTime != null && toTime != null && toTime > fromTime) {
           lift = _liftProgress(session, trace, fromTime, toTime);
+          final liftTime = lift == null ? null : timeAtProgress(trace, lift);
+          if (liftTime != null) liftSeconds = math.max(0.0, toTime - liftTime);
         }
       }
       // A pickup between the end of the braking and the slow point,
@@ -1051,7 +1134,9 @@ DayCoach _dayCoach(
           minimum: shown.comparable ? _metersPerSecond(speeds.minimum.value, speeds.unit) : null,
           exit: shown.comparable ? _metersPerSecond(speeds.exit.value, speeds.unit) : null,
           lift: lift,
+          liftSeconds: liftSeconds,
           braking: braking,
+          release: released == null ? null : progressAtTime(trace, released),
           onset: onset,
           pickup: pickup,
           coastSeconds: coastSeconds,

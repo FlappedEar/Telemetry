@@ -4990,6 +4990,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'minimumSpeedControl': 'Minimum speed below your best: $value',
       'exitSpeedExecution': 'Exit speed below your best: $value',
       'paceConsistency': 'Lap time spread: $value',
+      'liftTiming': 'Off the throttle to braking: $value',
+      'brakeReleaseTiming': 'Brake-release spread: $value',
+      'brakingEffectiveness': 'Braking below your best: $value',
+      'turnInConsistency': 'Corner entry speed spread: $value',
+      'lineConsistency': 'Line spread through the corner: $value',
+      'throttleReapplication': 'Throttle pickup spread: $value',
+      'throttleCommitment':
+          'Throttle picked up and lifted again before the slowest point: $value of passes',
+      'cornerSequenceManagement':
+          'Lost linking a corner to what follows: $value',
       'other': '$value',
     });
     return '$_temp0';

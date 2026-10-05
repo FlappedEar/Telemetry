@@ -33,6 +33,29 @@ TelemetrySession _labelled(TelemetrySession session, String unit, {double scale 
   );
 }
 
+/// [session] with a GPS accuracy of [metres] throughout.
+TelemetrySession _withAccuracy(TelemetrySession session, double metres) {
+  final latitude = session.channels['latitude']!;
+  return TelemetrySession(
+    duration: session.duration,
+    startTime: session.startTime,
+    metadata: session.metadata,
+    channels: {
+      ...session.channels,
+      'accuracy': TelemetryChannel(
+        name: 'accuracy',
+        unit: 'm',
+        timestamps: latitude.timestamps,
+        values: Float32List.fromList(List.filled(latitude.sampleCount, metres)),
+      ),
+    },
+    aliases: {...session.aliases, 'accuracy': 'accuracy'},
+    warnings: session.warnings,
+    timingGates: session.timingGates,
+    sampleCount: session.sampleCount,
+  );
+}
+
 // A lap at 30 m/s that brakes from [brake] m to [slow] m/s at 326 m, holds it
 // to 360 m and is back at 30 m/s 60 m later.
 double Function(double) _lap(double brake, double slow) => (d) {
@@ -45,12 +68,27 @@ double Function(double) _lap(double brake, double slow) => (d) {
 
 final _laps = [_lap(250, 18), _lap(270, 20), _lap(240, 17), _lap(255, 19)];
 
+// As [_lap], on full throttle gaining 2 m/s over the 60 m before braking.
+double Function(double) _pushed(double brake, double slow) => (d) {
+  if (d >= brake - 60 && d < brake) return 28 + 2 * (d - brake + 60) / 60;
+  if (d < brake) return 28;
+  return _lap(brake, slow)(d);
+};
+
 /// A rectangle day of one session, analysed as the app does, with its
 /// recordings and theoretical best when [measured].
 ({DayAnalysis analysis, Map<String, TelemetrySession?> recordings, DayTheoreticalBest best})
-_rectangle({String unit = 'm/s', int start = 1756454400000, double scale = 1}) {
-  var session = rectangleSession(_laps, firstTimestampMilliseconds: start, pedals: true);
+_rectangle({
+  String unit = 'm/s',
+  int start = 1756454400000,
+  double scale = 1,
+  List<double Function(double)>? laps,
+  bool pedals = true,
+  double? accuracy,
+}) {
+  var session = rectangleSession(laps ?? _laps, firstTimestampMilliseconds: start, pedals: pedals);
   if (unit.isNotEmpty) session = _labelled(session, unit, scale: scale);
+  if (accuracy != null) session = _withAccuracy(session, accuracy);
   final run = DayRunInput(
     runId: 'run1',
     name: 'Session 1',
@@ -221,6 +259,88 @@ void main() {
       expect(slow.laps, stats.rankedLaps);
       for (final corner in stats.corners) {
         expect(corner.lossSeconds, anyOf(isNull, greaterThanOrEqualTo(0)));
+      }
+    });
+
+    test('corners: pedals, deceleration, entry, line and what follows', () {
+      final pushed = _rectangle(
+        laps: [
+          for (final (brake, slow) in [(250.0, 18.0), (270.0, 20.0), (240.0, 17.0), (255.0, 19.0)])
+            _pushed(brake, slow),
+        ],
+        accuracy: 0.3,
+      );
+      final corners = measureSessions(
+        pushed.analysis,
+        pushed.recordings,
+        best: pushed.best,
+      )['run1']!.corners;
+      final slow = corners.firstWhere((c) => c.minimumSpeed != null);
+      // Off the throttle straight onto the brake.
+      expect(slow.liftSeconds, closeTo(0, 0.15));
+      // The braking always ends at the slow point, 326 m.
+      expect(slow.releaseSpreadMeters, lessThan(2));
+      expect(slow.decelerationG, greaterThan(0.2));
+      expect(slow.bestDecelerationG, greaterThanOrEqualTo(slow.decelerationG!));
+      // Into the corner at 30 m/s less the braking done by then.
+      expect(slow.entrySpeedSpread, greaterThan(0));
+      expect(slow.pickupSpreadMeters, lessThan(2));
+      for (final corner in corners) {
+        // One line, GPS stated at 0.3 m.
+        expect(corner.lineSpreadMeters, lessThan(0.5));
+        expect(corner.sequenceLossSeconds, greaterThanOrEqualTo(0));
+      }
+      // Read back the same.
+      final read = _roundTrip(
+        _add(
+          DriverProfile.empty(Random(1)),
+          ProfileDayInput.fromAnalysis(
+            eventId: 'p',
+            file: 'Days/p.fetproject',
+            name: 'p',
+            analysis: pushed.analysis,
+            recordings: pushed.recordings,
+            theoreticalBest: pushed.best,
+          ),
+        ),
+      ).day('p')!.sessions.single.stats!.corners.firstWhere((c) => c.minimumSpeed != null);
+      expect(read.liftSeconds, slow.liftSeconds);
+      expect(read.releaseSpreadMeters, slow.releaseSpreadMeters);
+      expect(read.decelerationG, slow.decelerationG);
+      expect(read.bestDecelerationG, slow.bestDecelerationG);
+      expect(read.entrySpeedSpread, slow.entrySpeedSpread);
+      expect(read.lineSpreadMeters, slow.lineSpreadMeters);
+      expect(read.pickupSpreadMeters, slow.pickupSpreadMeters);
+      expect(read.sequenceLossSeconds, slow.sequenceLossSeconds);
+    });
+
+    test('without pedals, G or a stated GPS accuracy those are not measured', () {
+      final bare = _rectangle(pedals: false);
+      final corners = measureSessions(
+        bare.analysis,
+        bare.recordings,
+        best: bare.best,
+      )['run1']!.corners;
+      expect(corners, isNotEmpty);
+      for (final corner in corners) {
+        expect(corner.liftSeconds, isNull);
+        expect(corner.releaseSpreadMeters, isNull);
+        expect(corner.decelerationG, isNull);
+        expect(corner.pickupSpreadMeters, isNull);
+        expect(corner.releasedPickupShare, isNull);
+        expect(corner.lineSpreadMeters, isNull);
+      }
+      // Timing and speed need no more than GPS and speed.
+      expect(corners.where((c) => c.entrySpeedSpread != null), isNotEmpty);
+      expect(corners.where((c) => c.sequenceLossSeconds != null), isNotEmpty);
+      // A GPS accuracy worse than a metre cannot tell lines apart.
+      final rough = _rectangle(accuracy: 2.5);
+      for (final corner in measureSessions(
+        rough.analysis,
+        rough.recordings,
+        best: rough.best,
+      )['run1']!.corners) {
+        expect(corner.lineSpreadMeters, isNull);
       }
     });
 
@@ -873,6 +993,7 @@ void main() {
       final skills = {for (final s in skillLevels(profile, carId: 'car1')) s.skill.id: s};
       expect(skills.keys, [for (final s in skillCatalogue) s.id]);
       expect(skills.length, 12);
+      // The fixture's corners carry no pedal, G, line or sequence figures.
       for (final id in [
         'liftTiming',
         'brakeReleaseTiming',
@@ -909,6 +1030,68 @@ void main() {
       expect(skills['exitSpeedExecution']!.value, closeTo(1.8, 1e-9));
       expect(skills['exitSpeedExecution']!.level, 4);
       expect(skills['exitSpeedExecution']!.trend, SkillTrend.steady);
+    });
+
+    test('the pedal, G, line and sequence skills from each corner', () {
+      CornerStats corner(String id, double scale, double deceleration) => CornerStats(
+        cornerId: id,
+        laps: 6,
+        liftSeconds: 0.3 * scale,
+        releaseSpreadMeters: 10 * scale,
+        decelerationG: deceleration,
+        bestDecelerationG: deceleration,
+        entrySpeedSpread: 1 * scale,
+        lineSpreadMeters: 0.8 * scale,
+        pickupSpreadMeters: 5 * scale,
+        releasedPickupShare: 0.1 * scale,
+        sequenceLossSeconds: 0.04 * scale,
+      );
+      final measured = _profile([
+        _visit(
+          'm',
+          1,
+          track: 'jastrzab',
+          sessions: [
+            // k1 brakes at 0.8 g at best, k2 at 0.5 g.
+            _session('s1', corners: [corner('k1', 1, 0.8), corner('k2', 1, 0.5)]),
+            _session('s2', corners: [corner('k1', 2, 0.6), corner('k2', 2, 0.45)]),
+          ],
+        ),
+      ]);
+      final skills = {for (final s in skillLevels(measured)) s.skill.id: s};
+      // Sessions weigh alike (6 laps each): the mean of 1x and 2x.
+      expect(skills['liftTiming']!.value, closeTo(0.45, 1e-9));
+      expect(skills['liftTiming']!.level, 3);
+      expect(skills['brakeReleaseTiming']!.value, closeTo(15, 1e-9));
+      expect(skills['brakeReleaseTiming']!.level, 2);
+      // s1 at the day's best, s2 0.2 g and 0.05 g short: median 0.125, / 2.
+      expect(skills['brakingEffectiveness']!.value, closeTo(0.0625, 1e-9));
+      expect(skills['brakingEffectiveness']!.level, 3);
+      expect(skills['turnInConsistency']!.value, closeTo(1.5 * 3.6, 1e-9));
+      expect(skills['turnInConsistency']!.level, 3);
+      expect(skills['lineConsistency']!.value, closeTo(1.2, 1e-9));
+      expect(skills['lineConsistency']!.level, 3);
+      expect(skills['throttleReapplication']!.value, closeTo(7.5, 1e-9));
+      expect(skills['throttleReapplication']!.level, 3);
+      expect(skills['throttleCommitment']!.value, closeTo(15, 1e-9));
+      expect(skills['throttleCommitment']!.level, 4);
+      expect(skills['cornerSequenceManagement']!.value, closeTo(0.06, 1e-9));
+      expect(skills['cornerSequenceManagement']!.level, 3);
+
+      // A session without the pedals measures none of their skills.
+      final bare = _profile([
+        _visit(
+          'b',
+          1,
+          track: 'jastrzab',
+          sessions: [
+            _session('s1', corners: [CornerStats(cornerId: 'k1', laps: 6)]),
+          ],
+        ),
+      ]);
+      for (final skill in skillLevels(bare)) {
+        expect(skill.level, isNull, reason: skill.skill.id);
+      }
     });
 
     test('a session on another layout counts in totals only', () {
@@ -1002,6 +1185,15 @@ void main() {
             bestExitSpeed: 24.012,
             brakingSpreadMeters: 6.345,
             lossSeconds: 0.312,
+            liftSeconds: 0.345,
+            releaseSpreadMeters: 7.123,
+            decelerationG: 0.845,
+            bestDecelerationG: 0.987,
+            entrySpeedSpread: 1.234,
+            lineSpreadMeters: 0.678,
+            pickupSpreadMeters: 8.901,
+            releasedPickupShare: 0.333,
+            sequenceLossSeconds: 0.456,
           ),
       ];
       ProfileSession full(String id, List<CornerStats> corners) => ProfileSession(

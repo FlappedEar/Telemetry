@@ -6,7 +6,9 @@ import 'dart:convert';
 import 'dart:math';
 
 import '../analysis/consistency.dart';
+import '../analysis/gg_pairs.dart' show standardGravity;
 import '../day/compatibility.dart';
+import '../day/day_coach.dart' show CoachCornerPassage, coachCornerPassages;
 import '../day/day_analysis.dart';
 import '../day/day_document.dart';
 import '../day/day_laps.dart';

@@ -71,6 +71,9 @@ CornerStats _corner(String id, double loss) => CornerStats(
   bestExitSpeed: 20.3,
   brakingSpreadMeters: 5,
   lossSeconds: loss,
+  liftSeconds: 0.3,
+  decelerationG: 0.8,
+  bestDecelerationG: 0.9,
 );
 
 ProfileDay _visit(String id, int number, double best) => ProfileDay(
@@ -182,11 +185,22 @@ void main() {
           .data,
       'Lap time spread: 1.50 s',
     );
+    String value(String id) =>
+        tester.widget<Text>(find.byKey(ValueKey('skillValue $id'))).data!;
+    expect(value('liftTiming'), 'Off the throttle to braking: 0.30\u00a0s');
+    // 0.8 g against the day's best 0.9 g.
+    expect(
+      value('brakingEffectiveness'),
+      'Braking below your best: 0.10\u00a0g',
+    );
+    // No throttle figures in this profile.
     expect(
       tester
-          .widget<Text>(find.byKey(const ValueKey('skillDetails liftTiming')))
+          .widget<Text>(
+            find.byKey(const ValueKey('skillDetails throttleCommitment')),
+          )
           .data,
-      'Not measured by the app yet',
+      'Needs more evidence',
     );
 
     // Only cars that drove.
@@ -223,7 +237,11 @@ void main() {
     );
     expect(find.text('Wszystkie dni'), findsOneWidget);
     expect(find.text('Powtarzalność tempa'), findsOneWidget);
-    expect(find.text('Aplikacja jeszcze tego nie mierzy'), findsWidgets);
+    expect(find.text('Potrzeba więcej danych'), findsWidgets);
+    expect(
+      find.text('Od odjęcia gazu do hamowania: 0.30\u00a0s'),
+      findsOneWidget,
+    );
     expect(find.textContaining('2 wizyty'), findsOneWidget);
     expect(
       tester
