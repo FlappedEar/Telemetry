@@ -252,6 +252,35 @@ void main() {
       expect(weather.stateOf(id), SessionWeatherState.ready);
     });
 
+    test(
+      'offline at the track: the next session added asks again for all',
+      () async {
+        final day = importDay([
+          write('a.vbo', [30, 28]),
+          write('b.vbo', [31, 29]),
+        ]);
+        final first = day.runs.first;
+        final second = day.runs.last;
+        final service = _Service()..offline = true;
+        final weather = DayWeather(fetcher: service.fetch);
+        addTearDown(weather.dispose);
+        weather.sync([first], const []);
+        await settle();
+        expect(weather.stateOf(first.run.id), SessionWeatherState.unavailable);
+        // The same sessions again (a reopened lap, an edit): not asked again.
+        weather.sync([first], const []);
+        await settle();
+        expect(service.asked, hasLength(1));
+        // Signal back, and the next session is shared: both get weather.
+        service.offline = false;
+        weather.sync([first, second], const []);
+        await settle();
+        expect(service.asked, hasLength(3));
+        expect(weather.stateOf(first.run.id), SessionWeatherState.ready);
+        expect(weather.stateOf(second.run.id), SessionWeatherState.ready);
+      },
+    );
+
     test('nothing is asked while off, nor for an undated recording', () async {
       final day = importDay([
         write('a.vbo', [30, 28]),
