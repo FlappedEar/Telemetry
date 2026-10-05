@@ -78,6 +78,38 @@ match what the app on `main` shows.
 - Describe only what the app does at that revision; do not announce features.
 - The pull request template asks for this; answer it, including "no visible
   change".
+- The independent review fails a pull request that changes what a user sees
+  or does without updating the guide.
+
+## Technical documentation and releases
+
+The technical documentation in the Confluence space
+[FET](https://kozucharkadiusz.atlassian.net/wiki/spaces/FET/pages/65840) explains
+how the app is built for the owner and future maintainers. It must match `main`
+as of the latest release; when it and the code disagree, the code wins and the
+page gets fixed.
+
+- A pull request that changes how the app is built (architecture, a module's
+  responsibility, the `.fetproject` or profile format, saving and recovery,
+  analysis rules, CI, releases or this file's rules) names the Confluence page
+  it affects in the template's "Technical documentation" section, or says that
+  none is affected. The reviewer checks that answer as it checks the user
+  guide answer.
+- Each release updates every page named since the previous release, and the
+  root page's "Brought up to date from" line and "Releases covered" table,
+  before the Release workflow runs, whether it is started from the Actions tab
+  or by pushing a tag. CI does not check this; the release's Jira ticket
+  records it. Steps to cut a release:
+  1. List the merges since the previous tag (`git log --first-parent`) right
+     before writing the notes, and again right before running Release.
+  2. Bump `pubspec.yaml` and add `docs/release-notes/vX.Y.Z.md` in a pull
+     request.
+  3. Bring the Confluence pages up to date with the release commit (`main`
+     after the step 2 pull request merges).
+  4. Check the user guide on GitHub Pages matches `docs/user-guide` at that
+     commit (the "User Guide" workflow deploys it when the guide changes).
+  5. Run the Release workflow on `main` with the version, and record the
+     release, its commit and the Confluence update on the release's Jira ticket.
 
 ## Product rules
 
@@ -109,7 +141,8 @@ survive a re-save without losing anything.
 - Keep every field Overlays owns unchanged: `scene.widgets`, `analysis.channels`,
   and each run's `sync` and `sources.video`.
 - Open objects keep unknown keys. Never add keys to closed objects.
-- Keep `documentState.id`, and continue `savedRevision` from the loaded value.
+- Keep `documentState.id`, continue `savedRevision` from the loaded value, and
+  write a new `documentState.saveId` on every save (KAN-183).
 - Schema changes are agreed with the owner first.
 
 The handover section "The shared contract: `.fetproject`" is the detailed reference.
