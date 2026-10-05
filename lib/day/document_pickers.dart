@@ -10,9 +10,15 @@ import '../l10n.dart';
 
 /// Chooses where days are saved and which one opens. Replaced by a fake in
 /// widget tests.
+/// Where the user chose to save a day. [replacesUnasked] when a file is
+/// already there and the save dialog did not ask before replacing it: the
+/// app added the extension to the typed name, or the dialog never asks
+/// (Linux).
+typedef SaveLocation = ({String path, bool replacesUnasked});
+
 abstract interface class DocumentPickers {
   /// Where to save a day called [name]; null when the user cancelled.
-  Future<String?> saveLocation(String name);
+  Future<SaveLocation?> saveLocation(String name);
 
   /// A day to open; null when the user cancelled.
   Future<String?> pickDocument();
@@ -74,7 +80,7 @@ final class PlatformDocumentPickers implements DocumentPickers {
   }
 
   @override
-  Future<String?> saveLocation(String name) async {
+  Future<SaveLocation?> saveLocation(String name) async {
     final fileName = documentFileName(name);
     if (_desktop) {
       final location = await getSaveLocation(
@@ -82,7 +88,13 @@ final class PlatformDocumentPickers implements DocumentPickers {
         acceptedTypeGroups: [_documents],
       );
       if (location == null) return null;
-      return withDocumentExtension(location.path);
+      final path = withDocumentExtension(location.path);
+      return (
+        path: path,
+        replacesUnasked:
+            (path != location.path || Platform.isLinux) &&
+            File(path).existsSync(),
+      );
     }
     final folder = await _daysFolder();
     var path = p.join(folder.path, fileName);
@@ -92,7 +104,7 @@ final class PlatformDocumentPickers implements DocumentPickers {
         '${p.basenameWithoutExtension(fileName)} ($copy)$_extension',
       );
     }
-    return path;
+    return (path: path, replacesUnasked: false);
   }
 
   @override

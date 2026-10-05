@@ -1428,7 +1428,10 @@ final class _SavedDays implements DocumentPickers {
   final String? open;
 
   @override
-  Future<String?> saveLocation(String name) async => saveTo;
+  Future<SaveLocation?> saveLocation(String name) async {
+    final path = saveTo;
+    return path == null ? null : (path: path, replacesUnasked: false);
+  }
 
   @override
   Future<String?> pickDocument() async => open;

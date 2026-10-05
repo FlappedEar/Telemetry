@@ -588,6 +588,35 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return path == null || library.holds(path);
   }
 
+  /// Where to save or export the day; null when the user cancelled, or
+  /// declined to replace a file the save dialog did not ask about.
+  Future<String?> _chooseLocation() async {
+    final location = await widget.documents.saveLocation(_controller.name);
+    if (location == null || !mounted) return null;
+    if (!location.replacesUnasked) return location.path;
+    final replace = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          context.l10n.replaceDayFileTitle(p.basename(location.path)),
+        ),
+        content: Text(context.l10n.replaceDayFileBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            key: const ValueKey('replaceDayFile'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.replaceDayFile),
+          ),
+        ],
+      ),
+    );
+    return replace == true ? location.path : null;
+  }
+
   /// Saves the day; with [quiet] (a save by itself) only a failure is said.
   Future<void> _save({bool choose = false, bool quiet = false}) async {
     if (choose && _inLibrary) return _export();
@@ -597,7 +626,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       final path = choose || controller.documentPath == null
           ? _inLibrary
                 ? await library!.dayPath(controller.eventId)
-                : await widget.documents.saveLocation(controller.name)
+                : await _chooseLocation()
           : controller.documentPath;
       if (path == null || !mounted) return;
       // A day saved as a file never replaces one of the library's days.
@@ -626,7 +655,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// Writes a copy of the day for FlappedEar Overlays where the user
   /// chooses; the day stays in the profile.
   Future<void> _export() async {
-    final path = await widget.documents.saveLocation(_controller.name);
+    final path = await _chooseLocation();
     if (path == null || !mounted) return;
     // The library's own files are never replaced by an export.
     if (widget.library?.holds(path) ?? false) {

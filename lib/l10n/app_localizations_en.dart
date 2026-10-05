@@ -4795,6 +4795,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not exported: choose a place outside the library.';
 
   @override
+  String replaceDayFileTitle(String file) {
+    return 'Replace $file?';
+  }
+
+  @override
+  String get replaceDayFileBody =>
+      'A file with this name is already in that folder. Replacing it cannot be undone.';
+
+  @override
+  String get replaceDayFile => 'Replace';
+
+  @override
   String get notSavedInLibrary =>
       'Not saved: choose a place outside the library.';
 
