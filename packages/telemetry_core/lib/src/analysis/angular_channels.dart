@@ -6,8 +6,11 @@ import 'dart:typed_data';
 
 import '../telemetry_session.dart';
 
+// A compass name with at most a source tag or a degrees unit after it, so
+// heading_rate or course_distance are not taken for a direction.
 final RegExp _angularName = RegExp(
-  r'^(?:gps[ _-]?)?(?:heading|course|bearing)(?:[ _-].*)?$',
+  r'^(?:gps[ _-]?)?(?:heading|course|bearing)'
+  r'(?:[ _-](?:gps|calc|rcz|obd|deg|degrees))?(?:\s*\((?:deg|degrees|°)\))?$',
   caseSensitive: false,
 );
 

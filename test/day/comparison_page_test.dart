@@ -220,6 +220,16 @@ void main() {
     cursor.value = 1;
     await tester.pump();
     expect(tester.widget<Text>(value).data, 'A 340');
+    // A whole turn: a screen reader says 0 to 360.
+    expect(find.bySemanticsLabel(RegExp('A: from 0 to 360')), findsOneWidget);
+  });
+
+  test('north reads 0, never 360, after rounding', () {
+    expect(chartDegrees(719.6, 400), 0);
+    expect(chartDegrees(-0.4, 400), 0);
+    expect(chartDegrees(-1e-14, 400), 0);
+    expect(chartDegrees(359.4, 400), 359);
+    expect(chartDegrees(12.25, 50), 12.3);
   });
 
   testWidgets('a mouse moves the chart cursor without a click', (tester) async {

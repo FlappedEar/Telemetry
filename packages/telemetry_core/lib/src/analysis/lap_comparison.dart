@@ -345,7 +345,7 @@ final class LapComparison {
   double? _angleOffset(int slot, String channel) {
     double? start(int slot) {
       final recorded = lap(slot).session.channel(channel);
-      if (recorded == null) return null;
+      if (recorded == null || !isAngularChannel(recorded)) return null;
       return firstFiniteValueFrom(unwrappedAngleSession(recorded), recorded.name, lap(slot).start);
     }
 

@@ -314,13 +314,29 @@ void main() {
         timestamps: Float64List(0),
         values: Float32List(0),
       );
-      for (final name in ['heading', 'Heading', 'GPS Heading', 'course', 'bearing-gps']) {
+      for (final name in [
+        'heading',
+        'Heading',
+        'GPS Heading',
+        'course',
+        'bearing-gps',
+        'heading-calc',
+        'Heading (deg)',
+      ]) {
         expect(isAngularChannel(channel(name)), isTrue, reason: name);
       }
       expect(isAngularChannel(channel('heading', 'deg')), isTrue);
       expect(isAngularChannel(channel('heading', '°')), isTrue);
       expect(isAngularChannel(channel('heading', 'rad')), isFalse);
-      for (final name in ['lean_angle-calc', 'heart_rate-hrm', 'velocity', 'steering angle']) {
+      for (final name in [
+        'lean_angle-calc',
+        'heart_rate-hrm',
+        'velocity',
+        'steering angle',
+        'heading_rate',
+        'heading accuracy',
+        'course_distance',
+      ]) {
         expect(isAngularChannel(channel(name)), isFalse, reason: name);
       }
       expect(normalizeDegrees(-10), closeTo(350, 1e-9));
