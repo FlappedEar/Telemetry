@@ -7043,6 +7043,24 @@
   "@exportNotInLibrary": {
     "description": "Export for Overlays refused a file inside the library's own days folder."
   },
+  "replaceDayFileTitle": "Replace {file}?",
+  "@replaceDayFileTitle": {
+    "description": "Title of the dialog asking before Save as… or Export for Overlays replaces a file the system save dialog did not warn about (the app added .fetproject to the typed name, or the dialog never asks, as on Linux).",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "Jastrzab.fetproject"
+      }
+    }
+  },
+  "replaceDayFileBody": "A file with this name is already in that folder. Replacing it cannot be undone.",
+  "@replaceDayFileBody": {
+    "description": "Body of the dialog asking before an existing day file is replaced."
+  },
+  "replaceDayFile": "Replace",
+  "@replaceDayFile": {
+    "description": "Button that replaces the existing day file."
+  },
   "notSavedInLibrary": "Not saved: choose a place outside the library.",
   "@notSavedInLibrary": {
     "description": "Save as… refused a file inside the library's own days folder."

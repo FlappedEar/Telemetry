@@ -4907,6 +4907,18 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie wyeksportowano: wybierz miejsce poza biblioteką.';
 
   @override
+  String replaceDayFileTitle(String file) {
+    return 'Zastąpić $file?';
+  }
+
+  @override
+  String get replaceDayFileBody =>
+      'Plik o tej nazwie już jest w tym folderze. Zastąpienia nie można cofnąć.';
+
+  @override
+  String get replaceDayFile => 'Zastąp';
+
+  @override
   String get notSavedInLibrary =>
       'Nie zapisano: wybierz miejsce poza biblioteką.';
 

@@ -27,17 +27,26 @@ import '../support/temp_directory.dart';
 
 /// Pickers that answer from fixed values.
 final class FakeDocuments implements DocumentPickers {
-  FakeDocuments({this.location, this.folder, this.document});
+  FakeDocuments({
+    this.location,
+    this.folder,
+    this.document,
+    this.replacesUnasked = false,
+  });
 
   final String? location;
   final String? folder;
   final String? document;
+
+  /// Whether [location] holds a file the save dialog did not ask about.
+  final bool replacesUnasked;
   final names = <String>[];
 
   @override
-  Future<String?> saveLocation(String name) async {
+  Future<SaveLocation?> saveLocation(String name) async {
     names.add(name);
-    return location;
+    final path = location;
+    return path == null ? null : (path: path, replacesUnasked: replacesUnasked);
   }
 
   @override
@@ -787,6 +796,47 @@ void main() {
     );
   });
 
+  testWidgets('asks before replacing a file the save dialog did not ask '
+      'about', (tester) async {
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+    });
+    final saved = <String>[];
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      writer: (path, document) async => saved.add(path),
+    );
+    final path = '${directory.path}/Day.fetproject';
+    final documents = FakeDocuments(location: path, replacesUnasked: true);
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          documents: documents,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Replace Day.fetproject?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(saved, isEmpty);
+    expect(controller.dirty, isTrue);
+
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('replaceDayFile')));
+    await tester.pumpAndSettle();
+    expect(saved, [path]);
+    expect(find.text('Saved as Day.fetproject.'), findsOneWidget);
+  });
+
   testWidgets('lists the sessions whose recordings are missing', (
     tester,
   ) async {
@@ -844,6 +894,19 @@ void main() {
       suggestedSaveName(documentFileName('Round 1.5'), macOS: true),
       'Round 1.5',
     );
+  });
+
+  test('asks before replacing only a file the save dialog did not ask '
+      'about', () {
+    const typed = '/d/Foo', added = '/d/Foo.fetproject';
+    // Windows and macOS: the dialog asked for the name as chosen.
+    expect(replacesUnasked(typed, added, linux: false, exists: true), isTrue);
+    expect(replacesUnasked(added, added, linux: false, exists: true), isFalse);
+    expect(replacesUnasked(typed, added, linux: false, exists: false), isFalse);
+    // Linux: the dialog never asks.
+    expect(replacesUnasked(typed, added, linux: true, exists: true), isTrue);
+    expect(replacesUnasked(added, added, linux: true, exists: true), isTrue);
+    expect(replacesUnasked(added, added, linux: true, exists: false), isFalse);
   });
 
   test('a chosen save path ends in .fetproject once', () {

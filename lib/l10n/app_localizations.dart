@@ -7281,6 +7281,24 @@ abstract class AppLocalizations {
   /// **'Not exported: choose a place outside the library.'**
   String get exportNotInLibrary;
 
+  /// Title of the dialog asking before Save as… or Export for Overlays replaces a file the system save dialog did not warn about (the app added .fetproject to the typed name, or the dialog never asks, as on Linux).
+  ///
+  /// In en, this message translates to:
+  /// **'Replace {file}?'**
+  String replaceDayFileTitle(String file);
+
+  /// Body of the dialog asking before an existing day file is replaced.
+  ///
+  /// In en, this message translates to:
+  /// **'A file with this name is already in that folder. Replacing it cannot be undone.'**
+  String get replaceDayFileBody;
+
+  /// Button that replaces the existing day file.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replaceDayFile;
+
   /// Save as… refused a file inside the library's own days folder.
   ///
   /// In en, this message translates to:

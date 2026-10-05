@@ -85,7 +85,7 @@ final class _Documents implements DocumentPickers {
   final String folder;
 
   @override
-  Future<String?> saveLocation(String name) async => null;
+  Future<SaveLocation?> saveLocation(String name) async => null;
 
   @override
   Future<String?> pickDocument() async => null;
