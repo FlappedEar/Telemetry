@@ -825,6 +825,39 @@ void main() {
     expect(documentFileName('Day 2026/09/27'), 'Day 2026-09-27.fetproject');
   });
 
+  test('gives a day file the .fetproject extension once', () {
+    expect(documentFileName('Kaizen Cup'), 'Kaizen Cup.fetproject');
+    expect(documentFileName('Kaizen Cup.fetproject'), 'Kaizen Cup.fetproject');
+    expect(
+      documentFileName('Kaizen Cup.FETPROJECT.fetproject '),
+      'Kaizen Cup.fetproject',
+    );
+    expect(documentFileName('.fetproject'), 'Day.fetproject');
+    expect(documentFileName('Kaizen Cup.v2'), 'Kaizen Cup.v2.fetproject');
+  });
+
+  test('the macOS save panel is given the name without the extension', () {
+    const fileName = 'Kaizen Cup.fetproject';
+    expect(suggestedSaveName(fileName, macOS: true), 'Kaizen Cup');
+    expect(suggestedSaveName(fileName, macOS: false), fileName);
+    expect(
+      suggestedSaveName(documentFileName('Round 1.5'), macOS: true),
+      'Round 1.5',
+    );
+  });
+
+  test('a chosen save path ends in .fetproject once', () {
+    expect(withDocumentExtension('/d/Kaizen Cup'), '/d/Kaizen Cup.fetproject');
+    expect(
+      withDocumentExtension('/d/Kaizen Cup.fetproject'),
+      '/d/Kaizen Cup.fetproject',
+    );
+    expect(
+      withDocumentExtension('/d/Kaizen Cup.FETPROJECT'),
+      '/d/Kaizen Cup.FETPROJECT',
+    );
+  });
+
   /// A saved two-session day whose second recording was then moved to
   /// [moveTo] (relative to the test folder), opened again.
   Future<(String, OpenedDay)> savedDayMissingB(

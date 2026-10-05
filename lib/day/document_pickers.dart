@@ -28,12 +28,30 @@ abstract interface class DocumentPickers {
 bool get _desktop =>
     !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
 
+const _extension = '.fetproject';
+
 /// The name of a day's file: [name] without characters file systems refuse,
-/// with the `.fetproject` extension.
+/// with the `.fetproject` extension once, even when [name] already ends in it.
 String documentFileName(String name) {
-  final cleaned = name.replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1f]'), '-').trim();
-  return '${cleaned.isEmpty ? 'Day' : cleaned}.fetproject';
+  var cleaned = name.replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1f]'), '-').trim();
+  while (cleaned.toLowerCase().endsWith(_extension)) {
+    cleaned = cleaned
+        .substring(0, cleaned.length - _extension.length)
+        .trimRight();
+  }
+  return '${cleaned.isEmpty ? 'Day' : cleaned}$_extension';
 }
+
+/// The name the save dialog suggests for [fileName]. The macOS panel adds
+/// the extension of the accepted type itself, so it gets the name without
+/// it (given with it, the panel showed `Day.fetproject.fetproject`).
+String suggestedSaveName(String fileName, {required bool macOS}) =>
+    macOS ? p.basenameWithoutExtension(fileName) : fileName;
+
+/// [path] with the `.fetproject` extension once: added when the user's name
+/// left it out, kept (in any case) when it is there.
+String withDocumentExtension(String path) =>
+    p.extension(path).toLowerCase() == _extension ? path : '$path$_extension';
 
 /// On desktop, the system save and open dialogs (the macOS sandbox grants
 /// write access to what the user picks). On phones, which have no save
@@ -60,19 +78,18 @@ final class PlatformDocumentPickers implements DocumentPickers {
     final fileName = documentFileName(name);
     if (_desktop) {
       final location = await getSaveLocation(
-        suggestedName: fileName,
+        suggestedName: suggestedSaveName(fileName, macOS: Platform.isMacOS),
         acceptedTypeGroups: [_documents],
       );
       if (location == null) return null;
-      final path = location.path;
-      return p.extension(path) == '.fetproject' ? path : '$path.fetproject';
+      return withDocumentExtension(location.path);
     }
     final folder = await _daysFolder();
     var path = p.join(folder.path, fileName);
     for (var copy = 2; File(path).existsSync(); ++copy) {
       path = p.join(
         folder.path,
-        '${p.basenameWithoutExtension(fileName)} ($copy).fetproject',
+        '${p.basenameWithoutExtension(fileName)} ($copy)$_extension',
       );
     }
     return path;
@@ -98,7 +115,7 @@ final class PlatformDocumentPickers implements DocumentPickers {
     final folder = await _daysFolder();
     final days = [
       for (final entity in folder.listSync())
-        if (entity is File && entity.path.endsWith('.fetproject')) entity,
+        if (entity is File && entity.path.endsWith(_extension)) entity,
     ]..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
     return [for (final file in days) file.path];
   }
