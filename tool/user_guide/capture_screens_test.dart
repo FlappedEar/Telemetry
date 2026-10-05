@@ -25,6 +25,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/app/app_navigation.dart';
+import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
@@ -34,6 +35,7 @@ import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/profile_library.dart';
+import 'package:telemetry/profile/profile_page.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry_core/telemetry_core.dart'
     show
@@ -683,6 +685,55 @@ void main() {
     await tester.tap(open.first);
     await tester.pumpAndSettle();
     await shot(tester, 'corner-analyzer-segment');
+    debugDisableShadows = true;
+  });
+
+  testWidgets('profile', (tester) async {
+    debugDisableShadows = false;
+    await size(tester, _desktop, 1.5);
+    // The day recorded in a profile of its own, as saving it does.
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      name: 'Jastrząb',
+    );
+    addTearDown(controller.dispose);
+    unawaited(controller.requestTheoreticalBest());
+    await until(tester, () => controller.theoreticalBest != null);
+    final folder = '${directory.path}/ProfileShot';
+    final library = _library(folder);
+    await tester.runAsync(library.load);
+    await library.recordDay(
+      eventId: controller.eventId,
+      path: profileDayPath(folder, controller.eventId),
+      name: controller.name,
+      analysis: controller.analysis,
+      recordings: {
+        for (final named in controller.runs)
+          named.run.id: controller.session(named.run.id),
+      },
+      theoreticalBest: controller.theoreticalBest,
+    );
+    await tester.runAsync(library.flush);
+    final host = Object();
+    appNavigation.attach(host, (_) {});
+    appNavigation.update(
+      section: AppSection.profile,
+      dayAvailable: false,
+      libraryAvailable: true,
+    );
+    addTearDown(() => appNavigation.detach(host));
+    await tester.pumpWidget(app(ProfilePage(library: library)));
+    await tester.pumpAndSettle();
+    await shot(tester, 'profile');
+    final page = list('profile');
+    await scrollIn(
+      tester,
+      page,
+      find.byKey(const ValueKey('skill paceConsistency')),
+    );
+    await shot(tester, 'profile-skills');
     debugDisableShadows = true;
   });
 

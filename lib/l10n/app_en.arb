@@ -7087,5 +7087,260 @@
   "navCoach": "Coach",
   "@navCoach": {
     "description": "Place in the app navigation: the coach of the day open now, what to try in the next session."
-  }
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Place in the app navigation: the driver's totals, records and progress across every day."
+  },
+  "profileEmpty": "No days yet. Every day you import is added to your profile, and its totals, records and skills appear here.",
+  "@profileEmpty": {
+    "description": "Profile page with no day in the profile."
+  },
+  "profileTotals": "All days",
+  "@profileTotals": {
+    "description": "Heading of the profile's totals over every day."
+  },
+  "profileDays": "Days",
+  "@profileDays": {
+    "description": "Totals: number of days."
+  },
+  "profileSessions": "Sessions",
+  "@profileSessions": {
+    "description": "Totals: number of sessions."
+  },
+  "profileLaps": "Timed laps",
+  "@profileLaps": {
+    "description": "Totals: number of timed laps."
+  },
+  "profileDistance": "Distance",
+  "@profileDistance": {
+    "description": "Totals: distance driven."
+  },
+  "profileDrivingTime": "Time on track",
+  "@profileDrivingTime": {
+    "description": "Totals: time moving on track."
+  },
+  "profileTracks": "Tracks",
+  "@profileTracks": {
+    "description": "Totals: number of tracks; also the heading of the per-track records."
+  },
+  "profileCars": "Cars",
+  "@profileCars": {
+    "description": "Totals: number of cars; also the heading of each car's mileage."
+  },
+  "profileMeasured": "Distance and time cover {measured} of {sessions, plural, =1{1 session} other{{sessions} sessions}}: a day saved before this version adds them when you open it again.",
+  "@profileMeasured": {
+    "description": "Totals note when some sessions have no measured distance and time.",
+    "placeholders": {
+      "measured": {
+        "type": "int"
+      },
+      "sessions": {
+        "type": "int"
+      }
+    }
+  },
+  "profileSkills": "Skills",
+  "@profileSkills": {
+    "description": "Heading of the skill levels, on the Profile and in the coach."
+  },
+  "profileSkillsIntro": "Each skill over your last 3 days that measured it, against fixed bands: level 5 is the best. Confidence comes from the ranked laps measured.",
+  "@profileSkillsIntro": {
+    "description": "Explains how skill levels are worked out."
+  },
+  "skillName": "{id, select, liftTiming{Lift timing} brakePointConsistency{Brake point consistency} brakeReleaseTiming{Brake release timing} brakingEffectiveness{Braking effectiveness} turnInConsistency{Turn-in consistency} minimumSpeedControl{Minimum speed control} lineConsistency{Line consistency} throttleReapplication{Throttle reapplication} throttleCommitment{Throttle commitment} exitSpeedExecution{Exit speed execution} cornerSequenceManagement{Corner sequence management} paceConsistency{Pace consistency} other{{id}}}",
+  "@skillName": {
+    "description": "A driving skill's name, from the 12-skill model.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "skillGroup": "{group, select, braking{Braking} corner{Corner} exit{Exit} lap{Lap} other{{group}}}",
+  "@skillGroup": {
+    "description": "The group a skill belongs to.",
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "skillMeasured": "{id, select, brakePointConsistency{Braking-point spread: {value}} minimumSpeedControl{Minimum speed below your best: {value}} exitSpeedExecution{Exit speed below your best: {value}} paceConsistency{Lap time spread: {value}} other{{value}}}",
+  "@skillMeasured": {
+    "description": "What a skill's measured value is, with the value and its unit.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "skillLevel": "Level {level} of 5",
+  "@skillLevel": {
+    "description": "A skill's level.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "skillConfidence": "{confidence, select, low{Low confidence} medium{Medium confidence} high{High confidence} other{{confidence}}}",
+  "@skillConfidence": {
+    "description": "How sure a skill level is, from the laps measured.",
+    "placeholders": {
+      "confidence": {
+        "type": "String"
+      }
+    }
+  },
+  "skillEvidence": "{laps, plural, =1{1 ranked lap} other{{laps} ranked laps}} over {days, plural, =1{1 day} other{{days} days}}",
+  "@skillEvidence": {
+    "description": "The evidence behind a skill level.",
+    "placeholders": {
+      "laps": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "skillTrend": "{trend, select, improving{Improving} steady{Steady} declining{Declining} other{{trend}}}",
+  "@skillTrend": {
+    "description": "A skill level against the days before.",
+    "placeholders": {
+      "trend": {
+        "type": "String"
+      }
+    }
+  },
+  "skillNeedsEvidence": "Needs more evidence",
+  "@skillNeedsEvidence": {
+    "description": "A measured skill with no lap measured yet."
+  },
+  "skillNotMeasured": "Not measured by the app yet",
+  "@skillNotMeasured": {
+    "description": "A skill of the model the app has no measure for yet."
+  },
+  "profileDrivenOn": "{days, plural, =1{1 day} other{{days} days}} · {distance} · {time}",
+  "@profileDrivenOn": {
+    "description": "A car's or track's totals.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "distance": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "profileVisits": "{visits, plural, =1{1 visit} other{{visits} visits}}",
+  "@profileVisits": {
+    "description": "How often a track was driven.",
+    "placeholders": {
+      "visits": {
+        "type": "int"
+      }
+    }
+  },
+  "profileBestLap": "Best lap: {time} · {when}",
+  "@profileBestLap": {
+    "description": "A track's personal best lap, its date and session.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "profileTheoreticalBest": "Best theoretical: {time} · {when}",
+  "@profileTheoreticalBest": {
+    "description": "A track's best theoretical lap time and its date.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "profileTypicalLap": "Best typical lap: {time} · {when}",
+  "@profileTypicalLap": {
+    "description": "A track's best median lap time of a visit, and its date.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "profileFaster": "Last visit: best lap {time} faster than the visit before",
+  "@profileFaster": {
+    "description": "The last visit's best lap against the visit before, faster.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "profileSlower": "Last visit: best lap {time} slower than the visit before",
+  "@profileSlower": {
+    "description": "The last visit's best lap against the visit before, slower.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "profileUndated": "Undated",
+  "@profileUndated": {
+    "description": "A day with no recording time."
+  },
+  "profileRepeated": "Corners that keep costing time",
+  "@profileRepeated": {
+    "description": "Heading of the corners among a visit's costliest on two or more visits."
+  },
+  "profileRepeatedLoss": "{loss} lost on average, on {visits, plural, =1{1 visit} other{{visits} visits}}",
+  "@profileRepeatedLoss": {
+    "description": "A repeated loss: the mean time lost and on how many visits.",
+    "placeholders": {
+      "loss": {
+        "type": "String"
+      },
+      "visits": {
+        "type": "int"
+      }
+    }
+  },
+  "profileRepeatedState": "{state, select, active{Still costing time} fading{Fading: not measured on the last two visits} fixed{Not lost on the last two visits} other{{state}}}",
+  "@profileRepeatedState": {
+    "description": "Whether a repeated loss is still there.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "profileRepeatedNone": "No corner has been among a visit's costliest on two visits yet.",
+  "@profileRepeatedNone": {
+    "description": "No repeated loss across visits."
+  },
+  "profileDrivenOnUnmeasured": "{days, plural, =1{1 day} other{{days} days}} · distance and time not measured yet",
+  "@profileDrivenOnUnmeasured": {
+    "description": "A car's days on the Profile page when no session of them has distance and time yet.",
+    "placeholders": {"days": {"type": "int"}}
+  },
+  "profileTracksNone": "No track recognised yet in your days.",
+  "@profileTracksNone": {"description": "Tracks card on the Profile page with no recognised track."}
 }

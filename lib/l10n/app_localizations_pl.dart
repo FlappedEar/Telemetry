@@ -4945,4 +4945,245 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get navCoach => 'Trener';
+
+  @override
+  String get navProfile => 'Profil';
+
+  @override
+  String get profileEmpty =>
+      'Brak dni. Każdy zaimportowany dzień trafia do profilu, a jego sumy, rekordy i umiejętności pojawiają się tutaj.';
+
+  @override
+  String get profileTotals => 'Wszystkie dni';
+
+  @override
+  String get profileDays => 'Dni';
+
+  @override
+  String get profileSessions => 'Sesje';
+
+  @override
+  String get profileLaps => 'Okrążenia z czasem';
+
+  @override
+  String get profileDistance => 'Dystans';
+
+  @override
+  String get profileDrivingTime => 'Czas na torze';
+
+  @override
+  String get profileTracks => 'Tory';
+
+  @override
+  String get profileCars => 'Samochody';
+
+  @override
+  String profileMeasured(int measured, int sessions) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sessions,
+      locale: localeName,
+      other: '$sessions sesji',
+      one: '1 sesji',
+    );
+    return 'Dystans i czas obejmują $measured z $_temp0: dzień zapisany przed tą wersją doda je po ponownym otwarciu.';
+  }
+
+  @override
+  String get profileSkills => 'Umiejętności';
+
+  @override
+  String get profileSkillsIntro =>
+      'Każda umiejętność z ostatnich 3 dni, w których ją zmierzono, według stałych progów: poziom 5 jest najlepszy. Pewność wynika z liczby zmierzonych sklasyfikowanych okrążeń.';
+
+  @override
+  String skillName(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'liftTiming': 'Moment odpuszczenia gazu',
+      'brakePointConsistency': 'Powtarzalność punktu hamowania',
+      'brakeReleaseTiming': 'Moment zwalniania hamulca',
+      'brakingEffectiveness': 'Skuteczność hamowania',
+      'turnInConsistency': 'Powtarzalność wejścia w zakręt',
+      'minimumSpeedControl': 'Kontrola prędkości minimalnej',
+      'lineConsistency': 'Powtarzalność toru jazdy',
+      'throttleReapplication': 'Ponowne otwieranie gazu',
+      'throttleCommitment': 'Zdecydowanie na gazie',
+      'exitSpeedExecution': 'Prędkość na wyjściu',
+      'cornerSequenceManagement': 'Prowadzenie sekwencji zakrętów',
+      'paceConsistency': 'Powtarzalność tempa',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillGroup(String group) {
+    String _temp0 = intl.Intl.selectLogic(group, {
+      'braking': 'Hamowanie',
+      'corner': 'Zakręt',
+      'exit': 'Wyjście',
+      'lap': 'Okrążenie',
+      'other': '$group',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillMeasured(String id, String value) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'brakePointConsistency': 'Rozrzut punktu hamowania: $value',
+      'minimumSpeedControl': 'Prędkość minimalna poniżej najlepszej: $value',
+      'exitSpeedExecution': 'Prędkość na wyjściu poniżej najlepszej: $value',
+      'paceConsistency': 'Rozrzut czasów okrążeń: $value',
+      'other': '$value',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillLevel(int level) {
+    return 'Poziom $level z 5';
+  }
+
+  @override
+  String skillConfidence(String confidence) {
+    String _temp0 = intl.Intl.selectLogic(confidence, {
+      'low': 'Niska pewność',
+      'medium': 'Średnia pewność',
+      'high': 'Wysoka pewność',
+      'other': '$confidence',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String skillEvidence(int laps, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: '$laps sklasyfikowanego okrążenia',
+      many: '$laps sklasyfikowanych okrążeń',
+      few: '$laps sklasyfikowane okrążenia',
+      one: '1 sklasyfikowane okrążenie',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dni',
+      one: '1 dnia',
+    );
+    return '$_temp0 z $_temp1';
+  }
+
+  @override
+  String skillTrend(String trend) {
+    String _temp0 = intl.Intl.selectLogic(trend, {
+      'improving': 'Poprawa',
+      'steady': 'Bez zmian',
+      'declining': 'Pogorszenie',
+      'other': '$trend',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get skillNeedsEvidence => 'Potrzeba więcej danych';
+
+  @override
+  String get skillNotMeasured => 'Aplikacja jeszcze tego nie mierzy';
+
+  @override
+  String profileDrivenOn(int days, String distance, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dni',
+      one: '1 dzień',
+    );
+    return '$_temp0 · $distance · $time';
+  }
+
+  @override
+  String profileVisits(int visits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      visits,
+      locale: localeName,
+      other: '$visits wizyty',
+      many: '$visits wizyt',
+      few: '$visits wizyty',
+      one: '1 wizyta',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String profileBestLap(String time, String when) {
+    return 'Najlepsze okrążenie: $time · $when';
+  }
+
+  @override
+  String profileTheoreticalBest(String time, String when) {
+    return 'Najlepszy teoretyczny czas okrążenia: $time · $when';
+  }
+
+  @override
+  String profileTypicalLap(String time, String when) {
+    return 'Najlepsze typowe okrążenie: $time · $when';
+  }
+
+  @override
+  String profileFaster(String time) {
+    return 'Ostatnia wizyta: najlepsze okrążenie o $time szybsze niż na poprzedniej';
+  }
+
+  @override
+  String profileSlower(String time) {
+    return 'Ostatnia wizyta: najlepsze okrążenie o $time wolniejsze niż na poprzedniej';
+  }
+
+  @override
+  String get profileUndated => 'Bez daty';
+
+  @override
+  String get profileRepeated => 'Zakręty, które ciągle kosztują czas';
+
+  @override
+  String profileRepeatedLoss(String loss, int visits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      visits,
+      locale: localeName,
+      other: '$visits wizytach',
+      one: '1 wizycie',
+    );
+    return 'średnio $loss straty, na $_temp0';
+  }
+
+  @override
+  String profileRepeatedState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'active': 'Nadal kosztuje czas',
+      'fading': 'Słabnie: niezmierzony na dwóch ostatnich wizytach',
+      'fixed': 'Bez straty na dwóch ostatnich wizytach',
+      'other': '$state',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get profileRepeatedNone =>
+      'Żaden zakręt nie był jeszcze wśród najkosztowniejszych na dwóch wizytach.';
+
+  @override
+  String profileDrivenOnUnmeasured(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dni',
+      one: '1 dzień',
+    );
+    return '$_temp0 · dystans i czas jeszcze niezmierzone';
+  }
+
+  @override
+  String get profileTracksNone =>
+      'W Twoich dniach nie rozpoznano jeszcze toru.';
 }

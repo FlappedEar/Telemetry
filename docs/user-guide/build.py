@@ -27,7 +27,7 @@ REPO = "https://github.com/FlappedEar/Telemetry"
 # Sidebar groups, in order. Every page in pages/ appears exactly once.
 NAV = [
     ("Start here", ["index", "install", "quick-start"]),
-    ("Your day", ["import", "day", "laps", "saving"]),
+    ("Your day", ["import", "day", "laps", "saving", "profile"]),
     ("Looking at a lap", ["lap", "compare", "corners", "driving"]),
     ("Day analysis", ["theoretical-best", "segments", "day-report"]),
     ("Reference", ["overlays", "phone", "troubleshooting"]),
