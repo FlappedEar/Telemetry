@@ -727,9 +727,9 @@ CornerStats _cornerStatsOf(Object? value) {
   final json = _map(value, 'corner stats');
   final known = _optionalCount(json['throttleKnownLaps'], 'laps with the throttle known');
   final released = _optionalCount(json['releasedPickups'], 'released pickups');
-  if ((known == null) != (released == null) || (released ?? 0) > (known ?? 0)) {
-    throw const ProfileFormatError('The released pickups are not valid.');
-  }
+  // A pair that does not add up (edited by hand) is left out, not a reason
+  // to refuse the profile.
+  final pair = known != null && released != null && released <= known;
   // 200 m/s (720 km/h) bounds every speed.
   return CornerStats(
     cornerId: _string(json['cornerId'], 'corner id', allowEmpty: false),
@@ -747,8 +747,8 @@ CornerStats _cornerStatsOf(Object? value) {
     entrySpeedSpread: _optionalMeasure(json['entrySpeedSpread'], 'entry speed spread', 200),
     lineSpreadMeters: _optionalMeasure(json['lineSpreadMeters'], 'line spread', 1e5),
     pickupSpreadMeters: _optionalMeasure(json['pickupSpreadMeters'], 'pickup spread', 1e5),
-    throttleKnownLaps: known,
-    releasedPickups: released,
+    throttleKnownLaps: pair ? known : null,
+    releasedPickups: pair ? released : null,
     sequenceLossSeconds: _optionalMeasure(json['sequenceLossSeconds'], 'sequence loss', 1e5),
     unknown: _without(json, const [
       'cornerId',

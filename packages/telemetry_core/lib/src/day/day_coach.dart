@@ -608,7 +608,8 @@ double _throttleScale(TelemetryChannel channel) {
 /// Whether the car coasts from [fromTime] to [toTime]: the throttle
 /// released (8 % or less, as [_liftProgress] reads a release) and the
 /// brake under 10 %, both recorded throughout (no sample missing or
-/// further than 0.5 s from either end or the one before).
+/// further than 0.5 s from either end or the one before), and the throttle
+/// pressed (20 % or more) somewhere in the session.
 bool _coastingThroughout(TelemetrySession session, double fromTime, double toTime) {
   bool below(String alias, double fraction) {
     final channel = session.channels[session.aliases[alias] ?? ''];
@@ -628,6 +629,11 @@ bool _coastingThroughout(TelemetrySession session, double fromTime, double toTim
     return count >= 2 && toTime - previous <= 0.5;
   }
 
+  // A throttle never pressed (unplugged, logging zeros) shows no lift.
+  final throttle = session.channels[session.aliases['throttle'] ?? ''];
+  if (throttle == null) return false;
+  final pressed = 0.20 * _throttleScale(throttle);
+  if (!throttle.values.any((v) => v.isFinite && v >= pressed)) return false;
   return below('throttle', 0.08) && below('brake', 0.10);
 }
 
@@ -942,14 +948,6 @@ Map<String, List<CoachCornerPassage>> coachCornerPassages(
   Map<String, TelemetrySession?> sessions,
 ) {
   if (result.laps.isEmpty) return const {};
-  // A day is measured again after every save; the coach's reading of the
-  // same result and recordings does not change.
-  final cached = _cornerPassages[result];
-  if (cached != null &&
-      cached.sessions.length == sessions.length &&
-      sessions.entries.every((e) => identical(cached.sessions[e.key], e.value))) {
-    return cached.passages;
-  }
   final passages = <String, List<_Passage>>{};
   // Which session is coached changes the findings, never the passages.
   _dayCoach(result, sessions, runId: result.laps.first.lap.runId, passages: passages);
@@ -967,14 +965,8 @@ Map<String, List<CoachCornerPassage>> coachCornerPassages(
           ),
       ]),
   };
-  _cornerPassages[result] = (sessions: Map.of(sessions), passages: read);
   return read;
 }
-
-final _cornerPassages =
-    Expando<
-      ({Map<String, TelemetrySession?> sessions, Map<String, List<CoachCornerPassage>> passages})
-    >('coach passages');
 
 /// The coach of [runId] (see [dayCoach]); each corner's passages go in
 /// [passages] by segment id.

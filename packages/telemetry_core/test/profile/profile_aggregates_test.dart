@@ -360,6 +360,32 @@ void main() {
       expect(read.sequenceLossSeconds, slow.sequenceLossSeconds);
     });
 
+    test('released pickups that do not add up are left out when read', () {
+      final profile = _profile([
+        _visit(
+          'v',
+          1,
+          track: 'jastrzab',
+          sessions: [
+            _session(
+              's1',
+              corners: [
+                CornerStats(cornerId: 'k1', laps: 3, throttleKnownLaps: 3, releasedPickups: 1),
+              ],
+            ),
+          ],
+        ),
+      ]);
+      final text = encodeDriverProfile(profile);
+      expect(text, contains('"releasedPickups":1'));
+      final corner = decodeDriverProfile(
+        text.replaceFirst('"releasedPickups":1', '"releasedPickups":5'),
+      ).day('v')!.sessions.single.stats!.corners.single;
+      expect(corner.throttleKnownLaps, isNull);
+      expect(corner.releasedPickups, isNull);
+      expect(corner.laps, 3);
+    });
+
     test('lift timing: a lift before braking, and coasting the whole approach', () {
       // The throttle half a second ahead of the brake.
       final early = slowCorner(
@@ -369,15 +395,29 @@ void main() {
         ),
       );
       expect(early.liftSeconds, closeTo(0.5, 0.1));
-      // Never on the throttle: lifted before the approach (150 m before the
-      // corner), so at least the approach long.
+      // Off the throttle on every lap, pressed only once the last lap is
+      // over: lifted before the approach (150 m before the corner), so at
+      // least the approach long.
+      TelemetryChannel pressedLast(TelemetryChannel channel) => TelemetryChannel(
+        name: channel.name,
+        unit: '%',
+        timestamps: channel.timestamps,
+        values: Float32List.fromList([
+          for (var i = 0; i < channel.sampleCount; i++) i == channel.sampleCount - 1 ? 100 : 0,
+        ]),
+      );
       final coasting = slowCorner(
+        _rectangle(laps: _pushedLaps, edit: (s) => _changed(s, 'throttle', pressedLast)),
+      );
+      expect(coasting.liftSeconds, greaterThan(2));
+      // A throttle never pressed (unplugged, logging zeros) shows nothing.
+      final dead = slowCorner(
         _rectangle(
           laps: _pushedLaps,
           edit: (s) => _changed(s, 'throttle', (c) => _inUnit(c, '%', scale: 0)),
         ),
       );
-      expect(coasting.liftSeconds, greaterThan(2));
+      expect(dead.liftSeconds, isNull);
     });
 
     test('deceleration in m/s² is stored in g; in another unit it is not stored', () {
@@ -420,16 +460,15 @@ void main() {
       );
     });
 
-    test('the coach passages are kept for the same result and recordings only', () {
+    test('the coach passages come from the recordings given', () {
       final day = _rectangle(laps: _pushedLaps);
       final first = coachCornerPassages(day.best, day.recordings);
-      expect(identical(coachCornerPassages(day.best, {...day.recordings}), first), isTrue);
       expect(first.values.expand((p) => p).where((p) => p.liftSeconds != null), isNotEmpty);
       // The same result with recordings that have no pedals.
       final bare = rectangleSession(_pushedLaps, firstTimestampMilliseconds: 1756454400000);
       final other = coachCornerPassages(day.best, {'run1': _labelled(bare, 'm/s')});
       expect(other.values.expand((p) => p).where((p) => p.liftSeconds != null), isEmpty);
-      expect(identical(coachCornerPassages(day.best, const {}), first), isFalse);
+      expect(coachCornerPassages(day.best, const {}).values.expand((p) => p), isEmpty);
     });
 
     test('without pedals, G or a stated GPS accuracy those are not measured', () {

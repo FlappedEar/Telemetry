@@ -105,6 +105,25 @@ void main() {
         expect(day.name, 'Newer');
         expect(day.sessions.first.stats!.corners, isNotEmpty);
         expect(day.sessions.first.stats!.distanceMeters, greaterThan(0));
+        // A flush waits for a day still being measured, as quitting does.
+        final other = (await shelf.dayPath('e2'))!;
+        unawaited(
+          shelf.recordDay(
+            eventId: 'e2',
+            path: other,
+            name: 'Other',
+            analysis: analysis,
+            recordings: recordings,
+            theoreticalBest: best,
+          ),
+        );
+        await shelf.flush();
+        expect(
+          decodeDriverProfile(
+            File(p.join(profileFolder(), profileFileName)).readAsStringSync(),
+          ).day('e2'),
+          isNotNull,
+        );
       },
     );
 
