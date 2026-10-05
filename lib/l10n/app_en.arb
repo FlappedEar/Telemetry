@@ -4108,6 +4108,88 @@
   "@chartAddChannel": {
     "description": "Button that adds a chart of a channel."
   },
+  "chartChangeChannel": "Change {channel}",
+  "@chartChangeChannel": {
+    "description": "Tooltip of a chart's title: opens the list of channels to show in its place.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "speed"
+      }
+    }
+  },
+  "chartRecordedAs": "recorded as {channel}",
+  "@chartRecordedAs": {
+    "description": "Under a chart's title when the driver named the channel in settings: the channel's name in the recording.",
+    "placeholders": {
+      "channel": {
+        "type": "String",
+        "example": "accelerator_pos-obd"
+      }
+    }
+  },
+  "channelNamesTitle": "Channel names",
+  "@channelNamesTitle": {
+    "description": "Title of the settings page where recorded channels get the names the app shows, and its heading in settings."
+  },
+  "channelNamesHelp": "Give a recorded channel the name the app shows for it, such as Throttle for accelerator_pos-obd. Leave a field empty to show the recorded name. Recordings and saved days keep the recorded names.",
+  "@channelNamesHelp": {
+    "description": "Introduction of the channel names page."
+  },
+  "channelNamesNoDay": "Open a day to list all of its channels here. Channels you have named or starred are listed below.",
+  "@channelNamesNoDay": {
+    "description": "Channel names page when no day is open."
+  },
+  "channelNamesRecordedName": "Shown as recorded",
+  "@channelNamesRecordedName": {
+    "description": "Helper text of a channel's name field when it has no name of its own."
+  },
+  "channelNamesShownAs": "Shown as {name}",
+  "@channelNamesShownAs": {
+    "description": "Helper text of a channel's name field when it has a name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Throttle"
+      }
+    }
+  },
+  "channelNamesClear": "Show the recorded name",
+  "@channelNamesClear": {
+    "description": "Tooltip of the button that removes a channel's name."
+  },
+  "settingsChannelNamesHelp": "Names shown for recorded channels, such as Throttle instead of accelerator_pos-obd, and stars that limit the chart menus to the channels you use.",
+  "@settingsChannelNamesHelp": {
+    "description": "Settings: what the channel names page is for."
+  },
+  "settingsChannelNamesOpen": "Name channels",
+  "@settingsChannelNamesOpen": {
+    "description": "Settings button that opens the channel names page."
+  },
+  "chartAllChannels": "All channels…",
+  "@chartAllChannels": {
+    "description": "Last entry of a chart's channel menu when only starred channels are listed: lists every channel."
+  },
+  "chartChooseChannel": "Choose a channel",
+  "@chartChooseChannel": {
+    "description": "Title of the list of every channel a chart can show."
+  },
+  "channelNamesListedHelp": "Star the channels you chart most: the chart menus then list only those, with All channels… for the rest.",
+  "@channelNamesListedHelp": {
+    "description": "Channel names page: what a channel's star does."
+  },
+  "channelListedOn": "Listed in chart menus (tap to unstar)",
+  "@channelListedOn": {
+    "description": "Tooltip of a starred channel's star."
+  },
+  "channelListedOff": "Star to list in chart menus",
+  "@channelListedOff": {
+    "description": "Tooltip of an unstarred channel's star."
+  },
+  "channelListedClear": "Unstar all",
+  "@channelListedClear": {
+    "description": "Button that takes every channel's star away, so chart menus list every channel again."
+  },
   "coastingTitle": "Coasting",
   "@coastingTitle": {
     "description": "Title of a lap's coasting panel."

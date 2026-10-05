@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app/app_navigation.dart';
+import 'channel_names.dart';
 import 'diagnostics/app_errors.dart';
 import 'import/day_import_page.dart';
 import 'l10n.dart';
@@ -59,14 +60,16 @@ class TelemetryApp extends StatelessWidget {
       // The places (Home, Library, Day) are drawn around every page.
       navigatorKey: appNavigatorKey,
       navigatorObservers: [appNavigation.observer],
-      // Every speed label follows the setting at once. Dates
+      // Every speed label and channel name follows the settings at once. Dates
       // formatted without a context follow the app's language.
       builder: (context, child) {
         useFormattingLocale(Localizations.localeOf(context));
         return SpeedUnitScope(
-          child: AppFrame(
-            navigation: appNavigation,
-            child: child ?? const SizedBox.shrink(),
+          child: ChannelNamesScope(
+            child: AppFrame(
+              navigation: appNavigation,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
       },

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
@@ -91,9 +92,15 @@ class TelemetryChart extends StatelessWidget {
     this.source,
     this.delta = false,
     this.onRemove,
+    this.choices = const [],
+    this.onPick,
+    this.choiceLabel,
     this.height = 120,
   });
 
+  /// The channel shown, as recorded (the Δ time chart: its name in the
+  /// app's language); the chart says the name the driver gave a channel in
+  /// settings ([channelNameOf]) and the recorded name under it.
   final String title;
   final List<ChartLine> lines;
 
@@ -124,6 +131,15 @@ class TelemetryChart extends StatelessWidget {
 
   /// Removes the chart; none when null.
   final VoidCallback? onRemove;
+
+  /// The channels the chart can show instead, listed when its title is
+  /// tapped; [onPick] gets the one chosen. A plain title when [onPick] is
+  /// null.
+  final List<String> choices;
+  final ValueChanged<String>? onPick;
+
+  /// The name listed for a choice; [channelMenuLabel] when null.
+  final String Function(String channel)? choiceLabel;
   final double height;
 
   double _fraction(double value) =>
@@ -143,6 +159,39 @@ class TelemetryChart extends StatelessWidget {
     return chartValueText(value, scale, unit);
   }
 
+  // The chart's name; with [onPick], a menu of the channels it can show
+  // instead.
+  Widget _heading(BuildContext context, String name) {
+    final style = Theme.of(context).textTheme.titleSmall;
+    final pick = onPick;
+    if (pick == null) {
+      return Text(name, style: style, overflow: TextOverflow.ellipsis);
+    }
+    final others = choices;
+    String label(String channel) =>
+        choiceLabel?.call(channel) ?? channelMenuLabel(context, channel);
+    return PopupMenuButton<String>(
+      key: ValueKey('chartPick $title'),
+      tooltip: context.l10n.chartChangeChannel(name),
+      enabled: others.isNotEmpty,
+      onSelected: (value) => chooseChannel(context, value, others, label, pick),
+      itemBuilder: (context) => channelMenuItems(context, others, label),
+      // A 48 dp target, as every button on a touch screen.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(name, style: style, overflow: TextOverflow.ellipsis),
+            ),
+            if (others.isNotEmpty) Icon(Icons.arrow_drop_down, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -158,6 +207,8 @@ class TelemetryChart extends StatelessWidget {
     final braking = lines.any((line) => line.series.brakingUp);
     final from = source ?? dayChannelSources[title] ?? '';
     final provenance = from.isEmpty ? '' : l10n.channelFromSource(from);
+    final name = channelNameOf(context, title);
+    final recordedAs = name == title ? '' : l10n.chartRecordedAs(title);
     final message = shown.isNotEmpty
         ? null
         : lines.every((line) => line.series.reason.isEmpty)
@@ -179,18 +230,16 @@ class TelemetryChart extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    _heading(context, name),
                     if (note.isNotEmpty ||
+                        recordedAs.isNotEmpty ||
                         provenance.isNotEmpty ||
                         braking ||
                         (shown.isNotEmpty && failed.isNotEmpty))
                       Text(
                         [
                           if (note.isNotEmpty) note,
+                          if (recordedAs.isNotEmpty) recordedAs,
                           if (provenance.isNotEmpty) provenance,
                           if (braking) l10n.chartBrakingUp,
                           if (shown.isNotEmpty) ...failed,
@@ -238,7 +287,7 @@ class TelemetryChart extends StatelessWidget {
               ),
               if (onRemove != null)
                 IconButton(
-                  tooltip: l10n.chartRemove(title),
+                  tooltip: l10n.chartRemove(name),
                   icon: const Icon(Icons.close),
                   onPressed: onRemove,
                 ),
@@ -271,7 +320,7 @@ class TelemetryChart extends StatelessWidget {
                   // What the lines show, not just their name: each line's
                   // lowest and highest value in the range shown.
                   label: [
-                    l10n.chartSemantics(title),
+                    l10n.chartSemantics(name),
                     for (final line in shown)
                       l10n.chartSemanticsRange(
                         line.label.isEmpty ? '' : '${line.label}: ',
@@ -705,14 +754,26 @@ class ChartWindowControls extends StatelessWidget {
   }
 }
 
-/// A menu of channels to add to a set of charts; disabled at four.
+/// [channel] as a chart menu lists it: its names ([channelLabelOf]) and,
+/// when it came from another recording, " · from RCZ" ([sources], or the
+/// open day's [dayChannelSources] when null).
+String channelMenuLabel(
+  BuildContext context,
+  String channel, [
+  Map<String, String>? sources,
+]) {
+  final source = (sources ?? dayChannelSources)[channel] ?? '';
+  final name = channelLabelOf(context, channel);
+  return source.isEmpty
+      ? name
+      : '$name · ${context.l10n.channelFromSource(source)}';
+}
+
+/// A menu of channels to add to a set of charts, by the names the driver
+/// gave them; disabled at four.
 class AddChannelButton extends StatelessWidget {
-  String _label(BuildContext context, String channel) {
-    final source = (sources ?? dayChannelSources)[channel] ?? '';
-    return source.isEmpty
-        ? channel
-        : '$channel · ${context.l10n.channelFromSource(source)}';
-  }
+  String _label(BuildContext context, String channel) =>
+      choiceLabel?.call(channel) ?? channelMenuLabel(context, channel, sources);
 
   const AddChannelButton({
     super.key,
@@ -720,6 +781,7 @@ class AddChannelButton extends StatelessWidget {
     required this.shown,
     required this.onAdd,
     this.sources,
+    this.choiceLabel,
   });
 
   final List<String> channels;
@@ -729,6 +791,10 @@ class AddChannelButton extends StatelessWidget {
   /// The channels that came from another recording, with its format
   /// ("RCZ"); when null, the open day's ([dayChannelSources]).
   final Map<String, String>? sources;
+
+  /// The name listed for a channel; [channelMenuLabel] with [sources] when
+  /// null.
+  final String Function(String channel)? choiceLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -745,11 +811,18 @@ class AddChannelButton extends StatelessWidget {
       key: const ValueKey('addChartChannel'),
       enabled: !full && available.isNotEmpty,
       tooltip: label,
-      onSelected: onAdd,
-      itemBuilder: (context) => [
-        for (final channel in available)
-          PopupMenuItem(value: channel, child: Text(_label(context, channel))),
-      ],
+      onSelected: (value) => chooseChannel(
+        context,
+        value,
+        available,
+        (channel) => _label(context, channel),
+        onAdd,
+      ),
+      itemBuilder: (context) => channelMenuItems(
+        context,
+        available,
+        (channel) => _label(context, channel),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(

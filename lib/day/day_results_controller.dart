@@ -528,16 +528,24 @@ final class DayResultsController extends ChangeNotifier {
       channel: channelSource(runId, channel),
   };
 
-  // This day's [dayChannelSources], cleared when it closes unless another
-  // day has declared its own since.
+  // This day's [dayChannelSources] and [dayRecordedChannels], cleared when
+  // it closes unless another day has declared its own since.
   Map<String, String> _declaredChannelSources = const {};
+  List<String> _declaredRecordedChannels = const [];
 
   void _declareChannelSources() {
     final sources = <String, String>{};
+    final recorded = <String>{};
     for (final named in _runs) {
       sources.addAll(channelSources(named.run.id));
+      recorded
+        ..addAll(named.run.telemetry.channelNames())
+        ..addAll(sources.keys);
     }
     dayChannelSources = _declaredChannelSources = Map.unmodifiable(sources);
+    dayRecordedChannels = _declaredRecordedChannels = List.unmodifiable(
+      recorded.toList()..sort(),
+    );
   }
 
   // [runs] with each fused session in place of its recording: what the
@@ -1319,6 +1327,9 @@ final class DayResultsController extends ChangeNotifier {
       declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
       _declaredSpeedUnits = declaredSpeedUnits;
     }
+    if (identical(dayChannelSources, _declaredChannelSources)) {
+      _declareChannelSources();
+    }
     _explainedFor = null;
     _additionClock = null;
     _resetTheoreticalBest();
@@ -1962,6 +1973,9 @@ final class DayResultsController extends ChangeNotifier {
     if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
       declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
       _declaredSpeedUnits = declaredSpeedUnits;
+    }
+    if (identical(dayChannelSources, _declaredChannelSources)) {
+      _declareChannelSources();
     }
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
@@ -3194,6 +3208,9 @@ final class DayResultsController extends ChangeNotifier {
     }
     if (identical(dayChannelSources, _declaredChannelSources)) {
       dayChannelSources = const {};
+    }
+    if (identical(dayRecordedChannels, _declaredRecordedChannels)) {
+      dayRecordedChannels = const [];
     }
     _appendJob?.cancel();
     _previewJob?.cancel();

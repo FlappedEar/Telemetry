@@ -25,6 +25,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/app/app_navigation.dart';
+import 'package:telemetry/channel_names.dart';
+import 'package:telemetry/day/channel_sources.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/day_weather.dart';
@@ -36,6 +38,7 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry/profile/profile_page.dart';
+import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry_core/telemetry_core.dart'
     show
@@ -631,6 +634,31 @@ void main() {
     }
     await toTop(tester, find.text('Coasting'));
     await shot(tester, 'lap-coasting');
+    debugDisableShadows = true;
+  });
+
+  testWidgets('channel names', (tester) async {
+    debugDisableShadows = false;
+    addTearDown(() {
+      channelNamesSetting.value = const {};
+      listedChannelsSetting.value = const [];
+    });
+    await showDay(tester, _desktop, 1.5);
+    // Names and stars as a driver would give the OBD channels.
+    for (final (channel, name) in const [
+      ('accelerator_pos-obd', 'Throttle'),
+      ('brake_pos-obd', 'Brake'),
+      ('rpm-obd', 'RPM'),
+    ]) {
+      if (!dayRecordedChannels.contains(channel)) continue;
+      setChannelName(channel, name);
+      setChannelListed(channel, true);
+    }
+    await tester.tap(find.byType(SettingsButton).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('openChannelNames')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'channel-names');
     debugDisableShadows = true;
   });
 

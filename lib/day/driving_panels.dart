@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../channel_names.dart';
 import '../l10n.dart';
 import 'comparison_page.dart' show ComparisonPanelBuilder;
 import 'touch.dart';
@@ -82,7 +83,7 @@ String pedalSourceText(
     drivingStateInferred => inferred,
     _ =>
       track.unresolvedReason == 'unitMismatch'
-          ? l10n.drivingUnexpectedUnitChannel(track.channel)
+          ? l10n.drivingUnexpectedUnitChannel(channelDisplayName(track.channel))
           : none,
   };
   final braking = pedal(

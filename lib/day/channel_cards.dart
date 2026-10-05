@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../channel_names.dart';
 import '../l10n.dart';
 import 'touch.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton;
@@ -39,6 +40,13 @@ String channelLabel(AppLocalizations l10n, String name) =>
       'Ambient' => l10n.channelAmbient,
       final other => other,
     };
+
+/// The name the driver gave channel [name] in settings, else
+/// [channelLabel]; rebuilds [context] when a name changes.
+String channelLabelIn(BuildContext context, String name) {
+  final named = channelNameOf(context, name);
+  return named == name ? channelLabel(context.l10n, name) : named;
+}
 
 /// A reason or error from `telemetry_core` channel summaries in the app's
 /// language; a failure of the work itself is translated where it is known.
@@ -228,7 +236,7 @@ class CarCard extends StatelessWidget {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => ChannelPage(
-              title: channelLabel(l10n, name),
+              title: channelLabelIn(context, name),
               channel: name,
               channels: channels,
               association: association,
@@ -244,7 +252,7 @@ class CarCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${channelLabel(l10n, name)} · $name'
+                      '${channelLabelIn(context, name)} · $name'
                       '${unit.isEmpty ? ' · ${l10n.channelUnitsNotDeclared}' : ''}',
                       style: theme.textTheme.titleSmall,
                     ),
@@ -303,7 +311,9 @@ class ChannelPage extends StatelessWidget {
     final l10n = context.l10n;
     final association = this.association;
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(heartRate ? title : channelLabelIn(context, channel)),
+      ),
       body: ReadableListView(
         children: [
           Text(

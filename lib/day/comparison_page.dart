@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
@@ -667,6 +668,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
                         delta: true,
                         note: l10n.compareDeltaNote,
                         onRemove: () => _remove(channel),
+                        choices: _choices(comparison),
+                        onPick: (picked) => _pick(channel, picked),
+                        choiceLabel: _channelLabel,
                       )
                     : TelemetryChart(
                         key: ValueKey('comparisonChart $channel'),
@@ -689,6 +693,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
                         onCursor: (value) => window.cursor.value = value,
                         valueAxis: _axisOf(channel),
                         onRemove: () => _remove(channel),
+                        choices: _choices(comparison),
+                        onPick: (picked) => _pick(channel, picked),
+                        choiceLabel: _channelLabel,
                       ),
               ),
           ],
@@ -699,6 +706,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
         shown: _channels,
         onAdd: (channel) =>
             setState(() => _setChannels([..._channels, channel])),
+        choiceLabel: _channelLabel,
       ),
       Wrap(
         spacing: 8,
@@ -741,6 +749,20 @@ class _ComparisonPageState extends State<ComparisonPage> {
         ),
       ),
   ];
+
+  // The channels a chart can show instead: those not charted.
+  List<String> _choices(LapComparison comparison) => [
+    for (final other in comparison.chartChannels)
+      if (!_channels.contains(other)) other,
+  ];
+
+  void _pick(String channel, String picked) =>
+      setState(() => _setChannels(replaceChannel(_channels, channel, picked)));
+
+  // A channel as the chart menus list it; Δ time in the app's language.
+  String _channelLabel(String channel) => channel == deltaTimeChannel
+      ? context.l10n.compareDeltaChart
+      : channelMenuLabel(context, channel);
 
   void _remove(String channel) => setState(
     () => _setChannels([
