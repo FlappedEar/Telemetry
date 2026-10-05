@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import 'channel_cards.dart';
@@ -173,7 +174,11 @@ class SessionFusion extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             l10n.fusionConflict(
-              fusionChannelName(l10n, channel),
+              fusionChannelName(
+                l10n,
+                channel,
+                named: (name) => channelNameOf(context, name),
+              ),
               primary,
               alternative,
             ),
@@ -332,15 +337,27 @@ String _offset(double seconds) {
 }
 
 /// A channel both recordings measured, as the user knows it: "Speed",
-/// "Satellites", "Oil".
-String fusionChannelName(AppLocalizations l10n, FusedChannel channel) =>
-    switch (channel.key.toLowerCase()) {
-      'speed' => l10n.fusionChannelSpeed,
-      'latitude' => l10n.fusionChannelLatitude,
-      'longitude' => l10n.fusionChannelLongitude,
-      'sats' || 'satellites' => l10n.fusionChannelSatellites,
-      _ => readableChannel(channel.name),
-    };
+/// "Satellites", the name the driver gave it ([named]), or a temperature in
+/// the app's language ("Temperatura oleju"); any other channel as recorded,
+/// so "Oil Pressure" or "Gear" never reads as a temperature.
+String fusionChannelName(
+  AppLocalizations l10n,
+  FusedChannel channel, {
+  String Function(String channel) named = channelDisplayName,
+}) => switch (channel.key.toLowerCase()) {
+  'speed' => l10n.fusionChannelSpeed,
+  'latitude' => l10n.fusionChannelLatitude,
+  'longitude' => l10n.fusionChannelLongitude,
+  'sats' || 'satellites' => l10n.fusionChannelSatellites,
+  _ when named(channel.name) != channel.name => named(channel.name),
+  _ when _isTemperature(channel) => channelLabel(l10n, channel.name),
+  _ => channel.name,
+};
+
+/// A temperature by its unit ("C", "°F") or its name ("Oil Temp").
+bool _isTemperature(FusedChannel channel) =>
+    const {'°C', '°F', 'F', 'degF'}.contains(unitText(channel.unit)) ||
+    channel.name.toLowerCase().contains('temp');
 
 /// What runs for a session's recordings, with a button that stops it.
 class _Working extends StatelessWidget {

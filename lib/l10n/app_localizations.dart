@@ -2595,6 +2595,30 @@ abstract class AppLocalizations {
   /// **'Channel summaries'**
   String get diagnosticsStepChannelSummaries;
 
+  /// Diagnostics step: aligning a session's VBO and RCZ recordings and combining their channels.
+  ///
+  /// In en, this message translates to:
+  /// **'Align and combine VBO and RCZ'**
+  String get diagnosticsStepFusion;
+
+  /// Diagnostics step: from sharing a recording until the session is in today's day.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a session'**
+  String get diagnosticsStepAddSession;
+
+  /// Diagnostics step: the coach working out its advice.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get diagnosticsStepCoach;
+
+  /// Diagnostics step: from sharing a recording until the Next session card has the coach's plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a session, until the coach\'s plan'**
+  String get diagnosticsStepAddToCoach;
+
   /// Day report heading when no group of laps is chosen.
   ///
   /// In en, this message translates to:
@@ -2967,10 +2991,10 @@ abstract class AppLocalizations {
   /// **'End'**
   String get segmentEditorEnd;
 
-  /// Switch: a moved boundary moves the neighbouring segment too.
+  /// Switch: moving a boundary also moves the neighbouring segment's shared boundary, so that segment grows or shrinks.
   ///
   /// In en, this message translates to:
-  /// **'Move the neighbouring segment too'**
+  /// **'Move the neighbouring segment\'s boundary too'**
   String get segmentEditorKeepJoined;
 
   /// Applies the segment changes.
@@ -5471,10 +5495,10 @@ abstract class AppLocalizations {
   /// **'Throttle pickup'**
   String get cornerAnalyzerLegendPickup;
 
-  /// Chart legend: the lowest speed marker.
+  /// Chart legend: the marker of the corner's minimum speed (corners only).
   ///
   /// In en, this message translates to:
-  /// **'Lowest speed'**
+  /// **'Minimum speed'**
   String get cornerAnalyzerLegendMinimum;
 
   /// An imported session's timed laps.

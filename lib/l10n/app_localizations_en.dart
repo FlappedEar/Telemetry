@@ -1736,6 +1736,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsStepChannelSummaries => 'Channel summaries';
 
   @override
+  String get diagnosticsStepFusion => 'Align and combine VBO and RCZ';
+
+  @override
+  String get diagnosticsStepAddSession => 'Add a session';
+
+  @override
+  String get diagnosticsStepCoach => 'Coach';
+
+  @override
+  String get diagnosticsStepAddToCoach =>
+      'Add a session, until the coach\'s plan';
+
+  @override
   String get reportGroupNone =>
       'Choose a group of compatible laps on the results page.';
 
@@ -2008,7 +2021,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get segmentEditorEnd => 'End';
 
   @override
-  String get segmentEditorKeepJoined => 'Move the neighbouring segment too';
+  String get segmentEditorKeepJoined =>
+      'Move the neighbouring segment\'s boundary too';
 
   @override
   String get segmentEditorApply => 'Apply';
@@ -3585,7 +3599,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cornerAnalyzerLegendPickup => 'Throttle pickup';
 
   @override
-  String get cornerAnalyzerLegendMinimum => 'Lowest speed';
+  String get cornerAnalyzerLegendMinimum => 'Minimum speed';
 
   @override
   String importPageLaps(int count) {

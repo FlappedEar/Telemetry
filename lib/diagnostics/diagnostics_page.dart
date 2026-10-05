@@ -33,6 +33,10 @@ String _stepName(AppLocalizations l10n, String name) => switch (name) {
   DiagnosticSteps.importTotal => l10n.diagnosticsStepImportTotal,
   DiagnosticSteps.theoreticalBest => l10n.diagnosticsStepTheoreticalBest,
   DiagnosticSteps.channelSummaries => l10n.diagnosticsStepChannelSummaries,
+  DiagnosticSteps.fusion => l10n.diagnosticsStepFusion,
+  DiagnosticSteps.addSession => l10n.diagnosticsStepAddSession,
+  DiagnosticSteps.coach => l10n.diagnosticsStepCoach,
+  DiagnosticSteps.addToCoach => l10n.diagnosticsStepAddToCoach,
   _ => name,
 };
 

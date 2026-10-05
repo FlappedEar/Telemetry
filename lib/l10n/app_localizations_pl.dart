@@ -1761,6 +1761,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
 
   @override
+  String get diagnosticsStepFusion => 'Dopasowanie i połączenie VBO z RCZ';
+
+  @override
+  String get diagnosticsStepAddSession => 'Dodanie sesji';
+
+  @override
+  String get diagnosticsStepCoach => 'Trener';
+
+  @override
+  String get diagnosticsStepAddToCoach => 'Dodanie sesji, aż do planu trenera';
+
+  @override
   String get reportGroupNone =>
       'Wybierz grupę zgodnych okrążeń na stronie wyników.';
 

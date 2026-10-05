@@ -2584,6 +2584,22 @@
   "@diagnosticsStepChannelSummaries": {
     "description": "Diagnostics step: summarising the channels (temperatures, heart rate) of the day."
   },
+  "diagnosticsStepFusion": "Align and combine VBO and RCZ",
+  "@diagnosticsStepFusion": {
+    "description": "Diagnostics step: aligning a session's VBO and RCZ recordings and combining their channels."
+  },
+  "diagnosticsStepAddSession": "Add a session",
+  "@diagnosticsStepAddSession": {
+    "description": "Diagnostics step: from sharing a recording until the session is in today's day."
+  },
+  "diagnosticsStepCoach": "Coach",
+  "@diagnosticsStepCoach": {
+    "description": "Diagnostics step: the coach working out its advice."
+  },
+  "diagnosticsStepAddToCoach": "Add a session, until the coach's plan",
+  "@diagnosticsStepAddToCoach": {
+    "description": "Diagnostics step: from sharing a recording until the Next session card has the coach's plan."
+  },
   "reportGroupNone": "Choose a group of compatible laps on the results page.",
   "@reportGroupNone": {
     "description": "Day report heading when no group of laps is chosen."
@@ -3001,9 +3017,9 @@
   "@segmentEditorEnd": {
     "description": "Label of the segment end boundary."
   },
-  "segmentEditorKeepJoined": "Move the neighbouring segment too",
+  "segmentEditorKeepJoined": "Move the neighbouring segment's boundary too",
   "@segmentEditorKeepJoined": {
-    "description": "Switch: a moved boundary moves the neighbouring segment too."
+    "description": "Switch: moving a boundary also moves the neighbouring segment's shared boundary, so that segment grows or shrinks."
   },
   "segmentEditorApply": "Apply",
   "@segmentEditorApply": {
@@ -5328,9 +5344,9 @@
   "@cornerAnalyzerLegendPickup": {
     "description": "Chart legend: the throttle pickup marker."
   },
-  "cornerAnalyzerLegendMinimum": "Lowest speed",
+  "cornerAnalyzerLegendMinimum": "Minimum speed",
   "@cornerAnalyzerLegendMinimum": {
-    "description": "Chart legend: the lowest speed marker."
+    "description": "Chart legend: the marker of the corner's minimum speed (corners only)."
   },
   "importPageLaps": "{count, plural, =1{1 lap} other{{count} laps}}",
   "@importPageLaps": {
