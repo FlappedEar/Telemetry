@@ -2748,6 +2748,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chartAddChannel => 'Add a channel';
 
   @override
+  String chartChangeChannel(String channel) {
+    return 'Change $channel';
+  }
+
+  @override
+  String chartRecordedAs(String channel) {
+    return 'recorded as $channel';
+  }
+
+  @override
+  String get channelNamesTitle => 'Channel names';
+
+  @override
+  String get channelNamesHelp =>
+      'Give a recorded channel the name the app shows for it, such as Throttle for accelerator_pos-obd. Leave a field empty to show the recorded name. Recordings and saved days keep the recorded names.';
+
+  @override
+  String get channelNamesNoDay =>
+      'Open a day to list all of its channels here. Channels you have named or starred are listed below.';
+
+  @override
+  String get channelNamesRecordedName => 'Shown as recorded';
+
+  @override
+  String channelNamesShownAs(String name) {
+    return 'Shown as $name';
+  }
+
+  @override
+  String get channelNamesClear => 'Show the recorded name';
+
+  @override
+  String get settingsChannelNamesHelp =>
+      'Names shown for recorded channels, such as Throttle instead of accelerator_pos-obd, and stars that limit the chart menus to the channels you use.';
+
+  @override
+  String get settingsChannelNamesOpen => 'Name channels';
+
+  @override
+  String get chartAllChannels => 'All channels…';
+
+  @override
+  String get chartChooseChannel => 'Choose a channel';
+
+  @override
+  String get channelNamesListedHelp =>
+      'Star the channels you chart most: the chart menus then list only those, with All channels… for the rest.';
+
+  @override
+  String get channelListedOn => 'Listed in chart menus (tap to unstar)';
+
+  @override
+  String get channelListedOff => 'Star to list in chart menus';
+
+  @override
+  String get channelListedClear => 'Unstar all';
+
+  @override
   String get coastingTitle => 'Coasting';
 
   @override

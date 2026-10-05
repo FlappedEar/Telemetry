@@ -4112,6 +4112,102 @@ abstract class AppLocalizations {
   /// **'Add a channel'**
   String get chartAddChannel;
 
+  /// Tooltip of a chart's title: opens the list of channels to show in its place.
+  ///
+  /// In en, this message translates to:
+  /// **'Change {channel}'**
+  String chartChangeChannel(String channel);
+
+  /// Under a chart's title when the driver named the channel in settings: the channel's name in the recording.
+  ///
+  /// In en, this message translates to:
+  /// **'recorded as {channel}'**
+  String chartRecordedAs(String channel);
+
+  /// Title of the settings page where recorded channels get the names the app shows, and its heading in settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel names'**
+  String get channelNamesTitle;
+
+  /// Introduction of the channel names page.
+  ///
+  /// In en, this message translates to:
+  /// **'Give a recorded channel the name the app shows for it, such as Throttle for accelerator_pos-obd. Leave a field empty to show the recorded name. Recordings and saved days keep the recorded names.'**
+  String get channelNamesHelp;
+
+  /// Channel names page when no day is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a day to list all of its channels here. Channels you have named or starred are listed below.'**
+  String get channelNamesNoDay;
+
+  /// Helper text of a channel's name field when it has no name of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown as recorded'**
+  String get channelNamesRecordedName;
+
+  /// Helper text of a channel's name field when it has a name.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown as {name}'**
+  String channelNamesShownAs(String name);
+
+  /// Tooltip of the button that removes a channel's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the recorded name'**
+  String get channelNamesClear;
+
+  /// Settings: what the channel names page is for.
+  ///
+  /// In en, this message translates to:
+  /// **'Names shown for recorded channels, such as Throttle instead of accelerator_pos-obd, and stars that limit the chart menus to the channels you use.'**
+  String get settingsChannelNamesHelp;
+
+  /// Settings button that opens the channel names page.
+  ///
+  /// In en, this message translates to:
+  /// **'Name channels'**
+  String get settingsChannelNamesOpen;
+
+  /// Last entry of a chart's channel menu when only starred channels are listed: lists every channel.
+  ///
+  /// In en, this message translates to:
+  /// **'All channels…'**
+  String get chartAllChannels;
+
+  /// Title of the list of every channel a chart can show.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a channel'**
+  String get chartChooseChannel;
+
+  /// Channel names page: what a channel's star does.
+  ///
+  /// In en, this message translates to:
+  /// **'Star the channels you chart most: the chart menus then list only those, with All channels… for the rest.'**
+  String get channelNamesListedHelp;
+
+  /// Tooltip of a starred channel's star.
+  ///
+  /// In en, this message translates to:
+  /// **'Listed in chart menus (tap to unstar)'**
+  String get channelListedOn;
+
+  /// Tooltip of an unstarred channel's star.
+  ///
+  /// In en, this message translates to:
+  /// **'Star to list in chart menus'**
+  String get channelListedOff;
+
+  /// Button that takes every channel's star away, so chart menus list every channel again.
+  ///
+  /// In en, this message translates to:
+  /// **'Unstar all'**
+  String get channelListedClear;
+
   /// Title of a lap's coasting panel.
   ///
   /// In en, this message translates to:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'channel_names.dart';
 import 'l10n.dart';
 import 'units.dart';
 
@@ -19,7 +20,8 @@ class SettingsButton extends StatelessWidget {
 }
 
 /// The app's settings: the unit assumed for unlabelled speeds, whether
-/// sessions' weather is looked up, and the licences of the app and the
+/// sessions' weather is looked up, the names shown for recorded channels,
+/// and the licences of the app and the
 /// software it uses.
 class SettingsDialog extends StatelessWidget {
   const SettingsDialog({super.key});
@@ -108,6 +110,22 @@ class SettingsDialog extends StatelessWidget {
                 Text(
                   l10n.settingsWeatherHelp,
                   style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                Text(l10n.channelNamesTitle, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.settingsChannelNamesHelp,
+                  style: theme.textTheme.bodySmall,
+                ),
+                TextButton(
+                  key: const ValueKey('openChannelNames'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ChannelNamesPage(),
+                    ),
+                  ),
+                  child: Text(l10n.settingsChannelNamesOpen),
                 ),
                 const SizedBox(height: 16),
                 Text(

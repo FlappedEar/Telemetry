@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../ui/headline_bar.dart';
@@ -205,6 +206,17 @@ class _LapPageState extends State<LapPage> {
                     for (final shown in _channels)
                       if (shown != channel) shown,
                   ]),
+                  choices: [
+                    for (final other in _chartable)
+                      if (!_channels.contains(other)) other,
+                  ],
+                  choiceLabel: (other) => channelMenuLabel(
+                    context,
+                    other,
+                    widget.controller.channelSources(widget.row.runId),
+                  ),
+                  onPick: (picked) =>
+                      _setChannels(replaceChannel(_channels, channel, picked)),
                 ),
               ),
           ],

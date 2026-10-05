@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,6 +7,8 @@ import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:telemetry_core/telemetry_core.dart';
+
+import 'channel_names.dart';
 
 /// The unit assumed for speeds whose recordings do not declare one. A unit a
 /// recording declares is always shown as declared and never overridden;
@@ -116,8 +119,9 @@ String displayUnit(String name, String unit) {
   return daySpeedUnit(declared, speedUnitSetting.value.unit);
 }
 
-/// Reads and keeps [speedUnitSetting], [weatherLookupSetting] and
-/// [hideUnrankedLapsSetting] in
+/// Reads and keeps [speedUnitSetting], [weatherLookupSetting],
+/// [hideUnrankedLapsSetting], [channelNamesSetting] and
+/// [listedChannelsSetting] in
 /// `settings.json` in the app's support folder. Off in `flutter test`.
 Future<void> loadSettings() async {
   if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return;
@@ -143,28 +147,65 @@ Future<void> loadSettings() async {
       if (json is Map && json['hideUnrankedLaps'] is bool) {
         hideUnrankedLapsSetting.value = json['hideUnrankedLaps'] as bool;
       }
+      if (json is Map) {
+        listedChannelsSetting.value = readListedChannels(
+          json['listedChannels'],
+        );
+        channelNamesSetting.value = readChannelNames(json['channelNames']);
+      }
     }
   } on Exception catch (error) {
     debugPrint('Settings not read: $error');
   }
-  Future<void> write() async {
+  // One write at a time, after typing settles, into a temporary file moved
+  // over settings.json: a write cut short never leaves half a file.
+  Timer? pending;
+  var writing = Future<void>.value();
+  Future<void> save() async {
+    final text = jsonEncode({
+      'speedUnit': speedUnitSetting.value.name,
+      'weatherLookup': weatherLookupSetting.value,
+      'hideUnrankedLaps': hideUnrankedLapsSetting.value,
+      'channelNames': channelNamesSetting.value,
+      'listedChannels': listedChannelsSetting.value,
+    });
     try {
       await file.parent.create(recursive: true);
-      await file.writeAsString(
-        jsonEncode({
-          'speedUnit': speedUnitSetting.value.name,
-          'weatherLookup': weatherLookupSetting.value,
-          'hideUnrankedLaps': hideUnrankedLapsSetting.value,
-        }),
-      );
-    } on Exception catch (error) {
+      final temporary = File('${file.path}.tmp');
+      await temporary.writeAsString(text, flush: true);
+      await temporary.rename(file.path);
+    } on Object catch (error) {
+      // Any failure, so the next write still runs.
       debugPrint('Settings not saved: $error');
     }
   }
 
+  void flush() {
+    pending?.cancel();
+    pending = null;
+    writing = writing.then((_) => save());
+  }
+
+  void write() {
+    pending?.cancel();
+    pending = Timer(const Duration(milliseconds: 400), flush);
+  }
+
+  // A change still waiting is written when the app leaves the screen.
+  AppLifecycleListener(
+    onPause: () {
+      if (pending != null) flush();
+    },
+    onDetach: () {
+      if (pending != null) flush();
+    },
+  );
+
   speedUnitSetting.addListener(write);
   weatherLookupSetting.addListener(write);
   hideUnrankedLapsSetting.addListener(write);
+  channelNamesSetting.addListener(write);
+  listedChannelsSetting.addListener(write);
 }
 
 /// Rebuilds what shows a speed unit when [speedUnitSetting] changes; put

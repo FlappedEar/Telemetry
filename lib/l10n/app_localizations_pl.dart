@@ -2812,6 +2812,65 @@ class AppLocalizationsPl extends AppLocalizations {
   String get chartAddChannel => 'Dodaj kanał';
 
   @override
+  String chartChangeChannel(String channel) {
+    return 'Zmień $channel';
+  }
+
+  @override
+  String chartRecordedAs(String channel) {
+    return 'w zapisie: $channel';
+  }
+
+  @override
+  String get channelNamesTitle => 'Nazwy kanałów';
+
+  @override
+  String get channelNamesHelp =>
+      'Nadaj zapisanemu kanałowi nazwę, którą pokazuje aplikacja, np. Gaz dla accelerator_pos-obd. Zostaw pole puste, aby pokazać nazwę z zapisu. Pliki zapisów i zapisane dni zachowują oryginalne nazwy.';
+
+  @override
+  String get channelNamesNoDay =>
+      'Otwórz dzień, aby zobaczyć tu wszystkie jego kanały. Poniżej są kanały, którym nadano nazwę lub które oznaczono gwiazdką.';
+
+  @override
+  String get channelNamesRecordedName => 'Nazwa z zapisu';
+
+  @override
+  String channelNamesShownAs(String name) {
+    return 'Pokazywany jako $name';
+  }
+
+  @override
+  String get channelNamesClear => 'Pokaż nazwę z zapisu';
+
+  @override
+  String get settingsChannelNamesHelp =>
+      'Nazwy pokazywane dla zapisanych kanałów, np. Gaz zamiast accelerator_pos-obd, oraz gwiazdki, które ograniczają menu wykresów do używanych kanałów.';
+
+  @override
+  String get settingsChannelNamesOpen => 'Nazwij kanały';
+
+  @override
+  String get chartAllChannels => 'Wszystkie kanały…';
+
+  @override
+  String get chartChooseChannel => 'Wybierz kanał';
+
+  @override
+  String get channelNamesListedHelp =>
+      'Oznacz gwiazdką kanały, których używasz najczęściej: menu wykresów pokażą wtedy tylko je, a pozostałe w pozycji Wszystkie kanały…';
+
+  @override
+  String get channelListedOn =>
+      'Na liście w menu wykresów (dotknij, aby usunąć gwiazdkę)';
+
+  @override
+  String get channelListedOff => 'Oznacz gwiazdką, aby był w menu wykresów';
+
+  @override
+  String get channelListedClear => 'Usuń wszystkie gwiazdki';
+
+  @override
   String get coastingTitle => 'Jazda bez gazu i hamulca';
 
   @override

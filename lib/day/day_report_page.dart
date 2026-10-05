@@ -557,7 +557,7 @@ class DayReportPage extends StatelessWidget {
           _row(
             context,
             l10n.reportCarPeak(
-              channelLabel(l10n, name),
+              channelLabelIn(context, name),
               channelValueText(peaks[name]!.maximum, peaks[name]!.unit),
               l10n.session(peaks[name]!.run),
             ),
