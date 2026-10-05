@@ -7467,6 +7467,35 @@
   "@settingsKeepScreenOnHelp": {
     "description": "Help under the keep-screen-on switch in settings."
   },
+  "lastTimeHereTitle": "Last time here",
+  "@lastTimeHereTitle": {
+    "description": "Day page card title: the previous visit to this track from the driver profile."
+  },
+  "lastTimeHereBestLap": "Best lap",
+  "@lastTimeHereBestLap": {
+    "description": "Row label in the Last time here card."
+  },
+  "lastTimeHereTheoreticalBest": "Theoretical best",
+  "@lastTimeHereTheoreticalBest": {
+    "description": "Row label in the Last time here card."
+  },
+  "lastTimeHereNote": "Today minus last time: negative is faster today. Conditions may differ.",
+  "@lastTimeHereNote": {
+    "description": "Note under the Last time here card."
+  },
+  "lastTimeHereMissing": "— means that day has no such time: no ranked lap, or the theoretical best could not be worked out.",
+  "@lastTimeHereMissing": {
+    "description": "Last time here card: why a time is shown as a dash."
+  },
+  "lastTimeHereOtherCar": "That car is named because this car has not driven here before.",
+  "@lastTimeHereOtherCar": {
+    "description": "Last time here card: the previous visit was in another car."
+  },
+  "lastTimeHereThenToday": "{then} then · {today} today",
+  "@lastTimeHereThenToday": {
+    "description": "Last time here card: the previous visit's time and today's.",
+    "placeholders": {"then": {"type": "String"}, "today": {"type": "String"}}
+  },
   "settingsUpdatesHeading": "Updates",
   "@settingsUpdatesHeading": {
     "description": "Settings heading for checking GitHub for a newer version of the app."

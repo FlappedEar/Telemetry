@@ -7689,6 +7689,48 @@ abstract class AppLocalizations {
   /// **'The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.'**
   String get settingsKeepScreenOnHelp;
 
+  /// Day page card title: the previous visit to this track from the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Last time here'**
+  String get lastTimeHereTitle;
+
+  /// Row label in the Last time here card.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get lastTimeHereBestLap;
+
+  /// Row label in the Last time here card.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best'**
+  String get lastTimeHereTheoreticalBest;
+
+  /// Note under the Last time here card.
+  ///
+  /// In en, this message translates to:
+  /// **'Today minus last time: negative is faster today. Conditions may differ.'**
+  String get lastTimeHereNote;
+
+  /// Last time here card: why a time is shown as a dash.
+  ///
+  /// In en, this message translates to:
+  /// **'— means that day has no such time: no ranked lap, or the theoretical best could not be worked out.'**
+  String get lastTimeHereMissing;
+
+  /// Last time here card: the previous visit was in another car.
+  ///
+  /// In en, this message translates to:
+  /// **'That car is named because this car has not driven here before.'**
+  String get lastTimeHereOtherCar;
+
+  /// Last time here card: the previous visit's time and today's.
+  ///
+  /// In en, this message translates to:
+  /// **'{then} then · {today} today'**
+  String lastTimeHereThenToday(String then, String today);
+
   /// Settings heading for checking GitHub for a newer version of the app.
   ///
   /// In en, this message translates to:

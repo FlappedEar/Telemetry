@@ -5170,6 +5170,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.';
 
   @override
+  String get lastTimeHereTitle => 'Last time here';
+
+  @override
+  String get lastTimeHereBestLap => 'Best lap';
+
+  @override
+  String get lastTimeHereTheoreticalBest => 'Theoretical best';
+
+  @override
+  String get lastTimeHereNote =>
+      'Today minus last time: negative is faster today. Conditions may differ.';
+
+  @override
+  String get lastTimeHereMissing =>
+      '— means that day has no such time: no ranked lap, or the theoretical best could not be worked out.';
+
+  @override
+  String get lastTimeHereOtherCar =>
+      'That car is named because this car has not driven here before.';
+
+  @override
+  String lastTimeHereThenToday(String then, String today) {
+    return '$then then · $today today';
+  }
+
+  @override
   String get settingsUpdatesHeading => 'Updates';
 
   @override

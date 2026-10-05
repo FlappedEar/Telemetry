@@ -5290,6 +5290,32 @@ class AppLocalizationsPl extends AppLocalizations {
       'Karta następnej sesji pozostaje czytelna między sesjami. W innych miejscach aplikacji i gdy nie jest ona na wierzchu, ekran wygasa jak zwykle.';
 
   @override
+  String get lastTimeHereTitle => 'Ostatnio tutaj';
+
+  @override
+  String get lastTimeHereBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String get lastTimeHereTheoreticalBest => 'Teoretyczny czas okrążenia';
+
+  @override
+  String get lastTimeHereNote =>
+      'Dziś minus poprzednio: wartość ujemna to dziś szybciej. Warunki mogły być inne.';
+
+  @override
+  String get lastTimeHereMissing =>
+      '— oznacza, że tego dnia nie ma takiego czasu: brak sklasyfikowanego okrążenia albo nie udało się wyznaczyć teoretycznego czasu okrążenia.';
+
+  @override
+  String get lastTimeHereOtherCar =>
+      'Podano inny samochód, bo tym samochodem nie jeżdżono tu wcześniej.';
+
+  @override
+  String lastTimeHereThenToday(String then, String today) {
+    return '$then poprzednio · $today dziś';
+  }
+
+  @override
   String get settingsUpdatesHeading => 'Aktualizacje';
 
   @override

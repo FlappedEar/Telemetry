@@ -16,6 +16,7 @@ import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers, isDesktopPlatform;
 import '../import/import_review_page.dart';
 import '../l10n.dart';
+import '../profile/last_time_here_card.dart';
 import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../units.dart' show hideUnrankedLapsSetting;
@@ -1408,6 +1409,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           onOpenLap: _open,
           weatherOf: _controller.weather.of,
         ),
+        // Only for a day kept in the library: a copy saved elsewhere
+        // shares its event id.
+        if (widget.library case final library?
+            when library.holds(_controller.documentPath ?? ''))
+          LastTimeHereCard(library: library, eventId: _controller.eventId),
       ],
       const SizedBox(height: 12),
       ..._channelCards(),
