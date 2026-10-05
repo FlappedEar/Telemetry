@@ -434,16 +434,47 @@ import 'dart:math';
 import 'package:telemetry_core/telemetry_core.dart';
 
 Future<void> main(List<String> arguments) async {
-  final before = ProcessInfo.currentRss;
-  var error = 'none';
-  try {
-    await readProfileBundle(DriverProfile.empty(Random(2)), arguments[1], arguments[0]);
-  } on Object catch (caught) {
-    error = caught.runtimeType.toString();
+  Future<String> read(String bundle) async {
+    try {
+      await readProfileBundle(DriverProfile.empty(Random(2)), arguments[2], bundle);
+    } on Object catch (caught) {
+      return caught.runtimeType.toString();
+    }
+    return 'none';
   }
+
+  // Once small, so what the first read sets up is not counted.
+  await read(arguments[0]);
+  final before = ProcessInfo.maxRss;
+  final error = await read(arguments[1]);
   stdout.write('\$error \${ProcessInfo.maxRss - before}');
 }
 ''');
+      // Compiled first, in a process of its own: the compiler's memory is not
+      // the read's.
+      final dill = p.join(root(), 'read_bomb.dill');
+      final compiled = await Process.run(Platform.resolvedExecutable, [
+        'compile',
+        'kernel',
+        '--packages=${p.join(Directory.current.path, '.dart_tool', 'package_config.json')}',
+        script,
+        '-o',
+        dill,
+      ]);
+      expect(compiled.exitCode, 0, reason: '${compiled.stdout}${compiled.stderr}');
+      final small = p.join(root(), 'small$profileBundleExtension');
+      File(small).writeAsBytesSync(
+        _zip([
+          (
+            name: 'bundle.json',
+            data: [...ZLibCodec(raw: true).encoder.convert(Uint8List(2 * 1024 * 1024))],
+            method: 8,
+            size: 1000,
+            crc: 0,
+            flags: 0,
+          ),
+        ]),
+      );
       final b = p.join(root(), 'B');
       for (final (label, madeBy, attributes) in [
         ('a file', 20, 0),
@@ -459,12 +490,7 @@ Future<void> main(List<String> arguments) async {
           ),
         );
         // In a process of its own, whose peak memory is this read's alone.
-        final run = await Process.run(Platform.resolvedExecutable, [
-          '--packages=${p.join(Directory.current.path, '.dart_tool', 'package_config.json')}',
-          script,
-          path,
-          b,
-        ]);
+        final run = await Process.run(Platform.resolvedExecutable, [dill, small, path, b]);
         expect(run.exitCode, 0, reason: '$label: ${run.stderr}');
         final [error, grew] = (run.stdout as String).trim().split(' ');
         expect(error, 'ProfileBundleError', reason: label);
