@@ -446,6 +446,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   int _recordedSaves = -1;
 
+  /// The theoretical best last recorded, so the profile gets the day's
+  /// corners once it is worked out.
+  DayTheoreticalBest? _recordedBest;
+
   /// Whether the library was read, so the day is kept in it.
   bool _libraryReady = false;
   Timer? _autosave;
@@ -546,14 +550,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }) {
     final path = controller.documentPath;
     if (library == null || path == null || !library.holds(path)) return;
-    if (!force && controller.saveCount == _recordedSaves) return;
+    final best = controller.theoreticalBestLoading
+        ? null
+        : controller.theoreticalBest;
+    if (!force &&
+        controller.saveCount == _recordedSaves &&
+        (best == null || identical(best, _recordedBest))) {
+      return;
+    }
     _recordedSaves = controller.saveCount;
+    _recordedBest = best ?? _recordedBest;
     unawaited(
       library.recordDay(
         eventId: controller.eventId,
         path: path,
         name: controller.name,
         analysis: controller.analysis,
+        recordings: {
+          for (final named in controller.runs)
+            named.run.id: controller.session(named.run.id),
+        },
+        theoreticalBest: best,
       ),
     );
   }

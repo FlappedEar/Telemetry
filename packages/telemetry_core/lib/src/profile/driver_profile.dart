@@ -5,13 +5,19 @@
 import 'dart:convert';
 import 'dart:math';
 
+import '../analysis/consistency.dart';
 import '../day/compatibility.dart';
 import '../day/day_analysis.dart';
 import '../day/day_document.dart';
 import '../day/day_laps.dart';
 import '../day/day_ranking.dart';
+import '../day/day_theoretical_best.dart';
 import '../day/track_inference.dart';
 import '../geometry.dart';
+import '../speed_units.dart';
+import '../telemetry_session.dart';
+
+part 'session_stats.dart';
 
 /// The `format` of a driver profile.
 const driverProfileFormat = 'flappedear-driver-profile';
@@ -70,9 +76,11 @@ final class ProfileTrack {
     required this.id,
     required this.name,
     required this.route,
+    List<TrackCorner> corners = const [],
     Map<String, Object?> unknown = const {},
     Map<String, Object?> unknownRoute = const {},
-  }) : unknown = Map.unmodifiable(unknown),
+  }) : corners = List.unmodifiable(corners),
+       unknown = Map.unmodifiable(unknown),
        unknownRoute = Map.unmodifiable(unknownRoute);
 
   final String id;
@@ -80,15 +88,19 @@ final class ProfileTrack {
 
   /// The route of the day that first added the track.
   final RouteShape route;
+
+  /// Its corners, the same on every visit, in the order first found.
+  final List<TrackCorner> corners;
   final Map<String, Object?> unknown;
 
   /// `route` keys this version does not know.
   final Map<String, Object?> unknownRoute;
 
-  ProfileTrack copyWith({String? name}) => ProfileTrack(
+  ProfileTrack copyWith({String? name, List<TrackCorner>? corners}) => ProfileTrack(
     id: id,
     name: name ?? this.name,
     route: route,
+    corners: corners ?? this.corners,
     unknown: unknown,
     unknownRoute: unknownRoute,
   );
@@ -102,6 +114,7 @@ final class ProfileSession {
     this.startMilliseconds,
     this.lapCount = 0,
     this.bestLapSeconds,
+    this.stats,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
 
@@ -118,7 +131,20 @@ final class ProfileSession {
 
   /// The fastest eligible lap; null when none is eligible.
   final double? bestLapSeconds;
+
+  /// What it measured; null until measured.
+  final SessionStats? stats;
   final Map<String, Object?> unknown;
+
+  ProfileSession _withStats(SessionStats? stats) => ProfileSession(
+    runId: runId,
+    name: name,
+    startMilliseconds: startMilliseconds,
+    lapCount: lapCount,
+    bestLapSeconds: bestLapSeconds,
+    stats: stats,
+    unknown: unknown,
+  );
 }
 
 /// A day kept in the profile.
@@ -132,6 +158,7 @@ final class ProfileDay {
     this.startMilliseconds,
     List<ProfileSession> sessions = const [],
     this.bestLapSeconds,
+    this.theoreticalBestSeconds,
     Map<String, Object?> unknown = const {},
   }) : sessions = List.unmodifiable(sessions),
        unknown = Map.unmodifiable(unknown);
@@ -154,6 +181,9 @@ final class ProfileDay {
 
   /// The day's fastest eligible lap; null when none.
   final double? bestLapSeconds;
+
+  /// The theoretical best of the day's track: its best segments added up.
+  final double? theoreticalBestSeconds;
   final Map<String, Object?> unknown;
 
   ProfileDay copyWith({String? carId}) => ProfileDay(
@@ -165,6 +195,7 @@ final class ProfileDay {
     startMilliseconds: startMilliseconds,
     sessions: sessions,
     bestLapSeconds: bestLapSeconds,
+    theoreticalBestSeconds: theoreticalBestSeconds,
     unknown: unknown,
   );
 }
@@ -247,18 +278,39 @@ final class ProfileDayInput {
     this.bestLapSeconds,
     this.route,
     this.trackName,
-  }) : sessions = List.unmodifiable(sessions);
+    this.theoreticalBestSeconds,
+    List<DayCornerSpan> cornerSpans = const [],
+    this.measuredCorners = false,
+  }) : sessions = List.unmodifiable(sessions),
+       cornerSpans = List.unmodifiable(cornerSpans);
 
   /// [eventId] and [file] of a day with [name], from its [analysis]: each
   /// session's laps and best lap, the day's best lap and the route of its
   /// chosen group. [trackName] names a track the profile does not know yet.
+  ///
+  /// With [recordings] (by run id, as analysis reads them: speeds in their
+  /// effective unit), each session's distance and driving time; with the
+  /// chosen group's [theoreticalBest], its total, each session's own
+  /// theoretical best and its corners. Without them, adding the day keeps
+  /// what the profile measured before.
   factory ProfileDayInput.fromAnalysis({
     required String eventId,
     required String file,
     required String name,
     required DayAnalysis analysis,
     String? trackName,
+    Map<String, TelemetrySession?>? recordings,
+    DayTheoreticalBest? theoreticalBest,
   }) {
+    // Only the chosen group's: the day's route and track are its.
+    if (theoreticalBest != null && theoreticalBest.groupId != analysis.chosenGroupId) {
+      theoreticalBest = null;
+    }
+    final measured = recordings == null && theoreticalBest == null
+        ? const <String, SessionStats>{}
+        : measureSessions(analysis, recordings ?? const {}, best: theoreticalBest);
+    final ready = theoreticalBest?.state == DayTheoreticalBestState.ready ? theoreticalBest : null;
+    final canonical = recordings?[ready?.computed?.canonicalRunId ?? ''];
     final ranking = analysis.ranking;
     // Each run's best lap from the ranking of its own group, so a session
     // on another layout that day keeps its best lap too.
@@ -289,6 +341,7 @@ final class ProfileDayInput {
           startMilliseconds: starts[runId],
           lapCount: laps[runId]!,
           bestLapSeconds: _finite(best[runId]),
+          stats: measured[runId],
         ),
     ];
     RouteShape? route;
@@ -309,6 +362,24 @@ final class ProfileDayInput {
       bestLapSeconds: _finite(ranking?.bestOfDay?.durationSeconds),
       route: route,
       trackName: trackName,
+      theoreticalBestSeconds: ready?.computed?.best.valid == true
+          ? _finite(ready!.computed!.best.totalSeconds)
+          : null,
+      cornerSpans: canonical == null
+          ? const []
+          : measureCornerSpans(
+              ready,
+              longitudeIsWestPositive:
+                  canonical.metadata['gpsLongitudeConvention'] == 'west-positive',
+            ),
+      // Corners are placed from the recording the axis came from; without
+      // it, what was measured before is kept.
+      // A calculation that failed measured nothing: what was measured
+      // before is kept.
+      measuredCorners:
+          theoreticalBest != null &&
+          theoreticalBest.state != DayTheoreticalBestState.error &&
+          (ready == null || canonical != null),
     );
   }
 
@@ -324,6 +395,17 @@ final class ProfileDayInput {
 
   /// The name of a new track; else [addDayToProfile]'s default.
   final String? trackName;
+
+  /// The theoretical best of the day's route; null when not known.
+  final double? theoreticalBestSeconds;
+
+  /// Where the corners of the sessions' [SessionStats] lie, by segment id;
+  /// placed on the day's track when it is added.
+  final List<DayCornerSpan> cornerSpans;
+
+  /// Whether the theoretical best was worked out: false keeps the day's and
+  /// each session's theoretical best and corners measured before.
+  final bool measuredCorners;
 }
 
 double? _finite(double? value) => value != null && value.isFinite && value > 0 ? value : null;
@@ -398,6 +480,64 @@ DriverProfile addDayToProfile(
     }
   }
 
+  // Corners measured this time are placed on the track; a session not
+  // measured this time keeps what was measured before, while it is on the
+  // same track.
+  var ids = const <String, String>{};
+  final trackIndex = trackId == null ? -1 : tracks.indexWhere((track) => track.id == trackId);
+  if (trackIndex >= 0 && day.cornerSpans.isNotEmpty) {
+    final (corners, placed) = _placeCorners(tracks[trackIndex], day.cornerSpans, random);
+    if (corners.length != tracks[trackIndex].corners.length) {
+      tracks[trackIndex] = _verified(
+        _encodeTrack(tracks[trackIndex].copyWith(corners: corners)),
+        _track,
+      );
+    }
+    ids = placed;
+  }
+  final sameTrack = existing != null && existing.trackId == trackId;
+  // Past the profile's budget of corners, the day keeps none.
+  var budget = maximumProfileCornerStats;
+  for (final other in profile.days) {
+    if (other.eventId == day.eventId) continue;
+    for (final session in other.sessions) {
+      budget -= session.stats?.corners.length ?? 0;
+    }
+  }
+  final before = {
+    if (sameTrack)
+      for (final session in existing.sessions)
+        if (session.stats != null) session.runId: session.stats!,
+  };
+  var sessions = [
+    for (final session in day.sessions)
+      switch (session.stats) {
+        final stats? when day.measuredCorners => session._withStats(
+          stats.withCorners([
+            for (final corner in stats.corners)
+              if (ids[corner.cornerId] case final id?) corner.withCorner(id),
+          ], theoreticalBestSeconds: stats.theoreticalBestSeconds),
+        ),
+        final stats? => session._withStats(
+          stats.withCorners(
+            before[session.runId]?.corners ?? const [],
+            theoreticalBestSeconds: before[session.runId]?.theoreticalBestSeconds,
+          ),
+        ),
+        null => session._withStats(before[session.runId]),
+      },
+  ];
+  if (sessions.fold(0, (sum, s) => sum + (s.stats?.corners.length ?? 0)) > budget) {
+    sessions = [
+      for (final session in sessions)
+        session._withStats(
+          session.stats?.withCorners(
+            const [],
+            theoreticalBestSeconds: session.stats!.theoreticalBestSeconds,
+          ),
+        ),
+    ];
+  }
   final entry = ProfileDay(
     eventId: day.eventId,
     file: day.file,
@@ -405,8 +545,11 @@ DriverProfile addDayToProfile(
     carId: carId,
     trackId: trackId,
     startMilliseconds: day.startMilliseconds,
-    sessions: day.sessions,
+    sessions: sessions,
     bestLapSeconds: day.bestLapSeconds,
+    theoreticalBestSeconds: day.measuredCorners
+        ? day.theoreticalBestSeconds
+        : day.theoreticalBestSeconds ?? (sameTrack ? existing.theoreticalBestSeconds : null),
     unknown: existing?.unknown ?? const {},
   );
   // What reading would refuse is refused here, so a profile is never
@@ -540,6 +683,8 @@ Map<String, Object?> _encodeTrack(ProfileTrack track) => {
   'id': track.id,
   'name': track.name,
   'route': {...track.unknownRoute, ..._encodeRoute(track.route)},
+  if (track.corners.isNotEmpty)
+    'corners': [for (final corner in track.corners) _encodeTrackCorner(corner)],
 };
 
 Map<String, Object?> _encodeDay(ProfileDay day) => {
@@ -551,6 +696,7 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
   'trackId': day.trackId,
   'startMilliseconds': day.startMilliseconds,
   'bestLapSeconds': day.bestLapSeconds,
+  if (day.theoreticalBestSeconds != null) 'theoreticalBestSeconds': day.theoreticalBestSeconds,
   'sessions': [
     for (final session in day.sessions)
       {
@@ -560,6 +706,7 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
         'startMilliseconds': session.startMilliseconds,
         'lapCount': session.lapCount,
         'bestLapSeconds': session.bestLapSeconds,
+        if (session.stats case final stats?) 'stats': _encodeStats(stats),
       },
   ],
 };
@@ -653,11 +800,14 @@ ProfileCar _car(Object? value) {
 
 ProfileTrack _track(Object? value) {
   final json = _map(value, 'track');
+  final corners = _list(json['corners'], 'track corners', maximumProfileCorners, _trackCorner);
+  _unique([for (final corner in corners) corner.id], 'track corner');
   return ProfileTrack(
     id: _string(json['id'], 'track id', allowEmpty: false),
     name: _string(json['name'], 'track name', allowEmpty: false),
     route: _route(json['route']),
-    unknown: _without(json, const ['id', 'name', 'route']),
+    corners: corners,
+    unknown: _without(json, const ['id', 'name', 'route', 'corners']),
     unknownRoute: _without(_map(json['route'], 'route'), const [
       'origin',
       'lengthMeters',
@@ -720,6 +870,10 @@ ProfileDay _day(Object? value) {
     trackId: _optionalString(json['trackId'], 'day track'),
     startMilliseconds: _optionalInt(json['startMilliseconds'], 'day start'),
     bestLapSeconds: _optionalSeconds(json['bestLapSeconds'], 'day best lap'),
+    theoreticalBestSeconds: _optionalSeconds(
+      json['theoreticalBestSeconds'],
+      'day theoretical best',
+    ),
     sessions: sessions,
     unknown: _without(json, const [
       'eventId',
@@ -729,6 +883,7 @@ ProfileDay _day(Object? value) {
       'trackId',
       'startMilliseconds',
       'bestLapSeconds',
+      'theoreticalBestSeconds',
       'sessions',
     ]),
   );
@@ -746,12 +901,14 @@ ProfileSession _session(Object? value) {
     startMilliseconds: _optionalInt(json['startMilliseconds'], 'session start'),
     lapCount: laps,
     bestLapSeconds: _optionalSeconds(json['bestLapSeconds'], 'session best lap'),
+    stats: json['stats'] == null ? null : _stats(json['stats']),
     unknown: _without(json, const [
       'runId',
       'name',
       'startMilliseconds',
       'lapCount',
       'bestLapSeconds',
+      'stats',
     ]),
   );
 }

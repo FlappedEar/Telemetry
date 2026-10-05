@@ -224,6 +224,30 @@ void main() {
         expect(find.text('Saved in your library.'), findsOneWidget);
         expect(shelf.profile!.days.single.eventId, controller.eventId);
         expect(shelf.profile!.days.single.sessions, hasLength(2));
+        // What each session measured, from its recording, and once the
+        // theoretical best is worked out, the day's and its corners.
+        expect(
+          controller.theoreticalBest?.state,
+          DayTheoreticalBestState.ready,
+        );
+        final day = shelf.profile!.days.single;
+        for (final session in day.sessions) {
+          expect(session.stats?.distanceMeters, greaterThan(0));
+          expect(session.stats?.rankedLaps, greaterThan(0));
+        }
+        expect(
+          day.theoreticalBestSeconds,
+          controller.theoreticalBest!.computed!.best.totalSeconds,
+        );
+        final corners = shelf.profile!.tracks.single.corners;
+        expect(corners, hasLength(controller.theoreticalBest!.corners.length));
+        expect(corners, isNotEmpty);
+        expect(day.sessions.expand((s) => s.stats!.corners), isNotEmpty);
+        for (final session in day.sessions) {
+          for (final corner in session.stats!.corners) {
+            expect(corners.map((c) => c.id), contains(corner.cornerId));
+          }
+        }
 
         await tester.tap(find.byKey(const ValueKey('moreMenu')));
         await tester.pumpAndSettle();

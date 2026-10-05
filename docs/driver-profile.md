@@ -11,8 +11,13 @@ documents; the profile never changes their format.
   day was driven in.
 - The day document: its sessions, laps, notes, conditions and setup changes.
   A day's `summary` fields in the profile (`sessions`, `bestLapSeconds`,
-  `startMilliseconds`) are rebuilt from the day's analysis whenever the day is
-  added again (`addDayToProfile`).
+  `theoreticalBestSeconds`, `startMilliseconds`, each session's `stats`) are
+  rebuilt from the day's analysis whenever the day is added again
+  (`addDayToProfile`).
+- The profile also keeps what each session measured (`stats`), so analysis
+  across days never re-opens old days. It stores measurements only, in SI
+  units, each with the laps behind it; levels, trends and repeated losses are
+  worked out when read (see "Across days").
 
 ## Format, version 1
 
@@ -34,7 +39,10 @@ version does not know, so a newer app's additions survive a re-save.
         "lengthMeters": 2061.4,
         "direction": "clockwise",
         "points": [[0.0, 0.0], "... 256 [east, north] metres from origin"]
-      }
+      },
+      "corners": [
+        { "id": "<32 hex>", "name": "Corner 1", "start": 0.0621, "end": 0.1143 }
+      ]
     }
   ],
   "days": [
@@ -46,9 +54,21 @@ version does not know, so a newer app's additions survive a re-save.
       "trackId": "<track id, or null>",
       "startMilliseconds": 1788076800000,
       "bestLapSeconds": 109.898,
+      "theoreticalBestSeconds": 108.2,
       "sessions": [
         { "runId": "...", "name": "Session 1", "startMilliseconds": 1788076800000,
-          "lapCount": 4, "bestLapSeconds": 124.053 }
+          "lapCount": 4, "bestLapSeconds": 124.053,
+          "stats": {
+            "distanceMeters": 11890.0, "drivingSeconds": 760.4,
+            "rankedLaps": 3, "medianLapSeconds": 125.1, "lapSpreadSeconds": 1.2,
+            "theoreticalBestSeconds": 122.9,
+            "corners": [
+              { "cornerId": "<track corner id>", "laps": 3,
+                "minimumSpeed": 18.5, "bestMinimumSpeed": 19.4,
+                "exitSpeed": 23.1, "bestExitSpeed": 23.6,
+                "brakingSpreadMeters": 6.2, "lossSeconds": 0.31 }
+            ]
+          } }
       ]
     }
   ],
@@ -56,8 +76,9 @@ version does not know, so a newer app's additions survive a re-save.
 }
 ```
 
-Limits: 64 cars, 1024 tracks, 10 000 days, 64 sessions a day, 4096 code units a
-text. A day names a car and (unless `null`) a track of the profile; ids are
+Limits: 64 cars, 1024 tracks, 10 000 days, 64 sessions a day, 128 corners a
+track or session, 4096 code units a text. Speeds are at most 200 m/s; corner
+`start`/`end` are fractions from 0 (inclusive) to 1 (exclusive). A day names a car and (unless `null`) a track of the profile; ids are
 unique, and so are a day's session run ids. `file` is a relative path inside
 the profile folder: no drive, `:`, empty, dot-only or trailing-dot or -space
 segment. Times are within the range a date can hold less two days; route points are within 50 km of
@@ -90,3 +111,65 @@ and does not change `lastCarId`.
 `profileTree` groups days as Car > Year > Track > Date > Days (sessions are in
 each day). Years and dates are the device's local date of the first session;
 undated days and days without a recognised track come last.
+
+## What a session measured (`stats`)
+
+All optional; added in the same version 1, so an older app keeps them as
+unknown keys. Absent values are left out, and values are rounded to a
+thousandth. A measurement out of range (a GPS spike, a speed in another unit
+than declared) is left out rather than refusing the day. A session without `stats` was added before them, or not measured
+yet; it still counts in days, sessions and laps.
+
+| Key | Meaning |
+|---|---|
+| `distanceMeters`, `drivingSeconds` | Speed integrated over time (a speed in a declared or assumed unit), else the GPS path; gaps over 1 s are skipped. Driving is above 2 m/s. Out and in laps included. |
+| `rankedLaps`, `medianLapSeconds`, `lapSpreadSeconds` | Ranked laps of the session's group; median; interquartile range (3 laps or more). |
+| `theoreticalBestSeconds` | The session's own fastest segments added up, when every segment was timed on one of its ranked laps. |
+| `otherLayout` | `true` when the session was on another layout than the day's track: it counts in totals only. |
+| `corners[]` | Per track corner, over the session's ranked laps: `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). |
+
+A day's `theoreticalBestSeconds` is its track's theoretical best (the chosen
+group's). Days re-added before their theoretical best is worked out, or when it
+failed, keep the corners and theoretical bests measured before.
+
+A whole profile keeps at most 60 000 session corners
+(`maximumProfileCornerStats`); past it, a day is added without its corners.
+10 000 days of 5 sessions with that many corners take about 30 Mi characters
+on a few tracks; each track adds about 4.5 Ki (16 Ki with 128 corners), so
+hundreds of tracks on top of that would exceed the limit (not budgeted yet).
+
+## Corners across days
+
+A track's `corners` are the same places on every visit, as fractions of the
+track's stored route (`start` > `end` crosses the start line). A day's corner
+is placed by the route point nearest its start and end (within 50 m), and
+takes the id of the known corner it overlaps by at least half (of either) and
+that no other corner of that day took; otherwise it is added, with the day's
+name for it. A span over half a lap is not a corner. A recording
+whose longitudes count west as positive is turned around first.
+
+## Across days (`profile_aggregates.dart`)
+
+Worked out when read; lap times compare only on the same track (one direction)
+and, when a car is given, the same car; sessions on another layout and, for
+records, sessions measured before `stats` existed count only through the day's
+best lap. Totals mix everything. Days run in date order; undated days come
+last.
+
+- `driverTotals`, `carTotals`, `trackTotals`: days, sessions, laps, ranked
+  laps, distance and driving time (of measured sessions), tracks, cars, first
+  and last day.
+- `trackRecords`: per track, visits, the best lap, the best day theoretical
+  best and the best session median, each with its day.
+- `trackProgress`, `lastTimeHere`: per visit, best, theoretical best, typical
+  lap and spread (sessions averaged by ranked laps) and the gain against the
+  visit before; the last visit prefers the same car.
+- `cornerHistory`: a corner's figures on every visit.
+- `repeatedLosses`: corners among a visit's three costliest (0.1 s or more) on
+  two visits or more; active, fading (two visits since, fewer than two of them measuring it) or
+  fixed (measured without a loss on the two visits since).
+- `skillLevels`: the 12 skills of `skillCatalogue`, each level 1–5 = 5 − bands
+  exceeded, over the last 3 days that measured it; confidence from its ranked
+  laps (low below 5, medium below 15, high from 15); trend against the 3 days before.
+  Measured now: brake-point consistency, minimum and exit speed below the day's
+  best at each corner, and lap spread; the others say "needs more evidence".

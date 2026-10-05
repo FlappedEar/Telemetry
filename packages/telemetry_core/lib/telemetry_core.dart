@@ -80,6 +80,7 @@ export 'src/laps/lap_session.dart';
 export 'src/laps/lap_time_format.dart';
 export 'src/operation.dart';
 export 'src/profile/driver_profile.dart';
+export 'src/profile/profile_aggregates.dart';
 export 'src/profile/profile_tree.dart';
 export 'src/rcz/rcz_archive.dart' show RczFormatError;
 export 'src/source_fingerprint.dart';

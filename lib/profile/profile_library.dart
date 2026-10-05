@@ -238,12 +238,16 @@ class ProfileLibrary extends ChangeNotifier {
 
   /// Records the day of [eventId] saved at [path] with [analysis] in the
   /// profile: a new day takes the last car and its track is recognised
-  /// by its route. Does nothing for a day saved elsewhere.
+  /// by its route. With its [recordings] and [theoreticalBest], what each
+  /// session measured ([ProfileDayInput.fromAnalysis]). Does nothing for a
+  /// day saved elsewhere.
   Future<void> recordDay({
     required String eventId,
     required String path,
     required String name,
     required DayAnalysis analysis,
+    Map<String, TelemetrySession?>? recordings,
+    DayTheoreticalBest? theoreticalBest,
   }) async {
     // Once loaded, the change is asked for at once, so a [flush] right
     // after waits for it.
@@ -257,6 +261,8 @@ class ProfileLibrary extends ChangeNotifier {
       name: name,
       analysis: analysis,
       trackName: defaultTrackName(profile.tracks.length + 1),
+      recordings: recordings,
+      theoreticalBest: theoreticalBest,
     );
     _change(
       (profile) => addDayToProfile(

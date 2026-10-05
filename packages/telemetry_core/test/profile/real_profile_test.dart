@@ -25,7 +25,8 @@ void main() {
       final runs = <DayRunInput>[
         for (final (index, file) in files.indexed)
           () {
-            final session = parseVboFile(file.path);
+            // As the app reads it, with unlabelled speeds assumed km/h.
+            final session = withEffectiveSpeedUnits(parseVboFile(file.path), assumed: 'km/h');
             return DayRunInput(
               runId: 'run${index + 1}',
               name: 'Session ${index + 1}',
@@ -36,12 +37,20 @@ void main() {
           }(),
       ];
       final half = runs.length ~/ 2;
-      ProfileDayInput day(String id, List<DayRunInput> runs) => ProfileDayInput.fromAnalysis(
-        eventId: id,
-        file: 'Days/$id.fetproject',
-        name: id,
-        analysis: analyzeDay(runs),
-      );
+      ProfileDayInput day(String id, List<DayRunInput> runs) {
+        final analysis = analyzeDay(runs);
+        return ProfileDayInput.fromAnalysis(
+          eventId: id,
+          file: 'Days/$id.fetproject',
+          name: id,
+          analysis: analysis,
+          recordings: {for (final run in runs) run.runId: run.session},
+          theoreticalBest: dayTheoreticalBest(analysis, {
+            for (final run in runs) run.runId: OutingRun(run.session, run.laps),
+          }, random: Random(1)),
+        );
+      }
+
       final first = day('first', runs.take(half).toList());
       final second = day('second', runs.skip(half).toList());
       expect(first.route, isNotNull);
@@ -70,6 +79,32 @@ void main() {
         'sessions ${[for (final d in profile.days)
           for (final s in d.sessions) '${s.name}: ${s.lapCount} laps'].join(', ')}',
       );
+      // Both halves measured, their corners on the same track corners.
+      final ids = [
+        for (final day in profile.days)
+          {
+            for (final session in day.sessions)
+              for (final corner in session.stats?.corners ?? const <CornerStats>[]) corner.cornerId,
+          },
+      ];
+      final totals = driverTotals(profile);
+      print(
+        'Measured: ${(totals.distanceMeters / 1000).toStringAsFixed(1)} km, '
+        '${(totals.drivingSeconds / 60).toStringAsFixed(0)} min driving, '
+        '${totals.rankedLaps} ranked laps; ${track.corners.length} track corners, '
+        '${ids.first.length} and ${ids.last.length} measured, '
+        '${ids.first.intersection(ids.last).length} shared',
+      );
+      for (final day in profile.days) {
+        expect(day.theoreticalBestSeconds, isNotNull);
+        for (final session in day.sessions) {
+          expect(session.stats?.distanceMeters, greaterThan(0));
+        }
+      }
+      expect(ids.first.intersection(ids.last), isNotEmpty);
+      for (final skill in skillLevels(profile)) {
+        print('${skill.skill.id}: ${skill.level} ${skill.confidence?.name} ${skill.value}');
+      }
       final best = [first.bestLapSeconds!, second.bestLapSeconds!].reduce(min);
       expect(best, analyzeDay(runs).ranking!.bestOfDay!.durationSeconds);
     },
