@@ -5,6 +5,7 @@
 // comparesKnownDeltaThroughFullComparisonPipeline,
 // coloursTheComparisonMapByAChannel and the lap series of
 // opensOutingLapDetail.
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:telemetry_core/telemetry_core.dart';
@@ -285,6 +286,163 @@ void main() {
         'velocity',
       ]);
       expect(lapChartChannels(withG, pending: 'brake'), ['brake', 'velocity', 'latacc', 'longacc']);
+    });
+  });
+
+  group('a heading chart (FET-163)', () {
+    // A heading turning steadily, crossing north every 9 s.
+    final session = _with(
+      rectangleSession([_constant(30), _constant(28)], pedals: true),
+      extra: {'heading': ('', (t) => (t * 40.0) % 360.0)},
+    );
+    final laps = deriveSourceLapSession(session);
+    final lap = laps.timedLaps.first;
+
+    void expectContinuous(ChartSeries series) {
+      expect(series.angular, isTrue);
+      for (final segment in series.segments) {
+        for (var i = 1; i < segment.length; ++i) {
+          expect((segment[i].y - segment[i - 1].y).abs(), lessThan(30), reason: 'jump at $i');
+        }
+      }
+    }
+
+    test('knows a compass direction by its name and unit', () {
+      TelemetryChannel channel(String name, [String unit = '']) => TelemetryChannel(
+        name: name,
+        unit: unit,
+        timestamps: Float64List(0),
+        values: Float32List(0),
+      );
+      for (final name in [
+        'heading',
+        'Heading',
+        'GPS Heading',
+        'course',
+        'bearing-gps',
+        'heading-calc',
+        'Heading (deg)',
+      ]) {
+        expect(isAngularChannel(channel(name)), isTrue, reason: name);
+      }
+      expect(isAngularChannel(channel('heading', 'deg')), isTrue);
+      expect(isAngularChannel(channel('heading', '°')), isTrue);
+      expect(isAngularChannel(channel('heading', 'rad')), isFalse);
+      for (final name in [
+        'lean_angle-calc',
+        'heart_rate-hrm',
+        'velocity',
+        'steering angle',
+        'heading_rate',
+        'heading accuracy',
+        'course_distance',
+      ]) {
+        expect(isAngularChannel(channel(name)), isFalse, reason: name);
+      }
+      expect(normalizeDegrees(-10), closeTo(350, 1e-9));
+      expect(normalizeDegrees(725), closeTo(5, 1e-9));
+      expect(normalizeDegrees(360), 0);
+    });
+
+    test('is continuous across north on the lap page, at any zoom', () {
+      final full = timeSeries(
+        session,
+        'heading',
+        lap.startTelemetryTime,
+        lap.endTelemetryTime,
+        300,
+      );
+      expect(lap.durationSeconds * 40, greaterThan(720), reason: 'crosses north several times');
+      expectContinuous(full);
+      // The lap starts within one turn; the axis spans the whole rotation.
+      expect(full.segments.first.first.y, inInclusiveRange(0, 360));
+      expect(full.maximum - full.minimum, greaterThan(720));
+      // Every point is the recorded heading, turned by whole turns.
+      final span = lap.endTelemetryTime - lap.startTelemetryTime;
+      for (final point in full.segments.expand((segment) => segment)) {
+        final recorded = session.valueAt('heading', lap.startTelemetryTime + point.x * span)!;
+        final turns = (point.y - recorded) / 360;
+        expect(turns, closeTo(turns.roundToDouble(), 1e-3));
+      }
+      // A zoom with the lap's reference draws the same line.
+      final from = lap.startTelemetryTime + span * 0.4, to = lap.startTelemetryTime + span * 0.6;
+      final zoomed = timeSeries(
+        session,
+        'heading',
+        from,
+        to,
+        300,
+        angleReference: lap.startTelemetryTime,
+      );
+      expectContinuous(zoomed);
+      final middle = zoomed.segments.first[zoomed.segments.first.length ~/ 2];
+      final time = from + middle.x * (to - from);
+      expect(
+        nearestChartValue(full, (time - lap.startTelemetryTime) / span),
+        closeTo(middle.y, 40.0 * span / 300 + 1),
+      );
+      // Other channels are untouched.
+      expect(
+        timeSeries(session, 'speed', lap.startTelemetryTime, lap.endTelemetryTime, 300).angular,
+        isFalse,
+      );
+    });
+
+    test('is continuous and overlaid in a comparison', () {
+      final comparison = LapComparison(_lap(session, laps, 0), _lap(session, laps, 1));
+      final length = comparison.axisLengthMeters;
+      final a = comparison.channelSeries(0, 'heading', 0, length, 600);
+      final b = comparison.channelSeries(1, 'heading', 0, length, 600);
+      expectContinuous(a);
+      expectContinuous(b);
+      final startA = a.segments.first.first.y, startB = b.segments.first.first.y;
+      expect(startA, inInclusiveRange(0, 360));
+      expect((startA - startB).abs(), lessThanOrEqualTo(180));
+      // Points are the recorded heading by whole turns, never read the long
+      // way round across north.
+      for (final slot in [0, 1]) {
+        final series = slot == 0 ? a : b;
+        for (final point in series.segments.expand((segment) => segment)) {
+          final time = comparison.timeAt(slot, point.x * length);
+          if (time == null) continue;
+          final recorded = (time * 40.0) % 360.0;
+          final difference = (normalizeDegrees(point.y) - recorded).abs();
+          expect(math.min(difference, 360 - difference), lessThan(0.5));
+        }
+      }
+      // A zoomed range keeps the same turns.
+      final zoomed = comparison.channelSeries(0, 'heading', length * 0.5, length * 0.75, 100);
+      expect(
+        nearestChartValue(a, 0.5),
+        closeTo(
+          zoomed.segments.first.first.y,
+          40.0 * (comparison.a.end - comparison.a.start) / 600 + 2,
+        ),
+      );
+    });
+
+    test('keeps missing values missing when unwrapped', () {
+      final times = Float64List.fromList([0, 1, 2, 3, 4]);
+      final channel = TelemetryChannel(
+        name: 'heading',
+        timestamps: times,
+        values: Float32List.fromList([350, 355, double.nan, 5, 10]),
+      );
+      final gapped = TelemetrySession(
+        duration: 4,
+        startTime: 0,
+        metadata: const {},
+        channels: {'heading': channel},
+        aliases: const {},
+        warnings: const [],
+        timingGates: const [],
+        sampleCount: 5,
+      );
+      final series = timeSeries(gapped, 'heading', 0, 4, 100);
+      expect(series.segments, hasLength(2));
+      expect(series.segments.first.map((p) => p.y), [350, 355]);
+      expect(series.segments.last.map((p) => p.y), [365, 370]);
+      expect(gapped.valueAt('heading', 3), 5, reason: 'the recording is unchanged');
     });
   });
 }

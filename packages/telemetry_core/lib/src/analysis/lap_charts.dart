@@ -3,6 +3,7 @@
 // AnalysisControllerOuting.cpp, which the lap page's charts draw on a time
 // axis.
 import '../telemetry_session.dart';
+import 'angular_channels.dart';
 
 /// The channel is not in the recording.
 const String chartReasonChannelMissing = 'channelMissing';
@@ -29,6 +30,7 @@ final class ChartSeries {
     this.maximum = 0.0,
     this.unit = '',
     this.brakingUp = false,
+    this.angular = false,
     this.reason = '',
   });
 
@@ -41,7 +43,8 @@ final class ChartSeries {
       minimum = 0.0,
       maximum = 0.0,
       unit = '',
-      brakingUp = false;
+      brakingUp = false,
+      angular = false;
 
   final List<List<ChartPoint>> segments;
   final double minimum;
@@ -51,6 +54,11 @@ final class ChartSeries {
   /// Longitudinal acceleration: braking (negative) is drawn upward, without
   /// changing the values.
   final bool brakingUp;
+
+  /// A compass direction ([isAngularChannel]): the points are unwrapped
+  /// degrees, continuous across north, so a value is read as
+  /// [normalizeDegrees] of it. [minimum] and [maximum] are unwrapped too.
+  final bool angular;
   final String reason;
 
   bool get hasData => segments.isNotEmpty;
@@ -59,15 +67,25 @@ final class ChartSeries {
 /// [channelName]'s samples in [start]..[end] (telemetry seconds) at up to
 /// [maximumPoints] buckets (bounded to 2..2000), as a time-axis chart
 /// (Overlays' `sessionSeries`).
+///
+/// A compass direction is drawn unwrapped ([ChartSeries.angular]), by whole
+/// turns that put its first value at or after [angleReference] (seconds,
+/// [start] when null) in 0 up to 360; charts of one lap at different zooms
+/// pass the same reference so their lines agree.
 ChartSeries timeSeries(
   TelemetrySession session,
   String channelName,
   double start,
   double end,
-  int maximumPoints,
-) {
+  int maximumPoints, {
+  double? angleReference,
+}) {
   final bounded = maximumPoints.clamp(2, 2000);
-  final sampled = session.sampledSegments(channelName, start, end, bounded);
+  final recorded = session.channel(channelName);
+  final angular = recorded != null && isAngularChannel(recorded);
+  final source = angular ? unwrappedAngleSession(recorded) : session;
+  final sourceName = angular ? recorded.name : channelName;
+  final sampled = source.sampledSegments(sourceName, start, end, bounded);
   if (sampled.isEmpty) {
     // Why sampledSegments returned nothing, as Overlays' status reports it.
     if (!start.isFinite || !end.isFinite || !(end - start).abs().isFinite) {
@@ -79,6 +97,13 @@ ChartSeries timeSeries(
       return const ChartSeries.failed(chartReasonChannelMalformed);
     }
     return ChartSeries.empty;
+  }
+  var offset = 0.0;
+  if (angular) {
+    final reference =
+        firstFiniteValueFrom(source, sourceName, angleReference ?? start) ??
+        sampled.first.first.value;
+    offset = degreesTurnOffset(reference);
   }
   var minimum = sampled.first.first.value;
   var maximum = minimum;
@@ -95,13 +120,14 @@ ChartSeries timeSeries(
       for (final segment in sampled)
         List<ChartPoint>.unmodifiable([
           for (final sample in segment)
-            (x: span == 0.0 ? 0.0 : (sample.time - start) / span, y: sample.value),
+            (x: span == 0.0 ? 0.0 : (sample.time - start) / span, y: sample.value + offset),
         ]),
     ]),
-    minimum: minimum,
-    maximum: maximum,
+    minimum: minimum + offset,
+    maximum: maximum + offset,
     unit: session.channels[resolved]?.unit ?? '',
     brakingUp: resolved == (session.aliases['longitudinalAcceleration'] ?? ''),
+    angular: angular,
   );
 }
 

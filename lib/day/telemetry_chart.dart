@@ -41,13 +41,25 @@ String chartReasonText(AppLocalizations l10n, String reason) =>
 
 /// [value] with as many decimals as the magnitude [scale] needs.
 String chartValueText(double value, double scale, String unit) {
+  final digits = _chartDigits(scale);
+  return '${value.toStringAsFixed(digits)}${unit.isEmpty ? '' : '\u00a0$unit'}';
+}
+
+int _chartDigits(double scale) {
   final magnitude = scale.abs();
-  final digits = magnitude >= 100
+  return magnitude >= 100
       ? 0
       : magnitude >= 10
       ? 1
       : 2;
-  return '${value.toStringAsFixed(digits)}${unit.isEmpty ? '' : '\u00a0$unit'}';
+}
+
+/// [value] (unwrapped degrees) as the compass direction it shows, rounded as
+/// [chartValueText] rounds at [scale] first, so north reads 0 and never 360.
+double chartDegrees(double value, double scale) {
+  final factor = math.pow(10, _chartDigits(scale)).toDouble();
+  final rounded = (normalizeDegrees(value) * factor).round() / factor;
+  return rounded >= 360 ? rounded - 360 : rounded;
 }
 
 /// The value axis of a chart, fixed over the whole lap so zooming does not
@@ -145,13 +157,31 @@ class TelemetryChart extends StatelessWidget {
   double _fraction(double value) =>
       end > start ? (value - start) / (end - start) : 0;
 
+  /// The value at the cursor; a compass direction drawn unwrapped reads as
+  /// the recorded 0 up to 360.
   String _value(ChartLine line, double fraction, String unit) {
-    final value = nearestChartValue(line.series, fraction);
-    if (value == null) return '–';
-    if (delta) return displayDelta(value);
+    final read = nearestChartValue(line.series, fraction);
+    if (read == null) return '–';
+    if (delta) return displayDelta(read);
     final scale = math.max(valueAxis.$1.abs(), valueAxis.$2.abs());
+    final value = line.series.angular ? chartDegrees(read, scale) : read;
     return chartValueText(value, scale, unit);
   }
+
+  // The lowest and highest value a screen reader says: a compass direction
+  // as recorded, from where it starts to where it ends round the compass, or
+  // 0 to 360 when it turns all the way round.
+  double _spokenLow(ChartSeries series) => !series.angular
+      ? series.minimum
+      : series.maximum - series.minimum >= 360
+      ? 0
+      : normalizeDegrees(series.minimum);
+
+  double _spokenHigh(ChartSeries series) => !series.angular
+      ? series.maximum
+      : series.maximum - series.minimum >= 360
+      ? 360
+      : normalizeDegrees(series.maximum);
 
   String _summaryValue(double value, String unit) {
     if (delta) return displayDelta(value);
@@ -325,11 +355,11 @@ class TelemetryChart extends StatelessWidget {
                       l10n.chartSemanticsRange(
                         line.label.isEmpty ? '' : '${line.label}: ',
                         _summaryValue(
-                          line.series.minimum,
+                          _spokenLow(line.series),
                           displayUnitOf(context, title, line.series.unit),
                         ),
                         _summaryValue(
-                          line.series.maximum,
+                          _spokenHigh(line.series),
                           displayUnitOf(context, title, line.series.unit),
                         ),
                       ),

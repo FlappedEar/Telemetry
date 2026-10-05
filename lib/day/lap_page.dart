@@ -149,6 +149,7 @@ class _LapPageState extends State<LapPage> {
       range.$1,
       range.$2,
       600,
+      angleReference: widget.row.start,
     );
   }
 
