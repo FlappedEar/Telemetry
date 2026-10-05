@@ -310,6 +310,71 @@ void main() {
     expect(_find(result, 'speed')!.comparedSourceId, 'rcz');
   });
 
+  test('an added VBO speed keeps the unit its header declares (FET-112)', () {
+    // The primary (an RCZ) has no second speed; the VBO's `velocity-calc`
+    // declares mph only on its `[header]` line.
+    final vbo = TelemetrySession(
+      duration: 0.0,
+      startTime: 0.0,
+      metadata: const {'header.3': 'velocity-calc mph', 'header.4': 'velocity kmh'},
+      channels: {
+        'velocity-calc': _channel('velocity-calc', '', 0.0, 90.0, 5.0, _speedAt),
+        'rpm-obd': _channel('rpm-obd', '', 0.0, 90.0, 5.0, (c) => 4000.0),
+      },
+      aliases: const {},
+      warnings: const [],
+      timingGates: const [],
+      sampleCount: 0,
+    );
+    final result = fuseChannels(_primary(), 'rcz', _rcz(vbo));
+    final speed = _find(result, 'velocity-calc')!;
+    expect(speed.rule, 'added');
+    expect(speed.unit, 'mph');
+    expect(speed.channel.unit, 'mph');
+    // The values are never rescaled.
+    expect(speed.channel.values, vbo.channels['velocity-calc']!.values);
+    // Analysis of the fused session reads it in mph, whatever is assumed.
+    final fused = withEffectiveSpeedUnits(fusedSession(_primary(), result), assumed: 'km/h');
+    expect(fused.channels['velocity-calc']!.unit, 'mph');
+    // A speed found only through its `speed` alias, declared `kmh`.
+    final aliased = TelemetrySession(
+      duration: 0.0,
+      startTime: 0.0,
+      metadata: const {'header.2': 'gps_speed kmh'},
+      channels: {'gps_speed': _channel('gps_speed', '', 0.0, 90.0, 5.0, _speedAt)},
+      aliases: const {'speed': 'gps_speed'},
+      warnings: const [],
+      timingGates: const [],
+      sampleCount: 0,
+    );
+    final rczWithoutSpeed = _session([
+      (_channel('latacc-calc', 'g', 0.0, 100.0, 10.0, math.sin), 'lateralAcceleration'),
+    ]);
+    final byAlias = fuseChannels(rczWithoutSpeed, 'rcz', _rcz(aliased));
+    expect(_find(byAlias, 'speed')!.rule, 'added');
+    expect(_find(byAlias, 'speed')!.unit, 'km/h');
+    // A channel that is not a speed keeps its own (missing) unit.
+    expect(_find(result, 'rpm-obd')!.unit, '');
+    // A speed with no unit declared anywhere stays without one.
+    final bare = fuseChannels(
+      _primary(),
+      'rcz',
+      _rcz(
+        TelemetrySession(
+          duration: 0.0,
+          startTime: 0.0,
+          metadata: const {},
+          channels: {'velocity-calc': _channel('velocity-calc', '', 0.0, 90.0, 5.0, _speedAt)},
+          aliases: const {},
+          warnings: const [],
+          timingGates: const [],
+          sampleCount: 0,
+        ),
+      ),
+    );
+    expect(_find(bare, 'velocity-calc')!.unit, '');
+  });
+
   test('the fused session carries the merged and added channels', () {
     final primary = _primary();
     final result = fuseChannels(
