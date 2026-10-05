@@ -81,8 +81,9 @@ Future<Object?> fetchWeatherJson(Uri uri) async {
 
 /// The weather of a day's sessions: what the day's document keeps, and
 /// what is fetched for sessions without it, one session at a time and only
-/// while [enabled]. A failed lookup is not repeated until [retry] or the
-/// day is opened again. The day's controller holds it and writes
+/// while [enabled]. A failed lookup is not repeated until [retry], a
+/// session is added (at the track the signal may be back by the next
+/// session), or the day is opened again. The day's controller holds it and writes
 /// [fetched] with the day.
 final class DayWeather extends ChangeNotifier {
   DayWeather({this._fetcher, this._enabled, int Function()? clock})
@@ -130,6 +131,8 @@ final class DayWeather extends ChangeNotifier {
   /// Takes the day's [runs] and the document's runs ([documentRuns]), and
   /// asks for the weather of sessions that have none for their recording.
   void sync(List<NamedRun> runs, List<Object?> documentRuns) {
+    final known = {for (final named in _runs) named.run.id};
+    if (runs.any((named) => !known.contains(named.run.id))) _failed.clear();
     _runs = List.of(runs);
     _documentRuns = documentRuns;
     final stored = <String, Object?>{};
@@ -250,8 +253,8 @@ final class DayWeather extends ChangeNotifier {
         // The run's recording changed or the lookup was turned off meanwhile.
         if (_wanted[id]?.$1 != revision || !_on) continue;
         if (weather == null || weather.summary.isEmpty) {
-          // Nothing for the session: not kept, so asked again next time
-          // the day opens.
+          // Nothing for the session: not kept, so asked again when a
+          // session is added or the day opens.
           _failed[id] = revision;
           _wanted.remove(id);
           _set(id, SessionWeatherState.unavailable);
