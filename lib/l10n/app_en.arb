@@ -7442,5 +7442,175 @@
     "placeholders": {"days": {"type": "int"}}
   },
   "profileTracksNone": "No track recognised yet in your days.",
-  "@profileTracksNone": {"description": "Tracks card on the Profile page with no recognised track."}
+  "@profileTracksNone": {"description": "Tracks card on the Profile page with no recognised track."},
+  "settingsUpdatesHeading": "Updates",
+  "@settingsUpdatesHeading": {
+    "description": "Settings heading for checking GitHub for a newer version of the app."
+  },
+  "settingsUpdateSwitch": "Check for a new version when the app starts",
+  "@settingsUpdateSwitch": {
+    "description": "Settings switch: look for a newer release on GitHub at launch, at most once a day."
+  },
+  "settingsUpdateHelp": "When the app starts, at most once a day, it asks GitHub for its newest release. None of your recordings or settings are sent.",
+  "@settingsUpdateHelp": {
+    "description": "Help under the update switch in Settings."
+  },
+  "settingsUpdateCheckNow": "Check for updates",
+  "@settingsUpdateCheckNow": {
+    "description": "Settings button that looks for a newer version now."
+  },
+  "updateTitle": "App updates",
+  "@updateTitle": {
+    "description": "Title of the dialog that checks for and downloads a newer version."
+  },
+  "updateChecking": "Looking for a newer version on GitHub…",
+  "@updateChecking": {
+    "description": "Update dialog while asking GitHub."
+  },
+  "updateUpToDate": "You have the newest version.",
+  "@updateUpToDate": {
+    "description": "Update dialog when no newer release exists."
+  },
+  "updateInstalledVersion": "This app: version {version}",
+  "@updateInstalledVersion": {
+    "description": "Update dialog: the running app's version and build.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.2.5 (6)"
+      }
+    }
+  },
+  "updateVersionUnknown": "unknown",
+  "@updateVersionUnknown": {
+    "description": "Stands for the running app's version when it could not be read."
+  },
+  "updateAvailable": "Version {newVersion} is available. You have {installed}.",
+  "@updateAvailable": {
+    "description": "Update dialog when a newer release exists.",
+    "placeholders": {
+      "newVersion": {
+        "type": "String",
+        "example": "0.2.6"
+      },
+      "installed": {
+        "type": "String",
+        "example": "0.2.5 (6)"
+      }
+    }
+  },
+  "updateAvailableMessage": "FlappedEar Telemetry {newVersion} is available.",
+  "@updateAvailableMessage": {
+    "description": "Message shown at launch when a newer release exists.",
+    "placeholders": {
+      "newVersion": {
+        "type": "String",
+        "example": "0.2.6"
+      }
+    }
+  },
+  "updateDetails": "Details",
+  "@updateDetails": {
+    "description": "Action on the new-version message that opens the update dialog."
+  },
+  "updateAndroidHelp": "The app downloads the APK, checks it against the release's checksums and opens Android's installer. Your saved days stay.",
+  "@updateAndroidHelp": {
+    "description": "Update dialog on Android, before downloading."
+  },
+  "updateMacHelp": "The app downloads the zip, checks it against the release's checksums and shows it in Finder. Open it and move FlappedEar Telemetry to Applications, replacing the old one. macOS refuses the first start as after the first install: allow it in the same way.",
+  "@updateMacHelp": {
+    "description": "Update dialog on a Mac, before downloading."
+  },
+  "updateNoDownloadHere": "The release has no download for this device. Its page on GitHub says what changed.",
+  "@updateNoDownloadHere": {
+    "description": "Update dialog on iOS, Windows and Linux, where the release carries no file to install."
+  },
+  "updateDownloadInstall": "Download and install",
+  "@updateDownloadInstall": {
+    "description": "Update dialog button on Android."
+  },
+  "updateDownload": "Download",
+  "@updateDownload": {
+    "description": "Update dialog button on a Mac."
+  },
+  "updateWhatsNew": "What's new",
+  "@updateWhatsNew": {
+    "description": "Update dialog button that opens the release's page on GitHub."
+  },
+  "updateOpenReleases": "Releases page",
+  "@updateOpenReleases": {
+    "description": "Update dialog button that opens the app's releases on GitHub."
+  },
+  "updateDownloading": "Downloading version {newVersion}: {percent}%",
+  "@updateDownloading": {
+    "description": "Update dialog while downloading.",
+    "placeholders": {
+      "newVersion": {
+        "type": "String",
+        "example": "0.2.6"
+      },
+      "percent": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
+  "updateNeedsPermission": "Android asks you to allow FlappedEar Telemetry to install apps. Turn it on in the settings that opened, come back and tap Continue. If the app started again, open Settings and tap Check for updates.",
+  "@updateNeedsPermission": {
+    "description": "Update dialog on Android when the app may not install apps yet."
+  },
+  "updateContinue": "Continue",
+  "@updateContinue": {
+    "description": "Update dialog button on Android after the user allowed the app to install apps."
+  },
+  "updateInstallAgain": "Open the installer again",
+  "@updateInstallAgain": {
+    "description": "Update dialog button while Android's installer is open."
+  },
+  "updateInstalling": "Downloaded and checked. Android's installer is open: confirm the update there.",
+  "@updateInstalling": {
+    "description": "Update dialog after Android's installer opened."
+  },
+  "updateSaved": "Downloaded and checked: {path}. Open it and move FlappedEar Telemetry to Applications, replacing the old one. macOS refuses the first start as after the first install: allow it in the same way.",
+  "@updateSaved": {
+    "description": "Update dialog on a Mac after the zip was saved.",
+    "placeholders": {
+      "path": {
+        "type": "String",
+        "example": "/Users/arek/Downloads/FlappedEar-Telemetry-0.2.6-macos.zip"
+      }
+    }
+  },
+  "updateShowInFinder": "Show in Finder",
+  "@updateShowInFinder": {
+    "description": "Update dialog button on a Mac."
+  },
+  "updateFailedOffline": "GitHub could not be reached. Check the connection and try again.",
+  "@updateFailedOffline": {
+    "description": "Update dialog when offline or GitHub timed out."
+  },
+  "updateFailedRateLimited": "GitHub allows only a few checks an hour from one network. Try again later.",
+  "@updateFailedRateLimited": {
+    "description": "Update dialog when GitHub's rate limit for unauthenticated requests is reached."
+  },
+  "updateFailedNotVerifiable": "The release lists no checksum for this file, so it was not kept.",
+  "@updateFailedNotVerifiable": {
+    "description": "Update dialog when SHA256SUMS.txt does not cover the download."
+  },
+  "updateFailedChecksum": "The download does not match the release's checksum and was deleted. Try again.",
+  "@updateFailedChecksum": {
+    "description": "Update dialog when the downloaded file's SHA-256 or size differs."
+  },
+  "updateFailedNotSaved": "The download could not be saved. Try again, or choose another folder on a computer.",
+  "@updateFailedNotSaved": {
+    "description": "Update dialog when the file could not be written."
+  },
+  "updateFailedUnexpected": "The update did not work. Try again, or open the releases page.",
+  "@updateFailedUnexpected": {
+    "description": "Update dialog for any other failure."
+  },
+  "updateTryAgain": "Try again",
+  "@updateTryAgain": {
+    "description": "Update dialog button after a failure."
+  }
 }

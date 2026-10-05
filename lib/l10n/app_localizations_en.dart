@@ -5137,4 +5137,126 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTracksNone => 'No track recognised yet in your days.';
+
+  @override
+  String get settingsUpdatesHeading => 'Updates';
+
+  @override
+  String get settingsUpdateSwitch =>
+      'Check for a new version when the app starts';
+
+  @override
+  String get settingsUpdateHelp =>
+      'When the app starts, at most once a day, it asks GitHub for its newest release. None of your recordings or settings are sent.';
+
+  @override
+  String get settingsUpdateCheckNow => 'Check for updates';
+
+  @override
+  String get updateTitle => 'App updates';
+
+  @override
+  String get updateChecking => 'Looking for a newer version on GitHub…';
+
+  @override
+  String get updateUpToDate => 'You have the newest version.';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'This app: version $version';
+  }
+
+  @override
+  String get updateVersionUnknown => 'unknown';
+
+  @override
+  String updateAvailable(String newVersion, String installed) {
+    return 'Version $newVersion is available. You have $installed.';
+  }
+
+  @override
+  String updateAvailableMessage(String newVersion) {
+    return 'FlappedEar Telemetry $newVersion is available.';
+  }
+
+  @override
+  String get updateDetails => 'Details';
+
+  @override
+  String get updateAndroidHelp =>
+      'The app downloads the APK, checks it against the release\'s checksums and opens Android\'s installer. Your saved days stay.';
+
+  @override
+  String get updateMacHelp =>
+      'The app downloads the zip, checks it against the release\'s checksums and shows it in Finder. Open it and move FlappedEar Telemetry to Applications, replacing the old one. macOS refuses the first start as after the first install: allow it in the same way.';
+
+  @override
+  String get updateNoDownloadHere =>
+      'The release has no download for this device. Its page on GitHub says what changed.';
+
+  @override
+  String get updateDownloadInstall => 'Download and install';
+
+  @override
+  String get updateDownload => 'Download';
+
+  @override
+  String get updateWhatsNew => 'What\'s new';
+
+  @override
+  String get updateOpenReleases => 'Releases page';
+
+  @override
+  String updateDownloading(String newVersion, int percent) {
+    return 'Downloading version $newVersion: $percent%';
+  }
+
+  @override
+  String get updateNeedsPermission =>
+      'Android asks you to allow FlappedEar Telemetry to install apps. Turn it on in the settings that opened, come back and tap Continue. If the app started again, open Settings and tap Check for updates.';
+
+  @override
+  String get updateContinue => 'Continue';
+
+  @override
+  String get updateInstallAgain => 'Open the installer again';
+
+  @override
+  String get updateInstalling =>
+      'Downloaded and checked. Android\'s installer is open: confirm the update there.';
+
+  @override
+  String updateSaved(String path) {
+    return 'Downloaded and checked: $path. Open it and move FlappedEar Telemetry to Applications, replacing the old one. macOS refuses the first start as after the first install: allow it in the same way.';
+  }
+
+  @override
+  String get updateShowInFinder => 'Show in Finder';
+
+  @override
+  String get updateFailedOffline =>
+      'GitHub could not be reached. Check the connection and try again.';
+
+  @override
+  String get updateFailedRateLimited =>
+      'GitHub allows only a few checks an hour from one network. Try again later.';
+
+  @override
+  String get updateFailedNotVerifiable =>
+      'The release lists no checksum for this file, so it was not kept.';
+
+  @override
+  String get updateFailedChecksum =>
+      'The download does not match the release\'s checksum and was deleted. Try again.';
+
+  @override
+  String get updateFailedNotSaved =>
+      'The download could not be saved. Try again, or choose another folder on a computer.';
+
+  @override
+  String get updateFailedUnexpected =>
+      'The update did not work. Try again, or open the releases page.';
+
+  @override
+  String get updateTryAgain => 'Try again';
 }

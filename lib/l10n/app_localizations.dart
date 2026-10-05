@@ -7652,6 +7652,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No track recognised yet in your days.'**
   String get profileTracksNone;
+
+  /// Settings heading for checking GitHub for a newer version of the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get settingsUpdatesHeading;
+
+  /// Settings switch: look for a newer release on GitHub at launch, at most once a day.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for a new version when the app starts'**
+  String get settingsUpdateSwitch;
+
+  /// Help under the update switch in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'When the app starts, at most once a day, it asks GitHub for its newest release. None of your recordings or settings are sent.'**
+  String get settingsUpdateHelp;
+
+  /// Settings button that looks for a newer version now.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get settingsUpdateCheckNow;
+
+  /// Title of the dialog that checks for and downloads a newer version.
+  ///
+  /// In en, this message translates to:
+  /// **'App updates'**
+  String get updateTitle;
+
+  /// Update dialog while asking GitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for a newer version on GitHub…'**
+  String get updateChecking;
+
+  /// Update dialog when no newer release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'You have the newest version.'**
+  String get updateUpToDate;
+
+  /// Update dialog: the running app's version and build.
+  ///
+  /// In en, this message translates to:
+  /// **'This app: version {version}'**
+  String updateInstalledVersion(String version);
+
+  /// Stands for the running app's version when it could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get updateVersionUnknown;
+
+  /// Update dialog when a newer release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {newVersion} is available. You have {installed}.'**
+  String updateAvailable(String newVersion, String installed);
+
+  /// Message shown at launch when a newer release exists.
+  ///
+  /// In en, this message translates to:
+  /// **'FlappedEar Telemetry {newVersion} is available.'**
+  String updateAvailableMessage(String newVersion);
+
+  /// Action on the new-version message that opens the update dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get updateDetails;
+
+  /// Update dialog on Android, before downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'The app downloads the APK, checks it against the release\'s checksums and opens Android\'s installer. Your saved days stay.'**
+  String get updateAndroidHelp;
+
+  /// Update dialog on a Mac, before downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'The app downloads the zip, checks it against the release\'s checksums and shows it in Finder. Open it and move FlappedEar Telemetry to Applications, replacing the old one. macOS refuses the first start as after the first install: allow it in the same way.'**
+  String get updateMacHelp;
+
+  /// Update dialog on iOS, Windows and Linux, where the release carries no file to install.
+  ///
+  /// In en, this message translates to:
+  /// **'The release has no download for this device. Its page on GitHub says what changed.'**
+  String get updateNoDownloadHere;
+
+  /// Update dialog button on Android.
+  ///
+  /// In en, this message translates to:
+  /// **'Download and install'**
+  String get updateDownloadInstall;
+
+  /// Update dialog button on a Mac.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateDownload;
+
+  /// Update dialog button that opens the release's page on GitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new'**
+  String get updateWhatsNew;
+
+  /// Update dialog button that opens the app's releases on GitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases page'**
+  String get updateOpenReleases;
+
+  /// Update dialog while downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading version {newVersion}: {percent}%'**
+  String updateDownloading(String newVersion, int percent);
+
+  /// Update dialog on Android when the app may not install apps yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Android asks you to allow FlappedEar Telemetry to install apps. Turn it on in the settings that opened, come back and tap Continue. If the app started again, open Settings and tap Check for updates.'**
+  String get updateNeedsPermission;
+
+  /// Update dialog button on Android after the user allowed the app to install apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get updateContinue;
+
+  /// Update dialog button while Android's installer is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the installer again'**
+  String get updateInstallAgain;
+
+  /// Update dialog after Android's installer opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded and checked. Android\'s installer is open: confirm the update there.'**
+  String get updateInstalling;
+
+  /// Update dialog on a Mac after the zip was saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded and checked: {path}. Open it and move FlappedEar Telemetry to Applications, replacing the old one. macOS refuses the first start as after the first install: allow it in the same way.'**
+  String updateSaved(String path);
+
+  /// Update dialog button on a Mac.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Finder'**
+  String get updateShowInFinder;
+
+  /// Update dialog when offline or GitHub timed out.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub could not be reached. Check the connection and try again.'**
+  String get updateFailedOffline;
+
+  /// Update dialog when GitHub's rate limit for unauthenticated requests is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub allows only a few checks an hour from one network. Try again later.'**
+  String get updateFailedRateLimited;
+
+  /// Update dialog when SHA256SUMS.txt does not cover the download.
+  ///
+  /// In en, this message translates to:
+  /// **'The release lists no checksum for this file, so it was not kept.'**
+  String get updateFailedNotVerifiable;
+
+  /// Update dialog when the downloaded file's SHA-256 or size differs.
+  ///
+  /// In en, this message translates to:
+  /// **'The download does not match the release\'s checksum and was deleted. Try again.'**
+  String get updateFailedChecksum;
+
+  /// Update dialog when the file could not be written.
+  ///
+  /// In en, this message translates to:
+  /// **'The download could not be saved. Try again, or choose another folder on a computer.'**
+  String get updateFailedNotSaved;
+
+  /// Update dialog for any other failure.
+  ///
+  /// In en, this message translates to:
+  /// **'The update did not work. Try again, or open the releases page.'**
+  String get updateFailedUnexpected;
+
+  /// Update dialog button after a failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get updateTryAgain;
 }
 
 class _AppLocalizationsDelegate

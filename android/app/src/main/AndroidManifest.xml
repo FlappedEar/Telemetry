@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Map tiles under the lap trace. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Opens Android's installer for an update downloaded from the app's
+         GitHub Releases (lib/update). Google Play does not allow this
+         permission for this kind of app: a Play build must leave it out. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
         android:label="FlappedEar Telemetry"
         android:name="${applicationName}"
@@ -38,6 +42,13 @@
                 <data android:mimeType="text/*"/>
             </intent-filter>
         </activity>
+        <!-- Serves a downloaded update APK to Android's installer
+             (UpdateApkProvider.kt). -->
+        <provider
+            android:name=".UpdateApkProvider"
+            android:authorities="${applicationId}.updates"
+            android:exported="false"
+            android:grantUriPermissions="true" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

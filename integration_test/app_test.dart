@@ -10,6 +10,9 @@ import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/main.dart' as app;
+import 'package:telemetry/update/app_update.dart';
+import 'package:telemetry/update/app_updater.dart';
+import 'package:telemetry/update/update_dialog.dart';
 
 import '../test/day/blank_tiles.dart';
 import '../test/day/day_results_page_test.dart' show circuitVbo;
@@ -85,6 +88,9 @@ void main() {
   // A first frame that never comes fails the test with a result after three
   // minutes, instead of leaving the tool waiting until CI stops it.
   testWidgets('the app starts and shows its first screen', (tester) async {
+    // The check for a newer release stays off GitHub, so its message never
+    // covers what a later test taps.
+    appUpdater = AppUpdater(checker: UpdateChecker.off());
     // main() loads the settings before runApp; without the await,
     // pumpAndSettle can return before the app has been built.
     await app.main();

@@ -5257,4 +5257,126 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get profileTracksNone =>
       'W Twoich dniach nie rozpoznano jeszcze toru.';
+
+  @override
+  String get settingsUpdatesHeading => 'Aktualizacje';
+
+  @override
+  String get settingsUpdateSwitch =>
+      'Sprawdzaj przy uruchomieniu, czy jest nowa wersja';
+
+  @override
+  String get settingsUpdateHelp =>
+      'Przy uruchomieniu, najwyżej raz dziennie, aplikacja pyta GitHub o swoje najnowsze wydanie. Żadne Twoje zapisy ani ustawienia nie są wysyłane.';
+
+  @override
+  String get settingsUpdateCheckNow => 'Sprawdź aktualizacje';
+
+  @override
+  String get updateTitle => 'Aktualizacje aplikacji';
+
+  @override
+  String get updateChecking => 'Szukam nowszej wersji na GitHubie…';
+
+  @override
+  String get updateUpToDate => 'Masz najnowszą wersję.';
+
+  @override
+  String updateInstalledVersion(String version) {
+    return 'Ta aplikacja: wersja $version';
+  }
+
+  @override
+  String get updateVersionUnknown => 'nieznana';
+
+  @override
+  String updateAvailable(String newVersion, String installed) {
+    return 'Dostępna jest wersja $newVersion. Masz $installed.';
+  }
+
+  @override
+  String updateAvailableMessage(String newVersion) {
+    return 'Dostępna jest wersja FlappedEar Telemetry $newVersion.';
+  }
+
+  @override
+  String get updateDetails => 'Szczegóły';
+
+  @override
+  String get updateAndroidHelp =>
+      'Aplikacja pobierze plik APK, sprawdzi go z sumami kontrolnymi wydania i otworzy instalator Androida. Zapisane dni pozostaną.';
+
+  @override
+  String get updateMacHelp =>
+      'Aplikacja pobierze plik zip, sprawdzi go z sumami kontrolnymi wydania i pokaże go w Finderze. Otwórz go i przenieś FlappedEar Telemetry do Aplikacji, zastępując starą wersję. Przy pierwszym uruchomieniu macOS odmówi jak po pierwszej instalacji: zezwól w ten sam sposób.';
+
+  @override
+  String get updateNoDownloadHere =>
+      'Wydanie nie zawiera pliku dla tego urządzenia. Jego strona na GitHubie opisuje zmiany.';
+
+  @override
+  String get updateDownloadInstall => 'Pobierz i zainstaluj';
+
+  @override
+  String get updateDownload => 'Pobierz';
+
+  @override
+  String get updateWhatsNew => 'Co nowego';
+
+  @override
+  String get updateOpenReleases => 'Strona wydań';
+
+  @override
+  String updateDownloading(String newVersion, int percent) {
+    return 'Pobieranie wersji $newVersion: $percent %';
+  }
+
+  @override
+  String get updateNeedsPermission =>
+      'Android prosi o zgodę na instalowanie aplikacji przez FlappedEar Telemetry. Włącz ją w otwartych ustawieniach, wróć i dotknij Dalej. Jeśli aplikacja uruchomiła się od nowa, otwórz Ustawienia i dotknij Sprawdź aktualizacje.';
+
+  @override
+  String get updateContinue => 'Dalej';
+
+  @override
+  String get updateInstallAgain => 'Otwórz instalator ponownie';
+
+  @override
+  String get updateInstalling =>
+      'Pobrano i sprawdzono. Instalator Androida jest otwarty: potwierdź w nim aktualizację.';
+
+  @override
+  String updateSaved(String path) {
+    return 'Pobrano i sprawdzono: $path. Otwórz plik i przenieś FlappedEar Telemetry do Aplikacji, zastępując starą wersję. Przy pierwszym uruchomieniu macOS odmówi jak po pierwszej instalacji: zezwól w ten sam sposób.';
+  }
+
+  @override
+  String get updateShowInFinder => 'Pokaż w Finderze';
+
+  @override
+  String get updateFailedOffline =>
+      'Nie udało się połączyć z GitHubem. Sprawdź połączenie i spróbuj ponownie.';
+
+  @override
+  String get updateFailedRateLimited =>
+      'GitHub pozwala na kilka sprawdzeń na godzinę z jednej sieci. Spróbuj później.';
+
+  @override
+  String get updateFailedNotVerifiable =>
+      'Wydanie nie podaje sumy kontrolnej tego pliku, więc go nie zachowano.';
+
+  @override
+  String get updateFailedChecksum =>
+      'Pobrany plik nie zgadza się z sumą kontrolną wydania i został usunięty. Spróbuj ponownie.';
+
+  @override
+  String get updateFailedNotSaved =>
+      'Nie udało się zapisać pliku. Spróbuj ponownie albo, na komputerze, wybierz inny folder.';
+
+  @override
+  String get updateFailedUnexpected =>
+      'Aktualizacja się nie udała. Spróbuj ponownie albo otwórz stronę wydań.';
+
+  @override
+  String get updateTryAgain => 'Spróbuj ponownie';
 }

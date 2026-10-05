@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import io.flutter.embedding.android.FlutterActivity
@@ -42,6 +43,12 @@ import java.util.concurrent.Executors
  * [MAXIMUM_BATCH_FILES] files, and the user is told once what was left out.
  * A picked file that is not a recording is passed on as an empty file of the
  * same name, which is all the import needs to report it.
+ *
+ * "install" on the "com.flappedear.telemetry/app_update" channel hands an
+ * update APK the app downloaded and checked (UpdateApkProvider) to Android's
+ * installer. Until the user allows the app to install apps, it opens that
+ * setting instead and answers "permission"; "allowInstall" does the same
+ * check before a download starts.
  */
 class MainActivity : FlutterActivity() {
     private val copier = Executors.newSingleThreadExecutor()
@@ -51,6 +58,7 @@ class MainActivity : FlutterActivity() {
     private var ready = false
     private var picker: MethodChannel? = null
     private var pickResult: MethodChannel.Result? = null
+    private var updates: MethodChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -74,7 +82,53 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+        updates = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL).apply {
+            setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "install" -> install(call.argument<String>("name"), result)
+                    "allowInstall" -> result.success(allowInstall())
+                    else -> result.notImplemented()
+                }
+            }
+        }
         receive(intent)
+    }
+
+    /**
+     * Whether the app may install apps. When not, opens the setting that
+     * allows it, so the user grants it before the update downloads.
+     */
+    private fun allowInstall(): Boolean {
+        if (packageManager.canRequestPackageInstalls()) return true
+        try {
+            startActivity(
+                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")),
+            )
+        } catch (error: ActivityNotFoundException) {
+            Log.w(TAG, "No setting for installing apps", error)
+        }
+        return false
+    }
+
+    /** Opens Android's installer for the downloaded update [name]. */
+    private fun install(name: String?, result: MethodChannel.Result) {
+        if (name == null) {
+            result.error("argument", "No update named.", null)
+            return
+        }
+        if (!allowInstall()) {
+            result.success("permission")
+            return
+        }
+        val intent = Intent(Intent.ACTION_VIEW)
+            .setDataAndType(UpdateApkProvider.uriFor(packageName, name), UpdateApkProvider.APK_TYPE)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            startActivity(intent)
+            result.success("started")
+        } catch (error: ActivityNotFoundException) {
+            result.error("unavailable", "No installer on this device.", null)
+        }
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
@@ -82,6 +136,8 @@ class MainActivity : FlutterActivity() {
         channel = null
         picker?.setMethodCallHandler(null)
         picker = null
+        updates?.setMethodCallHandler(null)
+        updates = null
         ready = false
         super.cleanUpFlutterEngine(flutterEngine)
     }
@@ -263,6 +319,7 @@ class MainActivity : FlutterActivity() {
     private companion object {
         const val CHANNEL = "com.flappedear.telemetry/incoming_recordings"
         const val PICKER_CHANNEL = "com.flappedear.telemetry/recording_picker"
+        const val UPDATE_CHANNEL = "com.flappedear.telemetry/app_update"
         const val PICK_REQUEST = 0x46E7
         const val HANDLED = "com.flappedear.telemetry.SHARE_HANDLED"
         const val TAG = "IncomingRecordings"
