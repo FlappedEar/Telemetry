@@ -616,10 +616,13 @@ typedef _CornerBest = ({double? minimum, double? exit, double? deceleration});
     case 'cornerSequenceManagement':
       return median((corner) => corner.sequenceLossSeconds);
     case 'throttleCommitment':
-      // Corners count alike: the mean, as most have no released pickup.
-      final shares = [for (final corner in stats.corners) ?corner.releasedPickupShare];
-      if (shares.isEmpty) return null;
-      return (shares.fold(0.0, (sum, v) => sum + v) / shares.length * 100, stats.rankedLaps);
+      // A share of all the session's passes, from 3 of them.
+      var known = 0, released = 0;
+      for (final corner in stats.corners) {
+        known += corner.throttleKnownLaps ?? 0;
+        released += corner.releasedPickups ?? 0;
+      }
+      return known < 3 ? null : (released / known * 100, stats.rankedLaps);
     case 'brakingEffectiveness':
       return median((corner) {
         final best = dayBest[corner.cornerId]?.deceleration, typical = corner.decelerationG;

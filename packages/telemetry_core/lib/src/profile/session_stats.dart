@@ -72,7 +72,8 @@ final class CornerStats {
     this.entrySpeedSpread,
     this.lineSpreadMeters,
     this.pickupSpreadMeters,
-    this.releasedPickupShare,
+    this.throttleKnownLaps,
+    this.releasedPickups,
     this.sequenceLossSeconds,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
@@ -107,8 +108,9 @@ final class CornerStats {
   /// below 3 laps.
   final double? releaseSpreadMeters;
 
-  /// Median and highest mean deceleration while braking, g; needs a
-  /// longitudinal acceleration in g (also unlabelled) or m/s².
+  /// Median and highest mean deceleration through a measured braking (the
+  /// brake recorded), g; needs a longitudinal acceleration in g (also
+  /// unlabelled) or m/s².
   final double? decelerationG;
   final double? bestDecelerationG;
 
@@ -117,23 +119,24 @@ final class CornerStats {
   final double? entrySpeedSpread;
 
   /// Interquartile range of the line across the track at the apex, metres;
-  /// only where the recording states a GPS accuracy of a metre or better,
-  /// so the spread is not GPS noise. Null below 3 laps.
+  /// only where the recording states a GPS accuracy of [_lineAccuracy] or
+  /// better, half the closest band, so the spread is not GPS noise. Null
+  /// below 3 laps.
   final double? lineSpreadMeters;
 
   /// Interquartile range of the measured throttle pickup, metres; null
   /// below 3 laps.
   final double? pickupSpreadMeters;
 
-  /// Of the laps whose throttle is known from the end of braking to the
-  /// slow point (3 or more), the share (0–1) with a pickup released again
-  /// in between.
-  final double? releasedPickupShare;
+  /// Laps whose throttle is known from the end of a measured braking to the
+  /// slow point, and of them those with a pickup released again in
+  /// between; null without such a lap.
+  final int? throttleKnownLaps;
+  final int? releasedPickups;
 
-  /// How far the best lap through the corner and the segment right after
-  /// it falls short of the best of each put together, seconds: the time a
-  /// faster corner gave away after it, or the other way round. Null below
-  /// 3 laps.
+  /// What the faster half of the laps through the corner gave back in the
+  /// segment right after it: its median time lost there less the slower
+  /// half's, seconds, 0 when it lost no more. Null below 4 laps.
   final double? sequenceLossSeconds;
   final Map<String, Object?> unknown;
 
@@ -153,7 +156,8 @@ final class CornerStats {
     entrySpeedSpread: entrySpeedSpread,
     lineSpreadMeters: lineSpreadMeters,
     pickupSpreadMeters: pickupSpreadMeters,
-    releasedPickupShare: releasedPickupShare,
+    throttleKnownLaps: throttleKnownLaps,
+    releasedPickups: releasedPickups,
     sequenceLossSeconds: sequenceLossSeconds,
     unknown: unknown,
   );
@@ -440,7 +444,14 @@ List<CornerStats> _cornerStats(
       if (point != null && point.isFinite) braking.add(point);
       final g = _gFactor(metrics.braking.decelerationUnit);
       final mean = metrics.braking.meanDeceleration;
-      if (g != null && mean != null && mean.isFinite && mean > 0) deceleration.add(mean * g);
+      // A braking inferred from G alone is another window: never mixed in.
+      if (metrics.braking.method == 'measuredBrake' &&
+          g != null &&
+          mean != null &&
+          mean.isFinite &&
+          mean > 0) {
+        deceleration.add(mean * g);
+      }
       final offset = metrics.observation.lineOffsetMeters;
       final stated = metrics.observation.gpsAccuracyMeters;
       if (offset != null && offset.isFinite) line.add(offset);
@@ -490,22 +501,25 @@ List<CornerStats> _cornerStats(
             ? _spread(line, _maximumSeconds)
             : null,
         pickupSpreadMeters: _spread(pickup, _maximumSeconds),
-        releasedPickupShare: known >= 3 ? _nonNegative(released / known, 1) : null,
-        sequenceLossSeconds: sequence.length < 3
-            ? null
-            : _nonNegative(
-                max(
-                  0.0,
-                  sequence.map((p) => p.$1 + p.$2).reduce(min) -
-                      sequence.map((p) => p.$1).reduce(min) -
-                      sequence.map((p) => p.$2).reduce(min),
-                ),
-                _maximumSeconds,
-              ),
+        throttleKnownLaps: known == 0 ? null : known,
+        releasedPickups: known == 0 ? null : released,
+        sequenceLossSeconds: _gaveBack(sequence),
       ),
     );
   }
   return result;
+}
+
+/// Of [laps] (time lost in a corner, and in the segment after it), what the
+/// faster half in the corner lost more after it than the slower half; the
+/// middle lap of an odd count is in neither. Null below 4 laps.
+double? _gaveBack(List<(double, double)> laps) {
+  if (laps.length < 4) return null;
+  final sorted = [...laps]..sort((a, b) => a.$1.compareTo(b.$1));
+  final half = sorted.length ~/ 2;
+  final faster = _median([for (final lap in sorted.take(half)) lap.$2]);
+  final slower = _median([for (final lap in sorted.skip(sorted.length - half)) lap.$2]);
+  return _nonNegative(max(0.0, faster - slower), _maximumSeconds);
 }
 
 /// The interquartile range of [values], from 3 of them.
@@ -539,7 +553,7 @@ const _maximumSeconds = 1e5; // s, also metres of braking spread
 const _maximumDeceleration = 10.0; // g
 
 /// The stated GPS accuracy, metres, a line spread needs.
-const _lineAccuracy = 1.0;
+const _lineAccuracy = 0.25;
 
 double? _positive(double? value, double maximum) =>
     value != null && value.isFinite && value > 0 && value <= maximum ? _rounded(value) : null;
@@ -668,7 +682,8 @@ Map<String, Object?> _encodeStats(SessionStats stats) => {
           'entrySpeedSpread': ?corner.entrySpeedSpread,
           'lineSpreadMeters': ?corner.lineSpreadMeters,
           'pickupSpreadMeters': ?corner.pickupSpreadMeters,
-          'releasedPickupShare': ?corner.releasedPickupShare,
+          'throttleKnownLaps': ?corner.throttleKnownLaps,
+          'releasedPickups': ?corner.releasedPickups,
           'sequenceLossSeconds': ?corner.sequenceLossSeconds,
         },
     ],
@@ -710,6 +725,11 @@ SessionStats _stats(Object? value) {
 
 CornerStats _cornerStatsOf(Object? value) {
   final json = _map(value, 'corner stats');
+  final known = _optionalCount(json['throttleKnownLaps'], 'laps with the throttle known');
+  final released = _optionalCount(json['releasedPickups'], 'released pickups');
+  if ((known == null) != (released == null) || (released ?? 0) > (known ?? 0)) {
+    throw const ProfileFormatError('The released pickups are not valid.');
+  }
   // 200 m/s (720 km/h) bounds every speed.
   return CornerStats(
     cornerId: _string(json['cornerId'], 'corner id', allowEmpty: false),
@@ -727,7 +747,8 @@ CornerStats _cornerStatsOf(Object? value) {
     entrySpeedSpread: _optionalMeasure(json['entrySpeedSpread'], 'entry speed spread', 200),
     lineSpreadMeters: _optionalMeasure(json['lineSpreadMeters'], 'line spread', 1e5),
     pickupSpreadMeters: _optionalMeasure(json['pickupSpreadMeters'], 'pickup spread', 1e5),
-    releasedPickupShare: _optionalMeasure(json['releasedPickupShare'], 'released pickups', 1),
+    throttleKnownLaps: known,
+    releasedPickups: released,
     sequenceLossSeconds: _optionalMeasure(json['sequenceLossSeconds'], 'sequence loss', 1e5),
     unknown: _without(json, const [
       'cornerId',
@@ -745,7 +766,8 @@ CornerStats _cornerStatsOf(Object? value) {
       'entrySpeedSpread',
       'lineSpreadMeters',
       'pickupSpreadMeters',
-      'releasedPickupShare',
+      'throttleKnownLaps',
+      'releasedPickups',
       'sequenceLossSeconds',
     ]),
   );
@@ -756,6 +778,8 @@ double _fraction(Object? value, String what) {
   if (fraction < 0 || fraction >= 1) throw ProfileFormatError('The $what is out of range.');
   return fraction;
 }
+
+int? _optionalCount(Object? value, String what) => value == null ? null : _count(value, what);
 
 int _count(Object? value, String what) {
   final count = value ?? 0;

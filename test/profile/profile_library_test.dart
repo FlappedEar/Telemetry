@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +52,62 @@ void main() {
   }
 
   group('ProfileLibrary', () {
+    test(
+      'measures a day in another isolate; a newer recording of it wins',
+      () async {
+        final outcome = importDay({
+          'a.vbo': [30, 28, 31, 29],
+          'b.vbo': [29, 32, 30],
+        });
+        final analysis = outcome.analysis!;
+        final recordings = {
+          for (final named in outcome.runs) named.run.id: named.run.telemetry,
+        };
+        final best = dayTheoreticalBest(analysis, outingRuns(outcome.runs));
+        expect(best.state, DayTheoreticalBestState.ready);
+        // The first measuring finishes after the second.
+        final gate = Completer<void>();
+        final shelf = ProfileLibrary(
+          store: FolderProfileStore(profileFolder()),
+          defaultCarName: 'My car',
+          defaultTrackName: (number) => 'Track $number',
+          background: <R>(FutureOr<R> Function() job) async {
+            final result = await Isolate.run(job);
+            if (result is ProfileDayInput && result.name == 'Older') {
+              await gate.future;
+            }
+            return result;
+          },
+        );
+        final path = (await shelf.dayPath('e1'))!;
+        await shelf.load();
+        final older = shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Older',
+          analysis: analysis,
+          recordings: recordings,
+          theoreticalBest: best,
+        );
+        final newer = shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Newer',
+          analysis: analysis,
+          recordings: recordings,
+          theoreticalBest: best,
+        );
+        await newer;
+        gate.complete();
+        await older;
+        await shelf.flush();
+        final day = shelf.profile!.day('e1')!;
+        expect(day.name, 'Newer');
+        expect(day.sessions.first.stats!.corners, isNotEmpty);
+        expect(day.sessions.first.stats!.distanceMeters, greaterThan(0));
+      },
+    );
+
     test(
       'records a day saved in the profile and writes a profile that reads back',
       () async {

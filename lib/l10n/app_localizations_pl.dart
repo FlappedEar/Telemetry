@@ -5114,7 +5114,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'throttleCommitment':
           'Gaz dodany i znów odjęty przed najwolniejszym punktem: $value przejazdów',
       'cornerSequenceManagement':
-          'Strata na połączeniu zakrętu z dalszą częścią: $value',
+          'Strata tuż za zakrętem przy szybszych przejazdach: $value',
       'other': '$value',
     });
     return '$_temp0';

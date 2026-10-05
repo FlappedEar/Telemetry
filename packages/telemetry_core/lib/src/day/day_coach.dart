@@ -605,6 +605,32 @@ double _throttleScale(TelemetryChannel channel) {
   return channel.unit.trim() == '%' || peak > 1.5 ? 100.0 : 1.0;
 }
 
+/// Whether the car coasts from [fromTime] to [toTime]: the throttle
+/// released (8 % or less, as [_liftProgress] reads a release) and the
+/// brake under 10 %, both recorded throughout (no sample missing or
+/// further than 0.5 s from either end or the one before).
+bool _coastingThroughout(TelemetrySession session, double fromTime, double toTime) {
+  bool below(String alias, double fraction) {
+    final channel = session.channels[session.aliases[alias] ?? ''];
+    if (channel == null || channel.sampleCount < 2) return false;
+    final limit = fraction * _throttleScale(channel);
+    final times = channel.timestamps, values = channel.values;
+    var previous = fromTime;
+    var count = 0;
+    for (var i = 0; i < times.length; ++i) {
+      final t = times[i];
+      if (t < fromTime) continue;
+      if (t >= toTime) break;
+      if (t - previous > 0.5 || !values[i].isFinite || values[i] > limit) return false;
+      previous = t;
+      ++count;
+    }
+    return count >= 2 && toTime - previous <= 0.5;
+  }
+
+  return below('throttle', 0.08) && below('brake', 0.10);
+}
+
 /// The longest stretch from [from] to [to] with the throttle off (below
 /// [coachThrottleOff]), in seconds and metres along [trace]: zero for none,
 /// null without a throttle channel. A sample that is not finite ends a
@@ -1059,8 +1085,22 @@ DayCoach _dayCoach(
         final toTime = timeAtProgress(trace, braking);
         if (fromTime != null && toTime != null && toTime > fromTime) {
           lift = _liftProgress(session, trace, fromTime, toTime);
-          final liftTime = lift == null ? null : timeAtProgress(trace, lift);
-          if (liftTime != null) liftSeconds = math.max(0.0, toTime - liftTime);
+        }
+      }
+      // For the profile: from the lift to the braking. An approach reaching
+      // back past start/finish starts at the lap's start; coasting through
+      // the whole approach lifted before it, so at least that long.
+      if (braking != null && end > start) {
+        final fromTime = from <= 0 ? lap.start : timeAtProgress(trace, from);
+        final toTime = timeAtProgress(trace, braking);
+        if (fromTime != null && toTime != null && toTime > fromTime) {
+          final at = from >= 0 ? lift : _liftProgress(session, trace, fromTime, toTime);
+          final liftTime = at == null ? null : timeAtProgress(trace, at);
+          if (liftTime != null) {
+            liftSeconds = math.max(0.0, toTime - liftTime);
+          } else if (_coastingThroughout(session, fromTime, toTime)) {
+            liftSeconds = toTime - fromTime;
+          }
         }
       }
       // A pickup between the end of the braking and the slow point,

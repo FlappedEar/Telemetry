@@ -255,15 +255,22 @@ class ProfileLibrary extends ChangeNotifier {
     final folder = _folder;
     final profile = _profile;
     if (folder == null || profile == null || !holds(path)) return;
-    final input = ProfileDayInput.fromAnalysis(
-      eventId: eventId,
-      file: p.relative(path, from: folder).replaceAll(r'\', '/'),
-      name: name,
-      analysis: analysis,
-      trackName: defaultTrackName(profile.tracks.length + 1),
-      recordings: recordings,
-      theoreticalBest: theoreticalBest,
+    // Measuring reads every lap's pedals at every corner as the coach does:
+    // off the UI thread. A newer recording of the same day wins.
+    final generation = (_recordings[eventId] ?? 0) + 1;
+    _recordings[eventId] = generation;
+    final input = await background(
+      _measureJob(
+        eventId: eventId,
+        file: p.relative(path, from: folder).replaceAll(r'\', '/'),
+        name: name,
+        analysis: analysis,
+        trackName: defaultTrackName(profile.tracks.length + 1),
+        recordings: recordings,
+        theoreticalBest: theoreticalBest,
+      ),
     );
+    if (_recordings[eventId] != generation || _folder != folder) return;
     _change(
       (profile) => addDayToProfile(
         profile,
@@ -273,6 +280,29 @@ class ProfileLibrary extends ChangeNotifier {
       ),
     );
   }
+
+  /// The latest [recordDay] of each day, by event id.
+  final _recordings = <String, int>{};
+
+  // Takes only what it is given, so it can be sent to another isolate.
+  static ProfileDayInput Function() _measureJob({
+    required String eventId,
+    required String file,
+    required String name,
+    required DayAnalysis analysis,
+    required String trackName,
+    required Map<String, TelemetrySession?>? recordings,
+    required DayTheoreticalBest? theoreticalBest,
+  }) =>
+      () => ProfileDayInput.fromAnalysis(
+        eventId: eventId,
+        file: file,
+        name: name,
+        analysis: analysis,
+        trackName: trackName,
+        recordings: recordings,
+        theoreticalBest: theoreticalBest,
+      );
 
   /// Day [eventId] driven in car [carId], which new days then take.
   void setDayCar(String eventId, String carId) =>

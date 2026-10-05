@@ -498,7 +498,7 @@ DriverProfile addDayToProfile(
     ids = placed;
   }
   final sameTrack = existing != null && existing.trackId == trackId;
-  // Past the profile's budget of corners, the day keeps none.
+  // Past the profile's budget of corners, the day keeps no new ones.
   var budget = maximumProfileCornerStats;
   for (final other in profile.days) {
     if (other.eventId == day.eventId) continue;
@@ -530,11 +530,14 @@ DriverProfile addDayToProfile(
       },
   ];
   if (sessions.fold(0, (sum, s) => sum + (s.stats?.corners.length ?? 0)) > budget) {
+    // A day already in the profile keeps the corners it has (a profile
+    // written under an older, larger budget loses none); a new day gets
+    // none.
     sessions = [
       for (final session in sessions)
         session._withStats(
           session.stats?.withCorners(
-            const [],
+            before[session.runId]?.corners ?? const [],
             theoreticalBestSeconds: session.stats!.theoreticalBestSeconds,
           ),
         ),

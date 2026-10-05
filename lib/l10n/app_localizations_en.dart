@@ -4999,7 +4999,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'throttleCommitment':
           'Throttle picked up and lifted again before the slowest point: $value of passes',
       'cornerSequenceManagement':
-          'Lost linking a corner to what follows: $value',
+          'Lost right after the corner on your faster passes: $value',
       'other': '$value',
     });
     return '$_temp0';
