@@ -5269,4 +5269,102 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateTryAgain => 'Try again';
+
+  @override
+  String get libraryExport => 'Export profile';
+
+  @override
+  String get libraryImport => 'Import profile';
+
+  @override
+  String libraryExportFileName(String date) {
+    return 'Driver profile $date';
+  }
+
+  @override
+  String get libraryExporting => 'Writing the profile file…';
+
+  @override
+  String get libraryImporting => 'Adding the days from the file…';
+
+  @override
+  String libraryExported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Profile exported with $count days.',
+      one: 'Profile exported with 1 day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryExportMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count recordings were not found on this device and are not in the file.',
+      one: '1 recording was not found on this device and is not in the file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryExportFailed => 'The profile could not be exported.';
+
+  @override
+  String libraryImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days added.',
+      one: '1 day added.',
+      zero: 'The file has no days that are not here already.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportNotAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count days could not be added: they are missing from the file or the library is full.',
+      one: '1 day could not be added: it is missing from the file or the library is full.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryImportFailed =>
+      'This file cannot be imported. It is not a profile exported from this app, it comes from a newer version, or it is damaged.';
+
+  @override
+  String get profileBundleType => 'Driver profiles';
+
+  @override
+  String libraryExportDaysMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count days were not found on this device and are not in the file.',
+      one: '1 day was not found on this device and is not in the file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportNotSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count days were copied, but the library could not be saved. They are listed again, in your last car, when the app next starts.',
+      one: '1 day was copied, but the library could not be saved. It is listed again, in your last car, when the app next starts.',
+    );
+    return '$_temp0';
+  }
 }

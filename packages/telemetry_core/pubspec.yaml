@@ -8,6 +8,7 @@ version: 0.1.0
 environment:
   sdk: ^3.13.5
 dependencies:
+  archive: ^4.3.0
   crypto: ^3.0.7
   fetproject:
     path: ../fetproject

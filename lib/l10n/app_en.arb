@@ -7612,5 +7612,68 @@
   "updateTryAgain": "Try again",
   "@updateTryAgain": {
     "description": "Update dialog button after a failure."
+  },
+  "libraryExport": "Export profile",
+  "@libraryExport": {
+    "description": "Library page menu item: writes the driver profile, its days and their recordings to one file to move to another device."
+  },
+  "libraryImport": "Import profile",
+  "@libraryImport": {
+    "description": "Library page menu item: adds the days of a profile file exported on another device."
+  },
+  "libraryExportFileName": "Driver profile {date}",
+  "@libraryExportFileName": {
+    "description": "Suggested name of an exported profile file, without the extension; date is like 2026-10-05.",
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "libraryExporting": "Writing the profile file…",
+  "@libraryExporting": {
+    "description": "Shown while the profile file is being written."
+  },
+  "libraryImporting": "Adding the days from the file…",
+  "@libraryImporting": {
+    "description": "Shown while a profile file is being imported."
+  },
+  "libraryExported": "{count, plural, =1{Profile exported with 1 day.} other{Profile exported with {count} days.}}",
+  "@libraryExported": {
+    "description": "After an export: how many days the file holds.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryExportMissing": "{count, plural, =1{1 recording was not found on this device and is not in the file.} other{{count} recordings were not found on this device and are not in the file.}}",
+  "@libraryExportMissing": {
+    "description": "After an export: recordings the file could not include.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryExportFailed": "The profile could not be exported.",
+  "@libraryExportFailed": {
+    "description": "Export failed, for example because the disk is full."
+  },
+  "libraryImported": "{count, plural, =0{The file has no days that are not here already.} =1{1 day added.} other{{count} days added.}}",
+  "@libraryImported": {
+    "description": "After an import: how many days were added.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryImportNotAdded": "{count, plural, =1{1 day could not be added: it is missing from the file or the library is full.} other{{count} days could not be added: they are missing from the file or the library is full.}}",
+  "@libraryImportNotAdded": {
+    "description": "After an import: days not added.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryImportFailed": "This file cannot be imported. It is not a profile exported from this app, it comes from a newer version, or it is damaged.",
+  "@libraryImportFailed": {
+    "description": "Import of a file that is not a readable profile bundle."
+  },
+  "profileBundleType": "Driver profiles",
+  "@profileBundleType": {
+    "description": "Name of the file type in the save and open dialogs for exported profiles."
+  },
+  "libraryExportDaysMissing": "{count, plural, =1{1 day was not found on this device and is not in the file.} other{{count} days were not found on this device and are not in the file.}}",
+  "@libraryExportDaysMissing": {
+    "description": "After an export: days whose file was not found.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryImportNotSaved": "{count, plural, =1{1 day was copied, but the library could not be saved. It is listed again, in your last car, when the app next starts.} other{{count} days were copied, but the library could not be saved. They are listed again, in your last car, when the app next starts.}}",
+  "@libraryImportNotSaved": {
+    "description": "After an import whose days were copied but the library file could not be written.",
+    "placeholders": {"count": {"type": "int"}}
   }
 }

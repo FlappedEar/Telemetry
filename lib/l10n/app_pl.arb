@@ -1280,5 +1280,19 @@
   "updateFailedChecksum": "Pobrany plik nie zgadza się z sumą kontrolną wydania i został usunięty. Spróbuj ponownie.",
   "updateFailedNotSaved": "Nie udało się zapisać pliku. Spróbuj ponownie albo, na komputerze, wybierz inny folder.",
   "updateFailedUnexpected": "Aktualizacja się nie udała. Spróbuj ponownie albo otwórz stronę wydań.",
-  "updateTryAgain": "Spróbuj ponownie"
+  "updateTryAgain": "Spróbuj ponownie",
+  "libraryExport": "Eksportuj profil",
+  "libraryImport": "Importuj profil",
+  "libraryExportFileName": "Profil kierowcy {date}",
+  "libraryExporting": "Zapisywanie pliku profilu…",
+  "libraryImporting": "Dodawanie dni z pliku…",
+  "libraryExported": "{count, plural, =1{Wyeksportowano profil z 1 dniem.} other{Wyeksportowano profil z {count} dniami.}}",
+  "libraryExportMissing": "{count, plural, =1{Nie znaleziono 1 zapisu na tym urządzeniu, więc nie ma go w pliku.} other{Nie znaleziono {count} zapisów na tym urządzeniu, więc nie ma ich w pliku.}}",
+  "libraryExportFailed": "Nie udało się wyeksportować profilu.",
+  "libraryImported": "{count, plural, =0{W pliku nie ma dni, których tu jeszcze nie ma.} =1{Dodano 1 dzień.} other{Dodano {count} dni.}}",
+  "libraryImportNotAdded": "{count, plural, =1{Nie dodano 1 dnia: brak go w pliku albo biblioteka jest pełna.} other{Nie dodano {count} dni: brak ich w pliku albo biblioteka jest pełna.}}",
+  "libraryImportFailed": "Nie można zaimportować tego pliku. To nie jest profil wyeksportowany z tej aplikacji, pochodzi z nowszej wersji albo jest uszkodzony.",
+  "profileBundleType": "Profile kierowcy",
+  "libraryExportDaysMissing": "{count, plural, =1{Nie znaleziono 1 dnia na tym urządzeniu, więc nie ma go w pliku.} other{Nie znaleziono {count} dni na tym urządzeniu, więc nie ma ich w pliku.}}",
+  "libraryImportNotSaved": "{count, plural, =1{Skopiowano 1 dzień, ale nie udało się zapisać biblioteki. Pojawi się w niej ponownie, w ostatnim samochodzie, przy następnym uruchomieniu aplikacji.} other{Skopiowano {count} dni, ale nie udało się zapisać biblioteki. Pojawią się w niej ponownie, w ostatnim samochodzie, przy następnym uruchomieniu aplikacji.}}"
 }

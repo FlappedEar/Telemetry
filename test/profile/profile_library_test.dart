@@ -12,6 +12,7 @@ import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/library_page.dart';
+import 'package:telemetry/profile/profile_bundle_pickers.dart';
 import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry/profile/profile_page.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -905,6 +906,294 @@ void main() {
       expect(find.byKey(const ValueKey('libraryEmpty')), findsOneWidget);
     });
   });
+
+  group('Profile bundle', () {
+    // A library at [folder] holding day e1, saved there as the app saves
+    // it, its recordings outside the profile.
+    Future<ProfileLibrary> withDay(
+      String folder, {
+      Future<R> Function<R>(FutureOr<R> Function()) background = _inPlace,
+    }) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = ProfileLibrary(
+        store: FolderProfileStore(folder),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: background,
+      );
+      final path = (await shelf.dayPath('e1'))!;
+      await saveDayDocument(
+        path,
+        dayDocument(
+          eventId: 'e1',
+          name: 'Test day',
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          projectPath: path,
+        ),
+      );
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Test day',
+        analysis: outcome.analysis!,
+      );
+      await shelf.flush();
+      return shelf;
+    }
+
+    test('moves the days and their recordings to another library, in other isolates', () async {
+      final here = await withDay(profileFolder(), background: Isolate.run);
+      final bundle = p.join(directory.path, 'driver.feprofile');
+      final export = (await here.exportBundle(bundle))!;
+      expect(export.days, 1);
+      expect(export.recordings, 2);
+      for (final name in ['a.vbo', 'b.vbo']) {
+        File(p.join(directory.path, name)).deleteSync();
+      }
+
+      final elsewhere = p.join(directory.path, 'Other');
+      final there = ProfileLibrary(
+        store: FolderProfileStore(elsewhere),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: Isolate.run,
+      );
+      final read = (await there.importBundle(bundle))!;
+      expect(read.added, ['e1']);
+      expect(there.profile!.day('e1')!.name, 'Test day');
+      final day = openDay(p.join(elsewhere, 'Days', 'e1.fetproject'));
+      expect(day.missing, isEmpty);
+      expect(day.runs, hasLength(2));
+
+      // Written: a library opened again has the day.
+      final reopened = ProfileLibrary(
+        store: FolderProfileStore(elsewhere),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: Isolate.run,
+      );
+      await reopened.load();
+      expect(reopened.profile!.day('e1'), isNotNull);
+
+      // Again: nothing is added twice.
+      final again = (await there.importBundle(bundle))!;
+      expect(again.added, isEmpty);
+      expect(there.profile!.days, hasLength(1));
+    });
+
+    test('keeps a day recorded while a bundle is read', () async {
+      final here = await withDay(profileFolder());
+      final bundle = p.join(directory.path, 'driver.feprofile');
+      await here.exportBundle(bundle);
+      final elsewhere = p.join(directory.path, 'Other');
+      final gate = Completer<void>();
+      final reading = Completer<void>();
+      final there = ProfileLibrary(
+        store: FolderProfileStore(elsewhere),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: <R>(FutureOr<R> Function() job) async {
+          final result = await job();
+          if (result is ProfileBundleImport) {
+            reading.complete();
+            await gate.future;
+          }
+          return result;
+        },
+      );
+      final imported = there.importBundle(bundle);
+      await reading.future;
+      // Meanwhile a day is saved on this device.
+      final outcome = importDay({
+        'c.vbo': [30, 29, 31],
+      });
+      await there.recordDay(
+        eventId: 'h1',
+        path: (await there.dayPath('h1'))!,
+        name: 'Here',
+        analysis: outcome.analysis!,
+      );
+      expect(there.profile!.day('h1'), isNotNull);
+      gate.complete();
+      final read = (await imported)!;
+      expect(read.added, ['e1']);
+      expect(
+        {for (final day in there.profile!.days) day.eventId},
+        {'h1', 'e1'},
+      );
+      await there.flush();
+      final reopened = ProfileLibrary(
+        store: FolderProfileStore(elsewhere),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: _inPlace,
+      );
+      await reopened.load();
+      expect(
+        {for (final day in reopened.profile!.days) day.eventId},
+        {'h1', 'e1'},
+      );
+    });
+
+    test('says when the imported days could not be written', () async {
+      final here = await withDay(profileFolder());
+      final bundle = p.join(directory.path, 'driver.feprofile');
+      await here.exportBundle(bundle);
+      final elsewhere = p.join(directory.path, 'Other');
+      var failing = true;
+      final there = ProfileLibrary(
+        store: FolderProfileStore(elsewhere),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: <R>(FutureOr<R> Function() job) async {
+          final result = await job();
+          // The profile's write: a full disk, once.
+          if (result == null && failing) {
+            failing = false;
+            throw const FileSystemException('No space left on device');
+          }
+          return result;
+        },
+      );
+      await there.load();
+      await expectLater(
+        there.importBundle(bundle),
+        throwsA(
+          isA<ProfileNotSaved>().having(
+            (error) => error.import.added,
+            'added',
+            ['e1'],
+          ),
+        ),
+      );
+      // Kept in memory, and written with the next change.
+      expect(there.profile!.day('e1'), isNotNull);
+      there.renameCar(there.profile!.cars.single.id, 'Clio');
+      await there.flush();
+      final reopened = ProfileLibrary(
+        store: FolderProfileStore(elsewhere),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: _inPlace,
+      );
+      await reopened.load();
+      expect(reopened.profile!.day('e1'), isNotNull);
+      expect(reopened.profile!.cars.single.name, 'Clio');
+    });
+
+    testWidgets('exports from the menu and imports on another device', (
+      tester,
+    ) async {
+      final here = await tester.runAsync(() => withDay(profileFolder()));
+      final saved = p.join(directory.path, 'Saved', 'driver.feprofile');
+      Directory(p.dirname(saved)).createSync();
+      final pickers = _FakeBundlePickers(
+        location: saved,
+        work: p.join(directory.path, 'work.feprofile'),
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: here!, open: (_) {}, pickers: pickers),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryExport')));
+      await _untilSnackBar(tester);
+      expect(find.text('Profile exported with 1 day.'), findsOneWidget);
+      expect(File(saved).existsSync(), isTrue);
+      expect(File(pickers.work).existsSync(), isFalse);
+      expect(pickers.suggested, startsWith('Driver profile '));
+
+      final there = ProfileLibrary(
+        store: FolderProfileStore(p.join(directory.path, 'Other')),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: _inPlace,
+      );
+      final picking = _FakeBundlePickers(bundle: saved);
+      await tester.runAsync(there.load);
+      // The other device: a new app.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: there, open: (_) {}, pickers: picking),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('libraryEmpty')), findsOneWidget);
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryImport')));
+      await _untilSnackBar(tester);
+      expect(find.text('1 day added.'), findsOneWidget);
+      expect(picking.released, [saved]);
+      expect(find.byKey(const ValueKey('libraryDay-e1')), findsOneWidget);
+
+      // A file that is not a profile changes nothing.
+      final notes = File(p.join(directory.path, 'notes.feprofile'))
+        ..writeAsStringSync('{}');
+      picking.bundle = notes.path;
+      tester
+          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+          .clearSnackBars();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryImport')));
+      await _untilSnackBar(tester);
+      expect(find.textContaining('cannot be imported'), findsOneWidget);
+      expect(there.profile!.days, hasLength(1));
+      // The profile is written in place here: nothing is left running.
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('shares the file on phones', (tester) async {
+      final here = await tester.runAsync(() => withDay(profileFolder()));
+      final pickers = _FakeBundlePickers(
+        shares: true,
+        work: p.join(directory.path, 'work.feprofile'),
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: here!, open: (_) {}, pickers: pickers),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryExport')));
+      await _untilSnackBar(tester);
+      expect(pickers.shared, [pickers.work]);
+      expect(File(pickers.work).existsSync(), isTrue);
+      expect(find.text('Profile exported with 1 day.'), findsOneWidget);
+
+      // Closed without sharing: nothing to confirm.
+      tester
+          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+          .clearSnackBars();
+      await tester.pumpAndSettle();
+      pickers.sharing = false;
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryExport')));
+      for (var turn = 0; turn < 300 && pickers.shared.length < 2; turn++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(pickers.shared, hasLength(2));
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.byKey(const ValueKey('libraryWorking')), findsNothing);
+    });
+  });
 }
 
 Future<R> _inPlace<R>(FutureOr<R> Function() computation) async =>
@@ -915,4 +1204,60 @@ final class _NoFolder implements ProfileStore {
 
   @override
   Future<String?> folder() async => null;
+}
+
+final class _FakeBundlePickers implements ProfileBundlePickers {
+  _FakeBundlePickers({
+    this.shares = false,
+    this.location,
+    this.work = '',
+    this.bundle,
+  });
+
+  @override
+  final bool shares;
+  final String? location;
+  final String work;
+  String? bundle;
+  String? suggested;
+  final shared = <String>[];
+
+  @override
+  Future<String?> saveLocation(String fileName) async {
+    suggested = fileName;
+    return location;
+  }
+
+  @override
+  Future<String> workFile(String fileName) async => work;
+
+  /// Whether the share sheet shares, or is closed.
+  bool sharing = true;
+  final released = <String>[];
+
+  @override
+  Future<bool> share(String path, Rect origin) async {
+    shared.add(path);
+    return sharing;
+  }
+
+  @override
+  Future<void> release(String path) async => released.add(path);
+
+  @override
+  Future<String?> pickBundle() async => bundle;
+}
+
+/// Runs the page's export or import, which reads and writes real files,
+/// until its snack bar shows.
+Future<void> _untilSnackBar(WidgetTester tester) async {
+  for (var turn = 0; turn < 300; turn++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+    if (find.byType(SnackBar).evaluate().isNotEmpty) break;
+  }
+  await tester.pumpAndSettle();
+  expect(find.byType(SnackBar), findsOneWidget);
 }

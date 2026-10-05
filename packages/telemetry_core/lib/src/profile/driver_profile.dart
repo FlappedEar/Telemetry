@@ -19,6 +19,7 @@ import '../geometry.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 
+part 'profile_merge.dart';
 part 'session_stats.dart';
 
 /// The `format` of a driver profile.

@@ -7850,6 +7850,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get updateTryAgain;
+
+  /// Library page menu item: writes the driver profile, its days and their recordings to one file to move to another device.
+  ///
+  /// In en, this message translates to:
+  /// **'Export profile'**
+  String get libraryExport;
+
+  /// Library page menu item: adds the days of a profile file exported on another device.
+  ///
+  /// In en, this message translates to:
+  /// **'Import profile'**
+  String get libraryImport;
+
+  /// Suggested name of an exported profile file, without the extension; date is like 2026-10-05.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver profile {date}'**
+  String libraryExportFileName(String date);
+
+  /// Shown while the profile file is being written.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing the profile file…'**
+  String get libraryExporting;
+
+  /// Shown while a profile file is being imported.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding the days from the file…'**
+  String get libraryImporting;
+
+  /// After an export: how many days the file holds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Profile exported with 1 day.} other{Profile exported with {count} days.}}'**
+  String libraryExported(int count);
+
+  /// After an export: recordings the file could not include.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 recording was not found on this device and is not in the file.} other{{count} recordings were not found on this device and are not in the file.}}'**
+  String libraryExportMissing(int count);
+
+  /// Export failed, for example because the disk is full.
+  ///
+  /// In en, this message translates to:
+  /// **'The profile could not be exported.'**
+  String get libraryExportFailed;
+
+  /// After an import: how many days were added.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{The file has no days that are not here already.} =1{1 day added.} other{{count} days added.}}'**
+  String libraryImported(int count);
+
+  /// After an import: days not added.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day could not be added: it is missing from the file or the library is full.} other{{count} days could not be added: they are missing from the file or the library is full.}}'**
+  String libraryImportNotAdded(int count);
+
+  /// Import of a file that is not a readable profile bundle.
+  ///
+  /// In en, this message translates to:
+  /// **'This file cannot be imported. It is not a profile exported from this app, it comes from a newer version, or it is damaged.'**
+  String get libraryImportFailed;
+
+  /// Name of the file type in the save and open dialogs for exported profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver profiles'**
+  String get profileBundleType;
+
+  /// After an export: days whose file was not found.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day was not found on this device and is not in the file.} other{{count} days were not found on this device and are not in the file.}}'**
+  String libraryExportDaysMissing(int count);
+
+  /// After an import whose days were copied but the library file could not be written.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day was copied, but the library could not be saved. It is listed again, in your last car, when the app next starts.} other{{count} days were copied, but the library could not be saved. They are listed again, in your last car, when the app next starts.}}'**
+  String libraryImportNotSaved(int count);
 }
 
 class _AppLocalizationsDelegate
