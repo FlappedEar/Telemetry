@@ -2566,7 +2566,7 @@ final class DayResultsController extends ChangeNotifier {
       _revision++;
       _scheduleRecovery();
     }
-    if (remeasure && result.state != DayTheoreticalBestState.error) {
+    if (remeasure && result.state == DayTheoreticalBestState.ready) {
       _remeasure.settled(result.groupId);
     }
     _theoreticalBest = result;
