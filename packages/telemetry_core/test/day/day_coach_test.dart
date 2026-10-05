@@ -72,6 +72,7 @@ DayCoach _coach(
   bool coachedRecording = true,
   bool saved = false,
   bool lateral = false,
+  CancellationCheck? cancelled,
 }) {
   final runs = [
     _run(
@@ -116,10 +117,43 @@ DayCoach _coach(
     },
     runId: runId,
     before: dayBeforeRun(analysis, outing, runId, documentRuns: documentRuns, random: Random(1)),
+    cancelled: cancelled,
   );
 }
 
 void main() {
+  group('cancellation', () {
+    test('a cancelled coach stops', () {
+      expect(
+        () => _coach([20, 20.5], [15, 15.2, 15.1], cancelled: () => true),
+        throwsA(isA<OperationCancelled>()),
+      );
+    });
+
+    test('the check of the session before stops too', () {
+      // The coach checks once at each of the circuit's four corners, then
+      // again at each for the session before; cancelled at that last
+      // check, it still stops.
+      var checks = 0;
+      final coach = _coach(
+        [20, 20.5],
+        [15, 15.2, 15.1],
+        cancelled: () {
+          ++checks;
+          return false;
+        },
+      );
+      expect(coach.plan, isNotEmpty);
+      final all = checks;
+      expect(all, 8);
+      checks = 0;
+      expect(
+        () => _coach([20, 20.5], [15, 15.2, 15.1], cancelled: () => ++checks == all),
+        throwsA(isA<OperationCancelled>()),
+      );
+    });
+  });
+
   test('a repeated slower minimum speed than the earlier, faster laps', () {
     final coach = _coach([20, 20.5], [15, 15.2, 15.1]);
     expect(coach.runId, 'run2');

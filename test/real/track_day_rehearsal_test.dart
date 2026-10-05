@@ -12,6 +12,8 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../support/coach_runner.dart';
+
 void main() {
   final folder = Platform.environment['FLAPPEDEAR_REAL_DAY'] ?? '';
   final skip = folder.isEmpty ? 'FLAPPEDEAR_REAL_DAY is not set' : null;
@@ -36,7 +38,7 @@ void main() {
       final controller = DayResultsController(
         runs: first.runs,
         analysis: first.analysis!,
-        coachRunner: (job) async => job(),
+        coachRunner: testCoachRunner((job) async => job()),
       );
       Future<void> coached() async {
         await controller.requestTheoreticalBest();

@@ -18,6 +18,7 @@ import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
 import 'rectangle_vbo.dart';
 import 'recovery_test.dart' show FileRecoveryStore;
 import '../support/temp_directory.dart';
+import '../support/coach_runner.dart';
 
 /// Prepares additions on the test's own thread.
 final class _SyncAppender implements DayAppender {
@@ -672,7 +673,7 @@ void main() {
           runs: first.runs,
           analysis: first.analysis!,
           appender: _SyncAppender(),
-          coachRunner: (job) async => job(),
+          coachRunner: testCoachRunner((job) async => job()),
           diagnostics: diagnostics,
         );
         await tester.binding.setSurfaceSize(size);
@@ -743,7 +744,7 @@ void main() {
       analysis: first.analysis!,
       appender: _SyncAppender(),
       diagnostics: diagnostics,
-      coachRunner: (job) async => job(),
+      coachRunner: testCoachRunner((job) async => job()),
     );
     addTearDown(controller.dispose);
     List<String> names() => [for (final step in diagnostics.steps) step.name];
@@ -771,7 +772,7 @@ void main() {
       analysis: first.analysis!,
       appender: _SyncAppender(),
       diagnostics: diagnostics,
-      coachRunner: (job) async => job(),
+      coachRunner: testCoachRunner((job) async => job()),
     );
     addTearDown(controller.dispose);
     // A share that waited 300 ms to open the day first.

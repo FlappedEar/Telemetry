@@ -18,6 +18,7 @@ import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'rectangle_vbo.dart';
+import '../support/coach_runner.dart';
 import '../support/temp_directory.dart';
 
 void main() {
@@ -179,16 +180,18 @@ void main() {
       theoreticalBestRunner: theoreticalBestRunner,
       coachRunner:
           coachRunner ??
-          (job) async => withPlan
-              ? plan(
-                  controller.theoreticalBest!,
-                  controller.latestRunId,
-                  goal: goal,
-                  measuredName: measuredName,
-                  lift: lift,
-                  braking: braking,
-                )
-              : job(),
+          testCoachRunner(
+            (job) async => withPlan
+                ? plan(
+                    controller.theoreticalBest!,
+                    controller.latestRunId,
+                    goal: goal,
+                    measuredName: measuredName,
+                    lift: lift,
+                    braking: braking,
+                  )
+                : job(),
+          ),
     );
     await tester.pumpWidget(
       MediaQuery(
@@ -593,7 +596,7 @@ void main() {
   ) async {
     final controller = await show(
       tester,
-      coachRunner: (job) async => throw StateError('broken'),
+      coachRunner: testCoachRunner((job) async => throw StateError('broken')),
     );
     expect(controller.coachLoading, isFalse);
     expect(controller.coachError, contains('broken'));
@@ -611,11 +614,11 @@ void main() {
     controller = await show(
       tester,
       locale: const Locale('pl'),
-      coachRunner: (job) async {
+      coachRunner: testCoachRunner((job) async {
         if (fail) throw const BackgroundTaskFailed('The work stopped.');
         await release.future;
         return plan(controller.theoreticalBest!, controller.latestRunId);
-      },
+      }),
     );
     addTearDown(() => Intl.defaultLocale = null);
     expect(
@@ -641,6 +644,100 @@ void main() {
     expect(again, findsNothing);
   });
 
+  testWidgets('a plan still being prepared when the laps change is stopped '
+      'and left out', (tester) async {
+    var calls = 0;
+    final held = Completer<void>();
+    Object? stopped;
+    final controller = await show(
+      tester,
+      coachRunner: testCoachRunner((job) async {
+        if (++calls != 2) return job();
+        await held.future;
+        try {
+          return job();
+        } on Object catch (error) {
+          stopped = error;
+          rethrow;
+        }
+      }),
+    );
+    expect(calls, 1);
+    final lap = controller.analysis.rows.firstWhere(
+      (row) => row.type == LapSectionType.lap && row.referenceEligible,
+    );
+    expect(controller.exclude(lap, 'Traffic'), isTrue);
+    await tester.pump();
+    await tester.pump();
+    expect(calls, 2);
+    expect(controller.coachLoading, isTrue);
+    // The laps change again while the second plan is held.
+    controller.include(lap);
+    await tester.pump();
+    await tester.pump();
+    expect(calls, 3);
+    held.complete();
+    await tester.pumpAndSettle();
+    expect(stopped, isA<OperationCancelled>());
+    expect(controller.coachLoading, isFalse);
+    expect(controller.coachError, isEmpty);
+    expect(controller.coach, isNotNull);
+  });
+
+  testWidgets('a plan still being prepared stops when the day closes', (
+    tester,
+  ) async {
+    var calls = 0;
+    final held = Completer<void>();
+    Object? stopped;
+    final controller = await show(
+      tester,
+      coachRunner: testCoachRunner((job) async {
+        if (++calls != 2) return job();
+        await held.future;
+        try {
+          return job();
+        } on Object catch (error) {
+          stopped = error;
+          rethrow;
+        }
+      }),
+    );
+    final lap = controller.analysis.rows.firstWhere(
+      (row) => row.type == LapSectionType.lap && row.referenceEligible,
+    );
+    expect(controller.exclude(lap, 'Traffic'), isTrue);
+    await tester.pump();
+    await tester.pump();
+    expect(calls, 2);
+    await tester.pumpWidget(const SizedBox());
+    held.complete();
+    await tester.pump();
+    expect(stopped, isA<OperationCancelled>());
+  });
+
+  test('the coach runs in its own isolate', () async {
+    debugRunInIsolate = true;
+    addTearDown(() => debugRunInIsolate = false);
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    final coached = Completer<void>();
+    controller.addListener(() {
+      if ((controller.coach != null || controller.coachError.isNotEmpty) &&
+          !coached.isCompleted) {
+        coached.complete();
+      }
+    });
+    await controller.requestTheoreticalBest();
+    await coached.future;
+    expect(controller.coachError, isEmpty);
+    expect(controller.coach?.runId, controller.latestRunId);
+  });
+
   testWidgets('without a theoretical best the coach says why', (tester) async {
     var coached = false;
     final controller = await show(
@@ -650,10 +747,10 @@ void main() {
         state: DayTheoreticalBestState.error,
         message: 'failed',
       ),
-      coachRunner: (job) async {
+      coachRunner: testCoachRunner((job) async {
         coached = true;
         return job();
-      },
+      }),
     );
     expect(coached, isFalse);
     expect(controller.coachLoading, isFalse);
