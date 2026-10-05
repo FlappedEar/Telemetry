@@ -83,10 +83,12 @@ final class DayTheoreticalBest {
     this.segmentRunId = '',
     List<Map<String, Object?>> runSegments = const [],
     List<SegmentReviewItem> proposalReview = const [],
+    Map<String, List<Map<String, Object?>>> remeasuredRuns = const {},
   }) : laps = List.unmodifiable(laps),
        corners = List.unmodifiable(corners),
        runSegments = List.unmodifiable(runSegments),
-       proposalReview = List.unmodifiable(proposalReview);
+       proposalReview = List.unmodifiable(proposalReview),
+       remeasuredRuns = Map.unmodifiable(remeasuredRuns);
 
   final String groupId;
   final DayTheoreticalBestState state;
@@ -123,6 +125,29 @@ final class DayTheoreticalBest {
   /// approved segments: all approved when the segments are the automatic
   /// ones, superseded where an edit replaced them.
   final List<SegmentReviewItem> proposalReview;
+
+  /// When the segments were measured again on the best lap
+  /// ([remeasureDaySegments]): each changed run's whole `trackSegments`,
+  /// which the day keeps as approved. Empty otherwise.
+  final Map<String, List<Map<String, Object?>>> remeasuredRuns;
+
+  /// This result with [runs] as its [remeasuredRuns].
+  DayTheoreticalBest withRemeasuredRuns(Map<String, List<Map<String, Object?>>> runs) =>
+      DayTheoreticalBest(
+        groupId: groupId,
+        state: state,
+        message: message,
+        computed: computed,
+        summary: summary,
+        laps: laps,
+        bestLap: bestLap,
+        automaticSegments: automaticSegments,
+        corners: corners,
+        segmentRunId: segmentRunId,
+        runSegments: runSegments,
+        proposalReview: proposalReview,
+        remeasuredRuns: runs,
+      );
 
   /// The length of the shared axis the segments are edited on.
   double get axisLengthMeters => computed?.axisLengthMeters ?? 0.0;

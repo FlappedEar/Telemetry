@@ -163,6 +163,21 @@ final class DaySegmentEdits {
     return true;
   }
 
+  /// Keeps segments measured again on the best lap
+  /// ([DayTheoreticalBest.remeasuredRuns], FET-170): each run's whole
+  /// `trackSegments`. Not an edit; the history, which refers to the
+  /// segments replaced, is cleared.
+  void adoptRemeasured(Map<String, List<Map<String, Object?>>> runs) {
+    if (runs.isEmpty) return;
+    for (final MapEntry(key: id, value: segments) in runs.entries) {
+      _runs[id] = [
+        for (final segment in segments) {...segment},
+      ];
+    }
+    _undo.clear();
+    _redo.clear();
+  }
+
   /// Forgets the edits once they are saved.
   void clear() {
     _runs.clear();

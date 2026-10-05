@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -172,6 +173,69 @@ void main() {
         [for (final s in after.segments) s.name],
         [for (final s in before.segments) s.name],
       );
+    },
+  );
+
+  test(
+    'corners that cannot time a new best lap are measured again on it',
+    () async {
+      // Session 2's laps are faster; its best lap runs 12 m off the others'
+      // line in the middle of the left straight, eased in and out (FET-170).
+      double offLine(double distance) {
+        const from = 385.0, to = 465.0, ease = 25.0;
+        if (distance <= from || distance >= to) return 0.0;
+        final edge = math.min(distance - from, to - distance);
+        if (edge >= ease) return 12.0;
+        final x = edge / ease;
+        return 12.0 * x * x * (3 - 2 * x);
+      }
+
+      final a = '${directory.path}/a.vbo';
+      File(a)
+          .writeAsStringSync(rectangleVbo([(_) => 30, (_) => 30.5, (_) => 30]));
+      final b = '${directory.path}/b.vbo';
+      File(b).writeAsStringSync(
+        rectangleVbo(
+          [(_) => 33, (_) => 33.5, (_) => 33],
+          westShifts: [(_) => 0, offLine, (_) => 0],
+        ),
+      );
+      final first = runDayImport((paths: [a], includeSubfolders: false));
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+      );
+      await controller.requestTheoreticalBest();
+      final before = controller.theoreticalBest!;
+      expect(before.automaticSegments, isTrue);
+
+      expect((await controller.addRecordings([b])).added, ['Session 2']);
+      await controller.requestTheoreticalBest();
+      final after = controller.theoreticalBest!;
+      // Measured on Session 2's best lap now, with nothing to undo.
+      expect(after.segmentRunId, isNot(before.segmentRunId));
+      expect(bestLapHasUntimedSegment(after), isFalse);
+      expect(
+        after.theoreticalBestSeconds,
+        lessThanOrEqualTo(after.bestLapSeconds!),
+      );
+      expect(controller.canUndoSegmentEdit, isFalse);
+
+      // Saved with them and opened again, the day keeps them and measures
+      // nothing.
+      final path = '${directory.path}/Day.fetproject';
+      await controller.save(path);
+      final opened = DayResultsController.opened(
+        openDay(path),
+        appender: _SyncAppender(),
+      );
+      await opened.requestTheoreticalBest();
+      final reopened = opened.theoreticalBest!;
+      expect(reopened.remeasuredRuns, isEmpty);
+      expect(reopened.automaticSegments, isFalse);
+      expect(reopened.segmentRunId, after.segmentRunId);
+      expect(reopened.theoreticalBestSeconds, after.theoreticalBestSeconds);
     },
   );
 

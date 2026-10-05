@@ -8,11 +8,14 @@ import 'dart:math' as math;
 /// from the change of speed: braking when slowing by more than 0.4 m/s²,
 /// full throttle when gaining more than 0.3 m/s², 15 % otherwise. With
 /// [car] it also records an oil temperature (°C, warming up, then cooling
-/// through the last lap) and the driver's heart rate (bpm). No real data.
+/// through the last lap) and the driver's heart rate (bpm). [westShifts]
+/// move each lap's line west by metres at a distance along the lap. No real
+/// data.
 String rectangleVbo(
   List<double Function(double distance)> laps, {
   bool pedals = false,
   bool car = false,
+  List<double Function(double distance)>? westShifts,
 }) {
   const lat0 = 52.0, lon0 = 21.0;
   const metersPerDegree = 6371000.0 * math.pi / 180.0;
@@ -69,6 +72,11 @@ String rectangleVbo(
         outline[index].$1 + (outline[next].$1 - outline[index].$1) * fraction;
     final north =
         outline[index].$2 + (outline[next].$2 - outline[index].$2) * fraction;
+    // A lap driven off the others' line: moved west by [westShifts].
+    final lap = math.max(0, math.min(distance ~/ perimeter, laps.length - 1));
+    final shift = westShifts == null || lap >= westShifts.length
+        ? 0.0
+        : westShifts[lap](distance - lap * perimeter);
     var pedalColumns = '';
     if (pedals) {
       // Speed 0.1 s ahead and behind, as distance travelled at this speed.
@@ -90,7 +98,7 @@ String rectangleVbo(
       carColumns = ' ${oil.toStringAsFixed(1)} ${heart.toStringAsFixed(0)}';
     }
     rows.writeln(
-      '${t.toStringAsFixed(2)} ${coordinate(east, north)} '
+      '${t.toStringAsFixed(2)} ${coordinate(east - shift, north)} '
       '${(speed * 3.6).toStringAsFixed(2)}$pedalColumns$carColumns',
     );
     distance += speed / 10;
