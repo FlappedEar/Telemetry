@@ -126,15 +126,18 @@ yet; it still counts in days, sessions and laps.
 | `rankedLaps`, `medianLapSeconds`, `lapSpreadSeconds` | Ranked laps of the session's group; median; interquartile range (3 laps or more). |
 | `theoreticalBestSeconds` | The session's own fastest segments added up, when every segment was timed on one of its ranked laps. |
 | `otherLayout` | `true` when the session was on another layout than the day's track: it counts in totals only. |
-| `corners[]` | Per track corner, over the session's ranked laps: `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). |
+| `corners[]` | Per track corner, over the session's ranked laps: `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). From FET-165 also: `liftSeconds` (median time from the last lift off the throttle to a measured braking point, 0 when the pedals overlap; the lift is looked for from 150 m before the corner, or the lap's start, and coasting with both pedals off through all of that counts as that long, unless the throttle is never pressed in the session (an unplugged pedal logging zeros); needs throttle and brake), `releaseSpreadMeters` (interquartile range of where a measured braking ends), median and highest `decelerationG` / `bestDecelerationG` (mean deceleration through a measured braking, never one inferred from G alone, g; needs longitudinal G in g, also unlabelled as the G-G diagram reads it, or m/s²), `entrySpeedSpread` (interquartile range of the speed at the corner's start, m/s), `lineSpreadMeters` (interquartile range of the line across the track at the apex; only when the recording states a median GPS accuracy of 0.25 m or better for at least half the laps, half the closest band), `pickupSpreadMeters` (interquartile range of the measured throttle pickup at or after the slow point), `throttleKnownLaps` and `releasedPickups` (laps whose throttle is known from the end of a measured braking to the slow point, and of them those with a pickup released again in between) and `sequenceLossSeconds` (the median time the faster half of the laps through the corner lost in the segment right after it, less the slower half's, at least 0; 4 laps or more). Pedal readings are the coach's (`coachCornerPassages` in `day_coach.dart`); spreads need 3 laps. The app measures a day off the UI thread (`ProfileLibrary.recordDay`). |
 
 A day's `theoreticalBestSeconds` is its track's theoretical best (the chosen
 group's). Days re-added before their theoretical best is worked out, or when it
 failed, keep the corners and theoretical bests measured before.
 
-A whole profile keeps at most 60 000 session corners
-(`maximumProfileCornerStats`); past it, a day is added without its corners.
-10 000 days of 5 sessions with that many corners take about 30 Mi characters
+A whole profile keeps at most 30 000 session corners
+(`maximumProfileCornerStats`, halved from 60 000 when FET-165 added nine
+figures per corner); past it, a new day is added without its corners and a
+day already in the profile keeps the corners it had, so a profile written
+under the larger budget loses none.
+10 000 days of 5 sessions with that many corners stay under the 32 Mi characters
 on a few tracks; each track adds about 4.5 Ki (16 Ki with 128 corners), so
 hundreds of tracks on top of that would exceed the limit (not budgeted yet).
 
@@ -171,5 +174,29 @@ last.
 - `skillLevels`: the 12 skills of `skillCatalogue`, each level 1–5 = 5 − bands
   exceeded, over the last 3 days that measured it; confidence from its ranked
   laps (low below 5, medium below 15, high from 15); trend against the 3 days before.
-  Measured now: brake-point consistency, minimum and exit speed below the day's
-  best at each corner, and lap spread; the others say "needs more evidence".
+  Each is the median over a session's corners (sessions weighed by ranked
+  laps), lower is better:
+
+  | Skill | Measure | Bands |
+  |---|---|---|
+  | liftTiming | `liftSeconds` | 0.2, 0.4, 0.7, 1 s |
+  | brakePointConsistency | `brakingSpreadMeters` | 4, 6, 9, 14 m |
+  | brakeReleaseTiming | `releaseSpreadMeters` | 6, 9, 14, 21 m |
+  | brakingEffectiveness | day's best `bestDecelerationG` at the corner − `decelerationG` | 0.03, 0.06, 0.1, 0.15 g |
+  | turnInConsistency | `entrySpeedSpread` | 2, 4, 6, 9 km/h |
+  | minimumSpeedControl | day's best − `minimumSpeed` | 2, 4, 6, 9 km/h |
+  | lineConsistency | `lineSpreadMeters` | 0.5, 1, 1.5, 2.5 m |
+  | throttleReapplication | `pickupSpreadMeters` | 4, 6, 9, 14 m |
+  | throttleCommitment | all corners' `releasedPickups` / `throttleKnownLaps` (3 or more passes, 3 or more ranked laps), % of passes | 5, 15, 30, 50 % |
+  | exitSpeedExecution | day's best − `exitSpeed` | 1, 3, 6, 9 km/h |
+  | cornerSequenceManagement | `sequenceLossSeconds` | 0.02, 0.05, 0.1, 0.2 s |
+
+  Minimum speed, exit speed and braking effectiveness compare against the
+  day's best at the corner, so a day with more laps sets a higher best.
+  | paceConsistency | `lapSpreadSeconds` | 1, 2.5, 5, 8 s |
+
+  A skill none of the window's sessions measured (no pedals, no G, no stated
+  GPS accuracy, or days added before FET-165) says "needs more evidence". The
+  bands are a first setting from one real day (Jastrząb, 2026-08-29: every
+  skill between level 2 and 5) and are tuned in `skillCatalogue`; stored data
+  never changes.

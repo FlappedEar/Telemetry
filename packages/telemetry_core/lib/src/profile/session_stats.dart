@@ -11,7 +11,7 @@ const maximumProfileCorners = 128;
 /// The most session corners a whole profile keeps, so it stays well inside
 /// [maximumProfileCharacters] at [maximumProfileDays]: past it, a day is
 /// still added, without its corners.
-const maximumProfileCornerStats = 60000;
+const maximumProfileCornerStats = 30000;
 
 /// Moving faster than this counts as driving.
 const drivingSpeedMetresPerSecond = 2.0;
@@ -65,6 +65,16 @@ final class CornerStats {
     this.bestExitSpeed,
     this.brakingSpreadMeters,
     this.lossSeconds,
+    this.liftSeconds,
+    this.releaseSpreadMeters,
+    this.decelerationG,
+    this.bestDecelerationG,
+    this.entrySpeedSpread,
+    this.lineSpreadMeters,
+    this.pickupSpreadMeters,
+    this.throttleKnownLaps,
+    this.releasedPickups,
+    this.sequenceLossSeconds,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
 
@@ -89,6 +99,45 @@ final class CornerStats {
 
   /// Median time lost here against the group's fastest time, seconds.
   final double? lossSeconds;
+
+  /// Median time from lifting off the throttle to braking, seconds; needs
+  /// the throttle and brake.
+  final double? liftSeconds;
+
+  /// Interquartile range of where a measured braking ends, metres; null
+  /// below 3 laps.
+  final double? releaseSpreadMeters;
+
+  /// Median and highest mean deceleration through a measured braking (the
+  /// brake recorded), g; needs a longitudinal acceleration in g (also
+  /// unlabelled) or m/s².
+  final double? decelerationG;
+  final double? bestDecelerationG;
+
+  /// Interquartile range of the speed into the corner, m/s; null below 3
+  /// laps.
+  final double? entrySpeedSpread;
+
+  /// Interquartile range of the line across the track at the apex, metres;
+  /// only where the recording states a GPS accuracy of [_lineAccuracy] or
+  /// better, half the closest band, so the spread is not GPS noise. Null
+  /// below 3 laps.
+  final double? lineSpreadMeters;
+
+  /// Interquartile range of the measured throttle pickup, metres; null
+  /// below 3 laps.
+  final double? pickupSpreadMeters;
+
+  /// Laps whose throttle is known from the end of a measured braking to the
+  /// slow point, and of them those with a pickup released again in
+  /// between; null without such a lap.
+  final int? throttleKnownLaps;
+  final int? releasedPickups;
+
+  /// What the faster half of the laps through the corner gave back in the
+  /// segment right after it: its median time lost there less the slower
+  /// half's, seconds, 0 when it lost no more. Null below 4 laps.
+  final double? sequenceLossSeconds;
   final Map<String, Object?> unknown;
 
   CornerStats withCorner(String id) => CornerStats(
@@ -100,6 +149,16 @@ final class CornerStats {
     bestExitSpeed: bestExitSpeed,
     brakingSpreadMeters: brakingSpreadMeters,
     lossSeconds: lossSeconds,
+    liftSeconds: liftSeconds,
+    releaseSpreadMeters: releaseSpreadMeters,
+    decelerationG: decelerationG,
+    bestDecelerationG: bestDecelerationG,
+    entrySpeedSpread: entrySpeedSpread,
+    lineSpreadMeters: lineSpreadMeters,
+    pickupSpreadMeters: pickupSpreadMeters,
+    throttleKnownLaps: throttleKnownLaps,
+    releasedPickups: releasedPickups,
+    sequenceLossSeconds: sequenceLossSeconds,
     unknown: unknown,
   );
 }
@@ -195,6 +254,9 @@ Map<String, SessionStats> measureSessions(
     }
   }
   final ready = best != null && best.state == DayTheoreticalBestState.ready ? best : null;
+  final passages = ready == null
+      ? const <String, List<CoachCornerPassage>>{}
+      : coachCornerPassages(ready, sessions);
   final dayTrack = {...?analysis.chosenGroup?.runIds};
   final result = <String, SessionStats>{};
   for (final runId in {for (final row in analysis.rows) row.runId}) {
@@ -215,7 +277,7 @@ Map<String, SessionStats> measureSessions(
           : _sessionTheoreticalBest(ready, rankedRows[runId] ?? const {}),
       corners: ready == null
           ? const []
-          : _cornerStats(ready, rankedRows[runId] ?? const {}, sessions[runId]),
+          : _cornerStats(ready, rankedRows[runId] ?? const {}, passages),
     );
   }
   return result;
@@ -350,33 +412,70 @@ double? _sessionTheoreticalBest(DayTheoreticalBest best, Set<DayLapReference> ra
 List<CornerStats> _cornerStats(
   DayTheoreticalBest best,
   Set<DayLapReference> ranked,
-  TelemetrySession? session,
+  Map<String, List<CoachCornerPassage>> passages,
 ) {
   final losses = <DayLapReference, List<double?>>{
     for (final lap in best.laps)
       if (ranked.contains(lap.lap.reference)) lap.lap.reference: lap.lossSeconds,
   };
+  double? lossAt(DayLapReference lap, int segment) {
+    final values = losses[lap];
+    if (values == null || segment < 0 || segment >= values.length) return null;
+    final value = values[segment];
+    return value != null && value.isFinite ? value : null;
+  }
+
   final result = <CornerStats>[];
   for (final corner in best.corners.take(maximumProfileCorners)) {
     final minimum = <double>[], exit = <double>[], braking = <double>[], loss = <double>[];
+    final entry = <double>[], deceleration = <double>[], line = <double>[];
+    final accuracy = <double>[], sequence = <(double, double)>[];
     var laps = 0;
     for (final (row, metrics) in corner.laps) {
       if (!ranked.contains(row.reference)) continue;
       laps++;
       final factor = _speedFactor(metrics.speeds.unit);
       final low = metrics.speeds.minimum.value, out = metrics.speeds.exit.value;
+      final into = metrics.speeds.entry.value;
       if (factor != null && low != null && low.isFinite) minimum.add(low * factor);
       if (factor != null && out != null && out.isFinite) exit.add(out * factor);
+      if (factor != null && into != null && into.isFinite) entry.add(into * factor);
       final point = metrics.braking.brakingPointMeters;
       if (point != null && point.isFinite) braking.add(point);
-      final lapLoss = losses[row.reference];
-      if (lapLoss != null && corner.segmentIndex < lapLoss.length) {
-        final value = lapLoss[corner.segmentIndex];
-        if (value != null && value.isFinite) loss.add(value);
+      final g = _gFactor(metrics.braking.decelerationUnit);
+      final mean = metrics.braking.meanDeceleration;
+      // A braking inferred from G alone is another window: never mixed in.
+      if (metrics.braking.method == 'measuredBrake' &&
+          g != null &&
+          mean != null &&
+          mean.isFinite &&
+          mean > 0) {
+        deceleration.add(mean * g);
       }
+      final offset = metrics.observation.lineOffsetMeters;
+      final stated = metrics.observation.gpsAccuracyMeters;
+      if (offset != null && offset.isFinite) line.add(offset);
+      if (stated != null && stated.isFinite && stated >= 0) accuracy.add(stated);
+      final here = lossAt(row.reference, corner.segmentIndex);
+      if (here != null) loss.add(here);
+      final after = lossAt(row.reference, corner.segmentIndex + 1);
+      if (here != null && after != null) sequence.add((here, after));
     }
     if (laps == 0) continue;
-    final spread = summarizeConsistency(braking);
+    final lift = <double>[], release = <double>[], pickup = <double>[];
+    var known = 0, released = 0;
+    for (final passage in passages[corner.segmentId] ?? const <CoachCornerPassage>[]) {
+      if (!ranked.contains(passage.lap.reference)) continue;
+      if (passage.liftSeconds case final value? when value.isFinite) lift.add(value);
+      if (passage.releaseMeters case final value? when value.isFinite) release.add(value);
+      if (passage.pickupMeters case final value? when value.isFinite) pickup.add(value);
+      if (passage.throttleKnown) {
+        known++;
+        if (passage.pickupReleased) released++;
+      }
+    }
+    // A line spread counts only where GPS can tell it apart from noise.
+    final typicalAccuracy = accuracy.length * 2 >= laps ? _median(accuracy) : null;
     result.add(
       CornerStats(
         cornerId: corner.segmentId,
@@ -385,15 +484,58 @@ List<CornerStats> _cornerStats(
         bestMinimumSpeed: _positive(minimum.isEmpty ? null : minimum.reduce(max), _maximumSpeed),
         exitSpeed: _positive(exit.isEmpty ? null : _median(exit), _maximumSpeed),
         bestExitSpeed: _positive(exit.isEmpty ? null : exit.reduce(max), _maximumSpeed),
-        brakingSpreadMeters: braking.length >= 3 && spread.available
-            ? _nonNegative(spread.interquartileRange, _maximumSeconds)
-            : null,
+        brakingSpreadMeters: _spread(braking, _maximumSeconds),
         lossSeconds: _nonNegative(loss.isEmpty ? null : _median(loss), _maximumSeconds),
+        liftSeconds: _nonNegative(lift.isEmpty ? null : _median(lift), _maximumSeconds),
+        releaseSpreadMeters: _spread(release, _maximumSeconds),
+        decelerationG: _positive(
+          deceleration.isEmpty ? null : _median(deceleration),
+          _maximumDeceleration,
+        ),
+        bestDecelerationG: _positive(
+          deceleration.isEmpty ? null : deceleration.reduce(max),
+          _maximumDeceleration,
+        ),
+        entrySpeedSpread: _spread(entry, _maximumSpeed),
+        lineSpreadMeters: typicalAccuracy != null && typicalAccuracy <= _lineAccuracy
+            ? _spread(line, _maximumSeconds)
+            : null,
+        pickupSpreadMeters: _spread(pickup, _maximumSeconds),
+        throttleKnownLaps: known == 0 ? null : known,
+        releasedPickups: known == 0 ? null : released,
+        sequenceLossSeconds: _gaveBack(sequence),
       ),
     );
   }
   return result;
 }
+
+/// Of [laps] (time lost in a corner, and in the segment after it), what the
+/// faster half in the corner lost more after it than the slower half; the
+/// middle lap of an odd count is in neither. Null below 4 laps.
+double? _gaveBack(List<(double, double)> laps) {
+  if (laps.length < 4) return null;
+  final sorted = [...laps]..sort((a, b) => a.$1.compareTo(b.$1));
+  final half = sorted.length ~/ 2;
+  final faster = _median([for (final lap in sorted.take(half)) lap.$2]);
+  final slower = _median([for (final lap in sorted.skip(sorted.length - half)) lap.$2]);
+  return _nonNegative(max(0.0, faster - slower), _maximumSeconds);
+}
+
+/// The interquartile range of [values], from 3 of them.
+double? _spread(List<double> values, double maximum) {
+  if (values.length < 3) return null;
+  final summary = summarizeConsistency(values);
+  return summary.available ? _nonNegative(summary.interquartileRange, maximum) : null;
+}
+
+/// g per unit of an acceleration; null when not known.
+double? _gFactor(String unit) => switch (unit.trim().toLowerCase().replaceAll(' ', '')) {
+  // As the G-G diagram reads it: loggers record g, often unlabelled.
+  '' || 'g' => 1.0,
+  'm/s2' || 'm/s^2' || 'm/s²' => 1 / standardGravity,
+  _ => null,
+};
 
 double _median(List<double> values) {
   final sorted = [...values]..sort();
@@ -408,6 +550,10 @@ const _maximumSpeed = 200.0; // m/s, 720 km/h
 const _maximumDistance = 1e7; // m
 const _maximumDuration = 1e6; // s
 const _maximumSeconds = 1e5; // s, also metres of braking spread
+const _maximumDeceleration = 10.0; // g
+
+/// The stated GPS accuracy, metres, a line spread needs.
+const _lineAccuracy = 0.25;
 
 double? _positive(double? value, double maximum) =>
     value != null && value.isFinite && value > 0 && value <= maximum ? _rounded(value) : null;
@@ -529,6 +675,16 @@ Map<String, Object?> _encodeStats(SessionStats stats) => {
           'bestExitSpeed': ?corner.bestExitSpeed,
           'brakingSpreadMeters': ?corner.brakingSpreadMeters,
           'lossSeconds': ?corner.lossSeconds,
+          'liftSeconds': ?corner.liftSeconds,
+          'releaseSpreadMeters': ?corner.releaseSpreadMeters,
+          'decelerationG': ?corner.decelerationG,
+          'bestDecelerationG': ?corner.bestDecelerationG,
+          'entrySpeedSpread': ?corner.entrySpeedSpread,
+          'lineSpreadMeters': ?corner.lineSpreadMeters,
+          'pickupSpreadMeters': ?corner.pickupSpreadMeters,
+          'throttleKnownLaps': ?corner.throttleKnownLaps,
+          'releasedPickups': ?corner.releasedPickups,
+          'sequenceLossSeconds': ?corner.sequenceLossSeconds,
         },
     ],
 };
@@ -569,6 +725,11 @@ SessionStats _stats(Object? value) {
 
 CornerStats _cornerStatsOf(Object? value) {
   final json = _map(value, 'corner stats');
+  final known = _optionalCount(json['throttleKnownLaps'], 'laps with the throttle known');
+  final released = _optionalCount(json['releasedPickups'], 'released pickups');
+  // A pair that does not add up (edited by hand) is left out, not a reason
+  // to refuse the profile.
+  final pair = known != null && released != null && released <= known;
   // 200 m/s (720 km/h) bounds every speed.
   return CornerStats(
     cornerId: _string(json['cornerId'], 'corner id', allowEmpty: false),
@@ -579,6 +740,16 @@ CornerStats _cornerStatsOf(Object? value) {
     bestExitSpeed: _optionalMeasure(json['bestExitSpeed'], 'best exit speed', 200),
     brakingSpreadMeters: _optionalMeasure(json['brakingSpreadMeters'], 'braking spread', 1e5),
     lossSeconds: _optionalMeasure(json['lossSeconds'], 'corner loss', 1e5),
+    liftSeconds: _optionalMeasure(json['liftSeconds'], 'lift time', 1e5),
+    releaseSpreadMeters: _optionalMeasure(json['releaseSpreadMeters'], 'release spread', 1e5),
+    decelerationG: _optionalMeasure(json['decelerationG'], 'deceleration', 10),
+    bestDecelerationG: _optionalMeasure(json['bestDecelerationG'], 'best deceleration', 10),
+    entrySpeedSpread: _optionalMeasure(json['entrySpeedSpread'], 'entry speed spread', 200),
+    lineSpreadMeters: _optionalMeasure(json['lineSpreadMeters'], 'line spread', 1e5),
+    pickupSpreadMeters: _optionalMeasure(json['pickupSpreadMeters'], 'pickup spread', 1e5),
+    throttleKnownLaps: pair ? known : null,
+    releasedPickups: pair ? released : null,
+    sequenceLossSeconds: _optionalMeasure(json['sequenceLossSeconds'], 'sequence loss', 1e5),
     unknown: _without(json, const [
       'cornerId',
       'laps',
@@ -588,6 +759,16 @@ CornerStats _cornerStatsOf(Object? value) {
       'bestExitSpeed',
       'brakingSpreadMeters',
       'lossSeconds',
+      'liftSeconds',
+      'releaseSpreadMeters',
+      'decelerationG',
+      'bestDecelerationG',
+      'entrySpeedSpread',
+      'lineSpreadMeters',
+      'pickupSpreadMeters',
+      'throttleKnownLaps',
+      'releasedPickups',
+      'sequenceLossSeconds',
     ]),
   );
 }
@@ -597,6 +778,8 @@ double _fraction(Object? value, String what) {
   if (fraction < 0 || fraction >= 1) throw ProfileFormatError('The $what is out of range.');
   return fraction;
 }
+
+int? _optionalCount(Object? value, String what) => value == null ? null : _count(value, what);
 
 int _count(Object? value, String what) {
   final count = value ?? 0;

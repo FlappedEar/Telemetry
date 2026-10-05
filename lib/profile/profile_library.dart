@@ -249,21 +249,58 @@ class ProfileLibrary extends ChangeNotifier {
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
   }) async {
-    // Once loaded, the change is asked for at once, so a [flush] right
-    // after waits for it.
+    // A [flush] right after waits for the day being measured and written.
+    final measured = Completer<void>();
+    _measuring.add(measured.future);
+    try {
+      await _recordDay(
+        eventId: eventId,
+        path: path,
+        name: name,
+        analysis: analysis,
+        recordings: recordings,
+        theoreticalBest: theoreticalBest,
+      );
+    } finally {
+      _measuring.remove(measured.future);
+      measured.complete();
+    }
+  }
+
+  Future<void> _recordDay({
+    required String eventId,
+    required String path,
+    required String name,
+    required DayAnalysis analysis,
+    Map<String, TelemetrySession?>? recordings,
+    DayTheoreticalBest? theoreticalBest,
+  }) async {
     if (!_loaded) await load();
     final folder = _folder;
     final profile = _profile;
     if (folder == null || profile == null || !holds(path)) return;
-    final input = ProfileDayInput.fromAnalysis(
-      eventId: eventId,
-      file: p.relative(path, from: folder).replaceAll(r'\', '/'),
-      name: name,
-      analysis: analysis,
-      trackName: defaultTrackName(profile.tracks.length + 1),
-      recordings: recordings,
-      theoreticalBest: theoreticalBest,
-    );
+    // Measuring reads every lap's pedals at every corner as the coach does:
+    // off the UI thread. A newer recording of the same day wins.
+    final generation = (_recordings[eventId] ?? 0) + 1;
+    _recordings[eventId] = generation;
+    final ProfileDayInput input;
+    try {
+      input = await background(
+        _measureJob(
+          eventId: eventId,
+          file: p.relative(path, from: folder).replaceAll(r'\', '/'),
+          name: name,
+          analysis: analysis,
+          trackName: defaultTrackName(profile.tracks.length + 1),
+          recordings: recordings,
+          theoreticalBest: theoreticalBest,
+        ),
+      );
+    } on Object catch (error) {
+      debugPrint('Day not measured for the profile: $error');
+      return;
+    }
+    if (_recordings[eventId] != generation) return;
     _change(
       (profile) => addDayToProfile(
         profile,
@@ -273,6 +310,32 @@ class ProfileLibrary extends ChangeNotifier {
       ),
     );
   }
+
+  /// The latest [recordDay] of each day, by event id.
+  final _recordings = <String, int>{};
+
+  /// The [recordDay]s still measuring.
+  final _measuring = <Future<void>>{};
+
+  // Takes only what it is given, so it can be sent to another isolate.
+  static ProfileDayInput Function() _measureJob({
+    required String eventId,
+    required String file,
+    required String name,
+    required DayAnalysis analysis,
+    required String trackName,
+    required Map<String, TelemetrySession?>? recordings,
+    required DayTheoreticalBest? theoreticalBest,
+  }) =>
+      () => ProfileDayInput.fromAnalysis(
+        eventId: eventId,
+        file: file,
+        name: name,
+        analysis: analysis,
+        trackName: trackName,
+        recordings: recordings,
+        theoreticalBest: theoreticalBest,
+      );
 
   /// Day [eventId] driven in car [carId], which new days then take.
   void setDayCar(String eventId, String carId) =>
@@ -312,8 +375,11 @@ class ProfileLibrary extends ChangeNotifier {
     _writes = _writes.then((_) => _write(folder, next, background));
   }
 
-  /// Waits for the writes asked for so far.
-  Future<void> flush() => _writes;
+  /// Waits for the days being measured and the writes asked for so far.
+  Future<void> flush() async {
+    await Future.wait([..._measuring]);
+    await _writes;
+  }
 
   static Future<void> _write(
     String folder,

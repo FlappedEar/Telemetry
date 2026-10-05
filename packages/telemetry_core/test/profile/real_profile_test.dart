@@ -102,9 +102,16 @@ void main() {
         }
       }
       expect(ids.first.intersection(ids.last), isNotEmpty);
-      for (final skill in skillLevels(profile)) {
+      final skills = skillLevels(profile);
+      for (final skill in skills) {
         print('${skill.skill.id}: ${skill.level} ${skill.confidence?.name} ${skill.value}');
       }
+      // The day has throttle, brake, longitudinal G and GPS accuracy: every
+      // skill is measured.
+      expect([
+        for (final skill in skills)
+          if (skill.level == null) skill.skill.id,
+      ], isEmpty);
       final best = [first.bestLapSeconds!, second.bestLapSeconds!].reduce(min);
       expect(best, analyzeDay(runs).ranking!.bestOfDay!.durationSeconds);
     },

@@ -492,7 +492,8 @@ final class SkillDefinition {
   final String id;
   final SkillGroup group;
 
-  /// The unit of the measure and [bands]: "s", "m" or "km/h".
+  /// The unit of the measure and [bands]: "s", "m", "km/h", "g" or "%" (a
+  /// share of passes).
   final String unit;
 
   /// Four rising thresholds; level = 5 − bands exceeded. Empty while the
@@ -509,17 +510,27 @@ final class SkillDefinition {
 /// (thread "Welcome screen and app navigation"); tune them here, stored
 /// data never changes.
 const skillCatalogue = [
-  SkillDefinition('liftTiming', SkillGroup.braking, unit: 's'),
+  SkillDefinition('liftTiming', SkillGroup.braking, unit: 's', bands: [0.2, 0.4, 0.7, 1]),
   SkillDefinition('brakePointConsistency', SkillGroup.braking, unit: 'm', bands: [4, 6, 9, 14]),
-  SkillDefinition('brakeReleaseTiming', SkillGroup.braking),
-  SkillDefinition('brakingEffectiveness', SkillGroup.braking),
-  SkillDefinition('turnInConsistency', SkillGroup.corner),
+  SkillDefinition('brakeReleaseTiming', SkillGroup.braking, unit: 'm', bands: [6, 9, 14, 21]),
+  SkillDefinition(
+    'brakingEffectiveness',
+    SkillGroup.braking,
+    unit: 'g',
+    bands: [0.03, 0.06, 0.1, 0.15],
+  ),
+  SkillDefinition('turnInConsistency', SkillGroup.corner, unit: 'km/h', bands: [2, 4, 6, 9]),
   SkillDefinition('minimumSpeedControl', SkillGroup.corner, unit: 'km/h', bands: [2, 4, 6, 9]),
-  SkillDefinition('lineConsistency', SkillGroup.corner),
-  SkillDefinition('throttleReapplication', SkillGroup.exit),
-  SkillDefinition('throttleCommitment', SkillGroup.exit),
+  SkillDefinition('lineConsistency', SkillGroup.corner, unit: 'm', bands: [0.5, 1, 1.5, 2.5]),
+  SkillDefinition('throttleReapplication', SkillGroup.exit, unit: 'm', bands: [4, 6, 9, 14]),
+  SkillDefinition('throttleCommitment', SkillGroup.exit, unit: '%', bands: [5, 15, 30, 50]),
   SkillDefinition('exitSpeedExecution', SkillGroup.exit, unit: 'km/h', bands: [1, 3, 6, 9]),
-  SkillDefinition('cornerSequenceManagement', SkillGroup.lap),
+  SkillDefinition(
+    'cornerSequenceManagement',
+    SkillGroup.lap,
+    unit: 's',
+    bands: [0.02, 0.05, 0.1, 0.2],
+  ),
   SkillDefinition('paceConsistency', SkillGroup.lap, unit: 's', bands: [1, 2.5, 5, 8]),
 ];
 
@@ -570,32 +581,60 @@ double? _median(List<double> values) {
   return sorted.length.isOdd ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+/// The day's best per corner, from all its sessions on the track: minimum
+/// and exit speed, m/s, and mean deceleration while braking, g.
+typedef _CornerBest = ({double? minimum, double? exit, double? deceleration});
+
 /// One session's measure of [skill] and its ranked laps; null when not
-/// measured. [dayBest] is the day's best minimum and exit speed per corner.
-(double, int)? _skillMeasure(
-  String skill,
-  SessionStats stats,
-  Map<String, (double?, double?)> dayBest,
-) {
+/// measured. [dayBest] is the day's best per corner.
+(double, int)? _skillMeasure(String skill, SessionStats stats, Map<String, _CornerBest> dayBest) {
+  (double, int)? median(double? Function(CornerStats corner) value, {double scale = 1}) {
+    final values = [
+      for (final corner in stats.corners)
+        if (value(corner) case final v?) v * scale,
+    ];
+    final result = _median(values);
+    return result == null ? null : (result, stats.rankedLaps);
+  }
+
   switch (skill) {
     case 'paceConsistency':
       final spread = stats.lapSpreadSeconds;
       return spread == null ? null : (spread, stats.rankedLaps);
     case 'brakePointConsistency':
-      final spreads = [for (final corner in stats.corners) ?corner.brakingSpreadMeters];
-      final value = _median(spreads);
-      return value == null ? null : (value, stats.rankedLaps);
-    case 'minimumSpeedControl' || 'exitSpeedExecution':
-      final gaps = <double>[];
+      return median((corner) => corner.brakingSpreadMeters);
+    case 'liftTiming':
+      return median((corner) => corner.liftSeconds);
+    case 'brakeReleaseTiming':
+      return median((corner) => corner.releaseSpreadMeters);
+    case 'turnInConsistency':
+      return median((corner) => corner.entrySpeedSpread, scale: 3.6);
+    case 'lineConsistency':
+      return median((corner) => corner.lineSpreadMeters);
+    case 'throttleReapplication':
+      return median((corner) => corner.pickupSpreadMeters);
+    case 'cornerSequenceManagement':
+      return median((corner) => corner.sequenceLossSeconds);
+    case 'throttleCommitment':
+      // A share of all the session's passes, from 3 of them on 3 laps.
+      var known = 0, released = 0;
       for (final corner in stats.corners) {
-        final (bestMinimum, bestExit) = dayBest[corner.cornerId] ?? (null, null);
-        final minimum = skill == 'minimumSpeedControl';
-        final typical = minimum ? corner.minimumSpeed : corner.exitSpeed;
-        final best = minimum ? bestMinimum : bestExit;
-        if (typical != null && best != null) gaps.add(max(0, best - typical) * 3.6);
+        known += corner.throttleKnownLaps ?? 0;
+        released += corner.releasedPickups ?? 0;
       }
-      final value = _median(gaps);
-      return value == null ? null : (value, stats.rankedLaps);
+      return known < 3 || stats.rankedLaps < 3 ? null : (released / known * 100, stats.rankedLaps);
+    case 'brakingEffectiveness':
+      return median((corner) {
+        final best = dayBest[corner.cornerId]?.deceleration, typical = corner.decelerationG;
+        return best == null || typical == null ? null : max(0, best - typical);
+      });
+    case 'minimumSpeedControl' || 'exitSpeedExecution':
+      final minimum = skill == 'minimumSpeedControl';
+      return median((corner) {
+        final best = minimum ? dayBest[corner.cornerId]?.minimum : dayBest[corner.cornerId]?.exit;
+        final typical = minimum ? corner.minimumSpeed : corner.exitSpeed;
+        return best == null || typical == null ? null : max(0, best - typical);
+      }, scale: 3.6);
   }
   return null;
 }
@@ -624,13 +663,14 @@ SkillLevel _skillLevel(SkillDefinition skill, List<ProfileDay> days, int window)
   // Per day that measured it, newest first: its sessions' measures.
   final measured = <(ProfileDay, List<(double, int)>)>[];
   for (final day in days.reversed) {
-    final dayBest = <String, (double?, double?)>{};
+    final dayBest = <String, _CornerBest>{};
     for (final session in _onTrack(day)) {
       for (final corner in session.stats?.corners ?? const <CornerStats>[]) {
-        final (minimum, exit) = dayBest[corner.cornerId] ?? (null, null);
+        final best = dayBest[corner.cornerId];
         dayBest[corner.cornerId] = (
-          _higher(minimum, corner.bestMinimumSpeed),
-          _higher(exit, corner.bestExitSpeed),
+          minimum: _higher(best?.minimum, corner.bestMinimumSpeed),
+          exit: _higher(best?.exit, corner.bestExitSpeed),
+          deceleration: _higher(best?.deceleration, corner.bestDecelerationG),
         );
       }
     }

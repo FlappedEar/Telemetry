@@ -33,6 +33,62 @@ TelemetrySession _labelled(TelemetrySession session, String unit, {double scale 
   );
 }
 
+/// [session] with its channel [name] changed by [change].
+TelemetrySession _changed(
+  TelemetrySession session,
+  String name,
+  TelemetryChannel Function(TelemetryChannel channel) change,
+) => TelemetrySession(
+  duration: session.duration,
+  startTime: session.startTime,
+  metadata: session.metadata,
+  channels: {...session.channels, name: change(session.channels[name]!)},
+  aliases: session.aliases,
+  warnings: session.warnings,
+  timingGates: session.timingGates,
+  sampleCount: session.sampleCount,
+);
+
+/// [channel] [seconds] earlier.
+TelemetryChannel _earlier(TelemetryChannel channel, double seconds) => TelemetryChannel(
+  name: channel.name,
+  unit: channel.unit,
+  timestamps: Float64List.fromList([for (final t in channel.timestamps) t - seconds]),
+  values: channel.values,
+);
+
+/// [channel] in [unit], its values times [scale].
+TelemetryChannel _inUnit(TelemetryChannel channel, String unit, {double scale = 1}) =>
+    TelemetryChannel(
+      name: channel.name,
+      unit: unit,
+      timestamps: channel.timestamps,
+      values: Float32List.fromList([for (final v in channel.values) v * scale]),
+    );
+
+/// [session] with a GPS accuracy of [metres] throughout.
+TelemetrySession _withAccuracy(TelemetrySession session, double metres) {
+  final latitude = session.channels['latitude']!;
+  return TelemetrySession(
+    duration: session.duration,
+    startTime: session.startTime,
+    metadata: session.metadata,
+    channels: {
+      ...session.channels,
+      'accuracy': TelemetryChannel(
+        name: 'accuracy',
+        unit: 'm',
+        timestamps: latitude.timestamps,
+        values: Float32List.fromList(List.filled(latitude.sampleCount, metres)),
+      ),
+    },
+    aliases: {...session.aliases, 'accuracy': 'accuracy'},
+    warnings: session.warnings,
+    timingGates: session.timingGates,
+    sampleCount: session.sampleCount,
+  );
+}
+
 // A lap at 30 m/s that brakes from [brake] m to [slow] m/s at 326 m, holds it
 // to 360 m and is back at 30 m/s 60 m later.
 double Function(double) _lap(double brake, double slow) => (d) {
@@ -45,12 +101,37 @@ double Function(double) _lap(double brake, double slow) => (d) {
 
 final _laps = [_lap(250, 18), _lap(270, 20), _lap(240, 17), _lap(255, 19)];
 
+// As [_lap], on full throttle gaining 2 m/s over the 60 m before braking,
+// and still slowing by 0.5 m/s off the brake to 360 m.
+double Function(double) _pushed(double brake, double slow) => (d) {
+  if (d >= brake - 60 && d < brake) return 28 + 2 * (d - brake + 60) / 60;
+  if (d < brake) return 28;
+  if (d >= 326 && d < 360) return slow - 0.5 * (d - 326) / 34;
+  if (d >= 360 && d < 420) return slow - 0.5 + (30.5 - slow) * (d - 360) / 60;
+  return _lap(brake, slow)(d);
+};
+
+final _pushedLaps = [
+  for (final (brake, slow) in [(250.0, 18.0), (270.0, 20.0), (240.0, 17.0), (255.0, 19.0)])
+    _pushed(brake, slow),
+];
+
 /// A rectangle day of one session, analysed as the app does, with its
 /// recordings and theoretical best when [measured].
 ({DayAnalysis analysis, Map<String, TelemetrySession?> recordings, DayTheoreticalBest best})
-_rectangle({String unit = 'm/s', int start = 1756454400000, double scale = 1}) {
-  var session = rectangleSession(_laps, firstTimestampMilliseconds: start, pedals: true);
+_rectangle({
+  String unit = 'm/s',
+  int start = 1756454400000,
+  double scale = 1,
+  List<double Function(double)>? laps,
+  bool pedals = true,
+  double? accuracy,
+  TelemetrySession Function(TelemetrySession session)? edit,
+}) {
+  var session = rectangleSession(laps ?? _laps, firstTimestampMilliseconds: start, pedals: pedals);
   if (unit.isNotEmpty) session = _labelled(session, unit, scale: scale);
+  if (accuracy != null) session = _withAccuracy(session, accuracy);
+  if (edit != null) session = edit(session);
   final run = DayRunInput(
     runId: 'run1',
     name: 'Session 1',
@@ -221,6 +302,203 @@ void main() {
       expect(slow.laps, stats.rankedLaps);
       for (final corner in stats.corners) {
         expect(corner.lossSeconds, anyOf(isNull, greaterThanOrEqualTo(0)));
+      }
+    });
+
+    // The corner whose laps brake: the one with a minimum speed.
+    CornerStats slowCorner(
+      ({DayAnalysis analysis, Map<String, TelemetrySession?> recordings, DayTheoreticalBest best})
+      day,
+    ) => measureSessions(
+      day.analysis,
+      day.recordings,
+      best: day.best,
+    )['run1']!.corners.firstWhere((c) => c.minimumSpeed != null);
+
+    test('corners: pedals, deceleration, entry, line and what follows', () {
+      final pushed = _rectangle(laps: _pushedLaps, accuracy: 0.1);
+      final slow = slowCorner(pushed);
+      expect(slow.laps, 4);
+      // Off the throttle straight onto the brake.
+      expect(slow.liftSeconds, closeTo(0, 0.15));
+      // The braking always ends at the same place, 326 m.
+      expect(slow.releaseSpreadMeters, lessThan(2));
+      // Braking from 30 to 17–20 m/s over 56–86 m: 0.3–0.5 g.
+      expect(slow.decelerationG, inInclusiveRange(0.3, 0.5));
+      expect(slow.bestDecelerationG, greaterThan(slow.decelerationG!));
+      expect(slow.entrySpeedSpread, greaterThan(0));
+      // Still slowing off the brake, the throttle known and never picked
+      // up and released.
+      expect(slow.throttleKnownLaps, 4);
+      expect(slow.releasedPickups, 0);
+      // One line, GPS stated at 0.1 m.
+      expect(slow.lineSpreadMeters, lessThan(0.25));
+      // The plain laps pick the throttle up at much the same place.
+      expect(slowCorner(_rectangle()).pickupSpreadMeters, lessThan(2));
+      // Read back the same.
+      final read = _roundTrip(
+        _add(
+          DriverProfile.empty(Random(1)),
+          ProfileDayInput.fromAnalysis(
+            eventId: 'p',
+            file: 'Days/p.fetproject',
+            name: 'p',
+            analysis: pushed.analysis,
+            recordings: pushed.recordings,
+            theoreticalBest: pushed.best,
+          ),
+        ),
+      ).day('p')!.sessions.single.stats!.corners.firstWhere((c) => c.minimumSpeed != null);
+      expect(read.liftSeconds, slow.liftSeconds);
+      expect(read.releaseSpreadMeters, slow.releaseSpreadMeters);
+      expect(read.decelerationG, slow.decelerationG);
+      expect(read.bestDecelerationG, slow.bestDecelerationG);
+      expect(read.entrySpeedSpread, slow.entrySpeedSpread);
+      expect(read.lineSpreadMeters, slow.lineSpreadMeters);
+      expect(read.throttleKnownLaps, 4);
+      expect(read.releasedPickups, 0);
+      expect(read.sequenceLossSeconds, slow.sequenceLossSeconds);
+    });
+
+    test('released pickups that do not add up are left out when read', () {
+      final profile = _profile([
+        _visit(
+          'v',
+          1,
+          track: 'jastrzab',
+          sessions: [
+            _session(
+              's1',
+              corners: [
+                CornerStats(cornerId: 'k1', laps: 3, throttleKnownLaps: 3, releasedPickups: 1),
+              ],
+            ),
+          ],
+        ),
+      ]);
+      final text = encodeDriverProfile(profile);
+      expect(text, contains('"releasedPickups":1'));
+      final corner = decodeDriverProfile(
+        text.replaceFirst('"releasedPickups":1', '"releasedPickups":5'),
+      ).day('v')!.sessions.single.stats!.corners.single;
+      expect(corner.throttleKnownLaps, isNull);
+      expect(corner.releasedPickups, isNull);
+      expect(corner.laps, 3);
+    });
+
+    test('lift timing: a lift before braking, and coasting the whole approach', () {
+      // The throttle half a second ahead of the brake.
+      final early = slowCorner(
+        _rectangle(
+          laps: _pushedLaps,
+          edit: (s) => _changed(s, 'throttle', (c) => _earlier(c, 0.5)),
+        ),
+      );
+      expect(early.liftSeconds, closeTo(0.5, 0.1));
+      // Off the throttle on every lap, pressed only once the last lap is
+      // over: lifted before the approach (150 m before the corner), so at
+      // least the approach long.
+      TelemetryChannel pressedLast(TelemetryChannel channel) => TelemetryChannel(
+        name: channel.name,
+        unit: '%',
+        timestamps: channel.timestamps,
+        values: Float32List.fromList([
+          for (var i = 0; i < channel.sampleCount; i++) i == channel.sampleCount - 1 ? 100 : 0,
+        ]),
+      );
+      final coasting = slowCorner(
+        _rectangle(laps: _pushedLaps, edit: (s) => _changed(s, 'throttle', pressedLast)),
+      );
+      expect(coasting.liftSeconds, greaterThan(2));
+      // A throttle never pressed (unplugged, logging zeros) shows nothing.
+      final dead = slowCorner(
+        _rectangle(
+          laps: _pushedLaps,
+          edit: (s) => _changed(s, 'throttle', (c) => _inUnit(c, '%', scale: 0)),
+        ),
+      );
+      expect(dead.liftSeconds, isNull);
+    });
+
+    test('deceleration in m/s² is stored in g; in another unit it is not stored', () {
+      final g = slowCorner(_rectangle(laps: _pushedLaps));
+      final metric = slowCorner(
+        _rectangle(
+          laps: _pushedLaps,
+          edit: (s) => _changed(s, 'longacc', (c) => _inUnit(c, 'm/s²', scale: standardGravity)),
+        ),
+      );
+      expect(metric.decelerationG, closeTo(g.decelerationG!, 0.002));
+      expect(metric.bestDecelerationG, closeTo(g.bestDecelerationG!, 0.002));
+      final unknown = slowCorner(
+        _rectangle(
+          laps: _pushedLaps,
+          edit: (s) => _changed(s, 'longacc', (c) => _inUnit(c, 'ft/s2')),
+        ),
+      );
+      expect(unknown.decelerationG, isNull);
+      expect(unknown.bestDecelerationG, isNull);
+    });
+
+    test('a corner whose faster laps lose time right after gives it back', () {
+      // A faster corner (higher minimum speed) leads onto a slower straight.
+      double Function(double) traded(double slow) => (d) {
+        final straight = 30 - (slow - 17);
+        if (d >= 420 && d < 560) return straight;
+        if (d >= 360 && d < 420) return slow + (straight - slow) * (d - 360) / 60;
+        if (d >= 560 && d < 600) return straight + (30 - straight) * (d - 560) / 40;
+        return _lap(250, slow)(d);
+      };
+      final speeds = [18.0, 20.0, 17.0, 19.0];
+      expect(
+        slowCorner(_rectangle(laps: [for (final v in speeds) traded(v)])).sequenceLossSeconds,
+        greaterThan(0.1),
+      );
+      expect(
+        slowCorner(_rectangle(laps: [for (final v in speeds) _lap(250, v)])).sequenceLossSeconds,
+        closeTo(0, 0.01),
+      );
+    });
+
+    test('the coach passages come from the recordings given', () {
+      final day = _rectangle(laps: _pushedLaps);
+      final first = coachCornerPassages(day.best, day.recordings);
+      expect(first.values.expand((p) => p).where((p) => p.liftSeconds != null), isNotEmpty);
+      // The same result with recordings that have no pedals.
+      final bare = rectangleSession(_pushedLaps, firstTimestampMilliseconds: 1756454400000);
+      final other = coachCornerPassages(day.best, {'run1': _labelled(bare, 'm/s')});
+      expect(other.values.expand((p) => p).where((p) => p.liftSeconds != null), isEmpty);
+      expect(coachCornerPassages(day.best, const {}).values.expand((p) => p), isEmpty);
+    });
+
+    test('without pedals, G or a stated GPS accuracy those are not measured', () {
+      final bare = _rectangle(pedals: false);
+      final corners = measureSessions(
+        bare.analysis,
+        bare.recordings,
+        best: bare.best,
+      )['run1']!.corners;
+      expect(corners, isNotEmpty);
+      for (final corner in corners) {
+        expect(corner.liftSeconds, isNull);
+        expect(corner.releaseSpreadMeters, isNull);
+        expect(corner.decelerationG, isNull);
+        expect(corner.pickupSpreadMeters, isNull);
+        expect(corner.throttleKnownLaps, isNull);
+        expect(corner.releasedPickups, isNull);
+        expect(corner.lineSpreadMeters, isNull);
+      }
+      // Timing and speed need no more than GPS and speed.
+      expect(corners.where((c) => c.entrySpeedSpread != null), isNotEmpty);
+      expect(corners.where((c) => c.sequenceLossSeconds != null), isNotEmpty);
+      // A GPS accuracy worse than 0.25 m cannot tell lines apart.
+      final rough = _rectangle(accuracy: 0.3);
+      for (final corner in measureSessions(
+        rough.analysis,
+        rough.recordings,
+        best: rough.best,
+      )['run1']!.corners) {
+        expect(corner.lineSpreadMeters, isNull);
       }
     });
 
@@ -873,6 +1151,7 @@ void main() {
       final skills = {for (final s in skillLevels(profile, carId: 'car1')) s.skill.id: s};
       expect(skills.keys, [for (final s in skillCatalogue) s.id]);
       expect(skills.length, 12);
+      // The fixture's corners carry no pedal, G, line or sequence figures.
       for (final id in [
         'liftTiming',
         'brakeReleaseTiming',
@@ -909,6 +1188,70 @@ void main() {
       expect(skills['exitSpeedExecution']!.value, closeTo(1.8, 1e-9));
       expect(skills['exitSpeedExecution']!.level, 4);
       expect(skills['exitSpeedExecution']!.trend, SkillTrend.steady);
+    });
+
+    test('the pedal, G, line and sequence skills from each corner', () {
+      CornerStats corner(String id, double scale, double deceleration) => CornerStats(
+        cornerId: id,
+        laps: 6,
+        liftSeconds: 0.3 * scale,
+        releaseSpreadMeters: 10 * scale,
+        decelerationG: deceleration,
+        bestDecelerationG: deceleration,
+        entrySpeedSpread: 1 * scale,
+        lineSpreadMeters: 0.8 * scale,
+        pickupSpreadMeters: 5 * scale,
+        throttleKnownLaps: 10,
+        releasedPickups: scale.round(),
+        sequenceLossSeconds: 0.04 * scale,
+      );
+      final measured = _profile([
+        _visit(
+          'm',
+          1,
+          track: 'jastrzab',
+          sessions: [
+            // k1 brakes at 0.8 g at best, k2 at 0.5 g.
+            _session('s1', corners: [corner('k1', 1, 0.8), corner('k2', 1, 0.5)]),
+            _session('s2', corners: [corner('k1', 2, 0.6), corner('k2', 2, 0.45)]),
+          ],
+        ),
+      ]);
+      final skills = {for (final s in skillLevels(measured)) s.skill.id: s};
+      // Sessions weigh alike (6 laps each): the mean of 1x and 2x.
+      expect(skills['liftTiming']!.value, closeTo(0.45, 1e-9));
+      expect(skills['liftTiming']!.level, 3);
+      expect(skills['brakeReleaseTiming']!.value, closeTo(15, 1e-9));
+      expect(skills['brakeReleaseTiming']!.level, 2);
+      // s1 at the day's best, s2 0.2 g and 0.05 g short: median 0.125, / 2.
+      expect(skills['brakingEffectiveness']!.value, closeTo(0.0625, 1e-9));
+      expect(skills['brakingEffectiveness']!.level, 3);
+      expect(skills['turnInConsistency']!.value, closeTo(1.5 * 3.6, 1e-9));
+      expect(skills['turnInConsistency']!.level, 3);
+      expect(skills['lineConsistency']!.value, closeTo(1.2, 1e-9));
+      expect(skills['lineConsistency']!.level, 3);
+      expect(skills['throttleReapplication']!.value, closeTo(7.5, 1e-9));
+      expect(skills['throttleReapplication']!.level, 3);
+      // Pooled over each session's passes: 2 of 20 (10 %), 4 of 20 (20 %).
+      expect(skills['throttleCommitment']!.value, closeTo(15, 1e-9));
+      expect(skills['throttleCommitment']!.level, 4);
+      expect(skills['cornerSequenceManagement']!.value, closeTo(0.06, 1e-9));
+      expect(skills['cornerSequenceManagement']!.level, 3);
+
+      // A session without the pedals measures none of their skills.
+      final bare = _profile([
+        _visit(
+          'b',
+          1,
+          track: 'jastrzab',
+          sessions: [
+            _session('s1', corners: [CornerStats(cornerId: 'k1', laps: 6)]),
+          ],
+        ),
+      ]);
+      for (final skill in skillLevels(bare)) {
+        expect(skill.level, isNull, reason: skill.skill.id);
+      }
     });
 
     test('a session on another layout counts in totals only', () {
@@ -1002,6 +1345,16 @@ void main() {
             bestExitSpeed: 24.012,
             brakingSpreadMeters: 6.345,
             lossSeconds: 0.312,
+            liftSeconds: 0.345,
+            releaseSpreadMeters: 7.123,
+            decelerationG: 0.845,
+            bestDecelerationG: 0.987,
+            entrySpeedSpread: 1.234,
+            lineSpreadMeters: 0.678,
+            pickupSpreadMeters: 8.901,
+            throttleKnownLaps: 12,
+            releasedPickups: 3,
+            sequenceLossSeconds: 0.456,
           ),
       ];
       ProfileSession full(String id, List<CornerStats> corners) => ProfileSession(
@@ -1060,6 +1413,45 @@ void main() {
       expect(added.sessions.single.stats!.corners, isEmpty);
       expect(added.sessions.single.stats!.distanceMeters, 31234.567);
     }, timeout: const Timeout(Duration(minutes: 2)));
+
+    test('a day already in a profile past the budget keeps its corners', () {
+      final first = _add(DriverProfile.empty(Random(1)), _input('old'));
+      final old = first.day('old')!;
+      final kept = old.sessions.single.stats!.corners;
+      expect(kept, isNotEmpty);
+      // Another day with more corners than the budget, as a profile written
+      // under an older, larger one may hold.
+      final crowded = DriverProfile(
+        driverId: first.driverId,
+        cars: first.cars,
+        tracks: first.tracks,
+        lastCarId: first.lastCarId,
+        days: [
+          old,
+          ProfileDay(
+            eventId: 'full',
+            file: 'Days/full.fetproject',
+            name: 'full',
+            carId: old.carId,
+            trackId: old.trackId,
+            sessions: [
+              for (var i = 0; i <= maximumProfileCornerStats ~/ kept.length; i++)
+                ProfileSession(
+                  runId: 'r$i',
+                  name: 'r$i',
+                  stats: SessionStats(rankedLaps: 4, corners: kept),
+                ),
+            ],
+          ),
+        ],
+      );
+      final again = _add(crowded, _input('old')).day('old')!;
+      expect(again.sessions.single.stats!.corners, hasLength(kept.length));
+      expect(again.sessions.single.stats!.corners.first.cornerId, kept.first.cornerId);
+      // A new day gets none.
+      final added = _add(crowded, _input('new', start: 1756454400000 + 86400000)).day('new')!;
+      expect(added.sessions.single.stats!.corners, isEmpty);
+    });
 
     test('many days stay quick', () {
       final many = _profile(

@@ -5105,6 +5105,16 @@ class AppLocalizationsPl extends AppLocalizations {
       'minimumSpeedControl': 'Prędkość minimalna poniżej najlepszej: $value',
       'exitSpeedExecution': 'Prędkość na wyjściu poniżej najlepszej: $value',
       'paceConsistency': 'Rozrzut czasów okrążeń: $value',
+      'liftTiming': 'Od odjęcia gazu do hamowania: $value',
+      'brakeReleaseTiming': 'Rozrzut końca hamowania: $value',
+      'brakingEffectiveness': 'Hamowanie słabsze od najlepszego: $value',
+      'turnInConsistency': 'Rozrzut prędkości wejścia w zakręt: $value',
+      'lineConsistency': 'Rozrzut toru jazdy w zakręcie: $value',
+      'throttleReapplication': 'Rozrzut ponownego dodania gazu: $value',
+      'throttleCommitment':
+          'Gaz dodany i znów odjęty przed najwolniejszym punktem: $value przejazdów',
+      'cornerSequenceManagement':
+          'Strata tuż za zakrętem przy szybszych przejazdach: $value',
       'other': '$value',
     });
     return '$_temp0';

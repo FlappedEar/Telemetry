@@ -5,12 +5,12 @@ import '../format.dart';
 import '../l10n.dart';
 import 'profile_library.dart';
 
-/// A skill's measured value with its unit: "6.4 m", "1.85 s".
+/// A skill's measured value with its unit: "6.4 m", "1.85 s", "0.12 g".
 String skillValueText(SkillLevel level) {
   final value = level.value;
   if (value == null) return '';
   final unit = level.skill.unit;
-  return '${fixed(value, unit == 's' ? 2 : 1)}$unitSpace$unit';
+  return '${fixed(value, unit == 's' || unit == 'g' ? 2 : 1)}$unitSpace$unit';
 }
 
 /// [library]'s skill levels as a [SkillLevelsCard], worked out once per
