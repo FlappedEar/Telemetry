@@ -515,12 +515,22 @@ class _SeriesPainter extends CustomPainter {
       high.paint(canvas, const Offset(4, 2));
       low.paint(canvas, Offset(4, size.height - low.height - 2));
     }
+    // On white, a faint dark edge under each line keeps the light lap
+    // colours (A's amber) visible; the colours themselves stay.
+    final edge = dark
+        ? null
+        : (Paint()
+            ..color = const Color(0x59000000)
+            ..strokeWidth = 4
+            ..style = PaintingStyle.stroke
+            ..strokeJoin = StrokeJoin.round);
     for (final line in lines) {
       final paint = Paint()
         ..color = line.color == deltaLineColor && !dark
             ? deltaLineLightColor
             : line.color
-        ..strokeWidth = 2
+        // Thicker in the light look, for reading in the sun.
+        ..strokeWidth = dark ? 2 : 2.5
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round;
       // Each run stays separate: a gap is never bridged.
@@ -552,6 +562,7 @@ class _SeriesPainter extends CustomPainter {
           );
           i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
         }
+        if (edge != null) canvas.drawPath(path, edge);
         canvas.drawPath(path, paint);
       }
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'channel_names.dart';
 import 'l10n.dart';
+import 'ui/theme.dart';
 import 'units.dart';
 import 'update/update_dialog.dart';
 
@@ -20,7 +21,8 @@ class SettingsButton extends StatelessWidget {
   );
 }
 
-/// The app's settings: the unit assumed for unlabelled speeds, whether
+/// The app's settings: the unit assumed for unlabelled speeds, the look
+/// (dark or sunlight) and whether the screen stays on at the coach, whether
 /// sessions' weather is looked up, the names shown for recorded channels,
 /// and the licences of the app and the
 /// software it uses.
@@ -91,6 +93,50 @@ class SettingsDialog extends StatelessWidget {
                                 ? l10n.settingsAllUnlabelled
                                 : l10n.settingsSomeUnlabelled(unlabelled),
                         ].join(' '),
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.settingsLookHeading,
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                ValueListenableBuilder(
+                  valueListenable: appLookSetting,
+                  builder: (context, look, _) => SegmentedButton<AppLook>(
+                    key: const ValueKey('appLookSetting'),
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(
+                        value: AppLook.dark,
+                        icon: const Icon(Icons.dark_mode_outlined),
+                        label: Text(l10n.lookDark),
+                      ),
+                      ButtonSegment(
+                        value: AppLook.sunlight,
+                        icon: const Icon(Icons.wb_sunny_outlined),
+                        label: Text(l10n.lookSunlight),
+                      ),
+                    ],
+                    selected: {look},
+                    onSelectionChanged: (choice) =>
+                        appLookSetting.value = choice.first,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(l10n.settingsLookHelp, style: theme.textTheme.bodySmall),
+                ValueListenableBuilder(
+                  valueListenable: keepScreenOnSetting,
+                  builder: (context, on, _) => SwitchListTile(
+                    key: const ValueKey('keepScreenOnSetting'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.settingsKeepScreenOnSwitch),
+                    value: on,
+                    onChanged: (value) => keepScreenOnSetting.value = value,
+                  ),
+                ),
+                Text(
+                  l10n.settingsKeepScreenOnHelp,
                   style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 16),

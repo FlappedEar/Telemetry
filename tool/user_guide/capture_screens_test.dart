@@ -39,6 +39,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry/profile/profile_page.dart';
 import 'package:telemetry/settings_dialog.dart';
+import 'package:telemetry/units.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry_core/telemetry_core.dart'
     show
@@ -656,6 +657,8 @@ void main() {
     }
     await tester.tap(find.byType(SettingsButton).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('openChannelNames')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('openChannelNames')));
     await tester.pumpAndSettle();
     await shot(tester, 'channel-names');
@@ -791,6 +794,37 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('daySection-compare')));
     await tester.pumpAndSettle();
     await shot(tester, 'phone-compare');
+    debugDisableShadows = true;
+  });
+
+  testWidgets('phone in sunlight', (tester) async {
+    debugDisableShadows = false;
+    appLookSetting.value = AppLook.sunlight;
+    addTearDown(() {
+      appLookSetting.value = AppLook.dark;
+      debugDisableShadows = true;
+    });
+    await showDay(tester, _phone, 2);
+    await tester.tap(find.byKey(const ValueKey('place-coach')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'phone-sunlight-coach');
+    await tester.tap(find.byKey(const ValueKey('place-day')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daySection-laps')));
+    await tester.pumpAndSettle();
+    final best = find.descendant(
+      of: find.byKey(const ValueKey('dayResultsLaps')),
+      matching: find.text(bestName),
+    );
+    await tester.scrollUntilVisible(
+      best,
+      200,
+      scrollable: list('dayResultsLaps'),
+    );
+    await tester.tap(best);
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Channels'));
+    await shot(tester, 'phone-sunlight-lap-charts');
     debugDisableShadows = true;
   });
 }

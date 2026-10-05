@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'channel_names.dart';
+import 'ui/theme.dart';
 
 /// The unit assumed for speeds whose recordings do not declare one. A unit a
 /// recording declares is always shown as declared and never overridden;
@@ -52,6 +53,14 @@ final ValueNotifier<bool> hideUnrankedLapsSetting = ValueNotifier(true);
 /// most once a day), chosen in settings and kept in `settings.json`. On by
 /// default; "Check for updates" in settings works either way.
 final ValueNotifier<bool> updateCheckSetting = ValueNotifier(true);
+
+/// How the app looks (dark, or sunlight for reading outdoors), chosen in
+/// settings and kept in `settings.json`. Dark by default.
+final ValueNotifier<AppLook> appLookSetting = ValueNotifier(AppLook.dark);
+
+/// Whether the screen stays on while the Coach place is shown, chosen in
+/// settings and kept in `settings.json`. On by default.
+final ValueNotifier<bool> keepScreenOnSetting = ValueNotifier(true);
 
 /// When the app last looked for a newer release on its own; kept in
 /// `settings.json` so the check on launch runs at most once a day.
@@ -130,7 +139,7 @@ String displayUnit(String name, String unit) {
 
 /// Reads and keeps [speedUnitSetting], [weatherLookupSetting],
 /// [hideUnrankedLapsSetting], [updateCheckSetting], [lastUpdateCheck],
-/// [channelNamesSetting] and [listedChannelsSetting] in
+/// [appLookSetting], [keepScreenOnSetting], [channelNamesSetting] and [listedChannelsSetting] in
 /// `settings.json` in the app's support folder. Off in `flutter test`.
 Future<void> loadSettings() async {
   if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return;
@@ -161,6 +170,14 @@ Future<void> loadSettings() async {
           json['lastUpdateCheck'] as String,
         );
       }
+      if (json is Map && json['look'] is String) {
+        for (final value in AppLook.values) {
+          if (value.name == json['look']) appLookSetting.value = value;
+        }
+      }
+      if (json is Map && json['keepScreenOn'] is bool) {
+        keepScreenOnSetting.value = json['keepScreenOn'] as bool;
+      }
       if (json is Map && json['hideUnrankedLaps'] is bool) {
         hideUnrankedLapsSetting.value = json['hideUnrankedLaps'] as bool;
       }
@@ -184,6 +201,8 @@ Future<void> loadSettings() async {
       'weatherLookup': weatherLookupSetting.value,
       'hideUnrankedLaps': hideUnrankedLapsSetting.value,
       'updateCheck': updateCheckSetting.value,
+      'look': appLookSetting.value.name,
+      'keepScreenOn': keepScreenOnSetting.value,
       if (lastUpdateCheck.value case final checked?)
         'lastUpdateCheck': checked.toUtc().toIso8601String(),
       'channelNames': channelNamesSetting.value,
@@ -226,6 +245,8 @@ Future<void> loadSettings() async {
   hideUnrankedLapsSetting.addListener(write);
   updateCheckSetting.addListener(write);
   lastUpdateCheck.addListener(write);
+  appLookSetting.addListener(write);
+  keepScreenOnSetting.addListener(write);
   channelNamesSetting.addListener(write);
   listedChannelsSetting.addListener(write);
 }

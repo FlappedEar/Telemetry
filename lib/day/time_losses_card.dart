@@ -7,6 +7,7 @@ import 'theoretical_best_card.dart' show TheoreticalBestText, lossColor;
 import 'track_map.dart';
 import 'touch.dart';
 import '../ui/readable_list.dart';
+import '../ui/theme.dart';
 
 /// Opens lap [a] against lap [b], showing [focus] of lap A first (its
 /// recording times) when given; with [segmentId] (a segment of the
@@ -353,7 +354,7 @@ class _TimeLossPageState extends State<TimeLossPage> {
     final lap = _lap(loss.lapReference);
     final reference = _lap(comparison?.referenceLap);
     final path = widget.path;
-    final highlight = lossColor(1);
+    final highlight = lossColor(1, FetColors.of(context).loss);
     final neutral = theme.colorScheme.outlineVariant;
     String time(double? seconds) =>
         seconds == null ? '—' : displayTime(seconds);

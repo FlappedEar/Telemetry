@@ -5269,6 +5269,27 @@ class AppLocalizationsPl extends AppLocalizations {
       'W Twoich dniach nie rozpoznano jeszcze toru.';
 
   @override
+  String get settingsLookHeading => 'Wygląd';
+
+  @override
+  String get lookDark => 'Ciemny';
+
+  @override
+  String get lookSunlight => 'Słoneczny';
+
+  @override
+  String get settingsLookHelp =>
+      'Wygląd słoneczny: czarny tekst na białym tle i mocniejsze kolory, łatwiejsze do odczytania w ostrym słońcu.';
+
+  @override
+  String get settingsKeepScreenOnSwitch =>
+      'Nie wygaszaj ekranu, gdy widoczny jest Trener';
+
+  @override
+  String get settingsKeepScreenOnHelp =>
+      'Karta następnej sesji pozostaje czytelna między sesjami. W innych miejscach aplikacji i gdy nie jest ona na wierzchu, ekran wygasa jak zwykle.';
+
+  @override
   String get settingsUpdatesHeading => 'Aktualizacje';
 
   @override

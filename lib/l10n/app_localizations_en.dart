@@ -5149,6 +5149,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTracksNone => 'No track recognised yet in your days.';
 
   @override
+  String get settingsLookHeading => 'Look';
+
+  @override
+  String get lookDark => 'Dark';
+
+  @override
+  String get lookSunlight => 'Sunlight';
+
+  @override
+  String get settingsLookHelp =>
+      'Sunlight is black on white with stronger colours, easier to read outdoors in bright sun.';
+
+  @override
+  String get settingsKeepScreenOnSwitch =>
+      'Keep the screen on while Coach is shown';
+
+  @override
+  String get settingsKeepScreenOnHelp =>
+      'The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.';
+
+  @override
   String get settingsUpdatesHeading => 'Updates';
 
   @override

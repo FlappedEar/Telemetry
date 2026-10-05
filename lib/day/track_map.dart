@@ -320,6 +320,8 @@ class TrackMap extends StatelessWidget {
         gateColor: scheme.onSurface,
         pointColor: pointColor,
         marks: marks,
+        // On white the light end of the speed ramp needs a dark edge.
+        casing: scheme.brightness == Brightness.light ? Colors.black54 : null,
       ),
       child: const SizedBox.expand(),
     );
@@ -808,7 +810,12 @@ class _TrackPainter extends CustomPainter {
     required this.gateColor,
     this.pointColor,
     this.marks = const [],
+    this.casing,
   }) : range = speedRange(path);
+
+  /// Drawn under the trace and around the marks when set (the light look);
+  /// marks get a white ring otherwise.
+  final Color? casing;
 
   final List<MapMark> marks;
 
@@ -841,6 +848,25 @@ class _TrackPainter extends CustomPainter {
             : line.lineTo(point.dx, point.dy);
       }
       canvas.drawPath(line, referencePaint);
+    }
+
+    if (casing case final casing?) {
+      final edge = Paint()
+        ..color = casing
+        ..strokeWidth = 6
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      for (final segment in path.segments) {
+        final line = Path();
+        for (var i = 0; i < segment.length; ++i) {
+          final point = at(segment[i].eastMeters, segment[i].northMeters);
+          i == 0
+              ? line.moveTo(point.dx, point.dy)
+              : line.lineTo(point.dx, point.dy);
+        }
+        canvas.drawPath(line, edge);
+      }
     }
 
     final linePaint = Paint()
@@ -877,7 +903,11 @@ class _TrackPainter extends CustomPainter {
     for (final mark in marks) {
       final centre = at(mark.east, mark.north);
       canvas
-        ..drawCircle(centre, mark.radius + 2, Paint()..color = Colors.white)
+        ..drawCircle(
+          centre,
+          mark.radius + 2,
+          Paint()..color = casing ?? Colors.white,
+        )
         ..drawCircle(centre, mark.radius, Paint()..color = mark.color);
     }
 
@@ -926,6 +956,7 @@ class _TrackPainter extends CustomPainter {
       old.noSpeedColor != noSpeedColor ||
       old.gateColor != gateColor ||
       old.pointColor != pointColor ||
+      old.casing != casing ||
       !listEquals(old.marks, marks);
 }
 

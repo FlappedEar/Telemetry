@@ -16,10 +16,11 @@ import 'track_map.dart';
 /// The colour of a loss of [fraction] (0 to 1) of the largest: one hue, dim
 /// to bright, as in Overlays' "Where your best lap can improve", ending in
 /// the app's loss red (`FetColors.loss`) so it never reads as lap A's amber.
-Color lossColor(double fraction) {
+/// [loss] is the theme's loss red (`FetColors.of(context).loss`).
+Color lossColor(double fraction, [Color? loss]) {
   return Color.lerp(
     Color.from(alpha: 1, red: 0.30, green: 0.36, blue: 0.42),
-    FetColors.dark.loss,
+    loss ?? FetColors.dark.loss,
     fraction.clamp(0.0, 1.0),
   )!;
 }
@@ -373,11 +374,12 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     final segments = _segments(result, path);
     final maximum = _maximumLoss(lap);
     final neutral = Theme.of(context).colorScheme.outline;
+    final red = FetColors.of(context).loss;
     return (point) {
       final index = segments[point.telemetryTime];
       if (index == null) return neutral;
       final loss = lap.lossSeconds[index];
-      return loss == null ? neutral : lossColor(loss / maximum);
+      return loss == null ? neutral : lossColor(loss / maximum, red);
     };
   }
 
@@ -438,7 +440,10 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             decoration: BoxDecoration(
               color: lap.lossSeconds[index] == null
                   ? theme.colorScheme.outline
-                  : lossColor(lap.lossSeconds[index]! / maximum),
+                  : lossColor(
+                      lap.lossSeconds[index]! / maximum,
+                      FetColors.of(context).loss,
+                    ),
               borderRadius: BorderRadius.circular(3),
             ),
           ),
@@ -736,7 +741,12 @@ class _LossLegend extends StatelessWidget {
             height: 10,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(5),
-              gradient: LinearGradient(colors: [lossColor(0), lossColor(1)]),
+              gradient: LinearGradient(
+                colors: [
+                  lossColor(0, FetColors.of(context).loss),
+                  lossColor(1, FetColors.of(context).loss),
+                ],
+              ),
             ),
           ),
         ),
