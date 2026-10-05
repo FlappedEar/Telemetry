@@ -846,17 +846,18 @@ DayTheoreticalBest? dayBeforeRun(
 
 /// What the coach suggests for the next session after session [runId] (the
 /// day's latest), from [result]'s laps and corners and the day's recordings
-/// in [sessions] by run id.
+/// in [sessions] by run id. Stops at [cancelled] with [OperationCancelled].
 DayCoach dayCoach(
   DayTheoreticalBest result,
   Map<String, TelemetrySession?> sessions, {
   required String runId,
   DayTheoreticalBest? before,
+  CancellationCheck? cancelled,
 }) {
   final passages = <String, List<_Passage>>{};
-  final coach = _dayCoach(result, sessions, runId: runId, passages: passages);
+  final coach = _dayCoach(result, sessions, runId: runId, passages: passages, cancelled: cancelled);
   if (coach.reason == CoachReason.noSegments || before == null) return coach;
-  final goal = _goalCheck(result, before, sessions, runId, passages);
+  final goal = _goalCheck(result, before, sessions, runId, passages, cancelled);
   if (goal == null) return coach;
   return DayCoach(
     runId: coach.runId,
@@ -876,6 +877,7 @@ DayCoach _dayCoach(
   Map<String, TelemetrySession?> sessions, {
   required String runId,
   Map<String, List<_Passage>>? passages,
+  CancellationCheck? cancelled,
 }) {
   final passagesOut = passages;
   final computed = result.computed;
@@ -919,6 +921,7 @@ DayCoach _dayCoach(
 
   final findings = <CoachFinding>[];
   for (final corner in result.corners) {
+    throwIfCancelled(cancelled);
     final index = corner.segmentIndex;
     final start = corner.startProgressMeters, end = corner.endProgressMeters;
     final passages = <_Passage>[];
@@ -1129,6 +1132,7 @@ CoachGoalCheck? _goalCheck(
   Map<String, TelemetrySession?> sessions,
   String coached,
   Map<String, List<_Passage>> passages,
+  CancellationCheck? cancelled,
 ) {
   final laps = [for (final sectors in result.laps) sectors.lap];
   final runs = <String>[];
@@ -1140,7 +1144,7 @@ CoachGoalCheck? _goalCheck(
   final previous = runs[at - 1];
   final then = {for (final sectors in before.laps) sectors.lap.runId};
   if (!then.contains(previous) || then.contains(coached)) return null;
-  final focus = _dayCoach(before, sessions, runId: previous).focus?.finding;
+  final focus = _dayCoach(before, sessions, runId: previous, cancelled: cancelled).focus?.finding;
   if (focus == null || !focus.kind.corrective) return null;
   final runName = laps.firstWhere((lap) => lap.runId == previous).runName;
   CoachGoalCheck unmeasured([String measuredName = '']) => CoachGoalCheck(

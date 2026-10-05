@@ -12,10 +12,13 @@ import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
 import 'channel_sources.dart';
+import 'coach_job.dart';
 import 'day_weather.dart';
 import 'recovery_store.dart';
 import 'recovery_writes.dart';
 import 'save_journal.dart';
+
+export 'coach_job.dart' show CoachJob, CoachRunner, defaultCoachRunner;
 
 /// Saves a document. Replaced by a fake in widget tests.
 typedef DocumentWriter = Future<void> Function(
@@ -46,16 +49,6 @@ typedef SegmentReviewRunner = Future<DayProposalReview> Function(
 Future<DayProposalReview> defaultSegmentReviewRunner(
   DayProposalReview Function() job,
 ) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
-    ? Future.microtask(job)
-    : Isolate.run(job);
-
-/// Runs the coach's job; replaced in widget tests like
-/// [TheoreticalBestRunner].
-typedef CoachRunner = Future<DayCoach> Function(DayCoach Function() job);
-
-/// In a background isolate, or directly under `flutter test`.
-Future<DayCoach> defaultCoachRunner(DayCoach Function() job) =>
-    !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
     ? Future.microtask(job)
     : Isolate.run(job);
 
@@ -253,7 +246,7 @@ final class DayResultsController extends ChangeNotifier {
        _documentAlternatives = {...documentAlternatives},
        _fusions = {...fusions},
        _fusionRunner = fusionRunner ?? defaultFusionRunner,
-       _coachRunner = coachRunner ?? defaultCoachRunner,
+       _coachJob = LatestCoachJob(coachRunner ?? defaultCoachRunner),
        _segmentReviewRunner = segmentReviewRunner ?? defaultSegmentReviewRunner,
        _appender = appender ?? const IsolateDayAppender(),
        _preparer = preparer ?? const IsolateImportPreparer(),
@@ -1394,7 +1387,9 @@ final class DayResultsController extends ChangeNotifier {
   final DaySegmentEdits _segmentEdits = DaySegmentEdits();
 
   final TheoreticalBestRunner _theoreticalBestRunner;
-  final CoachRunner _coachRunner;
+  // The coach's plan being prepared, stopped when the day it is for
+  // changes or the day closes.
+  final LatestCoachJob _coachJob;
   final SegmentReviewRunner _segmentReviewRunner;
   DayProposalReview? _segmentReview;
   bool _segmentReviewLoading = false;
@@ -2610,7 +2605,7 @@ final class DayResultsController extends ChangeNotifier {
 
   // [analysis], [runs], [documentRuns] and [exclusions] rebuild the day as
   // it stood before [runId], to check the main focus given then.
-  static DayCoach Function() _coachJob(
+  static CoachJob _coachJobFor(
     DayTheoreticalBest result,
     Map<String, TelemetrySession?> sessions,
     String runId, {
@@ -2619,7 +2614,7 @@ final class DayResultsController extends ChangeNotifier {
     required List<Object?> documentRuns,
     required Map<DayLapReference, String> exclusions,
   }) =>
-      () => dayCoach(
+      (cancelled) => dayCoach(
         result,
         sessions,
         runId: runId,
@@ -2630,7 +2625,9 @@ final class DayResultsController extends ChangeNotifier {
           documentRuns: documentRuns,
           exclusions: exclusions,
           groupId: result.groupId,
+          cancelled: cancelled,
         ),
+        cancelled: cancelled,
       );
 
   /// Prepares the coach's plan again after it failed. Returns whether it
@@ -2657,25 +2654,25 @@ final class DayResultsController extends ChangeNotifier {
     }
     _coachLoading = true;
     notifyListeners();
-    DayCoach? coach;
-    var error = '';
     final clock = Stopwatch()..start();
-    try {
-      coach = await _coachRunner(
-        _coachJob(
-          result,
-          {for (final named in _unitRuns) named.run.id: named.run.telemetry},
-          latestRunId,
-          analysis: _analysis,
-          runs: outingRuns(_unitRuns),
-          documentRuns: _documentRuns,
-          exclusions: {..._exclusions},
-        ),
-      );
-    } on Object catch (failure) {
-      error = '$failure';
+    // A plan still being prepared for the day as it was is stopped.
+    final outcome = await _coachJob.run(
+      _coachJobFor(
+        result,
+        {for (final named in _unitRuns) named.run.id: named.run.telemetry},
+        latestRunId,
+        analysis: _analysis,
+        runs: outingRuns(_unitRuns),
+        documentRuns: _documentRuns,
+        exclusions: {..._exclusions},
+      ),
+    );
+    if (outcome == null ||
+        _disposed ||
+        generation != _theoreticalBestGeneration) {
+      return;
     }
-    if (_disposed || generation != _theoreticalBestGeneration) return;
+    final (:coach, :error) = outcome;
     if (coach != null) {
       diagnostics.recordStep(DiagnosticSteps.coach, clock.elapsed);
       if (_additionClock case final added?) {
@@ -2843,6 +2840,7 @@ final class DayResultsController extends ChangeNotifier {
     _coach = null;
     _coachError = '';
     _coachLoading = false;
+    _coachJob.cancel();
     ++_theoreticalBestGeneration;
   }
 
@@ -3183,6 +3181,7 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _coachJob.cancel();
     speedUnitSetting.removeListener(_speedUnitAssumed);
     weather.dispose();
     // Alignments not started are dropped; running ones are stopped.

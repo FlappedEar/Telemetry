@@ -39,11 +39,16 @@ final class BackgroundTaskFailed implements Exception {
 /// next cancellation check. Either way the job's failures come back as
 /// [BackgroundTaskFailed].
 BackgroundTask<T> runInBackground<A, T>(BackgroundJob<A, T> job, A argument) =>
-    !debugRunInIsolate &&
-        !kIsWeb &&
-        Platform.environment.containsKey('FLUTTER_TEST')
+    backgroundRunsInline
     ? _InlineTask(job, argument)
     : runInIsolate(job, argument);
+
+/// Whether [runInBackground] runs its jobs on the caller's thread: under
+/// `flutter test`, unless [debugRunInIsolate] is set.
+bool get backgroundRunsInline =>
+    !debugRunInIsolate &&
+    !kIsWeb &&
+    Platform.environment.containsKey('FLUTTER_TEST');
 
 /// Makes [runInBackground] use its own isolate under `flutter test` too, to
 /// test the app's jobs as it runs them.
@@ -56,7 +61,7 @@ BackgroundTask<T> runInIsolate<A, T>(BackgroundJob<A, T> job, A argument) =>
     _IsolateTask(job, argument);
 
 /// [error] as a [BackgroundTaskFailed]; a cancellation stays one.
-Object _failure(Object error) => switch (error) {
+Object backgroundFailure(Object error) => switch (error) {
   OperationCancelled() || BackgroundTaskFailed() => error,
   _ => BackgroundTaskFailed('$error'),
 };
@@ -68,7 +73,7 @@ final class _InlineTask<A, T> implements BackgroundTask<T> {
       try {
         return job(argument, () => _cancelled);
       } on Object catch (error, stack) {
-        Error.throwWithStackTrace(_failure(error), stack);
+        Error.throwWithStackTrace(backgroundFailure(error), stack);
       }
     });
   }
@@ -145,7 +150,7 @@ final class _IsolateTask<A, T> implements BackgroundTask<T> {
       );
     } on Object catch (error, stack) {
       // A job that cannot be sent to another isolate.
-      _fail(_failure(error), stack);
+      _fail(backgroundFailure(error), stack);
       return;
     }
     spawned.then(
@@ -154,7 +159,7 @@ final class _IsolateTask<A, T> implements BackgroundTask<T> {
         if (_cancelled) isolate.kill(priority: Isolate.immediate);
       },
       onError: (Object error, StackTrace stack) =>
-          _fail(_failure(error), stack),
+          _fail(backgroundFailure(error), stack),
     );
   }
 
