@@ -66,14 +66,7 @@ ProfileMerge mergeDriverProfile(
         _find(cars, (car) => car.name.trim().toLowerCase() == name);
     if (mine == null) {
       if (cars.length >= maximumProfileCars) return null;
-      mine = cars.any((car) => car.id == id)
-          ? ProfileCar(
-              id: newEventId(random),
-              name: theirs.name,
-              notes: theirs.notes,
-              unknown: theirs.unknown,
-            )
-          : theirs;
+      mine = theirs;
       cars.add(mine);
     }
     return carIds[id] = mine.id;
@@ -108,9 +101,36 @@ ProfileMerge mergeDriverProfile(
       alreadyHere.add(day.eventId);
       continue;
     }
-    final carId = days.length >= maximumProfileDays ? null : car(day.carId);
+    if (days.length >= maximumProfileDays) {
+      notAdded.add(day.eventId);
+      continue;
+    }
+    // A day that cannot be added leaves no car or track of its own behind.
+    final before = (
+      cars: [...cars],
+      tracks: [...tracks],
+      carIds: {...carIds},
+      trackIds: {...trackIds},
+      cornerIds: {...cornerIds},
+    );
     final trackId = day.trackId == null ? null : track(day.trackId!);
+    final carId = car(day.carId);
     if (carId == null || (day.trackId != null && trackId == null)) {
+      cars
+        ..clear()
+        ..addAll(before.cars);
+      tracks
+        ..clear()
+        ..addAll(before.tracks);
+      carIds
+        ..clear()
+        ..addAll(before.carIds);
+      trackIds
+        ..clear()
+        ..addAll(before.trackIds);
+      cornerIds
+        ..clear()
+        ..addAll(before.cornerIds);
       notAdded.add(day.eventId);
       continue;
     }

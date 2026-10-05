@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:path/path.dart' as p;
@@ -25,13 +27,14 @@ void main() {
     String eventId,
     List<List<double>> sessions, {
     String car = 'Clio',
+    double latitude = 52.0,
   }) async {
     Directory(recordings).createSync(recursive: true);
     final paths = [
       for (final (index, speeds) in sessions.indexed)
         () {
           final path = p.join(recordings, '$eventId-$index.vbo');
-          File(path).writeAsStringSync(circuitVbo(speeds));
+          File(path).writeAsStringSync(circuitVbo(speeds, latitude: latitude));
           return path;
         }(),
     ];
@@ -200,6 +203,337 @@ void main() {
       expect(existing.readAsStringSync(), 'mine');
     });
 
+    test('a day that cannot be read writes nothing', () async {
+      final a = p.join(root(), 'A');
+      var profile = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
+        [30, 28, 31],
+      ]);
+      profile = await saveDay(profile, a, p.join(a, 'in'), 'e2', [
+        [31, 29, 30],
+      ]);
+      final bundle = p.join(root(), 'a$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      final archive = ZipDecoder().decodeBytes(File(bundle).readAsBytesSync());
+      final damaged = Archive();
+      for (final entry in archive) {
+        damaged.addFile(
+          entry.name == 'Days/e2.fetproject'
+              ? ArchiveFile.string(entry.name, 'not json')
+              : ArchiveFile.bytes(entry.name, entry.content),
+        );
+      }
+      final path = p.join(root(), 'damaged$profileBundleExtension');
+      File(path).writeAsBytesSync(ZipEncoder().encodeBytes(damaged));
+      final b = p.join(root(), 'B');
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, path),
+        throwsA(isA<ProfileBundleError>()),
+      );
+      expect(Directory(b).existsSync(), isFalse);
+    });
+
+    /// [bundle] with each entry [change] returns content for replaced, at
+    /// [path].
+    String rewritten(String bundle, String path, List<int>? Function(String name) change) {
+      final archive = ZipDecoder().decodeBytes(File(bundle).readAsBytesSync());
+      final out = Archive();
+      for (final entry in archive) {
+        out.addFile(ArchiveFile.bytes(entry.name, change(entry.name) ?? entry.content));
+      }
+      File(path).writeAsBytesSync(ZipEncoder().encodeBytes(out));
+      return path;
+    }
+
+    /// [bytes] with every little-endian 32-bit [from] (a size in the zip's
+    /// headers) made [to].
+    List<int> patched(List<int> bytes, int from, int to) {
+      final out = [...bytes];
+      List<int> le(int v) => [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff];
+      final needle = le(from), value = le(to);
+      for (var i = 0; i + 4 <= out.length; i++) {
+        if (out[i] == needle[0] &&
+            out[i + 1] == needle[1] &&
+            out[i + 2] == needle[2] &&
+            out[i + 3] == needle[3]) {
+          out.setRange(i, i + 4, value);
+        }
+      }
+      return out;
+    }
+
+    test('a recording damaged after the first day writes nothing', () async {
+      final a = p.join(root(), 'A');
+      var profile = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
+        [30, 28, 31],
+      ]);
+      profile = await saveDay(profile, a, p.join(a, 'in'), 'e2', [
+        [31, 29, 30],
+      ]);
+      final bundle = p.join(root(), 'a$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      final names = [
+        for (final entry in ZipDecoder().decodeBytes(File(bundle).readAsBytesSync()))
+          if (entry.name.startsWith('Recordings/')) entry.name,
+      ];
+      expect(names, hasLength(2));
+      // The last recording, its content changed but not its size.
+      final damaged = rewritten(bundle, p.join(root(), 'damaged.feprofile'), (name) {
+        if (name != names.last) return null;
+        final original = ZipDecoder()
+            .decodeBytes(File(bundle).readAsBytesSync())
+            .findFile(name)!
+            .content;
+        return [...original]..[original.length ~/ 2] ^= 0xff;
+      });
+      final b = p.join(root(), 'B');
+      Directory(b).createSync();
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, damaged),
+        throwsA(isA<ProfileBundleError>()),
+      );
+      expect(Directory(b).listSync(), isEmpty, reason: 'no day, recording or staging left');
+      // The whole bundle then adds both days.
+      final read = await readProfileBundle(DriverProfile.empty(Random(2)), b, bundle);
+      expect(read.added, ['e1', 'e2']);
+    });
+
+    test('an entry unpacking to more than it declares is refused', () async {
+      final a = p.join(root(), 'A');
+      final profile = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
+        [30, 28, 31],
+      ]);
+      final bundle = p.join(root(), 'a$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      const size = 1000003;
+      final b = p.join(root(), 'B');
+      Directory(b).createSync();
+      // A recording that would unpack to far more than it says.
+      final recording = rewritten(
+        bundle,
+        p.join(root(), 'big.feprofile'),
+        (name) => name.startsWith('Recordings/') ? List<int>.filled(size, 0) : null,
+      );
+      File(recording).writeAsBytesSync(patched(File(recording).readAsBytesSync(), size, 10));
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, recording),
+        throwsA(isA<ProfileBundleError>()),
+      );
+      expect(Directory(b).listSync(), isEmpty);
+      // So would the profile, read into memory.
+      final index = rewritten(
+        bundle,
+        p.join(root(), 'index.feprofile'),
+        (name) => name == profileIndexName ? List<int>.filled(size, 0x20) : null,
+      );
+      File(index).writeAsBytesSync(patched(File(index).readAsBytesSync(), size, 10));
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, index),
+        throwsA(isA<ProfileBundleError>()),
+      );
+      expect(Directory(b).listSync(), isEmpty);
+    });
+
+    test(
+      'another car and circuit are added; a different recording of the same name is kept',
+      () async {
+        final a = p.join(root(), 'A');
+        final b = p.join(root(), 'B');
+        final there = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
+          [30, 28, 31],
+        ]);
+        final here = await saveDay(
+          DriverProfile.empty(Random(2)),
+          b,
+          p.join(b, 'in'),
+          'h1',
+          [
+            [29, 30, 31],
+          ],
+          car: 'Civic',
+          latitude: 50,
+        );
+        final bundle = p.join(root(), 'a$profileBundleExtension');
+        await writeProfileBundle(there, a, bundle);
+        final name = [
+          for (final entry in ZipDecoder().decodeBytes(File(bundle).readAsBytesSync()))
+            if (entry.name.startsWith('Recordings/')) entry,
+        ].single;
+        // Here already: another file by that name, of the same size.
+        File(p.join(b, 'Recordings', p.basename(name.name)))
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(List<int>.filled(name.size, 7));
+        final read = await readProfileBundle(here, b, bundle);
+        expect(read.added, ['e1']);
+        expect(read.profile.cars.map((car) => car.name), ['Civic', 'Clio']);
+        expect(read.profile.tracks, hasLength(2));
+        expect(read.profile.lastCarId, here.lastCarId);
+        final day = read.profile.day('e1')!;
+        expect(day.carId, there.cars.single.id);
+        expect(day.trackId, there.tracks.single.id);
+        final ids = {for (final corner in read.profile.track(day.trackId!)!.corners) corner.id};
+        for (final corner in day.sessions.single.stats!.corners) {
+          expect(ids, contains(corner.cornerId));
+        }
+        final opened = openDay(p.join(b, 'Days', 'e1.fetproject'));
+        expect(opened.missing, isEmpty);
+        expect(
+          File(p.join(b, 'Recordings', p.basename(name.name))).readAsBytesSync().first,
+          7,
+          reason: 'the file already here is left as it is',
+        );
+        expect(
+          File(
+            p.join(
+              b,
+              'Recordings',
+              '${p.basenameWithoutExtension(name.name)} (2)${p.extension(name.name)}',
+            ),
+          ).existsSync(),
+          isTrue,
+        );
+      },
+    );
+
+    test('a day that is another day inside is refused', () async {
+      final a = p.join(root(), 'A');
+      final profile = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
+        [30, 28, 31],
+      ]);
+      final bundle = p.join(root(), 'a$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      final other = rewritten(bundle, p.join(root(), 'other-day.feprofile'), (name) {
+        if (name != 'Days/e1.fetproject') return null;
+        final text = utf8.decode(
+          ZipDecoder().decodeBytes(File(bundle).readAsBytesSync()).findFile(name)!.content,
+        );
+        return utf8.encode(text.replaceAll('"e1"', '"e9"'));
+      });
+      final b = p.join(root(), 'B');
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, other),
+        throwsA(isA<ProfileBundleError>()),
+      );
+      expect(Directory(b).existsSync(), isFalse);
+    });
+
+    test('a small file unpacking to far more than it says stays small in memory', () async {
+      // 512 MiB of zeros, deflated a piece at a time, said to be 1000 bytes.
+      final deflated = BytesBuilder(copy: false);
+      final sink = ZLibCodec(raw: true).encoder.startChunkedConversion(_Collect(deflated.add));
+      final zeros = Uint8List(1024 * 1024);
+      for (var mebibyte = 0; mebibyte < 512; mebibyte++) {
+        sink.add(zeros);
+      }
+      sink.close();
+      final bomb = deflated.takeBytes();
+      final script = p.join(root(), 'read_bomb.dart');
+      File(script).writeAsStringSync('''
+import 'dart:io';
+import 'dart:math';
+
+import 'package:telemetry_core/telemetry_core.dart';
+
+Future<void> main(List<String> arguments) async {
+  final before = ProcessInfo.currentRss;
+  var error = 'none';
+  try {
+    await readProfileBundle(DriverProfile.empty(Random(2)), arguments[1], arguments[0]);
+  } on Object catch (caught) {
+    error = caught.runtimeType.toString();
+  }
+  stdout.write('\$error \${ProcessInfo.maxRss - before}');
+}
+''');
+      final b = p.join(root(), 'B');
+      for (final (label, madeBy, attributes) in [
+        ('a file', 20, 0),
+        // archive's own decoder would unpack a Unix link whole.
+        ('a link', 0x0314, 0xa1ff << 16),
+      ]) {
+        final path = p.join(root(), 'bomb$profileBundleExtension');
+        File(path).writeAsBytesSync(
+          _zip(
+            [(name: 'bundle.json', data: bomb, method: 8, size: 1000, crc: 0, flags: 0)],
+            madeBy: madeBy,
+            attributes: attributes,
+          ),
+        );
+        // In a process of its own, whose peak memory is this read's alone.
+        final run = await Process.run(Platform.resolvedExecutable, [
+          '--packages=${p.join(Directory.current.path, '.dart_tool', 'package_config.json')}',
+          script,
+          path,
+          b,
+        ]);
+        expect(run.exitCode, 0, reason: '$label: ${run.stderr}');
+        final [error, grew] = (run.stdout as String).trim().split(' ');
+        expect(error, 'ProfileBundleError', reason: label);
+        expect(int.parse(grew), lessThan(128 * 1024 * 1024), reason: label);
+      }
+      expect(Directory(b).existsSync(), isFalse);
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
+    test('an encrypted, oddly packed or damaged entry is refused', () async {
+      final manifest = utf8.encode('{"format":"$profileBundleFormat","version":1}');
+      final crc = getCrc32(manifest);
+      final b = p.join(root(), 'B');
+      for (final (label, entry) in [
+        (
+          'encrypted',
+          (
+            name: 'bundle.json',
+            data: manifest,
+            method: 0,
+            size: manifest.length,
+            crc: crc,
+            flags: 1,
+          ),
+        ),
+        (
+          'bzip2',
+          (
+            name: 'bundle.json',
+            data: manifest,
+            method: 12,
+            size: manifest.length,
+            crc: crc,
+            flags: 0,
+          ),
+        ),
+        (
+          'bad deflate',
+          (
+            name: 'bundle.json',
+            data: [0xff, 0xff, 0xff, 0xff],
+            method: 8,
+            size: manifest.length,
+            crc: crc,
+            flags: 0,
+          ),
+        ),
+        (
+          'wrong checksum',
+          (
+            name: 'bundle.json',
+            data: manifest,
+            method: 0,
+            size: manifest.length,
+            crc: crc ^ 1,
+            flags: 0,
+          ),
+        ),
+      ]) {
+        final path = p.join(root(), '$label$profileBundleExtension');
+        File(path).writeAsBytesSync(_zip([entry]));
+        await expectLater(
+          readProfileBundle(DriverProfile.empty(Random(2)), b, path),
+          throwsA(isA<ProfileBundleError>()),
+          reason: label,
+        );
+      }
+      expect(Directory(b).existsSync(), isFalse);
+    });
+
     test('a file that is not a bundle, or reaches outside it, writes nothing', () async {
       final b = p.join(root(), 'B');
       final empty = DriverProfile.empty(Random(2));
@@ -229,6 +563,34 @@ void main() {
         'Recordings/a/b.vbo': 'x',
       });
       await expectLater(readProfileBundle(empty, b, nested), throwsA(isA<ProfileBundleError>()));
+      for (final name in [
+        r'Recordings\..\..\evil.txt',
+        'C:/evil.txt',
+        '/evil.txt',
+        'Recordings/C:evil.vbo',
+        'Recordings/CON.vbo',
+        'Recordings/evil.',
+        'Days/e1.txt',
+      ]) {
+        final hostile = await zip('hostile.feprofile', {
+          'bundle.json': manifest,
+          'driver.feprofile': encodeDriverProfile(empty),
+          name: 'x',
+        });
+        await expectLater(
+          readProfileBundle(empty, b, hostile),
+          throwsA(isA<ProfileBundleError>()),
+          reason: name,
+        );
+      }
+      final unversioned = await zip('unversioned.feprofile', {
+        'bundle.json': '{"format":"$profileBundleFormat","version":"1"}',
+        'driver.feprofile': encodeDriverProfile(empty),
+      });
+      await expectLater(
+        readProfileBundle(empty, b, unversioned),
+        throwsA(isA<ProfileBundleError>()),
+      );
       final other = await zip('other.feprofile', {'bundle.json': '{"format":"something"}'});
       await expectLater(readProfileBundle(empty, b, other), throwsA(isA<ProfileBundleError>()));
       final newer = await zip('newer.feprofile', {
@@ -240,4 +602,68 @@ void main() {
       expect(File(p.join(root(), 'evil.txt')).existsSync(), isFalse);
     });
   });
+}
+
+final class _Collect implements Sink<List<int>> {
+  _Collect(this._add);
+
+  final void Function(List<int>) _add;
+
+  @override
+  void add(List<int> data) => _add(data);
+
+  @override
+  void close() {}
+}
+
+typedef _Entry = ({String name, List<int> data, int method, int size, int crc, int flags});
+
+/// A zip of [entries] as given, headers and all, so a test can say what a
+/// real encoder would not.
+List<int> _zip(List<_Entry> entries, {int madeBy = 20, int attributes = 0}) {
+  final out = BytesBuilder();
+  void u16(BytesBuilder to, int v) => to.add([v & 0xff, (v >> 8) & 0xff]);
+  void u32(BytesBuilder to, int v) =>
+      to.add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
+  final central = BytesBuilder();
+  for (final entry in entries) {
+    final offset = out.length;
+    final name = utf8.encode(entry.name);
+    u32(out, 0x04034b50);
+    for (final v in [20, entry.flags, entry.method, 0, 0x21]) {
+      u16(out, v);
+    }
+    u32(out, entry.crc);
+    u32(out, entry.data.length);
+    u32(out, entry.size);
+    u16(out, name.length);
+    u16(out, 0);
+    out
+      ..add(name)
+      ..add(entry.data);
+    u32(central, 0x02014b50);
+    for (final v in [madeBy, 20, entry.flags, entry.method, 0, 0x21]) {
+      u16(central, v);
+    }
+    u32(central, entry.crc);
+    u32(central, entry.data.length);
+    u32(central, entry.size);
+    for (final v in [name.length, 0, 0, 0, 0]) {
+      u16(central, v);
+    }
+    u32(central, attributes);
+    u32(central, offset);
+    central.add(name);
+  }
+  final start = out.length;
+  final directory = central.takeBytes();
+  out.add(directory);
+  u32(out, 0x06054b50);
+  for (final v in [0, 0, entries.length, entries.length]) {
+    u16(out, v);
+  }
+  u32(out, directory.length);
+  u32(out, start);
+  u16(out, 0);
+  return out.takeBytes();
 }

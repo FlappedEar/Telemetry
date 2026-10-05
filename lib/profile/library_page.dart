@@ -1,17 +1,28 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'profile_bundle_pickers.dart';
 import 'profile_library.dart';
 
 /// Every day kept in the driver profile, as Car > Year > Track > Date >
-/// sessions. Tapping a day opens it with [open].
+/// sessions. Tapping a day opens it with [open]. Its menu exports the
+/// profile to one file and imports one exported on another device.
 class LibraryPage extends StatefulWidget {
-  const LibraryPage({super.key, required this.library, required this.open});
+  const LibraryPage({
+    super.key,
+    required this.library,
+    required this.open,
+    this.pickers = const PlatformProfileBundlePickers(),
+  });
 
   final ProfileLibrary library;
+
+  final ProfileBundlePickers pickers;
 
   /// Opens the day saved at the path given.
   final ValueChanged<String> open;
@@ -21,10 +32,132 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  final _menu = GlobalKey();
+
+  /// What the export or import under way is doing; null when there is none.
+  String? _working;
+
   @override
   void initState() {
     super.initState();
     widget.library.load();
+  }
+
+  Future<void> _export() async {
+    final l10n = context.l10n;
+    final pickers = widget.pickers;
+    final messenger = ScaffoldMessenger.of(context);
+    // The iPad's share sheet points at the menu, or the page.
+    final box =
+        (_menu.currentContext?.findRenderObject() ?? context.findRenderObject())
+            as RenderBox?;
+    final origin = box == null || !box.hasSize
+        ? const Rect.fromLTWH(0, 0, 1, 1)
+        : box.localToGlobal(Offset.zero) & box.size;
+    final date = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final fileName =
+        '${l10n.libraryExportFileName(date)}$profileBundleExtension';
+    String? location;
+    if (!pickers.shares) {
+      location = await pickers.saveLocation(fileName);
+      if (location == null || !mounted) return;
+    }
+    setState(() => _working = l10n.libraryExporting);
+    var copying = false;
+    try {
+      // Written in the app's own folder first: a sandboxed app may write
+      // only the file the user chose, not a temporary one beside it.
+      final work = await pickers.workFile(fileName);
+      final export = await widget.library.exportBundle(work);
+      if (export == null) throw StateError('No profile to export.');
+      if (location != null) {
+        copying = true;
+        await File(work).copy(location);
+        copying = false;
+        try {
+          await File(work).delete();
+        } on Object {
+          // Removed with the next export's.
+        }
+      } else if (!await pickers.share(work, origin)) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            [
+              l10n.libraryExported(export.days),
+              if (export.daysMissing.isNotEmpty)
+                l10n.libraryExportDaysMissing(export.daysMissing.length),
+              if (export.recordingsMissing > 0)
+                l10n.libraryExportMissing(export.recordingsMissing),
+            ].join(' '),
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      debugPrint('Profile not exported: $error');
+      // A copy cut short is no profile: it is not left where the user
+      // chose.
+      if (copying && location != null) {
+        try {
+          await File(location).delete();
+        } on Object {
+          // Never written.
+        }
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.libraryExportFailed)));
+    } finally {
+      if (mounted) setState(() => _working = null);
+    }
+  }
+
+  Future<void> _import() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final path = await widget.pickers.pickBundle();
+    if (path == null || !mounted) return;
+    setState(() => _working = l10n.libraryImporting);
+    String message;
+    try {
+      final read = await widget.library.importBundle(path);
+      if (read == null) throw StateError('No profile to import into.');
+      message = [
+        l10n.libraryImported(read.added.length),
+        if (read.notAdded.isNotEmpty)
+          l10n.libraryImportNotAdded(read.notAdded.length),
+      ].join(' ');
+    } on ProfileNotSaved catch (error) {
+      message = l10n.libraryImportNotSaved(error.import.added.length);
+    } on Object catch (error) {
+      debugPrint('Profile not imported: $error');
+      message = l10n.libraryImportFailed;
+    } finally {
+      await widget.pickers.release(path);
+      if (mounted) setState(() => _working = null);
+    }
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  PreferredSizeWidget? _progress() {
+    final working = _working;
+    if (working == null) return null;
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(32),
+      child: Column(
+        key: const ValueKey('libraryWorking'),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(working),
+            ),
+          ),
+          const LinearProgressIndicator(),
+        ],
+      ),
+    );
   }
 
   Future<void> _rename({
@@ -85,7 +218,43 @@ class _LibraryPageState extends State<LibraryPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.libraryTitle)),
+      appBar: AppBar(
+        title: Text(l10n.libraryTitle),
+        bottom: _progress(),
+        actions: [
+          ListenableBuilder(
+            listenable: widget.library,
+            builder: (context, _) {
+              final profile = widget.library.profile;
+              final idle = _working == null && widget.library.available;
+              return PopupMenuButton<VoidCallback>(
+                key: _menu,
+                enabled: idle,
+                onSelected: (action) => action(),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    key: const ValueKey('libraryExport'),
+                    value: _export,
+                    enabled: profile != null && profile.days.isNotEmpty,
+                    child: ListTile(
+                      leading: const Icon(Icons.ios_share),
+                      title: Text(l10n.libraryExport),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    key: const ValueKey('libraryImport'),
+                    value: _import,
+                    child: ListTile(
+                      leading: const Icon(Icons.file_open_outlined),
+                      title: Text(l10n.libraryImport),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
       body: ListenableBuilder(
         listenable: widget.library,
         builder: (context, _) {

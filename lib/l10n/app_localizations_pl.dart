@@ -5389,4 +5389,102 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get updateTryAgain => 'Spróbuj ponownie';
+
+  @override
+  String get libraryExport => 'Eksportuj profil';
+
+  @override
+  String get libraryImport => 'Importuj profil';
+
+  @override
+  String libraryExportFileName(String date) {
+    return 'Profil kierowcy $date';
+  }
+
+  @override
+  String get libraryExporting => 'Zapisywanie pliku profilu…';
+
+  @override
+  String get libraryImporting => 'Dodawanie dni z pliku…';
+
+  @override
+  String libraryExported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Wyeksportowano profil z $count dniami.',
+      one: 'Wyeksportowano profil z 1 dniem.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryExportMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Nie znaleziono $count zapisów na tym urządzeniu, więc nie ma ich w pliku.',
+      one: 'Nie znaleziono 1 zapisu na tym urządzeniu, więc nie ma go w pliku.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryExportFailed => 'Nie udało się wyeksportować profilu.';
+
+  @override
+  String libraryImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dodano $count dni.',
+      one: 'Dodano 1 dzień.',
+      zero: 'W pliku nie ma dni, których tu jeszcze nie ma.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportNotAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Nie dodano $count dni: brak ich w pliku albo biblioteka jest pełna.',
+      one: 'Nie dodano 1 dnia: brak go w pliku albo biblioteka jest pełna.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryImportFailed =>
+      'Nie można zaimportować tego pliku. To nie jest profil wyeksportowany z tej aplikacji, pochodzi z nowszej wersji albo jest uszkodzony.';
+
+  @override
+  String get profileBundleType => 'Profile kierowcy';
+
+  @override
+  String libraryExportDaysMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Nie znaleziono $count dni na tym urządzeniu, więc nie ma ich w pliku.',
+      one: 'Nie znaleziono 1 dnia na tym urządzeniu, więc nie ma go w pliku.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportNotSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Skopiowano $count dni, ale nie udało się zapisać biblioteki. Pojawią się w niej ponownie, w ostatnim samochodzie, przy następnym uruchomieniu aplikacji.',
+      one: 'Skopiowano 1 dzień, ale nie udało się zapisać biblioteki. Pojawi się w niej ponownie, w ostatnim samochodzie, przy następnym uruchomieniu aplikacji.',
+    );
+    return '$_temp0';
+  }
 }

@@ -12,8 +12,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
+import 'package:crypto/crypto.dart';
 import 'package:fetproject/fetproject.dart' as fet;
 import 'package:path/path.dart' as p;
 
@@ -72,7 +74,8 @@ Future<ProfileBundleExport> writeProfileBundle(
   final encoder = ZipFileEncoder()..create(partial);
   var days = 0;
   final daysMissing = <String>[];
-  var recordingsMissing = 0;
+  // Each recording not found once, however many days use it.
+  final missingRecordings = <String>{};
   // Each recording once, by the file it is on this device.
   final written = <String, String>{};
   final names = <String>{};
@@ -97,7 +100,8 @@ Future<ProfileBundleExport> writeProfileBundle(
         if (reference is! Map<String, Object?>) continue;
         final file = fet.SourceReference.fromJson(reference).resolve(path);
         if (file.isEmpty) {
-          recordingsMissing++;
+          final digest = source['contentSha256'];
+          missingRecordings.add(digest is String ? digest : jsonEncode(reference));
           continue;
         }
         var name = written[file];
@@ -144,7 +148,7 @@ Future<ProfileBundleExport> writeProfileBundle(
     days: days,
     recordings: written.length,
     daysMissing: daysMissing,
-    recordingsMissing: recordingsMissing,
+    recordingsMissing: missingRecordings.length,
   );
 }
 
@@ -188,6 +192,10 @@ final class ProfileBundleError implements Exception {
 /// profile kept in [folder]: their recordings, then their documents, are
 /// written there; the profile with them is returned for the caller to
 /// write. A day whose document is already in the folder is left as it is.
+///
+/// Everything is read and checked before anything is put in place: a
+/// bundle that is not one, or is damaged anywhere, throws
+/// [ProfileBundleError] and leaves the folder as it was.
 Future<ProfileBundleImport> readProfileBundle(
   DriverProfile into,
   String folder,
@@ -196,27 +204,37 @@ Future<ProfileBundleImport> readProfileBundle(
 }) async {
   final input = InputFileStream(bundle);
   try {
-    final Archive archive;
+    // Only the zip's directory is read here: archive's decoder would
+    // unpack some entries (Unix links) whole, before anything is checked.
+    final directory = ZipDirectory();
     try {
-      archive = ZipDecoder().decodeStream(input);
+      directory.read(input);
     } on Object {
       throw const ProfileBundleError('This file is not a profile bundle.');
     }
     final entries = <String, ArchiveFile>{};
-    for (final entry in archive) {
-      if (!entry.isFile) continue;
-      final name = entry.name.replaceAll(r'\', '/');
-      if (!_allowed(name)) {
+    for (final header in directory.fileHeaders) {
+      final zip = header.file;
+      if (zip == null) continue;
+      final name = zip.filename.replaceAll(r'\', '/');
+      if (name.endsWith('/')) continue;
+      // Plain files only: no links, devices or folders by mode.
+      final type = (header.externalFileAttributes >> 16) & 0xf000;
+      if (!_allowed(name) || (header.versionMadeBy >> 8 == 3 && type != 0 && type != 0x8000)) {
         throw ProfileBundleError('The bundle holds a file it may not: $name.');
       }
-      entries[name] = entry;
+      if (entries.containsKey(name)) {
+        throw ProfileBundleError('The bundle holds $name twice.');
+      }
+      entries[name] = ArchiveFile.file(name, zip.uncompressedSize, zip)..crc32 = zip.crc32;
     }
     final manifest = _json(entries[_manifestName], 64 * 1024);
     if (manifest == null || manifest['format'] != profileBundleFormat) {
       throw const ProfileBundleError('This file is not a profile bundle.');
     }
-    if (manifest['version'] case final int version when version > profileBundleVersion) {
-      throw const ProfileBundleError('The bundle is from a newer version of the app.');
+    final version = manifest['version'];
+    if (version is! int || version < 1 || version > profileBundleVersion) {
+      throw const ProfileBundleError('The bundle is from another version of the app.');
     }
     final index = entries[profileIndexName];
     if (index == null || index.size > maximumProfileCharacters * 4) {
@@ -225,6 +243,8 @@ Future<ProfileBundleImport> readProfileBundle(
     final DriverProfile from;
     try {
       from = decodeDriverProfile(utf8.decode(_bytes(index)));
+    } on ProfileBundleError {
+      rethrow;
     } on Object {
       throw const ProfileBundleError("The bundle's profile cannot be read.");
     }
@@ -249,10 +269,8 @@ Future<ProfileBundleImport> readProfileBundle(
     }
     final merge = mergeDriverProfile(into, from, only: candidates, random: random);
 
-    final recordings = Directory(p.join(folder, profileRecordingsFolderName));
-    var written = 0;
-    // A bundle's recording name, by the name it has in this folder.
-    final placed = <String, String>{};
+    // Every day read before anything is written.
+    final documents = <String, Map<String, Object?>>{};
     for (final eventId in merge.added) {
       final entry = entries['$profileDaysFolderName/$eventId.fetproject']!;
       final Map<String, Object?> document;
@@ -261,50 +279,124 @@ Future<ProfileBundleImport> readProfileBundle(
       } on Object {
         throw ProfileBundleError('The day $eventId in the bundle cannot be read.');
       }
-      for (final source in _telemetrySources(document)) {
-        final reference = source['reference'];
-        if (reference is! Map<String, Object?>) continue;
-        final relative = reference['relativePath'];
-        const prefix = '../$profileRecordingsFolderName/';
-        if (relative is! String || !relative.startsWith(prefix)) continue;
-        final name = relative.substring(prefix.length);
-        final recording = entries['$profileRecordingsFolderName/$name'];
-        if (recording == null) continue;
-        var here = placed[name];
-        if (here == null) {
-          recordings.createSync(recursive: true);
-          here = name;
-          for (var copy = 2; ; copy++) {
-            final file = File(p.join(recordings.path, here!));
-            if (!file.existsSync()) {
-              _extract(recording, file.path);
-              written++;
-              break;
+      final event = document['event'];
+      if (event is! Map<String, Object?> || event['id'] != eventId) {
+        throw ProfileBundleError('The day $eventId in the bundle is another day.');
+      }
+      documents[eventId] = document;
+    }
+
+    final recordings = Directory(p.join(folder, profileRecordingsFolderName));
+    // Recordings are unpacked beside the profile first, checked, and moved
+    // into place only once every one of them is whole.
+    _deleteStaging(folder);
+    final staging = Directory(p.join(folder, '$_stagingPrefix${_stagingSuffix(random)}'));
+    // A bundle's recording name, by the name it has in this folder.
+    final placed = <String, String>{};
+    // Staged files, by the name they take in Recordings.
+    final staged = <String, String>{};
+    final created = <String>[];
+    try {
+      for (final document in documents.values) {
+        for (final source in _telemetrySources(document)) {
+          final reference = source['reference'];
+          if (reference is! Map<String, Object?>) continue;
+          final relative = reference['relativePath'];
+          const prefix = '../$profileRecordingsFolderName/';
+          if (relative is! String || !relative.startsWith(prefix)) continue;
+          final name = relative.substring(prefix.length);
+          final recording = entries['$profileRecordingsFolderName/$name'];
+          if (recording == null) continue;
+          var here = placed[name];
+          if (here == null) {
+            final digest = source['contentSha256'];
+            here = name;
+            for (var copy = 2; ; copy++) {
+              final taken = staged.keys.any((other) => other.toLowerCase() == here!.toLowerCase());
+              final file = File(p.join(recordings.path, here!));
+              if (!taken && !file.existsSync()) {
+                staging.createSync(recursive: true);
+                final path = p.join(staging.path, '${staged.length}');
+                _extract(recording, path);
+                staged[here] = path;
+                // The recording the day was analysed from, or none.
+                if (digest is String && await _sha256(path) != digest) {
+                  throw ProfileBundleError('${recording.name} in the bundle is damaged.');
+                }
+                break;
+              }
+              // The same recording when its content is the one the day names.
+              if (!taken &&
+                  digest is String &&
+                  file.lengthSync() == recording.size &&
+                  await _sha256(file.path) == digest) {
+                break;
+              }
+              here = '${p.basenameWithoutExtension(name)} ($copy)${p.extension(name)}';
             }
-            // Named by its content, so the same name is the same recording.
-            if (file.lengthSync() == recording.size) break;
-            here = '${p.basenameWithoutExtension(name)} ($copy)${p.extension(name)}';
+            placed[name] = here;
           }
-          placed[name] = here;
-        }
-        if (here != name) {
-          source['reference'] = {...reference, 'relativePath': '$prefix$here'};
+          if (here != name) {
+            source['reference'] = {...reference, 'relativePath': '$prefix$here'};
+          }
         }
       }
-      days.createSync(recursive: true);
-      await fet.writeFetproject(p.join(days.path, '$eventId.fetproject'), document);
+      // Into place: the recordings, then the days that use them.
+      if (staged.isNotEmpty) recordings.createSync(recursive: true);
+      for (final MapEntry(key: name, value: path) in staged.entries) {
+        final target = p.join(recordings.path, name);
+        File(path).renameSync(target);
+        created.add(target);
+      }
+      for (final MapEntry(key: eventId, value: document) in documents.entries) {
+        days.createSync(recursive: true);
+        final target = p.join(days.path, '$eventId.fetproject');
+        created.add(target);
+        await fet.writeFetproject(target, document);
+      }
+    } on Object {
+      // Nothing half done is left: a day here is one the profile lists.
+      created.forEach(_delete);
+      rethrow;
+    } finally {
+      _deleteStaging(folder);
     }
     return ProfileBundleImport(
       profile: merge.profile,
       added: merge.added,
       alreadyHere: present,
       notAdded: [...merge.notAdded, ...missing],
-      recordings: written,
+      recordings: staged.length,
     );
   } finally {
     input.closeSync();
   }
 }
+
+const _stagingPrefix = '.bundle-import-';
+
+String _stagingSuffix(Random? random) {
+  final source = random ?? Random.secure();
+  return List.generate(8, (_) => source.nextInt(16).toRadixString(16)).join();
+}
+
+/// Removes what an import cut short left in [folder].
+void _deleteStaging(String folder) {
+  final directory = Directory(folder);
+  if (!directory.existsSync()) return;
+  for (final entity in directory.listSync()) {
+    if (entity is Directory && p.basename(entity.path).startsWith(_stagingPrefix)) {
+      try {
+        entity.deleteSync(recursive: true);
+      } on Object {
+        // Removed by the next import.
+      }
+    }
+  }
+}
+
+Future<String> _sha256(String path) async =>
+    (await sha256.bind(File(path).openRead()).first).toString();
 
 /// Every telemetry source entry of [document]'s runs.
 Iterable<Map<String, Object?>> _telemetrySources(Map<String, Object?> document) sync* {
@@ -328,10 +420,23 @@ bool _allowed(String name) {
   final parts = name.split('/');
   if (parts.length != 2) return false;
   final file = parts[1];
-  if (file.isEmpty || file.startsWith('.') || file != _safeName(file)) return false;
+  if (file.isEmpty ||
+      file.startsWith('.') ||
+      file.endsWith('.') ||
+      file.endsWith(' ') ||
+      file != _safeName(file) ||
+      _reserved.hasMatch(file)) {
+    return false;
+  }
   return (parts[0] == profileDaysFolderName && file.endsWith('.fetproject')) ||
       parts[0] == profileRecordingsFolderName;
 }
+
+/// Names Windows keeps for devices, with any extension.
+final _reserved = RegExp(
+  r'^(con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])(\.|$)',
+  caseSensitive: false,
+);
 
 /// [name] without characters file systems refuse.
 String _safeName(String name) => name.replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1f]'), '-');
@@ -346,39 +451,101 @@ Map<String, Object?>? _json(ArchiveFile? entry, int maximum) {
   }
 }
 
-/// [entry]'s content, no more than it declares.
+/// [entry]'s content: no more than it declares, unpacked no further than
+/// that, and matching its checksum.
 List<int> _bytes(ArchiveFile entry) {
-  final bytes = entry.readBytes() ?? const <int>[];
-  if (bytes.length != entry.size) {
-    throw ProfileBundleError('${entry.name} in the bundle is damaged.');
-  }
-  return bytes;
+  final bytes = BytesBuilder(copy: false);
+  _unpack(entry, bytes.add);
+  return bytes.takeBytes();
 }
 
-/// Writes [entry] to [path], beside it first; a damaged or oversized entry
-/// leaves nothing behind.
+/// Writes [entry] to [path]: no more than it declares, matching its
+/// checksum; a damaged or oversized entry leaves nothing behind.
 void _extract(ArchiveFile entry, String path) {
   if (entry.size > maximumBundleRecordingBytes) {
     throw ProfileBundleError('${entry.name} in the bundle is too large.');
   }
-  final partial = '$path.partial';
-  final output = OutputFileStream(partial);
+  final file = File(path).openSync(mode: FileMode.writeOnly);
   try {
-    entry.writeContent(output);
-    output.closeSync();
-    if (File(partial).lengthSync() != entry.size) {
-      throw ProfileBundleError('${entry.name} in the bundle is damaged.');
-    }
-    File(partial).renameSync(path);
-  } on Object {
     try {
-      output.closeSync();
-    } on Object {
-      // Closed already.
+      _unpack(entry, file.writeFromSync);
+    } finally {
+      file.closeSync();
     }
-    _delete(partial);
+  } on Object {
+    _delete(path);
     rethrow;
   }
+}
+
+/// Hands [entry]'s content to [write] a piece at a time, as it is unpacked:
+/// never more than the size it declares, so a small bundle cannot unpack
+/// into more memory or disk than it says; then checks its size and CRC-32.
+/// Only stored and deflated, unencrypted entries, as bundles are written.
+void _unpack(ArchiveFile entry, void Function(List<int> bytes) write) {
+  final zip = entry.rawContent;
+  if (zip is! ZipFile ||
+      zip.flags & 0x1 != 0 ||
+      (zip.compressionMethod != CompressionType.none &&
+          zip.compressionMethod != CompressionType.deflate)) {
+    throw ProfileBundleError(
+      '${entry.name} in the bundle is stored in a way this app does not read.',
+    );
+  }
+  var length = 0;
+  var crc = 0;
+  void add(List<int> bytes) {
+    length += bytes.length;
+    if (length > entry.size) throw const _TooLong();
+    crc = getCrc32(bytes, crc);
+    write(bytes);
+  }
+
+  final raw = zip.getStream(decompress: false);
+  final start = raw.position;
+  try {
+    final inflate = zip.compressionMethod == CompressionType.deflate
+        ? ZLibCodec(raw: true).decoder.startChunkedConversion(_Pieces(add))
+        : null;
+    while (!raw.isEOS) {
+      final piece = raw.readBytes(64 * 1024).toUint8List();
+      if (inflate == null) {
+        add(piece);
+      } else {
+        inflate.add(piece);
+      }
+    }
+    inflate?.close();
+  } on FileSystemException {
+    // Writing where it is unpacked, or reading the bundle, failed.
+    rethrow;
+  } on Object {
+    throw ProfileBundleError('${entry.name} in the bundle is damaged.');
+  } finally {
+    raw.setPosition(start);
+  }
+  final expected = entry.crc32 ?? zip.crc32;
+  if (length != entry.size || crc != expected) {
+    throw ProfileBundleError('${entry.name} in the bundle is damaged.');
+  }
+}
+
+/// What the inflater unpacks, handed on as it comes.
+final class _Pieces implements Sink<List<int>> {
+  _Pieces(this._add);
+
+  final void Function(List<int> bytes) _add;
+
+  @override
+  void add(List<int> data) => _add(data);
+
+  @override
+  void close() {}
+}
+
+/// More unpacked than an entry declares.
+final class _TooLong implements Exception {
+  const _TooLong();
 }
 
 void _delete(String path) {

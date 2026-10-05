@@ -358,6 +358,98 @@ class ProfileLibrary extends ChangeNotifier {
   void renameTrack(String trackId, String name) =>
       _change((profile) => renameProfileTrack(profile, trackId, name));
 
+  /// Writes the profile, its days and their recordings to one bundle at
+  /// [target] ([writeProfileBundle]), once the changes asked for so far are
+  /// written. Null when there is no profile.
+  Future<ProfileBundleExport?> exportBundle(String target) =>
+      _bundleWork(() async {
+        await flush();
+        final profile = _profile;
+        final folder = _folder;
+        if (profile == null || folder == null) return null;
+        return background(_exportJob(profile, folder, target));
+      });
+
+  /// Adds the days of the bundle at [bundle] this profile does not have,
+  /// with their recordings ([readProfileBundle]), and writes the profile.
+  /// Null when there is no profile; throws [ProfileBundleError] for a file
+  /// that is not a bundle, and [ProfileNotSaved] when the days were copied
+  /// but the profile listing them could not be written.
+  Future<ProfileBundleImport?> importBundle(String bundle) =>
+      _bundleWork(() async {
+        await flush();
+        final profile = _profile;
+        final folder = _folder;
+        if (profile == null || folder == null) return null;
+        final read = await background(_importJob(profile, folder, bundle));
+        if (read.added.isEmpty) return read;
+        var result = read;
+        try {
+          // A day recorded while the bundle was read is kept: the bundle's
+          // days are merged into the profile as it is now.
+          final current = _profile!;
+          var next = read.profile;
+          if (!identical(current, profile)) {
+            final merge = mergeDriverProfile(
+              current,
+              read.profile,
+              only: {...read.added},
+            );
+            next = merge.profile;
+            result = ProfileBundleImport(
+              profile: next,
+              added: merge.added,
+              alreadyHere: [...read.alreadyHere, ...merge.alreadyHere],
+              notAdded: [...read.notAdded, ...merge.notAdded],
+              recordings: read.recordings,
+            );
+          }
+          _profile = next;
+          notifyListeners();
+          final written = _writes.then(
+            (_) => background(_writeJob(folder, next)),
+          );
+          _writes = written.then((_) {}, onError: (Object error) {});
+          await written;
+        } on Object catch (error) {
+          debugPrint('Imported days not written to the profile: $error');
+          throw ProfileNotSaved(result);
+        }
+        return result;
+      });
+
+  // One export or import at a time: two imports of one bundle would write
+  // the same days.
+  Future<R?> _bundleWork<R>(Future<R?> Function() work) async {
+    if (!_loaded) await load();
+    final previous = _bundles;
+    final done = Completer<void>();
+    _bundles = done.future;
+    try {
+      await previous;
+      return await work();
+    } finally {
+      done.complete();
+    }
+  }
+
+  Future<void> _bundles = Future.value();
+
+  // Take only what they are given, so they can be sent to another isolate.
+  static Future<ProfileBundleExport> Function() _exportJob(
+    DriverProfile profile,
+    String folder,
+    String target,
+  ) =>
+      () => writeProfileBundle(profile, folder, target);
+
+  static Future<ProfileBundleImport> Function() _importJob(
+    DriverProfile profile,
+    String folder,
+    String bundle,
+  ) =>
+      () => readProfileBundle(profile, folder, bundle);
+
   void _change(DriverProfile Function(DriverProfile) change) {
     final profile = _profile;
     final folder = _folder;
@@ -387,19 +479,33 @@ class ProfileLibrary extends ChangeNotifier {
     Future<R> Function<R>(FutureOr<R> Function()) background,
   ) async {
     try {
-      // Encoded, written and moved into place together, in the background:
-      // a temporary file renamed over the profile, so a write cut short
-      // leaves the previous profile whole.
-      await background(() {
-        final text = encodeDriverProfile(profile);
-        Directory(folder).createSync(recursive: true);
-        final target = p.join(folder, profileFileName);
-        File('$target.saving')
-          ..writeAsStringSync(text, flush: true)
-          ..renameSync(target);
-      });
+      await background(_writeJob(folder, profile));
     } on Object catch (error) {
       debugPrint('Driver profile not written: $error');
     }
   }
+
+  // Encoded, written and moved into place together, in the background: a
+  // temporary file renamed over the profile, so a write cut short leaves
+  // the previous profile whole.
+  static void Function() _writeJob(String folder, DriverProfile profile) => () {
+    final text = encodeDriverProfile(profile);
+    Directory(folder).createSync(recursive: true);
+    final target = p.join(folder, profileFileName);
+    File('$target.saving')
+      ..writeAsStringSync(text, flush: true)
+      ..renameSync(target);
+  };
+}
+
+/// The days of a bundle were copied, but the profile listing them could
+/// not be written: they are listed again, under the last car, when the app
+/// next starts.
+final class ProfileNotSaved implements Exception {
+  const ProfileNotSaved(this.import);
+
+  final ProfileBundleImport import;
+
+  @override
+  String toString() => 'The profile with the imported days was not written.';
 }

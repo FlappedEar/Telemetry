@@ -200,3 +200,51 @@ last.
   bands are a first setting from one real day (Jastrząb, 2026-08-29: every
   skill between level 2 and 5) and are tuned in `skillCatalogue`; stored data
   never changes.
+
+## Moving a profile to another device (`profile_bundle.dart`, FET-133)
+
+`writeProfileBundle` writes the profile, its days and their recordings to one
+zip file, also with the `.feprofile` extension (the index alone is
+`driver.feprofile`; a bundle is any other name):
+
+- `bundle.json`: `{"format": "flappedear-profile-bundle", "version": 1}`.
+- `driver.feprofile`: the profile as it is.
+- `Days/<eventId>.fetproject`: each day's document, its telemetry references
+  rewritten to `../Recordings/<name>` (the absolute path is dropped, unknown
+  keys kept).
+- `Recordings/<name>`: each recording once, however many days use it; a
+  recording not found is left out and counted (`recordingsMissing`), and its
+  day still comes along and reports it missing when opened.
+
+Recordings are deflated as they are added; the encoder keeps one recording's
+compressed bytes in memory at a time (about twice that at most), which is fine
+for VBO files of tens of megabytes. The bundle is written to `<target>.partial` and renamed. The app writes it in
+its temporary folder and then copies it where the user chose (a sandboxed Mac
+app may only write the chosen file) or shares it (phones).
+
+`readProfileBundle` accepts only those names (no `..`, no nested folders, no
+drive letters, Windows device names or trailing dots, no other files) and the
+known format with an integer version from 1 to the current one. Every entry is
+unpacked in pieces, never past the size it declares (only stored or deflated,
+unencrypted entries), and must match its CRC-32; each
+day's document must be that day (`event.id`), and each recording the SHA-256
+its day names. Anything else throws `ProfileBundleError`.
+
+It never replaces: a day the profile has, or whose document already exists in
+`Days/`, is left as it is (`alreadyHere`). The other days are merged by
+`mergeDriverProfile`: a car joins this profile's car with the same id or name
+(ignoring case and leading or trailing spaces), a track the one with the same
+id or circuit (`routesMatch`), its corners placed on this track's as a day's
+are; anything else is added within the profile's limits (`notAdded`
+otherwise, leaving no car or track of its own).
+
+All of it is read and checked first: the documents in memory, the recordings
+unpacked into a `.bundle-import-*` folder beside the index. Only then are the
+recordings moved into `Recordings/` and the documents written; a failure there
+removes what this import wrote, and a staging folder left by a crash is removed
+by the next import. A recording already in `Recordings/` is reused only when
+its SHA-256 is the one the day names; another file of that name makes the new
+one `name (2)`. The caller writes the merged profile: the app merges it into
+the profile as it is by then, so a day recorded during the import is kept, and
+says so when the profile cannot be written (the days then come back through
+the unlisted-days scan at the next start, under the last car).

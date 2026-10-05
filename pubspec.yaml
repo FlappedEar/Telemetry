@@ -47,6 +47,7 @@ dependencies:
   package_info_plus: ^10.2.2
   url_launcher: ^6.3.3
   crypto: ^3.0.7
+  share_plus: ^13.3.1
 
 
 dev_dependencies:

@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
 /// A synthetic, undated VBO recording driving a 100 m circle through a start
-/// line, one lap per speed (m/s), at 10 Hz. No real data.
-String circuitVbo(List<double> speeds) {
-  const lat0 = 52.0, lon0 = 21.0;
+/// line, one lap per speed (m/s), at 10 Hz, centred near [latitude]. No
+/// real data.
+String circuitVbo(List<double> speeds, {double latitude = 52.0}) {
+  final lat0 = latitude;
+  const lon0 = 21.0;
   const metersPerDegree = 6371000.0 * math.pi / 180.0;
   final cosLat = math.cos(lat0 * math.pi / 180.0);
   String coordinate(double east, double north) =>
