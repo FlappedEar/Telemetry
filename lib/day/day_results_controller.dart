@@ -17,6 +17,7 @@ import 'day_weather.dart';
 import 'recovery_store.dart';
 import 'recovery_writes.dart';
 import 'save_journal.dart';
+import 'segment_remeasure.dart';
 
 export 'coach_job.dart' show CoachJob, CoachRunner, defaultCoachRunner;
 
@@ -1982,6 +1983,12 @@ final class DayResultsController extends ChangeNotifier {
       // best is ready no corners were shown yet, so there are none to keep.
       if (_theoreticalBest case final best?) _segmentEdits.keepAutomatic(best);
       _resetTheoreticalBest();
+      // Unless the kept corners cannot time a new best lap (FET-170).
+      final added = {for (final named in outcome.runs) named.run.id};
+      _remeasure.added([
+        for (final group in _analysis.groups)
+          if (group.runIds.any(added.contains)) group.id,
+      ]);
     }
     _resetChannelSummaries();
     // Each RCZ is aligned and fused once the sessions show. One added to a
@@ -2486,12 +2493,32 @@ final class DayResultsController extends ChangeNotifier {
 
   // Built outside the controller so the isolate's closure holds only its
   // inputs.
+  // With [remeasure], segments that cannot time the best lap are measured
+  // again on it (remeasureDaySegments).
   static DayTheoreticalBest Function() _theoreticalBestJob(
     DayAnalysis analysis,
     Map<String, OutingRun> runs,
-    List<Object?> documentRuns,
-  ) =>
-      () => dayTheoreticalBest(analysis, runs, documentRuns: documentRuns);
+    List<Object?> documentRuns, {
+    bool remeasure = false,
+  }) => () {
+    final result = dayTheoreticalBest(
+      analysis,
+      runs,
+      documentRuns: documentRuns,
+    );
+    if (!remeasure) return result;
+    return remeasureDaySegments(
+          analysis,
+          runs,
+          result,
+          documentRuns: documentRuns,
+        ) ??
+        result;
+  };
+
+  /// The groups whose kept corners are measured again on a new best lap
+  /// they cannot time (FET-170).
+  final _remeasure = SegmentRemeasure();
 
   /// Times every eligible lap of the shown group against its approved
   /// segments (proposed from the best lap when the day has none yet), in the
@@ -2503,11 +2530,17 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
     final documentRuns = _documentRuns;
     _theoreticalKey = decisionsKey;
+    final remeasure = _remeasure.pendingFor(_analysis.chosenGroupId);
     DayTheoreticalBest result;
     final clock = Stopwatch()..start();
     try {
       result = await _theoreticalBestRunner(
-        _theoreticalBestJob(_analysis, outingRuns(_unitRuns), documentRuns),
+        _theoreticalBestJob(
+          _analysis,
+          outingRuns(_unitRuns),
+          documentRuns,
+          remeasure: remeasure,
+        ),
       );
       diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
     } on Object catch (error) {
@@ -2518,6 +2551,24 @@ final class DayResultsController extends ChangeNotifier {
       );
     }
     if (_disposed || generation != _theoreticalBestGeneration) return;
+    if (result.remeasuredRuns.isNotEmpty) {
+      // A save running now clears the segment edits when it ends: they are
+      // kept after it.
+      while (_saving) {
+        await _saveDone?.future;
+      }
+      if (_disposed || generation != _theoreticalBestGeneration) return;
+      // Kept as approved, as saving keeps automatic segments; not an edit,
+      // so nothing to undo. The day is saved with them.
+      _segmentEdits.adoptRemeasured(result.remeasuredRuns);
+      _theoreticalKey = decisionsKey;
+      _dirty = true;
+      _revision++;
+      _scheduleRecovery();
+    }
+    if (remeasure && result.state == DayTheoreticalBestState.ready) {
+      _remeasure.settled(result.groupId);
+    }
     _theoreticalBest = result;
     _theoreticalBestLoading = false;
     notifyListeners();

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -174,6 +175,134 @@ void main() {
       );
     },
   );
+
+  group('corners that cannot time a new best lap (FET-170)', () {
+    // Session 2's laps are faster; its best lap runs 12 m off the others'
+    // line in the middle of the left straight, eased in and out.
+    double offLine(double distance) {
+      const from = 385.0, to = 465.0, ease = 25.0;
+      if (distance <= from || distance >= to) return 0.0;
+      final edge = math.min(distance - from, to - distance);
+      if (edge >= ease) return 12.0;
+      final x = edge / ease;
+      return 12.0 * x * x * (3 - 2 * x);
+    }
+
+    late String a, b;
+    setUp(() {
+      a = '${directory.path}/a.vbo';
+      File(a)
+          .writeAsStringSync(rectangleVbo([(_) => 30, (_) => 30.5, (_) => 30]));
+      b = '${directory.path}/b.vbo';
+      File(b).writeAsStringSync(
+        rectangleVbo(
+          [(_) => 33, (_) => 33.5, (_) => 33],
+          westShifts: [(_) => 0, offLine, (_) => 0],
+        ),
+      );
+    });
+
+    /// Session 1 alone, its automatic corners shown.
+    Future<DayResultsController> firstSession() async {
+      final first = runDayImport((paths: [a], includeSubfolders: false));
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+      );
+      await controller.requestTheoreticalBest();
+      expect(controller.theoreticalBest!.automaticSegments, isTrue);
+      return controller;
+    }
+
+    test('are measured again on it after an addition', () async {
+      final controller = await firstSession();
+      final before = controller.theoreticalBest!;
+
+      expect((await controller.addRecordings([b])).added, ['Session 2']);
+      await controller.requestTheoreticalBest();
+      final after = controller.theoreticalBest!;
+      // Measured on Session 2's best lap now, approved.
+      expect(after.segmentRunId, isNot(before.segmentRunId));
+      expect(after.automaticSegments, isFalse);
+      expect(bestLapHasUntimedSegment(after), isFalse);
+      expect(
+        after.theoreticalBestSeconds,
+        lessThanOrEqualTo(after.bestLapSeconds!),
+      );
+      expect(controller.dirty, isTrue);
+
+      // Saved with them and opened again, the day keeps them and measures
+      // nothing.
+      final path = '${directory.path}/Day.fetproject';
+      await controller.save(path);
+      final opened = DayResultsController.opened(
+        openDay(path),
+        appender: _SyncAppender(),
+      );
+      await opened.requestTheoreticalBest();
+      final reopened = opened.theoreticalBest!;
+      expect(reopened.remeasuredRuns, isEmpty);
+      expect(reopened.automaticSegments, isFalse);
+      expect(reopened.segmentRunId, after.segmentRunId);
+      expect(reopened.theoreticalBestSeconds, after.theoreticalBestSeconds);
+    });
+
+    test('keep the names given to them, with nothing to undo', () async {
+      final controller = await firstSession();
+      final shown = controller.theoreticalBest!;
+      final corner = shown.runSegments.firstWhere(
+        (segment) => segment['type'] == 'corner',
+      );
+      expect(
+        controller.editSegment(
+          corner['id']! as String,
+          name: 'Hairpin',
+          type: 'corner',
+          startMeters: corner['startProgressMeters']! as double,
+          endMeters: corner['endProgressMeters']! as double,
+        ),
+        isEmpty,
+      );
+      expect(controller.canUndoSegmentEdit, isTrue);
+
+      expect((await controller.addRecordings([b])).added, ['Session 2']);
+      await controller.requestTheoreticalBest();
+      final after = controller.theoreticalBest!;
+      expect(after.segmentRunId, isNot(shown.segmentRunId));
+      expect(bestLapHasUntimedSegment(after), isFalse);
+      expect(
+        after.segments.where((segment) => segment.name == 'Hairpin'),
+        hasLength(1),
+      );
+      expect(controller.canUndoSegmentEdit, isFalse);
+    });
+
+    test('are not measured again when a saved day is opened', () async {
+      final controller = await firstSession();
+      final first = controller.theoreticalBest!.segmentRunId;
+      final path = '${directory.path}/Day.fetproject';
+      await controller.save(path);
+      final saved = DayResultsController.opened(
+        openDay(path),
+        appender: _SyncAppender(),
+      );
+      // The addition saves the day at once, with Session 1's corners.
+      expect((await saved.addRecordings([b])).added, ['Session 2']);
+
+      final opened = DayResultsController.opened(
+        openDay(path),
+        appender: _SyncAppender(),
+      );
+      expect(opened.runs, hasLength(2));
+      await opened.requestTheoreticalBest();
+      final result = opened.theoreticalBest!;
+      expect(result.remeasuredRuns, isEmpty);
+      expect(result.segmentRunId, first);
+      expect(bestLapHasUntimedSegment(result), isTrue);
+      expect(opened.dirty, isFalse);
+    });
+  });
 
   test('a recording already in the day is not added twice', () async {
     final a = write('a.vbo', [30, 28, 31]);

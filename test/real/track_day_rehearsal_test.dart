@@ -84,6 +84,19 @@ void main() {
         report(addition.added.join(', '), add, clock.elapsed);
         expect(controller.coach, isNotNull);
         expect(controller.coach!.runId, controller.latestRunId);
+        // The day's corners time its best lap, measured again on it when
+        // the kept ones cannot (FET-170).
+        final best = controller.theoreticalBest!;
+        // ignore: avoid_print
+        print(
+          '  theoretical best ${best.theoreticalBestSeconds?.toStringAsFixed(3)}'
+          ', best lap ${best.bestLapSeconds?.toStringAsFixed(3)}',
+        );
+        expect(bestLapHasUntimedSegment(best), isFalse);
+        expect(
+          best.theoreticalBestSeconds,
+          lessThanOrEqualTo(best.bestLapSeconds! + 1e-6),
+        );
       }
       controller.dispose();
     },

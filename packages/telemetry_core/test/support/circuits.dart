@@ -95,6 +95,7 @@ TelemetrySession rectangleSession(
   GeoCoordinate centre = const GeoCoordinate(_lat0, _lon0),
   bool pedals = false,
   bool lateral = false,
+  List<double Function(double distance)>? westShifts,
 }) {
   const width = 300.0, height = 150.0, radius = 30.0;
   // The outline from the gate, 0.5 m apart.
@@ -150,7 +151,11 @@ TelemetrySession rectangleSession(
     final lap = math.max(0, math.min(distance ~/ perimeter, speeds.length - 1));
     final speed = speeds[lap](distance - lap * perimeter);
     final (east, north) = at(distance);
-    final coordinate = _toDegrees(east, north, centre);
+    // A lap driven off the others' line: moved west by [westShifts].
+    final shift = westShifts == null || lap >= westShifts.length
+        ? 0.0
+        : westShifts[lap](distance - lap * perimeter);
+    final coordinate = _toDegrees(east - shift, north, centre);
     times.add(t);
     latitudes.add(coordinate.latitudeDegrees);
     longitudes.add(coordinate.longitudeDegrees);
