@@ -84,6 +84,7 @@ void main() {
     )!;
     expect(after.state, DayTheoreticalBestState.ready);
     expect(after.segmentRunId, 'run2');
+    expect(after.automaticSegments, isFalse, reason: 'approved, as kept');
     expect(bestLapHasUntimedSegment(after), isFalse);
     expect(after.theoreticalBestSeconds, lessThanOrEqualTo(after.bestLapSeconds!));
     // Session 1 keeps no segments of the group; Session 2 has them.
@@ -102,6 +103,37 @@ void main() {
       isNull,
       reason: 'the best lap is timed now',
     );
+  });
+
+  // A run stores the segments of one configuration only (approveAllProposals).
+  test("does nothing when the best lap's session has another group's segments", () {
+    final edits = kept();
+    final other = {
+      'id': 'other-corner',
+      'type': 'corner',
+      'name': 'Elsewhere',
+      'startProgressMeters': 10.0,
+      'endProgressMeters': 20.0,
+      'trackConfigurationReference': 'compatibility-v1:${'b' * 64}',
+    };
+    final documentRuns = [
+      for (final run in edits.applyTo(const []))
+        if (run case {'id': 'run2'})
+          {
+            ...run,
+            'trackSegments': [...(run['trackSegments'] as List? ?? const []), other],
+          }
+        else
+          run,
+      if (!edits.applyTo(const []).any((run) => (run as Map)['id'] == 'run2'))
+        {
+          'id': 'run2',
+          'trackSegments': [other],
+        },
+    ];
+    final before = dayTheoreticalBest(day, outing, documentRuns: documentRuns);
+    expect(bestLapHasUntimedSegment(before), isTrue);
+    expect(remeasureDaySegments(day, outing, before, documentRuns: documentRuns), isNull);
   });
 
   test('keeps the names the driver gave', () {

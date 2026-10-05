@@ -152,32 +152,45 @@ DayTheoreticalBest? remeasureDaySegments(
     return null;
   }
   var segments = [
-    for (final segment in next.runSegments) {...segment},
+    for (final segment in next.runSegments)
+      if (segment['trackConfigurationReference'] == groupId) {...segment},
   ];
   if (named.isNotEmpty) {
     segments = _withNames(segments, groupId, next.axisLengthMeters, named);
-    final renamed = [
-      for (final value in withoutGroup)
-        if (_object(value) case final run? when run['id'] == next.segmentRunId)
-          {...run, 'trackSegments': segments}
-        else
-          value,
-      if (!withoutGroup.any((value) => _object(value)?['id'] == next.segmentRunId))
-        {'id': next.segmentRunId, 'trackSegments': segments},
-    ];
-    next = dayTheoreticalBest(
-      analysis,
-      runs,
-      documentRuns: renamed,
-      groupId: groupId,
-      random: random,
-      cancelled: cancelled,
-    );
-    if (next.state != DayTheoreticalBestState.ready || bestLapHasUntimedSegment(next)) {
-      return null;
-    }
   }
-  changed[next.segmentRunId] = segments;
+  // The best lap's run keeps its segments of other groups.
+  final segmentRunId = next.segmentRunId;
+  final runSegments = [
+    for (final value in withoutGroup)
+      if (_object(value) case final run? when run['id'] == segmentRunId)
+        ..._segmentsOf(run['trackSegments']),
+    ...segments,
+  ];
+  // Timed again with them approved, as the day gives once they are kept.
+  final approvedRuns = [
+    for (final value in withoutGroup)
+      if (_object(value) case final run? when run['id'] == segmentRunId)
+        {...run, 'trackSegments': runSegments}
+      else
+        value,
+    if (!withoutGroup.any((value) => _object(value)?['id'] == segmentRunId))
+      {'id': segmentRunId, 'trackSegments': runSegments},
+  ];
+  next = dayTheoreticalBest(
+    analysis,
+    runs,
+    documentRuns: approvedRuns,
+    groupId: groupId,
+    random: random,
+    cancelled: cancelled,
+  );
+  if (next.state != DayTheoreticalBestState.ready ||
+      next.automaticSegments ||
+      next.segmentRunId != segmentRunId ||
+      bestLapHasUntimedSegment(next)) {
+    return null;
+  }
+  changed[segmentRunId] = runSegments;
   return next.withRemeasuredRuns(changed);
 }
 

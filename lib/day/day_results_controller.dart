@@ -17,6 +17,7 @@ import 'day_weather.dart';
 import 'recovery_store.dart';
 import 'recovery_writes.dart';
 import 'save_journal.dart';
+import 'segment_remeasure.dart';
 
 export 'coach_job.dart' show CoachJob, CoachRunner, defaultCoachRunner;
 
@@ -1983,7 +1984,11 @@ final class DayResultsController extends ChangeNotifier {
       if (_theoreticalBest case final best?) _segmentEdits.keepAutomatic(best);
       _resetTheoreticalBest();
       // Unless the kept corners cannot time a new best lap (FET-170).
-      _remeasureSegments = true;
+      final added = {for (final named in outcome.runs) named.run.id};
+      _remeasure.added([
+        for (final group in _analysis.groups)
+          if (group.runIds.any(added.contains)) group.id,
+      ]);
     }
     _resetChannelSummaries();
     // Each RCZ is aligned and fused once the sessions show. One added to a
@@ -2511,10 +2516,9 @@ final class DayResultsController extends ChangeNotifier {
         result;
   };
 
-  /// Whether the next theoretical best follows an addition, so the day's
-  /// kept corners are measured again on a new best lap they cannot time
-  /// (FET-170). Not on opening a day: that would change it unasked.
-  bool _remeasureSegments = false;
+  /// The groups whose kept corners are measured again on a new best lap
+  /// they cannot time (FET-170).
+  final _remeasure = SegmentRemeasure();
 
   /// Times every eligible lap of the shown group against its approved
   /// segments (proposed from the best lap when the day has none yet), in the
@@ -2526,8 +2530,7 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
     final documentRuns = _documentRuns;
     _theoreticalKey = decisionsKey;
-    final remeasure = _remeasureSegments;
-    _remeasureSegments = false;
+    final remeasure = _remeasure.pendingFor(_analysis.chosenGroupId);
     DayTheoreticalBest result;
     final clock = Stopwatch()..start();
     try {
@@ -2549,6 +2552,12 @@ final class DayResultsController extends ChangeNotifier {
     }
     if (_disposed || generation != _theoreticalBestGeneration) return;
     if (result.remeasuredRuns.isNotEmpty) {
+      // A save running now clears the segment edits when it ends: they are
+      // kept after it.
+      while (_saving) {
+        await _saveDone?.future;
+      }
+      if (_disposed || generation != _theoreticalBestGeneration) return;
       // Kept as approved, as saving keeps automatic segments; not an edit,
       // so nothing to undo. The day is saved with them.
       _segmentEdits.adoptRemeasured(result.remeasuredRuns);
@@ -2556,6 +2565,9 @@ final class DayResultsController extends ChangeNotifier {
       _dirty = true;
       _revision++;
       _scheduleRecovery();
+    }
+    if (remeasure && result.state != DayTheoreticalBestState.error) {
+      _remeasure.settled(result.groupId);
     }
     _theoreticalBest = result;
     _theoreticalBestLoading = false;
