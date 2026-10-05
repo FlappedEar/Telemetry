@@ -897,6 +897,73 @@ void main() {
       expect(importer.jobs.last.request.paths, [shared, next]);
     });
 
+    testWidgets('a day of another date saved since does not hide today\'s', (
+      tester,
+    ) async {
+      // At the track: today's day is saved, then a day of an earlier visit
+      // is opened from the library and saved again (a renamed lap, say), so
+      // it is the newest saved day when the next session is shared.
+      final incoming = _FakeIncoming();
+      final today = '${directory.path}/Today.fetproject';
+      final earlier = '${directory.path}/Earlier.fetproject';
+      await tester.runAsync(() async {
+        for (final (recording, path) in [
+          (write('a.vbo', _datedVbo(hour: 10)), today),
+          (write('x.vbo', _datedVbo(hour: 9, day: 1)), earlier),
+        ]) {
+          final outcome = runDayImport((
+            paths: [recording],
+            includeSubfolders: false,
+          ));
+          final day = DayResultsController(
+            runs: outcome.runs,
+            analysis: outcome.analysis!,
+          );
+          await day.save(path);
+          day.dispose();
+        }
+      });
+      final now = DateTime.now();
+      File(today).setLastModifiedSync(now.subtract(const Duration(hours: 1)));
+      File(earlier).setLastModifiedSync(now);
+      await tester.binding.setSurfaceSize(const Size(400, 3000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayImportPage(
+            controller: controller,
+            pickers: pickers,
+            incoming: incoming,
+            recovery: store,
+            appender: _SyncAppender(),
+            documents: _SavedDays([earlier, today]),
+          ),
+        ),
+      );
+      incoming.controller.add([write('b.vbo', _datedVbo(hour: 12, speed: 80))]);
+      // Two saved days are opened in turn, each in an isolate.
+      bool added() => find
+          .textContaining('Session 2 added to the day.')
+          .evaluate()
+          .isNotEmpty;
+      for (var i = 0; i < 1500 && !added() && importer.jobs.isEmpty; ++i) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+      expect(importer.jobs, isEmpty, reason: 'imported as a new day');
+      expect(added(), isTrue);
+      await tester.pumpAndSettle();
+      final runs = (readDayDocument(today)['event'] as Map)['runs'] as List;
+      expect(runs, hasLength(2));
+      final kept = (readDayDocument(earlier)['event'] as Map)['runs'] as List;
+      expect(kept, hasLength(1));
+
+      await tester.pumpWidget(const SizedBox());
+      await settleRecovery(tester);
+    });
+
     /// The import page with [store] and desktop choices; [open] is the day
     /// "Open a saved day…" picks.
     Future<void> showDesktop(WidgetTester tester, {String? open}) async {

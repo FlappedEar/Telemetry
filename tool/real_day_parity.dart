@@ -203,6 +203,12 @@ Future<void> main(List<String> arguments) async {
       env: {'FLAPPEDEAR_REAL_DAY': dayPath},
     ),
     _Check(
+      'track day shares (app)',
+      _root,
+      'test/real/track_day_shares_test.dart',
+      env: {'FLAPPEDEAR_REAL_DAY': dayPath},
+    ),
+    _Check(
       'fusion in the day (app)',
       _root,
       'test/day/fusion_real_test.dart',
