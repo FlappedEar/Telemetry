@@ -145,9 +145,12 @@ class TelemetryChart extends StatelessWidget {
   double _fraction(double value) =>
       end > start ? (value - start) / (end - start) : 0;
 
+  /// The value at the cursor; a compass direction drawn unwrapped reads as
+  /// the recorded 0 up to 360.
   String _value(ChartLine line, double fraction, String unit) {
-    final value = nearestChartValue(line.series, fraction);
-    if (value == null) return '–';
+    final read = nearestChartValue(line.series, fraction);
+    if (read == null) return '–';
+    final value = line.series.angular ? normalizeDegrees(read) : read;
     if (delta) return displayDelta(value);
     final scale = math.max(valueAxis.$1.abs(), valueAxis.$2.abs());
     return chartValueText(value, scale, unit);

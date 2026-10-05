@@ -178,6 +178,50 @@ void main() {
     expect(find.text('Not available · A: not recorded'), findsOneWidget);
   });
 
+  testWidgets('a heading chart reads the recorded 0-360 at the cursor', (
+    tester,
+  ) async {
+    final cursor = ValueNotifier(0.0);
+    addTearDown(cursor.dispose);
+    // Unwrapped across north: 350 then 370 (10 recorded) and -20 (340).
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: TelemetryChart(
+            title: 'heading',
+            lines: [
+              ChartLine(
+                'A',
+                const ChartSeries(
+                  segments: [
+                    [(x: 0, y: 350), (x: 0.5, y: 370), (x: 1, y: -20)],
+                  ],
+                  minimum: -20,
+                  maximum: 370,
+                  angular: true,
+                ),
+                lapAColorForTest,
+              ),
+            ],
+            start: 0,
+            end: 1,
+            cursor: cursor,
+            onCursor: (value) => cursor.value = value,
+            valueAxis: (-40, 390),
+          ),
+        ),
+      ),
+    );
+    final value = find.byKey(const ValueKey('chartValue heading A'));
+    expect(tester.widget<Text>(value).data, 'A 350');
+    cursor.value = 0.5;
+    await tester.pump();
+    expect(tester.widget<Text>(value).data, 'A 10');
+    cursor.value = 1;
+    await tester.pump();
+    expect(tester.widget<Text>(value).data, 'A 340');
+  });
+
   testWidgets('a mouse moves the chart cursor without a click', (tester) async {
     final cursor = ValueNotifier(0.0);
     addTearDown(cursor.dispose);

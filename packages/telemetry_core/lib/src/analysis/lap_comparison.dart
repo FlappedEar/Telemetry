@@ -13,6 +13,7 @@ import '../geometry.dart';
 import '../laps/lap_session.dart';
 import '../operation.dart';
 import '../telemetry_session.dart';
+import 'angular_channels.dart';
 import 'channel_summary.dart';
 import 'lap_charts.dart';
 import 'map_layers.dart';
@@ -337,11 +338,32 @@ final class LapComparison {
     );
   }
 
+  /// The whole turns added to lap [slot]'s unwrapped compass direction
+  /// [channel]: lap A's first value from its start goes in 0 up to 360, and
+  /// lap B's within half a turn of lap A's, so the two lines overlay at any
+  /// zoom. Null when the lap has no value of it.
+  double? _angleOffset(int slot, String channel) {
+    double? start(int slot) {
+      final recorded = lap(slot).session.channel(channel);
+      if (recorded == null) return null;
+      return firstFiniteValueFrom(unwrappedAngleSession(recorded), recorded.name, lap(slot).start);
+    }
+
+    final first = start(0);
+    if (slot == 0) return first == null ? null : degreesTurnOffset(first);
+    final own = start(1);
+    if (own == null) return null;
+    if (first == null) return degreesTurnOffset(own);
+    return degreesTurnOffsetNear(own, first + degreesTurnOffset(first));
+  }
+
   /// Lap [slot]'s [channel] at [maximumPoints] evenly spaced positions over
   /// [startProgress]..[endProgress], read at the lap's own time there. A
   /// discrete channel (the gear) keeps its previous value instead of being
   /// interpolated. A channel the lap did not record reports
-  /// [chartReasonChannelMissing], never another lap's data.
+  /// [chartReasonChannelMissing], never another lap's data. A compass
+  /// direction is read unwrapped ([ChartSeries.angular], [_angleOffset]), so
+  /// it is never interpolated the long way round across north.
   ChartSeries channelSeries(
     int slot,
     String channel,
@@ -361,6 +383,10 @@ final class LapComparison {
     final interpolation = channel.toLowerCase() == 'gear'
         ? InterpolationMode.previous
         : InterpolationMode.linear;
+    final angular = isAngularChannel(found);
+    final source = angular ? unwrappedAngleSession(found) : session;
+    final sourceName = angular ? found.name : channel;
+    final offset = angular ? _angleOffset(slot, channel) ?? 0.0 : 0.0;
     final span = endProgress - startProgress;
     final segments = <List<ChartPoint>>[];
     var current = <ChartPoint>[];
@@ -370,7 +396,8 @@ final class LapComparison {
     for (var index = 0; index < maximumPoints; ++index) {
       final target = startProgress + span * index / (maximumPoints - 1);
       final time = timeAtProgress(projection, target);
-      final value = time == null ? null : session.valueAt(channel, time, interpolation);
+      final read = time == null ? null : source.valueAt(sourceName, time, interpolation);
+      final value = read == null ? null : read + offset;
       if (value == null) {
         if (current.isNotEmpty) {
           segments.add(List.unmodifiable(current));
@@ -395,6 +422,7 @@ final class LapComparison {
       maximum: maximum,
       unit: found.unit,
       brakingUp: resolved == (session.aliases['longitudinalAcceleration'] ?? ''),
+      angular: angular,
     );
   }
 

@@ -1,6 +1,8 @@
 /// Recording model, VBO parser and lap timing for FlappedEar Telemetry.
 library;
 
+export 'src/analysis/angular_channels.dart'
+    show isAngularChannel, normalizeDegrees;
 export 'src/analysis/automatic_segments.dart';
 export 'src/analysis/braking_metrics.dart';
 export 'src/analysis/braking_onset.dart';
