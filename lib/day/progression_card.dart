@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'setup_text.dart';
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
 import 'weather_text.dart';
@@ -156,6 +157,7 @@ class _ProgressionCardState extends State<ProgressionCard> {
       if (run.run.conditions case final conditions?)
         l10n.progressionConditions(conditions),
       if (run.run.setupChanges case final setup?) l10n.progressionSetup(setup),
+      ?setupLine(l10n, run.run.setup),
       if (run.run.notes case final notes?) l10n.progressionNotes(notes),
     ];
     return ButtonRow(

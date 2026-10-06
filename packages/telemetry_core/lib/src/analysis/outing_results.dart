@@ -4,6 +4,7 @@
 // the forms Overlays' TimeLossDialog.qml and SectionProgressionView.qml read.
 // Overlays publishes maps for QML; here they are typed. Lap labels are left
 // to the caller, which knows the laps' names.
+import '../day/run_setup.dart';
 import 'consistency.dart';
 import 'outing_theoretical_best.dart';
 import 'time_loss.dart';
@@ -14,7 +15,8 @@ const String timeLossBestLapUntimedMessage =
     "The group's best lap could not be timed against the approved segments.";
 
 /// A run as the progression lists it, with the context recorded for it
-/// (Overlays' run metadata: name, notes, conditions and setup changes).
+/// (Overlays' run metadata: name, notes, conditions and setup changes; and
+/// Telemetry's structured setup).
 final class ProgressionRunInfo {
   const ProgressionRunInfo({
     required this.id,
@@ -22,6 +24,7 @@ final class ProgressionRunInfo {
     this.notes,
     this.conditions,
     this.setupChanges,
+    this.setup,
   });
 
   final String id;
@@ -29,6 +32,9 @@ final class ProgressionRunInfo {
 
   /// Null when not recorded.
   final String? notes, conditions, setupChanges;
+
+  /// The structured setup; null when nothing is entered.
+  final RunSetup? setup;
 }
 
 /// One observed loss as the time-loss list shows it.

@@ -2094,9 +2094,9 @@
       }
     }
   },
-  "progressionSetup": "Setup: {setup}",
+  "progressionSetup": "Setup changes: {setup}",
   "@progressionSetup": {
-    "description": "The setup changes the driver noted for a session.",
+    "description": "The setup changes the driver noted for a session (free text).",
     "placeholders": {
       "setup": {
         "type": "String"
@@ -3749,9 +3749,9 @@
   "@sessionDetailsHeading": {
     "description": "Heading of the day page's list of sessions with their conditions, setup changes and notes."
   },
-  "sessionDetailsNone": "No conditions, setup changes or notes",
+  "sessionDetailsNone": "No conditions, setup, setup changes or notes",
   "@sessionDetailsNone": {
-    "description": "Shown under a session that has no conditions, setup changes or notes."
+    "description": "Shown under a session that has no conditions, setup, setup changes or notes."
   },
   "sessionDetailsTitle": "Details of {session}",
   "@sessionDetailsTitle": {
@@ -7891,6 +7891,204 @@
   "@libraryImportNotSaved": {
     "description": "After an import whose days were copied but the library file could not be written.",
     "placeholders": {"count": {"type": "int"}}
+  },
+  "sessionSetupHeading": "Setup",
+  "@sessionSetupHeading": {
+    "description": "Heading of the structured setup (tyre pressures, tyres, fuel) in the session details dialog."
+  },
+  "sessionSetupPressures": "Tyre pressures",
+  "@sessionSetupPressures": {
+    "description": "Label next to the choice of the unit the tyre pressures are entered in."
+  },
+  "pressureUnitBar": "bar",
+  "@pressureUnitBar": {
+    "description": "The pressure unit bar, as a choice and after numbers."
+  },
+  "pressureUnitPsi": "psi",
+  "@pressureUnitPsi": {
+    "description": "The pressure unit psi (pounds per square inch), as a choice and after numbers."
+  },
+  "setupWheelFl": "FL",
+  "@setupWheelFl": {
+    "description": "Column heading, short: the front left wheel."
+  },
+  "setupWheelFr": "FR",
+  "@setupWheelFr": {
+    "description": "Column heading, short: the front right wheel."
+  },
+  "setupWheelRl": "RL",
+  "@setupWheelRl": {
+    "description": "Column heading, short: the rear left wheel."
+  },
+  "setupWheelRr": "RR",
+  "@setupWheelRr": {
+    "description": "Column heading, short: the rear right wheel."
+  },
+  "setupWheelFlName": "front left",
+  "@setupWheelFlName": {
+    "description": "Spoken name of the front left wheel's pressure field."
+  },
+  "setupWheelFrName": "front right",
+  "@setupWheelFrName": {
+    "description": "Spoken name of the front right wheel's pressure field."
+  },
+  "setupWheelRlName": "rear left",
+  "@setupWheelRlName": {
+    "description": "Spoken name of the rear left wheel's pressure field."
+  },
+  "setupWheelRrName": "rear right",
+  "@setupWheelRrName": {
+    "description": "Spoken name of the rear right wheel's pressure field."
+  },
+  "sessionSetupCold": "Cold",
+  "@sessionSetupCold": {
+    "description": "Row label: tyre pressures set cold, before the session."
+  },
+  "sessionSetupHot": "Hot",
+  "@sessionSetupHot": {
+    "description": "Row label: tyre pressures measured hot, after the session."
+  },
+  "sessionSetupPressureField": "{row}, {wheel}",
+  "@sessionSetupPressureField": {
+    "description": "Spoken name of one tyre pressure field.",
+    "placeholders": {
+      "row": {
+        "type": "String",
+        "example": "Cold"
+      },
+      "wheel": {
+        "type": "String",
+        "example": "front left"
+      }
+    }
+  },
+  "sessionSetupPressureRange": "Pressures in {unit} are from {min} to {max}, with at most two decimals.",
+  "@sessionSetupPressureRange": {
+    "description": "Shown under the tyre pressures when one is out of range for the chosen unit.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": "bar"
+      },
+      "min": {
+        "type": "String",
+        "example": "0.5"
+      },
+      "max": {
+        "type": "String",
+        "example": "6"
+      }
+    }
+  },
+  "sessionSetupKeptAsEntered": "Kept as entered: switching the unit does not convert the numbers.",
+  "@sessionSetupKeptAsEntered": {
+    "description": "Explains that the tyre pressures are stored in the unit chosen and never converted."
+  },
+  "sessionSetupTyre": "Tyres",
+  "@sessionSetupTyre": {
+    "description": "Text field label: the tyre's name or compound."
+  },
+  "sessionSetupTyreHint": "Pirelli SC2",
+  "@sessionSetupTyreHint": {
+    "description": "Example tyre in the empty text field."
+  },
+  "sessionSetupFuel": "Fuel at start (l)",
+  "@sessionSetupFuel": {
+    "description": "Number field label: the fuel in the tank at the start of the session, in litres."
+  },
+  "sessionSetupFuelRange": "0–200 l, at most two decimals",
+  "@sessionSetupFuelRange": {
+    "description": "Shown under the fuel field when the number cannot be saved."
+  },
+  "sessionSetupSameAs": "Same as {session}",
+  "@sessionSetupSameAs": {
+    "description": "Button: fills the setup fields from the previous session's setup; nothing is saved until Save.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 1"
+      }
+    }
+  },
+  "sessionSetupReadOnly": "Saved by a newer version of the app: shown as it is and not changed here.",
+  "@sessionSetupReadOnly": {
+    "description": "Shown instead of the setup fields when the setup was stored in a format this version does not edit."
+  },
+  "setupCold": "Cold {pressures} {unit}",
+  "@setupCold": {
+    "description": "Part of a session's setup line: the cold tyre pressures FL / FR / RL / RR and their unit.",
+    "placeholders": {
+      "pressures": {
+        "type": "String",
+        "example": "2.1 / 2.1 / 2 / 2"
+      },
+      "unit": {
+        "type": "String",
+        "example": "bar"
+      }
+    }
+  },
+  "setupHot": "Hot {pressures} {unit}",
+  "@setupHot": {
+    "description": "Part of a session's setup line: the hot tyre pressures FL / FR / RL / RR and their unit.",
+    "placeholders": {
+      "pressures": {
+        "type": "String",
+        "example": "2.4 / 2.4 / — / 2.3"
+      },
+      "unit": {
+        "type": "String",
+        "example": "bar"
+      }
+    }
+  },
+  "setupTyres": "Tyres {tyre}",
+  "@setupTyres": {
+    "description": "Part of a session's setup line: the tyre's name or compound.",
+    "placeholders": {
+      "tyre": {
+        "type": "String",
+        "example": "Pirelli SC2"
+      }
+    }
+  },
+  "setupFuel": "Fuel {litres} l",
+  "@setupFuel": {
+    "description": "Part of a session's setup line: the fuel at the start in litres.",
+    "placeholders": {
+      "litres": {
+        "type": "String",
+        "example": "8.5"
+      }
+    }
+  },
+  "sessionSetupLine": "Setup: {setup}",
+  "@sessionSetupLine": {
+    "description": "A session's structured setup on one line, in the session list and the progression.",
+    "placeholders": {
+      "setup": {
+        "type": "String",
+        "example": "Cold 2.1 / 2.1 / 2 / 2 bar · Tyres Pirelli SC2 · Fuel 8.5 l"
+      }
+    }
+  },
+  "sessionSetupReplaceTitle": "Replace the setup?",
+  "@sessionSetupReplaceTitle": {
+    "description": "Title of the question asked before the previous session's setup replaces values already in the fields."
+  },
+  "sessionSetupReplaceBody": "The setup fields will hold {session}'s setup instead of what is in them now. Nothing is saved until Save.",
+  "@sessionSetupReplaceBody": {
+    "description": "Explains what replacing the setup with the previous session's does.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 1"
+      }
+    }
+  },
+  "sessionSetupReplace": "Replace",
+  "@sessionSetupReplace": {
+    "description": "Button: replaces the setup fields with the previous session's setup."
   },
   "trackDialogCircuit": "Circuit: {name}",
   "@trackDialogCircuit": {"description": "The circuit the route starts on, from the circuit list or named by the user.", "placeholders": {"name": {"type": "String", "example": "Autodrom Jastrząb"}}},

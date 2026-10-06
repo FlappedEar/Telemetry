@@ -548,6 +548,25 @@ void main() {
     await scrollIn(tester, summary, find.text('Session details'), delta: -300);
     await tester.tap(find.byIcon(Icons.edit_note).first);
     await tester.pumpAndSettle();
+    // Sample setup values to show the table filled in; cancelled below, so
+    // nothing is kept.
+    for (final (row, values) in [
+      ('cold', ['2.1', '2.1', '2.0', '2.0']),
+      ('hot', ['2.4', '2.4', '2.3', '2.3']),
+    ]) {
+      for (final (index, wheel) in ['fl', 'fr', 'rl', 'rr'].indexed) {
+        await tester.enterText(
+          find.byKey(ValueKey('sessionSetup $row $wheel')),
+          values[index],
+        );
+      }
+    }
+    await tester.enterText(
+      find.byKey(const ValueKey('sessionSetupTyre')),
+      'Semi-slick',
+    );
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await shot(tester, 'session-details-dialog');
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();

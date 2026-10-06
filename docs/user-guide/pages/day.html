@@ -84,17 +84,27 @@
 <p>One row per session with its best ranked lap, for example <em>LAP 2 · 5 of 7 laps ranked · typical 1:50.123</em>. The best lap of the day's time is in bold purple. Tap a row to open that lap.</p>
 
 <h2 id="details">Session details</h2>
-<p>One row per session with its conditions, setup changes and notes, or <em>No conditions, setup changes or notes</em>, and its <a href="#weather">weather</a> when the app has it. Tap a row to open <strong>Details of Session N</strong>:</p>
+<p>One row per session with its conditions, setup changes, setup and notes, or <em>No conditions, setup, setup changes or notes</em>, and its <a href="#weather">weather</a> when the app has it. Tap a row to open <strong>Details of Session N</strong>:</p>
 <figure>
-  <img src="assets/screens/session-details-dialog.png" alt="Details of Session 1 dialog with Name, Conditions, Setup changes and Notes fields" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/session-details-dialog.png" alt="Details of Session 1 dialog with Name, Conditions and Setup changes fields, a Setup table of cold and hot tyre pressures per wheel with a bar or psi choice, Tyres, Fuel at start and Notes" width="1280" height="800" loading="lazy">
 </figure>
 <ul>
   <li><strong>Name</strong>: the session's name, up to 160 characters, for example <em>Warm-up</em>. It cannot be blank. The new name is used everywhere: the lap list (<em>Warm-up · LAP 2</em>), the results, the progression and the day report.</li>
   <li><strong>Conditions</strong>, for example <em>Dry, 18 °C</em>.</li>
   <li><strong>Setup changes</strong>, for example <em>Tyres +0.1 bar</em>.</li>
+  <li><strong>Setup</strong>: the setup you drove the session with, every field optional.
+    <ul>
+      <li><strong>Tyre pressures</strong>: choose <strong>bar</strong> or <strong>psi</strong>, then fill the table: one column per wheel (<strong>FL</strong>, <strong>FR</strong>, <strong>RL</strong>, <strong>RR</strong>: front left, front right, rear left, rear right), the <strong>Cold</strong> row for the pressures set before the session and the <strong>Hot</strong> row for those measured after it. Leave a wheel empty if you did not measure it. On a narrow phone or with large text the fields go two or one to a line, each labelled with its wheel. The unit is the previous session's, or bar for the first.</li>
+      <li>Numbers take a decimal point and at most two decimals, for example <em>2.15</em>. A comma typed on a Polish keyboard becomes a point as you type, and spaces in a pasted number are dropped.</li>
+      <li>Pressures are kept exactly as you entered them, in the unit you chose. Switching between bar and psi never converts the numbers: it only checks them again against the unit's range (0.5–6 bar, 7–90 psi). A pressure outside the range is marked red, the range is said under the table, and <strong>Save</strong> waits until it is fixed.</li>
+      <li><strong>Tyres</strong>: the tyre's name or compound, up to 160 characters, for example <em>Pirelli SC2</em>.</li>
+      <li><strong>Fuel at start (l)</strong>: the fuel in the tank at the start, 0–200 litres.</li>
+      <li><strong>Same as Session N</strong> copies the setup of the session recorded just before this one into the fields, unit included, when that session has a setup. If some fields already hold values, it asks <strong>Replace the setup?</strong> first. Nothing is kept until you tap <strong>Save</strong>, so you can change a pressure or two first.</li>
+    </ul>
+    The session's row then shows it on one line, for example <em>Setup: Cold 2.1 / 2.1 / 2 / 2 bar · Hot 2.4 / 2.4 / 2.3 / — bar · Tyres Pirelli SC2 · Fuel 8.5 l</em>; a wheel without a pressure shows <em>—</em>. Clear every field and the setup is removed from the file. A setup saved by a newer version of the app is shown as it is and cannot be edited here.</li>
   <li><strong>Notes</strong>: anything else about the session.</li>
 </ul>
-<p><strong>Save</strong> keeps the change and the day then has unsaved changes; save the day to write it to the file. Each text can be up to 4096 characters; a text you clear is saved as empty. FlappedEar Overlays reads and edits the same details (see <a href="overlays.html">Working with FlappedEar Overlays</a>).</p>
+<p><strong>Save</strong> keeps the change and the day then has unsaved changes; save the day to write it to the file. Each text can be up to 4096 characters; a text you clear is saved as empty. FlappedEar Overlays reads and edits the same name, conditions, setup changes and notes; it keeps the setup in the file without showing it (see <a href="overlays.html">Working with FlappedEar Overlays</a>).</p>
 <p>Below the fields, <strong>Weather</strong> shows the session's weather (see <a href="#weather">Weather</a>), or why there is none.</p>
 
 <h2 id="weather">Weather</h2>

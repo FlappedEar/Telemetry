@@ -1423,7 +1423,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String progressionSetup(String setup) {
-    return 'Ustawienia samochodu: $setup';
+    return 'Zmiany ustawień: $setup';
   }
 
   @override
@@ -2559,7 +2559,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get sessionDetailsNone =>
-      'Brak warunków, zmian w ustawieniach i notatek';
+      'Brak warunków, ustawień, zmian w ustawieniach i notatek';
 
   @override
   String sessionDetailsTitle(String session) {
@@ -5699,6 +5699,119 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get sessionSetupHeading => 'Ustawienia';
+
+  @override
+  String get sessionSetupPressures => 'Ciśnienie w oponach';
+
+  @override
+  String get pressureUnitBar => 'bar';
+
+  @override
+  String get pressureUnitPsi => 'psi';
+
+  @override
+  String get setupWheelFl => 'LP';
+
+  @override
+  String get setupWheelFr => 'PP';
+
+  @override
+  String get setupWheelRl => 'LT';
+
+  @override
+  String get setupWheelRr => 'PT';
+
+  @override
+  String get setupWheelFlName => 'lewe przednie';
+
+  @override
+  String get setupWheelFrName => 'prawe przednie';
+
+  @override
+  String get setupWheelRlName => 'lewe tylne';
+
+  @override
+  String get setupWheelRrName => 'prawe tylne';
+
+  @override
+  String get sessionSetupCold => 'Na zimno';
+
+  @override
+  String get sessionSetupHot => 'Na ciepło';
+
+  @override
+  String sessionSetupPressureField(String row, String wheel) {
+    return '$row, $wheel';
+  }
+
+  @override
+  String sessionSetupPressureRange(String unit, String min, String max) {
+    return 'Ciśnienie ($unit): od $min do $max, najwyżej dwie cyfry po kropce.';
+  }
+
+  @override
+  String get sessionSetupKeptAsEntered =>
+      'Zapisane tak, jak wpisano: zmiana jednostki nie przelicza liczb.';
+
+  @override
+  String get sessionSetupTyre => 'Opony';
+
+  @override
+  String get sessionSetupTyreHint => 'Pirelli SC2';
+
+  @override
+  String get sessionSetupFuel => 'Paliwo na starcie (l)';
+
+  @override
+  String get sessionSetupFuelRange => '0–200 l, najwyżej dwie cyfry po kropce';
+
+  @override
+  String sessionSetupSameAs(String session) {
+    return 'Skopiuj z: $session';
+  }
+
+  @override
+  String get sessionSetupReadOnly =>
+      'Zapisane przez nowszą wersję aplikacji: pokazane bez zmian i nie do edycji tutaj.';
+
+  @override
+  String setupCold(String pressures, String unit) {
+    return 'Na zimno $pressures $unit';
+  }
+
+  @override
+  String setupHot(String pressures, String unit) {
+    return 'Na ciepło $pressures $unit';
+  }
+
+  @override
+  String setupTyres(String tyre) {
+    return 'Opony $tyre';
+  }
+
+  @override
+  String setupFuel(String litres) {
+    return 'Paliwo $litres l';
+  }
+
+  @override
+  String sessionSetupLine(String setup) {
+    return 'Ustawienia: $setup';
+  }
+
+  @override
+  String get sessionSetupReplaceTitle => 'Zastąpić ustawienia?';
+
+  @override
+  String sessionSetupReplaceBody(String session) {
+    return 'Pola ustawień zostaną wypełnione ustawieniami z: $session zamiast obecnych wartości. Nic nie jest zapisywane przed naciśnięciem Zapisz.';
+  }
+
+  @override
+  String get sessionSetupReplace => 'Zastąp';
 
   @override
   String trackDialogCircuit(String name) {

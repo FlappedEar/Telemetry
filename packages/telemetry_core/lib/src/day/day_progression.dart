@@ -12,6 +12,7 @@ import 'compatibility.dart';
 import 'day_analysis.dart';
 import 'day_laps.dart';
 import 'day_ranking.dart';
+import 'run_setup.dart';
 
 /// Whether a run of the progression has a result.
 enum ProgressionRunState {
@@ -242,8 +243,9 @@ LapConsistency summarizeLapConsistency(List<DayLapRow> eligible) {
   );
 }
 
-/// The day's runs with their names, and the notes, conditions and setup
-/// changes a day document (`event.runs`) records for them.
+/// The day's runs with their names, and the notes, conditions, setup
+/// changes and structured setup a day document (`event.runs`) records for
+/// them.
 List<ProgressionRunInfo> progressionRunInfo(
   List<NamedRun> runs, {
   Iterable<Object?> documentRuns = const [],
@@ -262,6 +264,10 @@ List<ProgressionRunInfo> progressionRunInfo(
         notes: text(stored[named.run.id]?['notes']),
         conditions: text(stored[named.run.id]?['conditions']),
         setupChanges: text(stored[named.run.id]?['setupChanges']),
+        setup: switch (RunSetup.fromJson(stored[named.run.id]?[runSetupKey])) {
+          final setup when setup.isEmpty => null,
+          final setup => setup,
+        },
       ),
   ];
 }

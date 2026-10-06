@@ -151,3 +151,34 @@ keeps an unknown run object through validation, the editor and recovery).
 (WMO) and `windGustsKmh` of the hour before it (null is no data). A version this app does not read is
 kept as it is and not replaced. The model and its rules are in
 `packages/telemetry_core/lib/src/day/session_weather.dart`.
+
+## Session setup (Telemetry only)
+
+Telemetry adds an optional `setup` object to a run (FET-188; the owner
+agreed the structured fields on 2026-10-06). Runs are open objects, so
+Overlays keeps it unchanged without showing it;
+`packages/telemetry_core/test/day/overlays_roundtrip_test.dart` checks that a
+setup with unknown keys survives Overlays' save. `session-setup-v1` holds,
+every key optional:
+
+```json
+{"version": "session-setup-v1", "pressureUnit": "bar",
+ "coldPressure": {"fl": 2.1, "fr": 2.1, "rl": 2.0, "rr": 2.0},
+ "hotPressure": {"fl": 2.45}, "tyre": "Pirelli SC2", "fuelStartLitres": 8.5}
+```
+
+`pressureUnit` is `bar` or `psi`, as the driver chose; pressures are numbers
+in that unit, as entered, and never converted. A pressure needs a unit and is
+0.5–6.0 bar or 7–90 psi; `fuelStartLitres` is 0–200; both have at most two
+decimals. `tyre` is at most 160 characters without NUL. Reading is lenient: a
+value that is missing, of another type or out of range reads as not entered
+and never makes the document invalid. Writing changes only the keys the user
+edited, so unknown keys (in `setup` and in the pressure objects) and stored
+values read as not entered stay as they are; a setup passed back as read
+(only other details edited) is left byte for byte, and a run without one
+gains no key. When the unit changes, or goes with the last pressure, every
+stored pressure is replaced, so a value unreadable in the old unit never
+comes back in the new one; a setup left empty is removed, keys this app
+does not know apart. A setup of another `version` is
+shown read-only and never rewritten. The model and its rules are in
+`packages/telemetry_core/lib/src/day/run_setup.dart`.

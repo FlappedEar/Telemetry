@@ -40,6 +40,7 @@ import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
+import 'setup_text.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
 import '../ui/readable_list.dart';
@@ -1839,18 +1840,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
     );
   }
 
-  // A session's conditions, setup changes and notes on one line each, and
-  // its weather.
+  // A session's conditions, setup changes, setup and notes on one line
+  // each, and its weather.
   String _detailsText(String runId) {
     final l10n = context.l10n;
     final details = _controller.runMetadata(runId);
+    String? line(String label, String text) =>
+        text.trim().isEmpty ? null : '$label: ${text.trim()}';
     final lines = [
-      for (final (label, text) in [
-        (l10n.sessionDetailsConditions, details.conditions),
-        (l10n.sessionDetailsSetup, details.setupChanges),
-        (l10n.sessionDetailsNotes, details.notes),
-      ])
-        if (text.trim().isNotEmpty) '$label: ${text.trim()}',
+      ?line(l10n.sessionDetailsConditions, details.conditions),
+      ?line(l10n.sessionDetailsSetup, details.setupChanges),
+      ?setupLine(l10n, details.setup),
+      ?line(l10n.sessionDetailsNotes, details.notes),
     ];
     final weather = switch (_controller.weather.of(runId)) {
       final shown? => weatherShortText(l10n, shown),
