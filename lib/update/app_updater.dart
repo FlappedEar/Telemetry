@@ -252,6 +252,14 @@ class AppUpdater extends ChangeNotifier {
     }
   }
 
+  /// Reads the running app's version for [installedLabel], without asking
+  /// GitHub.
+  Future<String?> readInstalledLabel() async {
+    await _installed();
+    if (!_disposed) notifyListeners();
+    return _installedLabel;
+  }
+
   /// Asks GitHub for the newest release. Returns whether the check
   /// worked; a failure is in [failure].
   Future<bool> check() async {

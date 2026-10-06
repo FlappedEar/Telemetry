@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../l10n.dart';
 import '../format.dart';
 import '../ui/label_value_row.dart';
+import '../update/update_dialog.dart';
 import 'app_diagnostics.dart';
 import 'app_errors.dart';
 
@@ -250,7 +251,8 @@ PopupMenuItem<T> diagnosticsMenuItem<T>(BuildContext context) =>
       child: Text(context.l10n.diagnosticsTitle),
     );
 
-/// An overflow menu with the diagnostics entry, for an app bar.
+/// An overflow menu with "Check for updates" and the diagnostics entry, for
+/// an app bar.
 class DiagnosticsMenu extends StatelessWidget {
   const DiagnosticsMenu({super.key});
 
@@ -258,6 +260,14 @@ class DiagnosticsMenu extends StatelessWidget {
   Widget build(BuildContext context) => PopupMenuButton<void>(
     key: const ValueKey('moreMenu'),
     tooltip: context.l10n.moreActions,
-    itemBuilder: (_) => [diagnosticsMenuItem(context)],
+    itemBuilder: (_) => [
+      PopupMenuItem<void>(
+        key: const ValueKey('checkForUpdatesMenuItem'),
+        height: kMinInteractiveDimension,
+        onTap: () => showUpdateDialog(context),
+        child: Text(context.l10n.settingsUpdateCheckNow),
+      ),
+      diagnosticsMenuItem(context),
+    ],
   );
 }

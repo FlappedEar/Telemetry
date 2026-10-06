@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:telemetry/diagnostics/diagnostics_page.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/units.dart';
@@ -288,20 +290,69 @@ void main() {
     await tester.pumpWidget(const TelemetryApp(home: SettingsButton()));
     await tester.tap(find.byType(SettingsButton));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('checkForUpdates')),
-      100,
-      scrollable: find.byType(Scrollable).last,
+    // The first section: no scrolling, with the app's version.
+    expect(
+      find.byKey(const ValueKey('checkForUpdates')).hitTestable(),
+      findsOneWidget,
     );
-    // The circuits section below can move it while the dialog settles.
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('updateCheckSetting')),
-    );
-    await tester.pumpAndSettle();
+    expect(find.text('This app: version 0.2.5 (6)'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('updateCheckSetting')));
     await tester.pump();
     expect(updateCheckSetting.value, isFalse);
     await tester.tap(find.byKey(const ValueKey('checkForUpdates')));
+    await tester.pumpAndSettle();
+    expect(_body(tester), 'You have the newest version.');
+  });
+
+  testWidgets('settings on a phone show that they scroll', (tester) async {
+    appUpdater = _updater(_Platform(TargetPlatform.android), tag: 'v0.2.5');
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const TelemetryApp(home: SettingsButton()));
+    await tester.tap(find.byType(SettingsButton));
+    await tester.pumpAndSettle();
+    final bar = tester.widget<Scrollbar>(
+      find.byKey(const ValueKey('settingsScrollbar')),
+    );
+    expect(bar.thumbVisibility, isTrue);
+    final position = bar.controller!.position;
+    expect(position.maxScrollExtent, greaterThan(0));
+    expect(
+      find.byKey(const ValueKey('checkForUpdates')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('settingsAppVersion')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(find.text('This app: version 0.2.5 (6)'), findsOneWidget);
+  });
+
+  testWidgets('settings on a Mac show one scrollbar, not two', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.pumpWidget(const TelemetryApp(home: SettingsButton()));
+    await tester.tap(find.byType(SettingsButton));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(SettingsDialog),
+        matching: find.byType(Scrollbar),
+      ),
+      findsOneWidget,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Home\'s ⋮ menu checks for updates', (tester) async {
+    appUpdater = _updater(_Platform(TargetPlatform.android), tag: 'v0.2.5');
+    await tester.pumpWidget(
+      const TelemetryApp(home: Scaffold(appBar: _MenuBar())),
+    );
+    await tester.tap(find.byKey(const ValueKey('moreMenu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('checkForUpdatesMenuItem')));
     await tester.pumpAndSettle();
     expect(_body(tester), 'You have the newest version.');
   });
@@ -364,4 +415,15 @@ void main() {
       expect(lastUpdateCheck.value, isNull);
     });
   });
+}
+
+class _MenuBar extends StatelessWidget implements PreferredSizeWidget {
+  const _MenuBar();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) =>
+      AppBar(actions: const [DiagnosticsMenu()]);
 }
