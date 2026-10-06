@@ -261,8 +261,14 @@ final class DayTheoreticalBest {
   }
 
   /// The approved segment (index in [segments]) at [progressMeters] on the
-  /// shared axis, or null in a gap between segments.
+  /// shared axis, or null in a gap between segments. A lap's fixes just
+  /// before the line or past the finish lie below 0 or above the axis length
+  /// (FET-192); they are taken around the loop.
   int? segmentAt(double progressMeters) {
+    final length = axisLengthMeters;
+    if (length > 0 && (progressMeters < 0 || progressMeters > length)) {
+      progressMeters %= length;
+    }
     final rows = segments;
     for (var i = 0; i < rows.length; ++i) {
       final start = rows[i].startProgressMeters, end = rows[i].endProgressMeters;

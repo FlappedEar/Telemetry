@@ -226,7 +226,9 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     var distance = double.infinity;
     for (final (at, point) in _placed) {
       final apart = (at - progress).abs();
-      final circular = length > 0 ? math.min(apart, length - apart) : apart;
+      final circular = length > 0
+          ? math.min(apart, (length - apart).abs())
+          : apart;
       if (circular < distance) {
         distance = circular;
         nearest = point;

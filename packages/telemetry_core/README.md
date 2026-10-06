@@ -125,8 +125,9 @@ a background isolate.
   falls within a segment; `timeAtProgress`, `progressAtTime` and
   `computeDeltaSeries` read time and the delta between two laps by distance,
   only where both laps are covered, and `computeTimedDeltaSeries` measures
-  each lap from its timed start, as the comparison does (FET-192). `TelemetrySession.sampledSegments` gives a
-  channel's actual samples, split at gaps and reduced to bucket extremes.
+  each lap from its timed start, as the comparison does (FET-192).
+  `TelemetrySession.sampledSegments` gives a channel's actual samples, split
+  at gaps and reduced to bucket extremes.
 - `proposeTrackSegments` splits a progress axis into alternating corner and
   straight proposals from its smoothed curvature (kinks fold into the straight,
   corners with no 20 m straight between them form one chain, short straights
