@@ -745,6 +745,32 @@
   "@dayReport": {
     "description": "Button on the day page that opens the day report."
   },
+  "reportShare": "Share as image",
+  "@reportShare": {
+    "description": "Day report button: shares (phones) or saves (desktop) the report as one PNG image."
+  },
+  "reportImageType": "PNG image",
+  "@reportImageType": {
+    "description": "File type in the save dialog for the report image."
+  },
+  "reportShareSaved": "Report saved as an image.",
+  "@reportShareSaved": {
+    "description": "After the report image was saved on desktop."
+  },
+  "reportImageTooLong": "The report is too long for one image.",
+  "@reportImageTooLong": {
+    "description": "Why the report image could not be made: taller than an image may be."
+  },
+  "reportShareFailed": "The report image could not be made: {error}",
+  "@reportShareFailed": {
+    "description": "Drawing or writing the report image failed.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "No space left on device"
+      }
+    }
+  },
   "moreActions": "More",
   "@moreActions": {
     "description": "Tooltip of the menu with more actions."

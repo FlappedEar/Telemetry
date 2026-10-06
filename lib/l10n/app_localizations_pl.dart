@@ -508,6 +508,23 @@ class AppLocalizationsPl extends AppLocalizations {
   String get dayReport => 'Raport dnia';
 
   @override
+  String get reportShare => 'Udostępnij jako obraz';
+
+  @override
+  String get reportImageType => 'Obraz PNG';
+
+  @override
+  String get reportShareSaved => 'Raport zapisano jako obraz.';
+
+  @override
+  String get reportImageTooLong => 'Raport jest za długi na jeden obraz.';
+
+  @override
+  String reportShareFailed(String error) {
+    return 'Nie udało się utworzyć obrazu raportu: $error';
+  }
+
+  @override
   String get moreActions => 'Więcej';
 
   @override

@@ -500,6 +500,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dayReport => 'Day report';
 
   @override
+  String get reportShare => 'Share as image';
+
+  @override
+  String get reportImageType => 'PNG image';
+
+  @override
+  String get reportShareSaved => 'Report saved as an image.';
+
+  @override
+  String get reportImageTooLong => 'The report is too long for one image.';
+
+  @override
+  String reportShareFailed(String error) {
+    return 'The report image could not be made: $error';
+  }
+
+  @override
   String get moreActions => 'More';
 
   @override

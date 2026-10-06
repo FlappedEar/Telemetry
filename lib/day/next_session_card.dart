@@ -152,7 +152,11 @@ class NextSessionCard extends StatelessWidget {
     this.speedsConverted = false,
     this.withoutTheoreticalBest = false,
     this.onRetry,
+    this.printable = false,
   });
+
+  /// Drawn into the shared report image: no buttons.
+  final bool printable;
 
   /// Null while it is prepared.
   final DayCoach? coach;
@@ -208,7 +212,8 @@ class NextSessionCard extends StatelessWidget {
                 l10n.coachFailed(l10n.taskFailure(error)),
                 key: const ValueKey('coachReason'),
               ),
-              if (onRetry case final retry?) CalculateAgainButton(retry),
+              if (onRetry case final retry? when !printable)
+                CalculateAgainButton(retry),
             ] else if (loading || coach == null)
               Text(l10n.coachLoading)
             else ...[
@@ -383,7 +388,7 @@ class NextSessionCard extends StatelessWidget {
             l10n.coachAction(finding.kind),
             ValueKey('coachAction $index'),
           ),
-          if (result != null)
+          if (result != null && !printable)
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
