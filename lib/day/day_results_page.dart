@@ -2291,6 +2291,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// Before the next session in a few lines ([BriefingCard]).
   Widget _briefing() {
     final result = _controller.theoreticalBest;
+    final analysis = _controller.analysis;
     // The latest session's last ranked lap on the circuit shown.
     final last = _controller
         .comparisonCandidates()
@@ -2313,9 +2314,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
       goals: _ownGoals(_controller.latestRunId),
       channels: _controller.channelSummaries,
       lastLap: last,
-      bestLap: last == null
-          ? null
-          : dayBestComparisonLap(_controller.analysis, last),
+      lastLapOnCircuit:
+          analysis.chosenGroupId != null &&
+          analysis
+                  .configurations[_controller.latestRunId]
+                  ?.compatibilityGroupId ==
+              analysis.chosenGroupId,
+      // The best of the circuit shown, whichever laps the session has.
+      bestLap: analysis.groups
+          .where((group) => group.id == analysis.chosenGroupId)
+          .firstOrNull
+          ?.ranking
+          ?.bestOfDay,
     );
   }
 

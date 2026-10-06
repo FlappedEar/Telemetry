@@ -6405,14 +6405,19 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get briefingLastLap => 'Ostatnie okrążenie';
+  String get briefingLastLap => 'Ostatnie sklasyfikowane okrążenie';
 
   @override
-  String get briefingDayBest => 'Najlepsze dnia';
+  String get briefingDayBest => 'Najlepsze okrążenie dnia';
 
   @override
-  String get briefingDelta => 'Do najlepszego';
+  String get briefingDelta => 'Różnica do najlepszego';
 
   @override
   String get briefingCar => 'Auto';
+
+  @override
+  String briefingNoRankedLap(String session) {
+    return '$session nie ma sklasyfikowanego okrążenia na pokazanym torze.';
+  }
 }

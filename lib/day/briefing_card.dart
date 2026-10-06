@@ -32,6 +32,7 @@ class BriefingCard extends StatelessWidget {
     this.channels,
     this.lastLap,
     this.bestLap,
+    this.lastLapOnCircuit = false,
   });
 
   /// The session the briefing comes from (the latest) and its name.
@@ -64,6 +65,10 @@ class BriefingCard extends StatelessWidget {
   /// the day there (trackside, FET-234); null when there is none.
   final DayLapRow? lastLap, bestLap;
 
+  /// Whether the session is on the circuit shown: with no [lastLap], its
+  /// laps there are not ranked rather than missing.
+  final bool lastLapOnCircuit;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -74,12 +79,12 @@ class BriefingCard extends StatelessWidget {
     final coached = coach != null && coach.runId == runId;
     final speedUnit = coachSpeedLabel(context, converted: speedsConverted);
 
-    final changes = [
+    // The coach's plan: up to two changes, then up to one thing to keep
+    // (the first item is the main focus).
+    final plan = [
       if (coached)
-        for (final item in coach.plan)
-          if (item.finding.kind.corrective) item.finding,
+        for (final item in coach.plan) item.finding,
     ];
-    final keep = coached ? coach.focus?.finding : null;
     final String focus;
     String? measured;
     if (coachLoading || pending) {
@@ -90,7 +95,7 @@ class BriefingCard extends StatelessWidget {
       focus = l10n.summaryCoachFailed;
     } else if (!coached) {
       focus = l10n.summaryWorking;
-    } else if ((changes.isNotEmpty ? changes.first : keep) case final item?) {
+    } else if (plan.firstOrNull case final item?) {
       focus = _title(l10n, item);
       // Labelled apart, as on the Next session card; a speed that cannot
       // be shown reads "—" there too, and says why.
@@ -171,18 +176,20 @@ class BriefingCard extends StatelessWidget {
             _laps(context),
             line(
               'briefingFocus',
-              changes.isEmpty && keep != null && coached
+              plan.firstOrNull?.kind.corrective == false
                   ? l10n.coachKeepLabel
                   : l10n.coachFocusLabel,
               focus,
               measured,
             ),
-            // The coach's other points, up to three in all.
-            for (var i = 1; i < changes.length && i < 3; i++)
+            // The coach's other points, three in all at most.
+            for (final (i, item) in plan.indexed.skip(1))
               line(
                 i == 1 ? 'briefingThen' : 'briefingThen$i',
-                l10n.coachLaterLabel,
-                _title(l10n, changes[i]),
+                item.kind.corrective
+                    ? l10n.coachLaterLabel
+                    : l10n.coachKeepLabel,
+                _title(l10n, item),
               ),
             line(
               'briefingGoals',
@@ -214,16 +221,6 @@ class BriefingCard extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final last = lastLap, best = bestLap;
-    if (last == null) {
-      return Padding(
-        key: const ValueKey('briefingLaps'),
-        padding: const EdgeInsets.only(top: 16),
-        child: Text(
-          l10n.summaryNotShown(l10n.session(session)),
-          style: theme.textTheme.titleMedium,
-        ),
-      );
-    }
     final digits = theme.textTheme.displaySmall?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -239,7 +236,19 @@ class BriefingCard extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            Text(value, style: digits),
+            // On one line, smaller when the screen is narrow or the text
+            // large, so a time never splits.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                value,
+                key: ValueKey('$key value'),
+                style: digits,
+                maxLines: 1,
+                softWrap: false,
+              ),
+            ),
             if (detail != null) Text(detail, style: theme.textTheme.bodyMedium),
           ],
         );
@@ -250,26 +259,35 @@ class BriefingCard extends StatelessWidget {
         spacing: 32,
         runSpacing: 12,
         children: [
-          tile(
-            'briefingLastLap',
-            l10n.briefingLastLap,
-            displayTime(last.durationSeconds),
-            l10n.lapName(l10n.session(last.runName), last.lapNumber),
-          ),
-          if (best != null) ...[
+          if (last != null)
+            tile(
+              'briefingLastLap',
+              l10n.briefingLastLap,
+              displayTime(last.durationSeconds),
+              l10n.lapName(l10n.session(last.runName), last.lapNumber),
+            )
+          else
+            Text(
+              key: const ValueKey('briefingNoLap'),
+              lastLapOnCircuit
+                  ? l10n.briefingNoRankedLap(l10n.session(session))
+                  : l10n.summaryNotShown(l10n.session(session)),
+              style: theme.textTheme.titleMedium,
+            ),
+          if (best != null)
             tile(
               'briefingBestLap',
               l10n.briefingDayBest,
               displayTime(best.durationSeconds),
               l10n.lapName(l10n.session(best.runName), best.lapNumber),
             ),
+          if (last != null && best != null)
             tile(
               'briefingDelta',
               l10n.briefingDelta,
               displayDelta(last.durationSeconds - best.durationSeconds),
               null,
             ),
-          ],
         ],
       ),
     );
@@ -295,26 +313,34 @@ class BriefingCard extends StatelessWidget {
         channelReasonText(l10n, channels.error),
       );
     }
-    if (summary == null) return null;
+    // Read from the session's own recording, whichever circuit it is on.
+    final own = channels.runs.where((run) => run.runId == runId).firstOrNull;
     final hottest = [
-      for (final t in summary.temperatures)
-        l10n.summaryTemperature(
-          channelLabelIn(context, t.channel),
-          channelValueText(t.maximum, t.unit),
-        ),
+      for (final name in channels.temperatureChannels)
+        if (own?.channel(name) case final channel?
+            when channel.run.valid && channel.run.maximum != null)
+          l10n.summaryTemperature(
+            channelLabelIn(context, name),
+            channelValueText(channel.run.maximum, channel.unit),
+          ),
     ].join(' · ');
-    final watch = summary.carWatch;
+    final watch = summary?.carWatch ?? (own == null ? null : carWatch(own));
     final lines = watch == null
         ? const <String>[]
         : carWatchLines(context, watch);
     if (hottest.isEmpty && lines.isEmpty) {
-      return summary.temperatureReason.isEmpty
+      final reason = own?.unavailableReason ?? '';
+      if (reason.isNotEmpty) {
+        return line(
+          'briefingCar',
+          l10n.briefingCar,
+          channelReasonText(l10n, reason),
+        );
+      }
+      // The day records temperatures, this session does not.
+      return channels.temperatureChannels.isEmpty
           ? null
-          : line(
-              'briefingCar',
-              l10n.briefingCar,
-              channelReasonText(l10n, summary.temperatureReason),
-            );
+          : line('briefingCar', l10n.briefingCar, l10n.channelNotRecorded);
     }
     final more = hottest.isEmpty ? lines.skip(1).toList() : lines;
     return line(

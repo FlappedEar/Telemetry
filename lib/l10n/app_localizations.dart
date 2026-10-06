@@ -9214,7 +9214,7 @@ abstract class AppLocalizations {
   /// Trackside: the latest session's last ranked lap time, in large digits.
   ///
   /// In en, this message translates to:
-  /// **'Last lap'**
+  /// **'Last ranked lap'**
   String get briefingLastLap;
 
   /// Trackside: the best lap of the day on the circuit shown.
@@ -9234,6 +9234,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Car'**
   String get briefingCar;
+
+  /// Before you go out, when the latest session has laps on the shown circuit but none ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no ranked lap on the circuit shown.'**
+  String briefingNoRankedLap(String session);
 }
 
 class _AppLocalizationsDelegate
