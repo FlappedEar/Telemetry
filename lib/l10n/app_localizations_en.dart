@@ -6038,4 +6038,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get summaryOwnGoalOtherGroup =>
       'Not measured: set on other compared laps';
+
+  @override
+  String get ownGoalsOtherGroup =>
+      'These goals were set on other compared laps. Remove them to set new ones.';
 }

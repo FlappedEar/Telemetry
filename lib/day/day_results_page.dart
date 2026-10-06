@@ -1921,6 +1921,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
               goals: _ownGoals(_controller.latestRunId),
+              goalsOtherGroup: _goalsOtherGroup(),
               onGoalsChanged: _setOwnGoals,
             ),
           ],
@@ -1992,6 +1993,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// changes.
   void _setOwnGoals(RunGoals goals) {
     final runId = _controller.latestRunId;
+    final stored = _ownGoals(runId);
     final problem = _controller.updateRunMetadata(
       runId,
       _controller
@@ -1999,21 +2001,51 @@ class _DayResultsPageState extends State<DayResultsPage> {
           .withGoals(
             RunGoals(
               goals: goals.goals,
-              groupId: _controller.theoreticalBest?.groupId ?? '',
+              // Goals already set keep the compared laps they were set on.
+              groupId: stored.isEmpty || stored.groupId.isEmpty
+                  ? _controller.theoreticalBest?.groupId ?? ''
+                  : stored.groupId,
             ),
           ),
     );
     if (problem != null) _tell(context.l10n.ownGoalsNotSaved);
   }
 
-  /// The session recorded before the latest, in the day's order: the one
-  /// whose goals the latest is checked on; empty when there is none.
+  /// Whether the latest session's goals were set on other compared laps
+  /// than those shown: no goal is added to them then.
+  bool _goalsOtherGroup() {
+    final stored = _ownGoals(_controller.latestRunId);
+    final group = _controller.theoreticalBest?.groupId ?? '';
+    return !stored.isEmpty &&
+        stored.groupId.isNotEmpty &&
+        group.isNotEmpty &&
+        stored.groupId != group;
+  }
+
+  /// The session recorded before the latest, in the order [latestRunId]
+  /// picks the latest by (recording clock, else the order added): the one
+  /// whose goals the latest is checked on; empty when there is none. A
+  /// session without laps counts too.
   String _sessionBeforeLatest() {
+    final runs = _controller.runs;
     final latest = _controller.latestRunId;
+    final at = runs.indexWhere((named) => named.run.id == latest);
+    if (at < 0) return '';
+    final start = recordingTimestamp(runs[at].run.telemetry);
+    if (start == null) return at == 0 ? '' : runs[at - 1].run.id;
     var previous = '';
-    for (final row in _controller.analysis.rows) {
-      if (row.runId == latest) break;
-      previous = row.runId;
+    int? previousStart;
+    for (var i = 0; i < runs.length; ++i) {
+      if (i == at) continue;
+      final other = recordingTimestamp(runs[i].run.telemetry);
+      // Recorded before it, or at the same time and added before it.
+      if (other == null || other > start || (other == start && i > at)) {
+        continue;
+      }
+      if (previousStart == null || other >= previousStart) {
+        previous = runs[i].run.id;
+        previousStart = other;
+      }
     }
     return previous;
   }
@@ -2037,6 +2069,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (coach == null ||
         _controller.coachLoading ||
         coach.runId != _controller.latestRunId) {
+      return (goals: goals, session: session, checks: null, noLaps: false);
+    }
+    // Without segments the card says why, as for the focus.
+    if (coach.reason == CoachReason.noSegments) {
       return (goals: goals, session: session, checks: null, noLaps: false);
     }
     // Both sessions need laps among the compared laps.

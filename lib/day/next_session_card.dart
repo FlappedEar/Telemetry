@@ -157,8 +157,13 @@ class NextSessionCard extends StatelessWidget {
     this.onRetry,
     this.printable = false,
     this.goals,
+    this.goalsOtherGroup = false,
     this.onGoalsChanged,
   });
+
+  /// [goals] were set on other compared laps than those shown: none is
+  /// added to them.
+  final bool goalsOtherGroup;
 
   /// The driver's own goals for the session after [session] (FET-218);
   /// null hides them.
@@ -324,7 +329,13 @@ class NextSessionCard extends StatelessWidget {
               ],
             ),
           if (change != null && goals.goals.length < maximumRunGoals)
-            if (coach.reason == CoachReason.noLapInGroup)
+            if (goalsOtherGroup)
+              Text(
+                l10n.ownGoalsOtherGroup,
+                key: const ValueKey('ownGoalsOtherGroup'),
+                style: theme.textTheme.bodySmall,
+              )
+            else if (coach.reason == CoachReason.noLapInGroup)
               Text(
                 l10n.ownGoalsNeedLaps(l10n.session(session)),
                 key: const ValueKey('ownGoalsNeedLaps'),

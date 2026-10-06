@@ -6147,7 +6147,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String ownGoalsNeedLaps(String session) {
-    return 'Cele wymagają, by ta sesja ($session) miała okrążenia wśród porównywanych.';
+    return 'Cele wymagają, by $session miała okrążenia wśród porównywanych.';
   }
 
   @override
@@ -6158,4 +6158,8 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get summaryOwnGoalOtherGroup =>
       'Nie zmierzono: ustawiony dla innych porównywanych okrążeń';
+
+  @override
+  String get ownGoalsOtherGroup =>
+      'Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe.';
 }

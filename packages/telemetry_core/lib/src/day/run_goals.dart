@@ -16,6 +16,10 @@ const runGoalsKey = 'nextGoals';
 /// The most goals for one session.
 const maximumRunGoals = 3;
 
+/// How far, in metres, a corner's ends may lie from a goal's for the goal
+/// to be at that corner as it was drawn.
+const sessionGoalSameMeters = 1.0;
+
 /// One goal: a change of [kind] at the corner [segmentName], which lay from
 /// [startProgressMeters] to [endProgressMeters] on the lap's shared axis
 /// when the goal was set.
@@ -282,13 +286,13 @@ List<SessionGoalCheck> checkSessionGoals(RunGoals goals, DayCoach coach, {String
   return [
     for (final goal in goals.goals)
       () {
-        // The corner as it was drawn, else the one overlapping it most. A
-        // corner across the start line (ending before it starts) is found
-        // only while it is drawn the same.
+        // The corner as it was drawn (within [sessionGoalSameMeters]), else
+        // the one overlapping it most. A corner across the start line
+        // (ending before it starts) is found only while drawn the same.
         final same = corners.indexWhere(
           (c) =>
-              c.startProgressMeters == goal.startProgressMeters &&
-              c.endProgressMeters == goal.endProgressMeters,
+              (c.startProgressMeters - goal.startProgressMeters).abs() <= sessionGoalSameMeters &&
+              (c.endProgressMeters - goal.endProgressMeters).abs() <= sessionGoalSameMeters,
         );
         final match = same >= 0
             ? same

@@ -8929,6 +8929,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not measured: set on other compared laps'**
   String get summaryOwnGoalOtherGroup;
+
+  /// Why no goal can be added: the goals already set were set while another group of compared laps was shown.
+  ///
+  /// In en, this message translates to:
+  /// **'These goals were set on other compared laps. Remove them to set new ones.'**
+  String get ownGoalsOtherGroup;
 }
 
 class _AppLocalizationsDelegate

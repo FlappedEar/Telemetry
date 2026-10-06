@@ -1457,7 +1457,8 @@
   "ownGoalsSave": "Dodaj",
   "summaryOwnGoal": "Twój cel: {goal}",
   "ownGoalsNotSaved": "Nie udało się zapisać celów.",
-  "ownGoalsNeedLaps": "Cele wymagają, by ta sesja ({session}) miała okrążenia wśród porównywanych.",
+  "ownGoalsNeedLaps": "Cele wymagają, by {session} miała okrążenia wśród porównywanych.",
   "summaryOwnGoalNoLaps": "Nie zmierzono: {session} i ta sesja potrzebują okrążeń wśród porównywanych",
-  "summaryOwnGoalOtherGroup": "Nie zmierzono: ustawiony dla innych porównywanych okrążeń"
+  "summaryOwnGoalOtherGroup": "Nie zmierzono: ustawiony dla innych porównywanych okrążeń",
+  "ownGoalsOtherGroup": "Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe."
 }

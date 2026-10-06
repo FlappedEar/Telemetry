@@ -100,6 +100,7 @@ void main() {
     WidgetTester tester, {
     Locale? locale,
     String? previousRunId,
+    bool coachFails = false,
   }) async {
     await tester.binding.setSurfaceSize(const Size(412, 915));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -109,7 +110,9 @@ void main() {
       runs: outcome.runs,
       analysis: outcome.analysis!,
       coachRunner: testCoachRunner(
-        (job) async => coachOf(controller, previousRunId: previousRunId),
+        (job) async => coachFails
+            ? throw StateError('coach failed')
+            : coachOf(controller, previousRunId: previousRunId),
       ),
     );
     await tester.pumpWidget(
@@ -426,6 +429,70 @@ void main() {
       expect(check.now!.laps, greaterThanOrEqualTo(2));
       expect(check.before!.value.isFinite && check.now!.value.isFinite, isTrue);
     }
+  });
+
+  testWidgets('goals checked by a coach that failed say so', (tester) async {
+    final controller = await show(tester, coachFails: true);
+    expect(controller.coachError, isNotEmpty);
+    final first = controller.runs.first.run.id;
+    final corner = controller.theoreticalBest!.corners.first;
+    controller.updateRunMetadata(
+      first,
+      controller
+          .runMetadata(first)
+          .withGoals(
+            RunGoals(
+              goals: [
+                SessionGoal(
+                  kind: CoachKind.excessiveCoasting,
+                  segmentName: corner.name,
+                  startProgressMeters: corner.startProgressMeters,
+                  endProgressMeters: corner.endProgressMeters,
+                ),
+              ],
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+    final row = find.byKey(const ValueKey('sessionSummaryOwnGoal0'));
+    expect(row, findsOneWidget);
+    expect(
+      find.descendant(of: row, matching: find.text('The coach could not run')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('goals set on other compared laps get no new goal', (
+    tester,
+  ) async {
+    final controller = await show(tester);
+    final latest = controller.latestRunId;
+    final corner = controller.theoreticalBest!.corners.first;
+    controller.updateRunMetadata(
+      latest,
+      controller
+          .runMetadata(latest)
+          .withGoals(
+            RunGoals(
+              groupId: 'another group',
+              goals: [
+                SessionGoal(
+                  kind: CoachKind.excessiveCoasting,
+                  segmentName: corner.name,
+                  startProgressMeters: corner.startProgressMeters,
+                  endProgressMeters: corner.endProgressMeters,
+                ),
+              ],
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+    await reveal(tester, find.byKey(const ValueKey('ownGoalsOtherGroup')));
+    expect(find.byKey(const ValueKey('ownGoalsAdd')), findsNothing);
+    // Removing them keeps the group until none is left.
+    await tester.tap(find.byKey(const ValueKey('ownGoalRemove0')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ownGoalsAdd')), findsOneWidget);
   });
 
   testWidgets('in Polish', (tester) async {

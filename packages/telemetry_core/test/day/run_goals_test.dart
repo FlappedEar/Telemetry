@@ -308,6 +308,12 @@ void main() {
         _coach([corner(name: 'Corner 9', start: 2890, end: 40, before: values, now: now)]),
       );
       expect(moved.outcome, CoachGoalOutcome.notMeasured);
+      // Within a metre is the same drawing.
+      final [near] = checkSessionGoals(
+        RunGoals(goals: [across]),
+        _coach([corner(name: 'Corner 9', start: 2900.6, end: 39.5, before: values, now: now)]),
+      );
+      expect(near.outcome, CoachGoalOutcome.better);
     });
 
     test('later throttle is worse', () {

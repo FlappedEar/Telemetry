@@ -332,8 +332,7 @@ class SessionSummaryCard extends StatelessWidget {
               null when own.noLaps => l10n.summaryOwnGoalNoLaps(
                 l10n.session(own.session),
               ),
-              null when coachLoading || pending || coach == null =>
-                l10n.summaryWorking,
+              null when coachLoading || pending => l10n.summaryWorking,
               null when !ready => l10n.summarySegmentsUnavailable,
               null when coachError.isNotEmpty => l10n.summaryCoachFailed,
               null => l10n.summaryWorking,
