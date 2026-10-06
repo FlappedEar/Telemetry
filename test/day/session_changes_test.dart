@@ -96,20 +96,37 @@ void main() {
     expect(quicker.dy, lessThan(next.dy));
     expect(
       _text(tester, 'sessionChange c8'),
-      'Corner 8 | Typical 5.000\u00a0s (Session 5: 5.409\u00a0s) | Spread 0.050 s '
-      '(Session 5: 0.300 s) | −0.409\u00a0s',
+      'Corner 8 | Typical 5.000\u00a0s (Session 5: 5.409\u00a0s) | Spread 0.050\u00a0s '
+      '(Session 5: 0.300\u00a0s) | −0.409\u00a0s',
     );
     expect(
       _text(tester, 'sessionChange s2'),
-      'Straight 2 | Typical 8.400\u00a0s (Session 5: 8.100\u00a0s) | Spread 0.100 s '
-      '(Session 5: 0.100 s) | +0.300\u00a0s',
+      'Straight 2 | Typical 8.400\u00a0s (Session 5: 8.100\u00a0s) | Spread 0.100\u00a0s '
+      '(Session 5: 0.100\u00a0s) | +0.300\u00a0s',
     );
-    // Corner 9 +0.06 counts; Corner 3 +0.02 does not.
+    // Corner 9 +0.06 counts; Corner 3 +0.02 is listed as about the same,
+    // after the slower ones.
     expect(find.byKey(const ValueKey('sessionChange c9')), findsOneWidget);
-    expect(find.byKey(const ValueKey('sessionChange c3')), findsNothing);
     expect(
       _text(tester, 'sessionChangesSame'),
-      '1 segment within 0.05 s of before.',
+      'Within 0.05\u00a0s of Session 5',
+    );
+    expect(
+      _text(tester, 'sessionChange c3'),
+      'Corner 3 | Typical 21.040\u00a0s (Session 5: 21.020\u00a0s) | '
+      '+0.020\u00a0s',
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('sessionChange c3'))).dy,
+      greaterThan(
+        tester.getTopLeft(find.byKey(const ValueKey('sessionChangesSame'))).dy,
+      ),
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('sessionChangesSame'))).dy,
+      greaterThan(
+        tester.getTopLeft(find.byKey(const ValueKey('sessionChange c9'))).dy,
+      ),
     );
     final slower = tester.getTopLeft(
       find.byKey(const ValueKey('sessionChangesSlower')),
@@ -131,8 +148,33 @@ void main() {
       tester,
       _summary(changes: [_change('c1', 'Corner 1', 9.6, 9.62)]),
     );
-    expect(find.text('No segment quicker by 0.05 s or more.'), findsOneWidget);
-    expect(find.text('No segment slower by 0.05 s or more.'), findsOneWidget);
+    expect(
+      find.text('No segment quicker by 0.05\u00a0s or more.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('No segment slower by 0.05\u00a0s or more.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a lap-time spread that cannot be read says why', (tester) async {
+    await _pump(
+      tester,
+      SessionSummary(
+        runId: '6',
+        runName: 'Session 6',
+        earlierSessions: 5,
+        previousRunName: 'Session 5',
+        lapSpread: 2.52,
+        segmentsCompared: 1,
+        changes: [_change('c1', 'Corner 1', 9.6, 9.8)],
+      ),
+    );
+    expect(
+      _text(tester, 'sessionChangesLapSpread'),
+      'Lap-time spread: Needs at least 3 laps',
+    );
   });
 
   testWidgets('a list that cannot be shown says why', (tester) async {
@@ -148,7 +190,7 @@ void main() {
     expect(await reason(_summary(), pending: true), 'Working…');
     expect(
       await reason(_summary(), ready: false),
-      isNot(anyOf('Working…', '')),
+      'Not available without a theoretical best',
     );
     expect(
       await reason(null),
@@ -156,9 +198,16 @@ void main() {
     );
     expect(
       await reason(_summary(previous: null, earlier: 0)),
-      isNot(anyOf('Working…', '')),
+      'First session: nothing to compare with',
     );
-    expect(await reason(_summary()), isNot(anyOf('Working…', '')));
+    expect(
+      await reason(_summary(previous: null, earlier: 2)),
+      'No earlier session has a ranked lap',
+    );
+    expect(
+      await reason(_summary()),
+      'Needs 3 laps through a segment in both sessions',
+    );
   });
 
   testWidgets('in Polish', (tester) async {
@@ -169,8 +218,8 @@ void main() {
     );
     expect(
       _text(tester, 'sessionChange c8'),
-      'Zakręt 8 | Typowo 5.000\u00a0s (Sesja 5: 5.409\u00a0s) | Rozrzut 0.050 s '
-      '(Sesja 5: 0.300 s) | −0.409\u00a0s',
+      'Zakręt 8 | Typowo 5.000\u00a0s (Sesja 5: 5.409\u00a0s) | Rozrzut 0.050\u00a0s '
+      '(Sesja 5: 0.300\u00a0s) | −0.409\u00a0s',
     );
     expect(find.text('Szybciej'), findsOneWidget);
   });

@@ -30,15 +30,19 @@ void main() {
   });
   tearDown(() => deleteTemporaryDirectory(directory));
 
-  DayImportOutcome importDay() {
-    final files = {
-      'a.vbo': [
-        rectangleLap(30, 50, 120, 20),
-        rectangleLap(31, 300, 400, 25),
-        rectangleLap(30, 550, 650, 22),
-      ],
-      'b.vbo': [rectangleLap(29), rectangleLap(30.5, 700, 780, 20)],
-    };
+  DayImportOutcome importDay([
+    Map<String, List<double Function(double)>>? day,
+  ]) {
+    final files =
+        day ??
+        {
+          'a.vbo': [
+            rectangleLap(30, 50, 120, 20),
+            rectangleLap(31, 300, 400, 25),
+            rectangleLap(30, 550, 650, 22),
+          ],
+          'b.vbo': [rectangleLap(29), rectangleLap(30.5, 700, 780, 20)],
+        };
     final paths = <String>[];
     files.forEach((name, laps) {
       final path = '${directory.path}/$name';
@@ -107,10 +111,11 @@ void main() {
     bool coachFails = false,
     Size size = const Size(412, 915),
     double textScale = 1,
+    Map<String, List<double Function(double)>>? day,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final outcome = importDay();
+    final outcome = importDay(day);
     late DayResultsController controller;
     controller = DayResultsController(
       runs: outcome.runs,
@@ -1018,6 +1023,44 @@ void main() {
         '${best.runName} · LAP ${best.lapNumber}',
       );
     });
+  });
+
+  testWidgets('every segment since the session before opens from the '
+      'summary and follows the day', (tester) async {
+    final controller = await show(
+      tester,
+      day: {
+        'a.vbo': [
+          for (final straight in [30.0, 30.4, 29.6, 30.2, 29.8])
+            rectangleLap(straight, 300, 400, 20),
+        ],
+        'b.vbo': [
+          for (final straight in [31.0, 31.4, 30.6, 31.2, 30.8])
+            rectangleLap(straight, 300, 400, 24),
+        ],
+      },
+    );
+    final open = find.byKey(const ValueKey('sessionSummaryChanges'));
+    await reveal(tester, open, up: true);
+    await tester.tap(open);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('sessionChangesPage')), findsOneWidget);
+    final listed = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith('sessionChange '),
+    );
+    expect(listed, findsWidgets);
+    // Every lap of the latest session left out: the page says why.
+    for (final row in controller.comparisonCandidates()) {
+      if (row.runId == controller.latestRunId) {
+        controller.exclude(row, 'Traffic');
+      }
+    }
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('sessionChangesPage')), findsOneWidget);
+    expect(listed, findsNothing);
+    expect(find.byKey(const ValueKey('sessionChangesReason')), findsOneWidget);
   });
 
   testWidgets('the briefing says why while the coach failed', (tester) async {

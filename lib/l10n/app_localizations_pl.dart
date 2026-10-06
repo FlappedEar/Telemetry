@@ -6447,7 +6447,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String changesIntro(String session, String threshold) {
-    return 'Typowy (mediana) czas każdego odcinka w porównaniu z: $session, z rozrzutem środkowej połowy czasów. Zmiany poniżej $threshold s nie są liczone. Obserwacje z Twoich okrążeń, nie przyczyny.';
+    return 'Typowy (mediana) czas każdego odcinka w porównaniu z: $session, z rozrzutem środkowej połowy czasów. Zmiany poniżej $threshold s nie są liczone. Obserwacje z Twoich okrążeń, nie przyczyny.';
   }
 
   @override
@@ -6458,25 +6458,17 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String changesNoneQuicker(String threshold) {
-    return 'Żaden odcinek nie jest szybszy o $threshold s lub więcej.';
+    return 'Żaden odcinek nie jest szybszy o $threshold s lub więcej.';
   }
 
   @override
   String changesNoneSlower(String threshold) {
-    return 'Żaden odcinek nie jest wolniejszy o $threshold s lub więcej.';
+    return 'Żaden odcinek nie jest wolniejszy o $threshold s lub więcej.';
   }
 
   @override
-  String changesSame(int count, String threshold) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count odcinków w granicach $threshold s od poprzedniego.',
-      many: '$count odcinków w granicach $threshold s od poprzedniego.',
-      few: '$count odcinki w granicach $threshold s od poprzedniego.',
-      one: '1 odcinek w granicach $threshold s od poprzedniego.',
-    );
-    return '$_temp0';
+  String changesSame(String threshold, String session) {
+    return 'W granicach $threshold s względem: $session';
   }
 
   @override
@@ -6486,7 +6478,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String changesSpread(String now, String session, String before) {
-    return 'Rozrzut $now s ($session: $before s)';
+    return 'Rozrzut $now s ($session: $before s)';
   }
 
   @override

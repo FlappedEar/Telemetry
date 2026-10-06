@@ -133,8 +133,16 @@ void main() {
     expect(corner1.referenceSpreadSeconds, closeTo(c1Before, 1e-12));
     expect(corner1.spreadDeltaSeconds, closeTo(c1 - c1Before, 1e-12));
     expect(summary.biggestGain!.segmentId, 'c1');
+    expect(summary.quicker.first.segmentId, summary.biggestGain!.segmentId);
+    expect(summary.slower.first.segmentId, summary.biggestLoss!.segmentId);
+    expect(
+      summary.quicker.length + summary.slower.length + summary.same.length,
+      summary.changes.length,
+    );
     // The gap left is against the quickest time, without spreads.
     expect(summary.biggestGap!.spreadDeltaSeconds, isNull);
+    // Corner 4 untimed before: no change, so no spread either.
+    expect(summary.changes.where((change) => change.segmentId == 'c4'), isEmpty);
     // The first session compares nothing.
     expect(summarizeSession('1', progression: progression, sections: sections)!.changes, isEmpty);
   });
@@ -428,5 +436,29 @@ void main() {
     )!;
     expect(summary.segmentsTimed, 1);
     expect(summary.biggestGap, isNull);
+  });
+
+  test('a change of exactly the threshold counts, just under it is the same (FET-236)', () {
+    SessionSegmentChange change(String id, double seconds) => SessionSegmentChange(
+      segmentId: id,
+      name: id,
+      type: 'corner',
+      seconds: seconds,
+      referenceSeconds: 10,
+    );
+    final summary = SessionSummary(
+      runId: '2',
+      runName: 'Session 2',
+      earlierSessions: 1,
+      changes: [
+        change('quicker', 10 - sessionSummaryChangeSeconds),
+        change('slower', 10 + sessionSummaryChangeSeconds),
+        change('same', 10.049),
+        change('most', 9.5),
+      ],
+    );
+    expect([for (final c in summary.quicker) c.segmentId], ['most', 'quicker']);
+    expect([for (final c in summary.slower) c.segmentId], ['slower']);
+    expect([for (final c in summary.same) c.segmentId], ['same']);
   });
 }

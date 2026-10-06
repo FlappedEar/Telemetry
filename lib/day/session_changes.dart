@@ -66,15 +66,8 @@ class SessionChanges extends StatelessWidget {
       );
     }
 
-    final gains = [
-      for (final change in summary.changes)
-        if (change.deltaSeconds <= -sessionSummaryChangeSeconds) change,
-    ]..sort((a, b) => a.deltaSeconds.compareTo(b.deltaSeconds));
-    final losses = [
-      for (final change in summary.changes)
-        if (change.deltaSeconds >= sessionSummaryChangeSeconds) change,
-    ]..sort((a, b) => b.deltaSeconds.compareTo(a.deltaSeconds));
-    final same = summary.changes.length - gains.length - losses.length;
+    final gains = summary.quicker, losses = summary.slower;
+    final same = summary.same;
     final before = l10n.session(previous);
 
     final numbers = theme.textTheme.titleMedium?.copyWith(
@@ -146,18 +139,18 @@ class SessionChanges extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            if ((summary.lapSpread, summary.previousLapSpread) case (
-              final spread?,
-              final spreadBefore?,
-            ))
-              Padding(
-                key: const ValueKey('sessionChangesLapSpread'),
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  '${l10n.summarySpread}: ${l10n.summarySpreadThen(fixed(spread, 3), before, fixed(spreadBefore, 3))}',
-                  style: theme.textTheme.bodyLarge,
-                ),
+            Padding(
+              key: const ValueKey('sessionChangesLapSpread'),
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                '${l10n.summarySpread}: ${switch ((summary.lapSpread, summary.previousLapSpread)) {
+                  (final spread?, final spreadBefore?) => l10n.summarySpreadThen(fixed(spread, 3), before, fixed(spreadBefore, 3)),
+                  // As the Consistency card: a spread needs 3 laps.
+                  _ => l10n.consistencyNeedsLaps(minimumConsistencySamples),
+                }}',
+                style: theme.textTheme.bodyLarge,
               ),
+            ),
             heading('sessionChangesQuicker', l10n.changesQuicker),
             if (gains.isEmpty)
               note(
@@ -174,15 +167,15 @@ class SessionChanges extends StatelessWidget {
               )
             else
               for (final change in losses) item(change),
-            if (same > 0)
-              Padding(
-                key: const ValueKey('sessionChangesSame'),
-                padding: const EdgeInsets.only(top: 20),
-                child: Text(
-                  l10n.changesSame(same, threshold),
-                  style: theme.textTheme.bodyLarge,
-                ),
+            // Within the threshold: listed too, so every segment compared
+            // is on the page.
+            if (same.isNotEmpty) ...[
+              heading(
+                'sessionChangesSame',
+                l10n.changesSame(threshold, before),
               ),
+              for (final change in same) item(change),
+            ],
           ],
         ),
       ),

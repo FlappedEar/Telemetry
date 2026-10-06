@@ -6308,7 +6308,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String changesIntro(String session, String threshold) {
-    return 'Each segment\'s typical (median) time against $session, with the spread of the middle half of its times. Changes under $threshold s are not counted. Observed from your laps, not causes.';
+    return 'Each segment\'s typical (median) time against $session, with the spread of the middle half of its times. Changes under $threshold s are not counted. Observed from your laps, not causes.';
   }
 
   @override
@@ -6319,23 +6319,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String changesNoneQuicker(String threshold) {
-    return 'No segment quicker by $threshold s or more.';
+    return 'No segment quicker by $threshold s or more.';
   }
 
   @override
   String changesNoneSlower(String threshold) {
-    return 'No segment slower by $threshold s or more.';
+    return 'No segment slower by $threshold s or more.';
   }
 
   @override
-  String changesSame(int count, String threshold) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count segments within $threshold s of before.',
-      one: '1 segment within $threshold s of before.',
-    );
-    return '$_temp0';
+  String changesSame(String threshold, String session) {
+    return 'Within $threshold s of $session';
   }
 
   @override
@@ -6345,7 +6339,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String changesSpread(String now, String session, String before) {
-    return 'Spread $now s ($session: $before s)';
+    return 'Spread $now s ($session: $before s)';
   }
 
   @override

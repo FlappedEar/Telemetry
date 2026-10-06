@@ -153,6 +153,27 @@ final class SessionSummary {
   /// [biggestGain] and [biggestLoss] are among them.
   final List<SessionSegmentChange> changes;
 
+  /// [changes] quicker by [sessionSummaryChangeSeconds] or more, most first
+  /// (the first is [biggestGain]).
+  List<SessionSegmentChange> get quicker => [
+    for (final change in changes)
+      if (change.deltaSeconds <= -sessionSummaryChangeSeconds) change,
+  ]..sort((a, b) => a.deltaSeconds.compareTo(b.deltaSeconds));
+
+  /// [changes] slower by [sessionSummaryChangeSeconds] or more, most first
+  /// (the first is [biggestLoss]).
+  List<SessionSegmentChange> get slower => [
+    for (final change in changes)
+      if (change.deltaSeconds >= sessionSummaryChangeSeconds) change,
+  ]..sort((a, b) => b.deltaSeconds.compareTo(a.deltaSeconds));
+
+  /// [changes] within [sessionSummaryChangeSeconds] of the session before,
+  /// in track order.
+  List<SessionSegmentChange> get same => [
+    for (final change in changes)
+      if (change.deltaSeconds.abs() < sessionSummaryChangeSeconds) change,
+  ];
+
   /// Each recorded temperature's maximum, in the day's channel order.
   final List<SessionTemperature> temperatures;
 
