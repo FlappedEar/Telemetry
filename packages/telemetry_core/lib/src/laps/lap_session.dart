@@ -86,6 +86,9 @@ final class LapDetectionDiagnostics {
   int rejectedParallelClusters = 0;
   int rejectedLongClusters = 0;
   int rejectedOppositeDirectionClusters = 0;
+
+  /// Passes that came near the gate but did not cross its line (FET-198).
+  int rejectedNotCrossingClusters = 0;
   int invalidLapDurations = 0;
 }
 
