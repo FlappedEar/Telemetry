@@ -6392,4 +6392,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String cornerPhasesBestNotTimed(String reason) {
     return 'Best lap not timed through the parts: $reason';
   }
+
+  @override
+  String get spreadMapHeading => 'Where the laps vary';
+
+  @override
+  String get spreadMapIntro =>
+      'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green is repeatable; red is where the laps differ most.';
+
+  @override
+  String spreadMapLabel(String session) {
+    return 'Map of the best lap coloured by each segment\'s spread in $session';
+  }
+
+  @override
+  String spreadBandAtMost(String value) {
+    return 'Up to $value s';
+  }
+
+  @override
+  String spreadBandBetween(String from, String to) {
+    return '$from–$to s';
+  }
+
+  @override
+  String spreadBandAbove(String value) {
+    return 'Over $value s';
+  }
 }

@@ -9396,6 +9396,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Best lap not timed through the parts: {reason}'**
   String cornerPhasesBestNotTimed(String reason);
+
+  /// Consistency card: heading of the map of each segment's spread in one session (FET-224).
+  ///
+  /// In en, this message translates to:
+  /// **'Where the laps vary'**
+  String get spreadMapHeading;
+
+  /// Consistency card: under the heading of the spread map.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green is repeatable; red is where the laps differ most.'**
+  String get spreadMapIntro;
+
+  /// Spread map's accessibility label. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'Map of the best lap coloured by each segment\'s spread in {session}'**
+  String spreadMapLabel(String session);
+
+  /// Spread map legend: the lowest band.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {value} s'**
+  String spreadBandAtMost(String value);
+
+  /// Spread map legend: a middle band.
+  ///
+  /// In en, this message translates to:
+  /// **'{from}–{to} s'**
+  String spreadBandBetween(String from, String to);
+
+  /// Spread map legend: the highest band.
+  ///
+  /// In en, this message translates to:
+  /// **'Over {value} s'**
+  String spreadBandAbove(String value);
 }
 
 class _AppLocalizationsDelegate

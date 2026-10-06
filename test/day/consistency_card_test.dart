@@ -161,4 +161,128 @@ void main() {
     expect(find.text('Sesja 1'), findsOneWidget);
     expect(find.text('Wszystkie sesje'), findsNothing);
   });
+
+  group('where the laps vary', () {
+    Future<({DayTheoreticalBest result, SectionProgression sections})> show(
+      WidgetTester tester, {
+      Locale locale = const Locale('en'),
+    }) async {
+      final outcome = importDay();
+      final analysis = outcome.analysis!;
+      final result = dayTheoreticalBest(analysis, outingRuns(outcome.runs));
+      expect(result.state, DayTheoreticalBestState.ready);
+      final sections = result.sectionProgression([
+        for (final named in outcome.runs)
+          ProgressionRunInfo(id: named.run.id, name: named.name),
+      ]);
+      await tester.binding.setSurfaceSize(const Size(412, 4000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          locale: locale,
+          home: Scaffold(
+            body: ListView(
+              children: [
+                ConsistencyCard(
+                  laps: dayLapConsistency(analysis),
+                  result: result,
+                  sections: sections,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return (result: result, sections: sections);
+    }
+
+    String textOf(WidgetTester tester, Finder finder) => tester
+        .widgetList<Text>(
+          find.descendant(of: finder, matching: find.byType(Text)),
+        )
+        .map((text) => text.data)
+        .join(' | ');
+
+    testWidgets('lists the latest session first, its spread in bands', (
+      tester,
+    ) async {
+      final (:result, :sections) = await show(tester);
+      expect(find.byKey(const ValueKey('segmentSpread')), findsOneWidget);
+      expect(find.text('Where the laps vary'), findsOneWidget);
+      // Session 2 has two laps: every segment waits for a third, in grey,
+      // and none is given a spread.
+      expect(sections.sessions.last.run.name, 'Session 2');
+      for (final segment in result.segments) {
+        final row = find.byKey(ValueKey('segmentSpread ${segment.segmentId}'));
+        expect(textOf(tester, row), contains('Needs at least 3 laps'));
+        expect(textOf(tester, row), isNot(contains('spread')));
+      }
+      // The legend names every band and the grey.
+      final legend = textOf(
+        tester,
+        find.byKey(const ValueKey('segmentSpreadLegend')),
+      );
+      for (final band in [
+        'Up to 0.10\u00a0s',
+        '0.10–0.25\u00a0s',
+        '0.25–0.50\u00a0s',
+        '0.50–1.00\u00a0s',
+        'Over 1.00\u00a0s',
+        'Needs at least 3 laps',
+      ]) {
+        expect(legend, contains(band));
+      }
+    });
+
+    testWidgets('another session shows its own spreads, most varied first', (
+      tester,
+    ) async {
+      final (:result, :sections) = await show(tester);
+      await tester.tap(find.byKey(const ValueKey('segmentSpreadSession')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Session 1').last);
+      await tester.pumpAndSettle();
+      final first = sections.sessions.first.runId;
+      final spreads = [
+        for (final row in sections.segments)
+          (
+            id: row.segmentId,
+            spread: row.cells
+                .firstWhere((cell) => cell.runId == first)
+                .summary
+                .interquartileRange!,
+          ),
+      ]..sort((a, b) => b.spread.compareTo(a.spread));
+      expect(spreads, hasLength(result.segments.length));
+      for (final (:id, :spread) in spreads) {
+        expect(
+          textOf(tester, find.byKey(ValueKey('segmentSpread $id'))),
+          contains('spread ${spread.toStringAsFixed(3)}\u00a0s'),
+        );
+      }
+      // In that order down the card.
+      final tops = [
+        for (final (:id, spread: _) in spreads)
+          tester.getTopLeft(find.byKey(ValueKey('segmentSpread $id'))).dy,
+      ];
+      expect(tops, orderedEquals([...tops]..sort()));
+    });
+
+    testWidgets('speaks Polish', (tester) async {
+      addTearDown(() => Intl.defaultLocale = null);
+      await show(tester, locale: const Locale('pl'));
+      expect(find.text('Gdzie okrążenia się różnią'), findsOneWidget);
+      expect(find.text('Do 0.10\u00a0s'), findsOneWidget);
+      expect(find.text('Ponad 1.00\u00a0s'), findsOneWidget);
+      expect(find.text('Where the laps vary'), findsNothing);
+    });
+  });
+
+  test('the bands are fixed seconds of spread', () {
+    expect(segmentSpreadBand(0.10), 0);
+    expect(segmentSpreadBand(0.11), 1);
+    expect(segmentSpreadBand(1.00), 3);
+    expect(segmentSpreadBand(2.74), 4);
+  });
 }

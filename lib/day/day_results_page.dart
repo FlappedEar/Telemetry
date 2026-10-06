@@ -1816,6 +1816,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
           laps: _controller.lapConsistency,
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
+          sections: _controller.theoreticalBestLoading ? null : _sections(),
+          path: path,
+          gate: _mapGate,
         ),
         const SizedBox(height: 12),
         ProgressionCard(

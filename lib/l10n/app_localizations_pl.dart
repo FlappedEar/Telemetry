@@ -6532,4 +6532,31 @@ class AppLocalizationsPl extends AppLocalizations {
   String cornerPhasesBestNotTimed(String reason) {
     return 'Najlepsze okrążenie nie zostało zmierzone w częściach: $reason';
   }
+
+  @override
+  String get spreadMapHeading => 'Gdzie okrążenia się różnią';
+
+  @override
+  String get spreadMapIntro =>
+      'Każdy odcinek najlepszego okrążenia pokolorowany według rozrzutu w sesji: szerokości środkowej połowy jego czasów. Zielony jest powtarzalny; czerwony to miejsca, gdzie okrążenia różnią się najbardziej.';
+
+  @override
+  String spreadMapLabel(String session) {
+    return 'Mapa najlepszego okrążenia pokolorowana według rozrzutu każdego odcinka w: $session';
+  }
+
+  @override
+  String spreadBandAtMost(String value) {
+    return 'Do $value s';
+  }
+
+  @override
+  String spreadBandBetween(String from, String to) {
+    return '$from–$to s';
+  }
+
+  @override
+  String spreadBandAbove(String value) {
+    return 'Ponad $value s';
+  }
 }

@@ -1534,5 +1534,11 @@
   "cornerPhasesNote": "Wejście trwa do miejsca, w którym zakręt jest najciaśniejszy, środek obejmuje tę część, a wyjście sięga do końca zakrętu. Podział wynika z kształtu toru, więc oba okrążenia są mierzone na tych samych metrach, a trzy czasy sumują się do czasu zakrętu.",
   "cornerPhasesUnavailable": "Nie podzielono: {reason}",
   "cornerPhasesMoreThanOneTightPart": "więcej niż jedna najciaśniejsza część",
-  "cornerPhasesBestNotTimed": "Najlepsze okrążenie nie zostało zmierzone w częściach: {reason}"
+  "cornerPhasesBestNotTimed": "Najlepsze okrążenie nie zostało zmierzone w częściach: {reason}",
+  "spreadMapHeading": "Gdzie okrążenia się różnią",
+  "spreadMapIntro": "Każdy odcinek najlepszego okrążenia pokolorowany według rozrzutu w sesji: szerokości środkowej połowy jego czasów. Zielony jest powtarzalny; czerwony to miejsca, gdzie okrążenia różnią się najbardziej.",
+  "spreadMapLabel": "Mapa najlepszego okrążenia pokolorowana według rozrzutu każdego odcinka w: {session}",
+  "spreadBandAtMost": "Do {value} s",
+  "spreadBandBetween": "{from}–{to} s",
+  "spreadBandAbove": "Ponad {value} s"
 }
