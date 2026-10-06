@@ -522,6 +522,15 @@ void main() {
       await tester.pumpAndSettle();
       await shot(tester, 'own-goals');
     }
+    // Before you go out: the briefing from the session summary, with the
+    // goal just set.
+    final briefing = find.byKey(const ValueKey('sessionSummaryBriefing'));
+    await scrollIn(tester, list('dayResultsCoach'), briefing, delta: -300);
+    await tester.pumpAndSettle();
+    await tester.tap(briefing);
+    await tester.pumpAndSettle();
+    await shot(tester, 'briefing');
+    await back(tester);
     // The observations, on the Overview.
     await tester.tap(find.byKey(const ValueKey('place-day')));
     await tester.pumpAndSettle();

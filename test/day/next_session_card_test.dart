@@ -394,6 +394,7 @@ void main() {
     tester,
   ) async {
     await show(tester, goal: CoachGoalOutcome.notMeasured);
+    await reveal(tester, find.byKey(const ValueKey('coachGoalResult')));
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
       'Not measured in this session.',
@@ -632,6 +633,7 @@ void main() {
       }),
     );
     addTearDown(() => Intl.defaultLocale = null);
+    await reveal(tester, find.byKey(const ValueKey('coachReason')));
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('coachReason'))).data,
       contains('Praca została przerwana.'),
