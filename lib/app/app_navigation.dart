@@ -116,12 +116,17 @@ final appNavigation = AppNavigation();
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Draws the places around [child], the app's pages: a bottom bar below
-/// [wideWidth], a side rail from it. Without a host (a page shown by
+/// [railWidth], a side rail from it. Without a host (a page shown by
 /// itself, as in tests) it draws nothing.
 class AppFrame extends StatelessWidget {
   const AppFrame({super.key, required this.navigation, required this.child});
 
-  /// From this width the places are a side rail.
+  /// From this width the places are a side rail instead of a bottom bar
+  /// (Material's medium width: a tablet upright, a phone sideways).
+  static const railWidth = 600.0;
+
+  /// From this width pages show two panes side by side, such as the day
+  /// page's overview and laps.
   static const wideWidth = 900.0;
 
   final AppNavigation navigation;
@@ -131,6 +136,11 @@ class AppFrame extends StatelessWidget {
   /// shown without them.
   static double? widthOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_FrameWidth>()?.width;
+
+  /// [child] as if drawn by an [AppFrame] in a window [width] wide.
+  @visibleForTesting
+  static Widget withWidth(double width, Widget child) =>
+      _FrameWidth(width: width, child: child);
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -177,35 +187,44 @@ class AppFrame extends StatelessWidget {
       return LayoutBuilder(
         builder: (context, constraints) {
           child = _FrameWidth(width: constraints.maxWidth, child: child!);
-          if (constraints.maxWidth >= wideWidth) {
+          if (constraints.maxWidth >= railWidth) {
+            final rail = NavigationRail(
+              key: const ValueKey('appPlaces'),
+              selectedIndex: selected < 0 ? null : selected,
+              labelType: NavigationRailLabelType.all,
+              // A phone held sideways, or large text, can be too short for
+              // every place.
+              scrollable: true,
+              onDestinationSelected: go,
+              destinations: [
+                for (final (section, icon, selectedIcon, label, enabled)
+                    in places)
+                  NavigationRailDestination(
+                    icon: Icon(icon, key: ValueKey('place-${section.name}')),
+                    selectedIcon: Icon(
+                      selectedIcon,
+                      key: ValueKey('place-${section.name}'),
+                    ),
+                    label: Text(label),
+                    disabled: !enabled,
+                  ),
+              ],
+            );
             return Row(
               children: [
-                FocusTraversalGroup(
-                  child: NavigationRail(
-                    key: const ValueKey('appPlaces'),
-                    selectedIndex: selected < 0 ? null : selected,
-                    labelType: NavigationRailLabelType.all,
-                    onDestinationSelected: go,
-                    destinations: [
-                      for (final (section, icon, selectedIcon, label, enabled)
-                          in places)
-                        NavigationRailDestination(
-                          icon: Icon(
-                            icon,
-                            key: ValueKey('place-${section.name}'),
-                          ),
-                          selectedIcon: Icon(
-                            selectedIcon,
-                            key: ValueKey('place-${section.name}'),
-                          ),
-                          label: Text(label),
-                          disabled: !enabled,
-                        ),
-                    ],
+                FocusTraversalGroup(child: rail),
+                const VerticalDivider(width: 1),
+                // The rail takes the side inset (a phone's notch held
+                // sideways); the pages beside it do not.
+                Expanded(
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeLeft: Directionality.of(context) == TextDirection.ltr,
+                    removeRight:
+                        Directionality.of(context) == TextDirection.rtl,
+                    child: child!,
                   ),
                 ),
-                const VerticalDivider(width: 1),
-                Expanded(child: child!),
               ],
             );
           }

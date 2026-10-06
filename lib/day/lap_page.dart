@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../app/app_navigation.dart';
 import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
@@ -459,8 +460,10 @@ class _LapPageState extends State<LapPage> {
             builder: (context, constraints) {
               final height = constraints.maxHeight;
               // A wide window that is also tall enough; a phone sideways
-              // scrolls the page instead, so the map keeps its size.
-              if (constraints.maxWidth >= 800 && height >= 600) {
+              // scrolls the page instead, so the map keeps its size. The
+              // window's width, not the page's beside the app's side rail.
+              final window = AppFrame.widthOf(context) ?? constraints.maxWidth;
+              if (window >= 800 && height >= 600) {
                 // The summary across the top; the map stays in view on the
                 // left while the charts scroll on the right, so the cursor
                 // on a chart is always visible on the trace.
