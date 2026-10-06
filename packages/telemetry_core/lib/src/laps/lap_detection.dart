@@ -70,13 +70,27 @@ final class _PassageCluster {
   double candidateTime = 0.0;
   double candidateDistance = double.infinity;
   double candidateGateFraction = 0.0;
+
+  /// Side of the gate line the pass started on: −1, 0 (on the line) or +1.
+  int firstSide = 0;
+
+  /// Side of the gate line at the pass's latest point.
+  int lastSide = 0;
+
+  /// Whether a segment of the pass reached the gate line within the gate's
+  /// span (widened by the inner corridor at each end).
+  bool reachedLineInSpan = false;
 }
 
 /// Finds passes through [startGate] and the laps between them.
 ///
 /// A pass is a run of GPS segments that comes within the inner corridor of the
 /// gate and ends when the path leaves the outer corridor. It is accepted when
-/// it is short, fast enough and crosses the gate rather than running along it.
+/// it is short, fast enough, crosses the gate rather than running along it,
+/// and really crosses the line: it starts strictly on one side, ends on the
+/// line or the other side, and reaches the line within the gate's span
+/// (widened by the inner corridor at each end). Coming close and leaving on
+/// the same side is not a pass (FET-198; Overlays accepts it).
 /// The first accepted crossing direction locks; later passes the other way are
 /// rejected. A GPS gap or invalid fix breaks continuity.
 LapSession detectLaps(
@@ -125,6 +139,26 @@ LapSession detectLaps(
     return result(LapSessionStatus.invalidGate);
   }
   final gateNormal = Vector2(-gateVector.y / gateLength, gateVector.x / gateLength);
+  double signedDistance(Vector2 point) => (point - gateA).dot(gateNormal);
+  int sideOf(Vector2 point) {
+    final distance = signedDistance(point);
+    return distance > 0.0 ? 1 : (distance < 0.0 ? -1 : 0);
+  }
+
+  final spanTolerance = options.innerCorridorMeters / gateLength;
+
+  /// Whether the segment touches or crosses the gate line, and does so within
+  /// the widened gate span.
+  bool reachesLineInSpan(Vector2 start, Vector2 end) {
+    final startDistance = signedDistance(start);
+    final endDistance = signedDistance(end);
+    if (startDistance == 0.0) return false;
+    if (endDistance != 0.0 && (endDistance > 0.0) == (startDistance > 0.0)) return false;
+    final fraction = startDistance / (startDistance - endDistance);
+    final point = start + (end - start) * fraction;
+    final along = (point - gateA).dot(gateVector) / (gateLength * gateLength);
+    return along.isFinite && along >= -spanTolerance && along <= 1.0 + spanTolerance;
+  }
 
   final latitude = session.channels[session.aliases['latitude']];
   final longitude = session.channels[session.aliases['longitude']];
@@ -164,6 +198,10 @@ LapSession detectLaps(
     final normalRatio = groundSpeed > 0.0 ? normalSpeed.abs() / groundSpeed : 0.0;
     if (!duration.isFinite || duration <= 0.0 || duration > options.maximumClusterSeconds) {
       ++diagnostics.rejectedLongClusters;
+    } else if (cluster.firstSide == 0 ||
+        cluster.lastSide == cluster.firstSide ||
+        !cluster.reachedLineInSpan) {
+      ++diagnostics.rejectedNotCrossingClusters;
     } else if (!groundSpeed.isFinite || groundSpeed < options.minimumGroundSpeedMetersPerSecond) {
       ++diagnostics.rejectedSlowClusters;
     } else if (!normalSpeed.isFinite ||
@@ -237,11 +275,16 @@ LapSession detectLaps(
         ..lastPoint = current.point
         ..candidateTime = before.time + closest.vehicleFraction * interval
         ..candidateDistance = closest.distanceMeters
-        ..candidateGateFraction = closest.gateFraction;
+        ..candidateGateFraction = closest.gateFraction
+        ..firstSide = sideOf(before.point)
+        ..lastSide = sideOf(current.point)
+        ..reachedLineInSpan = reachesLineInSpan(before.point, current.point);
     } else if (cluster.active && !outsideOuter) {
       cluster
         ..lastTime = current.time
-        ..lastPoint = current.point;
+        ..lastPoint = current.point
+        ..lastSide = sideOf(current.point);
+      if (reachesLineInSpan(before.point, current.point)) cluster.reachedLineInSpan = true;
       if (closest.distanceMeters < cluster.candidateDistance) {
         cluster
           ..candidateTime = before.time + closest.vehicleFraction * interval
