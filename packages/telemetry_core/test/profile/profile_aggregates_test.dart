@@ -862,7 +862,7 @@ void main() {
 
       // Known limitation: a's span took z's corner by a share under one;
       // b's corner covers the span whole, so matching a again finds b's.
-      test('a day matched to an older corner keeps it', skip: 'known limitation', () {
+      test('a day matched to an older corner keeps it', skip: 'known limitation, FET-184', () {
         var profile = _add(DriverProfile.empty(Random(1)), day('z', [('k', 0.30, 0.36)]));
         final a = day('a', [('s', 0.31, 0.40)]);
         profile = _add(profile, a);
