@@ -222,17 +222,61 @@ double _medianInterval(List<double> times) {
   return steps[steps.length ~/ 2];
 }
 
-// Contiguous stretches: a step longer than [gap] splits them.
-List<_Span> _spans(List<double> times, double gap) {
+// Where [samples] have data: runs of consecutive finite samples. A step
+// longer than [gap] or a missing (non-finite) sample ends a run, so a
+// stretch whose timestamps are present but whose values are NaN is not
+// covered (FET-200; Overlays builds coverage from timestamps alone).
+List<_Span> _finiteSpans(List<_Sample> samples, double gap) {
   final result = <_Span>[];
-  for (final time in times) {
-    if (result.isEmpty || (gap > 0.0 && time - result.last.end > gap)) {
-      result.add(_Span(time, time));
+  var open = false;
+  for (final sample in samples) {
+    if (!sample.value.isFinite) {
+      open = false;
+      continue;
+    }
+    if (!open || (gap > 0.0 && sample.time - result.last.end > gap)) {
+      result.add(_Span(sample.time, sample.time));
+      open = true;
     } else {
-      result.last.end = time;
+      result.last.end = sample.time;
     }
   }
   return result;
+}
+
+/// [preferred] without the missing (NaN) samples of each hole between two
+/// finite samples that [inserted] (time-ordered) fills: the hole holds at
+/// least one inserted sample and [otherCoverage] covers the missing sample
+/// (FET-200).
+List<_Sample> _droppingFilledHoles(
+  List<_Sample> preferred,
+  List<_Span> otherCoverage,
+  List<_Sample> inserted,
+) {
+  final insertedTimes = [for (final sample in inserted) sample.time];
+  final kept = <_Sample>[];
+  var index = 0;
+  while (index < preferred.length) {
+    if (preferred[index].value.isFinite) {
+      kept.add(preferred[index++]);
+      continue;
+    }
+    final first = index;
+    while (index < preferred.length && !preferred[index].value.isFinite) {
+      ++index;
+    }
+    final after = index < preferred.length ? preferred[index].time : double.infinity;
+    final before = first > 0 ? preferred[first - 1].time : double.negativeInfinity;
+    var next = lowerBound(insertedTimes, before);
+    while (next < insertedTimes.length && insertedTimes[next] <= before) {
+      ++next;
+    }
+    final filled = next < insertedTimes.length && insertedTimes[next] < after;
+    for (var hole = first; hole < index; ++hole) {
+      if (!filled || !_covered(otherCoverage, preferred[hole].time)) kept.add(preferred[hole]);
+    }
+  }
+  return kept;
 }
 
 bool _covered(List<_Span> coverage, double time) {
@@ -504,14 +548,20 @@ ChannelFusionResult fuseChannels(
       final preferred = preferAlternative ? alternativeSamples : primarySamples;
       final other = preferAlternative ? primarySamples : alternativeSamples;
       final primaryGap = telemetryGapThreshold(fused.channel);
-      final coverage = _spans([
-        for (final sample in preferred) sample.time,
-      ], preferAlternative ? gap : primaryGap);
-      final merged = [
-        ...preferred,
+      // Coverage counts finite samples only, so the other source fills
+      // where the preferred one has timestamps but no values (FET-200).
+      // A missing preferred sample is dropped only when the other source
+      // covers it and actually places a sample in the same hole between
+      // two finite preferred samples; otherwise it stays and keeps the gap,
+      // so no reading interpolates across the preferred source's own
+      // missing values.
+      final coverage = _finiteSpans(preferred, preferAlternative ? gap : primaryGap);
+      final otherCoverage = _finiteSpans(other, preferAlternative ? primaryGap : gap);
+      final inserted = [
         for (final sample in other)
           if (!_covered(coverage, sample.time)) sample,
       ];
+      final merged = [..._droppingFilledHoles(preferred, otherCoverage, inserted), ...inserted];
       // As Overlays' std::stable_sort.
       stableSort(merged, (_Sample a, _Sample b) => a.time < b.time);
       // Strictly increasing timestamps: an equal time keeps the preferred
