@@ -518,7 +518,9 @@ DriverProfile addDayToProfile(
         final stats? when day.measuredCorners => session._withStats(
           stats.withCorners([
             for (final corner in stats.corners)
-              if (ids[corner.cornerId] case final id?) corner.withCorner(id),
+              // Measured corners are still on their segment ids.
+              if (ids[corner.cornerId] case final id?)
+                corner.withCorner(id, segmentId: corner.cornerId),
           ], theoreticalBestSeconds: stats.theoreticalBestSeconds),
         ),
         final stats? => session._withStats(

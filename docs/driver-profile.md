@@ -63,7 +63,7 @@ version does not know, so a newer app's additions survive a re-save.
             "rankedLaps": 3, "medianLapSeconds": 125.1, "lapSpreadSeconds": 1.2,
             "theoreticalBestSeconds": 122.9,
             "corners": [
-              { "cornerId": "<track corner id>", "laps": 3,
+              { "cornerId": "<track corner id>", "segmentId": "<day segment id>", "laps": 3,
                 "minimumSpeed": 18.5, "bestMinimumSpeed": 19.4,
                 "exitSpeed": 23.1, "bestExitSpeed": 23.6,
                 "brakingSpreadMeters": 6.2, "lossSeconds": 0.31 }
@@ -126,7 +126,7 @@ yet; it still counts in days, sessions and laps.
 | `rankedLaps`, `medianLapSeconds`, `lapSpreadSeconds` | Ranked laps of the session's group; median; interquartile range (3 laps or more). |
 | `theoreticalBestSeconds` | The session's own fastest segments added up, when every segment was timed on one of its ranked laps. |
 | `otherLayout` | `true` when the session was on another layout than the day's track: it counts in totals only. |
-| `corners[]` | Per track corner, over the session's ranked laps: `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). From FET-165 also: `liftSeconds` (median time from the last lift off the throttle to a measured braking point, 0 when the pedals overlap; the lift is looked for from 150 m before the corner, or the lap's start, and coasting with both pedals off through all of that counts as that long, unless the throttle is never pressed in the session (an unplugged pedal logging zeros); needs throttle and brake), `releaseSpreadMeters` (interquartile range of where a measured braking ends), median and highest `decelerationG` / `bestDecelerationG` (mean deceleration through a measured braking, never one inferred from G alone, g; needs longitudinal G in g, also unlabelled as the G-G diagram reads it, or m/s²), `entrySpeedSpread` (interquartile range of the speed at the corner's start, m/s), `lineSpreadMeters` (interquartile range of the line across the track at the apex; only when the recording states a median GPS accuracy of 0.25 m or better for at least half the laps, half the closest band), `pickupSpreadMeters` (interquartile range of the measured throttle pickup at or after the slow point), `throttleKnownLaps` and `releasedPickups` (laps whose throttle is known from the end of a measured braking to the slow point, and of them those with a pickup released again in between) and `sequenceLossSeconds` (the median time the faster half of the laps through the corner lost in the segment right after it, less the slower half's, at least 0; 4 laps or more). Pedal readings are the coach's (`coachCornerPassages` in `day_coach.dart`); spreads need 3 laps. The app measures a day off the UI thread (`ProfileLibrary.recordDay`). |
+| `corners[]` | Per track corner, over the session's ranked laps: `segmentId` (from FET-184: the day's theoretical-best segment placed on this corner when the day was added; absent in profiles written before), `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). From FET-165 also: `liftSeconds` (median time from the last lift off the throttle to a measured braking point, 0 when the pedals overlap; the lift is looked for from 150 m before the corner, or the lap's start, and coasting with both pedals off through all of that counts as that long, unless the throttle is never pressed in the session (an unplugged pedal logging zeros); needs throttle and brake), `releaseSpreadMeters` (interquartile range of where a measured braking ends), median and highest `decelerationG` / `bestDecelerationG` (mean deceleration through a measured braking, never one inferred from G alone, g; needs longitudinal G in g, also unlabelled as the G-G diagram reads it, or m/s²), `entrySpeedSpread` (interquartile range of the speed at the corner's start, m/s), `lineSpreadMeters` (interquartile range of the line across the track at the apex; only when the recording states a median GPS accuracy of 0.25 m or better for at least half the laps, half the closest band), `pickupSpreadMeters` (interquartile range of the measured throttle pickup at or after the slow point), `throttleKnownLaps` and `releasedPickups` (laps whose throttle is known from the end of a measured braking to the slow point, and of them those with a pickup released again in between) and `sequenceLossSeconds` (the median time the faster half of the laps through the corner lost in the segment right after it, less the slower half's, at least 0; 4 laps or more). Pedal readings are the coach's (`coachCornerPassages` in `day_coach.dart`); spreads need 3 laps. The app measures a day off the UI thread (`ProfileLibrary.recordDay`). |
 
 A day's `theoreticalBestSeconds` is its track's theoretical best (the chosen
 group's). Days re-added before their theoretical best is worked out, or when it
@@ -151,6 +151,16 @@ that no other corner of that day took; otherwise it is added, with the day's
 name for it. A span over half a lap is not a corner. A recording
 whose longitudes count west as positive is turned around first.
 `matchTrackCorners` finds the same ids for a day's spans without adding any.
+
+Each session corner keeps the segment it was placed from (`segmentId`), and
+`dayCornerIds` reads a day's segment-to-corner ids back from them, so the day
+page names the corner its figures are kept on (FET-184). Matching again is
+only the fallback for days without it: a later day can add a corner that fits
+a span better, and matching would then name that corner instead. A day added
+again keeps the segments of the corners it keeps; a merged day keeps its
+segments, its corner ids moved to this track's. An older app that adds the day
+again measures its corners afresh and drops the key, so a kept segment never
+outlives the placement it came from.
 
 ## Across days (`profile_aggregates.dart`)
 

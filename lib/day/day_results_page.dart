@@ -1636,8 +1636,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
     AppLocalizations l10n,
     String eventId,
   ) {
-    // The day's corners placed as adding it to the profile placed them,
+    // The track corners adding the day to the profile placed its segments
+    // on; a day added before they were kept matches its corners again,
     // from the recording the axis came from.
+    final today = profile?.day(eventId);
+    if (today != null && dayCornerIds(today) != null) {
+      return focusBefore(l10n, profile, eventId, const []);
+    }
     final canonical = _controller.session(
       result?.computed?.canonicalRunId ?? '',
     );

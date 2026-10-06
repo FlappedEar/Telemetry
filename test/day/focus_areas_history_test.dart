@@ -268,6 +268,38 @@ void main() {
     expect(await line(null), isNull);
     expect(await line(visited, spans: const []), isNull);
     expect(await line(visited, eventId: 'elsewhere'), isNull);
+
+    // The track corner adding the day placed the area's segment on (kept
+    // with its figures) wins over matching the day's corners again, which
+    // is only for days added before it was kept (FET-184).
+    final placed = _profile([
+      _day('a', dayNumber: 0, losses: {'k1': 0.6}),
+      ProfileDay(
+        eventId: 'today',
+        file: 'Days/today.fetproject',
+        name: 'Day today',
+        carId: 'clio',
+        trackId: 'jastrzab',
+        startMilliseconds: _day0 + 20 * _dayMs,
+        sessions: [
+          ProfileSession(
+            runId: 's1',
+            name: 'Session 1',
+            stats: SessionStats(
+              rankedLaps: 4,
+              corners: [
+                CornerStats(cornerId: 'k2', segmentId: area.segmentId, laps: 4),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ]);
+    const turn2 =
+        'Earlier visits here (Turn 2): this corner was not measured '
+        'before.';
+    expect(await line(placed), turn2);
+    expect(await line(placed, spans: const []), turn2);
   });
 
   test('the Polish texts count visits', () {

@@ -857,19 +857,60 @@ void main() {
         // Day b takes a's corner with one span and adds an overlapping one.
         profile = _add(profile, day('b', [('p', 0.30, 0.36), ('q', 0.31, 0.40)]));
         expect(profile.tracks.single.corners, hasLength(2));
+        expect(dayCornerIds(profile.day('a')!), ids);
         expect(matchTrackCorners(profile.tracks.single, a.cornerSpans), ids);
       });
 
-      // Known limitation: a's span took z's corner by a share under one;
-      // b's corner covers the span whole, so matching a again finds b's.
-      test('a day matched to an older corner keeps it', skip: 'known limitation, FET-184', () {
+      // a's span took z's corner by a share under one; b's corner covers
+      // the span whole, so matching a again finds b's (FET-184). The
+      // segments kept when a was added still give z's corner.
+      test('a day matched to an older corner keeps it', () {
         var profile = _add(DriverProfile.empty(Random(1)), day('z', [('k', 0.30, 0.36)]));
         final a = day('a', [('s', 0.31, 0.40)]);
         profile = _add(profile, a);
         final ids = stored(profile, a);
+        expect(ids, {'s': profile.tracks.single.corners.single.id});
         // Day b adds a corner exactly where a's span is.
         profile = _add(profile, day('b', [('p', 0.30, 0.36), ('q', 0.31, 0.40)]));
-        expect(matchTrackCorners(profile.tracks.single, a.cornerSpans), ids);
+        expect(dayCornerIds(_roundTrip(profile).day('a')!), ids);
+        // Matching again, the fallback for profiles written before, does not.
+        expect(matchTrackCorners(profile.tracks.single, a.cornerSpans), isNot(ids));
+      });
+
+      test('a day added again keeps the segments it measured', () {
+        final a = day('a', [('s', 0.31, 0.40)]);
+        var profile = _add(DriverProfile.empty(Random(1)), day('z', [('k', 0.30, 0.36)]));
+        profile = _add(profile, a);
+        final ids = stored(profile, a);
+        // Added again without measuring corners: what was placed stays.
+        profile = _add(
+          profile,
+          ProfileDayInput(
+            eventId: 'a',
+            file: a.file,
+            name: 'a',
+            route: _route,
+            sessions: a.sessions,
+          ),
+        );
+        expect(dayCornerIds(profile.day('a')!), ids);
+      });
+
+      test('a profile written before keeps no segments and matches again', () {
+        final a = day('a', [('s', 0.30, 0.36)]);
+        final profile = _add(DriverProfile.empty(Random(1)), a);
+        final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+        final corner =
+            (((((json['days'] as List).single as Map)['sessions'] as List).single as Map)['stats']
+                        as Map)['corners']
+                    .single
+                as Map<String, Object?>;
+        expect(corner['segmentId'], 's');
+        corner.remove('segmentId');
+        final old = decodeDriverProfile(jsonEncode(json));
+        expect(old.day('a')!.sessions.single.stats!.corners.single.segmentId, isNull);
+        expect(dayCornerIds(old.day('a')!), isNull);
+        expect(matchTrackCorners(old.tracks.single, a.cornerSpans), stored(old, a));
       });
     });
 
@@ -929,6 +970,27 @@ void main() {
       valid = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
     });
 
+    test("a corner's segment is read, written back and optional", () {
+      corner()['segmentId'] = 'segment-3';
+      final read = decodeDriverProfile(jsonEncode(valid));
+      final kept = read.day('a')!.sessions.single.stats!.corners.single;
+      expect(kept.segmentId, 'segment-3');
+      expect(kept.unknown, isEmpty);
+      expect(dayCornerIds(read.day('a')!), {'segment-3': 'c1'});
+      valid = jsonDecode(encodeDriverProfile(read)) as Map<String, Object?>;
+      expect(corner()['segmentId'], 'segment-3');
+      // Written before it existed: no key, no segment.
+      corner().remove('segmentId');
+      final old = decodeDriverProfile(jsonEncode(valid));
+      expect(old.day('a')!.sessions.single.stats!.corners.single.segmentId, isNull);
+      expect(dayCornerIds(old.day('a')!), isNull);
+      valid = jsonDecode(encodeDriverProfile(old)) as Map<String, Object?>;
+      expect(corner().containsKey('segmentId'), isFalse);
+      for (final invalid in ['', 7, '\u0000']) {
+        corner()['segmentId'] = invalid;
+        rejected('corner segment id');
+      }
+    });
     test('unknown keys inside stats and corners are kept', () {
       stats()['future'] = 1;
       corner()['future'] = [2];
