@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
+import 'package:telemetry/app/app_navigation.dart';
 import 'package:telemetry/day/apple_map.dart';
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
@@ -830,6 +831,62 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   }
+
+  testWidgets('a lap page on a wide but short window is at most 840 wide', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final row = controller
+        .comparisonCandidates(outcome.analysis!.ranking!.bestOfDay!)
+        .first;
+    await tester.binding.setSurfaceSize(const Size(1400, 560));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final map = tester.getRect(find.byType(TrackMap));
+    expect(map.width, lessThanOrEqualTo(840));
+    // Centred.
+    expect(map.center.dx, closeTo(700, 1));
+  });
+
+  testWidgets('a lap page beside the side rail keeps two columns while '
+      'the window is wide enough', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final row = controller
+        .comparisonCandidates(outcome.analysis!.ranking!.bestOfDay!)
+        .first;
+    // A tablet upright, 820 wide: the page beside the rail is 739.
+    await tester.binding.setSurfaceSize(const Size(739, 1180));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final (window, columns) in const [(820.0, true), (739.0, false)]) {
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: AppFrame.withWidth(
+            window,
+            LapPage(controller: controller, row: row),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('lapCharts')),
+        columns ? findsOneWidget : findsNothing,
+        reason: 'window $window',
+      );
+    }
+  });
 
   testWidgets('a lap page shows the best of the day in blue and compares '
       'with it', (tester) async {

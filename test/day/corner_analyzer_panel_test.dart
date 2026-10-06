@@ -248,6 +248,23 @@ void main() {
       findsOneWidget,
     );
 
+    // Moving the cursor repaints its own layer only, not the chart.
+    final cursorPainter =
+        tester
+                .widget<CustomPaint>(
+                  find.byKey(const ValueKey('cornerAnalyzerChartCursorLayer')),
+                )
+                .painter!
+            as SegmentSpeedCursorPainter;
+    expect(cursorPainter.chart, same(painter));
+    RenderObject plot(String key) =>
+        tester.renderObject(find.byKey(ValueKey(key)));
+    (cursorPainter.cursor as ValueNotifier<double>).value = corner.startMeters;
+    expect(plot('cornerAnalyzerChartCursorLayer').debugNeedsPaint, isTrue);
+    expect(plot('cornerAnalyzerChartPlot').debugNeedsPaint, isFalse);
+    await tester.pump();
+    expect(plot('cornerAnalyzerChartCursorLayer').debugNeedsPaint, isFalse);
+
     // Lap A opens at the segment's start.
     await tapKey(tester, const ValueKey('cornerAnalyzerOpenLapA'));
     expect(find.byType(LapPage), findsOneWidget);

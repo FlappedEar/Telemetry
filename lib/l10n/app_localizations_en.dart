@@ -13,6 +13,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'FlappedEar Telemetry';
 
   @override
+  String get mapTilesUnavailable =>
+      'The map background needs a connection; the trace is drawn without it.';
+
+  @override
   String get directionClockwise => 'Clockwise';
 
   @override
@@ -5225,6 +5229,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String lastTimeHereThenToday(String then, String today) {
     return '$then then · $today today';
   }
+
+  @override
+  String get lastTimeHereCorners => 'Time lost per corner';
+
+  @override
+  String get lastTimeHereCornersNote =>
+      'Each day\'s laps against that day\'s fastest through the corner, averaged over its sessions: a smaller time means a more even day there, not a faster corner. Where a corner starts and ends can differ a little between days. Only corners measured on both days are listed.';
+
+  @override
+  String get lastTimeHereCornersNone =>
+      'Time lost per corner: no corner was measured on both days.';
 
   @override
   String get settingsUpdatesHeading => 'Updates';

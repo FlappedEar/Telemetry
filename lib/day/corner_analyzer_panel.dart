@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -1135,12 +1136,9 @@ class SegmentSpeedChart extends StatelessWidget {
                       move(details.localPosition.dx, constraints.maxWidth),
                   onHorizontalDragUpdate: (details) =>
                       move(details.localPosition.dx, constraints.maxWidth),
-                  child: ValueListenableBuilder<double>(
-                    valueListenable: window.cursor,
-                    builder: (context, cursor, _) => CustomPaint(
-                      key: const ValueKey('cornerAnalyzerChartPlot'),
-                      size: Size(constraints.maxWidth, height),
-                      painter: SegmentSpeedPainter(
+                  child: Builder(
+                    builder: (context) {
+                      final chart = SegmentSpeedPainter(
                         start: start,
                         end: end,
                         segmentStart: segment.startMeters,
@@ -1164,8 +1162,6 @@ class SegmentSpeedChart extends StatelessWidget {
                         speedLabel: l10n.cornerAnalyzerSpeedAxis,
                         apexLabel: l10n.cornerAnalyzerApex,
                         unit: unit,
-                        cursor: cursor,
-                        cursorColor: theme.colorScheme.onSurface,
                         grid: theme.colorScheme.outlineVariant.withValues(
                           alpha: 0.5,
                         ),
@@ -1176,8 +1172,35 @@ class SegmentSpeedChart extends StatelessWidget {
                         ink: theme.colorScheme.onSurfaceVariant,
                         surface: theme.colorScheme.surfaceContainerLow,
                         textStyle: painterStyle,
-                      ),
-                    ),
+                      );
+                      // The chart and the cursor are separate layers: as
+                      // the cursor moves only its own layer is painted.
+                      return Stack(
+                        children: [
+                          RepaintBoundary(
+                            child: CustomPaint(
+                              key: const ValueKey('cornerAnalyzerChartPlot'),
+                              size: Size(constraints.maxWidth, height),
+                              painter: chart,
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                key: const ValueKey(
+                                  'cornerAnalyzerChartCursorLayer',
+                                ),
+                                painter: SegmentSpeedCursorPainter(
+                                  chart: chart,
+                                  cursor: window.cursor,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -1322,8 +1345,6 @@ class SegmentSpeedPainter extends CustomPainter {
     required this.apexes,
     required this.boundaryNames,
     required this.unit,
-    required this.cursor,
-    required this.cursorColor,
     required this.grid,
     required this.boundary,
     required this.shade,
@@ -1354,8 +1375,6 @@ class SegmentSpeedPainter extends CustomPainter {
   final List<double> apexes;
   final (String, String) boundaryNames;
   final String unit;
-  final double cursor;
-  final Color cursorColor;
   final Color grid;
   final Color boundary;
   final Color shade;
@@ -1384,17 +1403,15 @@ class SegmentSpeedPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
 
-  @override
-  void paint(Canvas canvas, Size size) {
+  /// The plot's area in [size] and its speed range, rounded out to whole
+  /// gridlines of [step]; null when neither lap has a speed to draw.
+  ({Rect plot, double low, double high, double step})? _scale(Size size) {
     final plot = Rect.fromLTRB(
       leftGutter,
       topGutter,
       math.max(leftGutter + 1, size.width - rightGutter),
       math.max(topGutter + 1, size.height - bottomGutter),
     );
-    final span = math.max(1e-9, end - start);
-    double x(double meters) => plot.left + (meters - start) / span * plot.width;
-
     // The speed range: both lines, rounded out to whole gridlines.
     var low = double.infinity, high = -double.infinity;
     for (final line in series) {
@@ -1410,7 +1427,7 @@ class SegmentSpeedPainter extends CustomPainter {
       low = math.min(low, value);
       high = math.max(high, value);
     }
-    if (!low.isFinite || !high.isFinite) return;
+    if (!low.isFinite || !high.isFinite) return null;
     if (high - low < 1) {
       low -= 0.5;
       high += 0.5;
@@ -1419,6 +1436,20 @@ class SegmentSpeedPainter extends CustomPainter {
     low = (low / step).floor() * step;
     high = (high / step).ceil() * step;
     if (high <= low) high = low + step;
+    return (plot: plot, low: low, high: high, step: step);
+  }
+
+  /// Where [meters] is across the plot in [size].
+  double _x(Rect plot, double meters) =>
+      plot.left + (meters - start) / math.max(1e-9, end - start) * plot.width;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = _scale(size);
+    if (scale == null) return;
+    final (:plot, :low, :high, :step) = scale;
+    final span = math.max(1e-9, end - start);
+    double x(double meters) => _x(plot, meters);
     double y(double value) =>
         plot.bottom - (value - low) / (high - low) * plot.height;
 
@@ -1608,30 +1639,11 @@ class SegmentSpeedPainter extends CustomPainter {
       label.paint(canvas, chosen.topLeft);
     }
 
-    // The shared cursor, with a dot where it crosses each lap's line.
-    if (cursor >= start && cursor <= end) {
-      final at = x(cursor);
-      canvas.drawLine(
-        Offset(at, plot.top),
-        Offset(at, plot.bottom),
-        Paint()
-          ..color = cursorColor
-          ..strokeWidth = 1.2,
-      );
-      for (final slot in const [0, 1]) {
-        final value = speedAt(slot, cursor);
-        if (value == null) continue;
-        final point = Offset(at, y(value));
-        canvas.drawCircle(point, 3.5, Paint()..color = cursorColor);
-        canvas.drawCircle(point, 2, Paint()..color = _lapColor(slot));
-      }
-    }
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(SegmentSpeedPainter old) =>
-      old.cursor != cursor ||
       old.start != start ||
       old.end != end ||
       !identical(old.series, series) ||
@@ -1640,6 +1652,57 @@ class SegmentSpeedPainter extends CustomPainter {
       old.surface != surface ||
       old.speedLabel != speedLabel ||
       old.apexLabel != apexLabel;
+}
+
+/// The shared cursor over a [SegmentSpeedPainter]'s chart, with a dot where
+/// it crosses each lap's line. Painted on its own layer, so a moving cursor
+/// does not redraw the chart.
+class SegmentSpeedCursorPainter extends CustomPainter {
+  SegmentSpeedCursorPainter({
+    required this.chart,
+    required this.cursor,
+    required this.color,
+  }) : super(repaint: cursor);
+
+  final SegmentSpeedPainter chart;
+  final ValueListenable<double> cursor;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final at = cursor.value;
+    if (at < chart.start || at > chart.end) return;
+    final scale = chart._scale(size);
+    if (scale == null) return;
+    final (:plot, :low, :high, step: _) = scale;
+    final dx = chart._x(plot, at);
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+    canvas.drawLine(
+      Offset(dx, plot.top),
+      Offset(dx, plot.bottom),
+      Paint()
+        ..color = color
+        ..strokeWidth = 1.2,
+    );
+    for (final slot in const [0, 1]) {
+      final value = chart.speedAt(slot, at);
+      if (value == null) continue;
+      final point = Offset(
+        dx,
+        plot.bottom - (value - low) / (high - low) * plot.height,
+      );
+      canvas.drawCircle(point, 3.5, Paint()..color = color);
+      canvas.drawCircle(point, 2, Paint()..color = _lapColor(slot));
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(SegmentSpeedCursorPainter old) =>
+      !identical(old.chart, chart) ||
+      old.cursor != cursor ||
+      old.color != color;
 }
 
 /// The chart's key: both laps' lines with their names and every marker.

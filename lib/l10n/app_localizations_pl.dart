@@ -13,6 +13,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appTitle => 'FlappedEar Telemetry';
 
   @override
+  String get mapTilesUnavailable =>
+      'Tło mapy wymaga połączenia z internetem; ślad jest rysowany bez niego.';
+
+  @override
   String get directionClockwise => 'Zgodnie z ruchem wskazówek zegara';
 
   @override
@@ -5343,6 +5347,17 @@ class AppLocalizationsPl extends AppLocalizations {
   String lastTimeHereThenToday(String then, String today) {
     return '$then poprzednio · $today dziś';
   }
+
+  @override
+  String get lastTimeHereCorners => 'Strata czasu na zakrętach';
+
+  @override
+  String get lastTimeHereCornersNote =>
+      'Okrążenia każdego dnia porównane z najszybszym przejazdem tego dnia przez zakręt, uśrednione po jego sesjach: mniejszy czas oznacza równiejszy dzień w tym miejscu, a nie szybszy zakręt. Początek i koniec zakrętu mogą się nieco różnić między dniami. Pokazane są tylko zakręty zmierzone w oba dni.';
+
+  @override
+  String get lastTimeHereCornersNone =>
+      'Strata czasu na zakrętach: żaden zakręt nie został zmierzony w oba dni.';
 
   @override
   String get settingsUpdatesHeading => 'Aktualizacje';
