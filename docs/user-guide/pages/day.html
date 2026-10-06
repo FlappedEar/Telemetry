@@ -58,7 +58,7 @@
 <p>If the suggestions could not be prepared, the card says why; <strong>Calculate again</strong> tries once more.</p>
 
 <h2 id="groups">Compared laps (groups)</h2>
-<p>Laps are only ranked against laps driven on the same layout, in the same direction, with the same start/finish line. The app forms these groups by itself. Under the best lap a line such as <em>Group 1 · Detected route · Counterclockwise · 15 of 15 laps ranked</em> says which group the page shows.</p>
+<p>Laps are only ranked against laps driven on the same layout, in the same direction, with the same start/finish line. The app forms these groups by itself. Under the best lap a line such as <em>Group 1 · Autodrom Jastrząb · Counterclockwise · 15 of 15 laps ranked</em> says which group the page shows. The circuit's name comes from where the route starts (see <a href="#circuit-names">Circuit names</a>); where no circuit is known, the line says <em>Detected route</em>.</p>
 <p>When the day has more than one group (for example two layouts), a <strong>Compared laps</strong> menu lets you pick one. The whole page then follows that group.</p>
 
 <h2 id="analysis">The analysis cards</h2>
@@ -123,6 +123,14 @@
   <li><strong>Save</strong> regroups the day. <strong>Use the detected route</strong> removes your setting again.</li>
 </ul>
 <p>Use this when a session was put in the wrong group, or its direction is unknown.</p>
+
+<h3 id="circuit-names">Circuit names</h3>
+<p>The app names a circuit by itself from the session's GPS: it looks up where the route's start/finish line is in its circuit list, and a circuit whose centre is within about 2 km (1.5 km for a circuit you add; the nearest, when there are several) gives the route its name. The name shows in the Circuits rows, the group line, the day report and, for a new track, in your <a href="profile.html#cars">profile</a>. In the <strong>Circuit of Session N</strong> dialog, under the detected route, a line says <em>Circuit: Autodrom Jastrząb</em>, or <em>This place is not in the circuit list.</em></p>
+<ul>
+  <li><strong>Name this circuit…</strong> gives the circuit at this place your own name, or adds a circuit the list does not have. Your name is used for every day driven there and is kept on this device. It does not change the layout name above, nor how laps are grouped. Where a circuit from the list is found, this renames that circuit, so check that the name the line shows is the place you drove; a circuit of your own cannot be added within reach of a listed one.</li>
+  <li>In <strong>Settings</strong>, <strong>Circuits</strong> shows how many circuits the list holds and lists <strong>Your circuit names</strong>; the bin button forgets one (a renamed circuit gets its listed name back). <strong>Update the circuit list</strong> fetches the newest list at once.</li>
+</ul>
+<p>The circuit list ships with the app and is updated from GitHub together with the app's update check (see <a href="install.html#updates">Updates</a>), at most once a day; nothing about your sessions is sent. Circuit names and positions come from <a href="https://www.wikidata.org">Wikidata</a> (CC0, public domain). A name in Wikidata can be in the circuit's own language.</p>
 
 <h3 id="combined">VBO and RCZ of one session</h3>
 <p>When a session has both a VBO and an RCZ of the same drive, the app lines up the two recordings' clocks by their speed traces and combines them by itself, with nothing to confirm. The results show from the VBO straight away; meanwhile the Circuits row says <em>Lining up with its RCZ…</em>, and the combined channels appear when that is done (a few seconds per session):</p>

@@ -5353,7 +5353,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsUpdateHelp =>
-      'Przy uruchomieniu, najwyżej raz dziennie, aplikacja pyta GitHub o swoje najnowsze wydanie. Żadne Twoje zapisy ani ustawienia nie są wysyłane.';
+      'Przy uruchomieniu, najwyżej raz dziennie, aplikacja pyta GitHub o swoje najnowsze wydanie i listę torów. Żadne Twoje zapisy ani ustawienia nie są wysyłane.';
 
   @override
   String get settingsUpdateCheckNow => 'Sprawdź aktualizacje';
@@ -5563,4 +5563,62 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String trackDialogCircuit(String name) {
+    return 'Tor: $name';
+  }
+
+  @override
+  String get trackDialogCircuitUnknown =>
+      'Tego miejsca nie ma na liście torów.';
+
+  @override
+  String get trackDialogNameCircuit => 'Nazwij ten tor…';
+
+  @override
+  String get circuitNameTitle => 'Nazwa toru';
+
+  @override
+  String get circuitNameHelp =>
+      'Pokazywana dla każdego dnia na tym torze. Zapisana na tym urządzeniu.';
+
+  @override
+  String get settingsCircuitsHeading => 'Tory';
+
+  @override
+  String settingsCircuitsCount(int count) {
+    return 'Torów na liście: $count';
+  }
+
+  @override
+  String get settingsCircuitsHelp =>
+      'Tor trasy jest rozpoznawany po miejscu jej startu. Lista pochodzi z Wikidata (CC0) i jest aktualizowana razem ze sprawdzaniem aktualizacji aplikacji.';
+
+  @override
+  String get settingsCircuitsUpdate => 'Zaktualizuj listę torów';
+
+  @override
+  String get settingsCircuitsUpdated => 'Lista torów została zaktualizowana.';
+
+  @override
+  String get settingsCircuitsUpToDate => 'Lista torów jest aktualna.';
+
+  @override
+  String get settingsCircuitsFailed =>
+      'Nie udało się pobrać listy torów. Sprawdź połączenie i spróbuj ponownie.';
+
+  @override
+  String get settingsCircuitsMine => 'Twoje nazwy torów';
+
+  @override
+  String settingsCircuitsRenamed(String name) {
+    return 'Na liście: $name';
+  }
+
+  @override
+  String get settingsCircuitsAdded => 'Dodany przez Ciebie';
+
+  @override
+  String get settingsCircuitsForget => 'Usuń tę nazwę';
 }
