@@ -44,6 +44,7 @@ export 'src/day/day_fusion.dart';
 export 'src/day/run_primary.dart';
 export 'src/day/day_recovery.dart';
 export 'src/day/day_relink.dart';
+export 'src/day/day_removal.dart';
 export 'src/day/day_report.dart';
 export 'src/day/day_segment_remeasure.dart';
 export 'src/day/day_segment_review.dart';

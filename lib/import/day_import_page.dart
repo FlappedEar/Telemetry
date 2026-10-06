@@ -1109,6 +1109,7 @@ class _DayImportPageState extends State<DayImportPage> {
       builder: (context) => LibraryPage(
         library: library,
         open: (path) => Navigator.of(context).pop(path),
+        closeDay: _closeDeletedDay,
       ),
     );
     _libraryRoute = route;
@@ -1142,6 +1143,28 @@ class _DayImportPageState extends State<DayImportPage> {
     } else {
       await _openDay(chosen);
     }
+  }
+
+  /// Lets go of day [eventId] before the library deletes it (FET-241): the
+  /// day kept for the Day place is closed without its unsaved changes, and
+  /// its recovery snapshot is cleared, so nothing saves or offers it again.
+  Future<bool> _closeDeletedDay(String eventId) async {
+    // The library is never shown over a day; refused should it be.
+    if (_shownDay?.eventId == eventId) return false;
+    if (_keptDay case final kept? when kept.eventId == eventId) {
+      _dropKept(discard: true);
+      _syncNav();
+    }
+    final recovered = await queueRecovery(widget.recovery.load);
+    if (recovered?.eventId == eventId) {
+      await queueRecovery(widget.recovery.clear);
+    }
+    if (!mounted) return true;
+    setState(() {
+      if (_recovered?.eventId == eventId) _recovered = null;
+      if (_lastDay?.eventId == eventId) _lastDay = null;
+    });
+    return true;
   }
 
   // Built outside the state so the isolate's closure holds only the path.

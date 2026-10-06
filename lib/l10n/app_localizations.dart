@@ -8834,6 +8834,156 @@ abstract class AppLocalizations {
   /// **'No other session to compare with'**
   String get summaryOnlySession;
 
+  /// Button in a session's details dialog that removes the session from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove session'**
+  String get removeSession;
+
+  /// Day page menu item that chooses a session to remove from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove a session…'**
+  String get removeSessionMenu;
+
+  /// Title of the dialog choosing the session to remove from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove which session?'**
+  String get removeSessionChoose;
+
+  /// Title of the dialog confirming that a session leaves the day. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {session}?'**
+  String removeSessionTitle(String session);
+
+  /// Body of the dialog confirming that a session leaves the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Its laps leave the day: the best lap, the theoretical best, the coach and your profile are worked out again without them. The recording file itself is not deleted.'**
+  String get removeSessionBody;
+
+  /// Button that confirms removing a session from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeSessionConfirm;
+
+  /// Said when the user tries to remove the day's only session.
+  ///
+  /// In en, this message translates to:
+  /// **'A day keeps at least one session. To remove the whole day, delete it in the Library.'**
+  String get removeSessionLast;
+
+  /// Said when a session cannot be removed while recordings are being added or checked.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the day has finished saving or working on its recordings, then try again.'**
+  String get removeSessionBusy;
+
+  /// Said when the save before removing a session failed or was cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be saved, so the session was not removed.'**
+  String get removeSessionNotSaved;
+
+  /// Said when the day changed while a session was being removed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day changed meanwhile, so the session was not removed. Try again.'**
+  String get removeSessionChangedMeanwhile;
+
+  /// Said when removing a session failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The session was not removed: {error}'**
+  String removeSessionFailed(String error);
+
+  /// Said after a session was removed from the day. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} removed from the day.'**
+  String sessionRemoved(String session);
+
+  /// Action on the message after removing a session that puts it back.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get sessionRemovedUndo;
+
+  /// Said after Undo put a removed session back. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} is back in the day.'**
+  String sessionRestored(String session);
+
+  /// Said when Undo cannot put a removed session back because the day changed since.
+  ///
+  /// In en, this message translates to:
+  /// **'The day changed since, so the session cannot be put back.'**
+  String get sessionRestoreRefused;
+
+  /// Tooltip of the menu on a day in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Day actions'**
+  String get libraryDayActions;
+
+  /// Menu item on a day in the library that deletes the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete day'**
+  String get libraryDeleteDay;
+
+  /// Title of the dialog confirming that a day is deleted. day is the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {day}?'**
+  String libraryDeleteDayTitle(String day);
+
+  /// Body of the dialog confirming that a day is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The day and its session leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.} other{The day and its {count} sessions leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.}}'**
+  String libraryDeleteDayBody(int count);
+
+  /// Button that confirms deleting a day.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get libraryDeleteConfirm;
+
+  /// Said after a day was deleted from the library. day is the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} deleted.'**
+  String libraryDayDeleted(String day);
+
+  /// Said when deleting a day failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day was not deleted: {error}'**
+  String libraryDayDeleteFailed(String error);
+
+  /// Added to the dialog confirming that a session leaves the day when the day's corners (segments) were measured on that session.
+  ///
+  /// In en, this message translates to:
+  /// **'If the day\'s corners were measured on this session, they are measured again on the best lap left, and names you gave them are lost.'**
+  String get removeSessionCorners;
+
+  /// Said when removing a session would leave only sessions whose recordings cannot be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'None of the other sessions\' recordings can be opened, so the day would have nothing to show. The session was not removed.'**
+  String get removeSessionNothingLeft;
+
+  /// Said when a day cannot be deleted from the library because it is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the day first, then delete it.'**
+  String get libraryDeleteDayOpen;
+
   /// Heading of the driver's own goals on the Next session card.
   ///
   /// In en, this message translates to:

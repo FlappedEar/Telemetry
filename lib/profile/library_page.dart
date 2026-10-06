@@ -10,15 +10,22 @@ import 'profile_bundle_pickers.dart';
 import 'profile_library.dart';
 
 /// Every day kept in the driver profile, as Car > Year > Track > Date >
-/// sessions. Tapping a day opens it with [open]. Its menu exports the
-/// profile to one file and imports one exported on another device.
+/// sessions. Tapping a day opens it with [open]; each day's menu moves it
+/// to another car or deletes it. The page's menu exports the profile to one
+/// file and imports one exported on another device.
 class LibraryPage extends StatefulWidget {
   const LibraryPage({
     super.key,
     required this.library,
     required this.open,
     this.pickers = const PlatformProfileBundlePickers(),
+    this.closeDay,
   });
+
+  /// Closes the day of the event id given wherever the app keeps it open,
+  /// before it is deleted, so nothing saves it again; false when it is
+  /// shown and cannot be closed.
+  final Future<bool> Function(String eventId)? closeDay;
 
   final ProfileLibrary library;
 
@@ -214,6 +221,55 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
+  /// Deletes [day] once the driver confirms: see [ProfileLibrary.deleteDay].
+  Future<void> _deleteDay(ProfileDay day) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.libraryDeleteDayTitle(day.name)),
+        content: Text(l10n.libraryDeleteDayBody(day.sessions.length)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            key: const ValueKey('libraryDeleteDayConfirm'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.libraryDeleteConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _working = l10n.libraryDeleteDay);
+    try {
+      if (!(await widget.closeDay?.call(day.eventId) ?? true)) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.libraryDeleteDayOpen)),
+        );
+        return;
+      }
+      await widget.library.deleteDay(day.eventId);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.libraryDayDeleted(day.name))),
+      );
+    } on Object catch (error) {
+      debugPrint('Day not deleted: $error');
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.libraryDayDeleteFailed('$error'))),
+      );
+    } finally {
+      if (mounted) setState(() => _working = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -377,14 +433,42 @@ class _LibraryPageState extends State<LibraryPage> {
         ].join(' · '),
       ),
       onTap: path == null ? null : () => widget.open(path),
-      trailing: IconButton(
-        tooltip: l10n.libraryChangeCar,
-        icon: const Icon(Icons.swap_horiz),
-        onPressed: () => _chooseCar(profile, day),
+      trailing: PopupMenuButton<_DayAction>(
+        key: ValueKey('libraryDayMenu-${day.eventId}'),
+        tooltip: l10n.libraryDayActions,
+        enabled: _working == null,
+        onSelected: (action) => switch (action) {
+          _DayAction.changeCar => _chooseCar(profile, day),
+          _DayAction.delete => _deleteDay(day),
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            key: const ValueKey('libraryChangeCar'),
+            value: _DayAction.changeCar,
+            child: ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: Text(l10n.libraryChangeCar),
+            ),
+          ),
+          PopupMenuItem(
+            key: const ValueKey('libraryDeleteDay'),
+            value: _DayAction.delete,
+            child: ListTile(
+              leading: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(l10n.libraryDeleteDay),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+/// What a day's menu in the library does.
+enum _DayAction { changeCar, delete }
 
 /// Asks for a name; pops it, or null when cancelled.
 class _NameDialog extends StatefulWidget {

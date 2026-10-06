@@ -129,6 +129,64 @@ void main() {
     );
 
     test(
+      'deletes a day with the recording copies only it uses (FET-241)',
+      () async {
+        // A copy the profile holds, and a recording of the driver's own.
+        final copy = p.join(profileFolder(), 'Recordings', 'a.vbo');
+        File(copy)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(circuitVbo([30, 28, 31]));
+        final own = p.join(directory.path, 'b.vbo');
+        File(own).writeAsStringSync(circuitVbo([29, 32]));
+        final outcome = runDayImport((
+          paths: [copy, own],
+          includeSubfolders: false,
+        ));
+        final shelf = library();
+        final path = (await shelf.dayPath('e1'))!;
+        File(path).writeAsStringSync(
+          jsonEncode(
+            dayDocument(
+              eventId: 'e1',
+              name: 'Day',
+              runs: outcome.runs,
+              analysis: outcome.analysis!,
+              projectPath: path,
+            ),
+          ),
+        );
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        expect(shelf.profile!.day('e1'), isNotNull);
+
+        final deleted = (await shelf.deleteDay('e1'))!;
+        await shelf.flush();
+        expect(deleted.recordings, 1);
+        expect(File(copy).existsSync(), isFalse);
+        expect(File(own).existsSync(), isTrue);
+        expect(File(path).existsSync(), isFalse);
+        expect(shelf.profile!.day('e1'), isNull);
+
+        // A page that still held the day does not list it again.
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        expect(shelf.profile!.day('e1'), isNull);
+        // Nor does the app started again.
+        final again = library();
+        await again.load();
+        expect(again.profile!.day('e1'), isNull);
+      },
+    );
+
+    test(
       'records a day saved in the profile and writes a profile that reads back',
       () async {
         final outcome = importDay({
@@ -1017,7 +1075,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Jastrząb'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Change car'));
+      await tester.tap(find.byTooltip('Day actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Change car'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('libraryNewCar')));
       await tester.pumpAndSettle();
@@ -1037,6 +1097,64 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('libraryDay-e1')));
       expect(opened, [p.join(profileFolder(), 'Days', 'e1.fetproject')]);
       await shelf.flush();
+    });
+
+    testWidgets('deletes a day once confirmed (FET-241)', (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      late String path;
+      await (() async {
+        path = (await shelf.dayPath('e1'))!;
+        File(path).writeAsStringSync('{}');
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Test day',
+          analysis: outcome.analysis!,
+        );
+      })();
+      final closed = <String>[];
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(
+            library: shelf,
+            open: (_) {},
+            closeDay: (eventId) async {
+              closed.add(eventId);
+              return true;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Cancelled: nothing changes.
+      await tester.tap(find.byTooltip('Day actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete day'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete Test day?'), findsOneWidget);
+      expect(find.textContaining('its 2 sessions'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('libraryDay-e1')), findsOneWidget);
+      expect(closed, isEmpty);
+
+      await tester.tap(find.byTooltip('Day actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete day'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryDeleteDayConfirm')));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(closed, ['e1']);
+      expect(find.byKey(const ValueKey('libraryDay-e1')), findsNothing);
+      expect(find.text('Test day deleted.'), findsOneWidget);
+      expect(shelf.profile!.day('e1'), isNull);
+      expect(File(path).existsSync(), isFalse);
     });
 
     testWidgets('says the library cannot be used once it is read', (

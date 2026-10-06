@@ -823,6 +823,19 @@ DriverProfile addDayToProfile(
   );
 }
 
+/// [profile] without day [eventId]: its sessions and their numbers leave
+/// every total and record (FET-241). Cars and tracks stay. The same
+/// [profile] when it has no such day.
+DriverProfile removeProfileDay(DriverProfile profile, String eventId) =>
+    profile.day(eventId) == null
+    ? profile
+    : profile._copy(
+        days: [
+          for (final day in profile.days)
+            if (day.eventId != eventId) day,
+        ],
+      );
+
 /// [profile] with a new car named [name]; the car is the last element of
 /// the result's [DriverProfile.cars].
 DriverProfile addProfileCar(DriverProfile profile, String name, {Random? random}) {

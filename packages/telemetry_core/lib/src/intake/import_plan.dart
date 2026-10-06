@@ -514,12 +514,15 @@ bool sameDriveInOtherFormat(
 typedef NamedRun = ({TelemetryRunProposal run, String name});
 
 /// Names [primaries] "Session N" in recording-time order, continuing after
-/// [existingRuns] runs already in the day. A run without a recording clock
-/// follows the dated ones, in the given order. Names are meant to be stored,
-/// so they never renumber.
+/// [existingRuns] runs already in the day and skipping [takenNames], the
+/// names the day's sessions have (a day with a session removed, FET-241,
+/// has fewer sessions than its highest number). A run without a recording
+/// clock follows the dated ones, in the given order. Names are meant to be
+/// stored, so they never renumber.
 List<NamedRun> nameRunsInRecordingOrder(
   List<TelemetryRunProposal> primaries, {
   int existingRuns = 0,
+  Iterable<String> takenNames = const [],
 }) {
   final order = List.generate(primaries.length, (index) => index);
   final starts = [for (final run in primaries) recordingTimestamp(run.telemetry)];
@@ -529,8 +532,17 @@ List<NamedRun> nameRunsInRecordingOrder(
     if (a != null && b != null && a != b) return a.compareTo(b);
     return left.compareTo(right); // stable
   });
+  final taken = {...takenNames};
   var number = existingRuns;
-  return [for (final index in order) (run: primaries[index], name: 'Session ${++number}')];
+  String next() {
+    var name = 'Session ${++number}';
+    while (taken.contains(name)) {
+      name = 'Session ${++number}';
+    }
+    return name;
+  }
+
+  return [for (final index in order) (run: primaries[index], name: next())];
 }
 
 /// Guards background results (AGENTS.md: "Background work"). Each [begin]
