@@ -135,6 +135,11 @@ final class FusedChannel {
   /// than the tolerance above the overlap's lowest value) that are far off;
   /// 0 with fewer than 10 such samples.
   double activeFractionOverTolerance = 0.0;
+
+  /// Whether the source in [comparedSourceId] disagrees with the primary.
+  /// With several alternatives it is the first that disagrees (FET-208),
+  /// which can be another source than the one a rule merged: the rule stays,
+  /// and only [rule] `unresolvedConflict` asks for a decision.
   bool conflicting = false;
 }
 
