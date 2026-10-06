@@ -6483,4 +6483,25 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get changesTitleNone => 'Zmiany na odcinkach';
+
+  @override
+  String get cornerPhasesTitle => 'Skąd wziął się czas';
+
+  @override
+  String get cornerPhaseEntry => 'Wejście';
+
+  @override
+  String get cornerPhaseMiddle => 'Środek';
+
+  @override
+  String get cornerPhaseExit => 'Wyjście';
+
+  @override
+  String get cornerPhasesNote =>
+      'Wejście trwa do miejsca, w którym zakręt jest najciaśniejszy, środek obejmuje tę część, a wyjście sięga do końca zakrętu. Podział wynika z kształtu toru, więc oba okrążenia są mierzone na tych samych metrach, a trzy czasy sumują się do czasu zakrętu.';
+
+  @override
+  String cornerPhasesUnavailable(String reason) {
+    return 'Nie podzielono: $reason';
+  }
 }

@@ -76,6 +76,15 @@ void main() {
       expect(result.corners[0].laps.first.$2.braking.unavailableReason, brakingNoneDetected);
     });
 
+    test('a corner whose tightest part cannot be told is not split, and says why '
+        '(FET-221)', () {
+      // The rectangle's corners turn in steps: more than one tight part.
+      expect(corner.phaseSplit.unavailableReason, cornerPhaseMultipleApexes);
+      final comparison = corner.compare(row(1).reference)!;
+      expect(comparison.phases.unavailableReason, cornerPhaseMultipleApexes);
+      expect(comparison.phaseDeltas, isNull);
+    });
+
     test('compares a lap with the best lap and the best of the group', () {
       expect(corner.bestLap!.lapNumber, 2);
       final comparison = corner.compare(row(1).reference)!;

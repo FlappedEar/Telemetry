@@ -9318,6 +9318,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Segment changes'**
   String get changesTitleNone;
+
+  /// Corner details: heading over the corner split into entry, middle and exit (FET-221).
+  ///
+  /// In en, this message translates to:
+  /// **'Where the time came from'**
+  String get cornerPhasesTitle;
+
+  /// Corner details: from the corner's start to where it is tightest.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry'**
+  String get cornerPhaseEntry;
+
+  /// Corner details: through the corner's tightest part.
+  ///
+  /// In en, this message translates to:
+  /// **'Middle'**
+  String get cornerPhaseMiddle;
+
+  /// Corner details: from the end of the tightest part to the corner's end.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get cornerPhaseExit;
+
+  /// Corner details: how the corner is split.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry runs to where the corner is tightest, the middle through that part, and the exit to the corner\'s end. The split comes from the track\'s shape, so both laps are timed over the same metres, and the three add up to the corner\'s time.'**
+  String get cornerPhasesNote;
+
+  /// Corner details: the corner could not be split into entry, middle and exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Not split: {reason}'**
+  String cornerPhasesUnavailable(String reason);
 }
 
 class _AppLocalizationsDelegate

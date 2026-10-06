@@ -1521,5 +1521,11 @@
   "changesSame": "W granicach {threshold} s względem: {session}",
   "changesTypical": "Typowo {now} ({session}: {before})",
   "changesSpread": "Rozrzut {now} s ({session}: {before} s)",
-  "changesTitleNone": "Zmiany na odcinkach"
+  "changesTitleNone": "Zmiany na odcinkach",
+  "cornerPhasesTitle": "Skąd wziął się czas",
+  "cornerPhaseEntry": "Wejście",
+  "cornerPhaseMiddle": "Środek",
+  "cornerPhaseExit": "Wyjście",
+  "cornerPhasesNote": "Wejście trwa do miejsca, w którym zakręt jest najciaśniejszy, środek obejmuje tę część, a wyjście sięga do końca zakrętu. Podział wynika z kształtu toru, więc oba okrążenia są mierzone na tych samych metrach, a trzy czasy sumują się do czasu zakrętu.",
+  "cornerPhasesUnavailable": "Nie podzielono: {reason}"
 }

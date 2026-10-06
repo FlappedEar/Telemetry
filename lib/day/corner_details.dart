@@ -33,7 +33,8 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       exitFollowsGap => l10n.cornerDetailsReasonAfterGap,
       exitTruncated => l10n.cornerDetailsReasonCutAtLapEnd,
       // Shared by several analyses.
-      analyzerIncompleteCoverage => l10n.cornerDetailsReasonNotCovered,
+      analyzerIncompleteCoverage ||
+      cornerPhaseTimesNotTimed => l10n.cornerDetailsReasonNotCovered,
       cornerPhaseCrossesGate => l10n.cornerDetailsReasonCrossesGate,
       exitUnitMismatch => l10n.cornerDetailsReasonUnitNotSupported,
       exitUnitUndeclared => l10n.cornerDetailsReasonUnitNotRecorded,
@@ -62,6 +63,9 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       drivingStateUnknownReason => l10n.cornerDetailsReasonDrivingStateUnknown,
       _ => l10n.cornerDetailsReasonNotAvailable,
     };
+
+String _seconds(double? value) =>
+    value == null ? '—' : '${value.toStringAsFixed(2)}\u00a0s';
 
 String _speed(double? value) => value == null ? '—' : value.toStringAsFixed(1);
 
@@ -376,6 +380,63 @@ class CornerDetails extends StatelessWidget {
           note: pickupNote(),
           key: const ValueKey('cornerPickup'),
         ),
+        const Divider(),
+        // Where the corner's time came from (FET-221): the same metres on
+        // both laps, split by the track's shape.
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            l10n.cornerPhasesTitle,
+            key: const ValueKey('cornerPhasesTitle'),
+            style: theme.textTheme.titleSmall,
+          ),
+        ),
+        if (comparison.phases.valid) ...[
+          for (final (key, label, own, best, delta) in [
+            (
+              'cornerPhaseEntry',
+              l10n.cornerPhaseEntry,
+              comparison.phases.entry,
+              comparison.bestLapPhases.entry,
+              comparison.phaseDeltas?.entry,
+            ),
+            (
+              'cornerPhaseMiddle',
+              l10n.cornerPhaseMiddle,
+              comparison.phases.mid,
+              comparison.bestLapPhases.mid,
+              comparison.phaseDeltas?.mid,
+            ),
+            (
+              'cornerPhaseExit',
+              l10n.cornerPhaseExit,
+              comparison.phases.exit,
+              comparison.bestLapPhases.exit,
+              comparison.phaseDeltas?.exit,
+            ),
+          ])
+            row(
+              label,
+              _seconds(own),
+              _seconds(best),
+              _signed(delta, 2, '\u00a0s'),
+              key: ValueKey(key),
+            ),
+          Text(
+            l10n.cornerPhasesNote,
+            key: const ValueKey('cornerPhasesNote'),
+            style: theme.textTheme.bodySmall,
+          ),
+        ] else
+          Padding(
+            key: const ValueKey('cornerPhasesReason'),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text(
+              l10n.cornerPhasesUnavailable(
+                cornerReasonText(l10n, comparison.phases.unavailableReason),
+              ),
+            ),
+          ),
         const SizedBox(height: 12),
         Text(
           l10n.cornerDetailsBestOfLaps(corner.laps.length),
