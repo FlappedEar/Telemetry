@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:telemetry/circuits/circuit_directory.dart';
 import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_page.dart';
@@ -91,6 +92,10 @@ void main() {
     // The check for a newer release stays off GitHub, so its message never
     // covers what a later test taps.
     appUpdater = AppUpdater(checker: UpdateChecker.off());
+    // Nor is the circuit list fetched.
+    circuitDirectory = CircuitDirectory(
+      fetch: (uri, maximum) async => throw const SocketException('off'),
+    );
     // main() loads the settings before runApp; without the await,
     // pumpAndSettle can return before the app has been built.
     await app.main();

@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../app/app_navigation.dart';
+import '../circuits/circuit_directory.dart';
 import '../diagnostics/diagnostics_page.dart';
 import '../format.dart';
 import '../import/day_import_page.dart'
@@ -200,10 +201,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   void _coachChanged() => setState(() {});
 
+  // The circuits that name routes, as they were when the page opened.
+  final CircuitDirectory _circuits = circuitDirectory;
+
+  void _circuitsChanged() => setState(() {});
+
   @override
   void initState() {
     super.initState();
     _coach.addListener(_coachChanged);
+    _circuits.addListener(_circuitsChanged);
+    _circuits.load();
     _controller.addListener(_reportAddition);
     _controller.addListener(_libraryChanged);
     _startLibrary();
@@ -226,6 +234,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _summaryScroll.dispose();
     _coachScroll.dispose();
     _coach.removeListener(_coachChanged);
+    _circuits.removeListener(_circuitsChanged);
     if (widget.coach == null) _coach.dispose();
     if (widget.disposesController?.call() ?? true) _controller.dispose();
     super.dispose();
@@ -434,17 +443,23 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ? const SizedBox.shrink()
       : ListenableBuilder(
           listenable: _controller,
-          builder: (context, _) => DayReportPage(
-            key: const ValueKey('dayResultsReport'),
-            embedded: true,
-            report: _controller.dayReportDocument,
-            onOpenLap: (reference) {
-              final row = _controller.lapRow(reference);
-              if (row != null) _open(row);
-            },
-            onShare: _shareReport,
-            shareEnabled: !_controller.coachLoading,
-          ),
+          builder: (context, _) {
+            final report = _controller.dayReportDocument;
+            return DayReportPage(
+              key: const ValueKey('dayResultsReport'),
+              embedded: true,
+              report: report,
+              circuitName: _groupCircuitName(
+                report['groupId'] as String? ?? '',
+              ),
+              onOpenLap: (reference) {
+                final row = _controller.lapRow(reference);
+                if (row != null) _open(row);
+              },
+              onShare: _shareReport,
+              shareEnabled: !_controller.coachLoading,
+            );
+          },
         );
 
   bool _sharingReport = false;
@@ -456,9 +471,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final l10n = context.l10n;
     try {
       final best = _controller.ranking?.bestOfDay;
+      final report = _controller.dayReportDocument;
       final outcome = await shareDayReport(
         context,
-        report: _controller.dayReportDocument,
+        report: report,
+        circuitName: _groupCircuitName(report['groupId'] as String? ?? ''),
         title: _controller.name,
         sharer: widget.reportSharer,
         origin: origin,
@@ -1695,7 +1712,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     for (final candidate in analysis.groups) {
       if (candidate.runIds.contains(runId)) group = candidate;
     }
-    final layout = _layout(configuration);
+    final layout = _layout(configuration, [runId]);
     final direction = configuration.direction == null
         ? l10n.directionUnknown
         : l10n.direction(configuration.direction!);
@@ -1704,12 +1721,29 @@ class _DayResultsPageState extends State<DayResultsPage> {
         '${group == null ? '' : ' · ${_groupLabel(group).split(' · ').first}'}';
   }
 
-  String _layout(TrackConfiguration configuration) =>
+  /// The layout's name: the user's, else the name of the circuit the route
+  /// of [runIds] starts on, else "Detected route".
+  String _layout(TrackConfiguration configuration, Iterable<String> runIds) =>
       configuration.layoutId == null
       ? context.l10n.circuitNotIdentifiedShort
       : configuration.detectedRoute
-      ? context.l10n.detectedRoute
+      ? _circuitName(runIds) ?? context.l10n.detectedRoute
       : configuration.layoutId!;
+
+  /// The name of the circuit the route of [runIds] starts on; null when
+  /// none is known there.
+  String? _circuitName(Iterable<String> runIds) =>
+      _circuits.find(routeStart(_controller.analysis, runIds))?.name;
+
+  /// The circuit name of the group [groupId] of a detected route.
+  String? _groupCircuitName(String groupId) {
+    for (final group in _controller.analysis.groups) {
+      if (group.id == groupId && group.configuration.detectedRoute) {
+        return _circuitName(group.runIds);
+      }
+    }
+    return null;
+  }
 
   /// A group's label in the app's language, built as `telemetry_core`
   /// builds `DayGroup.label`: resolved groups are numbered in order.
@@ -1732,7 +1766,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         groups.where((other) => other.resolved).toList().indexOf(group) + 1;
     return l10n.circuitGroup(
       number,
-      _layout(group.configuration),
+      _layout(group.configuration, group.runIds),
       l10n.direction(direction),
     );
   }

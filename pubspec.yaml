@@ -89,6 +89,9 @@ flutter:
     - assets/fonts/OFL-JetBrainsMono.txt
     # The logo beside the app's name on the start page.
     - assets/branding/splash-logo.png
+    # The circuit list (Wikidata, CC0 1.0); tool/circuits/update_circuits.dart
+    # rebuilds it, and the app fetches the copy on main (lib/circuits/).
+    - assets/circuits/circuits.json
 
   # Sora and JetBrains Mono, SIL Open Font License 1.1: assets/fonts/OFL-*.txt.
   fonts:
