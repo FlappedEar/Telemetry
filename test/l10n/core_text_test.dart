@@ -79,6 +79,14 @@ final List<_Row> _rows = [
     _vbo('VBO contains no valid timestamped data rows.'),
     (l) => l.coreVboNoValidRows,
   ),
+  (
+    _vboParser,
+    "'VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.'",
+    _vbo(
+      'VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.',
+    ),
+    (l) => l.coreVboNoTimeColumn,
+  ),
   for (final (path, text, polish) in <(String, String, _Text)>[
     (
       _vboFile,

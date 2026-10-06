@@ -6702,6 +6702,10 @@
   "@coreVboNoValidRows": {
     "description": "No data row of a VBO recording has a usable time."
   },
+  "coreVboNoTimeColumn": "VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.",
+  "@coreVboNoTimeColumn": {
+    "description": "A VBO recording has no column holding the time of each row, so it is refused."
+  },
   "coreVboFileSize": "VBO exceeds the supported 128 MiB file size limit.",
   "@coreVboFileSize": {
     "description": "A VBO recording is too large to read."
