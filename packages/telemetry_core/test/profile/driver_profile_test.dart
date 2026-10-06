@@ -19,6 +19,7 @@ ProfileDayInput _day(
   String? trackName,
   Map<String, WeatherSummary?>? weather,
   Map<String, String> recordings = const {},
+  Map<String, ProfileSetup?>? setups,
 }) {
   final runs = [
     for (var index = 0; index < sessions; ++index)
@@ -53,6 +54,7 @@ ProfileDayInput _day(
         ),
       ),
     ),
+    setups: setups,
   );
 }
 
@@ -608,6 +610,148 @@ void main() {
       expect(jsonDecode(encodeDriverProfile(read)), json);
       final again = _add(read, _day('a'));
       expect(jsonDecode(encodeDriverProfile(again)), json);
+    });
+  });
+
+  group('session setup', () {
+    const bar = {
+      'version': runSetupVersion,
+      'pressureUnit': 'bar',
+      'coldPressure': {'fl': 2.1, 'fr': 2.1, 'rl': 2, 'rr': 2},
+      'hotPressure': {'fl': 2.45, 'rr': 2.3},
+      'tyre': 'Pirelli SC2',
+      'fuelStartLitres': 8.5,
+    };
+    Map<String, Object?> session(Map<String, Object?> json, [int index = 0]) =>
+        ((((json['days'] as List).single as Map<String, Object?>)['sessions'] as List)[index])
+            as Map<String, Object?>;
+
+    test('is kept as the run stores it and reads back', () {
+      final profile = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', setups: {'run1': ProfileSetup.of(bar), 'run2': null}),
+      );
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      expect(session(json)['setup'], bar);
+      expect(session(json, 1).containsKey('setup'), isFalse);
+      expect(json['version'], 1);
+      final read = decodeDriverProfile(encodeDriverProfile(profile));
+      final setup = read.day('a')!.sessions.first.setup!.setup;
+      expect(setup.pressureUnit, PressureUnit.bar);
+      expect(setup.cold, const WheelPressures(fl: 2.1, fr: 2.1, rl: 2, rr: 2));
+      expect(setup.hot, const WheelPressures(fl: 2.45, rr: 2.3));
+      expect(setup.tyre, 'Pirelli SC2');
+      expect(setup.fuelStartLitres, 8.5);
+      expect(read.day('a')!.sessions[1].setup, isNull);
+      expect(encodeDriverProfile(read), encodeDriverProfile(profile));
+    });
+
+    test('a RunSetup is stored as the day stores it', () {
+      final setup = RunSetup.fromJson(bar);
+      expect(ProfileSetup.ofSetup(setup)!.json, bar);
+      expect(ProfileSetup.ofSetup(setup)!.setup, setup);
+      expect(ProfileSetup.ofSetup(const RunSetup()), isNull);
+      expect(ProfileSetup.of({'version': runSetupVersion}), isNull);
+      expect(ProfileSetup.of('bar'), isNull);
+    });
+
+    test('invalid values read as not entered and are not refused', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      session(json)['setup'] = {
+        'version': runSetupVersion,
+        'pressureUnit': 'bar',
+        'coldPressure': {'fl': 9, 'fr': 'high', 'rl': 2.123, 'rr': 2},
+        'hotPressure': 'warm',
+        'tyre': 7,
+        'fuelStartLitres': -1,
+      };
+      session(json, 1)['setup'] = 'slicks';
+      final read = decodeDriverProfile(jsonEncode(json));
+      final setup = read.day('a')!.sessions.first.setup!.setup;
+      expect(setup.cold, const WheelPressures(rr: 2));
+      expect(setup.hot.isEmpty, isTrue);
+      expect(setup.tyre, '');
+      expect(setup.fuelStartLitres, isNull);
+      // Not an object: no setup, kept as it was.
+      expect(read.day('a')!.sessions[1].setup, isNull);
+      expect(jsonDecode(encodeDriverProfile(read)), json);
+    });
+
+    test('pressures without a unit are not entered', () {
+      final setup = ProfileSetup.of({
+        'coldPressure': {'fl': 2.1},
+      })!;
+      expect(setup.setup.cold.isEmpty, isTrue);
+      expect(setup.setup.pressureUnit, isNull);
+    });
+
+    test('keys this version does not know are kept, also on re-adding', () {
+      final profile = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', setups: {'run1': ProfileSetup.of(bar)}),
+      );
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      final stored = session(json)['setup'] as Map<String, Object?>;
+      stored['camber'] = {'fl': -2.5};
+      (stored['coldPressure'] as Map<String, Object?>)['spare'] = 2.0;
+      session(json, 1)['setup'] = {'version': 'session-setup-v9', 'wing': 3};
+      final read = decodeDriverProfile(jsonEncode(json));
+      expect(jsonDecode(encodeDriverProfile(read)), json);
+      expect(read.day('a')!.sessions[1].setup!.setup.readOnly, isTrue);
+      // Added again without setups (a day found in the days folder): kept.
+      final again = _add(read, _day('a'));
+      expect(jsonDecode(encodeDriverProfile(again)), json);
+    });
+
+    test('given setups replace the profile\'s, null clears, none given keeps', () {
+      var profile = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', setups: {'run1': ProfileSetup.of(bar), 'run2': ProfileSetup.of(bar)}),
+      );
+      // Not given: kept.
+      profile = _add(profile, _day('a'));
+      expect([for (final s in profile.day('a')!.sessions) s.setup?.json], [bar, bar]);
+      // Given: replaces; null and missing clear.
+      const psi = {
+        'version': runSetupVersion,
+        'pressureUnit': 'psi',
+        'coldPressure': {'fl': 30},
+      };
+      profile = _add(profile, _day('a', setups: {'run1': ProfileSetup.of(psi)}));
+      expect(profile.day('a')!.sessions.first.setup!.json, psi);
+      expect(profile.day('a')!.sessions[1].setup, isNull);
+      profile = _add(profile, _day('a', setups: {'run1': null}));
+      expect(profile.day('a')!.sessions.first.setup, isNull);
+    });
+
+    test('new weather, a replaced recording and new weather alone keep it', () {
+      var profile = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', setups: {'run1': ProfileSetup.of(bar)}),
+      );
+      profile = _add(profile, _day('a', recordings: {'run1': _runRevision(9)}));
+      expect(profile.day('a')!.sessions.first.setup!.json, bar);
+      profile = setProfileSessionWeather(profile, 'a', {'run1': ProfileWeather(temperatureC: 12)});
+      expect(profile.day('a')!.sessions.first.weather!.temperatureC, 12);
+      expect(profile.day('a')!.sessions.first.setup!.json, bar);
+      final withWeather = _day(
+        'a',
+        setups: {'run1': ProfileSetup.of(bar)},
+      ).withWeather({'run1': ProfileWeather(temperatureC: 14)});
+      expect(withWeather.setupsGiven, isTrue);
+      expect(withWeather.sessions.first.setup!.json, bar);
+    });
+
+    test('merging another profile brings the setup along', () {
+      final there = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', setups: {'run1': ProfileSetup.of(bar)}),
+      );
+      final merged = mergeDriverProfile(DriverProfile.empty(Random(2)), there);
+      expect(merged.added, ['a']);
+      expect(merged.profile.day('a')!.sessions.first.setup!.json, bar);
+      expect(merged.profile.day('a')!.sessions[1].setup, isNull);
     });
   });
 

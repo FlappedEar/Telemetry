@@ -240,8 +240,10 @@ class ProfileLibrary extends ChangeNotifier {
   /// profile: a new day takes the last car and its track is recognised
   /// by its route. With its [recordings] and [theoreticalBest], what each
   /// session measured, and with [weather] (by run id) each session's
-  /// weather ([ProfileDayInput.fromAnalysis]). Does nothing for a day saved
-  /// elsewhere.
+  /// weather ([ProfileDayInput.fromAnalysis]). With [setups] (by run id,
+  /// each run's setup as the day was saved), each session's setup, which
+  /// replaces the profile's; without it, the profile's are kept. Does
+  /// nothing for a day saved elsewhere.
   Future<void> recordDay({
     required String eventId,
     required String path,
@@ -250,6 +252,7 @@ class ProfileLibrary extends ChangeNotifier {
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
     Map<String, ProfileWeather?>? weather,
+    Map<String, ProfileSetup?>? setups,
   }) async {
     _keepWeather(eventId, weather);
     // A [flush] right after waits for the day being measured and written.
@@ -264,6 +267,7 @@ class ProfileLibrary extends ChangeNotifier {
         recordings: recordings,
         theoreticalBest: theoreticalBest,
         weather: weather,
+        setups: setups,
       );
     } finally {
       _measuring.remove(measured.future);
@@ -279,6 +283,7 @@ class ProfileLibrary extends ChangeNotifier {
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
     Map<String, ProfileWeather?>? weather,
+    Map<String, ProfileSetup?>? setups,
   }) async {
     if (!_loaded) await load();
     final folder = _folder;
@@ -300,6 +305,7 @@ class ProfileLibrary extends ChangeNotifier {
           recordings: recordings,
           theoreticalBest: theoreticalBest,
           weather: weather,
+          setups: setups,
         ),
       );
     } on Object catch (error) {
@@ -335,6 +341,7 @@ class ProfileLibrary extends ChangeNotifier {
     required Map<String, TelemetrySession?>? recordings,
     required DayTheoreticalBest? theoreticalBest,
     required Map<String, ProfileWeather?>? weather,
+    required Map<String, ProfileSetup?>? setups,
   }) =>
       () => ProfileDayInput.fromAnalysis(
         eventId: eventId,
@@ -345,6 +352,7 @@ class ProfileLibrary extends ChangeNotifier {
         recordings: recordings,
         theoreticalBest: theoreticalBest,
         weather: weather,
+        setups: setups,
       );
 
   /// Day [eventId]'s sessions with [weather] (by run id), as it arrives

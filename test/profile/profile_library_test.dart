@@ -734,6 +734,83 @@ void main() {
       await shelf.flush();
     });
 
+    testWidgets('a session setup reaches the library when the day is saved', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      await shelf.load();
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: writer,
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      final runId = controller.runs.first.run.id;
+      ProfileSession session() => shelf.profile!.days.single.sessions
+          .singleWhere((session) => session.runId == runId);
+      expect(session().setup, isNull);
+      expect(controller.runSetupWaitsForSave(runId), isFalse);
+
+      final setup = RunSetup(
+        pressureUnit: PressureUnit.bar,
+        cold: const WheelPressures(fl: 2.1, fr: 2.1),
+        tyre: 'Pirelli SC2',
+      );
+      expect(
+        controller.updateRunMetadata(
+          runId,
+          RunMetadata(name: controller.runs.first.name, setup: setup),
+        ),
+        isNull,
+      );
+      await tester.pump();
+      // Entered, not saved: the library still has none, and the page knows.
+      expect(controller.runSetupWaitsForSave(runId), isTrue);
+      expect(controller.savedRunSetup(runId), isNull);
+      expect(session().setup, isNull);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(controller.dirty, isFalse);
+      expect(controller.runSetupWaitsForSave(runId), isFalse);
+      expect(session().setup!.setup, setup);
+      expect(session().setup!.json, controller.savedRunSetup(runId));
+      // Cleared and saved: cleared in the library too.
+      expect(
+        controller.updateRunMetadata(
+          runId,
+          RunMetadata(name: controller.runs.first.name),
+        ),
+        isNull,
+      );
+      await tester.pump();
+      expect(
+        controller.runSetupWaitsForSave(runId),
+        isFalse,
+        reason: 'nothing entered waits for the save',
+      );
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(controller.dirty, isFalse);
+      expect(session().setup, isNull);
+    });
+
     testWidgets('without a library a new day waits for Save, as before', (
       tester,
     ) async {

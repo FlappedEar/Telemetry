@@ -21,6 +21,9 @@ documents; the profile never changes their format.
 - It also keeps a copy of each session's weather (`weather`), so the day page
   can compare a visit's weather with today's without opening the old day.
   The day document's `event.runs[].weather` stays the source.
+- And a copy of each session's setup as the day was saved (`setup`): tyre
+  pressures, tyre and fuel the driver entered. The day document's
+  `event.runs[].setup` stays the source.
 
 ## Format, version 1
 
@@ -77,6 +80,12 @@ version does not know, so a newer app's additions survive a re-save.
             "temperatureC": 21.4, "temperatureMinC": 19.2, "temperatureMaxC": 22.6,
             "condition": "overcast", "precipitationMm": 0.0,
             "windSpeedKmh": 12.3, "windDirectionDegrees": 225.0
+          },
+          "setup": {
+            "version": "session-setup-v1", "pressureUnit": "bar",
+            "coldPressure": { "fl": 2.1, "fr": 2.1, "rl": 2.0, "rr": 2.0 },
+            "hotPressure": { "fl": 2.45, "rr": 2.3 },
+            "tyre": "Pirelli SC2", "fuelStartLitres": 8.5
           } }
       ]
     }
@@ -208,6 +217,48 @@ when that session has no weather, by its first session with weather, labelled
 as such. Today without weather in the profile says why from the page's
 weather state (being looked up, lookup off, service not reached, no time or
 position, not saved yet, or stored by a newer version).
+
+## A session's setup (`setup`)
+
+Optional; added in the same version 1 (FET-188), so an older app keeps it as
+an unknown key and a profile without it reads as before. It is the run's
+`setup` object of the day document (`session-setup-v1`, `run_setup.dart`)
+as the day was saved, copied as it is (`ProfileSetup`): `version`,
+`pressureUnit` (`bar` or `psi`), `coldPressure` and `hotPressure` (`fl`,
+`fr`, `rl`, `rr`), `tyre` and `fuelStartLitres`. Pressures stay in the unit
+the driver entered them in and are never converted.
+
+It is read as the day reads it (`RunSetup.fromJson`): a value that is
+missing, of the wrong type or out of range (bar 0.5–6.0, psi 7–90, fuel
+0–200 l, at most two decimals, tyre at most 160 code units) reads as not
+entered, pressures without a unit are not entered, and a setup of another
+`version` is read as far as it can be. None of this refuses the profile.
+Keys this version does not know, in the object and in its pressure objects,
+and values read as not entered are kept as stored and written back
+unchanged. A `setup` that is not an object reads as no setup and is kept as
+it is; one holding nothing but its `version` is no setup.
+
+Unlike `weather`, it has no `sourceRevision`: the setup is the driver's own
+statement about the run, not something measured from the recording, so a
+replaced recording keeps it. It reaches the profile only when the day is
+saved: each save that records the day (`ProfileLibrary.recordDay`) passes
+every run's setup as saved (`DayResultsController.savedRunSetup`), never an
+unsaved edit. Given that way, a session's setup replaces what the profile
+had, and a run without one clears it. A day added without setups, such as a
+day found in the days folder (`ProfileDayInput` without
+`ProfileDayInput.fromAnalysis`'s `setups`), keeps the profile's. New weather
+(`setProfileSessionWeather`) and moving the profile to another device
+(`mergeDriverProfile`, the bundle) carry it along.
+
+"Last time here" shows each visit's setup as entered, chosen as its weather
+is: the session that set the day's best lap, else its first session with a
+setup, labelled as such. When both visits entered pressures in the same unit,
+it adds today minus then for each wheel entered on both (no colour: higher
+is not better); in different units it shows both and says they are not
+compared. Today without a setup in the profile says, for the session that
+set the best lap (else the first), that none was entered, and that it comes
+with the save when that session's setup was entered on the page and the day
+is not saved yet (`DayResultsController.runSetupWaitsForSave`).
 
 ## Corners across days
 

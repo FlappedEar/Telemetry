@@ -2411,6 +2411,51 @@ final class DayResultsController extends ChangeNotifier {
     return RunMetadata(name: named?.name ?? '');
   }
 
+  /// [runId]'s setup as the day was last saved or opened: the run's stored
+  /// `setup` object as it is, keys this version does not know included;
+  /// null when the run stores none. The driver profile keeps this one
+  /// ([ProfileSetup]), never an unsaved edit.
+  Map<String, Object?>? savedRunSetup(String runId) =>
+      _storedSetup(_savedRuns, runId);
+
+  /// Whether [runId] has a setup entered that is not saved yet: the next
+  /// save would write a `setup` other than the one stored, and it holds
+  /// something entered.
+  bool runSetupWaitsForSave(String runId) {
+    if (!_metadataEdits.containsKey(runId)) return false;
+    final edited = _storedSetup(_metadataRuns, runId);
+    return edited != null &&
+        !RunSetup.fromJson(edited).isEmpty &&
+        !_sameJson(edited, savedRunSetup(runId));
+  }
+
+  static Map<String, Object?>? _storedSetup(List<Object?> runs, String runId) {
+    for (final value in runs) {
+      if (value case final Map<String, Object?> run when run['id'] == runId) {
+        return switch (run[runSetupKey]) {
+          final Map<String, Object?> setup => setup,
+          _ => null,
+        };
+      }
+    }
+    return null;
+  }
+
+  static bool _sameJson(Object? a, Object? b) => switch ((a, b)) {
+    (final Map<String, Object?> x, final Map<String, Object?> y) =>
+      x.length == y.length &&
+          x.entries.every(
+            (entry) =>
+                y.containsKey(entry.key) &&
+                _sameJson(entry.value, y[entry.key]),
+          ),
+    (final List<Object?> x, final List<Object?> y) =>
+      x.length == y.length &&
+          [for (var i = 0; i < x.length; ++i) i]
+              .every((i) => _sameJson(x[i], y[i])),
+    _ => a == b,
+  };
+
   /// Edits [runId]'s name, notes, conditions, setup changes and setup, as
   /// FlappedEar Overlays edits the texts ([applyRunMetadata]): the day then
   /// has unsaved changes. Returns why not ([runMetadataProblem]), or null.

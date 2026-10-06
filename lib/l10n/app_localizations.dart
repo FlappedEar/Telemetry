@@ -7941,6 +7941,78 @@ abstract class AppLocalizations {
   /// **'Each visit\'s weather is that of the session that set its best lap, or, when that session has none, of its first session with weather.'**
   String get lastTimeHereWeatherNote;
 
+  /// Last time here card: heading of the setup entered for a session of the previous visit and of today.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get lastTimeHereSetup;
+
+  /// Last time here card: the previous visit's setup as entered. session is a label such as 'Session 2, best lap'; setup is a setup line such as 'Cold 2.1 / 2.1 / 2 / 2 bar · Tyres Pirelli SC2 · Fuel 8.5 l'.
+  ///
+  /// In en, this message translates to:
+  /// **'Then ({session}): {setup}'**
+  String lastTimeHereSetupThen(String session, String setup);
+
+  /// Last time here card: today's setup as entered. session is a label such as 'Session 2, best lap'; setup is a setup line.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): {setup}'**
+  String lastTimeHereSetupToday(String session, String setup);
+
+  /// Last time here card: the session that set the best lap has no setup entered, so this session, the first with a setup, is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}; the best-lap session had none'**
+  String lastTimeHereSetupBestHadNone(String session);
+
+  /// Last time here card: no session matches the day's best lap, so the first session with a setup is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}, first with a setup'**
+  String lastTimeHereSetupFirstSession(String session);
+
+  /// Last time here card: the previous visit has no setup in the library for the session that stands for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Then: — no setup entered for that session'**
+  String get lastTimeHereSetupThenNone;
+
+  /// Last time here card: today has no setup in the library for this session. session is a label such as 'Session 2, best lap'.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: — no setup entered for {session}'**
+  String lastTimeHereSetupTodayNone(String session);
+
+  /// Last time here card: added after lastTimeHereSetupTodayNone when that session's setup was entered on the day page but the day is not saved yet.
+  ///
+  /// In en, this message translates to:
+  /// **'(it reaches the library when the day is saved)'**
+  String get lastTimeHereSetupTodayUnsaved;
+
+  /// Last time here card: today has no setup in the library and no session to name.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: — no setup entered.'**
+  String get lastTimeHereSetupTodayNoSessions;
+
+  /// Last time here card: today's pressures minus the previous visit's, wheel by wheel, in the unit both were entered in. difference is a line such as 'Cold +0.1 / 0 / −0.1 / — bar'; — is a wheel without a pressure on one of the visits.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference (today − then): {difference}'**
+  String lastTimeHereSetupDifference(String difference);
+
+  /// Last time here card: the two visits' pressures were entered in different units (bar and psi); they are never converted.
+  ///
+  /// In en, this message translates to:
+  /// **'Different pressure units, not compared.'**
+  String get lastTimeHereSetupUnits;
+
+  /// Last time here card: which session's setup stands for each visit, and that the difference is no judgement.
+  ///
+  /// In en, this message translates to:
+  /// **'Each visit\'s setup is that of the session that set its best lap, or, when that session has none, of its first session with a setup. Shown as entered; a higher or lower pressure is not better or worse.'**
+  String get lastTimeHereSetupNote;
+
   /// Settings heading for checking GitHub for a newer version of the app.
   ///
   /// In en, this message translates to:
