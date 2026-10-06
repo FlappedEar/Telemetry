@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/briefing_card.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/format.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
@@ -586,6 +588,10 @@ void main() {
       bool keepCoach = true,
       bool speedsConverted = false,
       RunGoals? goals,
+      DayChannelSummaries? channels,
+      DayLapRow? lastLap,
+      DayLapRow? bestLap,
+      bool lastLapOnCircuit = false,
     }) async {
       final best = controller.theoreticalBest!;
       await tester.pumpWidget(
@@ -611,6 +617,10 @@ void main() {
                   coachError: coachError,
                   speedsConverted: speedsConverted,
                   goals: goals ?? RunGoals(),
+                  channels: channels,
+                  lastLap: lastLap,
+                  bestLap: bestLap,
+                  lastLapOnCircuit: lastLapOnCircuit,
                 ),
               ],
             ),
@@ -708,6 +718,199 @@ void main() {
       expect(focus, isNot(contains('45.8')));
       expect(focus, contains('Speeds are not shown'));
     });
+
+    testWidgets('trackside: the last lap, the best of the day and the gap '
+        'in large digits, or why not', (tester) async {
+      controller = await show(tester);
+      final laps = controller.comparisonCandidates();
+      final last = laps.lastWhere((row) => row.runId == controller.latestRunId);
+      final best = laps.reduce(
+        (a, b) => a.durationSeconds <= b.durationSeconds ? a : b,
+      );
+      await card(tester, lastLap: last, bestLap: best);
+      String tile(String key) => line(tester, key);
+      expect(
+        tile('briefingLastLap'),
+        'Last ranked lap | ${displayTime(last.durationSeconds)} | '
+        '${last.runName} · LAP ${last.lapNumber}',
+      );
+      expect(
+        tile('briefingBestLap'),
+        'Best of the day | ${displayTime(best.durationSeconds)} | '
+        '${best.runName} · LAP ${best.lapNumber}',
+      );
+      expect(
+        tile('briefingDelta'),
+        'To the best | '
+        '${displayDelta(last.durationSeconds - best.durationSeconds)}',
+      );
+      await card(tester);
+      expect(
+        line(tester, 'briefingLaps'),
+        '${controller.latestRunName} has no timed laps on the circuit shown.',
+      );
+      // Laps there, none ranked: the best of the day still shows.
+      await card(tester, bestLap: best, lastLapOnCircuit: true);
+      expect(
+        line(tester, 'briefingLaps'),
+        '${controller.latestRunName} has no ranked lap on the circuit shown. | '
+        'Best of the day | ${displayTime(best.durationSeconds)} | '
+        '${best.runName} · LAP ${best.lapNumber}',
+      );
+      expect(find.byKey(const ValueKey('briefingDelta')), findsNothing);
+    });
+
+    testWidgets('the coach\'s plan: two changes, then what to keep', (
+      tester,
+    ) async {
+      controller = await show(tester);
+      final coach = controller.coach!;
+      final corners = controller.theoreticalBest!.corners;
+      expect(corners.length, greaterThanOrEqualTo(3));
+      CoachFinding finding(CoachKind kind, int corner) {
+        final focus = coach.plan.first.finding;
+        return CoachFinding(
+          kind: kind,
+          segmentId: corners[corner].segmentId,
+          segmentName: corners[corner].name,
+          confidence: 0.7,
+          affectedLaps: focus.affectedLaps,
+          evidence: focus.evidence,
+        );
+      }
+
+      final plan = [
+        CoachItem(finding(CoachKind.excessiveCoasting, 0)),
+        CoachItem(finding(CoachKind.lateThrottle, 1)),
+        CoachItem(finding(CoachKind.improving, 2)),
+      ];
+      DayCoach coached(List<CoachItem> plan) => DayCoach(
+        runId: coach.runId,
+        findings: [for (final item in plan) item.finding],
+        plan: plan,
+        reason: CoachReason.ready,
+      );
+      await card(tester, coach: coached(plan));
+      expect(line(tester, 'briefingFocus'), startsWith('Main focus | '));
+      expect(
+        line(tester, 'briefingThen'),
+        'Once that feels settled | ${corners[1].name} · Return to throttle sooner',
+      );
+      expect(
+        line(tester, 'briefingThen2'),
+        'Keep | ${corners[2].name} · Keep current approach',
+      );
+      // Only something to keep: it is the main point, labelled Keep.
+      await card(tester, coach: coached([plan.last]));
+      expect(line(tester, 'briefingFocus'), startsWith('Keep | '));
+      expect(find.byKey(const ValueKey('briefingThen')), findsNothing);
+    });
+
+    testWidgets('trackside: the car, hottest and over the last laps', (
+      tester,
+    ) async {
+      controller = await show(tester);
+      await card(tester);
+      expect(value(tester, 'briefingCar'), 'Working…');
+      await card(
+        tester,
+        channels: DayChannelSummaries(
+          error: 'Channel summaries were cancelled.',
+        ),
+      );
+      expect(find.byKey(const ValueKey('briefingCar')), findsOneWidget);
+      // Nothing recorded on the day: no car line.
+      await card(tester, channels: DayChannelSummaries());
+      expect(find.byKey(const ValueKey('briefingCar')), findsNothing);
+      final rows = [
+        for (final row in controller.analysis.rows)
+          if (row.runId == controller.latestRunId) row,
+      ];
+      DayChannelSummaries channelsOf(String runId) => DayChannelSummaries(
+        runs: [
+          RunChannelSummaries(
+            runId: runId,
+            runName: controller.latestRunName,
+            channels: [
+              RunChannel(
+                channel: 'engine_oil_temp-obd',
+                unit: 'C',
+                run: const ChannelSummary(maximum: 128, valid: true),
+                sections: [
+                  for (final row in rows)
+                    ChannelSection(
+                      row: row,
+                      summary: ChannelSummary(
+                        maximum: 100.0 + 10 * row.lapNumber,
+                        valid: true,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+            laps: [
+              for (final row in rows)
+                SectionAcceleration(
+                  row: row,
+                  acceleration: const LapAcceleration(),
+                ),
+            ],
+          ),
+        ],
+      );
+      await card(tester, channels: channelsOf(controller.latestRunId));
+      // The synthetic session has too few ranked laps to read a rise, and
+      // says so as the summary does.
+      expect(
+        line(tester, 'briefingCar'),
+        'Car | Oil 128\u00a0°C | Temperatures: needs 3 ranked laps',
+      );
+      // A session not in the ranking shown (no summary): its temperatures
+      // still show.
+      await card(
+        tester,
+        runId: 'elsewhere',
+        keepCoach: false,
+        channels: channelsOf('elsewhere'),
+      );
+      expect(
+        line(tester, 'briefingCar'),
+        'Car | Oil 128\u00a0°C | Temperatures: needs 3 ranked laps',
+      );
+      // Strong acceleration only, while the day records temperatures: the
+      // temperatures still read Not recorded, as on the summary.
+      await card(
+        tester,
+        channels: DayChannelSummaries(
+          runs: [
+            ...channelsOf('elsewhere').runs,
+            RunChannelSummaries(
+              runId: controller.latestRunId,
+              runName: controller.latestRunName,
+              laps: [
+                for (final row in rows)
+                  SectionAcceleration(
+                    row: row,
+                    acceleration: const LapAcceleration(strongG: 0.3),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+      expect(
+        line(tester, 'briefingCar'),
+        'Car | Not recorded | Strong acceleration: needs 4 ranked laps',
+      );
+      // The day records temperatures, this session does not.
+      await card(
+        tester,
+        runId: 'another session',
+        keepCoach: false,
+        channels: channelsOf(controller.latestRunId),
+      );
+      expect(line(tester, 'briefingCar'), 'Car | Not recorded');
+    });
   });
 
   testWidgets('the briefing follows the day while it is open', (tester) async {
@@ -739,6 +942,84 @@ void main() {
     );
   });
 
+  group('the briefing\'s laps follow the ranking shown', () {
+    String laps(WidgetTester tester) => line(tester, 'briefingLaps');
+    String time(DayLapRow row) => displayTime(row.durationSeconds);
+
+    testWidgets('an excluded last lap gives way to the one before', (
+      tester,
+    ) async {
+      final controller = await show(tester);
+      final own = [
+        for (final row in controller.comparisonCandidates())
+          if (row.runId == controller.latestRunId) row,
+      ];
+      expect(own.length, greaterThanOrEqualTo(2));
+      controller.exclude(own.last, 'Traffic');
+      await openBriefing(tester);
+      expect(
+        laps(tester),
+        startsWith(
+          'Last ranked lap | ${time(own[own.length - 2])} | '
+          '${own[own.length - 2].runName} · LAP ${own[own.length - 2].lapNumber} |',
+        ),
+      );
+    });
+
+    testWidgets('with every lap excluded, it says so and keeps the best', (
+      tester,
+    ) async {
+      final controller = await show(tester);
+      for (final row in controller.comparisonCandidates()) {
+        if (row.runId == controller.latestRunId) {
+          controller.exclude(row, 'Traffic');
+        }
+      }
+      final best = controller.comparisonCandidates().reduce(
+        (a, b) => a.durationSeconds <= b.durationSeconds ? a : b,
+      );
+      await openBriefing(tester);
+      expect(
+        laps(tester),
+        '${controller.latestRunName} has no ranked lap on the circuit shown. '
+        '| Best of the day | ${time(best)} | '
+        '${best.runName} · LAP ${best.lapNumber}',
+      );
+    });
+
+    testWidgets('a session on another circuit has no lap there', (
+      tester,
+    ) async {
+      final controller = await show(tester);
+      final best = controller
+          .comparisonCandidates()
+          .where((row) => row.runId != controller.latestRunId)
+          .reduce((a, b) => a.durationSeconds <= b.durationSeconds ? a : b);
+      controller.setTrack(
+        [controller.latestRunId],
+        'Elsewhere',
+        TrackDirection.clockwise,
+      );
+      final moved = controller
+          .analysis
+          .configurations[controller.latestRunId]
+          ?.compatibilityGroupId;
+      controller.chooseGroup(
+        controller.analysis.groups
+            .firstWhere((group) => group.resolved && group.id != moved)
+            .id,
+      );
+      await tester.pumpAndSettle();
+      await openBriefing(tester);
+      expect(
+        laps(tester),
+        '${controller.latestRunName} has no timed laps on the circuit shown. '
+        '| Best of the day | ${time(best)} | '
+        '${best.runName} · LAP ${best.lapNumber}',
+      );
+    });
+  });
+
   testWidgets('the briefing says why while the coach failed', (tester) async {
     await show(tester, coachFails: true);
     await openBriefing(tester);
@@ -757,6 +1038,37 @@ void main() {
     await show(tester, size: const Size(320, 640), textScale: 2);
     await openBriefing(tester);
     expect(tester.takeException(), isNull);
+    // Each time on one line, inside the screen.
+    for (final key in ['briefingLastLap', 'briefingBestLap', 'briefingDelta']) {
+      final value = find.byKey(ValueKey('$key value'));
+      expect(tester.widget<Text>(value).maxLines, 1);
+      final rect = tester.getRect(value);
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(320));
+      // Laid out whole, not cut: scaled down to fit instead.
+      final paragraph = tester.renderObject<RenderParagraph>(value);
+      expect(
+        paragraph.size.width,
+        moreOrLessEquals(
+          paragraph.getMaxIntrinsicWidth(double.infinity),
+          epsilon: 0.5,
+        ),
+      );
+    }
+    final scaled = tester.getRect(
+      find.byKey(const ValueKey('briefingLastLap value')),
+    );
+    expect(
+      scaled.width,
+      lessThan(
+        tester
+            .renderObject<RenderParagraph>(
+              find.byKey(const ValueKey('briefingLastLap value')),
+            )
+            .size
+            .width,
+      ),
+    );
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('briefingChance')),
       200,

@@ -9222,6 +9222,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}'**
   String summaryCarAccelerationOnLaps(int count, int ranked, int needed);
+
+  /// Trackside: the latest session's last ranked lap time, in large digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Last ranked lap'**
+  String get briefingLastLap;
+
+  /// Trackside: the best lap of the day on the circuit shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Best of the day'**
+  String get briefingDayBest;
+
+  /// Trackside: the last lap minus the best of the day (positive is slower).
+  ///
+  /// In en, this message translates to:
+  /// **'To the best'**
+  String get briefingDelta;
+
+  /// Trackside: the hottest temperatures and what the car did over the last laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get briefingCar;
+
+  /// Before you go out, when the latest session has laps on the shown circuit but none ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no ranked lap on the circuit shown.'**
+  String briefingNoRankedLap(String session);
 }
 
 class _AppLocalizationsDelegate
