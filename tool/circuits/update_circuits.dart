@@ -26,15 +26,23 @@ SELECT ?item ?itemLabel ?coord ?iso WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en,mul,pl,de,fr,it,es,nl,cs,pt". }
 }''';
 
-final _point = RegExp(r'^Point\((-?[0-9.]+(?:[eE]-?\d+)?) (-?[0-9.]+(?:[eE]-?\d+)?)\)$');
+final _point = RegExp(
+  r'^Point\((-?[0-9.]+(?:[eE]-?\d+)?) (-?[0-9.]+(?:[eE]-?\d+)?)\)$',
+);
 final _qid = RegExp(r'/entity/(Q(\d+))$');
 
 Future<void> main(List<String> args) async {
-  final output = File(args.isEmpty ? 'assets/circuits/circuits.json' : args.first);
+  final output = File(
+    args.isEmpty ? 'assets/circuits/circuits.json' : args.first,
+  );
   final client = HttpClient()
-    ..userAgent = 'FlappedEarTelemetry-circuits/1.0 (https://github.com/FlappedEar/Telemetry)';
+    ..userAgent =
+        'FlappedEarTelemetry-circuits/1.0 (https://github.com/FlappedEar/Telemetry)';
   final request = await client.getUrl(
-    Uri.https('query.wikidata.org', '/sparql', {'query': _query, 'format': 'json'}),
+    Uri.https('query.wikidata.org', '/sparql', {
+      'query': _query,
+      'format': 'json',
+    }),
   );
   request.headers.set('Accept', 'application/sparql-results+json');
   final response = await request.close();
@@ -42,12 +50,15 @@ Future<void> main(List<String> args) async {
     stderr.writeln('Wikidata answered ${response.statusCode}.');
     exit(1);
   }
-  final json = jsonDecode(await response.transform(utf8.decoder).join()) as Map<String, Object?>;
+  final json = jsonDecode(
+    await response.transform(utf8.decoder).join(),
+  ) as Map<String, Object?>;
   client.close();
 
   final byId = <String, Map<String, Object?>>{};
   final numbers = <String, int>{};
-  for (final row in ((json['results'] as Map)['bindings'] as List).cast<Map>()) {
+  for (final row
+      in ((json['results'] as Map)['bindings'] as List).cast<Map>()) {
     final item = _qid.firstMatch((row['item'] as Map)['value'] as String);
     final point = _point.firstMatch((row['coord'] as Map)['value'] as String);
     final name = ((row['itemLabel'] as Map?)?['value'] as String? ?? '').trim();
@@ -63,7 +74,9 @@ Future<void> main(List<String> args) async {
     byId[id] = {
       'id': id,
       'name': name.length > 128 ? name.substring(0, 128) : name,
-      if ((row['iso'] as Map?)?['value'] case final String iso when iso.length == 2) 'country': iso,
+      if ((row['iso'] as Map?)?['value'] case final String iso
+          when iso.length == 2)
+        'country': iso,
       'lat': double.parse(lat.toStringAsFixed(5)),
       'lon': double.parse(lon.toStringAsFixed(5)),
     };
@@ -74,10 +87,13 @@ Future<void> main(List<String> args) async {
     ..sort((a, b) => numbers[a['id']]!.compareTo(numbers[b['id']]!));
   final circuits = <Map<String, Object?>>[];
   for (final entry in ordered) {
-    if (!circuits.any((kept) => _metres(kept, entry) < 100)) circuits.add(entry);
+    if (!circuits.any((kept) => _metres(kept, entry) < 100))
+      circuits.add(entry);
   }
   final now = DateTime.now().toUtc();
-  final revision = int.parse('${now.year}${_two(now.month)}${_two(now.day)}${_two(now.hour)}');
+  final revision = int.parse(
+    '${now.year}${_two(now.month)}${_two(now.day)}${_two(now.hour)}',
+  );
   await output.parent.create(recursive: true);
   // One circuit a line, so a revision's diff shows what changed.
   final text = StringBuffer()
@@ -89,7 +105,9 @@ Future<void> main(List<String> args) async {
       ' "source": ${jsonEncode('Wikidata (https://www.wikidata.org), CC0 1.0; built by tool/circuits/update_circuits.dart')},',
     )
     ..writeln(' "circuits": [')
-    ..writeAll([for (final circuit in circuits) '  ${jsonEncode(circuit)}'], ',\n')
+    ..writeAll([
+      for (final circuit in circuits) '  ${jsonEncode(circuit)}',
+    ], ',\n')
     ..writeln()
     ..writeln(' ]')
     ..writeln('}');
@@ -102,10 +120,12 @@ Future<void> main(List<String> args) async {
 
 double _metres(Map<String, Object?> a, Map<String, Object?> b) {
   const radians = pi / 180;
-  final lat1 = (a['lat'] as double) * radians, lat2 = (b['lat'] as double) * radians;
+  final lat1 = (a['lat'] as double) * radians,
+      lat2 = (b['lat'] as double) * radians;
   final dLat = lat2 - lat1;
   final dLon = ((b['lon'] as double) - (a['lon'] as double)) * radians;
-  final h = pow(sin(dLat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dLon / 2), 2);
+  final h =
+      pow(sin(dLat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dLon / 2), 2);
   return 2 * 6371000.0 * asin(min(1.0, sqrt(h)));
 }
 

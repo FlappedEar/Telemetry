@@ -47,7 +47,12 @@ void main() {
     expect(() => decodeCircuitList('{"format":"other","version":1}'), throwsFormatException);
     expect(
       () => decodeCircuitList(
-        jsonEncode({'format': circuitListFormat, 'version': 2, 'revision': 1, 'circuits': <Object?>[]}),
+        jsonEncode({
+          'format': circuitListFormat,
+          'version': 2,
+          'revision': 1,
+          'circuits': <Object?>[],
+        }),
       ),
       throwsFormatException,
     );
