@@ -201,13 +201,20 @@ struct Pair {
         return {{"x", point->x()}, {"y", point->y()}};
     }
 
+    // AnalysisController::comparisonDeltaTiming (KAN-152).
+    DeltaTiming deltaTiming() const
+    {
+        return {members[0].start, members[0].end, members[1].start, members[1].end, axis.lengthMeters};
+    }
+
     QVariantMap deltaSeriesByProgress(const double startProgress, const double endProgress, const int maximumPoints) const
     {
         if (maximumPoints < 2) return {};
         if (!axis.valid) return {};
         if (!std::isfinite(startProgress) || !std::isfinite(endProgress) || endProgress <= startProgress)
             return {{"reason", QStringLiteral("invalidRange")}};
-        const auto deltaSegments = computeDeltaSeries(traces[0], traces[1], (endProgress - startProgress) / maximumPoints);
+        const auto deltaSegments = computeDeltaSeries(
+            traces[0], traces[1], (endProgress - startProgress) / maximumPoints, deltaTiming());
         QVariantList segments;
         double minimum = 0.0, maximum = 0.0;
         bool haveExtent = false;
@@ -345,7 +352,7 @@ struct Pair {
         const double length = axis.lengthMeters;
         ProgressValueSegments values;
         if (spec.id == QLatin1String("delta")) {
-            for (const auto &segment : computeDeltaSeries(traces[0], traces[1], length / mapLayerPoints)) {
+            for (const auto &segment : computeDeltaSeries(traces[0], traces[1], length / mapLayerPoints, deltaTiming())) {
                 QVector<QPointF> points;
                 for (const auto &point : segment) points.append({point.progressMeters, point.deltaSeconds});
                 values.append(points);

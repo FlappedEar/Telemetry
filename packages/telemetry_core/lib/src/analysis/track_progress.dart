@@ -1,6 +1,8 @@
 // Port of FlappedEar Overlays native/src/telemetry/TrackProgress.{h,cpp}
-// (revision d4d1039, FET-30): a gate-anchored distance axis for one track,
-// laps projected onto it, and the time delta between two laps by distance.
+// (revision d4d1039, FET-30; gate anchoring, unwrapping and the timed delta
+// from Overlays KAN-152, FET-192): a gate-anchored distance axis for one
+// track, laps projected onto it, and the time delta between two laps by
+// distance.
 import 'dart:math' as math;
 
 import '../geometry.dart';
@@ -9,9 +11,14 @@ import '../operation.dart';
 import '../telemetry_session.dart';
 import '../timing_gate.dart';
 
+/// Projection of a gate-to-gate lap starts and ends a few samples inside the
+/// gate; coverage within this distance of either gate counts as reaching it.
+const double gateCoverageToleranceMeters = 15.0;
+
 /// A dense (~2 m spacing), gate-anchored loop built once per compatible track
-/// group from one representative lap. Progress 0 sits at the timing-gate
-/// crossing. Points are local east/north metres around [origin], the same
+/// group from one representative lap. Progress 0 sits where the lap's path
+/// crosses the timing gate, or at the point nearest the gate midpoint when the
+/// path never crosses the gate's segment. Points are local east/north metres around [origin], the same
 /// convention lap traces use (no west-positive display flip: that only matters
 /// for map presentation, not for this distance math).
 final class ProgressAxis {
@@ -80,7 +87,8 @@ final class ProjectedSample {
   final bool valid;
 }
 
-/// A run of locked samples (time increasing) with no gap in between.
+/// A run of locked samples (time increasing, progress never falling) with no
+/// gap in between.
 final class ProgressSegment {
   ProgressSegment([List<ProjectedSample>? samples]) : samples = samples ?? [];
 
@@ -99,6 +107,49 @@ final class DeltaPoint {
 
 double _distance(MetricPoint a, MetricPoint b) =>
     hypot(a.eastMeters - b.eastMeters, a.northMeters - b.northMeters);
+
+/// A projection may step back this far before it is distrusted.
+const _backwardToleranceMeters = 3.0;
+
+/// A lock older than this is not continued: the next fix is a cold start.
+const _maximumGapSeconds = 5.0;
+
+double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
+
+/// Where a closed path (last point == first) crosses the gate segment
+/// [a]–[b], as the index of the path's edge from `closed[edge]` to
+/// `closed[edge + 1]` and the crossing point: the crossing nearest the gate
+/// midpoint when there are several, or null.
+(int, MetricPoint)? _gateCrossing(List<MetricPoint> closed, MetricPoint a, MetricPoint b) {
+  final gateX = b.eastMeters - a.eastMeters, gateY = b.northMeters - a.northMeters;
+  final midpoint = MetricPoint(
+    (a.eastMeters + b.eastMeters) / 2.0,
+    (a.northMeters + b.northMeters) / 2.0,
+  );
+  (int, MetricPoint)? result;
+  var bestDistance = double.infinity;
+  for (var i = 0; i + 1 < closed.length; ++i) {
+    final edgeX = closed[i + 1].eastMeters - closed[i].eastMeters;
+    final edgeY = closed[i + 1].northMeters - closed[i].northMeters;
+    final denominator = _cross(edgeX, edgeY, gateX, gateY);
+    if (!(denominator.abs() > 1e-12)) continue; // parallel: no single crossing
+    final offsetX = a.eastMeters - closed[i].eastMeters;
+    final offsetY = a.northMeters - closed[i].northMeters;
+    final alongEdge = _cross(offsetX, offsetY, gateX, gateY) / denominator;
+    final alongGate = _cross(offsetX, offsetY, edgeX, edgeY) / denominator;
+    if (alongEdge < 0.0 || alongEdge >= 1.0 || alongGate < 0.0 || alongGate > 1.0) continue;
+    final point = MetricPoint(
+      closed[i].eastMeters + edgeX * alongEdge,
+      closed[i].northMeters + edgeY * alongEdge,
+    );
+    final distance = _distance(point, midpoint);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      result = (i, point);
+    }
+  }
+  return result;
+}
 
 /// `std::lround` for the finite values used here (half away from zero).
 int _lround(double value) => value.round();
@@ -229,7 +280,8 @@ double _angularDifference(double to, double from) =>
     math.atan2(math.sin(to - from), math.cos(to - from));
 
 /// The progress axis of [referenceTrace] (a reference-eligible, gap-free lap)
-/// around [origin], with index 0 at the point closest to [gate]'s midpoint.
+/// around [origin], with index 0 where the lap's path crosses [gate] (else the
+/// point closest to its midpoint).
 /// Invalid for fewer than 12 distinct points or a loop outside 50 m–30 km.
 ProgressAxis buildProgressAxis(
   LapTrace referenceTrace,
@@ -259,27 +311,52 @@ ProgressAxis buildProgressAxis(
   if (!(length >= 50 && length <= 30000)) return invalid;
 
   final pointCount = _lround(length / 2.0).clamp(32, 15000);
-  final resampled = _resampleByArcLength(points, pointCount);
-  if (resampled.length != pointCount) return invalid;
 
-  // Rotate so index 0 sits at the timing-gate crossing.
-  final gateMidpoint = GeoCoordinate(
-    (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2,
-    (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2,
+  // Progress 0 is where the path crosses the timing gate (KAN-152): the closed
+  // path is restarted at that crossing before it is resampled. The point
+  // nearest the gate midpoint is not enough: an oblique gate whose midpoint
+  // lies off the racing line puts it metres after the crossing, and each lap's
+  // first fix would project just before progress 0.
+  final crossing = _gateCrossing(
+    points,
+    projectCoordinate(gate.endpointA, origin),
+    projectCoordinate(gate.endpointB, origin),
   );
-  final gateLocal = projectCoordinate(gateMidpoint, origin);
-  var gateIndex = 0;
-  var bestDistance = double.infinity;
-  for (var i = 0; i < resampled.length; ++i) {
-    final d = _distance(resampled[i], gateLocal);
-    if (d < bestDistance) {
-      bestDistance = d;
-      gateIndex = i;
+  final List<MetricPoint> rotated;
+  if (crossing != null) {
+    final (edge, point) = crossing;
+    final open = points.length - 1; // points.last repeats points.first
+    final restarted = <MetricPoint>[point];
+    for (var step = 1; step <= open; ++step) {
+      final next = points[(edge + step) % open];
+      if (_distance(next, restarted.last) > 1e-9) restarted.add(next);
     }
+    if (_distance(point, restarted.last) > 1e-9) restarted.add(point);
+    rotated = _resampleByArcLength(restarted, pointCount);
+    if (rotated.length != pointCount) return invalid;
+  } else {
+    // The path never crosses the gate's segment: rotate so index 0 is the
+    // resampled point nearest the gate midpoint.
+    final resampled = _resampleByArcLength(points, pointCount);
+    if (resampled.length != pointCount) return invalid;
+    final gateMidpoint = GeoCoordinate(
+      (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2,
+      (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2,
+    );
+    final gateLocal = projectCoordinate(gateMidpoint, origin);
+    var gateIndex = 0;
+    var bestDistance = double.infinity;
+    for (var i = 0; i < resampled.length; ++i) {
+      final d = _distance(resampled[i], gateLocal);
+      if (d < bestDistance) {
+        bestDistance = d;
+        gateIndex = i;
+      }
+    }
+    rotated = [
+      for (var i = 0; i < resampled.length; ++i) resampled[(gateIndex + i) % resampled.length],
+    ];
   }
-  final rotated = [
-    for (var i = 0; i < resampled.length; ++i) resampled[(gateIndex + i) % resampled.length],
-  ];
   final cumulative = <double>[0.0];
   for (var i = 1; i < rotated.length; ++i) {
     cumulative.add(cumulative.last + _distance(rotated[i - 1], rotated[i]));
@@ -368,8 +445,6 @@ ProjectedSample projectSample(
   const coldStartProximityMeters = 20.0;
   const lockProximityMeters = 20.0;
   const ambiguityRatio = 0.7; // reject when the runner-up is within 70% of the best distance
-  const backwardToleranceMeters = 3.0;
-  const maximumGapSeconds = 5.0;
   const coldStartSeparationMeters = 30.0;
   const windowedSeparationMeters = 10.0;
   // Direction must not disagree outright (> 90° off): this rejects a nearby
@@ -378,7 +453,7 @@ ProjectedSample projectSample(
   const minimumHeadingCosine = 0.0;
 
   final dt = context.hasLock ? telemetryTime - context.lastTelemetryTime : 0.0;
-  final coldStart = !context.hasLock || !(dt > 0) || dt > maximumGapSeconds;
+  final coldStart = !context.hasLock || !(dt > 0) || dt > _maximumGapSeconds;
   final n = axis.points.length;
 
   ProjectedSample lock(double progress) {
@@ -441,7 +516,7 @@ ProjectedSample projectSample(
   } else if (delta > axis.lengthMeters / 2) {
     delta -= axis.lengthMeters;
   }
-  if (delta < -backwardToleranceMeters) return invalid; // backward jump: not trustworthy
+  if (delta < -_backwardToleranceMeters) return invalid; // backward jump: not trustworthy
   return lock(best.progressMeters);
 }
 
@@ -450,6 +525,12 @@ ProjectedSample projectSample(
 /// [TelemetrySession.sampledSegments], an actual GPS gap or a stretch
 /// [projectSample] cannot lock onto ends the current segment instead of
 /// bridging it.
+///
+/// Progress is unwrapped within the lap (KAN-152): a fix taken just after the
+/// lap's timed start that projects just before progress 0 is stored as a small
+/// negative value, and fixes past the finish continue beyond the axis length.
+/// A fix projecting slightly behind the previous one in its segment is held at
+/// the previous progress, so progress never falls within a segment.
 List<ProgressSegment> projectLapTrace(
   ProgressAxis axis,
   TelemetrySession session,
@@ -465,6 +546,7 @@ List<ProgressSegment> projectLapTrace(
   var context = ProjectionContext();
   MetricPoint? previousLocal;
   double? previousTime;
+  double? lastProgress; // unwrapped; kept across segments of this lap
   void flush() {
     if (current.samples.isNotEmpty) {
       result.add(current);
@@ -505,7 +587,35 @@ List<ProgressSegment> projectLapTrace(
         flush();
         continue;
       }
-      current.samples.add(projected);
+
+      // Unwrap at the gate (KAN-152). The lap's first fix, taken just after
+      // its timed start, may project onto the end of the axis: it is just
+      // before progress 0. Later fixes continue forward from the last one by
+      // whole laps of the axis, so fixes past the finish run beyond the axis
+      // length.
+      var progress = projected.progressMeters;
+      final last = lastProgress;
+      if (last == null) {
+        if (progress > axis.lengthMeters / 2 && time - startTime <= _maximumGapSeconds) {
+          progress -= axis.lengthMeters;
+        }
+      } else {
+        progress +=
+            ((last - _backwardToleranceMeters - progress) / axis.lengthMeters).ceilToDouble() *
+            axis.lengthMeters;
+      }
+      // A fix projecting up to the backward tolerance behind the last one in
+      // this segment (GPS jitter, often while stopped) is held at the last
+      // progress, so progress never falls within a segment and the segment
+      // still covers the fix's time. A segment after a gap may start a little
+      // behind the last one.
+      if (current.samples.isNotEmpty) {
+        progress = math.max(progress, current.samples.last.progressMeters);
+      }
+      lastProgress = progress;
+      current.samples.add(
+        ProjectedSample(projected.telemetryTime, progressMeters: progress, valid: true),
+      );
     }
   }
   if (current.samples.isNotEmpty) result.add(current);
@@ -586,6 +696,98 @@ double? progressAtTime(List<ProgressSegment> lap, double telemetryTime) {
             span;
   }
   return null;
+}
+
+/// Each lap's timed start (its gate crossing) and end, and the axis length,
+/// for [computeDeltaSeries].
+final class DeltaTiming {
+  const DeltaTiming({
+    required this.lapStartA,
+    required this.lapEndA,
+    required this.lapStartB,
+    required this.lapEndB,
+    required this.lengthMeters,
+  });
+
+  final double lapStartA;
+  final double lapEndA;
+  final double lapStartB;
+  final double lapEndB;
+  final double lengthMeters;
+}
+
+/// [lap] at its timed start at progress 0 and its timed end at [length], when
+/// its projection stops within the gate tolerance of them.
+List<ProgressSegment> _anchoredAtGate(
+  List<ProgressSegment> lap,
+  double start,
+  double end,
+  double length,
+) {
+  if (lap.isEmpty || lap.first.samples.isEmpty || lap.last.samples.isEmpty) return lap;
+  final segments = [
+    for (final segment in lap) ProgressSegment([...segment.samples]),
+  ];
+  final first = segments.first.samples;
+  if (first.first.progressMeters > 0.0 &&
+      first.first.progressMeters <= gateCoverageToleranceMeters &&
+      start < first.first.telemetryTime) {
+    first.insert(0, ProjectedSample(start, valid: true));
+  }
+  final last = segments.last.samples;
+  if (last.last.progressMeters < length &&
+      last.last.progressMeters >= length - gateCoverageToleranceMeters &&
+      end > last.last.telemetryTime) {
+    last.add(ProjectedSample(end, progressMeters: length, valid: true));
+  }
+  return segments;
+}
+
+/// Lap A's time from its timed start minus lap B's, every [progressStepMeters]
+/// from 0 to the axis length, which is always the last step (KAN-152). Like
+/// sector timing, a lap whose projection reaches within
+/// [gateCoverageToleranceMeters] of the gate is at progress 0 at its timed
+/// start and at the axis length at its timed end, so the delta is 0 at the
+/// start and the lap-time difference at the finish. Only where both laps have
+/// locked coverage of the same progress; each uncovered stretch starts a new
+/// series.
+List<List<DeltaPoint>> computeTimedDeltaSeries(
+  List<ProgressSegment> lapA,
+  List<ProgressSegment> lapB,
+  double progressStepMeters,
+  DeltaTiming timing, {
+  CancellationCheck? cancelled,
+}) {
+  final result = <List<DeltaPoint>>[];
+  final length = timing.lengthMeters;
+  if (lapA.isEmpty ||
+      lapB.isEmpty ||
+      !(progressStepMeters > 0) ||
+      !length.isFinite ||
+      !(length > 0)) {
+    return result;
+  }
+  final anchoredA = _anchoredAtGate(lapA, timing.lapStartA, timing.lapEndA, length);
+  final anchoredB = _anchoredAtGate(lapB, timing.lapStartB, timing.lapEndB, length);
+
+  final steps = (length / progressStepMeters).ceil();
+  var current = <DeltaPoint>[];
+  for (var i = 0; i <= steps; ++i) {
+    throwIfCancelled(cancelled);
+    final progress = math.min(length, i * progressStepMeters);
+    final timeA = timeAtProgress(anchoredA, progress);
+    final timeB = timeAtProgress(anchoredB, progress);
+    if (timeA == null || timeB == null) {
+      if (current.isNotEmpty) {
+        result.add(current);
+        current = [];
+      }
+      continue;
+    }
+    current.add(DeltaPoint(progress, (timeA - timing.lapStartA) - (timeB - timing.lapStartB)));
+  }
+  if (current.isNotEmpty) result.add(current);
+  return result;
 }
 
 /// Lap A's time minus lap B's (each relative to its own start) every

@@ -117,13 +117,15 @@ a background isolate.
   owns the file.
 
 - `buildProgressAxis` turns one reference-eligible lap trace into a ~2 m,
-  gate-anchored distance axis for its track (progress 0 at the start gate);
-  `computeTrackFeatures` gives smoothed heading and signed curvature along it.
-  `projectLapTrace` places a lap's GPS fixes on the axis with a bounded,
-  heading-checked local search, ending a segment at every gap or lost lock
-  instead of guessing; `timeAtProgress`, `progressAtTime` and
+  gate-anchored distance axis for its track (progress 0 where the lap crosses
+  the start gate); `computeTrackFeatures` gives smoothed heading and signed
+  curvature along it. `projectLapTrace` places a lap's GPS fixes on the axis
+  with a bounded, heading-checked local search, ending a segment at every gap
+  or lost lock instead of guessing, unwrapped at the gate so progress never
+  falls within a segment; `timeAtProgress`, `progressAtTime` and
   `computeDeltaSeries` read time and the delta between two laps by distance,
-  only where both laps are covered. `TelemetrySession.sampledSegments` gives a
+  only where both laps are covered, and `computeTimedDeltaSeries` measures
+  each lap from its timed start, as the comparison does (FET-192). `TelemetrySession.sampledSegments` gives a
   channel's actual samples, split at gaps and reduced to bucket extremes.
 - `proposeTrackSegments` splits a progress axis into alternating corner and
   straight proposals from its smoothed curvature (kinks fold into the straight,
