@@ -496,6 +496,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               printable: true,
+              goals: _ownGoals(_controller.latestRunId),
             ),
         ],
       );
@@ -1919,6 +1920,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
+              goals: _ownGoals(_controller.latestRunId),
+              onGoalsChanged: _setOwnGoals,
             ),
           ],
           // Below what to try next: the driver's skills across days, from
@@ -1976,7 +1979,36 @@ class _DayResultsPageState extends State<DayResultsPage> {
       coachLoading: _controller.coachLoading,
       coachError: _controller.coachError,
       channels: channels,
+      goalChecks: _goalChecks(),
     );
+  }
+
+  /// The driver's goals set after [runId] for the session after it.
+  RunGoals _ownGoals(String runId) =>
+      _controller.runMetadata(runId).goals ?? RunGoals();
+
+  /// Saves the driver's goals for the session after the latest (FET-218):
+  /// the day then has unsaved changes.
+  void _setOwnGoals(RunGoals goals) {
+    final runId = _controller.latestRunId;
+    final problem = _controller.updateRunMetadata(
+      runId,
+      _controller.runMetadata(runId).withGoals(goals),
+    );
+    if (problem != null) _tell(problem);
+  }
+
+  /// The goals set after the session before the latest, checked on the
+  /// latest once the coach has measured it.
+  List<SessionGoalCheck> _goalChecks() {
+    final coach = _controller.coach;
+    if (coach == null ||
+        _controller.coachLoading ||
+        coach.runId != _controller.latestRunId ||
+        coach.previousRunId.isEmpty) {
+      return const [];
+    }
+    return checkSessionGoals(_ownGoals(coach.previousRunId), coach);
   }
 
   String _noBestReason(DayAnalysis analysis, DayRanking? ranking) {

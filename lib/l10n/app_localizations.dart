@@ -8833,6 +8833,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No other session to compare with'**
   String get summaryOnlySession;
+
+  /// Heading of the driver's own goals on the Next session card.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals for the next session'**
+  String get ownGoalsTitle;
+
+  /// Under the goals heading when goals are set.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked against this session once the next one is added.'**
+  String get ownGoalsIntro;
+
+  /// Under the goals heading when none are set.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up to {count} changes to work on, each at one corner. The next session is checked against this one.'**
+  String ownGoalsNone(int count);
+
+  /// Goals stored under a version this app does not read.
+  ///
+  /// In en, this message translates to:
+  /// **'Set in a newer version of the app, so they are not changed here.'**
+  String get ownGoalsReadOnly;
+
+  /// Why no goal can be added: the day has no corners yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals need the day\'s corners.'**
+  String get ownGoalsNeedCorners;
+
+  /// Button and dialog title for adding a goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a goal'**
+  String get ownGoalsAdd;
+
+  /// Tooltip of a goal's remove button.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove goal'**
+  String get ownGoalsRemove;
+
+  /// Corner field of the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get ownGoalsCorner;
+
+  /// Change field of the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Change to work on'**
+  String get ownGoalsChange;
+
+  /// The picked change at the picked corner is already a goal.
+  ///
+  /// In en, this message translates to:
+  /// **'This goal is already set.'**
+  String get ownGoalsTaken;
+
+  /// Confirms the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get ownGoalsSave;
+
+  /// Session summary row label for one of the driver's own goals; goal is 'Corner 3 · Reduce coasting'.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal: {goal}'**
+  String summaryOwnGoal(String goal);
 }
 
 class _AppLocalizationsDelegate

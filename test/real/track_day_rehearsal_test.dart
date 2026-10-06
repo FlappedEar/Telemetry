@@ -48,6 +48,16 @@ void main() {
         await controller.requestChannelSummaries();
       }
 
+      // The driver's own goals set after the session before (FET-218),
+      // checked on this one.
+      String ownGoals() {
+        final coach = controller.coach;
+        if (coach == null || coach.previousRunId.isEmpty) return '';
+        final goals = controller.runMetadata(coach.previousRunId).goals;
+        if (goals == null) return '';
+        return '\n  own goals: ${[for (final c in checkSessionGoals(goals, coach)) '${c.goal.segmentName} ${c.goal.kind.name} at ${c.measuredName}: ${c.before?.value.toStringAsFixed(1)} (${c.before?.laps}) -> ${c.now?.value.toStringAsFixed(1)} (${c.now?.laps}) ${c.outcome.name}'].join('; ')}';
+      }
+
       // The Coach place's session summary (FET-233), from the same results.
       String summary() {
         final result = controller.theoreticalBest;
@@ -69,7 +79,37 @@ void main() {
             ', ${s.segmentsCompared} compared, gain ${change(s.biggestGain)}'
             ', loss ${change(s.biggestLoss)}, gap ${change(s.biggestGap)}'
             ', car ${[for (final t in s.temperatures) '${t.channel} ${t.maximum.toStringAsFixed(0)}/${t.previousMaximum?.toStringAsFixed(0)}'].join(' ')}'
-            ', goal ${s.goal?.outcome.name}';
+            ', goal ${s.goal?.outcome.name}'
+            '${ownGoals()}';
+      }
+
+      // The driver takes the coach's changes as their goals for the next
+      // session, as Add a goal suggests them.
+      void setGoals() {
+        final coach = controller.coach;
+        final corners =
+            controller.theoreticalBest?.corners ?? const <DayCorner>[];
+        if (coach == null) return;
+        final goals = [
+          for (final item in coach.plan)
+            if (item.finding.kind.corrective)
+              for (final corner in corners)
+                if (corner.segmentId == item.finding.segmentId)
+                  SessionGoal(
+                    kind: item.finding.kind,
+                    segmentName: corner.name,
+                    startProgressMeters: corner.startProgressMeters,
+                    endProgressMeters: corner.endProgressMeters,
+                  ),
+        ];
+        final runId = controller.latestRunId;
+        expect(
+          controller.updateRunMetadata(
+            runId,
+            controller.runMetadata(runId).withGoals(RunGoals(goals: goals)),
+          ),
+          isNull,
+        );
       }
 
       String mb(int bytes) => '${(bytes / 1048576).toStringAsFixed(0)} MB';
@@ -99,6 +139,7 @@ void main() {
       clock.reset();
       await coached();
       report('Session 1', opened, clock.elapsed);
+      setGoals();
       for (final path in files.skip(1)) {
         clock.reset();
         final addition = await controller.addRecordings([path]);
@@ -108,6 +149,7 @@ void main() {
         clock.reset();
         await coached();
         report(addition.added.join(', '), add, clock.elapsed);
+        setGoals();
         expect(controller.coach, isNotNull);
         expect(controller.coach!.runId, controller.latestRunId);
         // The day's corners time its best lap, measured again on it when

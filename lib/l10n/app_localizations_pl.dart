@@ -6098,4 +6098,46 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get summaryOnlySession => 'Brak innej sesji do porównania';
+
+  @override
+  String get ownGoalsTitle => 'Twoje cele na następną sesję';
+
+  @override
+  String get ownGoalsIntro =>
+      'Sprawdzane względem tej sesji po dodaniu następnej.';
+
+  @override
+  String ownGoalsNone(int count) {
+    return 'Ustaw do $count zmian do przepracowania, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.';
+  }
+
+  @override
+  String get ownGoalsReadOnly =>
+      'Ustawione w nowszej wersji aplikacji, więc nie są tu zmieniane.';
+
+  @override
+  String get ownGoalsNeedCorners => 'Cele wymagają zakrętów dnia.';
+
+  @override
+  String get ownGoalsAdd => 'Dodaj cel';
+
+  @override
+  String get ownGoalsRemove => 'Usuń cel';
+
+  @override
+  String get ownGoalsCorner => 'Zakręt';
+
+  @override
+  String get ownGoalsChange => 'Zmiana do przepracowania';
+
+  @override
+  String get ownGoalsTaken => 'Ten cel jest już ustawiony.';
+
+  @override
+  String get ownGoalsSave => 'Dodaj';
+
+  @override
+  String summaryOwnGoal(String goal) {
+    return 'Twój cel: $goal';
+  }
 }

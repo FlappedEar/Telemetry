@@ -1443,5 +1443,17 @@
   "summaryCoachFailed": "Trener nie mógł przeanalizować sesji",
   "summaryGapNone": "W granicach {seconds} s od najszybszego typowego czasu na każdym zmierzonym odcinku",
   "summaryGapNeedsLaps": "Potrzeba 3 przejazdów odcinka",
-  "summaryOnlySession": "Brak innej sesji do porównania"
+  "summaryOnlySession": "Brak innej sesji do porównania",
+  "ownGoalsTitle": "Twoje cele na następną sesję",
+  "ownGoalsIntro": "Sprawdzane względem tej sesji po dodaniu następnej.",
+  "ownGoalsNone": "Ustaw do {count} zmian do przepracowania, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.",
+  "ownGoalsReadOnly": "Ustawione w nowszej wersji aplikacji, więc nie są tu zmieniane.",
+  "ownGoalsNeedCorners": "Cele wymagają zakrętów dnia.",
+  "ownGoalsAdd": "Dodaj cel",
+  "ownGoalsRemove": "Usuń cel",
+  "ownGoalsCorner": "Zakręt",
+  "ownGoalsChange": "Zmiana do przepracowania",
+  "ownGoalsTaken": "Ten cel jest już ustawiony.",
+  "ownGoalsSave": "Dodaj",
+  "summaryOwnGoal": "Twój cel: {goal}"
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -5,7 +7,8 @@ import '../format.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
 import '../units.dart';
-import 'theoretical_best_card.dart' show CalculateAgainButton;
+import 'theoretical_best_card.dart'
+    show CalculateAgainButton, TheoreticalBestText;
 import 'time_losses_card.dart' show TimeLossText;
 import 'corner_details.dart' show lapAColor, lapBColor;
 import 'track_map.dart';
@@ -153,7 +156,16 @@ class NextSessionCard extends StatelessWidget {
     this.withoutTheoreticalBest = false,
     this.onRetry,
     this.printable = false,
+    this.goals,
+    this.onGoalsChanged,
   });
+
+  /// The driver's own goals for the session after [session] (FET-218);
+  /// null hides them.
+  final RunGoals? goals;
+
+  /// Saves changed [goals]; null shows them without buttons.
+  final ValueChanged<RunGoals>? onGoalsChanged;
 
   /// Drawn into the shared report image: no buttons.
   final bool printable;
@@ -255,9 +267,98 @@ class NextSessionCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(l10n.coachFooter, style: theme.textTheme.bodySmall),
               ],
+              // The shared report shows goals only once some are set.
+              if (goals case final goals? when !printable || !goals.isEmpty)
+                _ownGoals(context, coach, goals),
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// The driver's own goals for the next session: each a change at a
+  /// corner of today's, at most [maximumRunGoals], checked once the next
+  /// session is added.
+  Widget _ownGoals(BuildContext context, DayCoach coach, RunGoals goals) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final corners = result?.corners ?? const <DayCorner>[];
+    final change = printable || goals.readOnly ? null : onGoalsChanged;
+    return Padding(
+      key: const ValueKey('ownGoals'),
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.ownGoalsTitle, style: theme.textTheme.titleSmall),
+          Text(
+            goals.readOnly
+                ? l10n.ownGoalsReadOnly
+                : goals.isEmpty
+                ? l10n.ownGoalsNone(maximumRunGoals)
+                : l10n.ownGoalsIntro,
+            key: const ValueKey('ownGoalsIntro'),
+            style: theme.textTheme.bodySmall,
+          ),
+          for (var i = 0; i < goals.goals.length; ++i)
+            Row(
+              key: ValueKey('ownGoal$i'),
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.coachItemTitle(
+                      l10n.tbSegmentName(goals.goals[i].segmentName),
+                      l10n.coachKind(goals.goals[i].kind),
+                    ),
+                  ),
+                ),
+                if (change != null)
+                  IconButton(
+                    key: ValueKey('ownGoalRemove$i'),
+                    tooltip: l10n.ownGoalsRemove,
+                    icon: const Icon(Icons.close),
+                    onPressed: () =>
+                        change(RunGoals(goals: [...goals.goals]..removeAt(i))),
+                  ),
+              ],
+            ),
+          if (change != null && goals.goals.length < maximumRunGoals)
+            if (corners.isEmpty)
+              Text(
+                l10n.ownGoalsNeedCorners,
+                key: const ValueKey('ownGoalsNeedCorners'),
+                style: theme.textTheme.bodySmall,
+              )
+            else
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  key: const ValueKey('ownGoalsAdd'),
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.ownGoalsAdd),
+                  onPressed: () async {
+                    final focus = coach.focus?.finding;
+                    final goal = await showDialog<SessionGoal>(
+                      context: context,
+                      builder: (context) => _GoalDialog(
+                        corners: corners,
+                        taken: goals.goals,
+                        segmentId: focus?.kind.corrective == true
+                            ? focus!.segmentId
+                            : null,
+                        kind: focus?.kind.corrective == true
+                            ? focus!.kind
+                            : null,
+                      ),
+                    );
+                    if (goal != null) {
+                      change(RunGoals(goals: [...goals.goals, goal]));
+                    }
+                  },
+                ),
+              ),
+        ],
       ),
     );
   }
@@ -635,6 +736,115 @@ class _CoachItemPageState extends State<CoachItemPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Picks a corner of today's and a change to work on there; the coach's
+/// main focus is picked to start with.
+class _GoalDialog extends StatefulWidget {
+  const _GoalDialog({
+    required this.corners,
+    required this.taken,
+    this.segmentId,
+    this.kind,
+  });
+
+  final List<DayCorner> corners;
+
+  /// The goals already set: the same change at the same corner is not
+  /// offered again.
+  final List<SessionGoal> taken;
+  final String? segmentId;
+  final CoachKind? kind;
+
+  @override
+  State<_GoalDialog> createState() => _GoalDialogState();
+}
+
+class _GoalDialogState extends State<_GoalDialog> {
+  late int _corner = math.max(
+    0,
+    widget.corners.indexWhere((c) => c.segmentId == widget.segmentId),
+  );
+  late CoachKind _kind = widget.kind ?? coachGoalKinds.first;
+
+  bool get _taken => widget.taken.any(
+    (goal) =>
+        goal.kind == _kind && goal.segmentName == widget.corners[_corner].name,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.ownGoalsAdd),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<int>(
+            key: const ValueKey('ownGoalCorner'),
+            initialValue: _corner,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: l10n.ownGoalsCorner),
+            items: [
+              for (var i = 0; i < widget.corners.length; ++i)
+                DropdownMenuItem(
+                  value: i,
+                  child: Text(l10n.tbSegmentName(widget.corners[i].name)),
+                ),
+            ],
+            onChanged: (value) => setState(() => _corner = value ?? _corner),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<CoachKind>(
+            key: const ValueKey('ownGoalKind'),
+            initialValue: _kind,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: l10n.ownGoalsChange),
+            items: [
+              for (final kind in coachGoalKinds)
+                DropdownMenuItem(
+                  value: kind,
+                  child: Text(l10n.coachKind(kind)),
+                ),
+            ],
+            onChanged: (value) => setState(() => _kind = value ?? _kind),
+          ),
+          if (_taken)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                l10n.ownGoalsTaken,
+                key: const ValueKey('ownGoalTaken'),
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        FilledButton(
+          key: const ValueKey('ownGoalSave'),
+          onPressed: _taken
+              ? null
+              : () {
+                  final corner = widget.corners[_corner];
+                  Navigator.of(context).pop(
+                    SessionGoal(
+                      kind: _kind,
+                      segmentName: corner.name,
+                      startProgressMeters: corner.startProgressMeters,
+                      endProgressMeters: corner.endProgressMeters,
+                    ),
+                  );
+                },
+          child: Text(l10n.ownGoalsSave),
+        ),
+      ],
     );
   }
 }
