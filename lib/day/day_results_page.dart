@@ -37,6 +37,7 @@ import 'progression_card.dart';
 import 'recovery_store.dart';
 import 'reveal.dart';
 import 'segment_editor_page.dart';
+import 'report_share.dart';
 import 'session_details_dialog.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
@@ -60,6 +61,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
     this.library,
+    this.reportSharer = const PlatformReportSharer(),
     this.coach,
   }) : replace = null,
        startNewDay = null,
@@ -78,6 +80,7 @@ class DayResultsPage extends StatefulWidget {
     this.pickers = const PlatformRecordingPickers(),
     this.recovery,
     this.library,
+    this.reportSharer = const PlatformReportSharer(),
     this.coach,
   }) : replace = null,
        startNewDay = null,
@@ -97,6 +100,7 @@ class DayResultsPage extends StatefulWidget {
     this.replace,
     this.startNewDay,
     this.library,
+    this.reportSharer = const PlatformReportSharer(),
     this.disposesController,
     this.coach,
   }) : _create = (() => controller);
@@ -109,6 +113,9 @@ class DayResultsPage extends StatefulWidget {
 
   /// Keeps the day while it has unsaved changes; none when null.
   final RecoveryStore? recovery;
+
+  /// Where the day report goes as an image (FET-174).
+  final ReportSharer reportSharer;
 
   /// The driver profile the day is saved in, by itself and without a save
   /// dialog; when null, days are saved where [documents] says.
@@ -428,8 +435,53 @@ class _DayResultsPageState extends State<DayResultsPage> {
               final row = _controller.lapRow(reference);
               if (row != null) _open(row);
             },
+            onShare: _shareReport,
+            shareEnabled: !_controller.coachLoading,
           ),
         );
+
+  bool _sharingReport = false;
+
+  /// The report as one image: the share sheet on phones, a file on desktop.
+  Future<void> _shareReport(Rect origin) async {
+    if (_sharingReport) return;
+    _sharingReport = true;
+    final l10n = context.l10n;
+    try {
+      final best = _controller.ranking?.bestOfDay;
+      final outcome = await shareDayReport(
+        context,
+        report: _controller.dayReportDocument,
+        title: _controller.name,
+        sharer: widget.reportSharer,
+        origin: origin,
+        // The coach's notes for the next session, without their maps.
+        extra: [
+          if (best != null)
+            NextSessionCard(
+              coach: _controller.coach,
+              result: _controller.theoreticalBest,
+              session: _controller.latestRunName,
+              lapLabel: _controller.lapLabel,
+              loading: _controller.coachLoading,
+              error: _controller.coachError,
+              speedsConverted: _controller.coachSpeedsConverted,
+              withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
+              printable: true,
+            ),
+        ],
+      );
+      if (mounted && outcome == ReportShareOutcome.saved) {
+        _tell(l10n.reportShareSaved);
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        _tell(l10n.reportShareFailed(reportShareError(l10n, error)));
+      }
+    } finally {
+      _sharingReport = false;
+    }
+  }
 
   LapPath? _bestPath(DayLapRow best) {
     if (_mapReference != best.reference) {

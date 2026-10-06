@@ -9,8 +9,11 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/focus_areas_card.dart';
 import 'package:telemetry/day/lap_page.dart';
+import 'package:telemetry/day/next_session_card.dart';
+import 'package:telemetry/day/report_share.dart';
 import 'package:telemetry/format.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -18,6 +21,7 @@ import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
 
 void main() {
+  group('share', _shareTests);
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('day_report'));
   tearDown(() => deleteTemporaryDirectory(directory));
@@ -475,5 +479,271 @@ void main() {
     );
     expect(find.text('Obliczanie…'), findsWidgets);
     expect(find.text('Calculating…'), findsNothing);
+  });
+}
+
+/// The report image's path instead of the share sheet or save dialog.
+final class _FakeSharer implements ReportSharer {
+  _FakeSharer(this.folder, {this.shares = true, this.chosen, this.work});
+
+  final Directory folder;
+  @override
+  final bool shares;
+
+  /// What the save dialog answers; null is cancelled.
+  final String? chosen;
+  final shared = <String>[];
+  final asked = <String>[];
+
+  /// Where the image is written before sharing; in [folder] when null.
+  final String? work;
+
+  @override
+  Future<String?> saveLocation(String fileName) async {
+    asked.add(fileName);
+    return chosen;
+  }
+
+  @override
+  Future<String> workFile(String fileName) async =>
+      work ?? '${folder.path}/$fileName';
+
+  @override
+  Future<bool> share(String path, Rect origin) async {
+    shared.add(path);
+    return true;
+  }
+}
+
+/// The width and height a PNG's header says.
+(int, int) _pngSize(List<int> bytes) {
+  int word(int at) =>
+      bytes[at] << 24 |
+      bytes[at + 1] << 16 |
+      bytes[at + 2] << 8 |
+      bytes[at + 3];
+  expect(bytes.sublist(1, 4), 'PNG'.codeUnits);
+  return (word(16), word(20));
+}
+
+void _shareTests() {
+  late Directory directory;
+  setUp(() => directory = Directory.systemTemp.createTempSync('report_share'));
+  tearDown(() => deleteTemporaryDirectory(directory));
+
+  DayImportOutcome importDay() {
+    final path = '${directory.path}/a.vbo';
+    File(path).writeAsStringSync(
+      rectangleVbo([
+        rectangleLap(30, 50, 120, 20),
+        rectangleLap(31, 300, 400, 25),
+        rectangleLap(30, 550, 650, 22),
+      ], car: true),
+    );
+    return runDayImport((paths: [path], includeSubfolders: false));
+  }
+
+  Future<void> openReport(WidgetTester tester, ReportSharer sharer) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage.controller(
+          controller: controller,
+          reportSharer: sharer,
+          disposesController: () => true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daySection-report')));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> tapShare(WidgetTester tester, bool Function() done) async {
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const ValueKey('dayReportShare')));
+      for (var wait = 0; wait < 1500 && !done(); ++wait) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+    });
+    await tester.pumpAndSettle();
+  }
+
+  // Real time passes until [finder] shows: the write after the image is
+  // asynchronous, so a file that exists may not be finished yet.
+  Future<void> settleUntil(WidgetTester tester, Finder finder) async {
+    for (var wait = 0; wait < 500 && finder.evaluate().isEmpty; ++wait) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('on a phone the report goes to the share sheet as one image', (
+    tester,
+  ) async {
+    final sharer = _FakeSharer(directory);
+    await openReport(tester, sharer);
+    await tapShare(tester, () => sharer.shared.isNotEmpty);
+    expect(sharer.shared, hasLength(1));
+    expect(sharer.shared.single, endsWith('.png'));
+    final (width, height) = _pngSize(
+      File(sharer.shared.single).readAsBytesSync(),
+    );
+    // 600 wide drawn at twice that; tall enough for every card.
+    expect(width, 1200);
+    expect(height, greaterThan(1200));
+    expect(sharer.asked, isEmpty);
+  });
+
+  testWidgets('on desktop the image is saved where the driver chooses', (
+    tester,
+  ) async {
+    final target = '${directory.path}/chosen.png';
+    final sharer = _FakeSharer(directory, shares: false, chosen: target);
+    await openReport(tester, sharer);
+    await tapShare(tester, () => File(target).existsSync());
+    await settleUntil(tester, find.text('Report saved as an image.'));
+    expect(sharer.asked.single, endsWith('.png'));
+    expect(_pngSize(File(target).readAsBytesSync()).$1, 1200);
+    expect(find.text('Report saved as an image.'), findsOneWidget);
+  });
+
+  testWidgets('a cancelled save writes nothing and says nothing', (
+    tester,
+  ) async {
+    final cancelled = _FakeSharer(directory, shares: false);
+    await openReport(tester, cancelled);
+    await tapShare(tester, () => cancelled.asked.isNotEmpty);
+    expect(cancelled.asked, hasLength(1));
+    expect(find.text('Report saved as an image.'), findsNothing);
+  });
+
+  testWidgets('the image has the cards under the day name, without buttons', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    addTearDown(controller.dispose);
+    await tester.binding.setSurfaceSize(const Size(600, 4000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: SingleChildScrollView(
+          child: DayReportPage(
+            report: controller.dayReportDocument,
+            printable: true,
+            heading: 'Jastrząb 29 Aug',
+            onOpenLap: (_) {},
+            onShare: (_) async {},
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Jastrząb 29 Aug'), findsOneWidget);
+    expect(find.byKey(const ValueKey('dayReportBest')), findsOneWidget);
+    expect(find.byKey(const ValueKey('dayReportShare')), findsNothing);
+    expect(find.byKey(const ValueKey('dayReportOpenBestLap')), findsNothing);
+    expect(find.text('FlappedEar Telemetry'), findsOneWidget);
+  });
+
+  testWidgets('a report image that cannot be written says why', (tester) async {
+    final sharer = _FakeSharer(
+      directory,
+      work: '${directory.path}/missing/folder/report.png',
+    );
+    await openReport(tester, sharer);
+    // Nothing to wait on but the message.
+    await tapShare(tester, () => true);
+    await settleUntil(tester, find.textContaining('could not be made'));
+    expect(
+      find.textContaining('The report image could not be made: '),
+      findsOneWidget,
+    );
+    expect(sharer.shared, isEmpty);
+  });
+
+  testWidgets('the coach goes into the image without its buttons', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(600, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: SingleChildScrollView(
+          child: DayReportPage(
+            report: const {'groupLabel': 'Unresolved · 1', 'results': []},
+            printable: true,
+            heading: 'Day',
+            extra: [
+              NextSessionCard(
+                coach: null,
+                result: null,
+                session: '2',
+                lapLabel: (_) => '',
+                error: 'Out of memory',
+                onRetry: () {},
+                printable: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(find.byKey(const ValueKey('nextSessionCard')), findsOneWidget);
+    expect(find.byKey(const ValueKey('coachReason')), findsOneWidget);
+    expect(find.byType(TextButton), findsNothing);
+  });
+
+  testWidgets('a report too tall for one image is refused, never cut', (
+    tester,
+  ) async {
+    Object? error;
+    await tester.runAsync(() async {
+      try {
+        await renderWidgetImage(
+          tester.view,
+          const SizedBox(width: 600, height: 20000),
+          width: 600,
+        );
+      } on Object catch (caught) {
+        error = caught;
+      }
+    });
+    expect(error, isA<ReportImageTooLong>());
+    final l10n = lookupAppLocalizations(const Locale('pl'));
+    expect(
+      reportShareError(l10n, error!),
+      'Raport jest za długi na jeden obraz.',
+    );
+    expect(
+      reportShareError(
+        l10n,
+        const FileSystemException('x', 'p', OSError('Brak miejsca', 28)),
+      ),
+      'Brak miejsca',
+    );
+  });
+
+  test('the file is named after the day', () {
+    expect(
+      reportFileName('Jastrząb 29/08: day', 'Day report'),
+      'Jastrząb 29 08 day.png',
+    );
+    expect(reportFileName('  ', 'Day report'), 'Day report.png');
+    expect(reportFileName('con', 'Day report'), 'Day report.png');
+    expect(reportFileName('Day 1.', 'Day report'), 'Day 1.png');
+    expect(reportFileName('x' * 300, 'Day report').length, 104);
   });
 }

@@ -119,7 +119,30 @@ class DayReportPage extends StatelessWidget {
     required this.report,
     this.onOpenLap,
     this.embedded = false,
+    this.onShare,
+    this.printable = false,
+    this.heading,
+    this.extra = const [],
+    this.shareEnabled = true,
   });
+
+  /// Cards after the report's own in a [printable] report: the coach.
+  final List<Widget> extra;
+
+  /// Whether [onShare] may run now: not while what the image would show is
+  /// still being prepared elsewhere (the coach).
+  final bool shareEnabled;
+
+  /// Shares the report as an image, from the share button's place on
+  /// screen; no button when null.
+  final Future<void> Function(Rect origin)? onShare;
+
+  /// Drawn as an image (FET-174): the cards alone in one column, without
+  /// buttons or scrolling, under [heading].
+  final bool printable;
+
+  /// The day's name above the cards of a [printable] report.
+  final String? heading;
 
   /// Shown as the day page's Report tab: the cards alone, without a page
   /// and a title of their own.
@@ -131,6 +154,14 @@ class DayReportPage extends StatelessWidget {
   /// Opens a lap from its reference as the report writes it; no button when
   /// null.
   final void Function(Object? reference)? onOpenLap;
+
+  bool get _calculating => (report['results'] as List? ?? const []).any(
+    (result) => result is Map && result['status'] == 'computing',
+  );
+
+  // No lap opens from an image.
+  void Function(Object? reference)? get _openLap =>
+      printable ? null : onOpenLap;
 
   Map<String, Object?> _result(String id) {
     for (final value in report['results'] as List? ?? const []) {
@@ -144,6 +175,82 @@ class DayReportPage extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final groupLabel = report['groupLabel'] as String? ?? '';
+    final share = printable ? null : onShare;
+    final children = [
+      if (printable && heading != null) ...[
+        Text(
+          heading!,
+          key: const ValueKey('dayReportHeading'),
+          style: theme.textTheme.titleLarge,
+        ),
+        const SizedBox(height: 4),
+      ],
+      Text(
+        groupLabel.isEmpty
+            ? l10n.reportGroupNone
+            : _groupLabel(l10n, groupLabel),
+        key: const ValueKey('dayReportGroup'),
+        style: theme.textTheme.titleMedium,
+      ),
+      if (share != null && groupLabel.isNotEmpty)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Builder(
+            builder: (button) => TextButton.icon(
+              key: const ValueKey('dayReportShare'),
+              icon: const Icon(Icons.ios_share),
+              label: Text(l10n.reportShare),
+              // Not while a part is still calculated: the image would say
+              // so instead of the result.
+              onPressed: !shareEnabled || _calculating
+                  ? null
+                  : () {
+                      final box = button.findRenderObject() as RenderBox?;
+                      // Where the iPad shows the share sheet.
+                      share(
+                        box != null && box.hasSize
+                            ? box.localToGlobal(Offset.zero) & box.size
+                            : Rect.fromCenter(
+                                center: MediaQuery.sizeOf(button)
+                                    .center(Offset.zero),
+                                width: 1,
+                                height: 1,
+                              ),
+                      );
+                    },
+            ),
+          ),
+        ),
+      const SizedBox(height: 12),
+      _best(context),
+      _focus(context),
+      _losses(context),
+      _sessions(context),
+      _consistency(context),
+      _car(context),
+      _heartRate(context),
+      if (printable)
+        for (final card in extra)
+          Padding(padding: const EdgeInsets.only(bottom: 12), child: card),
+      if (printable)
+        Text(
+          l10n.appTitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
+          ),
+        ),
+    ];
+    if (printable) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          key: const ValueKey('dayReport'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
+      );
+    }
     // At most 840 wide, centred, so lines stay readable on a large screen.
     final body = LayoutBuilder(
       builder: (context, constraints) => ListView(
@@ -152,23 +259,7 @@ class DayReportPage extends StatelessWidget {
           horizontal: math.max(16, (constraints.maxWidth - 840) / 2),
           vertical: 16,
         ),
-        children: [
-          Text(
-            groupLabel.isEmpty
-                ? l10n.reportGroupNone
-                : _groupLabel(l10n, groupLabel),
-            key: const ValueKey('dayReportGroup'),
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 12),
-          _best(context),
-          _focus(context),
-          _losses(context),
-          _sessions(context),
-          _consistency(context),
-          _car(context),
-          _heartRate(context),
-        ],
+        children: children,
       ),
     );
     if (embedded) return body;
@@ -223,7 +314,7 @@ class DayReportPage extends StatelessWidget {
     Key? key,
   }) {
     final theme = Theme.of(context);
-    final open = onOpenLap;
+    final open = _openLap;
     return ButtonRow(
       enabled: open != null && reference != null,
       child: InkWell(
@@ -318,14 +409,14 @@ class DayReportPage extends StatelessWidget {
             ),
           ],
         ),
-        if (onOpenLap != null && _evidence(best, 0) != null)
+        if (_openLap != null && _evidence(best, 0) != null)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               key: const ValueKey('dayReportOpenBestLap'),
               icon: const Icon(Icons.map_outlined),
               label: Text(l10n.reportOpenBestLap),
-              onPressed: () => onOpenLap!(_evidence(best, 0)),
+              onPressed: () => _openLap!(_evidence(best, 0)),
             ),
           ),
       ],

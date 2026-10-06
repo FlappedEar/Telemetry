@@ -872,6 +872,36 @@ abstract class AppLocalizations {
   /// **'Day report'**
   String get dayReport;
 
+  /// Day report button: shares (phones) or saves (desktop) the report as one PNG image.
+  ///
+  /// In en, this message translates to:
+  /// **'Share as image'**
+  String get reportShare;
+
+  /// File type in the save dialog for the report image.
+  ///
+  /// In en, this message translates to:
+  /// **'PNG image'**
+  String get reportImageType;
+
+  /// After the report image was saved on desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Report saved as an image.'**
+  String get reportShareSaved;
+
+  /// Why the report image could not be made: taller than an image may be.
+  ///
+  /// In en, this message translates to:
+  /// **'The report is too long for one image.'**
+  String get reportImageTooLong;
+
+  /// Drawing or writing the report image failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The report image could not be made: {error}'**
+  String reportShareFailed(String error);
+
   /// Tooltip of the menu with more actions.
   ///
   /// In en, this message translates to:
