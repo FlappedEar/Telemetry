@@ -7851,40 +7851,94 @@ abstract class AppLocalizations {
   /// **'Weather'**
   String get lastTimeHereWeather;
 
-  /// Last time here card: the previous visit's weather, during the named session. weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.
+  /// Last time here card: the previous visit's weather. session is a label such as 'Session 2, best lap'; weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.
   ///
   /// In en, this message translates to:
   /// **'Then ({session}): {weather}'**
   String lastTimeHereWeatherThen(String session, String weather);
 
-  /// Last time here card: today's weather, during the named session. weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.
+  /// Last time here card: today's weather. session is a label such as 'Session 2, best lap'; weather is a short weather line.
   ///
   /// In en, this message translates to:
   /// **'Today ({session}): {weather}'**
   String lastTimeHereWeatherToday(String session, String weather);
 
-  /// Last time here card: the previous visit has no weather kept.
+  /// Last time here card: the session whose weather is shown set the day's best lap.
   ///
   /// In en, this message translates to:
-  /// **'Then: —'**
+  /// **'{session}, best lap'**
+  String lastTimeHereWeatherBestLapSession(String session);
+
+  /// Last time here card: the session that set the best lap has no weather, so this session, the first with weather, is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}; the best-lap session had none'**
+  String lastTimeHereWeatherBestHadNone(String session);
+
+  /// Last time here card: no session matches the day's best lap, so the first session with weather is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}, first with weather'**
+  String lastTimeHereWeatherFirstSession(String session);
+
+  /// Last time here card: part of a weather line for a sky condition saved by a newer version of the app.
+  ///
+  /// In en, this message translates to:
+  /// **'conditions this version does not know'**
+  String get lastTimeHereWeatherUnknownCondition;
+
+  /// Last time here card: the previous visit has no weather in the library, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'Then: — no weather kept for that day: weather lookup was off, its recordings have no time or position, or the day was added before the library kept weather.'**
   String get lastTimeHereWeatherThenNone;
 
-  /// Last time here card: today has no weather kept yet.
+  /// Last time here card: today has no weather in the library, when the page's weather state is not known.
   ///
   /// In en, this message translates to:
-  /// **'Today: —'**
+  /// **'Today: — no weather kept for today yet.'**
   String get lastTimeHereWeatherTodayNone;
 
-  /// Last time here card: why a visit's weather is shown as a dash, or why there is no weather at all.
+  /// Last time here card: today's weather is being looked up.
   ///
   /// In en, this message translates to:
-  /// **'No weather for that session: weather lookup off, no time or position, or the day was added before the library kept weather.'**
-  String get lastTimeHereWeatherMissing;
+  /// **'Today ({session}): looking up the weather…'**
+  String lastTimeHereWeatherTodayFetching(String session);
+
+  /// Last time here card: no weather today because weather lookup is turned off.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — weather lookup is off in settings.'**
+  String lastTimeHereWeatherTodayOff(String session);
+
+  /// Last time here card: today's weather lookup failed (offline or no data).
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — the weather service could not be reached or had no data.'**
+  String lastTimeHereWeatherTodayUnavailable(String session);
+
+  /// Last time here card: today's session cannot have weather.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — no weather for this session: its recording has no time or GPS position.'**
+  String lastTimeHereWeatherTodayNoPosition(String session);
+
+  /// Last time here card: the weather arrived but the day has unsaved changes, so the library gets it with the save.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — shown on this page; it reaches the library when the day is saved.'**
+  String lastTimeHereWeatherTodayPending(String session);
+
+  /// Last time here card: today's weather was stored by a newer app version.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — saved by a newer version of the app and not read here.'**
+  String lastTimeHereWeatherTodayKept(String session);
 
   /// Last time here card: which session's weather stands for each visit.
   ///
   /// In en, this message translates to:
-  /// **'Each visit\'s weather is that of the session that set its best lap, else of its first session with weather.'**
+  /// **'Each visit\'s weather is that of the session that set its best lap, or, when that session has none, of its first session with weather.'**
   String get lastTimeHereWeatherNote;
 
   /// Settings heading for checking GitHub for a newer version of the app.

@@ -73,6 +73,7 @@ version does not know, so a newer app's additions survive a re-save.
             ]
           },
           "weather": {
+            "sourceRevision": "<recording SHA-256>",
             "temperatureC": 21.4, "temperatureMinC": 19.2, "temperatureMaxC": 22.6,
             "condition": "overcast", "precipitationMm": 0.0,
             "windSpeedKmh": 12.3, "windDirectionDegrees": 225.0
@@ -161,6 +162,7 @@ them has no `weather`.
 
 | Key | Meaning |
 |---|---|
+| `sourceRevision` | The SHA-256 of the recording the weather is for (the day weather's `sourceRevision`). |
 | `temperatureC` | Air temperature at the session's middle, °C. |
 | `temperatureMinC`, `temperatureMaxC` | Lowest and highest air temperature from the session's start to its end, °C. |
 | `condition` | The worst weather of the hours nearest the session: a `WeatherCondition` name (`clear`, `partlyCloudy`, `overcast`, `fog`, `drizzle`, `rain`, `snow`, `showers`, `thunderstorm`). |
@@ -170,24 +172,38 @@ them has no `weather`.
 
 Reading checks each value against the ranges a day's stored weather uses
 (`weatherValueRanges`: −90 to 60 °C, 0 to 500 mm, 0 to 500 km/h, 0 to 360°);
-a value out of range, not a number, or a condition this version does not know
-is left out rather than refusing the profile. `weather` that is not an object
-is refused, like `stats`.
+a value out of range or not a number is left out rather than refusing the
+profile, and so is a `sourceRevision` that is not a string of 1 to 128 code
+units. A `condition` this version does not know (a newer version's) is kept
+as written and written back unchanged; the app shows it as conditions it does
+not know. `weather` that is not an object is refused, like `stats`.
 
 The app records the weather the day page shows for each session: weather kept
 in the day document, or fetched while the day is open. Nothing is looked up
 for the profile, so with weather lookup off only weather the day already kept
-is recorded. Weather usually arrives after the save that records the day, so
-the day page records the day again when a session's weather arrives
-(`_record` in `day_results_page.dart` compares which recording and fetch each
-session's weather is from). A day added again without a session's weather
-keeps the weather that session had; new weather replaces it whole. Days added
-before FET-132 get their weather when they are next opened, if their document
-holds it.
+is recorded. Each save that records the day (`ProfileLibrary.recordDay`)
+passes it. Weather usually arrives after that save; it then goes to the
+profile on its own (`ProfileLibrary.recordWeather`, `setProfileSessionWeather`),
+which swaps only the sessions' `weather` and measures nothing again. The page
+gives it only while the day has no unsaved changes, so it goes only to the
+sessions of the saved day the profile lists; on a day with unsaved changes it
+waits for the save (a library day saves itself after 2 s). Sessions the
+profile does not list are left out.
+
+A day added again without a session's weather keeps the weather that session
+had while it is the weather of the same recording: when the session's
+recording revision (from its lap rows) differs from the kept
+`sourceRevision`, the kept weather is dropped. Weather without a
+`sourceRevision`, or a session without lap rows, keeps it. New weather
+replaces the old whole. Days added before FET-132 get their weather when they
+are next opened, if their document holds it.
 
 "Last time here" on the day page shows each visit by the session that set the
-day's best lap (`bestLapSeconds` equal to the day's); when that session has no
-weather, or none matches, by its first session with weather.
+day's best lap (`bestLapSeconds` equal to the day's), labelled "best lap";
+when that session has no weather, by its first session with weather, labelled
+as such. Today without weather in the profile says why from the page's
+weather state (being looked up, lookup off, service not reached, no time or
+position, not saved yet, or stored by a newer version).
 
 ## Corners across days
 

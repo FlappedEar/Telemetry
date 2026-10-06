@@ -103,7 +103,7 @@ String _datedVbo(List<double> speeds) {
       '${rows.join('\n')}\n';
 }
 
-/// Counts the days recorded in the profile.
+/// Counts the days recorded in the profile, and the weather given to it.
 final class _CountingLibrary extends ProfileLibrary {
   _CountingLibrary(String folder)
     : super(
@@ -114,7 +114,14 @@ final class _CountingLibrary extends ProfileLibrary {
             computation(),
       );
 
-  final recorded = <Map<String, WeatherSummary?>?>[];
+  final recorded = <Map<String, ProfileWeather?>?>[];
+  final weatherRecorded = <Map<String, ProfileWeather>>[];
+
+  @override
+  void recordWeather(String eventId, Map<String, ProfileWeather> weather) {
+    weatherRecorded.add(weather);
+    super.recordWeather(eventId, weather);
+  }
 
   @override
   Future<void> recordDay({
@@ -124,7 +131,7 @@ final class _CountingLibrary extends ProfileLibrary {
     required DayAnalysis analysis,
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
-    Map<String, WeatherSummary?>? weather,
+    Map<String, ProfileWeather?>? weather,
   }) {
     recorded.add(weather);
     return super.recordDay(
@@ -779,13 +786,20 @@ void main() {
       await until(() => session()?.weather != null);
       expect(session()!.weather!.temperatureC, 18);
       expect(session()!.weather!.condition, WeatherCondition.overcast);
-      expect(library.recorded.length, before + 1);
+      // Only the weather is given: the day is not measured again.
+      expect(library.recorded.length, before);
+      expect(library.weatherRecorded, hasLength(1));
+      expect(
+        library.weatherRecorded.single[id]!.sourceRevision,
+        day.runs.single.run.contentSha256,
+      );
 
-      // Told again with nothing new: not recorded again.
+      // Told again with nothing new: not given again.
       controller.weather.retry(id);
       await tester.runAsync(settle);
       await tester.pump();
-      expect(library.recorded.length, before + 1);
+      expect(library.recorded.length, before);
+      expect(library.weatherRecorded, hasLength(1));
 
       // Written to the profile's file, as the card reads it.
       final file = File('${directory.path}/Profile/$profileFileName');
@@ -798,6 +812,56 @@ void main() {
           : null;
       await until(() => written() != null);
       expect(written()!.windSpeedKmh, 12);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    },
+  );
+
+  testWidgets(
+    'weather arriving on a day with unsaved changes goes with the save',
+    (tester) async {
+      final day = importDay([
+        write('a.vbo', [30, 28, 31]),
+      ]);
+      final id = day.runs.single.run.id;
+      final service = _Service()..gate = Completer<void>();
+      final controller = DayResultsController(
+        runs: day.runs,
+        analysis: day.analysis!,
+        weather: DayWeather(fetcher: service.fetch),
+      );
+      final library = _CountingLibrary('${directory.path}/Profile');
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(
+              location: '${directory.path}/d.fetproject',
+            ),
+            library: library,
+          ),
+        ),
+      );
+      Future<void> until(bool Function() done) async {
+        for (var i = 0; i < 300 && !done(); ++i) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+        expect(done(), isTrue);
+      }
+
+      await until(() => library.recorded.isNotEmpty && !controller.dirty);
+      expect(controller.renameDay('Renamed'), isNull);
+      expect(controller.dirty, isTrue);
+      service.gate!.complete();
+      await until(() => controller.weather.of(id) != null);
+      await tester.pump();
+      expect(library.weatherRecorded, isEmpty);
+      // Saved by itself after a moment; that save records the weather.
+      await until(() => library.recorded.last?[id] != null);
+      expect(library.weatherRecorded, isEmpty);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 3));
     },

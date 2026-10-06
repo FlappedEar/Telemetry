@@ -249,7 +249,7 @@ class ProfileLibrary extends ChangeNotifier {
     required DayAnalysis analysis,
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
-    Map<String, WeatherSummary?>? weather,
+    Map<String, ProfileWeather?>? weather,
   }) async {
     // A [flush] right after waits for the day being measured and written.
     final measured = Completer<void>();
@@ -277,7 +277,7 @@ class ProfileLibrary extends ChangeNotifier {
     required DayAnalysis analysis,
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
-    Map<String, WeatherSummary?>? weather,
+    Map<String, ProfileWeather?>? weather,
   }) async {
     if (!_loaded) await load();
     final folder = _folder;
@@ -331,7 +331,7 @@ class ProfileLibrary extends ChangeNotifier {
     required String trackName,
     required Map<String, TelemetrySession?>? recordings,
     required DayTheoreticalBest? theoreticalBest,
-    required Map<String, WeatherSummary?>? weather,
+    required Map<String, ProfileWeather?>? weather,
   }) =>
       () => ProfileDayInput.fromAnalysis(
         eventId: eventId,
@@ -343,6 +343,13 @@ class ProfileLibrary extends ChangeNotifier {
         theoreticalBest: theoreticalBest,
         weather: weather,
       );
+
+  /// Day [eventId]'s sessions with [weather] (by run id), as it arrives
+  /// after the day was recorded: only the weather is swapped, nothing is
+  /// measured again. Sessions the profile does not list for the day are
+  /// left out.
+  void recordWeather(String eventId, Map<String, ProfileWeather> weather) =>
+      _change((profile) => setProfileSessionWeather(profile, eventId, weather));
 
   /// Day [eventId] driven in car [carId], which new days then take.
   void setDayCar(String eventId, String carId) =>

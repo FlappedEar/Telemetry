@@ -5420,18 +5420,65 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get lastTimeHereWeatherThenNone => 'Poprzednio: —';
+  String lastTimeHereWeatherBestLapSession(String session) {
+    return '$session, najlepsze okrążenie';
+  }
 
   @override
-  String get lastTimeHereWeatherTodayNone => 'Dziś: —';
+  String lastTimeHereWeatherBestHadNone(String session) {
+    return '$session; sesja z najlepszym okrążeniem nie ma pogody';
+  }
 
   @override
-  String get lastTimeHereWeatherMissing =>
-      'Brak pogody dla tej sesji: pobieranie pogody wyłączone, brak czasu lub pozycji albo dzień dodano, zanim biblioteka zapisywała pogodę.';
+  String lastTimeHereWeatherFirstSession(String session) {
+    return '$session, pierwsza z pogodą';
+  }
+
+  @override
+  String get lastTimeHereWeatherUnknownCondition =>
+      'warunki nieznane tej wersji';
+
+  @override
+  String get lastTimeHereWeatherThenNone =>
+      'Poprzednio: — brak danych pogodowych dla tamtego dnia: pobieranie pogody było wyłączone, jego zapisy nie mają czasu lub pozycji albo dzień dodano, zanim biblioteka zapisywała pogodę.';
+
+  @override
+  String get lastTimeHereWeatherTodayNone =>
+      'Dziś: — biblioteka nie ma jeszcze dzisiejszej pogody.';
+
+  @override
+  String lastTimeHereWeatherTodayFetching(String session) {
+    return 'Dziś ($session): pobieranie pogody…';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayOff(String session) {
+    return 'Dziś ($session): — pobieranie pogody jest wyłączone w ustawieniach.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayUnavailable(String session) {
+    return 'Dziś ($session): — nie udało się połączyć z serwisem pogodowym albo nie miał danych.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayNoPosition(String session) {
+    return 'Dziś ($session): — brak danych pogodowych dla tej sesji: zapis nie ma czasu ani pozycji GPS.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayPending(String session) {
+    return 'Dziś ($session): — widoczna na tej stronie; trafi do biblioteki po zapisaniu dnia.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayKept(String session) {
+    return 'Dziś ($session): — zapisana przez nowszą wersję aplikacji i tu nieodczytywana.';
+  }
 
   @override
   String get lastTimeHereWeatherNote =>
-      'Pogoda każdego dnia to pogoda sesji, w której padło najlepsze okrążenie, a w razie jej braku pierwszej sesji z pogodą.';
+      'Pogoda każdego dnia to pogoda sesji z najlepszym okrążeniem, a gdy ta sesja nie ma pogody – pierwszej sesji, która ją ma.';
 
   @override
   String get settingsUpdatesHeading => 'Aktualizacje';
