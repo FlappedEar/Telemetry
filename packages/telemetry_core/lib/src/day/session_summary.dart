@@ -1,7 +1,7 @@
 // A session in 30 seconds (FET-233, idea 18 of FET-217): its best lap
 // against the day's earlier sessions, how repeatable its laps were against
 // the session before, its biggest gain and loss and the biggest gap left to
-// the day's fastest, the car's hottest temperatures and how the coach's goal
+// the quickest typical time of the day, the car's hottest temperatures and how the coach's goal
 // went. Nothing is recalculated here: every number comes from results the
 // day already computed (progression, section progression, coach, channel
 // summaries).
@@ -34,7 +34,7 @@ final class SessionSegmentChange {
   final double seconds;
 
   /// What it is compared with: the session before's typical time, or for
-  /// the biggest gap left the fastest time any lap of the day recorded.
+  /// the biggest gap left the quickest typical time of any session there.
   final double referenceSeconds;
 
   /// [seconds] − [referenceSeconds]: negative is quicker.
@@ -57,7 +57,8 @@ final class SessionTemperature {
   final String unit;
   final double maximum;
 
-  /// Null when the session before did not record it.
+  /// Null when the session before did not record it, or recorded it in
+  /// another unit.
   final double? previousMaximum;
 }
 
@@ -66,6 +67,7 @@ final class SessionSummary {
   SessionSummary({
     required this.runId,
     required this.runName,
+    this.earlierSessions = 0,
     this.previousRunName,
     this.eligibleLapCount = 0,
     this.bestLap,
@@ -73,18 +75,23 @@ final class SessionSummary {
     this.lapSpread,
     this.previousLapSpread,
     this.segmentsCompared = 0,
+    this.segmentsTimed = 0,
     this.biggestGain,
     this.biggestLoss,
     this.biggestGap,
     List<SessionTemperature> temperatures = const [],
+    this.temperatureReason = '',
     this.goal,
   }) : temperatures = List.unmodifiable(temperatures);
 
   final String runId;
   final String runName;
 
-  /// The session listed before it in recording order; null for the day's
-  /// first.
+  /// How many sessions of the group are listed before it.
+  final int earlierSessions;
+
+  /// The nearest session listed before it that has a ranked lap: what its
+  /// spread, gains and losses are compared with. Null when none has.
   final String? previousRunName;
 
   /// Its laps the ranking counts.
@@ -104,23 +111,32 @@ final class SessionSummary {
   /// Segments with a typical time in both sessions.
   final int segmentsCompared;
 
+  /// Segments with a typical time in this session.
+  final int segmentsTimed;
+
   /// The segment whose typical time fell the most since the session
   /// before, and the one that rose the most; null when none moved by
   /// [sessionSummaryChangeSeconds] or more.
   final SessionSegmentChange? biggestGain, biggestLoss;
 
-  /// The segment where its typical time is furthest from the fastest time
-  /// any lap of the day recorded there; null when none has a typical time.
+  /// The segment where its typical time is furthest above the quickest
+  /// typical time of any session there; null when it has no typical time
+  /// anywhere ([segmentsTimed] 0) or is the quickest everywhere.
   final SessionSegmentChange? biggestGap;
 
   /// Each recorded temperature's maximum, in the day's channel order.
   final List<SessionTemperature> temperatures;
 
+  /// Why there are no temperatures although the channel summaries are
+  /// there: their calculation failed, or this session's recording could not
+  /// be read (the summaries' own reason). Empty otherwise.
+  final String temperatureReason;
+
   /// How it did on the main focus the coach gave after the session before;
   /// null when the coach gave none or has not coached this session.
   final CoachGoalCheck? goal;
 
-  bool get firstSession => previousRunName == null;
+  bool get firstSession => earlierSessions == 0;
 
   /// Its best lap is quicker than every earlier session's.
   bool get newBest {
@@ -150,7 +166,10 @@ SessionSummary? summarizeSession(
   final index = progression.runs.indexWhere((run) => run.runId == runId);
   if (index < 0) return null;
   final run = progression.runs[index];
-  final previous = index > 0 ? progression.runs[index - 1] : null;
+  ProgressionRun? previous;
+  for (final earlier in progression.runs.take(index)) {
+    if (earlier.state == ProgressionRunState.available) previous = earlier;
+  }
 
   DayLapRow? earlierBest;
   for (final earlier in progression.runs.take(index)) {
@@ -168,13 +187,14 @@ SessionSummary? summarizeSession(
     return distribution.q3 - distribution.q1;
   }
 
-  var compared = 0;
+  var compared = 0, typical = 0;
   SessionSegmentChange? gain, loss, gap;
   if (sections != null) {
     final now = sections.sessions.indexWhere((session) => session.runId == runId);
-    final before = previous == null
+    final previousId = previous?.runId;
+    final before = previousId == null
         ? -1
-        : sections.sessions.indexWhere((session) => session.runId == previous.runId);
+        : sections.sessions.indexWhere((session) => session.runId == previousId);
     if (now >= 0) {
       for (final row in sections.segments) {
         final cell = row.cells[now].summary;
@@ -186,15 +206,14 @@ SessionSummary? summarizeSession(
           seconds: cell.median!,
           referenceSeconds: reference,
         );
-        double? fastest;
-        for (final other in row.cells) {
-          for (final lap in other.laps) {
-            if (fastest == null || lap.seconds < fastest) fastest = lap.seconds;
-          }
-        }
+        typical++;
+        final fastest = row.fastestTypical;
         if (fastest != null) {
           final candidate = against(fastest);
-          if (gap == null || candidate.deltaSeconds > gap.deltaSeconds) gap = candidate;
+          if (candidate.deltaSeconds > 0 &&
+              (gap == null || candidate.deltaSeconds > gap.deltaSeconds)) {
+            gap = candidate;
+          }
         }
         if (before < 0) continue;
         final earlier = row.cells[before].summary;
@@ -214,7 +233,10 @@ SessionSummary? summarizeSession(
   }
 
   final temperatures = <SessionTemperature>[];
-  if (channels != null && channels.error.isEmpty) {
+  var temperatureReason = '';
+  if (channels != null && channels.error.isNotEmpty) {
+    temperatureReason = channels.error;
+  } else if (channels != null) {
     RunChannelSummaries? of(String? id) {
       if (id == null) return null;
       for (final summaries in channels.runs) {
@@ -224,17 +246,24 @@ SessionSummary? summarizeSession(
     }
 
     final own = of(runId), before = of(previous?.runId);
+    if (own != null && own.unavailableReason.isNotEmpty) {
+      temperatureReason = own.unavailableReason;
+    }
     for (final name in channels.temperatureChannels) {
       final channel = own?.channel(name);
       final maximum = channel?.run.maximum;
       if (channel == null || maximum == null || !channel.run.valid) continue;
-      final earlier = before?.channel(name)?.run;
+      final earlierChannel = before?.channel(name);
+      final earlier = earlierChannel?.run;
       temperatures.add(
         SessionTemperature(
           channel: name,
           unit: channel.unit,
           maximum: maximum,
-          previousMaximum: earlier != null && earlier.valid ? earlier.maximum : null,
+          previousMaximum:
+              earlier != null && earlier.valid && _sameUnit(earlierChannel!.unit, channel.unit)
+              ? earlier.maximum
+              : null,
         ),
       );
     }
@@ -243,6 +272,7 @@ SessionSummary? summarizeSession(
   return SessionSummary(
     runId: runId,
     runName: run.runName,
+    earlierSessions: index,
     previousRunName: previous?.runName,
     eligibleLapCount: run.eligibleLapCount,
     bestLap: run.bestLap,
@@ -250,10 +280,23 @@ SessionSummary? summarizeSession(
     lapSpread: spread(run),
     previousLapSpread: spread(previous),
     segmentsCompared: compared,
+    segmentsTimed: typical,
     biggestGain: gain,
     biggestLoss: loss,
     biggestGap: gap,
     temperatures: temperatures,
+    temperatureReason: temperatureReason,
     goal: coach != null && coach.runId == runId ? coach.goal : null,
   );
+}
+
+// Whether two declared temperature units are the same: "C", "°C" and "degC"
+// are one unit; an undeclared unit only matches another undeclared one.
+bool _sameUnit(String a, String b) {
+  String normal(String unit) => switch (unit.trim()) {
+    'C' || 'c' || '°C' || 'degC' => '°C',
+    'F' || 'f' || '°F' || 'degF' => '°F',
+    final other => other,
+  };
+  return normal(a) == normal(b);
 }

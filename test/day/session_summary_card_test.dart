@@ -39,14 +39,70 @@ ProgressionRun _run(
   ),
 );
 
-final _progression = DayProgression(
-  groupId: 'g',
-  state: DayRankingState.available,
-  runs: [
-    _run('1', 112.0, q1: 0.5, q3: 1.2),
-    _run('2', 109.898, q1: 0.1, q3: 0.5),
-  ],
+ProgressionRun _empty(String id) => ProgressionRun(
+  run: ProgressionRunInfo(id: id, name: 'Session $id'),
+  state: ProgressionRunState.noEligibleLaps,
 );
+
+DayProgression _progression(List<ProgressionRun> runs) =>
+    DayProgression(groupId: 'g', state: DayRankingState.available, runs: runs);
+
+final _day = _progression([
+  _run('1', 112.0, q1: 0.5, q3: 1.2),
+  _run('2', 109.898, q1: 0.1, q3: 0.5),
+]);
+
+SectionProgressionCell _cell(String run, List<double> laps) =>
+    SectionProgressionCell(
+      runId: run,
+      summary: summarizeConsistency(laps),
+      laps: [for (final seconds in laps) SectionLapTime(seconds, null)],
+    );
+
+// Two sessions through two segments, as publishSectorProgression gives
+// them: Corner 1 0.3 s quicker in session 2, Straight 2 0.2 s slower.
+SectionProgression _sections({bool small = false}) {
+  SectionProgressionRow row(
+    String id,
+    String name,
+    List<double> one,
+    List<double> two,
+  ) {
+    final cells = [_cell('1', one), _cell('2', two)];
+    double? fastest;
+    for (final cell in cells) {
+      final median = cell.summary.median;
+      if (cell.summary.available && (fastest == null || median! < fastest)) {
+        fastest = median;
+      }
+    }
+    return SectionProgressionRow(
+      segmentId: id,
+      name: name,
+      type: 'corner',
+      cells: cells,
+      fastestTypical: fastest,
+    );
+  }
+
+  return SectionProgression(
+    sessions: [
+      for (final id in ['1', '2'])
+        SectionProgressionSession(
+          run: ProgressionRunInfo(id: id, name: 'Session $id'),
+          laps: const ConsistencySummary(),
+        ),
+    ],
+    segments: small
+        ? [
+            row('c1', 'Corner 1', [10.0, 10.1, 10.2], [10.0, 10.12, 10.2]),
+          ]
+        : [
+            row('c1', 'Corner 1', [10.0, 10.1, 10.2], [9.7, 9.8, 9.9]),
+            row('s2', 'Straight 2', [8.0, 8.1, 8.2], [8.2, 8.3, 8.4]),
+          ],
+  );
+}
 
 final _channels = DayChannelSummaries(
   runs: [
@@ -98,11 +154,13 @@ DayCoach _coach(String runId) => DayCoach(
 Future<void> _pump(
   WidgetTester tester, {
   String runId = '2',
-  DayTheoreticalBest? result,
+  DayProgression? progression,
+  DayTheoreticalBestState? state = DayTheoreticalBestState.ready,
+  SectionProgression? sections,
   DayCoach? coach,
   bool coachLoading = false,
+  String coachError = '',
   DayChannelSummaries? channels,
-  bool channelsLoading = false,
   Locale? locale,
 }) => tester.pumpWidget(
   TelemetryApp(
@@ -112,12 +170,13 @@ Future<void> _pump(
         child: SessionSummaryCard(
           runId: runId,
           session: 'Session $runId',
-          progression: _progression,
-          result: result,
+          progression: progression ?? _day,
+          sectionsState: state,
+          sections: sections ?? _sections(),
           coach: coach,
           coachLoading: coachLoading,
+          coachError: coachError,
           channels: channels,
-          channelsLoading: channelsLoading,
         ),
       ),
     ),
@@ -135,9 +194,7 @@ String _text(WidgetTester tester, String key) => tester
     .join(' | ');
 
 void main() {
-  testWidgets('the latest session: new best, spread, car and goal', (
-    tester,
-  ) async {
+  testWidgets('the latest session: every line', (tester) async {
     await _pump(tester, coach: _coach('2'), channels: _channels);
     expect(find.text('Session 2 in 30 seconds'), findsOneWidget);
     expect(
@@ -149,6 +206,25 @@ void main() {
       'Lap-time spread | 0.400 s (Session 1: 0.700 s)',
     );
     expect(
+      _text(tester, 'sessionSummaryGain'),
+      'Biggest gain | Corner 1 −0.300 s',
+    );
+    expect(
+      _text(tester, 'sessionSummaryLoss'),
+      'Biggest loss | Straight 2 +0.200 s',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('sessionSummaryAgainst')))
+          .data,
+      'Gains and losses: typical segment times against Session 1.',
+    );
+    // Straight 2's 8.3 against session 1's 8.1.
+    expect(
+      _text(tester, 'sessionSummaryGap'),
+      'Biggest gap left | Straight 2 +0.200 s to the quickest typical time there',
+    );
+    expect(
       _text(tester, 'sessionSummaryCar'),
       'Car, hottest | Oil 112 °C (Session 1: 104 °C)',
     );
@@ -156,23 +232,160 @@ void main() {
       _text(tester, 'sessionSummaryGoal'),
       'Focus from Session 1 | Corner 3: Better.',
     );
-    // The theoretical best is not ready yet.
-    expect(_text(tester, 'sessionSummaryGain'), 'Biggest gain | Working…');
-    expect(_text(tester, 'sessionSummaryGap'), 'Biggest gap left | Working…');
+  });
+
+  testWidgets('no change by the threshold; not a new best', (tester) async {
+    await _pump(
+      tester,
+      progression: _progression([
+        _run('1', 109.0),
+        _run('2', 109.5, q1: 0.1, q3: 0.5),
+      ]),
+      sections: _sections(small: true),
+    );
+    expect(
+      _text(tester, 'sessionSummaryBest'),
+      'Best lap | 1:49.500 · +0.500 s on the best of Session 1',
+    );
+    expect(
+      _text(tester, 'sessionSummaryGain'),
+      'Biggest gain | None by 0.05 s or more',
+    );
+    expect(
+      _text(tester, 'sessionSummaryLoss'),
+      'Biggest loss | None by 0.05 s or more',
+    );
+  });
+
+  testWidgets('the quickest typical time everywhere', (tester) async {
+    await _pump(tester, runId: '1', sections: _sections(small: true));
+    expect(
+      _text(tester, 'sessionSummaryGap'),
+      'Biggest gap left | Quickest typical time in every segment',
+    );
+  });
+
+  testWidgets('a tie with the earlier best', (tester) async {
+    await _pump(
+      tester,
+      progression: _progression([_run('1', 109.0), _run('2', 109.0)]),
+    );
+    expect(
+      _text(tester, 'sessionSummaryBest'),
+      'Best lap | 1:49.000 · equals the best of Session 1',
+    );
   });
 
   testWidgets('the first session, values still being worked out', (
     tester,
   ) async {
-    await _pump(tester, runId: '1', coachLoading: true, channelsLoading: true);
+    await _pump(tester, runId: '1', state: null, coachLoading: true);
     expect(
       _text(tester, 'sessionSummaryBest'),
       'Best lap | 1:52.000 · first session of the day',
     );
     expect(_text(tester, 'sessionSummarySpread'), 'Lap-time spread | 0.700 s');
+    expect(_text(tester, 'sessionSummaryGain'), 'Biggest gain | Working…');
+    expect(_text(tester, 'sessionSummaryGap'), 'Biggest gap left | Working…');
     expect(_text(tester, 'sessionSummaryCar'), 'Car, hottest | Working…');
     // No session before, so no goal to check.
     expect(find.byKey(const ValueKey('sessionSummaryGoal')), findsNothing);
+  });
+
+  testWidgets('the first session once the theoretical best is ready', (
+    tester,
+  ) async {
+    await _pump(tester, runId: '1');
+    expect(
+      _text(tester, 'sessionSummaryGain'),
+      'Biggest gain | First session: nothing to compare with',
+    );
+    expect(find.byKey(const ValueKey('sessionSummaryAgainst')), findsNothing);
+  });
+
+  testWidgets('earlier sessions without a ranked lap', (tester) async {
+    await _pump(
+      tester,
+      progression: _progression([
+        _empty('1'),
+        _run('2', 109.0, q1: 0.1, q3: 0.5),
+      ]),
+    );
+    expect(
+      _text(tester, 'sessionSummaryBest'),
+      'Best lap | 1:49.000 · no earlier session has a ranked lap',
+    );
+    expect(
+      _text(tester, 'sessionSummaryGain'),
+      'Biggest gain | No earlier session has a ranked lap',
+    );
+    expect(
+      _text(tester, 'sessionSummaryGoal'),
+      'Focus from the session before | No change to work on was given',
+    );
+  });
+
+  testWidgets('fewer than three laps through the segments', (tester) async {
+    await _pump(
+      tester,
+      sections: SectionProgression(
+        sessions: _sections().sessions,
+        segments: [
+          SectionProgressionRow(
+            segmentId: 'c1',
+            name: 'Corner 1',
+            type: 'corner',
+            cells: [
+              _cell('1', [10.0]),
+              _cell('2', [9.0, 9.1]),
+            ],
+          ),
+        ],
+      ),
+    );
+    expect(
+      _text(tester, 'sessionSummaryGain'),
+      'Biggest gain | Needs 3 laps in both sessions',
+    );
+    expect(
+      _text(tester, 'sessionSummaryGap'),
+      'Biggest gap left | Needs at least 3 laps',
+    );
+  });
+
+  testWidgets('without a theoretical best, the segment lines say why', (
+    tester,
+  ) async {
+    await _pump(tester, state: DayTheoreticalBestState.unavailable);
+    expect(find.byKey(const ValueKey('sessionSummaryGain')), findsNothing);
+    expect(
+      _text(tester, 'sessionSummarySegments'),
+      'Segments | Not available without a theoretical best',
+    );
+  });
+
+  testWidgets('the car and the goal say why when they have nothing', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      coachError: 'boom',
+      channels: DayChannelSummaries(error: 'Channel summaries were cancelled.'),
+    );
+    expect(_text(tester, 'sessionSummaryCar'), startsWith('Car, hottest | '));
+    expect(_text(tester, 'sessionSummaryCar'), isNot(contains('Working')));
+    expect(
+      _text(tester, 'sessionSummaryGoal'),
+      'Focus from the session before | The coach could not run',
+    );
+
+    await _pump(tester, coachLoading: true, channels: DayChannelSummaries());
+    expect(
+      _text(tester, 'sessionSummaryGoal'),
+      'Focus from the session before | Working…',
+    );
+    // No temperature recorded: no car line.
+    expect(find.byKey(const ValueKey('sessionSummaryCar')), findsNothing);
   });
 
   testWidgets('a session the progression does not list says why', (
@@ -187,21 +400,6 @@ void main() {
     );
     expect(find.byKey(const ValueKey('sessionSummaryBest')), findsNothing);
   });
-
-  testWidgets(
-    'a theoretical best without a result leaves out the segment lines',
-    (tester) async {
-      await _pump(
-        tester,
-        result: DayTheoreticalBest(
-          groupId: 'g',
-          state: DayTheoreticalBestState.unavailable,
-        ),
-      );
-      expect(find.byKey(const ValueKey('sessionSummaryGain')), findsNothing);
-      expect(find.byKey(const ValueKey('sessionSummaryGap')), findsNothing);
-    },
-  );
 
   testWidgets('in Polish', (tester) async {
     await _pump(
@@ -218,6 +416,10 @@ void main() {
     expect(
       _text(tester, 'sessionSummaryGoal'),
       'Cel po sesji: Sesja 1 | Zakręt 3: Lepiej.',
+    );
+    expect(
+      _text(tester, 'sessionSummaryGain'),
+      'Największy zysk | Zakręt 1 −0.300 s',
     );
   });
 }

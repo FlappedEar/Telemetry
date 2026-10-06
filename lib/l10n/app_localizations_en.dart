@@ -5814,7 +5814,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get summaryNoChange => 'None by 0.05 s or more';
+  String summaryNoChange(String seconds) {
+    return 'None by $seconds s or more';
+  }
 
   @override
   String get summaryFirstSession => 'First session: nothing to compare with';
@@ -5832,7 +5834,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String summaryGapValue(String segment, String delta) {
-    return '$segment $delta to the day\'s fastest there';
+    return '$segment $delta to the quickest typical time there';
   }
 
   @override
@@ -5860,4 +5862,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryWorking => 'Working…';
+
+  @override
+  String summaryBestNoEarlier(String time) {
+    return '$time · no earlier session has a ranked lap';
+  }
+
+  @override
+  String summaryBestEqual(String time, String session) {
+    return '$time · equals the best of $session';
+  }
+
+  @override
+  String get summaryNoEarlierRanked => 'No earlier session has a ranked lap';
+
+  @override
+  String get summarySegments => 'Segments';
+
+  @override
+  String get summarySegmentsUnavailable =>
+      'Not available without a theoretical best';
+
+  @override
+  String get summaryGoalBefore => 'Focus from the session before';
+
+  @override
+  String get summaryNoFocus => 'No change to work on was given';
+
+  @override
+  String get summaryCoachFailed => 'The coach could not run';
+
+  @override
+  String get summaryGapNone => 'Quickest typical time in every segment';
 }

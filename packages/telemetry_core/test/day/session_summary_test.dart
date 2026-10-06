@@ -32,6 +32,27 @@ SectionProgressionCell _cell(String run, List<double> laps) => SectionProgressio
   laps: [for (final seconds in laps) SectionLapTime(seconds, null)],
 );
 
+// As publishSectorProgression builds it: the quickest median of any run.
+SectionProgressionRow _row({
+  required String segmentId,
+  required String name,
+  required String type,
+  required List<SectionProgressionCell> cells,
+}) {
+  double? fastest;
+  for (final cell in cells) {
+    final median = cell.summary.median;
+    if (cell.summary.available && (fastest == null || median! < fastest)) fastest = median;
+  }
+  return SectionProgressionRow(
+    segmentId: segmentId,
+    name: name,
+    type: type,
+    cells: cells,
+    fastestTypical: fastest,
+  );
+}
+
 SectionProgressionSession _session(String id) => SectionProgressionSession(
   run: ProgressionRunInfo(id: id, name: id),
   laps: const ConsistencySummary(),
@@ -56,7 +77,7 @@ void main() {
   final sections = SectionProgression(
     sessions: [_session('1'), _session('2'), _session('3')],
     segments: [
-      SectionProgressionRow(
+      _row(
         segmentId: 'c1',
         name: 'Corner 1',
         type: 'corner',
@@ -66,7 +87,7 @@ void main() {
           _cell('3', [9.5, 9.6, 9.7]),
         ],
       ),
-      SectionProgressionRow(
+      _row(
         segmentId: 's2',
         name: 'Straight 2',
         type: 'straight',
@@ -76,7 +97,7 @@ void main() {
           _cell('3', [8.3, 8.4, 8.5]),
         ],
       ),
-      SectionProgressionRow(
+      _row(
         segmentId: 'c3',
         name: 'Corner 3',
         type: 'corner',
@@ -86,7 +107,7 @@ void main() {
           _cell('3', [21.0, 21.04, 21.08]),
         ],
       ),
-      SectionProgressionRow(
+      _row(
         segmentId: 'c4',
         name: 'Corner 4',
         type: 'corner',
@@ -117,11 +138,11 @@ void main() {
     expect(summary.biggestGain!.deltaSeconds, closeTo(-0.2, 1e-9));
     expect(summary.biggestLoss!.name, 'Straight 2');
     expect(summary.biggestLoss!.deltaSeconds, closeTo(0.3, 1e-9));
-    // Typical against the fastest any lap of the day recorded: Corner 3 is
-    // 21.04 against 20.0.
+    // Typical against the quickest typical of any session: Corner 3 is
+    // 21.04 against session 1's 20.1.
     expect(summary.biggestGap!.name, 'Corner 3');
-    expect(summary.biggestGap!.referenceSeconds, 20.0);
-    expect(summary.biggestGap!.deltaSeconds, closeTo(1.04, 1e-9));
+    expect(summary.biggestGap!.referenceSeconds, closeTo(20.1, 1e-9));
+    expect(summary.biggestGap!.deltaSeconds, closeTo(0.94, 1e-9));
   });
 
   test('a change under the threshold is neither a gain nor a loss', () {
@@ -137,7 +158,7 @@ void main() {
     expect(summary.biggestGap, isNotNull);
   });
 
-  test('not a new best: the delta to the earlier best is positive', () {
+  test('a new best against the first session; a slower best has a positive delta', () {
     final summary = summarizeSession('2', progression: progression, sections: sections)!;
     expect(summary.previousRunName, '1');
     expect(summary.newBest, isTrue);
@@ -163,8 +184,10 @@ void main() {
     expect(summary.segmentsCompared, 0);
     expect(summary.biggestGain, isNull);
     expect(summary.biggestLoss, isNull);
-    // Still the gap left: Corner 4's typical 5.1 against the day's fastest 5.0.
-    expect(summary.biggestGap, isNotNull);
+    // Still the gap left: Straight 2's typical 8.1 is the quickest, Corner
+    // 3's 20.1 too; Corner 1's 10.2 against session 3's 9.6.
+    expect(summary.biggestGap!.name, 'Corner 1');
+    expect(summary.biggestGap!.deltaSeconds, closeTo(0.6, 1e-9));
   });
 
   test('sessions and segments not ready yet give no segment lines', () {
@@ -210,6 +233,7 @@ void main() {
       channels: DayChannelSummaries(runs: channels.runs, error: 'cancelled'),
     )!;
     expect(failed.temperatures, isEmpty);
+    expect(failed.temperatureReason, 'cancelled');
   });
 
   test("the goal is the coach's only when it coached this session", () {
@@ -242,5 +266,122 @@ void main() {
     final coach = DayCoach(runId: '3', reason: CoachReason.ready, goal: goal);
     expect(summarizeSession('3', progression: progression, coach: coach)!.goal, same(goal));
     expect(summarizeSession('2', progression: progression, coach: coach)!.goal, isNull);
+  });
+
+  test('the session before without a ranked lap is skipped for comparisons', () {
+    final withGap = DayProgression(
+      groupId: 'g',
+      state: DayRankingState.available,
+      runs: [
+        progression.runs[0],
+        ProgressionRun(
+          run: const ProgressionRunInfo(id: '2', name: '2'),
+          state: ProgressionRunState.noRecordedLaps,
+        ),
+        progression.runs[2],
+      ],
+    );
+    final summary = summarizeSession(
+      '3',
+      progression: withGap,
+      sections: SectionProgression(
+        sessions: [sections.sessions[0], sections.sessions[2]],
+        segments: [
+          for (final row in sections.segments)
+            _row(
+              segmentId: row.segmentId,
+              name: row.name,
+              type: row.type,
+              cells: [row.cells[0], row.cells[2]],
+            ),
+        ],
+      ),
+    )!;
+    expect(summary.earlierSessions, 2);
+    expect(summary.firstSession, isFalse);
+    expect(summary.previousRunName, '1');
+    expect(summary.previousLapSpread, closeTo(1.0, 1e-9));
+    // Against session 1: Corner 1 10.2 -> 9.6, Corner 3 20.1 -> 21.04.
+    expect(summary.segmentsCompared, 4);
+    expect(summary.biggestGain!.name, 'Corner 1');
+    expect(summary.biggestLoss!.name, 'Corner 3');
+  });
+
+  test('earlier sessions without a ranked lap: no previous, not the first', () {
+    final none = DayProgression(
+      groupId: 'g',
+      state: DayRankingState.available,
+      runs: [
+        ProgressionRun(
+          run: const ProgressionRunInfo(id: '1', name: '1'),
+          state: ProgressionRunState.noEligibleLaps,
+        ),
+        progression.runs[2],
+      ],
+    );
+    final summary = summarizeSession('3', progression: none)!;
+    expect(summary.firstSession, isFalse);
+    expect(summary.previousRunName, isNull);
+    expect(summary.earlierBestLap, isNull);
+    expect(summary.newBest, isFalse);
+  });
+
+  test('a tie with the earlier best is not a new best', () {
+    final tie = DayProgression(
+      groupId: 'g',
+      state: DayRankingState.available,
+      runs: [
+        _run('1', best: _lap('1', 1, 110.0), laps: 3, q1: 110.0, q3: 110.5),
+        _run('2', best: _lap('2', 1, 110.0), laps: 3, q1: 110.0, q3: 110.5),
+      ],
+    );
+    final summary = summarizeSession('2', progression: tie)!;
+    expect(summary.newBest, isFalse);
+    expect(summary.bestDeltaSeconds, 0);
+  });
+
+  test('a temperature in another unit is not compared, a failure says why', () {
+    RunChannelSummaries run(String id, String unit, double maximum) => RunChannelSummaries(
+      runId: id,
+      runName: id,
+      channels: [
+        RunChannel(
+          channel: 'engine_oil_temp-obd',
+          unit: unit,
+          run: ChannelSummary(maximum: maximum, valid: true),
+        ),
+      ],
+    );
+    final mixed = summarizeSession(
+      '3',
+      progression: progression,
+      channels: DayChannelSummaries(runs: [run('2', 'F', 230), run('3', 'C', 112)]),
+    )!;
+    expect(mixed.temperatures.single.previousMaximum, isNull);
+    final same = summarizeSession(
+      '3',
+      progression: progression,
+      channels: DayChannelSummaries(runs: [run('2', '°C', 104), run('3', 'C', 112)]),
+    )!;
+    expect(same.temperatures.single.previousMaximum, 104);
+    final unread = summarizeSession(
+      '3',
+      progression: progression,
+      channels: DayChannelSummaries(
+        runs: [RunChannelSummaries(runId: '3', runName: '3', unavailableReason: 'missing')],
+      ),
+    )!;
+    expect(unread.temperatures, isEmpty);
+    expect(unread.temperatureReason, 'missing');
+  });
+
+  test('no gap when the session has the quickest typical time everywhere', () {
+    final summary = summarizeSession(
+      '2',
+      progression: progression,
+      sections: SectionProgression(sessions: sections.sessions, segments: [sections.segments[1]]),
+    )!;
+    expect(summary.segmentsTimed, 1);
+    expect(summary.biggestGap, isNull);
   });
 }

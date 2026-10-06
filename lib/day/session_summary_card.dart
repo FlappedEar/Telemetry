@@ -4,25 +4,28 @@ import 'package:telemetry_core/telemetry_core.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../ui/label_value_row.dart';
-import 'channel_cards.dart' show channelLabelIn, channelValueText;
+import 'channel_cards.dart'
+    show channelLabelIn, channelReasonText, channelValueText;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// A session in 30 seconds (FET-233): its best lap against the day so far,
 /// how repeatable its laps were, its biggest gain and loss since the
-/// session before, the biggest gap left to the day's fastest, the car's
-/// hottest temperatures and the coach's goal. Every number comes from the
-/// day's results ([summarizeSession]); nothing is recalculated here.
-class SessionSummaryCard extends StatefulWidget {
+/// session before, the biggest gap left to the quickest typical time, the
+/// car's hottest temperatures and the coach's goal. Every number comes from
+/// the day's results ([summarizeSession]); nothing is recalculated here. A
+/// line without a result says why.
+class SessionSummaryCard extends StatelessWidget {
   const SessionSummaryCard({
     super.key,
     required this.runId,
     required this.session,
     required this.progression,
-    required this.result,
+    required this.sectionsState,
+    required this.sections,
     required this.coach,
     required this.coachLoading,
+    this.coachError = '',
     required this.channels,
-    required this.channelsLoading,
   });
 
   /// The session summarized (the one the coach coaches) and its name.
@@ -31,50 +34,32 @@ class SessionSummaryCard extends StatefulWidget {
 
   final DayProgression progression;
 
-  /// The theoretical best, whose section times give the segment lines;
-  /// null until it is calculated.
-  final DayTheoreticalBest? result;
+  /// The theoretical best's state, null while it is calculated, and its
+  /// section progression in [progression]'s order when it is ready.
+  final DayTheoreticalBestState? sectionsState;
+  final SectionProgression? sections;
+
   final DayCoach? coach;
   final bool coachLoading;
 
-  /// The day's channel summaries; null until requested and calculated.
+  /// Why the coach could not run; empty when it ran.
+  final String coachError;
+
+  /// The day's channel summaries; null until they are calculated.
   final DayChannelSummaries? channels;
-  final bool channelsLoading;
-
-  @override
-  State<SessionSummaryCard> createState() => _SessionSummaryCardState();
-}
-
-class _SessionSummaryCardState extends State<SessionSummaryCard> {
-  // The section progression, worked out again only when the theoretical
-  // best or the progression changes.
-  (DayTheoreticalBest?, DayProgression, SectionProgression?)? _sections;
-
-  SectionProgression? get _sectionProgression {
-    final result = widget.result, progression = widget.progression;
-    final cached = _sections;
-    if (cached != null &&
-        identical(cached.$1, result) &&
-        identical(cached.$2, progression)) {
-      return cached.$3;
-    }
-    final sections = result?.sectionProgression([
-      for (final run in progression.runs) run.run,
-    ]);
-    _sections = (result, progression, sections);
-    return sections;
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final summary = summarizeSession(
-      widget.runId,
-      progression: widget.progression,
-      sections: _sectionProgression,
-      coach: widget.coachLoading ? null : widget.coach,
-      channels: widget.channels,
+      runId,
+      progression: progression,
+      sections: sectionsState == DayTheoreticalBestState.ready
+          ? sections
+          : null,
+      coach: coachLoading ? null : coach,
+      channels: channels,
     );
     return Card(
       key: const ValueKey('sessionSummary'),
@@ -84,13 +69,13 @@ class _SessionSummaryCardState extends State<SessionSummaryCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.summaryTitle(l10n.session(widget.session)),
+              l10n.summaryTitle(l10n.session(session)),
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
               summary == null
-                  ? l10n.summaryNotShown(l10n.session(widget.session))
+                  ? l10n.summaryNotShown(l10n.session(session))
                   : l10n.summaryIntro,
               key: const ValueKey('sessionSummaryIntro'),
               style: theme.textTheme.bodySmall?.copyWith(
@@ -119,37 +104,39 @@ class _SessionSummaryCardState extends State<SessionSummaryCard> {
         value: Text(value, style: numbers, textAlign: TextAlign.end),
       ),
     );
-    String segment(SessionSegmentChange change) => l10n.summaryChange(
-      l10n.tbSegmentName(change.name),
-      displayDelta(change.deltaSeconds),
-    );
     final previous = summary.previousRunName;
-    // Segment lines wait for the theoretical best, and are left out when
-    // it has no result.
-    final segmentsPending = widget.result == null;
-    final segmentsShown =
-        segmentsPending ||
-        widget.result!.state == DayTheoreticalBestState.ready;
+    final pending = sectionsState == null;
+    final ready = sectionsState == DayTheoreticalBestState.ready;
 
     final best = summary.bestLap;
     final earlier = summary.earlierBestLap;
-    final bestText = best == null
-        ? l10n.summaryNoBest
-        : earlier == null
-        ? l10n.summaryBestFirst(displayTime(best.durationSeconds))
-        : summary.newBest
-        ? l10n.summaryBestNew(
-            displayTime(best.durationSeconds),
-            displayDelta(summary.bestDeltaSeconds!),
-          )
-        : l10n.summaryBestBehind(
-            displayTime(best.durationSeconds),
-            displayDelta(summary.bestDeltaSeconds!),
-            l10n.session(earlier.runName),
-          );
+    final String bestText;
+    if (best == null) {
+      bestText = l10n.summaryNoBest;
+    } else if (earlier == null) {
+      bestText = summary.firstSession
+          ? l10n.summaryBestFirst(displayTime(best.durationSeconds))
+          : l10n.summaryBestNoEarlier(displayTime(best.durationSeconds));
+    } else if (summary.newBest) {
+      bestText = l10n.summaryBestNew(
+        displayTime(best.durationSeconds),
+        displayDelta(summary.bestDeltaSeconds!),
+      );
+    } else if (summary.bestDeltaSeconds == 0) {
+      bestText = l10n.summaryBestEqual(
+        displayTime(best.durationSeconds),
+        l10n.session(earlier.runName),
+      );
+    } else {
+      bestText = l10n.summaryBestBehind(
+        displayTime(best.durationSeconds),
+        displayDelta(summary.bestDeltaSeconds!),
+        l10n.session(earlier.runName),
+      );
+    }
 
-    final spread = summary.lapSpread,
-        previousSpread = summary.previousLapSpread;
+    final spread = summary.lapSpread;
+    final previousSpread = summary.previousLapSpread;
     final spreadText = spread == null
         ? l10n.consistencyNeedsLaps(minimumConsistencySamples)
         : previous != null && previousSpread != null
@@ -160,23 +147,29 @@ class _SessionSummaryCardState extends State<SessionSummaryCard> {
           )
         : l10n.summarySpreadValue(fixed(spread, 3));
 
-    String change(SessionSegmentChange? value) => segmentsPending
+    String change(SessionSegmentChange? value) => pending
         ? l10n.summaryWorking
-        : previous == null
+        : summary.firstSession
         ? l10n.summaryFirstSession
+        : previous == null
+        ? l10n.summaryNoEarlierRanked
         : summary.segmentsCompared == 0
         ? l10n.summaryNotCompared
         : value == null
-        ? l10n.summaryNoChange
-        : segment(value);
+        ? l10n.summaryNoChange(fixed(sessionSummaryChangeSeconds, 2))
+        : l10n.summaryChange(
+            l10n.tbSegmentName(value.name),
+            displayDelta(value.deltaSeconds),
+          );
 
     final gap = summary.biggestGap;
-    final goal = summary.goal;
+    final channels = this.channels;
     final temperatures = summary.temperatures;
+    final goal = summary.goal;
     return [
       row('sessionSummaryBest', l10n.summaryBestLap, bestText),
       row('sessionSummarySpread', l10n.summarySpread, spreadText),
-      if (segmentsShown) ...[
+      if (pending || ready) ...[
         row(
           'sessionSummaryGain',
           l10n.summaryGain,
@@ -187,29 +180,38 @@ class _SessionSummaryCardState extends State<SessionSummaryCard> {
           l10n.summaryLoss,
           change(summary.biggestLoss),
         ),
-      ],
-      if (previous != null && summary.segmentsCompared > 0)
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            l10n.summaryAgainst(l10n.session(previous)),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+        if (previous != null && summary.segmentsCompared > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              l10n.summaryAgainst(l10n.session(previous)),
+              key: const ValueKey('sessionSummaryAgainst'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-        ),
-      if (segmentsPending || gap != null)
         row(
           'sessionSummaryGap',
           l10n.summaryGap,
-          gap == null
+          pending
               ? l10n.summaryWorking
+              : gap == null && summary.segmentsTimed > 0
+              ? l10n.summaryGapNone
+              : gap == null
+              ? l10n.consistencyNeedsLaps(minimumConsistencySamples)
               : l10n.summaryGapValue(
                   l10n.tbSegmentName(gap.name),
                   displayDelta(gap.deltaSeconds),
                 ),
         ),
-      if (widget.channels == null && widget.channelsLoading)
+      ] else
+        row(
+          'sessionSummarySegments',
+          l10n.summarySegments,
+          l10n.summarySegmentsUnavailable,
+        ),
+      if (channels == null)
         row('sessionSummaryCar', l10n.summaryCar, l10n.summaryWorking)
       else if (temperatures.isNotEmpty)
         row(
@@ -229,24 +231,35 @@ class _SessionSummaryCardState extends State<SessionSummaryCard> {
                       channelValueText(t.maximum, t.unit),
                     ),
           ].join('\n'),
-        ),
-      if (widget.coachLoading && previous != null)
-        row(
-          'sessionSummaryGoal',
-          l10n.summaryGoal(l10n.session(previous)),
-          l10n.summaryWorking,
         )
-      else if (goal != null)
+      else if (summary.temperatureReason.isNotEmpty)
         row(
-          'sessionSummaryGoal',
-          l10n.summaryGoal(l10n.session(goal.runName)),
-          '${l10n.tbSegmentName(goal.finding.segmentName)}: ${switch (goal.outcome) {
-            CoachGoalOutcome.better => l10n.coachGoalBetter,
-            CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
-            CoachGoalOutcome.worse => l10n.coachGoalWorse,
-            CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
-          }}',
+          'sessionSummaryCar',
+          l10n.summaryCar,
+          channelReasonText(l10n, summary.temperatureReason),
         ),
+      if (!summary.firstSession)
+        if (goal != null)
+          row(
+            'sessionSummaryGoal',
+            l10n.summaryGoal(l10n.session(goal.runName)),
+            '${l10n.tbSegmentName(goal.finding.segmentName)}: ${switch (goal.outcome) {
+              CoachGoalOutcome.better => l10n.coachGoalBetter,
+              CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
+              CoachGoalOutcome.worse => l10n.coachGoalWorse,
+              CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
+            }}',
+          )
+        else
+          row(
+            'sessionSummaryGoal',
+            l10n.summaryGoalBefore,
+            coachLoading
+                ? l10n.summaryWorking
+                : coachError.isNotEmpty
+                ? l10n.summaryCoachFailed
+                : l10n.summaryNoFocus,
+          ),
     ];
   }
 }

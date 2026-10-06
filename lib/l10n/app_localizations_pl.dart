@@ -5882,7 +5882,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String summaryNotShown(String session) {
-    return '$session nie ma pomiarowych okrążeń na pokazanym torze.';
+    return '$session nie ma mierzonych okrążeń na pokazanym torze.';
   }
 
   @override
@@ -5931,7 +5931,9 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get summaryNoChange => 'Brak zmian o 0.05 s lub więcej';
+  String summaryNoChange(String seconds) {
+    return 'Brak zmian o $seconds s lub więcej';
+  }
 
   @override
   String get summaryFirstSession => 'Pierwsza sesja: brak porównania';
@@ -5941,7 +5943,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String summaryAgainst(String session) {
-    return 'Zyski i straty: typowe czasy odcinków względem: $session.';
+    return 'Zyski i straty: typowe czasy odcinków w porównaniu z poprzednią sesją ($session).';
   }
 
   @override
@@ -5949,11 +5951,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String summaryGapValue(String segment, String delta) {
-    return '$segment $delta do najszybszego przejazdu dnia';
+    return '$segment $delta do najszybszego typowego czasu';
   }
 
   @override
-  String get summaryCar => 'Auto, maksimum';
+  String get summaryCar => 'Auto, najwyższe temperatury';
 
   @override
   String summaryTemperature(String channel, String value) {
@@ -5977,4 +5979,37 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get summaryWorking => 'Obliczanie…';
+
+  @override
+  String summaryBestNoEarlier(String time) {
+    return '$time · żadna wcześniejsza sesja nie ma sklasyfikowanego okrążenia';
+  }
+
+  @override
+  String summaryBestEqual(String time, String session) {
+    return '$time · tyle samo co najlepsze okrążenie ($session)';
+  }
+
+  @override
+  String get summaryNoEarlierRanked =>
+      'Żadna wcześniejsza sesja nie ma sklasyfikowanego okrążenia';
+
+  @override
+  String get summarySegments => 'Odcinki';
+
+  @override
+  String get summarySegmentsUnavailable =>
+      'Niedostępne bez teoretycznego czasu okrążenia';
+
+  @override
+  String get summaryGoalBefore => 'Cel po poprzedniej sesji';
+
+  @override
+  String get summaryNoFocus => 'Nie było zmiany do przećwiczenia';
+
+  @override
+  String get summaryCoachFailed => 'Trener nie mógł przeanalizować sesji';
+
+  @override
+  String get summaryGapNone => 'Najszybszy typowy czas na każdym odcinku';
 }

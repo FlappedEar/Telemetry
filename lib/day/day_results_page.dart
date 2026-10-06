@@ -1922,26 +1922,44 @@ class _DayResultsPageState extends State<DayResultsPage> {
     );
   }
 
+  // The theoretical best's section progression for the session summary,
+  // worked out again only when the result or the progression changes.
+  (DayTheoreticalBest?, DayProgression, SectionProgression?)? _summarySections;
+
   /// The latest session in a few lines, above the coach's plan. Its car
   /// line needs the channel summaries, which are asked for here as on the
   /// overview.
   Widget _sessionSummary() {
     final channels = _controller.channelSummaries;
-    final loading = _controller.channelSummariesLoading;
-    if (channels == null && !loading) {
+    if (channels == null && !_controller.channelSummariesLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _controller.requestChannelSummaries();
       });
     }
+    final result = _controller.theoreticalBest;
+    final progression = _controller.progression;
+    var cached = _summarySections;
+    if (cached == null ||
+        !identical(cached.$1, result) ||
+        !identical(cached.$2, progression)) {
+      cached = _summarySections = (
+        result,
+        progression,
+        result?.sectionProgression([
+          for (final run in progression.runs) run.run,
+        ]),
+      );
+    }
     return SessionSummaryCard(
       runId: _controller.latestRunId,
       session: _controller.latestRunName,
-      progression: _controller.progression,
-      result: _controller.theoreticalBest,
+      progression: progression,
+      sectionsState: result?.state,
+      sections: cached.$3,
       coach: _controller.coach,
       coachLoading: _controller.coachLoading,
+      coachError: _controller.coachError,
       channels: channels,
-      channelsLoading: loading,
     );
   }
 
