@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:telemetry/day/consistency_card.dart';
+import 'package:telemetry/day/segment_spread_map.dart';
+import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -15,8 +17,8 @@ void main() {
   setUp(() => directory = Directory.systemTemp.createTempSync('consistency'));
   tearDown(() => directory.deleteSync(recursive: true));
 
-  // Session 1 drives four laps, session 2 two.
-  DayImportOutcome importDay() {
+  // Session 1 drives four laps, session 2 two (four with [longerLatest]).
+  DayImportOutcome importDay({bool longerLatest = false}) {
     final files = {
       'a.vbo': [
         rectangleLap(30, 50, 120, 20),
@@ -24,7 +26,14 @@ void main() {
         rectangleLap(30, 550, 650, 22),
         rectangleLap(30.5, 100, 160, 24),
       ],
-      'b.vbo': [rectangleLap(29), rectangleLap(30.5, 700, 780, 20)],
+      'b.vbo': [
+        rectangleLap(29),
+        rectangleLap(30.5, 700, 780, 20),
+        if (longerLatest) ...[
+          rectangleLap(29.5, 200, 260, 22),
+          rectangleLap(30, 400, 480, 18),
+        ],
+      ],
     };
     final paths = <String>[];
     files.forEach((name, laps) {
@@ -163,11 +172,29 @@ void main() {
   });
 
   group('where the laps vary', () {
-    Future<({DayTheoreticalBest result, SectionProgression sections})> show(
+    // The best lap's trace at 10 Hz; where it is drawn does not matter.
+    LapPath pathOf(DayTheoreticalBest result) {
+      final best = result.bestLap!;
+      return LapPath(
+        origin: const GeoCoordinate(0, 0),
+        segments: [
+          [
+            for (var t = best.start; t <= best.end; t += 0.1)
+              PathPoint(t, t, 0, null),
+          ],
+        ],
+      );
+    }
+
+    Future<
+      ({DayTheoreticalBest result, SectionProgression sections, LapPath path})
+    >
+    show(
       WidgetTester tester, {
       Locale locale = const Locale('en'),
+      bool longerLatest = false,
     }) async {
-      final outcome = importDay();
+      final outcome = importDay(longerLatest: longerLatest);
       final analysis = outcome.analysis!;
       final result = dayTheoreticalBest(analysis, outingRuns(outcome.runs));
       expect(result.state, DayTheoreticalBestState.ready);
@@ -175,26 +202,33 @@ void main() {
         for (final named in outcome.runs)
           ProgressionRunInfo(id: named.run.id, name: named.name),
       ]);
+      final path = pathOf(result);
       await tester.binding.setSurfaceSize(const Size(412, 4000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      String? chosen;
       await tester.pumpWidget(
         TelemetryApp(
           locale: locale,
           home: Scaffold(
-            body: ListView(
-              children: [
-                ConsistencyCard(
-                  laps: dayLapConsistency(analysis),
-                  result: result,
-                  sections: sections,
-                ),
-              ],
+            body: StatefulBuilder(
+              builder: (context, setState) => ListView(
+                children: [
+                  ConsistencyCard(
+                    laps: dayLapConsistency(analysis),
+                    result: result,
+                    sections: sections,
+                    path: path,
+                    spreadRunId: chosen,
+                    onSpreadRun: (id) => setState(() => chosen = id),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      return (result: result, sections: sections);
+      return (result: result, sections: sections, path: path);
     }
 
     String textOf(WidgetTester tester, Finder finder) => tester
@@ -204,85 +238,142 @@ void main() {
         .map((text) => text.data)
         .join(' | ');
 
-    testWidgets('lists the latest session first, its spread in bands', (
+    // Each segment's spread in [runId], by segment id; null below 3 laps.
+    Map<String, double?> spreadsIn(SectionProgression sections, String runId) =>
+        {
+          for (final row in sections.segments)
+            row.segmentId: row.cells
+                .firstWhere((cell) => cell.runId == runId)
+                .summary
+                .interquartileRange,
+        };
+
+    // The map colours each fix by its segment's band in the session shown,
+    // grey below 3 laps, and its own colour outside every segment; the list
+    // gives every value, most varied first.
+    Future<void> expectSession(
+      WidgetTester tester,
+      DayTheoreticalBest result,
+      SectionProgression sections,
+      LapPath path,
+      String runId,
+    ) async {
+      final spreads = spreadsIn(sections, runId);
+      final context = tester.element(
+        find.byKey(const ValueKey('segmentSpread')),
+      );
+      final colors = segmentSpreadColors(context);
+      final grey = Theme.of(context).colorScheme.outline;
+      final map = tester.widget<TrackMap>(
+        find.byKey(const ValueKey('segmentSpreadMap')),
+      );
+      final seen = <String>{};
+      for (final point in path.segments.single) {
+        final index = result.segmentAtTime(
+          result.bestLap!,
+          point.telemetryTime,
+        );
+        final expected = switch (index) {
+          null => segmentSpreadOutsideColor,
+          final i => switch (spreads[result.segments[i].segmentId]) {
+            null => grey,
+            final spread => colors[segmentSpreadBand(spread)],
+          },
+        };
+        expect(map.pointColor!(point), expected, reason: '$index');
+        if (index != null) seen.add(result.segments[index].segmentId);
+      }
+      expect(seen, hasLength(result.segments.length));
+      final order = [...spreads.entries]
+        ..sort((a, b) => (b.value ?? -1).compareTo(a.value ?? -1));
+      final tops = <double>[];
+      for (final MapEntry(key: id, value: spread) in order) {
+        final row = find.byKey(ValueKey('segmentSpread $id'));
+        expect(
+          textOf(tester, row),
+          spread == null
+              ? contains('Needs at least 3 laps')
+              : contains('spread ${spread.toStringAsFixed(3)} s'),
+        );
+        tops.add(tester.getTopLeft(row).dy);
+      }
+      expect(tops, orderedEquals([...tops]..sort()));
+    }
+
+    testWidgets('shows the latest session first, coloured by its spreads', (
       tester,
     ) async {
-      final (:result, :sections) = await show(tester);
-      expect(find.byKey(const ValueKey('segmentSpread')), findsOneWidget);
+      final (:result, :sections, :path) = await show(
+        tester,
+        longerLatest: true,
+      );
       expect(find.text('Where the laps vary'), findsOneWidget);
-      // Session 2 has two laps: every segment waits for a third, in grey,
-      // and none is given a spread.
-      expect(sections.sessions.last.run.name, 'Session 2');
-      for (final segment in result.segments) {
-        final row = find.byKey(ValueKey('segmentSpread ${segment.segmentId}'));
-        expect(textOf(tester, row), contains('Needs at least 3 laps'));
-        expect(textOf(tester, row), isNot(contains('spread')));
-      }
-      // The legend names every band and the grey.
+      final latest = sections.sessions.last;
+      expect(latest.run.name, 'Session 2');
+      expect(spreadsIn(sections, latest.runId).values, everyElement(isNotNull));
+      expect(
+        tester
+            .widget<DropdownButton<String>>(
+              find.byKey(const ValueKey('segmentSpreadSession')),
+            )
+            .value,
+        latest.runId,
+      );
+      await expectSession(tester, result, sections, path, latest.runId);
+      // Two sessions with different spreads: the colours are not one band.
+      final first = spreadsIn(sections, sections.sessions.first.runId);
+      expect(first, isNot(spreadsIn(sections, latest.runId)));
+    });
+
+    testWidgets('another session shows its own spreads', (tester) async {
+      final (:result, :sections, :path) = await show(
+        tester,
+        longerLatest: true,
+      );
+      await tester.tap(find.byKey(const ValueKey('segmentSpreadSession')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Session 1').last);
+      await tester.pumpAndSettle();
+      final first = sections.sessions.first.runId;
+      expect(
+        tester
+            .widget<DropdownButton<String>>(
+              find.byKey(const ValueKey('segmentSpreadSession')),
+            )
+            .value,
+        first,
+      );
+      await expectSession(tester, result, sections, path, first);
+    });
+
+    testWidgets('a session with two laps is grey and says why', (tester) async {
+      final (:result, :sections, :path) = await show(tester);
+      final latest = sections.sessions.last.runId;
+      expect(spreadsIn(sections, latest).values, everyElement(isNull));
+      await expectSession(tester, result, sections, path, latest);
       final legend = textOf(
         tester,
         find.byKey(const ValueKey('segmentSpreadLegend')),
       );
       for (final band in [
-        'Up to 0.10\u00a0s',
-        '0.10–0.25\u00a0s',
-        '0.25–0.50\u00a0s',
-        '0.50–1.00\u00a0s',
-        'Over 1.00\u00a0s',
+        'Up to 0.10 s',
+        '0.10–0.25 s',
+        '0.25–0.50 s',
+        '0.50–1.00 s',
+        'Over 1.00 s',
         'Needs at least 3 laps',
       ]) {
         expect(legend, contains(band));
       }
     });
 
-    testWidgets('another session shows its own spreads, most varied first', (
-      tester,
-    ) async {
-      final (:result, :sections) = await show(tester);
-      await tester.tap(find.byKey(const ValueKey('segmentSpreadSession')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Session 1').last);
-      await tester.pumpAndSettle();
-      final first = sections.sessions.first.runId;
-      final spreads = [
-        for (final row in sections.segments)
-          (
-            id: row.segmentId,
-            spread: row.cells
-                .firstWhere((cell) => cell.runId == first)
-                .summary
-                .interquartileRange!,
-          ),
-      ]..sort((a, b) => b.spread.compareTo(a.spread));
-      expect(spreads, hasLength(result.segments.length));
-      for (final (:id, :spread) in spreads) {
-        expect(
-          textOf(tester, find.byKey(ValueKey('segmentSpread $id'))),
-          contains('spread ${spread.toStringAsFixed(3)}\u00a0s'),
-        );
-      }
-      // In that order down the card.
-      final tops = [
-        for (final (:id, spread: _) in spreads)
-          tester.getTopLeft(find.byKey(ValueKey('segmentSpread $id'))).dy,
-      ];
-      expect(tops, orderedEquals([...tops]..sort()));
-    });
-
     testWidgets('speaks Polish', (tester) async {
       addTearDown(() => Intl.defaultLocale = null);
       await show(tester, locale: const Locale('pl'));
       expect(find.text('Gdzie okrążenia się różnią'), findsOneWidget);
-      expect(find.text('Do 0.10\u00a0s'), findsOneWidget);
-      expect(find.text('Ponad 1.00\u00a0s'), findsOneWidget);
+      expect(find.text('Do 0.10 s'), findsOneWidget);
+      expect(find.text('Ponad 1.00 s'), findsOneWidget);
       expect(find.text('Where the laps vary'), findsNothing);
     });
-  });
-
-  test('the bands are fixed seconds of spread', () {
-    expect(segmentSpreadBand(0.10), 0);
-    expect(segmentSpreadBand(0.11), 1);
-    expect(segmentSpreadBand(1.00), 3);
-    expect(segmentSpreadBand(2.74), 4);
   });
 }

@@ -9406,7 +9406,7 @@ abstract class AppLocalizations {
   /// Consistency card: under the heading of the spread map.
   ///
   /// In en, this message translates to:
-  /// **'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green is repeatable; red is where the laps differ most.'**
+  /// **'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green: repeatable; red: where the laps differ most.'**
   String get spreadMapIntro;
 
   /// Spread map's accessibility label. session is a label such as 'Session 2'.
@@ -9432,6 +9432,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Over {value} s'**
   String spreadBandAbove(String value);
+
+  /// Spread map legend: the best lap's trace outside every segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a segment'**
+  String get spreadOutsideSegments;
 }
 
 class _AppLocalizationsDelegate

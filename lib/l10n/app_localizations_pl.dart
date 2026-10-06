@@ -6538,11 +6538,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get spreadMapIntro =>
-      'Każdy odcinek najlepszego okrążenia pokolorowany według rozrzutu w sesji: szerokości środkowej połowy jego czasów. Zielony jest powtarzalny; czerwony to miejsca, gdzie okrążenia różnią się najbardziej.';
+      'Każdy odcinek najlepszego okrążenia pokolorowany według rozrzutu w sesji: szerokości środkowej połowy jego czasów. Zielony: okrążenia powtarzalne; czerwony: tu różnią się najbardziej.';
 
   @override
   String spreadMapLabel(String session) {
-    return 'Mapa najlepszego okrążenia pokolorowana według rozrzutu każdego odcinka w: $session';
+    return 'Mapa najlepszego okrążenia, rozrzut każdego odcinka: $session';
   }
 
   @override
@@ -6559,4 +6559,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String spreadBandAbove(String value) {
     return 'Ponad $value s';
   }
+
+  @override
+  String get spreadOutsideSegments => 'Poza odcinkami';
 }

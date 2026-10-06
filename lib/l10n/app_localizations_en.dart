@@ -6398,7 +6398,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spreadMapIntro =>
-      'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green is repeatable; red is where the laps differ most.';
+      'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green: repeatable; red: where the laps differ most.';
 
   @override
   String spreadMapLabel(String session) {
@@ -6419,4 +6419,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String spreadBandAbove(String value) {
     return 'Over $value s';
   }
+
+  @override
+  String get spreadOutsideSegments => 'Not in a segment';
 }

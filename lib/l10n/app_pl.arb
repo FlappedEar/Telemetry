@@ -1536,9 +1536,10 @@
   "cornerPhasesMoreThanOneTightPart": "więcej niż jedna najciaśniejsza część",
   "cornerPhasesBestNotTimed": "Najlepsze okrążenie nie zostało zmierzone w częściach: {reason}",
   "spreadMapHeading": "Gdzie okrążenia się różnią",
-  "spreadMapIntro": "Każdy odcinek najlepszego okrążenia pokolorowany według rozrzutu w sesji: szerokości środkowej połowy jego czasów. Zielony jest powtarzalny; czerwony to miejsca, gdzie okrążenia różnią się najbardziej.",
-  "spreadMapLabel": "Mapa najlepszego okrążenia pokolorowana według rozrzutu każdego odcinka w: {session}",
+  "spreadMapIntro": "Każdy odcinek najlepszego okrążenia pokolorowany według rozrzutu w sesji: szerokości środkowej połowy jego czasów. Zielony: okrążenia powtarzalne; czerwony: tu różnią się najbardziej.",
+  "spreadMapLabel": "Mapa najlepszego okrążenia, rozrzut każdego odcinka: {session}",
   "spreadBandAtMost": "Do {value} s",
   "spreadBandBetween": "{from}–{to} s",
-  "spreadBandAbove": "Ponad {value} s"
+  "spreadBandAbove": "Ponad {value} s",
+  "spreadOutsideSegments": "Poza odcinkami"
 }

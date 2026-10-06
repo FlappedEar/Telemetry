@@ -17,6 +17,10 @@ List<Color> segmentSpreadColors(BuildContext context) => [
   FetColors.of(context).loss,
 ];
 
+/// The best lap's trace outside every segment (between two, or not timed):
+/// apart from the grey of a segment with too few laps.
+const Color segmentSpreadOutsideColor = Color(0xFF9B8CFF);
+
 /// Where a session's laps vary (FET-224): the best lap's trace coloured by
 /// each segment's spread in the chosen session (the interquartile range of
 /// its times there, from the section progression), in fixed bands, with the
@@ -27,6 +31,8 @@ class SegmentSpreadMap extends StatefulWidget {
     super.key,
     required this.result,
     required this.sections,
+    this.selectedRunId,
+    this.onSelectRun,
     this.path,
     this.gate,
   });
@@ -37,6 +43,11 @@ class SegmentSpreadMap extends StatefulWidget {
   /// Each session's times through each segment.
   final SectionProgression sections;
 
+  /// The session shown; the latest when null or no longer in [sections].
+  /// Kept by the page, so a recalculation keeps the choice.
+  final String? selectedRunId;
+  final ValueChanged<String>? onSelectRun;
+
   /// The best lap's trace; no map without it.
   final LapPath? path;
   final (Offset, Offset)? gate;
@@ -46,8 +57,6 @@ class SegmentSpreadMap extends StatefulWidget {
 }
 
 class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
-  String? _runId;
-
   // The segment of each fix of the best lap's trace, by its time.
   DayTheoreticalBest? _indexedResult;
   LapPath? _indexedPath;
@@ -72,6 +81,11 @@ class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
     return _segmentOfFix;
   }
 
+  // The map's colours, kept while their inputs are the same, so the trace is
+  // not repainted on every rebuild of the page.
+  Object? _coloursKey;
+  Color? Function(PathPoint)? _colours;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -79,16 +93,18 @@ class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
     final sessions = widget.sections.sessions;
     if (sessions.isEmpty) return const SizedBox.shrink();
     // The latest session first, as the progression orders them.
-    var index = sessions.indexWhere((session) => session.run.id == _runId);
-    if (index < 0) index = sessions.length - 1;
-    final session = sessions[index];
+    final session = sessions.firstWhere(
+      (session) => session.run.id == widget.selectedRunId,
+      orElse: () => sessions.last,
+    );
     final colors = segmentSpreadColors(context);
     final neutral = theme.colorScheme.outline;
 
     // Each segment's spread in the session, by its id.
     final spreads = <String, ConsistencySummary>{
       for (final row in widget.sections.segments)
-        if (index < row.cells.length) row.segmentId: row.cells[index].summary,
+        for (final cell in row.cells)
+          if (cell.runId == session.runId) row.segmentId: cell.summary,
     };
     double? spreadOf(String segmentId) {
       final summary = spreads[segmentId];
@@ -103,6 +119,27 @@ class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
         (segment: segment, spread: spreadOf(segment.segmentId)),
     ]..sort((a, b) => (b.spread ?? -1).compareTo(a.spread ?? -1));
     final path = widget.path;
+    final ofFix = path == null
+        ? const <double, int?>{}
+        : _segments(widget.result, path);
+    final outside = ofFix.values.contains(null);
+    final key = (
+      widget.result,
+      widget.sections,
+      path,
+      session.runId,
+      neutral,
+      colors.last,
+    );
+    if (key != _coloursKey) {
+      _coloursKey = key;
+      _colours = (PathPoint point) {
+        final index = ofFix[point.telemetryTime];
+        if (index == null) return segmentSpreadOutsideColor;
+        final spread = spreadOf(segments[index].segmentId);
+        return spread == null ? neutral : colors[segmentSpreadBand(spread)];
+      };
+    }
 
     Widget swatch(Color color) => Container(
       width: 12,
@@ -138,7 +175,9 @@ class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
                   child: Text(l10n.session(candidate.run.name)),
                 ),
             ],
-            onChanged: (id) => setState(() => _runId = id),
+            onChanged: (id) {
+              if (id != null) widget.onSelectRun?.call(id);
+            },
           ),
         if (path != null && !path.isEmpty) ...[
           const SizedBox(height: 8),
@@ -153,17 +192,7 @@ class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
                 semanticLabel: l10n.spreadMapLabel(
                   l10n.session(session.run.name),
                 ),
-                pointColor: () {
-                  final ofFix = _segments(widget.result, path);
-                  return (PathPoint point) {
-                    final index = ofFix[point.telemetryTime];
-                    if (index == null) return neutral;
-                    final spread = spreadOf(segments[index].segmentId);
-                    return spread == null
-                        ? neutral
-                        : colors[segmentSpreadBand(spread)];
-                  };
-                }(),
+                pointColor: _colours,
               ),
             ),
           ),
@@ -198,6 +227,20 @@ class _SegmentSpreadMapState extends State<SegmentSpreadMap> {
                 ),
               ],
             ),
+            if (outside)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  swatch(segmentSpreadOutsideColor),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      l10n.spreadOutsideSegments,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
         const SizedBox(height: 8),

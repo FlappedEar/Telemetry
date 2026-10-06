@@ -34,6 +34,8 @@ class ConsistencyCard extends StatelessWidget {
     required this.result,
     this.loading = false,
     this.sections,
+    this.spreadRunId,
+    this.onSpreadRun,
     this.path,
     this.gate,
   });
@@ -49,6 +51,10 @@ class ConsistencyCard extends StatelessWidget {
   /// Each session's segment times, for where the laps vary; with [path]
   /// (the best lap's trace) and [gate] the map draws on.
   final SectionProgression? sections;
+
+  /// The session where the laps vary is shown for, kept by the page.
+  final String? spreadRunId;
+  final ValueChanged<String>? onSpreadRun;
   final LapPath? path;
   final (Offset, Offset)? gate;
 
@@ -144,6 +150,8 @@ class ConsistencyCard extends StatelessWidget {
               SegmentSpreadMap(
                 result: result,
                 sections: sections!,
+                selectedRunId: spreadRunId,
+                onSelectRun: onSpreadRun,
                 path: path,
                 gate: gate,
               ),
