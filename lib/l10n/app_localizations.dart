@@ -6849,6 +6849,12 @@ abstract class AppLocalizations {
   /// **'VBO contains no valid timestamped data rows.'**
   String get coreVboNoValidRows;
 
+  /// A VBO recording has no column holding the time of each row, so it is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.'**
+  String get coreVboNoTimeColumn;
+
   /// A VBO recording is too large to read.
   ///
   /// In en, this message translates to:

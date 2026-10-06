@@ -151,6 +151,14 @@ class _VboParse {
         'VBO has more values (rows x columns) than the supported 40 million.',
       );
     }
+    // Without a time column the samples have no time: a made-up clock (one
+    // row a second, as Overlays does) would turn every time-based result
+    // into a believable but wrong one (FET-203).
+    if (timeIndex < 0) {
+      throw const VboParseError(
+        'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.',
+      );
+    }
 
     final rawValues = [for (final _ in names) Float32List(dataSection.length)];
     final rawTimes = Float64List(dataSection.length);
@@ -176,12 +184,10 @@ class _VboParse {
       if (row.count > names.length) {
         warn('Row $rowNumber: ignored ${row.count - names.length} extra value(s).');
       }
-      final timeText = timeIndex >= 0 && timeIndex < cellCount
+      final timeText = timeIndex < cellCount
           ? line.substring(row.starts[timeIndex], row.ends[timeIndex])
           : null;
-      final ParsedTimestamp? parsedTime = timeIndex >= 0
-          ? (timeText != null ? parseTimestamp(timeText) : null)
-          : ParsedTimestamp(rowIndex.toDouble(), TimestampFormat.relativeSeconds);
+      final ParsedTimestamp? parsedTime = timeText != null ? parseTimestamp(timeText) : null;
       if (parsedTime == null) {
         warn('Row $rowNumber: invalid timestamp "${timeText ?? ''}"; row skipped.');
         continue;
