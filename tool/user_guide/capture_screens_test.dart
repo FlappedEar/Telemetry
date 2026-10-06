@@ -31,6 +31,7 @@ import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
+import 'package:telemetry/day/next_session_card.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
@@ -493,6 +494,9 @@ void main() {
 
     // The coach's card and its first item's measured values.
     await tester.tap(find.byKey(const ValueKey('place-coach')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'session-summary');
+    await tester.ensureVisible(find.byType(NextSessionCard));
     await tester.pumpAndSettle();
     await shot(tester, 'next-session');
     final why = find.byKey(const ValueKey('coachWhy 0'));

@@ -841,8 +841,11 @@ void main() {
         });
         await tester.pumpAndSettle();
         expect(find.text('Session 2 added to the day.'), findsOneWidget);
-        expect(card.hitTestable(), findsOneWidget);
-        final top = tester.getTopLeft(card).dy;
+        // The coach from the top: the session summary, then its card.
+        expect(card, findsOneWidget);
+        final summaryCard = find.byKey(const ValueKey('sessionSummary'));
+        expect(summaryCard.hitTestable(), findsOneWidget);
+        final top = tester.getTopLeft(summaryCard).dy;
         expect(top, inInclusiveRange(0, size.height - 100));
         // The diagnostics page shows how long it took, for the phone.
         expect(

@@ -50,11 +50,12 @@ String channelLabelIn(BuildContext context, String name) {
 
 /// A reason or error from `telemetry_core` channel summaries in the app's
 /// language; a failure of the work itself is translated where it is known.
-String _channelReason(AppLocalizations l10n, String reason) => switch (reason) {
-  channelRecordingUnavailable => l10n.channelRecordingUnavailable,
-  'Channel summaries were cancelled.' => l10n.channelSummariesCancelled,
-  _ => l10n.taskFailure(reason),
-};
+String channelReasonText(AppLocalizations l10n, String reason) =>
+    switch (reason) {
+      channelRecordingUnavailable => l10n.channelRecordingUnavailable,
+      'Channel summaries were cancelled.' => l10n.channelSummariesCancelled,
+      _ => l10n.taskFailure(reason),
+    };
 
 /// The unit as shown: "°C" for a recording's "C".
 String unitText(String unit) => switch (unit.trim()) {
@@ -199,7 +200,7 @@ class CarCard extends StatelessWidget {
             if (loading || channels == null)
               Text(l10n.channelCarReading)
             else if (channels.error.isNotEmpty) ...[
-              Text(_channelReason(l10n, channels.error)),
+              Text(channelReasonText(l10n, channels.error)),
               if (onRetry case final retry?) CalculateAgainButton(retry),
             ] else if (names.isEmpty)
               Text(
@@ -258,7 +259,7 @@ class CarCard extends StatelessWidget {
                     ),
                     for (final run in channels.runs)
                       Text(
-                        '${l10n.session(run.runName)}: ${run.unavailableReason.isNotEmpty ? _channelReason(l10n, run.unavailableReason) : channelSummaryText(l10n, run.channel(name)?.run, unit)}'
+                        '${l10n.session(run.runName)}: ${run.unavailableReason.isNotEmpty ? channelReasonText(l10n, run.unavailableReason) : channelSummaryText(l10n, run.channel(name)?.run, unit)}'
                         '${channelSourceSuffix(context, channelSource?.call(run.runId, name) ?? '')}',
                         style: theme.textTheme.bodySmall,
                       ),
@@ -366,7 +367,7 @@ class ChannelPage extends StatelessWidget {
       const SizedBox(height: 12),
       Text(l10n.session(run.runName), style: theme.textTheme.titleSmall),
       if (run.unavailableReason.isNotEmpty)
-        Text(_channelReason(l10n, run.unavailableReason))
+        Text(channelReasonText(l10n, run.unavailableReason))
       else if (recorded == null)
         Text(l10n.channelNotRecorded)
       else ...[
@@ -426,7 +427,7 @@ class DriverCard extends StatelessWidget {
             if (loading || channels == null)
               Text(l10n.channelDriverReading)
             else if (channels.error.isNotEmpty) ...[
-              Text(_channelReason(l10n, channels.error)),
+              Text(channelReasonText(l10n, channels.error)),
               if (onRetry case final retry?) CalculateAgainButton(retry),
             ] else if (!channels.hasHeartRate)
               Text(
@@ -469,7 +470,7 @@ class DriverCard extends StatelessWidget {
       Text(l10n.session(run.runName), style: theme.textTheme.titleSmall),
       Text(
         run.unavailableReason.isNotEmpty
-            ? _channelReason(l10n, run.unavailableReason)
+            ? channelReasonText(l10n, run.unavailableReason)
             : '${channelSummaryText(l10n, heart?.run, heart?.unit ?? 'bpm')}'
                   '${heart == null ? '' : channelSourceSuffix(context, channelSource?.call(run.runId, heart.channel) ?? '')}',
         key: ValueKey('heartRate ${run.runId}'),
