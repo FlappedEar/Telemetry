@@ -7627,6 +7627,36 @@
   "@lastTimeHereCornersNone": {
     "description": "Last time here card: why there are no per-corner rows (one of the days has no corner measurements, e.g. still being analysed)."
   },
+  "lastTimeHereWeather": "Weather",
+  "@lastTimeHereWeather": {
+    "description": "Last time here card: heading of the weather of the previous visit and of today."
+  },
+  "lastTimeHereWeatherThen": "Then ({session}): {weather}",
+  "@lastTimeHereWeatherThen": {
+    "description": "Last time here card: the previous visit's weather, during the named session. weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.",
+    "placeholders": {"session": {"type": "String"}, "weather": {"type": "String"}}
+  },
+  "lastTimeHereWeatherToday": "Today ({session}): {weather}",
+  "@lastTimeHereWeatherToday": {
+    "description": "Last time here card: today's weather, during the named session. weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.",
+    "placeholders": {"session": {"type": "String"}, "weather": {"type": "String"}}
+  },
+  "lastTimeHereWeatherThenNone": "Then: —",
+  "@lastTimeHereWeatherThenNone": {
+    "description": "Last time here card: the previous visit has no weather kept."
+  },
+  "lastTimeHereWeatherTodayNone": "Today: —",
+  "@lastTimeHereWeatherTodayNone": {
+    "description": "Last time here card: today has no weather kept yet."
+  },
+  "lastTimeHereWeatherMissing": "No weather for that session: weather lookup off, no time or position, or the day was added before the library kept weather.",
+  "@lastTimeHereWeatherMissing": {
+    "description": "Last time here card: why a visit's weather is shown as a dash, or why there is no weather at all."
+  },
+  "lastTimeHereWeatherNote": "Each visit's weather is that of the session that set its best lap, else of its first session with weather.",
+  "@lastTimeHereWeatherNote": {
+    "description": "Last time here card: which session's weather stands for each visit."
+  },
   "settingsUpdatesHeading": "Updates",
   "@settingsUpdatesHeading": {
     "description": "Settings heading for checking GitHub for a newer version of the app."

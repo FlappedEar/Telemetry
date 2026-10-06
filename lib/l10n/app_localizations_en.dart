@@ -5289,6 +5289,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Time lost per corner: no corner was measured on both days.';
 
   @override
+  String get lastTimeHereWeather => 'Weather';
+
+  @override
+  String lastTimeHereWeatherThen(String session, String weather) {
+    return 'Then ($session): $weather';
+  }
+
+  @override
+  String lastTimeHereWeatherToday(String session, String weather) {
+    return 'Today ($session): $weather';
+  }
+
+  @override
+  String get lastTimeHereWeatherThenNone => 'Then: —';
+
+  @override
+  String get lastTimeHereWeatherTodayNone => 'Today: —';
+
+  @override
+  String get lastTimeHereWeatherMissing =>
+      'No weather for that session: weather lookup off, no time or position, or the day was added before the library kept weather.';
+
+  @override
+  String get lastTimeHereWeatherNote =>
+      'Each visit\'s weather is that of the session that set its best lap, else of its first session with weather.';
+
+  @override
   String get settingsUpdatesHeading => 'Updates';
 
   @override

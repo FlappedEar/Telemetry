@@ -3,12 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
+import '../day/weather_text.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
 import 'profile_library.dart';
 
 /// "Last time here": the previous visit to the open day's track, from the
-/// driver profile, with its best lap and theoretical best next to today's.
+/// driver profile, with its best lap, theoretical best and weather next to
+/// today's.
 /// The same car first, else any car. Nothing is shown on a first visit, for
 /// a day outside the library, or before the day is in the profile.
 class LastTimeHereCard extends StatelessWidget {
@@ -108,11 +110,92 @@ class LastTimeHereCard extends StatelessWidget {
             Text(l10n.lastTimeHereNote, style: theme.textTheme.bodySmall),
             if (car != null)
               Text(l10n.lastTimeHereOtherCar, style: theme.textTheme.bodySmall),
+            ..._weather(context, today, then),
             ..._corners(context, profile, today, then),
           ],
         ),
       ),
     );
+  }
+
+  /// The weather of each visit, kept in the profile with its sessions:
+  /// nothing is looked up here.
+  List<Widget> _weather(
+    BuildContext context,
+    ProfileDay today,
+    ProfileDay then,
+  ) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final thenWeather = _weatherOf(l10n, then);
+    final todayWeather = _weatherOf(l10n, today);
+    final small = theme.textTheme.bodySmall;
+    final missing = Text(
+      l10n.lastTimeHereWeatherMissing,
+      key: const ValueKey('lastTimeHereWeatherMissing'),
+      style: small,
+    );
+    return [
+      const SizedBox(height: 8),
+      Text(
+        l10n.lastTimeHereWeather,
+        key: const ValueKey('lastTimeHereWeather'),
+        style: theme.textTheme.labelLarge,
+      ),
+      if (thenWeather == null && todayWeather == null)
+        missing
+      else ...[
+        Text(
+          thenWeather == null
+              ? l10n.lastTimeHereWeatherThenNone
+              : l10n.lastTimeHereWeatherThen(thenWeather.$1, thenWeather.$2),
+          key: const ValueKey('lastTimeHereWeatherThen'),
+          style: theme.textTheme.bodyMedium,
+        ),
+        Text(
+          todayWeather == null
+              ? l10n.lastTimeHereWeatherTodayNone
+              : l10n.lastTimeHereWeatherToday(todayWeather.$1, todayWeather.$2),
+          key: const ValueKey('lastTimeHereWeatherToday'),
+          style: theme.textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 4),
+        if (thenWeather == null || todayWeather == null) missing,
+        Text(l10n.lastTimeHereWeatherNote, style: small),
+        Text(
+          '${l10n.weatherModelled} ${weatherCredit(l10n)}',
+          key: const ValueKey('lastTimeHereWeatherCredit'),
+          style: small,
+        ),
+      ],
+    ];
+  }
+
+  /// The session name and weather line standing for [day]: the session that
+  /// set its best lap when it has weather, else its first session with
+  /// weather; null when none has.
+  static (String, String)? _weatherOf(AppLocalizations l10n, ProfileDay day) {
+    (String, String)? of(ProfileSession session) {
+      final weather = session.weather;
+      final text = weather == null
+          ? null
+          : weatherSummaryShortText(l10n, weather.summary);
+      return text == null ? null : (session.name, text);
+    }
+
+    final best = day.bestLapSeconds;
+    final setter = best == null
+        ? null
+        : day.sessions
+              .where((session) => session.bestLapSeconds == best)
+              .firstOrNull;
+    if (setter != null) {
+      if (of(setter) case final shown?) return shown;
+    }
+    for (final session in day.sessions) {
+      if (of(session) case final shown?) return shown;
+    }
+    return null;
   }
 
   /// Each corner measured on both days: the time lost there against that

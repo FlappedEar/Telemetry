@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:isolate';
 import 'dart:ui' show AppExitResponse;
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, mapEquals;
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
@@ -206,6 +206,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _coach.addListener(_coachChanged);
     _controller.addListener(_reportAddition);
     _controller.addListener(_libraryChanged);
+    _controller.weather.addListener(_weatherChanged);
     _startLibrary();
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
@@ -221,6 +222,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _controller.removeListener(_libraryChanged);
+    _controller.weather.removeListener(_weatherChanged);
     _autosave?.cancel();
     _lifecycle.dispose();
     _summaryScroll.dispose();
@@ -511,6 +513,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// corners once it is worked out.
   DayTheoreticalBest? _recordedBest;
 
+  /// The weather last recorded, by run id: the recording it is for and when
+  /// it was fetched. Weather usually arrives after the save that recorded
+  /// the day, so the day is recorded again when it does.
+  Map<String, (String, int)> _recordedWeather = const {};
+
   /// Whether the library was read, so the day is kept in it.
   bool _libraryReady = false;
   Timer? _autosave;
@@ -540,6 +547,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _recordSave();
     _scheduleAutosave();
   }
+
+  /// Weather that arrived for a saved day goes to the profile at once,
+  /// without waiting for the next save. Only weather already shown is
+  /// recorded: nothing is looked up here.
+  void _weatherChanged() => _recordSave();
 
   /// Saves a day kept in the library once it stayed unchanged for
   /// [_autosaveDelay].
@@ -614,13 +626,24 @@ class _DayResultsPageState extends State<DayResultsPage> {
     final best = controller.theoreticalBestLoading
         ? null
         : controller.theoreticalBest;
+    final weather = {
+      for (final named in controller.runs)
+        named.run.id: controller.weather.of(named.run.id),
+    };
+    final weatherShown = {
+      for (final MapEntry(:key, :value) in weather.entries)
+        if (value != null)
+          key: (value.sourceRevision, value.fetchedMilliseconds),
+    };
     if (!force &&
         controller.saveCount == _recordedSaves &&
-        (best == null || identical(best, _recordedBest))) {
+        (best == null || identical(best, _recordedBest)) &&
+        mapEquals(weatherShown, _recordedWeather)) {
       return;
     }
     _recordedSaves = controller.saveCount;
     _recordedBest = best ?? _recordedBest;
+    _recordedWeather = weatherShown;
     unawaited(
       library.recordDay(
         eventId: controller.eventId,
@@ -632,6 +655,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
             named.run.id: controller.session(named.run.id),
         },
         theoreticalBest: best,
+        weather: {
+          for (final MapEntry(:key, :value) in weather.entries)
+            key: value?.summary,
+        },
       ),
     );
   }

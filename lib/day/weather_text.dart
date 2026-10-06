@@ -67,8 +67,12 @@ String? weatherWindText(AppLocalizations l10n, WeatherSummary summary) {
 
 /// One short line of a session's weather: "21 °C, overcast, no rain, wind
 /// SW 12 km/h", or null when the model had nothing.
-String? weatherShortText(AppLocalizations l10n, SessionWeather weather) {
-  final summary = weather.summary;
+String? weatherShortText(AppLocalizations l10n, SessionWeather weather) =>
+    weatherSummaryShortText(l10n, weather.summary);
+
+/// [weatherShortText] of a [summary], such as the driver profile's copy of
+/// a session's weather.
+String? weatherSummaryShortText(AppLocalizations l10n, WeatherSummary summary) {
   final parts = [
     ?weatherTemperatureText(l10n, summary),
     if (summary.condition case final condition?)

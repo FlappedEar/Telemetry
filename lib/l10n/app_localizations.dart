@@ -7845,6 +7845,48 @@ abstract class AppLocalizations {
   /// **'Time lost per corner: no corner was measured on both days.'**
   String get lastTimeHereCornersNone;
 
+  /// Last time here card: heading of the weather of the previous visit and of today.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get lastTimeHereWeather;
+
+  /// Last time here card: the previous visit's weather, during the named session. weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.
+  ///
+  /// In en, this message translates to:
+  /// **'Then ({session}): {weather}'**
+  String lastTimeHereWeatherThen(String session, String weather);
+
+  /// Last time here card: today's weather, during the named session. weather is a short weather line such as '21 °C, overcast, no rain, wind SW 12 km/h'.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): {weather}'**
+  String lastTimeHereWeatherToday(String session, String weather);
+
+  /// Last time here card: the previous visit has no weather kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Then: —'**
+  String get lastTimeHereWeatherThenNone;
+
+  /// Last time here card: today has no weather kept yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: —'**
+  String get lastTimeHereWeatherTodayNone;
+
+  /// Last time here card: why a visit's weather is shown as a dash, or why there is no weather at all.
+  ///
+  /// In en, this message translates to:
+  /// **'No weather for that session: weather lookup off, no time or position, or the day was added before the library kept weather.'**
+  String get lastTimeHereWeatherMissing;
+
+  /// Last time here card: which session's weather stands for each visit.
+  ///
+  /// In en, this message translates to:
+  /// **'Each visit\'s weather is that of the session that set its best lap, else of its first session with weather.'**
+  String get lastTimeHereWeatherNote;
+
   /// Settings heading for checking GitHub for a newer version of the app.
   ///
   /// In en, this message translates to:

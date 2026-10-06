@@ -11,13 +11,16 @@ documents; the profile never changes their format.
   day was driven in.
 - The day document: its sessions, laps, notes, conditions and setup changes.
   A day's `summary` fields in the profile (`sessions`, `bestLapSeconds`,
-  `theoreticalBestSeconds`, `startMilliseconds`, each session's `stats`) are
-  rebuilt from the day's analysis whenever the day is added again
-  (`addDayToProfile`).
+  `theoreticalBestSeconds`, `startMilliseconds`, each session's `stats` and
+  `weather`) are rebuilt from the day's analysis whenever the day is added
+  again (`addDayToProfile`).
 - The profile also keeps what each session measured (`stats`), so analysis
   across days never re-opens old days. It stores measurements only, in SI
   units, each with the laps behind it; levels, trends and repeated losses are
   worked out when read (see "Across days").
+- It also keeps a copy of each session's weather (`weather`), so the day page
+  can compare a visit's weather with today's without opening the old day.
+  The day document's `event.runs[].weather` stays the source.
 
 ## Format, version 1
 
@@ -68,6 +71,11 @@ version does not know, so a newer app's additions survive a re-save.
                 "exitSpeed": 23.1, "bestExitSpeed": 23.6,
                 "brakingSpreadMeters": 6.2, "lossSeconds": 0.31 }
             ]
+          },
+          "weather": {
+            "temperatureC": 21.4, "temperatureMinC": 19.2, "temperatureMaxC": 22.6,
+            "condition": "overcast", "precipitationMm": 0.0,
+            "windSpeedKmh": 12.3, "windDirectionDegrees": 225.0
           } }
       ]
     }
@@ -140,6 +148,46 @@ under the larger budget loses none.
 10 000 days of 5 sessions with that many corners stay under the 32 Mi characters
 on a few tracks; each track adds about 4.5 Ki (16 Ki with 128 corners), so
 hundreds of tracks on top of that would exceed the limit (not budgeted yet).
+
+## A session's weather (`weather`)
+
+All optional; added in the same version 1 (FET-132), so an older app keeps
+it as an unknown key and a profile without it reads as before. It copies a few
+values of the session's `WeatherSummary` (`session_weather.dart`), the weather
+model's values for the area around the track at the session's time, not a
+measurement at the track. Values stay in the units the day stores them in; they
+are never converted. Absent values are left out, and a session with none of
+them has no `weather`.
+
+| Key | Meaning |
+|---|---|
+| `temperatureC` | Air temperature at the session's middle, °C. |
+| `temperatureMinC`, `temperatureMaxC` | Lowest and highest air temperature from the session's start to its end, °C. |
+| `condition` | The worst weather of the hours nearest the session: a `WeatherCondition` name (`clear`, `partlyCloudy`, `overcast`, `fog`, `drizzle`, `rain`, `snow`, `showers`, `thunderstorm`). |
+| `precipitationMm` | Rain (and melted snow) over the hours the session ran in, mm. |
+| `windSpeedKmh` | Wind speed at the session's middle, km/h. |
+| `windDirectionDegrees` | Where the wind comes from, degrees clockwise from north. |
+
+Reading checks each value against the ranges a day's stored weather uses
+(`weatherValueRanges`: −90 to 60 °C, 0 to 500 mm, 0 to 500 km/h, 0 to 360°);
+a value out of range, not a number, or a condition this version does not know
+is left out rather than refusing the profile. `weather` that is not an object
+is refused, like `stats`.
+
+The app records the weather the day page shows for each session: weather kept
+in the day document, or fetched while the day is open. Nothing is looked up
+for the profile, so with weather lookup off only weather the day already kept
+is recorded. Weather usually arrives after the save that records the day, so
+the day page records the day again when a session's weather arrives
+(`_record` in `day_results_page.dart` compares which recording and fetch each
+session's weather is from). A day added again without a session's weather
+keeps the weather that session had; new weather replaces it whole. Days added
+before FET-132 get their weather when they are next opened, if their document
+holds it.
+
+"Last time here" on the day page shows each visit by the session that set the
+day's best lap (`bestLapSeconds` equal to the day's); when that session has no
+weather, or none matches, by its first session with weather.
 
 ## Corners across days
 

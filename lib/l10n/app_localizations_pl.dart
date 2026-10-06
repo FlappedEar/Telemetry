@@ -5407,6 +5407,33 @@ class AppLocalizationsPl extends AppLocalizations {
       'Strata czasu na zakrętach: żaden zakręt nie został zmierzony w oba dni.';
 
   @override
+  String get lastTimeHereWeather => 'Pogoda';
+
+  @override
+  String lastTimeHereWeatherThen(String session, String weather) {
+    return 'Poprzednio ($session): $weather';
+  }
+
+  @override
+  String lastTimeHereWeatherToday(String session, String weather) {
+    return 'Dziś ($session): $weather';
+  }
+
+  @override
+  String get lastTimeHereWeatherThenNone => 'Poprzednio: —';
+
+  @override
+  String get lastTimeHereWeatherTodayNone => 'Dziś: —';
+
+  @override
+  String get lastTimeHereWeatherMissing =>
+      'Brak pogody dla tej sesji: pobieranie pogody wyłączone, brak czasu lub pozycji albo dzień dodano, zanim biblioteka zapisywała pogodę.';
+
+  @override
+  String get lastTimeHereWeatherNote =>
+      'Pogoda każdego dnia to pogoda sesji, w której padło najlepsze okrążenie, a w razie jej braku pierwszej sesji z pogodą.';
+
+  @override
   String get settingsUpdatesHeading => 'Aktualizacje';
 
   @override
