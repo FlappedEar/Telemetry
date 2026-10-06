@@ -2595,6 +2595,30 @@ abstract class AppLocalizations {
   /// **'Channel summaries'**
   String get diagnosticsStepChannelSummaries;
 
+  /// Diagnostics step: aligning a session's VBO and RCZ recordings and combining their channels.
+  ///
+  /// In en, this message translates to:
+  /// **'Align and combine VBO and RCZ'**
+  String get diagnosticsStepFusion;
+
+  /// Diagnostics step: from sharing a recording until the session is in today's day.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a session'**
+  String get diagnosticsStepAddSession;
+
+  /// Diagnostics step: the coach working out its advice.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get diagnosticsStepCoach;
+
+  /// Diagnostics step: from sharing a recording until the Next session card has the coach's plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a session, until the coach\'s plan'**
+  String get diagnosticsStepAddToCoach;
+
   /// Day report heading when no group of laps is chosen.
   ///
   /// In en, this message translates to:
@@ -2967,10 +2991,10 @@ abstract class AppLocalizations {
   /// **'End'**
   String get segmentEditorEnd;
 
-  /// Switch: a moved boundary moves the neighbouring segment too.
+  /// Switch: moving a boundary also moves the neighbouring segment's shared boundary, so that segment grows or shrinks.
   ///
   /// In en, this message translates to:
-  /// **'Move the neighbouring segment too'**
+  /// **'Move the neighbouring segment\'s boundary too'**
   String get segmentEditorKeepJoined;
 
   /// Applies the segment changes.
@@ -5471,10 +5495,10 @@ abstract class AppLocalizations {
   /// **'Throttle pickup'**
   String get cornerAnalyzerLegendPickup;
 
-  /// Chart legend: the lowest speed marker.
+  /// Chart legend: the marker of the corner's minimum speed (corners only).
   ///
   /// In en, this message translates to:
-  /// **'Lowest speed'**
+  /// **'Minimum speed'**
   String get cornerAnalyzerLegendMinimum;
 
   /// An imported session's timed laps.
@@ -7688,6 +7712,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.'**
   String get settingsKeepScreenOnHelp;
+
+  /// Day page card title: the previous visit to this track from the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Last time here'**
+  String get lastTimeHereTitle;
+
+  /// Row label in the Last time here card.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get lastTimeHereBestLap;
+
+  /// Row label in the Last time here card.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical best'**
+  String get lastTimeHereTheoreticalBest;
+
+  /// Note under the Last time here card.
+  ///
+  /// In en, this message translates to:
+  /// **'Today minus last time: negative is faster today. Conditions may differ.'**
+  String get lastTimeHereNote;
+
+  /// Last time here card: why a time is shown as a dash.
+  ///
+  /// In en, this message translates to:
+  /// **'— means that day has no such time: no ranked lap, or the theoretical best could not be worked out.'**
+  String get lastTimeHereMissing;
+
+  /// Last time here card: the previous visit was in another car.
+  ///
+  /// In en, this message translates to:
+  /// **'That car is named because this car has not driven here before.'**
+  String get lastTimeHereOtherCar;
+
+  /// Last time here card: the previous visit's time and today's.
+  ///
+  /// In en, this message translates to:
+  /// **'{then} then · {today} today'**
+  String lastTimeHereThenToday(String then, String today);
 
   /// Settings heading for checking GitHub for a newer version of the app.
   ///

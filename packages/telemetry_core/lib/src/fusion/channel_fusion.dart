@@ -9,11 +9,15 @@
 //   their overlapping measurements disagree and no rule was chosen, the
 //   conflict is reported as unresolved;
 // - units must match exactly; nothing is rescaled.
+// One deliberate difference from Overlays: an added speed takes the unit its
+// own recording declares (a VBO `[header]` line, FET-112), where Overlays
+// keeps the channel's raw, empty unit.
 // Samples are never resampled or interpolated: each output sample is a real
 // sample of one source with its timestamp transformed, so gaps stay gaps.
 import 'dart:typed_data';
 
 import '../operation.dart';
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'std_math.dart';
 
@@ -338,16 +342,23 @@ ChannelFusionResult fuseChannels(
       final existing = byKey[key];
 
       if (primaryName.isEmpty && existing == null) {
-        // Only the alternative recorded it: added on the primary clock.
+        // Only the alternative recorded it: added on the primary clock. A
+        // speed takes the unit its own recording declares (a VBO declares
+        // it on a `[header]` line the primary's session does not carry,
+        // FET-112), so it is never read in the unit assumed for unlabelled
+        // speeds.
+        final unit = channel.unit.trim().isEmpty && isSessionSpeedChannel(session, name)
+            ? declaredSpeedUnit(session, name)
+            : channel.unit;
         final fused = FusedChannel(
           key: key,
           name: name,
-          unit: channel.unit,
+          unit: unit,
           rule: 'added',
           segments: [],
           channel: TelemetryChannel(
             name: name,
-            unit: channel.unit,
+            unit: unit,
             timestamps: times,
             values: Float32List.fromList(channel.values),
           ),

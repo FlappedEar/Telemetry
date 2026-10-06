@@ -152,7 +152,15 @@ void main() {
         DiagnosticSteps.theoreticalBest,
         const Duration(milliseconds: 1840),
       );
-    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    for (final step in [
+      DiagnosticSteps.fusion,
+      DiagnosticSteps.addSession,
+      DiagnosticSteps.coach,
+      DiagnosticSteps.addToCoach,
+    ]) {
+      diagnostics.recordStep(step, const Duration(milliseconds: 500));
+    }
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -174,6 +182,23 @@ void main() {
     expect(find.text('Diagnostics'), findsNothing);
     expect(find.text('Last import'), findsNothing);
     expect(find.text(DiagnosticSteps.scan), findsNothing);
+    // Every step the app records has a Polish name.
+    for (final name in [
+      'Dopasowanie i połączenie VBO z RCZ',
+      'Dodanie sesji',
+      'Trener',
+      'Dodanie sesji, aż do planu trenera',
+    ]) {
+      expect(find.text(name), findsOneWidget);
+    }
+    for (final step in [
+      DiagnosticSteps.fusion,
+      DiagnosticSteps.addSession,
+      DiagnosticSteps.coach,
+      DiagnosticSteps.addToCoach,
+    ]) {
+      expect(find.text(step), findsNothing);
+    }
   });
 
   test('reads the memory the platform reports', () {

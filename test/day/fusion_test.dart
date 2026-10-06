@@ -12,6 +12,7 @@ import 'package:telemetry/day/document_pickers.dart';
 import 'package:telemetry/day/fusion_panel.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -171,6 +172,7 @@ Map<String, Object?> _runJson(String path) =>
         as Map<String, Object?>;
 
 void main() {
+  _channelNamesInTheAppsLanguage();
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('fusion'));
   tearDown(() => directory.deleteSync(recursive: true));
@@ -1397,3 +1399,57 @@ TelemetryRunProposal _late(TelemetryRunProposal run) => TelemetryRunProposal(
 /// The content SHA-256 of the file at [path].
 String _sha(String path) =>
     prepareTelemetryImport([path]).runs.single.contentSha256;
+
+void _channelNamesInTheAppsLanguage() {
+  test('fused channel names are in the app\'s language (FET-100)', () {
+    FusedChannel channel(String key, String name, [String unit = '']) =>
+        FusedChannel(
+          key: key,
+          name: name,
+          unit: unit,
+          rule: 'added',
+          segments: const [],
+          channel: TelemetryChannel(
+            name: name,
+            timestamps: Float64List(0),
+            values: Float32List(0),
+          ),
+        );
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    final english = lookupAppLocalizations(const Locale('en'));
+    expect(
+      fusionChannelName(polish, channel('oil', 'Oil Temp')),
+      'Temperatura oleju',
+    );
+    expect(
+      fusionChannelName(english, channel('oil', 'Oil Temp')),
+      english.channelOil,
+    );
+    expect(
+      fusionChannelName(polish, channel('coolant', 'Water Temp')),
+      polish.channelCoolant,
+    );
+    // A channel the app does not know keeps its recorded name.
+    expect(
+      fusionChannelName(polish, channel('egt', 'EGT', 'C')),
+      polish.channelExhaust,
+    );
+    // A channel the app does not know keeps its recorded name, and a
+    // pressure or a gear is never called a temperature.
+    expect(fusionChannelName(polish, channel('rpm', 'RPM')), 'RPM');
+    expect(fusionChannelName(polish, channel('gear', 'Gear')), 'Gear');
+    expect(
+      fusionChannelName(polish, channel('oil_p', 'Oil Pressure', 'bar')),
+      'Oil Pressure',
+    );
+    // The name the driver gave a channel wins.
+    expect(
+      fusionChannelName(
+        polish,
+        channel('oil', 'Oil Temp'),
+        named: (name) => name == 'Oil Temp' ? 'Olej silnika' : name,
+      ),
+      'Olej silnika',
+    );
+  });
+}

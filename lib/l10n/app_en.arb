@@ -2584,6 +2584,22 @@
   "@diagnosticsStepChannelSummaries": {
     "description": "Diagnostics step: summarising the channels (temperatures, heart rate) of the day."
   },
+  "diagnosticsStepFusion": "Align and combine VBO and RCZ",
+  "@diagnosticsStepFusion": {
+    "description": "Diagnostics step: aligning a session's VBO and RCZ recordings and combining their channels."
+  },
+  "diagnosticsStepAddSession": "Add a session",
+  "@diagnosticsStepAddSession": {
+    "description": "Diagnostics step: from sharing a recording until the session is in today's day."
+  },
+  "diagnosticsStepCoach": "Coach",
+  "@diagnosticsStepCoach": {
+    "description": "Diagnostics step: the coach working out its advice."
+  },
+  "diagnosticsStepAddToCoach": "Add a session, until the coach's plan",
+  "@diagnosticsStepAddToCoach": {
+    "description": "Diagnostics step: from sharing a recording until the Next session card has the coach's plan."
+  },
   "reportGroupNone": "Choose a group of compatible laps on the results page.",
   "@reportGroupNone": {
     "description": "Day report heading when no group of laps is chosen."
@@ -3001,9 +3017,9 @@
   "@segmentEditorEnd": {
     "description": "Label of the segment end boundary."
   },
-  "segmentEditorKeepJoined": "Move the neighbouring segment too",
+  "segmentEditorKeepJoined": "Move the neighbouring segment's boundary too",
   "@segmentEditorKeepJoined": {
-    "description": "Switch: a moved boundary moves the neighbouring segment too."
+    "description": "Switch: moving a boundary also moves the neighbouring segment's shared boundary, so that segment grows or shrinks."
   },
   "segmentEditorApply": "Apply",
   "@segmentEditorApply": {
@@ -5328,9 +5344,9 @@
   "@cornerAnalyzerLegendPickup": {
     "description": "Chart legend: the throttle pickup marker."
   },
-  "cornerAnalyzerLegendMinimum": "Lowest speed",
+  "cornerAnalyzerLegendMinimum": "Minimum speed",
   "@cornerAnalyzerLegendMinimum": {
-    "description": "Chart legend: the lowest speed marker."
+    "description": "Chart legend: the marker of the corner's minimum speed (corners only)."
   },
   "importPageLaps": "{count, plural, =1{1 lap} other{{count} laps}}",
   "@importPageLaps": {
@@ -7466,6 +7482,35 @@
   "settingsKeepScreenOnHelp": "The next-session card stays readable between sessions. The screen sleeps as usual elsewhere in the app and when the app is not in front.",
   "@settingsKeepScreenOnHelp": {
     "description": "Help under the keep-screen-on switch in settings."
+  },
+  "lastTimeHereTitle": "Last time here",
+  "@lastTimeHereTitle": {
+    "description": "Day page card title: the previous visit to this track from the driver profile."
+  },
+  "lastTimeHereBestLap": "Best lap",
+  "@lastTimeHereBestLap": {
+    "description": "Row label in the Last time here card."
+  },
+  "lastTimeHereTheoreticalBest": "Theoretical best",
+  "@lastTimeHereTheoreticalBest": {
+    "description": "Row label in the Last time here card."
+  },
+  "lastTimeHereNote": "Today minus last time: negative is faster today. Conditions may differ.",
+  "@lastTimeHereNote": {
+    "description": "Note under the Last time here card."
+  },
+  "lastTimeHereMissing": "— means that day has no such time: no ranked lap, or the theoretical best could not be worked out.",
+  "@lastTimeHereMissing": {
+    "description": "Last time here card: why a time is shown as a dash."
+  },
+  "lastTimeHereOtherCar": "That car is named because this car has not driven here before.",
+  "@lastTimeHereOtherCar": {
+    "description": "Last time here card: the previous visit was in another car."
+  },
+  "lastTimeHereThenToday": "{then} then · {today} today",
+  "@lastTimeHereThenToday": {
+    "description": "Last time here card: the previous visit's time and today's.",
+    "placeholders": {"then": {"type": "String"}, "today": {"type": "String"}}
   },
   "settingsUpdatesHeading": "Updates",
   "@settingsUpdatesHeading": {

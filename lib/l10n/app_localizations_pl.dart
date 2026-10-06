@@ -1761,6 +1761,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get diagnosticsStepChannelSummaries => 'Podsumowania kanałów';
 
   @override
+  String get diagnosticsStepFusion => 'Dopasowanie i połączenie VBO z RCZ';
+
+  @override
+  String get diagnosticsStepAddSession => 'Dodanie sesji';
+
+  @override
+  String get diagnosticsStepCoach => 'Trener';
+
+  @override
+  String get diagnosticsStepAddToCoach => 'Dodanie sesji, aż do planu trenera';
+
+  @override
   String get reportGroupNone =>
       'Wybierz grupę zgodnych okrążeń na stronie wyników.';
 
@@ -5288,6 +5300,32 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get settingsKeepScreenOnHelp =>
       'Karta następnej sesji pozostaje czytelna między sesjami. W innych miejscach aplikacji i gdy nie jest ona na wierzchu, ekran wygasa jak zwykle.';
+
+  @override
+  String get lastTimeHereTitle => 'Ostatnio tutaj';
+
+  @override
+  String get lastTimeHereBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String get lastTimeHereTheoreticalBest => 'Teoretyczny czas okrążenia';
+
+  @override
+  String get lastTimeHereNote =>
+      'Dziś minus poprzednio: wartość ujemna to dziś szybciej. Warunki mogły być inne.';
+
+  @override
+  String get lastTimeHereMissing =>
+      '— oznacza, że tego dnia nie ma takiego czasu: brak sklasyfikowanego okrążenia albo nie udało się wyznaczyć teoretycznego czasu okrążenia.';
+
+  @override
+  String get lastTimeHereOtherCar =>
+      'Podano inny samochód, bo tym samochodem nie jeżdżono tu wcześniej.';
+
+  @override
+  String lastTimeHereThenToday(String then, String today) {
+    return '$then poprzednio · $today dziś';
+  }
 
   @override
   String get settingsUpdatesHeading => 'Aktualizacje';
