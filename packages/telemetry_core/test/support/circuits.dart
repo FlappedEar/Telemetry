@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:telemetry_core/src/telemetry_session.dart'
+    show adoptChannelTimestamps, adoptChannelValues;
 import 'package:telemetry_core/telemetry_core.dart';
 
 const double _lat0 = 52.0, _lon0 = 21.0;
@@ -165,10 +167,12 @@ TelemetrySession rectangleSession(
     distance += speed / 10.0;
     t += 0.1;
   }
+  final clock = adoptChannelTimestamps(Float64List.fromList(times));
+  final editable = <String, Float32List>{};
   TelemetryChannel channel(String name, List<double> values) => TelemetryChannel(
     name: name,
-    timestamps: Float64List.fromList(times),
-    values: Float32List.fromList(values),
+    timestamps: clock,
+    values: adoptChannelValues(editable[name] = Float32List.fromList(values)),
   );
   final throttle = <double>[], brake = <double>[], longitudinal = <double>[];
   if (pedals) {
@@ -188,7 +192,7 @@ TelemetrySession rectangleSession(
       );
     }
   }
-  return TelemetrySession(
+  final session = TelemetrySession(
     duration: times.last,
     startTime: 0,
     metadata: {
@@ -221,4 +225,14 @@ TelemetrySession rectangleSession(
     timingGates: [circuitGate(centre: centre)],
     sampleCount: times.length,
   );
+  _editableValues[session] = editable;
+  return session;
 }
+
+final _editableValues = Expando<Map<String, Float32List>>('editable values');
+
+/// The writable values behind channel [name] of a [rectangleSession], for
+/// tests that change a recording before analysing it. Channels are
+/// read-only (FET-202); only this test helper keeps the lists it handed over.
+Float32List editableValues(TelemetrySession session, String name) =>
+    _editableValues[session]![name]!;

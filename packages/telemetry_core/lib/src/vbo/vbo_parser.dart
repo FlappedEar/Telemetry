@@ -245,7 +245,8 @@ class _VboParse {
     if (accepted == 0) {
       throw const VboParseError('VBO contains no valid timestamped data rows.');
     }
-    final times = Float64List.sublistView(rawTimes, 0, accepted);
+    // Handed over to the channels, which share it read-only.
+    final times = adoptChannelTimestamps(Float64List.sublistView(rawTimes, 0, accepted));
     for (var index = 1; index < times.length; ++index) {
       if ((index & 0xfff) == 0) throwIfCancelled(cancelled);
       if (!(times[index] > times[index - 1])) {
@@ -257,7 +258,7 @@ class _VboParse {
     for (var column = 0; column < names.length; ++column) {
       if ((column & 0x1f) == 0) throwIfCancelled(cancelled);
       if (column == timeIndex) continue;
-      final values = Float32List.sublistView(rawValues[column], 0, accepted);
+      final values = adoptChannelValues(Float32List.sublistView(rawValues[column], 0, accepted));
       if (!values.any((value) => value.isFinite)) continue;
       channels[names[column]] = TelemetryChannel(
         name: names[column],

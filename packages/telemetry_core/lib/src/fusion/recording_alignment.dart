@@ -133,8 +133,8 @@ TelemetrySession _speedSlice(TelemetryChannel channel, double from, double to) {
   final slice = TelemetryChannel(
     name: channel.name,
     unit: channel.unit,
-    timestamps: Float64List.fromList(times),
-    values: Float32List.fromList(values),
+    timestamps: adoptChannelTimestamps(Float64List.fromList(times)),
+    values: adoptChannelValues(Float32List.fromList(values)),
   );
   return TelemetrySession(
     duration: 0.0,

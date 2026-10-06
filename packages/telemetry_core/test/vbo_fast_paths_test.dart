@@ -154,17 +154,8 @@ void main() {
           if (times[i] - times[i - 1] > 0) times[i] - times[i - 1],
       ]..sort();
       final expected = intervals.isEmpty ? 0.0 : intervals[intervals.length ~/ 2];
-      final channel = TelemetryChannel(name: 'c', timestamps: times, values: Float32List(length));
-      expect(channel.baseIntervalSeconds, expected);
-      // A second channel on the same clock reads the same median.
-      expect(
-        TelemetryChannel(
-          name: 'd',
-          timestamps: times,
-          values: Float32List(length),
-        ).baseIntervalSeconds,
-        expected,
-      );
+      // Raw clocks may tie or step back: the median of positive steps.
+      expect(TelemetryChannel.medianIntervalOf(times), expected);
     }
   });
 }

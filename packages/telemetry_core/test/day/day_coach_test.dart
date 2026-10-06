@@ -43,7 +43,7 @@ void _edit(
   int? lap,
 }) {
   final speed = session.channels['velocity']!.values;
-  final values = session.channels[channel]!.values;
+  final values = editableValues(session, channel);
   var distance = -20.0;
   for (var i = 0; i < speed.length; ++i) {
     if (distance >= 0 &&

@@ -641,8 +641,8 @@ ChannelFusionResult fuseChannels(
           channel: TelemetryChannel(
             name: name,
             unit: unit,
-            timestamps: times,
-            values: Float32List.fromList(channel.values),
+            timestamps: adoptChannelTimestamps(times),
+            values: channel.values,
           ),
         );
         _appendSegments(
@@ -799,8 +799,12 @@ ChannelFusionResult fuseChannels(
       fused.channel = TelemetryChannel(
         name: fused.channel.name,
         unit: fused.channel.unit,
-        timestamps: Float64List.fromList([for (final sample in ordered) sample.time]),
-        values: Float32List.fromList([for (final sample in ordered) sample.value]),
+        timestamps: adoptChannelTimestamps(
+          Float64List.fromList([for (final sample in ordered) sample.time]),
+        ),
+        values: adoptChannelValues(
+          Float32List.fromList([for (final sample in ordered) sample.value]),
+        ),
       );
       final primarySegments = <FusedSegment>[];
       final alternativeSegments = <FusedSegment>[];
