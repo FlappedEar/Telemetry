@@ -18,6 +18,7 @@
 import 'dart:typed_data';
 
 import '../operation.dart';
+import '../selection.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'std_math.dart';
@@ -116,6 +117,18 @@ final class FusedChannel {
   String comparedSourceId = '';
   int comparedSamples = 0;
   double medianDifference = 0.0;
+
+  /// The 95th percentile of the absolute differences (FET-201), for review.
+  double highDifference = 0.0;
+
+  /// Share of the compared samples far off ([fusionConflictFarFactor]
+  /// tolerances or more apart).
+  double fractionOverTolerance = 0.0;
+
+  /// Share of the samples where the channel is active (either recording more
+  /// than the tolerance above the overlap's lowest value) that are far off;
+  /// 0 with fewer than 10 such samples.
+  double activeFractionOverTolerance = 0.0;
   bool conflicting = false;
 }
 
@@ -363,6 +376,171 @@ String _foldCase(String text) {
   return buffer.toString();
 }
 
+/// How many tolerances apart two samples must be to count as far off
+/// (FET-201). Two loggers of one fast signal (a 100 Hz accelerometer) read
+/// at slightly different instants differ by a tolerance or two now and
+/// then; a broken or wrongly scaled channel differs by much more.
+const fusionConflictFarFactor = 3.0;
+
+/// Share of compared samples far off from which two recordings conflict
+/// (FET-201): one in ten, so the 90th percentile is far off. Two loggers
+/// of a vibrating 100 Hz accelerometer on the real day reach 6 %.
+const fusionConflictFraction = 0.10;
+
+/// Share of the samples where the channel is active that are far off from
+/// which two recordings conflict (FET-201), so a brake that agrees at rest
+/// but not while braking conflicts.
+const fusionActiveConflictFraction = 0.10;
+
+/// The low percentile of a recording that counts as its rest value when
+/// deciding where a channel is active (FET-201): one stray low sample does
+/// not move it.
+const fusionRestPercentile = 0.05;
+
+/// Whether two recordings of one quantity conflict (FET-201): when the
+/// median difference is above [tolerance] (Overlays' only rule), when more
+/// than [fusionConflictFraction] of the samples differ by more than
+/// [fusionConflictFarFactor] tolerances, or when more than
+/// [fusionActiveConflictFraction] of the samples where the channel is
+/// active do. Each rule needs at least 10 samples. A sample is active when
+/// either recording is more than [tolerance] above its own rest value
+/// ([fusionRestPercentile]); that suits channels that rise from rest (a
+/// brake, a throttle), and for others the overall share still applies. A
+/// median alone hides a channel that agrees at rest and disagrees in every
+/// braking zone.
+///
+/// [median], when given, is the median difference of [medianSamples]
+/// samples measured elsewhere (Overlays' sampling, kept for parity) and
+/// replaces the median of these samples.
+({double median, double high, double fractionOver, double activeFractionOver, bool conflicting})
+fusionConflictMeasures(
+  List<double> alternative,
+  List<double> reference,
+  double tolerance, {
+  double? median,
+  int? medianSamples,
+}) {
+  final count = alternative.length < reference.length ? alternative.length : reference.length;
+  final medianCount = median == null ? count : (medianSamples ?? count);
+  if (count == 0) {
+    final middle = median ?? 0.0;
+    return (
+      median: middle,
+      high: 0.0,
+      fractionOver: 0.0,
+      activeFractionOver: 0.0,
+      conflicting: medianCount >= 10 && middle > tolerance,
+    );
+  }
+  final restAlternative = _percentile(alternative, count, fusionRestPercentile);
+  final restReference = _percentile(reference, count, fusionRestPercentile);
+  final differences = Float64List(count);
+  var over = 0, active = 0, activeOver = 0;
+  for (var index = 0; index < count; ++index) {
+    final difference = (alternative[index] - reference[index]).abs();
+    differences[index] = difference;
+    final isOver = difference > fusionConflictFarFactor * tolerance;
+    if (isOver) ++over;
+    if (alternative[index] - restAlternative > tolerance ||
+        reference[index] - restReference > tolerance) {
+      ++active;
+      if (isOver) ++activeOver;
+    }
+  }
+  final high = selectKth(differences, count, ((count - 1) * 0.95).round());
+  final middle = median ?? selectKth(differences, count, count ~/ 2);
+  final fractionOver = over / count;
+  final activeFractionOver = active >= 10 ? activeOver / active : 0.0;
+  final conflicting =
+      (medianCount >= 10 && middle > tolerance) ||
+      (count >= 10 &&
+          (fractionOver > fusionConflictFraction ||
+              activeFractionOver > fusionActiveConflictFraction));
+  return (
+    median: middle,
+    high: high,
+    fractionOver: fractionOver,
+    activeFractionOver: activeFractionOver,
+    conflicting: conflicting,
+  );
+}
+
+/// The median difference between two recordings, as Overlays measures it.
+double fusionMedianDifference(List<double> alternative, List<double> reference) {
+  final count = alternative.length < reference.length ? alternative.length : reference.length;
+  if (count == 0) return 0.0;
+  final differences = Float64List(count);
+  for (var index = 0; index < count; ++index) {
+    differences[index] = (alternative[index] - reference[index]).abs();
+  }
+  return selectKth(differences, count, count ~/ 2);
+}
+
+double _percentile(List<double> values, int count, double fraction) {
+  final copy = Float64List(count);
+  for (var index = 0; index < count; ++index) {
+    copy[index] = values[index];
+  }
+  return selectKth(copy, count, ((count - 1) * fraction).round());
+}
+
+/// Factors between the declared [unit] and a common other unit of the same
+/// quantity: % and a fraction, km/h and m/s, g and m/s². An unknown unit
+/// takes them all plus a thousandth. Factors under 3 (mph) are left out: a
+/// sensor reading half or two thirds of the other is a fault to show, not a
+/// unit to hide.
+List<double> _unitFactorsFor(String unit) {
+  final u = unit.trim().toLowerCase();
+  if (u == '%') return const [100.0];
+  if (u == 'km/h' || u == 'kmh' || u == 'kph' || u == 'm/s') return const [3.6];
+  if (u == 'g' || u == 'm/s2' || u == 'm/s\u00b2') return const [9.80665];
+  if (u == 'rpm' || u == 'c' || u == '\u00b0c' || u == 'degc') return const [];
+  return const [3.6, 9.80665, 100.0, 1000.0];
+}
+
+/// Whether two recordings of one quantity, one with no declared unit, are
+/// in different units (FET-201): their spreads (5th to 95th percentile)
+/// differ by about a factor between the declared [unit] and a common other
+/// unit of the quantity, as a 0..1 brake against
+/// a % one does, and rescaled by that factor they agree. A channel that is
+/// flat, dead, noisy or merely reads low is not a unit, even when its
+/// spread happens to match a factor: it is a disagreement the driver sees
+/// as a conflict. [unit] is the declared side's unit; [referenceDeclared]
+/// says which side declares it. For a unit this does not know, a sensor
+/// reading a unit factor apart and agreeing once rescaled cannot be told
+/// from a unit difference, and counts as one.
+bool fusionScalesDiffer(
+  List<double> alternative,
+  List<double> reference,
+  double tolerance, {
+  String unit = '',
+  bool referenceDeclared = true,
+}) {
+  final count = alternative.length < reference.length ? alternative.length : reference.length;
+  if (count == 0) return false;
+  final spreadAlternative =
+      _percentile(alternative, count, 0.95) - _percentile(alternative, count, 0.05);
+  final spreadReference = _percentile(reference, count, 0.95) - _percentile(reference, count, 0.05);
+  final larger = stdMax(spreadAlternative, spreadReference);
+  final smaller = stdMin(spreadAlternative, spreadReference);
+  if (larger <= tolerance) return false;
+  final ratio = larger / smaller;
+  for (final factor in _unitFactorsFor(unit)) {
+    if (ratio <= factor / 1.15 || ratio >= factor * 1.15) continue;
+    // The guess holds only if the undeclared recording, brought into the
+    // declared unit ([tolerance]'s), agrees with the declared one.
+    final undeclared = referenceDeclared ? alternative : reference;
+    final declared = referenceDeclared ? reference : alternative;
+    final undeclaredNarrower = referenceDeclared
+        ? spreadAlternative < spreadReference
+        : spreadReference < spreadAlternative;
+    final scale = undeclaredNarrower ? factor : 1.0 / factor;
+    final converted = [for (var index = 0; index < count; ++index) undeclared[index] * scale];
+    return !fusionConflictMeasures(converted, declared.sublist(0, count), tolerance).conflicting;
+  }
+  return false;
+}
+
 /// The difference above which two recordings of one quantity conflict, by
 /// unit: km/h 2, % 3, g 0.05, C 2, rpm 100; otherwise 5 % of the primary's
 /// range in the overlap.
@@ -493,40 +671,83 @@ ChannelFusionResult fuseChannels(
       }
 
       // Compare the overlap at the alternative's own samples.
-      final differences = <double>[];
+      final compared = <double>[];
+      final references = <double>[];
       var low = double.infinity, high = -low;
       for (var index = 0; index < times.length; ++index) {
         final double value = channel.values[index];
         final reference = primary.valueAt(fused.name, times[index]);
         if (!value.isFinite || reference == null) continue;
-        differences.add((value - reference).abs());
+        compared.add(value);
+        references.add(reference);
         low = stdMin(low, reference);
         high = stdMax(high, reference);
       }
-      var medianDifference = 0.0;
-      var conflicting = false;
-      if (differences.isNotEmpty) {
-        differences.sort();
-        medianDifference = differences[differences.length ~/ 2];
-        // An undeclared unit takes the declared side's tolerance.
-        conflicting =
-            differences.length >= 10 &&
-            medianDifference >
-                fusionConflictTolerance(
-                  primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
-                  high - low,
-                );
+      // An undeclared unit takes the declared side's tolerance.
+      final tolerance = fusionConflictTolerance(
+        primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
+        high - low,
+      );
+      // Overlays' median at the alternative's samples, kept for parity. The
+      // share of far-off samples is measured at the coarser recording's
+      // samples (FET-201): a 1 Hz primary interpolated at 10 Hz differs
+      // from a true 10 Hz recording on every brake ramp.
+      final medianDifference = fusionMedianDifference(compared, references);
+      var sampledAlternative = compared, sampledReference = references;
+      final primaryInterval = _medianInterval(fused.channel.timestamps);
+      if (interval > 0.0 && interval < 0.75 * primaryInterval) {
+        final alternativeChannel = TelemetryChannel(
+          name: name,
+          unit: channel.unit,
+          timestamps: times,
+          values: channel.values,
+        );
+        sampledAlternative = <double>[];
+        sampledReference = <double>[];
+        final primaryTimes = fused.channel.timestamps;
+        final primaryValues = fused.channel.values;
+        for (var index = 0; index < primaryTimes.length; ++index) {
+          final double reference = primaryValues[index];
+          if (!reference.isFinite) continue;
+          final value = telemetryValueAt(alternativeChannel, primaryTimes[index]);
+          if (value == null) continue;
+          sampledAlternative.add(value);
+          sampledReference.add(reference);
+        }
       }
+      final measures = fusionConflictMeasures(
+        sampledAlternative,
+        sampledReference,
+        tolerance,
+        median: medianDifference,
+        medianSamples: compared.length,
+      );
+      final comparedSamples = compared.length;
       // A unit only one side declares (VBO declares none, KAN-184) counts as
-      // the same unit only when at least 10 samples agree; otherwise it is a
-      // mismatch, so values in another scale are never fused.
-      if (oneUndeclared && (differences.length < 10 || conflicting)) {
+      // the same unit only when at least 10 samples agree in the median and
+      // both recordings spread alike; otherwise it is a mismatch, so values
+      // in another scale are never fused. Beyond that, a disagreement is a
+      // conflict the driver sees (FET-201), not a hidden mismatch.
+      if (oneUndeclared &&
+          (comparedSamples < 10 ||
+              medianDifference > tolerance ||
+              fusionScalesDiffer(
+                compared,
+                references,
+                tolerance,
+                unit: primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
+                referenceDeclared: primaryUnit.isNotEmpty,
+              ))) {
         result.unitMismatches.add('$key: ${source.sourceId}');
         continue;
       }
+      final conflicting = measures.conflicting;
       fused.comparedSourceId = source.sourceId;
-      fused.comparedSamples = differences.length;
+      fused.comparedSamples = comparedSamples;
       fused.medianDifference = medianDifference;
+      fused.highDifference = measures.high;
+      fused.fractionOverTolerance = measures.fractionOver;
+      fused.activeFractionOverTolerance = measures.activeFractionOver;
       fused.conflicting = conflicting;
 
       final chosen = policy.rules[key];

@@ -33,6 +33,11 @@ const _fusionDepartures = {
   // The preferred source's RCZ gap markers go where the other source fills
   // the loss (truth tests "RCZ gap markers ..." in the same file).
   'gapMarkersPreferred': 'FET-200',
+  // FET-201 (KAN-224) adds conflict rules beyond Overlays' median: far-off
+  // shares, compared at the slower recording's rate, and an undeclared unit
+  // that only disagrees in use is a conflict, not a unit mismatch. No corpus
+  // case reaches them, so none is skipped; the truth tests are in
+  // test/fusion/fusion_conflict_test.dart.
 };
 
 var _compared = 0;
