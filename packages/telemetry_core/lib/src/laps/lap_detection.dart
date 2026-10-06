@@ -34,8 +34,6 @@ final class _GpsSample {
   final Vector2 point;
 }
 
-/// The GPS fix at [index], projected around [origin], or null when the two
-/// channels disagree on its time or the coordinate is invalid.
 /// The longest step between two GPS fixes that is still continuous: the
 /// smaller of the latitude's and longitude's [telemetryGapThreshold], so a
 /// gap by either channel's own cadence is a gap. Pass detection and lap
@@ -48,6 +46,8 @@ double gpsGapThreshold(TelemetryChannel latitude, TelemetryChannel longitude) {
   return latitudeGap < longitudeGap ? latitudeGap : longitudeGap;
 }
 
+/// The GPS fix at [index], projected around [origin], or null when the two
+/// channels disagree on its time or the coordinate is invalid.
 _GpsSample? _gpsSampleAt(
   TelemetryChannel latitude,
   TelemetryChannel longitude,

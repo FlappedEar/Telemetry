@@ -204,7 +204,9 @@ void main() {
 
   test('detects passes under the same GPS gap rule that judges laps (FET-212)', () {
     // A crossing over a 2 s step: within the latitude's 1 Hz cadence (gap
-    // 3 s), beyond the longitude's own 2 Hz one (gap 1.5 s).
+    // 3 s), beyond the longitude's own 2 Hz one (gap 1.5 s). Synthetic: the
+    // two thresholds differ only when the channels run on different clocks,
+    // which real VBO and RCZ recordings do not; the rule is defensive.
     final crossing = gpsSession([0, 1, 3, 4], [_north, _mid, _mid, _north], [
       _east,
       _east,
