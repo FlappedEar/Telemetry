@@ -119,14 +119,24 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
       insetPadding: MediaQuery.sizeOf(context).width < 400
           ? const EdgeInsets.symmetric(horizontal: 16, vertical: 24)
           : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      title: Text(l10n.sessionDetailsTitle(l10n.session(_stored.name))),
-      content: SizedBox(
-        width: 460,
-        child: SingleChildScrollView(
+      // The title scrolls with the fields, so with large text on a small
+      // phone every field can still be reached above the buttons.
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 460,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  l10n.sessionDetailsTitle(l10n.session(_stored.name)),
+                  style:
+                      theme.dialogTheme.titleTextStyle ??
+                      theme.textTheme.headlineSmall,
+                ),
+              ),
               TextField(
                 key: const ValueKey('sessionDetailsName'),
                 controller: _name,
@@ -226,7 +236,7 @@ String? previousRunInRecordingOrder(List<NamedRun> runs, String runId) {
 }
 
 /// Turns a comma into a decimal point as it is typed, so every language
-/// enters "2.1" (the owner's rule), and refuses anything but digits with at
+/// enters "2.1" (the owner's rule), drops spaces, and refuses anything but digits with at
 /// most [setupDecimals] decimals, and [integerDigits] before the point.
 class SetupNumberFormatter extends TextInputFormatter {
   SetupNumberFormatter({int integerDigits = 2})
@@ -239,28 +249,37 @@ class SetupNumberFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final text = newValue.text.replaceAll(',', '.');
+    // A paste such as " 2, 1 " is 2.1: spaces go before the check.
+    final text = newValue.text
+        .replaceAll(',', '.')
+        .replaceAll(RegExp(r'\s'), '');
     if (!_allowed.hasMatch(text)) return oldValue;
-    return newValue.copyWith(text: text);
+    if (text == newValue.text) return newValue;
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
   }
 }
 
 /// The text fields of a session's setup and the unit chosen.
 class _SetupFields {
   _SetupFields(RunSetup stored, {PressureUnit? defaultUnit})
-    : unit = stored.pressureUnit ?? defaultUnit ?? PressureUnit.bar,
-      _storedUnit = stored.pressureUnit {
+    : unit = stored.pressureUnit ?? defaultUnit ?? PressureUnit.bar {
     fill(stored, keepUnit: stored.pressureUnit == null);
   }
 
   PressureUnit unit;
-  final PressureUnit? _storedUnit;
   final cold = [for (final _ in setupWheels) TextEditingController()];
   final hot = [for (final _ in setupWheels) TextEditingController()];
   final tyre = TextEditingController();
   final fuel = TextEditingController();
 
   List<TextEditingController> get _all => [...cold, ...hot, tyre, fuel];
+
+  /// Whether any field holds something.
+  bool get hasValues =>
+      _all.any((controller) => controller.text.trim().isNotEmpty);
 
   /// Shows [setup] in the fields; its unit too, unless [keepUnit].
   void fill(RunSetup setup, {bool keepUnit = false}) {
@@ -291,7 +310,7 @@ class _SetupFields {
 
   /// The setup the fields hold, or null while one of them cannot be
   /// stored. The unit is kept only with a pressure, so a session without
-  /// pressures gains none; one stored before stays.
+  /// pressures has none.
   RunSetup? get setup {
     if (pressuresInvalid || fuelInvalid || !validTyre(tyre.text.trim())) {
       return null;
@@ -304,7 +323,7 @@ class _SetupFields {
     final hotValues = WheelPressures.of([for (final c in hot) number(c)]);
     final pressures = !coldValues.isEmpty || !hotValues.isEmpty;
     return RunSetup(
-      pressureUnit: pressures ? unit : _storedUnit,
+      pressureUnit: pressures ? unit : null,
       cold: coldValues,
       hot: hotValues,
       tyre: tyre.text.trim(),
@@ -352,8 +371,9 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
   Widget _pressure(
     BuildContext context,
     TextEditingController controller,
-    String key,
-  ) {
+    String key, {
+    String? label,
+  }) {
     final invalid = _fields.pressureInvalid(controller);
     final errorBorder = OutlineInputBorder(
       borderSide: BorderSide(
@@ -369,7 +389,7 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
         textAlign: TextAlign.center,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [SetupNumberFormatter()],
-        style: Theme.of(context).textTheme.bodyMedium,
+        style: _pressureStyle(context),
         decoration: InputDecoration(
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(
@@ -382,6 +402,11 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
           enabledBorder: invalid ? errorBorder : null,
           focusedBorder: invalid ? errorBorder : null,
           hintText: '—',
+          // Two fields a line: each says its wheel.
+          labelText: label,
+          floatingLabelBehavior: label == null
+              ? null
+              : FloatingLabelBehavior.always,
         ),
         onChanged: (_) => _changed(),
       ),
@@ -417,31 +442,23 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
       ('cold', l10n.sessionSetupCold, _fields.cold),
       ('hot', l10n.sessionSetupHot, _fields.hot),
     ];
-    Widget fieldsRow(String key, String row, List<TextEditingController> c) =>
-        Row(
-          children: [
-            for (final (index, wheel) in setupWheels.indexed)
-              Expanded(
-                child: Semantics(
-                  label: l10n.sessionSetupPressureField(row, names[index]),
-                  child: _pressure(
-                    context,
-                    c[index],
-                    'sessionSetup $key $wheel',
-                  ),
-                ),
-              ),
-          ],
-        );
-    Widget headingsRow() => Row(
-      children: [
-        for (final text in headings)
-          Expanded(
-            child: ExcludeSemantics(
-              child: Text(text, style: small, textAlign: TextAlign.center),
-            ),
-          ),
-      ],
+    Widget field(
+      String key,
+      String row,
+      List<TextEditingController> controllers,
+      int index, {
+      bool labelled = false,
+    }) => Semantics(
+      label: l10n.sessionSetupPressureField(row, names[index]),
+      child: _pressure(
+        context,
+        controllers[index],
+        'sessionSetup $key ${setupWheels[index]}',
+        label: labelled ? headings[index] : null,
+      ),
+    );
+    Widget headingText(String text) => ExcludeSemantics(
+      child: Text(text, style: small, textAlign: TextAlign.center),
     );
     final tyre = TextField(
       key: const ValueKey('sessionSetupTyre'),
@@ -464,38 +481,50 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
       decoration: InputDecoration(
         labelText: l10n.sessionSetupFuel,
         errorText: _fields.fuelInvalid ? l10n.sessionSetupFuelRange : null,
-        errorMaxLines: 2,
+        errorMaxLines: 3,
       ),
       onChanged: (_) => _changed(),
     );
+    // How wide a pressure field must be to show "28.25" in the font and
+    // text size in use, with its padding and outline.
+    final digits = TextPainter(
+      text: TextSpan(text: '28.25', style: _pressureStyle(context)),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    final fieldWidth = digits.width + 16;
+    final labelWidth = 80 * MediaQuery.textScalerOf(context).scale(1);
+    digits.dispose();
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Below 300 points (a 320 phone with large text), the row labels go
-        // above their rows and the fuel under the tyres.
-        final narrow = constraints.maxWidth < 300;
+        final width = constraints.maxWidth;
+        // A table with the row labels beside it where everything fits; the
+        // labels above four fields a row on a phone; on a narrow phone or
+        // with large text two fields a line, or one, each with its wheel.
+        final layout = width >= labelWidth + 4 * fieldWidth
+            ? _PressureLayout.table
+            : width >= 4 * fieldWidth
+            ? _PressureLayout.rows
+            : width >= 2 * fieldWidth
+            ? _PressureLayout.grid
+            : _PressureLayout.list;
+        final narrow = layout != _PressureLayout.table;
         return Column(
           key: const ValueKey('sessionSetup'),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 12,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              alignment: WrapAlignment.spaceBetween,
-              children: [
-                heading,
-                if (widget.sameAs case final sameAs?)
-                  TextButton.icon(
-                    key: const ValueKey('sessionSetupSameAs'),
-                    icon: const Icon(Icons.content_copy, size: 18),
-                    label: Text(l10n.sessionSetupSameAs(sameAs.name)),
-                    onPressed: () {
-                      _fields.fill(sameAs.setup);
-                      _changed();
-                    },
-                  ),
-              ],
-            ),
+            heading,
+            if (widget.sameAs case final sameAs?)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  key: const ValueKey('sessionSetupSameAs'),
+                  icon: const Icon(Icons.content_copy, size: 18),
+                  label: Text(l10n.sessionSetupSameAs(sameAs.name)),
+                  onPressed: () => _copy(sameAs),
+                ),
+              ),
             const SizedBox(height: 4),
             Wrap(
               spacing: 12,
@@ -526,28 +555,15 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
               ],
             ),
             const SizedBox(height: 8),
-            if (narrow) ...[
-              headingsRow(),
-              for (final (key, label, controllers) in rows) ...[
-                Text(label, style: small),
-                fieldsRow(key, label, controllers),
-              ],
-            ] else
-              Table(
+            switch (layout) {
+              _PressureLayout.table => Table(
                 columnWidths: const {0: IntrinsicColumnWidth()},
                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                 children: [
                   TableRow(
                     children: [
                       const SizedBox(),
-                      for (final text in headings)
-                        ExcludeSemantics(
-                          child: Text(
-                            text,
-                            style: small,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                      for (final text in headings) headingText(text),
                     ],
                   ),
                   for (final (key, label, controllers) in rows)
@@ -559,22 +575,71 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
                             child: Text(label, style: small),
                           ),
                         ),
-                        for (final (index, wheel) in setupWheels.indexed)
-                          Semantics(
-                            label: l10n.sessionSetupPressureField(
-                              label,
-                              names[index],
-                            ),
-                            child: _pressure(
-                              context,
-                              controllers[index],
-                              'sessionSetup $key $wheel',
-                            ),
-                          ),
+                        for (final index in [0, 1, 2, 3])
+                          field(key, label, controllers, index),
                       ],
                     ),
                 ],
               ),
+              _PressureLayout.rows => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      for (final text in headings)
+                        Expanded(child: headingText(text)),
+                    ],
+                  ),
+                  for (final (key, label, controllers) in rows) ...[
+                    ExcludeSemantics(child: Text(label, style: small)),
+                    Row(
+                      children: [
+                        for (final index in [0, 1, 2, 3])
+                          Expanded(
+                            child: field(key, label, controllers, index),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              _PressureLayout.list => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (key, label, controllers) in rows) ...[
+                    ExcludeSemantics(child: Text(label, style: small)),
+                    for (final index in [0, 1, 2, 3])
+                      field(key, label, controllers, index, labelled: true),
+                  ],
+                ],
+              ),
+              _PressureLayout.grid => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final (key, label, controllers) in rows) ...[
+                    ExcludeSemantics(child: Text(label, style: small)),
+                    for (final pair in [
+                      [0, 1],
+                      [2, 3],
+                    ])
+                      Row(
+                        children: [
+                          for (final index in pair)
+                            Expanded(
+                              child: field(
+                                key,
+                                label,
+                                controllers,
+                                index,
+                                labelled: true,
+                              ),
+                            ),
+                        ],
+                      ),
+                  ],
+                ],
+              ),
+            },
             if (_fields.pressuresInvalid)
               Text(
                 l10n.sessionSetupPressureRange(
@@ -604,7 +669,42 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
       },
     );
   }
+
+  /// Fills the fields from the previous session; when some already hold a
+  /// value, only after the driver agrees. Nothing is saved until Save.
+  Future<void> _copy(({String name, RunSetup setup}) sameAs) async {
+    if (_fields.hasValues) {
+      final l10n = context.l10n;
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.sessionSetupReplaceTitle),
+          content: Text(l10n.sessionSetupReplaceBody(sameAs.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              key: const ValueKey('sessionSetupReplace'),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.sessionSetupReplace),
+            ),
+          ],
+        ),
+      );
+      if (replace != true || !mounted) return;
+    }
+    _fields.fill(sameAs.setup);
+    _changed();
+  }
 }
+
+/// How the pressure fields are laid out for the width and text size.
+enum _PressureLayout { table, rows, grid, list }
+
+TextStyle? _pressureStyle(BuildContext context) =>
+    Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14);
 
 /// Renames the day: the name of its document, which Overlays shows too.
 class RenameDayDialog extends StatefulWidget {

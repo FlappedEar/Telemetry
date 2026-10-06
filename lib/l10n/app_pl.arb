@@ -587,7 +587,7 @@
   "retryRecordingsSaveFirst": "Najpierw zapisz dzień, potem ponów odczyt zapisów danych.",
   "retryRecordingsStill": "Zapisy nadal nie są tam, gdzie wskazuje dzień.",
   "sessionDetailsHeading": "Szczegóły sesji",
-  "sessionDetailsNone": "Brak warunków, zmian w ustawieniach i notatek",
+  "sessionDetailsNone": "Brak warunków, ustawień, zmian w ustawieniach i notatek",
   "sessionDetailsTitle": "Szczegóły: {session}",
   "sessionDetailsName": "Nazwa",
   "sessionDetailsNameRequired": "Sesja musi mieć nazwę.",
@@ -1358,7 +1358,7 @@
   "sessionSetupCold": "Na zimno",
   "sessionSetupHot": "Na ciepło",
   "sessionSetupPressureField": "{row}, {wheel}",
-  "sessionSetupPressureRange": "Ciśnienie w {unit} wpisz od {min} do {max}, najwyżej z dwiema cyframi po kropce.",
+  "sessionSetupPressureRange": "Ciśnienie ({unit}): od {min} do {max}, najwyżej dwie cyfry po kropce.",
   "sessionSetupKeptAsEntered": "Zapisane tak, jak wpisano: zmiana jednostki nie przelicza liczb.",
   "sessionSetupTyre": "Opony",
   "sessionSetupTyreHint": "Pirelli SC2",
@@ -1370,5 +1370,8 @@
   "setupHot": "Na ciepło {pressures} {unit}",
   "setupTyres": "Opony {tyre}",
   "setupFuel": "Paliwo {litres} l",
-  "sessionSetupLine": "Ustawienia: {setup}"
+  "sessionSetupLine": "Ustawienia: {setup}",
+  "sessionSetupReplaceTitle": "Zastąpić ustawienia?",
+  "sessionSetupReplaceBody": "Pola ustawień zostaną wypełnione ustawieniami z: {session} zamiast obecnych wartości. Nic nie jest zapisywane przed naciśnięciem Zapisz.",
+  "sessionSetupReplace": "Zastąp"
 }

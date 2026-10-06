@@ -3656,10 +3656,10 @@ abstract class AppLocalizations {
   /// **'Session details'**
   String get sessionDetailsHeading;
 
-  /// Shown under a session that has no conditions, setup changes or notes.
+  /// Shown under a session that has no conditions, setup, setup changes or notes.
   ///
   /// In en, this message translates to:
-  /// **'No conditions, setup changes or notes'**
+  /// **'No conditions, setup, setup changes or notes'**
   String get sessionDetailsNone;
 
   /// Title of the dialog that edits a session's name, conditions, setup changes and notes.
@@ -8310,7 +8310,7 @@ abstract class AppLocalizations {
   /// Spoken name of one tyre pressure field.
   ///
   /// In en, this message translates to:
-  /// **'{row} pressure, {wheel}'**
+  /// **'{row}, {wheel}'**
   String sessionSetupPressureField(String row, String wheel);
 
   /// Shown under the tyre pressures when one is out of range for the chosen unit.
@@ -8390,6 +8390,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Setup: {setup}'**
   String sessionSetupLine(String setup);
+
+  /// Title of the question asked before the previous session's setup replaces values already in the fields.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace the setup?'**
+  String get sessionSetupReplaceTitle;
+
+  /// Explains what replacing the setup with the previous session's does.
+  ///
+  /// In en, this message translates to:
+  /// **'The setup fields will hold {session}\'s setup instead of what is in them now. Nothing is saved until Save.'**
+  String sessionSetupReplaceBody(String session);
+
+  /// Button: replaces the setup fields with the previous session's setup.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get sessionSetupReplace;
 }
 
 class _AppLocalizationsDelegate

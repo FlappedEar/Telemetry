@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/session_details_dialog.dart';
@@ -67,7 +67,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Session details'), findsOneWidget);
     expect(
-      find.text('No conditions, setup changes or notes'),
+      find.text('No conditions, setup, setup changes or notes'),
       findsNWidgets(2),
     );
 
@@ -191,6 +191,14 @@ void main() {
     expect(type('30', '300').text, '30');
     expect(type('', 'a').text, '');
     expect(type('', '-').text, '');
+    // Pasted with spaces.
+    expect(type('', ' 2.1').text, '2.1');
+    expect(type('', '2.1 ').text, '2.1');
+    expect(type('', '2, 1').text, '2.1');
+    expect(
+      type('', '2, 1').selection,
+      const TextSelection.collapsed(offset: 3),
+    );
     expect(
       SetupNumberFormatter(integerDigits: 3)
           .formatEditUpdate(
@@ -311,8 +319,20 @@ void main() {
     final sameAs = find.byKey(const ValueKey('sessionSetupSameAs'));
     expect(find.text('Skopiuj z: Sesja 1'), findsOneWidget);
     await tester.ensureVisible(sameAs);
+    await tester.pumpAndSettle();
+    // The fields hold values: asked first, and Cancel keeps them.
     await tester.tap(sameAs);
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Zastąpić ustawienia?'), findsOneWidget);
+    await tester.tap(find.text('Anuluj').last);
+    await tester.pumpAndSettle();
+    expect(fieldText(tester, setupField('cold', 'fl')), '2.1');
+    await tester.ensureVisible(sameAs);
+    await tester.pumpAndSettle();
+    await tester.tap(sameAs);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('sessionSetupReplace')));
+    await tester.pumpAndSettle();
     expect(fieldText(tester, setupField('cold', 'fl')), '30');
     expect(fieldText(tester, setupField('cold', 'rl')), '28.5');
     expect(fieldText(tester, setupField('hot', 'fl')), '34');
@@ -428,6 +448,123 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('sessionDetailsSave')));
     await tester.pumpAndSettle();
     expect(controller.dirty, isFalse);
+
+    // Every field cleared: the file keeps no setup at all.
+    await tester.tap(detailsTile(first));
+    await tester.pumpAndSettle();
+    for (final row in ['cold', 'hot']) {
+      for (final wheel in setupWheels) {
+        await tester.enterText(setupField(row, wheel), '');
+      }
+    }
+    await tester.enterText(find.byKey(const ValueKey('sessionSetupTyre')), '');
+    await tester.enterText(find.byKey(const ValueKey('sessionSetupFuel')), '');
+    await tester.tap(find.byKey(const ValueKey('sessionDetailsSave')));
+    await tester.pumpAndSettle();
+    expect(controller.dirty, isTrue);
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(documentRun(saved.last, first).containsKey('setup'), isFalse);
+    expect(find.text(line), findsNothing);
+  });
+
+  testWidgets('on a 320×640 phone with text twice as large every setup '
+      'control fits, reads and can be tapped', (tester) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      writer: (path, document) async {},
+    );
+    final [first, second] = [for (final named in outcome.runs) named.run.id];
+    const previous = RunSetup(
+      pressureUnit: PressureUnit.psi,
+      cold: WheelPressures(fl: 28.25, fr: 28.25, rl: 26.5, rr: 26.5),
+      tyre: 'Pirelli SC2',
+    );
+    controller.updateRunMetadata(
+      first,
+      const RunMetadata(name: 'Session 1', setup: previous),
+    );
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) =>
+                    SessionDetailsDialog(controller: controller, runId: second),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // The copy button is reached by scrolling and works.
+    final sameAs = find.byKey(const ValueKey('sessionSetupSameAs'));
+    await tester.ensureVisible(sameAs);
+    await tester.pumpAndSettle();
+    await tester.tap(sameAs);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(fieldText(tester, setupField('cold', 'fl')), '28.25');
+
+    // Each pressure field is wide enough for "28.25" at this text size.
+    for (final row in ['cold', 'hot']) {
+      for (final wheel in setupWheels) {
+        final field = setupField(row, wheel);
+        await tester.ensureVisible(field);
+        await tester.pumpAndSettle();
+        final text = find.descendant(
+          of: field,
+          matching: find.byType(EditableText),
+        );
+        final editable = tester.widget<EditableText>(text);
+        final painter = TextPainter(
+          text: TextSpan(text: '28.25', style: editable.style),
+          textScaler:
+              editable.textScaler ??
+              MediaQuery.textScalerOf(tester.element(text)),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        expect(
+          tester.getSize(text).width,
+          greaterThanOrEqualTo(painter.width),
+          reason: '$row $wheel',
+        );
+        painter.dispose();
+        // On screen, inside the dialog.
+        final rect = tester.getRect(field);
+        expect(rect.left, greaterThanOrEqualTo(0));
+        expect(rect.right, lessThanOrEqualTo(320));
+      }
+    }
+
+    // Every control can be reached: the fuel and Save at the end.
+    final fuel = find.byKey(const ValueKey('sessionSetupFuel'));
+    await tester.ensureVisible(fuel);
+    await tester.pumpAndSettle();
+    await tester.enterText(fuel, '12.5');
+    final save = find.byKey(const ValueKey('sessionDetailsSave'));
+    await tester.ensureVisible(save);
+    await tester.pumpAndSettle();
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(controller.runMetadata(second).setup.fuelStartLitres, 12.5);
+    expect(controller.runMetadata(second).setup.cold, previous.cold);
   });
 
   testWidgets('a setup of a newer version is shown and passed back as it is', (

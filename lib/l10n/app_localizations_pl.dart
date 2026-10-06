@@ -2559,7 +2559,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get sessionDetailsNone =>
-      'Brak warunków, zmian w ustawieniach i notatek';
+      'Brak warunków, ustawień, zmian w ustawieniach i notatek';
 
   @override
   String sessionDetailsTitle(String session) {
@@ -5744,12 +5744,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String sessionSetupPressureField(String row, String wheel) {
-    return 'Ciśnienie $row, $wheel';
+    return '$row, $wheel';
   }
 
   @override
   String sessionSetupPressureRange(String unit, String min, String max) {
-    return 'Ciśnienie w $unit wpisz od $min do $max, najwyżej z dwiema cyframi po kropce.';
+    return 'Ciśnienie ($unit): od $min do $max, najwyżej dwie cyfry po kropce.';
   }
 
   @override
@@ -5801,4 +5801,15 @@ class AppLocalizationsPl extends AppLocalizations {
   String sessionSetupLine(String setup) {
     return 'Ustawienia: $setup';
   }
+
+  @override
+  String get sessionSetupReplaceTitle => 'Zastąpić ustawienia?';
+
+  @override
+  String sessionSetupReplaceBody(String session) {
+    return 'Pola ustawień zostaną wypełnione ustawieniami z: $session zamiast obecnych wartości. Nic nie jest zapisywane przed naciśnięciem Zapisz.';
+  }
+
+  @override
+  String get sessionSetupReplace => 'Zastąp';
 }

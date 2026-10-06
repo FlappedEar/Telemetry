@@ -2500,7 +2500,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailsHeading => 'Session details';
 
   @override
-  String get sessionDetailsNone => 'No conditions, setup changes or notes';
+  String get sessionDetailsNone =>
+      'No conditions, setup, setup changes or notes';
 
   @override
   String sessionDetailsTitle(String session) {
@@ -5626,7 +5627,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String sessionSetupPressureField(String row, String wheel) {
-    return '$row pressure, $wheel';
+    return '$row, $wheel';
   }
 
   @override
@@ -5683,4 +5684,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String sessionSetupLine(String setup) {
     return 'Setup: $setup';
   }
+
+  @override
+  String get sessionSetupReplaceTitle => 'Replace the setup?';
+
+  @override
+  String sessionSetupReplaceBody(String session) {
+    return 'The setup fields will hold $session\'s setup instead of what is in them now. Nothing is saved until Save.';
+  }
+
+  @override
+  String get sessionSetupReplace => 'Replace';
 }

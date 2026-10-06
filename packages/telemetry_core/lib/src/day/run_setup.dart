@@ -45,10 +45,12 @@ enum PressureUnit {
 final _setupNumber = RegExp(r'^\d{0,3}(\.\d{0,2})?$');
 
 /// [text] as a setup number, or null when it is not one: digits with at most
-/// [setupDecimals] decimals after a decimal point. A comma is not a decimal
-/// point here; the app turns it into one as it is typed.
+/// [setupDecimals] decimals after a decimal point; spaces are ignored. A
+/// comma is not a decimal point here; the app turns it into one as it is
+/// typed.
 double? parseSetupNumber(String text) {
-  final trimmed = text.trim();
+  // Spaces from a paste are not part of the number.
+  final trimmed = text.replaceAll(RegExp(r'\s'), '');
   if (!_setupNumber.hasMatch(trimmed) || !trimmed.contains(RegExp(r'\d'))) return null;
   return double.parse(trimmed.startsWith('.') ? '0$trimmed' : trimmed);
 }
@@ -177,16 +179,15 @@ final class RunSetup {
     return (run[runSetupKey] as Map<String, Object?>?) ?? {'version': runSetupVersion};
   }
 
-  RunSetup _trimmed() => tyre == tyre.trim()
-      ? this
-      : RunSetup(
-          pressureUnit: pressureUnit,
-          cold: cold,
-          hot: hot,
-          tyre: tyre.trim(),
-          fuelStartLitres: fuelStartLitres,
-          unknownVersion: unknownVersion,
-        );
+  // As written: the tyre trimmed, and no unit without a pressure.
+  RunSetup _normalized() => RunSetup(
+    pressureUnit: hasPressures ? pressureUnit : null,
+    cold: cold,
+    hot: hot,
+    tyre: tyre.trim(),
+    fuelStartLitres: fuelStartLitres,
+    unknownVersion: unknownVersion,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -236,12 +237,16 @@ String _number(double value) => value == value.roundToDouble() ? '${value.round(
 /// what changed against what is stored is written, so keys this app does
 /// not know (in the setup and in its pressure objects) and stored values it
 /// reads as not entered stay as they are, and a setup equal to the stored
-/// one leaves [run] as it was. A setup stored under another version is
-/// never rewritten. A setup left with nothing in it is removed. Returns
+/// one leaves [run] as it was. When the unit changes, or goes with the last
+/// pressure, every stored pressure is replaced, so a value read as not
+/// entered in the old unit cannot come back in the new one. A setup stored
+/// under another version is never rewritten. A setup left with nothing in
+/// it but keys this app does not know keeps those; one left with nothing is
+/// removed. Returns
 /// whether [run] changed. [setup] must have no [runSetupProblem].
 bool applyRunSetup(Map<String, Object?> run, RunSetup setup) {
   final storedSetup = RunSetup.fromJson(run[runSetupKey]);
-  final next = setup._trimmed();
+  final next = setup._normalized();
   if (storedSetup.readOnly || next.readOnly || storedSetup == next) return false;
   _write(run, next, storedSetup);
   final object = run[runSetupKey]! as Map<String, Object?>;
@@ -264,16 +269,17 @@ void _write(Map<String, Object?> run, RunSetup next, RunSetup stored) {
     }
   }
 
+  final unitChanged = next.pressureUnit != stored.pressureUnit;
   set('pressureUnit', next.pressureUnit?.name, stored.pressureUnit?.name);
   for (final (key, pressures, storedPressures) in [
     ('coldPressure', next.cold, stored.cold),
     ('hotPressure', next.hot, stored.hot),
   ]) {
-    if (pressures == storedPressures) continue;
+    if (pressures == storedPressures && !unitChanged) continue;
     final wheels = <String, Object?>{if (object[key] case final Map<String, Object?> kept) ...kept};
     for (final wheel in setupWheels) {
       final value = pressures[wheel];
-      if (value == storedPressures[wheel]) continue;
+      if (value == storedPressures[wheel] && !unitChanged) continue;
       if (value == null) {
         wheels.remove(wheel);
       } else {

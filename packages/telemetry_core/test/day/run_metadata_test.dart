@@ -120,6 +120,9 @@ void main() {
       expect(parseSetupNumber('.5'), 0.5);
       expect(parseSetupNumber('150.25'), 150.25);
       expect(parseSetupNumber('2,1'), isNull);
+      expect(parseSetupNumber('2, 1'), isNull);
+      expect(parseSetupNumber(' 2.1'), 2.1);
+      expect(parseSetupNumber('2. 1 '), 2.1);
       expect(parseSetupNumber('2.125'), isNull);
       expect(parseSetupNumber('-1'), isNull);
       expect(parseSetupNumber('1e1'), isNull);
@@ -250,7 +253,9 @@ void main() {
       expect(applyRunMetadata(run, const RunMetadata(name: 'Session 1')), isTrue);
       expect(run['setup'], {
         'version': 'session-setup-v1',
-        'coldPressure': {'rl': 9.0, 'futureWheel': 'kept'},
+        // The unit went with the last pressure: the value read as not
+        // entered went with it.
+        'coldPressure': {'futureWheel': 'kept'},
         'futureSetup': {'kept': true},
       });
       final plain = <String, Object?>{
@@ -259,6 +264,80 @@ void main() {
       };
       expect(applyRunMetadata(plain, const RunMetadata(name: 'Session 1')), isTrue);
       expect(plain.containsKey('setup'), isFalse);
+    });
+
+    test('a new unit drops pressures read as not entered in the old one', () {
+      final run = <String, Object?>{
+        'name': 'Session 1',
+        'setup': {
+          'version': 'session-setup-v1',
+          'pressureUnit': 'bar',
+          // 30 is no pressure in bar, but would be one in psi.
+          'coldPressure': {'fl': 2.1, 'rl': 30, 'futureWheel': 'kept'},
+          'hotPressure': {'rr': 31},
+        },
+      };
+      const psi = RunSetup(pressureUnit: PressureUnit.psi, cold: WheelPressures(fl: 30.5));
+      expect(applyRunMetadata(run, const RunMetadata(name: 'Session 1', setup: psi)), isTrue);
+      expect(run['setup'], {
+        'version': 'session-setup-v1',
+        'pressureUnit': 'psi',
+        'coldPressure': {'fl': 30.5, 'futureWheel': 'kept'},
+      });
+      expect(RunMetadata.fromRun(run).setup, psi);
+      // Pressures stored without a unit do not come back with one either.
+      final unitless = <String, Object?>{
+        'name': 'Session 1',
+        'setup': {
+          'coldPressure': {'fl': 2.1, 'fr': 2.2},
+        },
+      };
+      const bar = RunSetup(pressureUnit: PressureUnit.bar, cold: WheelPressures(fl: 2.0));
+      applyRunMetadata(unitless, const RunMetadata(name: 'Session 1', setup: bar));
+      expect((unitless['setup']! as Map)['coldPressure'], {'fl': 2.0});
+    });
+
+    test('a setup cleared of everything leaves no stub', () {
+      final run = <String, Object?>{
+        'name': 'Session 1',
+        'setup': {
+          'version': 'session-setup-v1',
+          'pressureUnit': 'psi',
+          'coldPressure': {'fl': 30},
+          'tyre': 'Slick',
+          'fuelStartLitres': 10,
+        },
+      };
+      expect(applyRunMetadata(run, const RunMetadata(name: 'Session 1')), isTrue);
+      expect(run.containsKey('setup'), isFalse);
+      // A unit with no pressure is not kept.
+      final unitOnly = <String, Object?>{
+        'name': 'Session 1',
+        'setup': {'version': 'session-setup-v1', 'pressureUnit': 'bar', 'tyre': 'Rain'},
+      };
+      expect(
+        applyRunMetadata(
+          unitOnly,
+          const RunMetadata(
+            name: 'Session 1',
+            setup: RunSetup(pressureUnit: PressureUnit.bar, tyre: 'Rain'),
+          ),
+        ),
+        isTrue,
+      );
+      expect(unitOnly['setup'], {'version': 'session-setup-v1', 'tyre': 'Rain'});
+      final fresh = <String, Object?>{'name': 'Session 1'};
+      expect(
+        applyRunMetadata(
+          fresh,
+          const RunMetadata(
+            name: 'Session 1',
+            setup: RunSetup(pressureUnit: PressureUnit.psi),
+          ),
+        ),
+        isFalse,
+      );
+      expect(fresh.containsKey('setup'), isFalse);
     });
 
     test('an unchanged setup is left byte for byte', () {

@@ -3749,9 +3749,9 @@
   "@sessionDetailsHeading": {
     "description": "Heading of the day page's list of sessions with their conditions, setup changes and notes."
   },
-  "sessionDetailsNone": "No conditions, setup changes or notes",
+  "sessionDetailsNone": "No conditions, setup, setup changes or notes",
   "@sessionDetailsNone": {
-    "description": "Shown under a session that has no conditions, setup changes or notes."
+    "description": "Shown under a session that has no conditions, setup, setup changes or notes."
   },
   "sessionDetailsTitle": "Details of {session}",
   "@sessionDetailsTitle": {
@@ -8071,5 +8071,23 @@
         "example": "Cold 2.1 / 2.1 / 2 / 2 bar · Tyres Pirelli SC2 · Fuel 8.5 l"
       }
     }
+  },
+  "sessionSetupReplaceTitle": "Replace the setup?",
+  "@sessionSetupReplaceTitle": {
+    "description": "Title of the question asked before the previous session's setup replaces values already in the fields."
+  },
+  "sessionSetupReplaceBody": "The setup fields will hold {session}'s setup instead of what is in them now. Nothing is saved until Save.",
+  "@sessionSetupReplaceBody": {
+    "description": "Explains what replacing the setup with the previous session's does.",
+    "placeholders": {
+      "session": {
+        "type": "String",
+        "example": "Session 1"
+      }
+    }
+  },
+  "sessionSetupReplace": "Replace",
+  "@sessionSetupReplace": {
+    "description": "Button: replaces the setup fields with the previous session's setup."
   }
 }
