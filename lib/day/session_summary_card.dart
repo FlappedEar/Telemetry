@@ -6,6 +6,7 @@ import '../l10n.dart';
 import '../ui/label_value_row.dart';
 import 'channel_cards.dart'
     show channelLabelIn, channelReasonText, channelValueText;
+import 'next_session_card.dart' show CoachText, coachSpeedLabel, coachValue;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// A session in 30 seconds (FET-233): its best lap against the day so far,
@@ -26,7 +27,20 @@ class SessionSummaryCard extends StatelessWidget {
     required this.coachLoading,
     this.coachError = '',
     required this.channels,
+    this.ownGoals,
   });
+
+  /// The driver's own goals set after the session before ([session] names
+  /// it), and their checks on this one ([checkSessionGoals], FET-218): null
+  /// checks while they cannot be made, [noLaps] when that session or this
+  /// one has no laps among the compared laps. Null when no goals were set.
+  final ({
+    RunGoals goals,
+    String session,
+    List<SessionGoalCheck>? checks,
+    bool noLaps,
+  })?
+  ownGoals;
 
   /// The session summarized (the one the coach coaches) and its name.
   final String runId;
@@ -87,6 +101,38 @@ class SessionSummaryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// How the session did on one of the driver's goals, as the Next session
+  /// card words the main focus.
+  String _ownGoal(BuildContext context, SessionGoalCheck check) {
+    final l10n = context.l10n;
+    final coach = this.coach!;
+    final speedUnit = coachSpeedLabel(
+      context,
+      converted: coach.speedsConverted,
+    );
+    final unit = coachGoalUnit(check.goal.kind, coach.speedUnit);
+    final outcome = switch (check.outcome) {
+      CoachGoalOutcome.better => l10n.coachGoalBetter,
+      CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
+      CoachGoalOutcome.worse => l10n.coachGoalWorse,
+      CoachGoalOutcome.notMeasured when check.otherGroup =>
+        l10n.summaryOwnGoalOtherGroup,
+      CoachGoalOutcome.notMeasured when check.measuredName.isEmpty =>
+        l10n.coachGoalNoCorner,
+      CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
+    };
+    final text = switch ((check.before, check.now)) {
+      (final before?, final now?) =>
+        '${l10n.coachGoalMeasured(l10n.coachMetric(check.metric), coachValue(before.value, unit, speedUnit), coachValue(now.value, unit, speedUnit))} $outcome',
+      _ => outcome,
+    };
+    // Today's corners can differ from those the goal was set at.
+    return check.measuredName.isNotEmpty &&
+            check.measuredName != check.goal.segmentName
+        ? '$text\n${l10n.coachGoalMeasuredAt(l10n.tbSegmentName(check.measuredName))}'
+        : text;
   }
 
   List<Widget> _rows(BuildContext context, SessionSummary summary) {
@@ -269,6 +315,28 @@ class SessionSummaryCard extends StatelessWidget {
                 : coachError.isNotEmpty
                 ? l10n.summaryCoachFailed
                 : l10n.summaryNoFocus,
+          ),
+      if (ownGoals case final own?)
+        for (var i = 0; i < own.goals.goals.length; ++i)
+          row(
+            'sessionSummaryOwnGoal$i',
+            l10n.summaryOwnGoal(
+              l10n.coachItemTitle(
+                l10n.tbSegmentName(own.goals.goals[i].segmentName),
+                l10n.coachKind(own.goals.goals[i].kind),
+              ),
+            ),
+            switch (own.checks) {
+              final checks? => _ownGoal(context, checks[i]),
+              // Why there is no check yet, as the focus line says it.
+              null when own.noLaps => l10n.summaryOwnGoalNoLaps(
+                l10n.session(own.session),
+              ),
+              null when coachLoading || pending => l10n.summaryWorking,
+              null when !ready => l10n.summarySegmentsUnavailable,
+              null when coachError.isNotEmpty => l10n.summaryCoachFailed,
+              null => l10n.summaryWorking,
+            },
           ),
     ];
   }

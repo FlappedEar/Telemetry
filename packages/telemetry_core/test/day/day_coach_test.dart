@@ -459,6 +459,53 @@ void main() {
       expect(goal.outcome, CoachGoalOutcome.better);
     });
 
+    test('every corner\'s measures are kept for the driver\'s own goals', () {
+      final coach = _coach(before, [19, 19.5, 19.2, 3]);
+      expect(coach.previousRunId, 'run1');
+      expect(coach.speedUnit, isNotEmpty);
+      final focus = coach.goal!;
+      final corner = coach.goalValues.singleWhere((c) => c.name == focus.measuredName);
+      final minimum = (
+        corner.before[CoachKind.lowMinimumSpeed]!,
+        corner.now[CoachKind.lowMinimumSpeed]!,
+      );
+      // As the main focus measured it, the much slower lap left out.
+      expect(minimum.$1.value, closeTo(focus.before!, 1e-9));
+      expect(minimum.$2.value, closeTo(focus.now!, 1e-9));
+      expect((minimum.$1.laps, minimum.$2.laps), (4, 3));
+
+      final checks = checkSessionGoals(
+        RunGoals(
+          goals: [
+            SessionGoal(
+              kind: CoachKind.lowMinimumSpeed,
+              segmentName: 'Turn 1 as it was',
+              startProgressMeters: corner.startProgressMeters + 5,
+              endProgressMeters: corner.endProgressMeters + 5,
+            ),
+            const SessionGoal(
+              kind: CoachKind.excessiveCoasting,
+              segmentName: 'Off the track',
+              startProgressMeters: 90000,
+              endProgressMeters: 90100,
+            ),
+          ],
+        ),
+        coach,
+      );
+      expect(checks.first.outcome, CoachGoalOutcome.better);
+      expect(checks.first.measuredName, corner.name);
+      expect(checks.first.metric, CoachMetric.minimumSpeed);
+      expect(checks.last.outcome, CoachGoalOutcome.notMeasured);
+      expect(checks.last.measuredName, isEmpty);
+    });
+
+    test('the first session has no session before for goals', () {
+      final coach = _coach(before, [19, 19.5, 19.2], runId: 'run1');
+      expect(coach.previousRunId, isEmpty);
+      expect(coach.goalValues, isEmpty);
+    });
+
     test('better or worse by a clear step, in each kind\'s direction', () {
       final cases = <(CoachKind, double, double, CoachGoalOutcome)>[
         // A later lift is better; 8 m is the step.
