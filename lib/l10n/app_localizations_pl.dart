@@ -5870,4 +5870,111 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsCircuitsForget => 'Usuń tę nazwę';
+
+  @override
+  String summaryTitle(String session) {
+    return '$session w 30 sekund';
+  }
+
+  @override
+  String get summaryIntro =>
+      'Obserwacje z Twoich okrążeń, nie przyczyny. Typowy czas to mediana z co najmniej 3 okrążeń.';
+
+  @override
+  String summaryNotShown(String session) {
+    return '$session nie ma pomiarowych okrążeń na pokazanym torze.';
+  }
+
+  @override
+  String get summaryBestLap => 'Najlepsze okrążenie';
+
+  @override
+  String summaryBestNew(String time, String delta) {
+    return '$time · nowy najlepszy czas dnia ($delta)';
+  }
+
+  @override
+  String summaryBestBehind(String time, String delta, String session) {
+    return '$time · $delta do najlepszego okrążenia ($session)';
+  }
+
+  @override
+  String summaryBestFirst(String time) {
+    return '$time · pierwsza sesja dnia';
+  }
+
+  @override
+  String get summaryNoBest => 'Brak sklasyfikowanego okrążenia';
+
+  @override
+  String get summarySpread => 'Rozrzut czasów okrążeń';
+
+  @override
+  String summarySpreadValue(String spread) {
+    return '$spread s';
+  }
+
+  @override
+  String summarySpreadThen(String spread, String session, String previous) {
+    return '$spread s ($session: $previous s)';
+  }
+
+  @override
+  String get summaryGain => 'Największy zysk';
+
+  @override
+  String get summaryLoss => 'Największa strata';
+
+  @override
+  String summaryChange(String segment, String delta) {
+    return '$segment $delta';
+  }
+
+  @override
+  String get summaryNoChange => 'Brak zmian o 0.05 s lub więcej';
+
+  @override
+  String get summaryFirstSession => 'Pierwsza sesja: brak porównania';
+
+  @override
+  String get summaryNotCompared => 'Potrzeba 3 okrążeń w obu sesjach';
+
+  @override
+  String summaryAgainst(String session) {
+    return 'Zyski i straty: typowe czasy odcinków względem: $session.';
+  }
+
+  @override
+  String get summaryGap => 'Największa rezerwa';
+
+  @override
+  String summaryGapValue(String segment, String delta) {
+    return '$segment $delta do najszybszego przejazdu dnia';
+  }
+
+  @override
+  String get summaryCar => 'Auto, maksimum';
+
+  @override
+  String summaryTemperature(String channel, String value) {
+    return '$channel $value';
+  }
+
+  @override
+  String summaryTemperatureThen(
+    String channel,
+    String value,
+    String session,
+    String previous,
+  ) {
+    return '$channel $value ($session: $previous)';
+  }
+
+  @override
+  String summaryGoal(String session) {
+    return 'Cel po sesji: $session';
+  }
+
+  @override
+  String get summaryWorking => 'Obliczanie…';
 }

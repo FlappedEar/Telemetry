@@ -40,6 +40,7 @@ import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
+import 'session_summary_card.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
@@ -1890,7 +1891,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
         children: [
           if (best == null)
             Text(_noBestReason(_controller.analysis, _controller.ranking))
-          else
+          else ...[
+            _sessionSummary(),
+            const SizedBox(height: 12),
             NextSessionCard(
               key: _coachKey,
               coach: _controller.coach,
@@ -1906,6 +1909,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
             ),
+          ],
           // Below what to try next: the driver's skills across days, from
           // the profile.
           if (widget.library case final library?)
@@ -1915,6 +1919,29 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ),
         ],
       ),
+    );
+  }
+
+  /// The latest session in a few lines, above the coach's plan. Its car
+  /// line needs the channel summaries, which are asked for here as on the
+  /// overview.
+  Widget _sessionSummary() {
+    final channels = _controller.channelSummaries;
+    final loading = _controller.channelSummariesLoading;
+    if (channels == null && !loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.requestChannelSummaries();
+      });
+    }
+    return SessionSummaryCard(
+      runId: _controller.latestRunId,
+      session: _controller.latestRunName,
+      progression: _controller.progression,
+      result: _controller.theoreticalBest,
+      coach: _controller.coach,
+      coachLoading: _controller.coachLoading,
+      channels: channels,
+      channelsLoading: loading,
     );
   }
 
