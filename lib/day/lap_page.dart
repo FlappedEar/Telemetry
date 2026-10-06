@@ -9,6 +9,7 @@ import '../ui/theme.dart';
 import 'comparison_page.dart';
 import 'day_results_controller.dart';
 import 'lap_coasting_panel.dart';
+import 'save_shortcuts.dart';
 import 'telemetry_chart.dart';
 import 'touch.dart';
 import 'track_map.dart';
@@ -26,6 +27,7 @@ class LapPage extends StatefulWidget {
     required this.controller,
     required this.row,
     this.initialCursor,
+    this.onSave,
   });
 
   final DayResultsController controller;
@@ -33,6 +35,10 @@ class LapPage extends StatefulWidget {
 
   /// Where the cursor starts, in recording time; the lap's start when null.
   final double? initialCursor;
+
+  /// Saves the day (Ctrl+S or Cmd+S), here and on the pages opened from
+  /// this one; no shortcut when null.
+  final VoidCallback? onSave;
 
   @override
   State<LapPage> createState() => _LapPageState();
@@ -254,10 +260,14 @@ class _LapPageState extends State<LapPage> {
   // This lap as A against [other] as B.
   Future<void> _openComparison(DayLapRow other) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => ComparisonPage(
-        controller: widget.controller,
-        a: widget.row,
-        b: other,
+      builder: (_) => saveShortcuts(
+        widget.onSave,
+        ComparisonPage(
+          controller: widget.controller,
+          a: widget.row,
+          b: other,
+          onSave: widget.onSave,
+        ),
       ),
     ),
   );

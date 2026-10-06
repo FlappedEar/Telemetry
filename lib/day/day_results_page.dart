@@ -5,7 +5,6 @@ import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -33,6 +32,7 @@ import 'fusion_panel.dart';
 import 'next_session_card.dart';
 import '../profile/skill_levels_card.dart';
 import 'lap_page.dart';
+import 'save_shortcuts.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
 import 'reveal.dart';
@@ -376,7 +376,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
 
   void _open(DayLapRow row) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => LapPage(controller: _controller, row: row),
+      builder: (_) => saveShortcuts(
+        _saveFromShortcut,
+        LapPage(controller: _controller, row: row, onSave: _saveFromShortcut),
+      ),
     ),
   );
 
@@ -389,13 +392,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
     String? segmentId,
   }) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => ComparisonPage(
-        controller: _controller,
-        a: a,
-        b: b,
-        focus: focus,
-        segmentId: segmentId,
-        fromTheoreticalBest: segmentId != null,
+      builder: (_) => saveShortcuts(
+        _saveFromShortcut,
+        ComparisonPage(
+          onSave: _saveFromShortcut,
+          controller: _controller,
+          a: a,
+          b: b,
+          focus: focus,
+          segmentId: segmentId,
+          fromTheoreticalBest: segmentId != null,
+        ),
       ),
     ),
   );
@@ -675,6 +682,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
       ),
     );
     return replace == true ? location.path : null;
+  }
+
+  // Ctrl+S (Cmd+S on a Mac) saves the day, like the Save button, on the
+  // day page and on the lap and Corner Analyzer pages opened from it, at
+  // any depth.
+  void _saveFromShortcut() {
+    if (mounted && !_controller.saving && _controller.dirty) {
+      unawaited(_save());
+    }
   }
 
   /// Saves the day; with [quiet] (a save by itself) only a failure is said.
@@ -1169,20 +1185,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ),
       ),
     );
-    // Ctrl+S (Cmd+S on a Mac) saves, like the Save button.
-    void saveShortcut() {
-      if (!_controller.saving && _controller.dirty) unawaited(_save());
-    }
-
-    final page = CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.keyS, control: true):
-            saveShortcut,
-        const SingleActivator(LogicalKeyboardKey.keyS, meta: true):
-            saveShortcut,
-      },
-      child: Focus(autofocus: true, child: scaffold),
-    );
+    final page = saveShortcuts(_saveFromShortcut, scaffold);
     // A session being added is part of the day: the day stays open until it
     // is in, so it is saved or kept for recovery with it.
     return ListenableBuilder(
