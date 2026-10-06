@@ -202,6 +202,29 @@ void main() {
     expect(tied.diagnostics.rejectedOppositeDirectionClusters, 1);
   });
 
+  test('detects passes under the same GPS gap rule that judges laps (FET-212)', () {
+    // A crossing over a 2 s step: within the latitude's 1 Hz cadence (gap
+    // 3 s), beyond the longitude's own 2 Hz one (gap 1.5 s).
+    final crossing = gpsSession([0, 1, 3, 4], [_north, _mid, _mid, _north], [
+      _east,
+      _east,
+      _west,
+      _west,
+    ]);
+    expect(detectLaps(crossing, _startGate).acceptedPasses, hasLength(1));
+    final denseLongitude = gpsSession(
+      [0, 1, 3, 4],
+      [_north, _mid, _mid, _north],
+      [_east, _east, _west, _west, for (var i = 0; i < 8; ++i) _west],
+      longitudeTimes: [0, 1, 3, 4, for (var i = 1; i <= 8; ++i) 4 + i / 2],
+    );
+    final latitude = denseLongitude.channels['latitude']!;
+    final longitude = denseLongitude.channels['longitude']!;
+    expect(gpsGapThreshold(latitude, longitude), closeTo(1.5, 1e-9));
+    expect(gpsGapThreshold(longitude, latitude), closeTo(1.5, 1e-9));
+    expect(detectLaps(denseLongitude, _startGate).acceptedPasses, isEmpty);
+  });
+
   test('finalizes a pass when the recording ends inside the corridor', () {
     final session = gpsSession([0, 1, 2], [_mid, _mid, _mid], [_east, _east, 21.0]);
     final result = detectLaps(session, _startGate);

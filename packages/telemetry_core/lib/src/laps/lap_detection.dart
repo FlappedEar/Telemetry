@@ -36,6 +36,18 @@ final class _GpsSample {
 
 /// The GPS fix at [index], projected around [origin], or null when the two
 /// channels disagree on its time or the coordinate is invalid.
+/// The longest step between two GPS fixes that is still continuous: the
+/// smaller of the latitude's and longitude's [telemetryGapThreshold], so a
+/// gap by either channel's own cadence is a gap. Pass detection and lap
+/// reference validation both use it, so a lap is never found under one
+/// continuity rule and judged under another (FET-212; Overlays detects
+/// passes with the larger, departure KAN-234).
+double gpsGapThreshold(TelemetryChannel latitude, TelemetryChannel longitude) {
+  final latitudeGap = telemetryGapThreshold(latitude);
+  final longitudeGap = telemetryGapThreshold(longitude);
+  return latitudeGap < longitudeGap ? latitudeGap : longitudeGap;
+}
+
 _GpsSample? _gpsSampleAt(
   TelemetryChannel latitude,
   TelemetryChannel longitude,
@@ -172,9 +184,7 @@ LapSession detectLaps(
     longitude.timestamps.length,
     longitude.values.length,
   ].reduce((a, b) => a > b ? a : b);
-  final latitudeGap = telemetryGapThreshold(latitude);
-  final longitudeGap = telemetryGapThreshold(longitude);
-  final gapThreshold = latitudeGap > longitudeGap ? latitudeGap : longitudeGap;
+  final gapThreshold = gpsGapThreshold(latitude, longitude);
 
   // One scan of the GPS for passes, with the crossing direction locked to
   // [lock] (+1 or −1), or to the first accepted pass's when 0. Each scan
@@ -464,9 +474,7 @@ TimedLap _withIssue(TimedLap lap, LapReferenceIssue issue, LapDetectionDiagnosti
   if (first == times.length || times[first] > lap.startTelemetryTime || last == times.length) {
     return (LapReferenceIssue.gpsGap, null);
   }
-  final latitudeGap = telemetryGapThreshold(latitude);
-  final longitudeGap = telemetryGapThreshold(longitude);
-  final threshold = latitudeGap < longitudeGap ? latitudeGap : longitudeGap;
+  final threshold = gpsGapThreshold(latitude, longitude);
   _GpsSample? previous;
   var distance = 0.0;
   for (var index = first; index <= last; ++index) {
