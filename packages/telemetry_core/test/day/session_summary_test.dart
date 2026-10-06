@@ -120,6 +120,25 @@ void main() {
     ],
   );
 
+  test('every segment compared with the session before, with its spread (FET-236)', () {
+    final summary = summarizeSession('3', progression: progression, sections: sections)!;
+    // Corner 4 has no typical time in session 2: not compared.
+    expect([for (final change in summary.changes) change.segmentId], ['c1', 's2', 'c3']);
+    final corner1 = summary.changes.first;
+    expect(corner1.seconds, 9.6);
+    expect(corner1.referenceSeconds, 9.8);
+    final c1 = summarizeConsistency([9.5, 9.6, 9.7]).interquartileRange!;
+    final c1Before = summarizeConsistency([9.6, 9.8, 10.0]).interquartileRange!;
+    expect(corner1.spreadSeconds, closeTo(c1, 1e-12));
+    expect(corner1.referenceSpreadSeconds, closeTo(c1Before, 1e-12));
+    expect(corner1.spreadDeltaSeconds, closeTo(c1 - c1Before, 1e-12));
+    expect(summary.biggestGain!.segmentId, 'c1');
+    // The gap left is against the quickest time, without spreads.
+    expect(summary.biggestGap!.spreadDeltaSeconds, isNull);
+    // The first session compares nothing.
+    expect(summarizeSession('1', progression: progression, sections: sections)!.changes, isEmpty);
+  });
+
   test('a new best, the gain and loss since the session before, and the gap left', () {
     final summary = summarizeSession('3', progression: progression, sections: sections)!;
     expect(summary.runName, '3');

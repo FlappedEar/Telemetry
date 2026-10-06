@@ -1510,5 +1510,16 @@
   "briefingDayBest": "Najlepsze okrążenie dnia",
   "briefingDelta": "Różnica do najlepszego",
   "briefingCar": "Auto",
-  "briefingNoRankedLap": "{session} nie ma sklasyfikowanego okrążenia na pokazanym torze."
+  "briefingNoRankedLap": "{session} nie ma sklasyfikowanego okrążenia na pokazanym torze.",
+  "changesButton": "{count, plural, =1{1 odcinek w porównaniu z: {session}} other{Odcinki ({count}) w porównaniu z: {session}}}",
+  "changesTitle": "Zmiany od: {session}",
+  "changesIntro": "Typowy (mediana) czas każdego odcinka w porównaniu z: {session}, z rozrzutem środkowej połowy czasów. Zmiany poniżej {threshold} s nie są liczone. Obserwacje z Twoich okrążeń, nie przyczyny.",
+  "changesQuicker": "Szybciej",
+  "changesSlower": "Wolniej",
+  "changesNoneQuicker": "Żaden odcinek nie jest szybszy o {threshold} s lub więcej.",
+  "changesNoneSlower": "Żaden odcinek nie jest wolniejszy o {threshold} s lub więcej.",
+  "changesSame": "{count, plural, =1{1 odcinek w granicach {threshold} s od poprzedniego.} few{{count} odcinki w granicach {threshold} s od poprzedniego.} many{{count} odcinków w granicach {threshold} s od poprzedniego.} other{{count} odcinków w granicach {threshold} s od poprzedniego.}}",
+  "changesTypical": "Typowo {now} ({session}: {before})",
+  "changesSpread": "Rozrzut {now} s ({session}: {before} s)",
+  "changesTitleNone": "Zmiany na odcinkach"
 }

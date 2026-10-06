@@ -9252,6 +9252,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{session} has no ranked lap on the circuit shown.'**
   String briefingNoRankedLap(String session);
+
+  /// Session summary button opening every segment's change since the session before (FET-236).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 segment against {session}} other{All {count} segments against {session}}}'**
+  String changesButton(int count, String session);
+
+  /// Title of the page of every segment's change since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Since {session}'**
+  String changesTitle(String session);
+
+  /// Intro of the page of segment changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment\'s typical (median) time against {session}, with the spread of the middle half of its times. Changes under {threshold} s are not counted. Observed from your laps, not causes.'**
+  String changesIntro(String session, String threshold);
+
+  /// Heading: segments whose typical time fell.
+  ///
+  /// In en, this message translates to:
+  /// **'Quicker'**
+  String get changesQuicker;
+
+  /// Heading: segments whose typical time rose.
+  ///
+  /// In en, this message translates to:
+  /// **'Slower'**
+  String get changesSlower;
+
+  /// No segment got quicker by the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'No segment quicker by {threshold} s or more.'**
+  String changesNoneQuicker(String threshold);
+
+  /// No segment got slower by the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'No segment slower by {threshold} s or more.'**
+  String changesNoneSlower(String threshold);
+
+  /// How many compared segments changed by less than the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 segment within {threshold} s of before.} other{{count} segments within {threshold} s of before.}}'**
+  String changesSame(int count, String threshold);
+
+  /// A segment's typical time now and in the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical {now} ({session}: {before})'**
+  String changesTypical(String now, String session, String before);
+
+  /// A segment's interquartile range now and in the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread {now} s ({session}: {before} s)'**
+  String changesSpread(String now, String session, String before);
+
+  /// Title of the page of segment changes when there is no session before to compare with.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment changes'**
+  String get changesTitleNone;
 }
 
 class _AppLocalizationsDelegate
