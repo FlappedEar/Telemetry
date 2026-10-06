@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../app/app_navigation.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
@@ -569,10 +570,12 @@ class _SegmentEditorPageState extends State<SegmentEditorPage> {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
+        // The window's width, not the page's beside the app's side rail.
+        final window = AppFrame.widthOf(context) ?? constraints.maxWidth;
         final sideways =
             map != null &&
             constraints.maxWidth > constraints.maxHeight &&
-            constraints.maxWidth >= 600;
+            window >= 600;
         // A short screen (or large text) keeps room for the list.
         final mapHeight = (constraints.maxHeight * 0.35).clamp(140.0, 240.0);
         // The header scrolls with the segments when it would leave them

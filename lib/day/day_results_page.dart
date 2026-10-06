@@ -1039,8 +1039,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }
 
   Widget _page(BuildContext context, double width) {
-    // The window's width, not the page's: the two panes come with the
-    // app's side rail, from the same width.
+    // The window's width, not the page's beside the app's side rail (from
+    // AppFrame.railWidth), so the panes do not depend on the rail.
     final wide = (AppFrame.widthOf(context) ?? width) >= _twoPaneWidth;
     // The trace keeps a similar shape from a small phone to a tablet in
     // portrait: about 0.6 of the card's width.

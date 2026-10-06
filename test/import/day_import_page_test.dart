@@ -597,6 +597,42 @@ void main() {
     await settleRecovery(tester);
   });
 
+  testWidgets('a tablet upright and a phone sideways have the rail too, '
+      'scrolling when it is too short', (tester) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    for (final (size, rail, scale) in const [
+      (Size(412, 915), false, 1.0),
+      (Size(599, 900), false, 1.0),
+      (Size(600, 900), true, 1.0),
+      (Size(820, 1180), true, 1.0),
+      (Size(740, 360), true, 1.0),
+      (Size(740, 360), true, 2.0),
+      (Size(640, 240), true, 2.0),
+    ]) {
+      await tester.binding.setSurfaceSize(size);
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      await show(tester, picksFolders: false);
+      final places = find.byKey(const ValueKey('appPlaces'));
+      final reason = '$size ×$scale';
+      expect(
+        tester.widget(places),
+        rail ? isA<NavigationRail>() : isA<NavigationBar>(),
+        reason: reason,
+      );
+      expect(tester.takeException(), isNull, reason: reason);
+      if (rail) {
+        // Every place can be reached, scrolling the rail if it must.
+        final last = find.byKey(const ValueKey('place-coach'));
+        await tester.ensureVisible(last);
+        await tester.pumpAndSettle();
+        expect(tester.getRect(last).bottom, lessThanOrEqualTo(size.height));
+      }
+      await tester.pumpWidget(const SizedBox());
+      await settleRecovery(tester);
+    }
+  });
+
   testWidgets('a saved day closed here takes the next session', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 3000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
