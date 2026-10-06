@@ -1,9 +1,12 @@
 // What the user edits of a day: each session's name, notes, conditions and
-// setup changes, and the day's name (FET-52). The rules and the stored form
+// setup changes, its structured setup (FET-188, [RunSetup]), and the day's
+// name (FET-52). The rules and the stored form
 // follow FlappedEar Overlays' AnalysisController::updateRunMetadata and the
 // event validation of EventProjectCodec, so a document edited in either app
 // reads the same in the other.
 import 'package:fetproject/fetproject.dart' as fet;
+
+import 'run_setup.dart';
 
 /// The longest session or day name, in UTF-16 code units.
 const maximumDetailsNameCharacters = fet.maximumNameCharacters;
@@ -14,14 +17,15 @@ const maximumDetailsTextCharacters = fet.maximumStringCharacters;
 /// The document keys of a session's free text, in Overlays' order.
 const runMetadataTextKeys = ['notes', 'conditions', 'setupChanges'];
 
-/// A session's name, notes, conditions and setup changes as the user edits
-/// them. Empty text is "not recorded".
+/// A session's name, notes, conditions, setup changes and structured setup
+/// as the user edits them. Empty text is "not recorded".
 final class RunMetadata {
   const RunMetadata({
     required this.name,
     this.notes = '',
     this.conditions = '',
     this.setupChanges = '',
+    this.setup = const RunSetup(),
   });
 
   /// [run]'s metadata as a document stores it (`event.runs[]`); a missing or
@@ -33,6 +37,7 @@ final class RunMetadata {
       notes: text(run['notes']),
       conditions: text(run['conditions']),
       setupChanges: text(run['setupChanges']),
+      setup: RunSetup.fromJson(run[runSetupKey]),
     );
   }
 
@@ -40,6 +45,9 @@ final class RunMetadata {
   final String notes;
   final String conditions;
   final String setupChanges;
+
+  /// The structured setup (`setup`), which only Telemetry shows.
+  final RunSetup setup;
 
   String _text(String key) => switch (key) {
     'notes' => notes,
@@ -53,15 +61,17 @@ final class RunMetadata {
       other.name == name &&
       other.notes == notes &&
       other.conditions == conditions &&
-      other.setupChanges == setupChanges;
+      other.setupChanges == setupChanges &&
+      other.setup == setup;
 
   @override
-  int get hashCode => Object.hash(name, notes, conditions, setupChanges);
+  int get hashCode => Object.hash(name, notes, conditions, setupChanges, setup);
 }
 
 /// Why [metadata] cannot be saved, or null when it can: the name must not be
 /// blank and is at most 160 characters (UTF-16 code units, as Overlays counts
-/// them); every text is at most 4096 and contains no NUL.
+/// them); every text is at most 4096 and contains no NUL; the setup has no
+/// [runSetupProblem].
 String? runMetadataProblem(RunMetadata metadata) {
   if (metadata.name.trim().isEmpty) return 'The session needs a name.';
   if (metadata.name.length > fet.maximumNameCharacters) {
@@ -73,13 +83,14 @@ String? runMetadataProblem(RunMetadata metadata) {
     }
     if (text.contains('\u0000')) return 'A text contains a NUL character.';
   }
-  return null;
+  return runSetupProblem(metadata.setup);
 }
 
 /// Writes [metadata] into [run] (a document run) as Overlays does: the name
 /// trimmed; each text as written, or null when blank; a text equal to what
 /// is stored (a missing one reads as empty) is left alone, so an unchanged
-/// record never gains keys. Returns whether [run] changed. [metadata] must
+/// record never gains keys; the setup is written by [applyRunSetup], which
+/// Overlays does not do. Returns whether [run] changed. [metadata] must
 /// have no [runMetadataProblem].
 bool applyRunMetadata(Map<String, Object?> run, RunMetadata metadata) {
   assert(runMetadataProblem(metadata) == null);
@@ -99,6 +110,7 @@ bool applyRunMetadata(Map<String, Object?> run, RunMetadata metadata) {
     run[key] = next;
     changed = true;
   }
+  if (applyRunSetup(run, metadata.setup)) changed = true;
   return changed;
 }
 

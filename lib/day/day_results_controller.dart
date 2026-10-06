@@ -2390,8 +2390,8 @@ final class DayResultsController extends ChangeNotifier {
   // The user's unsaved edits of sessions' details, by run id.
   final Map<String, RunMetadata> _metadataEdits = {};
 
-  /// [runId]'s name, notes, conditions and setup changes as the user sees
-  /// them, unsaved edits included.
+  /// [runId]'s name, notes, conditions, setup changes and setup as the user
+  /// sees them, unsaved edits included.
   RunMetadata runMetadata(String runId) {
     final edited = _metadataEdits[runId];
     if (edited != null) return edited;
@@ -2404,15 +2404,16 @@ final class DayResultsController extends ChangeNotifier {
           notes: stored.notes,
           conditions: stored.conditions,
           setupChanges: stored.setupChanges,
+          setup: stored.setup,
         );
       }
     }
     return RunMetadata(name: named?.name ?? '');
   }
 
-  /// Edits [runId]'s name, notes, conditions and setup changes, as
-  /// FlappedEar Overlays edits them ([applyRunMetadata]): the day then has
-  /// unsaved changes. Returns why not ([runMetadataProblem]), or null.
+  /// Edits [runId]'s name, notes, conditions, setup changes and setup, as
+  /// FlappedEar Overlays edits the texts ([applyRunMetadata]): the day then
+  /// has unsaved changes. Returns why not ([runMetadataProblem]), or null.
   String? updateRunMetadata(String runId, RunMetadata metadata) {
     final named = _named(runId);
     if (named == null) return 'The session is not in this day.';
@@ -2427,6 +2428,7 @@ final class DayResultsController extends ChangeNotifier {
         'setupChanges': current.setupChanges,
       }.entries)
         if (value.isNotEmpty) key: value,
+      if (!current.setup.isEmpty) runSetupKey: current.setup.toJson(),
     };
     if (!applyRunMetadata(run, metadata)) return null;
     final name = metadata.name.trim();
@@ -2435,6 +2437,7 @@ final class DayResultsController extends ChangeNotifier {
       notes: metadata.notes,
       conditions: metadata.conditions,
       setupChanges: metadata.setupChanges,
+      setup: metadata.setup,
     );
     if (name != named.name) {
       _runs[_runs.indexOf(named)] = (run: named.run, name: name);
