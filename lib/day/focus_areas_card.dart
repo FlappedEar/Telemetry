@@ -142,10 +142,13 @@ _FocusTexts? _focusTextsIn(
 
 /// "Earlier visits here" under each focus area, from [profile]'s visits to
 /// the track of day [eventId] in its car before it ([cornerBefore]), each
-/// track corner worked out once. [spans] are all the day's corners on the
-/// ground ([measureCornerSpans]), matched to the track's as adding the day
-/// placed them. Null, so no line, when the day is not in [profile], its
-/// track is unknown or no corner of the day is on the ground.
+/// track corner worked out once. Each segment is on the track corner adding
+/// the day placed it on ([dayCornerIds]); a segment without one (a day
+/// added before it was kept, a corner without ranked laps) matches its span
+/// of [spans], all the day's corners on the ground ([measureCornerSpans]),
+/// to the track's again. Null, so no line, when the day is not in
+/// [profile], its track is unknown or no corner of the day is known; no line
+/// for a segment without one when [spans] is empty.
 String? Function(FocusArea area)? focusBefore(
   AppLocalizations l10n,
   DriverProfile? profile,
@@ -154,10 +157,14 @@ String? Function(FocusArea area)? focusBefore(
 ) {
   final today = profile?.day(eventId);
   final track = today?.trackId == null ? null : profile!.track(today!.trackId!);
-  if (profile == null || today == null || track == null || spans.isEmpty) {
-    return null;
-  }
-  final corners = matchTrackCorners(track, spans);
+  if (profile == null || today == null || track == null) return null;
+  // A later day can add a corner that fits better: matching again could
+  // name another corner than the one the day's figures are kept on.
+  // The placement kept wins; matching only fills the segments it lacks.
+  final stored = dayCornerIds(today);
+  final matched = spans.isEmpty ? null : matchTrackCorners(track, spans);
+  if (stored == null && matched == null) return null;
+  final corners = {...?matched, ...?stored};
   final texts = <String, String>{};
   String text(String cornerId) {
     final before = cornerBefore(profile, today, cornerId);
@@ -185,7 +192,9 @@ String? Function(FocusArea area)? focusBefore(
 
   return (area) => switch (corners[area.segmentId]) {
     final cornerId? => texts.putIfAbsent(cornerId, () => text(cornerId)),
-    null => l10n.focusBeforeNotCorner,
+    // Without the day's corners on the ground, a segment the placement
+    // lacks may still be a corner: say nothing rather than that it is not.
+    null => spans.isEmpty ? null : l10n.focusBeforeNotCorner,
   };
 }
 

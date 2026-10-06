@@ -75,12 +75,18 @@ final class CornerStats {
     this.throttleKnownLaps,
     this.releasedPickups,
     this.sequenceLossSeconds,
+    this.segmentId,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
 
   /// The track's corner ([TrackCorner.id]); while a day is measured, its
   /// segment id.
   final String cornerId;
+
+  /// The day's segment placed on [cornerId] when the day was added (FET-184),
+  /// so the day's own corners need not be matched again; null in profiles
+  /// written before.
+  final String? segmentId;
 
   /// Ranked laps measured here.
   final int laps;
@@ -140,8 +146,10 @@ final class CornerStats {
   final double? sequenceLossSeconds;
   final Map<String, Object?> unknown;
 
-  CornerStats withCorner(String id) => CornerStats(
+  /// This corner on track corner [id]; [segmentId] replaces the one kept.
+  CornerStats withCorner(String id, {String? segmentId}) => CornerStats(
     cornerId: id,
+    segmentId: segmentId ?? this.segmentId,
     laps: laps,
     minimumSpeed: minimumSpeed,
     bestMinimumSpeed: bestMinimumSpeed,
@@ -601,6 +609,22 @@ double? _routeFraction(RouteShape route, GeoCoordinate point) {
 Map<String, String> matchTrackCorners(ProfileTrack track, List<DayCornerSpan> spans) =>
     _matchCorners(track, spans, addNew: false).$2;
 
+/// The track corner id of each of [day]'s segments, as adding the day
+/// placed them (each session corner's [CornerStats.segmentId]); null when
+/// no corner of the day keeps its segment (a profile written before
+/// FET-184, or a day without corners), so [matchTrackCorners] has to find
+/// them again. A segment two sessions placed differently (one kept from an
+/// earlier add) takes its first session's corner.
+Map<String, String>? dayCornerIds(ProfileDay day) {
+  final ids = <String, String>{};
+  for (final session in day.sessions) {
+    for (final corner in session.stats?.corners ?? const <CornerStats>[]) {
+      if (corner.segmentId case final segment?) ids.putIfAbsent(segment, () => corner.cornerId);
+    }
+  }
+  return ids.isEmpty ? null : ids;
+}
+
 (List<TrackCorner>, Map<String, String>) _matchCorners(
   ProfileTrack track,
   List<DayCornerSpan> spans, {
@@ -682,6 +706,7 @@ Map<String, Object?> _encodeStats(SessionStats stats) => {
         {
           ...corner.unknown,
           'cornerId': corner.cornerId,
+          'segmentId': ?corner.segmentId,
           'laps': corner.laps,
           'minimumSpeed': ?corner.minimumSpeed,
           'bestMinimumSpeed': ?corner.bestMinimumSpeed,
@@ -747,6 +772,7 @@ CornerStats _cornerStatsOf(Object? value) {
   // 200 m/s (720 km/h) bounds every speed.
   return CornerStats(
     cornerId: _string(json['cornerId'], 'corner id', allowEmpty: false),
+    segmentId: _optionalString(json['segmentId'], 'corner segment id'),
     laps: _count(json['laps'], 'corner laps'),
     minimumSpeed: _optionalMeasure(json['minimumSpeed'], 'minimum speed', 200),
     bestMinimumSpeed: _optionalMeasure(json['bestMinimumSpeed'], 'best minimum speed', 200),
@@ -766,6 +792,7 @@ CornerStats _cornerStatsOf(Object? value) {
     sequenceLossSeconds: _optionalMeasure(json['sequenceLossSeconds'], 'sequence loss', 1e5),
     unknown: _without(json, const [
       'cornerId',
+      'segmentId',
       'laps',
       'minimumSpeed',
       'bestMinimumSpeed',

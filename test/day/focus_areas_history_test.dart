@@ -268,6 +268,72 @@ void main() {
     expect(await line(null), isNull);
     expect(await line(visited, spans: const []), isNull);
     expect(await line(visited, eventId: 'elsewhere'), isNull);
+
+    // The track corner adding the day placed the area's segment on (kept
+    // with its figures) wins over matching the day's corners again, which
+    // is only for days added before it was kept (FET-184).
+    final placed = _profile([
+      _day('a', dayNumber: 0, losses: {'k1': 0.6}),
+      ProfileDay(
+        eventId: 'today',
+        file: 'Days/today.fetproject',
+        name: 'Day today',
+        carId: 'clio',
+        trackId: 'jastrzab',
+        startMilliseconds: _day0 + 20 * _dayMs,
+        sessions: [
+          ProfileSession(
+            runId: 's1',
+            name: 'Session 1',
+            stats: SessionStats(
+              rankedLaps: 4,
+              corners: [
+                CornerStats(cornerId: 'k2', segmentId: area.segmentId, laps: 4),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ]);
+    const turn2 =
+        'Earlier visits here (Turn 2): this corner was not measured '
+        'before.';
+    expect(await line(placed), turn2);
+    expect(await line(placed, spans: const []), turn2);
+
+    // A kept placement without the area's segment (a corner without ranked
+    // laps, or corners kept from before FET-184 beside new ones): its span
+    // is matched again, not called "not a corner".
+    ProfileDay today(List<CornerStats> corners) => ProfileDay(
+      eventId: 'today',
+      file: 'Days/today.fetproject',
+      name: 'Day today',
+      carId: 'clio',
+      trackId: 'jastrzab',
+      startMilliseconds: _day0 + 20 * _dayMs,
+      sessions: [
+        ProfileSession(
+          runId: 's1',
+          name: 'Session 1',
+          stats: SessionStats(rankedLaps: 4, corners: corners),
+        ),
+      ],
+    );
+    const turn1 =
+        'Earlier visits here (Turn 1): it cost time on 1 of 1 '
+        'visit, last on';
+    final partial = _profile([
+      _day('a', dayNumber: 0, losses: {'k1': 0.6}),
+      today([
+        CornerStats(cornerId: 'k2', segmentId: 'another segment', laps: 4),
+        // Kept from before segments were kept: no segment.
+        CornerStats(cornerId: 'k1', laps: 4),
+      ]),
+    ]);
+    expect(await line(partial), startsWith(turn1));
+    // Without the day's corners on the ground, only what was kept: a
+    // segment it lacks may still be a corner, so no line.
+    expect(await line(partial, spans: const []), isNull);
   });
 
   test('the Polish texts count visits', () {

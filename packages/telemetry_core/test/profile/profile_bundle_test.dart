@@ -163,6 +163,15 @@ void main() {
       for (final corner in corners) {
         expect(ids, contains(corner.cornerId));
       }
+      // Each corner keeps the day's segment it was measured at, now on this
+      // track's corner (FET-184).
+      final segments = dayCornerIds(there.day('e1')!)!;
+      expect(segments, hasLength(there.day('e1')!.sessions.single.stats!.corners.length));
+      final merged = dayCornerIds(day)!;
+      expect(merged.keys, segments.keys);
+      for (final corner in corners) {
+        expect(merged[corner.segmentId], corner.cornerId);
+      }
       // The same circuit: its corners are this track's, none added.
       expect(track.corners, hasLength(here.tracks.single.corners.length));
       // Which car new days take is this device's.

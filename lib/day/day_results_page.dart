@@ -1636,21 +1636,25 @@ class _DayResultsPageState extends State<DayResultsPage> {
     AppLocalizations l10n,
     String eventId,
   ) {
-    // The day's corners placed as adding it to the profile placed them,
-    // from the recording the axis came from.
+    // The track corners adding the day to the profile placed its segments
+    // on; a segment without one matches its corner again, from the
+    // recording the axis came from. Without that recording, only what was
+    // kept.
     final canonical = _controller.session(
       result?.computed?.canonicalRunId ?? '',
     );
-    if (canonical == null) return null;
     return focusBefore(
       l10n,
       profile,
       eventId,
-      measureCornerSpans(
-        result,
-        longitudeIsWestPositive:
-            canonical.metadata['gpsLongitudeConvention'] == 'west-positive',
-      ),
+      canonical == null
+          ? const []
+          : measureCornerSpans(
+              result,
+              longitudeIsWestPositive:
+                  canonical.metadata['gpsLongitudeConvention'] ==
+                  'west-positive',
+            ),
     );
   }
 
