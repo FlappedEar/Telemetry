@@ -370,7 +370,8 @@ final class _RczSession {
       name: name,
       unit: map.unit,
       timestamps: clock.timestamps,
-      values: withGaps,
+      // Handed over: the parser keeps no other reference to it.
+      values: adoptChannelValues(withGaps),
     );
     duration = math.max(duration, channel.timestamps.last);
     if (map.alias.isNotEmpty) aliases[map.alias] = name;
@@ -386,9 +387,7 @@ final class _RczSession {
     final cached = _gapClocks[times];
     if (cached != null) return cached;
     // The threshold depends on the timestamps only.
-    final gapLimit = telemetryGapThreshold(
-      TelemetryChannel(name: '', timestamps: times, values: Float32List(0)),
-    );
+    final gapLimit = TelemetryChannel.medianIntervalOf(times) * 3.0;
     final gaps = <int>[];
     for (var index = 1; index < times.length; ++index) {
       if ((index & 0xfff) == 0) throwIfCancelled(cancelled);
@@ -407,7 +406,8 @@ final class _RczSession {
       }
       timestamps.setRange(to, timestamps.length, times, from);
     }
-    return _gapClocks[times] = (timestamps: timestamps, gaps: gaps);
+    // Handed over: every channel of this clock shares the one read-only list.
+    return _gapClocks[times] = (timestamps: adoptChannelTimestamps(timestamps), gaps: gaps);
   }
 
   void _readGates(Uint8List bytes) {

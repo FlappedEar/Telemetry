@@ -72,7 +72,7 @@ TelemetryChannel _unwrapped(TelemetryChannel channel) {
     name: channel.name,
     unit: channel.unit,
     timestamps: channel.timestamps,
-    values: values,
+    values: adoptChannelValues(values),
   );
 }
 

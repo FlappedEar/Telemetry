@@ -205,12 +205,16 @@ void main() {
       ]).polylines,
       isEmpty,
     );
-    final mismatched = TelemetryChannel(
-      name: 'x',
-      timestamps: Float64List.fromList([0.0, 1.0]),
-      values: Float32List.fromList([1.0]),
+    // A channel whose timestamps and values differ in length cannot be built
+    // (FET-202).
+    expect(
+      () => TelemetryChannel(
+        name: 'x',
+        timestamps: Float64List.fromList([0.0, 1.0]),
+        values: Float32List.fromList([1.0]),
+      ),
+      throwsArgumentError,
     );
-    expect(plausibleChannelValue(mismatched, 0.5, const ChannelSummaryPolicy(), false), isNull);
   });
 
   test('normalizes two laps to one map, east-positive', () {
