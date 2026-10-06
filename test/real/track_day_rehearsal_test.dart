@@ -50,12 +50,22 @@ void main() {
 
       // The driver's own goals set after the session before (FET-218),
       // checked on this one.
+      var measuredGoals = 0;
       String ownGoals() {
         final coach = controller.coach;
         if (coach == null || coach.previousRunId.isEmpty) return '';
         final goals = controller.runMetadata(coach.previousRunId).goals;
         if (goals == null) return '';
-        return '\n  own goals: ${[for (final c in checkSessionGoals(goals, coach)) '${c.goal.segmentName} ${c.goal.kind.name} at ${c.measuredName}: ${c.before?.value.toStringAsFixed(1)} (${c.before?.laps}) -> ${c.now?.value.toStringAsFixed(1)} (${c.now?.laps}) ${c.outcome.name}'].join('; ')}';
+        final checks = checkSessionGoals(
+          goals,
+          coach,
+          groupId: controller.theoreticalBest!.groupId,
+        );
+        expect(checks, hasLength(goals.goals.length));
+        measuredGoals += checks
+            .where((c) => c.outcome != CoachGoalOutcome.notMeasured)
+            .length;
+        return '\n  own goals: ${[for (final c in checks) '${c.goal.segmentName} ${c.goal.kind.name} at ${c.measuredName}: ${c.before?.value.toStringAsFixed(1)} (${c.before?.laps}) -> ${c.now?.value.toStringAsFixed(1)} (${c.now?.laps}) ${c.outcome.name}'].join('; ')}';
       }
 
       // The Coach place's session summary (FET-233), from the same results.
@@ -166,6 +176,9 @@ void main() {
           lessThanOrEqualTo(best.bestLapSeconds! + 1e-6),
         );
       }
+      // The driver's goals (the coach's changes) were measured on the
+      // sessions after them (FET-218).
+      expect(measuredGoals, greaterThan(0));
       controller.dispose();
     },
     skip: skip,

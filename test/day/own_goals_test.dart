@@ -9,6 +9,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import 'day_results_page_test.dart' show circuitVbo;
 import 'rectangle_vbo.dart';
 import 'recovery_test.dart' show FileRecoveryStore;
 import '../support/coach_runner.dart';
@@ -50,7 +51,7 @@ void main() {
 
   // The coach of the latest session, its main focus coasting at the first
   // corner, with that corner's measures in both sessions.
-  DayCoach coachOf(DayResultsController controller) {
+  DayCoach coachOf(DayResultsController controller, {String? previousRunId}) {
     final result = controller.theoreticalBest!;
     final runId = controller.latestRunId;
     final laps = [for (final sectors in result.laps) sectors.lap];
@@ -80,7 +81,7 @@ void main() {
       findings: [focus],
       plan: [CoachItem(focus)],
       reason: CoachReason.ready,
-      previousRunId: previous,
+      previousRunId: previousRunId ?? previous,
       goalValues: [
         for (final c in result.corners)
           CoachCornerGoalValues(
@@ -98,6 +99,7 @@ void main() {
   Future<DayResultsController> show(
     WidgetTester tester, {
     Locale? locale,
+    String? previousRunId,
   }) async {
     await tester.binding.setSurfaceSize(const Size(412, 915));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -106,7 +108,9 @@ void main() {
     controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      coachRunner: testCoachRunner((job) async => coachOf(controller)),
+      coachRunner: testCoachRunner(
+        (job) async => coachOf(controller, previousRunId: previousRunId),
+      ),
     );
     await tester.pumpWidget(
       TelemetryApp(
@@ -281,6 +285,7 @@ void main() {
       isNull,
     );
     await controller.flushRecovery();
+    final kept = (await store.load())!;
     await controller.save('${directory.path}/d.fetproject');
     controller.dispose();
     final runs =
@@ -297,7 +302,6 @@ void main() {
     );
     expect(other.containsKey(runGoalsKey), isFalse);
 
-    final kept = (await store.load())!;
     final restored = DayResultsController.recovered(
       openRecoveredDay(kept),
       kept,
@@ -305,6 +309,123 @@ void main() {
     );
     addTearDown(restored.dispose);
     expect(restored.runMetadata(first).goals!.goals, [goal]);
+  });
+
+  testWidgets('goals of a session without laps compared say why they are not '
+      'measured', (tester) async {
+    // The coach compared the latest session with another one than the
+    // session the goals were set after.
+    final controller = await show(tester, previousRunId: 'another');
+    final before = controller.coach!;
+    expect(before.previousRunId, 'another');
+    final first = controller.runs.first.run.id;
+    final corner = controller.theoreticalBest!.corners.first;
+    controller.updateRunMetadata(
+      first,
+      controller
+          .runMetadata(first)
+          .withGoals(
+            RunGoals(
+              goals: [
+                SessionGoal(
+                  kind: CoachKind.excessiveCoasting,
+                  segmentName: corner.name,
+                  startProgressMeters: corner.startProgressMeters,
+                  endProgressMeters: corner.endProgressMeters,
+                ),
+              ],
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+    final row = find.byKey(const ValueKey('sessionSummaryOwnGoal0'));
+    await reveal(tester, row);
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.text(
+          'Not measured: needs laps of Session 1 and this session among the '
+          'compared laps',
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  test('goals set on the latest session are checked once the next one is '
+      'added, with the coach\'s own measures', () async {
+    // Synthetic circuit laps (no real data), as the addition tests use.
+    String write(String name, List<double> speeds) {
+      final path = '${directory.path}/$name';
+      File(path).writeAsStringSync(circuitVbo(speeds));
+      return path;
+    }
+
+    final files = [
+      write('a.vbo', [30, 28, 31]),
+      write('b.vbo', [33, 29, 34]),
+    ];
+    final first = runDayImport((
+      paths: [files.first],
+      includeSubfolders: false,
+    ));
+    final controller = DayResultsController(
+      runs: first.runs,
+      analysis: first.analysis!,
+      coachRunner: testCoachRunner((job) async => job()),
+    );
+    addTearDown(controller.dispose);
+    Future<void> coached() async {
+      await controller.requestTheoreticalBest();
+      while (controller.coachLoading) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+    }
+
+    await coached();
+    final setAfter = controller.latestRunId;
+    final corners = controller.theoreticalBest!.corners;
+    expect(corners, isNotEmpty);
+    final goals = [
+      for (final corner in corners.take(2))
+        SessionGoal(
+          kind: CoachKind.lowMinimumSpeed,
+          segmentName: corner.name,
+          startProgressMeters: corner.startProgressMeters,
+          endProgressMeters: corner.endProgressMeters,
+        ),
+    ];
+    expect(
+      controller.updateRunMetadata(
+        setAfter,
+        controller.runMetadata(setAfter).withGoals(RunGoals(goals: goals)),
+      ),
+      isNull,
+    );
+
+    final addition = await controller.addRecordings([files.last]);
+    expect(addition.error, isEmpty);
+    await coached();
+    final coach = controller.coach!;
+    expect(controller.latestRunId, isNot(setAfter));
+    expect(coach.runId, controller.latestRunId);
+    // Checked against the session the goals were set after.
+    expect(coach.previousRunId, setAfter);
+    final checks = checkSessionGoals(
+      controller.runMetadata(setAfter).goals!,
+      coach,
+      groupId: controller.theoreticalBest!.groupId,
+    );
+    expect(checks, hasLength(2));
+    final measured = checks
+        .where((c) => c.outcome != CoachGoalOutcome.notMeasured)
+        .toList();
+    expect(measured, isNotEmpty);
+    for (final check in measured) {
+      expect(check.before!.laps, greaterThanOrEqualTo(2));
+      expect(check.now!.laps, greaterThanOrEqualTo(2));
+      expect(check.before!.value.isFinite && check.now!.value.isFinite, isTrue);
+    }
   });
 
   testWidgets('in Polish', (tester) async {

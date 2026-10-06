@@ -8852,10 +8852,10 @@ abstract class AppLocalizations {
   /// **'Set up to {count} changes to work on, each at one corner. The next session is checked against this one.'**
   String ownGoalsNone(int count);
 
-  /// Goals stored under a version this app does not read.
+  /// Goals stored under another version, or in a form this app would not write itself.
   ///
   /// In en, this message translates to:
-  /// **'Set in a newer version of the app, so they are not changed here.'**
+  /// **'Stored in a form this version of the app does not edit, so they are not changed here.'**
   String get ownGoalsReadOnly;
 
   /// Why no goal can be added: the day has no corners yet.
@@ -8905,6 +8905,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your goal: {goal}'**
   String summaryOwnGoal(String goal);
+
+  /// Shown when the goals the driver changed could not be stored.
+  ///
+  /// In en, this message translates to:
+  /// **'The goals could not be saved.'**
+  String get ownGoalsNotSaved;
+
+  /// Why no goal can be added: the session has no lap in the group compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals need laps of {session} among the compared laps.'**
+  String ownGoalsNeedLaps(String session);
+
+  /// Own goal row when the session the goal was set after, or this one, has no lap in the group compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: needs laps of {session} and this session among the compared laps'**
+  String summaryOwnGoalNoLaps(String session);
+
+  /// Own goal row when the goal was set while another group of compared laps was shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: set on other compared laps'**
+  String get summaryOwnGoalOtherGroup;
 }
 
 class _AppLocalizationsDelegate

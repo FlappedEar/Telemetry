@@ -1446,14 +1446,18 @@
   "summaryOnlySession": "Brak innej sesji do porównania",
   "ownGoalsTitle": "Twoje cele na następną sesję",
   "ownGoalsIntro": "Sprawdzane względem tej sesji po dodaniu następnej.",
-  "ownGoalsNone": "Ustaw do {count} zmian do przepracowania, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.",
-  "ownGoalsReadOnly": "Ustawione w nowszej wersji aplikacji, więc nie są tu zmieniane.",
-  "ownGoalsNeedCorners": "Cele wymagają zakrętów dnia.",
+  "ownGoalsNone": "Ustaw do {count} rzeczy do poprawy, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.",
+  "ownGoalsReadOnly": "Zapisane w formie, której ta wersja aplikacji nie edytuje, więc nie są tu zmieniane.",
+  "ownGoalsNeedCorners": "Cele można ustawić, gdy zakręty dnia są gotowe.",
   "ownGoalsAdd": "Dodaj cel",
   "ownGoalsRemove": "Usuń cel",
   "ownGoalsCorner": "Zakręt",
-  "ownGoalsChange": "Zmiana do przepracowania",
+  "ownGoalsChange": "Co poprawić",
   "ownGoalsTaken": "Ten cel jest już ustawiony.",
   "ownGoalsSave": "Dodaj",
-  "summaryOwnGoal": "Twój cel: {goal}"
+  "summaryOwnGoal": "Twój cel: {goal}",
+  "ownGoalsNotSaved": "Nie udało się zapisać celów.",
+  "ownGoalsNeedLaps": "Cele wymagają, by ta sesja ({session}) miała okrążenia wśród porównywanych.",
+  "summaryOwnGoalNoLaps": "Nie zmierzono: {session} i ta sesja potrzebują okrążeń wśród porównywanych",
+  "summaryOwnGoalOtherGroup": "Nie zmierzono: ustawiony dla innych porównywanych okrążeń"
 }

@@ -324,7 +324,13 @@ class NextSessionCard extends StatelessWidget {
               ],
             ),
           if (change != null && goals.goals.length < maximumRunGoals)
-            if (corners.isEmpty)
+            if (coach.reason == CoachReason.noLapInGroup)
+              Text(
+                l10n.ownGoalsNeedLaps(l10n.session(session)),
+                key: const ValueKey('ownGoalsNeedLaps'),
+                style: theme.textTheme.bodySmall,
+              )
+            else if (corners.isEmpty)
               Text(
                 l10n.ownGoalsNeedCorners,
                 key: const ValueKey('ownGoalsNeedCorners'),

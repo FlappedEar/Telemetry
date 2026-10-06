@@ -62,20 +62,68 @@ void main() {
       expect(kept[runGoalsKey], {'version': runGoalsVersion, 'note': 'from a later app'});
     });
 
-    test('a goal that is not one is left out when read', () {
-      final goals = RunGoals.fromJson({
-        'version': runGoalsVersion,
-        'goals': [
-          _coasting.toJson(),
-          {..._lift.toJson(), 'kind': 'improving'},
-          {..._lift.toJson(), 'endProgressMeters': 700},
-          {..._lift.toJson(), 'segment': 3},
-          'Corner 3',
-        ],
-      });
-      expect(goals.goals, [_coasting]);
-      expect(RunGoals.fromJson('nothing').isEmpty, isTrue);
+    test('goals this app would not write are shown and never rewritten', () {
+      final cases = <Object?>[
+        // Goals it cannot read, kept among those it can.
+        {
+          'version': runGoalsVersion,
+          'goals': [
+            _coasting.toJson(),
+            {..._lift.toJson(), 'kind': 'improving'},
+            {..._lift.toJson(), 'endProgressMeters': 800},
+            {..._lift.toJson(), 'segment': 3},
+            'Corner 3',
+          ],
+        },
+        // A key of a later app in a goal.
+        {
+          'version': runGoalsVersion,
+          'goals': [
+            {..._coasting.toJson(), 'targetMeters': 10},
+          ],
+        },
+        // More than three, a goal twice, one without a corner name.
+        {
+          'version': runGoalsVersion,
+          'goals': [for (var i = 0; i < 4; ++i) _coasting.toJson()],
+        },
+        {
+          'version': runGoalsVersion,
+          'goals': [
+            {..._coasting.toJson(), 'segment': ' '},
+          ],
+        },
+        // Not an object, goals not a list, a group that is not text.
+        'Corner 3',
+        {'version': runGoalsVersion, 'goals': 'Corner 3'},
+        {
+          'version': runGoalsVersion,
+          'groupId': 3,
+          'goals': [_coasting.toJson()],
+        },
+      ];
+      for (final stored in cases) {
+        final goals = RunGoals.fromJson(stored);
+        expect(goals.readOnly, isTrue, reason: '$stored');
+        expect(runGoalsProblem(goals), isNull);
+        final run = <String, Object?>{runGoalsKey: stored};
+        expect(applyRunGoals(run, RunGoals(goals: [_lift])), isFalse);
+        expect(run[runGoalsKey], same(stored));
+      }
+      expect(RunGoals.fromJson(cases.first).goals, [_coasting]);
+      expect(RunGoals.fromJson(cases[1]).goals, [_coasting]);
+      expect(RunGoals.fromJson(cases[2]).goals, hasLength(maximumRunGoals));
+      expect(RunGoals.fromJson(null).readOnly, isFalse);
       expect(RunGoals.fromJson(null).isEmpty, isTrue);
+    });
+
+    test('the group the goals were set on is stored with them', () {
+      final run = <String, Object?>{'id': 'run1'};
+      applyRunGoals(run, RunGoals(goals: [_coasting], groupId: 'group-a'));
+      expect((run[runGoalsKey]! as Map)['groupId'], 'group-a');
+      expect(RunGoals.fromJson(run[runGoalsKey]).groupId, 'group-a');
+      expect(applyRunGoals(run, RunGoals()), isTrue);
+      expect(run.containsKey(runGoalsKey), isFalse);
     });
 
     test('goals of another version are not read or rewritten', () {
@@ -212,6 +260,54 @@ void main() {
       expect(checks[0].metric, CoachMetric.longestCoast);
       // 5 m earlier is within the 8 m step.
       expect(checks[1].outcome, CoachGoalOutcome.unchanged);
+    });
+
+    test('goals set on other compared laps are not measured', () {
+      final values = [
+        corner(
+          before: {CoachKind.excessiveCoasting: (value: 1.8, laps: 4)},
+          now: {CoachKind.excessiveCoasting: (value: 1.2, laps: 3)},
+        ),
+      ];
+      final goals = RunGoals(goals: [_coasting], groupId: 'group-a');
+      final [other] = checkSessionGoals(goals, _coach(values), groupId: 'group-b');
+      expect(other.outcome, CoachGoalOutcome.notMeasured);
+      expect(other.otherGroup, isTrue);
+      final [same] = checkSessionGoals(goals, _coach(values), groupId: 'group-a');
+      expect(same.outcome, CoachGoalOutcome.better);
+      expect(same.otherGroup, isFalse);
+    });
+
+    test('a corner across the start line is found while drawn the same', () {
+      const across = SessionGoal(
+        kind: CoachKind.excessiveCoasting,
+        segmentName: 'Corner 9',
+        startProgressMeters: 2900,
+        endProgressMeters: 40,
+      );
+      expect(
+        RunGoals.fromJson({
+          'goals': [across.toJson()],
+        }).goals,
+        [across],
+      );
+      expect(runGoalsProblem(RunGoals(goals: [across])), isNull);
+      final values = {CoachKind.excessiveCoasting: (value: 1.8, laps: 3)};
+      final now = {CoachKind.excessiveCoasting: (value: 1.2, laps: 3)};
+      final [found] = checkSessionGoals(
+        RunGoals(goals: [across]),
+        _coach([
+          corner(start: 300, end: 400, before: values, now: now),
+          corner(name: 'Corner 9', start: 2900, end: 40, before: values, now: now),
+        ]),
+      );
+      expect(found.outcome, CoachGoalOutcome.better);
+      expect(found.measuredName, 'Corner 9');
+      final [moved] = checkSessionGoals(
+        RunGoals(goals: [across]),
+        _coach([corner(name: 'Corner 9', start: 2890, end: 40, before: values, now: now)]),
+      );
+      expect(moved.outcome, CoachGoalOutcome.notMeasured);
     });
 
     test('later throttle is worse', () {

@@ -8238,8 +8238,8 @@
   "@ownGoalsIntro": {"description": "Under the goals heading when goals are set."},
   "ownGoalsNone": "Set up to {count} changes to work on, each at one corner. The next session is checked against this one.",
   "@ownGoalsNone": {"description": "Under the goals heading when none are set.", "placeholders": {"count": {"type": "int"}}},
-  "ownGoalsReadOnly": "Set in a newer version of the app, so they are not changed here.",
-  "@ownGoalsReadOnly": {"description": "Goals stored under a version this app does not read."},
+  "ownGoalsReadOnly": "Stored in a form this version of the app does not edit, so they are not changed here.",
+  "@ownGoalsReadOnly": {"description": "Goals stored under another version, or in a form this app would not write itself."},
   "ownGoalsNeedCorners": "Goals need the day's corners.",
   "@ownGoalsNeedCorners": {"description": "Why no goal can be added: the day has no corners yet."},
   "ownGoalsAdd": "Add a goal",
@@ -8255,5 +8255,13 @@
   "ownGoalsSave": "Add",
   "@ownGoalsSave": {"description": "Confirms the add-goal dialog."},
   "summaryOwnGoal": "Your goal: {goal}",
-  "@summaryOwnGoal": {"description": "Session summary row label for one of the driver's own goals; goal is 'Corner 3 · Reduce coasting'.", "placeholders": {"goal": {"type": "String"}}}
+  "@summaryOwnGoal": {"description": "Session summary row label for one of the driver's own goals; goal is 'Corner 3 · Reduce coasting'.", "placeholders": {"goal": {"type": "String"}}},
+  "ownGoalsNotSaved": "The goals could not be saved.",
+  "@ownGoalsNotSaved": {"description": "Shown when the goals the driver changed could not be stored."},
+  "ownGoalsNeedLaps": "Goals need laps of {session} among the compared laps.",
+  "@ownGoalsNeedLaps": {"description": "Why no goal can be added: the session has no lap in the group compared.", "placeholders": {"session": {"type": "String"}}},
+  "summaryOwnGoalNoLaps": "Not measured: needs laps of {session} and this session among the compared laps",
+  "@summaryOwnGoalNoLaps": {"description": "Own goal row when the session the goal was set after, or this one, has no lap in the group compared.", "placeholders": {"session": {"type": "String"}}},
+  "summaryOwnGoalOtherGroup": "Not measured: set on other compared laps",
+  "@summaryOwnGoalOtherGroup": {"description": "Own goal row when the goal was set while another group of compared laps was shown."}
 }

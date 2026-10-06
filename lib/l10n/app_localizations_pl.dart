@@ -6108,15 +6108,16 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String ownGoalsNone(int count) {
-    return 'Ustaw do $count zmian do przepracowania, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.';
+    return 'Ustaw do $count rzeczy do poprawy, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.';
   }
 
   @override
   String get ownGoalsReadOnly =>
-      'Ustawione w nowszej wersji aplikacji, więc nie są tu zmieniane.';
+      'Zapisane w formie, której ta wersja aplikacji nie edytuje, więc nie są tu zmieniane.';
 
   @override
-  String get ownGoalsNeedCorners => 'Cele wymagają zakrętów dnia.';
+  String get ownGoalsNeedCorners =>
+      'Cele można ustawić, gdy zakręty dnia są gotowe.';
 
   @override
   String get ownGoalsAdd => 'Dodaj cel';
@@ -6128,7 +6129,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get ownGoalsCorner => 'Zakręt';
 
   @override
-  String get ownGoalsChange => 'Zmiana do przepracowania';
+  String get ownGoalsChange => 'Co poprawić';
 
   @override
   String get ownGoalsTaken => 'Ten cel jest już ustawiony.';
@@ -6140,4 +6141,21 @@ class AppLocalizationsPl extends AppLocalizations {
   String summaryOwnGoal(String goal) {
     return 'Twój cel: $goal';
   }
+
+  @override
+  String get ownGoalsNotSaved => 'Nie udało się zapisać celów.';
+
+  @override
+  String ownGoalsNeedLaps(String session) {
+    return 'Cele wymagają, by ta sesja ($session) miała okrążenia wśród porównywanych.';
+  }
+
+  @override
+  String summaryOwnGoalNoLaps(String session) {
+    return 'Nie zmierzono: $session i ta sesja potrzebują okrążeń wśród porównywanych';
+  }
+
+  @override
+  String get summaryOwnGoalOtherGroup =>
+      'Nie zmierzono: ustawiony dla innych porównywanych okrążeń';
 }

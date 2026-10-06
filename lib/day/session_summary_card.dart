@@ -27,12 +27,20 @@ class SessionSummaryCard extends StatelessWidget {
     required this.coachLoading,
     this.coachError = '',
     required this.channels,
-    this.goalChecks = const [],
+    this.ownGoals,
   });
 
-  /// The driver's own goals set after the session before, checked on this
-  /// one ([checkSessionGoals], FET-218).
-  final List<SessionGoalCheck> goalChecks;
+  /// The driver's own goals set after the session before ([session] names
+  /// it), and their checks on this one ([checkSessionGoals], FET-218): null
+  /// checks while they cannot be made, [noLaps] when that session or this
+  /// one has no laps among the compared laps. Null when no goals were set.
+  final ({
+    RunGoals goals,
+    String session,
+    List<SessionGoalCheck>? checks,
+    bool noLaps,
+  })?
+  ownGoals;
 
   /// The session summarized (the one the coach coaches) and its name.
   final String runId;
@@ -109,6 +117,8 @@ class SessionSummaryCard extends StatelessWidget {
       CoachGoalOutcome.better => l10n.coachGoalBetter,
       CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
       CoachGoalOutcome.worse => l10n.coachGoalWorse,
+      CoachGoalOutcome.notMeasured when check.otherGroup =>
+        l10n.summaryOwnGoalOtherGroup,
       CoachGoalOutcome.notMeasured when check.measuredName.isEmpty =>
         l10n.coachGoalNoCorner,
       CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
@@ -306,17 +316,29 @@ class SessionSummaryCard extends StatelessWidget {
                 ? l10n.summaryCoachFailed
                 : l10n.summaryNoFocus,
           ),
-      for (var i = 0; i < goalChecks.length; ++i)
-        row(
-          'sessionSummaryOwnGoal$i',
-          l10n.summaryOwnGoal(
-            l10n.coachItemTitle(
-              l10n.tbSegmentName(goalChecks[i].goal.segmentName),
-              l10n.coachKind(goalChecks[i].goal.kind),
+      if (ownGoals case final own?)
+        for (var i = 0; i < own.goals.goals.length; ++i)
+          row(
+            'sessionSummaryOwnGoal$i',
+            l10n.summaryOwnGoal(
+              l10n.coachItemTitle(
+                l10n.tbSegmentName(own.goals.goals[i].segmentName),
+                l10n.coachKind(own.goals.goals[i].kind),
+              ),
             ),
+            switch (own.checks) {
+              final checks? => _ownGoal(context, checks[i]),
+              // Why there is no check yet, as the focus line says it.
+              null when own.noLaps => l10n.summaryOwnGoalNoLaps(
+                l10n.session(own.session),
+              ),
+              null when coachLoading || pending || coach == null =>
+                l10n.summaryWorking,
+              null when !ready => l10n.summarySegmentsUnavailable,
+              null when coachError.isNotEmpty => l10n.summaryCoachFailed,
+              null => l10n.summaryWorking,
+            },
           ),
-          _ownGoal(context, goalChecks[i]),
-        ),
     ];
   }
 }

@@ -1979,7 +1979,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       coachLoading: _controller.coachLoading,
       coachError: _controller.coachError,
       channels: channels,
-      goalChecks: _goalChecks(),
+      ownGoals: _goalSummary(),
     );
   }
 
@@ -1987,28 +1987,73 @@ class _DayResultsPageState extends State<DayResultsPage> {
   RunGoals _ownGoals(String runId) =>
       _controller.runMetadata(runId).goals ?? RunGoals();
 
-  /// Saves the driver's goals for the session after the latest (FET-218):
-  /// the day then has unsaved changes.
+  /// Saves the driver's goals for the session after the latest (FET-218),
+  /// with the compared laps their corners are on: the day then has unsaved
+  /// changes.
   void _setOwnGoals(RunGoals goals) {
     final runId = _controller.latestRunId;
     final problem = _controller.updateRunMetadata(
       runId,
-      _controller.runMetadata(runId).withGoals(goals),
+      _controller
+          .runMetadata(runId)
+          .withGoals(
+            RunGoals(
+              goals: goals.goals,
+              groupId: _controller.theoreticalBest?.groupId ?? '',
+            ),
+          ),
     );
-    if (problem != null) _tell(problem);
+    if (problem != null) _tell(context.l10n.ownGoalsNotSaved);
   }
 
-  /// The goals set after the session before the latest, checked on the
-  /// latest once the coach has measured it.
-  List<SessionGoalCheck> _goalChecks() {
+  /// The session recorded before the latest, in the day's order: the one
+  /// whose goals the latest is checked on; empty when there is none.
+  String _sessionBeforeLatest() {
+    final latest = _controller.latestRunId;
+    var previous = '';
+    for (final row in _controller.analysis.rows) {
+      if (row.runId == latest) break;
+      previous = row.runId;
+    }
+    return previous;
+  }
+
+  /// The goals set after the session before the latest, and their checks
+  /// once the coach has measured the latest against that session; null
+  /// checks while they cannot be made (see [SessionSummaryCard]).
+  ({
+    RunGoals goals,
+    String session,
+    List<SessionGoalCheck>? checks,
+    bool noLaps,
+  })?
+  _goalSummary() {
+    final before = _sessionBeforeLatest();
+    if (before.isEmpty) return null;
+    final goals = _ownGoals(before);
+    if (goals.isEmpty) return null;
+    final session = _controller.runMetadata(before).name;
     final coach = _controller.coach;
     if (coach == null ||
         _controller.coachLoading ||
-        coach.runId != _controller.latestRunId ||
-        coach.previousRunId.isEmpty) {
-      return const [];
+        coach.runId != _controller.latestRunId) {
+      return (goals: goals, session: session, checks: null, noLaps: false);
     }
-    return checkSessionGoals(_ownGoals(coach.previousRunId), coach);
+    // Both sessions need laps among the compared laps.
+    if (coach.previousRunId != before ||
+        coach.reason == CoachReason.noLapInGroup) {
+      return (goals: goals, session: session, checks: null, noLaps: true);
+    }
+    return (
+      goals: goals,
+      session: session,
+      checks: checkSessionGoals(
+        goals,
+        coach,
+        groupId: _controller.theoreticalBest?.groupId ?? '',
+      ),
+      noLaps: false,
+    );
   }
 
   String _noBestReason(DayAnalysis analysis, DayRanking? ranking) {

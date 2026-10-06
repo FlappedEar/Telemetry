@@ -5994,7 +5994,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ownGoalsReadOnly =>
-      'Set in a newer version of the app, so they are not changed here.';
+      'Stored in a form this version of the app does not edit, so they are not changed here.';
 
   @override
   String get ownGoalsNeedCorners => 'Goals need the day\'s corners.';
@@ -6021,4 +6021,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String summaryOwnGoal(String goal) {
     return 'Your goal: $goal';
   }
+
+  @override
+  String get ownGoalsNotSaved => 'The goals could not be saved.';
+
+  @override
+  String ownGoalsNeedLaps(String session) {
+    return 'Goals need laps of $session among the compared laps.';
+  }
+
+  @override
+  String summaryOwnGoalNoLaps(String session) {
+    return 'Not measured: needs laps of $session and this session among the compared laps';
+  }
+
+  @override
+  String get summaryOwnGoalOtherGroup =>
+      'Not measured: set on other compared laps';
 }
