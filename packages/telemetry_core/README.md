@@ -223,6 +223,14 @@ a background isolate.
   `compareLoss` and `sectionProgression` do it for a group of a day;
   `progressionRunInfo` reads the notes, conditions and setup changes a
   document records for a run.
+- Session summary (FlappedEar Telemetry only, FET-233): `summarizeSession`
+  puts one run of a day's progression in a few lines from results the day
+  already computed: its best lap against every other run's best, its lap
+  spread against the nearest earlier run with a ranked lap, its biggest
+  segment gain and loss since that run and its biggest gap to the quickest
+  typical time (medians, by `sessionSummaryChangeSeconds` or more), its
+  temperature maxima (the earlier run's only in the same unit) and the
+  coach's goal check.
 - Channel summaries, temperature associations, focus areas and the day
   report (Overlays `ChannelSummary`, `TemperatureAssociation`,
   `OutingChannelSummaries`, `FocusAreas`, `DayReport`, `OutingDayReport` and

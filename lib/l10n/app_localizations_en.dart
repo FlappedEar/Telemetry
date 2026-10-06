@@ -5829,4 +5829,154 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCircuitsForget => 'Forget this name';
+
+  @override
+  String summaryTitle(String session) {
+    return '$session in 30 seconds';
+  }
+
+  @override
+  String get summaryIntro =>
+      'Observed from your laps, not causes. Typical is the median of at least 3 laps.';
+
+  @override
+  String summaryNotShown(String session) {
+    return '$session has no timed laps on the circuit shown.';
+  }
+
+  @override
+  String get summaryBestLap => 'Best lap';
+
+  @override
+  String summaryBestNew(String time, String delta) {
+    return '$time · new best of the day ($delta)';
+  }
+
+  @override
+  String summaryBestBehind(String time, String delta, String session) {
+    return '$time · $delta on the best of $session';
+  }
+
+  @override
+  String summaryBestFirst(String time) {
+    return '$time · first session of the day';
+  }
+
+  @override
+  String get summaryNoBest => 'No ranked lap';
+
+  @override
+  String get summarySpread => 'Lap-time spread';
+
+  @override
+  String summarySpreadValue(String spread) {
+    return '$spread s';
+  }
+
+  @override
+  String summarySpreadThen(String spread, String session, String previous) {
+    return '$spread s ($session: $previous s)';
+  }
+
+  @override
+  String get summaryGain => 'Biggest gain';
+
+  @override
+  String get summaryLoss => 'Biggest loss';
+
+  @override
+  String summaryChange(String segment, String delta) {
+    return '$segment $delta';
+  }
+
+  @override
+  String summaryNoChange(String seconds) {
+    return 'None by $seconds s or more';
+  }
+
+  @override
+  String get summaryFirstSession => 'First session: nothing to compare with';
+
+  @override
+  String get summaryNotCompared =>
+      'Needs 3 laps through a segment in both sessions';
+
+  @override
+  String summaryAgainst(String session) {
+    return 'Gains and losses: typical segment times against $session.';
+  }
+
+  @override
+  String get summaryGap => 'Biggest gap left';
+
+  @override
+  String summaryGapValue(String segment, String delta) {
+    return '$segment $delta to the quickest typical time there';
+  }
+
+  @override
+  String get summaryCar => 'Car, hottest';
+
+  @override
+  String summaryTemperature(String channel, String value) {
+    return '$channel $value';
+  }
+
+  @override
+  String summaryTemperatureThen(
+    String channel,
+    String value,
+    String session,
+    String previous,
+  ) {
+    return '$channel $value ($session: $previous)';
+  }
+
+  @override
+  String summaryGoal(String session) {
+    return 'Focus from $session';
+  }
+
+  @override
+  String get summaryWorking => 'Working…';
+
+  @override
+  String summaryBestNoEarlier(String time) {
+    return '$time · no earlier session has a ranked lap';
+  }
+
+  @override
+  String summaryBestEqual(String time, String session) {
+    return '$time · equals the best of $session';
+  }
+
+  @override
+  String get summaryNoEarlierRanked => 'No earlier session has a ranked lap';
+
+  @override
+  String get summarySegments => 'Segments';
+
+  @override
+  String get summarySegmentsUnavailable =>
+      'Not available without a theoretical best';
+
+  @override
+  String get summaryGoalBefore => 'Focus from the session before';
+
+  @override
+  String get summaryNoFocus => 'No change to work on was given';
+
+  @override
+  String get summaryCoachFailed => 'The coach could not run';
+
+  @override
+  String summaryGapNone(String seconds) {
+    return 'Within $seconds s of the quickest typical time wherever timed';
+  }
+
+  @override
+  String get summaryGapNeedsLaps => 'Needs 3 laps through a segment';
+
+  @override
+  String get summaryOnlySession => 'No other session to compare with';
 }

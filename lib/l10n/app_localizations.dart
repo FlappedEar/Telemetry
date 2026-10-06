@@ -8612,6 +8612,227 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Forget this name'**
   String get settingsCircuitsForget;
+
+  /// Heading of the session summary on the Coach place.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} in 30 seconds'**
+  String summaryTitle(String session);
+
+  /// Under the session summary heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed from your laps, not causes. Typical is the median of at least 3 laps.'**
+  String get summaryIntro;
+
+  /// Session summary when the latest session has no laps in the shown group.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no timed laps on the circuit shown.'**
+  String summaryNotShown(String session);
+
+  /// Session summary row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get summaryBestLap;
+
+  /// Best lap row when it beats every earlier session; delta is against the earlier best.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · new best of the day ({delta})'**
+  String summaryBestNew(String time, String delta);
+
+  /// Best lap row when an earlier session was quicker.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · {delta} on the best of {session}'**
+  String summaryBestBehind(String time, String delta, String session);
+
+  /// Best lap row for the day's first session.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · first session of the day'**
+  String summaryBestFirst(String time);
+
+  /// Best lap row without an eligible lap.
+  ///
+  /// In en, this message translates to:
+  /// **'No ranked lap'**
+  String get summaryNoBest;
+
+  /// Session summary row label: interquartile range of lap times.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap-time spread'**
+  String get summarySpread;
+
+  /// Lap-time spread without a previous session to compare.
+  ///
+  /// In en, this message translates to:
+  /// **'{spread} s'**
+  String summarySpreadValue(String spread);
+
+  /// Lap-time spread with the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'{spread} s ({session}: {previous} s)'**
+  String summarySpreadThen(String spread, String session, String previous);
+
+  /// Session summary row label: segment whose typical time fell the most since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest gain'**
+  String get summaryGain;
+
+  /// Session summary row label: segment whose typical time rose the most since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest loss'**
+  String get summaryLoss;
+
+  /// A segment and its typical-time change.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment} {delta}'**
+  String summaryChange(String segment, String delta);
+
+  /// No segment's typical time changed by the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'None by {seconds} s or more'**
+  String summaryNoChange(String seconds);
+
+  /// Gain/loss rows for the day's first session.
+  ///
+  /// In en, this message translates to:
+  /// **'First session: nothing to compare with'**
+  String get summaryFirstSession;
+
+  /// No segment has a typical time in both sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs 3 laps through a segment in both sessions'**
+  String get summaryNotCompared;
+
+  /// Footnote under gain and loss.
+  ///
+  /// In en, this message translates to:
+  /// **'Gains and losses: typical segment times against {session}.'**
+  String summaryAgainst(String session);
+
+  /// Session summary row label: segment where the typical time is furthest from the quickest typical time of any session.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest gap left'**
+  String get summaryGap;
+
+  /// Biggest gap row value.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment} {delta} to the quickest typical time there'**
+  String summaryGapValue(String segment, String delta);
+
+  /// Session summary row label: highest recorded temperatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Car, hottest'**
+  String get summaryCar;
+
+  /// One temperature's maximum.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} {value}'**
+  String summaryTemperature(String channel, String value);
+
+  /// One temperature's maximum with the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} {value} ({session}: {previous})'**
+  String summaryTemperatureThen(
+    String channel,
+    String value,
+    String session,
+    String previous,
+  );
+
+  /// Session summary row label: the coach's main focus from the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus from {session}'**
+  String summaryGoal(String session);
+
+  /// A summary value still being calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get summaryWorking;
+
+  /// Best lap row when earlier sessions exist but none has a ranked lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · no earlier session has a ranked lap'**
+  String summaryBestNoEarlier(String time);
+
+  /// Best lap row when it ties the earlier best.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · equals the best of {session}'**
+  String summaryBestEqual(String time, String session);
+
+  /// Gain/loss rows when no earlier session has a ranked lap.
+  ///
+  /// In en, this message translates to:
+  /// **'No earlier session has a ranked lap'**
+  String get summaryNoEarlierRanked;
+
+  /// Session summary row label when segment lines cannot be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments'**
+  String get summarySegments;
+
+  /// Segment lines without a theoretical best result.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available without a theoretical best'**
+  String get summarySegmentsUnavailable;
+
+  /// Goal row label while the coach works or when no focus was given.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus from the session before'**
+  String get summaryGoalBefore;
+
+  /// Goal row when the coach gave no main focus after the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'No change to work on was given'**
+  String get summaryNoFocus;
+
+  /// Goal row when the coach failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach could not run'**
+  String get summaryCoachFailed;
+
+  /// Biggest gap row when the session is within the threshold of the quickest typical time in every segment it was timed in.
+  ///
+  /// In en, this message translates to:
+  /// **'Within {seconds} s of the quickest typical time wherever timed'**
+  String summaryGapNone(String seconds);
+
+  /// Biggest gap row when the session has no typical time through any segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs 3 laps through a segment'**
+  String get summaryGapNeedsLaps;
+
+  /// Biggest gap row when only this session has timed segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No other session to compare with'**
+  String get summaryOnlySession;
 }
 
 class _AppLocalizationsDelegate

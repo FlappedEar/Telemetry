@@ -45,6 +45,31 @@ void main() {
         while (controller.coachLoading) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
         }
+        await controller.requestChannelSummaries();
+      }
+
+      // The Coach place's session summary (FET-233), from the same results.
+      String summary() {
+        final result = controller.theoreticalBest;
+        final s = summarizeSession(
+          controller.latestRunId,
+          progression: controller.progression,
+          sections: result?.sectionProgression([
+            for (final run in controller.progression.runs) run.run,
+          ]),
+          coach: controller.coach,
+          channels: controller.channelSummaries,
+        );
+        if (s == null) return '  summary: not in the group shown';
+        String change(SessionSegmentChange? c) =>
+            c == null ? '-' : '${c.name} ${c.deltaSeconds.toStringAsFixed(3)}';
+        return '  summary: best ${s.bestLap?.durationSeconds.toStringAsFixed(3)}'
+            '${s.newBest ? ' (new best)' : ''} delta ${s.bestDeltaSeconds?.toStringAsFixed(3)}'
+            ', spread ${s.lapSpread?.toStringAsFixed(3)} (before ${s.previousLapSpread?.toStringAsFixed(3)})'
+            ', ${s.segmentsCompared} compared, gain ${change(s.biggestGain)}'
+            ', loss ${change(s.biggestLoss)}, gap ${change(s.biggestGap)}'
+            ', car ${[for (final t in s.temperatures) '${t.channel} ${t.maximum.toStringAsFixed(0)}/${t.previousMaximum?.toStringAsFixed(0)}'].join(' ')}'
+            ', goal ${s.goal?.outcome.name}';
       }
 
       String mb(int bytes) => '${(bytes / 1048576).toStringAsFixed(0)} MB';
@@ -64,6 +89,7 @@ void main() {
                 '${[for (final e in item.finding.evidence) '${e.metric} ${e.observed.toStringAsFixed(1)} vs ${e.reference.toStringAsFixed(1)} ${e.unit}'].join('; ')}\n'
                 '    laps ${[for (final lap in item.finding.affectedLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}'
                 '${item.finding.kind.corrective ? ' against' : ', from'} ${[for (final lap in item.finding.evidence.first.referenceLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}',
+          summary(),
         ];
         // ignore: avoid_print
         print(lines.join('\n'));

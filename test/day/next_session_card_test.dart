@@ -234,6 +234,15 @@ void main() {
     // The synthetic day has no pedals and no plan, and says why.
     expect(controller.coach!.plan, isEmpty);
     expect(find.byKey(const ValueKey('nextSessionCard')), findsOneWidget);
+    // Above it, the session in 30 seconds (FET-233), its car line from the
+    // channel summaries the Coach place asks for.
+    expect(find.byKey(const ValueKey('sessionSummary')), findsOneWidget);
+    expect(find.text('Session 2 in 30 seconds'), findsOneWidget);
+    expect(find.byKey(const ValueKey('sessionSummaryBest')), findsOneWidget);
+    expect(
+      controller.channelSummaries != null || controller.channelSummariesLoading,
+      isTrue,
+    );
     expect(find.text('Next session'), findsOneWidget);
     expect(
       find.text("Coaching Session 2 against the day's faster laps"),
@@ -373,6 +382,8 @@ void main() {
 
   testWidgets('a focus no corner of today\'s matches says so', (tester) async {
     await show(tester, goal: CoachGoalOutcome.notMeasured, measuredName: '');
+    // Below the session summary.
+    await reveal(tester, find.byKey(const ValueKey('coachGoalResult')));
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('coachGoalResult'))).data,
       "Not measured: today's corners no longer include it.",

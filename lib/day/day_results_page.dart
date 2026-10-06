@@ -40,6 +40,7 @@ import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
+import 'session_summary_card.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
@@ -298,7 +299,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   final _coachScroll = ScrollController();
 
   /// The day opens on what to do in the next session: the coach, from the
-  /// top, where its Next session card is.
+  /// top, where the session summary leads into the Next session card.
   void _revealCoach() {
     _coach.value = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1902,9 +1903,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
         children: [
           if (best == null)
             Text(_noBestReason(_controller.analysis, _controller.ranking))
-          else
+          else ...[
+            _sessionSummary(),
+            const SizedBox(height: 12),
             NextSessionCard(
-              key: _coachKey,
               coach: _controller.coach,
               result: _controller.theoreticalBest,
               session: _controller.latestRunName,
@@ -1918,6 +1920,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
             ),
+          ],
           // Below what to try next: the driver's skills across days, from
           // the profile.
           if (widget.library case final library?)
@@ -1927,6 +1930,52 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ),
         ],
       ),
+    );
+  }
+
+  // The theoretical best's section progression for the session summary,
+  // worked out again only when the result or the progression changes.
+  (DayTheoreticalBest?, DayProgression, SectionProgression?)? _summarySections;
+
+  /// The latest session in a few lines, above the coach's plan. Its car
+  /// line needs the channel summaries, which are asked for here while Coach
+  /// is shown, as on the overview.
+  Widget _sessionSummary() {
+    final channels = _controller.channelSummaries;
+    // Only while Coach is shown: the Coach list is built behind the day's
+    // tabs too, and the summaries read every recording.
+    if (_coach.value &&
+        channels == null &&
+        !_controller.channelSummariesLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.requestChannelSummaries();
+      });
+    }
+    final result = _controller.theoreticalBest;
+    final progression = _controller.progression;
+    var cached = _summarySections;
+    if (cached == null ||
+        !identical(cached.$1, result) ||
+        !identical(cached.$2, progression)) {
+      cached = _summarySections = (
+        result,
+        progression,
+        result?.sectionProgression([
+          for (final run in progression.runs) run.run,
+        ]),
+      );
+    }
+    return SessionSummaryCard(
+      key: _coachKey,
+      runId: _controller.latestRunId,
+      session: _controller.latestRunName,
+      progression: progression,
+      sectionsState: result?.state,
+      sections: cached.$3,
+      coach: _controller.coach,
+      coachLoading: _controller.coachLoading,
+      coachError: _controller.coachError,
+      channels: channels,
     );
   }
 
