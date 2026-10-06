@@ -1,6 +1,7 @@
 {
   "@@locale": "pl",
   "appTitle": "FlappedEar Telemetry",
+  "mapTilesUnavailable": "Tło mapy wymaga połączenia z internetem; ślad jest rysowany bez niego.",
   "directionClockwise": "Zgodnie z ruchem wskazówek zegara",
   "directionCounterclockwise": "Przeciwnie do ruchu wskazówek zegara",
   "directionClockwiseInSentence": "zgodnie z ruchem wskazówek zegara",

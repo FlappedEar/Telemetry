@@ -4,6 +4,10 @@
   "@appTitle": {
     "description": "The app's name, shown in the task switcher and window title. Not translated."
   },
+  "mapTilesUnavailable": "The map background needs a connection; the trace is drawn without it.",
+  "@mapTilesUnavailable": {
+    "description": "Note on a map while map tiles fail to load, such as at a track without signal."
+  },
   "directionClockwise": "Clockwise",
   "@directionClockwise": {
     "description": "A circuit driven clockwise; button label."

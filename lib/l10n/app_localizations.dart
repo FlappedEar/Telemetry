@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'FlappedEar Telemetry'**
   String get appTitle;
 
+  /// Note on a map while map tiles fail to load, such as at a track without signal.
+  ///
+  /// In en, this message translates to:
+  /// **'The map background needs a connection; the trace is drawn without it.'**
+  String get mapTilesUnavailable;
+
   /// A circuit driven clockwise; button label.
   ///
   /// In en, this message translates to:

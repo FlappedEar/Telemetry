@@ -18,6 +18,7 @@ import 'corner_details.dart' show lapAColor, lapBColor;
 import 'day_results_controller.dart';
 import 'driving_panels.dart';
 import 'lap_page.dart';
+import 'save_shortcuts.dart';
 import 'telemetry_chart.dart';
 import 'touch.dart';
 import 'track_map.dart';
@@ -138,6 +139,7 @@ class ComparisonPage extends StatefulWidget {
     this.focus,
     this.segmentId,
     this.fromTheoreticalBest = false,
+    this.onSave,
   });
 
   final DayResultsController controller;
@@ -154,6 +156,10 @@ class ComparisonPage extends StatefulWidget {
   /// Opened from a result of the theoretical best: the laps are measured
   /// against its segments when their own differ.
   final bool fromTheoreticalBest;
+
+  /// Saves the day (Ctrl+S or Cmd+S), here and on the pages opened from
+  /// this one; no shortcut when null.
+  final VoidCallback? onSave;
 
   @override
   State<ComparisonPage> createState() => _ComparisonPageState();
@@ -374,10 +380,14 @@ class _ComparisonPageState extends State<ComparisonPage> {
     final time = comparison.timeAt(slot, progressMeters);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => LapPage(
-          controller: widget.controller,
-          row: row,
-          initialCursor: time,
+        builder: (_) => saveShortcuts(
+          widget.onSave,
+          LapPage(
+            controller: widget.controller,
+            row: row,
+            initialCursor: time,
+            onSave: widget.onSave,
+          ),
         ),
       ),
     );

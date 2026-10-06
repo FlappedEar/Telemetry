@@ -343,74 +343,102 @@ void main() {
     },
   );
 
-  testWidgets('on a desktop, Ctrl+S or Cmd+S saves and Enter excludes a lap', (
-    tester,
-  ) async {
-    final outcome = importDay({
-      'a.vbo': [30, 28, 31],
-    });
-    final saved = <Map<String, Object?>>[];
-    final controller = DayResultsController(
-      runs: outcome.runs,
-      analysis: outcome.analysis!,
-      writer: (path, document) async => saved.add(document),
-    );
-    final documents = FakeDocuments(
-      location: '${directory.path}/Day.fetproject',
-    );
-    await tester.binding.setSurfaceSize(const Size(1200, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      TelemetryApp(
-        home: DayResultsPage.controller(
-          controller: controller,
-          documents: documents,
+  testWidgets(
+    'on a desktop, Ctrl+S or Cmd+S saves, on the lap page too, and Enter '
+    'excludes a lap',
+    (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final saved = <Map<String, Object?>>[];
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: (path, document) async => saved.add(document),
+      );
+      final documents = FakeDocuments(
+        location: '${directory.path}/Day.fetproject',
+      );
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: documents,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    Future<void> save(LogicalKeyboardKey modifier) async {
-      await tester.sendKeyDownEvent(modifier);
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
-      await tester.sendKeyUpEvent(modifier);
+      );
       await tester.pumpAndSettle();
-    }
+      Future<void> save(LogicalKeyboardKey modifier) async {
+        await tester.sendKeyDownEvent(modifier);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+        await tester.sendKeyUpEvent(modifier);
+        await tester.pumpAndSettle();
+      }
 
-    expect(controller.dirty, isTrue);
-    await save(LogicalKeyboardKey.controlLeft);
-    expect(documents.names, ['Day']);
-    expect(saved, hasLength(1));
-    expect(controller.dirty, isFalse);
-    // Nothing more to save: the shortcut does nothing.
-    await save(LogicalKeyboardKey.controlLeft);
-    expect(saved, hasLength(1));
+      expect(controller.dirty, isTrue);
+      await save(LogicalKeyboardKey.controlLeft);
+      expect(documents.names, ['Day']);
+      expect(saved, hasLength(1));
+      expect(controller.dirty, isFalse);
+      // Nothing more to save: the shortcut does nothing.
+      await save(LogicalKeyboardKey.controlLeft);
+      expect(saved, hasLength(1));
 
-    await tester.tap(find.text('Tap to open the lap.'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Exclude from ranking…'));
-    await tester.pumpAndSettle();
-    // Enter with no reason keeps the dialog open.
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(
-      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
-      isTrue,
-    );
-    await tester.enterText(find.byType(TextField), 'Traffic');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
-    expect(find.text('Not ranked: excluded (“Traffic”)'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    expect(controller.dirty, isTrue);
+      await tester.tap(find.text('Tap to open the lap.'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Exclude from ranking…'));
+      await tester.pumpAndSettle();
+      // Enter with no reason keeps the dialog open.
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode
+            .hasFocus,
+        isTrue,
+      );
+      await tester.enterText(find.byType(TextField), 'Traffic');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Not ranked: excluded (“Traffic”)'), findsOneWidget);
+      expect(controller.dirty, isTrue);
 
-    // Cmd+S on a Mac.
-    await save(LogicalKeyboardKey.metaLeft);
-    expect(saved, hasLength(2));
-    expect(controller.dirty, isFalse);
-  });
+      // Cmd+S on a Mac, on the lap page too.
+      await save(LogicalKeyboardKey.metaLeft);
+      expect(find.byType(LapPage), findsOneWidget);
+      expect(saved, hasLength(2));
+      expect(controller.dirty, isFalse);
+
+      // And in the Corner Analyzer opened from the lap page.
+      await tester.tap(find.text('Include in ranking'));
+      await tester.pumpAndSettle();
+      expect(controller.dirty, isTrue);
+      await tester.tap(find.byKey(const ValueKey('lapCompare')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget.key is ValueKey<String> &&
+                  (widget.key! as ValueKey<String>).value.startsWith(
+                    'suggestedLap ',
+                  ),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(ComparisonPage), findsOneWidget);
+      await save(LogicalKeyboardKey.controlLeft);
+      expect(find.byType(ComparisonPage), findsOneWidget);
+      expect(saved, hasLength(3));
+      expect(controller.dirty, isFalse);
+    },
+  );
 
   testWidgets('on a wide window, Tab goes through one pane at a time', (
     tester,
