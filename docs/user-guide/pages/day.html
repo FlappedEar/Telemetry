@@ -133,7 +133,7 @@
 <p>The circuit list ships with the app and is updated from GitHub together with the app's update check (see <a href="install.html#updates">Updates</a>), at most once a day; nothing about your sessions is sent. Circuit names and positions come from <a href="https://www.wikidata.org">Wikidata</a> (CC0, public domain). A name in Wikidata can be in the circuit's own language.</p>
 
 <h3 id="combined">VBO and RCZ of one session</h3>
-<p>When a session has both a VBO and an RCZ of the same drive, the app lines up the two recordings' clocks by their speed traces and combines them by itself, with nothing to confirm. The results show from the VBO straight away; meanwhile the Circuits row says <em>Lining up with its RCZ…</em>, and the combined channels appear when that is done (a few seconds per session):</p>
+<p>When a session has both a VBO and an RCZ of the same drive, the app lines up the two recordings' clocks by their speed traces and combines them by itself, with nothing to confirm. A stretch where either recording lost its GPS takes no part in lining them up. The results show from the VBO straight away; meanwhile the Circuits row says <em>Lining up with its RCZ…</em>, and the combined channels appear when that is done (a few seconds per session):</p>
 <ul>
   <li>A channel only the RCZ recorded is added to the session. The Circuits row then says, for example, <em>Combined with its RCZ: 1 channel added</em>, and wherever that channel is listed or charted it says <em>from RCZ</em>.</li>
   <li>A channel both recorded stays the VBO's. Channels the two declare with different units are never combined. VBO channels declare no unit, so a VBO channel is checked against the RCZ's only when their values agree; when they do not, it is never combined.</li>

@@ -64,6 +64,60 @@ double telemetryGapThreshold(TelemetryChannel channel, [double minimumSeconds = 
   return threshold > floor ? threshold : floor;
 }
 
+/// The value of [channel] at [time]: the one lookup (Overlays'
+/// `telemetryValueAt`).
+///
+/// Null outside the channel's range and on missing samples. Linear reading
+/// needs two adjacent finite samples. Between two samples farther apart than
+/// [telemetryGapThreshold] there is no value in any mode (Overlays KAN-157),
+/// so a loss of signal is never bridged.
+double? telemetryValueAt(
+  TelemetryChannel channel,
+  double time, [
+  InterpolationMode mode = InterpolationMode.linear,
+]) {
+  if (channel.timestamps.isEmpty || !time.isFinite) {
+    return null;
+  }
+  final timestamps = channel.timestamps;
+  final values = channel.values;
+  if (timestamps.length != values.length || time < timestamps.first || time > timestamps.last) {
+    return null;
+  }
+  final next = lowerBound(timestamps, time);
+  double? finiteAt(int index) {
+    final value = values[index];
+    return value.isFinite ? value : null;
+  }
+
+  if (timestamps[next] == time) return finiteAt(next);
+  if (next == 0) return null;
+  final previous = next - 1;
+  // Overlays KAN-157: the one gap rule. Between two samples farther apart
+  // than the channel's gap threshold there is no data in any mode: a held,
+  // nearest or interpolated value would bridge a loss of signal.
+  final gapThreshold = telemetryGapThreshold(channel);
+  if (gapThreshold > 0.0 && timestamps[next] - timestamps[previous] > gapThreshold) return null;
+  switch (mode) {
+    case InterpolationMode.previous:
+      return finiteAt(previous);
+    case InterpolationMode.nearest:
+      return time - timestamps[previous] <= timestamps[next] - time
+          ? finiteAt(previous)
+          : finiteAt(next);
+    case InterpolationMode.linear:
+      final span = timestamps[next] - timestamps[previous];
+      final before = finiteAt(previous);
+      final after = finiteAt(next);
+      if (before == null || after == null || !span.isFinite || span <= 0.0) {
+        return null;
+      }
+      final ratio = (time - timestamps[previous]) / span;
+      final value = before + (after - before) * ratio;
+      return value.isFinite ? value : null;
+  }
+}
+
 /// One imported recording. Immutable once built.
 final class TelemetrySession {
   TelemetrySession({
@@ -101,51 +155,15 @@ final class TelemetrySession {
   /// The channel named [name], or the channel an alias of that name points to.
   TelemetryChannel? channel(String name) => channels[aliases[name] ?? name];
 
-  /// The value of [channelName] (or the channel its alias names) at [time].
-  ///
-  /// Null outside the channel's range and on missing samples. Linear reading
-  /// needs two adjacent finite samples; gaps are never bridged.
+  /// The value of [channelName] (or the channel its alias names) at [time],
+  /// by [telemetryValueAt].
   double? valueAt(
     String channelName,
     double time, [
     InterpolationMode mode = InterpolationMode.linear,
   ]) {
     final found = channel(channelName);
-    if (found == null || found.timestamps.isEmpty || !time.isFinite) {
-      return null;
-    }
-    final timestamps = found.timestamps;
-    final values = found.values;
-    if (timestamps.length != values.length || time < timestamps.first || time > timestamps.last) {
-      return null;
-    }
-    final next = lowerBound(timestamps, time);
-    double? finiteAt(int index) {
-      final value = values[index];
-      return value.isFinite ? value : null;
-    }
-
-    if (timestamps[next] == time) return finiteAt(next);
-    if (next == 0) return null;
-    final previous = next - 1;
-    switch (mode) {
-      case InterpolationMode.previous:
-        return finiteAt(previous);
-      case InterpolationMode.nearest:
-        return time - timestamps[previous] <= timestamps[next] - time
-            ? finiteAt(previous)
-            : finiteAt(next);
-      case InterpolationMode.linear:
-        final span = timestamps[next] - timestamps[previous];
-        final before = finiteAt(previous);
-        final after = finiteAt(next);
-        if (before == null || after == null || !span.isFinite || span <= 0.0) {
-          return null;
-        }
-        final ratio = (time - timestamps[previous]) / span;
-        final value = before + (after - before) * ratio;
-        return value.isFinite ? value : null;
-    }
+    return found == null ? null : telemetryValueAt(found, time, mode);
   }
 
   /// Actual samples of [channelName] between [rangeStart] and [rangeEnd] (in

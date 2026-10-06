@@ -91,7 +91,13 @@ export 'src/source_fingerprint.dart';
 export 'src/speed_units.dart';
 export 'src/rcz/rcz_parser.dart' show RczParser, rczAccelerationNote;
 export 'src/telemetry_session.dart'
-    show InterpolationMode, SamplePoint, TelemetryChannel, TelemetrySession, telemetryGapThreshold;
+    show
+        InterpolationMode,
+        SamplePoint,
+        TelemetryChannel,
+        TelemetrySession,
+        telemetryGapThreshold,
+        telemetryValueAt;
 export 'src/timing_gate.dart';
 export 'src/vbo/vbo_file.dart';
 export 'src/vbo/vbo_limits.dart';
