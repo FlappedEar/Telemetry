@@ -6411,4 +6411,21 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get briefingLastLap => 'Ostatnie sklasyfikowane okrążenie';
+
+  @override
+  String get briefingDayBest => 'Najlepsze okrążenie dnia';
+
+  @override
+  String get briefingDelta => 'Różnica do najlepszego';
+
+  @override
+  String get briefingCar => 'Auto';
+
+  @override
+  String briefingNoRankedLap(String session) {
+    return '$session nie ma sklasyfikowanego okrążenia na pokazanym torze.';
+  }
 }
