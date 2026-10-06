@@ -145,7 +145,9 @@ class SessionChanges extends StatelessWidget {
               child: Text(
                 '${l10n.summarySpread}: ${switch ((summary.lapSpread, summary.previousLapSpread)) {
                   (final spread?, final spreadBefore?) => l10n.summarySpreadThen(fixed(spread, 3), before, fixed(spreadBefore, 3)),
-                  // As the Consistency card: a spread needs 3 laps.
+                  // As the summary: this session's alone when the session
+                  // before has too few laps; a spread needs 3 laps.
+                  (final spread?, null) => l10n.summarySpreadValue(fixed(spread, 3)),
                   _ => l10n.consistencyNeedsLaps(minimumConsistencySamples),
                 }}',
                 style: theme.textTheme.bodyLarge,

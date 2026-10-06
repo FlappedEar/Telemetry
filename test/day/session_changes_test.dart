@@ -171,6 +171,23 @@ void main() {
         changes: [_change('c1', 'Corner 1', 9.6, 9.8)],
       ),
     );
+    // The session before has too few laps: this session's spread alone.
+    expect(
+      _text(tester, 'sessionChangesLapSpread'),
+      'Lap-time spread: 2.520 s',
+    );
+    await _pump(
+      tester,
+      SessionSummary(
+        runId: '6',
+        runName: 'Session 6',
+        earlierSessions: 5,
+        previousRunName: 'Session 5',
+        previousLapSpread: 7.8,
+        segmentsCompared: 1,
+        changes: [_change('c1', 'Corner 1', 9.6, 9.8)],
+      ),
+    );
     expect(
       _text(tester, 'sessionChangesLapSpread'),
       'Lap-time spread: Needs at least 3 laps',
