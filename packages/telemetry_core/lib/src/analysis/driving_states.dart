@@ -442,8 +442,9 @@ double intervalSeconds(List<DrivingStateInterval> intervals) {
 
 /// Distance travelled over [intervals]: the `speed` alias integrated
 /// between its samples in its own unit; nothing is counted across a missing
-/// speed sample. 0 for a speed in a unit not known. Overlays (d4d1039) reads
-/// every speed as km/h here; an mph speed differs from it on purpose.
+/// speed sample or across a step longer than [telemetryGapThreshold] (Overlays
+/// KAN-201, 3fa38da). 0 for a speed in a unit not known. Overlays reads every
+/// speed as km/h here; an mph speed differs from it on purpose.
 double travelledMeters(TelemetrySession session, List<DrivingStateInterval> intervals) {
   final speed = session.channels[session.aliases['speed'] ?? ''];
   if (speed == null || speed.timestamps.length != speed.values.length) return 0.0;
