@@ -1,5 +1,6 @@
 // Port of FlappedEar Overlays native/src/telemetry/ChannelFusion.{h,cpp}
-// (revision d4d1039, channel-fusion-v1) (FET-50): channels from a run's
+// (revision d4d1039, channel-fusion-v1) (FET-50), with Overlays' KAN-188 gap
+// markers (see [_keepMarkersInside] and [_markGaps]): channels from a run's
 // alternative recordings brought onto the primary recording's clock, with
 // the provenance of every output sample and an explicit rule wherever two
 // recordings measure the same thing. Nothing is overwritten silently:
@@ -136,7 +137,7 @@ final class _Sample {
 
   final double time;
   final double value; // a float32
-  final int source; // 0 = primary, 1 = the alternative
+  final int source; // 0 = primary, 1 = the alternative, -1 = a gap marker
 }
 
 final class _Span {
@@ -151,6 +152,64 @@ bool _validClock(SourceClock clock) =>
 
 double _toPrimary(double time, SourceClock clock) =>
     time + clock.offsetSeconds + clock.driftPpm * 1e-6 * time;
+
+// `std::nextafter(value, toward)` for finite doubles.
+double _nextToward(double value, double toward) {
+  if (value.isNaN || toward.isNaN) return double.nan;
+  if (value == toward) return toward;
+  if (value == 0.0) return toward > 0.0 ? double.minPositive : -double.minPositive;
+  final bits = ByteData(8)..setFloat64(0, value);
+  final raw = bits.getInt64(0);
+  // Away from zero is one up in the magnitude bits, for either sign.
+  bits.setInt64(0, (toward > value) == (value > 0.0) ? raw + 1 : raw - 1);
+  return bits.getFloat64(0);
+}
+
+// A gap marker (a NaN one step inside a gap, the RCZ parser) can round onto
+// its neighbour when mapped through the clock (Overlays KAN-188). Keep each
+// non-finite sample strictly between its neighbours, so no two times are
+// equal and no marker swaps places with a real sample.
+void _keepMarkersInside(List<double> times, List<double> values) {
+  for (var index = 1; index < times.length; ++index) {
+    if (!values[index].isFinite && times[index] <= times[index - 1]) {
+      times[index] = _nextToward(times[index - 1], double.infinity);
+    }
+  }
+  for (var index = times.length - 2; index >= 0; --index) {
+    if (!values[index].isFinite && times[index] >= times[index + 1]) {
+      times[index] = _nextToward(times[index + 1], double.negativeInfinity);
+    }
+  }
+}
+
+// std::numeric_limits<float>::quiet_NaN(): the positive quiet NaN (Dart's
+// double.nan may carry the sign bit, which a float keeps).
+final double _quietNan = (ByteData(8)..setUint64(0, 0x7ff8000000000000)).getFloat64(0);
+
+// Gap markers where two neighbouring real samples are farther apart than the
+// gap threshold of their sources (Overlays KAN-188): a merged channel mixes
+// cadences, so the threshold read back from it can be longer than either
+// source's and bridge a gap neither recorded across. A marker has source -1.
+List<_Sample> _markGaps(List<_Sample> samples, double primaryGap, double alternativeGap) {
+  double gapOf(_Sample sample) => sample.source == 0 ? primaryGap : alternativeGap;
+  final result = <_Sample>[];
+  for (var index = 0; index < samples.length; ++index) {
+    if (index > 0) {
+      final before = samples[index - 1], after = samples[index];
+      final gap = stdMax(gapOf(before), gapOf(after));
+      if (gap > 0.0 &&
+          before.value.isFinite &&
+          after.value.isFinite &&
+          after.time - before.time > gap) {
+        result
+          ..add(_Sample(_nextToward(before.time, after.time), _quietNan, -1))
+          ..add(_Sample(_nextToward(after.time, before.time), _quietNan, -1));
+      }
+    }
+    result.add(samples[index]);
+  }
+  return result;
+}
 
 // The middle step, upper median, counting every step as Overlays does.
 double _medianInterval(List<double> times) {
@@ -336,6 +395,7 @@ ChannelFusionResult fuseChannels(
       for (var index = 0; index < times.length; ++index) {
         times[index] = _toPrimary(channel.timestamps[index], source.clock);
       }
+      _keepMarkersInside(times, channel.values);
       final gap = telemetryGapThreshold(channel) * (1.0 + source.clock.driftPpm * 1e-6);
       final interval = _medianInterval(times);
       final primaryName = _primaryNameFor(primary, key, name);
@@ -452,19 +512,19 @@ ChannelFusionResult fuseChannels(
         for (final sample in other)
           if (!_covered(coverage, sample.time)) sample,
       ];
-      // The times are distinct (a preferred time is always covered), so any
-      // sort gives std::sort's order.
-      merged.sort((a, b) => a.time.compareTo(b.time));
+      // As Overlays' std::stable_sort.
+      stableSort(merged, (_Sample a, _Sample b) => a.time < b.time);
       // Strictly increasing timestamps: an equal time keeps the preferred
       // sample.
-      final ordered = <_Sample>[];
+      final sorted = <_Sample>[];
       for (final sample in merged) {
-        if (ordered.isNotEmpty && sample.time <= ordered.last.time) {
-          if (sample.source == (preferAlternative ? 1 : 0)) ordered.last = sample;
+        if (sorted.isNotEmpty && sample.time <= sorted.last.time) {
+          if (sample.source == (preferAlternative ? 1 : 0)) sorted.last = sample;
           continue;
         }
-        ordered.add(sample);
+        sorted.add(sample);
       }
+      final ordered = _markGaps(sorted, primaryGap, gap);
       fused.channel = TelemetryChannel(
         name: fused.channel.name,
         unit: fused.channel.unit,
