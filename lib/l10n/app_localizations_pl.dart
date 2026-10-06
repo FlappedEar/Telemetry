@@ -6180,4 +6180,63 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get briefingChance => 'Największa szansa';
+
+  @override
+  String get summaryCarWatch => 'Samochód, ostatnie okrążenia';
+
+  @override
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  ) {
+    return '$channel nadal w górę: $from → $to (okrążenia $fromLap–$toLap)';
+  }
+
+  @override
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Mocne przyspieszenie niższe o $percent% od okrążenia $fromLap do $toLap ($from → $to)';
+  }
+
+  @override
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  ) {
+    return '$fall; w tym czasie $channel $from → $to';
+  }
+
+  @override
+  String get summaryCarSettled =>
+      'Żadna temperatura już nie rośnie, mocne przyspieszenie bez spadku';
+
+  @override
+  String get summaryCarSettledTemperatures =>
+      'Żadna temperatura już nie rośnie';
+
+  @override
+  String get summaryCarSettledAcceleration => 'Mocne przyspieszenie bez spadku';
+
+  @override
+  String summaryCarNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Potrzeba $count okrążeń pomiarowych',
+      many: 'Potrzeba $count okrążeń pomiarowych',
+      few: 'Potrzeba $count okrążeń pomiarowych',
+      one: 'Potrzeba 1 okrążenia pomiarowego',
+    );
+    return '$_temp0';
+  }
 }

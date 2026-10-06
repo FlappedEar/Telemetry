@@ -6060,4 +6060,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get briefingChance => 'Biggest chance';
+
+  @override
+  String get summaryCarWatch => 'Car, last laps';
+
+  @override
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  ) {
+    return '$channel still rising: $from → $to (laps $fromLap–$toLap)';
+  }
+
+  @override
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Strong acceleration $percent% lower from lap $fromLap to lap $toLap ($from → $to)';
+  }
+
+  @override
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  ) {
+    return '$fall; meanwhile $channel $from → $to';
+  }
+
+  @override
+  String get summaryCarSettled =>
+      'No temperature still rising and strong acceleration held';
+
+  @override
+  String get summaryCarSettledTemperatures => 'No temperature still rising';
+
+  @override
+  String get summaryCarSettledAcceleration => 'Strong acceleration held';
+
+  @override
+  String summaryCarNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Needs $count timed laps',
+      one: 'Needs 1 timed lap',
+    );
+    return '$_temp0';
+  }
 }

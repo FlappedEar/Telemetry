@@ -1465,5 +1465,13 @@
   "briefingFrom": "Na podstawie: {session}",
   "briefingGoals": "Twoje cele",
   "briefingNoGoals": "Brak: dodaj je w sekcji Twoje cele na następną sesję",
-  "briefingChance": "Największa szansa"
+  "briefingChance": "Największa szansa",
+  "summaryCarWatch": "Samochód, ostatnie okrążenia",
+  "summaryCarRise": "{channel} nadal w górę: {from} → {to} (okrążenia {fromLap}–{toLap})",
+  "summaryCarFall": "Mocne przyspieszenie niższe o {percent}% od okrążenia {fromLap} do {toLap} ({from} → {to})",
+  "summaryCarFallWith": "{fall}; w tym czasie {channel} {from} → {to}",
+  "summaryCarSettled": "Żadna temperatura już nie rośnie, mocne przyspieszenie bez spadku",
+  "summaryCarSettledTemperatures": "Żadna temperatura już nie rośnie",
+  "summaryCarSettledAcceleration": "Mocne przyspieszenie bez spadku",
+  "summaryCarNeedsLaps": "{count, plural, =1{Potrzeba 1 okrążenia pomiarowego} few{Potrzeba {count} okrążeń pomiarowych} many{Potrzeba {count} okrążeń pomiarowych} other{Potrzeba {count} okrążeń pomiarowych}}"
 }

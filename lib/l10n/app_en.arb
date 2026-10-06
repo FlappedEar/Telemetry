@@ -8275,5 +8275,21 @@
   "briefingNoGoals": "None set: add them under Your goals for the next session",
   "@briefingNoGoals": {"description": "Briefing goals line when the driver set no goals."},
   "briefingChance": "Biggest chance",
-  "@briefingChance": {"description": "Briefing line: the segment with the biggest gap to the quickest typical time."}
+  "@briefingChance": {"description": "Briefing line: the segment with the biggest gap to the quickest typical time."},
+  "summaryCarWatch": "Car, last laps",
+  "@summaryCarWatch": {"description": "Session summary row: what the car did over the session's timed laps (FET-228): a temperature still rising, strong acceleration falling. Observations, not a diagnosis."},
+  "summaryCarRise": "{channel} still rising: {from} → {to} (laps {fromLap}–{toLap})",
+  "@summaryCarRise": {"description": "A temperature's lap maximum still rising over the session's last 3 timed laps.", "placeholders": {"channel": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}, "fromLap": {"type": "String"}, "toLap": {"type": "String"}}},
+  "summaryCarFall": "Strong acceleration {percent}% lower from lap {fromLap} to lap {toLap} ({from} → {to})",
+  "@summaryCarFall": {"description": "Strong acceleration (90th percentile of positive longitudinal G) on the last timed lap below the session's highest.", "placeholders": {"percent": {"type": "String"}, "fromLap": {"type": "String"}, "toLap": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}}},
+  "summaryCarFallWith": "{fall}; meanwhile {channel} {from} → {to}",
+  "@summaryCarFallWith": {"description": "The fall in strong acceleration with the temperature that rose most over the same laps.", "placeholders": {"fall": {"type": "String"}, "channel": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}}},
+  "summaryCarSettled": "No temperature still rising and strong acceleration held",
+  "@summaryCarSettled": {"description": "Car, last laps when nothing was noted and both were read."},
+  "summaryCarSettledTemperatures": "No temperature still rising",
+  "@summaryCarSettledTemperatures": {"description": "Car, last laps when nothing was noted and only temperatures could be read."},
+  "summaryCarSettledAcceleration": "Strong acceleration held",
+  "@summaryCarSettledAcceleration": {"description": "Car, last laps when nothing was noted and only strong acceleration could be read."},
+  "summaryCarNeedsLaps": "{count, plural, =1{Needs 1 timed lap} other{Needs {count} timed laps}}",
+  "@summaryCarNeedsLaps": {"description": "Car, last laps when the session has too few timed laps.", "placeholders": {"count": {"type": "int"}}}
 }

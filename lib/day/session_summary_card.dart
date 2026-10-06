@@ -154,6 +154,67 @@ class SessionSummaryCard extends StatelessWidget {
         : text;
   }
 
+  /// What the car did over the session's timed laps (FET-228); null when
+  /// it recorded nothing to read.
+  Widget? _carWatch(
+    BuildContext context,
+    CarWatch watch,
+    Widget Function(String key, String label, String value) row,
+  ) {
+    final l10n = context.l10n;
+    if (!watch.recorded) return null;
+    String g(double value) => '${fixed(value, 3)}\u00a0g';
+    String rise(CarWatchRise rise) => l10n.summaryCarRise(
+      channelLabelIn(context, rise.channel),
+      channelValueText(rise.from, rise.unit),
+      channelValueText(rise.to, rise.unit),
+      '${rise.fromLap}',
+      '${rise.toLap}',
+    );
+    final lines = <String>[
+      if (!watch.read)
+        l10n.summaryCarNeedsLaps(
+          watch.timedLaps < carWatchLaps
+              ? carWatchLaps
+              : carWatchAccelerationLaps,
+        )
+      else if (watch.settled)
+        watch.temperaturesRead > 0 &&
+                watch.accelerationLaps >= carWatchAccelerationLaps
+            ? l10n.summaryCarSettled
+            : watch.temperaturesRead > 0
+            ? l10n.summaryCarSettledTemperatures
+            : l10n.summaryCarSettledAcceleration
+      else ...[
+        for (final item in watch.rises) rise(item),
+        if (watch.fall case final fall?)
+          () {
+            final text = l10n.summaryCarFall(
+              fixed(fall.fall * 100, 0),
+              '${fall.fromLap}',
+              '${fall.toLap}',
+              g(fall.from),
+              g(fall.to),
+            );
+            final with_ = fall.alongside;
+            return with_ == null
+                ? text
+                : l10n.summaryCarFallWith(
+                    text,
+                    channelLabelIn(context, with_.channel),
+                    channelValueText(with_.from, with_.unit),
+                    channelValueText(with_.to, with_.unit),
+                  );
+          }(),
+      ],
+    ];
+    return row(
+      'sessionSummaryCarWatch',
+      l10n.summaryCarWatch,
+      lines.join('\n'),
+    );
+  }
+
   List<Widget> _rows(BuildContext context, SessionSummary summary) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
@@ -308,6 +369,8 @@ class SessionSummaryCard extends StatelessWidget {
       else if (channels.temperatureChannels.isNotEmpty)
         // The day records temperatures, this session does not.
         row('sessionSummaryCar', l10n.summaryCar, l10n.channelNotRecorded),
+      if (channels != null && summary.carWatch != null)
+        ?_carWatch(context, summary.carWatch!, row),
       if (!summary.firstSession)
         if (goal != null)
           row(
