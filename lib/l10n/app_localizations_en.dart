@@ -6085,4 +6085,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryDeleteDayOpen => 'Close the day first, then delete it.';
+
+  @override
+  String get ownGoalsTitle => 'Your goals for the next session';
+
+  @override
+  String get ownGoalsIntro =>
+      'Checked against this session once the next one is added.';
+
+  @override
+  String ownGoalsNone(int count) {
+    return 'Set up to $count changes to work on, each at one corner. The next session is checked against this one.';
+  }
+
+  @override
+  String get ownGoalsReadOnly =>
+      'Stored in a form this version of the app does not edit, so they are not changed here.';
+
+  @override
+  String get ownGoalsNeedCorners => 'Goals need the day\'s corners.';
+
+  @override
+  String get ownGoalsAdd => 'Add a goal';
+
+  @override
+  String get ownGoalsRemove => 'Remove goal';
+
+  @override
+  String get ownGoalsCorner => 'Corner';
+
+  @override
+  String get ownGoalsChange => 'Change to work on';
+
+  @override
+  String get ownGoalsTaken => 'This goal is already set.';
+
+  @override
+  String get ownGoalsSave => 'Add';
+
+  @override
+  String summaryOwnGoal(String goal) {
+    return 'Your goal: $goal';
+  }
+
+  @override
+  String get ownGoalsNotSaved => 'The goals could not be saved.';
+
+  @override
+  String ownGoalsNeedLaps(String session) {
+    return 'Goals need laps of $session among the compared laps.';
+  }
+
+  @override
+  String summaryOwnGoalNoLaps(String session) {
+    return 'Not measured: needs laps of $session and this session among the compared laps';
+  }
+
+  @override
+  String get summaryOwnGoalOtherGroup =>
+      'Not measured: set on other compared laps';
+
+  @override
+  String get ownGoalsOtherGroup =>
+      'These goals were set on other compared laps. Remove them to set new ones.';
+
+  @override
+  String get briefingTitle => 'Before you go out';
+
+  @override
+  String briefingFrom(String session) {
+    return 'From $session';
+  }
+
+  @override
+  String get briefingGoals => 'Your goals';
+
+  @override
+  String get briefingNoGoals =>
+      'None set: add them under Your goals for the next session';
+
+  @override
+  String get briefingChance => 'Biggest chance';
 }

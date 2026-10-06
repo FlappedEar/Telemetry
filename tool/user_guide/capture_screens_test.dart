@@ -508,6 +508,29 @@ void main() {
       await shot(tester, 'coach-why');
       await back(tester);
     }
+    // A goal of the driver's own for the next session: the coach's main
+    // focus, as Add a goal suggests it.
+    final addGoal = find.byKey(const ValueKey('ownGoalsAdd'));
+    if (addGoal.evaluate().isNotEmpty) {
+      await tester.ensureVisible(addGoal);
+      await tester.pumpAndSettle();
+      await tester.tap(addGoal);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('ownGoalSave')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('ownGoals')));
+      await tester.pumpAndSettle();
+      await shot(tester, 'own-goals');
+    }
+    // Before you go out: the briefing from the session summary, with the
+    // goal just set.
+    final briefing = find.byKey(const ValueKey('sessionSummaryBriefing'));
+    await scrollIn(tester, list('dayResultsCoach'), briefing, delta: -300);
+    await tester.pumpAndSettle();
+    await tester.tap(briefing);
+    await tester.pumpAndSettle();
+    await shot(tester, 'briefing');
+    await back(tester);
     // The observations, on the Overview.
     await tester.tap(find.byKey(const ValueKey('place-day')));
     await tester.pumpAndSettle();

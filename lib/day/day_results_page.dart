@@ -41,6 +41,7 @@ import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
 import 'session_removal.dart';
+import 'briefing_card.dart';
 import 'session_summary_card.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart';
@@ -501,6 +502,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               printable: true,
+              goals: _ownGoals(_controller.latestRunId),
             ),
         ],
       );
@@ -2188,6 +2190,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
+              goals: _ownGoals(_controller.latestRunId),
+              goalsOtherGroup: _goalsOtherGroup(),
+              onGoalsChanged: _setOwnGoals,
             ),
           ],
           // Below what to try next: the driver's skills across days, from
@@ -2222,6 +2227,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
     final result = _controller.theoreticalBest;
     final progression = _controller.progression;
+    return SessionSummaryCard(
+      key: _coachKey,
+      runId: _controller.latestRunId,
+      session: _controller.latestRunName,
+      progression: progression,
+      sectionsState: result?.state,
+      sections: _sections(),
+      coach: _controller.coach,
+      coachLoading: _controller.coachLoading,
+      coachError: _controller.coachError,
+      channels: channels,
+      ownGoals: _goalSummary(),
+      onBriefing: _openBriefing,
+    );
+  }
+
+  /// The theoretical best's section progression in the progression's
+  /// order, worked out again only when either changes.
+  SectionProgression? _sections() {
+    final result = _controller.theoreticalBest;
+    final progression = _controller.progression;
     var cached = _summarySections;
     if (cached == null ||
         !identical(cached.$1, result) ||
@@ -2234,17 +2260,156 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ]),
       );
     }
-    return SessionSummaryCard(
-      key: _coachKey,
+    return cached.$3;
+  }
+
+  /// Before the next session, on a page of its own in large text, read at
+  /// the car: it follows the day as it changes.
+  void _openBriefing() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => saveShortcuts(
+        _saveFromShortcut,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => Scaffold(
+            appBar: AppBar(title: Text(context.l10n.briefingTitle)),
+            body: LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                key: const ValueKey('briefingPage'),
+                padding: constraints.maxWidth > readableWidth
+                    ? readablePadding(constraints.maxWidth)
+                    : const EdgeInsets.all(16),
+                children: [_briefing()],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  /// Before the next session in a few lines ([BriefingCard]).
+  Widget _briefing() {
+    final result = _controller.theoreticalBest;
+    return BriefingCard(
       runId: _controller.latestRunId,
       session: _controller.latestRunName,
-      progression: progression,
+      progression: _controller.progression,
       sectionsState: result?.state,
-      sections: cached.$3,
+      sections: _sections(),
       coach: _controller.coach,
       coachLoading: _controller.coachLoading,
       coachError: _controller.coachError,
-      channels: channels,
+      speedsConverted: _controller.coachSpeedsConverted,
+      goals: _ownGoals(_controller.latestRunId),
+    );
+  }
+
+  /// The driver's goals set after [runId] for the session after it.
+  RunGoals _ownGoals(String runId) =>
+      _controller.runMetadata(runId).goals ?? RunGoals();
+
+  /// Saves the driver's goals for the session after the latest (FET-218),
+  /// with the compared laps their corners are on: the day then has unsaved
+  /// changes.
+  void _setOwnGoals(RunGoals goals) {
+    final runId = _controller.latestRunId;
+    final stored = _ownGoals(runId);
+    final problem = _controller.updateRunMetadata(
+      runId,
+      _controller
+          .runMetadata(runId)
+          .withGoals(
+            RunGoals(
+              goals: goals.goals,
+              // Goals already set keep the compared laps they were set on.
+              groupId: stored.isEmpty || stored.groupId.isEmpty
+                  ? _controller.theoreticalBest?.groupId ?? ''
+                  : stored.groupId,
+            ),
+          ),
+    );
+    if (problem != null) _tell(context.l10n.ownGoalsNotSaved);
+  }
+
+  /// Whether the latest session's goals were set on other compared laps
+  /// than those shown: no goal is added to them then.
+  bool _goalsOtherGroup() {
+    final stored = _ownGoals(_controller.latestRunId);
+    final group = _controller.theoreticalBest?.groupId ?? '';
+    return !stored.isEmpty &&
+        stored.groupId.isNotEmpty &&
+        group.isNotEmpty &&
+        stored.groupId != group;
+  }
+
+  /// The session recorded before the latest, in the order [latestRunId]
+  /// picks the latest by (recording clock, else the order added): the one
+  /// whose goals the latest is checked on; empty when there is none. A
+  /// session without laps counts too.
+  String _sessionBeforeLatest() {
+    final runs = _controller.runs;
+    final latest = _controller.latestRunId;
+    final at = runs.indexWhere((named) => named.run.id == latest);
+    if (at < 0) return '';
+    final start = recordingTimestamp(runs[at].run.telemetry);
+    if (start == null) return at == 0 ? '' : runs[at - 1].run.id;
+    var previous = '';
+    int? previousStart;
+    for (var i = 0; i < runs.length; ++i) {
+      if (i == at) continue;
+      final other = recordingTimestamp(runs[i].run.telemetry);
+      // Recorded before it, or at the same time and added before it.
+      if (other == null || other > start || (other == start && i > at)) {
+        continue;
+      }
+      if (previousStart == null || other >= previousStart) {
+        previous = runs[i].run.id;
+        previousStart = other;
+      }
+    }
+    return previous;
+  }
+
+  /// The goals set after the session before the latest, and their checks
+  /// once the coach has measured the latest against that session; null
+  /// checks while they cannot be made (see [SessionSummaryCard]).
+  ({
+    RunGoals goals,
+    String session,
+    List<SessionGoalCheck>? checks,
+    bool noLaps,
+  })?
+  _goalSummary() {
+    final before = _sessionBeforeLatest();
+    if (before.isEmpty) return null;
+    final goals = _ownGoals(before);
+    if (goals.isEmpty) return null;
+    final session = _controller.runMetadata(before).name;
+    final coach = _controller.coach;
+    if (coach == null ||
+        _controller.coachLoading ||
+        coach.runId != _controller.latestRunId) {
+      return (goals: goals, session: session, checks: null, noLaps: false);
+    }
+    // Without segments the card says why, as for the focus.
+    if (coach.reason == CoachReason.noSegments) {
+      return (goals: goals, session: session, checks: null, noLaps: false);
+    }
+    // Both sessions need laps among the compared laps.
+    if (coach.previousRunId != before ||
+        coach.reason == CoachReason.noLapInGroup) {
+      return (goals: goals, session: session, checks: null, noLaps: true);
+    }
+    return (
+      goals: goals,
+      session: session,
+      checks: checkSessionGoals(
+        goals,
+        coach,
+        groupId: _controller.theoreticalBest?.groupId ?? '',
+      ),
+      noLaps: false,
     );
   }
 

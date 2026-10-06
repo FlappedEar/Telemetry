@@ -8983,6 +8983,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close the day first, then delete it.'**
   String get libraryDeleteDayOpen;
+
+  /// Heading of the driver's own goals on the Next session card.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals for the next session'**
+  String get ownGoalsTitle;
+
+  /// Under the goals heading when goals are set.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked against this session once the next one is added.'**
+  String get ownGoalsIntro;
+
+  /// Under the goals heading when none are set.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up to {count} changes to work on, each at one corner. The next session is checked against this one.'**
+  String ownGoalsNone(int count);
+
+  /// Goals stored under another version, or in a form this app would not write itself.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored in a form this version of the app does not edit, so they are not changed here.'**
+  String get ownGoalsReadOnly;
+
+  /// Why no goal can be added: the day has no corners yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals need the day\'s corners.'**
+  String get ownGoalsNeedCorners;
+
+  /// Button and dialog title for adding a goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a goal'**
+  String get ownGoalsAdd;
+
+  /// Tooltip of a goal's remove button.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove goal'**
+  String get ownGoalsRemove;
+
+  /// Corner field of the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get ownGoalsCorner;
+
+  /// Change field of the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Change to work on'**
+  String get ownGoalsChange;
+
+  /// The picked change at the picked corner is already a goal.
+  ///
+  /// In en, this message translates to:
+  /// **'This goal is already set.'**
+  String get ownGoalsTaken;
+
+  /// Confirms the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get ownGoalsSave;
+
+  /// Session summary row label for one of the driver's own goals; goal is 'Corner 3 · Reduce coasting'.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal: {goal}'**
+  String summaryOwnGoal(String goal);
+
+  /// Shown when the goals the driver changed could not be stored.
+  ///
+  /// In en, this message translates to:
+  /// **'The goals could not be saved.'**
+  String get ownGoalsNotSaved;
+
+  /// Why no goal can be added: the session has no lap in the group compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals need laps of {session} among the compared laps.'**
+  String ownGoalsNeedLaps(String session);
+
+  /// Own goal row when the session the goal was set after, or this one, has no lap in the group compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: needs laps of {session} and this session among the compared laps'**
+  String summaryOwnGoalNoLaps(String session);
+
+  /// Own goal row when the goal was set while another group of compared laps was shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: set on other compared laps'**
+  String get summaryOwnGoalOtherGroup;
+
+  /// Why no goal can be added: the goals already set were set while another group of compared laps was shown.
+  ///
+  /// In en, this message translates to:
+  /// **'These goals were set on other compared laps. Remove them to set new ones.'**
+  String get ownGoalsOtherGroup;
+
+  /// Button beside the session summary's title, and the title of the page it opens: a briefing read at the car before the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you go out'**
+  String get briefingTitle;
+
+  /// Under the briefing heading: the session the briefing comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'From {session}'**
+  String briefingFrom(String session);
+
+  /// Briefing line: the driver's own goals for the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals'**
+  String get briefingGoals;
+
+  /// Briefing goals line when the driver set no goals.
+  ///
+  /// In en, this message translates to:
+  /// **'None set: add them under Your goals for the next session'**
+  String get briefingNoGoals;
+
+  /// Briefing line: the segment with the biggest gap to the quickest typical time.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest chance'**
+  String get briefingChance;
 }
 
 class _AppLocalizationsDelegate

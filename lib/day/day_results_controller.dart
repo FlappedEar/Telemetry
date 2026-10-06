@@ -2420,6 +2420,7 @@ final class DayResultsController extends ChangeNotifier {
           conditions: stored.conditions,
           setupChanges: stored.setupChanges,
           setup: stored.setup,
+          goals: stored.goals,
         );
       }
     }
@@ -2497,6 +2498,7 @@ final class DayResultsController extends ChangeNotifier {
         if (value.isNotEmpty) key: value,
       if (!current.setup.isEmpty) runSetupKey: current.setup.toJson(),
     };
+    if (current.goals case final goals?) applyRunGoals(run, goals);
     if (!applyRunMetadata(run, metadata)) return null;
     final name = metadata.name.trim();
     _metadataEdits[runId] = RunMetadata(
@@ -2505,6 +2507,8 @@ final class DayResultsController extends ChangeNotifier {
       conditions: metadata.conditions,
       setupChanges: metadata.setupChanges,
       setup: metadata.setup,
+      // Goals not passed stay as they were (FET-218).
+      goals: metadata.goals ?? current.goals,
     );
     if (name != named.name) {
       _runs[_runs.indexOf(named)] = (run: named.run, name: name);

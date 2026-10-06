@@ -6208,4 +6208,86 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get libraryDeleteDayOpen => 'Najpierw zamknij dzień, potem go usuń.';
+
+  @override
+  String get ownGoalsTitle => 'Twoje cele na następną sesję';
+
+  @override
+  String get ownGoalsIntro =>
+      'Sprawdzane względem tej sesji po dodaniu następnej.';
+
+  @override
+  String ownGoalsNone(int count) {
+    return 'Ustaw do $count rzeczy do poprawy, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.';
+  }
+
+  @override
+  String get ownGoalsReadOnly =>
+      'Zapisane w formie, której ta wersja aplikacji nie edytuje, więc nie są tu zmieniane.';
+
+  @override
+  String get ownGoalsNeedCorners =>
+      'Cele można ustawić, gdy zakręty dnia są gotowe.';
+
+  @override
+  String get ownGoalsAdd => 'Dodaj cel';
+
+  @override
+  String get ownGoalsRemove => 'Usuń cel';
+
+  @override
+  String get ownGoalsCorner => 'Zakręt';
+
+  @override
+  String get ownGoalsChange => 'Co poprawić';
+
+  @override
+  String get ownGoalsTaken => 'Ten cel jest już ustawiony.';
+
+  @override
+  String get ownGoalsSave => 'Dodaj';
+
+  @override
+  String summaryOwnGoal(String goal) {
+    return 'Twój cel: $goal';
+  }
+
+  @override
+  String get ownGoalsNotSaved => 'Nie udało się zapisać celów.';
+
+  @override
+  String ownGoalsNeedLaps(String session) {
+    return 'Cele wymagają, by $session miała okrążenia wśród porównywanych.';
+  }
+
+  @override
+  String summaryOwnGoalNoLaps(String session) {
+    return 'Nie zmierzono: $session i ta sesja potrzebują okrążeń wśród porównywanych';
+  }
+
+  @override
+  String get summaryOwnGoalOtherGroup =>
+      'Nie zmierzono: ustawiony dla innych porównywanych okrążeń';
+
+  @override
+  String get ownGoalsOtherGroup =>
+      'Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe.';
+
+  @override
+  String get briefingTitle => 'Przed wyjazdem';
+
+  @override
+  String briefingFrom(String session) {
+    return 'Na podstawie: $session';
+  }
+
+  @override
+  String get briefingGoals => 'Twoje cele';
+
+  @override
+  String get briefingNoGoals =>
+      'Brak: dodaj je w sekcji Twoje cele na następną sesję';
+
+  @override
+  String get briefingChance => 'Największa szansa';
 }

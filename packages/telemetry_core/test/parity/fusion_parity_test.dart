@@ -23,6 +23,23 @@ import 'package:test/test.dart';
 
 import '../support/fusion_json.dart';
 
+/// Cases where Telemetry deliberately differs from Overlays, and why. Each
+/// has truth tests of its own; the Overlays ticket ports the change.
+const _fusionDepartures = {
+  // The preferred source's missing values (NaN) no longer count as coverage,
+  // so the other source fills them (FET-200, KAN-223;
+  // test/fusion/fusion_coverage_test.dart).
+  'missingValues': 'FET-200',
+  // The preferred source's RCZ gap markers go where the other source fills
+  // the loss (truth tests "RCZ gap markers ..." in the same file).
+  'gapMarkersPreferred': 'FET-200',
+  // FET-201 (KAN-224) adds conflict rules beyond Overlays' median: far-off
+  // shares, compared at the slower recording's rate, and an undeclared unit
+  // that only disagrees in use is a conflict, not a unit mismatch. No corpus
+  // case reaches them, so none is skipped; the truth tests are in
+  // test/fusion/fusion_conflict_test.dart.
+};
+
 var _compared = 0;
 var _mismatched = 0;
 
@@ -144,6 +161,9 @@ void main() {
               input[alternative.sourceId] as Map<String, Object?>,
             );
           }
+          // A deliberate departure from Overlays: the inputs still match, the
+          // result is checked by truth tests instead.
+          if (_fusionDepartures.containsKey(key)) return;
           final expected = cases[key] as Map<String, Object?>;
           final result = fuseChannels(primary, 'vbo', alternatives, policy: policy);
           check.fusion(key, result, expected);
