@@ -107,4 +107,22 @@ void main() {
     expect(session.aliases.containsKey('rpm'), isFalse);
     expect(session.metadata['fusedChannels'], '');
   });
+
+  test('the span widens to the primary\'s own channels', () {
+    // The primary's speed runs to 110 s although its duration says 100 s.
+    final primary = _session(100.0, [
+      (_channel('velocity', 'km/h', 110.0, 10.0, _speedAt), 'speed'),
+    ]);
+    final fusion = fuseChannels(primary, 'vbo', [
+      FusionSource(
+        sourceId: 'rcz',
+        session: _alternative(0.0),
+        clock: const SourceClock(offsetSeconds: 10.0),
+        alignmentStatus: 'aligned',
+      ),
+    ]);
+    final rpm = fusedSession(primary, fusion).channels['rpm-obd']!;
+    expect(rpm.timestamps.first, closeTo(10.0, 1e-9));
+    expect(rpm.timestamps.last, closeTo(110.0, 1e-6));
+  });
 }

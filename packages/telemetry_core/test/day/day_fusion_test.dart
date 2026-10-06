@@ -50,6 +50,26 @@ void main() {
         (run) => run['id'] == runId,
       );
 
+  test('a channel outside the run is neither in the session nor in its origins (FET-210)', () {
+    final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
+    final plan = prepareTelemetryImport([vbo, rcz]);
+    final primary = plan.runs.firstWhere((run) => run.format == RecordingFormat.vbo);
+    final alternative = plan.runs.firstWhere((run) => run.format == RecordingFormat.rcz);
+    final aligned = fuseRunRecordings(primary, alternative);
+    expect(aligned.channelOrigins, contains('rpm-obd'));
+    // A saved clock that puts the RCZ an hour after the run.
+    final far = applyFusionDecision(
+      {
+        ...aligned.decision!,
+        'clock': {'offsetSeconds': 3600.0, 'driftPpm': 0.0},
+      },
+      primary,
+      alternative,
+    );
+    expect(far.session!.channels.containsKey('rpm-obd'), isFalse);
+    expect(far.channelOrigins, isEmpty);
+  });
+
   test('adds the channels only the RCZ has and keeps the VBO where they conflict', () {
     final (vbo, rcz) = writeFusionPair(p.join(root, 'recordings'), satellites: true);
     final day = importDay([vbo, rcz]);

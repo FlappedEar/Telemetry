@@ -171,13 +171,19 @@ final class RunFusion {
 
   /// The channels of [session] whose samples come from the alternative, in
   /// whole ("added") or in part ("fillGaps", "preferAlternative"), by name.
-  Map<String, String> get channelOrigins => {
-    for (final channel in result?.channels ?? const <FusedChannel>[])
-      if (channel.rule == 'added' ||
-          channel.rule == 'fillGaps' ||
-          channel.rule == 'preferAlternative')
-        channel.name: channel.rule,
-  };
+  /// Only those the session holds: an added channel wholly outside the
+  /// primary's span is left out of it (FET-210).
+  Map<String, String> get channelOrigins {
+    final inSession = (session?.metadata['fusedChannels'] ?? '').split(',').toSet();
+    return {
+      for (final channel in result?.channels ?? const <FusedChannel>[])
+        if ((channel.rule == 'added' ||
+                channel.rule == 'fillGaps' ||
+                channel.rule == 'preferAlternative') &&
+            inSession.contains(channel.name))
+          channel.name: channel.rule,
+    };
+  }
 
   /// The channels both recordings measured whose measurements disagree, by
   /// key, with the rule applied to each.

@@ -928,7 +928,11 @@ ChannelFusionResult fuseChannels(
 /// to its own channels' first and last samples), so its duration, start
 /// time and sample count still describe every channel (FET-210; Overlays
 /// keeps every fused sample, departure KAN-232); an added
-/// channel with no finite sample left in it is left out.
+/// channel with no finite sample left in it is left out. The span is the
+/// primary's own: where a primary channel reaches past its duration, fused
+/// channels may too. A fused channel's sample just outside the span is cut
+/// with the rest, so near the span's ends that channel reads nothing for up
+/// to one of its own intervals.
 TelemetrySession fusedSession(TelemetrySession primary, ChannelFusionResult fusion) {
   final channels = Map.of(primary.channels);
   final aliases = Map.of(primary.aliases);
