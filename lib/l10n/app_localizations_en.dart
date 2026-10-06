@@ -13,6 +13,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'FlappedEar Telemetry';
 
   @override
+  String get mapTilesUnavailable =>
+      'The map background needs a connection; the trace is drawn without it.';
+
+  @override
   String get directionClockwise => 'Clockwise';
 
   @override

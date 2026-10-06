@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -160,8 +161,71 @@ TileSource? tileSourceFor(MapBackground background) => switch (background) {
   MapBackground.none => null,
 };
 
+/// Whether a map shows a tile that failed to load, as without a connection
+/// at the track (FET-177): every map then says its background needs one.
+/// False again once no failed tile is shown (loaded again, or gone).
+final ValueNotifier<bool> mapTilesUnavailable = ValueNotifier(false);
+
+// The tiles shown that failed to load, on every map.
+final Set<TileImage> _failedTiles = Set.identity();
+
+// Tiles report while a frame is built; the maps learn after it.
+void _tileFailed(TileImage tile, bool failed) {
+  final changed = failed ? _failedTiles.add(tile) : _failedTiles.remove(tile);
+  if (changed) {
+    scheduleMicrotask(
+      () => mapTilesUnavailable.value = _failedTiles.isNotEmpty,
+    );
+  }
+}
+
+/// Clears what [mapTilesUnavailable] knows, for tests.
+@visibleForTesting
+void resetMapTilesUnavailable() {
+  _failedTiles.clear();
+  mapTilesUnavailable.value = false;
+}
+
+/// [child], one tile of a map, counted in [mapTilesUnavailable] while it
+/// failed to load and is shown.
+class _TileWatch extends StatefulWidget {
+  const _TileWatch({required this.tile, required this.child});
+
+  final TileImage tile;
+  final Widget child;
+
+  @override
+  State<_TileWatch> createState() => _TileWatchState();
+}
+
+class _TileWatchState extends State<_TileWatch> {
+  @override
+  void didUpdateWidget(_TileWatch old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.tile, widget.tile)) _tileFailed(old.tile, false);
+  }
+
+  @override
+  void dispose() {
+    _tileFailed(widget.tile, false);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = widget.tile;
+    if (tile.loadError) {
+      _tileFailed(tile, true);
+    } else if (tile.imageInfo != null) {
+      _tileFailed(tile, false);
+    }
+    return widget.child;
+  }
+}
+
 /// The tile layer of [tiles], identified to the tile server as the app
-/// (the native map for [appleMapSource]).
+/// (the native map for [appleMapSource]). A tile shown that failed to load
+/// sets [mapTilesUnavailable].
 Widget mapTileLayer(TileSource tiles) => isAppleMapSource(tiles)
     ? const AppleMapLayer()
     : TileLayer(
@@ -169,6 +233,8 @@ Widget mapTileLayer(TileSource tiles) => isAppleMapSource(tiles)
         userAgentPackageName: 'com.flappedear.telemetry',
         maxNativeZoom: tiles.maxNativeZoom,
         tileProvider: debugTileProvider?.call(),
+        tileBuilder: (context, child, tile) =>
+            _TileWatch(tile: tile, child: child),
       );
 
 /// The attribution [tiles] require, in a map's bottom-right corner.
@@ -178,8 +244,9 @@ class MapAttribution extends StatelessWidget {
   final TileSource tiles;
 
   @override
-  Widget build(BuildContext context) =>
-      isAppleMapSource(tiles) ? const AppleMapLegal() : _chip(context);
+  Widget build(BuildContext context) => isAppleMapSource(tiles)
+      ? const AppleMapLegal()
+      : Stack(children: [_chip(context), const MapTilesNote()]);
 
   Widget _chip(BuildContext context) => Align(
     alignment: Alignment.bottomRight,
@@ -194,6 +261,59 @@ class MapAttribution extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// "Map background needs a connection" in a map's bottom-left corner
+/// (clear of the background button, the editor's hints and the
+/// attribution) while [mapTilesUnavailable]: the trace is still drawn.
+class MapTilesNote extends StatelessWidget {
+  const MapTilesNote({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ValueListenableBuilder(
+      valueListenable: mapTilesUnavailable,
+      builder: (context, unavailable, _) => !unavailable
+          ? const SizedBox.shrink()
+          : Align(
+              alignment: Alignment.bottomLeft,
+              // At most 60% wide, so the attribution keeps its corner.
+              child: FractionallySizedBox(
+                widthFactor: 0.6,
+                alignment: Alignment.bottomLeft,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    key: const ValueKey('mapTilesNote'),
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.cloud_off, size: 16),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            context.l10n.mapTilesUnavailable,
+                            style: theme.textTheme.labelSmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
 }
 
 /// [point] of [path] back in degrees (the inverse of the path's projection).

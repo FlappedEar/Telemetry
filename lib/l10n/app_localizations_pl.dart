@@ -13,6 +13,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get appTitle => 'FlappedEar Telemetry';
 
   @override
+  String get mapTilesUnavailable =>
+      'Tło mapy wymaga połączenia z internetem; ślad jest rysowany bez niego.';
+
+  @override
   String get directionClockwise => 'Zgodnie z ruchem wskazówek zegara';
 
   @override
