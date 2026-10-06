@@ -290,7 +290,7 @@ class LastTimeHereCard extends StatelessWidget {
       ),
       Text(
         thenSetup == null
-            ? l10n.lastTimeHereSetupThenNone
+            ? _thenSetupMissing(l10n, then)
             : l10n.lastTimeHereSetupThen(
                 thenSetup.$1,
                 setupText(l10n, thenSetup.$2)!,
@@ -327,20 +327,67 @@ class LastTimeHereCard extends StatelessWidget {
     ];
   }
 
-  /// Today without a setup in the library: for the session that set the
-  /// best lap (else the first session), and, when its setup was entered on
-  /// the page and not saved yet, that it comes with the save.
+  /// Why [setup] cannot be shown, when it holds something this version
+  /// does not show: stored by a newer version, or only values it cannot
+  /// read. Null when it shows, or when nothing but its version (and a
+  /// unit) is stored: nothing was entered.
+  static String? _unreadable(AppLocalizations l10n, ProfileSetup? setup) {
+    if (setup == null || setupText(l10n, setup.setup) != null) return null;
+    if (setup.setup.readOnly) return l10n.lastTimeHereSetupReasonNewer;
+    final stored = setup.json.keys.any(
+      (key) => key != 'version' && key != 'pressureUnit',
+    );
+    return stored ? l10n.lastTimeHereSetupReasonUnreadable : null;
+  }
+
+  /// The session standing for [day] whose setup cannot be shown, labelled
+  /// as a shown setup would be, with why; null when none has such a setup.
+  static (String, String)? _unreadableOf(
+    AppLocalizations l10n,
+    ProfileDay day,
+  ) {
+    final standing = _standingSession(
+      l10n,
+      day,
+      (session) => _unreadable(l10n, session.setup),
+      bestHadNone: l10n.lastTimeHereSetupBestHadNone,
+      firstSession: l10n.lastTimeHereSetupFirstSession,
+    );
+    return standing == null ? null : (standing.$1, standing.$3);
+  }
+
+  /// The previous visit without a setup to show: why for a session whose
+  /// setup this version cannot show, else that the day has none.
+  static String _thenSetupMissing(AppLocalizations l10n, ProfileDay then) =>
+      switch (_unreadableOf(l10n, then)) {
+        (final label, final reason) => l10n.lastTimeHereSetupThenMissing(
+          label,
+          reason,
+        ),
+        null => l10n.lastTimeHereSetupThenNone,
+      };
+
+  /// Today without a setup to show in the library: why, for a session
+  /// whose setup this version cannot show, else for the session that set
+  /// the best lap (else the first session): entered on the page and not
+  /// saved yet, saved and not in the library yet, or not entered.
   String _todaySetupMissing(AppLocalizations l10n, ProfileDay today) {
+    if (_unreadableOf(l10n, today) case (final label, final reason)) {
+      return l10n.lastTimeHereSetupTodayMissing(label, reason);
+    }
     final setter = _bestLapSession(today);
     final session = setter ?? today.sessions.firstOrNull;
     if (session == null) return l10n.lastTimeHereSetupTodayNoSessions;
     final label = setter == null
         ? session.name
         : l10n.lastTimeHereWeatherBestLapSession(session.name);
-    final none = l10n.lastTimeHereSetupTodayNone(label);
-    return setupUnsavedOf?.call(session.runId) ?? false
-        ? '$none ${l10n.lastTimeHereSetupTodayUnsaved}'
-        : none;
+    final given = library.givenSetups(eventId)?[session.runId];
+    final reason = setupUnsavedOf?.call(session.runId) ?? false
+        ? l10n.lastTimeHereSetupReasonUnsaved
+        : given != null && setupText(l10n, given.setup) != null
+        ? l10n.lastTimeHereSetupReasonPending
+        : l10n.lastTimeHereSetupReasonNone;
+    return l10n.lastTimeHereSetupTodayMissing(label, reason);
   }
 
   /// Today's pressures minus then's ("Cold +0.1 / 0 / −0.1 / — bar · Hot

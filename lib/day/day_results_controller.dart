@@ -265,6 +265,7 @@ final class DayResultsController extends ChangeNotifier {
        _document = openedDocument,
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayWithJournal,
+       _setupsSaved = !recovered,
        _dirty = recovered || changed {
     declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
     _declaredSpeedUnits = declaredSpeedUnits;
@@ -1511,6 +1512,7 @@ final class DayResultsController extends ChangeNotifier {
       if (_recoveryWrites.waiting) await flushRecovery();
       await _writer(path, document);
       _document = document;
+      _setupsSaved = true;
       // The details saved are in the document now; later edits stay.
       for (final MapEntry(:key, :value) in metadataNow.entries) {
         if (_metadataEdits[key] == value) _metadataEdits.remove(key);
@@ -2411,22 +2413,29 @@ final class DayResultsController extends ChangeNotifier {
     return RunMetadata(name: named?.name ?? '');
   }
 
+  /// Whether [savedRunSetup] is the day's file as saved: false for a day
+  /// restored from its recovery snapshot until it is saved, as the
+  /// snapshot holds unsaved changes.
+  bool get setupsSaved => _setupsSaved;
+  bool _setupsSaved;
+
   /// [runId]'s setup as the day was last saved or opened: the run's stored
   /// `setup` object as it is, keys this version does not know included;
-  /// null when the run stores none. The driver profile keeps this one
-  /// ([ProfileSetup]), never an unsaved edit.
+  /// null when the run stores none. Before [setupsSaved], the recovery
+  /// snapshot's. The driver profile keeps this one ([ProfileSetup]), never
+  /// an unsaved edit.
   Map<String, Object?>? savedRunSetup(String runId) =>
       _storedSetup(_savedRuns, runId);
 
-  /// Whether [runId] has a setup entered that is not saved yet: the next
-  /// save would write a `setup` other than the one stored, and it holds
-  /// something entered.
+  /// Whether [runId] has a setup entered that is not saved yet: it holds
+  /// something entered, and the next save would write a `setup` other than
+  /// the one stored, or the day was restored and not saved since.
   bool runSetupWaitsForSave(String runId) {
-    if (!_metadataEdits.containsKey(runId)) return false;
-    final edited = _storedSetup(_metadataRuns, runId);
-    return edited != null &&
-        !RunSetup.fromJson(edited).isEmpty &&
-        !_sameJson(edited, savedRunSetup(runId));
+    final current = _storedSetup(_metadataRuns, runId);
+    if (current == null || RunSetup.fromJson(current).isEmpty) return false;
+    if (!_setupsSaved) return true;
+    return _metadataEdits.containsKey(runId) &&
+        !_sameJson(current, savedRunSetup(runId));
   }
 
   static Map<String, Object?>? _storedSetup(List<Object?> runs, String runId) {

@@ -5388,19 +5388,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lastTimeHereSetupThenNone =>
-      'Then: — no setup entered for that session';
-
-  @override
-  String lastTimeHereSetupTodayNone(String session) {
-    return 'Today: — no setup entered for $session';
-  }
-
-  @override
-  String get lastTimeHereSetupTodayUnsaved =>
-      '(it reaches the library when the day is saved)';
+      'Then: — no setup entered for that day, or the day was added before the library kept setups.';
 
   @override
   String get lastTimeHereSetupTodayNoSessions => 'Today: — no setup entered.';
+
+  @override
+  String lastTimeHereSetupThenMissing(String session, String reason) {
+    return 'Then ($session): — $reason';
+  }
+
+  @override
+  String lastTimeHereSetupTodayMissing(String session, String reason) {
+    return 'Today ($session): — $reason';
+  }
+
+  @override
+  String get lastTimeHereSetupReasonNone => 'no setup entered';
+
+  @override
+  String get lastTimeHereSetupReasonNewer =>
+      'set up in a newer version of the app';
+
+  @override
+  String get lastTimeHereSetupReasonUnreadable =>
+      'not readable by this version';
+
+  @override
+  String get lastTimeHereSetupReasonUnsaved =>
+      'entered on this page; it reaches the library when the day is saved';
+
+  @override
+  String get lastTimeHereSetupReasonPending =>
+      'saved with the day; not in the library yet';
 
   @override
   String lastTimeHereSetupDifference(String difference) {

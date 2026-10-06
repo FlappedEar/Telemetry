@@ -5505,20 +5505,40 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lastTimeHereSetupThenNone =>
-      'Poprzednio: — dla tamtej sesji nie wpisano ustawień';
-
-  @override
-  String lastTimeHereSetupTodayNone(String session) {
-    return 'Dziś: — dla $session nie wpisano ustawień';
-  }
-
-  @override
-  String get lastTimeHereSetupTodayUnsaved =>
-      '(trafią do biblioteki po zapisaniu dnia)';
+      'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień dodano, zanim biblioteka zapisywała ustawienia.';
 
   @override
   String get lastTimeHereSetupTodayNoSessions =>
       'Dziś: — nie wpisano ustawień.';
+
+  @override
+  String lastTimeHereSetupThenMissing(String session, String reason) {
+    return 'Poprzednio ($session): — $reason';
+  }
+
+  @override
+  String lastTimeHereSetupTodayMissing(String session, String reason) {
+    return 'Dziś ($session): — $reason';
+  }
+
+  @override
+  String get lastTimeHereSetupReasonNone => 'nie wpisano ustawień';
+
+  @override
+  String get lastTimeHereSetupReasonNewer =>
+      'ustawienia z nowszej wersji aplikacji';
+
+  @override
+  String get lastTimeHereSetupReasonUnreadable =>
+      'ta wersja nie potrafi ich odczytać';
+
+  @override
+  String get lastTimeHereSetupReasonUnsaved =>
+      'wpisane na tej stronie; trafią do biblioteki po zapisaniu dnia';
+
+  @override
+  String get lastTimeHereSetupReasonPending =>
+      'zapisane z dniem; jeszcze ich nie ma w bibliotece';
 
   @override
   String lastTimeHereSetupDifference(String difference) {

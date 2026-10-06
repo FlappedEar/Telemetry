@@ -236,7 +236,8 @@ entered, pressures without a unit are not entered, and a setup of another
 Keys this version does not know, in the object and in its pressure objects,
 and values read as not entered are kept as stored and written back
 unchanged. A `setup` that is not an object reads as no setup and is kept as
-it is; one holding nothing but its `version` is no setup.
+it is; one holding nothing this version reads (only its `version`, say) is
+kept as written too.
 
 Unlike `weather`, it has no `sourceRevision`: the setup is the driver's own
 statement about the run, not something measured from the recording, so a
@@ -244,9 +245,14 @@ replaced recording keeps it. It reaches the profile only when the day is
 saved: each save that records the day (`ProfileLibrary.recordDay`) passes
 every run's setup as saved (`DayResultsController.savedRunSetup`), never an
 unsaved edit. Given that way, a session's setup replaces what the profile
-had, and a run without one clears it. A day added without setups, such as a
-day found in the days folder (`ProfileDayInput` without
-`ProfileDayInput.fromAnalysis`'s `setups`), keeps the profile's. New weather
+had, and a run without one clears it. A day restored from its recovery
+snapshot and not saved since gives none (`setupsSaved` is false: the
+snapshot holds unsaved changes). A day added without setups, such as a day
+found in the days folder or a restored day, keeps the profile's. The setups
+go to a day the profile already lists at once (`setProfileSessionSetups`),
+before the day is measured, and the library holds the last ones given for
+each day (`ProfileLibrary.givenSetups`), applying them to a later record
+without setups, so a measure that fails does not lose them. New weather
 (`setProfileSessionWeather`) and moving the profile to another device
 (`mergeDriverProfile`, the bundle) carry it along.
 
@@ -255,10 +261,14 @@ is: the session that set the day's best lap, else its first session with a
 setup, labelled as such. When both visits entered pressures in the same unit,
 it adds today minus then for each wheel entered on both (no colour: higher
 is not better); in different units it shows both and says they are not
-compared. Today without a setup in the profile says, for the session that
-set the best lap (else the first), that none was entered, and that it comes
-with the save when that session's setup was entered on the page and the day
-is not saved yet (`DayResultsController.runSetupWaitsForSave`).
+compared. A setup this version cannot show says so: stored by a newer
+version, or holding only values it cannot read. The previous visit without
+any setup says none was entered that day or the day was added before the
+library kept setups. Today without a setup in the profile says, for the
+session that set the best lap (else the first), that it was entered on the
+page and not saved yet (`DayResultsController.runSetupWaitsForSave`, also
+for a restored day not saved since), that it was saved and is not in the
+library yet (`givenSetups`), or that none was entered.
 
 ## Corners across days
 

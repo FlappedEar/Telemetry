@@ -651,7 +651,9 @@ void main() {
       expect(ProfileSetup.ofSetup(setup)!.json, bar);
       expect(ProfileSetup.ofSetup(setup)!.setup, setup);
       expect(ProfileSetup.ofSetup(const RunSetup()), isNull);
-      expect(ProfileSetup.of({'version': runSetupVersion}), isNull);
+      // Nothing readable, kept as written all the same.
+      expect(ProfileSetup.of({'version': runSetupVersion})!.json, {'version': runSetupVersion});
+      expect(ProfileSetup.of({'version': runSetupVersion})!.setup.isEmpty, isTrue);
       expect(ProfileSetup.of('bar'), isNull);
     });
 
@@ -741,6 +743,34 @@ void main() {
       ).withWeather({'run1': ProfileWeather(temperatureC: 14)});
       expect(withWeather.setupsGiven, isTrue);
       expect(withWeather.sessions.first.setup!.json, bar);
+    });
+
+    test('a setup holding only its version survives a re-save', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      session(json)['setup'] = {'version': runSetupVersion};
+      session(json, 1)['setup'] = <String, Object?>{};
+      final read = decodeDriverProfile(jsonEncode(json));
+      expect(read.day('a')!.sessions.first.setup!.setup.isEmpty, isTrue);
+      expect(jsonDecode(encodeDriverProfile(read)), json);
+    });
+
+    test('setups alone replace the day\'s, without measuring it', () {
+      final profile = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', setups: {'run2': ProfileSetup.of(bar)}),
+      );
+      final next = setProfileSessionSetups(profile, 'a', {
+        'run1': ProfileSetup.of(bar),
+        'other': ProfileSetup.of(bar),
+      });
+      expect([for (final s in next.day('a')!.sessions) s.setup?.json], [bar, null]);
+      expect(next.day('a')!.sessions.first.stats, same(profile.day('a')!.sessions.first.stats));
+      expect(
+        identical(setProfileSessionSetups(next, 'a', {'run1': ProfileSetup.of(bar)}), next),
+        isTrue,
+      );
+      expect(identical(setProfileSessionSetups(next, 'b', {}), next), isTrue);
     });
 
     test('merging another profile brings the setup along', () {

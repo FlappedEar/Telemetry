@@ -215,14 +215,13 @@ final class ProfileSetup {
       setup = RunSetup.fromJson(json);
 
   /// [value], a run's stored `setup` ([runSetupKey]), as the profile keeps
-  /// it: every key as stored, those this version does not know included.
-  /// Null when it is not an object or holds nothing but its version. A
-  /// value the profile could not write back (nested too deeply) keeps only
-  /// what [RunSetup] reads.
+  /// it: every key as stored, those this version does not know included,
+  /// also when nothing in it can be read (only a `version`, say), so it
+  /// survives a re-save. Null when it is not an object. A value the
+  /// profile could not write back (nested too deeply) keeps only what
+  /// [RunSetup] reads.
   static ProfileSetup? of(Object? value) {
-    if (value is! Map<String, Object?> || value.keys.every((key) => key == 'version')) {
-      return null;
-    }
+    if (value is! Map<String, Object?>) return null;
     try {
       return ProfileSetup._({
         for (final MapEntry(:key, :value) in value.entries) key: _bounded(value),
@@ -890,6 +889,53 @@ DriverProfile setProfileSessionWeather(
         }()
       else
         session,
+  ];
+  if (!changed) return profile;
+  final entry = ProfileDay(
+    eventId: day.eventId,
+    file: day.file,
+    name: day.name,
+    carId: day.carId,
+    trackId: day.trackId,
+    startMilliseconds: day.startMilliseconds,
+    sessions: sessions,
+    bestLapSeconds: day.bestLapSeconds,
+    theoreticalBestSeconds: day.theoreticalBestSeconds,
+    unknown: day.unknown,
+  );
+  _verified(_encodeDay(entry), _day);
+  return profile._copy(
+    days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
+  );
+}
+
+/// [profile] with the setups of day [eventId]'s sessions replaced by
+/// [setups] (by run id; the day's setups as saved, so a session missing
+/// from it or given null has none), without measuring the day again.
+/// Unchanged when the day is not in the profile or nothing changes. Throws
+/// [ProfileFormatError] for what [decodeDriverProfile] would refuse.
+DriverProfile setProfileSessionSetups(
+  DriverProfile profile,
+  String eventId,
+  Map<String, ProfileSetup?> setups,
+) {
+  final day = profile.day(eventId);
+  if (day == null) return profile;
+  String? encoded(ProfileSetup? setup) => setup == null ? null : jsonEncode(setup.json);
+  var changed = false;
+  final sessions = [
+    for (final session in day.sessions)
+      if (encoded(setups[session.runId]) == encoded(session.setup))
+        session
+      else
+        () {
+          changed = true;
+          return session._withSetup(
+            setups[session.runId],
+            stats: session.stats,
+            weather: session.weather,
+          );
+        }(),
   ];
   if (!changed) return profile;
   final entry = ProfileDay(

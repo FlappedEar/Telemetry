@@ -272,6 +272,65 @@ void main() {
       });
     });
 
+    test('setups go to a listed day at once and are held when measuring '
+        'fails', () async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final run = outcome.runs.single.run;
+      var fail = true;
+      final shelf = ProfileLibrary(
+        store: FolderProfileStore(profileFolder()),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: <R>(FutureOr<R> Function() job) async {
+          final result = await job();
+          if (result is ProfileDayInput && fail) {
+            throw StateError('not measured');
+          }
+          return result;
+        },
+      );
+      final path = (await shelf.dayPath('e1'))!;
+      await shelf.load();
+      final setup = ProfileSetup.of({
+        'version': runSetupVersion,
+        'pressureUnit': 'bar',
+        'coldPressure': {'fl': 2.1},
+      });
+      // Not in the profile yet, and the measure fails: held, not lost.
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Day',
+        analysis: outcome.analysis!,
+        setups: {run.id: setup},
+      );
+      expect(shelf.profile!.day('e1'), isNull);
+      expect(shelf.givenSetups('e1')![run.id]!.json, setup!.json);
+      // Recorded without setups (a restored day): the held ones apply.
+      fail = false;
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Day',
+        analysis: outcome.analysis!,
+      );
+      await shelf.flush();
+      expect(shelf.profile!.day('e1')!.sessions.single.setup!.json, setup.json);
+      // Listed now: a save's setups reach it even when its measure fails.
+      fail = true;
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Day',
+        analysis: outcome.analysis!,
+        setups: {run.id: null},
+      );
+      await shelf.flush();
+      expect(shelf.profile!.day('e1')!.sessions.single.setup, isNull);
+    });
+
     test('ignores a day saved elsewhere', () async {
       final outcome = importDay({
         'a.vbo': [30, 28, 31],
@@ -809,6 +868,89 @@ void main() {
       await shelf.flush();
       expect(controller.dirty, isFalse);
       expect(session().setup, isNull);
+    });
+
+    testWidgets('a restored day keeps the library\'s setups until saved', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      late String path;
+      late String eventId;
+      late String name;
+      await tester.runAsync(() async {
+        final first = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          writer: writer,
+        );
+        eventId = first.eventId;
+        name = first.name;
+        path = (await shelf.dayPath(eventId))!;
+        await first.save(path);
+        first.dispose();
+      });
+      final runId = outcome.runs.single.run.id;
+      const kept = {
+        'version': runSetupVersion,
+        'pressureUnit': 'psi',
+        'coldPressure': {'fl': 30},
+      };
+      await shelf.recordDay(
+        eventId: eventId,
+        path: path,
+        name: name,
+        analysis: outcome.analysis!,
+        setups: {runId: ProfileSetup.of(kept)},
+      );
+      await shelf.flush();
+      // The recovery snapshot holds a setup the file does not.
+      final snapshot =
+          jsonDecode(File(path).readAsStringSync()) as Map<String, Object?>;
+      final run =
+          ((snapshot['event']! as Map<String, Object?>)['runs']! as List).single
+              as Map<String, Object?>;
+      run[runSetupKey] = {
+        'version': runSetupVersion,
+        'pressureUnit': 'bar',
+        'coldPressure': {'fl': 2.1},
+      };
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        eventId: eventId,
+        name: name,
+        openedFrom: path,
+        openedDocument: snapshot,
+        recovered: true,
+        writer: writer,
+      );
+      expect(controller.setupsSaved, isFalse);
+      expect(controller.runSetupWaitsForSave(runId), isTrue);
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pump();
+      await shelf.flush();
+      // Recorded on opening, without the snapshot's setup.
+      ProfileSetup? setup() => shelf.profile!.days.single.sessions.single.setup;
+      expect(setup()!.json, kept);
+      // Saved by itself: the restored setup is the day's now.
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(controller.dirty, isFalse);
+      expect(controller.setupsSaved, isTrue);
+      expect(controller.runSetupWaitsForSave(runId), isFalse);
+      expect(setup()!.setup.pressureUnit, PressureUnit.bar);
     });
 
     testWidgets('without a library a new day waits for Save, as before', (

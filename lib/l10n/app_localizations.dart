@@ -7971,29 +7971,59 @@ abstract class AppLocalizations {
   /// **'{session}, first with a setup'**
   String lastTimeHereSetupFirstSession(String session);
 
-  /// Last time here card: the previous visit has no setup in the library for the session that stands for it.
+  /// Last time here card: no session of the previous visit has a setup in the library, and why.
   ///
   /// In en, this message translates to:
-  /// **'Then: — no setup entered for that session'**
+  /// **'Then: — no setup entered for that day, or the day was added before the library kept setups.'**
   String get lastTimeHereSetupThenNone;
-
-  /// Last time here card: today has no setup in the library for this session. session is a label such as 'Session 2, best lap'.
-  ///
-  /// In en, this message translates to:
-  /// **'Today: — no setup entered for {session}'**
-  String lastTimeHereSetupTodayNone(String session);
-
-  /// Last time here card: added after lastTimeHereSetupTodayNone when that session's setup was entered on the day page but the day is not saved yet.
-  ///
-  /// In en, this message translates to:
-  /// **'(it reaches the library when the day is saved)'**
-  String get lastTimeHereSetupTodayUnsaved;
 
   /// Last time here card: today has no setup in the library and no session to name.
   ///
   /// In en, this message translates to:
   /// **'Today: — no setup entered.'**
   String get lastTimeHereSetupTodayNoSessions;
+
+  /// Last time here card: the previous visit's session has a setup that cannot be shown. session is a label such as 'Session 2, best lap'; reason is one of the lastTimeHereSetupReason texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Then ({session}): — {reason}'**
+  String lastTimeHereSetupThenMissing(String session, String reason);
+
+  /// Last time here card: today's session has no setup in the library to show, and why. session is a label such as 'Session 2, best lap'; reason is one of the lastTimeHereSetupReason texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — {reason}'**
+  String lastTimeHereSetupTodayMissing(String session, String reason);
+
+  /// Last time here card: reason, no setup was entered for the session.
+  ///
+  /// In en, this message translates to:
+  /// **'no setup entered'**
+  String get lastTimeHereSetupReasonNone;
+
+  /// Last time here card: reason, the setup was stored by a newer app version and this version cannot show it.
+  ///
+  /// In en, this message translates to:
+  /// **'set up in a newer version of the app'**
+  String get lastTimeHereSetupReasonNewer;
+
+  /// Last time here card: reason, the setup holds only values this version cannot read.
+  ///
+  /// In en, this message translates to:
+  /// **'not readable by this version'**
+  String get lastTimeHereSetupReasonUnreadable;
+
+  /// Last time here card: reason, the setup was entered on the day page but the day is not saved yet.
+  ///
+  /// In en, this message translates to:
+  /// **'entered on this page; it reaches the library when the day is saved'**
+  String get lastTimeHereSetupReasonUnsaved;
+
+  /// Last time here card: reason, the day was saved with this setup but the library has not recorded it yet.
+  ///
+  /// In en, this message translates to:
+  /// **'saved with the day; not in the library yet'**
+  String get lastTimeHereSetupReasonPending;
 
   /// Last time here card: today's pressures minus the previous visit's, wheel by wheel, in the unit both were entered in. difference is a line such as 'Cold +0.1 / 0 / −0.1 / — bar'; — is a wheel without a pressure on one of the visits.
   ///

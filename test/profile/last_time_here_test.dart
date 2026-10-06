@@ -114,7 +114,10 @@ void main() {
   setUp(() => folder = Directory.systemTemp.createTempSync('last_time'));
   tearDown(() => folder.deleteSync(recursive: true));
 
-  Future<ProfileLibrary> library(List<ProfileDay> days) async {
+  Future<ProfileLibrary> library(
+    List<ProfileDay> days, {
+    Map<String, ProfileSetup?>? given,
+  }) async {
     final profile = DriverProfile(
       driverId: 'driver',
       cars: [
@@ -137,7 +140,8 @@ void main() {
     );
     File('${folder.path}/$profileFileName')
         .writeAsStringSync(encodeDriverProfile(profile));
-    final shelf = ProfileLibrary(
+    final shelf = _GivenLibrary(
+      given,
       store: FolderProfileStore(folder.path),
       defaultCarName: 'My car',
       defaultTrackName: (number) => 'Track $number',
@@ -569,7 +573,9 @@ void main() {
   });
 
   group('setup', () {
-    const thenNone = 'Then: — no setup entered for that session';
+    const thenNone =
+        'Then: — no setup entered for that day, or the day was added before '
+        'the library kept setups.';
     const note =
         "Each visit's setup is that of the session that set its best lap, or, "
         'when that session has none, of its first session with a setup. Shown '
@@ -743,7 +749,7 @@ void main() {
       );
       expect(find.text(thenNone), findsOneWidget);
       expect(
-        find.text('Today: — no setup entered for Session 2, best lap'),
+        find.text('Today (Session 2, best lap): — no setup entered'),
         findsOneWidget,
       );
       expect(asked.toSet(), {'s2'});
@@ -778,17 +784,97 @@ void main() {
       await show(tester, shelf!, 'today', setupUnsavedOf: (_) => true);
       expect(
         find.text(
-          'Today: — no setup entered for Session 1, best lap (it reaches the '
-          'library when the day is saved)',
+          'Today (Session 1, best lap): — entered on this page; it reaches '
+          'the library when the day is saved',
         ),
         findsOneWidget,
       );
       // Without the page: not claimed.
       await show(tester, shelf, 'today');
       expect(
-        find.text('Today: — no setup entered for Session 1, best lap'),
+        find.text('Today (Session 1, best lap): — no setup entered'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('saved with the day and not in the library yet says so', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library(
+          [
+            _day(
+              'a',
+              dayNumber: 0,
+              best: 111.2,
+              sessions: [_session('s1', 111.2)],
+            ),
+            _day(
+              'today',
+              dayNumber: 30,
+              best: 109.9,
+              sessions: [_session('s1', 109.9)],
+            ),
+          ],
+          given: {
+            's1': ProfileSetup.of(_setup('bar', cold: {'fl': 2})),
+          },
+        ),
+      );
+      await show(tester, shelf!, 'today', setupUnsavedOf: (_) => false);
+      expect(
+        find.text(
+          'Today (Session 1, best lap): — saved with the day; not in the '
+          'library yet',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a setup this version cannot show says why, not none', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session('s1', 111.2, null, {
+                'version': 'session-setup-v9',
+                'wing': 3,
+              }),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [
+              _session('s1', 110.4, null, {'version': runSetupVersion}),
+              _session('s2', 109.9, null, {
+                'version': runSetupVersion,
+                'camber': -2.5,
+              }),
+            ],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today', setupUnsavedOf: (_) => true);
+      expect(
+        find.text(
+          'Then (Session 1, best lap): — set up in a newer version of the app',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Today (Session 2, best lap): — not readable by this version',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(thenNone), findsNothing);
     });
 
     testWidgets('a fallback session says why it stands for the day', (
@@ -908,24 +994,50 @@ void main() {
           ),
         ]),
       );
+      await show(tester, shelf!, 'today', locale: const Locale('pl'));
+      expect(
+        find.text(
+          'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień '
+          'dodano, zanim biblioteka zapisywała ustawienia.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Dziś (Session 1, najlepsze okrążenie): — nie wpisano ustawień',
+        ),
+        findsOneWidget,
+      );
       await show(
         tester,
-        shelf!,
+        shelf,
         'today',
         locale: const Locale('pl'),
         setupUnsavedOf: (_) => true,
       );
       expect(
-        find.text('Poprzednio: — dla tamtej sesji nie wpisano ustawień'),
-        findsOneWidget,
-      );
-      expect(
         find.text(
-          'Dziś: — dla Session 1, najlepsze okrążenie nie wpisano ustawień '
-          '(trafią do biblioteki po zapisaniu dnia)',
+          'Dziś (Session 1, najlepsze okrążenie): — wpisane na tej stronie; '
+          'trafią do biblioteki po zapisaniu dnia',
         ),
         findsOneWidget,
       );
     });
   });
+}
+
+/// A library holding [given] as the setups last given for any day.
+final class _GivenLibrary extends ProfileLibrary {
+  _GivenLibrary(
+    this.given, {
+    required super.store,
+    required super.defaultCarName,
+    required super.defaultTrackName,
+    required super.background,
+  });
+
+  final Map<String, ProfileSetup?>? given;
+
+  @override
+  Map<String, ProfileSetup?>? givenSetups(String eventId) => given;
 }
