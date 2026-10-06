@@ -8935,6 +8935,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'These goals were set on other compared laps. Remove them to set new ones.'**
   String get ownGoalsOtherGroup;
+
+  /// Button beside the session summary's title, and the title of the page it opens: a briefing read at the car before the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you go out'**
+  String get briefingTitle;
+
+  /// Under the briefing heading: the session the briefing comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'From {session}'**
+  String briefingFrom(String session);
+
+  /// Briefing line: the driver's own goals for the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals'**
+  String get briefingGoals;
+
+  /// Briefing goals line when the driver set no goals.
+  ///
+  /// In en, this message translates to:
+  /// **'None set: add them under Your goals for the next session'**
+  String get briefingNoGoals;
+
+  /// Briefing line: the segment with the biggest gap to the quickest typical time.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest chance'**
+  String get briefingChance;
 }
 
 class _AppLocalizationsDelegate

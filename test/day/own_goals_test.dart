@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/briefing_card.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -101,8 +103,10 @@ void main() {
     Locale? locale,
     String? previousRunId,
     bool coachFails = false,
+    Size size = const Size(412, 915),
+    double textScale = 1,
   }) async {
-    await tester.binding.setSurfaceSize(const Size(412, 915));
+    await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final outcome = importDay();
     late DayResultsController controller;
@@ -116,11 +120,17 @@ void main() {
       ),
     );
     await tester.pumpWidget(
-      TelemetryApp(
-        locale: locale,
-        home: DayResultsPage.controller(
-          controller: controller,
-          coach: ValueNotifier(true),
+      MediaQuery(
+        data: MediaQueryData(
+          size: size,
+          textScaler: TextScaler.linear(textScale),
+        ),
+        child: TelemetryApp(
+          locale: locale,
+          home: DayResultsPage.controller(
+            controller: controller,
+            coach: ValueNotifier(true),
+          ),
         ),
       ),
     );
@@ -128,10 +138,20 @@ void main() {
     return controller;
   }
 
-  Future<void> reveal(WidgetTester tester, Finder target) async {
+  Future<void> reveal(
+    WidgetTester tester,
+    Finder target, {
+    bool up = false,
+  }) async {
+    // Built already (above or below): bring it in.
+    if (target.evaluate().isNotEmpty) {
+      await tester.ensureVisible(target.first);
+      await tester.pumpAndSettle();
+      return;
+    }
     await tester.scrollUntilVisible(
       target,
-      200,
+      up ? -200 : 200,
       scrollable: find
           .descendant(
             of: find.byKey(const ValueKey('dayResultsCoach')),
@@ -495,10 +515,267 @@ void main() {
     expect(find.byKey(const ValueKey('ownGoalsAdd')), findsOneWidget);
   });
 
+  Future<void> openBriefing(WidgetTester tester) async {
+    await reveal(
+      tester,
+      find.byKey(const ValueKey('sessionSummaryBriefing')),
+      up: true,
+    );
+    await tester.tap(find.byKey(const ValueKey('sessionSummaryBriefing')));
+    await tester.pumpAndSettle();
+  }
+
+  String line(WidgetTester tester, String key) => [
+    for (final text in tester.widgetList<Text>(
+      find.descendant(
+        of: find.byKey(ValueKey(key)),
+        matching: find.byType(Text),
+      ),
+    ))
+      text.data,
+  ].join(' | ');
+
+  testWidgets('the briefing gathers the focus, the goals and the biggest '
+      'chance before the next session', (tester) async {
+    final controller = await show(tester);
+    final corner = controller.theoreticalBest!.corners.first;
+    await openBriefing(tester);
+    expect(find.byKey(const ValueKey('briefingPage')), findsOneWidget);
+    expect(find.text('From Session 2'), findsOneWidget);
+    expect(
+      line(tester, 'briefingFocus'),
+      'Main focus | ${corner.name} · Reduce coasting | Measured: Longest coast: '
+      '1.2\u00a0s on this session\'s laps, 0.6\u00a0s on your faster lap.',
+    );
+    expect(
+      line(tester, 'briefingGoals'),
+      'Your goals | None set: add them under Your goals for the next session',
+    );
+    // The summary's Biggest gap left, word for word.
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final gap = line(tester, 'sessionSummaryGap').split(' | ').last;
+    await openBriefing(tester);
+    expect(line(tester, 'briefingChance'), 'Biggest chance | $gap');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    // A goal set on the Next session card shows in the briefing.
+    await reveal(tester, find.byKey(const ValueKey('ownGoalsAdd')));
+    await tester.tap(find.byKey(const ValueKey('ownGoalsAdd')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ownGoalSave')));
+    await tester.pumpAndSettle();
+    await openBriefing(tester);
+    expect(
+      line(tester, 'briefingGoals'),
+      'Your goals | ${corner.name} · Reduce coasting',
+    );
+  });
+
+  group('each briefing line says why when it cannot be filled', () {
+    late DayResultsController controller;
+
+    Future<void> card(
+      WidgetTester tester, {
+      String? runId,
+      DayTheoreticalBestState? sectionsState = DayTheoreticalBestState.ready,
+      bool coachLoading = false,
+      String coachError = '',
+      DayCoach? coach,
+      bool keepCoach = true,
+      bool speedsConverted = false,
+      RunGoals? goals,
+    }) async {
+      final best = controller.theoreticalBest!;
+      await tester.pumpWidget(
+        // Not TelemetryApp: its navigator would keep the Day results page.
+        MaterialApp(
+          key: UniqueKey(),
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ListView(
+              children: [
+                BriefingCard(
+                  runId: runId ?? controller.latestRunId,
+                  session: controller.latestRunName,
+                  progression: controller.progression,
+                  sectionsState: sectionsState,
+                  sections: best.sectionProgression([
+                    for (final run in controller.progression.runs) run.run,
+                  ]),
+                  coach: keepCoach ? (coach ?? controller.coach) : null,
+                  coachLoading: coachLoading,
+                  coachError: coachError,
+                  speedsConverted: speedsConverted,
+                  goals: goals ?? RunGoals(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    String value(WidgetTester tester, String key) =>
+        line(tester, key).split(' | ')[1];
+
+    testWidgets('while working, and without a theoretical best', (
+      tester,
+    ) async {
+      controller = await show(tester);
+      await card(tester, sectionsState: null);
+      expect(value(tester, 'briefingFocus'), 'Working…');
+      expect(value(tester, 'briefingChance'), 'Working…');
+      await card(tester, coachLoading: true);
+      expect(value(tester, 'briefingFocus'), 'Working…');
+      await card(tester, sectionsState: DayTheoreticalBestState.unavailable);
+      expect(
+        value(tester, 'briefingFocus'),
+        isNot(anyOf('Working…', contains('Reduce coasting'))),
+      );
+      expect(value(tester, 'briefingChance'), value(tester, 'briefingFocus'));
+    });
+
+    testWidgets('a coach for an older session is not shown', (tester) async {
+      controller = await show(tester);
+      final older = controller.progression.runs.first.run.id;
+      expect(older, isNot(controller.latestRunId));
+      await card(tester, runId: older);
+      expect(value(tester, 'briefingFocus'), 'Working…');
+    });
+
+    testWidgets('a session without laps on the circuit shown', (tester) async {
+      controller = await show(tester);
+      await card(tester, runId: 'no such session', keepCoach: false);
+      expect(
+        value(tester, 'briefingChance'),
+        '${controller.latestRunName} has no timed laps on the circuit shown.',
+      );
+    });
+
+    testWidgets('goals stored in another form are kept, and say so', (
+      tester,
+    ) async {
+      controller = await show(tester);
+      await card(tester, goals: RunGoals(unknownVersion: 'session-goals-v2'));
+      expect(
+        value(tester, 'briefingGoals'),
+        'Stored in a form this version of the app does not edit, so they '
+        'are not changed here.',
+      );
+    });
+
+    testWidgets('a speed that cannot be shown says why', (tester) async {
+      controller = await show(tester);
+      final coach = controller.coach!;
+      final finding = coach.plan.first.finding;
+      final speed = CoachFinding(
+        kind: CoachKind.lowMinimumSpeed,
+        segmentId: finding.segmentId,
+        segmentName: finding.segmentName,
+        confidence: 0.7,
+        affectedLaps: finding.affectedLaps,
+        evidence: [
+          CoachEvidence(
+            key: CoachMetric.minimumSpeed,
+            metric: 'Minimum speed',
+            observed: 45.8,
+            reference: 52.5,
+            unit: 'km/h',
+            referenceLaps: finding.evidence.first.referenceLaps,
+            detail: '',
+          ),
+        ],
+      );
+      await card(
+        tester,
+        coach: DayCoach(
+          runId: coach.runId,
+          findings: [speed],
+          plan: [CoachItem(speed)],
+          reason: CoachReason.ready,
+          speedsConverted: true,
+        ),
+        speedsConverted: true,
+      );
+      final focus = line(tester, 'briefingFocus');
+      expect(focus, contains('Measured: '));
+      expect(focus, contains('—'));
+      expect(focus, isNot(contains('45.8')));
+      expect(focus, contains('Speeds are not shown'));
+    });
+  });
+
+  testWidgets('the briefing follows the day while it is open', (tester) async {
+    final controller = await show(tester);
+    final corner = controller.theoreticalBest!.corners.first;
+    await openBriefing(tester);
+    final latest = controller.latestRunId;
+    controller.updateRunMetadata(
+      latest,
+      controller
+          .runMetadata(latest)
+          .withGoals(
+            RunGoals(
+              goals: [
+                SessionGoal(
+                  kind: CoachKind.lateThrottle,
+                  segmentName: corner.name,
+                  startProgressMeters: corner.startProgressMeters,
+                  endProgressMeters: corner.endProgressMeters,
+                ),
+              ],
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      line(tester, 'briefingGoals'),
+      'Your goals | ${corner.name} · Return to throttle sooner',
+    );
+  });
+
+  testWidgets('the briefing says why while the coach failed', (tester) async {
+    await show(tester, coachFails: true);
+    await openBriefing(tester);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('briefingFocus')),
+        matching: find.text('The coach could not run'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the briefing fits a small phone with large text', (
+    tester,
+  ) async {
+    await show(tester, size: const Size(320, 640), textScale: 2);
+    await openBriefing(tester);
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('briefingChance')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('briefingPage')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('in Polish', (tester) async {
     await show(tester, locale: const Locale('pl'));
     await reveal(tester, find.byKey(const ValueKey('ownGoalsAdd')));
     expect(find.text('Twoje cele na następną sesję'), findsOneWidget);
     expect(find.text('Dodaj cel'), findsOneWidget);
+    await openBriefing(tester);
+    expect(find.text('Przed wyjazdem'), findsOneWidget);
   });
 }

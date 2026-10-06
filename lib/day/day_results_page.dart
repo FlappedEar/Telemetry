@@ -40,6 +40,7 @@ import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
+import 'briefing_card.dart';
 import 'session_summary_card.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart';
@@ -1957,6 +1958,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
     final result = _controller.theoreticalBest;
     final progression = _controller.progression;
+    return SessionSummaryCard(
+      key: _coachKey,
+      runId: _controller.latestRunId,
+      session: _controller.latestRunName,
+      progression: progression,
+      sectionsState: result?.state,
+      sections: _sections(),
+      coach: _controller.coach,
+      coachLoading: _controller.coachLoading,
+      coachError: _controller.coachError,
+      channels: channels,
+      ownGoals: _goalSummary(),
+      onBriefing: _openBriefing,
+    );
+  }
+
+  /// The theoretical best's section progression in the progression's
+  /// order, worked out again only when either changes.
+  SectionProgression? _sections() {
+    final result = _controller.theoreticalBest;
+    final progression = _controller.progression;
     var cached = _summarySections;
     if (cached == null ||
         !identical(cached.$1, result) ||
@@ -1969,18 +1991,48 @@ class _DayResultsPageState extends State<DayResultsPage> {
         ]),
       );
     }
-    return SessionSummaryCard(
-      key: _coachKey,
+    return cached.$3;
+  }
+
+  /// Before the next session, on a page of its own in large text, read at
+  /// the car: it follows the day as it changes.
+  void _openBriefing() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => saveShortcuts(
+        _saveFromShortcut,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => Scaffold(
+            appBar: AppBar(title: Text(context.l10n.briefingTitle)),
+            body: LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                key: const ValueKey('briefingPage'),
+                padding: constraints.maxWidth > readableWidth
+                    ? readablePadding(constraints.maxWidth)
+                    : const EdgeInsets.all(16),
+                children: [_briefing()],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  /// Before the next session in a few lines ([BriefingCard]).
+  Widget _briefing() {
+    final result = _controller.theoreticalBest;
+    return BriefingCard(
       runId: _controller.latestRunId,
       session: _controller.latestRunName,
-      progression: progression,
+      progression: _controller.progression,
       sectionsState: result?.state,
-      sections: cached.$3,
+      sections: _sections(),
       coach: _controller.coach,
       coachLoading: _controller.coachLoading,
       coachError: _controller.coachError,
-      channels: channels,
-      ownGoals: _goalSummary(),
+      speedsConverted: _controller.coachSpeedsConverted,
+      goals: _ownGoals(_controller.latestRunId),
     );
   }
 
