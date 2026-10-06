@@ -6702,7 +6702,7 @@
   "@coreVboNoValidRows": {
     "description": "No data row of a VBO recording has a usable time."
   },
-  "coreVboNoTimeColumn": "VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.",
+  "coreVboNoTimeColumn": "VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.",
   "@coreVboNoTimeColumn": {
     "description": "A VBO recording has no column holding the time of each row, so it is refused."
   },

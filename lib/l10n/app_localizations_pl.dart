@@ -4649,7 +4649,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get coreVboNoTimeColumn =>
-      'Plik VBO nie ma kolumny czasu (time, timestamp ani UTC time), więc jego próbek nie da się umieścić w czasie.';
+      'Plik VBO nie ma kolumny czasu (time, timestamp ani utc_time), więc jego próbek nie da się umieścić w czasie.';
 
   @override
   String get coreVboFileSize =>

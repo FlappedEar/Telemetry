@@ -81,9 +81,9 @@ final List<_Row> _rows = [
   ),
   (
     _vboParser,
-    "'VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.'",
+    "'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.'",
     _vbo(
-      'VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.',
+      'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.',
     ),
     (l) => l.coreVboNoTimeColumn,
   ),

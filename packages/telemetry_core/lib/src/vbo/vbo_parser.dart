@@ -156,7 +156,7 @@ class _VboParse {
     // into a believable but wrong one (FET-203).
     if (timeIndex < 0) {
       throw const VboParseError(
-        'VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.',
+        'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.',
       );
     }
 

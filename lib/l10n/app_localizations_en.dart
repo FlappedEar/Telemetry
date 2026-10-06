@@ -4548,7 +4548,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreVboNoTimeColumn =>
-      'VBO has no time column (time, timestamp or UTC time), so its samples cannot be timed.';
+      'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.';
 
   @override
   String get coreVboFileSize =>

@@ -1114,7 +1114,7 @@
   "coreVboUnreadable": "Nie można odczytać pliku VBO: {detail}",
   "coreVboNoData": "Plik VBO nie ma wierszy w sekcji [data].",
   "coreVboNoValidRows": "Plik VBO nie zawiera prawidłowych wierszy danych ze znacznikiem czasu.",
-  "coreVboNoTimeColumn": "Plik VBO nie ma kolumny czasu (time, timestamp ani UTC time), więc jego próbek nie da się umieścić w czasie.",
+  "coreVboNoTimeColumn": "Plik VBO nie ma kolumny czasu (time, timestamp ani utc_time), więc jego próbek nie da się umieścić w czasie.",
   "coreVboFileSize": "Plik VBO przekracza obsługiwany limit rozmiaru 128 MiB.",
   "coreVboComplexity": "Tekst pliku VBO przekracza obsługiwany limit złożoności.",
   "coreVboTooManyValues": "Plik VBO ma więcej wartości (wiersze × kolumny) niż obsługiwane 40 milionów.",
