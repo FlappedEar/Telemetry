@@ -147,7 +147,8 @@ _FocusTexts? _focusTextsIn(
 /// added before it was kept, a corner without ranked laps) matches its span
 /// of [spans], all the day's corners on the ground ([measureCornerSpans]),
 /// to the track's again. Null, so no line, when the day is not in
-/// [profile], its track is unknown or no corner of the day is known.
+/// [profile], its track is unknown or no corner of the day is known; no line
+/// for a segment without one when [spans] is empty.
 String? Function(FocusArea area)? focusBefore(
   AppLocalizations l10n,
   DriverProfile? profile,
@@ -191,7 +192,9 @@ String? Function(FocusArea area)? focusBefore(
 
   return (area) => switch (corners[area.segmentId]) {
     final cornerId? => texts.putIfAbsent(cornerId, () => text(cornerId)),
-    null => l10n.focusBeforeNotCorner,
+    // Without the day's corners on the ground, a segment the placement
+    // lacks may still be a corner: say nothing rather than that it is not.
+    null => spans.isEmpty ? null : l10n.focusBeforeNotCorner,
   };
 }
 

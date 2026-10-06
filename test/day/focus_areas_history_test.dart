@@ -331,12 +331,9 @@ void main() {
       ]),
     ]);
     expect(await line(partial), startsWith(turn1));
-    // Without the day's corners on the ground, only what was kept.
-    expect(
-      await line(partial, spans: const []),
-      "Earlier visits here: this place is not one of the track's corners "
-      'in your library yet.',
-    );
+    // Without the day's corners on the ground, only what was kept: a
+    // segment it lacks may still be a corner, so no line.
+    expect(await line(partial, spans: const []), isNull);
   });
 
   test('the Polish texts count visits', () {
