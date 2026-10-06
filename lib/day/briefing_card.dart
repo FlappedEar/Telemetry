@@ -342,11 +342,18 @@ class BriefingCard extends StatelessWidget {
           ? null
           : line('briefingCar', l10n.briefingCar, l10n.channelNotRecorded);
     }
-    final more = hottest.isEmpty ? lines.skip(1).toList() : lines;
+    // As the summary: temperatures the day records but this session does
+    // not read Not recorded.
+    final headline = hottest.isNotEmpty
+        ? hottest
+        : channels.temperatureChannels.isNotEmpty
+        ? l10n.channelNotRecorded
+        : null;
+    final more = headline == null ? lines.skip(1).toList() : lines;
     return line(
       'briefingCar',
       l10n.briefingCar,
-      hottest.isEmpty ? lines.first : hottest,
+      headline ?? lines.first,
       more.isEmpty ? null : more.join('\n'),
     );
   }

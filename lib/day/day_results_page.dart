@@ -2321,11 +2321,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
                   ?.compatibilityGroupId ==
               analysis.chosenGroupId,
       // The best of the circuit shown, whichever laps the session has.
-      bestLap: analysis.groups
-          .where((group) => group.id == analysis.chosenGroupId)
-          .firstOrNull
-          ?.ranking
-          ?.bestOfDay,
+      bestLap: analysis.ranking?.bestOfDay,
     );
   }
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/briefing_card.dart';
@@ -876,6 +877,31 @@ void main() {
         line(tester, 'briefingCar'),
         'Car | Oil 128\u00a0°C | Temperatures: needs 3 ranked laps',
       );
+      // Strong acceleration only, while the day records temperatures: the
+      // temperatures still read Not recorded, as on the summary.
+      await card(
+        tester,
+        channels: DayChannelSummaries(
+          runs: [
+            ...channelsOf('elsewhere').runs,
+            RunChannelSummaries(
+              runId: controller.latestRunId,
+              runName: controller.latestRunName,
+              laps: [
+                for (final row in rows)
+                  SectionAcceleration(
+                    row: row,
+                    acceleration: const LapAcceleration(strongG: 0.3),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+      expect(
+        line(tester, 'briefingCar'),
+        'Car | Not recorded | Strong acceleration: needs 4 ranked laps',
+      );
       // The day records temperatures, this session does not.
       await card(
         tester,
@@ -933,7 +959,10 @@ void main() {
       await openBriefing(tester);
       expect(
         laps(tester),
-        startsWith('Last ranked lap | ${time(own[own.length - 2])} | '),
+        startsWith(
+          'Last ranked lap | ${time(own[own.length - 2])} | '
+          '${own[own.length - 2].runName} · LAP ${own[own.length - 2].lapNumber} |',
+        ),
       );
     });
 
@@ -1016,7 +1045,30 @@ void main() {
       final rect = tester.getRect(value);
       expect(rect.left, greaterThanOrEqualTo(0));
       expect(rect.right, lessThanOrEqualTo(320));
+      // Laid out whole, not cut: scaled down to fit instead.
+      final paragraph = tester.renderObject<RenderParagraph>(value);
+      expect(
+        paragraph.size.width,
+        moreOrLessEquals(
+          paragraph.getMaxIntrinsicWidth(double.infinity),
+          epsilon: 0.5,
+        ),
+      );
     }
+    final scaled = tester.getRect(
+      find.byKey(const ValueKey('briefingLastLap value')),
+    );
+    expect(
+      scaled.width,
+      lessThan(
+        tester
+            .renderObject<RenderParagraph>(
+              find.byKey(const ValueKey('briefingLastLap value')),
+            )
+            .size
+            .width,
+      ),
+    );
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('briefingChance')),
       200,
