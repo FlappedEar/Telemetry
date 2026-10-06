@@ -5144,7 +5144,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get profileSkillsIntro =>
-      'Każda umiejętność z ostatnich 3 dni, w których ją zmierzono, według stałych progów: poziom 5 jest najlepszy. Pewność wynika z liczby zmierzonych sklasyfikowanych okrążeń.';
+      'Każda umiejętność z ostatnich 3 dni, w których ją zmierzono, według stałych progów wyznaczonych przez to, co szybki, doświadczony kierowca powtarza okrążenie po okrążeniu: poziom 5 oznacza jazdę na limicie. Poziom 5 wymaga 15 sklasyfikowanych okrążeń, a poziom 4 – 5. Pewność wynika z liczby zmierzonych sklasyfikowanych okrążeń.';
 
   @override
   String skillName(String id) {
@@ -5562,7 +5562,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsUpdateHelp =>
-      'Przy uruchomieniu, najwyżej raz dziennie, aplikacja pyta GitHub o swoje najnowsze wydanie. Żadne Twoje zapisy ani ustawienia nie są wysyłane.';
+      'Przy uruchomieniu, najwyżej raz dziennie, aplikacja pyta GitHub o swoje najnowsze wydanie i listę torów. Żadne Twoje zapisy ani ustawienia nie są wysyłane.';
 
   @override
   String get settingsUpdateCheckNow => 'Sprawdź aktualizacje';
@@ -5885,4 +5885,62 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get sessionSetupReplace => 'Zastąp';
+
+  @override
+  String trackDialogCircuit(String name) {
+    return 'Tor: $name';
+  }
+
+  @override
+  String get trackDialogCircuitUnknown =>
+      'Tego miejsca nie ma na liście torów.';
+
+  @override
+  String get trackDialogNameCircuit => 'Nazwij ten tor…';
+
+  @override
+  String get circuitNameTitle => 'Nazwa toru';
+
+  @override
+  String get circuitNameHelp =>
+      'Pokazywana dla każdego dnia na tym torze. Zapisana na tym urządzeniu.';
+
+  @override
+  String get settingsCircuitsHeading => 'Tory';
+
+  @override
+  String settingsCircuitsCount(int count) {
+    return 'Torów na liście: $count';
+  }
+
+  @override
+  String get settingsCircuitsHelp =>
+      'Tor jest rozpoznawany po miejscu, w którym zaczyna się trasa. Lista pochodzi z Wikidanych (CC0) i jest aktualizowana razem ze sprawdzaniem aktualizacji aplikacji.';
+
+  @override
+  String get settingsCircuitsUpdate => 'Zaktualizuj listę torów';
+
+  @override
+  String get settingsCircuitsUpdated => 'Lista torów została zaktualizowana.';
+
+  @override
+  String get settingsCircuitsUpToDate => 'Lista torów jest aktualna.';
+
+  @override
+  String get settingsCircuitsFailed =>
+      'Nie udało się pobrać listy torów. Sprawdź połączenie i spróbuj ponownie.';
+
+  @override
+  String get settingsCircuitsMine => 'Twoje nazwy torów';
+
+  @override
+  String settingsCircuitsRenamed(String name) {
+    return 'Na liście: $name';
+  }
+
+  @override
+  String get settingsCircuitsAdded => 'Dodany przez Ciebie';
+
+  @override
+  String get settingsCircuitsForget => 'Usuń tę nazwę';
 }

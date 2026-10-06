@@ -31,6 +31,7 @@ export 'src/analysis/track_progress.dart';
 export 'src/analysis/track_segment_editing.dart';
 export 'src/analysis/track_segment_proposals.dart';
 export 'src/analysis/track_segment_review.dart';
+export 'src/day/circuits.dart';
 export 'src/day/compatibility.dart';
 export 'src/day/day_analysis.dart';
 export 'src/day/day_channel_summaries.dart';
@@ -91,7 +92,13 @@ export 'src/source_fingerprint.dart';
 export 'src/speed_units.dart';
 export 'src/rcz/rcz_parser.dart' show RczParser, rczAccelerationNote;
 export 'src/telemetry_session.dart'
-    show InterpolationMode, SamplePoint, TelemetryChannel, TelemetrySession, telemetryGapThreshold;
+    show
+        InterpolationMode,
+        SamplePoint,
+        TelemetryChannel,
+        TelemetrySession,
+        telemetryGapThreshold,
+        telemetryValueAt;
 export 'src/timing_gate.dart';
 export 'src/vbo/vbo_file.dart';
 export 'src/vbo/vbo_limits.dart';

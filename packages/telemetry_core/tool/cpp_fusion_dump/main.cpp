@@ -11,7 +11,7 @@
 // unrelated, short and missing signals.
 // "fusion": fuseChannels (channel-fusion-v1) and fusedSession on the
 // sessions of ChannelFusionTests.cpp under every rule, refused sources, unit
-// mismatches, two alternatives and name clashes.
+// mismatches, two alternatives, name clashes and gap markers (KAN-188).
 // "tolerances": fusionConflictTolerance for fixed units and ranges.
 // "inputs": a digest of every input session (by "alignment/" or "fusion/"
 // and the case), so the Dart test can confirm it
@@ -158,6 +158,25 @@ void add(TelemetrySession &session, const TelemetryChannel &channel, const QStri
 }
 
 double fusionSpeed(const double t) { return 100.0 + 20.0 * wave(0.1 * t); }
+
+// A channel with the gap markers RczParser writes: NaN one step inside every
+// step longer than `gap`.
+TelemetryChannel withGapMarkers(const TelemetryChannel &channel, const double gap)
+{
+    TelemetryChannel marked;
+    marked.name = channel.name;
+    marked.unit = channel.unit;
+    for (qsizetype index = 0; index < channel.timestamps.size(); ++index) {
+        if (index && channel.timestamps[index] - channel.timestamps[index - 1] > gap) {
+            const double before = channel.timestamps[index - 1], after = channel.timestamps[index];
+            marked.timestamps << std::nextafter(before, after) << std::nextafter(after, before);
+            marked.values << std::numeric_limits<float>::quiet_NaN() << std::numeric_limits<float>::quiet_NaN();
+        }
+        marked.timestamps << channel.timestamps[index];
+        marked.values << channel.values[index];
+    }
+    return marked;
+}
 
 // ChannelFusionTests' primary (a VBO): GPS speed, missing from 40 to 50 s.
 TelemetrySession fusionPrimary()
@@ -499,6 +518,32 @@ QJsonObject fusionCases()
             [](double c) { return c > 30.0 && c < 33.0 ? std::nan("") : fusionSpeed(c + 5.0); }), "speed");
         cases.insert("missingValues", fusionCase("missingValues", primary, {{"rcz", alternative, five}},
             rule("speed", "rcz", FusionRule::PreferAlternative)));
+    }
+    // KAN-188: RCZ gap markers mapped through a 3000 s offset round onto
+    // their neighbours unless kept inside the gap; added, and preferred over
+    // a primary that fills the gap.
+    {
+        TelemetrySession alternative;
+        add(alternative, withGapMarkers(makeChannel("rpm-obd", "rpm", 1000.0, 1010.0, 10.0,
+            [](double c) { return 3000.0 + c; }, [](double c) { return c < 1004.0 || c > 1006.0; }), 1.0), "rpm");
+        TelemetrySession later;
+        add(later, makeChannel("velocity", "km/h", 3990.0, 4020.0, 10.0, fusionSpeed), "speed");
+        cases.insert("gapMarkersAdded", fusionCase("gapMarkersAdded", later, {{"rcz", alternative, {3000.0, 0.0}}}));
+        add(later, makeChannel("rpm-obd", "rpm", 3990.0, 4020.0, 10.0, [](double t) { return t + 0.5; }), "rpm");
+        cases.insert("gapMarkersPreferred", fusionCase("gapMarkersPreferred", later,
+            {{"rcz", alternative, {3000.0, 0.0}}}, rule("rpm", "rcz", FusionRule::PreferAlternative)));
+    }
+    // KAN-188: a 1 Hz primary filled by a 10 Hz alternative with a 2 s gap; the
+    // merged channel's own threshold (3 s) would bridge it, so it is marked.
+    {
+        TelemetrySession slow;
+        add(slow, makeChannel("velocity", "km/h", 0.0, 400.0, 1.0, fusionSpeed,
+            [](double t) { return t < 100.0 || t > 120.0; }), "speed");
+        TelemetrySession fast;
+        add(fast, makeChannel("velocity", "km/h", 0.0, 30.0, 10.0, [](double c) { return fusionSpeed(c + 95.0); },
+            [](double c) { return c < 13.0 || c > 15.0; }), "speed");
+        cases.insert("mergedGapMarkers", fusionCase("mergedGapMarkers", slow, {{"rcz", fast, {95.0, 0.0}}},
+            rule("speed", "rcz", FusionRule::FillGaps)));
     }
     return cases;
 }

@@ -293,6 +293,11 @@ void main() {
       100,
       scrollable: find.byType(Scrollable).last,
     );
+    // The circuits section below can move it while the dialog settles.
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('updateCheckSetting')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('updateCheckSetting')));
     await tester.pump();
     expect(updateCheckSetting.value, isFalse);

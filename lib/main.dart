@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'app/app_navigation.dart';
 import 'channel_names.dart';
+import 'circuits/circuit_directory.dart';
 import 'diagnostics/app_errors.dart';
 import 'import/day_import_page.dart';
 import 'l10n.dart';
@@ -30,10 +31,14 @@ Future<void> main() async {
     ),
   );
   // After the first frame, so the message has a page to show on.
-  WidgetsBinding.instance.addPostFrameCallback((_) => checkForUpdateOnLaunch());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    checkForUpdateOnLaunch();
+    refreshCircuitsOnLaunch();
+  });
 }
 
-/// The bundled fonts' SIL Open Font License texts, which must ship with them.
+/// The bundled fonts' SIL Open Font License texts, which must ship with
+/// them, and where the circuit list comes from.
 Stream<LicenseEntry> _fontLicenses() async* {
   for (final (font, file) in [
     ('Sora', 'OFL-Sora.txt'),
@@ -42,6 +47,12 @@ Stream<LicenseEntry> _fontLicenses() async* {
     final text = await rootBundle.loadString('assets/fonts/$file');
     yield LicenseEntryWithLineBreaks([font], text);
   }
+  yield const LicenseEntryWithLineBreaks(
+    ['Circuit list'],
+    'Circuit names and positions come from Wikidata '
+    '(https://www.wikidata.org), dedicated to the public domain under '
+    'CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/).',
+  );
 }
 
 class TelemetryApp extends StatelessWidget {

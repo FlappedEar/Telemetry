@@ -5032,7 +5032,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileSkillsIntro =>
-      'Each skill over your last 3 days that measured it, against fixed bands: level 5 is the best. Confidence comes from the ranked laps measured.';
+      'Each skill over your last 3 days that measured it, against fixed bands set by what a fast, experienced driver repeats lap after lap: level 5 means at the limit. Level 5 needs 15 ranked laps and level 4 needs 5. Confidence comes from the ranked laps measured.';
 
   @override
   String skillName(String id) {
@@ -5444,7 +5444,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsUpdateHelp =>
-      'When the app starts, at most once a day, it asks GitHub for its newest release. None of your recordings or settings are sent.';
+      'When the app starts, at most once a day, it asks GitHub for its newest release and circuit list. None of your recordings or settings are sent.';
 
   @override
   String get settingsUpdateCheckNow => 'Check for updates';
@@ -5767,4 +5767,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionSetupReplace => 'Replace';
+
+  @override
+  String trackDialogCircuit(String name) {
+    return 'Circuit: $name';
+  }
+
+  @override
+  String get trackDialogCircuitUnknown =>
+      'This place is not in the circuit list.';
+
+  @override
+  String get trackDialogNameCircuit => 'Name this circuit…';
+
+  @override
+  String get circuitNameTitle => 'Circuit name';
+
+  @override
+  String get circuitNameHelp =>
+      'Shown for every day driven here. Kept on this device.';
+
+  @override
+  String get settingsCircuitsHeading => 'Circuits';
+
+  @override
+  String settingsCircuitsCount(int count) {
+    return 'Circuits in the list: $count';
+  }
+
+  @override
+  String get settingsCircuitsHelp =>
+      'A route\'s circuit is named from where it starts. The list comes from Wikidata (CC0) and is updated with the app\'s update check.';
+
+  @override
+  String get settingsCircuitsUpdate => 'Update the circuit list';
+
+  @override
+  String get settingsCircuitsUpdated => 'The circuit list was updated.';
+
+  @override
+  String get settingsCircuitsUpToDate => 'The circuit list is up to date.';
+
+  @override
+  String get settingsCircuitsFailed =>
+      'The circuit list could not be fetched. Check the connection and try again.';
+
+  @override
+  String get settingsCircuitsMine => 'Your circuit names';
+
+  @override
+  String settingsCircuitsRenamed(String name) {
+    return 'Listed as $name';
+  }
+
+  @override
+  String get settingsCircuitsAdded => 'Added by you';
+
+  @override
+  String get settingsCircuitsForget => 'Forget this name';
 }

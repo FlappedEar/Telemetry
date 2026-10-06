@@ -66,6 +66,9 @@ final ValueNotifier<bool> keepScreenOnSetting = ValueNotifier(true);
 /// `settings.json` so the check on launch runs at most once a day.
 final ValueNotifier<DateTime?> lastUpdateCheck = ValueNotifier(null);
 
+/// When the circuit list was last fetched; null before the first time.
+final ValueNotifier<DateTime?> lastCircuitCheck = ValueNotifier(null);
+
 /// The speed unit each of the open day's recordings declares ("km/h",
 /// "mph", or empty when it declares none). Set when a day opens.
 List<String> declaredSpeedUnits = const [];
@@ -139,6 +142,7 @@ String displayUnit(String name, String unit) {
 
 /// Reads and keeps [speedUnitSetting], [weatherLookupSetting],
 /// [hideUnrankedLapsSetting], [updateCheckSetting], [lastUpdateCheck],
+/// [lastCircuitCheck],
 /// [appLookSetting], [keepScreenOnSetting], [channelNamesSetting] and [listedChannelsSetting] in
 /// `settings.json` in the app's support folder. Off in `flutter test`.
 Future<void> loadSettings() async {
@@ -168,6 +172,11 @@ Future<void> loadSettings() async {
       if (json is Map && json['lastUpdateCheck'] is String) {
         lastUpdateCheck.value = DateTime.tryParse(
           json['lastUpdateCheck'] as String,
+        );
+      }
+      if (json is Map && json['lastCircuitCheck'] is String) {
+        lastCircuitCheck.value = DateTime.tryParse(
+          json['lastCircuitCheck'] as String,
         );
       }
       if (json is Map && json['look'] is String) {
@@ -205,6 +214,8 @@ Future<void> loadSettings() async {
       'keepScreenOn': keepScreenOnSetting.value,
       if (lastUpdateCheck.value case final checked?)
         'lastUpdateCheck': checked.toUtc().toIso8601String(),
+      if (lastCircuitCheck.value case final checked?)
+        'lastCircuitCheck': checked.toUtc().toIso8601String(),
       'channelNames': channelNamesSetting.value,
       'listedChannels': listedChannelsSetting.value,
     });
@@ -245,6 +256,7 @@ Future<void> loadSettings() async {
   hideUnrankedLapsSetting.addListener(write);
   updateCheckSetting.addListener(write);
   lastUpdateCheck.addListener(write);
+  lastCircuitCheck.addListener(write);
   appLookSetting.addListener(write);
   keepScreenOnSetting.addListener(write);
   channelNamesSetting.addListener(write);

@@ -7608,7 +7608,7 @@ abstract class AppLocalizations {
   /// Explains how skill levels are worked out.
   ///
   /// In en, this message translates to:
-  /// **'Each skill over your last 3 days that measured it, against fixed bands: level 5 is the best. Confidence comes from the ranked laps measured.'**
+  /// **'Each skill over your last 3 days that measured it, against fixed bands set by what a fast, experienced driver repeats lap after lap: level 5 means at the limit. Level 5 needs 15 ranked laps and level 4 needs 5. Confidence comes from the ranked laps measured.'**
   String get profileSkillsIntro;
 
   /// A driving skill's name, from the 12-skill model.
@@ -8058,7 +8058,7 @@ abstract class AppLocalizations {
   /// Help under the update switch in Settings.
   ///
   /// In en, this message translates to:
-  /// **'When the app starts, at most once a day, it asks GitHub for its newest release. None of your recordings or settings are sent.'**
+  /// **'When the app starts, at most once a day, it asks GitHub for its newest release and circuit list. None of your recordings or settings are sent.'**
   String get settingsUpdateHelp;
 
   /// Settings button that looks for a newer version now.
@@ -8510,6 +8510,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replace'**
   String get sessionSetupReplace;
+
+  /// The circuit the route starts on, from the circuit list or named by the user.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuit: {name}'**
+  String trackDialogCircuit(String name);
+
+  /// The route's start is near no listed circuit.
+  ///
+  /// In en, this message translates to:
+  /// **'This place is not in the circuit list.'**
+  String get trackDialogCircuitUnknown;
+
+  /// Button: opens the dialog that names the circuit at this route's start.
+  ///
+  /// In en, this message translates to:
+  /// **'Name this circuit…'**
+  String get trackDialogNameCircuit;
+
+  /// Title of the dialog that names a circuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuit name'**
+  String get circuitNameTitle;
+
+  /// Under the circuit name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown for every day driven here. Kept on this device.'**
+  String get circuitNameHelp;
+
+  /// Settings heading: the circuit list.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuits'**
+  String get settingsCircuitsHeading;
+
+  /// How many circuits the circuit list holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Circuits in the list: {count}'**
+  String settingsCircuitsCount(int count);
+
+  /// Settings help about the circuit list.
+  ///
+  /// In en, this message translates to:
+  /// **'A route\'s circuit is named from where it starts. The list comes from Wikidata (CC0) and is updated with the app\'s update check.'**
+  String get settingsCircuitsHelp;
+
+  /// Button: fetch the newest circuit list now.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the circuit list'**
+  String get settingsCircuitsUpdate;
+
+  /// Message after a newer circuit list was fetched.
+  ///
+  /// In en, this message translates to:
+  /// **'The circuit list was updated.'**
+  String get settingsCircuitsUpdated;
+
+  /// Message when no newer circuit list was found.
+  ///
+  /// In en, this message translates to:
+  /// **'The circuit list is up to date.'**
+  String get settingsCircuitsUpToDate;
+
+  /// Message when fetching the circuit list failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The circuit list could not be fetched. Check the connection and try again.'**
+  String get settingsCircuitsFailed;
+
+  /// Heading of the circuits the driver named.
+  ///
+  /// In en, this message translates to:
+  /// **'Your circuit names'**
+  String get settingsCircuitsMine;
+
+  /// Under a circuit the driver renamed: its name in the list.
+  ///
+  /// In en, this message translates to:
+  /// **'Listed as {name}'**
+  String settingsCircuitsRenamed(String name);
+
+  /// Under a circuit the driver added.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by you'**
+  String get settingsCircuitsAdded;
+
+  /// Tooltip: remove the driver's circuit name.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this name'**
+  String get settingsCircuitsForget;
 }
 
 class _AppLocalizationsDelegate

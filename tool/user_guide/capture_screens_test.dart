@@ -754,16 +754,19 @@ void main() {
     final folder = '${directory.path}/ProfileShot';
     final library = _library(folder);
     await tester.runAsync(library.load);
-    await library.recordDay(
-      eventId: controller.eventId,
-      path: profileDayPath(folder, controller.eventId),
-      name: controller.name,
-      analysis: controller.analysis,
-      recordings: {
-        for (final named in controller.runs)
-          named.run.id: controller.session(named.run.id),
-      },
-      theoreticalBest: controller.theoreticalBest,
+    // Off the fake clock: the profile's writes are real file work.
+    await tester.runAsync(
+      () => library.recordDay(
+        eventId: controller.eventId,
+        path: profileDayPath(folder, controller.eventId),
+        name: controller.name,
+        analysis: controller.analysis,
+        recordings: {
+          for (final named in controller.runs)
+            named.run.id: controller.session(named.run.id),
+        },
+        theoreticalBest: controller.theoreticalBest,
+      ),
     );
     await tester.runAsync(library.flush);
     final host = Object();

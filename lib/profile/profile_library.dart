@@ -8,6 +8,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../circuits/circuit_directory.dart';
+
 /// The name of the driver profile file in the profile folder.
 const profileFileName = 'driver.feprofile';
 
@@ -310,7 +312,7 @@ class ProfileLibrary extends ChangeNotifier {
           file: p.relative(path, from: folder).replaceAll(r'\', '/'),
           name: name,
           analysis: analysis,
-          trackName: defaultTrackName(profile.tracks.length + 1),
+          trackName: _newTrackName(profile, analysis),
           recordings: recordings,
           theoreticalBest: theoreticalBest,
           weather: weather,
@@ -336,6 +338,22 @@ class ProfileLibrary extends ChangeNotifier {
       );
       return held == null ? next : setProfileSessionSetups(next, eventId, held);
     });
+  }
+
+  /// The name of a new track of [analysis]: the circuit its route starts
+  /// on, numbered when the profile has a track of that name already (another
+  /// layout there); else [defaultTrackName].
+  String _newTrackName(DriverProfile profile, DayAnalysis analysis) {
+    final circuit = circuitDirectory.find(
+      routeStart(analysis, analysis.chosenGroup?.runIds ?? const []),
+    );
+    if (circuit == null) return defaultTrackName(profile.tracks.length + 1);
+    final taken = {for (final track in profile.tracks) track.name};
+    var name = circuit.name;
+    for (var number = 2; taken.contains(name); ++number) {
+      name = '${circuit.name} $number';
+    }
+    return name;
   }
 
   /// The latest [recordDay] of each day, by event id.

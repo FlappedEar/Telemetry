@@ -387,6 +387,38 @@ final double _quietNan = (ByteData(8)..setUint64(0, 0x7ff8000000000000)).getFloa
 
 double _fusionSpeed(double t) => 100.0 + 20.0 * _wave(0.1 * t);
 
+// The positive [value]'s neighbouring double towards [toward].
+double _nextAfter(double value, double toward) {
+  final bits = ByteData(8)..setFloat64(0, value);
+  bits.setInt64(0, bits.getInt64(0) + (toward > value ? 1 : -1));
+  return bits.getFloat64(0);
+}
+
+// A channel with the gap markers the RCZ parser writes, as the tool's
+// withGapMarkers.
+TelemetryChannel _withGapMarkers(TelemetryChannel channel, double gap) {
+  final times = <double>[], values = <double>[];
+  for (var index = 0; index < channel.timestamps.length; ++index) {
+    if (index > 0 && channel.timestamps[index] - channel.timestamps[index - 1] > gap) {
+      final before = channel.timestamps[index - 1], after = channel.timestamps[index];
+      times
+        ..add(_nextAfter(before, after))
+        ..add(_nextAfter(after, before));
+      values
+        ..add(_quietNan)
+        ..add(_quietNan);
+    }
+    times.add(channel.timestamps[index]);
+    values.add(channel.values[index]);
+  }
+  return TelemetryChannel(
+    name: channel.name,
+    unit: channel.unit,
+    timestamps: Float64List.fromList(times),
+    values: Float32List.fromList(values),
+  );
+}
+
 TelemetrySession _fusionPrimary([List<(TelemetryChannel, String?)> extra = const []]) => _session(
   [
     (
@@ -447,6 +479,31 @@ Map<String, _FusionCase> _fusionCases() {
       (_channel('throttle', '%', 0.0, 95.0, 10.0, (c) => 50.0 + 50.0 * _wave(0.2 * c)), 'throttle'),
     ],
   );
+  // Overlays KAN-188: RCZ gap markers through a 3000 s offset.
+  final markedRpm = _session([
+    (
+      _withGapMarkers(
+        _channel(
+          'rpm-obd',
+          'rpm',
+          1000.0,
+          1010.0,
+          10.0,
+          (c) => 3000.0 + c,
+          (c) => c < 1004.0 || c > 1006.0,
+        ),
+        1.0,
+      ),
+      'rpm',
+    ),
+  ]);
+  const offset3000 = SourceClock(offsetSeconds: 3000.0);
+  final laterSpeed = (_channel('velocity', 'km/h', 3990.0, 4020.0, 10.0, _fusionSpeed), 'speed');
+  final later = _session([laterSpeed]);
+  final laterWithRpm = _session([
+    laterSpeed,
+    (_channel('rpm-obd', 'rpm', 3990.0, 4020.0, 10.0, (t) => t + 0.5), 'rpm'),
+  ]);
   return {
     'added': (primary, [rcz(_fusionAlternative())], none),
     'agree': (primary, [rcz(_fusionAlternative(speedBias: 0.5))], none),
@@ -592,6 +649,48 @@ Map<String, _FusionCase> _fusionCases() {
         ),
       ],
       _rule('speed', 'rcz', FusionRule.preferAlternative),
+    ),
+    'gapMarkersAdded': (later, [rcz(markedRpm, offset3000)], none),
+    'gapMarkersPreferred': (
+      laterWithRpm,
+      [rcz(markedRpm, offset3000)],
+      _rule('rpm', 'rcz', FusionRule.preferAlternative),
+    ),
+    'mergedGapMarkers': (
+      _session([
+        (
+          _channel(
+            'velocity',
+            'km/h',
+            0.0,
+            400.0,
+            1.0,
+            _fusionSpeed,
+            (t) => t < 100.0 || t > 120.0,
+          ),
+          'speed',
+        ),
+      ]),
+      [
+        rcz(
+          _session([
+            (
+              _channel(
+                'velocity',
+                'km/h',
+                0.0,
+                30.0,
+                10.0,
+                (c) => _fusionSpeed(c + 95.0),
+                (c) => c < 13.0 || c > 15.0,
+              ),
+              'speed',
+            ),
+          ]),
+          const SourceClock(offsetSeconds: 95.0),
+        ),
+      ],
+      _rule('speed', 'rcz', FusionRule.fillGaps),
     ),
   };
 }
