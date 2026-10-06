@@ -450,6 +450,8 @@ double travelledMeters(TelemetrySession session, List<DrivingStateInterval> inte
   final factor = metresPerSecondPerSpeedUnit(speed.unit);
   if (factor == null) return 0.0;
   final times = speed.timestamps;
+  // No distance is integrated across a telemetry gap (Overlays KAN-201).
+  final gapThreshold = telemetryGapThreshold(speed);
   var meters = 0.0;
   for (final interval in intervals) {
     for (
@@ -457,6 +459,7 @@ double travelledMeters(TelemetrySession session, List<DrivingStateInterval> inte
       index + 1 < times.length && times[index + 1] <= interval.end;
       ++index
     ) {
+      if (times[index + 1] - times[index] > gapThreshold) continue;
       final double a = speed.values[index], b = speed.values[index + 1];
       if (a.isFinite && b.isFinite) {
         meters += (a + b) / 2.0 * factor * (times[index + 1] - times[index]);
