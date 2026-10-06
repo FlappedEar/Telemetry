@@ -610,36 +610,58 @@ final class SkillDefinition {
 
   bool get measured => bands.isNotEmpty;
 
-  /// The level of [value]: 5 at or below the first band, 1 above the last.
-  int levelOf(double value) => 5 - bands.where((band) => value > band).length;
+  /// The level of [value] from [rankedLaps]: 5 at or below the first band,
+  /// 1 above the last, and never above what the laps can show
+  /// ([skillLevelCap]).
+  int levelOf(double value, {int rankedLaps = skillHighConfidenceLaps}) =>
+      min(bandOf(value), skillLevelCap(rankedLaps));
+
+  /// The level of [value] by the bands alone, whatever the laps; trends
+  /// compare these, so more laps alone is no change in skill.
+  int bandOf(double value) => 5 - bands.where((band) => value > band).length;
 }
 
-/// The skills, in the order shown. Bands from the Profile screen's draft
-/// (thread "Welcome screen and app navigation"); tune them here, stored
-/// data never changes.
+/// Ranked laps for medium and high confidence.
+const skillMediumConfidenceLaps = 5;
+const skillHighConfidenceLaps = 15;
+
+/// The highest level [rankedLaps] can show (FET-191): 5 only from high
+/// confidence, 4 from medium, 3 below that. A few good laps are not yet the
+/// limit.
+int skillLevelCap(int rankedLaps) => rankedLaps >= skillHighConfidenceLaps
+    ? 5
+    : rankedLaps >= skillMediumConfidenceLaps
+    ? 4
+    : 3;
+
+/// The skills, in the order shown; tune them here, stored data never
+/// changes. Absolute bands (FET-191): level 5 is what a fast, experienced
+/// driver repeats lap after lap, so it means at the limit, not consistent
+/// with oneself; the first draft's bands (from one real day) gave 5 too
+/// easily.
 const skillCatalogue = [
-  SkillDefinition('liftTiming', SkillGroup.braking, unit: 's', bands: [0.2, 0.4, 0.7, 1]),
-  SkillDefinition('brakePointConsistency', SkillGroup.braking, unit: 'm', bands: [4, 6, 9, 14]),
-  SkillDefinition('brakeReleaseTiming', SkillGroup.braking, unit: 'm', bands: [6, 9, 14, 21]),
+  SkillDefinition('liftTiming', SkillGroup.braking, unit: 's', bands: [0.1, 0.25, 0.5, 0.8]),
+  SkillDefinition('brakePointConsistency', SkillGroup.braking, unit: 'm', bands: [2, 4, 7, 12]),
+  SkillDefinition('brakeReleaseTiming', SkillGroup.braking, unit: 'm', bands: [3, 6, 10, 16]),
   SkillDefinition(
     'brakingEffectiveness',
     SkillGroup.braking,
     unit: 'g',
-    bands: [0.03, 0.06, 0.1, 0.15],
+    bands: [0.02, 0.04, 0.07, 0.12],
   ),
-  SkillDefinition('turnInConsistency', SkillGroup.corner, unit: 'km/h', bands: [2, 4, 6, 9]),
-  SkillDefinition('minimumSpeedControl', SkillGroup.corner, unit: 'km/h', bands: [2, 4, 6, 9]),
-  SkillDefinition('lineConsistency', SkillGroup.corner, unit: 'm', bands: [0.5, 1, 1.5, 2.5]),
-  SkillDefinition('throttleReapplication', SkillGroup.exit, unit: 'm', bands: [4, 6, 9, 14]),
-  SkillDefinition('throttleCommitment', SkillGroup.exit, unit: '%', bands: [5, 15, 30, 50]),
-  SkillDefinition('exitSpeedExecution', SkillGroup.exit, unit: 'km/h', bands: [1, 3, 6, 9]),
+  SkillDefinition('turnInConsistency', SkillGroup.corner, unit: 'km/h', bands: [1, 2, 4, 7]),
+  SkillDefinition('minimumSpeedControl', SkillGroup.corner, unit: 'km/h', bands: [1, 2, 4, 7]),
+  SkillDefinition('lineConsistency', SkillGroup.corner, unit: 'm', bands: [0.4, 0.7, 1.1, 1.8]),
+  SkillDefinition('throttleReapplication', SkillGroup.exit, unit: 'm', bands: [2, 4, 7, 12]),
+  SkillDefinition('throttleCommitment', SkillGroup.exit, unit: '%', bands: [2, 10, 20, 35]),
+  SkillDefinition('exitSpeedExecution', SkillGroup.exit, unit: 'km/h', bands: [1, 2, 4, 7]),
   SkillDefinition(
     'cornerSequenceManagement',
     SkillGroup.lap,
     unit: 's',
-    bands: [0.02, 0.05, 0.1, 0.2],
+    bands: [0.01, 0.03, 0.06, 0.1],
   ),
-  SkillDefinition('paceConsistency', SkillGroup.lap, unit: 's', bands: [1, 2.5, 5, 8]),
+  SkillDefinition('paceConsistency', SkillGroup.lap, unit: 's', bands: [0.5, 1, 2, 4]),
 ];
 
 /// A skill's level over its window.
@@ -675,9 +697,9 @@ final class SkillLevel {
   /// Low below 5 ranked laps, medium below 15, high from 15.
   SkillConfidence? get confidence => level == null
       ? null
-      : rankedLaps < 5
+      : rankedLaps < skillMediumConfidenceLaps
       ? SkillConfidence.low
-      : rankedLaps < 15
+      : rankedLaps < skillHighConfidenceLaps
       ? SkillConfidence.medium
       : SkillConfidence.high;
 }
@@ -689,13 +711,42 @@ double? _median(List<double> values) {
   return sorted.length.isOdd ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-/// The day's best per corner, from all its sessions on the track: minimum
-/// and exit speed, m/s, and mean deceleration while braking, g.
+/// The best per corner: minimum and exit speed, m/s, and mean deceleration
+/// while braking, g.
 typedef _CornerBest = ({double? minimum, double? exit, double? deceleration});
 
+/// The key of [cornerId] on [day]'s track in its car, for [_bestEver].
+String? _cornerKey(ProfileDay day, String cornerId) =>
+    day.trackId == null ? null : '${day.carId}\n${day.trackId}\n$cornerId';
+
+/// The best ever per corner of [days], each in its car: what the car and
+/// driver have shown there, so a slow day is not its own reference.
+Map<String, _CornerBest> _bestEver(Iterable<ProfileDay> days) {
+  final bestEver = <String, _CornerBest>{};
+  for (final day in days) {
+    for (final session in _onTrack(day)) {
+      for (final corner in session.stats?.corners ?? const <CornerStats>[]) {
+        final key = _cornerKey(day, corner.cornerId);
+        if (key == null) continue;
+        final best = bestEver[key];
+        bestEver[key] = (
+          minimum: _higher(best?.minimum, corner.bestMinimumSpeed),
+          exit: _higher(best?.exit, corner.bestExitSpeed),
+          deceleration: _higher(best?.deceleration, corner.bestDecelerationG),
+        );
+      }
+    }
+  }
+  return bestEver;
+}
+
 /// One session's measure of [skill] and its ranked laps; null when not
-/// measured. [dayBest] is the day's best per corner.
-(double, int)? _skillMeasure(String skill, SessionStats stats, Map<String, _CornerBest> dayBest) {
+/// measured. [bestAt] gives the best ever at a corner of the session's day.
+(double, int)? _skillMeasure(
+  String skill,
+  SessionStats stats,
+  _CornerBest? Function(String cornerId) bestAt,
+) {
   (double, int)? median(double? Function(CornerStats corner) value, {double scale = 1}) {
     final values = [
       for (final corner in stats.corners)
@@ -722,7 +773,12 @@ typedef _CornerBest = ({double? minimum, double? exit, double? deceleration});
     case 'throttleReapplication':
       return median((corner) => corner.pickupSpreadMeters);
     case 'cornerSequenceManagement':
-      return median((corner) => corner.sequenceLossSeconds);
+      // The mean on purpose, not the median: most corners give nothing back,
+      // so a median is 0 even where one corner costs the next part a lot.
+      final losses = [for (final corner in stats.corners) ?corner.sequenceLossSeconds];
+      return losses.isEmpty
+          ? null
+          : (losses.reduce((a, b) => a + b) / losses.length, stats.rankedLaps);
     case 'throttleCommitment':
       // A share of all the session's passes, from 3 of them on 3 laps.
       var known = 0, released = 0;
@@ -733,13 +789,14 @@ typedef _CornerBest = ({double? minimum, double? exit, double? deceleration});
       return known < 3 || stats.rankedLaps < 3 ? null : (released / known * 100, stats.rankedLaps);
     case 'brakingEffectiveness':
       return median((corner) {
-        final best = dayBest[corner.cornerId]?.deceleration, typical = corner.decelerationG;
+        final best = bestAt(corner.cornerId)?.deceleration, typical = corner.decelerationG;
         return best == null || typical == null ? null : max(0, best - typical);
       });
     case 'minimumSpeedControl' || 'exitSpeedExecution':
       final minimum = skill == 'minimumSpeedControl';
       return median((corner) {
-        final best = minimum ? dayBest[corner.cornerId]?.minimum : dayBest[corner.cornerId]?.exit;
+        final top = bestAt(corner.cornerId);
+        final best = minimum ? top?.minimum : top?.exit;
         final typical = minimum ? corner.minimumSpeed : corner.exitSpeed;
         return best == null || typical == null ? null : max(0, best - typical);
       }, scale: 3.6);
@@ -761,30 +818,29 @@ List<SkillLevel> skillLevels(
       (day) => (trackId == null || day.trackId == trackId) && (carId == null || day.carId == carId),
     ),
   );
+  final bestEver = _bestEver(days);
   return [
     for (final skill in skillCatalogue)
-      if (!skill.measured) SkillLevel(skill: skill) else _skillLevel(skill, days, max(1, window)),
+      if (!skill.measured)
+        SkillLevel(skill: skill)
+      else
+        _skillLevel(skill, days, max(1, window), bestEver),
   ];
 }
 
-SkillLevel _skillLevel(SkillDefinition skill, List<ProfileDay> days, int window) {
+SkillLevel _skillLevel(
+  SkillDefinition skill,
+  List<ProfileDay> days,
+  int window,
+  Map<String, _CornerBest> bestEver,
+) {
   // Per day that measured it, newest first: its sessions' measures.
   final measured = <(ProfileDay, List<(double, int)>)>[];
   for (final day in days.reversed) {
-    final dayBest = <String, _CornerBest>{};
-    for (final session in _onTrack(day)) {
-      for (final corner in session.stats?.corners ?? const <CornerStats>[]) {
-        final best = dayBest[corner.cornerId];
-        dayBest[corner.cornerId] = (
-          minimum: _higher(best?.minimum, corner.bestMinimumSpeed),
-          exit: _higher(best?.exit, corner.bestExitSpeed),
-          deceleration: _higher(best?.deceleration, corner.bestDecelerationG),
-        );
-      }
-    }
+    _CornerBest? best(String cornerId) => bestEver[_cornerKey(day, cornerId) ?? ''];
     final values = [
       for (final session in _onTrack(day))
-        if (session.stats case final stats?) ?_skillMeasure(skill.id, stats, dayBest),
+        if (session.stats case final stats?) ?_skillMeasure(skill.id, stats, best),
     ];
     if (values.isNotEmpty) measured.add((day, values));
     if (measured.length >= window * 2) break;
@@ -800,8 +856,11 @@ SkillLevel _skillLevel(SkillDefinition skill, List<ProfileDay> days, int window)
   final now = over(measured.take(window));
   if (now == null) return SkillLevel(skill: skill);
   final before = over(measured.skip(window));
-  final level = skill.levelOf(now.$1);
-  final earlier = before == null ? null : skill.levelOf(before.$1);
+  final level = skill.levelOf(now.$1, rankedLaps: now.$2);
+  // The trend by the bands alone: a window with fewer laps is capped lower
+  // without being a worse skill.
+  final band = skill.bandOf(now.$1);
+  final earlier = before == null ? null : skill.bandOf(before.$1);
   return SkillLevel(
     skill: skill,
     level: level,
@@ -811,9 +870,9 @@ SkillLevel _skillLevel(SkillDefinition skill, List<ProfileDay> days, int window)
     lastDay: measured.first.$1,
     trend: earlier == null
         ? null
-        : level > earlier
+        : band > earlier
         ? SkillTrend.improving
-        : level < earlier
+        : band < earlier
         ? SkillTrend.declining
         : SkillTrend.steady,
   );

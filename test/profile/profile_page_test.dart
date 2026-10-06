@@ -174,7 +174,7 @@ void main() {
           find.byKey(const ValueKey('skillDetails paceConsistency')),
         )
         .data!;
-    expect(pace, startsWith('Level 4 of 5'));
+    expect(pace, startsWith('Level 3 of 5'));
     expect(pace, contains('High confidence'));
     expect(pace, contains('16 ranked laps over 2 days'));
     expect(
@@ -188,7 +188,7 @@ void main() {
     String value(String id) =>
         tester.widget<Text>(find.byKey(ValueKey('skillValue $id'))).data!;
     expect(value('liftTiming'), 'Off the throttle to braking: 0.30\u00a0s');
-    // 0.8 g against the day's best 0.9 g.
+    // 0.8 g against the best ever there, 0.9 g.
     expect(
       value('brakingEffectiveness'),
       'Braking below your best: 0.10\u00a0g',

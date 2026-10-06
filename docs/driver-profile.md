@@ -192,32 +192,42 @@ last.
 - `skillLevels`: the 12 skills of `skillCatalogue`, each level 1–5 = 5 − bands
   exceeded, over the last 3 days that measured it; confidence from its ranked
   laps (low below 5, medium below 15, high from 15); trend against the 3 days before.
+  A level is capped by its ranked laps (FET-191): 5 needs high confidence, 4
+  medium, otherwise at most 3. The bands are absolute (FET-191): level 5 is what
+  a fast, experienced driver repeats lap after lap, so 5 means at the limit, not
+  consistent with oneself.
   Each is the median over a session's corners (sessions weighed by ranked
   laps), lower is better:
 
   | Skill | Measure | Bands |
   |---|---|---|
-  | liftTiming | `liftSeconds` | 0.2, 0.4, 0.7, 1 s |
-  | brakePointConsistency | `brakingSpreadMeters` | 4, 6, 9, 14 m |
-  | brakeReleaseTiming | `releaseSpreadMeters` | 6, 9, 14, 21 m |
-  | brakingEffectiveness | day's best `bestDecelerationG` at the corner − `decelerationG` | 0.03, 0.06, 0.1, 0.15 g |
-  | turnInConsistency | `entrySpeedSpread` | 2, 4, 6, 9 km/h |
-  | minimumSpeedControl | day's best − `minimumSpeed` | 2, 4, 6, 9 km/h |
-  | lineConsistency | `lineSpreadMeters` | 0.5, 1, 1.5, 2.5 m |
-  | throttleReapplication | `pickupSpreadMeters` | 4, 6, 9, 14 m |
-  | throttleCommitment | all corners' `releasedPickups` / `throttleKnownLaps` (3 or more passes, 3 or more ranked laps), % of passes | 5, 15, 30, 50 % |
-  | exitSpeedExecution | day's best − `exitSpeed` | 1, 3, 6, 9 km/h |
-  | cornerSequenceManagement | `sequenceLossSeconds` | 0.02, 0.05, 0.1, 0.2 s |
+  | liftTiming | `liftSeconds` | 0.1, 0.25, 0.5, 0.8 s |
+  | brakePointConsistency | `brakingSpreadMeters` | 2, 4, 7, 12 m |
+  | brakeReleaseTiming | `releaseSpreadMeters` | 3, 6, 10, 16 m |
+  | brakingEffectiveness | best ever `bestDecelerationG` at the corner in the car − `decelerationG` | 0.02, 0.04, 0.07, 0.12 g |
+  | turnInConsistency | `entrySpeedSpread` | 1, 2, 4, 7 km/h |
+  | minimumSpeedControl | best ever − `minimumSpeed` | 1, 2, 4, 7 km/h |
+  | lineConsistency | `lineSpreadMeters` | 0.4, 0.7, 1.1, 1.8 m |
+  | throttleReapplication | `pickupSpreadMeters` | 2, 4, 7, 12 m |
+  | throttleCommitment | all corners' `releasedPickups` / `throttleKnownLaps` (3 or more passes, 3 or more ranked laps), % of passes | 2, 10, 20, 35 % |
+  | exitSpeedExecution | best ever − `exitSpeed` | 1, 2, 4, 7 km/h |
+  | cornerSequenceManagement | mean `sequenceLossSeconds` (a median is 0 on most corners) | 0.01, 0.03, 0.06, 0.1 s |
+  | paceConsistency | `lapSpreadSeconds` | 0.5, 1, 2, 4 s |
 
   Minimum speed, exit speed and braking effectiveness compare against the
-  day's best at the corner, so a day with more laps sets a higher best.
-  | paceConsistency | `lapSpreadSeconds` | 1, 2.5, 5, 8 s |
+  best ever at the corner in that car over the days read (FET-191), so a slow
+  day is not its own reference. That best is one lap's figure, so a GPS or G
+  spike lowers the corner's level on every later day too; a sturdier
+  reference (a high quantile of the day bests) is the fix if it shows up.
+  cornerSequenceManagement is a mean over corners on purpose, not the median:
+  most corners give nothing back, so the median is 0. Trends compare the band
+  level without the laps cap, so more laps alone is no change.
 
   A skill none of the window's sessions measured (no pedals, no G, no stated
   GPS accuracy, or days added before FET-165) says "needs more evidence". The
-  bands are a first setting from one real day (Jastrząb, 2026-08-29: every
-  skill between level 2 and 5) and are tuned in `skillCatalogue`; stored data
-  never changes.
+  bands are tuned in `skillCatalogue`; stored data never changes. The real
+  Jastrząb day (2026-08-29) scored 2 to 5 with the first draft's bands and 1
+  to 4 with these.
 
 ## Moving a profile to another device (`profile_bundle.dart`, FET-133)
 
