@@ -203,6 +203,7 @@
   "lapIssueStaleSource": "Źródło się zmieniło; wczytaj zapis ponownie",
   "lapIssueIneligibleLap": "Okrążenie się nie kwalifikuje",
   "lapIssueDifferentRoute": "Okrążenie zjeżdża z trasy pozostałych okrążeń (wyjazd poza tor, objazd lub aleja serwisowa)",
+  "lapIssueImplausibleLap": "Czas lub długość okrążenia są niewiarygodne dla tego toru",
   "tbFailedElsewhere": "Niedostępne: nie udało się obliczyć teoretycznego czasu okrążenia.",
   "tbTiming": "Pomiar czasu każdego okrążenia na wspólnej osi toru…",
   "tbIntro": "Dla każdego z {segments, plural, =1{1 odcinka} other{{segments} odcinków}} wybierany jest najlepszy czas spośród {laps, plural, =1{1 okrążenia} other{{laps} okrążeń}}. Suma czasów odcinków daje teoretyczny czas okrążenia. Wynik łączy fragmenty różnych okrążeń i nie oznacza, że całe okrążenie można przejechać w takim czasie.",

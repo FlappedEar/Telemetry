@@ -815,6 +815,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Okrążenie zjeżdża z trasy pozostałych okrążeń (wyjazd poza tor, objazd lub aleja serwisowa)';
 
   @override
+  String get lapIssueImplausibleLap =>
+      'Czas lub długość okrążenia są niewiarygodne dla tego toru';
+
+  @override
   String get tbFailedElsewhere =>
       'Niedostępne: nie udało się obliczyć teoretycznego czasu okrążenia.';
 

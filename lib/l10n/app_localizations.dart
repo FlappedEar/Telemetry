@@ -1316,6 +1316,12 @@ abstract class AppLocalizations {
   /// **'Lap leaves the route the other laps took (off track, a detour or the pit lane)'**
   String get lapIssueDifferentRoute;
 
+  /// Why a lap is not ranked: its time, GPS path length or average speed cannot be a lap of the circuit (for example a fake crossing of the line).
+  ///
+  /// In en, this message translates to:
+  /// **'Lap time or length is not plausible for this circuit'**
+  String get lapIssueImplausibleLap;
+
   /// In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card.
   ///
   /// In en, this message translates to:

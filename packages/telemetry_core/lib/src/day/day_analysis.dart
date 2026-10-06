@@ -317,8 +317,7 @@ DayAnalysis extendDay(
   }
   return _group(
     sortDayLaps([
-      for (final row in day?.rows ?? const <DayLapRow>[])
-        row.offRoute ? row.copyWith(offRoute: false) : row,
+      for (final row in day?.rows ?? const <DayLapRow>[]) row.withoutGroupMarks(),
       ...added.rows,
     ]),
     {...?day?.inferences, ...added.inferences},
@@ -365,7 +364,7 @@ DayAnalysis replaceDayRun(
   return _group(
     sortDayLaps([
       for (final row in day.rows)
-        if (row.runId != runId) row.offRoute ? row.copyWith(offRoute: false) : row,
+        if (row.runId != runId) row.withoutGroupMarks(),
       for (final row in replacement.rows) row.copyWith(sourceOrder: sourceOrder),
     ]),
     {
@@ -395,7 +394,7 @@ DayAnalysis regroupDay(
   Map<DayLapReference, String> exclusions = const {},
   String? preferredGroupId,
 }) => _group(
-  [for (final row in day.rows) row.offRoute ? row.copyWith(offRoute: false) : row],
+  [for (final row in day.rows) row.withoutGroupMarks()],
   day.inferences,
   day.sources,
   day.runMessages,
@@ -464,7 +463,7 @@ DayAnalysis _group(
         row,
   ];
   return _assemble(
-    marked,
+    _markShortForGroup(marked, grouped.configurations),
     grouped.configurations,
     inferences,
     messages,
@@ -475,6 +474,57 @@ DayAnalysis _group(
     runMessages: runMessages,
     manualTracks: manualTracks,
   );
+}
+
+/// Share of its circuit group's median lap path below which a lap is not a
+/// plausible lap of that circuit (FET-199). The same share as
+/// [LapDetectionOptions.minimumLapDistanceRatio] within one recording; this
+/// checks across the day's recordings, so one session's single short "lap"
+/// cannot become the best of the day.
+const double dayMinimumLapDistanceRatio = 0.8;
+
+/// [rows] with every ranked-eligible lap whose GPS path is shorter than
+/// [dayMinimumLapDistanceRatio] of the median of its compatibility group's
+/// laps marked [DayLapRow.shortForGroup]. The median takes the laps that
+/// pass every per-recording check and are on the group's route, from at
+/// least two recordings, so one recording's laps are not judged twice.
+List<DayLapRow> _markShortForGroup(
+  List<DayLapRow> rows,
+  Map<String, TrackConfiguration> configurations,
+) {
+  final byGroup = <String, List<double>>{};
+  final runsByGroup = <String, Set<String>>{};
+  String? groupOf(DayLapRow row) => configurations[row.runId]?.compatibilityGroupId;
+  bool candidate(DayLapRow row) =>
+      row.type == LapSectionType.lap &&
+      row.referenceEligible &&
+      !row.offRoute &&
+      row.distanceMeters != null;
+  for (final row in rows) {
+    final group = groupOf(row);
+    if (group == null || !candidate(row)) continue;
+    byGroup.putIfAbsent(group, () => []).add(row.distanceMeters!);
+    runsByGroup.putIfAbsent(group, () => {}).add(row.runId);
+  }
+  final medians = <String, double>{};
+  byGroup.forEach((group, distances) {
+    if ((runsByGroup[group]?.length ?? 0) < 2) return;
+    distances.sort();
+    final middle = distances.length ~/ 2;
+    medians[group] = distances.length.isOdd
+        ? distances[middle]
+        : (distances[middle - 1] + distances[middle]) / 2.0;
+  });
+  if (medians.isEmpty) return rows;
+  return [
+    for (final row in rows)
+      if (candidate(row) &&
+          medians[groupOf(row)] != null &&
+          row.distanceMeters! < dayMinimumLapDistanceRatio * medians[groupOf(row)]!)
+        row.copyWith(shortForGroup: true)
+      else
+        row,
+  ];
 }
 
 /// [day] with only the runs [runIds]: the day as it stood before the
@@ -488,7 +538,7 @@ DayAnalysis dayWithRuns(
 }) => _group(
   [
     for (final row in day.rows)
-      if (runIds.contains(row.runId)) row.offRoute ? row.copyWith(offRoute: false) : row,
+      if (runIds.contains(row.runId)) row.withoutGroupMarks(),
   ],
   {
     for (final MapEntry(:key, :value) in day.inferences.entries)
