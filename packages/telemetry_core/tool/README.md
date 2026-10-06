@@ -797,8 +797,12 @@ FET_FUSION_DAY=<folder> FET_FUSION_REFERENCE=/tmp/fusion_day.json \
 ```
 
 The committed `test/parity/fusion_reference.json` was generated from
-FlappedEar/Overlay `3fa38da` with Qt 6.8.3 from conda-forge and g++ 13.3 on
-Ubuntu 24.04. Its only change from the `f7111ba` reference (KAN-184: units
+FlappedEar/Overlay `e75b3c7` with Qt 6.8.3 from conda-forge and g++ 13.3 on
+Ubuntu 24.04. Its only change from the `3fa38da` reference is three new
+cases for Overlays' KAN-188 gap markers (PR #190): `gapMarkersAdded` and
+`gapMarkersPreferred` (RCZ gap markers through a 3000 s offset) and
+`mergedGapMarkers` (a 1 Hz primary filled by a 10 Hz alternative with a 2 s
+gap). The `3fa38da` reference's only change from the `f7111ba` reference (KAN-184: units
 only one side declares, and "°C") is Overlays' KAN-157 gap rule: the
 primary's speed is not read inside its 40-50 s gap, so fewer samples are
 compared (451 to 400 in most cases; 451 to 401 for drift,
