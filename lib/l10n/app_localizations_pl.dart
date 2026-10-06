@@ -5939,7 +5939,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get summaryFirstSession => 'Pierwsza sesja: brak porównania';
 
   @override
-  String get summaryNotCompared => 'Potrzeba 3 okrążeń w obu sesjach';
+  String get summaryNotCompared =>
+      'Potrzeba 3 przejazdów odcinka w obu sesjach';
 
   @override
   String summaryAgainst(String session) {
@@ -6011,5 +6012,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get summaryCoachFailed => 'Trener nie mógł przeanalizować sesji';
 
   @override
-  String get summaryGapNone => 'Najszybszy typowy czas na każdym odcinku';
+  String summaryGapNone(String seconds) {
+    return 'W granicach $seconds s od najszybszego typowego czasu na każdym zmierzonym odcinku';
+  }
+
+  @override
+  String get summaryGapNeedsLaps => 'Potrzeba 3 przejazdów odcinka';
+
+  @override
+  String get summaryOnlySession => 'Brak innej sesji do porównania';
 }

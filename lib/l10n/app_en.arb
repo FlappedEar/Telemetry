@@ -8154,7 +8154,7 @@
   "@summaryNoChange": {"description": "No segment's typical time changed by the threshold.", "placeholders": {"seconds": {"type": "String"}}},
   "summaryFirstSession": "First session: nothing to compare with",
   "@summaryFirstSession": {"description": "Gain/loss rows for the day's first session."},
-  "summaryNotCompared": "Needs 3 laps in both sessions",
+  "summaryNotCompared": "Needs 3 laps through a segment in both sessions",
   "@summaryNotCompared": {"description": "No segment has a typical time in both sessions."},
   "summaryAgainst": "Gains and losses: typical segment times against {session}.",
   "@summaryAgainst": {"description": "Footnote under gain and loss.", "placeholders": {"session": {"type": "String"}}},
@@ -8188,6 +8188,10 @@
   "@summaryNoFocus": {"description": "Goal row when the coach gave no main focus after the session before."},
   "summaryCoachFailed": "The coach could not run",
   "@summaryCoachFailed": {"description": "Goal row when the coach failed."},
-  "summaryGapNone": "Quickest typical time in every segment",
-  "@summaryGapNone": {"description": "Biggest gap row when the session has the quickest typical time everywhere."}
+  "summaryGapNone": "Within {seconds} s of the quickest typical time wherever timed",
+  "@summaryGapNone": {"description": "Biggest gap row when the session is within the threshold of the quickest typical time in every segment it was timed in.", "placeholders": {"seconds": {"type": "String"}}},
+  "summaryGapNeedsLaps": "Needs 3 laps through a segment",
+  "@summaryGapNeedsLaps": {"description": "Biggest gap row when the session has no typical time through any segment."},
+  "summaryOnlySession": "No other session to compare with",
+  "@summaryOnlySession": {"description": "Biggest gap row when only this session has timed segments."}
 }

@@ -158,10 +158,13 @@ void main() {
     expect(summary.biggestGap, isNotNull);
   });
 
-  test('a new best against the first session; a slower best has a positive delta', () {
+  test('the best is against every other session; a slower best has a positive delta', () {
     final summary = summarizeSession('2', progression: progression, sections: sections)!;
     expect(summary.previousRunName, '1');
-    expect(summary.newBest, isTrue);
+    // Session 3, listed after it, was quicker.
+    expect(summary.earlierBestLap!.runId, '3');
+    expect(summary.newBest, isFalse);
+    expect(summary.bestDeltaSeconds, closeTo(0.5, 1e-9));
     expect(summary.previousLapSpread, closeTo(1.0, 1e-9));
     expect(summary.lapSpread, isNull);
 
@@ -178,9 +181,18 @@ void main() {
   test('the first session has nothing to compare with', () {
     final summary = summarizeSession('1', progression: progression, sections: sections)!;
     expect(summary.firstSession, isTrue);
-    expect(summary.earlierBestLap, isNull);
     expect(summary.newBest, isFalse);
-    expect(summary.bestDeltaSeconds, isNull);
+    expect(summary.previousRunName, isNull);
+    final alone = summarizeSession(
+      '1',
+      progression: DayProgression(
+        groupId: 'g',
+        state: DayRankingState.available,
+        runs: [progression.runs[0]],
+      ),
+    )!;
+    expect(alone.earlierBestLap, isNull);
+    expect(alone.bestDeltaSeconds, isNull);
     expect(summary.segmentsCompared, 0);
     expect(summary.biggestGain, isNull);
     expect(summary.biggestLoss, isNull);
@@ -338,6 +350,20 @@ void main() {
     final summary = summarizeSession('2', progression: tie)!;
     expect(summary.newBest, isFalse);
     expect(summary.bestDeltaSeconds, 0);
+    // Less than half a millisecond apart reads as the same time.
+    final near = summarizeSession(
+      '2',
+      progression: DayProgression(
+        groupId: 'g',
+        state: DayRankingState.available,
+        runs: [
+          tie.runs[0],
+          _run('2', best: _lap('2', 1, 109.9998), laps: 3, q1: 110.0, q3: 110.5),
+        ],
+      ),
+    )!;
+    expect(near.newBest, isFalse);
+    expect(near.bestDeltaSeconds, 0);
   });
 
   test('a temperature in another unit is not compared, a failure says why', () {

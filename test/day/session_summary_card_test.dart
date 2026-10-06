@@ -261,7 +261,30 @@ void main() {
     await _pump(tester, runId: '1', sections: _sections(small: true));
     expect(
       _text(tester, 'sessionSummaryGap'),
-      'Biggest gap left | Quickest typical time in every segment',
+      'Biggest gap left | Within 0.05 s of the quickest typical time wherever timed',
+    );
+    // A session timed alone has nothing to compare with.
+    await _pump(
+      tester,
+      runId: '1',
+      sections: SectionProgression(
+        sessions: [_sections().sessions[0]],
+        segments: [
+          SectionProgressionRow(
+            segmentId: 'c1',
+            name: 'Corner 1',
+            type: 'corner',
+            cells: [
+              _cell('1', [10.0, 10.1, 10.2]),
+            ],
+            fastestTypical: 10.1,
+          ),
+        ],
+      ),
+    );
+    expect(
+      _text(tester, 'sessionSummaryGap'),
+      'Biggest gap left | No other session to compare with',
     );
   });
 
@@ -279,7 +302,13 @@ void main() {
   testWidgets('the first session, values still being worked out', (
     tester,
   ) async {
-    await _pump(tester, runId: '1', state: null, coachLoading: true);
+    await _pump(
+      tester,
+      runId: '1',
+      progression: _progression([_day.runs[0]]),
+      state: null,
+      coachLoading: true,
+    );
     expect(
       _text(tester, 'sessionSummaryBest'),
       'Best lap | 1:52.000 · first session of the day',
@@ -295,7 +324,7 @@ void main() {
   testWidgets('the first session once the theoretical best is ready', (
     tester,
   ) async {
-    await _pump(tester, runId: '1');
+    await _pump(tester, runId: '1', progression: _progression([_day.runs[0]]));
     expect(
       _text(tester, 'sessionSummaryGain'),
       'Biggest gain | First session: nothing to compare with',
@@ -345,11 +374,11 @@ void main() {
     );
     expect(
       _text(tester, 'sessionSummaryGain'),
-      'Biggest gain | Needs 3 laps in both sessions',
+      'Biggest gain | Needs 3 laps through a segment in both sessions',
     );
     expect(
       _text(tester, 'sessionSummaryGap'),
-      'Biggest gap left | Needs at least 3 laps',
+      'Biggest gap left | Needs 3 laps through a segment',
     );
   });
 
@@ -361,6 +390,11 @@ void main() {
     expect(
       _text(tester, 'sessionSummarySegments'),
       'Segments | Not available without a theoretical best',
+    );
+    // Nor does the coach run without it.
+    expect(
+      _text(tester, 'sessionSummaryGoal'),
+      'Focus from the session before | Not available without a theoretical best',
     );
   });
 
@@ -386,6 +420,18 @@ void main() {
     );
     // No temperature recorded: no car line.
     expect(find.byKey(const ValueKey('sessionSummaryCar')), findsNothing);
+
+    // The day records one, this session does not.
+    await _pump(
+      tester,
+      channels: DayChannelSummaries(
+        runs: [
+          _channels.runs[0],
+          RunChannelSummaries(runId: '2', runName: 'Session 2'),
+        ],
+      ),
+    );
+    expect(_text(tester, 'sessionSummaryCar'), 'Car, hottest | Not recorded');
   });
 
   testWidgets('a session the progression does not list says why', (

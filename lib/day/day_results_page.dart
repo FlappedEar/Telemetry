@@ -299,7 +299,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   final _coachScroll = ScrollController();
 
   /// The day opens on what to do in the next session: the coach, from the
-  /// top, where its Next session card is.
+  /// top, where the session summary leads into the Next session card.
   void _revealCoach() {
     _coach.value = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1895,7 +1895,6 @@ class _DayResultsPageState extends State<DayResultsPage> {
             _sessionSummary(),
             const SizedBox(height: 12),
             NextSessionCard(
-              key: _coachKey,
               coach: _controller.coach,
               result: _controller.theoreticalBest,
               session: _controller.latestRunName,
@@ -1927,11 +1926,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
   (DayTheoreticalBest?, DayProgression, SectionProgression?)? _summarySections;
 
   /// The latest session in a few lines, above the coach's plan. Its car
-  /// line needs the channel summaries, which are asked for here as on the
-  /// overview.
+  /// line needs the channel summaries, which are asked for here while Coach
+  /// is shown, as on the overview.
   Widget _sessionSummary() {
     final channels = _controller.channelSummaries;
-    if (channels == null && !_controller.channelSummariesLoading) {
+    // Only while Coach is shown: the Coach list is built behind the day's
+    // tabs too, and the summaries read every recording.
+    if (_coach.value &&
+        channels == null &&
+        !_controller.channelSummariesLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _controller.requestChannelSummaries();
       });
@@ -1951,6 +1954,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       );
     }
     return SessionSummaryCard(
+      key: _coachKey,
       runId: _controller.latestRunId,
       session: _controller.latestRunName,
       progression: progression,

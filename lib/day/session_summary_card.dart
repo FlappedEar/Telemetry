@@ -196,10 +196,12 @@ class SessionSummaryCard extends StatelessWidget {
           l10n.summaryGap,
           pending
               ? l10n.summaryWorking
-              : gap == null && summary.segmentsTimed > 0
-              ? l10n.summaryGapNone
+              : summary.segmentsTimed == 0
+              ? l10n.summaryGapNeedsLaps
+              : summary.sessionsTimed < 2
+              ? l10n.summaryOnlySession
               : gap == null
-              ? l10n.consistencyNeedsLaps(minimumConsistencySamples)
+              ? l10n.summaryGapNone(fixed(sessionSummaryChangeSeconds, 2))
               : l10n.summaryGapValue(
                   l10n.tbSegmentName(gap.name),
                   displayDelta(gap.deltaSeconds),
@@ -237,16 +239,21 @@ class SessionSummaryCard extends StatelessWidget {
           'sessionSummaryCar',
           l10n.summaryCar,
           channelReasonText(l10n, summary.temperatureReason),
-        ),
+        )
+      else if (channels.temperatureChannels.isNotEmpty)
+        // The day records temperatures, this session does not.
+        row('sessionSummaryCar', l10n.summaryCar, l10n.channelNotRecorded),
       if (!summary.firstSession)
         if (goal != null)
           row(
             'sessionSummaryGoal',
             l10n.summaryGoal(l10n.session(goal.runName)),
-            '${l10n.tbSegmentName(goal.finding.segmentName)}: ${switch (goal.outcome) {
+            // As the Next session card words it.
+            '${l10n.tbSegmentName(goal.measuredName.isEmpty ? goal.finding.segmentName : goal.measuredName)}: ${switch (goal.outcome) {
               CoachGoalOutcome.better => l10n.coachGoalBetter,
               CoachGoalOutcome.unchanged => l10n.coachGoalUnchanged,
               CoachGoalOutcome.worse => l10n.coachGoalWorse,
+              CoachGoalOutcome.notMeasured when goal.measuredName.isEmpty => l10n.coachGoalNoCorner,
               CoachGoalOutcome.notMeasured => l10n.coachGoalNotMeasured,
             }}',
           )
@@ -254,8 +261,11 @@ class SessionSummaryCard extends StatelessWidget {
           row(
             'sessionSummaryGoal',
             l10n.summaryGoalBefore,
-            coachLoading
+            coachLoading || pending
                 ? l10n.summaryWorking
+                : !ready
+                // The coach needs the theoretical best.
+                ? l10n.summarySegmentsUnavailable
                 : coachError.isNotEmpty
                 ? l10n.summaryCoachFailed
                 : l10n.summaryNoFocus,

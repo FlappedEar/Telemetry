@@ -13,7 +13,8 @@ import 'day_laps.dart';
 import 'day_progression.dart';
 
 /// A change in a segment's typical time smaller than this, in seconds, is
-/// not reported as a gain or a loss: it is within what a few laps vary by.
+/// not reported as a gain, a loss or a gap: it is within what a few laps
+/// vary by.
 const double sessionSummaryChangeSeconds = 0.05;
 
 /// One segment's typical time in the session, against another.
@@ -76,6 +77,7 @@ final class SessionSummary {
     this.previousLapSpread,
     this.segmentsCompared = 0,
     this.segmentsTimed = 0,
+    this.sessionsTimed = 0,
     this.biggestGain,
     this.biggestLoss,
     this.biggestGap,
@@ -100,8 +102,9 @@ final class SessionSummary {
   /// Its best lap; null when none is eligible.
   final DayLapRow? bestLap;
 
-  /// The quickest best lap of every session listed before it; null when
-  /// none has one.
+  /// The quickest best lap of every other session of the group (listed
+  /// before it or, without a recording clock, after it); null when none
+  /// has one.
   final DayLapRow? earlierBestLap;
 
   /// Its lap times' interquartile range, and the session before's; null
@@ -114,14 +117,18 @@ final class SessionSummary {
   /// Segments with a typical time in this session.
   final int segmentsTimed;
 
+  /// Sessions with laps timed through the segments.
+  final int sessionsTimed;
+
   /// The segment whose typical time fell the most since the session
   /// before, and the one that rose the most; null when none moved by
   /// [sessionSummaryChangeSeconds] or more.
   final SessionSegmentChange? biggestGain, biggestLoss;
 
   /// The segment where its typical time is furthest above the quickest
-  /// typical time of any session there; null when it has no typical time
-  /// anywhere ([segmentsTimed] 0) or is the quickest everywhere.
+  /// typical time of any session there, by [sessionSummaryChangeSeconds]
+  /// or more; null when it has no typical time anywhere ([segmentsTimed]
+  /// 0) or is within that of the quickest everywhere.
   final SessionSegmentChange? biggestGap;
 
   /// Each recorded temperature's maximum, in the day's channel order.
@@ -138,16 +145,16 @@ final class SessionSummary {
 
   bool get firstSession => earlierSessions == 0;
 
-  /// Its best lap is quicker than every earlier session's.
-  bool get newBest {
-    final best = bestLap, earlier = earlierBestLap;
-    return best != null && earlier != null && best.durationSeconds < earlier.durationSeconds;
-  }
+  /// Its best lap is quicker than every other session's, by at least a
+  /// millisecond as times are shown.
+  bool get newBest => (bestDeltaSeconds ?? 0) < 0;
 
-  /// Its best lap minus the earlier best: negative is quicker.
+  /// Its best lap minus the other sessions' best, rounded to the
+  /// millisecond as times are shown: negative is quicker, 0 a tie.
   double? get bestDeltaSeconds {
     final best = bestLap, earlier = earlierBestLap;
-    return best == null || earlier == null ? null : best.durationSeconds - earlier.durationSeconds;
+    if (best == null || earlier == null) return null;
+    return ((best.durationSeconds - earlier.durationSeconds) * 1000).round() / 1000;
   }
 }
 
@@ -172,7 +179,8 @@ SessionSummary? summarizeSession(
   }
 
   DayLapRow? earlierBest;
-  for (final earlier in progression.runs.take(index)) {
+  for (final earlier in progression.runs) {
+    if (earlier.runId == runId) continue;
     final best = earlier.bestLap;
     if (best != null &&
         (earlierBest == null || best.durationSeconds < earlierBest.durationSeconds)) {
@@ -210,7 +218,7 @@ SessionSummary? summarizeSession(
         final fastest = row.fastestTypical;
         if (fastest != null) {
           final candidate = against(fastest);
-          if (candidate.deltaSeconds > 0 &&
+          if (candidate.deltaSeconds >= sessionSummaryChangeSeconds &&
               (gap == null || candidate.deltaSeconds > gap.deltaSeconds)) {
             gap = candidate;
           }
@@ -281,6 +289,7 @@ SessionSummary? summarizeSession(
     previousLapSpread: spread(previous),
     segmentsCompared: compared,
     segmentsTimed: typical,
+    sessionsTimed: sections?.sessions.length ?? 0,
     biggestGain: gain,
     biggestLoss: loss,
     biggestGap: gap,

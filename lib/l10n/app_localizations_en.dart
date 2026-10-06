@@ -5822,7 +5822,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryFirstSession => 'First session: nothing to compare with';
 
   @override
-  String get summaryNotCompared => 'Needs 3 laps in both sessions';
+  String get summaryNotCompared =>
+      'Needs 3 laps through a segment in both sessions';
 
   @override
   String summaryAgainst(String session) {
@@ -5893,5 +5894,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryCoachFailed => 'The coach could not run';
 
   @override
-  String get summaryGapNone => 'Quickest typical time in every segment';
+  String summaryGapNone(String seconds) {
+    return 'Within $seconds s of the quickest typical time wherever timed';
+  }
+
+  @override
+  String get summaryGapNeedsLaps => 'Needs 3 laps through a segment';
+
+  @override
+  String get summaryOnlySession => 'No other session to compare with';
 }

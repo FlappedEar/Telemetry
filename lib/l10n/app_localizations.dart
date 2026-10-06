@@ -8604,7 +8604,7 @@ abstract class AppLocalizations {
   /// No segment has a typical time in both sessions.
   ///
   /// In en, this message translates to:
-  /// **'Needs 3 laps in both sessions'**
+  /// **'Needs 3 laps through a segment in both sessions'**
   String get summaryNotCompared;
 
   /// Footnote under gain and loss.
@@ -8708,11 +8708,23 @@ abstract class AppLocalizations {
   /// **'The coach could not run'**
   String get summaryCoachFailed;
 
-  /// Biggest gap row when the session has the quickest typical time everywhere.
+  /// Biggest gap row when the session is within the threshold of the quickest typical time in every segment it was timed in.
   ///
   /// In en, this message translates to:
-  /// **'Quickest typical time in every segment'**
-  String get summaryGapNone;
+  /// **'Within {seconds} s of the quickest typical time wherever timed'**
+  String summaryGapNone(String seconds);
+
+  /// Biggest gap row when the session has no typical time through any segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs 3 laps through a segment'**
+  String get summaryGapNeedsLaps;
+
+  /// Biggest gap row when only this session has timed segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No other session to compare with'**
+  String get summaryOnlySession;
 }
 
 class _AppLocalizationsDelegate
