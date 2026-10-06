@@ -138,24 +138,6 @@ double _significanceOf(double score, int samples) {
   return atanh(stdClamp(score, -0.999999, 0.999999)) * math.sqrt((samples - 3).toDouble());
 }
 
-// Linear interpolation of a strictly increasing channel; null outside it.
-// At a sample's exact time this reads from the segment before it, as Overlays
-// does.
-double? _interpolate(TelemetryChannel signal, double time) {
-  final timestamps = signal.timestamps;
-  if (!time.isFinite || timestamps.isEmpty || time < timestamps.first || time > timestamps.last) {
-    return null;
-  }
-  final high = lowerBound(timestamps, time);
-  if (high == 0) return signal.values.first;
-  final low = high - 1;
-  final span = timestamps[high] - timestamps[low];
-  final ratio = span == 0.0 ? 0.0 : (time - timestamps[low]) / span;
-  final double lowValue = signal.values[low];
-  final double highValue = signal.values[high];
-  return lowValue + (highValue - lowValue) * ratio;
-}
-
 double _correlation(Float64List a, Float64List b, int length, CancellationCheck? cancelled) {
   if (length < 2) return -1.0;
   var sumA = 0.0, sumB = 0.0;
@@ -224,8 +206,10 @@ SyncCandidate _calculate(
     for (var sampleIndex = 0; sampleIndex < samples; ++sampleIndex) {
       if ((sampleIndex & 0xff) == 0) throwIfCancelled(cancelled);
       final time = _gridTime(video.timestamps.first, step, sampleIndex);
-      final av = _interpolate(video, time);
-      final bv = _interpolate(telemetry, time + offset);
+      // Overlays KAN-157: the shared lookup, so a loss of GPS fix is not
+      // bridged into a ramp that correlates.
+      final av = telemetryValueAt(video, time);
+      final bv = telemetryValueAt(telemetry, time + offset);
       if (av != null && bv != null && av.isFinite && bv.isFinite) {
         a[count] = av;
         b[count] = bv;
