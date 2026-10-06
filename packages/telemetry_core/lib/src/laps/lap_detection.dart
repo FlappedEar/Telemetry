@@ -132,10 +132,7 @@ LapSession detectLaps(
     diagnostics: diagnostics,
   );
 
-  final origin = GeoCoordinate(
-    (startGate.endpointA.latitudeDegrees + startGate.endpointB.latitudeDegrees) / 2.0,
-    (startGate.endpointA.longitudeDegrees + startGate.endpointB.longitudeDegrees) / 2.0,
-  );
+  final origin = geoMidpoint(startGate.endpointA, startGate.endpointB);
   if (!isValidCoordinate(startGate.endpointA) ||
       !isValidCoordinate(startGate.endpointB) ||
       !isValidCoordinate(origin)) {

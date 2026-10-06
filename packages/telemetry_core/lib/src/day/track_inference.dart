@@ -280,11 +280,10 @@ TrackInference inferTrack(
   );
   final gate = laps.selectedStartGate;
   if (gate == null || laps.lapTraces.length < 2) return notEnough;
+  final midpoint = geoMidpoint(gate.endpointA, gate.endpointB);
   final origin = GeoCoordinate(
-    (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2,
-    (longitudeIsWestPositive ? -1 : 1) *
-        (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) /
-        2,
+    midpoint.latitudeDegrees,
+    (longitudeIsWestPositive ? -1 : 1) * midpoint.longitudeDegrees,
   );
   final candidates = <RouteShape>[];
   final stride = math.max(

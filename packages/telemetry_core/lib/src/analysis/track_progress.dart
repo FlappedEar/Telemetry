@@ -339,10 +339,7 @@ ProgressAxis buildProgressAxis(
     // resampled point nearest the gate midpoint.
     final resampled = _resampleByArcLength(points, pointCount);
     if (resampled.length != pointCount) return invalid;
-    final gateMidpoint = GeoCoordinate(
-      (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2,
-      (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2,
-    );
+    final gateMidpoint = geoMidpoint(gate.endpointA, gate.endpointB);
     final gateLocal = projectCoordinate(gateMidpoint, origin);
     var gateIndex = 0;
     var bestDistance = double.infinity;
