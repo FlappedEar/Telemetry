@@ -108,10 +108,56 @@ class LastTimeHereCard extends StatelessWidget {
             Text(l10n.lastTimeHereNote, style: theme.textTheme.bodySmall),
             if (car != null)
               Text(l10n.lastTimeHereOtherCar, style: theme.textTheme.bodySmall),
+            ..._corners(context, profile, today, then),
           ],
         ),
       ),
     );
+  }
+
+  /// Each corner measured on both days: the time lost there against that
+  /// day's fastest through it, then and today.
+  List<Widget> _corners(
+    BuildContext context,
+    DriverProfile profile,
+    ProfileDay today,
+    ProfileDay then,
+  ) {
+    final trackId = today.trackId;
+    if (trackId == null) return const [];
+    final corners = lastTimeHereCorners(profile, trackId, then, today);
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    if (corners.isEmpty) {
+      // A track with corners, not measured on one of the days (an older
+      // day, or today's still being analysed).
+      if (profile.track(trackId)?.corners.isEmpty ?? true) return const [];
+      return [
+        const SizedBox(height: 8),
+        Text(
+          l10n.lastTimeHereCornersNone,
+          key: const ValueKey('lastTimeHereCornersNone'),
+          style: theme.textTheme.bodySmall,
+        ),
+      ];
+    }
+    return [
+      const SizedBox(height: 8),
+      Text(
+        l10n.lastTimeHereCorners,
+        key: const ValueKey('lastTimeHereCorners'),
+        style: theme.textTheme.labelLarge,
+      ),
+      for (final corner in corners)
+        _row(
+          context,
+          ValueKey('lastTimeHereCorner ${corner.corner.id}'),
+          corner.corner.name,
+          corner.then,
+          corner.today,
+        ),
+      Text(l10n.lastTimeHereCornersNote, style: theme.textTheme.bodySmall),
+    ];
   }
 
   /// "Best lap  1:51.204 then · 1:49.898 today  −1.306 s": today − then,

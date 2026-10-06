@@ -7791,6 +7791,24 @@ abstract class AppLocalizations {
   /// **'{then} then · {today} today'**
   String lastTimeHereThenToday(String then, String today);
 
+  /// Last time here card: heading of the per-corner rows, then and today.
+  ///
+  /// In en, this message translates to:
+  /// **'Time lost per corner'**
+  String get lastTimeHereCorners;
+
+  /// Last time here card: what the per-corner times mean.
+  ///
+  /// In en, this message translates to:
+  /// **'Each day\'s laps against that day\'s fastest through the corner, averaged over its sessions: a smaller time means a more even day there, not a faster corner. Where a corner starts and ends can differ a little between days. Only corners measured on both days are listed.'**
+  String get lastTimeHereCornersNote;
+
+  /// Last time here card: why there are no per-corner rows (one of the days has no corner measurements, e.g. still being analysed).
+  ///
+  /// In en, this message translates to:
+  /// **'Time lost per corner: no corner was measured on both days.'**
+  String get lastTimeHereCornersNone;
+
   /// Settings heading for checking GitHub for a newer version of the app.
   ///
   /// In en, this message translates to:

@@ -372,6 +372,42 @@ List<CornerVisit> cornerHistory(
   String? carId,
 }) => [for (final day in _visits(profile, trackId, carId)) ?_cornerVisits(day)[cornerId]];
 
+/// One corner of a track on the last visit and on the day open now.
+final class CornerThenToday {
+  const CornerThenToday({required this.corner, required this.then, required this.today});
+
+  final TrackCorner corner;
+
+  /// The time lost here against that day's fastest time through the corner,
+  /// each session's median averaged by its laps ([CornerVisit.lossSeconds]),
+  /// seconds: how far that day's laps were from its best here, not a time
+  /// through the corner.
+  final double then;
+  final double today;
+}
+
+/// [today]'s corners next to [then]'s, in the track's order: every corner
+/// of [trackId] whose time lost was measured on both days. Empty when the
+/// track has no corners or no corner was measured on both. Corners are the
+/// track's own, matched on each day by where they are on the track, so the
+/// days' segments need not end at the same place; each loss is against its
+/// own day's fastest, so it compares consistency, not speed.
+List<CornerThenToday> lastTimeHereCorners(
+  DriverProfile profile,
+  String trackId,
+  ProfileDay then,
+  ProfileDay today,
+) {
+  final track = profile.track(trackId);
+  if (track == null) return const [];
+  final before = _cornerVisits(then), now = _cornerVisits(today);
+  return [
+    for (final corner in track.corners)
+      if ((before[corner.id]?.lossSeconds, now[corner.id]?.lossSeconds) case (final a?, final b?))
+        CornerThenToday(corner: corner, then: a, today: b),
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Corners that keep costing time
 

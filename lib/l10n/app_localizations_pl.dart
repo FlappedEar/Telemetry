@@ -5349,6 +5349,17 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get lastTimeHereCorners => 'Strata czasu na zakrętach';
+
+  @override
+  String get lastTimeHereCornersNote =>
+      'Okrążenia każdego dnia porównane z najszybszym przejazdem tego dnia przez zakręt, uśrednione po jego sesjach: mniejszy czas oznacza równiejszy dzień w tym miejscu, a nie szybszy zakręt. Początek i koniec zakrętu mogą się nieco różnić między dniami. Pokazane są tylko zakręty zmierzone w oba dni.';
+
+  @override
+  String get lastTimeHereCornersNone =>
+      'Strata czasu na zakrętach: żaden zakręt nie został zmierzony w oba dni.';
+
+  @override
   String get settingsUpdatesHeading => 'Aktualizacje';
 
   @override
