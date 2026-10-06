@@ -5,6 +5,7 @@ import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../ui/headline_bar.dart';
+import '../ui/readable_list.dart';
 import '../ui/theme.dart';
 import 'comparison_page.dart';
 import 'day_results_controller.dart';
@@ -525,9 +526,10 @@ class _LapPageState extends State<LapPage> {
               }
               // The map keeps a readable size, the charts follow it; a
               // short screen (a small phone sideways, or with large text)
-              // gives the map most of its height.
+              // gives the map most of its height. A wide but short window
+              // keeps it at most 840 wide, centred, like the other pages.
               return ListView(
-                padding: const EdgeInsets.all(16),
+                padding: readablePadding(constraints.maxWidth),
                 children: [
                   ...summary,
                   if (actions.isNotEmpty) const SizedBox(height: 12),

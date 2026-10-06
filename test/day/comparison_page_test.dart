@@ -831,6 +831,31 @@ void main() {
     });
   }
 
+  testWidgets('a lap page on a wide but short window is at most 840 wide', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+    );
+    final row = controller
+        .comparisonCandidates(outcome.analysis!.ranking!.bestOfDay!)
+        .first;
+    await tester.binding.setSurfaceSize(const Size(1400, 560));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: LapPage(controller: controller, row: row),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final map = tester.getRect(find.byType(TrackMap));
+    expect(map.width, lessThanOrEqualTo(840));
+    // Centred.
+    expect(map.center.dx, closeTo(700, 1));
+  });
+
   testWidgets('a lap page shows the best of the day in blue and compares '
       'with it', (tester) async {
     final outcome = importDay();
