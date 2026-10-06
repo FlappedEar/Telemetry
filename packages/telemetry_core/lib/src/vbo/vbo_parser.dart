@@ -32,10 +32,6 @@ final RegExp _createdPattern = RegExp(
 /// before 01:00 (departure: KAN-233).
 const double vboMaximumRolloverGapSeconds = 3.0 * 3600.0;
 
-/// A rollover is undone when the next clock row is at least this much later
-/// in the day than the row that rolled over: back on the evening before, so
-/// that row was a bad one (FET-211).
-const double vboRolloverUndoSeconds = 12.0 * 3600.0;
 const double _floatMax = 3.4028234663852886e38;
 
 /// Reads RaceChrono VBO text exports into a [TelemetrySession].
@@ -180,9 +176,11 @@ class _VboParse {
     double? previousAbsoluteTime;
     double? previousClockTime;
     var clockDayOffset = 0.0;
-    // A rollover is confirmed by the next clock row (FET-211): if that row
-    // is back on the evening before, the "rollover" was one bad row, which
-    // is dropped and the day offset restored.
+    // A rollover is confirmed by the next accepted row (FET-211): if a clock
+    // row before that is back on the evening before (at or up to 3 h after
+    // the time before the rollover), the "rollover" was one bad row, which
+    // is dropped and the day offset restored. Two bad rows in a row confirm
+    // each other; a bad last row cannot be told from a real midnight.
     ({int row, double absolute, double? clock, double offset})? unconfirmedRollover;
 
     // Fields are read in place: no string per value.
@@ -210,11 +208,13 @@ class _VboParse {
       }
       var absoluteTime = checkedTime(parsedTime.seconds);
       final rollover = unconfirmedRollover;
-      unconfirmedRollover = null;
+      final beforeRollover = rollover?.clock;
       if (rollover != null &&
+          beforeRollover != null &&
           parsedTime.format == TimestampFormat.clock &&
-          previousClockTime != null &&
-          parsedTime.seconds - previousClockTime >= vboRolloverUndoSeconds) {
+          parsedTime.seconds >= beforeRollover &&
+          parsedTime.seconds - beforeRollover <= vboMaximumRolloverGapSeconds) {
+        unconfirmedRollover = null;
         --accepted;
         previousAbsoluteTime = rollover.absolute;
         previousClockTime = rollover.clock;

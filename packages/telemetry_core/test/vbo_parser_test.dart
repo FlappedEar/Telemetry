@@ -70,6 +70,20 @@ void main() {
     expect(badRow.channels['speed']!.timestamps, _near([0.0, 1.0, 2.0, 3.0]));
     expect(badRow.channels['speed']!.values, [1.0, 2.0, 4.0, 5.0]);
     expect(badRow.warnings.any((w) => w.contains('Row 3: not a midnight rollover')), isTrue);
+    // The same after a skipped duplicate of the bad row.
+    expect(times('213000 1\n213001 2\n001500 3\n001500 4\n213002 5'), _near([0.0, 1.0, 2.0]));
+    // A real midnight followed by a long dropout stays a rollover.
+    expect(
+      times('235900 1\n235959 2\n000100 3\n130000 4\n130001 5'),
+      _near([0.0, 59.0, 120.0, 46860.0, 46861.0]),
+    );
+    // Limits: two bad rows in a row confirm each other, and a bad last row
+    // cannot be told from a midnight.
+    expect(
+      times('213000 1\n213001 2\n001500 3\n001501 4\n213002 5'),
+      _near([0.0, 1.0, 9900.0, 9901.0, 86402.0]),
+    );
+    expect(times('213000 1\n213001 2\n001500 3'), _near([0.0, 1.0, 9900.0]));
     // A recording through two midnights.
     expect(
       times('235959 1\n000001 2\n120000 3\n235959 4\n000001 5'),
