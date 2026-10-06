@@ -7608,7 +7608,7 @@ abstract class AppLocalizations {
   /// Explains how skill levels are worked out.
   ///
   /// In en, this message translates to:
-  /// **'Each skill over your last 3 days that measured it, against fixed bands: level 5 is the best. Confidence comes from the ranked laps measured.'**
+  /// **'Each skill over your last 3 days that measured it, against fixed bands set by what a fast, experienced driver repeats lap after lap: level 5 means at the limit. Level 5 needs 15 ranked laps and level 4 needs 5. Confidence comes from the ranked laps measured.'**
   String get profileSkillsIntro;
 
   /// A driving skill's name, from the 12-skill model.
