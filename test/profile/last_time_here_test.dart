@@ -33,6 +33,7 @@ ProfileDay _day(
   String? track = 'jastrzab',
   double? best,
   double? theoretical,
+  Map<String, double> losses = const {},
 }) => ProfileDay(
   eventId: id,
   file: 'Days/$id.fetproject',
@@ -42,6 +43,22 @@ ProfileDay _day(
   startMilliseconds: _day0 + dayNumber * _dayMs,
   bestLapSeconds: best,
   theoreticalBestSeconds: theoretical,
+  sessions: [
+    if (losses.isNotEmpty)
+      ProfileSession(
+        runId: 's1',
+        name: 'Session 1',
+        lapCount: 6,
+        bestLapSeconds: best,
+        stats: SessionStats(
+          rankedLaps: 4,
+          corners: [
+            for (final MapEntry(:key, :value) in losses.entries)
+              CornerStats(cornerId: key, laps: 4, lossSeconds: value),
+          ],
+        ),
+      ),
+  ],
 );
 
 void main() {
@@ -56,7 +73,18 @@ void main() {
         ProfileCar(id: 'clio', name: 'Clio'),
         ProfileCar(id: 'golf', name: 'Golf'),
       ],
-      tracks: [ProfileTrack(id: 'jastrzab', name: 'Jastrząb', route: _route)],
+      tracks: [
+        ProfileTrack(
+          id: 'jastrzab',
+          name: 'Jastrząb',
+          route: _route,
+          corners: [
+            TrackCorner(id: 'k1', name: 'Turn 1', start: 0.1, end: 0.15),
+            TrackCorner(id: 'k2', name: 'Turn 2', start: 0.4, end: 0.45),
+            TrackCorner(id: 'k3', name: 'Turn 3', start: 0.7, end: 0.75),
+          ],
+        ),
+      ],
       days: days,
     );
     File('${folder.path}/$profileFileName')
@@ -104,6 +132,72 @@ void main() {
     // Theoretical best slower today: a positive difference.
     expect(find.text('1:49.500 then · 1:49.900 today'), findsOneWidget);
     expect(find.text('+0.400 s'), findsOneWidget);
+  });
+
+  testWidgets('each corner measured on both days, with the time lost there', (
+    tester,
+  ) async {
+    final shelf = await tester.runAsync(
+      () => library([
+        _day('a', dayNumber: 0, best: 112.0, losses: {'k1': 0.6, 'k2': 0.2}),
+        _day(
+          'today',
+          dayNumber: 30,
+          best: 110.0,
+          losses: {'k1': 0.25, 'k3': 0.1},
+        ),
+      ]),
+    );
+    await show(tester, shelf!, 'today');
+    expect(find.byKey(const ValueKey('lastTimeHereCorners')), findsOneWidget);
+    final turn1 = find.byKey(const ValueKey('lastTimeHereCorner k1'));
+    expect(
+      find.descendant(of: turn1, matching: find.text('Turn 1')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: turn1,
+        matching: find.text('0.600\u00a0s then · 0.250\u00a0s today'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: turn1, matching: find.text('−0.350\u00a0s')),
+      findsOneWidget,
+    );
+    // Turn 2 only last time, Turn 3 only today: neither is listed.
+    expect(find.byKey(const ValueKey('lastTimeHereCorner k2')), findsNothing);
+    expect(find.byKey(const ValueKey('lastTimeHereCorner k3')), findsNothing);
+    expect(find.textContaining('not a faster corner'), findsOneWidget);
+
+    // No corner on both days: no corner rows.
+    final none = await tester.runAsync(
+      () => library([
+        _day('a', dayNumber: 0, best: 112.0, losses: {'k2': 0.2}),
+        _day('today', dayNumber: 30, best: 110.0, losses: {'k1': 0.25}),
+      ]),
+    );
+    await show(tester, none!, 'today');
+    expect(find.byKey(const ValueKey('lastTimeHere')), findsOneWidget);
+    expect(find.byKey(const ValueKey('lastTimeHereCorners')), findsNothing);
+    expect(
+      find.text('Time lost per corner: no corner was measured on both days.'),
+      findsOneWidget,
+    );
+
+    // Today not measured yet (no stats): said too.
+    final unmeasured = await tester.runAsync(
+      () => library([
+        _day('a', dayNumber: 0, best: 112.0, losses: {'k1': 0.6}),
+        _day('today', dayNumber: 30, best: 110.0),
+      ]),
+    );
+    await show(tester, unmeasured!, 'today');
+    expect(
+      find.byKey(const ValueKey('lastTimeHereCornersNone')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the visit before by date, whatever order days were added', (

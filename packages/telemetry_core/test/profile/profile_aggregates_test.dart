@@ -1108,6 +1108,29 @@ void main() {
       expect(lastTimeHere(profile, 'jastrzab', carId: 'car1')!.day.eventId, 'undated');
     });
 
+    test('last time here per corner: measured on both days, in track order', () {
+      final then = profile.days.firstWhere((d) => d.eventId == 'j20');
+      final today = profile.days.firstWhere((d) => d.eventId == 'j30');
+      final corners = lastTimeHereCorners(profile, 'jastrzab', then, today);
+      expect([for (final c in corners) c.corner.id], ['k1', 'k2', 'k3', 'k4']);
+      expect(corners.first.corner.name, 'Corner 1');
+      expect(corners.first.then, closeTo(0.4, 1e-9));
+      expect(corners.first.today, closeTo(0.3, 1e-9));
+      expect(corners[1].then, closeTo(0.01, 1e-9));
+      expect(corners[1].today, closeTo(0.02, 1e-9));
+      // Days averaged by laps, as their history.
+      final first = profile.days.firstWhere((d) => d.eventId == 'j0');
+      expect(
+        lastTimeHereCorners(profile, 'jastrzab', first, today).first.then,
+        closeTo(0.55, 1e-9),
+      );
+      // A day without corners measured, or another track: none.
+      final car2 = profile.days.firstWhere((d) => d.eventId == 'j15');
+      expect(lastTimeHereCorners(profile, 'jastrzab', car2, today), isEmpty);
+      expect(lastTimeHereCorners(profile, 'torun', then, today), isEmpty);
+      expect(lastTimeHereCorners(profile, 'nowhere', then, today), isEmpty);
+    });
+
     test("a corner's history averages its sessions by laps", () {
       final history = cornerHistory(profile, 'jastrzab', 'k1');
       expect([for (final v in history) v.day.eventId], ['j0', 'j10', 'j20', 'j30']);
