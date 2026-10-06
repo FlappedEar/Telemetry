@@ -22,8 +22,15 @@ final RegExp _createdPattern = RegExp(
   r'^File created on (\d{2})/(\d{2})/(\d{4}) at (\d{2}):(\d{2}):(\d{2})$',
 );
 
-const double _lateDayThreshold = 23.0 * 3600.0;
-const double _earlyDayThreshold = 1.0 * 3600.0;
+/// A time of day that moves backward is read as the clock passing midnight
+/// when, read that way, it moved forward by at most this long (FET-211): a
+/// dropout from 22:50 to 01:10 is a rollover. A longer "gap" is a clock
+/// reset or a bad row, and a small step back (jitter, a daylight-saving
+/// change) is too: those rows are skipped as moving backward. A clock reset
+/// less than this long before midnight cannot be told from a rollover. Overlays
+/// requires the time before to be after 23:00 and the time after to be
+/// before 01:00 (departure: KAN-233).
+const double vboMaximumRolloverGapSeconds = 3.0 * 3600.0;
 const double _floatMax = 3.4028234663852886e38;
 
 /// Reads RaceChrono VBO text exports into a [TelemetrySession].
@@ -197,8 +204,8 @@ class _VboParse {
         if (previousClockTime != null &&
             previousAbsoluteTime != null &&
             parsedTime.seconds < previousClockTime &&
-            previousClockTime >= _lateDayThreshold &&
-            parsedTime.seconds <= _earlyDayThreshold) {
+            parsedTime.seconds + 24.0 * 3600.0 - previousClockTime <=
+                vboMaximumRolloverGapSeconds) {
           clockDayOffset = checkedTime(clockDayOffset + 24.0 * 3600.0);
           warn('Row $rowNumber: midnight rollover detected.');
         }
