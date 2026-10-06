@@ -810,11 +810,11 @@ void main() {
       'Home ring',
     );
     await tester.pump();
-    await tester.runAsync(() async {
-      await tester.tap(find.byKey(const ValueKey('saveCircuitName')));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    });
+    await tester.tap(find.byKey(const ValueKey('saveCircuitName')));
+    await tester.pump();
+    // No file is written here (no folder), so the name dialog closes at once.
     await tester.pumpAndSettle();
+    expect(find.text('Circuit name'), findsNothing);
     expect(find.text('Circuit: Home ring'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();

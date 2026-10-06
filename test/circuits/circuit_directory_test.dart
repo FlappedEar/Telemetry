@@ -280,10 +280,19 @@ void main() {
         'Home track',
       );
       await tester.pump();
-      await tester.runAsync(() async {
-        await tester.tap(save);
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-      });
+      await tester.tap(save);
+      // The dialog closes once the name is written to the device's file,
+      // which takes real time between frames.
+      for (
+        var i = 0;
+        i < 50 && find.text('Circuit name').evaluate().isNotEmpty;
+        ++i
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
       await tester.pumpAndSettle();
       expect(circuits.find(alpha)?.name, 'Home track');
       expect(find.text('Circuit name'), findsNothing);

@@ -5608,7 +5608,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsCircuitsHelp =>
-      'Tor trasy jest rozpoznawany po miejscu jej startu. Lista pochodzi z Wikidata (CC0) i jest aktualizowana razem ze sprawdzaniem aktualizacji aplikacji.';
+      'Tor jest rozpoznawany po miejscu, w którym zaczyna się trasa. Lista pochodzi z Wikidanych (CC0) i jest aktualizowana razem ze sprawdzaniem aktualizacji aplikacji.';
 
   @override
   String get settingsCircuitsUpdate => 'Zaktualizuj listę torów';
