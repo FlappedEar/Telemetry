@@ -232,13 +232,18 @@ a background isolate.
   temperature maxima (the earlier run's only in the same unit), what the
   car did over its last laps (`carWatch`) and the coach's goal check.
 - Car over the last laps (FlappedEar Telemetry only, FET-228): `carWatch`
-  reads a run's channel summaries over its timed laps (out and in laps left
-  out): each temperature whose lap maximum rose `carWatchRiseCelsius` (8 °C;
-  × 1.8 for a declared °F, undeclared read as °C) or more over the last
-  `carWatchLaps` (3) laps, and strong acceleration on the last timed lap
-  `carWatchAccelerationFall` (5%) or more below the run's highest, with at
-  least `carWatchAccelerationLaps` (4) laps, together with the temperature
-  that rose most over the same laps. Observations, not a diagnosis.
+  reads a run's channel summaries over its ranked laps (timed, reference
+  eligible and not off-route or short; out, in and excluded laps left out):
+  each temperature whose lap maximum rose `carWatchRiseCelsius` (8 °C; × 1.8
+  for a declared °F, undeclared read as °C) or more over the last
+  `carWatchLaps` (3) ranked laps without dropping on the last one, and
+  strong acceleration on the last ranked lap `carWatchAccelerationFall` (5%)
+  or more below the run's highest, with at least `carWatchAccelerationLaps`
+  (4) such laps, together with the temperature that rose most over the same
+  laps (`carWatchAlongsideCelsius`, 2 °C, or more). `CarWatchStatus` says
+  for each part whether it was read and why not. Observations, not a
+  diagnosis. A rule for a session starting hotter than earlier ones is not
+  built yet.
 - Channel summaries, temperature associations, focus areas and the day
   report (Overlays `ChannelSummary`, `TemperatureAssociation`,
   `OutingChannelSummaries`, `FocusAreas`, `DayReport`, `OutingDayReport` and

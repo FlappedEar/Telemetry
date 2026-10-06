@@ -8284,12 +8284,18 @@
   "@summaryCarFall": {"description": "Strong acceleration (90th percentile of positive longitudinal G) on the last timed lap below the session's highest.", "placeholders": {"percent": {"type": "String"}, "fromLap": {"type": "String"}, "toLap": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}}},
   "summaryCarFallWith": "{fall}; meanwhile {channel} {from} → {to}",
   "@summaryCarFallWith": {"description": "The fall in strong acceleration with the temperature that rose most over the same laps.", "placeholders": {"fall": {"type": "String"}, "channel": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}}},
-  "summaryCarSettled": "No temperature still rising and strong acceleration held",
-  "@summaryCarSettled": {"description": "Car, last laps when nothing was noted and both were read."},
   "summaryCarSettledTemperatures": "No temperature still rising",
   "@summaryCarSettledTemperatures": {"description": "Car, last laps when nothing was noted and only temperatures could be read."},
   "summaryCarSettledAcceleration": "Strong acceleration held",
   "@summaryCarSettledAcceleration": {"description": "Car, last laps when nothing was noted and only strong acceleration could be read."},
-  "summaryCarNeedsLaps": "{count, plural, =1{Needs 1 timed lap} other{Needs {count} timed laps}}",
-  "@summaryCarNeedsLaps": {"description": "Car, last laps when the session has too few timed laps.", "placeholders": {"count": {"type": "int"}}}
+  "summaryCarTemperaturesNeedLaps": "{count, plural, =1{Temperatures: needs 1 ranked lap} other{Temperatures: needs {count} ranked laps}}",
+  "@summaryCarTemperaturesNeedLaps": {"description": "Car, last laps: too few ranked laps to read a temperature's rise.", "placeholders": {"count": {"type": "int"}}},
+  "summaryCarAccelerationNeedsLaps": "{count, plural, =1{Strong acceleration: needs 1 ranked lap} other{Strong acceleration: needs {count} ranked laps}}",
+  "@summaryCarAccelerationNeedsLaps": {"description": "Car, last laps: too few ranked laps with strong acceleration.", "placeholders": {"count": {"type": "int"}}},
+  "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatures: not recorded on the last ranked lap} other{Temperatures: not recorded on each of the last {count} ranked laps}}",
+  "@summaryCarTemperaturesMissing": {"description": "Car, last laps: every temperature is missing on one of the laps its rise is read over.", "placeholders": {"count": {"type": "int"}}},
+  "summaryCarAccelerationMissing": "Strong acceleration: not read on the last ranked lap",
+  "@summaryCarAccelerationMissing": {"description": "Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples)."},
+  "summaryCarFallNote": "Traffic and a different line lower it too.",
+  "@summaryCarFallNote": {"description": "Under a fall in strong acceleration: it is an observation, not a diagnosis."}
 }

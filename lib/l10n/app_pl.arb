@@ -1466,12 +1466,15 @@
   "briefingGoals": "Twoje cele",
   "briefingNoGoals": "Brak: dodaj je w sekcji Twoje cele na następną sesję",
   "briefingChance": "Największa szansa",
-  "summaryCarWatch": "Samochód, ostatnie okrążenia",
-  "summaryCarRise": "{channel} nadal w górę: {from} → {to} (okrążenia {fromLap}–{toLap})",
+  "summaryCarWatch": "Auto, ostatnie okrążenia",
+  "summaryCarRise": "{channel} nadal rośnie: {from} → {to} (okrążenia {fromLap}–{toLap})",
   "summaryCarFall": "Mocne przyspieszenie niższe o {percent}% od okrążenia {fromLap} do {toLap} ({from} → {to})",
   "summaryCarFallWith": "{fall}; w tym czasie {channel} {from} → {to}",
-  "summaryCarSettled": "Żadna temperatura już nie rośnie, mocne przyspieszenie bez spadku",
-  "summaryCarSettledTemperatures": "Żadna temperatura już nie rośnie",
+  "summaryCarSettledTemperatures": "Żadna temperatura nie rośnie na końcu",
   "summaryCarSettledAcceleration": "Mocne przyspieszenie bez spadku",
-  "summaryCarNeedsLaps": "{count, plural, =1{Potrzeba 1 okrążenia pomiarowego} few{Potrzeba {count} okrążeń pomiarowych} many{Potrzeba {count} okrążeń pomiarowych} other{Potrzeba {count} okrążeń pomiarowych}}"
+  "summaryCarTemperaturesNeedLaps": "{count, plural, =1{Temperatury: potrzeba 1 okrążenia w rankingu} few{Temperatury: potrzeba {count} okrążeń w rankingu} many{Temperatury: potrzeba {count} okrążeń w rankingu} other{Temperatury: potrzeba {count} okrążeń w rankingu}}",
+  "summaryCarAccelerationNeedsLaps": "{count, plural, =1{Mocne przyspieszenie: potrzeba 1 okrążenia w rankingu} few{Mocne przyspieszenie: potrzeba {count} okrążeń w rankingu} many{Mocne przyspieszenie: potrzeba {count} okrążeń w rankingu} other{Mocne przyspieszenie: potrzeba {count} okrążeń w rankingu}}",
+  "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatury: brak zapisu na ostatnim okrążeniu w rankingu} few{Temperatury: brak zapisu na którymś z ostatnich {count} okrążeń w rankingu} many{Temperatury: brak zapisu na którymś z ostatnich {count} okrążeń w rankingu} other{Temperatury: brak zapisu na którymś z ostatnich {count} okrążeń w rankingu}}",
+  "summaryCarAccelerationMissing": "Mocne przyspieszenie: brak odczytu na ostatnim okrążeniu w rankingu",
+  "summaryCarFallNote": "Ruch na torze i inna linia też je obniżają."
 }

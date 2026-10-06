@@ -9007,12 +9007,6 @@ abstract class AppLocalizations {
     String to,
   );
 
-  /// Car, last laps when nothing was noted and both were read.
-  ///
-  /// In en, this message translates to:
-  /// **'No temperature still rising and strong acceleration held'**
-  String get summaryCarSettled;
-
   /// Car, last laps when nothing was noted and only temperatures could be read.
   ///
   /// In en, this message translates to:
@@ -9025,11 +9019,35 @@ abstract class AppLocalizations {
   /// **'Strong acceleration held'**
   String get summaryCarSettledAcceleration;
 
-  /// Car, last laps when the session has too few timed laps.
+  /// Car, last laps: too few ranked laps to read a temperature's rise.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Needs 1 timed lap} other{Needs {count} timed laps}}'**
-  String summaryCarNeedsLaps(int count);
+  /// **'{count, plural, =1{Temperatures: needs 1 ranked lap} other{Temperatures: needs {count} ranked laps}}'**
+  String summaryCarTemperaturesNeedLaps(int count);
+
+  /// Car, last laps: too few ranked laps with strong acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Strong acceleration: needs 1 ranked lap} other{Strong acceleration: needs {count} ranked laps}}'**
+  String summaryCarAccelerationNeedsLaps(int count);
+
+  /// Car, last laps: every temperature is missing on one of the laps its rise is read over.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Temperatures: not recorded on the last ranked lap} other{Temperatures: not recorded on each of the last {count} ranked laps}}'**
+  String summaryCarTemperaturesMissing(int count);
+
+  /// Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples).
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration: not read on the last ranked lap'**
+  String get summaryCarAccelerationMissing;
+
+  /// Under a fall in strong acceleration: it is an observation, not a diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic and a different line lower it too.'**
+  String get summaryCarFallNote;
 }
 
 class _AppLocalizationsDelegate

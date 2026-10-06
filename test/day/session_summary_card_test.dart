@@ -543,47 +543,52 @@ void main() {
     );
     expect(
       _text(tester, 'sessionSummaryCarWatch'),
-      'Car, last laps | Gearbox still rising: 108\u00a0°C → 119\u00a0°C '
+      'Car, last laps | Gearbox still rising: 108 °C → 119 °C '
       '(laps 3–5)\nStrong acceleration 6% lower from lap 2 to lap 5 '
-      '(0.265\u00a0g → 0.250\u00a0g); meanwhile Gearbox 104\u00a0°C → '
-      '119\u00a0°C',
+      '(0.265 g → 0.250 g); meanwhile Gearbox 104 °C → '
+      '119 °C\nTraffic and a different line lower it too.',
     );
   });
 
-  testWidgets('the car over the last laps says what held, or why not', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      channels: _lastLaps(
-        oil: [110, 112, 113, 113],
-        strongG: [0.25, 0.25, 0.25, 0.25],
+  testWidgets('the car over the last laps says what held, or why each part '
+      'was not read', (tester) async {
+    Future<String> watch(DayChannelSummaries channels) async {
+      await _pump(tester, channels: channels);
+      return _text(tester, 'sessionSummaryCarWatch');
+    }
+
+    expect(
+      await watch(
+        _lastLaps(oil: [110, 112, 113, 113], strongG: [0.25, 0.25, 0.25, 0.25]),
       ),
+      'Car, last laps | No temperature still rising\nStrong acceleration held',
     );
     expect(
-      _text(tester, 'sessionSummaryCarWatch'),
-      'Car, last laps | No temperature still rising and strong acceleration '
-      'held',
-    );
-    await _pump(tester, channels: _lastLaps(oil: [110, 112, 113]));
-    expect(
-      _text(tester, 'sessionSummaryCarWatch'),
+      await watch(_lastLaps(oil: [110, 112, 113])),
       'Car, last laps | No temperature still rising',
     );
-    await _pump(tester, channels: _lastLaps(strongG: [0.25, 0.25, 0.25, 0.25]));
+    // Three ranked laps: enough for temperatures, not for acceleration.
     expect(
-      _text(tester, 'sessionSummaryCarWatch'),
-      'Car, last laps | Strong acceleration held',
+      await watch(_lastLaps(oil: [110, 120, 130], strongG: [0.3, 0.3, 0.2])),
+      'Car, last laps | Oil still rising: 110 °C → 130 °C (laps '
+      '1–3)\nStrong acceleration: needs 4 ranked laps',
     );
-    await _pump(tester, channels: _lastLaps(oil: [110, 130]));
     expect(
-      _text(tester, 'sessionSummaryCarWatch'),
-      'Car, last laps | Needs 3 timed laps',
+      await watch(_lastLaps(oil: [110, 130], strongG: [0.3, 0.3])),
+      'Car, last laps | Temperatures: needs 3 ranked laps\nStrong '
+      'acceleration: needs 4 ranked laps',
     );
-    await _pump(tester, channels: _lastLaps(strongG: [0.3, 0.3, 0.2]));
+    // Twelve laps, the temperature missing on one of the last three and no
+    // acceleration on the last: no lap count is blamed.
     expect(
-      _text(tester, 'sessionSummaryCarWatch'),
-      'Car, last laps | Needs 4 timed laps',
+      await watch(
+        _lastLaps(
+          oil: [for (var i = 0; i < 10; i++) 100.0, null, 101],
+          strongG: [for (var i = 0; i < 11; i++) 0.3, null],
+        ),
+      ),
+      'Car, last laps | Temperatures: not recorded on each of the last 3 '
+      'ranked laps\nStrong acceleration: not read on the last ranked lap',
     );
     // Nothing recorded on its laps: no line (the hottest line says so).
     await _pump(tester, channels: _channels);
@@ -603,10 +608,21 @@ void main() {
     );
     expect(
       _text(tester, 'sessionSummaryCarWatch'),
-      'Samochód, ostatnie okrążenia | Temperatura oleju nadal w górę: 126\u00a0°C → '
-      '136\u00a0°C (okrążenia 3–5)\nMocne przyspieszenie niższe o 6% od '
-      'okrążenia 2 do 5 (0.265\u00a0g → 0.250\u00a0g); w tym czasie Temperatura oleju '
-      '121\u00a0°C → 136\u00a0°C',
+      'Auto, ostatnie okrążenia | Temperatura oleju nadal rośnie: '
+      '126 °C → 136 °C (okrążenia 3–5)\nMocne przyspieszenie niższe '
+      'o 6% od okrążenia 2 do 5 (0.265 g → 0.250 g); w tym czasie '
+      'Temperatura oleju 121 °C → 136 °C\nRuch na torze i inna '
+      'linia też je obniżają.',
+    );
+    await _pump(
+      tester,
+      locale: const Locale('pl'),
+      channels: _lastLaps(oil: [110, 130], strongG: [0.3, 0.3]),
+    );
+    expect(
+      _text(tester, 'sessionSummaryCarWatch'),
+      'Auto, ostatnie okrążenia | Temperatury: potrzeba 3 okrążeń w rankingu'
+      '\nMocne przyspieszenie: potrzeba 4 okrążeń w rankingu',
     );
   });
 }

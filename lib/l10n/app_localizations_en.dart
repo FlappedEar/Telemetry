@@ -6097,23 +6097,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get summaryCarSettled =>
-      'No temperature still rising and strong acceleration held';
-
-  @override
   String get summaryCarSettledTemperatures => 'No temperature still rising';
 
   @override
   String get summaryCarSettledAcceleration => 'Strong acceleration held';
 
   @override
-  String summaryCarNeedsLaps(int count) {
+  String summaryCarTemperaturesNeedLaps(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Needs $count timed laps',
-      one: 'Needs 1 timed lap',
+      other: 'Temperatures: needs $count ranked laps',
+      one: 'Temperatures: needs 1 ranked lap',
     );
     return '$_temp0';
   }
+
+  @override
+  String summaryCarAccelerationNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Strong acceleration: needs $count ranked laps',
+      one: 'Strong acceleration: needs 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarTemperaturesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Temperatures: not recorded on each of the last $count ranked laps',
+      one: 'Temperatures: not recorded on the last ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryCarAccelerationMissing =>
+      'Strong acceleration: not read on the last ranked lap';
+
+  @override
+  String get summaryCarFallNote => 'Traffic and a different line lower it too.';
 }
