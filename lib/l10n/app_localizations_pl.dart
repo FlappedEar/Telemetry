@@ -1423,7 +1423,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String progressionSetup(String setup) {
-    return 'Ustawienia samochodu: $setup';
+    return 'Zmiany ustawień: $setup';
   }
 
   @override
@@ -5698,5 +5698,107 @@ class AppLocalizationsPl extends AppLocalizations {
       one: 'Skopiowano 1 dzień, ale nie udało się zapisać biblioteki. Pojawi się w niej ponownie, w ostatnim samochodzie, przy następnym uruchomieniu aplikacji.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get sessionSetupHeading => 'Ustawienia';
+
+  @override
+  String get sessionSetupPressures => 'Ciśnienie w oponach';
+
+  @override
+  String get pressureUnitBar => 'bar';
+
+  @override
+  String get pressureUnitPsi => 'psi';
+
+  @override
+  String get setupWheelFl => 'LP';
+
+  @override
+  String get setupWheelFr => 'PP';
+
+  @override
+  String get setupWheelRl => 'LT';
+
+  @override
+  String get setupWheelRr => 'PT';
+
+  @override
+  String get setupWheelFlName => 'lewe przednie';
+
+  @override
+  String get setupWheelFrName => 'prawe przednie';
+
+  @override
+  String get setupWheelRlName => 'lewe tylne';
+
+  @override
+  String get setupWheelRrName => 'prawe tylne';
+
+  @override
+  String get sessionSetupCold => 'Na zimno';
+
+  @override
+  String get sessionSetupHot => 'Na ciepło';
+
+  @override
+  String sessionSetupPressureField(String row, String wheel) {
+    return 'Ciśnienie $row, $wheel';
+  }
+
+  @override
+  String sessionSetupPressureRange(String unit, String min, String max) {
+    return 'Ciśnienie w $unit wpisz od $min do $max, najwyżej z dwiema cyframi po kropce.';
+  }
+
+  @override
+  String get sessionSetupKeptAsEntered =>
+      'Zapisane tak, jak wpisano: zmiana jednostki nie przelicza liczb.';
+
+  @override
+  String get sessionSetupTyre => 'Opony';
+
+  @override
+  String get sessionSetupTyreHint => 'Pirelli SC2';
+
+  @override
+  String get sessionSetupFuel => 'Paliwo na starcie (l)';
+
+  @override
+  String get sessionSetupFuelRange => '0–200 l, najwyżej dwie cyfry po kropce';
+
+  @override
+  String sessionSetupSameAs(String session) {
+    return 'Skopiuj z: $session';
+  }
+
+  @override
+  String get sessionSetupReadOnly =>
+      'Zapisane przez nowszą wersję aplikacji: pokazane bez zmian i nie do edycji tutaj.';
+
+  @override
+  String setupCold(String pressures, String unit) {
+    return 'Na zimno $pressures $unit';
+  }
+
+  @override
+  String setupHot(String pressures, String unit) {
+    return 'Na ciepło $pressures $unit';
+  }
+
+  @override
+  String setupTyres(String tyre) {
+    return 'Opony $tyre';
+  }
+
+  @override
+  String setupFuel(String litres) {
+    return 'Paliwo $litres l';
+  }
+
+  @override
+  String sessionSetupLine(String setup) {
+    return 'Ustawienia: $setup';
   }
 }

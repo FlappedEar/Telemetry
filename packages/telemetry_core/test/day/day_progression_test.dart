@@ -196,7 +196,21 @@ void main() {
     final info = progressionRunInfo(
       [named('run:1', 'Session 1'), named('run:2', 'Session 2')],
       documentRuns: [
-        {'id': 'run:2', 'notes': 'Wet', 'conditions': ' ', 'setupChanges': 3},
+        {
+          'id': 'run:1',
+          'setup': {'version': 'session-setup-v1', 'tyre': ' '},
+        },
+        {
+          'id': 'run:2',
+          'notes': 'Wet',
+          'conditions': ' ',
+          'setupChanges': 3,
+          'setup': {
+            'pressureUnit': 'bar',
+            'coldPressure': {'fl': 2.1, 'rr': 9.9},
+            'fuelStartLitres': 8.5,
+          },
+        },
         'not a run',
       ],
     );
@@ -205,6 +219,17 @@ void main() {
     expect(info[1].notes, 'Wet');
     expect(info[1].conditions, isNull);
     expect(info[1].setupChanges, isNull);
+    // A setup with nothing in it is not recorded; an invalid pressure is not
+    // entered.
+    expect(info[0].setup, isNull);
+    expect(
+      info[1].setup,
+      const RunSetup(
+        pressureUnit: PressureUnit.bar,
+        cold: WheelPressures(fl: 2.1),
+        fuelStartLitres: 8.5,
+      ),
+    );
   });
 
   group('a day', () {

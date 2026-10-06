@@ -2074,10 +2074,10 @@ abstract class AppLocalizations {
   /// **'Conditions: {conditions}'**
   String progressionConditions(String conditions);
 
-  /// The setup changes the driver noted for a session.
+  /// The setup changes the driver noted for a session (free text).
   ///
   /// In en, this message translates to:
-  /// **'Setup: {setup}'**
+  /// **'Setup changes: {setup}'**
   String progressionSetup(String setup);
 
   /// The driver's notes for a session.
@@ -8222,6 +8222,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 day was copied, but the library could not be saved. It is listed again, in your last car, when the app next starts.} other{{count} days were copied, but the library could not be saved. They are listed again, in your last car, when the app next starts.}}'**
   String libraryImportNotSaved(int count);
+
+  /// Heading of the structured setup (tyre pressures, tyres, fuel) in the session details dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get sessionSetupHeading;
+
+  /// Label next to the choice of the unit the tyre pressures are entered in.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyre pressures'**
+  String get sessionSetupPressures;
+
+  /// The pressure unit bar, as a choice and after numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'bar'**
+  String get pressureUnitBar;
+
+  /// The pressure unit psi (pounds per square inch), as a choice and after numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'psi'**
+  String get pressureUnitPsi;
+
+  /// Column heading, short: the front left wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'FL'**
+  String get setupWheelFl;
+
+  /// Column heading, short: the front right wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'FR'**
+  String get setupWheelFr;
+
+  /// Column heading, short: the rear left wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'RL'**
+  String get setupWheelRl;
+
+  /// Column heading, short: the rear right wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'RR'**
+  String get setupWheelRr;
+
+  /// Spoken name of the front left wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'front left'**
+  String get setupWheelFlName;
+
+  /// Spoken name of the front right wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'front right'**
+  String get setupWheelFrName;
+
+  /// Spoken name of the rear left wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'rear left'**
+  String get setupWheelRlName;
+
+  /// Spoken name of the rear right wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'rear right'**
+  String get setupWheelRrName;
+
+  /// Row label: tyre pressures set cold, before the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Cold'**
+  String get sessionSetupCold;
+
+  /// Row label: tyre pressures measured hot, after the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot'**
+  String get sessionSetupHot;
+
+  /// Spoken name of one tyre pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'{row} pressure, {wheel}'**
+  String sessionSetupPressureField(String row, String wheel);
+
+  /// Shown under the tyre pressures when one is out of range for the chosen unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Pressures in {unit} are from {min} to {max}, with at most two decimals.'**
+  String sessionSetupPressureRange(String unit, String min, String max);
+
+  /// Explains that the tyre pressures are stored in the unit chosen and never converted.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept as entered: switching the unit does not convert the numbers.'**
+  String get sessionSetupKeptAsEntered;
+
+  /// Text field label: the tyre's name or compound.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres'**
+  String get sessionSetupTyre;
+
+  /// Example tyre in the empty text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Pirelli SC2'**
+  String get sessionSetupTyreHint;
+
+  /// Number field label: the fuel in the tank at the start of the session, in litres.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel at start (l)'**
+  String get sessionSetupFuel;
+
+  /// Shown under the fuel field when the number cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'0–200 l, at most two decimals'**
+  String get sessionSetupFuelRange;
+
+  /// Button: fills the setup fields from the previous session's setup; nothing is saved until Save.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as {session}'**
+  String sessionSetupSameAs(String session);
+
+  /// Shown instead of the setup fields when the setup was stored in a format this version does not edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved by a newer version of the app: shown as it is and not changed here.'**
+  String get sessionSetupReadOnly;
+
+  /// Part of a session's setup line: the cold tyre pressures FL / FR / RL / RR and their unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cold {pressures} {unit}'**
+  String setupCold(String pressures, String unit);
+
+  /// Part of a session's setup line: the hot tyre pressures FL / FR / RL / RR and their unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot {pressures} {unit}'**
+  String setupHot(String pressures, String unit);
+
+  /// Part of a session's setup line: the tyre's name or compound.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres {tyre}'**
+  String setupTyres(String tyre);
+
+  /// Part of a session's setup line: the fuel at the start in litres.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel {litres} l'**
+  String setupFuel(String litres);
+
+  /// A session's structured setup on one line, in the session list and the progression.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup: {setup}'**
+  String sessionSetupLine(String setup);
 }
 
 class _AppLocalizationsDelegate

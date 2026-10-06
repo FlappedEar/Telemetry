@@ -4,11 +4,13 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../l10n.dart';
 import 'day_results_controller.dart';
+import 'setup_text.dart';
 import 'weather_text.dart';
 
 /// Edits one session's name, conditions, setup changes and notes, as
-/// FlappedEar Overlays stores them in the day's document (FET-52). The day
-/// then has unsaved changes.
+/// FlappedEar Overlays stores them in the day's document (FET-52), and its
+/// structured setup, which only Telemetry shows (FET-188). The day then has
+/// unsaved changes.
 class SessionDetailsDialog extends StatefulWidget {
   const SessionDetailsDialog({
     super.key,
@@ -29,7 +31,20 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
   late final _conditions = TextEditingController(text: _stored.conditions);
   late final _setup = TextEditingController(text: _stored.setupChanges);
   late final _notes = TextEditingController(text: _stored.notes);
+  late final _setupFields = _SetupFields(
+    _stored.setup,
+    defaultUnit: _previous?.setup.pressureUnit,
+  );
   bool _invalid = false;
+
+  // The details of the session recorded before this one, or null.
+  late final RunMetadata? _previous = switch (previousRunInRecordingOrder(
+    widget.controller.runs,
+    widget.runId,
+  )) {
+    final id? => widget.controller.runMetadata(id),
+    null => null,
+  };
 
   @override
   void didChangeDependencies() {
@@ -44,6 +59,7 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
     for (final controller in [_name, _conditions, _setup, _notes]) {
       controller?.dispose();
     }
+    _setupFields.dispose();
     super.dispose();
   }
 
@@ -59,6 +75,9 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
         notes: _notes.text,
         conditions: _conditions.text,
         setupChanges: _setup.text,
+        // A setup of a newer version is passed back as it is: never
+        // rewritten.
+        setup: _stored.setup.readOnly ? _stored.setup : _setupFields.setup!,
       ),
     );
     if (problem != null) {
@@ -93,7 +112,13 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final blank = _name!.text.trim().isEmpty;
+    final setupValid = _stored.setup.readOnly || _setupFields.setup != null;
+    final previousSetup = _previous?.setup;
     return AlertDialog(
+      // On a phone the setup table gets the width.
+      insetPadding: MediaQuery.sizeOf(context).width < 400
+          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 24)
+          : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       title: Text(l10n.sessionDetailsTitle(l10n.session(_stored.name))),
       content: SizedBox(
         width: 460,
@@ -125,6 +150,22 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
                 l10n.sessionDetailsSetup,
                 hint: l10n.sessionDetailsSetupHint,
                 maxLines: 4,
+              ),
+              const SizedBox(height: 16),
+              _SessionSetupSection(
+                fields: _setupFields,
+                stored: _stored.setup,
+                sameAs:
+                    previousSetup == null ||
+                        previousSetup.isEmpty ||
+                        previousSetup.readOnly ||
+                        _stored.setup.readOnly
+                    ? null
+                    : (
+                        name: l10n.session(_previous!.name),
+                        setup: previousSetup,
+                      ),
+                onChanged: () => setState(() => _invalid = false),
               ),
               const SizedBox(height: 12),
               _field(_notes, l10n.sessionDetailsNotes, maxLines: 6),
@@ -158,10 +199,409 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
         ),
         FilledButton(
           key: const ValueKey('sessionDetailsSave'),
-          onPressed: blank ? null : _save,
+          onPressed: blank || !setupValid ? null : _save,
           child: Text(l10n.save),
         ),
       ],
+    );
+  }
+}
+
+/// The session recorded just before [runId] in [runs]: by recording time,
+/// sessions without one after the dated ones in the order added, as
+/// sessions are numbered. Null for the first, or when [runId] is not there.
+String? previousRunInRecordingOrder(List<NamedRun> runs, String runId) {
+  final order = List.generate(runs.length, (index) => index);
+  final starts = [
+    for (final named in runs) recordingTimestamp(named.run.telemetry),
+  ];
+  order.sort((left, right) {
+    final a = starts[left], b = starts[right];
+    if ((a == null) != (b == null)) return a == null ? 1 : -1;
+    if (a != null && b != null && a != b) return a.compareTo(b);
+    return left.compareTo(right);
+  });
+  final at = order.indexWhere((index) => runs[index].run.id == runId);
+  return at <= 0 ? null : runs[order[at - 1]].run.id;
+}
+
+/// Turns a comma into a decimal point as it is typed, so every language
+/// enters "2.1" (the owner's rule), and refuses anything but digits with at
+/// most [setupDecimals] decimals, and [integerDigits] before the point.
+class SetupNumberFormatter extends TextInputFormatter {
+  SetupNumberFormatter({int integerDigits = 2})
+    : _allowed = RegExp('^\\d{0,$integerDigits}(\\.\\d{0,$setupDecimals})?\$');
+
+  final RegExp _allowed;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.replaceAll(',', '.');
+    if (!_allowed.hasMatch(text)) return oldValue;
+    return newValue.copyWith(text: text);
+  }
+}
+
+/// The text fields of a session's setup and the unit chosen.
+class _SetupFields {
+  _SetupFields(RunSetup stored, {PressureUnit? defaultUnit})
+    : unit = stored.pressureUnit ?? defaultUnit ?? PressureUnit.bar,
+      _storedUnit = stored.pressureUnit {
+    fill(stored, keepUnit: stored.pressureUnit == null);
+  }
+
+  PressureUnit unit;
+  final PressureUnit? _storedUnit;
+  final cold = [for (final _ in setupWheels) TextEditingController()];
+  final hot = [for (final _ in setupWheels) TextEditingController()];
+  final tyre = TextEditingController();
+  final fuel = TextEditingController();
+
+  List<TextEditingController> get _all => [...cold, ...hot, tyre, fuel];
+
+  /// Shows [setup] in the fields; its unit too, unless [keepUnit].
+  void fill(RunSetup setup, {bool keepUnit = false}) {
+    if (!keepUnit && setup.pressureUnit != null) unit = setup.pressureUnit!;
+    String number(double? value) => value == null ? '' : setupNumberText(value);
+    for (final (index, wheel) in setupWheels.indexed) {
+      cold[index].text = number(setup.cold[wheel]);
+      hot[index].text = number(setup.hot[wheel]);
+    }
+    tyre.text = setup.tyre;
+    fuel.text = number(setup.fuelStartLitres);
+  }
+
+  /// Whether [controller]'s pressure cannot be stored in [unit].
+  bool pressureInvalid(TextEditingController controller) {
+    if (controller.text.trim().isEmpty) return false;
+    final value = parseSetupNumber(controller.text);
+    return value == null || !validSetupPressure(unit, value);
+  }
+
+  bool get fuelInvalid {
+    if (fuel.text.trim().isEmpty) return false;
+    final value = parseSetupNumber(fuel.text);
+    return value == null || !validFuelLitres(value);
+  }
+
+  bool get pressuresInvalid => [...cold, ...hot].any(pressureInvalid);
+
+  /// The setup the fields hold, or null while one of them cannot be
+  /// stored. The unit is kept only with a pressure, so a session without
+  /// pressures gains none; one stored before stays.
+  RunSetup? get setup {
+    if (pressuresInvalid || fuelInvalid || !validTyre(tyre.text.trim())) {
+      return null;
+    }
+    double? number(TextEditingController controller) =>
+        controller.text.trim().isEmpty
+        ? null
+        : parseSetupNumber(controller.text);
+    final coldValues = WheelPressures.of([for (final c in cold) number(c)]);
+    final hotValues = WheelPressures.of([for (final c in hot) number(c)]);
+    final pressures = !coldValues.isEmpty || !hotValues.isEmpty;
+    return RunSetup(
+      pressureUnit: pressures ? unit : _storedUnit,
+      cold: coldValues,
+      hot: hotValues,
+      tyre: tyre.text.trim(),
+      fuelStartLitres: number(fuel),
+    );
+  }
+
+  void dispose() {
+    for (final controller in _all) {
+      controller.dispose();
+    }
+  }
+}
+
+/// The setup part of the session details: the unit, a table of cold and
+/// hot pressures per wheel, the tyre and the fuel at the start. A setup
+/// stored by a newer version is shown, not edited.
+class _SessionSetupSection extends StatefulWidget {
+  const _SessionSetupSection({
+    required this.fields,
+    required this.stored,
+    this.sameAs,
+    required this.onChanged,
+  });
+
+  final _SetupFields fields;
+  final RunSetup stored;
+
+  /// The previous session's name and setup, offered to copy.
+  final ({String name, RunSetup setup})? sameAs;
+  final VoidCallback onChanged;
+
+  @override
+  State<_SessionSetupSection> createState() => __SessionSetupSectionState();
+}
+
+class __SessionSetupSectionState extends State<_SessionSetupSection> {
+  _SetupFields get _fields => widget.fields;
+
+  void _changed() {
+    setState(() {});
+    widget.onChanged();
+  }
+
+  Widget _pressure(
+    BuildContext context,
+    TextEditingController controller,
+    String key,
+  ) {
+    final invalid = _fields.pressureInvalid(controller);
+    final errorBorder = OutlineInputBorder(
+      borderSide: BorderSide(
+        color: Theme.of(context).colorScheme.error,
+        width: 2,
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      child: TextField(
+        key: ValueKey(key),
+        controller: controller,
+        textAlign: TextAlign.center,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [SetupNumberFormatter()],
+        style: Theme.of(context).textTheme.bodyMedium,
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 2,
+            vertical: 10,
+          ),
+          // The range is said once under the table; the field is marked
+          // with the error colour, without an error line under it.
+          border: const OutlineInputBorder(),
+          enabledBorder: invalid ? errorBorder : null,
+          focusedBorder: invalid ? errorBorder : null,
+          hintText: '—',
+        ),
+        onChanged: (_) => _changed(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final small = theme.textTheme.bodySmall;
+    final heading = Text(
+      l10n.sessionSetupHeading,
+      style: theme.textTheme.titleSmall,
+    );
+    if (widget.stored.readOnly) {
+      return Column(
+        key: const ValueKey('sessionSetupReadOnly'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          heading,
+          const SizedBox(height: 4),
+          if (setupText(l10n, widget.stored) case final text?)
+            Text(text, style: theme.textTheme.bodyMedium),
+          Text(l10n.sessionSetupReadOnly, style: small),
+        ],
+      );
+    }
+    final unit = _fields.unit;
+    final headings = setupWheelHeadings(l10n);
+    final names = setupWheelNames(l10n);
+    final rows = [
+      ('cold', l10n.sessionSetupCold, _fields.cold),
+      ('hot', l10n.sessionSetupHot, _fields.hot),
+    ];
+    Widget fieldsRow(String key, String row, List<TextEditingController> c) =>
+        Row(
+          children: [
+            for (final (index, wheel) in setupWheels.indexed)
+              Expanded(
+                child: Semantics(
+                  label: l10n.sessionSetupPressureField(row, names[index]),
+                  child: _pressure(
+                    context,
+                    c[index],
+                    'sessionSetup $key $wheel',
+                  ),
+                ),
+              ),
+          ],
+        );
+    Widget headingsRow() => Row(
+      children: [
+        for (final text in headings)
+          Expanded(
+            child: ExcludeSemantics(
+              child: Text(text, style: small, textAlign: TextAlign.center),
+            ),
+          ),
+      ],
+    );
+    final tyre = TextField(
+      key: const ValueKey('sessionSetupTyre'),
+      controller: _fields.tyre,
+      textCapitalization: TextCapitalization.sentences,
+      inputFormatters: [
+        LengthLimitingTextInputFormatter(maximumTyreCharacters),
+      ],
+      decoration: InputDecoration(
+        labelText: l10n.sessionSetupTyre,
+        hintText: l10n.sessionSetupTyreHint,
+      ),
+      onChanged: (_) => _changed(),
+    );
+    final fuel = TextField(
+      key: const ValueKey('sessionSetupFuel'),
+      controller: _fields.fuel,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [SetupNumberFormatter(integerDigits: 3)],
+      decoration: InputDecoration(
+        labelText: l10n.sessionSetupFuel,
+        errorText: _fields.fuelInvalid ? l10n.sessionSetupFuelRange : null,
+        errorMaxLines: 2,
+      ),
+      onChanged: (_) => _changed(),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Below 300 points (a 320 phone with large text), the row labels go
+        // above their rows and the fuel under the tyres.
+        final narrow = constraints.maxWidth < 300;
+        return Column(
+          key: const ValueKey('sessionSetup'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
+              children: [
+                heading,
+                if (widget.sameAs case final sameAs?)
+                  TextButton.icon(
+                    key: const ValueKey('sessionSetupSameAs'),
+                    icon: const Icon(Icons.content_copy, size: 18),
+                    label: Text(l10n.sessionSetupSameAs(sameAs.name)),
+                    onPressed: () {
+                      _fields.fill(sameAs.setup);
+                      _changed();
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  l10n.sessionSetupPressures,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                SegmentedButton<PressureUnit>(
+                  key: const ValueKey('sessionSetupUnit'),
+                  showSelectedIcon: false,
+                  segments: [
+                    for (final value in PressureUnit.values)
+                      ButtonSegment(
+                        value: value,
+                        label: Text(pressureUnitText(l10n, value)),
+                      ),
+                  ],
+                  selected: {unit},
+                  // Never converted: the numbers stay and are checked again.
+                  onSelectionChanged: (selection) {
+                    _fields.unit = selection.single;
+                    _changed();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (narrow) ...[
+              headingsRow(),
+              for (final (key, label, controllers) in rows) ...[
+                Text(label, style: small),
+                fieldsRow(key, label, controllers),
+              ],
+            ] else
+              Table(
+                columnWidths: const {0: IntrinsicColumnWidth()},
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                children: [
+                  TableRow(
+                    children: [
+                      const SizedBox(),
+                      for (final text in headings)
+                        ExcludeSemantics(
+                          child: Text(
+                            text,
+                            style: small,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  ),
+                  for (final (key, label, controllers) in rows)
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsetsDirectional.only(end: 8),
+                          child: ExcludeSemantics(
+                            child: Text(label, style: small),
+                          ),
+                        ),
+                        for (final (index, wheel) in setupWheels.indexed)
+                          Semantics(
+                            label: l10n.sessionSetupPressureField(
+                              label,
+                              names[index],
+                            ),
+                            child: _pressure(
+                              context,
+                              controllers[index],
+                              'sessionSetup $key $wheel',
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            if (_fields.pressuresInvalid)
+              Text(
+                l10n.sessionSetupPressureRange(
+                  pressureUnitText(l10n, unit),
+                  setupNumberText(unit.minimum),
+                  setupNumberText(unit.maximum),
+                ),
+                key: const ValueKey('sessionSetupPressureError'),
+                style: small?.copyWith(color: theme.colorScheme.error),
+              ),
+            Text(l10n.sessionSetupKeptAsEntered, style: small),
+            const SizedBox(height: 4),
+            if (narrow) ...[
+              tyre,
+              fuel,
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: tyre),
+                  const SizedBox(width: 12),
+                  SizedBox(width: 190, child: fuel),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 }
