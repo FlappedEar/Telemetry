@@ -87,8 +87,9 @@ Future<void> main(List<String> args) async {
     ..sort((a, b) => numbers[a['id']]!.compareTo(numbers[b['id']]!));
   final circuits = <Map<String, Object?>>[];
   for (final entry in ordered) {
-    if (!circuits.any((kept) => _metres(kept, entry) < 100))
+    if (!circuits.any((kept) => _metres(kept, entry) < 100)) {
       circuits.add(entry);
+    }
   }
   final now = DateTime.now().toUtc();
   final revision = int.parse(
