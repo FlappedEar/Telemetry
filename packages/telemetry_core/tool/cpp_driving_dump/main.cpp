@@ -686,6 +686,12 @@ QVector<QPair<QString, TelemetrySession>> drivingSessions()
             {"throttle", makeChannel("accelerator_pos-obd", "%", throttle)},
             {"lateralAcceleration", makeChannel("latacc", "g", lateral, everywhere)},
             {"speed", makeChannel("velocity", "km/h", [](double t) { return t < 9.0 ? 110.0 : std::nan(""); })}})},
+        // KAN-201: speed is lost from 5.45 s to 6.55 s, inside braking while
+        // cornering; no distance is integrated across that gap.
+        {"speedGap", sessionWith({{"brake", makeChannel("brake_pos-obd", "%", brake)},
+            {"throttle", makeChannel("accelerator_pos-obd", "%", throttle)},
+            {"lateralAcceleration", makeChannel("latacc-calc", "g", lateral)},
+            {"speed", makeChannel("velocity", "km/h", speed, [](double t) { return t < 5.47 || t > 6.53; })}})},
     };
 }
 

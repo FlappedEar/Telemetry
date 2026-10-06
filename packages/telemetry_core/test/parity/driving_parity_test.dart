@@ -489,6 +489,14 @@ Map<String, TelemetrySession> _drivingSessions() => {
     'lateralAcceleration': _channel('latacc', 'g', _lateral),
     'speed': _channel('velocity', 'km/h', (t) => t < 9.0 ? 110.0 : double.nan),
   }),
+  // KAN-201: speed is lost from 5.45 s to 6.55 s, inside braking while
+  // cornering; no distance is integrated across that gap.
+  'speedGap': _session({
+    'brake': _channel('brake_pos-obd', '%', _brake),
+    'throttle': _channel('accelerator_pos-obd', '%', _throttle),
+    'lateralAcceleration': _channel('latacc-calc', 'g', _lateral),
+    'speed': _channel('velocity', 'km/h', _speed, (t) => t < 5.47 || t > 6.53),
+  }),
 };
 
 const Map<String, DrivingStateOptions> _options = {

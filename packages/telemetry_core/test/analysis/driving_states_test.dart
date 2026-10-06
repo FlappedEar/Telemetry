@@ -275,6 +275,21 @@ void main() {
     expect(travelledMeters(_session(const {}), overlap), 0.0, reason: 'no speed: none invented');
   });
 
+  test('counts no distance across a speed gap longer than the gap threshold', () {
+    // Steps of 0.25 s put the threshold at 3 x 0.25 = 0.75 s: the 0.75 s step
+    // from 1 s is counted, the 1 s step from 2.25 s is not. 36 km/h is 10 m/s.
+    const times = [0.0, 0.25, 0.5, 0.75, 1.0, 1.75, 2.0, 2.25, 3.25, 3.5, 3.75];
+    final session = _session({
+      'speed': TelemetryChannel(
+        name: 'velocity',
+        unit: 'km/h',
+        timestamps: Float64List.fromList(times),
+        values: Float32List.fromList([for (final _ in times) 36.0]),
+      ),
+    });
+    expect(travelledMeters(session, const [DrivingStateInterval(0.0, 3.75)]), closeTo(27.5, 1e-9));
+  });
+
   group('on a comparison', () {
     final session = parseVboFile('test/parity/driving/driving_measured.vbo');
     final laps = deriveSourceLapSession(session);

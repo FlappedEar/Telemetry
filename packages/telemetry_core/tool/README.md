@@ -730,8 +730,11 @@ never commit its input or output. Run the test against it with
 and the largest difference.
 
 The committed `test/parity/driving_reference.json` was generated from
-FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
-other references are unchanged. Never edit the JSON by hand.
+FlappedEar/Overlay `3fa38da` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Its
+only change from the `d4d1039` reference is the `speedGap` case: since
+Overlays' KAN-201 (PR #188), `travelledMeters` integrates no distance across a
+gap in the speed channel (`telemetryGapThreshold`). The other references are
+unchanged. Never edit the JSON by hand.
 
 ## cpp_fusion_dump
 
