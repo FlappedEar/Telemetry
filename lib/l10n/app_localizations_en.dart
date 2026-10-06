@@ -5408,7 +5408,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lastTimeHereSetupReasonNewer =>
-      'set up in a newer version of the app';
+      'set up in another version of the app';
 
   @override
   String get lastTimeHereSetupReasonUnreadable =>

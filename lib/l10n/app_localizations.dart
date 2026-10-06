@@ -8001,10 +8001,10 @@ abstract class AppLocalizations {
   /// **'no setup entered'**
   String get lastTimeHereSetupReasonNone;
 
-  /// Last time here card: reason, the setup was stored by a newer app version and this version cannot show it.
+  /// Last time here card: reason, the setup was stored with a setup version this app does not know (usually a newer app), so it cannot show it.
   ///
   /// In en, this message translates to:
-  /// **'set up in a newer version of the app'**
+  /// **'set up in another version of the app'**
   String get lastTimeHereSetupReasonNewer;
 
   /// Last time here card: reason, the setup holds only values this version cannot read.

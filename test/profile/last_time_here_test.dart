@@ -864,7 +864,7 @@ void main() {
       await show(tester, shelf!, 'today', setupUnsavedOf: (_) => true);
       expect(
         find.text(
-          'Then (Session 1, best lap): — set up in a newer version of the app',
+          'Then (Session 1, best lap): — set up in another version of the app',
         ),
         findsOneWidget,
       );
@@ -998,7 +998,7 @@ void main() {
       expect(
         find.text(
           'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień '
-          'dodano, zanim biblioteka zapisywała ustawienia.',
+          'dodano, zanim biblioteka zaczęła zapisywać ustawienia.',
         ),
         findsOneWidget,
       );

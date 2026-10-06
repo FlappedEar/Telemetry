@@ -5505,7 +5505,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lastTimeHereSetupThenNone =>
-      'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień dodano, zanim biblioteka zapisywała ustawienia.';
+      'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień dodano, zanim biblioteka zaczęła zapisywać ustawienia.';
 
   @override
   String get lastTimeHereSetupTodayNoSessions =>
@@ -5526,7 +5526,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lastTimeHereSetupReasonNewer =>
-      'ustawienia z nowszej wersji aplikacji';
+      'ustawienia z innej wersji aplikacji';
 
   @override
   String get lastTimeHereSetupReasonUnreadable =>
@@ -5538,7 +5538,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lastTimeHereSetupReasonPending =>
-      'zapisane z dniem; jeszcze ich nie ma w bibliotece';
+      'zapisane razem z dniem; jeszcze nie ma ich w bibliotece';
 
   @override
   String lastTimeHereSetupDifference(String difference) {
