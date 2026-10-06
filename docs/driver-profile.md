@@ -150,6 +150,7 @@ takes the id of the known corner it overlaps by at least half (of either) and
 that no other corner of that day took; otherwise it is added, with the day's
 name for it. A span over half a lap is not a corner. A recording
 whose longitudes count west as positive is turned around first.
+`matchTrackCorners` finds the same ids for a day's spans without adding any.
 
 ## Across days (`profile_aggregates.dart`)
 
@@ -171,6 +172,9 @@ last.
 - `repeatedLosses`: corners among a visit's three costliest (0.1 s or more) on
   two visits or more; active, fading (two visits since, fewer than two of them measuring it) or
   fixed (measured without a loss on the two visits since).
+- `cornerBefore`: by the same rule, one corner on the visits before a day in
+  its car: visits, how many measured it and lost time there, the last loss and
+  whether it is fixed.
 - `skillLevels`: the 12 skills of `skillCatalogue`, each level 1–5 = 5 − bands
   exceeded, over the last 3 days that measured it; confidence from its ranked
   laps (low below 5, medium below 15, high from 15); trend against the 3 days before.

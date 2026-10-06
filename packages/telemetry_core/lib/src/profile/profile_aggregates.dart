@@ -454,6 +454,14 @@ final class RepeatedLoss {
 const _lossCorners = 3;
 const _lossSeconds = 0.1;
 
+/// The corners of [measured] that lost time on that visit, by id.
+Set<String> _costly(Map<String, CornerVisit> measured) =>
+    (measured.entries.where((e) => (e.value.lossSeconds ?? 0) >= _lossSeconds).toList()
+          ..sort((a, b) => b.value.lossSeconds!.compareTo(a.value.lossSeconds!)))
+        .take(_lossCorners)
+        .map((e) => e.key)
+        .toSet();
+
 /// Corners that cost time on at least two visits, per track ([trackId]
 /// when given, in [carId] when given), costliest first.
 List<RepeatedLoss> repeatedLosses(DriverProfile profile, {String? trackId, String? carId}) {
@@ -466,12 +474,7 @@ List<RepeatedLoss> repeatedLosses(DriverProfile profile, {String? trackId, Strin
     for (var v = 0; v < visits.length; v++) {
       final day = visits[v];
       final measured = _cornerVisits(day);
-      final costly =
-          (measured.entries.where((e) => (e.value.lossSeconds ?? 0) >= _lossSeconds).toList()
-                ..sort((a, b) => b.value.lossSeconds!.compareTo(a.value.lossSeconds!)))
-              .take(_lossCorners)
-              .map((e) => e.key)
-              .toSet();
+      final costly = _costly(measured);
       for (final corner in track.corners) {
         final list = history.putIfAbsent(corner.id, () => List.filled(visits.length, null));
         final visit = measured[corner.id];
@@ -506,6 +509,75 @@ List<RepeatedLoss> repeatedLosses(DriverProfile profile, {String? trackId, Strin
   }
   result.sort((a, b) => b.weight.compareTo(a.weight));
   return result;
+}
+
+/// A corner of a day's track on the visits before it in the same car.
+final class CornerBefore {
+  const CornerBefore({
+    required this.corner,
+    required this.visits,
+    required this.measured,
+    required this.lost,
+    required this.lastLost,
+    required this.notOnLastTwo,
+  });
+
+  final TrackCorner corner;
+
+  /// Earlier visits to the track in the car.
+  final int visits;
+
+  /// Those that measured the corner.
+  final int measured;
+
+  /// Those on which it was among the day's costliest corners.
+  final int lost;
+
+  /// The latest of those; null when it never was.
+  final ProfileDay? lastLost;
+
+  /// Measured without losing time on the last two visits that measured it
+  /// since it last did ([RepeatedLossState.fixed]).
+  final bool notOnLastTwo;
+}
+
+/// Corner [cornerId] of [today]'s track on the visits there in [today]'s
+/// car before [today], by the rule of [repeatedLosses]. Null when the
+/// day's track or the corner is not in [profile].
+CornerBefore? cornerBefore(DriverProfile profile, ProfileDay today, String cornerId) {
+  final trackId = today.trackId;
+  final track = trackId == null ? null : profile.track(trackId);
+  final corner = track?.corners.where((corner) => corner.id == cornerId).firstOrNull;
+  if (track == null || corner == null) return null;
+  // As lastTimeHere: each day's place among all days.
+  final order = {for (final (i, day) in _ordered(profile.days).indexed) day.eventId: i};
+  final limit = order[today.eventId];
+  final visits = [
+    for (final day in _visits(profile, track.id, today.carId))
+      if (limit != null && order[day.eventId]! < limit) day,
+  ];
+  var measured = 0, lost = 0, measuredAfter = 0;
+  ProfileDay? lastLost;
+  for (final day in visits) {
+    final corners = _cornerVisits(day);
+    if (!corners.containsKey(cornerId)) continue;
+    measured++;
+    if (_costly(corners).contains(cornerId)) {
+      lost++;
+      lastLost = day;
+      measuredAfter = 0;
+    } else {
+      measuredAfter++;
+    }
+  }
+  return CornerBefore(
+    corner: corner,
+    visits: visits.length,
+    measured: measured,
+    lost: lost,
+    lastLost: lastLost,
+    notOnLastTwo: lost > 0 && measuredAfter >= 2,
+  );
 }
 
 // ---------------------------------------------------------------------------

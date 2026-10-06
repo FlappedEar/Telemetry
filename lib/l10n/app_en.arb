@@ -1780,6 +1780,59 @@
   "@focusCompareAB": {
     "description": "Button that compares the focus area's two laps."
   },
+  "focusBeforeLost": "Earlier visits here: it also cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}} ({corner}), last on {date}.",
+  "@focusBeforeLost": {
+    "description": "Under a focus area at one of the track's corners: on earlier visits to this track in this car, how many measured the corner and on how many it was among the day's costliest corners, with the track corner's name and the date of the latest. An observation, not a cause.",
+    "placeholders": {
+      "lost": {
+        "type": "int"
+      },
+      "measured": {
+        "type": "int"
+      },
+      "corner": {
+        "type": "String",
+        "example": "Corner 3"
+      },
+      "date": {
+        "type": "String",
+        "example": "Aug 29, 2026"
+      }
+    }
+  },
+  "focusBeforeNotLastTwo": "Earlier visits here: it cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}}, but not on the last 2.",
+  "@focusBeforeNotLastTwo": {
+    "description": "Under a focus area at one of the track's corners: it was among the day's costliest corners on earlier visits in this car, but measured without that on the last two visits that measured it.",
+    "placeholders": {
+      "lost": {
+        "type": "int"
+      },
+      "measured": {
+        "type": "int"
+      }
+    }
+  },
+  "focusBeforeNever": "Earlier visits here: measured on {measured, plural, =1{1 visit} other{{measured} visits}}, never among the corners that cost the most time.",
+  "@focusBeforeNever": {
+    "description": "Under a focus area at one of the track's corners: measured on earlier visits in this car, never among a day's costliest corners.",
+    "placeholders": {
+      "measured": {
+        "type": "int"
+      }
+    }
+  },
+  "focusBeforeNone": "Earlier visits here: none in your library.",
+  "@focusBeforeNone": {
+    "description": "Under a focus area at one of the track's corners: the library has no earlier day at this track in this car."
+  },
+  "focusBeforeNotMeasured": "Earlier visits here: this corner was not measured before.",
+  "@focusBeforeNotMeasured": {
+    "description": "Under a focus area at one of the track's corners: earlier days at this track in this car did not measure it."
+  },
+  "focusBeforeNotCorner": "Earlier visits here: this place is not one of the track's corners in your library yet.",
+  "@focusBeforeNotCorner": {
+    "description": "Under a focus area whose segment does not match a corner the library keeps for this track, so it has no earlier visits to show."
+  },
   "focusObservationSectorGap": "Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.",
   "@focusObservationSectorGap": {
     "description": "What a sector-gap focus area measured.",

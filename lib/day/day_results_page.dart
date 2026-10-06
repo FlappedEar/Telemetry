@@ -1427,17 +1427,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
         // The observations to look at first; what to try next is the
         // coach's (_coachList).
         const SizedBox(height: 12),
-        FocusAreasCard(
-          result: _controller.theoreticalBest,
-          loading: _controller.theoreticalBestLoading,
-          areas: _controller.focusAreas,
-          lapLabel: _controller.lapLabel,
-          path: path,
-          gate: _mapGate,
-          wide: wide,
-          onOpenLap: _open,
-          onCompare: _compare,
-        ),
+        if (widget.library case final library?
+            when library.holds(_controller.documentPath ?? ''))
+          ListenableBuilder(
+            listenable: library,
+            builder: (context, _) => _focusAreas(path, wide, library.profile),
+          )
+        else
+          _focusAreas(path, wide, null),
         const SizedBox(height: 12),
         _theoreticalBest(path, wide),
         const SizedBox(height: 12),
@@ -1595,6 +1592,47 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channelSource: _controller.channelSource,
       ),
     ];
+  }
+
+  /// Where to look next; with [profile], what earlier visits say about each
+  /// area at one of the track's corners.
+  Widget _focusAreas(LapPath? path, bool wide, DriverProfile? profile) {
+    final result = _controller.theoreticalBest;
+    final trackId = profile?.day(_controller.eventId)?.trackId;
+    final track = trackId == null ? null : profile!.track(trackId);
+    // The day's corners placed as adding it to the profile placed them:
+    // all of them, from the recording the axis came from.
+    final canonical = _controller.session(
+      result?.computed?.canonicalRunId ?? '',
+    );
+    final before = track == null || canonical == null
+        ? null
+        : focusBefore(
+            context.l10n,
+            profile,
+            _controller.eventId,
+            matchTrackCorners(
+              track,
+              measureCornerSpans(
+                result,
+                longitudeIsWestPositive:
+                    canonical.metadata['gpsLongitudeConvention'] ==
+                    'west-positive',
+              ),
+            ),
+          );
+    return FocusAreasCard(
+      result: result,
+      loading: _controller.theoreticalBestLoading,
+      areas: _controller.focusAreas,
+      lapLabel: _controller.lapLabel,
+      path: path,
+      gate: _mapGate,
+      wide: wide,
+      onOpenLap: _open,
+      onCompare: _compare,
+      before: before,
+    );
   }
 
   Widget _theoreticalBest(LapPath? path, bool wide) {

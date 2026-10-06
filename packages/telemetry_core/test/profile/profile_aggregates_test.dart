@@ -749,15 +749,35 @@ void main() {
       // Over half a lap is not a corner.
       expect(corners, hasLength(2));
       expect(corners.first.start, greaterThan(corners.first.end));
-      profile = _add(
-        profile,
-        day('b', [('x', 0.97, 0.04), ('y', 0.31, 0.34), ('z', 0.6, 0.65), ('w', 0.36, 0.40)]),
-      );
+      final b = day('b', [
+        ('x', 0.97, 0.04),
+        ('y', 0.31, 0.34),
+        ('z', 0.6, 0.65),
+        ('w', 0.36, 0.40),
+      ]);
+      // Matching only reads the track's corners: new places have none.
+      expect(matchTrackCorners(profile.tracks.single, b.cornerSpans), {
+        'x': corners[0].id,
+        'y': corners[1].id,
+      });
+      expect(profile.tracks.single.corners, hasLength(2));
+      profile = _add(profile, b);
       final ids = [for (final c in profile.day('b')!.sessions.single.stats!.corners) c.cornerId];
       expect(ids[0], corners[0].id);
       expect(ids[1], corners[1].id);
       expect(profile.tracks.single.corners, hasLength(4));
       expect(ids.toSet(), hasLength(4));
+      // Matched again, a day's spans get the ids adding it gave them.
+      expect(matchTrackCorners(profile.tracks.single, b.cornerSpans), {
+        'x': ids[0],
+        'y': ids[1],
+        'z': ids[2],
+        'w': ids[3],
+      });
+      expect(
+        matchTrackCorners(profile.tracks.single, day('a', [('far', 0.1, 0.8)]).cornerSpans),
+        isEmpty,
+      );
       // A corner off the route (more than 50 m) is dropped from the stats.
       final off = ProfileDayInput(
         eventId: 'c',
@@ -788,6 +808,7 @@ void main() {
       expect(splitIds, hasLength(2));
       expect(splitIds.toSet(), hasLength(2));
       expect(splitIds, contains(corners[1].id));
+      expect(matchTrackCorners(profile.tracks.single, off.cornerSpans), isEmpty);
       final withOff = _add(profile, off);
       expect(withOff.day('c')!.sessions.single.stats!.corners, isEmpty);
       expect(withOff.tracks.single.corners, hasLength(4));
@@ -1168,6 +1189,43 @@ void main() {
       );
       final k1 = repeatedLosses(fading).firstWhere((l) => l.cornerId == 'k1');
       expect(k1.state, RepeatedLossState.fading);
+    });
+
+    test('a corner before a day: earlier visits in its car only', () {
+      ProfileDay day(String id) => profile.day(id)!;
+      // Before j30: j0, j10 and j20 (j15 is in car2); k2 lost on j0 and j10.
+      final k2 = cornerBefore(profile, day('j30'), 'k2')!;
+      expect(k2.corner.name, 'Corner 2');
+      expect((k2.visits, k2.measured, k2.lost), (3, 3, 2));
+      expect(k2.lastLost!.eventId, 'j10');
+      expect(k2.notOnLastTwo, isFalse);
+      // Before the undated day: every dated one, and j20 and j30 measured
+      // k2 without a loss.
+      final undated = cornerBefore(profile, day('undated'), 'k2')!;
+      expect((undated.visits, undated.measured, undated.lost), (4, 4, 2));
+      expect(undated.notOnLastTwo, isTrue);
+      // Later days are left out.
+      final j20 = cornerBefore(profile, day('j20'), 'k1')!;
+      expect((j20.visits, j20.measured, j20.lost), (2, 2, 2));
+      expect(j20.lastLost!.eventId, 'j10');
+      expect(cornerBefore(profile, day('undated'), 'k3')!.lost, 1);
+      // Measured, never among the costliest (under 0.1 s).
+      final k4 = cornerBefore(profile, day('undated'), 'k4')!;
+      expect((k4.measured, k4.lost, k4.lastLost, k4.notOnLastTwo), (4, 0, null, false));
+      // A first visit, and the first in another car.
+      final first = cornerBefore(profile, day('j0'), 'k1')!;
+      expect((first.visits, first.measured, first.lost), (0, 0, 0));
+      expect(cornerBefore(profile, day('j15'), 'k1')!.visits, 0);
+      // Earlier visits that did not measure the corner.
+      final unmeasured = _profile(
+        [_visit('a', 0, track: 'jastrzab'), days[2]],
+        tracks: [_track('jastrzab', corner)],
+      );
+      final none = cornerBefore(unmeasured, days[2], 'k1')!;
+      expect((none.visits, none.measured), (1, 0));
+      // Not a corner of the track, or a track without it.
+      expect(cornerBefore(profile, day('j30'), 'nowhere'), isNull);
+      expect(cornerBefore(profile, day('p25'), 'k1'), isNull);
     });
 
     test('skill levels over the last three days, with confidence and trend', () {

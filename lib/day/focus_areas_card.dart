@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
@@ -139,6 +140,47 @@ _FocusTexts? _focusTextsIn(
   }
 }
 
+/// "Earlier visits here" under each focus area, from [profile]'s visits to
+/// the track of day [eventId] in its car before it ([cornerBefore]).
+/// [corners] is the track corner of each of the day's segments, as
+/// [matchTrackCorners] finds them. Null, so no line, when the day is not in
+/// [profile] or its track is unknown.
+String? Function(FocusArea area)? focusBefore(
+  AppLocalizations l10n,
+  DriverProfile? profile,
+  String eventId,
+  Map<String, String> corners,
+) {
+  final today = profile?.day(eventId);
+  final track = today?.trackId == null ? null : profile!.track(today!.trackId!);
+  if (profile == null || today == null || track == null) return null;
+  return (area) {
+    final cornerId = corners[area.segmentId];
+    final before = cornerId == null
+        ? null
+        : cornerBefore(profile, today, cornerId);
+    if (before == null) return l10n.focusBeforeNotCorner;
+    if (before.visits == 0) return l10n.focusBeforeNone;
+    if (before.measured == 0) return l10n.focusBeforeNotMeasured;
+    final last = before.lastLost;
+    if (last == null) return l10n.focusBeforeNever(before.measured);
+    if (before.notOnLastTwo) {
+      return l10n.focusBeforeNotLastTwo(before.lost, before.measured);
+    }
+    final start = last.startMilliseconds;
+    return l10n.focusBeforeLost(
+      before.lost,
+      before.measured,
+      before.corner.name,
+      start == null
+          ? l10n.profileUndated
+          : DateFormat.yMMMd().format(
+              DateTime.fromMillisecondsSinceEpoch(start),
+            ),
+    );
+  };
+}
+
 /// Where to look next (Overlays' focus areas): at most three areas selected
 /// from measured losses, sector gaps and corner spreads. Each shows what was
 /// measured apart from a hypothesis to check; neither is a cause or an
@@ -155,6 +197,7 @@ class FocusAreasCard extends StatelessWidget {
     this.wide = false,
     this.onOpenLap,
     this.onCompare,
+    this.before,
   });
 
   /// Null while the theoretical best is calculated for the first time.
@@ -162,6 +205,9 @@ class FocusAreasCard extends StatelessWidget {
   final List<FocusArea> areas;
   final String Function(Object? reference) lapLabel;
   final bool loading;
+
+  /// What earlier visits say about an area ([focusBefore]); null for none.
+  final String? Function(FocusArea area)? before;
 
   /// The best lap's trace, for the comparison's map.
   final LapPath? path;
@@ -210,6 +256,7 @@ class FocusAreasCard extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final before = this.before?.call(area);
     return ButtonRow(
       child: InkWell(
         key: ValueKey('focusArea $index'),
@@ -251,6 +298,14 @@ class FocusAreasCard extends StatelessWidget {
                         fontStyle: FontStyle.italic,
                       ),
                     ),
+                    if (before != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        before,
+                        key: ValueKey('focusBefore $index'),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
                     const SizedBox(height: 2),
                     Text(
                       l10n.focusCompareLaps(
