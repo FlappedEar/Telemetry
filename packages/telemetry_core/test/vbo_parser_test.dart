@@ -77,6 +77,10 @@ void main() {
       times('235900 1\n235959 2\n000100 3\n130000 4\n130001 5'),
       _near([0.0, 59.0, 120.0, 46860.0, 46861.0]),
     );
+    // Limit: a stale repeat of the last evening row right after a real
+    // midnight reads as back on the evening; one row is lost, the midnight
+    // is found again on the next row.
+    expect(times('235959 1\n000001 2\n235959 3\n000002 4'), _near([0.0, 3.0]));
     // Limits: two bad rows in a row confirm each other, and a bad last row
     // cannot be told from a midnight.
     expect(
