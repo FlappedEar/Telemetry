@@ -14,10 +14,6 @@ const String sectorTimingAlgorithm = 'sector-timing-v1';
 /// A complete partition's sector times must sum to the lap time within this.
 const double sectorSumToleranceSeconds = 0.001;
 
-/// Projection of a gate-to-gate lap starts and ends a few samples inside the
-/// gate; coverage within this distance of either gate counts as reaching it.
-const double gateCoverageToleranceMeters = 15.0;
-
 /// Why a sector has no time: no longer produced (a sector crossing the gate is
 /// timed within the lap, its part after its start plus its part before its
 /// end), kept for stored results.

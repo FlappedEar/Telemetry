@@ -64,14 +64,34 @@ ProfileDay _day(
   ],
 );
 
-ProfileSession _session(String id, double best, [ProfileWeather? weather]) =>
-    ProfileSession(
-      runId: id,
-      name: 'Session ${id.substring(1)}',
-      lapCount: 5,
-      bestLapSeconds: best,
-      weather: weather,
-    );
+ProfileSession _session(
+  String id,
+  double best, [
+  ProfileWeather? weather,
+  Map<String, Object?>? setup,
+]) => ProfileSession(
+  runId: id,
+  name: 'Session ${id.substring(1)}',
+  lapCount: 5,
+  bestLapSeconds: best,
+  weather: weather,
+  setup: ProfileSetup.of(setup),
+);
+
+Map<String, Object?> _setup(
+  String unit, {
+  Map<String, num>? cold,
+  Map<String, num>? hot,
+  String? tyre,
+  num? fuel,
+}) => {
+  'version': runSetupVersion,
+  'pressureUnit': unit,
+  'coldPressure': ?cold,
+  'hotPressure': ?hot,
+  'tyre': ?tyre,
+  'fuelStartLitres': ?fuel,
+};
 
 final _warm = ProfileWeather(
   temperatureC: 21.4,
@@ -94,7 +114,10 @@ void main() {
   setUp(() => folder = Directory.systemTemp.createTempSync('last_time'));
   tearDown(() => folder.deleteSync(recursive: true));
 
-  Future<ProfileLibrary> library(List<ProfileDay> days) async {
+  Future<ProfileLibrary> library(
+    List<ProfileDay> days, {
+    Map<String, ProfileSetup?>? given,
+  }) async {
     final profile = DriverProfile(
       driverId: 'driver',
       cars: [
@@ -117,7 +140,8 @@ void main() {
     );
     File('${folder.path}/$profileFileName')
         .writeAsStringSync(encodeDriverProfile(profile));
-    final shelf = ProfileLibrary(
+    final shelf = _GivenLibrary(
+      given,
       store: FolderProfileStore(folder.path),
       defaultCarName: 'My car',
       defaultTrackName: (number) => 'Track $number',
@@ -133,13 +157,19 @@ void main() {
     ProfileLibrary shelf,
     String id, {
     SessionWeatherState Function(String runId)? weatherStateOf,
+    bool Function(String runId)? setupUnsavedOf,
+    Locale? locale,
   }) => tester.pumpWidget(
     TelemetryApp(
+      locale: locale,
       home: Scaffold(
-        body: LastTimeHereCard(
-          library: shelf,
-          eventId: id,
-          weatherStateOf: weatherStateOf,
+        body: SingleChildScrollView(
+          child: LastTimeHereCard(
+            library: shelf,
+            eventId: id,
+            weatherStateOf: weatherStateOf,
+            setupUnsavedOf: setupUnsavedOf,
+          ),
         ),
       ),
     ),
@@ -541,4 +571,473 @@ void main() {
       );
     });
   });
+
+  group('setup', () {
+    const thenNone =
+        'Then: — no setup entered for that day, or the day was added before '
+        'the library kept setups.';
+    const note =
+        "Each visit's setup is that of the session that set its best lap, or, "
+        'when that session has none, of its first session with a setup. Shown '
+        'as entered; a higher or lower pressure is not better or worse.';
+
+    testWidgets('same units: both as entered, and today minus then', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session(
+                's1',
+                111.2,
+                null,
+                _setup(
+                  'bar',
+                  cold: {'fl': 2.1, 'fr': 2.1, 'rl': 2.1, 'rr': 2},
+                  hot: {'fl': 2.4},
+                  tyre: 'Pirelli SC2',
+                ),
+              ),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [
+              _session('s1', 110.4),
+              _session(
+                's2',
+                109.9,
+                null,
+                _setup(
+                  'bar',
+                  cold: {'fl': 2.2, 'fr': 2.1, 'rl': 2},
+                  hot: {'fr': 2.5},
+                  fuel: 8.5,
+                ),
+              ),
+            ],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(find.byKey(const ValueKey('lastTimeHereSetup')), findsOneWidget);
+      expect(
+        find.text(
+          'Then (Session 1, best lap): Cold 2.1 / 2.1 / 2.1 / 2\u00a0bar · '
+          'Hot 2.4 / — / — / —\u00a0bar · Tyres Pirelli SC2',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Today (Session 2, best lap): Cold 2.2 / 2.1 / 2 / —\u00a0bar · '
+          'Hot — / 2.5 / — / —\u00a0bar · Fuel 8.5\u00a0l',
+        ),
+        findsOneWidget,
+      );
+      // Hot has no wheel entered on both visits: only cold is compared.
+      expect(
+        find.text(
+          'Difference (today − then): Cold +0.1 / 0 / −0.1 / —\u00a0bar',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('lastTimeHereSetupUnits')),
+        findsNothing,
+      );
+      expect(find.text(note), findsOneWidget);
+      // No judgement: the difference is not coloured.
+      final difference = tester.widget<Text>(
+        find.byKey(const ValueKey('lastTimeHereSetupDifference')),
+      );
+      expect(
+        difference.style?.color,
+        Theme.of(tester.element(find.byType(LastTimeHereCard)))
+            .textTheme
+            .bodyMedium
+            ?.color,
+      );
+    });
+
+    testWidgets('different units: both shown, never compared', (tester) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session(
+                's1',
+                111.2,
+                null,
+                _setup('psi', cold: {'fl': 30, 'fr': 30.5}),
+              ),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [
+              _session(
+                's1',
+                109.9,
+                null,
+                _setup('bar', cold: {'fl': 2.1, 'fr': 2.1}),
+              ),
+            ],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(
+        find.text(
+          'Then (Session 1, best lap): Cold 30 / 30.5 / — / —\u00a0psi',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Today (Session 1, best lap): Cold 2.1 / 2.1 / — / —\u00a0bar',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Different pressure units, not compared.'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('lastTimeHereSetupDifference')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('both missing: each says so, without a note', (tester) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [_session('s1', 111.2)],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [_session('s1', 110.4), _session('s2', 109.9)],
+          ),
+        ]),
+      );
+      final asked = <String>[];
+      await show(
+        tester,
+        shelf!,
+        'today',
+        setupUnsavedOf: (runId) {
+          asked.add(runId);
+          return false;
+        },
+      );
+      expect(find.text(thenNone), findsOneWidget);
+      expect(
+        find.text('Today (Session 2, best lap): — no setup entered'),
+        findsOneWidget,
+      );
+      expect(asked.toSet(), {'s2'});
+      expect(find.text(note), findsNothing);
+      expect(
+        find.byKey(const ValueKey('lastTimeHereSetupDifference')),
+        findsNothing,
+      );
+    });
+
+    testWidgets("today's setup not saved yet says it comes with the save", (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session('s1', 111.2, null, _setup('bar', cold: {'fl': 2})),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [_session('s1', 109.9)],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today', setupUnsavedOf: (_) => true);
+      expect(
+        find.text(
+          'Today (Session 1, best lap): — entered on this page; it reaches '
+          'the library when the day is saved',
+        ),
+        findsOneWidget,
+      );
+      // Without the page: not claimed.
+      await show(tester, shelf, 'today');
+      expect(
+        find.text('Today (Session 1, best lap): — no setup entered'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('saved with the day and not in the library yet says so', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library(
+          [
+            _day(
+              'a',
+              dayNumber: 0,
+              best: 111.2,
+              sessions: [_session('s1', 111.2)],
+            ),
+            _day(
+              'today',
+              dayNumber: 30,
+              best: 109.9,
+              sessions: [_session('s1', 109.9)],
+            ),
+          ],
+          given: {
+            's1': ProfileSetup.of(_setup('bar', cold: {'fl': 2})),
+          },
+        ),
+      );
+      await show(tester, shelf!, 'today', setupUnsavedOf: (_) => false);
+      expect(
+        find.text(
+          'Today (Session 1, best lap): — saved with the day; not in the '
+          'library yet',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a setup this version cannot show says why, not none', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session('s1', 111.2, null, {
+                'version': 'session-setup-v9',
+                'wing': 3,
+              }),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [
+              _session('s1', 110.4, null, {'version': runSetupVersion}),
+              _session('s2', 109.9, null, {
+                'version': runSetupVersion,
+                'camber': -2.5,
+              }),
+            ],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today', setupUnsavedOf: (_) => true);
+      expect(
+        find.text(
+          'Then (Session 1, best lap): — set up in another version of the app',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Today (Session 2, best lap): — not readable by this version',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(thenNone), findsNothing);
+    });
+
+    testWidgets('a fallback session says why it stands for the day', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session('s1', 111.2),
+              _session('s2', 112.0, null, _setup('psi', cold: {'fl': 28})),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            sessions: [
+              _session('s1', 109.9),
+              _session('s2', 110.0, null, _setup('psi', cold: {'fl': 29.5})),
+            ],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(
+        find.text(
+          'Then (Session 2; the best-lap session had none): '
+          'Cold 28 / — / — / —\u00a0psi',
+        ),
+        findsOneWidget,
+      );
+      // No best lap today: the first session with a setup.
+      expect(
+        find.text(
+          'Today (Session 2, first with a setup): Cold 29.5 / — / — / —\u00a0psi',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Difference (today − then): Cold +1.5 / — / — / —\u00a0psi'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('in Polish', (tester) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session(
+                's1',
+                111.2,
+                null,
+                _setup('bar', cold: {'fl': 2.15}, tyre: 'Pirelli'),
+              ),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [
+              _session('s1', 109.9, null, _setup('bar', cold: {'fl': 2})),
+            ],
+          ),
+          _day(
+            'b',
+            dayNumber: 10,
+            track: null,
+            sessions: [_session('s1', 112)],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today', locale: const Locale('pl'));
+      expect(find.text('Ustawienia'), findsOneWidget);
+      expect(
+        find.text(
+          'Poprzednio (Session 1, najlepsze okrążenie): '
+          'Na zimno 2.15 / — / — / —\u00a0bar · Opony Pirelli',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Dziś (Session 1, najlepsze okrążenie): Na zimno 2 / — / — / —\u00a0bar',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Różnica (dziś − poprzednio): Na zimno −0.15 / — / — / —\u00a0bar',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('in Polish, missing on both sides', (tester) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [_session('s1', 111.2)],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [_session('s1', 109.9)],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today', locale: const Locale('pl'));
+      expect(
+        find.text(
+          'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień '
+          'dodano, zanim biblioteka zaczęła zapisywać ustawienia.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Dziś (Session 1, najlepsze okrążenie): — nie wpisano ustawień',
+        ),
+        findsOneWidget,
+      );
+      await show(
+        tester,
+        shelf,
+        'today',
+        locale: const Locale('pl'),
+        setupUnsavedOf: (_) => true,
+      );
+      expect(
+        find.text(
+          'Dziś (Session 1, najlepsze okrążenie): — wpisane na tej stronie; '
+          'trafią do biblioteki po zapisaniu dnia',
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+}
+
+/// A library holding [given] as the setups last given for any day.
+final class _GivenLibrary extends ProfileLibrary {
+  _GivenLibrary(
+    this.given, {
+    required super.store,
+    required super.defaultCarName,
+    required super.defaultTrackName,
+    required super.background,
+  });
+
+  final Map<String, ProfileSetup?>? given;
+
+  @override
+  Map<String, ProfileSetup?>? givenSetups(String eventId) => given;
 }

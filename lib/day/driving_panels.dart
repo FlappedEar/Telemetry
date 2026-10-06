@@ -1096,7 +1096,7 @@ class _ComparisonCoastingPanelState
                                 'coastingEpisode ${_lapNames[slot]} $index',
                               ),
                               label: Text(
-                                '${episode.startProgressMeters!.round()}\u00a0m · '
+                                '${math.max(0.0, episode.startProgressMeters!).round()}\u00a0m · '
                                 '${episode.seconds.toStringAsFixed(1)}\u00a0s',
                               ),
                               onPressed: () => window.cursor.value =

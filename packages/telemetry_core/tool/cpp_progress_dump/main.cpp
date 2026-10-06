@@ -184,6 +184,11 @@ std::optional<QJsonObject> runFile(const QString &path)
     entry.insert("projections", projections);
     if (!laps.timedLaps.isEmpty() && laps.fastestLapIndex) {
         entry.insert("delta", deltaJson(computeDeltaSeries(projected.first(), projected[*laps.fastestLapIndex], 5.0)));
+        const auto &first = laps.timedLaps.first();
+        const auto &fastest = laps.timedLaps[*laps.fastestLapIndex];
+        entry.insert("timedDelta", deltaJson(computeDeltaSeries(projected.first(), projected[*laps.fastestLapIndex], 5.0,
+            DeltaTiming{first.startTelemetryTime, first.endTelemetryTime, fastest.startTelemetryTime,
+                fastest.endTelemetryTime, axis.lengthMeters})));
         entry.insert("fastestLapIndex", *laps.fastestLapIndex);
     }
     return entry;

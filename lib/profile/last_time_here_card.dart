@@ -4,14 +4,15 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../day/day_weather.dart';
+import '../day/setup_text.dart';
 import '../day/weather_text.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
 import 'profile_library.dart';
 
 /// "Last time here": the previous visit to the open day's track, from the
-/// driver profile, with its best lap, theoretical best and weather next to
-/// today's.
+/// driver profile, with its best lap, theoretical best, weather and setup
+/// next to today's.
 /// The same car first, else any car. Nothing is shown on a first visit, for
 /// a day outside the library, or before the day is in the profile.
 class LastTimeHereCard extends StatelessWidget {
@@ -21,6 +22,7 @@ class LastTimeHereCard extends StatelessWidget {
     required this.eventId,
     this.weatherStateOf,
     this.weatherChanges,
+    this.setupUnsavedOf,
   });
 
   final ProfileLibrary library;
@@ -33,6 +35,11 @@ class LastTimeHereCard extends StatelessWidget {
   /// here. [weatherChanges] tells when it changes.
   final SessionWeatherState Function(String runId)? weatherStateOf;
   final Listenable? weatherChanges;
+
+  /// Whether the open day's setup of a session was edited and not saved
+  /// yet, so it is in the day document but not in the library, which has
+  /// the setups as the day was saved.
+  final bool Function(String runId)? setupUnsavedOf;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -120,6 +127,7 @@ class LastTimeHereCard extends StatelessWidget {
             if (car != null)
               Text(l10n.lastTimeHereOtherCar, style: theme.textTheme.bodySmall),
             ..._weather(context, today, then),
+            ..._setup(context, today, then),
             ..._corners(context, profile, today, then),
           ],
         ),
@@ -192,31 +200,246 @@ class LastTimeHereCard extends StatelessWidget {
     return parts.isEmpty ? null : parts.join(', ');
   }
 
-  /// The session label and weather line standing for [day]: the session
-  /// that set its best lap when it has weather, else its first session with
-  /// weather, labelled as which; null when none has.
-  static (String, String)? _weatherOf(AppLocalizations l10n, ProfileDay day) {
-    String? text(ProfileSession session) => switch (session.weather) {
-      final weather? => _weatherText(l10n, weather),
-      null => null,
-    };
+  /// The session standing for [day] with what [value] finds of it, and
+  /// its label: the session that set its best lap when [value] finds
+  /// something there, else its first session where it does, labelled as
+  /// which ([bestHadNone] or [firstSession]); null when none has.
+  static (String, ProfileSession, T)? _standingSession<T extends Object>(
+    AppLocalizations l10n,
+    ProfileDay day,
+    T? Function(ProfileSession session) value, {
+    required String Function(String session) bestHadNone,
+    required String Function(String session) firstSession,
+  }) {
     final setter = _bestLapSession(day);
     if (setter != null) {
-      if (text(setter) case final shown?) {
-        return (l10n.lastTimeHereWeatherBestLapSession(setter.name), shown);
+      if (value(setter) case final shown?) {
+        return (
+          l10n.lastTimeHereWeatherBestLapSession(setter.name),
+          setter,
+          shown,
+        );
       }
     }
     for (final session in day.sessions) {
-      if (text(session) case final shown?) {
+      if (value(session) case final shown?) {
         return (
           setter == null
-              ? l10n.lastTimeHereWeatherFirstSession(session.name)
-              : l10n.lastTimeHereWeatherBestHadNone(session.name),
+              ? firstSession(session.name)
+              : bestHadNone(session.name),
+          session,
           shown,
         );
       }
     }
     return null;
+  }
+
+  /// The session label and weather line standing for [day]: the session
+  /// that set its best lap when it has weather, else its first session with
+  /// weather, labelled as which; null when none has.
+  static (String, String)? _weatherOf(AppLocalizations l10n, ProfileDay day) {
+    final standing = _standingSession(
+      l10n,
+      day,
+      (session) => switch (session.weather) {
+        final weather? => _weatherText(l10n, weather),
+        null => null,
+      },
+      bestHadNone: l10n.lastTimeHereWeatherBestHadNone,
+      firstSession: l10n.lastTimeHereWeatherFirstSession,
+    );
+    return standing == null ? null : (standing.$1, standing.$3);
+  }
+
+  /// The session label and setup standing for [day], chosen as its weather
+  /// is ([_standingSession]); null when no session has a setup entered.
+  static (String, RunSetup)? _setupOf(AppLocalizations l10n, ProfileDay day) {
+    final standing = _standingSession(
+      l10n,
+      day,
+      (session) => switch (session.setup?.setup) {
+        final setup? when setupText(l10n, setup) != null => setup,
+        _ => null,
+      },
+      bestHadNone: l10n.lastTimeHereSetupBestHadNone,
+      firstSession: l10n.lastTimeHereSetupFirstSession,
+    );
+    return standing == null ? null : (standing.$1, standing.$3);
+  }
+
+  /// The setup of each visit as entered, kept in the profile with its
+  /// sessions as the day was saved, and, when both visits entered
+  /// pressures in the same unit, today's minus then's. Pressures in
+  /// different units are never converted or compared.
+  List<Widget> _setup(BuildContext context, ProfileDay today, ProfileDay then) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final small = theme.textTheme.bodySmall;
+    final thenSetup = _setupOf(l10n, then);
+    final todaySetup = _setupOf(l10n, today);
+    final difference = thenSetup == null || todaySetup == null
+        ? null
+        : _setupDifference(l10n, thenSetup.$2, todaySetup.$2);
+    return [
+      const SizedBox(height: 8),
+      Text(
+        l10n.lastTimeHereSetup,
+        key: const ValueKey('lastTimeHereSetup'),
+        style: theme.textTheme.labelLarge,
+      ),
+      Text(
+        thenSetup == null
+            ? _thenSetupMissing(l10n, then)
+            : l10n.lastTimeHereSetupThen(
+                thenSetup.$1,
+                setupText(l10n, thenSetup.$2)!,
+              ),
+        key: const ValueKey('lastTimeHereSetupThen'),
+        style: thenSetup == null ? small : theme.textTheme.bodyMedium,
+      ),
+      Text(
+        todaySetup == null
+            ? _todaySetupMissing(l10n, today)
+            : l10n.lastTimeHereSetupToday(
+                todaySetup.$1,
+                setupText(l10n, todaySetup.$2)!,
+              ),
+        key: const ValueKey('lastTimeHereSetupToday'),
+        style: todaySetup == null ? small : theme.textTheme.bodyMedium,
+      ),
+      if (difference case (final line?, _))
+        Text(
+          l10n.lastTimeHereSetupDifference(line),
+          key: const ValueKey('lastTimeHereSetupDifference'),
+          style: theme.textTheme.bodyMedium,
+        ),
+      if (difference case (_, true))
+        Text(
+          l10n.lastTimeHereSetupUnits,
+          key: const ValueKey('lastTimeHereSetupUnits'),
+          style: small,
+        ),
+      if (thenSetup != null || todaySetup != null) ...[
+        const SizedBox(height: 4),
+        Text(l10n.lastTimeHereSetupNote, style: small),
+      ],
+    ];
+  }
+
+  /// Why [setup] cannot be shown, when it holds something this version
+  /// does not show: stored by a newer version, or only values it cannot
+  /// read. Null when it shows, or when nothing but its version (and a
+  /// unit) is stored: nothing was entered.
+  static String? _unreadable(AppLocalizations l10n, ProfileSetup? setup) {
+    if (setup == null || setupText(l10n, setup.setup) != null) return null;
+    if (setup.setup.readOnly) return l10n.lastTimeHereSetupReasonNewer;
+    final stored = setup.json.keys.any(
+      (key) => key != 'version' && key != 'pressureUnit',
+    );
+    return stored ? l10n.lastTimeHereSetupReasonUnreadable : null;
+  }
+
+  /// The session standing for [day] whose setup cannot be shown, labelled
+  /// as a shown setup would be, with why; null when none has such a setup.
+  static (String, String)? _unreadableOf(
+    AppLocalizations l10n,
+    ProfileDay day,
+  ) {
+    final standing = _standingSession(
+      l10n,
+      day,
+      (session) => _unreadable(l10n, session.setup),
+      bestHadNone: l10n.lastTimeHereSetupBestHadNone,
+      firstSession: l10n.lastTimeHereSetupFirstSession,
+    );
+    return standing == null ? null : (standing.$1, standing.$3);
+  }
+
+  /// The previous visit without a setup to show: why for a session whose
+  /// setup this version cannot show, else that the day has none.
+  static String _thenSetupMissing(AppLocalizations l10n, ProfileDay then) =>
+      switch (_unreadableOf(l10n, then)) {
+        (final label, final reason) => l10n.lastTimeHereSetupThenMissing(
+          label,
+          reason,
+        ),
+        null => l10n.lastTimeHereSetupThenNone,
+      };
+
+  /// Today without a setup to show in the library: why, for a session
+  /// whose setup this version cannot show, else for the session that set
+  /// the best lap (else the first session): entered on the page and not
+  /// saved yet, saved and not in the library yet, or not entered.
+  String _todaySetupMissing(AppLocalizations l10n, ProfileDay today) {
+    if (_unreadableOf(l10n, today) case (final label, final reason)) {
+      return l10n.lastTimeHereSetupTodayMissing(label, reason);
+    }
+    final setter = _bestLapSession(today);
+    final session = setter ?? today.sessions.firstOrNull;
+    if (session == null) return l10n.lastTimeHereSetupTodayNoSessions;
+    final label = setter == null
+        ? session.name
+        : l10n.lastTimeHereWeatherBestLapSession(session.name);
+    final given = library.givenSetups(eventId)?[session.runId];
+    final reason = setupUnsavedOf?.call(session.runId) ?? false
+        ? l10n.lastTimeHereSetupReasonUnsaved
+        : given != null && setupText(l10n, given.setup) != null
+        ? l10n.lastTimeHereSetupReasonPending
+        : l10n.lastTimeHereSetupReasonNone;
+    return l10n.lastTimeHereSetupTodayMissing(label, reason);
+  }
+
+  /// Today's pressures minus then's ("Cold +0.1 / 0 / −0.1 / — bar · Hot
+  /// …") when both were entered in one unit, for the wheels entered on
+  /// both; null when there is none. The second value is whether the units
+  /// differ, so nothing was compared.
+  static (String?, bool) _setupDifference(
+    AppLocalizations l10n,
+    RunSetup then,
+    RunSetup today,
+  ) {
+    final unit = then.pressureUnit;
+    if (unit == null ||
+        today.pressureUnit == null ||
+        !then.hasPressures ||
+        !today.hasPressures) {
+      return (null, false);
+    }
+    if (unit != today.pressureUnit) return (null, true);
+    String? wheels(
+      WheelPressures before,
+      WheelPressures now,
+      String Function(String pressures, String unit) line,
+    ) {
+      final values = [
+        for (final (index, value) in now.values.indexed)
+          switch ((before.values[index], value)) {
+            (final a?, final b?) => _signed(b - a),
+            _ => null,
+          },
+      ];
+      if (values.every((value) => value == null)) return null;
+      return line(
+        [for (final value in values) value ?? '—'].join(' / '),
+        pressureUnitText(l10n, unit),
+      );
+    }
+
+    final parts = [
+      ?wheels(then.cold, today.cold, l10n.setupCold),
+      ?wheels(then.hot, today.hot, l10n.setupHot),
+    ];
+    return (parts.isEmpty ? null : parts.join(' · '), false);
+  }
+
+  /// A difference of setup numbers with its sign, as a time difference
+  /// shows it: "+0.1", "−0.15", "0" for none.
+  static String _signed(double value) {
+    final hundredths = (value * 100).round();
+    if (hundredths == 0) return '0';
+    return '${hundredths > 0 ? '+' : '−'}'
+        '${setupNumberText(hundredths.abs() / 100)}';
   }
 
   /// Why today has no weather in the library: from the page's weather of

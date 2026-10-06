@@ -5364,6 +5364,78 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each visit\'s weather is that of the session that set its best lap, or, when that session has none, of its first session with weather.';
 
   @override
+  String get lastTimeHereSetup => 'Setup';
+
+  @override
+  String lastTimeHereSetupThen(String session, String setup) {
+    return 'Then ($session): $setup';
+  }
+
+  @override
+  String lastTimeHereSetupToday(String session, String setup) {
+    return 'Today ($session): $setup';
+  }
+
+  @override
+  String lastTimeHereSetupBestHadNone(String session) {
+    return '$session; the best-lap session had none';
+  }
+
+  @override
+  String lastTimeHereSetupFirstSession(String session) {
+    return '$session, first with a setup';
+  }
+
+  @override
+  String get lastTimeHereSetupThenNone =>
+      'Then: — no setup entered for that day, or the day was added before the library kept setups.';
+
+  @override
+  String get lastTimeHereSetupTodayNoSessions => 'Today: — no setup entered.';
+
+  @override
+  String lastTimeHereSetupThenMissing(String session, String reason) {
+    return 'Then ($session): — $reason';
+  }
+
+  @override
+  String lastTimeHereSetupTodayMissing(String session, String reason) {
+    return 'Today ($session): — $reason';
+  }
+
+  @override
+  String get lastTimeHereSetupReasonNone => 'no setup entered';
+
+  @override
+  String get lastTimeHereSetupReasonNewer =>
+      'set up in another version of the app';
+
+  @override
+  String get lastTimeHereSetupReasonUnreadable =>
+      'not readable by this version';
+
+  @override
+  String get lastTimeHereSetupReasonUnsaved =>
+      'entered on this page; it reaches the library when the day is saved';
+
+  @override
+  String get lastTimeHereSetupReasonPending =>
+      'saved with the day; not in the library yet';
+
+  @override
+  String lastTimeHereSetupDifference(String difference) {
+    return 'Difference (today − then): $difference';
+  }
+
+  @override
+  String get lastTimeHereSetupUnits =>
+      'Different pressure units, not compared.';
+
+  @override
+  String get lastTimeHereSetupNote =>
+      'Each visit\'s setup is that of the session that set its best lap, or, when that session has none, of its first session with a setup. Shown as entered; a higher or lower pressure is not better or worse.';
+
+  @override
   String get settingsUpdatesHeading => 'Updates';
 
   @override

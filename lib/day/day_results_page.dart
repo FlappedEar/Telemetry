@@ -713,6 +713,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
         },
         theoreticalBest: best,
         weather: weather,
+        // The setups as saved: an edit not saved yet is not the driver's
+        // statement about the run until the day is saved. A restored day
+        // not saved since gives none, so the profile keeps its own.
+        setups: controller.setupsSaved
+            ? {
+                for (final named in controller.runs)
+                  named.run.id: ProfileSetup.of(
+                    controller.savedRunSetup(named.run.id),
+                  ),
+              }
+            : null,
       ),
     );
   }
@@ -1551,6 +1562,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             eventId: _controller.eventId,
             weatherStateOf: _controller.weather.stateOf,
             weatherChanges: _controller.weather,
+            setupUnsavedOf: _controller.runSetupWaitsForSave,
           ),
       ],
       const SizedBox(height: 12),

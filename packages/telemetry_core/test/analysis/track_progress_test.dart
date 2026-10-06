@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:fetproject/fetproject.dart' show TrackSegmentType, makeTrackSegment;
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
@@ -35,6 +36,49 @@ TelemetrySession _channelSession(List<double> times, List<double> values) => Tel
   timingGates: const [],
   sampleCount: times.length,
 );
+
+const double _metersPerDegree = 6371000.0 * math.pi / 180.0;
+
+/// [circuitSession]'s point [east], [north] metres from the gate.
+GeoCoordinate _circuitPoint(double east, double north) => GeoCoordinate(
+  52.0 + north / _metersPerDegree,
+  21.0 + east / (_metersPerDegree * math.cos(52.0 * math.pi / 180.0)),
+);
+
+/// [session] timed by a gate turned 45° and moved along itself: it still
+/// crosses the line at the origin, but its midpoint is about 10 m away, 7 m
+/// ahead along the direction of travel (KAN-152).
+TelemetrySession _withObliqueGate(TelemetrySession session) => TelemetrySession(
+  duration: session.duration,
+  startTime: session.startTime,
+  metadata: session.metadata,
+  channels: session.channels,
+  aliases: session.aliases,
+  warnings: session.warnings,
+  timingGates: [
+    TimingGate(
+      type: TimingGateType.start,
+      sourceName: 'Start',
+      endpointA: _circuitPoint(-18.0, -18.0),
+      endpointB: _circuitPoint(32.0, 32.0),
+    ),
+  ],
+  sampleCount: session.sampleCount,
+);
+
+ApprovedSegmentation _quarterSectors(double length) {
+  final configuration = 'compatibility-v1:${'a' * 64}';
+  return approvedSegmentation([
+    for (var quarter = 0; quarter < 4; ++quarter)
+      makeTrackSegment(
+        TrackSegmentType.sector,
+        'S${quarter + 1}',
+        length * quarter / 4,
+        length * (quarter + 1) / 4,
+        configuration,
+      ),
+  ], configuration);
+}
 
 void main() {
   group('sampledSegments', () {
@@ -132,6 +176,93 @@ void main() {
         throwsA(isA<OperationCancelled>()),
       );
     });
+  });
+
+  group('an oblique gate off the racing line (KAN-152)', () {
+    final session = _withObliqueGate(circuitSession());
+    final laps = deriveSourceLapSession(session);
+    final axis = _axisOf(session);
+
+    test('puts progress 0 where the lap crosses the gate', () {
+      expect(axis.valid, isTrue);
+      // The crossing is the circuit's origin, (−7, −7) from the gate midpoint.
+      final start = axis.points.first;
+      final offset = math.sqrt(
+        math.pow(start.eastMeters + 7.0, 2) + math.pow(start.northMeters + 7.0, 2),
+      );
+      expect(offset, lessThan(1.0));
+      expect(axis.spacingMeters, closeTo(axis.lengthMeters / axis.points.length, 1e-9));
+    });
+
+    test('keeps every lap from falling back at the gate and all its sectors timed', () {
+      expect(laps.timedLaps.length, greaterThanOrEqualTo(3));
+      final approved = _quarterSectors(axis.lengthMeters);
+      for (final lap in laps.timedLaps) {
+        final trace = projectLapTrace(axis, session, lap.startTelemetryTime, lap.endTelemetryTime);
+        for (final segment in trace) {
+          for (var i = 1; i < segment.samples.length; ++i) {
+            expect(
+              segment.samples[i].progressMeters,
+              greaterThanOrEqualTo(segment.samples[i - 1].progressMeters),
+            );
+          }
+        }
+        final times = computeLapSectorTimes(
+          approved,
+          axis.lengthMeters,
+          trace,
+          lap.startTelemetryTime,
+          lap.endTelemetryTime,
+          null,
+        );
+        expect(times.sectors.map((sector) => sector.seconds), everyElement(isNotNull));
+        expect(times.sumSeconds, closeTo(times.lapSeconds, 1e-6));
+      }
+    });
+
+    test('measures the delta from each lap\'s timed start', () {
+      final lapA = laps.timedLaps[1], lapB = laps.timedLaps[0];
+      List<ProgressSegment> project(TimedLap lap) =>
+          projectLapTrace(axis, session, lap.startTelemetryTime, lap.endTelemetryTime);
+      final series = computeTimedDeltaSeries(
+        project(lapA),
+        project(lapB),
+        20.0,
+        DeltaTiming(
+          lapStartA: lapA.startTelemetryTime,
+          lapEndA: lapA.endTelemetryTime,
+          lapStartB: lapB.startTelemetryTime,
+          lapEndB: lapB.endTelemetryTime,
+          lengthMeters: axis.lengthMeters,
+        ),
+      );
+      expect(series.first.first.progressMeters, 0.0);
+      expect(series.first.first.deltaSeconds, closeTo(0.0, 1e-9));
+      expect(series.last.last.progressMeters, axis.lengthMeters);
+      expect(
+        series.last.last.deltaSeconds,
+        closeTo(lapA.durationSeconds - lapB.durationSeconds, 1e-9),
+      );
+    });
+  });
+
+  test('projectLapTrace unwraps a first fix just before the gate (KAN-152)', () {
+    final session = circuitSession();
+    final axis = _axisOf(session);
+    final lap = deriveSourceLapSession(session).timedLaps[1];
+    // Start the projection 0.3 s early: its first fix is about 9 m before
+    // progress 0, at the end of the axis.
+    final trace = projectLapTrace(
+      axis,
+      session,
+      lap.startTelemetryTime - 0.3,
+      lap.endTelemetryTime,
+    );
+    expect(trace, hasLength(1));
+    final first = trace.single.samples.first;
+    expect(first.progressMeters, inInclusiveRange(-12.0, -6.0));
+    final atGate = timeAtProgress(trace, 0.0)!;
+    expect(atGate, closeTo(lap.startTelemetryTime, 0.05));
   });
 
   test('computeTrackFeatures gives a constant left curvature on a counterclockwise circle', () {
