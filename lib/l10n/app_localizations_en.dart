@@ -6166,4 +6166,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get briefingChance => 'Biggest chance';
+
+  @override
+  String get summaryCarWatch => 'Car, last laps';
+
+  @override
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  ) {
+    return '$channel still rising: $from → $to (laps $fromLap–$toLap)';
+  }
+
+  @override
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Strong acceleration $percent% lower from lap $fromLap to lap $toLap ($from → $to)';
+  }
+
+  @override
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  ) {
+    return '$fall; meanwhile $channel $from → $to';
+  }
+
+  @override
+  String get summaryCarSettledTemperatures => 'No temperature still rising';
+
+  @override
+  String get summaryCarSettledAcceleration => 'Strong acceleration held';
+
+  @override
+  String summaryCarTemperaturesNeedLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Temperatures: needs $count ranked laps',
+      one: 'Temperatures: needs 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarAccelerationNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Strong acceleration: needs $count ranked laps',
+      one: 'Strong acceleration: needs 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarTemperaturesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Temperatures: missing on one of the last $count ranked laps',
+      one: 'Temperatures: missing on the last ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryCarAccelerationMissing =>
+      'Strong acceleration: not read on the last ranked lap';
+
+  @override
+  String get summaryCarFallNote => 'Traffic and a different line lower it too.';
+
+  @override
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Strong acceleration: read on $count of $ranked ranked laps, needs $needed',
+      one:
+          'Strong acceleration: read on 1 of $ranked ranked laps, needs $needed',
+    );
+    return '$_temp0';
+  }
 }

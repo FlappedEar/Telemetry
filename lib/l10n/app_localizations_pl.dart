@@ -6290,4 +6290,113 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get briefingChance => 'Największa szansa';
+
+  @override
+  String get summaryCarWatch => 'Auto, ostatnie okrążenia';
+
+  @override
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  ) {
+    return '$channel nadal rośnie: $from → $to (okrążenia $fromLap–$toLap)';
+  }
+
+  @override
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Mocne przyspieszenie niższe o $percent% od okrążenia $fromLap do $toLap ($from → $to)';
+  }
+
+  @override
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  ) {
+    return '$fall; w tym czasie $channel $from → $to';
+  }
+
+  @override
+  String get summaryCarSettledTemperatures =>
+      'Żadna temperatura nie rośnie na końcu';
+
+  @override
+  String get summaryCarSettledAcceleration => 'Mocne przyspieszenie bez spadku';
+
+  @override
+  String summaryCarTemperaturesNeedLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Temperatury: potrzeba $count sklasyfikowanych okrążeń',
+      many: 'Temperatury: potrzeba $count sklasyfikowanych okrążeń',
+      few: 'Temperatury: potrzeba $count sklasyfikowanych okrążeń',
+      one: 'Temperatury: potrzeba 1 sklasyfikowanego okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarAccelerationNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      many: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      few: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      one: 'Mocne przyspieszenie: potrzeba 1 sklasyfikowanego okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarTemperaturesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Temperatury: brak zapisu na którymś z ostatnich $count sklasyfikowanych okrążeń',
+      many:
+          'Temperatury: brak zapisu na którymś z ostatnich $count sklasyfikowanych okrążeń',
+      few:
+          'Temperatury: brak zapisu na którymś z ostatnich $count sklasyfikowanych okrążeń',
+      one: 'Temperatury: brak zapisu na ostatnim sklasyfikowanym okrążeniu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryCarAccelerationMissing =>
+      'Mocne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu';
+
+  @override
+  String get summaryCarFallNote =>
+      'Ruch na torze i inna linia też je obniżają.';
+
+  @override
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+      many:
+          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+      few:
+          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+      one:
+          'Mocne przyspieszenie: odczyt na 1 z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+    );
+    return '$_temp0';
+  }
 }

@@ -121,6 +121,68 @@ final _channels = DayChannelSummaries(
   ],
 );
 
+/// Session 2 with [oil] and [gearbox] lap maxima and [strongG] on its timed
+/// laps, for the car's last laps (FET-228).
+DayChannelSummaries _lastLaps({
+  List<double?> oil = const [],
+  List<double?> gearbox = const [],
+  List<double?> strongG = const [],
+}) {
+  final count = [
+    oil.length,
+    gearbox.length,
+    strongG.length,
+  ].reduce((a, b) => a > b ? a : b);
+  final rows = [
+    for (var lap = 1; lap <= count; lap++)
+      DayLapRow(
+        runId: '2',
+        runName: 'Session 2',
+        type: LapSectionType.lap,
+        lapNumber: lap,
+        start: lap * 100,
+        end: lap * 100 + 100,
+        sourceRevision: _revision,
+        referenceEligible: true,
+      ),
+  ];
+  RunChannel channel(String name, List<double?> maxima) => RunChannel(
+    channel: name,
+    unit: 'C',
+    run: const ChannelSummary(maximum: 130, valid: true),
+    sections: [
+      for (final (i, row) in rows.indexed)
+        ChannelSection(
+          row: row,
+          summary: i < maxima.length && maxima[i] != null
+              ? ChannelSummary(maximum: maxima[i], valid: true)
+              : const ChannelSummary(),
+        ),
+    ],
+  );
+  return DayChannelSummaries(
+    runs: [
+      RunChannelSummaries(
+        runId: '2',
+        runName: 'Session 2',
+        channels: [
+          if (oil.isNotEmpty) channel('engine_oil_temp-obd', oil),
+          if (gearbox.isNotEmpty) channel('gearbox_temp-obd', gearbox),
+        ],
+        laps: [
+          for (final (i, row) in rows.indexed)
+            SectionAcceleration(
+              row: row,
+              acceleration: LapAcceleration(
+                strongG: i < strongG.length ? strongG[i] : null,
+              ),
+            ),
+        ],
+      ),
+    ],
+  );
+}
+
 DayCoach _coach(String runId) => DayCoach(
   runId: runId,
   reason: CoachReason.ready,
@@ -466,6 +528,107 @@ void main() {
     expect(
       _text(tester, 'sessionSummaryGain'),
       'Największy zysk | Zakręt 1 −0.300 s',
+    );
+  });
+
+  testWidgets('the car over the last laps: still rising, and strong '
+      'acceleration falling with what rose alongside', (tester) async {
+    await _pump(
+      tester,
+      channels: _lastLaps(
+        oil: [114, 121, 126, 128, 126],
+        gearbox: [98, 104, 108, 111, 119],
+        strongG: [0.263, 0.265, 0.264, 0.256, 0.250],
+      ),
+    );
+    expect(
+      _text(tester, 'sessionSummaryCarWatch'),
+      'Car, last laps | Gearbox still rising: 108 °C → 119 °C '
+      '(laps 3–5)\nStrong acceleration 6% lower from lap 2 to lap 5 '
+      '(0.265 g → 0.250 g); meanwhile Gearbox 104 °C → '
+      '119 °C\nTraffic and a different line lower it too.',
+    );
+  });
+
+  testWidgets('the car over the last laps says what held, or why each part '
+      'was not read', (tester) async {
+    Future<String> watch(DayChannelSummaries channels) async {
+      await _pump(tester, channels: channels);
+      return _text(tester, 'sessionSummaryCarWatch');
+    }
+
+    expect(
+      await watch(
+        _lastLaps(oil: [110, 112, 113, 113], strongG: [0.25, 0.25, 0.25, 0.25]),
+      ),
+      'Car, last laps | No temperature still rising\nStrong acceleration held',
+    );
+    expect(
+      await watch(_lastLaps(oil: [110, 112, 113])),
+      'Car, last laps | No temperature still rising',
+    );
+    // Three ranked laps: enough for temperatures, not for acceleration.
+    expect(
+      await watch(_lastLaps(oil: [110, 120, 130], strongG: [0.3, 0.3, 0.2])),
+      'Car, last laps | Oil still rising: 110 °C → 130 °C (laps '
+      '1–3)\nStrong acceleration: needs 4 ranked laps',
+    );
+    expect(
+      await watch(_lastLaps(oil: [110, 130], strongG: [0.3, 0.3])),
+      'Car, last laps | Temperatures: needs 3 ranked laps\nStrong '
+      'acceleration: needs 4 ranked laps',
+    );
+    // Twelve laps, the temperature missing on one of the last three and no
+    // acceleration on the last: no lap count is blamed.
+    expect(
+      await watch(
+        _lastLaps(
+          oil: [for (var i = 0; i < 10; i++) 100.0, null, 101],
+          strongG: [for (var i = 0; i < 11; i++) 0.3, null],
+        ),
+      ),
+      'Car, last laps | Temperatures: missing on one of the last 3 ranked '
+      'laps\nStrong acceleration: not read on the last ranked lap',
+    );
+    // Six ranked laps, three of them with strong acceleration.
+    expect(
+      await watch(_lastLaps(strongG: [0.3, null, null, null, 0.3, 0.3])),
+      'Car, last laps | Strong acceleration: read on 3 of 6 ranked laps, '
+      'needs 4',
+    );
+    // Nothing recorded on its laps: no line (the hottest line says so).
+    await _pump(tester, channels: _channels);
+    expect(find.byKey(const ValueKey('sessionSummaryCarWatch')), findsNothing);
+    await _pump(tester);
+    expect(find.byKey(const ValueKey('sessionSummaryCarWatch')), findsNothing);
+  });
+
+  testWidgets('the car over the last laps in Polish', (tester) async {
+    await _pump(
+      tester,
+      locale: const Locale('pl'),
+      channels: _lastLaps(
+        oil: [114, 121, 126, 128, 136],
+        strongG: [0.263, 0.265, 0.264, 0.256, 0.250],
+      ),
+    );
+    expect(
+      _text(tester, 'sessionSummaryCarWatch'),
+      'Auto, ostatnie okrążenia | Temperatura oleju nadal rośnie: '
+      '126 °C → 136 °C (okrążenia 3–5)\nMocne przyspieszenie niższe '
+      'o 6% od okrążenia 2 do 5 (0.265 g → 0.250 g); w tym czasie '
+      'Temperatura oleju 121 °C → 136 °C\nRuch na torze i inna '
+      'linia też je obniżają.',
+    );
+    await _pump(
+      tester,
+      locale: const Locale('pl'),
+      channels: _lastLaps(oil: [110, 130], strongG: [0.3, 0.3]),
+    );
+    expect(
+      _text(tester, 'sessionSummaryCarWatch'),
+      'Auto, ostatnie okrążenia | Temperatury: potrzeba 3 sklasyfikowanych '
+      'okrążeń\nMocne przyspieszenie: potrzeba 4 sklasyfikowanych okrążeń',
     );
   });
 }

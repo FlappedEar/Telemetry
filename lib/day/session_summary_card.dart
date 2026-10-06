@@ -154,6 +154,90 @@ class SessionSummaryCard extends StatelessWidget {
         : text;
   }
 
+  /// What the car did over the session's ranked laps (FET-228), each part
+  /// saying why when it could not be read; null when neither was recorded.
+  Widget? _carWatch(
+    BuildContext context,
+    CarWatch watch,
+    Widget Function(String key, String label, String value) row,
+  ) {
+    final l10n = context.l10n;
+    if (!watch.recorded) return null;
+    String g(double value) => '${fixed(value, 3)}\u00a0g';
+    String fallText(CarWatchFall fall) {
+      final text = l10n.summaryCarFall(
+        fixed(fall.fall * 100, 0),
+        '${fall.fromLap}',
+        '${fall.toLap}',
+        g(fall.from),
+        g(fall.to),
+      );
+      final alongside = fall.alongside;
+      return alongside == null
+          ? text
+          : l10n.summaryCarFallWith(
+              text,
+              channelLabelIn(context, alongside.channel),
+              channelValueText(alongside.from, alongside.unit),
+              channelValueText(alongside.to, alongside.unit),
+            );
+    }
+
+    String rise(CarWatchRise rise) => l10n.summaryCarRise(
+      channelLabelIn(context, rise.channel),
+      channelValueText(rise.from, rise.unit),
+      channelValueText(rise.to, rise.unit),
+      '${rise.fromLap}',
+      '${rise.toLap}',
+    );
+    final lines = <String>[
+      // Temperatures still rising, or why none was read.
+      ...switch (watch.temperatures) {
+        CarWatchStatus.read when watch.rises.isNotEmpty => [
+          for (final item in watch.rises) rise(item),
+        ],
+        CarWatchStatus.read => [l10n.summaryCarSettledTemperatures],
+        CarWatchStatus.needsLaps => [
+          l10n.summaryCarTemperaturesNeedLaps(carWatchLaps),
+        ],
+        CarWatchStatus.missingOnLap => [
+          l10n.summaryCarTemperaturesMissing(carWatchLaps),
+        ],
+        CarWatchStatus.notRecorded => const <String>[],
+      },
+      // Strong acceleration falling, or why it was not read.
+      ...switch (watch.acceleration) {
+        CarWatchStatus.read => [
+          if (watch.fall case final fall?) ...[
+            fallText(fall),
+            l10n.summaryCarFallNote,
+          ] else
+            l10n.summaryCarSettledAcceleration,
+        ],
+        // Enough ranked laps, too few of them with strong acceleration.
+        CarWatchStatus.needsLaps
+            when watch.rankedLaps >= carWatchAccelerationLaps =>
+          [
+            l10n.summaryCarAccelerationOnLaps(
+              watch.accelerationLaps,
+              watch.rankedLaps,
+              carWatchAccelerationLaps,
+            ),
+          ],
+        CarWatchStatus.needsLaps => [
+          l10n.summaryCarAccelerationNeedsLaps(carWatchAccelerationLaps),
+        ],
+        CarWatchStatus.missingOnLap => [l10n.summaryCarAccelerationMissing],
+        CarWatchStatus.notRecorded => const <String>[],
+      },
+    ];
+    return row(
+      'sessionSummaryCarWatch',
+      l10n.summaryCarWatch,
+      lines.join('\n'),
+    );
+  }
+
   List<Widget> _rows(BuildContext context, SessionSummary summary) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
@@ -308,6 +392,8 @@ class SessionSummaryCard extends StatelessWidget {
       else if (channels.temperatureChannels.isNotEmpty)
         // The day records temperatures, this session does not.
         row('sessionSummaryCar', l10n.summaryCar, l10n.channelNotRecorded),
+      if (channels != null && summary.carWatch != null)
+        ?_carWatch(context, summary.carWatch!, row),
       if (!summary.firstSession)
         if (goal != null)
           row(

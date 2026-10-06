@@ -9115,6 +9115,95 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Biggest chance'**
   String get briefingChance;
+
+  /// Session summary row: what the car did over the session's timed laps (FET-228): a temperature still rising, strong acceleration falling. Observations, not a diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Car, last laps'**
+  String get summaryCarWatch;
+
+  /// A temperature's lap maximum still rising over the session's last 3 timed laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} still rising: {from} → {to} (laps {fromLap}–{toLap})'**
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  );
+
+  /// Strong acceleration (90th percentile of positive longitudinal G) on the last timed lap below the session's highest.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration {percent}% lower from lap {fromLap} to lap {toLap} ({from} → {to})'**
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  );
+
+  /// The fall in strong acceleration with the temperature that rose most over the same laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{fall}; meanwhile {channel} {from} → {to}'**
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  );
+
+  /// Car, last laps when nothing was noted and only temperatures could be read.
+  ///
+  /// In en, this message translates to:
+  /// **'No temperature still rising'**
+  String get summaryCarSettledTemperatures;
+
+  /// Car, last laps when nothing was noted and only strong acceleration could be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration held'**
+  String get summaryCarSettledAcceleration;
+
+  /// Car, last laps: too few ranked laps to read a temperature's rise.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Temperatures: needs 1 ranked lap} other{Temperatures: needs {count} ranked laps}}'**
+  String summaryCarTemperaturesNeedLaps(int count);
+
+  /// Car, last laps: too few ranked laps with strong acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Strong acceleration: needs 1 ranked lap} other{Strong acceleration: needs {count} ranked laps}}'**
+  String summaryCarAccelerationNeedsLaps(int count);
+
+  /// Car, last laps: every temperature is missing on one of the laps its rise is read over.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Temperatures: missing on the last ranked lap} other{Temperatures: missing on one of the last {count} ranked laps}}'**
+  String summaryCarTemperaturesMissing(int count);
+
+  /// Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples).
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration: not read on the last ranked lap'**
+  String get summaryCarAccelerationMissing;
+
+  /// Under a fall in strong acceleration: it is an observation, not a diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic and a different line lower it too.'**
+  String get summaryCarFallNote;
+
+  /// Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}'**
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed);
 }
 
 class _AppLocalizationsDelegate

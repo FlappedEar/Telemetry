@@ -7,6 +7,7 @@
 // summaries).
 import '../analysis/consistency.dart';
 import '../analysis/outing_results.dart';
+import 'car_watch.dart';
 import 'day_channel_summaries.dart';
 import 'day_coach.dart';
 import 'day_laps.dart';
@@ -83,6 +84,7 @@ final class SessionSummary {
     this.biggestGap,
     List<SessionTemperature> temperatures = const [],
     this.temperatureReason = '',
+    this.carWatch,
     this.goal,
   }) : temperatures = List.unmodifiable(temperatures);
 
@@ -138,6 +140,11 @@ final class SessionSummary {
   /// there: their calculation failed, or this session's recording could not
   /// be read (the summaries' own reason). Empty otherwise.
   final String temperatureReason;
+
+  /// What the car did over its timed laps ([carWatch]); null while the
+  /// channel summaries are not ready, or when its recording could not be
+  /// read.
+  final CarWatch? carWatch;
 
   /// How it did on the main focus the coach gave after the session before;
   /// null when the coach gave none or has not coached this session.
@@ -242,6 +249,7 @@ SessionSummary? summarizeSession(
 
   final temperatures = <SessionTemperature>[];
   var temperatureReason = '';
+  CarWatch? watch;
   if (channels != null && channels.error.isNotEmpty) {
     temperatureReason = channels.error;
   } else if (channels != null) {
@@ -254,6 +262,7 @@ SessionSummary? summarizeSession(
     }
 
     final own = of(runId), before = of(previous?.runId);
+    if (own != null) watch = carWatch(own);
     if (own != null && own.unavailableReason.isNotEmpty) {
       temperatureReason = own.unavailableReason;
     }
@@ -295,6 +304,7 @@ SessionSummary? summarizeSession(
     biggestGap: gap,
     temperatures: temperatures,
     temperatureReason: temperatureReason,
+    carWatch: watch,
     goal: coach != null && coach.runId == runId ? coach.goal : null,
   );
 }

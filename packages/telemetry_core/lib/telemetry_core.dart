@@ -51,6 +51,7 @@ export 'src/day/day_segment_review.dart';
 export 'src/day/day_segments.dart';
 export 'src/day/day_theoretical_best.dart';
 export 'src/day/run_metadata.dart';
+export 'src/day/car_watch.dart';
 export 'src/day/run_goals.dart';
 export 'src/day/run_setup.dart';
 export 'src/day/session_summary.dart';
