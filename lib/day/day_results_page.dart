@@ -1998,17 +1998,20 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// the car: it follows the day as it changes.
   void _openBriefing() => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (context) => ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => Scaffold(
-          appBar: AppBar(title: Text(context.l10n.briefingTitle)),
-          body: LayoutBuilder(
-            builder: (context, constraints) => ListView(
-              key: const ValueKey('briefingPage'),
-              padding: constraints.maxWidth > readableWidth
-                  ? readablePadding(constraints.maxWidth)
-                  : const EdgeInsets.all(16),
-              children: [_briefing()],
+      builder: (context) => saveShortcuts(
+        _saveFromShortcut,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => Scaffold(
+            appBar: AppBar(title: Text(context.l10n.briefingTitle)),
+            body: LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                key: const ValueKey('briefingPage'),
+                padding: constraints.maxWidth > readableWidth
+                    ? readablePadding(constraints.maxWidth)
+                    : const EdgeInsets.all(16),
+                children: [_briefing()],
+              ),
             ),
           ),
         ),

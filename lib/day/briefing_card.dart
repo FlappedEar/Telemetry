@@ -77,14 +77,16 @@ class BriefingCard extends StatelessWidget {
       focus = l10n.summaryCoachFailed;
     } else if (!coached) {
       focus = l10n.summaryWorking;
-    } else if (changes.isNotEmpty) {
-      focus = _title(l10n, changes.first);
-      // A speed is left out when the speeds cannot be shown.
-      measured = speedUnit == null && _hasSpeed(changes.first)
-          ? null
-          : l10n.coachMeasured(changes.first, speedUnit);
-    } else if (keep != null) {
-      focus = _title(l10n, keep);
+    } else if ((changes.isNotEmpty ? changes.first : keep) case final item?) {
+      focus = _title(l10n, item);
+      // Labelled apart, as on the Next session card; a speed that cannot
+      // be shown reads "—" there too, and says why.
+      measured =
+          '${l10n.coachMeasuredLabel}: '
+          '${l10n.coachMeasured(item, speedUnit)}';
+      if (speedUnit == null && _hasSpeed(item)) {
+        measured = '$measured\n${l10n.coachSpeedHidden}';
+      }
     } else {
       focus = l10n.coachReason(coach.reason, l10n.session(session));
     }
@@ -100,7 +102,9 @@ class BriefingCard extends StatelessWidget {
       chance = l10n.summaryWorking;
     } else if (!ready) {
       chance = l10n.summarySegmentsUnavailable;
-    } else if (summary == null || summary.segmentsTimed == 0) {
+    } else if (summary == null) {
+      chance = l10n.summaryNotShown(l10n.session(session));
+    } else if (summary.segmentsTimed == 0) {
       chance = l10n.summaryGapNeedsLaps;
     } else if (summary.sessionsTimed < 2) {
       chance = l10n.summaryOnlySession;
@@ -168,7 +172,10 @@ class BriefingCard extends StatelessWidget {
               'briefingGoals',
               l10n.briefingGoals,
               goals.isEmpty
-                  ? l10n.briefingNoGoals
+                  // Goals this version does not read are still kept.
+                  ? (goals.readOnly
+                        ? l10n.ownGoalsReadOnly
+                        : l10n.briefingNoGoals)
                   : [
                       for (final goal in goals.goals)
                         l10n.coachItemTitle(
@@ -190,7 +197,9 @@ class BriefingCard extends StatelessWidget {
         l10n.coachKind(finding.kind),
       );
 
-  static bool _hasSpeed(CoachFinding finding) => finding.evidence.any(
-    (evidence) => evidence.unit == 'km/h' || evidence.unit == 'mph',
-  );
+  /// Whether the measured sentence ([AppLocalizations.coachMeasured],
+  /// which reads the first evidence) holds a speed.
+  static bool _hasSpeed(CoachFinding finding) =>
+      finding.evidence.first.unit == 'km/h' ||
+      finding.evidence.first.unit == 'mph';
 }

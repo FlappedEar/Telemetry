@@ -8936,7 +8936,7 @@ abstract class AppLocalizations {
   /// **'These goals were set on other compared laps. Remove them to set new ones.'**
   String get ownGoalsOtherGroup;
 
-  /// Heading of the briefing card on the Coach place, read before the next session.
+  /// Button beside the session summary's title, and the title of the page it opens: a briefing read at the car before the next session.
   ///
   /// In en, this message translates to:
   /// **'Before you go out'**
