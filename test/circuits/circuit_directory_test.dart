@@ -38,9 +38,12 @@ void main() {
   CircuitDirectory make({
     int shipped = 1,
     Future<String> Function(Uri uri, int maximum)? fetch,
+    bool files = true,
   }) => CircuitDirectory(
     bundled: () async => list(shipped, [('a', 'Alpha', 50.0, 20.0)]),
-    folder: () async => directory,
+    // Screens keep nothing on disk: a write still running when the test
+    // ends would keep the folder open on Windows.
+    folder: () async => files ? directory : null,
     fetch: fetch ?? (uri, maximum) async => throw const SocketException('no'),
   );
 
@@ -208,7 +211,7 @@ void main() {
     testWidgets('settings count the list and forget the driver\'s names', (
       tester,
     ) async {
-      final circuits = circuitDirectory = make();
+      final circuits = circuitDirectory = make(files: false);
       await tester.runAsync(() async {
         await circuits.nameAt(alpha, 'Home track');
         await circuits.nameAt(elsewhere, 'Kart track');
@@ -252,7 +255,7 @@ void main() {
     });
 
     testWidgets('the circuit name dialog names the place', (tester) async {
-      final circuits = circuitDirectory = make();
+      final circuits = circuitDirectory = make(files: false);
       await tester.runAsync(circuits.load);
       await tester.pumpWidget(
         TelemetryApp(
