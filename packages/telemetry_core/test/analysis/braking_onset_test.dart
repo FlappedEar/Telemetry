@@ -179,12 +179,16 @@ void main() {
   });
 
   test('deceleration never stands in for missing brake data', () {
+    // The brake records until 3 s, then loses its data: that window stays
+    // unknown. (A brake with no data at all, or one the deceleration shows
+    // is not pressed in most hard brakings, gives way for the whole session:
+    // braking_source_test.dart, FET-204.)
     final result = detectBrakingOnsets(
       _session({
-        'brake': _channel('brake_pos', '%', (_) => double.nan),
+        'brake': _channel('brake_pos', '%', (k) => k < 60 ? 0.0 : double.nan),
         'longitudinalAcceleration': _channel('longacc', 'g', _decelerationProfile),
       }),
-      0.0,
+      3.0,
       10.0,
     );
     expect(result.method, brakingMethodMeasured);

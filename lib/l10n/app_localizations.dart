@@ -4949,6 +4949,18 @@ abstract class AppLocalizations {
   /// **'Inferred from deceleration'**
   String get cornerDetailsFromDeceleration;
 
+  /// How a lap's braking point was found: from the deceleration, because the session's brake channel has no data or is not pressed in most hard brakings.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from deceleration: the brake channel does not show the braking'**
+  String get cornerDetailsFromDecelerationBrakeUnused;
+
+  /// Why a corner figure is inferred, lower case: the session's brake channel has no data or is not pressed in most hard brakings.
+  ///
+  /// In en, this message translates to:
+  /// **'the brake channel does not show the braking'**
+  String get cornerDetailsReasonBrakeChannelNotUsed;
+
   /// How a lap's braking point was found: from the recorded brake channel.
   ///
   /// In en, this message translates to:

@@ -25,6 +25,7 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       brakingAlreadyActive => l10n.cornerDetailsReasonAlreadyBraking,
       brakingInterruptedByGap => l10n.cornerDetailsReasonBrakingGap,
       brakingNoSamples => l10n.cornerDetailsReasonNoSamplesHere,
+      brakingBrakeChannelNotUsed => l10n.cornerDetailsReasonBrakeChannelNotUsed,
       // Throttle pickup and exit.
       exitNoChannel => l10n.cornerDetailsReasonNoThrottleOrAcceleration,
       exitNoLift => l10n.cornerDetailsReasonNoLift,
@@ -186,9 +187,11 @@ class CornerDetails extends StatelessWidget {
       if (braking.brakingPointMeters == null) {
         return cornerReasonText(l10n, braking.unavailableReason);
       }
-      final how = braking.provenance == 'inferred'
-          ? l10n.cornerDetailsFromDeceleration
-          : l10n.cornerDetailsFromBrakeChannel;
+      final how = braking.provenance != 'inferred'
+          ? l10n.cornerDetailsFromBrakeChannel
+          : braking.limitations.contains(brakingBrakeChannelNotUsed)
+          ? l10n.cornerDetailsFromDecelerationBrakeUnused
+          : l10n.cornerDetailsFromDeceleration;
       if (best != null &&
           bestBraking?.brakingPointMeters != null &&
           comparison.braking.unavailableReason == 'mixedProvenance') {

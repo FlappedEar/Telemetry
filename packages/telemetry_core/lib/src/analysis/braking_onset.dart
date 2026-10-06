@@ -1,10 +1,12 @@
 // Port of FlappedEar Overlays native/src/telemetry/BrakingOnset.{h,cpp}
 // (revision d4d1039, FET-33): where braking episodes start inside a time
-// window, from the measured brake channel or, only without one, from
-// deceleration.
+// window, from the measured brake channel or, when there is no trustworthy
+// one, from deceleration (FET-204: by quality, not by which exists;
+// braking_source.dart).
 import 'dart:math' as math;
 
 import '../telemetry_session.dart';
+import 'braking_source.dart';
 import 'track_progress.dart';
 
 const String brakingOnsetAlgorithm = 'braking-onset-v1';
@@ -26,6 +28,11 @@ const String brakingAlreadyActive = 'alreadyBrakingAtWindowStart';
 const String brakingInterruptedByGap = 'interruptedByGap';
 const String brakingTruncatedAtWindowEnd = 'truncatedAtWindowEnd';
 const String brakingUnitUndeclared = 'channelUnitUndeclared';
+
+/// The session has a brake channel, but it does not show the braking (no
+/// data, or not pressed in most hard brakings), so deceleration is used
+/// (FET-204, braking_source.dart).
+const String brakingBrakeChannelNotUsed = 'brakeChannelNotUsed';
 
 /// Hysteresis thresholds on braking magnitude, in [unit]. For deceleration
 /// the magnitude is the negated longitudinal acceleration (negative G is
@@ -122,9 +129,11 @@ final class _Episode {
   final List<String> reasons = [];
 }
 
-/// Uses the measured `brake` channel whenever the session has one, and never
-/// substitutes deceleration for it, even where brake data is missing. Only a
-/// session without a brake channel falls back to `longitudinalAcceleration`,
+/// Uses the measured `brake` channel unless [brakingSourceQuality] rejects
+/// it for the whole session, and never substitutes deceleration for it in
+/// one window, even where brake data is missing there. A session without a
+/// brake channel, or with a rejected one (each candidate then carries
+/// [brakingBrakeChannelNotUsed]), falls back to `longitudinalAcceleration`,
 /// labelled inferred. Raw samples in [startTime]..[endTime] are scanned
 /// without interpolation across gaps; [lapTrace], when given, maps onsets to
 /// progress.
@@ -148,11 +157,14 @@ BrakingOnsetDetection detectBrakingOnsets(
   result.valid = true;
   result.minimumDurationSeconds = options.minimumDurationSeconds;
 
-  final brakeName = session.aliases['brake'] ?? '';
-  final decelerationName = session.aliases['longitudinalAcceleration'] ?? '';
-  final hasBrake = brakeName.isNotEmpty && session.channels.containsKey(brakeName);
-  final hasDeceleration =
-      decelerationName.isNotEmpty && session.channels.containsKey(decelerationName);
+  final quality = brakingSourceQuality(session);
+  final brakeName = quality.brakeName;
+  final decelerationName = quality.decelerationName;
+  // A brake with no data, or not pressed in most hard brakings, gives way
+  // to a usable deceleration.
+  final brakeRejected = quality.brakeRejected && options.allowInferred;
+  final hasBrake = quality.hasBrake && !brakeRejected;
+  final hasDeceleration = quality.hasDeceleration;
   var sign = 1.0;
   if (hasBrake) {
     result.method = brakingMethodMeasured;
@@ -216,6 +228,7 @@ BrakingOnsetDetection detectBrakingOnsets(
             ...current.reasons,
             ?truncation,
             if (!unitDeclared) brakingUnitUndeclared,
+            if (brakeRejected) brakingBrakeChannelNotUsed,
           ],
           progressMeters: lapTrace == null ? null : progressAtTime(lapTrace, current.onset),
         ),

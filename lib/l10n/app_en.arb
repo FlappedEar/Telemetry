@@ -4823,6 +4823,14 @@
   "@cornerDetailsFromDeceleration": {
     "description": "How a lap's braking point was found: from the deceleration, without a brake channel."
   },
+  "cornerDetailsFromDecelerationBrakeUnused": "Inferred from deceleration: the brake channel does not show the braking",
+  "@cornerDetailsFromDecelerationBrakeUnused": {
+    "description": "How a lap's braking point was found: from the deceleration, because the session's brake channel has no data or is not pressed in most hard brakings."
+  },
+  "cornerDetailsReasonBrakeChannelNotUsed": "the brake channel does not show the braking",
+  "@cornerDetailsReasonBrakeChannelNotUsed": {
+    "description": "Why a corner figure is inferred, lower case: the session's brake channel has no data or is not pressed in most hard brakings."
+  },
   "cornerDetailsFromBrakeChannel": "From the brake channel",
   "@cornerDetailsFromBrakeChannel": {
     "description": "How a lap's braking point was found: from the recorded brake channel."

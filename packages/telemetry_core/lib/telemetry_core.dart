@@ -5,6 +5,7 @@ export 'src/analysis/angular_channels.dart' show isAngularChannel, normalizeDegr
 export 'src/analysis/automatic_segments.dart';
 export 'src/analysis/braking_metrics.dart';
 export 'src/analysis/braking_onset.dart';
+export 'src/analysis/braking_source.dart';
 export 'src/analysis/channel_summary.dart';
 export 'src/analysis/coasting_analysis.dart';
 export 'src/analysis/comparison_driving.dart';

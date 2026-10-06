@@ -33,6 +33,7 @@ import '../analysis/braking_onset.dart'
         brakingFollowsGap,
         brakingInterruptedByGap,
         brakingTruncatedAtWindowEnd;
+import '../analysis/braking_source.dart' show brakingSourceQuality;
 import '../analysis/coasting_analysis.dart';
 import '../analysis/gg_pairs.dart' show buildGgPairs, ggMagnitude;
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
@@ -1176,9 +1177,11 @@ DayCoach _dayCoach(
               !rise.limitations.contains(exitFollowsGap)
           ? rise.progressMeters
           : null;
+      // A brake that does not show the braking is no pedal (FET-204).
       if (lap.runId == coached &&
           (session.channels.containsKey(session.aliases['throttle'] ?? '') ||
-              session.channels.containsKey(session.aliases['brake'] ?? ''))) {
+              (session.channels.containsKey(session.aliases['brake'] ?? '') &&
+                  !brakingSourceQuality(session).brakeRejected))) {
         pedals = true;
       }
       double? lift, liftSeconds;
