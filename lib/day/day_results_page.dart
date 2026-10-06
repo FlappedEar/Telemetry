@@ -40,6 +40,7 @@ import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
+import 'session_removal.dart';
 import 'session_summary_card.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart';
@@ -223,11 +224,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
     if (_controller.lastAddition != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _reportAddition());
     }
+    if (sessionRemovals[_controller] != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reportRemoval());
+    }
     _lifecycle;
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_measuredThenSave);
     ++_retryGeneration;
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
@@ -1036,6 +1041,256 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
+  /// Takes session [runId] out of the day once the driver confirms
+  /// (FET-241): the day is saved, the session is removed from its document
+  /// ([removeRunFromDayDocument]), the day without it is opened and only
+  /// then written, and shown in place of this one, so its laps, theoretical
+  /// best, coach and profile are worked out again. The recording file
+  /// stays. The day opened again offers Undo.
+  Future<void> _removeSession(String runId) async {
+    final l10n = context.l10n;
+    final name = [
+      for (final named in _controller.runs)
+        if (named.run.id == runId) named.name,
+      for (final recording in _controller.missing)
+        if (recording.runId == runId) recording.name,
+    ].firstOrNull;
+    if (name == null) return;
+    if (_controller.runs.length + _controller.missing.length < 2) {
+      _tell(l10n.removeSessionLast);
+      return;
+    }
+    if (_busyForRemoval) {
+      _tell(l10n.removeSessionBusy);
+      return;
+    }
+    final label = l10n.session(name);
+    // Said whenever it may be so: the corners' session is known once the
+    // theoretical best is ready.
+    final best = _controller.theoreticalBest;
+    final corners =
+        best == null ||
+        _controller.theoreticalBestLoading ||
+        best.segmentRunId.isEmpty ||
+        best.segmentRunId == runId;
+    if (!await confirmSessionRemoval(context, label, corners: corners) ||
+        !mounted) {
+      return;
+    }
+    if (_busyForRemoval) {
+      _tell(l10n.removeSessionBusy);
+      return;
+    }
+    setState(() => _relinking = true);
+    try {
+      _autosave?.cancel();
+      if (_controller.dirty) await _save(quiet: true);
+      if (!mounted) return;
+      final path = _controller.documentPath;
+      if (path == null || _controller.dirty) {
+        _tell(l10n.removeSessionNotSaved);
+        return;
+      }
+      final sessions = _controller.runs.length;
+      final saves = _controller.saveCount;
+      final removal = await runInBackground(removeSessionJob, (
+        path: path,
+        runId: runId,
+      )).result;
+      if (!mounted) return;
+      if (_changedSince(sessions, saves)) {
+        _tell(l10n.removeSessionChangedMeanwhile);
+        return;
+      }
+      if (removal.day.analysis == null) {
+        _tell(l10n.removeSessionNothingLeft);
+        return;
+      }
+      if (!_onTop) {
+        _tell(l10n.removeSessionChangedMeanwhile);
+        return;
+      }
+      await _controller.writer(path, removal.after);
+      if (!mounted) return;
+      _replaceWith(
+        removal.day,
+        undo: SessionRemoval(
+          path: path,
+          before: removal.before,
+          label: label,
+          saves: removal.heldSegments ? 1 : 0,
+        ),
+      );
+    } on Object catch (error) {
+      if (mounted) _tell(l10n.removeSessionFailed('$error'));
+    } finally {
+      if (mounted) setState(() => _relinking = false);
+    }
+  }
+
+  /// Whether work under way keeps sessions from being removed or put back.
+  bool get _busyForRemoval =>
+      !_controller.fusionsIdle ||
+      _controller.adding ||
+      _controller.saving ||
+      _controller.recordingsBusy ||
+      _controller.savingWaitsForRecordings ||
+      _relinking ||
+      _preparingReview;
+
+  /// Whether the day changed, or is being saved, since it had [sessions]
+  /// sessions and [saves] saves.
+  bool _changedSince(int sessions, int saves) =>
+      !_controller.fusionsIdle ||
+      _controller.dirty ||
+      _controller.saving ||
+      _controller.adding ||
+      _controller.recordingsBusy ||
+      _controller.savingWaitsForRecordings ||
+      _controller.saveCount != saves ||
+      _controller.runs.length != sessions;
+
+  /// Whether the day page is the page shown: a day opened again replaces
+  /// this route, so nothing opened over the day may be.
+  bool get _onTop => ModalRoute.of(context)?.isCurrent ?? true;
+
+  /// Puts back the session [removal] took out, while the day has not
+  /// changed since it opened without it.
+  Future<void> _undoRemoval(SessionRemoval removal) async {
+    if (!mounted) return;
+    final l10n = context.l10n;
+    // The save measuring the corners again may still run: waited for.
+    while (_controller.saving && mounted) {
+      final saved = Completer<void>();
+      void done() {
+        if (!_controller.saving && !saved.isCompleted) saved.complete();
+      }
+
+      _controller.addListener(done);
+      try {
+        await saved.future;
+      } finally {
+        _controller.removeListener(done);
+      }
+    }
+    if (!mounted) return;
+    bool refused() =>
+        _busyForRemoval ||
+        _controller.dirty ||
+        _controller.saveCount > removal.saves ||
+        _controller.documentPath != removal.path ||
+        !_onTop;
+    if (refused()) {
+      _tell(l10n.sessionRestoreRefused);
+      return;
+    }
+    setState(() => _relinking = true);
+    try {
+      final sessions = _controller.runs.length;
+      final saves = _controller.saveCount;
+      final restored = await runInBackground(restoreSessionJob, (
+        path: removal.path,
+        before: removal.before,
+      )).result;
+      if (!mounted) return;
+      if (_changedSince(sessions, saves) ||
+          restored.day.analysis == null ||
+          !_onTop) {
+        _tell(l10n.sessionRestoreRefused);
+        return;
+      }
+      await _controller.writer(removal.path, restored.document);
+      if (!mounted) return;
+      _tell(l10n.sessionRestored(removal.label));
+      _replaceWith(restored.day);
+    } on Object catch (error) {
+      if (mounted) _tell(l10n.dayReopenFailed('$error'));
+    } finally {
+      if (mounted) setState(() => _relinking = false);
+    }
+  }
+
+  /// Shows [day], just written, in place of this page; with [undo], it
+  /// offers to put that session back.
+  void _replaceWith(OpenedDay day, {SessionRemoval? undo}) {
+    final controller = DayResultsController.opened(
+      day,
+      writer: _controller.writer,
+      recovery: widget.recovery,
+      appender: _controller.appender,
+    );
+    if (undo != null) sessionRemovals[controller] = undo;
+    final replace = widget.replace;
+    if (replace != null) {
+      replace(controller);
+      Navigator.of(context).pop();
+      return;
+    }
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => DayResultsPage.controller(
+            controller: controller,
+            documents: widget.documents,
+            pickers: widget.pickers,
+            recovery: widget.recovery,
+            library: widget.library,
+            reportSharer: widget.reportSharer,
+            coach: widget.coach,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Whether the day saves once its theoretical best is measured: the
+  /// session removed held the corners, which are measured again on the
+  /// best lap left and approved by that save.
+  bool _saveWhenMeasured = false;
+
+  /// The save [_saveWhenMeasured] waits for, once the theoretical best is
+  /// there (its automatic segments are then the ones the save approves).
+  void _measuredThenSave() {
+    if (!_saveWhenMeasured || !mounted) return;
+    if (_controller.theoreticalBestLoading) return;
+    if (_controller.theoreticalBest == null) {
+      unawaited(_controller.requestTheoreticalBest());
+      return;
+    }
+    _saveWhenMeasured = false;
+    _controller.removeListener(_measuredThenSave);
+    unawaited(_save(quiet: true));
+  }
+
+  /// Says the session removed before this day opened, with Undo. When the
+  /// session held the day's corners, the day is saved once its corners are
+  /// measured again on the best lap left.
+  void _reportRemoval() {
+    final removal = sessionRemovals[_controller];
+    if (removal == null || !mounted) return;
+    sessionRemovals[_controller] = null;
+    if (removal.saves > 0) {
+      _saveWhenMeasured = true;
+      _controller.addListener(_measuredThenSave);
+      _measuredThenSave();
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          // Gone by itself, not left over pages opened over the day.
+          persist: false,
+          duration: const Duration(seconds: 8),
+          content: Text(context.l10n.sessionRemoved(removal.label)),
+          action: SnackBarAction(
+            key: const ValueKey('sessionRemovedUndo'),
+            label: context.l10n.sessionRemovedUndo,
+            onPressed: () => unawaited(_undoRemoval(removal)),
+          ),
+        ),
+      );
+  }
+
   /// Two panes and a side rail from this width; below it the overview, the
   /// laps, Compare and Report are tabs of their own.
   static const _twoPaneWidth = AppFrame.wideWidth;
@@ -1235,6 +1490,19 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     !_preparingReview,
                 onTap: _addAndReview,
                 child: Text(context.l10n.addAndReviewRecordings),
+              ),
+              PopupMenuItem(
+                key: const ValueKey('removeSessionMenu'),
+                height: kMinInteractiveDimension,
+                enabled: !_busyForRemoval,
+                onTap: () async {
+                  final runId = await chooseSessionToRemove(
+                    this.context,
+                    _controller,
+                  );
+                  if (runId != null && mounted) await _removeSession(runId);
+                },
+                child: Text(context.l10n.removeSessionMenu),
               ),
               PopupMenuItem(
                 key: const ValueKey('renameDay'),
@@ -1629,6 +1897,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             builder: (_) => SessionDetailsDialog(
               controller: _controller,
               runId: named.run.id,
+              onRemove: () => _removeSession(named.run.id),
             ),
           ),
         ),

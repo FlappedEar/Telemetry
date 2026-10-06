@@ -18,10 +18,15 @@ class SessionDetailsDialog extends StatefulWidget {
     super.key,
     required this.controller,
     required this.runId,
+    this.onRemove,
   });
 
   final DayResultsController controller;
   final String runId;
+
+  /// Removes the session from the day (FET-241), after the dialog closes;
+  /// no "Remove session" button when null.
+  final VoidCallback? onRemove;
 
   @override
   State<SessionDetailsDialog> createState() => _SessionDetailsDialogState();
@@ -205,6 +210,19 @@ class _SessionDetailsDialogState extends State<SessionDetailsDialog> {
         ),
       ),
       actions: [
+        if (widget.onRemove case final remove?)
+          TextButton.icon(
+            key: const ValueKey('sessionDetailsRemove'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            icon: const Icon(Icons.delete_outline),
+            label: Text(l10n.removeSession),
+            onPressed: () {
+              Navigator.pop(context);
+              remove();
+            },
+          ),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(l10n.cancel),

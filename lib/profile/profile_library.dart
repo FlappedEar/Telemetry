@@ -51,6 +51,30 @@ final class FolderProfileStore implements ProfileStore {
   Future<String?> folder() async => path;
 }
 
+/// Folders holding only recording copies the app made, besides the
+/// profile's own `Recordings`: on Android the folders files shared to or
+/// picked in the app are copied to (`incoming` and `picked` in its files
+/// folder, see MainActivity.copyBatch), on iOS the Inbox shared files
+/// arrive in. A recording there that no day uses any more is deleted with
+/// the last day using it. None elsewhere and in `flutter test`.
+Future<List<String>> platformOwnedRecordingFolders() async {
+  if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) {
+    return const [];
+  }
+  try {
+    if (Platform.isAndroid) {
+      final files = (await getApplicationSupportDirectory()).path;
+      return [p.join(files, 'incoming'), p.join(files, 'picked')];
+    }
+    if (Platform.isIOS) {
+      return [p.join((await getApplicationDocumentsDirectory()).path, 'Inbox')];
+    }
+  } on Exception {
+    // None.
+  }
+  return const [];
+}
+
 /// The day of [eventId]'s file in [folder]'s days.
 String profileDayPath(String folder, String eventId) =>
     p.join(folder, profileDaysFolder, '$eventId.fetproject');
@@ -67,7 +91,12 @@ class ProfileLibrary extends ChangeNotifier {
     required this.defaultCarName,
     required this.defaultTrackName,
     this.background = Isolate.run,
+    this.ownedRecordingFolders = platformOwnedRecordingFolders,
   });
+
+  /// Folders besides the profile's own `Recordings` where every recording
+  /// is a copy the app made ([platformOwnedRecordingFolders]).
+  final Future<List<String>> Function() ownedRecordingFolders;
 
   /// Runs reading and writing the profile off the UI thread; widget tests
   /// run it in place, on their fake clock.
@@ -259,6 +288,8 @@ class ProfileLibrary extends ChangeNotifier {
     Map<String, ProfileWeather?>? weather,
     Map<String, ProfileSetup?>? setups,
   }) async {
+    // A day deleted is not listed again by a page that still held it.
+    if (_deleted.contains(eventId)) return;
     _keepWeather(eventId, weather);
     if (setups != null) {
       _setups[eventId] = Map.unmodifiable(setups);
@@ -323,7 +354,9 @@ class ProfileLibrary extends ChangeNotifier {
       debugPrint('Day not measured for the profile: $error');
       return;
     }
-    if (_recordings[eventId] != generation) return;
+    if (_recordings[eventId] != generation || _deleted.contains(eventId)) {
+      return;
+    }
     // Weather given since this recording began is newer than its own.
     final newer = _weather[eventId];
     // A record without setups (a restored day not saved since) takes the
@@ -438,6 +471,82 @@ class ProfileLibrary extends ChangeNotifier {
   void renameTrack(String trackId, String name) =>
       _change((profile) => renameProfileTrack(profile, trackId, name));
 
+  /// Deletes day [eventId]: its document, its place in the profile with
+  /// every number of its sessions, and the recording copies the app made
+  /// that no other day of the profile uses ([deleteDayFiles]). Recordings
+  /// anywhere else are the driver's own files and stay. Null when the
+  /// profile has no such day. Throws when the document could not be
+  /// deleted; the profile then still lists the day.
+  Future<DayFilesDeleted?> deleteDay(String eventId) async {
+    if (!_loaded) await load();
+    _deleted.add(eventId);
+    // A measure of the day still running would list it again.
+    _recordings[eventId] = (_recordings[eventId] ?? 0) + 1;
+    await flush();
+    final profile = _profile;
+    final folder = _folder;
+    final day = profile?.day(eventId);
+    if (profile == null || folder == null || day == null) {
+      _deleted.remove(eventId);
+      return null;
+    }
+    final path = pathOf(day)!;
+    // Every day in the days folder, listed in the profile or not yet.
+    final others = [
+      for (final other in profile.days)
+        if (other.eventId != eventId) pathOf(other)!,
+      ..._dayFiles(folder),
+    ];
+    final owned = [
+      p.join(folder, profileRecordingsFolderName),
+      ...await ownedRecordingFolders(),
+    ];
+    // A document outside the profile's days is never deleted from here.
+    final DayFilesDeleted deleted;
+    try {
+      deleted = holds(path)
+          ? await background(_deleteJob(path, others, owned))
+          : const DayFilesDeleted(recordings: 0, recordingsKept: 0);
+    } on Object {
+      // Still listed, so it may be recorded again.
+      _deleted.remove(eventId);
+      rethrow;
+    }
+    _weather.remove(eventId);
+    _setups.remove(eventId);
+    _change((profile) => removeProfileDay(profile, eventId));
+    return deleted;
+  }
+
+  static List<String> _dayFiles(String folder) {
+    try {
+      final days = Directory(p.join(folder, profileDaysFolder));
+      if (!days.existsSync()) return const [];
+      return [
+        for (final entry in days.listSync())
+          if (entry is File && p.extension(entry.path) == '.fetproject')
+            entry.path,
+      ];
+    } on FileSystemException {
+      return const [];
+    }
+  }
+
+  /// The days deleted while the app runs: never recorded again.
+  final _deleted = <String>{};
+
+  // Takes only what it is given, so it can be sent to another isolate.
+  static DayFilesDeleted Function() _deleteJob(
+    String path,
+    List<String> others,
+    List<String> owned,
+  ) =>
+      () => deleteDayFiles(
+        dayPath: path,
+        otherDayPaths: others,
+        ownedFolders: owned,
+      );
+
   /// Writes the profile, its days and their recordings to one bundle at
   /// [target] ([writeProfileBundle]), once the changes asked for so far are
   /// written. Null when there is no profile.
@@ -462,6 +571,8 @@ class ProfileLibrary extends ChangeNotifier {
         final folder = _folder;
         if (profile == null || folder == null) return null;
         final read = await background(_importJob(profile, folder, bundle));
+        // A day deleted earlier and brought back is the profile's again.
+        _deleted.removeAll(read.added);
         if (read.added.isEmpty) return read;
         var result = read;
         try {

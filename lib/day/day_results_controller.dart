@@ -464,6 +464,10 @@ final class DayResultsController extends ChangeNotifier {
     return (_fusionsSettled ??= Completer<void>()).future;
   }
 
+  /// Whether no alternative recording is being aligned, fused or saved
+  /// after: nothing of the day's own writes its document by itself.
+  bool get fusionsIdle => _fusionsIdle;
+
   bool get _fusionsIdle =>
       _fusionPending.isEmpty &&
       _fusionUpdating.isEmpty &&
@@ -1368,6 +1372,10 @@ final class DayResultsController extends ChangeNotifier {
   /// stay in the document when it is saved.
   final List<MissingRecording> missing;
   final DocumentWriter _writer;
+
+  /// What saves the day's document: for a document the page writes itself,
+  /// such as the day without a session it removed.
+  DocumentWriter get writer => _writer;
   String _name;
   String? _documentPath;
   Map<String, Object?>? _document;
@@ -1870,6 +1878,10 @@ final class DayResultsController extends ChangeNotifier {
         for (final recording in missing) recording.runId,
       },
       runCount: _runs.length + missing.length,
+      sessionNames: {
+        for (final named in _runs) named.name,
+        for (final recording in missing) recording.name,
+      },
       rowCount: _analysis.rows.length,
       sameDayAs: sameDayAs,
       // The recordings the user made the same run as one of the sessions.
@@ -1898,6 +1910,7 @@ final class DayResultsController extends ChangeNotifier {
           paths: request.paths,
           runIds: request.runIds,
           runCount: request.runCount,
+          sessionNames: request.sessionNames,
           rowCount: request.rowCount,
           sameDayAs: request.sameDayAs,
           alternatives: {

@@ -6098,4 +6098,114 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get summaryOnlySession => 'Brak innej sesji do porównania';
+
+  @override
+  String get removeSession => 'Usuń sesję';
+
+  @override
+  String get removeSessionMenu => 'Usuń sesję…';
+
+  @override
+  String get removeSessionChoose => 'Którą sesję usunąć?';
+
+  @override
+  String removeSessionTitle(String session) {
+    return 'Usunąć z dnia: $session?';
+  }
+
+  @override
+  String get removeSessionBody =>
+      'Jej okrążenia znikną z dnia: najlepsze okrążenie, teoretyczny czas okrążenia, trener i Twój profil zostaną przeliczone bez nich. Sam plik zapisu nie zostanie usunięty.';
+
+  @override
+  String get removeSessionConfirm => 'Usuń';
+
+  @override
+  String get removeSessionLast =>
+      'Dzień musi mieć co najmniej jedną sesję. Aby usunąć cały dzień, usuń go w bibliotece.';
+
+  @override
+  String get removeSessionBusy =>
+      'Poczekaj, aż dzień skończy zapisywanie lub pracę nad zapisami, i spróbuj ponownie.';
+
+  @override
+  String get removeSessionNotSaved =>
+      'Nie udało się zapisać dnia, więc sesja nie została usunięta.';
+
+  @override
+  String get removeSessionChangedMeanwhile =>
+      'Dzień w międzyczasie się zmienił, więc sesja nie została usunięta. Spróbuj ponownie.';
+
+  @override
+  String removeSessionFailed(String error) {
+    return 'Sesja nie została usunięta: $error';
+  }
+
+  @override
+  String sessionRemoved(String session) {
+    return 'Usunięto z dnia: $session.';
+  }
+
+  @override
+  String get sessionRemovedUndo => 'Cofnij';
+
+  @override
+  String sessionRestored(String session) {
+    return 'Przywrócono do dnia: $session.';
+  }
+
+  @override
+  String get sessionRestoreRefused =>
+      'Dzień zmienił się od tego czasu, więc nie można przywrócić sesji.';
+
+  @override
+  String get libraryDayActions => 'Opcje dnia';
+
+  @override
+  String get libraryDeleteDay => 'Usuń dzień';
+
+  @override
+  String libraryDeleteDayTitle(String day) {
+    return 'Usunąć dzień „$day”?';
+  }
+
+  @override
+  String libraryDeleteDayBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Dzień i jego $count sesji znikną z profilu, a zapisany plik dnia zostanie usunięty. Kopie zapisów zrobione dla niego przez aplikację też zostaną usunięte; Twoje własne pliki zapisów zostaną tam, gdzie są. Tego nie można cofnąć.',
+      many:
+          'Dzień i jego $count sesji znikną z profilu, a zapisany plik dnia zostanie usunięty. Kopie zapisów zrobione dla niego przez aplikację też zostaną usunięte; Twoje własne pliki zapisów zostaną tam, gdzie są. Tego nie można cofnąć.',
+      few:
+          'Dzień i jego $count sesje znikną z profilu, a zapisany plik dnia zostanie usunięty. Kopie zapisów zrobione dla niego przez aplikację też zostaną usunięte; Twoje własne pliki zapisów zostaną tam, gdzie są. Tego nie można cofnąć.',
+      one: 'Dzień i jego sesja znikną z profilu, a zapisany plik dnia zostanie usunięty. Kopie zapisów zrobione dla niego przez aplikację też zostaną usunięte; Twoje własne pliki zapisów zostaną tam, gdzie są. Tego nie można cofnąć.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryDeleteConfirm => 'Usuń';
+
+  @override
+  String libraryDayDeleted(String day) {
+    return 'Usunięto: $day.';
+  }
+
+  @override
+  String libraryDayDeleteFailed(String error) {
+    return 'Dzień nie został usunięty: $error';
+  }
+
+  @override
+  String get removeSessionCorners =>
+      'Jeśli zakręty dnia zostały wyznaczone w tej sesji, zostaną wyznaczone ponownie na najlepszym pozostałym okrążeniu, a nadane im nazwy przepadną.';
+
+  @override
+  String get removeSessionNothingLeft =>
+      'Zapisów żadnej z pozostałych sesji nie da się otworzyć, więc dzień nie miałby nic do pokazania. Sesja nie została usunięta.';
+
+  @override
+  String get libraryDeleteDayOpen => 'Najpierw zamknij dzień, potem go usuń.';
 }

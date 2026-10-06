@@ -5979,4 +5979,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryOnlySession => 'No other session to compare with';
+
+  @override
+  String get removeSession => 'Remove session';
+
+  @override
+  String get removeSessionMenu => 'Remove a session…';
+
+  @override
+  String get removeSessionChoose => 'Remove which session?';
+
+  @override
+  String removeSessionTitle(String session) {
+    return 'Remove $session?';
+  }
+
+  @override
+  String get removeSessionBody =>
+      'Its laps leave the day: the best lap, the theoretical best, the coach and your profile are worked out again without them. The recording file itself is not deleted.';
+
+  @override
+  String get removeSessionConfirm => 'Remove';
+
+  @override
+  String get removeSessionLast =>
+      'A day keeps at least one session. To remove the whole day, delete it in the Library.';
+
+  @override
+  String get removeSessionBusy =>
+      'Wait until the day has finished saving or working on its recordings, then try again.';
+
+  @override
+  String get removeSessionNotSaved =>
+      'The day could not be saved, so the session was not removed.';
+
+  @override
+  String get removeSessionChangedMeanwhile =>
+      'The day changed meanwhile, so the session was not removed. Try again.';
+
+  @override
+  String removeSessionFailed(String error) {
+    return 'The session was not removed: $error';
+  }
+
+  @override
+  String sessionRemoved(String session) {
+    return '$session removed from the day.';
+  }
+
+  @override
+  String get sessionRemovedUndo => 'Undo';
+
+  @override
+  String sessionRestored(String session) {
+    return '$session is back in the day.';
+  }
+
+  @override
+  String get sessionRestoreRefused =>
+      'The day changed since, so the session cannot be put back.';
+
+  @override
+  String get libraryDayActions => 'Day actions';
+
+  @override
+  String get libraryDeleteDay => 'Delete day';
+
+  @override
+  String libraryDeleteDayTitle(String day) {
+    return 'Delete $day?';
+  }
+
+  @override
+  String libraryDeleteDayBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The day and its $count sessions leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.',
+      one: 'The day and its session leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryDeleteConfirm => 'Delete';
+
+  @override
+  String libraryDayDeleted(String day) {
+    return '$day deleted.';
+  }
+
+  @override
+  String libraryDayDeleteFailed(String error) {
+    return 'The day was not deleted: $error';
+  }
+
+  @override
+  String get removeSessionCorners =>
+      'If the day\'s corners were measured on this session, they are measured again on the best lap left, and names you gave them are lost.';
+
+  @override
+  String get removeSessionNothingLeft =>
+      'None of the other sessions\' recordings can be opened, so the day would have nothing to show. The session was not removed.';
+
+  @override
+  String get libraryDeleteDayOpen => 'Close the day first, then delete it.';
 }
