@@ -6403,4 +6403,16 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get briefingLastLap => 'Ostatnie okrążenie';
+
+  @override
+  String get briefingDayBest => 'Najlepsze dnia';
+
+  @override
+  String get briefingDelta => 'Do najlepszego';
+
+  @override
+  String get briefingCar => 'Auto';
 }

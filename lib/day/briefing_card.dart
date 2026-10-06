@@ -3,7 +3,10 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'channel_cards.dart'
+    show channelLabelIn, channelReasonText, channelValueText;
 import 'next_session_card.dart' show CoachText, coachSpeedLabel;
+import 'session_summary_card.dart' show carWatchLines;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// Before the next session, in a few large lines on a page of its own
@@ -26,6 +29,9 @@ class BriefingCard extends StatelessWidget {
     this.coachError = '',
     this.speedsConverted = false,
     required this.goals,
+    this.channels,
+    this.lastLap,
+    this.bestLap,
   });
 
   /// The session the briefing comes from (the latest) and its name.
@@ -50,6 +56,13 @@ class BriefingCard extends StatelessWidget {
 
   /// The driver's goals for the next session, set after [session].
   final RunGoals goals;
+
+  /// The day's channel summaries, null while they are worked out.
+  final DayChannelSummaries? channels;
+
+  /// The session's last ranked lap on the circuit shown, and the best of
+  /// the day there (trackside, FET-234); null when there is none.
+  final DayLapRow? lastLap, bestLap;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +108,7 @@ class BriefingCard extends StatelessWidget {
       runId,
       progression: progression,
       sections: ready ? sections : null,
+      channels: channels,
     );
     final gap = summary?.biggestGap;
     final String chance;
@@ -154,6 +168,7 @@ class BriefingCard extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            _laps(context),
             line(
               'briefingFocus',
               changes.isEmpty && keep != null && coached
@@ -162,11 +177,12 @@ class BriefingCard extends StatelessWidget {
               focus,
               measured,
             ),
-            if (changes.length > 1)
+            // The coach's other points, up to three in all.
+            for (var i = 1; i < changes.length && i < 3; i++)
               line(
-                'briefingThen',
+                i == 1 ? 'briefingThen' : 'briefingThen$i',
                 l10n.coachLaterLabel,
-                _title(l10n, changes[1]),
+                _title(l10n, changes[i]),
               ),
             line(
               'briefingGoals',
@@ -184,10 +200,128 @@ class BriefingCard extends StatelessWidget {
                         ),
                     ].join('\n'),
             ),
+            ?_car(context, summary, line),
             line('briefingChance', l10n.briefingChance, chance),
           ],
         ),
       ),
+    );
+  }
+
+  /// The last ranked lap, the best of the day and the gap, in digits to be
+  /// read from a few steps away.
+  Widget _laps(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final last = lastLap, best = bestLap;
+    if (last == null) {
+      return Padding(
+        key: const ValueKey('briefingLaps'),
+        padding: const EdgeInsets.only(top: 16),
+        child: Text(
+          l10n.summaryNotShown(l10n.session(session)),
+          style: theme.textTheme.titleMedium,
+        ),
+      );
+    }
+    final digits = theme.textTheme.displaySmall?.copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    Widget tile(String key, String label, String value, String? detail) =>
+        Column(
+          key: ValueKey(key),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Text(value, style: digits),
+            if (detail != null) Text(detail, style: theme.textTheme.bodyMedium),
+          ],
+        );
+    return Padding(
+      key: const ValueKey('briefingLaps'),
+      padding: const EdgeInsets.only(top: 16),
+      child: Wrap(
+        spacing: 32,
+        runSpacing: 12,
+        children: [
+          tile(
+            'briefingLastLap',
+            l10n.briefingLastLap,
+            displayTime(last.durationSeconds),
+            l10n.lapName(l10n.session(last.runName), last.lapNumber),
+          ),
+          if (best != null) ...[
+            tile(
+              'briefingBestLap',
+              l10n.briefingDayBest,
+              displayTime(best.durationSeconds),
+              l10n.lapName(l10n.session(best.runName), best.lapNumber),
+            ),
+            tile(
+              'briefingDelta',
+              l10n.briefingDelta,
+              displayDelta(last.durationSeconds - best.durationSeconds),
+              null,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// The hottest temperatures and what the car did over the last laps, as
+  /// the session summary shows them; null when the day records neither.
+  Widget? _car(
+    BuildContext context,
+    SessionSummary? summary,
+    Widget Function(String key, String label, String value, [String? detail])
+    line,
+  ) {
+    final l10n = context.l10n;
+    final channels = this.channels;
+    if (channels == null) {
+      return line('briefingCar', l10n.briefingCar, l10n.summaryWorking);
+    }
+    if (channels.error.isNotEmpty) {
+      return line(
+        'briefingCar',
+        l10n.briefingCar,
+        channelReasonText(l10n, channels.error),
+      );
+    }
+    if (summary == null) return null;
+    final hottest = [
+      for (final t in summary.temperatures)
+        l10n.summaryTemperature(
+          channelLabelIn(context, t.channel),
+          channelValueText(t.maximum, t.unit),
+        ),
+    ].join(' · ');
+    final watch = summary.carWatch;
+    final lines = watch == null
+        ? const <String>[]
+        : carWatchLines(context, watch);
+    if (hottest.isEmpty && lines.isEmpty) {
+      return summary.temperatureReason.isEmpty
+          ? null
+          : line(
+              'briefingCar',
+              l10n.briefingCar,
+              channelReasonText(l10n, summary.temperatureReason),
+            );
+    }
+    final more = hottest.isEmpty ? lines.skip(1).toList() : lines;
+    return line(
+      'briefingCar',
+      l10n.briefingCar,
+      hottest.isEmpty ? lines.first : hottest,
+      more.isEmpty ? null : more.join('\n'),
     );
   }
 

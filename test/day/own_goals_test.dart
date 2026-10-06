@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/briefing_card.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/format.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
@@ -586,6 +587,9 @@ void main() {
       bool keepCoach = true,
       bool speedsConverted = false,
       RunGoals? goals,
+      DayChannelSummaries? channels,
+      DayLapRow? lastLap,
+      DayLapRow? bestLap,
     }) async {
       final best = controller.theoreticalBest!;
       await tester.pumpWidget(
@@ -611,6 +615,9 @@ void main() {
                   coachError: coachError,
                   speedsConverted: speedsConverted,
                   goals: goals ?? RunGoals(),
+                  channels: channels,
+                  lastLap: lastLap,
+                  bestLap: bestLap,
                 ),
               ],
             ),
@@ -707,6 +714,101 @@ void main() {
       expect(focus, contains('—'));
       expect(focus, isNot(contains('45.8')));
       expect(focus, contains('Speeds are not shown'));
+    });
+
+    testWidgets('trackside: the last lap, the best of the day and the gap '
+        'in large digits, or why not', (tester) async {
+      controller = await show(tester);
+      final laps = controller.comparisonCandidates();
+      final last = laps.lastWhere((row) => row.runId == controller.latestRunId);
+      final best = laps.reduce(
+        (a, b) => a.durationSeconds <= b.durationSeconds ? a : b,
+      );
+      await card(tester, lastLap: last, bestLap: best);
+      String tile(String key) => line(tester, key);
+      expect(
+        tile('briefingLastLap'),
+        'Last lap | ${displayTime(last.durationSeconds)} | '
+        '${last.runName} · LAP ${last.lapNumber}',
+      );
+      expect(
+        tile('briefingBestLap'),
+        'Best of the day | ${displayTime(best.durationSeconds)} | '
+        '${best.runName} · LAP ${best.lapNumber}',
+      );
+      expect(
+        tile('briefingDelta'),
+        'To the best | '
+        '${displayDelta(last.durationSeconds - best.durationSeconds)}',
+      );
+      await card(tester);
+      expect(
+        line(tester, 'briefingLaps'),
+        '${controller.latestRunName} has no timed laps on the circuit shown.',
+      );
+    });
+
+    testWidgets('trackside: the car, hottest and over the last laps', (
+      tester,
+    ) async {
+      controller = await show(tester);
+      await card(tester);
+      expect(value(tester, 'briefingCar'), 'Working…');
+      await card(
+        tester,
+        channels: DayChannelSummaries(
+          error: 'Channel summaries were cancelled.',
+        ),
+      );
+      expect(find.byKey(const ValueKey('briefingCar')), findsOneWidget);
+      // Nothing recorded on the day: no car line.
+      await card(tester, channels: DayChannelSummaries());
+      expect(find.byKey(const ValueKey('briefingCar')), findsNothing);
+      final rows = [
+        for (final row in controller.analysis.rows)
+          if (row.runId == controller.latestRunId) row,
+      ];
+      await card(
+        tester,
+        channels: DayChannelSummaries(
+          runs: [
+            RunChannelSummaries(
+              runId: controller.latestRunId,
+              runName: controller.latestRunName,
+              channels: [
+                RunChannel(
+                  channel: 'engine_oil_temp-obd',
+                  unit: 'C',
+                  run: const ChannelSummary(maximum: 128, valid: true),
+                  sections: [
+                    for (final row in rows)
+                      ChannelSection(
+                        row: row,
+                        summary: ChannelSummary(
+                          maximum: 100.0 + 10 * row.lapNumber,
+                          valid: true,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              laps: [
+                for (final row in rows)
+                  SectionAcceleration(
+                    row: row,
+                    acceleration: const LapAcceleration(),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+      // The synthetic session has too few ranked laps to read a rise, and
+      // says so as the summary does.
+      expect(
+        line(tester, 'briefingCar'),
+        'Car | Oil 128\u00a0°C | Temperatures: needs 3 ranked laps',
+      );
     });
   });
 

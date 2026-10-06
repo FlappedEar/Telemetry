@@ -2291,6 +2291,15 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// Before the next session in a few lines ([BriefingCard]).
   Widget _briefing() {
     final result = _controller.theoreticalBest;
+    // The latest session's last ranked lap on the circuit shown.
+    final last = _controller
+        .comparisonCandidates()
+        .where((row) => row.runId == _controller.latestRunId)
+        .fold<DayLapRow?>(
+          null,
+          (latest, row) =>
+              latest == null || row.start > latest.start ? row : latest,
+        );
     return BriefingCard(
       runId: _controller.latestRunId,
       session: _controller.latestRunName,
@@ -2302,6 +2311,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
       coachError: _controller.coachError,
       speedsConverted: _controller.coachSpeedsConverted,
       goals: _ownGoals(_controller.latestRunId),
+      channels: _controller.channelSummaries,
+      lastLap: last,
+      bestLap: last == null
+          ? null
+          : dayBestComparisonLap(_controller.analysis, last),
     );
   }
 

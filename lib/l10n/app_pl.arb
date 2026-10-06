@@ -1503,5 +1503,9 @@
   "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatury: brak zapisu na ostatnim sklasyfikowanym okrążeniu} few{Temperatury: brak zapisu na którymś z ostatnich {count} sklasyfikowanych okrążeń} many{Temperatury: brak zapisu na którymś z ostatnich {count} sklasyfikowanych okrążeń} other{Temperatury: brak zapisu na którymś z ostatnich {count} sklasyfikowanych okrążeń}}",
   "summaryCarAccelerationMissing": "Mocne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu",
   "summaryCarFallNote": "Ruch na torze i inna linia też je obniżają.",
-  "summaryCarAccelerationOnLaps": "{count, plural, =1{Mocne przyspieszenie: odczyt na 1 z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} few{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} many{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} other{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}}}"
+  "summaryCarAccelerationOnLaps": "{count, plural, =1{Mocne przyspieszenie: odczyt na 1 z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} few{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} many{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} other{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}}}",
+  "briefingLastLap": "Ostatnie okrążenie",
+  "briefingDayBest": "Najlepsze dnia",
+  "briefingDelta": "Do najlepszego",
+  "briefingCar": "Auto"
 }

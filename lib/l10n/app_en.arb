@@ -8353,5 +8353,13 @@
   "summaryCarFallNote": "Traffic and a different line lower it too.",
   "@summaryCarFallNote": {"description": "Under a fall in strong acceleration: it is an observation, not a diagnosis."},
   "summaryCarAccelerationOnLaps": "{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}",
-  "@summaryCarAccelerationOnLaps": {"description": "Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).", "placeholders": {"count": {"type": "int"}, "ranked": {"type": "int"}, "needed": {"type": "int"}}}
+  "@summaryCarAccelerationOnLaps": {"description": "Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).", "placeholders": {"count": {"type": "int"}, "ranked": {"type": "int"}, "needed": {"type": "int"}}},
+  "briefingLastLap": "Last lap",
+  "@briefingLastLap": {"description": "Trackside: the latest session's last ranked lap time, in large digits."},
+  "briefingDayBest": "Best of the day",
+  "@briefingDayBest": {"description": "Trackside: the best lap of the day on the circuit shown."},
+  "briefingDelta": "To the best",
+  "@briefingDelta": {"description": "Trackside: the last lap minus the best of the day (positive is slower)."},
+  "briefingCar": "Car",
+  "@briefingCar": {"description": "Trackside: the hottest temperatures and what the car did over the last laps."}
 }
