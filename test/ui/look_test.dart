@@ -55,6 +55,10 @@ void main() {
     tester,
   ) async {
     addTearDown(() => appLookSetting.value = AppLook.dark);
+    // Tall enough for the Look section below Updates.
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       const TelemetryApp(home: Scaffold(body: SettingsDialog())),
     );
