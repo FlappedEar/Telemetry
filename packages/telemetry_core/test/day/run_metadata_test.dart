@@ -310,7 +310,8 @@ void main() {
       };
       expect(applyRunMetadata(run, const RunMetadata(name: 'Session 1')), isTrue);
       expect(run.containsKey('setup'), isFalse);
-      // A unit with no pressure is not kept.
+      // A unit with no pressure stays while the setup is not edited, and
+      // goes once it is.
       final unitOnly = <String, Object?>{
         'name': 'Session 1',
         'setup': {'version': 'session-setup-v1', 'pressureUnit': 'bar', 'tyre': 'Rain'},
@@ -323,9 +324,19 @@ void main() {
             setup: RunSetup(pressureUnit: PressureUnit.bar, tyre: 'Rain'),
           ),
         ),
+        isFalse,
+      );
+      expect(
+        applyRunMetadata(
+          unitOnly,
+          const RunMetadata(
+            name: 'Session 1',
+            setup: RunSetup(pressureUnit: PressureUnit.bar, tyre: 'Wet'),
+          ),
+        ),
         isTrue,
       );
-      expect(unitOnly['setup'], {'version': 'session-setup-v1', 'tyre': 'Rain'});
+      expect(unitOnly['setup'], {'version': 'session-setup-v1', 'tyre': 'Wet'});
       final fresh = <String, Object?>{'name': 'Session 1'};
       expect(
         applyRunMetadata(
@@ -338,6 +349,26 @@ void main() {
         isFalse,
       );
       expect(fresh.containsKey('setup'), isFalse);
+    });
+
+    test('editing only the notes leaves the setup as stored', () {
+      final setup = {
+        'version': 'session-setup-v1',
+        'pressureUnit': 'bar',
+        // Not readable in bar: read as not entered, and kept.
+        'coldPressure': {'fl': 9},
+      };
+      final run = <String, Object?>{'name': 'Session 1', 'setup': setup};
+      final before = jsonEncode(run);
+      final read = RunMetadata.fromRun(run);
+      expect(read.setup, const RunSetup(pressureUnit: PressureUnit.bar));
+      expect(
+        applyRunMetadata(run, RunMetadata(name: 'Session 1', notes: 'Wet', setup: read.setup)),
+        isTrue,
+      );
+      expect(identical(run['setup'], setup), isTrue);
+      expect(jsonEncode(run['setup']), jsonEncode(jsonDecode(before)['setup']));
+      expect(run['notes'], 'Wet');
     });
 
     test('an unchanged setup is left byte for byte', () {

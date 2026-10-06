@@ -174,7 +174,11 @@ decimals. `tyre` is at most 160 characters without NUL. Reading is lenient: a
 value that is missing, of another type or out of range reads as not entered
 and never makes the document invalid. Writing changes only the keys the user
 edited, so unknown keys (in `setup` and in the pressure objects) and stored
-values read as not entered stay as they are; an unchanged setup is left byte
-for byte, and a run without one gains no key. A setup of another `version` is
+values read as not entered stay as they are; a setup passed back as read
+(only other details edited) is left byte for byte, and a run without one
+gains no key. When the unit changes, or goes with the last pressure, every
+stored pressure is replaced, so a value unreadable in the old unit never
+comes back in the new one; a setup left empty is removed, keys this app
+does not know apart. A setup of another `version` is
 shown read-only and never rewritten. The model and its rules are in
 `packages/telemetry_core/lib/src/day/run_setup.dart`.

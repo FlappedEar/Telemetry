@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -265,11 +267,16 @@ class SetupNumberFormatter extends TextInputFormatter {
 /// The text fields of a session's setup and the unit chosen.
 class _SetupFields {
   _SetupFields(RunSetup stored, {PressureUnit? defaultUnit})
-    : unit = stored.pressureUnit ?? defaultUnit ?? PressureUnit.bar {
+    : unit = stored.pressureUnit ?? defaultUnit ?? PressureUnit.bar,
+      _storedUnit = stored.pressureUnit {
     fill(stored, keepUnit: stored.pressureUnit == null);
   }
 
   PressureUnit unit;
+
+  // The unit as read: passed back while no pressure is entered, so a setup
+  // whose details were not touched is left as it is stored.
+  final PressureUnit? _storedUnit;
   final cold = [for (final _ in setupWheels) TextEditingController()];
   final hot = [for (final _ in setupWheels) TextEditingController()];
   final tyre = TextEditingController();
@@ -309,8 +316,9 @@ class _SetupFields {
   bool get pressuresInvalid => [...cold, ...hot].any(pressureInvalid);
 
   /// The setup the fields hold, or null while one of them cannot be
-  /// stored. The unit is kept only with a pressure, so a session without
-  /// pressures has none.
+  /// stored. Without a pressure the unit is the one read, so an untouched
+  /// setup is left as stored; an edited one then loses it
+  /// ([applyRunSetup]).
   RunSetup? get setup {
     if (pressuresInvalid || fuelInvalid || !validTyre(tyre.text.trim())) {
       return null;
@@ -323,7 +331,7 @@ class _SetupFields {
     final hotValues = WheelPressures.of([for (final c in hot) number(c)]);
     final pressures = !coldValues.isEmpty || !hotValues.isEmpty;
     return RunSetup(
-      pressureUnit: pressures ? unit : null,
+      pressureUnit: pressures ? unit : _storedUnit,
       cold: coldValues,
       hot: hotValues,
       tyre: tyre.text.trim(),
@@ -494,7 +502,18 @@ class __SessionSetupSectionState extends State<_SessionSetupSection> {
       maxLines: 1,
     )..layout();
     final fieldWidth = digits.width + 16;
-    final labelWidth = 80 * MediaQuery.textScalerOf(context).scale(1);
+    // And how wide the row labels beside the table are.
+    var labelWidth = 0.0;
+    for (final label in [l10n.sessionSetupCold, l10n.sessionSetupHot]) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: small),
+        textScaler: MediaQuery.textScalerOf(context),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      labelWidth = math.max(labelWidth, painter.width + 8);
+      painter.dispose();
+    }
     digits.dispose();
     return LayoutBuilder(
       builder: (context, constraints) {

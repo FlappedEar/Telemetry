@@ -180,8 +180,8 @@ final class RunSetup {
   }
 
   // As written: the tyre trimmed, and no unit without a pressure.
-  RunSetup _normalized() => RunSetup(
-    pressureUnit: hasPressures ? pressureUnit : null,
+  RunSetup _normalized({bool keepUnit = false}) => RunSetup(
+    pressureUnit: hasPressures || keepUnit ? pressureUnit : null,
     cold: cold,
     hot: hot,
     tyre: tyre.trim(),
@@ -246,8 +246,13 @@ String _number(double value) => value == value.roundToDouble() ? '${value.round(
 /// whether [run] changed. [setup] must have no [runSetupProblem].
 bool applyRunSetup(Map<String, Object?> run, RunSetup setup) {
   final storedSetup = RunSetup.fromJson(run[runSetupKey]);
+  if (storedSetup.readOnly || setup.readOnly) return false;
+  // The setup as it was read, passed back with other details edited, is
+  // left alone: a unit without a readable pressure stays, and so do
+  // values read as not entered.
+  if (storedSetup == setup._normalized(keepUnit: true)) return false;
   final next = setup._normalized();
-  if (storedSetup.readOnly || next.readOnly || storedSetup == next) return false;
+  if (storedSetup == next) return false;
   _write(run, next, storedSetup);
   final object = run[runSetupKey]! as Map<String, Object?>;
   if (object.keys.every((key) => key == 'version')) run.remove(runSetupKey);

@@ -567,6 +567,68 @@ void main() {
     expect(controller.runMetadata(second).setup.cold, previous.cold);
   });
 
+  testWidgets('on a Polish desktop the pressure fields fit "28.25"', (
+    tester,
+  ) async {
+    addTearDown(() => Intl.defaultLocale = null);
+    final outcome = importDay();
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: outcome.analysis!,
+      writer: (path, document) async {},
+    );
+    final first = outcome.runs.first.run.id;
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        locale: const Locale('pl'),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) =>
+                    SessionDetailsDialog(controller: controller, runId: first),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('psi'));
+    await tester.pump();
+    for (final row in ['cold', 'hot']) {
+      for (final wheel in setupWheels) {
+        final field = setupField(row, wheel);
+        await tester.enterText(field, '28.25');
+        await tester.pump();
+        final text = find.descendant(
+          of: field,
+          matching: find.byType(EditableText),
+        );
+        final editable = tester.widget<EditableText>(text);
+        final painter = TextPainter(
+          text: TextSpan(text: '28.25', style: editable.style),
+          textScaler:
+              editable.textScaler ??
+              MediaQuery.textScalerOf(tester.element(text)),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        expect(
+          tester.getSize(text).width,
+          greaterThanOrEqualTo(painter.width),
+          reason: '$row $wheel',
+        );
+        painter.dispose();
+      }
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a setup of a newer version is shown and passed back as it is', (
     tester,
   ) async {
