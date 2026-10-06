@@ -811,8 +811,17 @@ void main() {
     );
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('saveCircuitName')));
-    await tester.pump();
-    // No file is written here (no folder), so the name dialog closes at once.
+    // Saving finishes outside the test's clock (the list was read there).
+    for (
+      var i = 0;
+      i < 50 && find.text('Circuit name').evaluate().isNotEmpty;
+      ++i
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
     expect(find.text('Circuit name'), findsNothing);
     expect(find.text('Circuit: Home ring'), findsOneWidget);
