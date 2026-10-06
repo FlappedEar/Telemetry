@@ -1443,5 +1443,22 @@
   "summaryCoachFailed": "Trener nie mógł przeanalizować sesji",
   "summaryGapNone": "W granicach {seconds} s od najszybszego typowego czasu na każdym zmierzonym odcinku",
   "summaryGapNeedsLaps": "Potrzeba 3 przejazdów odcinka",
-  "summaryOnlySession": "Brak innej sesji do porównania"
+  "summaryOnlySession": "Brak innej sesji do porównania",
+  "ownGoalsTitle": "Twoje cele na następną sesję",
+  "ownGoalsIntro": "Sprawdzane względem tej sesji po dodaniu następnej.",
+  "ownGoalsNone": "Ustaw do {count} rzeczy do poprawy, każdą w jednym zakręcie. Następna sesja zostanie porównana z tą.",
+  "ownGoalsReadOnly": "Zapisane w formie, której ta wersja aplikacji nie edytuje, więc nie są tu zmieniane.",
+  "ownGoalsNeedCorners": "Cele można ustawić, gdy zakręty dnia są gotowe.",
+  "ownGoalsAdd": "Dodaj cel",
+  "ownGoalsRemove": "Usuń cel",
+  "ownGoalsCorner": "Zakręt",
+  "ownGoalsChange": "Co poprawić",
+  "ownGoalsTaken": "Ten cel jest już ustawiony.",
+  "ownGoalsSave": "Dodaj",
+  "summaryOwnGoal": "Twój cel: {goal}",
+  "ownGoalsNotSaved": "Nie udało się zapisać celów.",
+  "ownGoalsNeedLaps": "Cele wymagają, by {session} miała okrążenia wśród porównywanych.",
+  "summaryOwnGoalNoLaps": "Nie zmierzono: {session} i ta sesja potrzebują okrążeń wśród porównywanych",
+  "summaryOwnGoalOtherGroup": "Nie zmierzono: ustawiony dla innych porównywanych okrążeń",
+  "ownGoalsOtherGroup": "Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe."
 }

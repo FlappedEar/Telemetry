@@ -182,3 +182,34 @@ comes back in the new one; a setup left empty is removed, keys this app
 does not know apart. A setup of another `version` is
 shown read-only and never rewritten. The model and its rules are in
 `packages/telemetry_core/lib/src/day/run_setup.dart`.
+
+## Session goals (Telemetry only)
+
+Telemetry adds an optional `nextGoals` object to a run (FET-218): the
+driver's own goals for the session after it, set on the Next session card
+and checked once that session is added. Runs are open objects, so Overlays
+keeps it unchanged without showing it. `session-goals-v1` holds at most
+three goals, each a change at one corner as the corner lay when the goal
+was set:
+
+```json
+{"version": "session-goals-v1", "groupId": "compatibility-v1:…", "goals": [
+  {"kind": "excessiveCoasting", "segment": "Corner 3",
+   "startProgressMeters": 812.4, "endProgressMeters": 905.0}]}
+```
+
+`kind` is one of the coach's changes: `earlyLift`, `excessiveCoasting`,
+`lowMinimumSpeed`, `lateThrottle`, `earlyThrottle` or
+`inconsistentBraking`. The positions are metres on the shared axis of the
+compared laps `groupId` names; the range ends before it starts for a corner
+across the start line. A goal is checked at the day's current corner drawn
+the same, else at the one overlapping that range most by at least half of
+the shorter of the two (a corner across the start line only while drawn the
+same); goals of another group are not measured. Writing replaces the goal
+list and `groupId` and keeps other keys of the object; no goals left
+removes the object unless it holds keys this app does not know. Goals of
+another `version`, or stored in a form this app would not write itself (not
+an object, a goal it cannot read or with keys it does not know, more than
+three, one there twice or without a name), are shown as far as they can be
+read and never rewritten, so nothing stored is lost. The model and its rules
+are in `packages/telemetry_core/lib/src/day/run_goals.dart`.

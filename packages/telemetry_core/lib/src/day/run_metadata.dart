@@ -6,6 +6,7 @@
 // reads the same in the other.
 import 'package:fetproject/fetproject.dart' as fet;
 
+import 'run_goals.dart';
 import 'run_setup.dart';
 
 /// The longest session or day name, in UTF-16 code units.
@@ -26,6 +27,7 @@ final class RunMetadata {
     this.conditions = '',
     this.setupChanges = '',
     this.setup = const RunSetup(),
+    this.goals,
   });
 
   /// [run]'s metadata as a document stores it (`event.runs[]`); a missing or
@@ -38,6 +40,7 @@ final class RunMetadata {
       conditions: text(run['conditions']),
       setupChanges: text(run['setupChanges']),
       setup: RunSetup.fromJson(run[runSetupKey]),
+      goals: run.containsKey(runGoalsKey) ? RunGoals.fromJson(run[runGoalsKey]) : null,
     );
   }
 
@@ -48,6 +51,21 @@ final class RunMetadata {
 
   /// The structured setup (`setup`), which only Telemetry shows.
   final RunSetup setup;
+
+  /// The driver's goals for the session after it (`nextGoals`, FET-218),
+  /// which only Telemetry shows; null when none are stored, and when
+  /// written, null leaves the stored goals as they are.
+  final RunGoals? goals;
+
+  /// This metadata with [goals] instead.
+  RunMetadata withGoals(RunGoals goals) => RunMetadata(
+    name: name,
+    notes: notes,
+    conditions: conditions,
+    setupChanges: setupChanges,
+    setup: setup,
+    goals: goals,
+  );
 
   String _text(String key) => switch (key) {
     'notes' => notes,
@@ -62,10 +80,11 @@ final class RunMetadata {
       other.notes == notes &&
       other.conditions == conditions &&
       other.setupChanges == setupChanges &&
-      other.setup == setup;
+      other.setup == setup &&
+      other.goals == goals;
 
   @override
-  int get hashCode => Object.hash(name, notes, conditions, setupChanges, setup);
+  int get hashCode => Object.hash(name, notes, conditions, setupChanges, setup, goals);
 }
 
 /// Why [metadata] cannot be saved, or null when it can: the name must not be
@@ -83,7 +102,8 @@ String? runMetadataProblem(RunMetadata metadata) {
     }
     if (text.contains('\u0000')) return 'A text contains a NUL character.';
   }
-  return runSetupProblem(metadata.setup);
+  return runSetupProblem(metadata.setup) ??
+      (metadata.goals == null ? null : runGoalsProblem(metadata.goals!));
 }
 
 /// Writes [metadata] into [run] (a document run) as Overlays does: the name
@@ -111,6 +131,7 @@ bool applyRunMetadata(Map<String, Object?> run, RunMetadata metadata) {
     changed = true;
   }
   if (applyRunSetup(run, metadata.setup)) changed = true;
+  if (metadata.goals case final goals? when applyRunGoals(run, goals)) changed = true;
   return changed;
 }
 

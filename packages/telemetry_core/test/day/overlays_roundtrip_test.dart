@@ -63,6 +63,21 @@ const setupFixture = {
   'futureSetup': {'kept': true},
 };
 
+/// A session's goals for the next one as Telemetry stores them, with a key
+/// it does not know.
+const goalsFixture = {
+  'version': 'session-goals-v1',
+  'goals': [
+    {
+      'kind': 'excessiveCoasting',
+      'segment': 'Corner 3',
+      'startProgressMeters': 812.5,
+      'endProgressMeters': 905.0,
+    },
+  ],
+  'futureGoals': {'kept': true},
+};
+
 /// Keys Overlays adds to a document Telemetry saved: its own defaults for
 /// settings Telemetry does not have. Everything else must match.
 const _overlaysDefaults = {'mapSettings', 'exportSettings'};
@@ -166,6 +181,8 @@ void main() {
       // Telemetry's structured setup (FET-188), with keys of a later version
       // in it and in a wheel object: Overlays keeps it without reading it.
       firstRun[runSetupKey] = setupFixture;
+      // And the driver's goals for the next session (FET-218).
+      firstRun[runGoalsKey] = goalsFixture;
       final source = _object((_object(firstRun['sources'])['telemetry']! as List).first);
       source['futureSourceField'] = [1, 2, 3];
       _object(source['reference'])['futureReferenceField'] = 'kept';
@@ -237,6 +254,8 @@ void main() {
       expect(againFirst[runSetupKey], setupFixture);
       expect(RunMetadata.fromRun(againFirst).setup, RunSetup.fromJson(setupFixture));
       expect(RunSetup.fromJson(setupFixture).pressureUnit, PressureUnit.psi);
+      expect(againFirst[runGoalsKey], goalsFixture);
+      expect(RunMetadata.fromRun(againFirst).goals!.goals.single.kind, CoachKind.excessiveCoasting);
       expect(jsonDifferences(telemetryView(again), afterOverlays, tolerance: 1e-9), isEmpty);
       final next = dayDocument(
         eventId: again.eventId,

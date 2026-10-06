@@ -419,9 +419,30 @@ final class DayCoach {
     this.speedsConverted = false,
     List<DayLapRow> slowLaps = const [],
     this.goal,
+    this.previousRunId = '',
+    this.speedUnit = 'km/h',
+    this.perMetrePerSecond = 3.6,
+    List<CoachCornerGoalValues> goalValues = const [],
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan),
-       slowLaps = List.unmodifiable(slowLaps);
+       slowLaps = List.unmodifiable(slowLaps),
+       goalValues = List.unmodifiable(goalValues);
+
+  /// The session before the one coached, among the group's laps; empty when
+  /// there is none. The driver's own goals for the session coached are
+  /// stored on it ([RunGoals]).
+  final String previousRunId;
+
+  /// The unit [goalValues]' minimum speeds are in, and how many of it make
+  /// one metre per second (see [coachGoalOutcome]).
+  final String speedUnit;
+  final double perMetrePerSecond;
+
+  /// Every corner's goal measures in the session coached and in
+  /// [previousRunId], slow laps left out; empty when there is no session
+  /// before. What the driver's own goals are checked against
+  /// ([checkSessionGoals]).
+  final List<CoachCornerGoalValues> goalValues;
 
   /// The session coached; empty when none could be.
   final String runId;
@@ -480,6 +501,34 @@ final class DayCoach {
     CoachReason.notInSession =>
       'Patterns seen earlier today do not repeat on most of this session\'s laps.',
   };
+}
+
+/// A goal's measure across one session's laps at a corner: the median of
+/// the lap values (the braking range, the share of laps picking up early)
+/// and how many laps had it.
+typedef CoachGoalValue = ({double value, int laps});
+
+/// One corner's goal measures, by the kind of change a goal asks for: in
+/// the session coached ([now]) and the session before ([before]). A kind
+/// is missing where fewer than two laps (three for the braking range) have
+/// the measure.
+final class CoachCornerGoalValues {
+  CoachCornerGoalValues({
+    required this.segmentId,
+    required this.name,
+    required this.startProgressMeters,
+    required this.endProgressMeters,
+    Map<CoachKind, CoachGoalValue> before = const {},
+    Map<CoachKind, CoachGoalValue> now = const {},
+  }) : before = Map.unmodifiable(before),
+       now = Map.unmodifiable(now);
+
+  final String segmentId;
+  final String name;
+
+  /// The corner on the lap's shared axis, metres.
+  final double startProgressMeters, endProgressMeters;
+  final Map<CoachKind, CoachGoalValue> before, now;
 }
 
 /// One lap through one corner, as the rules read it.
@@ -896,9 +945,21 @@ DayCoach dayCoach(
 }) {
   final passages = <String, List<_Passage>>{};
   final coach = _dayCoach(result, sessions, runId: runId, passages: passages, cancelled: cancelled);
-  if (coach.reason == CoachReason.noSegments || before == null) return coach;
-  final goal = _goalCheck(result, before, sessions, runId, passages, cancelled);
-  if (goal == null) return coach;
+  if (coach.reason == CoachReason.noSegments) return coach;
+  final goal = before == null
+      ? null
+      : _goalCheck(result, before, sessions, runId, passages, cancelled);
+  final laps = [for (final sectors in result.laps) sectors.lap];
+  final runs = <String>[];
+  for (final lap in laps) {
+    if (!runs.contains(lap.runId)) runs.add(lap.runId);
+  }
+  final at = runs.indexOf(runId);
+  final previous = at >= 1 ? runs[at - 1] : '';
+  final shown = _shownSpeed(result.corners);
+  final values = previous.isEmpty
+      ? const <CoachCornerGoalValues>[]
+      : _cornerGoalValues(result, laps, passages, previous, runId, shown);
   return DayCoach(
     runId: coach.runId,
     findings: coach.findings,
@@ -907,7 +968,54 @@ DayCoach dayCoach(
     speedsConverted: coach.speedsConverted,
     slowLaps: coach.slowLaps,
     goal: goal,
+    previousRunId: previous,
+    speedUnit: shown.unit,
+    perMetrePerSecond: shown.perMetrePerSecond,
+    goalValues: values,
   );
+}
+
+/// The kinds of change a driver can set as a goal: every corrective kind.
+const coachGoalKinds = [
+  CoachKind.earlyLift,
+  CoachKind.excessiveCoasting,
+  CoachKind.lowMinimumSpeed,
+  CoachKind.lateThrottle,
+  CoachKind.earlyThrottle,
+  CoachKind.inconsistentBraking,
+];
+
+/// Each corner's goal measures for [previous] and [coached], from
+/// [passages], slow laps left out, as the main focus is measured.
+List<CoachCornerGoalValues> _cornerGoalValues(
+  DayTheoreticalBest result,
+  List<DayLapRow> laps,
+  Map<String, List<_Passage>> passages,
+  String previous,
+  String coached,
+  _ShownSpeed shown,
+) {
+  final slow = {for (final lap in _slowLaps(laps)) lap.reference};
+  return [
+    for (final corner in result.corners)
+      () {
+        List<_Passage> of(String runId) => [
+          for (final p in passages[corner.segmentId] ?? const <_Passage>[])
+            if (p.lap.runId == runId && !slow.contains(p.lap.reference)) p,
+        ];
+        Map<CoachKind, CoachGoalValue> measure(List<_Passage> list) => {
+          for (final kind in coachGoalKinds) kind: ?_goalValue(kind, list, shown),
+        };
+        return CoachCornerGoalValues(
+          segmentId: corner.segmentId,
+          name: corner.name,
+          startProgressMeters: corner.startProgressMeters,
+          endProgressMeters: corner.endProgressMeters,
+          before: measure(of(previous)),
+          now: measure(of(coached)),
+        );
+      }(),
+  ];
 }
 
 /// One lap through one corner as the coach reads it, for a driver profile:
@@ -1364,7 +1472,7 @@ CoachGoalOutcome coachGoalOutcome(
 /// The goal's measure across [passages] (a session's laps at the goal's
 /// segment): the median of the lap values, or the braking range; null
 /// when fewer than two laps (three for the braking range) have it.
-({double value, int laps})? _goalValue(CoachKind kind, List<_Passage> passages, _ShownSpeed shown) {
+CoachGoalValue? _goalValue(CoachKind kind, List<_Passage> passages, _ShownSpeed shown) {
   double? read(_Passage p) => switch (kind) {
     CoachKind.earlyLift => p.lift,
     CoachKind.excessiveCoasting => p.coastSeconds,
