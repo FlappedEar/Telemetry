@@ -1398,22 +1398,22 @@ void main() {
       final consistency = skills['paceConsistency']!;
       expect(consistency.days, 3);
       expect(consistency.value, closeTo((0.8 + 2 + 4) / 3, 1e-9));
-      expect(consistency.level, 4);
+      expect(consistency.level, 2);
       expect(consistency.rankedLaps, 18);
       expect(consistency.confidence, SkillConfidence.high);
       expect(consistency.lastDay!.eventId, 'j30');
-      // Before: j0 alone, spread 5.5 → level 2.
+      // Before: j0 alone, spread 5.5 → level 1.
       expect(consistency.trend, SkillTrend.improving);
 
-      // Braking spread: j30 3, j20 3, j10 5 → 3.67 m, level 5; before 12 → 2.
+      // Braking spread: j30 3, j20 3, j10 5 → 3.67 m, level 4; before 12 → 2.
       final brake = skills['brakePointConsistency']!;
       expect(brake.value, closeTo(11 / 3, 1e-9));
-      expect(brake.level, 5);
+      expect(brake.level, 4);
       expect(brake.trend, SkillTrend.improving);
 
-      // Minimum and exit speed: 1 m/s and 0.5 m/s below the day's best.
+      // Minimum and exit speed: 1 m/s and 0.5 m/s below the best ever.
       expect(skills['minimumSpeedControl']!.value, closeTo(3.6, 1e-9));
-      expect(skills['minimumSpeedControl']!.level, 4);
+      expect(skills['minimumSpeedControl']!.level, 3);
       expect(skills['exitSpeedExecution']!.value, closeTo(1.8, 1e-9));
       expect(skills['exitSpeedExecution']!.level, 4);
       expect(skills['exitSpeedExecution']!.trend, SkillTrend.steady);
@@ -1456,14 +1456,15 @@ void main() {
       expect(skills['brakingEffectiveness']!.value, closeTo(0.0625, 1e-9));
       expect(skills['brakingEffectiveness']!.level, 3);
       expect(skills['turnInConsistency']!.value, closeTo(1.5 * 3.6, 1e-9));
-      expect(skills['turnInConsistency']!.level, 3);
+      expect(skills['turnInConsistency']!.level, 2);
       expect(skills['lineConsistency']!.value, closeTo(1.2, 1e-9));
-      expect(skills['lineConsistency']!.level, 3);
+      expect(skills['lineConsistency']!.level, 2);
       expect(skills['throttleReapplication']!.value, closeTo(7.5, 1e-9));
-      expect(skills['throttleReapplication']!.level, 3);
+      expect(skills['throttleReapplication']!.level, 2);
       // Pooled over each session's passes: 2 of 20 (10 %), 4 of 20 (20 %).
       expect(skills['throttleCommitment']!.value, closeTo(15, 1e-9));
-      expect(skills['throttleCommitment']!.level, 4);
+      expect(skills['throttleCommitment']!.level, 3);
+      // The mean over corners: s1 0.04 s, s2 0.08 s.
       expect(skills['cornerSequenceManagement']!.value, closeTo(0.06, 1e-9));
       expect(skills['cornerSequenceManagement']!.level, 3);
 
@@ -1551,12 +1552,100 @@ void main() {
     test('levels step down at each band', () {
       final consistency = skillCatalogue.last;
       expect(consistency.levelOf(0), 5);
-      expect(consistency.levelOf(1), 5);
-      expect(consistency.levelOf(1.01), 4);
-      expect(consistency.levelOf(2.6), 3);
-      expect(consistency.levelOf(5.1), 2);
-      expect(consistency.levelOf(8.1), 1);
+      expect(consistency.levelOf(0.5), 5);
+      expect(consistency.levelOf(0.51), 4);
+      expect(consistency.levelOf(1.1), 3);
+      expect(consistency.levelOf(2.1), 2);
+      expect(consistency.levelOf(4.1), 1);
       expect(consistency.levelOf(1000), 1);
+    });
+
+    test('a level of 5 needs high confidence, 4 medium', () {
+      final consistency = skillCatalogue.last;
+      expect(consistency.levelOf(0, rankedLaps: 15), 5);
+      expect(consistency.levelOf(0, rankedLaps: 14), 4);
+      expect(consistency.levelOf(0, rankedLaps: 5), 4);
+      expect(consistency.levelOf(0, rankedLaps: 4), 3);
+      expect(consistency.levelOf(0, rankedLaps: 0), 3);
+      // A low level stays as it is.
+      expect(consistency.levelOf(3, rankedLaps: 4), 2);
+      // The same perfect spread: 4 laps show 3, 14 show 4, 15 show 5.
+      int levelFrom(int laps) => skillLevels(
+        _profile([
+          _visit(
+            'a',
+            0,
+            track: 'poznan',
+            sessions: [_session('s', laps: laps, spread: 0.2)],
+          ),
+        ]),
+      ).last.level!;
+      expect([levelFrom(4), levelFrom(14), levelFrom(15)], [3, 4, 5]);
+    });
+
+    test('speeds and braking compare against the best ever there, in that car', () {
+      CornerStats corner(double minimum, double best) => CornerStats(
+        cornerId: 'k1',
+        laps: 6,
+        minimumSpeed: minimum,
+        bestMinimumSpeed: best,
+        exitSpeed: minimum,
+        bestExitSpeed: best,
+        decelerationG: 0.7,
+        bestDecelerationG: best / 25,
+      );
+      // A slow day at its own best still sits 2 m/s under the fast day.
+      final slow = _visit(
+        'slow',
+        0,
+        track: 'jastrzab',
+        sessions: [
+          _session('s1', laps: 15, corners: [corner(18, 18)]),
+        ],
+      );
+      final fast = _visit(
+        'fast',
+        1,
+        track: 'jastrzab',
+        sessions: [
+          _session('s1', laps: 15, corners: [corner(20, 20)]),
+        ],
+      );
+      final both = _profile([slow, fast]);
+      final skills = {for (final s in skillLevels(both, window: 1)) s.skill.id: s};
+      // The fast day is at its best: 0 below, level 5; before it, the slow
+      // day 2 m/s (7.2 km/h) under the best ever, level 1.
+      expect(skills['minimumSpeedControl']!.value, 0);
+      expect(skills['minimumSpeedControl']!.level, 5);
+      expect(skills['minimumSpeedControl']!.trend, SkillTrend.improving);
+      final slowOnly = {for (final s in skillLevels(both, window: 2)) s.skill.id: s};
+      expect(slowOnly['exitSpeedExecution']!.value, closeTo(7.2 / 2, 1e-9));
+      // The braking best ever, 0.8 g, against 0.7 g on both days.
+      expect(slowOnly['brakingEffectiveness']!.value, closeTo(0.1, 1e-9));
+      // Another car's best is not this car's reference.
+      final otherCar = _profile([slow, fast.copyWith(carId: 'car2')]);
+      final own = {for (final s in skillLevels(otherCar, carId: 'car1')) s.skill.id: s};
+      expect(own['minimumSpeedControl']!.value, 0);
+      // Unfiltered too: each day against its own car's best.
+      final mixed = {for (final s in skillLevels(otherCar, window: 2)) s.skill.id: s};
+      expect(mixed['minimumSpeedControl']!.value, 0);
+    });
+
+    test('a trend follows the bands, not the laps behind them', () {
+      ProfileDay day(String id, int number, int laps) => _visit(
+        id,
+        number,
+        track: 'poznan',
+        sessions: [_session('s', laps: laps, spread: 0.2)],
+      );
+      // 4 laps (capped at 3) before, 20 now, at the same spread.
+      final more = skillLevels(_profile([day('a', 0, 4), day('b', 1, 20)]), window: 1).last;
+      expect(more.level, 5);
+      expect(more.trend, SkillTrend.steady);
+      // 20 before, 4 now: capped at 3, still the same skill.
+      final fewer = skillLevels(_profile([day('a', 0, 20), day('b', 1, 4)]), window: 1).last;
+      expect(fewer.level, 3);
+      expect(fewer.trend, SkillTrend.steady);
     });
 
     test('the most days a profile holds fit, corners up to their budget', () {

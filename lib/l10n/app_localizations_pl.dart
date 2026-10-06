@@ -5144,7 +5144,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get profileSkillsIntro =>
-      'Każda umiejętność z ostatnich 3 dni, w których ją zmierzono, według stałych progów: poziom 5 jest najlepszy. Pewność wynika z liczby zmierzonych sklasyfikowanych okrążeń.';
+      'Każda umiejętność z ostatnich 3 dni, w których ją zmierzono, według stałych progów wyznaczonych przez to, co szybki, doświadczony kierowca powtarza okrążenie po okrążeniu: poziom 5 oznacza jazdę na limicie. Poziom 5 wymaga 15 sklasyfikowanych okrążeń, a poziom 4 – 5. Pewność wynika z liczby zmierzonych sklasyfikowanych okrążeń.';
 
   @override
   String skillName(String id) {
