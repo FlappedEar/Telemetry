@@ -5,13 +5,13 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/diagnostics/app_diagnostics.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
-import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../../packages/telemetry_core/test/rcz/rcz_fixture.dart';
@@ -522,11 +522,11 @@ void main() {
       appender: _SyncAppender(),
     );
     addTearDown(controller.dispose);
-    expect(declaredSpeedUnits, hasLength(1));
+    expect(openDayContext.speedUnits, hasLength(1));
     await controller.addRecordings([
       write('b.vbo', [29, 33]),
     ]);
-    expect(declaredSpeedUnits, hasLength(2));
+    expect(openDayContext.speedUnits, hasLength(2));
   });
 
   test('a session added while the day is being saved is not lost', () async {

@@ -7,6 +7,7 @@ import '../format.dart';
 import '../l10n.dart';
 import '../ui/theme.dart';
 import '../units.dart';
+import 'day_context.dart';
 import 'theoretical_best_card.dart'
     show CalculateAgainButton, TheoreticalBestText;
 import 'time_losses_card.dart' show TimeLossText;
@@ -106,7 +107,8 @@ extension CoachText on AppLocalizations {
 String? coachSpeedLabel(BuildContext context, {required bool converted}) {
   final label = speedUnitOf(context);
   if (converted) return null;
-  if (label.isEmpty && declaredSpeedUnits.any((unit) => unit.isNotEmpty)) {
+  if (label.isEmpty &&
+      openDayContext.speedUnits.any((unit) => unit.isNotEmpty)) {
     return null;
   }
   return label;

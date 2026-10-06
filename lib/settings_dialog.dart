@@ -4,6 +4,7 @@ import 'channel_names.dart';
 import 'circuits/circuit_directory.dart';
 import 'l10n.dart';
 import 'ui/theme.dart';
+import 'day/day_context.dart';
 import 'units.dart';
 import 'update/update_dialog.dart';
 
@@ -109,6 +110,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final declaredSpeedUnits = openDayContext.speedUnits;
     final declared = {
       for (final unit in declaredSpeedUnits)
         if (unit.isNotEmpty) unit,
