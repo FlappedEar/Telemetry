@@ -10,9 +10,15 @@
 //   their overlapping measurements disagree and no rule was chosen, the
 //   conflict is reported as unresolved;
 // - units must match exactly; nothing is rescaled.
-// One deliberate difference from Overlays: an added speed takes the unit its
-// own recording declares (a VBO `[header]` line, FET-112), where Overlays
-// keeps the channel's raw, empty unit.
+// Deliberate differences from Overlays:
+// - an added speed takes the unit its own recording declares (a VBO
+//   `[header]` line, FET-112), where Overlays keeps the channel's raw, empty
+//   unit;
+// - the result does not depend on the order of the alternatives (FET-208,
+//   KAN-231): they are taken in source ID order, a repeated ID is refused,
+//   a channel only alternatives have comes from the rule's source or the one
+//   covering most time, and a rule's source is applied first while the
+//   others are still compared so a disagreement stays visible.
 // Samples are never resampled or interpolated: each output sample is a real
 // sample of one source with its timestamp transformed, so gaps stay gaps.
 import 'dart:typed_data';
@@ -141,7 +147,8 @@ final class ChannelFusionResult {
   /// "key: sourceId" pairs that were not fused.
   final List<String> unitMismatches = [];
 
-  /// Source IDs whose clocks are not aligned.
+  /// Source IDs whose clocks are not aligned, or that more than one source
+  /// uses (FET-208), sorted.
   final List<String> refusedSources = [];
 }
 
@@ -598,238 +605,311 @@ ChannelFusionResult fuseChannels(
     result.channels.add(fused);
   }
 
+  // The result must not depend on the order the alternatives are listed in
+  // (FET-208; Overlays takes them in list order, departure KAN-231). They
+  // are taken in source ID order; only a policy rule gives one source
+  // priority.
+  final accepted = <FusionSource>[];
   for (final source in alternatives) {
-    throwIfCancelled(cancelled);
     final session = source.session;
     if (session == null || source.alignmentStatus != 'aligned' || !_validClock(source.clock)) {
       result.refusedSources.add(source.sourceId);
-      continue;
+    } else {
+      accepted.add(source);
     }
-    final names = session.channels.keys.toList()..sort();
-    for (final name in names) {
-      throwIfCancelled(cancelled);
+  }
+  // A repeated source ID would make the choice depend on the order again:
+  // every source sharing it is refused.
+  final seen = <String, int>{};
+  for (final source in accepted) {
+    seen[source.sourceId] = (seen[source.sourceId] ?? 0) + 1;
+  }
+  accepted.removeWhere((source) {
+    if (seen[source.sourceId]! < 2) return false;
+    result.refusedSources.add(source.sourceId);
+    return true;
+  });
+  result.refusedSources.sort();
+  accepted.sort((a, b) => a.sourceId.compareTo(b.sourceId));
+  // Per channel key, the sources that recorded it, and for a channel only
+  // alternatives have, the one it is added from: the policy's source when
+  // that one has it, otherwise the one whose finite samples cover the most
+  // time (the first in source ID order on a tie).
+  final offeredBy = <String, Set<String>>{};
+  final addedFrom = <String, (String, double)>{};
+  for (final source in accepted) {
+    throwIfCancelled(cancelled);
+    final session = source.session!;
+    for (final name in session.channels.keys.toList()..sort()) {
       final channel = session.channels[name]!;
       if (channel.timestamps.length != channel.values.length || channel.timestamps.isEmpty) {
         continue;
       }
       final key = _channelKey(session, name);
-      final times = Float64List(channel.timestamps.length);
-      for (var index = 0; index < times.length; ++index) {
-        times[index] = _toPrimary(channel.timestamps[index], source.clock);
+      (offeredBy[key] ??= {}).add(source.sourceId);
+      if (_primaryNameFor(primary, key, name).isNotEmpty || byKey.containsKey(key)) continue;
+      var covered = 0.0;
+      for (final span in _finiteSpans(
+        _samplesOf(channel.timestamps, channel.values, 1),
+        telemetryGapThreshold(channel),
+      )) {
+        covered += span.end - span.start;
       }
-      _keepMarkersInside(times, channel.values);
-      final gap = telemetryGapThreshold(channel) * (1.0 + source.clock.driftPpm * 1e-6);
-      final interval = _medianInterval(times);
-      final primaryName = _primaryNameFor(primary, key, name);
-      final existing = byKey[key];
+      final current = addedFrom[key];
+      if (current == null || covered > current.$2) addedFrom[key] = (source.sourceId, covered);
+    }
+  }
+  for (final MapEntry(:key, value: choice) in policy.rules.entries) {
+    if (addedFrom.containsKey(key) && offeredBy[key]!.contains(choice.sourceId)) {
+      addedFrom[key] = (choice.sourceId, double.infinity);
+    }
+  }
 
-      if (primaryName.isEmpty && existing == null) {
-        // Only the alternative recorded it: added on the primary clock. A
-        // speed takes the unit its own recording declares (a VBO declares
-        // it on a `[header]` line the primary's session does not carry,
-        // FET-112), so it is never read in the unit assumed for unlabelled
-        // speeds.
-        final unit = channel.unit.trim().isEmpty && isSessionSpeedChannel(session, name)
-            ? declaredSpeedUnit(session, name)
-            : channel.unit;
-        final fused = FusedChannel(
-          key: key,
-          name: name,
-          unit: unit,
-          rule: 'added',
-          segments: [],
-          channel: TelemetryChannel(
+  // A rule's source goes first for its channel; the rest follow, and once
+  // the rule has taken effect they are compared only to report how far
+  // they disagree.
+  final ruledApplied = <String>{};
+  for (final rulesPhase in const [true, false]) {
+    for (final source in accepted) {
+      throwIfCancelled(cancelled);
+      final session = source.session!;
+      final names = session.channels.keys.toList()..sort();
+      for (final name in names) {
+        throwIfCancelled(cancelled);
+        final channel = session.channels[name]!;
+        if (channel.timestamps.length != channel.values.length || channel.timestamps.isEmpty) {
+          continue;
+        }
+        final key = _channelKey(session, name);
+        final chosen = policy.rules[key];
+        final ruled = chosen != null && chosen.sourceId == source.sourceId;
+        if (ruled != rulesPhase) continue;
+        final times = Float64List(channel.timestamps.length);
+        for (var index = 0; index < times.length; ++index) {
+          times[index] = _toPrimary(channel.timestamps[index], source.clock);
+        }
+        _keepMarkersInside(times, channel.values);
+        final gap = telemetryGapThreshold(channel) * (1.0 + source.clock.driftPpm * 1e-6);
+        final interval = _medianInterval(times);
+        final primaryName = _primaryNameFor(primary, key, name);
+        final existing = byKey[key];
+
+        if (primaryName.isEmpty && existing == null) {
+          // Another alternative's recording of it is added instead.
+          if (addedFrom[key]?.$1 != source.sourceId) continue;
+          // Only the alternative recorded it: added on the primary clock. A
+          // speed takes the unit its own recording declares (a VBO declares
+          // it on a `[header]` line the primary's session does not carry,
+          // FET-112), so it is never read in the unit assumed for unlabelled
+          // speeds.
+          final unit = channel.unit.trim().isEmpty && isSessionSpeedChannel(session, name)
+              ? declaredSpeedUnit(session, name)
+              : channel.unit;
+          final fused = FusedChannel(
+            key: key,
             name: name,
             unit: unit,
-            timestamps: adoptChannelTimestamps(times),
+            rule: 'added',
+            segments: [],
+            channel: TelemetryChannel(
+              name: name,
+              unit: unit,
+              timestamps: adoptChannelTimestamps(times),
+              values: channel.values,
+            ),
+          );
+          _appendSegments(
+            fused.segments,
+            _samplesOf(times, channel.values, 1),
+            1,
+            source.sourceId,
+            source.clock,
+            gap,
+            interval,
+          );
+          byKey[key] = result.channels.length;
+          result.channels.add(fused);
+          continue;
+        }
+        // Added earlier by another alternative under a different key.
+        if (existing == null) continue;
+        final fused = result.channels[existing];
+        // Added from one source: decided.
+        if (fused.rule == 'added') continue;
+        final decided = ruledApplied.contains(key);
+        final primaryUnit = fused.unit.trim(), alternativeUnit = channel.unit.trim();
+        final oneUndeclared = primaryUnit.isEmpty != alternativeUnit.isEmpty;
+        if (!oneUndeclared && _foldCase(primaryUnit) != _foldCase(alternativeUnit)) {
+          result.unitMismatches.add('$key: ${source.sourceId}');
+          continue;
+        }
+
+        // Compare the overlap at the alternative's own samples.
+        final compared = <double>[];
+        final references = <double>[];
+        var low = double.infinity, high = -low;
+        for (var index = 0; index < times.length; ++index) {
+          final double value = channel.values[index];
+          final reference = primary.valueAt(fused.name, times[index]);
+          if (!value.isFinite || reference == null) continue;
+          compared.add(value);
+          references.add(reference);
+          low = stdMin(low, reference);
+          high = stdMax(high, reference);
+        }
+        // An undeclared unit takes the declared side's tolerance.
+        final tolerance = fusionConflictTolerance(
+          primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
+          high - low,
+        );
+        // Overlays' median at the alternative's samples, kept for parity. The
+        // share of far-off samples is measured at the coarser recording's
+        // samples (FET-201): a 1 Hz primary interpolated at 10 Hz differs
+        // from a true 10 Hz recording on every brake ramp.
+        final medianDifference = fusionMedianDifference(compared, references);
+        var sampledAlternative = compared, sampledReference = references;
+        final primaryChannel = primary.channels[fused.name]!;
+        final primaryInterval = _medianInterval(primaryChannel.timestamps);
+        if (interval > 0.0 && interval < 0.75 * primaryInterval) {
+          final alternativeChannel = TelemetryChannel(
+            name: name,
+            unit: channel.unit,
+            timestamps: times,
             values: channel.values,
+          );
+          sampledAlternative = <double>[];
+          sampledReference = <double>[];
+          final primaryTimes = primaryChannel.timestamps;
+          final primaryValues = primaryChannel.values;
+          for (var index = 0; index < primaryTimes.length; ++index) {
+            final double reference = primaryValues[index];
+            if (!reference.isFinite) continue;
+            final value = telemetryValueAt(alternativeChannel, primaryTimes[index]);
+            if (value == null) continue;
+            sampledAlternative.add(value);
+            sampledReference.add(reference);
+          }
+        }
+        final measures = fusionConflictMeasures(
+          sampledAlternative,
+          sampledReference,
+          tolerance,
+          median: medianDifference,
+          medianSamples: compared.length,
+        );
+        final comparedSamples = compared.length;
+        // A unit only one side declares (VBO declares none, KAN-184) counts as
+        // the same unit only when at least 10 samples agree in the median and
+        // both recordings spread alike; otherwise it is a mismatch, so values
+        // in another scale are never fused. Beyond that, a disagreement is a
+        // conflict the driver sees (FET-201), not a hidden mismatch.
+        if (oneUndeclared &&
+            (comparedSamples < 10 ||
+                medianDifference > tolerance ||
+                fusionScalesDiffer(
+                  compared,
+                  references,
+                  tolerance,
+                  unit: primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
+                  referenceDeclared: primaryUnit.isNotEmpty,
+                ))) {
+          result.unitMismatches.add('$key: ${source.sourceId}');
+          continue;
+        }
+        // The comparison shown is the first conflicting source's, otherwise
+        // the first compared one's: the rule's source, then source ID order.
+        final conflicting = measures.conflicting;
+        if (fused.comparedSourceId.isEmpty || (conflicting && !fused.conflicting)) {
+          fused.comparedSourceId = source.sourceId;
+          fused.comparedSamples = comparedSamples;
+          fused.medianDifference = medianDifference;
+          fused.highDifference = measures.high;
+          fused.fractionOverTolerance = measures.fractionOver;
+          fused.activeFractionOverTolerance = measures.activeFractionOver;
+          fused.conflicting = conflicting;
+        }
+
+        if (decided) continue;
+        if (ruled) ruledApplied.add(key);
+        if (!ruled || chosen.rule == FusionRule.primaryOnly) {
+          if (ruled) {
+            fused.rule = 'primary';
+          } else if (conflicting && fused.rule != 'unresolvedConflict') {
+            fused.rule = 'unresolvedConflict';
+            result.unresolved.add(key);
+          }
+          continue;
+        }
+        // Merge: the preferred source everywhere it has data, the other only
+        // outside the preferred one's recorded stretches.
+        final preferAlternative = chosen.rule == FusionRule.preferAlternative;
+        final primarySamples = _samplesOf(fused.channel.timestamps, fused.channel.values, 0);
+        final alternativeSamples = _samplesOf(times, channel.values, 1);
+        final preferred = preferAlternative ? alternativeSamples : primarySamples;
+        final other = preferAlternative ? primarySamples : alternativeSamples;
+        final primaryGap = telemetryGapThreshold(fused.channel);
+        // Coverage counts finite samples only, so the other source fills
+        // where the preferred one has timestamps but no values (FET-200).
+        // A missing preferred sample is dropped only when the other source
+        // covers it and actually places a sample in the same hole between
+        // two finite preferred samples; otherwise it stays and keeps the gap,
+        // so no reading interpolates across the preferred source's own
+        // missing values.
+        final coverage = _finiteSpans(preferred, preferAlternative ? gap : primaryGap);
+        final otherCoverage = _finiteSpans(other, preferAlternative ? primaryGap : gap);
+        final inserted = [
+          for (final sample in other)
+            if (!_covered(coverage, sample.time)) sample,
+        ];
+        final merged = [..._droppingFilledHoles(preferred, otherCoverage, inserted), ...inserted];
+        // As Overlays' std::stable_sort.
+        stableSort(merged, (_Sample a, _Sample b) => a.time < b.time);
+        // Strictly increasing timestamps: an equal time keeps the preferred
+        // sample.
+        final sorted = <_Sample>[];
+        for (final sample in merged) {
+          if (sorted.isNotEmpty && sample.time <= sorted.last.time) {
+            if (sample.source == (preferAlternative ? 1 : 0)) sorted.last = sample;
+            continue;
+          }
+          sorted.add(sample);
+        }
+        final ordered = _markGaps(sorted, primaryGap, gap);
+        fused.channel = TelemetryChannel(
+          name: fused.channel.name,
+          unit: fused.channel.unit,
+          timestamps: adoptChannelTimestamps(
+            Float64List.fromList([for (final sample in ordered) sample.time]),
+          ),
+          values: adoptChannelValues(
+            Float32List.fromList([for (final sample in ordered) sample.value]),
           ),
         );
+        final primarySegments = <FusedSegment>[];
+        final alternativeSegments = <FusedSegment>[];
         _appendSegments(
-          fused.segments,
-          _samplesOf(times, channel.values, 1),
+          primarySegments,
+          ordered,
+          0,
+          primarySourceId,
+          const SourceClock(),
+          primaryGap,
+          _medianInterval(primary.channels[fused.name]!.timestamps),
+        );
+        _appendSegments(
+          alternativeSegments,
+          ordered,
           1,
           source.sourceId,
           source.clock,
           gap,
           interval,
         );
-        byKey[key] = result.channels.length;
-        result.channels.add(fused);
-        continue;
+        final segments = [...primarySegments, ...alternativeSegments];
+        stableSort(segments, (FusedSegment a, FusedSegment b) => a.start < b.start);
+        fused.segments = segments;
+        fused.rule = preferAlternative ? 'preferAlternative' : 'fillGaps';
       }
-      // Added earlier by another alternative under a different key.
-      if (existing == null) continue;
-      final fused = result.channels[existing];
-      // Already decided by an earlier alternative.
-      if (fused.rule != 'primary') continue;
-      final primaryUnit = fused.unit.trim(), alternativeUnit = channel.unit.trim();
-      final oneUndeclared = primaryUnit.isEmpty != alternativeUnit.isEmpty;
-      if (!oneUndeclared && _foldCase(primaryUnit) != _foldCase(alternativeUnit)) {
-        result.unitMismatches.add('$key: ${source.sourceId}');
-        continue;
-      }
-
-      // Compare the overlap at the alternative's own samples.
-      final compared = <double>[];
-      final references = <double>[];
-      var low = double.infinity, high = -low;
-      for (var index = 0; index < times.length; ++index) {
-        final double value = channel.values[index];
-        final reference = primary.valueAt(fused.name, times[index]);
-        if (!value.isFinite || reference == null) continue;
-        compared.add(value);
-        references.add(reference);
-        low = stdMin(low, reference);
-        high = stdMax(high, reference);
-      }
-      // An undeclared unit takes the declared side's tolerance.
-      final tolerance = fusionConflictTolerance(
-        primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
-        high - low,
-      );
-      // Overlays' median at the alternative's samples, kept for parity. The
-      // share of far-off samples is measured at the coarser recording's
-      // samples (FET-201): a 1 Hz primary interpolated at 10 Hz differs
-      // from a true 10 Hz recording on every brake ramp.
-      final medianDifference = fusionMedianDifference(compared, references);
-      var sampledAlternative = compared, sampledReference = references;
-      final primaryInterval = _medianInterval(fused.channel.timestamps);
-      if (interval > 0.0 && interval < 0.75 * primaryInterval) {
-        final alternativeChannel = TelemetryChannel(
-          name: name,
-          unit: channel.unit,
-          timestamps: times,
-          values: channel.values,
-        );
-        sampledAlternative = <double>[];
-        sampledReference = <double>[];
-        final primaryTimes = fused.channel.timestamps;
-        final primaryValues = fused.channel.values;
-        for (var index = 0; index < primaryTimes.length; ++index) {
-          final double reference = primaryValues[index];
-          if (!reference.isFinite) continue;
-          final value = telemetryValueAt(alternativeChannel, primaryTimes[index]);
-          if (value == null) continue;
-          sampledAlternative.add(value);
-          sampledReference.add(reference);
-        }
-      }
-      final measures = fusionConflictMeasures(
-        sampledAlternative,
-        sampledReference,
-        tolerance,
-        median: medianDifference,
-        medianSamples: compared.length,
-      );
-      final comparedSamples = compared.length;
-      // A unit only one side declares (VBO declares none, KAN-184) counts as
-      // the same unit only when at least 10 samples agree in the median and
-      // both recordings spread alike; otherwise it is a mismatch, so values
-      // in another scale are never fused. Beyond that, a disagreement is a
-      // conflict the driver sees (FET-201), not a hidden mismatch.
-      if (oneUndeclared &&
-          (comparedSamples < 10 ||
-              medianDifference > tolerance ||
-              fusionScalesDiffer(
-                compared,
-                references,
-                tolerance,
-                unit: primaryUnit.isEmpty ? alternativeUnit : primaryUnit,
-                referenceDeclared: primaryUnit.isNotEmpty,
-              ))) {
-        result.unitMismatches.add('$key: ${source.sourceId}');
-        continue;
-      }
-      final conflicting = measures.conflicting;
-      fused.comparedSourceId = source.sourceId;
-      fused.comparedSamples = comparedSamples;
-      fused.medianDifference = medianDifference;
-      fused.highDifference = measures.high;
-      fused.fractionOverTolerance = measures.fractionOver;
-      fused.activeFractionOverTolerance = measures.activeFractionOver;
-      fused.conflicting = conflicting;
-
-      final chosen = policy.rules[key];
-      final ruled = chosen != null && chosen.sourceId == source.sourceId;
-      if (!ruled || chosen.rule == FusionRule.primaryOnly) {
-        if (ruled) {
-          fused.rule = 'primary';
-        } else if (fused.conflicting) {
-          fused.rule = 'unresolvedConflict';
-          result.unresolved.add(key);
-        }
-        continue;
-      }
-      // Merge: the preferred source everywhere it has data, the other only
-      // outside the preferred one's recorded stretches.
-      final preferAlternative = chosen.rule == FusionRule.preferAlternative;
-      final primarySamples = _samplesOf(fused.channel.timestamps, fused.channel.values, 0);
-      final alternativeSamples = _samplesOf(times, channel.values, 1);
-      final preferred = preferAlternative ? alternativeSamples : primarySamples;
-      final other = preferAlternative ? primarySamples : alternativeSamples;
-      final primaryGap = telemetryGapThreshold(fused.channel);
-      // Coverage counts finite samples only, so the other source fills
-      // where the preferred one has timestamps but no values (FET-200).
-      // A missing preferred sample is dropped only when the other source
-      // covers it and actually places a sample in the same hole between
-      // two finite preferred samples; otherwise it stays and keeps the gap,
-      // so no reading interpolates across the preferred source's own
-      // missing values.
-      final coverage = _finiteSpans(preferred, preferAlternative ? gap : primaryGap);
-      final otherCoverage = _finiteSpans(other, preferAlternative ? primaryGap : gap);
-      final inserted = [
-        for (final sample in other)
-          if (!_covered(coverage, sample.time)) sample,
-      ];
-      final merged = [..._droppingFilledHoles(preferred, otherCoverage, inserted), ...inserted];
-      // As Overlays' std::stable_sort.
-      stableSort(merged, (_Sample a, _Sample b) => a.time < b.time);
-      // Strictly increasing timestamps: an equal time keeps the preferred
-      // sample.
-      final sorted = <_Sample>[];
-      for (final sample in merged) {
-        if (sorted.isNotEmpty && sample.time <= sorted.last.time) {
-          if (sample.source == (preferAlternative ? 1 : 0)) sorted.last = sample;
-          continue;
-        }
-        sorted.add(sample);
-      }
-      final ordered = _markGaps(sorted, primaryGap, gap);
-      fused.channel = TelemetryChannel(
-        name: fused.channel.name,
-        unit: fused.channel.unit,
-        timestamps: adoptChannelTimestamps(
-          Float64List.fromList([for (final sample in ordered) sample.time]),
-        ),
-        values: adoptChannelValues(
-          Float32List.fromList([for (final sample in ordered) sample.value]),
-        ),
-      );
-      final primarySegments = <FusedSegment>[];
-      final alternativeSegments = <FusedSegment>[];
-      _appendSegments(
-        primarySegments,
-        ordered,
-        0,
-        primarySourceId,
-        const SourceClock(),
-        primaryGap,
-        _medianInterval(primary.channels[fused.name]!.timestamps),
-      );
-      _appendSegments(
-        alternativeSegments,
-        ordered,
-        1,
-        source.sourceId,
-        source.clock,
-        gap,
-        interval,
-      );
-      final segments = [...primarySegments, ...alternativeSegments];
-      stableSort(segments, (FusedSegment a, FusedSegment b) => a.start < b.start);
-      fused.segments = segments;
-      fused.rule = preferAlternative ? 'preferAlternative' : 'fillGaps';
     }
   }
   return result;
