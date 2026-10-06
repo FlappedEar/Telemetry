@@ -7,12 +7,15 @@
 // only when both pedals are measured (a lift-and-brake or left-foot overlap
 // cannot be seen in one acceleration channel). Coasting is the time at speed
 // when both pedal states are known to be off. A recorded pedal is never
-// inferred: deceleration and acceleration stand in for a pedal only when the
-// recording has no such pedal channel at all, and are labelled inferred.
+// inferred within a session: deceleration and acceleration stand in for a
+// pedal only when the recording has no such pedal channel at all or, for the
+// brake, when the whole session's brake does not show the braking (FET-204,
+// braking_source.dart, a departure from Overlays), and are labelled inferred.
 import 'dart:math' as math;
 
 import '../speed_units.dart';
 import '../telemetry_session.dart';
+import 'braking_source.dart';
 import 'braking_onset.dart' show BrakingThreshold;
 
 const String drivingStatesAlgorithm = 'driving-states-v1';
@@ -236,7 +239,8 @@ _Intervals _subtract(_Intervals from, _Intervals removed) {
 }
 
 // A pedal state from its measured channel, or inferred from longitudinal G
-// when the pedal channel is missing (never when it is present but empty).
+// when the pedal channel is missing or, for the brake, rejected for the
+// whole session (never because one window of it is empty).
 void _pedalState(
   TelemetrySession session,
   String pedalAlias,
@@ -249,6 +253,15 @@ void _pedalState(
   DrivingStateTrack track,
 ) {
   final (pedalName, pedal) = _aliasChannel(session, pedalAlias);
+  // The brake is used only when trustworthy (FET-204): otherwise a usable
+  // deceleration replaces it.
+  if (pedalAlias == 'brake' && pedal != null) {
+    final quality = brakingSourceQuality(session);
+    if (quality.brakeRejected && options.allowInferred) {
+      _inferredPedalState(session, inferred, sign, options, start, end, track);
+      return;
+    }
+  }
   if (pedal != null) {
     track.channel = pedalName;
     track.unit = pedal.unit;
@@ -261,6 +274,18 @@ void _pedalState(
     _classify(pedal, (value) => value, measured, options.minimumDurationSeconds, start, end, track);
     return;
   }
+  _inferredPedalState(session, inferred, sign, options, start, end, track);
+}
+
+void _inferredPedalState(
+  TelemetrySession session,
+  BrakingThreshold inferred,
+  double sign,
+  DrivingStateOptions options,
+  double start,
+  double end,
+  DrivingStateTrack track,
+) {
   final (name, longitudinal) = _aliasChannel(session, 'longitudinalAcceleration');
   if (longitudinal == null) {
     track.unresolvedReason = 'noPedalOrAccelerationChannel';
@@ -291,7 +316,8 @@ void _pedalState(
 
 /// Classifies [startTime]..[endTime] of [session]. Channels: the `brake`
 /// and `throttle` aliases (measured) and, when a pedal channel is missing
-/// and inference is allowed, `longitudinalAcceleration` (inferred);
+/// (or the brake is rejected by [brakingSourceQuality]) and inference is
+/// allowed, `longitudinalAcceleration` (inferred);
 /// cornering from `lateralAcceleration`; coasting also needs `speed`.
 /// Samples are not interpolated across gaps: a gap is unknown for every
 /// state that uses the channel. A channel whose declared unit differs from

@@ -800,6 +800,8 @@
   "cornerDetailsReasonDrivingStateUnknown": "stan jazdy nieznany",
   "cornerDetailsReasonNotAvailable": "niedostępne",
   "cornerDetailsFromDeceleration": "Wyznaczone pośrednio z przeciążenia przy hamowaniu",
+  "cornerDetailsFromDecelerationBrakeUnused": "Wyznaczone pośrednio z przeciążenia przy hamowaniu: kanał hamulca nie pokazuje hamowania",
+  "cornerDetailsReasonBrakeChannelNotUsed": "kanał hamulca nie pokazuje hamowania",
   "cornerDetailsFromBrakeChannel": "Z kanału hamulca",
   "cornerDetailsFromAcceleration": "Wyznaczone pośrednio z przyspieszenia",
   "cornerDetailsFromThrottleChannel": "Z kanału gazu",

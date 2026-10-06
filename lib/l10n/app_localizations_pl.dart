@@ -3356,6 +3356,14 @@ class AppLocalizationsPl extends AppLocalizations {
       'Wyznaczone pośrednio z przeciążenia przy hamowaniu';
 
   @override
+  String get cornerDetailsFromDecelerationBrakeUnused =>
+      'Wyznaczone pośrednio z przeciążenia przy hamowaniu: kanał hamulca nie pokazuje hamowania';
+
+  @override
+  String get cornerDetailsReasonBrakeChannelNotUsed =>
+      'kanał hamulca nie pokazuje hamowania';
+
+  @override
   String get cornerDetailsFromBrakeChannel => 'Z kanału hamulca';
 
   @override

@@ -3279,6 +3279,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cornerDetailsFromDeceleration => 'Inferred from deceleration';
 
   @override
+  String get cornerDetailsFromDecelerationBrakeUnused =>
+      'Inferred from deceleration: the brake channel does not show the braking';
+
+  @override
+  String get cornerDetailsReasonBrakeChannelNotUsed =>
+      'the brake channel does not show the braking';
+
+  @override
   String get cornerDetailsFromBrakeChannel => 'From the brake channel';
 
   @override

@@ -500,6 +500,7 @@ void main() {
       brakingInterruptedByGap,
       brakingTruncatedAtWindowEnd,
       brakingUnitUndeclared,
+      brakingBrakeChannelNotUsed,
       exitNoLift,
       exitNoPickup,
       exitNoChannel,
