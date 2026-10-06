@@ -118,9 +118,9 @@ final class _CountingLibrary extends ProfileLibrary {
   final weatherRecorded = <Map<String, ProfileWeather>>[];
 
   @override
-  void recordWeather(String eventId, Map<String, ProfileWeather> weather) {
+  bool recordWeather(String eventId, Map<String, ProfileWeather> weather) {
     weatherRecorded.add(weather);
-    super.recordWeather(eventId, weather);
+    return super.recordWeather(eventId, weather);
   }
 
   @override

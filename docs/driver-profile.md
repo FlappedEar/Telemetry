@@ -188,7 +188,11 @@ which swaps only the sessions' `weather` and measures nothing again. The page
 gives it only while the day has no unsaved changes, so it goes only to the
 sessions of the saved day the profile lists; on a day with unsaved changes it
 waits for the save (a library day saves itself after 2 s). Sessions the
-profile does not list are left out.
+profile does not list are left out. The library also holds the latest
+weather given for each day and applies it over the weather of a
+`recordDay` that finishes later (`ProfileDayInput.withWeather`, only for
+the same recording), so weather given while the day is measured, before it
+is in the profile, or when a measure fails is not lost.
 
 A day added again without a session's weather keeps the weather that session
 had while it is the weather of the same recording: when the session's

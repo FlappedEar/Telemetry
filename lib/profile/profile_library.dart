@@ -251,6 +251,7 @@ class ProfileLibrary extends ChangeNotifier {
     DayTheoreticalBest? theoreticalBest,
     Map<String, ProfileWeather?>? weather,
   }) async {
+    _keepWeather(eventId, weather);
     // A [flush] right after waits for the day being measured and written.
     final measured = Completer<void>();
     _measuring.add(measured.future);
@@ -306,10 +307,12 @@ class ProfileLibrary extends ChangeNotifier {
       return;
     }
     if (_recordings[eventId] != generation) return;
+    // Weather given since this recording began is newer than its own.
+    final newer = _weather[eventId];
     _change(
       (profile) => addDayToProfile(
         profile,
-        input,
+        newer == null ? input : input.withWeather(newer),
         defaultCarName: defaultCarName,
         defaultTrackName: defaultTrackName(profile.tracks.length + 1),
       ),
@@ -347,9 +350,27 @@ class ProfileLibrary extends ChangeNotifier {
   /// Day [eventId]'s sessions with [weather] (by run id), as it arrives
   /// after the day was recorded: only the weather is swapped, nothing is
   /// measured again. Sessions the profile does not list for the day are
-  /// left out.
-  void recordWeather(String eventId, Map<String, ProfileWeather> weather) =>
-      _change((profile) => setProfileSessionWeather(profile, eventId, weather));
+  /// left out. The weather is also held for the day's next [recordDay],
+  /// which applies it over its own (older) weather, so it is not lost when
+  /// the day is not in the profile yet, is being measured, or a measure
+  /// fails. Returns whether the profile changed now.
+  bool recordWeather(String eventId, Map<String, ProfileWeather> weather) {
+    _keepWeather(eventId, weather);
+    final before = _profile;
+    _change((profile) => setProfileSessionWeather(profile, eventId, weather));
+    return !identical(before, _profile);
+  }
+
+  /// The latest weather given for each day, by event id and run id.
+  final _weather = <String, Map<String, ProfileWeather>>{};
+
+  void _keepWeather(String eventId, Map<String, ProfileWeather?>? weather) {
+    if (weather == null) return;
+    final kept = _weather[eventId] ??= {};
+    for (final MapEntry(:key, :value) in weather.entries) {
+      if (value != null) kept[key] = value;
+    }
+  }
 
   /// Day [eventId] driven in car [carId], which new days then take.
   void setDayCar(String eventId, String carId) =>

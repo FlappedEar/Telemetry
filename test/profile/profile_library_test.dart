@@ -158,6 +158,120 @@ void main() {
       },
     );
 
+    group('weather', () {
+      ProfileWeather weather(double temperature, String revision) =>
+          ProfileWeather(temperatureC: temperature, sourceRevision: revision);
+
+      test('given while the day is measured, the newer weather wins', () async {
+        final outcome = importDay({
+          'a.vbo': [30, 28, 31],
+        });
+        final run = outcome.runs.single.run;
+        var gate = Completer<void>()..complete();
+        final shelf = ProfileLibrary(
+          store: FolderProfileStore(profileFolder()),
+          defaultCarName: 'My car',
+          defaultTrackName: (number) => 'Track $number',
+          background: <R>(FutureOr<R> Function() job) async {
+            final result = await job();
+            if (result is ProfileDayInput) await gate.future;
+            return result;
+          },
+        );
+        final path = (await shelf.dayPath('e1'))!;
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        gate = Completer<void>();
+        final measuring = shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+          weather: {run.id: weather(15, run.contentSha256)},
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          shelf.recordWeather('e1', {run.id: weather(21, run.contentSha256)}),
+          isTrue,
+        );
+        gate.complete();
+        await measuring;
+        await shelf.flush();
+        expect(
+          shelf.profile!.day('e1')!.sessions.single.weather!.temperatureC,
+          21,
+        );
+      });
+
+      test('given before the day is in the profile, or when measuring '
+          'fails, it reaches the profile with the next record', () async {
+        final outcome = importDay({
+          'a.vbo': [30, 28, 31],
+        });
+        final run = outcome.runs.single.run;
+        var fail = true;
+        final shelf = ProfileLibrary(
+          store: FolderProfileStore(profileFolder()),
+          defaultCarName: 'My car',
+          defaultTrackName: (number) => 'Track $number',
+          background: <R>(FutureOr<R> Function() job) async {
+            final result = await job();
+            if (result is ProfileDayInput && fail) {
+              throw StateError('not measured');
+            }
+            return result;
+          },
+        );
+        final path = (await shelf.dayPath('e1'))!;
+        await shelf.load();
+        // Not in the profile yet: held, not lost.
+        expect(
+          shelf.recordWeather('e1', {run.id: weather(21, run.contentSha256)}),
+          isFalse,
+        );
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        expect(shelf.profile!.day('e1'), isNull);
+        fail = false;
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        await shelf.flush();
+        expect(
+          shelf.profile!.day('e1')!.sessions.single.weather!.temperatureC,
+          21,
+        );
+        // Weather of a recording since replaced is not applied.
+        final other = ProfileLibrary(
+          store: FolderProfileStore(p.join(directory.path, 'Other')),
+          defaultCarName: 'My car',
+          defaultTrackName: (number) => 'Track $number',
+          background: _inPlace,
+        );
+        final otherPath = (await other.dayPath('e1'))!;
+        await other.load();
+        other.recordWeather('e1', {run.id: weather(21, 'f' * 64)});
+        await other.recordDay(
+          eventId: 'e1',
+          path: otherPath,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        expect(other.profile!.day('e1')!.sessions.single.weather, isNull);
+      });
+    });
+
     test('ignores a day saved elsewhere', () async {
       final outcome = importDay({
         'a.vbo': [30, 28, 31],

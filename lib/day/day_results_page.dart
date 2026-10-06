@@ -567,6 +567,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
     final shown = _weatherShown(controller);
     if (mapEquals(shown, _recordedWeather)) return;
+    // Recorded whether or not the profile changed now: the library holds
+    // it for the day's next record (a day not in the profile yet, or being
+    // measured), so it is never lost.
     _recordedWeather = shown;
     final weather = _weatherOf(controller);
     library.recordWeather(controller.eventId, {
