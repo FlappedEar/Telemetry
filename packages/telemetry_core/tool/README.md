@@ -800,6 +800,8 @@ The committed `test/parity/fusion_reference.json` was generated from
 FlappedEar/Overlay `3fa38da` with Qt 6.8.3 from conda-forge and g++ 13.3 on
 Ubuntu 24.04. Its only change from the `f7111ba` reference (KAN-184: units
 only one side declares, and "°C") is Overlays' KAN-157 gap rule: the
-primary's speed is not read inside its 40-50 s gap, so 400 rather than 451
-samples are compared and the median differences follow. Never edit the JSON
+primary's speed is not read inside its 40-50 s gap, so fewer samples are
+compared (451 to 400 in most cases; 451 to 401 for drift,
+preferAlternativeDrift and fractionalOffset; 436 to 385 for missingValues)
+and the median differences follow. Never edit the JSON
 by hand.
