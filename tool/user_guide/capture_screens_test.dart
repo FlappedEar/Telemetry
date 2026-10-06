@@ -531,6 +531,14 @@ void main() {
     await tester.pumpAndSettle();
     await shot(tester, 'briefing');
     await back(tester);
+    // Every segment since the session before, from the session summary.
+    final changes = find.byKey(const ValueKey('sessionSummaryChanges'));
+    await scrollIn(tester, list('dayResultsCoach'), changes, delta: -300);
+    await tester.pumpAndSettle();
+    await tester.tap(changes);
+    await tester.pumpAndSettle();
+    await shot(tester, 'session-changes');
+    await back(tester);
     // The observations, on the Overview.
     await tester.tap(find.byKey(const ValueKey('place-day')));
     await tester.pumpAndSettle();
