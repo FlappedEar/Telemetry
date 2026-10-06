@@ -8292,10 +8292,12 @@
   "@summaryCarTemperaturesNeedLaps": {"description": "Car, last laps: too few ranked laps to read a temperature's rise.", "placeholders": {"count": {"type": "int"}}},
   "summaryCarAccelerationNeedsLaps": "{count, plural, =1{Strong acceleration: needs 1 ranked lap} other{Strong acceleration: needs {count} ranked laps}}",
   "@summaryCarAccelerationNeedsLaps": {"description": "Car, last laps: too few ranked laps with strong acceleration.", "placeholders": {"count": {"type": "int"}}},
-  "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatures: not recorded on the last ranked lap} other{Temperatures: not recorded on each of the last {count} ranked laps}}",
+  "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatures: missing on the last ranked lap} other{Temperatures: missing on one of the last {count} ranked laps}}",
   "@summaryCarTemperaturesMissing": {"description": "Car, last laps: every temperature is missing on one of the laps its rise is read over.", "placeholders": {"count": {"type": "int"}}},
   "summaryCarAccelerationMissing": "Strong acceleration: not read on the last ranked lap",
   "@summaryCarAccelerationMissing": {"description": "Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples)."},
   "summaryCarFallNote": "Traffic and a different line lower it too.",
-  "@summaryCarFallNote": {"description": "Under a fall in strong acceleration: it is an observation, not a diagnosis."}
+  "@summaryCarFallNote": {"description": "Under a fall in strong acceleration: it is an observation, not a diagnosis."},
+  "summaryCarAccelerationOnLaps": "{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}",
+  "@summaryCarAccelerationOnLaps": {"description": "Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).", "placeholders": {"count": {"type": "int"}, "ranked": {"type": "int"}, "needed": {"type": "int"}}}
 }

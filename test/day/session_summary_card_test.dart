@@ -587,8 +587,14 @@ void main() {
           strongG: [for (var i = 0; i < 11; i++) 0.3, null],
         ),
       ),
-      'Car, last laps | Temperatures: not recorded on each of the last 3 '
-      'ranked laps\nStrong acceleration: not read on the last ranked lap',
+      'Car, last laps | Temperatures: missing on one of the last 3 ranked '
+      'laps\nStrong acceleration: not read on the last ranked lap',
+    );
+    // Six ranked laps, three of them with strong acceleration.
+    expect(
+      await watch(_lastLaps(strongG: [0.3, null, null, null, 0.3, 0.3])),
+      'Car, last laps | Strong acceleration: read on 3 of 6 ranked laps, '
+      'needs 4',
     );
     // Nothing recorded on its laps: no line (the hottest line says so).
     await _pump(tester, channels: _channels);
@@ -621,8 +627,8 @@ void main() {
     );
     expect(
       _text(tester, 'sessionSummaryCarWatch'),
-      'Auto, ostatnie okrążenia | Temperatury: potrzeba 3 okrążeń w rankingu'
-      '\nMocne przyspieszenie: potrzeba 4 okrążeń w rankingu',
+      'Auto, ostatnie okrążenia | Temperatury: potrzeba 3 sklasyfikowanych '
+      'okrążeń\nMocne przyspieszenie: potrzeba 4 sklasyfikowanych okrążeń',
     );
   });
 }

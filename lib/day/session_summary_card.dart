@@ -214,6 +214,16 @@ class SessionSummaryCard extends StatelessWidget {
           ] else
             l10n.summaryCarSettledAcceleration,
         ],
+        // Enough ranked laps, too few of them with strong acceleration.
+        CarWatchStatus.needsLaps
+            when watch.rankedLaps >= carWatchAccelerationLaps =>
+          [
+            l10n.summaryCarAccelerationOnLaps(
+              watch.accelerationLaps,
+              watch.rankedLaps,
+              carWatchAccelerationLaps,
+            ),
+          ],
         CarWatchStatus.needsLaps => [
           l10n.summaryCarAccelerationNeedsLaps(carWatchAccelerationLaps),
         ],

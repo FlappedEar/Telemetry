@@ -6129,9 +6129,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          'Temperatures: not recorded on each of the last $count ranked laps',
-      one: 'Temperatures: not recorded on the last ranked lap',
+      other: 'Temperatures: missing on one of the last $count ranked laps',
+      one: 'Temperatures: missing on the last ranked lap',
     );
     return '$_temp0';
   }
@@ -6142,4 +6141,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryCarFallNote => 'Traffic and a different line lower it too.';
+
+  @override
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Strong acceleration: read on $count of $ranked ranked laps, needs $needed',
+      one:
+          'Strong acceleration: read on 1 of $ranked ranked laps, needs $needed',
+    );
+    return '$_temp0';
+  }
 }

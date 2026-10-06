@@ -99,6 +99,7 @@ final class CarWatch {
     required this.rankedLaps,
     required this.temperatures,
     required this.acceleration,
+    this.accelerationLaps = 0,
     List<CarWatchRise> rises = const [],
     this.fall,
   }) : rises = List.unmodifiable(rises);
@@ -118,6 +119,9 @@ final class CarWatch {
 
   /// Whether a fall in strong acceleration could be read.
   final CarWatchStatus acceleration;
+
+  /// Ranked laps with strong acceleration.
+  final int accelerationLaps;
 
   /// Temperatures still rising at the end, largest rise (in °C) first.
   final List<CarWatchRise> rises;
@@ -172,8 +176,9 @@ CarWatch? carWatch(RunChannelSummaries run) {
     );
   }
 
-  // Temperatures: rising from the first of the last laps to the last, and
-  // not falling on the last step.
+  // Temperatures: rising from the first of the last ranked laps to the last
+  // (an unranked lap between them is skipped), and not falling on the last
+  // step.
   final recordedChannels = [
     for (final channel in run.channels)
       if (ranked.any((section) => maximumAt(channel, section) != null)) channel,
@@ -252,6 +257,7 @@ CarWatch? carWatch(RunChannelSummaries run) {
     rankedLaps: ranked.length,
     temperatures: temperatures,
     acceleration: acceleration,
+    accelerationLaps: accelerated.length,
     rises: rises,
     fall: fall,
   );

@@ -1472,9 +1472,10 @@
   "summaryCarFallWith": "{fall}; w tym czasie {channel} {from} → {to}",
   "summaryCarSettledTemperatures": "Żadna temperatura nie rośnie na końcu",
   "summaryCarSettledAcceleration": "Mocne przyspieszenie bez spadku",
-  "summaryCarTemperaturesNeedLaps": "{count, plural, =1{Temperatury: potrzeba 1 okrążenia w rankingu} few{Temperatury: potrzeba {count} okrążeń w rankingu} many{Temperatury: potrzeba {count} okrążeń w rankingu} other{Temperatury: potrzeba {count} okrążeń w rankingu}}",
-  "summaryCarAccelerationNeedsLaps": "{count, plural, =1{Mocne przyspieszenie: potrzeba 1 okrążenia w rankingu} few{Mocne przyspieszenie: potrzeba {count} okrążeń w rankingu} many{Mocne przyspieszenie: potrzeba {count} okrążeń w rankingu} other{Mocne przyspieszenie: potrzeba {count} okrążeń w rankingu}}",
-  "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatury: brak zapisu na ostatnim okrążeniu w rankingu} few{Temperatury: brak zapisu na którymś z ostatnich {count} okrążeń w rankingu} many{Temperatury: brak zapisu na którymś z ostatnich {count} okrążeń w rankingu} other{Temperatury: brak zapisu na którymś z ostatnich {count} okrążeń w rankingu}}",
-  "summaryCarAccelerationMissing": "Mocne przyspieszenie: brak odczytu na ostatnim okrążeniu w rankingu",
-  "summaryCarFallNote": "Ruch na torze i inna linia też je obniżają."
+  "summaryCarTemperaturesNeedLaps": "{count, plural, =1{Temperatury: potrzeba 1 sklasyfikowanego okrążenia} few{Temperatury: potrzeba {count} sklasyfikowanych okrążeń} many{Temperatury: potrzeba {count} sklasyfikowanych okrążeń} other{Temperatury: potrzeba {count} sklasyfikowanych okrążeń}}",
+  "summaryCarAccelerationNeedsLaps": "{count, plural, =1{Mocne przyspieszenie: potrzeba 1 sklasyfikowanego okrążenia} few{Mocne przyspieszenie: potrzeba {count} sklasyfikowanych okrążeń} many{Mocne przyspieszenie: potrzeba {count} sklasyfikowanych okrążeń} other{Mocne przyspieszenie: potrzeba {count} sklasyfikowanych okrążeń}}",
+  "summaryCarTemperaturesMissing": "{count, plural, =1{Temperatury: brak zapisu na ostatnim sklasyfikowanym okrążeniu} few{Temperatury: brak zapisu na którymś z ostatnich {count} sklasyfikowanych okrążeń} many{Temperatury: brak zapisu na którymś z ostatnich {count} sklasyfikowanych okrążeń} other{Temperatury: brak zapisu na którymś z ostatnich {count} sklasyfikowanych okrążeń}}",
+  "summaryCarAccelerationMissing": "Mocne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu",
+  "summaryCarFallNote": "Ruch na torze i inna linia też je obniżają.",
+  "summaryCarAccelerationOnLaps": "{count, plural, =1{Mocne przyspieszenie: odczyt na 1 z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} few{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} many{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}} other{Mocne przyspieszenie: odczyt na {count} z {ranked} sklasyfikowanych okrążeń, potrzeba {needed}}}"
 }

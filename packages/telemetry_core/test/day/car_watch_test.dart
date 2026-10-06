@@ -203,6 +203,7 @@ void main() {
     expect(missing.fall, isNull);
     expect(missing.acceleration, CarWatchStatus.missingOnLap);
     expect(carWatch(_run(strongG: [0.30, 0.30, 0.20]))!.acceleration, CarWatchStatus.needsLaps);
+    expect(carWatch(_run(strongG: [0.30, null, null, 0.30, 0.30]))!.accelerationLaps, 3);
     // Five ranked laps, only three with acceleration.
     expect(
       carWatch(_run(strongG: [0.30, null, null, 0.30, 0.30]))!.acceleration,

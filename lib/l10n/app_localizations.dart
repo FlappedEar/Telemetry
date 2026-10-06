@@ -9034,7 +9034,7 @@ abstract class AppLocalizations {
   /// Car, last laps: every temperature is missing on one of the laps its rise is read over.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Temperatures: not recorded on the last ranked lap} other{Temperatures: not recorded on each of the last {count} ranked laps}}'**
+  /// **'{count, plural, =1{Temperatures: missing on the last ranked lap} other{Temperatures: missing on one of the last {count} ranked laps}}'**
   String summaryCarTemperaturesMissing(int count);
 
   /// Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples).
@@ -9048,6 +9048,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Traffic and a different line lower it too.'**
   String get summaryCarFallNote;
+
+  /// Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}'**
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed);
 }
 
 class _AppLocalizationsDelegate
