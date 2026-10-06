@@ -511,6 +511,8 @@ void main() {
       exitFollowsGap,
       exitTruncated,
       exitUnitUndeclared,
+      exitScaleUnknown,
+      exitScaleInferred,
       exitMixedProvenance,
       cornerPhaseMultipleApexes,
       cornerPhaseSpeedChannelMissing,

@@ -4436,6 +4436,18 @@ abstract class AppLocalizations {
   /// **'{channel} is in an unexpected unit'**
   String drivingUnexpectedUnitChannel(String channel);
 
+  /// Why a pedal state is unknown: the pedal channel has no unit, stays within 0..1, and nothing shows whether it is a 0..1 fraction or a few percent.
+  ///
+  /// In en, this message translates to:
+  /// **'pedal scale unknown'**
+  String get drivingScaleUnknown;
+
+  /// A pedal channel with no unit whose values stay within 0..1, and nothing shows whether that is a fraction or a few percent.
+  ///
+  /// In en, this message translates to:
+  /// **'the scale of {channel} (0–1 or %) is not known'**
+  String drivingScaleUnknownChannel(String channel);
+
   /// A lap without a brake pedal channel.
   ///
   /// In en, this message translates to:
@@ -4829,6 +4841,18 @@ abstract class AppLocalizations {
   /// **'channel unit not recorded'**
   String get cornerDetailsReasonUnitNotRecorded;
 
+  /// Why a corner figure is missing, lower case: the pedal channel has no unit, stays within 0..1, and nothing shows its scale.
+  ///
+  /// In en, this message translates to:
+  /// **'pedal scale (0–1 or %) not known'**
+  String get cornerDetailsReasonScaleUnknown;
+
+  /// A note on a corner figure, lower case: the pedal channel has no unit and was read as a 0..1 fraction, as the longitudinal G shows.
+  ///
+  /// In en, this message translates to:
+  /// **'pedal read as 0–1'**
+  String get cornerDetailsReasonScaleInferred;
+
   /// Why a corner figure is missing, lower case: no speed channel.
   ///
   /// In en, this message translates to:
@@ -4954,6 +4978,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Inferred from deceleration: the brake channel does not show the braking'**
   String get cornerDetailsFromDecelerationBrakeUnused;
+
+  /// How a lap's braking point was found: from the deceleration, because the brake channel has no unit, stays within 0..1, and nothing shows its scale.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from deceleration: the brake channel\'s scale (0–1 or %) is not known'**
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown;
 
   /// Why a corner figure is inferred, lower case: the session's brake channel has no data or is not pressed in most hard brakings.
   ///

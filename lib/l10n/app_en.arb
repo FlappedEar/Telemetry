@@ -4409,6 +4409,19 @@
       }
     }
   },
+  "drivingScaleUnknown": "pedal scale unknown",
+  "@drivingScaleUnknown": {
+    "description": "Why a pedal state is unknown: the pedal channel has no unit, stays within 0..1, and nothing shows whether it is a 0..1 fraction or a few percent."
+  },
+  "drivingScaleUnknownChannel": "the scale of {channel} (0–1 or %) is not known",
+  "@drivingScaleUnknownChannel": {
+    "description": "A pedal channel with no unit whose values stay within 0..1, and nothing shows whether that is a fraction or a few percent.",
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
   "drivingNoBrakeChannel": "no brake channel",
   "@drivingNoBrakeChannel": {
     "description": "A lap without a brake pedal channel."
@@ -4743,6 +4756,14 @@
   "@cornerDetailsReasonUnitNotRecorded": {
     "description": "Why a corner figure is missing, lower case: channel unit not recorded."
   },
+  "cornerDetailsReasonScaleUnknown": "pedal scale (0–1 or %) not known",
+  "@cornerDetailsReasonScaleUnknown": {
+    "description": "Why a corner figure is missing, lower case: the pedal channel has no unit, stays within 0..1, and nothing shows its scale."
+  },
+  "cornerDetailsReasonScaleInferred": "pedal read as 0–1",
+  "@cornerDetailsReasonScaleInferred": {
+    "description": "A note on a corner figure, lower case: the pedal channel has no unit and was read as a 0..1 fraction, as the longitudinal G shows."
+  },
   "cornerDetailsReasonNoSpeedChannel": "no speed channel",
   "@cornerDetailsReasonNoSpeedChannel": {
     "description": "Why a corner figure is missing, lower case: no speed channel."
@@ -4826,6 +4847,10 @@
   "cornerDetailsFromDecelerationBrakeUnused": "Inferred from deceleration: the brake channel does not show the braking",
   "@cornerDetailsFromDecelerationBrakeUnused": {
     "description": "How a lap's braking point was found: from the deceleration, because the session's brake channel has no data or is not pressed in most hard brakings."
+  },
+  "cornerDetailsFromDecelerationBrakeScaleUnknown": "Inferred from deceleration: the brake channel's scale (0–1 or %) is not known",
+  "@cornerDetailsFromDecelerationBrakeScaleUnknown": {
+    "description": "How a lap's braking point was found: from the deceleration, because the brake channel has no unit, stays within 0..1, and nothing shows its scale."
   },
   "cornerDetailsReasonBrakeChannelNotUsed": "the brake channel does not show the braking",
   "@cornerDetailsReasonBrakeChannelNotUsed": {

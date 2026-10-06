@@ -3030,6 +3030,14 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get drivingScaleUnknown => 'nieznana skala pedału';
+
+  @override
+  String drivingScaleUnknownChannel(String channel) {
+    return 'nie wiadomo, w jakiej skali (0–1 czy %) jest $channel';
+  }
+
+  @override
   String get drivingNoBrakeChannel => 'brak kanału hamulca';
 
   @override
@@ -3286,6 +3294,13 @@ class AppLocalizationsPl extends AppLocalizations {
       'jednostka kanału nie jest zapisana';
 
   @override
+  String get cornerDetailsReasonScaleUnknown =>
+      'nieznana skala pedału (0–1 czy %)';
+
+  @override
+  String get cornerDetailsReasonScaleInferred => 'pedał odczytany w skali 0–1';
+
+  @override
   String get cornerDetailsReasonNoSpeedChannel => 'brak kanału prędkości';
 
   @override
@@ -3358,6 +3373,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get cornerDetailsFromDecelerationBrakeUnused =>
       'Wyznaczone pośrednio z przeciążenia przy hamowaniu: kanał hamulca nie pokazuje hamowania';
+
+  @override
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown =>
+      'Wyznaczone pośrednio z przeciążenia przy hamowaniu: nie wiadomo, w jakiej skali (0–1 czy %) jest kanał hamulca';
 
   @override
   String get cornerDetailsReasonBrakeChannelNotUsed =>
