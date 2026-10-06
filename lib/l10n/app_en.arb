@@ -1780,6 +1780,79 @@
   "@focusCompareAB": {
     "description": "Button that compares the focus area's two laps."
   },
+  "focusBeforeLost": "Earlier visits here ({corner}): it cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}}, last on {date}.",
+  "@focusBeforeLost": {
+    "description": "Under a focus area at one of the track's corners, with the track corner's name: on earlier visits to this track in this car, on how many of those that measured the corner it was among the day's costliest corners, and the date of the latest. An observation, not a cause.",
+    "placeholders": {
+      "lost": {
+        "type": "int"
+      },
+      "measured": {
+        "type": "int"
+      },
+      "corner": {
+        "type": "String",
+        "example": "Turn 4"
+      },
+      "date": {
+        "type": "String",
+        "example": "Aug 29, 2026"
+      }
+    }
+  },
+  "focusBeforeNotLastTwo": "Earlier visits here ({corner}): it cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}}, but not on the last 2 visits that measured it.",
+  "@focusBeforeNotLastTwo": {
+    "description": "Under a focus area at one of the track's corners, with the track corner's name: it was among the day's costliest corners on earlier visits in this car, but not on the last two visits that measured it.",
+    "placeholders": {
+      "lost": {
+        "type": "int"
+      },
+      "measured": {
+        "type": "int"
+      },
+      "corner": {
+        "type": "String",
+        "example": "Turn 4"
+      }
+    }
+  },
+  "focusBeforeNever": "Earlier visits here ({corner}): measured on {measured, plural, =1{1 visit} other{{measured} visits}}, never among the corners that cost the most time.",
+  "@focusBeforeNever": {
+    "description": "Under a focus area at one of the track's corners, with the track corner's name: measured on earlier visits in this car, never among a day's costliest corners.",
+    "placeholders": {
+      "measured": {
+        "type": "int"
+      },
+      "corner": {
+        "type": "String",
+        "example": "Turn 4"
+      }
+    }
+  },
+  "focusBeforeNone": "Earlier visits here ({corner}): none in this car in your library.",
+  "@focusBeforeNone": {
+    "description": "Under a focus area at one of the track's corners, with the track corner's name: the library has no earlier day at this track in this car (other cars may have driven it).",
+    "placeholders": {
+      "corner": {
+        "type": "String",
+        "example": "Turn 4"
+      }
+    }
+  },
+  "focusBeforeNotMeasured": "Earlier visits here ({corner}): this corner was not measured before.",
+  "@focusBeforeNotMeasured": {
+    "description": "Under a focus area at one of the track's corners, with the track corner's name: earlier days at this track in this car did not measure it.",
+    "placeholders": {
+      "corner": {
+        "type": "String",
+        "example": "Turn 4"
+      }
+    }
+  },
+  "focusBeforeNotCorner": "Earlier visits here: this place is not one of the track's corners in your library yet.",
+  "@focusBeforeNotCorner": {
+    "description": "Under a focus area whose segment does not match a corner the library keeps for this track, so it has no earlier visits to show."
+  },
   "focusObservationSectorGap": "Your best lap ({bestLap}) was {gap} s slower through {segment} than {sourceLap}, the fastest recorded there.",
   "@focusObservationSectorGap": {
     "description": "What a sector-gap focus area measured.",

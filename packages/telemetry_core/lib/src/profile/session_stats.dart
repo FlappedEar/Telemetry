@@ -592,7 +592,21 @@ double? _routeFraction(RouteShape route, GeoCoordinate point) {
   ProfileTrack track,
   List<DayCornerSpan> spans,
   Random? random,
-) {
+) => _matchCorners(track, spans, addNew: true, random: random);
+
+/// The track corner id of each of [spans] (by segment id) that is one of
+/// [track]'s corners, as adding the day places them; a span that would be a
+/// new corner has none. Pass all of a day's spans: each corner takes one
+/// span at most, in their order.
+Map<String, String> matchTrackCorners(ProfileTrack track, List<DayCornerSpan> spans) =>
+    _matchCorners(track, spans, addNew: false).$2;
+
+(List<TrackCorner>, Map<String, String>) _matchCorners(
+  ProfileTrack track,
+  List<DayCornerSpan> spans, {
+  required bool addNew,
+  Random? random,
+}) {
   final corners = [...track.corners];
   final ids = <String, String>{};
   // Each track corner takes one of the day's corners at most, so a session
@@ -614,7 +628,7 @@ double? _routeFraction(RouteShape route, GeoCoordinate point) {
       if (share >= 0.5 && share > matched) (match, matched) = (corner, share);
     }
     if (match == null) {
-      if (corners.length >= maximumProfileCorners) continue;
+      if (!addNew || corners.length >= maximumProfileCorners) continue;
       // The day's own name for it; renamed in the Library.
       match = TrackCorner(
         id: newEventId(random),

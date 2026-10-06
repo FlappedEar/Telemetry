@@ -1215,6 +1215,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get focusCompareAB => 'Compare laps A and B';
 
   @override
+  String focusBeforeLost(int lost, int measured, String corner, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: '$measured visits',
+      one: '1 visit',
+    );
+    return 'Earlier visits here ($corner): it cost time on $lost of $_temp0, last on $date.';
+  }
+
+  @override
+  String focusBeforeNotLastTwo(int lost, int measured, String corner) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: '$measured visits',
+      one: '1 visit',
+    );
+    return 'Earlier visits here ($corner): it cost time on $lost of $_temp0, but not on the last 2 visits that measured it.';
+  }
+
+  @override
+  String focusBeforeNever(int measured, String corner) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: '$measured visits',
+      one: '1 visit',
+    );
+    return 'Earlier visits here ($corner): measured on $_temp0, never among the corners that cost the most time.';
+  }
+
+  @override
+  String focusBeforeNone(String corner) {
+    return 'Earlier visits here ($corner): none in this car in your library.';
+  }
+
+  @override
+  String focusBeforeNotMeasured(String corner) {
+    return 'Earlier visits here ($corner): this corner was not measured before.';
+  }
+
+  @override
+  String get focusBeforeNotCorner =>
+      'Earlier visits here: this place is not one of the track\'s corners in your library yet.';
+
+  @override
   String focusObservationSectorGap(
     String bestLap,
     String gap,

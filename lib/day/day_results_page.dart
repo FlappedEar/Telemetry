@@ -1427,17 +1427,14 @@ class _DayResultsPageState extends State<DayResultsPage> {
         // The observations to look at first; what to try next is the
         // coach's (_coachList).
         const SizedBox(height: 12),
-        FocusAreasCard(
-          result: _controller.theoreticalBest,
-          loading: _controller.theoreticalBestLoading,
-          areas: _controller.focusAreas,
-          lapLabel: _controller.lapLabel,
-          path: path,
-          gate: _mapGate,
-          wide: wide,
-          onOpenLap: _open,
-          onCompare: _compare,
-        ),
+        if (widget.library case final library?
+            when library.holds(_controller.documentPath ?? ''))
+          ListenableBuilder(
+            listenable: library,
+            builder: (context, _) => _focusAreas(path, wide, library.profile),
+          )
+        else
+          _focusAreas(path, wide, null),
         const SizedBox(height: 12),
         _theoreticalBest(path, wide),
         const SizedBox(height: 12),
@@ -1595,6 +1592,66 @@ class _DayResultsPageState extends State<DayResultsPage> {
         channelSource: _controller.channelSource,
       ),
     ];
+  }
+
+  // What earlier visits say about each focus area, for the profile, the
+  // theoretical best, the language and the day it was worked out for.
+  (Object?, Object?, Object?, String, String? Function(FocusArea)?)? _before;
+
+  /// Where to look next; with [profile], what earlier visits say about each
+  /// area at one of the track's corners.
+  Widget _focusAreas(LapPath? path, bool wide, DriverProfile? profile) {
+    final result = _controller.theoreticalBest;
+    final l10n = context.l10n;
+    final eventId = _controller.eventId;
+    final cached = _before;
+    final String? Function(FocusArea)? before;
+    if (cached != null &&
+        identical(cached.$1, profile) &&
+        identical(cached.$2, result) &&
+        identical(cached.$3, l10n) &&
+        cached.$4 == eventId) {
+      before = cached.$5;
+    } else {
+      before = _focusBefore(profile, result, l10n, eventId);
+      _before = (profile, result, l10n, eventId, before);
+    }
+    return FocusAreasCard(
+      result: result,
+      loading: _controller.theoreticalBestLoading,
+      areas: _controller.focusAreas,
+      lapLabel: _controller.lapLabel,
+      path: path,
+      gate: _mapGate,
+      wide: wide,
+      onOpenLap: _open,
+      onCompare: _compare,
+      before: before,
+    );
+  }
+
+  String? Function(FocusArea)? _focusBefore(
+    DriverProfile? profile,
+    DayTheoreticalBest? result,
+    AppLocalizations l10n,
+    String eventId,
+  ) {
+    // The day's corners placed as adding it to the profile placed them,
+    // from the recording the axis came from.
+    final canonical = _controller.session(
+      result?.computed?.canonicalRunId ?? '',
+    );
+    if (canonical == null) return null;
+    return focusBefore(
+      l10n,
+      profile,
+      eventId,
+      measureCornerSpans(
+        result,
+        longitudeIsWestPositive:
+            canonical.metadata['gpsLongitudeConvention'] == 'west-positive',
+      ),
+    );
   }
 
   Widget _theoreticalBest(LapPath? path, bool wide) {
