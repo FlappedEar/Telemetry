@@ -14,6 +14,7 @@ import '../day/day_document.dart';
 import '../day/day_laps.dart';
 import '../day/day_ranking.dart';
 import '../day/day_theoretical_best.dart';
+import '../day/session_weather.dart';
 import '../day/track_inference.dart';
 import '../geometry.dart';
 import '../speed_units.dart';
@@ -109,6 +110,99 @@ final class ProfileTrack {
   );
 }
 
+/// The weather during a session, as the profile keeps it: a few values of
+/// its [WeatherSummary], in the units the day stores (°C, mm, km/h, degrees
+/// the wind comes from). Modelled for the area, not measured at the track.
+final class ProfileWeather {
+  ProfileWeather({
+    this.sourceRevision,
+    this.temperatureC,
+    this.temperatureMinC,
+    this.temperatureMaxC,
+    this.condition,
+    this.precipitationMm,
+    this.windSpeedKmh,
+    this.windDirectionDegrees,
+    Map<String, Object?> unknown = const {},
+  }) : unknown = Map.unmodifiable(unknown);
+
+  /// What the profile keeps of [summary], the weather of the recording
+  /// [sourceRevision]; null when it has none of it.
+  static ProfileWeather? of(WeatherSummary? summary, {String? sourceRevision}) {
+    if (summary == null) return null;
+    final weather = ProfileWeather(
+      sourceRevision: _revision(sourceRevision),
+      temperatureC: _weatherValue(summary.temperatureC, 'temperatureC'),
+      temperatureMinC: _weatherValue(summary.temperatureMinC, 'temperatureC'),
+      temperatureMaxC: _weatherValue(summary.temperatureMaxC, 'temperatureC'),
+      condition: summary.condition,
+      precipitationMm: _weatherValue(summary.precipitationMm, 'precipitationMm'),
+      windSpeedKmh: _weatherValue(summary.windSpeedKmh, 'windSpeedKmh'),
+      windDirectionDegrees: _weatherValue(summary.windDirectionDegrees, 'windDirectionDegrees'),
+    );
+    return weather.isEmpty ? null : weather;
+  }
+
+  /// [SessionWeather.sourceRevision]: the SHA-256 of the recording it is
+  /// the weather of. A session whose recording was replaced since does not
+  /// keep it. Null when not known.
+  final String? sourceRevision;
+
+  /// The air temperature at the session's middle, and its lowest and
+  /// highest from start to end.
+  final double? temperatureC, temperatureMinC, temperatureMaxC;
+
+  /// The worst weather of the hours nearest the session.
+  final WeatherCondition? condition;
+
+  /// Rain over the hours the session ran in.
+  final double? precipitationMm;
+  final double? windSpeedKmh;
+
+  /// Where the wind comes from, degrees clockwise from north.
+  final double? windDirectionDegrees;
+
+  /// Keys this version does not know, kept as read; a `condition` this
+  /// version does not know is kept here too.
+  final Map<String, Object?> unknown;
+
+  /// Whether it has a condition this version does not know.
+  bool get hasUnknownCondition => unknown.containsKey('condition');
+
+  /// Whether it holds no value this version reads.
+  bool get isEmpty =>
+      temperatureC == null &&
+      temperatureMinC == null &&
+      temperatureMaxC == null &&
+      condition == null &&
+      precipitationMm == null &&
+      windSpeedKmh == null &&
+      windDirectionDegrees == null;
+
+  /// As a [WeatherSummary], to be put in words as a day's weather is.
+  WeatherSummary get summary => WeatherSummary(
+    temperatureC: temperatureC,
+    temperatureMinC: temperatureMinC,
+    temperatureMaxC: temperatureMaxC,
+    condition: condition,
+    precipitationMm: precipitationMm,
+    windSpeedKmh: windSpeedKmh,
+    windDirectionDegrees: windDirectionDegrees,
+  );
+}
+
+String? _revision(Object? value) =>
+    value is String && value.isNotEmpty && value.length <= 128 ? value : null;
+
+/// [value] when it is a finite number within [weatherValueRanges] of [key],
+/// else null: out of range is no data.
+double? _weatherValue(Object? value, String key) {
+  if (value is! num || !value.isFinite) return null;
+  final (low, high) = weatherValueRanges[key]!;
+  final number = value.toDouble();
+  return number >= low && number <= high ? number : null;
+}
+
 /// One session of a day, as its last analysis found it.
 final class ProfileSession {
   ProfileSession({
@@ -118,6 +212,7 @@ final class ProfileSession {
     this.lapCount = 0,
     this.bestLapSeconds,
     this.stats,
+    this.weather,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
 
@@ -137,15 +232,23 @@ final class ProfileSession {
 
   /// What it measured; null until measured.
   final SessionStats? stats;
+
+  /// The weather during it; null when the day had none for it (weather
+  /// lookup off, no time or position, or added before the profile kept
+  /// weather).
+  final ProfileWeather? weather;
   final Map<String, Object?> unknown;
 
-  ProfileSession _withStats(SessionStats? stats) => ProfileSession(
+  ProfileSession _withStats(SessionStats? stats) => _with(stats, weather);
+
+  ProfileSession _with(SessionStats? stats, ProfileWeather? weather) => ProfileSession(
     runId: runId,
     name: name,
     startMilliseconds: startMilliseconds,
     lapCount: lapCount,
     bestLapSeconds: bestLapSeconds,
     stats: stats,
+    weather: weather,
     unknown: unknown,
   );
 }
@@ -284,8 +387,10 @@ final class ProfileDayInput {
     this.theoreticalBestSeconds,
     List<DayCornerSpan> cornerSpans = const [],
     this.measuredCorners = false,
+    Map<String, String> sourceRevisions = const {},
   }) : sessions = List.unmodifiable(sessions),
-       cornerSpans = List.unmodifiable(cornerSpans);
+       cornerSpans = List.unmodifiable(cornerSpans),
+       sourceRevisions = Map.unmodifiable(sourceRevisions);
 
   /// [eventId] and [file] of a day with [name], from its [analysis]: each
   /// session's laps and best lap, the day's best lap and the route of its
@@ -295,7 +400,9 @@ final class ProfileDayInput {
   /// effective unit), each session's distance and driving time; with the
   /// chosen group's [theoreticalBest], its total, each session's own
   /// theoretical best and its corners. Without them, adding the day keeps
-  /// what the profile measured before.
+  /// what the profile measured before. With [weather] (by run id), each
+  /// session's weather; a session without it keeps what the profile had,
+  /// while that is the weather of the same recording.
   factory ProfileDayInput.fromAnalysis({
     required String eventId,
     required String file,
@@ -304,6 +411,7 @@ final class ProfileDayInput {
     String? trackName,
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
+    Map<String, ProfileWeather?>? weather,
   }) {
     // Only the chosen group's: the day's route and track are its.
     if (theoreticalBest != null && theoreticalBest.groupId != analysis.chosenGroupId) {
@@ -326,7 +434,9 @@ final class ProfileDayInput {
     final names = <String, String>{};
     final starts = <String, int>{};
     final laps = <String, int>{};
+    final revisions = <String, String>{};
     for (final row in analysis.rows) {
+      revisions[row.runId] = row.sourceRevision;
       if (!names.containsKey(row.runId)) order.add(row.runId);
       names[row.runId] = row.runName;
       // A time a profile cannot keep (a hostile recording clock) is undated.
@@ -345,6 +455,7 @@ final class ProfileDayInput {
           lapCount: laps[runId]!,
           bestLapSeconds: _finite(best[runId]),
           stats: measured[runId],
+          weather: weather?[runId],
         ),
     ];
     RouteShape? route;
@@ -383,6 +494,7 @@ final class ProfileDayInput {
           theoreticalBest != null &&
           theoreticalBest.state != DayTheoreticalBestState.error &&
           (ready == null || canonical != null),
+      sourceRevisions: revisions,
     );
   }
 
@@ -409,6 +521,37 @@ final class ProfileDayInput {
   /// Whether the theoretical best was worked out: false keeps the day's and
   /// each session's theoretical best and corners measured before.
   final bool measuredCorners;
+
+  /// The SHA-256 of each session's recording, by run id: kept weather of
+  /// another recording is dropped.
+  final Map<String, String> sourceRevisions;
+
+  /// This day with [weather] (by run id) as its sessions' weather, such as
+  /// newer weather that arrived while the day was being measured. Weather
+  /// of another recording than a session's, as far as known, is left out.
+  ProfileDayInput withWeather(Map<String, ProfileWeather> weather) => ProfileDayInput(
+    eventId: eventId,
+    file: file,
+    name: name,
+    sessions: [
+      for (final session in sessions)
+        if (weather[session.runId] case final next?
+            when next.sourceRevision == null ||
+                sourceRevisions[session.runId] == null ||
+                next.sourceRevision == sourceRevisions[session.runId])
+          session._with(session.stats, next)
+        else
+          session,
+    ],
+    startMilliseconds: startMilliseconds,
+    bestLapSeconds: bestLapSeconds,
+    route: route,
+    trackName: trackName,
+    theoreticalBestSeconds: theoreticalBestSeconds,
+    cornerSpans: cornerSpans,
+    measuredCorners: measuredCorners,
+    sourceRevisions: sourceRevisions,
+  );
 }
 
 double? _finite(double? value) => value != null && value.isFinite && value > 0 ? value : null;
@@ -512,8 +655,26 @@ DriverProfile addDayToProfile(
       for (final session in existing.sessions)
         if (session.stats != null) session.runId: session.stats!,
   };
+  // A session given no weather keeps the weather it had (the weather of a
+  // session does not depend on the track), unless it is the weather of a
+  // recording since replaced.
+  final weatherBefore = {
+    for (final session in existing?.sessions ?? const <ProfileSession>[])
+      if (session.weather case final weather?
+          when weather.sourceRevision == null ||
+              day.sourceRevisions[session.runId] == null ||
+              weather.sourceRevision == day.sourceRevisions[session.runId])
+        session.runId: weather,
+  };
   var sessions = [
     for (final session in day.sessions)
+      if (session.weather == null && weatherBefore[session.runId] != null)
+        session._with(session.stats, weatherBefore[session.runId])
+      else
+        session,
+  ];
+  sessions = [
+    for (final session in sessions)
       switch (session.stats) {
         final stats? when day.measuredCorners => session._withStats(
           stats.withCorners([
@@ -623,6 +784,49 @@ DriverProfile setProfileDayCar(DriverProfile profile, String eventId, String car
   );
 }
 
+/// [profile] with the weather of day [eventId]'s sessions replaced by
+/// [weather] (by run id), without measuring the day again. Sessions the
+/// day does not have are left out; unchanged when nothing changes. Throws
+/// [ProfileFormatError] for what [decodeDriverProfile] would refuse.
+DriverProfile setProfileSessionWeather(
+  DriverProfile profile,
+  String eventId,
+  Map<String, ProfileWeather> weather,
+) {
+  final day = profile.day(eventId);
+  if (day == null) return profile;
+  var changed = false;
+  final sessions = [
+    for (final session in day.sessions)
+      if (weather[session.runId] case final next?
+          when session.weather == null ||
+              jsonEncode(_encodeWeather(next)) != jsonEncode(_encodeWeather(session.weather!)))
+        () {
+          changed = true;
+          return session._with(session.stats, next);
+        }()
+      else
+        session,
+  ];
+  if (!changed) return profile;
+  final entry = ProfileDay(
+    eventId: day.eventId,
+    file: day.file,
+    name: day.name,
+    carId: day.carId,
+    trackId: day.trackId,
+    startMilliseconds: day.startMilliseconds,
+    sessions: sessions,
+    bestLapSeconds: day.bestLapSeconds,
+    theoreticalBestSeconds: day.theoreticalBestSeconds,
+    unknown: day.unknown,
+  );
+  _verified(_encodeDay(entry), _day);
+  return profile._copy(
+    days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
+  );
+}
+
 /// [profile]'s other days at [trackId], most recent first; undated days last.
 List<ProfileDay> earlierVisits(DriverProfile profile, String trackId, {String? exceptEventId}) {
   final visits = [
@@ -715,8 +919,22 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
         'lapCount': session.lapCount,
         'bestLapSeconds': session.bestLapSeconds,
         if (session.stats case final stats?) 'stats': _encodeStats(stats),
+        if (session.weather case final weather?) 'weather': _encodeWeather(weather),
       },
   ],
+};
+
+// Absent values are left out, as in a session's stats.
+Map<String, Object?> _encodeWeather(ProfileWeather weather) => {
+  ...weather.unknown,
+  'sourceRevision': ?weather.sourceRevision,
+  'temperatureC': ?weather.temperatureC,
+  'temperatureMinC': ?weather.temperatureMinC,
+  'temperatureMaxC': ?weather.temperatureMaxC,
+  'condition': ?weather.condition?.name,
+  'precipitationMm': ?weather.precipitationMm,
+  'windSpeedKmh': ?weather.windSpeedKmh,
+  'windDirectionDegrees': ?weather.windDirectionDegrees,
 };
 
 double _round(double value) => (value * 10).roundToDouble() / 10;
@@ -910,6 +1128,7 @@ ProfileSession _session(Object? value) {
     lapCount: laps,
     bestLapSeconds: _optionalSeconds(json['bestLapSeconds'], 'session best lap'),
     stats: json['stats'] == null ? null : _stats(json['stats']),
+    weather: json['weather'] == null ? null : _weather(json['weather']),
     unknown: _without(json, const [
       'runId',
       'name',
@@ -917,8 +1136,45 @@ ProfileSession _session(Object? value) {
       'lapCount',
       'bestLapSeconds',
       'stats',
+      'weather',
     ]),
   );
+}
+
+const _weatherKeys = [
+  'sourceRevision',
+  'temperatureC',
+  'temperatureMinC',
+  'temperatureMaxC',
+  'condition',
+  'precipitationMm',
+  'windSpeedKmh',
+  'windDirectionDegrees',
+];
+
+/// A session's weather. A value out of its range ([weatherValueRanges]) is
+/// no data, not a reason to refuse the profile; a condition this version
+/// does not know is kept as it is, with the unknown keys; null when nothing
+/// is left.
+ProfileWeather? _weather(Object? value) {
+  final json = _map(value, 'session weather');
+  final raw = json['condition'];
+  final condition = WeatherCondition.values.where((known) => known.name == raw).firstOrNull;
+  final weather = ProfileWeather(
+    sourceRevision: _revision(json['sourceRevision']),
+    temperatureC: _weatherValue(json['temperatureC'], 'temperatureC'),
+    temperatureMinC: _weatherValue(json['temperatureMinC'], 'temperatureC'),
+    temperatureMaxC: _weatherValue(json['temperatureMaxC'], 'temperatureC'),
+    condition: condition,
+    precipitationMm: _weatherValue(json['precipitationMm'], 'precipitationMm'),
+    windSpeedKmh: _weatherValue(json['windSpeedKmh'], 'windSpeedKmh'),
+    windDirectionDegrees: _weatherValue(json['windDirectionDegrees'], 'windDirectionDegrees'),
+    unknown: {
+      ..._without(json, _weatherKeys),
+      if (condition == null && raw != null) 'condition': _bounded(raw),
+    },
+  );
+  return weather.isEmpty && weather.unknown.isEmpty ? null : weather;
 }
 
 Map<String, Object?> _map(Object? value, String what) {

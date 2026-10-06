@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:isolate';
 import 'dart:ui' show AppExitResponse;
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, mapEquals;
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:telemetry_core/telemetry_core.dart';
@@ -214,6 +214,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _circuits.load();
     _controller.addListener(_reportAddition);
     _controller.addListener(_libraryChanged);
+    _controller.weather.addListener(_weatherChanged);
     _startLibrary();
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
@@ -229,6 +230,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _controller.removeListener(_libraryChanged);
+    _controller.weather.removeListener(_weatherChanged);
     _autosave?.cancel();
     _lifecycle.dispose();
     _summaryScroll.dispose();
@@ -528,6 +530,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   /// corners once it is worked out.
   DayTheoreticalBest? _recordedBest;
 
+  /// Which weather was last given to the profile, by run id. Weather
+  /// usually arrives after the save that recorded the day, so it is given
+  /// again when it does ([_weatherChanged]).
+  Map<String, (String, int)> _recordedWeather = const {};
+
   /// Whether the library was read, so the day is kept in it.
   bool _libraryReady = false;
   Timer? _autosave;
@@ -557,6 +564,59 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _recordSave();
     _scheduleAutosave();
   }
+
+  /// Weather that arrived for a saved day goes to the profile at once
+  /// ([ProfileLibrary.recordWeather]): only the weather, without measuring
+  /// the day again. Only weather already shown is recorded: nothing is
+  /// looked up here. A day with unsaved changes gets its weather with the
+  /// save that records them, so the profile only takes weather of the
+  /// sessions of the saved day.
+  void _weatherChanged() {
+    final library = widget.library;
+    final controller = _controller;
+    final path = controller.documentPath;
+    if (library == null ||
+        path == null ||
+        !library.holds(path) ||
+        controller.dirty ||
+        controller.saving) {
+      return;
+    }
+    final shown = _weatherShown(controller);
+    if (mapEquals(shown, _recordedWeather)) return;
+    // Recorded whether or not the profile changed now: the library holds
+    // it for the day's next record (a day not in the profile yet, or being
+    // measured), so it is never lost.
+    _recordedWeather = shown;
+    final weather = _weatherOf(controller);
+    library.recordWeather(controller.eventId, {
+      for (final MapEntry(:key, :value) in weather.entries) key: ?value,
+    });
+  }
+
+  /// The weather [controller]'s page shows, as the profile keeps it, by run
+  /// id.
+  static Map<String, ProfileWeather?> _weatherOf(
+    DayResultsController controller,
+  ) => {
+    for (final named in controller.runs)
+      named.run.id: switch (controller.weather.of(named.run.id)) {
+        final shown? => ProfileWeather.of(
+          shown.summary,
+          sourceRevision: shown.sourceRevision,
+        ),
+        null => null,
+      },
+  };
+
+  /// Which recording and fetch each session's weather on the page is from.
+  static Map<String, (String, int)> _weatherShown(
+    DayResultsController controller,
+  ) => {
+    for (final named in controller.runs)
+      if (controller.weather.of(named.run.id) case final shown?)
+        named.run.id: (shown.sourceRevision, shown.fetchedMilliseconds),
+  };
 
   /// Saves a day kept in the library once it stayed unchanged for
   /// [_autosaveDelay].
@@ -636,8 +696,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
         (best == null || identical(best, _recordedBest))) {
       return;
     }
+    final weather = _weatherOf(controller);
     _recordedSaves = controller.saveCount;
     _recordedBest = best ?? _recordedBest;
+    _recordedWeather = _weatherShown(controller);
     unawaited(
       library.recordDay(
         eventId: controller.eventId,
@@ -649,6 +711,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             named.run.id: controller.session(named.run.id),
         },
         theoreticalBest: best,
+        weather: weather,
       ),
     );
   }
@@ -1482,7 +1545,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
         // shares its event id.
         if (widget.library case final library?
             when library.holds(_controller.documentPath ?? ''))
-          LastTimeHereCard(library: library, eventId: _controller.eventId),
+          LastTimeHereCard(
+            library: library,
+            eventId: _controller.eventId,
+            weatherStateOf: _controller.weather.stateOf,
+            weatherChanges: _controller.weather,
+          ),
       ],
       const SizedBox(height: 12),
       ..._channelCards(),

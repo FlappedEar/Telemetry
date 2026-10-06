@@ -5289,6 +5289,80 @@ class AppLocalizationsEn extends AppLocalizations {
       'Time lost per corner: no corner was measured on both days.';
 
   @override
+  String get lastTimeHereWeather => 'Weather';
+
+  @override
+  String lastTimeHereWeatherThen(String session, String weather) {
+    return 'Then ($session): $weather';
+  }
+
+  @override
+  String lastTimeHereWeatherToday(String session, String weather) {
+    return 'Today ($session): $weather';
+  }
+
+  @override
+  String lastTimeHereWeatherBestLapSession(String session) {
+    return '$session, best lap';
+  }
+
+  @override
+  String lastTimeHereWeatherBestHadNone(String session) {
+    return '$session; the best-lap session had none';
+  }
+
+  @override
+  String lastTimeHereWeatherFirstSession(String session) {
+    return '$session, first with weather';
+  }
+
+  @override
+  String get lastTimeHereWeatherUnknownCondition =>
+      'conditions this version does not know';
+
+  @override
+  String get lastTimeHereWeatherThenNone =>
+      'Then: — no weather kept for that day: weather lookup was off, its recordings have no time or position, or the day was added before the library kept weather.';
+
+  @override
+  String get lastTimeHereWeatherTodayNone =>
+      'Today: — no weather kept for today yet.';
+
+  @override
+  String lastTimeHereWeatherTodayFetching(String session) {
+    return 'Today ($session): looking up the weather…';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayOff(String session) {
+    return 'Today ($session): — weather lookup is off in settings.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayUnavailable(String session) {
+    return 'Today ($session): — the weather service could not be reached or had no data.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayNoPosition(String session) {
+    return 'Today ($session): — no weather for this session: its recording has no time or GPS position.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayPending(String session) {
+    return 'Today ($session): — shown on this page; it reaches the library when the day is saved.';
+  }
+
+  @override
+  String lastTimeHereWeatherTodayKept(String session) {
+    return 'Today ($session): — saved by a newer version of the app and not read here.';
+  }
+
+  @override
+  String get lastTimeHereWeatherNote =>
+      'Each visit\'s weather is that of the session that set its best lap, or, when that session has none, of its first session with weather.';
+
+  @override
   String get settingsUpdatesHeading => 'Updates';
 
   @override

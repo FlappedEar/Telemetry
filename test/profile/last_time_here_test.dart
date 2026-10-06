@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/last_time_here_card.dart';
 import 'package:telemetry/profile/profile_library.dart';
@@ -34,6 +35,7 @@ ProfileDay _day(
   double? best,
   double? theoretical,
   Map<String, double> losses = const {},
+  List<ProfileSession> sessions = const [],
 }) => ProfileDay(
   eventId: id,
   file: 'Days/$id.fetproject',
@@ -44,6 +46,7 @@ ProfileDay _day(
   bestLapSeconds: best,
   theoreticalBestSeconds: theoretical,
   sessions: [
+    ...sessions,
     if (losses.isNotEmpty)
       ProfileSession(
         runId: 's1',
@@ -59,6 +62,31 @@ ProfileDay _day(
         ),
       ),
   ],
+);
+
+ProfileSession _session(String id, double best, [ProfileWeather? weather]) =>
+    ProfileSession(
+      runId: id,
+      name: 'Session ${id.substring(1)}',
+      lapCount: 5,
+      bestLapSeconds: best,
+      weather: weather,
+    );
+
+final _warm = ProfileWeather(
+  temperatureC: 21.4,
+  condition: WeatherCondition.overcast,
+  precipitationMm: 0,
+  windSpeedKmh: 12.3,
+  windDirectionDegrees: 225,
+);
+final _wet = ProfileWeather(
+  temperatureC: 14.6,
+  temperatureMinC: 13.8,
+  temperatureMaxC: 15.2,
+  condition: WeatherCondition.rain,
+  precipitationMm: 1.24,
+  windSpeedKmh: 20,
 );
 
 void main() {
@@ -100,14 +128,22 @@ void main() {
     return shelf;
   }
 
-  Future<void> show(WidgetTester tester, ProfileLibrary shelf, String id) =>
-      tester.pumpWidget(
-        TelemetryApp(
-          home: Scaffold(
-            body: LastTimeHereCard(library: shelf, eventId: id),
-          ),
+  Future<void> show(
+    WidgetTester tester,
+    ProfileLibrary shelf,
+    String id, {
+    SessionWeatherState Function(String runId)? weatherStateOf,
+  }) => tester.pumpWidget(
+    TelemetryApp(
+      home: Scaffold(
+        body: LastTimeHereCard(
+          library: shelf,
+          eventId: id,
+          weatherStateOf: weatherStateOf,
         ),
-      );
+      ),
+    ),
+  );
 
   testWidgets('shows the last visit next to today, faster in green', (
     tester,
@@ -294,5 +330,215 @@ void main() {
     expect(find.byKey(const ValueKey('lastTimeHereMissing')), findsOneWidget);
     expect(find.textContaining('−'), findsNothing);
     expect(find.textContaining('+'), findsNothing);
+  });
+
+  group('weather', () {
+    const credit =
+        "Modelled for the area around the track at the session's time, not "
+        'measured at the track. Weather data by Open-Meteo.com';
+    const thenNone =
+        'Then: — no weather kept for that day: weather lookup was off, its '
+        'recordings have no time or position, or the day was added before '
+        'the library kept weather.';
+
+    testWidgets('of the best lap session on both visits, with the credit', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session('s1', 113.0, _warm),
+              _session('s2', 111.2, _wet),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [
+              _session('s1', 109.9, _warm),
+              _session('s2', 110.4, _wet),
+            ],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(find.byKey(const ValueKey('lastTimeHereWeather')), findsOneWidget);
+      expect(
+        find.text(
+          'Then (Session 2, best lap): 14–15 °C, rain, 1.2 mm of rain, '
+          'wind 20 km/h',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Today (Session 1, best lap): 21 °C, overcast, no rain, wind SW '
+          '12 km/h',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(credit), findsOneWidget);
+    });
+
+    testWidgets('a fallback session says why it stands for the day', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session('s1', 111.2),
+              _session('s2', 112.0, _wet),
+              _session('s3', 113.0, _warm),
+            ],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            sessions: [_session('s1', 109.9, _warm)],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(
+        find.textContaining(
+          'Then (Session 2; the best-lap session had none): 14–15 °C',
+        ),
+        findsOneWidget,
+      );
+      // No best lap today: the first session with weather.
+      expect(
+        find.textContaining('Today (Session 1, first with weather): 21 °C'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a condition of a newer version reads as unknown', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [
+              _session(
+                's1',
+                111.2,
+                ProfileWeather(
+                  temperatureC: 12,
+                  unknown: const {'condition': 'sandstorm'},
+                ),
+              ),
+            ],
+          ),
+          _day('today', dayNumber: 30, best: 110.0),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(
+        find.text(
+          'Then (Session 1, best lap): 12 °C, conditions this version does '
+          'not know',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a missing side reads as a dash with its own reason', (
+      tester,
+    ) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [_session('s1', 111.2)],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [_session('s1', 109.9, _warm)],
+          ),
+        ]),
+      );
+      await show(tester, shelf!, 'today');
+      expect(find.text(thenNone), findsOneWidget);
+      expect(
+        find.textContaining('Today (Session 1, best lap): 21 °C'),
+        findsOneWidget,
+      );
+      expect(find.text(credit), findsOneWidget);
+    });
+
+    testWidgets("today's reason follows the page's weather", (tester) async {
+      final shelf = await tester.runAsync(
+        () => library([
+          _day(
+            'a',
+            dayNumber: 0,
+            best: 111.2,
+            sessions: [_session('s1', 111.2)],
+          ),
+          _day(
+            'today',
+            dayNumber: 30,
+            best: 109.9,
+            sessions: [_session('s1', 110.4), _session('s2', 109.9)],
+          ),
+        ]),
+      );
+      const label = 'Today (Session 2, best lap)';
+      final reasons = {
+        SessionWeatherState.fetching: '$label: looking up the weather…',
+        SessionWeatherState.off: '$label: — weather lookup is off in settings.',
+        SessionWeatherState.unavailable:
+            '$label: — the weather service could not be reached or had no '
+            'data.',
+        SessionWeatherState.none:
+            '$label: — no weather for this session: its recording has no '
+            'time or GPS position.',
+        SessionWeatherState.ready:
+            '$label: — shown on this page; it reaches the library when the '
+            'day is saved.',
+        SessionWeatherState.kept:
+            '$label: — saved by a newer version of the app and not read here.',
+      };
+      expect(reasons.keys, containsAll(SessionWeatherState.values));
+      for (final MapEntry(key: state, value: reason) in reasons.entries) {
+        final asked = <String>[];
+        await show(
+          tester,
+          shelf!,
+          'today',
+          weatherStateOf: (runId) {
+            asked.add(runId);
+            return state;
+          },
+        );
+        expect(find.text(reason), findsOneWidget, reason: state.name);
+        expect(asked.toSet(), {'s2'});
+        // Neither side has weather: both say why, and no credit.
+        expect(find.text(thenNone), findsOneWidget);
+        expect(find.text(credit), findsNothing);
+      }
+      // Without the page's weather: said plainly.
+      await show(tester, shelf!, 'today');
+      expect(
+        find.text('Today: — no weather kept for today yet.'),
+        findsOneWidget,
+      );
+    });
   });
 }

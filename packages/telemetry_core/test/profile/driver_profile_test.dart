@@ -17,6 +17,8 @@ ProfileDayInput _day(
   int start = 1756454400000, // 2025-08-29 08:00 UTC
   int sessions = 2,
   String? trackName,
+  Map<String, WeatherSummary?>? weather,
+  Map<String, String> recordings = const {},
 }) {
   final runs = [
     for (var index = 0; index < sessions; ++index)
@@ -30,7 +32,7 @@ ProfileDayInput _day(
         return DayRunInput(
           runId: 'run${index + 1}',
           name: 'Session ${index + 1}',
-          contentSha256: _revision.replaceFirst('a', '${index + 1}'),
+          contentSha256: recordings['run${index + 1}'] ?? _runRevision(index + 1),
           session: session,
           laps: deriveSourceLapSession(session),
         );
@@ -42,8 +44,19 @@ ProfileDayInput _day(
     name: 'Day $eventId',
     analysis: analyzeDay(runs),
     trackName: trackName,
+    weather: weather?.map(
+      (runId, summary) => MapEntry(
+        runId,
+        ProfileWeather.of(
+          summary,
+          sourceRevision: recordings[runId] ?? _runRevision(int.parse(runId.substring(3))),
+        ),
+      ),
+    ),
   );
 }
+
+String _runRevision(int number) => _revision.replaceFirst('a', '$number');
 
 DriverProfile _add(DriverProfile profile, ProfileDayInput day) => addDayToProfile(
   profile,
@@ -473,6 +486,189 @@ void main() {
         sessions.add(sessions.first);
         rejected(jsonEncode(valid), 'same session twice');
       });
+    });
+  });
+
+  group('session weather', () {
+    const warm = WeatherSummary(
+      temperatureC: 21.4,
+      temperatureMinC: 19.2,
+      temperatureMaxC: 22.6,
+      relativeHumidityPercent: 60,
+      precipitationMm: 0.4,
+      condition: WeatherCondition.rain,
+      windSpeedKmh: 12.5,
+      windDirectionDegrees: 225,
+      windGustsKmh: 30,
+    );
+    Map<String, Object?> session(Map<String, Object?> json, [int index = 0]) =>
+        ((((json['days'] as List).single as Map<String, Object?>)['sessions'] as List)[index])
+            as Map<String, Object?>;
+
+    test('is kept as stored, in °C, mm and km/h, and reads back', () {
+      final profile = _add(
+        DriverProfile.empty(Random(1)),
+        _day('a', weather: {'run1': warm, 'run2': null}),
+      );
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      expect(session(json)['weather'], {
+        'sourceRevision': _runRevision(1),
+        'temperatureC': 21.4,
+        'temperatureMinC': 19.2,
+        'temperatureMaxC': 22.6,
+        'condition': WeatherCondition.rain.name,
+        'precipitationMm': 0.4,
+        'windSpeedKmh': 12.5,
+        'windDirectionDegrees': 225.0,
+      });
+      expect(session(json, 1).containsKey('weather'), isFalse);
+      final read = decodeDriverProfile(encodeDriverProfile(profile));
+      final weather = read.day('a')!.sessions.first.weather!;
+      expect(weather.temperatureC, 21.4);
+      expect(weather.temperatureMinC, 19.2);
+      expect(weather.temperatureMaxC, 22.6);
+      expect(weather.condition, WeatherCondition.rain);
+      expect(weather.precipitationMm, 0.4);
+      expect(weather.windSpeedKmh, 12.5);
+      expect(weather.windDirectionDegrees, 225);
+      expect(read.day('a')!.sessions[1].weather, isNull);
+      expect(encodeDriverProfile(read), encodeDriverProfile(profile));
+    });
+
+    test('a summary with none of the kept values is no weather', () {
+      final day = _day('a', weather: {'run1': const WeatherSummary(relativeHumidityPercent: 50)});
+      expect(day.sessions.first.weather, isNull);
+    });
+
+    test('out-of-range values are dropped, not refused', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      session(json)['weather'] = {
+        'temperatureC': 61,
+        'temperatureMinC': -91,
+        'temperatureMaxC': 'warm',
+        'condition': 'clear',
+        'precipitationMm': -1,
+        'windSpeedKmh': 501,
+        'windDirectionDegrees': 360,
+      };
+      session(json, 1)['weather'] = {'temperatureC': 70, 'windSpeedKmh': -3};
+      final read = decodeDriverProfile(jsonEncode(json));
+      final weather = read.day('a')!.sessions.first.weather!;
+      expect(weather.windDirectionDegrees, 360);
+      expect(weather.condition, WeatherCondition.clear);
+      expect([
+        weather.temperatureC,
+        weather.temperatureMinC,
+        weather.temperatureMaxC,
+        weather.precipitationMm,
+        weather.windSpeedKmh,
+      ], everyElement(isNull));
+      // Nothing left: no weather.
+      expect(read.day('a')!.sessions[1].weather, isNull);
+      expect(
+        session(jsonDecode(encodeDriverProfile(read)) as Map<String, Object?>, 1),
+        isNot(contains('weather')),
+      );
+    });
+
+    test('weather that is not an object is refused', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      session(json)['weather'] = 'dry';
+      expect(() => decodeDriverProfile(jsonEncode(json)), throwsA(isA<ProfileFormatError>()));
+    });
+
+    test('a profile written before weather was kept reads without it', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      expect(session(json).containsKey('weather'), isFalse);
+      expect(json['version'], 1);
+      final read = decodeDriverProfile(jsonEncode(json));
+      expect([for (final s in read.day('a')!.sessions) s.weather], [null, null]);
+    });
+
+    test('a session added again without weather keeps its weather', () {
+      var profile = _add(DriverProfile.empty(Random(1)), _day('a', weather: {'run1': warm}));
+      profile = _add(profile, _day('a'));
+      expect(profile.day('a')!.sessions.first.weather!.temperatureC, 21.4);
+      expect(profile.day('a')!.sessions[1].weather, isNull);
+      // New weather replaces it.
+      profile = _add(profile, _day('a', weather: {'run1': const WeatherSummary(temperatureC: 15)}));
+      expect(profile.day('a')!.sessions.first.weather!.temperatureC, 15);
+      expect(profile.day('a')!.sessions.first.weather!.condition, isNull);
+    });
+
+    test('keys this version does not know are kept, also on re-adding', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a', weather: {'run1': warm}));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      (session(json)['weather'] as Map<String, Object?>)['trackTemperatureC'] = 38;
+      session(json, 1)['weather'] = {'visibilityKm': 10};
+      final read = decodeDriverProfile(jsonEncode(json));
+      expect(jsonDecode(encodeDriverProfile(read)), json);
+      final again = _add(read, _day('a'));
+      expect(jsonDecode(encodeDriverProfile(again)), json);
+    });
+  });
+
+  group('session weather, kept per recording', () {
+    const warm = WeatherSummary(temperatureC: 21.4, condition: WeatherCondition.overcast);
+    Map<String, Object?> session(Map<String, Object?> json, [int index = 0]) =>
+        ((((json['days'] as List).single as Map<String, Object?>)['sessions'] as List)[index])
+            as Map<String, Object?>;
+
+    test('a replaced recording drops the weather kept for the old one', () {
+      var profile = _add(DriverProfile.empty(Random(1)), _day('a', weather: {'run1': warm}));
+      profile = _add(profile, _day('a', recordings: {'run1': _runRevision(9)}));
+      expect(profile.day('a')!.sessions.first.weather, isNull);
+    });
+
+    test('weather without a recording kept is kept on re-adding', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      session(json)['weather'] = {'temperatureC': 12};
+      final read = decodeDriverProfile(jsonEncode(json));
+      final again = _add(read, _day('a', recordings: {'run1': _runRevision(9)}));
+      expect(again.day('a')!.sessions.first.weather!.temperatureC, 12);
+    });
+
+    test('a condition of a newer version survives a re-save, read as unknown', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final json = jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      session(json)['weather'] = {'temperatureC': 12, 'condition': 'sandstorm'};
+      final read = decodeDriverProfile(jsonEncode(json));
+      final weather = read.day('a')!.sessions.first.weather!;
+      expect(weather.condition, isNull);
+      expect(weather.hasUnknownCondition, isTrue);
+      expect(jsonDecode(encodeDriverProfile(read)), json);
+      // Only an unknown condition: still weather, still kept.
+      session(json)['weather'] = {'condition': 'sandstorm'};
+      expect(jsonDecode(encodeDriverProfile(decodeDriverProfile(jsonEncode(json)))), json);
+    });
+
+    test('setProfileSessionWeather swaps only the weather of known sessions', () {
+      final profile = _add(DriverProfile.empty(Random(1)), _day('a'));
+      final weather = ProfileWeather.of(warm, sourceRevision: _runRevision(1))!;
+      final next = setProfileSessionWeather(profile, 'a', {'run1': weather, 'other': weather});
+      final day = next.day('a')!;
+      expect(day.sessions.first.weather!.temperatureC, 21.4);
+      expect(day.sessions[1].weather, isNull);
+      expect(
+        [for (final s in day.sessions) (s.runId, s.lapCount, s.bestLapSeconds)],
+        [for (final s in profile.day('a')!.sessions) (s.runId, s.lapCount, s.bestLapSeconds)],
+      );
+      // Nothing new, or a day not in the profile: the same profile.
+      expect(identical(setProfileSessionWeather(next, 'a', {'run1': weather}), next), isTrue);
+      expect(identical(setProfileSessionWeather(next, 'b', {'run1': weather}), next), isTrue);
+      expect(
+        decodeDriverProfile(encodeDriverProfile(next))
+            .day('a')!
+            .sessions
+            .first
+            .weather!
+            .sourceRevision,
+        _runRevision(1),
+      );
     });
   });
 

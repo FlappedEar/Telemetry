@@ -157,8 +157,9 @@ final class WeatherHour {
   final double? windGustsKmh;
 }
 
-// The stored keys with the range a value must be in, else it is no data.
-const _ranges = <String, (double, double)>{
+/// The stored keys with the range a value must be in, else it is no data:
+/// for a day's weather and the driver profile's copy of it.
+const weatherValueRanges = <String, (double, double)>{
   'temperatureC': (-90, 60),
   'relativeHumidityPercent': (0, 100),
   'precipitationMm': (0, 500),
@@ -172,7 +173,7 @@ const _ranges = <String, (double, double)>{
 double? _value(Object? value, String key) {
   if (value is! num) return null;
   final number = value.toDouble();
-  final (low, high) = _ranges[key]!;
+  final (low, high) = weatherValueRanges[key]!;
   return number.isFinite && number >= low && number <= high ? number : null;
 }
 
