@@ -31,6 +31,11 @@ final RegExp _createdPattern = RegExp(
 /// requires the time before to be after 23:00 and the time after to be
 /// before 01:00 (departure: KAN-233).
 const double vboMaximumRolloverGapSeconds = 3.0 * 3600.0;
+
+/// A rollover is undone when the next clock row is at least this much later
+/// in the day than the row that rolled over: back on the evening before, so
+/// that row was a bad one (FET-211).
+const double vboRolloverUndoSeconds = 12.0 * 3600.0;
 const double _floatMax = 3.4028234663852886e38;
 
 /// Reads RaceChrono VBO text exports into a [TelemetrySession].
@@ -175,6 +180,10 @@ class _VboParse {
     double? previousAbsoluteTime;
     double? previousClockTime;
     var clockDayOffset = 0.0;
+    // A rollover is confirmed by the next clock row (FET-211): if that row
+    // is back on the evening before, the "rollover" was one bad row, which
+    // is dropped and the day offset restored.
+    ({int row, double absolute, double? clock, double offset})? unconfirmedRollover;
 
     // Fields are read in place: no string per value.
     final row = RowBounds(names.length);
@@ -200,12 +209,31 @@ class _VboParse {
         continue;
       }
       var absoluteTime = checkedTime(parsedTime.seconds);
+      final rollover = unconfirmedRollover;
+      unconfirmedRollover = null;
+      if (rollover != null &&
+          parsedTime.format == TimestampFormat.clock &&
+          previousClockTime != null &&
+          parsedTime.seconds - previousClockTime >= vboRolloverUndoSeconds) {
+        --accepted;
+        previousAbsoluteTime = rollover.absolute;
+        previousClockTime = rollover.clock;
+        clockDayOffset = rollover.offset;
+        warn('Row ${rollover.row}: not a midnight rollover after all; row skipped.');
+      }
+      ({int row, double absolute, double? clock, double offset})? rolledOver;
       if (parsedTime.format == TimestampFormat.clock) {
         if (previousClockTime != null &&
             previousAbsoluteTime != null &&
             parsedTime.seconds < previousClockTime &&
             parsedTime.seconds + 24.0 * 3600.0 - previousClockTime <=
                 vboMaximumRolloverGapSeconds) {
+          rolledOver = (
+            row: rowNumber,
+            absolute: previousAbsoluteTime,
+            clock: previousClockTime,
+            offset: clockDayOffset,
+          );
           clockDayOffset = checkedTime(clockDayOffset + 24.0 * 3600.0);
           warn('Row $rowNumber: midnight rollover detected.');
         }
@@ -249,6 +277,7 @@ class _VboParse {
             : double.nan;
       }
       ++accepted;
+      unconfirmedRollover = rolledOver;
       previousAbsoluteTime = absoluteTime;
       previousClockTime = parsedTime.format == TimestampFormat.clock ? parsedTime.seconds : null;
     }

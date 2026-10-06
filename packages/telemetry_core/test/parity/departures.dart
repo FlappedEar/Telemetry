@@ -11,3 +11,12 @@ const vboRefusedByTelemetry = {
 
 /// Whether [path] names a recording in [vboRefusedByTelemetry].
 bool refusedByTelemetry(String path) => vboRefusedByTelemetry.containsKey(path.split('/').last);
+
+/// Departures no corpus file reaches, so every parity case still compares;
+/// listed so they are not lost. Each has truth tests of its own.
+const readingDepartures = {
+  // A backward time of day is a midnight rollover when it implies a gap of
+  // at most 3 h, confirmed by the next clock row; Overlays needs 23:00 to
+  // 01:00 (FET-211, KAN-233; test/vbo_parser_test.dart).
+  'midnight rollover': 'FET-211',
+};

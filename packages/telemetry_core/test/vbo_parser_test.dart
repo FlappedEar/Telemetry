@@ -61,6 +61,15 @@ void main() {
     // Up to three hours across midnight; more is not a rollover.
     expect(times('210000 1\n235959 2\n000000 3'), _near([0.0, 10799.0, 10800.0]));
     expect(times('205959 1\n000000 2'), _near([0.0]));
+    expect(times('210000 1\n000000 2'), _near([0.0, 10800.0]));
+    // One bad early-morning row among evening rows is no rollover: the next
+    // row is back on the evening, so that row is dropped.
+    final badRow = parse(
+      '[column names]\ntime speed\n[data]\n213000 1\n213001 2\n001500 3\n213002 4\n213003 5',
+    );
+    expect(badRow.channels['speed']!.timestamps, _near([0.0, 1.0, 2.0, 3.0]));
+    expect(badRow.channels['speed']!.values, [1.0, 2.0, 4.0, 5.0]);
+    expect(badRow.warnings.any((w) => w.contains('Row 3: not a midnight rollover')), isTrue);
     // A recording through two midnights.
     expect(
       times('235959 1\n000001 2\n120000 3\n235959 4\n000001 5'),
