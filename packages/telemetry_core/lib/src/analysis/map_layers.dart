@@ -157,7 +157,7 @@ void _appendFixes(
   double single(double value) => (float..[0] = value)[0];
   for (final segment in session.sampledSegments('latitude', start, end, 2000)) {
     for (final sample in segment) {
-      final longitude = session.valueAt('longitude', sample.time);
+      final longitude = session.valueAt('longitude', sample.time, InterpolationMode.longitude);
       if (longitude == null) continue;
       latitudes.add(single(sample.value));
       longitudes.add(single(longitude));
@@ -203,7 +203,7 @@ MapGeometry sharedMapGeometry(
 MapPoint? mapPointAt(TelemetrySession session, double time, MapGeometry geometry) {
   if (!geometry.valid) return null;
   final latitude = session.valueAt('latitude', time);
-  final longitude = session.valueAt('longitude', time);
+  final longitude = session.valueAt('longitude', time, InterpolationMode.longitude);
   if (latitude == null ||
       longitude == null ||
       !isValidCoordinate(GeoCoordinate(latitude, longitude))) {
@@ -267,7 +267,7 @@ List<List<MapPoint>> mapTrace(
   for (final segment in session.sampledSegments('latitude', start, end, 2000)) {
     var points = <MapPoint>[];
     for (final sample in segment) {
-      final longitude = session.valueAt('longitude', sample.time);
+      final longitude = session.valueAt('longitude', sample.time, InterpolationMode.longitude);
       if (longitude == null) {
         if (points.isNotEmpty) {
           track.add(points);

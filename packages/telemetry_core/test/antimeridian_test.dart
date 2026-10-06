@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:telemetry_core/telemetry_core.dart';
-import 'package:telemetry_core/src/geometry.dart' show geoMidpoint, wrapLongitudeDegrees;
+import 'package:telemetry_core/src/geometry.dart'
+    show earthRadiusMeters, geoMidpoint, wrapLongitudeDegrees;
 import 'package:telemetry_core/src/vbo/vbo_coordinates.dart' show parseTimingGate;
 import 'package:test/test.dart';
 
@@ -114,6 +115,94 @@ void main() {
         }
       }
     }
+  });
+
+  test('builds the same traces and track axis on a circle across the antimeridian', () {
+    // A 100 m circle driven at 10 Hz, 20 s a lap, through a gate at its
+    // southern point.
+    ({List<double> laps, List<LapTrace> traces, ProgressAxis axis, GeoCoordinate origin}) run(
+      double gateLongitude,
+    ) {
+      const latitude = -17.0;
+      const radius = 100.0;
+      final metresPerDegree = earthRadiusMeters * math.pi / 180.0;
+      final eastDegrees = 1.0 / (metresPerDegree * math.cos(latitude * math.pi / 180.0));
+      final times = <double>[], latitudes = <double>[], longitudes = <double>[];
+      for (var i = 0; i <= 700; ++i) {
+        final time = i / 10.0;
+        // 0.037 s out of phase, so gate crossings fall between samples.
+        final angle = math.pi / 2 + 2 * math.pi * (time + 0.037) / 20.0;
+        final east = radius * math.cos(angle), north = radius + radius * math.sin(angle) * -1;
+        times.add(time);
+        latitudes.add(latitude + north / metresPerDegree);
+        longitudes.add(wrapLongitudeDegrees(gateLongitude + east * eastDegrees));
+      }
+      final gate = TimingGate(
+        type: TimingGateType.start,
+        sourceName: 'Start',
+        endpointA: GeoCoordinate(latitude - 0.0002, gateLongitude),
+        endpointB: GeoCoordinate(latitude + 0.0002, gateLongitude),
+      );
+      final detected = detectLaps(gpsSession(times, latitudes, longitudes), gate);
+      final origin = geoMidpoint(gate.endpointA, gate.endpointB);
+      final axis = buildProgressAxis(detected.lapTraces.first, origin, gate);
+      return (
+        laps: [for (final lap in detected.timedLaps) lap.durationSeconds],
+        traces: detected.lapTraces,
+        axis: axis,
+        origin: origin,
+      );
+    }
+
+    // At 150° longitude is stored in the same Float32 steps (about 1.6 m)
+    // as near 180°, so the paths match closely.
+    final reference = run(150.0);
+    expect(reference.laps, isNotEmpty);
+    expect(reference.axis.valid, isTrue);
+    for (final longitude in [180.0, -180.0, 179.99995]) {
+      final across = run(longitude);
+      expect(across.laps, hasLength(reference.laps.length), reason: '$longitude');
+      for (var i = 0; i < reference.laps.length; i++) {
+        expect(across.laps[i], closeTo(reference.laps[i], 1e-3), reason: '$longitude');
+      }
+      expect(across.traces, hasLength(reference.traces.length));
+      for (var t = 0; t < across.traces.length; t++) {
+        // Every trace starts and ends at the gate, not on the far side of
+        // the Earth.
+        for (final point in [across.traces[t].points.first, across.traces[t].points.last]) {
+          expect(
+            math.sqrt(point.eastMeters * point.eastMeters + point.northMeters * point.northMeters),
+            lessThan(25.0),
+            reason: '$longitude trace $t',
+          );
+        }
+      }
+      expect(across.axis.valid, isTrue, reason: '$longitude');
+      expect(
+        across.axis.lengthMeters,
+        closeTo(reference.axis.lengthMeters, 0.01 * reference.axis.lengthMeters),
+        reason: '$longitude',
+      );
+    }
+  });
+
+  test('interpolates longitude the short way round', () {
+    // Longitude is stored as Float32: about 1.5e-5° steps near 180°.
+    final session = gpsSession([0.0, 1.0], [-17.0, -17.0], [179.9999, -179.9999]);
+    expect(
+      session.valueAt('longitude', 0.25, InterpolationMode.longitude),
+      closeTo(179.99995, 2e-5),
+    );
+    expect(
+      session.valueAt('longitude', 0.75, InterpolationMode.longitude),
+      closeTo(-179.99995, 2e-5),
+    );
+    // Under 180° apart it is exactly the straight line.
+    final usual = gpsSession([0.0, 1.0], [52.0, 52.0], [21.0, 21.0004]);
+    expect(
+      usual.valueAt('longitude', 0.3, InterpolationMode.longitude),
+      usual.valueAt('longitude', 0.3),
+    );
   });
 
   test('keeps a centre-and-direction gate on the antimeridian valid', () {

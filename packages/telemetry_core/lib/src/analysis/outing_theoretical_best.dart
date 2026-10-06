@@ -182,7 +182,7 @@ CornerLapMetrics measureCornerLap(
   final time = timeAtProgress(trace, at);
   if (time != null) {
     final latitude = session.valueAt('latitude', time);
-    final longitude = session.valueAt('longitude', time);
+    final longitude = session.valueAt('longitude', time, InterpolationMode.longitude);
     if (latitude != null && longitude != null) {
       observation.lineOffsetMeters = lateralOffsetMeters(
         axis,

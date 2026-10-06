@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'geometry.dart' show wrapLongitudeDegrees;
 import 'selection.dart';
 import 'timing_gate.dart';
 
@@ -14,6 +15,11 @@ enum InterpolationMode {
 
   /// Straight line between two finite neighbours.
   linear,
+
+  /// [linear] for a longitude in degrees, the short way round: across
+  /// ±180° (179.9999 to -179.9999) it stays near 180°, not near 0°
+  /// (FET-213). The same as [linear] for neighbours under 180° apart.
+  longitude,
 }
 
 // Lists made read-only for channels: channels built on them share them
@@ -180,6 +186,7 @@ double? telemetryValueAt(
           ? finiteAt(previous)
           : finiteAt(next);
     case InterpolationMode.linear:
+    case InterpolationMode.longitude:
       final span = timestamps[next] - timestamps[previous];
       final before = finiteAt(previous);
       final after = finiteAt(next);
@@ -187,7 +194,12 @@ double? telemetryValueAt(
         return null;
       }
       final ratio = (time - timestamps[previous]) / span;
-      final value = before + (after - before) * ratio;
+      final difference = after - before;
+      if (mode == InterpolationMode.longitude && difference.abs() > 180.0) {
+        final value = wrapLongitudeDegrees(before + wrapLongitudeDegrees(difference) * ratio);
+        return value.isFinite ? value : null;
+      }
+      final value = before + difference * ratio;
       return value.isFinite ? value : null;
   }
 }

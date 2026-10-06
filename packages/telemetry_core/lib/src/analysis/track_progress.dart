@@ -560,7 +560,7 @@ List<ProgressSegment> projectLapTrace(
       throwIfCancelled(cancelled);
       final time = sample.time;
       final latitude = sample.value;
-      final longitude = session.valueAt('longitude', time);
+      final longitude = session.valueAt('longitude', time, InterpolationMode.longitude);
       if (longitude == null || !isValidCoordinate(GeoCoordinate(latitude, longitude))) {
         flush();
         continue;
