@@ -40,6 +40,18 @@ const _fusionDepartures = {
   // test/fusion/fusion_conflict_test.dart.
 };
 
+/// Cases where only the fused session differs: Telemetry cuts fused
+/// channels to the primary's span, where Overlays keeps a sample or two past
+/// its end (FET-210, KAN-232; test/fusion/fused_session_span_test.dart). The
+/// fusion result itself is still compared.
+const _sessionDepartures = {
+  'drift',
+  'preferAlternativeDrift',
+  'fractionalOffset',
+  'twoAlternatives',
+  'twoAlternativesRefusedFirst',
+};
+
 var _compared = 0;
 var _mismatched = 0;
 
@@ -167,6 +179,7 @@ void main() {
           final expected = cases[key] as Map<String, Object?>;
           final result = fuseChannels(primary, 'vbo', alternatives, policy: policy);
           check.fusion(key, result, expected);
+          if (_sessionDepartures.contains(key)) return;
           check.session(
             '$key session',
             fusedSession(primary, result),
