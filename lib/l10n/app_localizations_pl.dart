@@ -6511,6 +6511,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerPhasesBestNotTimed(String reason) {
-    return 'Najlepsze okrążenie nie zmierzone w częściach: $reason';
+    return 'Najlepsze okrążenie nie zostało zmierzone w częściach: $reason';
   }
 }
