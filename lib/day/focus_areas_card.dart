@@ -143,11 +143,11 @@ _FocusTexts? _focusTextsIn(
 /// "Earlier visits here" under each focus area, from [profile]'s visits to
 /// the track of day [eventId] in its car before it ([cornerBefore]), each
 /// track corner worked out once. Each segment is on the track corner adding
-/// the day placed it on ([dayCornerIds]); a day added before that was kept
-/// matches [spans], all the day's corners on the ground
-/// ([measureCornerSpans]), to the track's again. Null, so no line, when the
-/// day is not in [profile], its track is unknown or no corner of the day is
-/// known.
+/// the day placed it on ([dayCornerIds]); a segment without one (a day
+/// added before it was kept, a corner without ranked laps) matches its span
+/// of [spans], all the day's corners on the ground ([measureCornerSpans]),
+/// to the track's again. Null, so no line, when the day is not in
+/// [profile], its track is unknown or no corner of the day is known.
 String? Function(FocusArea area)? focusBefore(
   AppLocalizations l10n,
   DriverProfile? profile,
@@ -159,10 +159,11 @@ String? Function(FocusArea area)? focusBefore(
   if (profile == null || today == null || track == null) return null;
   // A later day can add a corner that fits better: matching again could
   // name another corner than the one the day's figures are kept on.
-  final corners =
-      dayCornerIds(today) ??
-      (spans.isEmpty ? null : matchTrackCorners(track, spans));
-  if (corners == null) return null;
+  // The placement kept wins; matching only fills the segments it lacks.
+  final stored = dayCornerIds(today);
+  final matched = spans.isEmpty ? null : matchTrackCorners(track, spans);
+  if (stored == null && matched == null) return null;
+  final corners = {...?matched, ...?stored};
   final texts = <String, String>{};
   String text(String cornerId) {
     final before = cornerBefore(profile, today, cornerId);

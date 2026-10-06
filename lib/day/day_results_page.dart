@@ -1637,25 +1637,24 @@ class _DayResultsPageState extends State<DayResultsPage> {
     String eventId,
   ) {
     // The track corners adding the day to the profile placed its segments
-    // on; a day added before they were kept matches its corners again,
-    // from the recording the axis came from.
-    final today = profile?.day(eventId);
-    if (today != null && dayCornerIds(today) != null) {
-      return focusBefore(l10n, profile, eventId, const []);
-    }
+    // on; a segment without one matches its corner again, from the
+    // recording the axis came from. Without that recording, only what was
+    // kept.
     final canonical = _controller.session(
       result?.computed?.canonicalRunId ?? '',
     );
-    if (canonical == null) return null;
     return focusBefore(
       l10n,
       profile,
       eventId,
-      measureCornerSpans(
-        result,
-        longitudeIsWestPositive:
-            canonical.metadata['gpsLongitudeConvention'] == 'west-positive',
-      ),
+      canonical == null
+          ? const []
+          : measureCornerSpans(
+              result,
+              longitudeIsWestPositive:
+                  canonical.metadata['gpsLongitudeConvention'] ==
+                  'west-positive',
+            ),
     );
   }
 

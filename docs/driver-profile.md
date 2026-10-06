@@ -154,13 +154,17 @@ whose longitudes count west as positive is turned around first.
 
 Each session corner keeps the segment it was placed from (`segmentId`), and
 `dayCornerIds` reads a day's segment-to-corner ids back from them, so the day
-page names the corner its figures are kept on (FET-184). Matching again is
-only the fallback for days without it: a later day can add a corner that fits
-a span better, and matching would then name that corner instead. A day added
-again keeps the segments of the corners it keeps; a merged day keeps its
-segments, its corner ids moved to this track's. An older app that adds the day
-again measures its corners afresh and drops the key, so a kept segment never
-outlives the placement it came from.
+page names the corner its figures are kept on (FET-184). A later day can add a
+corner that fits a span better, and matching again would then name that corner
+instead, so the kept id always wins; `matchTrackCorners` only fills the
+segments without one (days added before FET-184, a corner without ranked laps
+in any session, corners kept past the budget). A day added again keeps the
+segments of the corners it keeps; a merged day keeps its segments, its corner
+ids moved to this track's. An older app drops the key when it measures the
+day's corners afresh, and keeps it with its corner when it adds the day again
+without measuring, so the pair stays consistent either way. If a day's
+segments are edited and adding it again cannot measure its corners, a kept id
+names the old placement until the next measured add.
 
 ## Across days (`profile_aggregates.dart`)
 

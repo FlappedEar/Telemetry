@@ -991,6 +991,33 @@ void main() {
         rejected('corner segment id');
       }
     });
+    test('a day partly placed before segments were kept maps only its kept ones', () {
+      final day = ProfileDay(
+        eventId: 'a',
+        file: 'Days/a.fetproject',
+        name: 'a',
+        carId: 'car',
+        sessions: [
+          ProfileSession(
+            runId: 'r1',
+            name: 'S1',
+            stats: SessionStats(
+              corners: [
+                CornerStats(cornerId: 'c1', segmentId: 's1', laps: 3),
+                CornerStats(cornerId: 'c2', laps: 3),
+              ],
+            ),
+          ),
+          ProfileSession(
+            runId: 'r2',
+            name: 'S2',
+            stats: SessionStats(corners: [CornerStats(cornerId: 'c3', laps: 3)]),
+          ),
+          ProfileSession(runId: 'r3', name: 'S3'),
+        ],
+      );
+      expect(dayCornerIds(day), {'s1': 'c1'});
+    });
     test('unknown keys inside stats and corners are kept', () {
       stats()['future'] = 1;
       corner()['future'] = [2];
