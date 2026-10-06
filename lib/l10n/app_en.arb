@@ -1188,6 +1188,10 @@
   "@lapIssueDifferentRoute": {
     "description": "Why a lap is not ranked."
   },
+  "lapIssueImplausibleLap": "Lap time or length is not plausible for this circuit",
+  "@lapIssueImplausibleLap": {
+    "description": "Why a lap is not ranked: its time, GPS path length or average speed cannot be a lap of the circuit (for example a fake crossing of the line)."
+  },
   "tbFailedElsewhere": "Not available: the theoretical best could not be calculated.",
   "@tbFailedElsewhere": {
     "description": "In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card."

@@ -802,6 +802,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lap leaves the route the other laps took (off track, a detour or the pit lane)';
 
   @override
+  String get lapIssueImplausibleLap =>
+      'Lap time or length is not plausible for this circuit';
+
+  @override
   String get tbFailedElsewhere =>
       'Not available: the theoretical best could not be calculated.';
 

@@ -298,7 +298,7 @@ LapSession detectLaps(
   throwIfCancelled(cancelled);
   if (diagnostics.usableGpsSegments == 0) return result(LapSessionStatus.noUsableGps);
 
-  final laps = <TimedLap>[];
+  final measured = <TimedLap>[];
   for (var index = 1; index < passes.length; ++index) {
     final start = passes[index - 1].telemetryTime;
     final end = passes[index].telemetryTime;
@@ -308,21 +308,24 @@ LapSession detectLaps(
       continue;
     }
     final lap = TimedLap(
-      number: laps.length + 1,
+      number: measured.length + 1,
       startTelemetryTime: start,
       endTelemetryTime: end,
       durationSeconds: duration,
     );
-    laps.add(
+    final (issue, distance) = _referenceIssueForLap(session, lap, origin, cancelled);
+    measured.add(
       TimedLap(
         number: lap.number,
         startTelemetryTime: start,
         endTelemetryTime: end,
         durationSeconds: duration,
-        referenceIssue: _referenceIssueForLap(session, lap, origin, cancelled),
+        referenceIssue: issue,
+        distanceMeters: distance,
       ),
     );
   }
+  final laps = _markImplausibleLaps(measured, options, diagnostics);
   final (ranked, fastest) = rankLaps(laps);
   if (passes.isEmpty) {
     return result(LapSessionStatus.noAcceptedPasses, passes, ranked, const [], fastest);
@@ -334,9 +337,77 @@ LapSession detectLaps(
   return result(LapSessionStatus.available, passes, ranked, traces, fastest);
 }
 
+/// [laps] with the ones that cannot be a lap of the circuit marked
+/// [LapReferenceIssue.implausibleLap] (FET-199). They stay listed but are
+/// never ranked, used for statistics or as references, so a bogus lap can
+/// never be the best of the day. A lap is implausible when its time is
+/// outside [LapDetectionOptions.minimumLapSeconds] …
+/// [LapDetectionOptions.maximumLapSeconds], or its GPS path is shorter than
+/// [LapDetectionOptions.minimumLapDistanceMeters] or than
+/// [LapDetectionOptions.minimumLapDistanceRatio] of the median path of the
+/// session's laps, or its average speed is above
+/// [LapDetectionOptions.maximumAverageSpeedMetersPerSecond]. Overlays has no
+/// such check.
+List<TimedLap> _markImplausibleLaps(
+  List<TimedLap> laps,
+  LapDetectionOptions options,
+  LapDetectionDiagnostics diagnostics,
+) {
+  // Absolute limits first; the median is taken from the laps within them,
+  // so a parked hour of GPS jitter cannot move it.
+  bool outsideLimits(TimedLap lap) {
+    final duration = lap.durationSeconds;
+    if (duration < options.minimumLapSeconds || duration > options.maximumLapSeconds) return true;
+    final distance = lap.distanceMeters;
+    if (distance == null) return false;
+    return distance < options.minimumLapDistanceMeters ||
+        distance / duration > options.maximumAverageSpeedMetersPerSecond;
+  }
+
+  final distances = [
+    for (final lap in laps)
+      if (lap.referenceIssue == LapReferenceIssue.none && !outsideLimits(lap)) ?lap.distanceMeters,
+  ]..sort();
+  final median = distances.isEmpty
+      ? null
+      : (distances.length.isOdd
+            ? distances[distances.length ~/ 2]
+            : (distances[distances.length ~/ 2 - 1] + distances[distances.length ~/ 2]) / 2.0);
+  bool implausible(TimedLap lap) {
+    if (outsideLimits(lap)) return true;
+    final distance = lap.distanceMeters;
+    return distance != null &&
+        distances.length >= 2 &&
+        median != null &&
+        distance < options.minimumLapDistanceRatio * median;
+  }
+
+  return [
+    for (final lap in laps)
+      if (lap.referenceIssue == LapReferenceIssue.none && implausible(lap))
+        _withIssue(lap, LapReferenceIssue.implausibleLap, diagnostics)
+      else
+        lap,
+  ];
+}
+
+TimedLap _withIssue(TimedLap lap, LapReferenceIssue issue, LapDetectionDiagnostics diagnostics) {
+  ++diagnostics.implausibleLaps;
+  return TimedLap(
+    number: lap.number,
+    startTelemetryTime: lap.startTelemetryTime,
+    endTelemetryTime: lap.endTelemetryTime,
+    durationSeconds: lap.durationSeconds,
+    referenceIssue: issue,
+    userExclusionReason: lap.userExclusionReason,
+    distanceMeters: lap.distanceMeters,
+  );
+}
+
 /// Whether the GPS covers [lap] without a gap or invalid fix, from the sample
-/// at or before its start through the first sample at or after its end.
-LapReferenceIssue _referenceIssueForLap(
+/// at or before its start through the first sample at or after its end, and
+/// the length of that path (null when it is not covered).
+(LapReferenceIssue, double?) _referenceIssueForLap(
   TelemetrySession session,
   TimedLap lap,
   GeoCoordinate origin,
@@ -350,28 +421,33 @@ LapReferenceIssue _referenceIssueForLap(
       longitude.timestamps.length != longitude.values.length ||
       latitude.timestamps.length != longitude.timestamps.length ||
       latitude.timestamps.isEmpty) {
-    return LapReferenceIssue.invalidGps;
+    return (LapReferenceIssue.invalidGps, null);
   }
   final times = latitude.timestamps;
   var first = lowerBound(times, lap.startTelemetryTime);
   if (first != 0 && (first == times.length || times[first] > lap.startTelemetryTime)) --first;
   final last = lowerBound(times, lap.endTelemetryTime, first);
   if (first == times.length || times[first] > lap.startTelemetryTime || last == times.length) {
-    return LapReferenceIssue.gpsGap;
+    return (LapReferenceIssue.gpsGap, null);
   }
   final latitudeGap = telemetryGapThreshold(latitude);
   final longitudeGap = telemetryGapThreshold(longitude);
   final threshold = latitudeGap < longitudeGap ? latitudeGap : longitudeGap;
-  double? previous;
+  _GpsSample? previous;
+  var distance = 0.0;
   for (var index = first; index <= last; ++index) {
     if ((index & 0xff) == 0) throwIfCancelled(cancelled);
     final sample = _gpsSampleAt(latitude, longitude, index, origin);
-    if (sample == null) return LapReferenceIssue.invalidGps;
-    if (previous != null &&
-        (sample.time <= previous || threshold <= 0.0 || sample.time - previous > threshold)) {
-      return LapReferenceIssue.gpsGap;
+    if (sample == null) return (LapReferenceIssue.invalidGps, null);
+    if (previous != null) {
+      if (sample.time <= previous.time ||
+          threshold <= 0.0 ||
+          sample.time - previous.time > threshold) {
+        return (LapReferenceIssue.gpsGap, null);
+      }
+      distance += (sample.point - previous.point).length;
     }
-    previous = sample.time;
+    previous = sample;
   }
-  return LapReferenceIssue.none;
+  return (LapReferenceIssue.none, distance.isFinite ? distance : null);
 }

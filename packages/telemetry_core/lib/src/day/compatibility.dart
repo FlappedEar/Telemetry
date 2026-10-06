@@ -75,7 +75,10 @@ enum LapIssue {
   differentRecordedRoute(
     'different-recorded-route',
     'Lap leaves the route the other laps took (off track, a detour or the pit lane)',
-  );
+  ),
+
+  /// Not an Overlays code: Telemetry's lap sanity check (FET-199).
+  implausibleLap('implausible-lap', 'Lap time or length is not plausible for this circuit');
 
   const LapIssue(this.code, this.label);
 
@@ -134,6 +137,7 @@ List<LapIssue> lapCompatibilityIssues(
   }
   if (issue == LapReferenceIssue.gpsGap) issues.add(LapIssue.incompleteGps);
   if (issue == LapReferenceIssue.invalidGps) issues.add(LapIssue.invalidGps);
+  if (issue == LapReferenceIssue.implausibleLap) issues.add(LapIssue.implausibleLap);
   if (userExcluded) issues.add(LapIssue.userExclusion);
   return issues;
 }

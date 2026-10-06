@@ -114,6 +114,7 @@ extension LapIssueText on AppLocalizations {
     LapIssue.staleSource => lapIssueStaleSource,
     LapIssue.ineligibleLap => lapIssueIneligibleLap,
     LapIssue.differentRecordedRoute => lapIssueDifferentRoute,
+    LapIssue.implausibleLap => lapIssueImplausibleLap,
   };
 }
 
