@@ -51,14 +51,15 @@ final _resolvedGroup = RegExp(
 final _unresolvedGroup = RegExp(r'^Unresolved · (.+)$');
 
 // A group label written by `telemetry_core` (`DayGroup.label`) in the
-// app's language; any other label is shown as written.
-String _groupLabel(AppLocalizations l10n, String label) {
+// app's language, a detected route named [circuitName] when known; any
+// other label is shown as written.
+String _groupLabel(AppLocalizations l10n, String label, String? circuitName) {
   final resolved = _resolvedGroup.firstMatch(label);
   if (resolved != null) {
     final layout = resolved[2]!;
     return l10n.circuitGroup(
       int.parse(resolved[1]!),
-      layout == 'Detected route' ? l10n.detectedRoute : layout,
+      layout == 'Detected route' ? circuitName ?? l10n.detectedRoute : layout,
       l10n.direction(
         resolved[3] == 'Clockwise'
             ? TrackDirection.clockwise
@@ -117,6 +118,7 @@ class DayReportPage extends StatelessWidget {
   const DayReportPage({
     super.key,
     required this.report,
+    this.circuitName,
     this.onOpenLap,
     this.embedded = false,
     this.onShare,
@@ -150,6 +152,10 @@ class DayReportPage extends StatelessWidget {
 
   /// The document of [buildOutingDayReport].
   final Map<String, Object?> report;
+
+  /// The name of the circuit of the report's group when its route was
+  /// detected; "Detected route" when null.
+  final String? circuitName;
 
   /// Opens a lap from its reference as the report writes it; no button when
   /// null.
@@ -188,7 +194,7 @@ class DayReportPage extends StatelessWidget {
       Text(
         groupLabel.isEmpty
             ? l10n.reportGroupNone
-            : _groupLabel(l10n, groupLabel),
+            : _groupLabel(l10n, groupLabel, circuitName),
         key: const ValueKey('dayReportGroup'),
         style: theme.textTheme.titleMedium,
       ),

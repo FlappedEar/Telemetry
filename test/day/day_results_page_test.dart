@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:telemetry/circuits/circuit_directory.dart';
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
@@ -759,6 +761,75 @@ void main() {
         'Detected route · Counterclockwise · inferred from GPS',
       ),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('names a detected route from the circuit list', (tester) async {
+    final saved = circuitDirectory;
+    addTearDown(() => circuitDirectory = saved);
+    final circuits = circuitDirectory = CircuitDirectory(
+      // A synthetic circuit 300 m from the synthetic start line.
+      bundled: () async => jsonEncode({
+        'format': circuitListFormat,
+        'version': 1,
+        'revision': 1,
+        'circuits': [
+          {'id': 'ring', 'name': 'Test Ring', 'lat': 52.0027, 'lon': 21.0},
+        ],
+      }),
+      folder: () async => null,
+    );
+    await tester.runAsync(circuits.load);
+    final outcome = importDay({
+      'a.vbo': [30, 28, 31],
+      'b.vbo': [29, 32],
+    });
+    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: DayResultsPage(runs: outcome.runs, analysis: outcome.analysis!),
+      ),
+    );
+    expect(
+      find.textContaining('Group 1 · Test Ring · Counterclockwise'),
+      findsWidgets,
+    );
+    expect(
+      find.textContaining('Test Ring · Counterclockwise · inferred from GPS'),
+      findsNWidgets(2),
+    );
+
+    await tester.tap(find.text('Session 1').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Circuit: Test Ring'), findsOneWidget);
+    await tester.tap(find.text('Name this circuit…'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('circuitNameField')),
+      'Home ring',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('saveCircuitName')));
+    // Saving finishes outside the test's clock (the list was read there).
+    for (
+      var i = 0;
+      i < 50 && find.text('Circuit name').evaluate().isNotEmpty;
+      ++i
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(find.text('Circuit name'), findsNothing);
+    expect(find.text('Circuit: Home ring'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Home ring · Counterclockwise · inferred from GPS'),
+      findsNWidgets(2),
     );
   });
 

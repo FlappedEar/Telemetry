@@ -7667,7 +7667,7 @@
   "@settingsUpdateSwitch": {
     "description": "Settings switch: look for a newer release on GitHub at launch, at most once a day."
   },
-  "settingsUpdateHelp": "When the app starts, at most once a day, it asks GitHub for its newest release. None of your recordings or settings are sent.",
+  "settingsUpdateHelp": "When the app starts, at most once a day, it asks GitHub for its newest release and circuit list. None of your recordings or settings are sent.",
   "@settingsUpdateHelp": {
     "description": "Help under the update switch in Settings."
   },
@@ -8089,5 +8089,37 @@
   "sessionSetupReplace": "Replace",
   "@sessionSetupReplace": {
     "description": "Button: replaces the setup fields with the previous session's setup."
-  }
+  },
+  "trackDialogCircuit": "Circuit: {name}",
+  "@trackDialogCircuit": {"description": "The circuit the route starts on, from the circuit list or named by the user.", "placeholders": {"name": {"type": "String", "example": "Autodrom Jastrząb"}}},
+  "trackDialogCircuitUnknown": "This place is not in the circuit list.",
+  "@trackDialogCircuitUnknown": {"description": "The route's start is near no listed circuit."},
+  "trackDialogNameCircuit": "Name this circuit…",
+  "@trackDialogNameCircuit": {"description": "Button: opens the dialog that names the circuit at this route's start."},
+  "circuitNameTitle": "Circuit name",
+  "@circuitNameTitle": {"description": "Title of the dialog that names a circuit."},
+  "circuitNameHelp": "Shown for every day driven here. Kept on this device.",
+  "@circuitNameHelp": {"description": "Under the circuit name field."},
+  "settingsCircuitsHeading": "Circuits",
+  "@settingsCircuitsHeading": {"description": "Settings heading: the circuit list."},
+  "settingsCircuitsCount": "Circuits in the list: {count}",
+  "@settingsCircuitsCount": {"description": "How many circuits the circuit list holds.", "placeholders": {"count": {"type": "int"}}},
+  "settingsCircuitsHelp": "A route's circuit is named from where it starts. The list comes from Wikidata (CC0) and is updated with the app's update check.",
+  "@settingsCircuitsHelp": {"description": "Settings help about the circuit list."},
+  "settingsCircuitsUpdate": "Update the circuit list",
+  "@settingsCircuitsUpdate": {"description": "Button: fetch the newest circuit list now."},
+  "settingsCircuitsUpdated": "The circuit list was updated.",
+  "@settingsCircuitsUpdated": {"description": "Message after a newer circuit list was fetched."},
+  "settingsCircuitsUpToDate": "The circuit list is up to date.",
+  "@settingsCircuitsUpToDate": {"description": "Message when no newer circuit list was found."},
+  "settingsCircuitsFailed": "The circuit list could not be fetched. Check the connection and try again.",
+  "@settingsCircuitsFailed": {"description": "Message when fetching the circuit list failed."},
+  "settingsCircuitsMine": "Your circuit names",
+  "@settingsCircuitsMine": {"description": "Heading of the circuits the driver named."},
+  "settingsCircuitsRenamed": "Listed as {name}",
+  "@settingsCircuitsRenamed": {"description": "Under a circuit the driver renamed: its name in the list.", "placeholders": {"name": {"type": "String", "example": "Autodrom Jastrząb"}}},
+  "settingsCircuitsAdded": "Added by you",
+  "@settingsCircuitsAdded": {"description": "Under a circuit the driver added."},
+  "settingsCircuitsForget": "Forget this name",
+  "@settingsCircuitsForget": {"description": "Tooltip: remove the driver's circuit name."}
 }

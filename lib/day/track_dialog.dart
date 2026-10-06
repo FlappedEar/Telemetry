@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../circuits/circuit_directory.dart';
 import '../format.dart';
 import '../l10n.dart';
 import 'day_results_controller.dart';
@@ -90,6 +91,8 @@ class _TrackDialogState extends State<TrackDialog> {
                       ),
                 style: theme.textTheme.bodySmall,
               ),
+              if (inference?.route case final route?)
+                _CircuitName(start: route.origin),
               if (_trace != null && !_trace.isEmpty) ...[
                 const SizedBox(height: 8),
                 SizedBox(
@@ -176,6 +179,120 @@ class _TrackDialogState extends State<TrackDialog> {
                   );
                   Navigator.pop(context);
                 },
+          child: Text(l10n.save),
+        ),
+      ],
+    );
+  }
+}
+
+/// The circuit the route starting at [start] is on, from the circuit list
+/// or the driver's own names, and a button to name it.
+class _CircuitName extends StatelessWidget {
+  const _CircuitName({required this.start});
+
+  final GeoCoordinate start;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final circuits = circuitDirectory;
+    return ListenableBuilder(
+      listenable: circuits,
+      builder: (context, _) {
+        final circuit = circuits.find(start);
+        // Stacked: the Polish button is too long to share a phone's row.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              circuit == null
+                  ? l10n.trackDialogCircuitUnknown
+                  : l10n.trackDialogCircuit(circuit.name),
+              key: const ValueKey('trackDialogCircuit'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            TextButton(
+              key: const ValueKey('nameCircuit'),
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) =>
+                    CircuitNameDialog(start: start, name: circuit?.name ?? ''),
+              ),
+              child: Text(l10n.trackDialogNameCircuit),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Names the circuit at [start] for every day driven there, on this device.
+class CircuitNameDialog extends StatefulWidget {
+  const CircuitNameDialog({super.key, required this.start, this.name = ''});
+
+  final GeoCoordinate start;
+
+  /// The name it has now; empty when it has none.
+  final String name;
+
+  @override
+  State<CircuitNameDialog> createState() => _CircuitNameDialogState();
+}
+
+class _CircuitNameDialogState extends State<CircuitNameDialog> {
+  late final TextEditingController _name = TextEditingController(
+    text: widget.name,
+  );
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final navigator = Navigator.of(context);
+    if (await circuitDirectory.nameAt(widget.start, _name.text)) {
+      navigator.pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final name = _name.text.trim();
+    final canSave =
+        name.isNotEmpty &&
+        name != widget.name.trim() &&
+        !name.contains('\u0000');
+    return AlertDialog(
+      title: Text(l10n.circuitNameTitle),
+      content: SizedBox(
+        width: 360,
+        child: TextField(
+          key: const ValueKey('circuitNameField'),
+          controller: _name,
+          autofocus: true,
+          maxLength: maximumCircuitNameCharacters,
+          decoration: InputDecoration(
+            helperText: l10n.circuitNameHelp,
+            helperMaxLines: 3,
+          ),
+          onChanged: (_) => setState(() {}),
+          onSubmitted: (_) => canSave ? _save() : null,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          key: const ValueKey('saveCircuitName'),
+          onPressed: canSave ? _save : null,
           child: Text(l10n.save),
         ),
       ],

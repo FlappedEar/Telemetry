@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'channel_names.dart';
+import 'circuits/circuit_directory.dart';
 import 'l10n.dart';
 import 'ui/theme.dart';
 import 'units.dart';
@@ -24,7 +25,7 @@ class SettingsButton extends StatelessWidget {
 /// The app's settings: the unit assumed for unlabelled speeds, the look
 /// (dark or sunlight) and whether the screen stays on at the coach, whether
 /// sessions' weather is looked up, the names shown for recorded channels,
-/// and the licences of the app and the
+/// the circuit list and the driver's circuit names, and the licences of the app and the
 /// software it uses.
 class SettingsDialog extends StatelessWidget {
   const SettingsDialog({super.key});
@@ -196,6 +197,8 @@ class SettingsDialog extends StatelessWidget {
                   child: Text(l10n.settingsUpdateCheckNow),
                 ),
                 const SizedBox(height: 16),
+                const CircuitSettings(),
+                const SizedBox(height: 16),
                 Text(
                   context.l10n.settingsAbout,
                   style: theme.textTheme.titleSmall,
@@ -220,6 +223,75 @@ class SettingsDialog extends StatelessWidget {
           child: Text(l10n.close),
         ),
       ],
+    );
+  }
+}
+
+/// The circuit list's size, a button that updates it now, and the circuits
+/// the driver named, each of which can be forgotten.
+class CircuitSettings extends StatelessWidget {
+  const CircuitSettings({super.key});
+
+  Future<void> _update(BuildContext context) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final outcome = await circuitDirectory.refresh();
+    if (outcome != CircuitRefresh.failed) {
+      lastCircuitCheck.value = DateTime.now();
+    }
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(switch (outcome) {
+          CircuitRefresh.updated => l10n.settingsCircuitsUpdated,
+          CircuitRefresh.upToDate => l10n.settingsCircuitsUpToDate,
+          CircuitRefresh.failed => l10n.settingsCircuitsFailed,
+        }),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final circuits = circuitDirectory;
+    return ListenableBuilder(
+      listenable: circuits,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.settingsCircuitsHeading, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(
+            l10n.settingsCircuitsCount(circuits.list.circuits.length),
+            key: const ValueKey('circuitCount'),
+          ),
+          Text(l10n.settingsCircuitsHelp, style: theme.textTheme.bodySmall),
+          TextButton(
+            key: const ValueKey('updateCircuits'),
+            onPressed: circuits.refreshing ? null : () => _update(context),
+            child: Text(l10n.settingsCircuitsUpdate),
+          ),
+          if (circuits.mine.isNotEmpty) ...[
+            Text(l10n.settingsCircuitsMine, style: theme.textTheme.bodyMedium),
+            for (final circuit in circuits.mine)
+              ListTile(
+                key: ValueKey('ownCircuit-${circuit.id}'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(circuit.name),
+                subtitle: Text(switch (circuits.listed(circuit.id)) {
+                  final listed? => l10n.settingsCircuitsRenamed(listed.name),
+                  null => l10n.settingsCircuitsAdded,
+                }),
+                trailing: IconButton(
+                  tooltip: l10n.settingsCircuitsForget,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => circuits.remove(circuit.id),
+                ),
+              ),
+          ],
+        ],
+      ),
     );
   }
 }

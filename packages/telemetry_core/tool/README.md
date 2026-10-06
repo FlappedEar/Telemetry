@@ -492,7 +492,10 @@ dart test test/parity/corner_metrics_parity_test.dart
 for `cpp_theoretical_best_dump`; never commit its input or output.
 
 The committed `test/parity/corner_metrics_reference.json` was generated from
-FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. The
+FlappedEar/Overlay `3fa38da` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Its
+only change from the `d4d1039` reference is Overlays' KAN-157 gap rule: in
+the hand-made cases whose exit ends inside a speed gap, `endSpeed` is now
+null (24 values). The
 corpus's `corners_*.vbo` laps (the mixed track driven with braking before
 and acceleration after each corner: throttle, brake, longitudinal G and GPS
 accuracy with a brake spike; longitudinal G only; and with a GPS gap and
@@ -633,8 +636,10 @@ output. Run the test against it with `FET_COMPARISON_REFERENCE=<json>` and
 of values compared, the mismatches and the largest difference.
 
 The committed `test/parity/comparison_reference.json` was generated from
-FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
-other references are unchanged. Never edit the JSON by hand.
+FlappedEar/Overlay `3fa38da` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Its
+only change from the `d4d1039` reference is Overlays' KAN-157 gap rule: on
+the hand-made gpsGap run the track point at 4 s, inside the gap, is no longer placed.
+Never edit the JSON by hand.
 
 ## cpp_corner_analyzer_dump
 
@@ -730,8 +735,11 @@ never commit its input or output. Run the test against it with
 and the largest difference.
 
 The committed `test/parity/driving_reference.json` was generated from
-FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04; the
-other references are unchanged. Never edit the JSON by hand.
+FlappedEar/Overlay `3fa38da` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Its
+only change from the `d4d1039` reference is the `speedGap` case: since
+Overlays' KAN-201 (PR #188), `travelledMeters` integrates no distance across a
+gap in the speed channel (`telemetryGapThreshold`). The other references are
+unchanged. Never edit the JSON by hand.
 
 ## cpp_fusion_dump
 
@@ -789,6 +797,15 @@ FET_FUSION_DAY=<folder> FET_FUSION_REFERENCE=/tmp/fusion_day.json \
 ```
 
 The committed `test/parity/fusion_reference.json` was generated from
-FlappedEar/Overlay `f7111ba` (KAN-184: units only one side declares, and
-"°C") with Qt 6.8.3 from conda-forge and g++ 13.3 on Ubuntu 24.04; the
-other references are unchanged. Never edit the JSON by hand.
+FlappedEar/Overlay `e75b3c7` with Qt 6.8.3 from conda-forge and g++ 13.3 on
+Ubuntu 24.04. Its only change from the `3fa38da` reference is three new
+cases for Overlays' KAN-188 gap markers (PR #190): `gapMarkersAdded` and
+`gapMarkersPreferred` (RCZ gap markers through a 3000 s offset) and
+`mergedGapMarkers` (a 1 Hz primary filled by a 10 Hz alternative with a 2 s
+gap). The `3fa38da` reference's only change from the `f7111ba` reference (KAN-184: units
+only one side declares, and "°C") is Overlays' KAN-157 gap rule: the
+primary's speed is not read inside its 40-50 s gap, so fewer samples are
+compared (451 to 400 in most cases; 451 to 401 for drift,
+preferAlternativeDrift and fractionalOffset; 436 to 385 for missingValues)
+and the median differences follow. Never edit the JSON
+by hand.

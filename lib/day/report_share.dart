@@ -142,6 +142,7 @@ String reportFileName(String name, String fallback) {
 Future<ReportShareOutcome> shareDayReport(
   BuildContext context, {
   required Map<String, Object?> report,
+  String? circuitName,
   required String title,
   required ReportSharer sharer,
   required Rect origin,
@@ -155,6 +156,7 @@ Future<ReportShareOutcome> shareDayReport(
       context,
       DayReportPage(
         report: report,
+        circuitName: circuitName,
         printable: true,
         heading: title,
         extra: extra,
