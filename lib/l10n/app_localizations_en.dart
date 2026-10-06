@@ -1222,37 +1222,40 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$measured visits',
       one: '1 visit',
     );
-    return 'Earlier visits here: it also cost time on $lost of $_temp0 ($corner), last on $date.';
+    return 'Earlier visits here ($corner): it cost time on $lost of $_temp0, last on $date.';
   }
 
   @override
-  String focusBeforeNotLastTwo(int lost, int measured) {
+  String focusBeforeNotLastTwo(int lost, int measured, String corner) {
     String _temp0 = intl.Intl.pluralLogic(
       measured,
       locale: localeName,
       other: '$measured visits',
       one: '1 visit',
     );
-    return 'Earlier visits here: it cost time on $lost of $_temp0, but not on the last 2.';
+    return 'Earlier visits here ($corner): it cost time on $lost of $_temp0, but not on the last 2 visits that measured it.';
   }
 
   @override
-  String focusBeforeNever(int measured) {
+  String focusBeforeNever(int measured, String corner) {
     String _temp0 = intl.Intl.pluralLogic(
       measured,
       locale: localeName,
       other: '$measured visits',
       one: '1 visit',
     );
-    return 'Earlier visits here: measured on $_temp0, never among the corners that cost the most time.';
+    return 'Earlier visits here ($corner): measured on $_temp0, never among the corners that cost the most time.';
   }
 
   @override
-  String get focusBeforeNone => 'Earlier visits here: none in your library.';
+  String focusBeforeNone(String corner) {
+    return 'Earlier visits here ($corner): none in this car in your library.';
+  }
 
   @override
-  String get focusBeforeNotMeasured =>
-      'Earlier visits here: this corner was not measured before.';
+  String focusBeforeNotMeasured(String corner) {
+    return 'Earlier visits here ($corner): this corner was not measured before.';
+  }
 
   @override
   String get focusBeforeNotCorner =>

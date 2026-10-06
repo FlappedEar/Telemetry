@@ -144,16 +144,38 @@ void main() {
     final result = controller.theoreticalBest!;
     final area = controller.focusAreas.first;
 
+    // The day's corner at [start]–[end] of the lap, in the area's segment.
+    DayCornerSpan span(double start, double end) {
+      GeoCoordinate at(double fraction) {
+        final point = _route.points[(fraction * 256).round() % 256];
+        return unprojectCoordinate(
+          point.eastMeters,
+          point.northMeters,
+          _route.origin,
+        );
+      }
+
+      return DayCornerSpan(
+        segmentId: area.segmentId,
+        name: area.name,
+        start: at(start),
+        end: at(end),
+      );
+    }
+
     // The line under the first area, for [profile] with the area's segment
-    // at track corner [corner] (none: not one of the track's corners).
+    // on Turn 1 unless [spans] say otherwise.
     Future<String?> line(
       DriverProfile? profile, {
-      String? corner = 'k1',
+      List<DayCornerSpan>? spans,
       String eventId = 'today',
     }) async {
-      final before = focusBefore(english, profile, eventId, {
-        area.segmentId: ?corner,
-      });
+      final before = focusBefore(
+        english,
+        profile,
+        eventId,
+        spans ?? [span(0.1, 0.15)],
+      );
       await tester.pumpWidget(
         TelemetryApp(
           home: Scaffold(
@@ -188,8 +210,8 @@ void main() {
           _day('later', dayNumber: 30, losses: {'k1': 0.9}),
         ]),
       ),
-      'Earlier visits here: it also cost time on 2 of 2 visits (Turn 1), '
-      'last on $date.',
+      'Earlier visits here (Turn 1): it cost time on 2 of 2 visits, last on '
+      '$date.',
     );
     // Costly once, then measured twice without it.
     expect(
@@ -201,8 +223,8 @@ void main() {
           _day('today', dayNumber: 20),
         ]),
       ),
-      'Earlier visits here: it cost time on 1 of 3 visits, but not on the '
-      'last 2.',
+      'Earlier visits here (Turn 1): it cost time on 1 of 3 visits, but not '
+      'on the last 2 visits that measured it.',
     );
     expect(
       await line(
@@ -211,8 +233,8 @@ void main() {
           _day('today', dayNumber: 20),
         ]),
       ),
-      'Earlier visits here: measured on 1 visit, never among the corners '
-      'that cost the most time.',
+      'Earlier visits here (Turn 1): measured on 1 visit, never among the '
+      'corners that cost the most time.',
     );
     expect(
       await line(
@@ -221,7 +243,7 @@ void main() {
           _day('today', dayNumber: 20),
         ]),
       ),
-      'Earlier visits here: none in your library.',
+      'Earlier visits here (Turn 1): none in this car in your library.',
     );
     expect(
       await line(
@@ -230,29 +252,31 @@ void main() {
           _day('today', dayNumber: 20),
         ]),
       ),
-      'Earlier visits here: this corner was not measured before.',
+      'Earlier visits here (Turn 1): this corner was not measured before.',
     );
     final visited = _profile([
       _day('a', dayNumber: 0, losses: {'k1': 0.6}),
       _day('today', dayNumber: 20),
     ]);
     expect(
-      await line(visited, corner: null),
+      await line(visited, spans: [span(0.6, 0.65)]),
       "Earlier visits here: this place is not one of the track's corners "
       'in your library yet.',
     );
-    // No library, or a day not in it: no line.
+    // No library, a day not in it, or no corner of the day on the ground
+    // (no usable axis): no line.
     expect(await line(null), isNull);
+    expect(await line(visited, spans: const []), isNull);
     expect(await line(visited, eventId: 'elsewhere'), isNull);
   });
 
   test('the Polish texts count visits', () {
     expect(
       polish.focusBeforeLost(2, 5, 'Zakręt 1', '29 sie 2026'),
-      'Wcześniejsze wizyty tutaj: ten zakręt (Zakręt 1) kosztował czas także '
-      'na 2 z 5 wizyt, ostatnio 29 sie 2026.',
+      'Wcześniejsze wizyty tutaj (Zakręt 1): ten zakręt kosztował czas na 2 '
+      'z 5 wizyt, ostatnio 29 sie 2026.',
     );
-    expect(polish.focusBeforeNever(1), contains('na 1 wizycie'));
-    expect(polish.focusBeforeNever(3), contains('na 3 wizytach'));
+    expect(polish.focusBeforeNever(1, 'Zakręt 1'), contains('na 1 wizycie'));
+    expect(polish.focusBeforeNever(3, 'Zakręt 1'), contains('na 3 wizytach'));
   });
 }

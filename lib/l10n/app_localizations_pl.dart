@@ -1242,38 +1242,40 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$measured wizyt',
       one: '1 wizyty',
     );
-    return 'Wcześniejsze wizyty tutaj: ten zakręt ($corner) kosztował czas także na $lost z $_temp0, ostatnio $date.';
+    return 'Wcześniejsze wizyty tutaj ($corner): ten zakręt kosztował czas na $lost z $_temp0, ostatnio $date.';
   }
 
   @override
-  String focusBeforeNotLastTwo(int lost, int measured) {
+  String focusBeforeNotLastTwo(int lost, int measured, String corner) {
     String _temp0 = intl.Intl.pluralLogic(
       measured,
       locale: localeName,
       other: '$measured wizyt',
       one: '1 wizyty',
     );
-    return 'Wcześniejsze wizyty tutaj: ten zakręt kosztował czas na $lost z $_temp0, ale nie na 2 ostatnich.';
+    return 'Wcześniejsze wizyty tutaj ($corner): ten zakręt kosztował czas na $lost z $_temp0, ale nie na 2 ostatnich wizytach, na których go zmierzono.';
   }
 
   @override
-  String focusBeforeNever(int measured) {
+  String focusBeforeNever(int measured, String corner) {
     String _temp0 = intl.Intl.pluralLogic(
       measured,
       locale: localeName,
       other: '$measured wizytach',
       one: '1 wizycie',
     );
-    return 'Wcześniejsze wizyty tutaj: zmierzony na $_temp0, ani razu wśród najkosztowniejszych zakrętów.';
+    return 'Wcześniejsze wizyty tutaj ($corner): ten zakręt zmierzono na $_temp0 i ani razu nie był wśród najkosztowniejszych zakrętów.';
   }
 
   @override
-  String get focusBeforeNone =>
-      'Wcześniejsze wizyty tutaj: brak w Twojej bibliotece.';
+  String focusBeforeNone(String corner) {
+    return 'Wcześniejsze wizyty tutaj ($corner): w Twojej bibliotece brak wizyt tym samochodem.';
+  }
 
   @override
-  String get focusBeforeNotMeasured =>
-      'Wcześniejsze wizyty tutaj: ten zakręt nie był wcześniej mierzony.';
+  String focusBeforeNotMeasured(String corner) {
+    return 'Wcześniejsze wizyty tutaj ($corner): ten zakręt nie był wcześniej mierzony.';
+  }
 
   @override
   String get focusBeforeNotCorner =>

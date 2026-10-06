@@ -1880,35 +1880,35 @@ abstract class AppLocalizations {
   /// **'Compare laps A and B'**
   String get focusCompareAB;
 
-  /// Under a focus area at one of the track's corners: on earlier visits to this track in this car, how many measured the corner and on how many it was among the day's costliest corners, with the track corner's name and the date of the latest. An observation, not a cause.
+  /// Under a focus area at one of the track's corners, with the track corner's name: on earlier visits to this track in this car, on how many of those that measured the corner it was among the day's costliest corners, and the date of the latest. An observation, not a cause.
   ///
   /// In en, this message translates to:
-  /// **'Earlier visits here: it also cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}} ({corner}), last on {date}.'**
+  /// **'Earlier visits here ({corner}): it cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}}, last on {date}.'**
   String focusBeforeLost(int lost, int measured, String corner, String date);
 
-  /// Under a focus area at one of the track's corners: it was among the day's costliest corners on earlier visits in this car, but measured without that on the last two visits that measured it.
+  /// Under a focus area at one of the track's corners, with the track corner's name: it was among the day's costliest corners on earlier visits in this car, but not on the last two visits that measured it.
   ///
   /// In en, this message translates to:
-  /// **'Earlier visits here: it cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}}, but not on the last 2.'**
-  String focusBeforeNotLastTwo(int lost, int measured);
+  /// **'Earlier visits here ({corner}): it cost time on {lost} of {measured, plural, =1{1 visit} other{{measured} visits}}, but not on the last 2 visits that measured it.'**
+  String focusBeforeNotLastTwo(int lost, int measured, String corner);
 
-  /// Under a focus area at one of the track's corners: measured on earlier visits in this car, never among a day's costliest corners.
+  /// Under a focus area at one of the track's corners, with the track corner's name: measured on earlier visits in this car, never among a day's costliest corners.
   ///
   /// In en, this message translates to:
-  /// **'Earlier visits here: measured on {measured, plural, =1{1 visit} other{{measured} visits}}, never among the corners that cost the most time.'**
-  String focusBeforeNever(int measured);
+  /// **'Earlier visits here ({corner}): measured on {measured, plural, =1{1 visit} other{{measured} visits}}, never among the corners that cost the most time.'**
+  String focusBeforeNever(int measured, String corner);
 
-  /// Under a focus area at one of the track's corners: the library has no earlier day at this track in this car.
+  /// Under a focus area at one of the track's corners, with the track corner's name: the library has no earlier day at this track in this car (other cars may have driven it).
   ///
   /// In en, this message translates to:
-  /// **'Earlier visits here: none in your library.'**
-  String get focusBeforeNone;
+  /// **'Earlier visits here ({corner}): none in this car in your library.'**
+  String focusBeforeNone(String corner);
 
-  /// Under a focus area at one of the track's corners: earlier days at this track in this car did not measure it.
+  /// Under a focus area at one of the track's corners, with the track corner's name: earlier days at this track in this car did not measure it.
   ///
   /// In en, this message translates to:
-  /// **'Earlier visits here: this corner was not measured before.'**
-  String get focusBeforeNotMeasured;
+  /// **'Earlier visits here ({corner}): this corner was not measured before.'**
+  String focusBeforeNotMeasured(String corner);
 
   /// Under a focus area whose segment does not match a corner the library keeps for this track, so it has no earlier visits to show.
   ///

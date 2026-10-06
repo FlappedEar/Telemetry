@@ -141,43 +141,51 @@ _FocusTexts? _focusTextsIn(
 }
 
 /// "Earlier visits here" under each focus area, from [profile]'s visits to
-/// the track of day [eventId] in its car before it ([cornerBefore]).
-/// [corners] is the track corner of each of the day's segments, as
-/// [matchTrackCorners] finds them. Null, so no line, when the day is not in
-/// [profile] or its track is unknown.
+/// the track of day [eventId] in its car before it ([cornerBefore]), each
+/// track corner worked out once. [spans] are all the day's corners on the
+/// ground ([measureCornerSpans]), matched to the track's as adding the day
+/// placed them. Null, so no line, when the day is not in [profile], its
+/// track is unknown or no corner of the day is on the ground.
 String? Function(FocusArea area)? focusBefore(
   AppLocalizations l10n,
   DriverProfile? profile,
   String eventId,
-  Map<String, String> corners,
+  List<DayCornerSpan> spans,
 ) {
   final today = profile?.day(eventId);
   final track = today?.trackId == null ? null : profile!.track(today!.trackId!);
-  if (profile == null || today == null || track == null) return null;
-  return (area) {
-    final cornerId = corners[area.segmentId];
-    final before = cornerId == null
-        ? null
-        : cornerBefore(profile, today, cornerId);
+  if (profile == null || today == null || track == null || spans.isEmpty) {
+    return null;
+  }
+  final corners = matchTrackCorners(track, spans);
+  final texts = <String, String>{};
+  String text(String cornerId) {
+    final before = cornerBefore(profile, today, cornerId);
     if (before == null) return l10n.focusBeforeNotCorner;
-    if (before.visits == 0) return l10n.focusBeforeNone;
-    if (before.measured == 0) return l10n.focusBeforeNotMeasured;
+    final name = before.corner.name;
+    if (before.visits == 0) return l10n.focusBeforeNone(name);
+    if (before.measured == 0) return l10n.focusBeforeNotMeasured(name);
     final last = before.lastLost;
-    if (last == null) return l10n.focusBeforeNever(before.measured);
+    if (last == null) return l10n.focusBeforeNever(before.measured, name);
     if (before.notOnLastTwo) {
-      return l10n.focusBeforeNotLastTwo(before.lost, before.measured);
+      return l10n.focusBeforeNotLastTwo(before.lost, before.measured, name);
     }
     final start = last.startMilliseconds;
     return l10n.focusBeforeLost(
       before.lost,
       before.measured,
-      before.corner.name,
+      name,
       start == null
           ? l10n.profileUndated
           : DateFormat.yMMMd().format(
               DateTime.fromMillisecondsSinceEpoch(start),
             ),
     );
+  }
+
+  return (area) => switch (corners[area.segmentId]) {
+    final cornerId? => texts.putIfAbsent(cornerId, () => text(cornerId)),
+    null => l10n.focusBeforeNotCorner,
   };
 }
 

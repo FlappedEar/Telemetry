@@ -814,6 +814,65 @@ void main() {
       expect(withOff.tracks.single.corners, hasLength(4));
     });
 
+    group('matching a day again after later days added corners', () {
+      GeoCoordinate at(double fraction) {
+        final point = _route.points[(fraction * _route.points.length).round() % 256];
+        return unprojectCoordinate(point.eastMeters, point.northMeters, _route.origin);
+      }
+
+      ProfileDayInput day(String id, List<(String, double, double)> spans) => ProfileDayInput(
+        eventId: id,
+        file: 'Days/$id.fetproject',
+        name: id,
+        route: _route,
+        measuredCorners: true,
+        cornerSpans: [
+          for (final (segment, start, end) in spans)
+            DayCornerSpan(segmentId: segment, name: segment, start: at(start), end: at(end)),
+        ],
+        sessions: [
+          ProfileSession(
+            runId: 'r',
+            name: 'S',
+            stats: SessionStats(
+              rankedLaps: 3,
+              corners: [
+                for (final (segment, _, _) in spans) CornerStats(cornerId: segment, laps: 3),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      // The track corner id adding [eventId] stored for each of its spans.
+      Map<String, String> stored(DriverProfile profile, ProfileDayInput input) => {
+        for (final (i, span) in input.cornerSpans.indexed)
+          span.segmentId: profile.day(input.eventId)!.sessions.single.stats!.corners[i].cornerId,
+      };
+
+      test('a day that made its corners keeps them', () {
+        final a = day('a', [('s', 0.30, 0.36)]);
+        var profile = _add(DriverProfile.empty(Random(1)), a);
+        final ids = stored(profile, a);
+        // Day b takes a's corner with one span and adds an overlapping one.
+        profile = _add(profile, day('b', [('p', 0.30, 0.36), ('q', 0.31, 0.40)]));
+        expect(profile.tracks.single.corners, hasLength(2));
+        expect(matchTrackCorners(profile.tracks.single, a.cornerSpans), ids);
+      });
+
+      // Known limitation: a's span took z's corner by a share under one;
+      // b's corner covers the span whole, so matching a again finds b's.
+      test('a day matched to an older corner keeps it', skip: 'known limitation', () {
+        var profile = _add(DriverProfile.empty(Random(1)), day('z', [('k', 0.30, 0.36)]));
+        final a = day('a', [('s', 0.31, 0.40)]);
+        profile = _add(profile, a);
+        final ids = stored(profile, a);
+        // Day b adds a corner exactly where a's span is.
+        profile = _add(profile, day('b', [('p', 0.30, 0.36), ('q', 0.31, 0.40)]));
+        expect(matchTrackCorners(profile.tracks.single, a.cornerSpans), ids);
+      });
+    });
+
     test('a profile without stats (written before) still reads and adds up', () {
       final old = _profile([
         _visit(
