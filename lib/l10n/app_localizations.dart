@@ -9354,6 +9354,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not split: {reason}'**
   String cornerPhasesUnavailable(String reason);
+
+  /// Corner details: why a corner (a double apex or a complex) is not split into entry, middle and exit.
+  ///
+  /// In en, this message translates to:
+  /// **'more than one tight part'**
+  String get cornerPhasesMoreThanOneTightPart;
+
+  /// Corner details: the best lap could not be timed through the corner's parts.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap not timed through the parts: {reason}'**
+  String cornerPhasesBestNotTimed(String reason);
 }
 
 class _AppLocalizationsDelegate

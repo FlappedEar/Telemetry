@@ -74,34 +74,68 @@ CornerPhaseSplit cornerPhaseSplit(
 
 /// One lap's time through each part of a [CornerPhaseSplit], in seconds.
 final class CornerPhaseTimes {
-  const CornerPhaseTimes({this.entry, this.mid, this.exit, this.unavailableReason = ''});
+  const CornerPhaseTimes({
+    this.entry,
+    this.mid,
+    this.exit,
+    this.unavailableReason = cornerPhaseTimesNotTimed,
+  });
+
+  const CornerPhaseTimes.timed({
+    required double this.entry,
+    required double this.mid,
+    required double this.exit,
+  }) : unavailableReason = '';
 
   final double? entry, mid, exit;
 
   /// Non-empty: the lap is not timed through the parts.
   final String unavailableReason;
 
-  bool get valid => unavailableReason.isEmpty;
+  bool get valid => unavailableReason.isEmpty && entry != null && mid != null && exit != null;
 
   /// The three parts together: the time from the corner's start to its end.
   double? get total => valid ? entry! + mid! + exit! : null;
 }
 
-/// [trace]'s time through each part of [split]; not timed when the trace
-/// does not cover a boundary (never bridged).
+/// [trace]'s time through each part of [split]; not timed unless the trace
+/// covers the whole corner without a gap (segments that touch, as the sector
+/// times merge them, count as one), so a gap inside it is never bridged.
 CornerPhaseTimes cornerPhaseTimes(CornerPhaseSplit split, List<ProgressSegment> trace) {
   if (!split.valid) return CornerPhaseTimes(unavailableReason: split.unavailableReason);
+  final ranges = [
+    for (final segment in trace)
+      if (segment.samples.isNotEmpty)
+        (start: segment.samples.first.progressMeters, end: segment.samples.last.progressMeters),
+  ]..sort((a, b) => a.start.compareTo(b.start));
+  var covered = false;
+  double? from, to;
+  for (final range in ranges) {
+    if (from != null && range.start <= to! + _touchingMeters) {
+      to = range.end > to ? range.end : to;
+    } else {
+      (from, to) = (range.start, range.end);
+    }
+    if (from <= split.startMeters && to >= split.endMeters) {
+      covered = true;
+      break;
+    }
+  }
+  if (!covered) return const CornerPhaseTimes();
   final times = [
     for (final at in [split.startMeters, split.entryEndMeters, split.midEndMeters, split.endMeters])
       timeAtProgress(trace, at),
   ];
   if (times.contains(null) ||
       !(times[0]! <= times[1]! && times[1]! <= times[2]! && times[2]! <= times[3]!)) {
-    return const CornerPhaseTimes(unavailableReason: cornerPhaseTimesNotTimed);
+    return const CornerPhaseTimes();
   }
-  return CornerPhaseTimes(
+  return CornerPhaseTimes.timed(
     entry: times[1]! - times[0]!,
     mid: times[2]! - times[1]!,
     exit: times[3]! - times[2]!,
   );
 }
+
+// As the sector times: segments this close are one stretch.
+const double _touchingMeters = 1e-6;

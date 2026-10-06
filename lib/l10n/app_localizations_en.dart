@@ -6365,4 +6365,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String cornerPhasesUnavailable(String reason) {
     return 'Not split: $reason';
   }
+
+  @override
+  String get cornerPhasesMoreThanOneTightPart => 'more than one tight part';
+
+  @override
+  String cornerPhasesBestNotTimed(String reason) {
+    return 'Best lap not timed through the parts: $reason';
+  }
 }

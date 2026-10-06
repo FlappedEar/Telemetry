@@ -112,6 +112,23 @@ void main() {
     expect(cornerPhaseTimes(across, drive((_) => 20)).unavailableReason, cornerPhaseCrossesGate);
   });
 
+  test('a gap inside one part is not bridged either', () {
+    final lap = driveLap(
+      _singleApexHalf(),
+      (_) => 20,
+      gpsGap: (split.startMeters + 3, split.entryEndMeters - 3),
+    );
+    expect(split.entryEndMeters - split.startMeters, greaterThan(10));
+    final trace = projectLapTrace(corner.axis, lap.session, 0.0, lap.endTime);
+    expect(cornerPhaseTimes(split, trace).unavailableReason, cornerPhaseTimesNotTimed);
+  });
+
+  test('times nobody measured are not valid', () {
+    expect(const CornerPhaseTimes().valid, isFalse);
+    expect(const CornerPhaseTimes().total, isNull);
+    expect(const CornerPhaseTimes(unavailableReason: '').valid, isFalse);
+  });
+
   test('a lap not covered through the corner is not timed (never bridged)', () {
     final lap = driveLap(
       _singleApexHalf(),

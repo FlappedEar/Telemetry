@@ -6504,4 +6504,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String cornerPhasesUnavailable(String reason) {
     return 'Nie podzielono: $reason';
   }
+
+  @override
+  String get cornerPhasesMoreThanOneTightPart =>
+      'więcej niż jedna najciaśniejsza część';
+
+  @override
+  String cornerPhasesBestNotTimed(String reason) {
+    return 'Najlepsze okrążenie nie zmierzone w częściach: $reason';
+  }
 }

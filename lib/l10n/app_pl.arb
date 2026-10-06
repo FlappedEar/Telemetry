@@ -1527,5 +1527,7 @@
   "cornerPhaseMiddle": "Środek",
   "cornerPhaseExit": "Wyjście",
   "cornerPhasesNote": "Wejście trwa do miejsca, w którym zakręt jest najciaśniejszy, środek obejmuje tę część, a wyjście sięga do końca zakrętu. Podział wynika z kształtu toru, więc oba okrążenia są mierzone na tych samych metrach, a trzy czasy sumują się do czasu zakrętu.",
-  "cornerPhasesUnavailable": "Nie podzielono: {reason}"
+  "cornerPhasesUnavailable": "Nie podzielono: {reason}",
+  "cornerPhasesMoreThanOneTightPart": "więcej niż jedna najciaśniejsza część",
+  "cornerPhasesBestNotTimed": "Najlepsze okrążenie nie zmierzone w częściach: {reason}"
 }
