@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../units.dart';
 import 'profile_bundle_pickers.dart';
 import 'profile_library.dart';
 
@@ -41,6 +42,21 @@ class _LibraryPageState extends State<LibraryPage> {
   void initState() {
     super.initState();
     widget.library.load();
+    widget.library.addListener(_libraryChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.library.removeListener(_libraryChanged);
+    super.dispose();
+  }
+
+  // The bar under the title follows the days being measured again.
+  bool _wasMeasuring = false;
+  void _libraryChanged() {
+    final measuring = widget.library.measuringAll;
+    if (measuring || _wasMeasuring) setState(() {});
+    _wasMeasuring = measuring;
   }
 
   Future<void> _export() async {
@@ -139,8 +155,34 @@ class _LibraryPageState extends State<LibraryPage> {
     messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Every day measured again from its recordings (FET-196). It goes on
+  /// when the page is left; the library says how far it is.
+  Future<void> _measureAgain() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await widget.library.measureAllAgain(
+      assumedSpeedUnit: speedUnitSetting.value.unit,
+    );
+    if (result == null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          [
+            l10n.libraryMeasured(result.measured),
+            if (result.failed > 0) l10n.libraryMeasureFailed(result.failed),
+          ].join(' '),
+        ),
+      ),
+    );
+  }
+
   PreferredSizeWidget? _progress() {
-    final working = _working;
+    final measuring = widget.library.measuringAllProgress;
+    final working =
+        _working ??
+        (measuring == null
+            ? null
+            : context.l10n.libraryMeasuring(measuring.done, measuring.total));
     if (working == null) return null;
     return PreferredSize(
       preferredSize: const Size.fromHeight(32),
@@ -226,7 +268,16 @@ class _LibraryPageState extends State<LibraryPage> {
             listenable: widget.library,
             builder: (context, _) {
               final profile = widget.library.profile;
-              final idle = _working == null && widget.library.available;
+              final measuring = widget.library.measuringAll;
+              final idle =
+                  _working == null && !measuring && widget.library.available;
+              if (measuring) {
+                return TextButton(
+                  key: const ValueKey('libraryStopMeasuring'),
+                  onPressed: widget.library.stopMeasuringAll,
+                  child: Text(l10n.libraryStopMeasuring),
+                );
+              }
               return PopupMenuButton<VoidCallback>(
                 key: _menu,
                 enabled: idle,
@@ -247,6 +298,15 @@ class _LibraryPageState extends State<LibraryPage> {
                     child: ListTile(
                       leading: const Icon(Icons.file_open_outlined),
                       title: Text(l10n.libraryImport),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    key: const ValueKey('libraryMeasureAgain'),
+                    value: _measureAgain,
+                    enabled: profile != null && profile.days.isNotEmpty,
+                    child: ListTile(
+                      leading: const Icon(Icons.refresh),
+                      title: Text(l10n.libraryMeasureAgain),
                     ),
                   ),
                 ],

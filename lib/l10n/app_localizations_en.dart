@@ -5583,6 +5583,40 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get libraryMeasureAgain => 'Measure all days again';
+
+  @override
+  String get libraryStopMeasuring => 'Stop';
+
+  @override
+  String libraryMeasuring(int done, int total) {
+    return 'Measuring the days again: $done of $total…';
+  }
+
+  @override
+  String libraryMeasured(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days measured again.',
+      one: '1 day measured again.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryMeasureFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count days could not be measured: a file or recording is missing or unreadable. They keep what was measured before.',
+      one: '1 day could not be measured: its file or one of its recordings is missing or unreadable. It keeps what was measured before.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String trackDialogCircuit(String name) {
     return 'Circuit: $name';
   }

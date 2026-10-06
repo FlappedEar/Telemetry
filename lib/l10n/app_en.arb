@@ -7892,6 +7892,29 @@
     "description": "After an import whose days were copied but the library file could not be written.",
     "placeholders": {"count": {"type": "int"}}
   },
+  "libraryMeasureAgain": "Measure all days again",
+  "@libraryMeasureAgain": {
+    "description": "Library menu: reads every saved day from its recordings again and updates what the profile measured, for example after the app measures something new."
+  },
+  "libraryStopMeasuring": "Stop",
+  "@libraryStopMeasuring": {
+    "description": "Library toolbar while the days are measured again: stops after the day being measured."
+  },
+  "libraryMeasuring": "Measuring the days again: {done} of {total}…",
+  "@libraryMeasuring": {
+    "description": "Shown while the library measures its days again.",
+    "placeholders": {"done": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "libraryMeasured": "{count, plural, =1{1 day measured again.} other{{count} days measured again.}}",
+  "@libraryMeasured": {
+    "description": "After measuring the days again: how many were.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryMeasureFailed": "{count, plural, =1{1 day could not be measured: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be measured: a file or recording is missing or unreadable. They keep what was measured before.}}",
+  "@libraryMeasureFailed": {
+    "description": "After measuring the days again: days whose file or recordings could not be read.",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "trackDialogCircuit": "Circuit: {name}",
   "@trackDialogCircuit": {"description": "The circuit the route starts on, from the circuit list or named by the user.", "placeholders": {"name": {"type": "String", "example": "Autodrom Jastrząb"}}},
   "trackDialogCircuitUnknown": "This place is not in the circuit list.",

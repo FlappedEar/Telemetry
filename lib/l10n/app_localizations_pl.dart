@@ -5701,6 +5701,40 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get libraryMeasureAgain => 'Zmierz ponownie wszystkie dni';
+
+  @override
+  String get libraryStopMeasuring => 'Zatrzymaj';
+
+  @override
+  String libraryMeasuring(int done, int total) {
+    return 'Ponowne mierzenie dni: $done z $total…';
+  }
+
+  @override
+  String libraryMeasured(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Zmierzono ponownie $count dni.',
+      one: 'Zmierzono ponownie 1 dzień.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryMeasureFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Nie udało się zmierzyć $count dni: brakuje pliku lub nagrania albo nie da się go odczytać. Zostają poprzednie pomiary.',
+      one: 'Nie udało się zmierzyć 1 dnia: brakuje jego pliku lub jednego z nagrań albo nie da się go odczytać. Zostają poprzednie pomiary.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String trackDialogCircuit(String name) {
     return 'Tor: $name';
   }

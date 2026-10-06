@@ -8223,6 +8223,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 day was copied, but the library could not be saved. It is listed again, in your last car, when the app next starts.} other{{count} days were copied, but the library could not be saved. They are listed again, in your last car, when the app next starts.}}'**
   String libraryImportNotSaved(int count);
 
+  /// Library menu: reads every saved day from its recordings again and updates what the profile measured, for example after the app measures something new.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure all days again'**
+  String get libraryMeasureAgain;
+
+  /// Library toolbar while the days are measured again: stops after the day being measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get libraryStopMeasuring;
+
+  /// Shown while the library measures its days again.
+  ///
+  /// In en, this message translates to:
+  /// **'Measuring the days again: {done} of {total}…'**
+  String libraryMeasuring(int done, int total);
+
+  /// After measuring the days again: how many were.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day measured again.} other{{count} days measured again.}}'**
+  String libraryMeasured(int count);
+
+  /// After measuring the days again: days whose file or recordings could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day could not be measured: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be measured: a file or recording is missing or unreadable. They keep what was measured before.}}'**
+  String libraryMeasureFailed(int count);
+
   /// The circuit the route starts on, from the circuit list or named by the user.
   ///
   /// In en, this message translates to:
