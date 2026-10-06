@@ -5481,6 +5481,79 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pogoda każdego dnia to pogoda sesji z najlepszym okrążeniem, a gdy ta sesja nie ma pogody – pierwszej sesji, która ją ma.';
 
   @override
+  String get lastTimeHereSetup => 'Ustawienia';
+
+  @override
+  String lastTimeHereSetupThen(String session, String setup) {
+    return 'Poprzednio ($session): $setup';
+  }
+
+  @override
+  String lastTimeHereSetupToday(String session, String setup) {
+    return 'Dziś ($session): $setup';
+  }
+
+  @override
+  String lastTimeHereSetupBestHadNone(String session) {
+    return '$session; sesja z najlepszym okrążeniem nie ma ustawień';
+  }
+
+  @override
+  String lastTimeHereSetupFirstSession(String session) {
+    return '$session, pierwsza z ustawieniami';
+  }
+
+  @override
+  String get lastTimeHereSetupThenNone =>
+      'Poprzednio: — dla tamtego dnia nie wpisano ustawień albo dzień dodano, zanim biblioteka zaczęła zapisywać ustawienia.';
+
+  @override
+  String get lastTimeHereSetupTodayNoSessions =>
+      'Dziś: — nie wpisano ustawień.';
+
+  @override
+  String lastTimeHereSetupThenMissing(String session, String reason) {
+    return 'Poprzednio ($session): — $reason';
+  }
+
+  @override
+  String lastTimeHereSetupTodayMissing(String session, String reason) {
+    return 'Dziś ($session): — $reason';
+  }
+
+  @override
+  String get lastTimeHereSetupReasonNone => 'nie wpisano ustawień';
+
+  @override
+  String get lastTimeHereSetupReasonNewer =>
+      'ustawienia z innej wersji aplikacji';
+
+  @override
+  String get lastTimeHereSetupReasonUnreadable =>
+      'ta wersja nie potrafi ich odczytać';
+
+  @override
+  String get lastTimeHereSetupReasonUnsaved =>
+      'wpisane na tej stronie; trafią do biblioteki po zapisaniu dnia';
+
+  @override
+  String get lastTimeHereSetupReasonPending =>
+      'zapisane razem z dniem; jeszcze nie ma ich w bibliotece';
+
+  @override
+  String lastTimeHereSetupDifference(String difference) {
+    return 'Różnica (dziś − poprzednio): $difference';
+  }
+
+  @override
+  String get lastTimeHereSetupUnits =>
+      'Różne jednostki ciśnienia, bez porównania.';
+
+  @override
+  String get lastTimeHereSetupNote =>
+      'Ustawienia każdego dnia to ustawienia sesji z najlepszym okrążeniem, a gdy ta sesja ich nie ma – pierwszej sesji, która je ma. Pokazane tak, jak je wpisano; wyższe lub niższe ciśnienie nie jest ani lepsze, ani gorsze.';
+
+  @override
   String get settingsUpdatesHeading => 'Aktualizacje';
 
   @override

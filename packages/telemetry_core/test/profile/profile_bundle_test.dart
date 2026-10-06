@@ -28,6 +28,7 @@ void main() {
     List<List<double>> sessions, {
     String car = 'Clio',
     double latitude = 52.0,
+    Map<String, Object?>? firstSetup,
   }) async {
     Directory(recordings).createSync(recursive: true);
     final paths = [
@@ -72,6 +73,7 @@ void main() {
         analysis: analysis,
         recordings: recordingsById,
         theoreticalBest: best,
+        setups: firstSetup == null ? null : {runs.first.run.id: ProfileSetup.of(firstSetup)},
       ),
       defaultCarName: car,
       defaultTrackName: 'Track',
@@ -136,6 +138,34 @@ void main() {
       expect(again.alreadyHere, ['e1', 'e2']);
       expect(again.recordings, 0);
       expect(Directory(p.join(b, 'Recordings')).listSync(), hasLength(3));
+    });
+
+    test('a session setup comes along as stored, unknown keys included', () async {
+      final a = p.join(root(), 'A');
+      final setup = {
+        'version': runSetupVersion,
+        'pressureUnit': 'psi',
+        'coldPressure': {'fl': 28.5, 'fr': 28.5, 'rl': 27, 'rr': 27, 'spare': 1},
+        'tyre': 'Pirelli',
+        'fuelStartLitres': 20,
+        'camber': -2.5,
+      };
+      final profile = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
+        [30, 28, 31],
+        [29, 32],
+      ], firstSetup: setup);
+      final bundle = p.join(root(), 'a$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      final read = await readProfileBundle(
+        DriverProfile.empty(Random(2)),
+        p.join(root(), 'B'),
+        bundle,
+      );
+      final sessions = read.profile.day('e1')!.sessions;
+      expect(sessions.first.setup!.json, setup);
+      expect(sessions.first.setup!.setup.pressureUnit, PressureUnit.psi);
+      expect(sessions.first.setup!.setup.cold.fl, 28.5);
+      expect(sessions[1].setup, isNull);
     });
 
     test("joins this device's car and track, its corners placed on this track's", () async {

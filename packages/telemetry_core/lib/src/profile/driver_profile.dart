@@ -14,6 +14,7 @@ import '../day/day_document.dart';
 import '../day/day_laps.dart';
 import '../day/day_ranking.dart';
 import '../day/day_theoretical_best.dart';
+import '../day/run_setup.dart';
 import '../day/session_weather.dart';
 import '../day/track_inference.dart';
 import '../geometry.dart';
@@ -203,6 +204,46 @@ double? _weatherValue(Object? value, String key) {
   return number >= low && number <= high ? number : null;
 }
 
+/// A session's setup as the profile keeps it (FET-188): the run's `setup`
+/// object of the day document as it was saved, read as [RunSetup] reads it.
+/// Numbers stay in the unit they were entered in and are never converted.
+/// It is the driver's own statement about the run, so unlike weather it
+/// has no source revision: it changes only when the day is saved.
+final class ProfileSetup {
+  ProfileSetup._(Map<String, Object?> json)
+    : json = Map.unmodifiable(json),
+      setup = RunSetup.fromJson(json);
+
+  /// [value], a run's stored `setup` ([runSetupKey]), as the profile keeps
+  /// it: every key as stored, those this version does not know included,
+  /// also when nothing in it can be read (only a `version`, say), so it
+  /// survives a re-save. Null when it is not an object. A value the
+  /// profile could not write back (nested too deeply) keeps only what
+  /// [RunSetup] reads.
+  static ProfileSetup? of(Object? value) {
+    if (value is! Map<String, Object?>) return null;
+    try {
+      return ProfileSetup._({
+        for (final MapEntry(:key, :value) in value.entries) key: _bounded(value),
+      });
+    } on ProfileFormatError {
+      final known = RunSetup.fromJson(value);
+      return known.isEmpty ? null : ProfileSetup._(known.toJson());
+    }
+  }
+
+  /// [setup] as a run stores it ([RunSetup.toJson]); null when nothing is
+  /// entered.
+  static ProfileSetup? ofSetup(RunSetup setup) => setup.isEmpty ? null : of(setup.toJson());
+
+  /// The object as stored, keys this version does not know included.
+  final Map<String, Object?> json;
+
+  /// What this version reads of it: a value that is missing, of the wrong
+  /// type or out of range reads as not entered.
+  final RunSetup setup;
+}
+
 /// One session of a day, as its last analysis found it.
 final class ProfileSession {
   ProfileSession({
@@ -213,6 +254,7 @@ final class ProfileSession {
     this.bestLapSeconds,
     this.stats,
     this.weather,
+    this.setup,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
 
@@ -237,20 +279,30 @@ final class ProfileSession {
   /// lookup off, no time or position, or added before the profile kept
   /// weather).
   final ProfileWeather? weather;
+
+  /// The setup the driver entered for it, as the day was last saved; null
+  /// when none was entered (or the day was added before the profile kept
+  /// setups).
+  final ProfileSetup? setup;
   final Map<String, Object?> unknown;
 
   ProfileSession _withStats(SessionStats? stats) => _with(stats, weather);
 
-  ProfileSession _with(SessionStats? stats, ProfileWeather? weather) => ProfileSession(
-    runId: runId,
-    name: name,
-    startMilliseconds: startMilliseconds,
-    lapCount: lapCount,
-    bestLapSeconds: bestLapSeconds,
-    stats: stats,
-    weather: weather,
-    unknown: unknown,
-  );
+  ProfileSession _with(SessionStats? stats, ProfileWeather? weather) =>
+      _withSetup(setup, stats: stats, weather: weather);
+
+  ProfileSession _withSetup(ProfileSetup? setup, {SessionStats? stats, ProfileWeather? weather}) =>
+      ProfileSession(
+        runId: runId,
+        name: name,
+        startMilliseconds: startMilliseconds,
+        lapCount: lapCount,
+        bestLapSeconds: bestLapSeconds,
+        stats: stats,
+        weather: weather,
+        setup: setup,
+        unknown: unknown,
+      );
 }
 
 /// A day kept in the profile.
@@ -388,6 +440,7 @@ final class ProfileDayInput {
     List<DayCornerSpan> cornerSpans = const [],
     this.measuredCorners = false,
     Map<String, String> sourceRevisions = const {},
+    this.setupsGiven = false,
   }) : sessions = List.unmodifiable(sessions),
        cornerSpans = List.unmodifiable(cornerSpans),
        sourceRevisions = Map.unmodifiable(sourceRevisions);
@@ -402,7 +455,10 @@ final class ProfileDayInput {
   /// theoretical best and its corners. Without them, adding the day keeps
   /// what the profile measured before. With [weather] (by run id), each
   /// session's weather; a session without it keeps what the profile had,
-  /// while that is the weather of the same recording.
+  /// while that is the weather of the same recording. With [setups] (by
+  /// run id; the setups of the day as saved), each session's setup, which
+  /// replaces what the profile had: a session missing from it or given null
+  /// has none. Without it, each session keeps the setup the profile had.
   factory ProfileDayInput.fromAnalysis({
     required String eventId,
     required String file,
@@ -412,6 +468,7 @@ final class ProfileDayInput {
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
     Map<String, ProfileWeather?>? weather,
+    Map<String, ProfileSetup?>? setups,
   }) {
     // Only the chosen group's: the day's route and track are its.
     if (theoreticalBest != null && theoreticalBest.groupId != analysis.chosenGroupId) {
@@ -456,6 +513,7 @@ final class ProfileDayInput {
           bestLapSeconds: _finite(best[runId]),
           stats: measured[runId],
           weather: weather?[runId],
+          setup: setups?[runId],
         ),
     ];
     RouteShape? route;
@@ -495,6 +553,7 @@ final class ProfileDayInput {
           theoreticalBest.state != DayTheoreticalBestState.error &&
           (ready == null || canonical != null),
       sourceRevisions: revisions,
+      setupsGiven: setups != null,
     );
   }
 
@@ -526,6 +585,11 @@ final class ProfileDayInput {
   /// another recording is dropped.
   final Map<String, String> sourceRevisions;
 
+  /// Whether [sessions] carry the day's setups as saved: when true, each
+  /// session's setup (null included) replaces the profile's; when false,
+  /// such as for a day found in the days folder, the profile's are kept.
+  final bool setupsGiven;
+
   /// This day with [weather] (by run id) as its sessions' weather, such as
   /// newer weather that arrived while the day was being measured. Weather
   /// of another recording than a session's, as far as known, is left out.
@@ -551,6 +615,7 @@ final class ProfileDayInput {
     cornerSpans: cornerSpans,
     measuredCorners: measuredCorners,
     sourceRevisions: sourceRevisions,
+    setupsGiven: setupsGiven,
   );
 }
 
@@ -666,6 +731,13 @@ DriverProfile addDayToProfile(
               weather.sourceRevision == day.sourceRevisions[session.runId])
         session.runId: weather,
   };
+  // The setup is the driver's statement about the session, saved with the
+  // day: given, it replaces the profile's (null clears it); not given, the
+  // profile's is kept, whatever the recording.
+  final setupBefore = {
+    for (final session in existing?.sessions ?? const <ProfileSession>[])
+      session.runId: session.setup,
+  };
   var sessions = [
     for (final session in day.sessions)
       if (session.weather == null && weatherBefore[session.runId] != null)
@@ -673,6 +745,16 @@ DriverProfile addDayToProfile(
       else
         session,
   ];
+  if (!day.setupsGiven) {
+    sessions = [
+      for (final session in sessions)
+        session._withSetup(
+          setupBefore[session.runId],
+          stats: session.stats,
+          weather: session.weather,
+        ),
+    ];
+  }
   sessions = [
     for (final session in sessions)
       switch (session.stats) {
@@ -827,6 +909,53 @@ DriverProfile setProfileSessionWeather(
   );
 }
 
+/// [profile] with the setups of day [eventId]'s sessions replaced by
+/// [setups] (by run id; the day's setups as saved, so a session missing
+/// from it or given null has none), without measuring the day again.
+/// Unchanged when the day is not in the profile or nothing changes. Throws
+/// [ProfileFormatError] for what [decodeDriverProfile] would refuse.
+DriverProfile setProfileSessionSetups(
+  DriverProfile profile,
+  String eventId,
+  Map<String, ProfileSetup?> setups,
+) {
+  final day = profile.day(eventId);
+  if (day == null) return profile;
+  String? encoded(ProfileSetup? setup) => setup == null ? null : jsonEncode(setup.json);
+  var changed = false;
+  final sessions = [
+    for (final session in day.sessions)
+      if (encoded(setups[session.runId]) == encoded(session.setup))
+        session
+      else
+        () {
+          changed = true;
+          return session._withSetup(
+            setups[session.runId],
+            stats: session.stats,
+            weather: session.weather,
+          );
+        }(),
+  ];
+  if (!changed) return profile;
+  final entry = ProfileDay(
+    eventId: day.eventId,
+    file: day.file,
+    name: day.name,
+    carId: day.carId,
+    trackId: day.trackId,
+    startMilliseconds: day.startMilliseconds,
+    sessions: sessions,
+    bestLapSeconds: day.bestLapSeconds,
+    theoreticalBestSeconds: day.theoreticalBestSeconds,
+    unknown: day.unknown,
+  );
+  _verified(_encodeDay(entry), _day);
+  return profile._copy(
+    days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
+  );
+}
+
 /// [profile]'s other days at [trackId], most recent first; undated days last.
 List<ProfileDay> earlierVisits(DriverProfile profile, String trackId, {String? exceptEventId}) {
   final visits = [
@@ -920,6 +1049,7 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
         'bestLapSeconds': session.bestLapSeconds,
         if (session.stats case final stats?) 'stats': _encodeStats(stats),
         if (session.weather case final weather?) 'weather': _encodeWeather(weather),
+        if (session.setup case final setup?) 'setup': setup.json,
       },
   ],
 };
@@ -1121,6 +1251,9 @@ ProfileSession _session(Object? value) {
   if (laps is! int || laps < 0) {
     throw const ProfileFormatError('A session has an invalid lap count.');
   }
+  // Read leniently, as a day document's setup is: never a reason to refuse
+  // the profile.
+  final setup = ProfileSetup.of(json['setup']);
   return ProfileSession(
     runId: _string(json['runId'], 'session run id', allowEmpty: false),
     name: _string(json['name'], 'session name'),
@@ -1129,7 +1262,9 @@ ProfileSession _session(Object? value) {
     bestLapSeconds: _optionalSeconds(json['bestLapSeconds'], 'session best lap'),
     stats: json['stats'] == null ? null : _stats(json['stats']),
     weather: json['weather'] == null ? null : _weather(json['weather']),
-    unknown: _without(json, const [
+    setup: setup,
+    // A setup that is not an object reads as none and is kept as it is.
+    unknown: _without(json, [
       'runId',
       'name',
       'startMilliseconds',
@@ -1137,6 +1272,7 @@ ProfileSession _session(Object? value) {
       'bestLapSeconds',
       'stats',
       'weather',
+      if (setup != null || json['setup'] is Map) 'setup',
     ]),
   );
 }

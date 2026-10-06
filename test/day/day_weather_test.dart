@@ -132,6 +132,7 @@ final class _CountingLibrary extends ProfileLibrary {
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
     Map<String, ProfileWeather?>? weather,
+    Map<String, ProfileSetup?>? setups,
   }) {
     recorded.add(weather);
     return super.recordDay(
@@ -142,6 +143,7 @@ final class _CountingLibrary extends ProfileLibrary {
       recordings: recordings,
       theoreticalBest: theoreticalBest,
       weather: weather,
+      setups: setups,
     );
   }
 }
