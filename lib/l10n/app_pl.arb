@@ -1460,5 +1460,10 @@
   "ownGoalsNeedLaps": "Cele wymagają, by {session} miała okrążenia wśród porównywanych.",
   "summaryOwnGoalNoLaps": "Nie zmierzono: {session} i ta sesja potrzebują okrążeń wśród porównywanych",
   "summaryOwnGoalOtherGroup": "Nie zmierzono: ustawiony dla innych porównywanych okrążeń",
-  "ownGoalsOtherGroup": "Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe."
+  "ownGoalsOtherGroup": "Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe.",
+  "briefingTitle": "Przed wyjazdem",
+  "briefingFrom": "Na podstawie: {session}",
+  "briefingGoals": "Twoje cele",
+  "briefingNoGoals": "Brak: dodaj je w sekcji Twoje cele na następną sesję",
+  "briefingChance": "Największa szansa"
 }

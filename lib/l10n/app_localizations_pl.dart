@@ -6162,4 +6162,22 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get ownGoalsOtherGroup =>
       'Te cele ustawiono dla innych porównywanych okrążeń. Usuń je, aby ustawić nowe.';
+
+  @override
+  String get briefingTitle => 'Przed wyjazdem';
+
+  @override
+  String briefingFrom(String session) {
+    return 'Na podstawie: $session';
+  }
+
+  @override
+  String get briefingGoals => 'Twoje cele';
+
+  @override
+  String get briefingNoGoals =>
+      'Brak: dodaj je w sekcji Twoje cele na następną sesję';
+
+  @override
+  String get briefingChance => 'Największa szansa';
 }

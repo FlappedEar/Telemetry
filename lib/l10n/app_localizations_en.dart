@@ -6042,4 +6042,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ownGoalsOtherGroup =>
       'These goals were set on other compared laps. Remove them to set new ones.';
+
+  @override
+  String get briefingTitle => 'Before you go out';
+
+  @override
+  String briefingFrom(String session) {
+    return 'From $session';
+  }
+
+  @override
+  String get briefingGoals => 'Your goals';
+
+  @override
+  String get briefingNoGoals =>
+      'None set: add them under Your goals for the next session';
+
+  @override
+  String get briefingChance => 'Biggest chance';
 }

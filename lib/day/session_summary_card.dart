@@ -28,7 +28,11 @@ class SessionSummaryCard extends StatelessWidget {
     this.coachError = '',
     required this.channels,
     this.ownGoals,
+    this.onBriefing,
   });
+
+  /// Opens the briefing for the next session; null shows no button.
+  final VoidCallback? onBriefing;
 
   /// The driver's own goals set after the session before ([session] names
   /// it), and their checks on this one ([checkSessionGoals], FET-218): null
@@ -82,9 +86,24 @@ class SessionSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.summaryTitle(l10n.session(session)),
-              style: theme.textTheme.titleMedium,
+            // The briefing beside the title, below it when they do not fit.
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              children: [
+                Text(
+                  l10n.summaryTitle(l10n.session(session)),
+                  style: theme.textTheme.titleMedium,
+                ),
+                if (onBriefing case final open?)
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('sessionSummaryBriefing'),
+                    onPressed: open,
+                    icon: const Icon(Icons.flag_outlined),
+                    label: Text(l10n.briefingTitle),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

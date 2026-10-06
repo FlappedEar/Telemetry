@@ -101,8 +101,10 @@ void main() {
     Locale? locale,
     String? previousRunId,
     bool coachFails = false,
+    Size size = const Size(412, 915),
+    double textScale = 1,
   }) async {
-    await tester.binding.setSurfaceSize(const Size(412, 915));
+    await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final outcome = importDay();
     late DayResultsController controller;
@@ -116,11 +118,17 @@ void main() {
       ),
     );
     await tester.pumpWidget(
-      TelemetryApp(
-        locale: locale,
-        home: DayResultsPage.controller(
-          controller: controller,
-          coach: ValueNotifier(true),
+      MediaQuery(
+        data: MediaQueryData(
+          size: size,
+          textScaler: TextScaler.linear(textScale),
+        ),
+        child: TelemetryApp(
+          locale: locale,
+          home: DayResultsPage.controller(
+            controller: controller,
+            coach: ValueNotifier(true),
+          ),
         ),
       ),
     );
@@ -128,10 +136,20 @@ void main() {
     return controller;
   }
 
-  Future<void> reveal(WidgetTester tester, Finder target) async {
+  Future<void> reveal(
+    WidgetTester tester,
+    Finder target, {
+    bool up = false,
+  }) async {
+    // Built already (above or below): bring it in.
+    if (target.evaluate().isNotEmpty) {
+      await tester.ensureVisible(target.first);
+      await tester.pumpAndSettle();
+      return;
+    }
     await tester.scrollUntilVisible(
       target,
-      200,
+      up ? -200 : 200,
       scrollable: find
           .descendant(
             of: find.byKey(const ValueKey('dayResultsCoach')),
@@ -495,10 +513,125 @@ void main() {
     expect(find.byKey(const ValueKey('ownGoalsAdd')), findsOneWidget);
   });
 
+  Future<void> openBriefing(WidgetTester tester) async {
+    await reveal(
+      tester,
+      find.byKey(const ValueKey('sessionSummaryBriefing')),
+      up: true,
+    );
+    await tester.tap(find.byKey(const ValueKey('sessionSummaryBriefing')));
+    await tester.pumpAndSettle();
+  }
+
+  String line(WidgetTester tester, String key) => [
+    for (final text in tester.widgetList<Text>(
+      find.descendant(
+        of: find.byKey(ValueKey(key)),
+        matching: find.byType(Text),
+      ),
+    ))
+      text.data,
+  ].join(' | ');
+
+  testWidgets('the briefing gathers the focus, the goals and the biggest '
+      'chance before the next session', (tester) async {
+    final controller = await show(tester);
+    final corner = controller.theoreticalBest!.corners.first;
+    await openBriefing(tester);
+    expect(find.byKey(const ValueKey('briefingPage')), findsOneWidget);
+    expect(find.text('From Session 2'), findsOneWidget);
+    expect(
+      line(tester, 'briefingFocus'),
+      'Main focus | ${corner.name} · Reduce coasting | Longest coast: '
+      '1.2\u00a0s on this session\'s laps, 0.6\u00a0s on your faster lap.',
+    );
+    expect(
+      line(tester, 'briefingGoals'),
+      'Your goals | None set: add them under Your goals for the next session',
+    );
+    expect(line(tester, 'briefingChance'), startsWith('Biggest chance | '));
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    // A goal set on the Next session card shows in the briefing.
+    await reveal(tester, find.byKey(const ValueKey('ownGoalsAdd')));
+    await tester.tap(find.byKey(const ValueKey('ownGoalsAdd')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ownGoalSave')));
+    await tester.pumpAndSettle();
+    await openBriefing(tester);
+    expect(
+      line(tester, 'briefingGoals'),
+      'Your goals | ${corner.name} · Reduce coasting',
+    );
+  });
+
+  testWidgets('the briefing follows the day while it is open', (tester) async {
+    final controller = await show(tester);
+    final corner = controller.theoreticalBest!.corners.first;
+    await openBriefing(tester);
+    final latest = controller.latestRunId;
+    controller.updateRunMetadata(
+      latest,
+      controller
+          .runMetadata(latest)
+          .withGoals(
+            RunGoals(
+              goals: [
+                SessionGoal(
+                  kind: CoachKind.lateThrottle,
+                  segmentName: corner.name,
+                  startProgressMeters: corner.startProgressMeters,
+                  endProgressMeters: corner.endProgressMeters,
+                ),
+              ],
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      line(tester, 'briefingGoals'),
+      'Your goals | ${corner.name} · Return to throttle sooner',
+    );
+  });
+
+  testWidgets('the briefing says why while the coach failed', (tester) async {
+    await show(tester, coachFails: true);
+    await openBriefing(tester);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('briefingFocus')),
+        matching: find.text('The coach could not run'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the briefing fits a small phone with large text', (
+    tester,
+  ) async {
+    await show(tester, size: const Size(320, 640), textScale: 2);
+    await openBriefing(tester);
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('briefingChance')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('briefingPage')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('in Polish', (tester) async {
     await show(tester, locale: const Locale('pl'));
     await reveal(tester, find.byKey(const ValueKey('ownGoalsAdd')));
     expect(find.text('Twoje cele na następną sesję'), findsOneWidget);
     expect(find.text('Dodaj cel'), findsOneWidget);
+    await openBriefing(tester);
+    expect(find.text('Przed wyjazdem'), findsOneWidget);
   });
 }

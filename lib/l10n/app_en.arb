@@ -8265,5 +8265,15 @@
   "summaryOwnGoalOtherGroup": "Not measured: set on other compared laps",
   "@summaryOwnGoalOtherGroup": {"description": "Own goal row when the goal was set while another group of compared laps was shown."},
   "ownGoalsOtherGroup": "These goals were set on other compared laps. Remove them to set new ones.",
-  "@ownGoalsOtherGroup": {"description": "Why no goal can be added: the goals already set were set while another group of compared laps was shown."}
+  "@ownGoalsOtherGroup": {"description": "Why no goal can be added: the goals already set were set while another group of compared laps was shown."},
+  "briefingTitle": "Before you go out",
+  "@briefingTitle": {"description": "Heading of the briefing card on the Coach place, read before the next session."},
+  "briefingFrom": "From {session}",
+  "@briefingFrom": {"description": "Under the briefing heading: the session the briefing comes from.", "placeholders": {"session": {"type": "String"}}},
+  "briefingGoals": "Your goals",
+  "@briefingGoals": {"description": "Briefing line: the driver's own goals for the next session."},
+  "briefingNoGoals": "None set: add them under Your goals for the next session",
+  "@briefingNoGoals": {"description": "Briefing goals line when the driver set no goals."},
+  "briefingChance": "Biggest chance",
+  "@briefingChance": {"description": "Briefing line: the segment with the biggest gap to the quickest typical time."}
 }
