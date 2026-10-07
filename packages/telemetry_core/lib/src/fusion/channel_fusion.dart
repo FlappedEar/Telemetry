@@ -924,15 +924,32 @@ ChannelFusionResult fuseChannels(
 /// primary's, added channels join it (under their alias when the primary has
 /// none by that name). Unresolved and primary-only channels stay the
 /// primary's. Metadata "fusedChannels" lists the channels that changed.
+/// Fused channels are cut to the primary's span (0 to its duration, widened
+/// to its own channels' first and last samples), so its duration, start
+/// time and sample count still describe every channel (FET-210; Overlays
+/// keeps every fused sample, departure KAN-232); an added
+/// channel with no finite sample left in it is left out. The span is the
+/// primary's own: where a primary channel reaches past its duration, fused
+/// channels may too. A fused channel's sample just outside the span is cut
+/// with the rest, so near the span's ends that channel reads nothing for up
+/// to one of its own intervals.
 TelemetrySession fusedSession(TelemetrySession primary, ChannelFusionResult fusion) {
   final channels = Map.of(primary.channels);
   final aliases = Map.of(primary.aliases);
   final changed = <String>[];
+  var from = 0.0, to = primary.duration;
+  for (final channel in primary.channels.values) {
+    if (channel.timestamps.isEmpty) continue;
+    if (channel.timestamps.first < from) from = channel.timestamps.first;
+    if (channel.timestamps.last > to) to = channel.timestamps.last;
+  }
   for (final fused in fusion.channels) {
     if (fused.rule != 'added' && fused.rule != 'fillGaps' && fused.rule != 'preferAlternative') {
       continue;
     }
-    channels[fused.name] = fused.channel;
+    final clipped = _withinSpan(fused.channel, from, to);
+    if (clipped == null) continue;
+    channels[fused.name] = clipped;
     if (fused.key != fused.name && !aliases.containsKey(fused.key)) {
       aliases[fused.key] = fused.name;
     }
@@ -948,5 +965,35 @@ TelemetrySession fusedSession(TelemetrySession primary, ChannelFusionResult fusi
     warnings: primary.warnings,
     timingGates: primary.timingGates,
     sampleCount: primary.sampleCount,
+  );
+}
+
+/// A fused sample this close outside the primary's span (rounding of the
+/// clock transform) still counts as inside it.
+const double _spanToleranceSeconds = 1e-6;
+
+/// [channel]'s samples from [from] to [to]; null when none of them is
+/// finite.
+TelemetryChannel? _withinSpan(TelemetryChannel channel, double from, double to) {
+  final times = channel.timestamps;
+  var first = 0;
+  while (first < times.length && !(times[first] >= from - _spanToleranceSeconds)) {
+    ++first;
+  }
+  var end = first;
+  while (end < times.length && times[end] <= to + _spanToleranceSeconds) {
+    ++end;
+  }
+  var finite = false;
+  for (var index = first; index < end && !finite; ++index) {
+    finite = channel.values[index].isFinite;
+  }
+  if (!finite) return null;
+  if (first == 0 && end == times.length) return channel;
+  return TelemetryChannel(
+    name: channel.name,
+    unit: channel.unit,
+    timestamps: Float64List.fromList(times.sublist(first, end)),
+    values: Float32List.fromList(channel.values.sublist(first, end)),
   );
 }
