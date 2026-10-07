@@ -644,13 +644,14 @@ ProjectedSample projectSample(
 /// A fix projecting slightly behind the previous one in its segment is held at
 /// the previous progress, so progress never falls within a segment.
 ///
-/// A segment must start where the lap could have driven since its last
-/// projected fix, the lap's first segment since the gate at [startTime]
-/// (FET-256); a fix that does not matched another branch of the track and is
-/// refused. When a fix instead fits the lap's earlier lock and lies behind
-/// where a short run of the latest segments started, those segments matched
-/// another branch and are dropped, rather than the rest of the lap being
-/// moved on by a lap.
+/// A segment after a gap must start where the lap could have driven since its
+/// last projected fix (FET-256); a fix that does not matched another branch of
+/// the track and is refused. When a fix instead fits the lap's earlier lock
+/// (the gate at [startTime] before the first segment) and lies behind where a
+/// short run of the latest segments started, or out of the run's reach where
+/// the earlier lock could have driven at the lap's own speed, those segments
+/// matched another branch and are dropped, rather than the rest of the lap
+/// being moved on by a lap or refused.
 List<ProgressSegment> projectLapTrace(
   ProgressAxis axis,
   TelemetrySession session,
@@ -716,22 +717,28 @@ List<ProgressSegment> projectLapTrace(
   // The latest segments a segment's first fix at [progress] (any lap of it)
   // and [time] shows to be on another branch: the index in [result] of the
   // first of them and the fix's progress from the lock before it, or null.
-  // The fix must lie behind where that run started and be within reach of
-  // the lock before it, and the run must cover less than a quarter of the
-  // axis: a long run is more likely right than one fix.
-  (int, double)? conflictingRun(double progress, double time) {
+  // The run must cover less than a quarter of the axis (a long run is more
+  // likely right than one fix), and the fix must either lie behind where
+  // the run started and within reach of the lock before it ([behind]), or,
+  // out of the run's reach, be where the lock before it could have driven at
+  // the lap's own speed (otherwise).
+  (int, double)? conflictingRun(double progress, double time, {required bool behind}) {
     final last = lastProgress!;
     for (var k = result.length - 1; k >= 0; --k) {
       final first = result[k].samples.first.progressMeters;
       if (last - first >= length / 4) return null;
       // The lap's last progress and its time when segment k began: the
-      // gate at [startTime] for the first.
+      // gate at [startTime] for the first. A lap timed from another line
+      // than the axis gate makes this lock off by that line's distance from
+      // the gate, which matters only for dropping the lap's first segment.
       final (anchor, anchorTime) = k == 0
           ? (0.0, startTime)
           : (result[k - 1].samples.last.progressMeters, result[k - 1].samples.last.telemetryTime);
-      final behind = progress + ((anchor - allowance - progress) / length).ceilToDouble() * length;
-      if (behind < first - allowance && behind - anchor <= reach(time - anchorTime)) {
-        return (k, behind);
+      final from = progress + ((anchor - allowance - progress) / length).ceilToDouble() * length;
+      if (behind
+          ? from < first - allowance && from - anchor <= reach(time - anchorTime)
+          : from - anchor <= ownReach(time - anchorTime)) {
+        return (k, from);
       }
     }
     return null;
@@ -791,13 +798,9 @@ List<ProgressSegment> projectLapTrace(
         if (progress > length / 2 && time - startTime <= _maximumGapSeconds) {
           progress -= length;
         }
-        // The lap starts at the gate: its first projected fix may lie no
-        // further behind it than a segment after a gap may start, and no
-        // further ahead than the lap could have driven since (FET-256).
-        if (progress < -allowance || progress > reach(time - startTime)) {
-          flush(keepMovement: true);
-          continue;
-        }
+        // No bound here: the lap may be timed from another line than the
+        // axis gate, so where it starts on the axis is not known. A first
+        // segment on another branch is dropped by the later fixes instead.
       } else if (current.samples.isEmpty) {
         // A segment after a gap continues from the last progress too, but its
         // first fix, found again from scratch, may be a little more behind
@@ -812,7 +815,14 @@ List<ProgressSegment> projectLapTrace(
         // by a lap. Otherwise, further ahead than any car could have driven,
         // it matched another branch itself and is refused, leaving a gap.
         final ahead = progress - last, since = time - lastProgressTime!;
-        final run = ahead > ownReach(since) ? conflictingRun(progress, time) : null;
+        var run = ahead > ownReach(since) ? conflictingRun(progress, time, behind: true) : null;
+        // The mirror case: a cold start after a long gap matched another
+        // branch behind the car but within reach, and the right fixes after
+        // it are out of its reach. When the lock before that run could have
+        // reached this fix at the lap's own speed, the run is dropped.
+        if (run == null && ahead > reach(since)) {
+          run = conflictingRun(progress, time, behind: false);
+        }
         if (run != null) {
           final (k, behind) = run;
           result.removeRange(k, result.length);

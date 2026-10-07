@@ -8,6 +8,7 @@
 // the page together. Each figure the page quotes has one constant.
 import 'dart:math' as math;
 
+import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
 import '../support/projection_probe.dart';
@@ -62,9 +63,10 @@ final _reviewRefused = <String, Map<Refusal, int>>{
   },
   'parallel straights 15 m apart, raw gaps': {
     Refusal.coldStartAmbiguity: 8635,
-    Refusal.coldStartHeading: 15493,
+    Refusal.coldStartHeading: 15481,
     Refusal.lockedAmbiguity: 1061,
-    Refusal.tooFarAhead: 12,
+    Refusal.lockedHeading: 12,
+    Refusal.dropped: 12,
   },
   'parallel straights 15 m apart, gap at the lap start': {
     Refusal.coldStartAmbiguity: 1732,
@@ -72,12 +74,19 @@ final _reviewRefused = <String, Map<Refusal, int>>{
     Refusal.lockedAmbiguity: 116,
   },
   'standing a minute': {Refusal.coldStartHeading: 118, Refusal.lockedHeading: 864},
+  'figure-eight 10°, 340 m gap to the second pass': {
+    Refusal.coldStartAmbiguity: 105,
+    Refusal.coldStartHeading: 33,
+    Refusal.lockedHeading: 50,
+    Refusal.dropped: 50,
+  },
 };
 final _reviewProjected = <String, (int, int)>{
   'figure-eight 10°, 200 m gaps': (38126, 38277),
   'parallel straights 15 m apart, raw gaps': (82556, 107757),
   'parallel straights 15 m apart, gap at the lap start': (15367, 20007),
   'standing a minute': (6133, 7115),
+  'figure-eight 10°, 340 m gap to the second pass': (56561, 56799),
 };
 
 /// Two straights of 300 m, [separation] metres apart centre to centre and
@@ -219,7 +228,11 @@ void main() {
         final outcome = measureProjection(axis, track, lap);
         projected += outcome.projected;
         fixes += outcome.fixes;
-        refusals.replay(axis, lap.session, 0.0, lap.endTime);
+        // The replay keeps exactly the fixes projectLapTrace does.
+        expect(refusals.replay(axis, lap.session, 0.0, lap.endTime), [
+          for (final segment in projectLapTrace(axis, lap.session, 0.0, lap.endTime))
+            [for (final sample in segment.samples) (sample.telemetryTime, sample.progressMeters)],
+        ]);
       }
       print('$name: $projected of $fixes fixes projected ($refusals)');
       expect(refusals.disagreements, 0);
@@ -238,7 +251,9 @@ void main() {
 /// 200 m gaps ending within 30 m of the crossing, parallel straights 15 m
 /// apart with a raw gap of 5–40 m on a straight and with a gap at the lap's
 /// start (laps 0.55–0.65 of the separation off their line toward the other
-/// straight), and a car standing for a minute with 0.5 m of GPS error.
+/// straight), a car standing for a minute with 0.5 m of GPS error, and (the
+/// re-review) the 10° figure-eight with a 340 m gap ending within 30 m of the
+/// lap's second pass of the crossing.
 Map<String, (SyntheticTrack, List<DrivenTrackLap>)> _reviewShapes() {
   final figureEight = SyntheticTrack.figureEight(crossingDegrees: 10.0);
   final crossing = figureEightCrossing(crossingDegrees: 10.0);
@@ -299,6 +314,24 @@ Map<String, (SyntheticTrack, List<DrivenTrackLap>)> _reviewShapes() {
                 noise: 0.3,
                 seed: seed,
                 dropFix: (meters) => meters > 0.5 && meters < gapEnd,
+              ),
+      ],
+    ),
+    'figure-eight 10°, 340 m gap to the second pass': (
+      figureEight,
+      [
+        for (var end = -30.0; end <= 30.0; end += 1.0)
+          for (final side in [-1.0, 0.0, 1.0])
+            for (final seed in [1, 2, 3])
+              driveTrack(
+                figureEight,
+                lateral: (_) => side,
+                noise: 0.3,
+                seed: seed,
+                dropFix: (meters) {
+                  final gapEnd = figureEight.lengthMeters - 75.0 + end;
+                  return meters > gapEnd - 340.0 && meters < gapEnd;
+                },
               ),
       ],
     ),

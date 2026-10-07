@@ -361,4 +361,75 @@ void main() {
     expect(trace, isNotEmpty);
     expect(trace.first.samples.first.telemetryTime, closeTo(0.2, 1e-9));
   });
+
+  group('one long gap ending near the second pass of the crossing', () {
+    // After a gap longer than (L − 60 m) / 100 m/s the cold start could match
+    // the other diagonal behind the car but within reach; the right fixes
+    // after it were out of its reach and every one was refused, so the lap
+    // ended about 400 m short (the re-review of FET-256): 19, 50 and 63 of
+    // 549 trials on the 10° figure-eight after 300, 340 and 400 m, 15 on
+    // the 30° one after 600 m.
+    for (final (angle, gap) in [(10.0, 300.0), (10.0, 340.0), (10.0, 400.0), (30.0, 600.0)]) {
+      test('a $angle° crossing, GPS back after $gap m', () {
+        final track = SyntheticTrack.figureEight(crossingDegrees: angle);
+        final axis = track.axis();
+        // The gate is a quarter of a diagonal past the crossing.
+        final crossing = track.lengthMeters - 75.0;
+        var trials = 0;
+        final wrong = <String>[];
+        for (var end = -30.0; end <= 30.0; end += 1.0) {
+          for (final side in [-1.0, 0.0, 1.0]) {
+            for (final seed in [1, 2, 3]) {
+              final gapEnd = crossing + end;
+              final lap = driveTrack(
+                track,
+                lateral: (_) => side,
+                noise: 0.3,
+                seed: seed,
+                dropFix: (meters) => meters > gapEnd - gap && meters < gapEnd,
+              );
+              final outcome = measureProjection(axis, track, lap);
+              ++trials;
+              if (!_onTheRightBranch(axis, outcome)) {
+                wrong.add('gap ends $end m from the crossing, $side m off, seed $seed: $outcome');
+              }
+            }
+          }
+        }
+        expect(trials, 549);
+        expect(wrong, isEmpty, reason: '${wrong.length} of $trials trials on the wrong branch');
+      });
+    }
+  });
+
+  test('a lap timed from another line than the axis gate keeps every fix', () {
+    // The lap's first fix is not bound to the axis gate: a timing line up to
+    // 100 m either side of it used to cost the lap its first 2–18 fixes.
+    final track = SyntheticTrack.loop([
+      straight(600),
+      arc(90, 60),
+      straight(200),
+      arc(90, 25),
+      straight(300),
+    ]);
+    final axis = track.axis();
+    final lap = driveTrack(
+      track,
+      noise: 0.3,
+      schedule: (i) {
+        final meters = i * 0.1 * 40.0;
+        return meters > 2 * track.lengthMeters + 200 ? null : meters;
+      },
+    );
+    for (final shift in [-100.0, -40.0, -20.0, 20.0, 40.0, 100.0]) {
+      final start = (track.lengthMeters + shift) / 40.0;
+      final end = start + track.lengthMeters / 40.0;
+      final trace = projectLapTrace(axis, lap.session, start, end);
+      final projected = trace.fold(0, (sum, segment) => sum + segment.samples.length);
+      final fixes = lap.times.where((time) => time >= start && time <= end).length;
+      expect(projected, fixes, reason: 'timing line $shift m from the gate');
+      expect(trace.first.samples.first.progressMeters, closeTo(shift, 5.0));
+      expect(trace.last.samples.last.progressMeters, closeTo(axis.lengthMeters + shift, 5.0));
+    }
+  });
 }

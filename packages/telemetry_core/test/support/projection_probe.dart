@@ -341,8 +341,15 @@ final class RefusalTally {
 
   int get refused => counts.values.fold(0, (sum, count) => sum + count);
 
-  /// Replays the fixes of [session] in [startTime]..[endTime] onto [axis].
-  void replay(ProgressAxis axis, TelemetrySession session, double startTime, double endTime) {
+  /// Replays the fixes of [session] in [startTime]..[endTime] onto [axis],
+  /// and returns the segments kept, each as the (time, progress) of its
+  /// fixes, to be compared with [projectLapTrace].
+  List<List<(double, double)>> replay(
+    ProgressAxis axis,
+    TelemetrySession session,
+    double startTime,
+    double endTime,
+  ) {
     final length = axis.lengthMeters;
     final allowance = math.min(30.0, length / 4);
     double reach(double seconds) => seconds * 100.0 + 30.0;
@@ -437,32 +444,38 @@ final class RefusalTally {
         var outOfReach = false;
         if (lastFix == null) {
           if (unwrapped > length / 2 && time - startTime <= 5.0) unwrapped -= length;
-          outOfReach = unwrapped < -allowance || unwrapped > reach(time - startTime);
         } else if (current.isEmpty) {
           final (lastTime, last) = lastFix;
           unwrapped += ((last - allowance - unwrapped) / length).ceilToDouble() * length;
           final ownSpeed = (fastest * 1.5).clamp(40.0, 100.0);
-          var dropped = false;
-          if (unwrapped - last > (time - lastTime) * ownSpeed + 30.0) {
-            // Behind a short run of the latest segments and within reach of
-            // the lock before them: they are dropped.
+          // A short run of the latest segments is dropped when the fix lies
+          // behind where it started and within reach of the lock before it,
+          // or, out of the run's reach, where that lock could have driven at
+          // the lap's own speed.
+          bool dropRun({required bool behind}) {
             for (var k = segments.length - 1; k >= 0; --k) {
               final first = segments[k].first.$2;
-              if (last - first >= length / 4) break;
+              if (last - first >= length / 4) return false;
               final (anchorTime, anchor) = k == 0 ? (startTime, 0.0) : segments[k - 1].last;
-              final behind =
+              final from =
                   unwrapped + ((anchor - allowance - unwrapped) / length).ceilToDouble() * length;
-              if (behind < first - allowance && behind - anchor <= reach(time - anchorTime)) {
+              if (behind
+                  ? from < first - allowance && from - anchor <= reach(time - anchorTime)
+                  : from - anchor <= (time - anchorTime) * ownSpeed + 30.0) {
                 for (final run in segments.sublist(k)) {
                   counts[Refusal.dropped] = counts[Refusal.dropped]! + run.length;
                 }
                 segments.removeRange(k, segments.length);
-                unwrapped = behind;
-                dropped = true;
-                break;
+                unwrapped = from;
+                return true;
               }
             }
+            return false;
           }
+
+          final ahead = unwrapped - last;
+          var dropped = ahead > (time - lastTime) * ownSpeed + 30.0 && dropRun(behind: true);
+          if (!dropped && ahead > reach(time - lastTime)) dropped = dropRun(behind: false);
           outOfReach = !dropped && unwrapped - last > reach(time - lastTime);
         } else {
           final last = lastFix.$2;
@@ -490,6 +503,7 @@ final class RefusalTally {
     }
     endSegment();
     accepted += segments.fold(0, (sum, segment) => sum + segment.length);
+    return segments;
   }
 
   /// The rule that refuses [point], or null, and the progress of its best
