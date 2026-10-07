@@ -49,6 +49,62 @@ void main() {
     expect(guarded.warnings.length, greaterThanOrEqualTo(6));
   });
 
+  test('reads midnight by an explicit rollover rule (FET-211)', () {
+    List<double> times(String rows) =>
+        parse('[column names]\ntime speed\n[data]\n$rows').channels['speed']!.timestamps;
+    // A dropout from 22:50 to 01:10 crosses midnight.
+    final dropout = parse(
+      '[column names]\ntime speed\n[data]\n225000 1\n225001 2\n011000 3\n011001 4',
+    );
+    expect(dropout.channels['speed']!.timestamps, _near([0.0, 1.0, 8400.0, 8401.0]));
+    expect(dropout.warnings.where((w) => w.contains('midnight rollover')), hasLength(1));
+    // Up to three hours across midnight; more is not a rollover.
+    expect(times('210000 1\n235959 2\n000000 3'), _near([0.0, 10799.0, 10800.0]));
+    expect(times('205959 1\n000000 2'), _near([0.0]));
+    expect(times('210000 1\n000000 2'), _near([0.0, 10800.0]));
+    // One bad early-morning row among evening rows is no rollover: the next
+    // row is back on the evening, so that row is dropped.
+    final badRow = parse(
+      '[column names]\ntime speed\n[data]\n213000 1\n213001 2\n001500 3\n213002 4\n213003 5',
+    );
+    expect(badRow.channels['speed']!.timestamps, _near([0.0, 1.0, 2.0, 3.0]));
+    expect(badRow.channels['speed']!.values, [1.0, 2.0, 4.0, 5.0]);
+    expect(badRow.warnings.any((w) => w.contains('Row 3: not a midnight rollover')), isTrue);
+    // The same after a skipped duplicate of the bad row.
+    expect(times('213000 1\n213001 2\n001500 3\n001500 4\n213002 5'), _near([0.0, 1.0, 2.0]));
+    // A real midnight followed by a long dropout stays a rollover.
+    expect(
+      times('235900 1\n235959 2\n000100 3\n130000 4\n130001 5'),
+      _near([0.0, 59.0, 120.0, 46860.0, 46861.0]),
+    );
+    // Limit: a stale repeat of the last evening row right after a real
+    // midnight reads as back on the evening; one row is lost, the midnight
+    // is found again on the next row.
+    expect(times('235959 1\n000001 2\n235959 3\n000002 4'), _near([0.0, 3.0]));
+    // Limits: two bad rows in a row confirm each other, and a bad last row
+    // cannot be told from a midnight.
+    expect(
+      times('213000 1\n213001 2\n001500 3\n001501 4\n213002 5'),
+      _near([0.0, 1.0, 9900.0, 9901.0, 86402.0]),
+    );
+    expect(times('213000 1\n213001 2\n001500 3'), _near([0.0, 1.0, 9900.0]));
+    // A recording through two midnights.
+    expect(
+      times('235959 1\n000001 2\n120000 3\n235959 4\n000001 5'),
+      _near([0.0, 2.0, 43201.0, 86400.0, 86402.0]),
+    );
+    // A clock reset in the afternoon: the rows after it go backward.
+    final reset = parse(
+      '[column names]\ntime speed\n[data]\n140000 1\n140001 2\n000005 3\n000006 4',
+    );
+    expect(reset.channels['speed']!.values, [1.0, 2.0]);
+    expect(reset.warnings.any((w) => w.contains('midnight rollover')), isFalse);
+    // A step back of a millisecond, or an hour (daylight saving), is no
+    // rollover either.
+    expect(times('120000.000 1\n115959.999 2\n120000.100 3'), _near([0.0, 0.1]));
+    expect(times('023000 1\n013000 2\n023001 3'), _near([0.0, 1.0]));
+  });
+
   group('rejects derived times outside the 64-bit microsecond range', () {
     final boundary = 9223372036854775808.0 / 1000000.0;
     final rows = {
