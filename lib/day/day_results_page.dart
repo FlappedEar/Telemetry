@@ -153,9 +153,6 @@ class DayResultsPage extends StatefulWidget {
   State<DayResultsPage> createState() => _DayResultsPageState();
 }
 
-/// Each open day's reference lap (FET-175), in memory only.
-final _references = Expando<ReferenceLapHolder>('reference laps');
-
 /// The addition each day said last, so a day shown again on a new page
 /// does not say it again.
 final _reportedAdditions = Expando<DayAddition>();
@@ -172,9 +169,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
 
   // The day's reference lap (FET-175), kept apart from the day itself and
-  // with it while its pages come and go.
-  late final ReferenceLapHolder _reference = _references[_controller] ??=
-      ReferenceLapHolder(dayId: _controller.eventId);
+  // with it while its pages come and go; disposed with the day.
+  ReferenceLapHolder get _reference =>
+      referenceLapOf(_controller, dayId: _controller.eventId);
   bool _relinking = false;
 
   // The tab shown under the title: on a phone Overview, Laps, Compare or
@@ -239,9 +236,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _startLibrary();
     // A reference kept for the day, once a storage layer keeps one
     // (FET-175); nothing is kept yet.
-    if (referenceGate(_controller) case final gate?
+    if (referenceLine(_controller) case final line?
         when _reference.state == ReferenceState.none) {
-      unawaited(_reference.restore(gate));
+      unawaited(_reference.restore(line));
     }
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
@@ -269,11 +266,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _coach.removeListener(_coachChanged);
     _circuits.removeListener(_circuitsChanged);
     if (widget.coach == null) _coach.dispose();
-    if (widget.disposesController?.call() ?? true) {
-      _references[_controller]?.dispose();
-      _references[_controller] = null;
-      _controller.dispose();
-    }
+    if (widget.disposesController?.call() ?? true) _controller.dispose();
     super.dispose();
   }
 

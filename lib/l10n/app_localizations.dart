@@ -10934,8 +10934,68 @@ abstract class AppLocalizations {
   /// A segment without a time on one of the laps.
   ///
   /// In en, this message translates to:
-  /// **'{segment}: not timed on both laps ({reason})'**
+  /// **'{segment}: not timed on one of the laps ({reason})'**
   String referenceSegmentNotTimed(String segment, String reason);
+
+  /// Why a reference was refused: its laps go round today's route in the opposite direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: its laps go round today\'s track the other way.'**
+  String get referenceRefusedDirection;
+
+  /// Why a reference was refused: its laps cross today's line but follow another route.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: its laps cross today\'s start/finish line but follow another layout of the track.'**
+  String get referenceRefusedLayout;
+
+  /// Why a reference from an earlier day was refused: all of its laps on today's route were excluded on that day.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: every one of its laps on today\'s track was excluded on its own day.'**
+  String get referenceRefusedExcluded;
+
+  /// In the reference lap picker: this lap was excluded on its own day, with the reason given there.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded on its day: {reason}'**
+  String referenceLapExcluded(String reason);
+
+  /// In the reference lap picker: this lap was excluded on its own day, without a reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded on its day'**
+  String get referenceLapExcludedNoReason;
+
+  /// Snack bar when several files were picked as a reference.
+  ///
+  /// In en, this message translates to:
+  /// **'A reference is one recording: only {name} is used.'**
+  String referenceOnlyFirstFile(String name);
+
+  /// The reference was timed on a start/finish line that is no longer today's line (another group or best lap).
+  ///
+  /// In en, this message translates to:
+  /// **'Timed on another start/finish line: today\'s line has changed since. Load it again to compare.'**
+  String get referenceStale;
+
+  /// Button: read and time the reference again on today's line.
+  ///
+  /// In en, this message translates to:
+  /// **'Load again'**
+  String get referenceReload;
+
+  /// On the reference comparison: lap A's session has another start/finish line than the one the reference was timed on.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap A was timed on another start/finish line than the reference, so there is no lap Δ. Choose another lap A.'**
+  String get referenceLapAOtherLine;
+
+  /// On the reference comparison: the reference lap's position covers too little of lap A's line for a lap delta.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap Δ: the reference lap follows only {percent} % of lap A\'s line.'**
+  String referenceLowCoverage(int percent);
 }
 
 class _AppLocalizationsDelegate

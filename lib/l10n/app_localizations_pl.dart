@@ -7568,7 +7568,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String referenceLoading(String source) {
-    return 'Mierzenie $source na dzisiejszej linii start/meta…';
+    return 'Mierzenie czasu $source na dzisiejszej linii start/meta…';
   }
 
   @override
@@ -7583,7 +7583,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String referenceRefusedWrongTrack(String distance) {
-    return 'Nie użyto: ten zapis pochodzi z innego toru. Jego GPS nie zbliża się do dzisiejszej linii start/meta bardziej niż na $distance.';
+    return 'Nie użyto: ten zapis pochodzi z innego toru. Jego GPS nie zbliża się do dzisiejszej linii start/meta na mniej niż $distance.';
   }
 
   @override
@@ -7608,7 +7608,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie znaleziono żadnego zapisu z tego dnia.';
 
   @override
-  String get referenceCompare => 'Porównaj z najlepszym dzisiejszym';
+  String get referenceCompare => 'Porównaj z najlepszym dzisiejszym okrążeniem';
 
   @override
   String get referenceChooseLap => 'Wybierz okrążenie';
@@ -7661,7 +7661,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String referenceUnitAssumed(String unit) {
-    return '$unit (przyjęto)';
+    return '$unit (przyjęta)';
   }
 
   @override
@@ -7692,6 +7692,47 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String referenceSegmentNotTimed(String segment, String reason) {
-    return '$segment: nie zmierzono na obu okrążeniach ($reason)';
+    return '$segment: nie zmierzono na jednym z okrążeń ($reason)';
+  }
+
+  @override
+  String get referenceRefusedDirection =>
+      'Nie użyto: jego okrążenia biegną po dzisiejszym torze w przeciwnym kierunku.';
+
+  @override
+  String get referenceRefusedLayout =>
+      'Nie użyto: jego okrążenia przecinają dzisiejszą linię start/meta, ale biegną inną konfiguracją toru.';
+
+  @override
+  String get referenceRefusedExcluded =>
+      'Nie użyto: wszystkie jego okrążenia na dzisiejszym torze wykluczono w ich dniu.';
+
+  @override
+  String referenceLapExcluded(String reason) {
+    return 'Wykluczone w swoim dniu: $reason';
+  }
+
+  @override
+  String get referenceLapExcludedNoReason => 'Wykluczone w swoim dniu';
+
+  @override
+  String referenceOnlyFirstFile(String name) {
+    return 'Odniesienie to jeden zapis: użyto tylko $name.';
+  }
+
+  @override
+  String get referenceStale =>
+      'Zmierzone na innej linii start/meta: dzisiejsza linia od tego czasu się zmieniła. Wczytaj je ponownie, aby porównać.';
+
+  @override
+  String get referenceReload => 'Wczytaj ponownie';
+
+  @override
+  String get referenceLapAOtherLine =>
+      'Okrążenie A zmierzono na innej linii start/meta niż odniesienie, więc nie ma Δ okrążenia. Wybierz inne okrążenie A.';
+
+  @override
+  String referenceLowCoverage(int percent) {
+    return 'Brak Δ okrążenia: okrążenie odniesienia pokrywa tylko $percent % linii okrążenia A.';
   }
 }

@@ -60,15 +60,22 @@ final class ReferenceProfileDay extends ReferenceSource {
 }
 
 /// The reference a day uses: its source and which of its laps.
+///
+/// A future store keys the lap by [recordingId] (the run id of an earlier
+/// day's session, or the file's name) and its [lapNumber] on today's line,
+/// never by the recording's position in its source, which shifts when one
+/// of a day's recordings is missing. It must not store absolute user paths
+/// either: a [ReferenceFile]'s path is where the file was on this computer,
+/// so a store keeps a copy or a path relative to the profile instead.
 final class ReferenceChoice {
   const ReferenceChoice({
     required this.source,
-    required this.recordingIndex,
+    required this.recordingId,
     required this.lapNumber,
   });
 
   final ReferenceSource source;
-  final int recordingIndex;
+  final String recordingId;
   final int lapNumber;
 }
 
@@ -99,8 +106,10 @@ final class UnsavedReferenceStore implements ReferenceStore {
 /// names was found or read.
 const referenceDayHasNoRecordings = 'referenceDayHasNoRecordings';
 
-/// What [loadReference] reads: a source, timed on today's line [gate].
-typedef ReferenceRequest = ({ReferenceSource source, TimingGate gate});
+/// What [loadReference] reads: a source, timed on today's line and
+/// checked against today's route ([ReferenceLine], with today's GPS
+/// longitude convention).
+typedef ReferenceRequest = ({ReferenceSource source, ReferenceLine line});
 
 /// A reference read and timed, or why it could not be read.
 final class ReferenceLoaded {
@@ -115,8 +124,10 @@ final class ReferenceLoaded {
 }
 
 /// Reads [request]'s recordings with the import's own reader
-/// ([prepareTelemetryImport], or [openDay] for a profile day) and times them
-/// on today's line ([timeReferenceLaps]). Runs in the background.
+/// ([prepareTelemetryImport], or [openDay] for a profile day, with the laps
+/// that day excluded) and times them on today's line ([timeReferenceLaps]).
+/// Runs in the background; only the recordings with laps on today's line
+/// come back, trimmed to those laps.
 ReferenceLoaded loadReference(
   ReferenceRequest request,
   CancellationCheck cancelled,
@@ -130,7 +141,11 @@ ReferenceLoaded loadReference(
         return ReferenceLoaded.failed(plan.files.firstOrNull?.message ?? '');
       }
       recordings.add(
-        ReferenceRecording(label: p.basename(path), session: run.telemetry),
+        ReferenceRecording(
+          label: p.basename(path),
+          id: p.basename(path),
+          session: run.telemetry,
+        ),
       );
     case ReferenceProfileDay(:final path):
       final OpenedDay day;
@@ -141,7 +156,17 @@ ReferenceLoaded loadReference(
       }
       for (final named in day.runs) {
         recordings.add(
-          ReferenceRecording(label: named.name, session: named.run.telemetry),
+          ReferenceRecording(
+            label: named.name,
+            id: named.run.id,
+            session: named.run.telemetry,
+            exclusions: [
+              for (final MapEntry(key: lap, value: reason)
+                  in day.exclusions.entries)
+                if (lap.runId == named.run.id)
+                  (start: lap.startTime, end: lap.endTime, reason: reason),
+            ],
+          ),
         );
       }
       if (recordings.isEmpty) {
@@ -149,7 +174,7 @@ ReferenceLoaded loadReference(
       }
   }
   return ReferenceLoaded(
-    timeReferenceLaps(recordings, request.gate, cancelled: cancelled),
+    timeReferenceLaps(recordings, request.line, cancelled: cancelled),
   );
 }
 
@@ -227,13 +252,14 @@ class ReferenceLapHolder extends ChangeNotifier {
   /// Why the source could not be read, when [state] is failed.
   String get error => _error;
 
-  /// Reads [source] and times it on today's line [gate]; its fastest lap
-  /// becomes the reference ([choose] another). With [lapNumber] and
-  /// [recordingIndex] (a kept choice), that lap when it is still there.
+  /// Reads [source] and times it on today's line [line]; its fastest lap
+  /// becomes the reference ([choose] another). With [recordingId] and
+  /// [lapNumber] (a kept choice, or the lap chosen before [reload]), that
+  /// lap when it is still there.
   Future<void> load(
     ReferenceSource source,
-    TimingGate gate, {
-    int? recordingIndex,
+    ReferenceLine line, {
+    String? recordingId,
     int? lapNumber,
   }) async {
     _task?.cancel();
@@ -244,7 +270,7 @@ class ReferenceLapHolder extends ChangeNotifier {
     _lap = null;
     _error = '';
     notifyListeners();
-    final task = _task = _loader((source: source, gate: gate));
+    final task = _task = _loader((source: source, line: line));
     ReferenceLoaded loaded;
     try {
       loaded = await task.result;
@@ -269,7 +295,7 @@ class ReferenceLapHolder extends ChangeNotifier {
             timing.candidates
                 .where(
                   (lap) =>
-                      lap.recordingIndex == recordingIndex &&
+                      lap.recordingId == recordingId &&
                       lap.lapNumber == lapNumber,
                 )
                 .firstOrNull ??
@@ -280,15 +306,37 @@ class ReferenceLapHolder extends ChangeNotifier {
     _keep();
   }
 
-  /// Reads the choice [store] kept for the day, if any, timed on [gate].
-  Future<void> restore(TimingGate gate) async {
+  /// Whether the reference was timed on another line than [line] (today's
+  /// line changed: another group, or a new best lap on another line), so
+  /// its laps and lap times no longer apply until it is loaded again.
+  bool timedOnAnotherLine(ReferenceLine? line) {
+    final timing = _timing;
+    return timing != null && !timing.line.sameLine(line);
+  }
+
+  /// Reads the same source again on today's line [line], keeping the chosen
+  /// lap when it is still there.
+  Future<void> reload(ReferenceLine line) async {
+    final source = _source;
+    if (source == null) return;
+    final lap = _lap;
+    await load(
+      source,
+      line,
+      recordingId: lap?.recordingId,
+      lapNumber: lap?.lapNumber,
+    );
+  }
+
+  /// Reads the choice [store] kept for the day, if any, timed on [line].
+  Future<void> restore(ReferenceLine line) async {
     final generation = _generation;
     final choice = await store.restore(dayId);
     if (choice == null || _disposed || generation != _generation) return;
     await load(
       choice.source,
-      gate,
-      recordingIndex: choice.recordingIndex,
+      line,
+      recordingId: choice.recordingId,
       lapNumber: choice.lapNumber,
     );
   }
@@ -327,17 +375,39 @@ class ReferenceLapHolder extends ChangeNotifier {
             ? null
             : ReferenceChoice(
                 source: source,
-                recordingIndex: lap.recordingIndex,
+                recordingId: lap.recordingId,
                 lapNumber: lap.lapNumber,
               ),
       ),
     );
   }
 
+  bool get disposed => _disposed;
+
   @override
   void dispose() {
     _disposed = true;
     _task?.cancel();
+    _task = null;
     super.dispose();
   }
+}
+
+final _holders = Expando<ReferenceLapHolder>('reference laps');
+
+/// The reference lap of the open day [day] (its [DayResultsController]):
+/// one holder per day, made on first use, kept while the day is kept (a
+/// day the shell keeps open between visits keeps its reference), and
+/// disposed with the day by [disposeReferenceLapOf].
+ReferenceLapHolder referenceLapOf(Object day, {String dayId = ''}) {
+  final held = _holders[day];
+  if (held != null && !held.disposed) return held;
+  return _holders[day] = ReferenceLapHolder(dayId: dayId);
+}
+
+/// Disposes [day]'s reference lap, if it has one, and stops a reference
+/// still being read: called when the day itself is disposed.
+void disposeReferenceLapOf(Object day) {
+  _holders[day]?.dispose();
+  _holders[day] = null;
 }

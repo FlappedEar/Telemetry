@@ -17,13 +17,23 @@ import 'reference_lap.dart';
 import 'telemetry_chart.dart';
 import 'touch.dart';
 
-/// Today's start/finish line a reference is timed on: the line of the
-/// day's best lap in the group shown. Null without a ranked lap.
-TimingGate? referenceGate(DayResultsController controller) {
+final _lines = Expando<Map<int, ReferenceLine?>>('reference lines');
+
+/// Today's start/finish line and route a reference is timed on and checked
+/// against: the line of the day's best lap in the group shown, with that
+/// lap's route and its recording's GPS longitude convention. Null without
+/// a ranked lap.
+ReferenceLine? referenceLine(DayResultsController controller) {
   final best = controller.ranking?.bestOfDay;
   if (best == null) return null;
   for (final named in controller.runs) {
-    if (named.run.id == best.runId) return named.run.laps.selectedStartGate;
+    if (named.run.id != best.runId) continue;
+    final laps = named.run.laps;
+    // The route is worked out once per lap, not on every rebuild.
+    return (_lines[laps] ??= {}).putIfAbsent(
+      best.lapNumber,
+      () => referenceLineOf(named.run.telemetry, laps, best.lapNumber),
+    );
   }
   return null;
 }
@@ -73,6 +83,9 @@ String referenceProblemText(AppLocalizations l10n, ReferenceLapHolder holder) {
     ),
     ReferenceRefusal.noGps => l10n.referenceRefusedNoGps,
     ReferenceRefusal.invalidGate => l10n.referenceRefusedGate,
+    ReferenceRefusal.oppositeDirection => l10n.referenceRefusedDirection,
+    ReferenceRefusal.differentLayout => l10n.referenceRefusedLayout,
+    ReferenceRefusal.onlyExcludedLaps => l10n.referenceRefusedExcluded,
     ReferenceRefusal.noTimedLap ||
     ReferenceRefusal.none => l10n.referenceRefusedNoLap,
   };
@@ -158,6 +171,8 @@ Future<ReferenceLapCandidate?> pickReferenceLap(
               ),
               leading: identical(lap, fastest)
                   ? const Icon(Icons.emoji_events_outlined)
+                  : lap.excluded
+                  ? const Icon(Icons.block)
                   : null,
               selected: identical(lap, holder.lap),
               title: Text(
@@ -168,7 +183,23 @@ Future<ReferenceLapCandidate?> pickReferenceLap(
               ),
               subtitle: identical(lap, fastest)
                   ? Text(l10n.suggestedFastest)
-                  : null,
+                  : switch (lap.excludedReason) {
+                      null => null,
+                      '' => Text(
+                        l10n.referenceLapExcludedNoReason,
+                        key: ValueKey(
+                          'referenceLapExcluded ${lap.recordingIndex} '
+                          '${lap.lapNumber}',
+                        ),
+                      ),
+                      final reason => Text(
+                        l10n.referenceLapExcluded(reason),
+                        key: ValueKey(
+                          'referenceLapExcluded ${lap.recordingIndex} '
+                          '${lap.lapNumber}',
+                        ),
+                      ),
+                    },
               trailing: Text(
                 displayTime(lap.durationSeconds),
                 style: theme.textTheme.titleSmall,
@@ -207,18 +238,27 @@ class ReferenceLapSection extends StatelessWidget {
   /// Opens the comparison of today's lap [a] with the reference.
   final void Function(DayLapRow a) onCompare;
 
-  Future<void> _loadFile(TimingGate gate) async {
+  Future<void> _loadFile(BuildContext context, ReferenceLine line) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = context.l10n;
     final paths = await pickers.pickRecordings();
     if (paths.isEmpty) return;
-    await holder.load(ReferenceFile(paths.first), gate);
+    final file = ReferenceFile(paths.first);
+    // The picker adding recordings allows several; a reference is one.
+    if (paths.length > 1) {
+      messenger?.showSnackBar(
+        SnackBar(content: Text(l10n.referenceOnlyFirstFile(file.name))),
+      );
+    }
+    await holder.load(file, line);
   }
 
-  Future<void> _loadDay(BuildContext context, TimingGate gate) async {
+  Future<void> _loadDay(BuildContext context, ReferenceLine line) async {
     final library = this.library;
     if (library == null) return;
     final day = await pickReferenceDay(context, library, controller.eventId);
     if (day == null) return;
-    await holder.load(day, gate);
+    await holder.load(day, line);
   }
 
   Future<void> _chooseLap(BuildContext context) async {
@@ -232,8 +272,11 @@ class ReferenceLapSection extends StatelessWidget {
     builder: (context, _) {
       final theme = Theme.of(context);
       final l10n = context.l10n;
-      final gate = referenceGate(controller);
+      final line = referenceLine(controller);
       final best = controller.ranking?.bestOfDay;
+      // Today's line changed since the reference was timed: its laps and
+      // times no longer apply until it is read again.
+      final stale = line != null && holder.timedOnAnotherLine(line);
       final library = this.library;
       final days = library != null && library.available;
       final loading = holder.state == ReferenceState.loading;
@@ -250,7 +293,7 @@ class ReferenceLapSection extends StatelessWidget {
           const SizedBox(height: 4),
           Text(l10n.referenceIntro, style: muted),
           const SizedBox(height: 12),
-          if (gate == null)
+          if (line == null)
             Text(
               l10n.referenceNeedsLap,
               key: const ValueKey('referenceNeedsLap'),
@@ -280,6 +323,14 @@ class ReferenceLapSection extends StatelessWidget {
                 color: theme.colorScheme.error,
               ),
             ),
+          if (stale)
+            Text(
+              l10n.referenceStale,
+              key: const ValueKey('referenceStale'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
           if (label != null)
             Card(
               clipBehavior: Clip.antiAlias,
@@ -301,14 +352,23 @@ class ReferenceLapSection extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (label != null && best != null)
+              if (stale)
+                FilledButton.icon(
+                  key: const ValueKey('referenceReload'),
+                  onPressed: () => holder.reload(line),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.referenceReload),
+                ),
+              if (label != null && best != null && !stale)
                 FilledButton.icon(
                   key: const ValueKey('referenceCompare'),
                   onPressed: () => onCompare(best),
                   icon: const Icon(Icons.compare_arrows),
                   label: Text(l10n.referenceCompare),
                 ),
-              if (label != null && (holder.timing?.candidates.length ?? 0) > 1)
+              if (label != null &&
+                  !stale &&
+                  (holder.timing?.candidates.length ?? 0) > 1)
                 OutlinedButton(
                   key: const ValueKey('referenceChooseLap'),
                   onPressed: () => _chooseLap(context),
@@ -316,18 +376,18 @@ class ReferenceLapSection extends StatelessWidget {
                 ),
               OutlinedButton.icon(
                 key: const ValueKey('referenceLoadFile'),
-                onPressed: gate == null || loading
+                onPressed: line == null || loading
                     ? null
-                    : () => _loadFile(gate),
+                    : () => _loadFile(context, line),
                 icon: const Icon(Icons.file_open_outlined),
                 label: Text(l10n.referenceLoadFile),
               ),
               if (days)
                 OutlinedButton.icon(
                   key: const ValueKey('referenceLoadDay'),
-                  onPressed: gate == null || loading
+                  onPressed: line == null || loading
                       ? null
-                      : () => _loadDay(context, gate),
+                      : () => _loadDay(context, line),
                   icon: const Icon(Icons.history),
                   label: Text(l10n.referenceLoadDay),
                 ),
@@ -394,31 +454,80 @@ class ReferenceComparisonPage extends StatefulWidget {
       _ReferenceComparisonPageState();
 }
 
+/// Why the reference cannot be compared with lap A as timed.
+enum _Line {
+  /// Both on one line.
+  same,
+
+  /// Today's line changed since the reference was timed.
+  reference,
+
+  /// Lap A was timed on another line than the reference.
+  lapA,
+}
+
 class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
   late DayLapRow _a = widget.a;
   ReferenceLapComparison? _comparison;
   ChartWindow? _window;
   ReferenceLapCandidate? _builtFor;
+  _Line _line = _Line.same;
   List<ReferenceSegmentTime> _segments = const [];
   final Map<String, ChartSeries> _series = {};
   (double, double)? _seriesRange;
+
+  // Each chart's value axis over the whole lap, by chart key: computed once
+  // per comparison, not on every pan or zoom.
+  final Map<String, (double, double)> _axes = {};
 
   @override
   void initState() {
     super.initState();
     widget.holder.addListener(_referenceChanged);
+    widget.controller.addListener(_dayChanged);
     _build();
   }
 
   @override
   void dispose() {
     widget.holder.removeListener(_referenceChanged);
+    widget.controller.removeListener(_dayChanged);
     _window?.dispose();
     super.dispose();
   }
 
   void _referenceChanged() {
     if (!identical(widget.holder.lap, _builtFor)) setState(_build);
+  }
+
+  // Today's line can change under the page (another group, a new best
+  // lap): the comparison stops until the reference is read again.
+  void _dayChanged() {
+    if (_lineOf() != _line) setState(_build);
+  }
+
+  NamedRun? get _runA {
+    for (final named in widget.controller.runs) {
+      if (named.run.id == _a.runId) return named;
+    }
+    return null;
+  }
+
+  _Line _lineOf() {
+    final timing = widget.holder.timing;
+    if (timing == null) return _Line.same;
+    if (!timing.line.sameLine(referenceLine(widget.controller))) {
+      return _Line.reference;
+    }
+    final run = _runA?.run;
+    if (run != null &&
+        !timing.line.sameGate(
+          run.laps.selectedStartGate,
+          westPositive: longitudeWestPositive(run.telemetry),
+        )) {
+      return _Line.lapA;
+    }
+    return _Line.same;
   }
 
   void _build() {
@@ -428,31 +537,35 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
     _segments = const [];
     _series.clear();
     _seriesRange = null;
+    _axes.clear();
     final holder = widget.holder, controller = widget.controller;
     final lap = _builtFor = holder.lap;
+    _line = _lineOf();
     final timing = holder.timing, recording = holder.session;
     if (lap == null || timing == null || recording == null) return;
+    if (_line != _Line.same) return;
     final session = controller.session(_a.runId);
-    LapSession? laps;
-    for (final named in controller.runs) {
-      if (named.run.id == _a.runId) laps = named.run.laps;
-    }
-    if (session == null || laps == null) return;
+    final run = _runA?.run;
+    if (session == null || run == null) return;
     final comparison = _comparison = ReferenceLapComparison(
       today: ComparisonLap(
         session: session,
-        laps: laps,
+        laps: run.laps,
         start: _a.start,
         end: _a.end,
         lapNumber: _a.lapNumber,
       ),
       timing: timing,
       lap: lap,
-      // As every analysis reads a speed: its declared unit, else the one
-      // assumed in settings.
-      referenceSession: withEffectiveSpeedUnits(
-        recording,
-        assumed: speedUnitSetting.value.unit,
+      // In lap A's GPS frame (a VBO's west-positive longitudes, or an
+      // RCZ's east-positive ones), with each speed read as every analysis
+      // reads it: its declared unit, else the one assumed in settings.
+      referenceSession: inLongitudeConvention(
+        withEffectiveSpeedUnits(
+          recording,
+          assumed: speedUnitSetting.value.unit,
+        ),
+        westPositive: longitudeWestPositive(run.telemetry),
       ),
       segmentation: controller.segmentationFor(_a),
     );
@@ -488,6 +601,13 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
         ? comparison.deltaSeries(range.$1, range.$2, 600)
         : comparison.channelSeries(slot, channel, range.$1, range.$2, 600);
   }
+
+  /// The value axis of chart [key] over the whole lap, from [series].
+  (double, double) _axisOf(
+    String key,
+    List<ChartSeries> Function() series, {
+    bool zeroLine = false,
+  }) => _axes[key] ??= chartValueAxis(series(), zeroLine: zeroLine);
 
   Widget _badge(
     BuildContext context, {
@@ -574,11 +694,29 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
           ],
         ),
         const SizedBox(height: 4),
-        if (comparison != null)
+        if (_line != _Line.same)
           Text(
-            l10n.compareLapDelta(displayDelta(comparison.lapDeltaSeconds)),
+            _line == _Line.reference
+                ? l10n.referenceStale
+                : l10n.referenceLapAOtherLine,
+            key: const ValueKey('referenceComparisonStale'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          )
+        else if (comparison?.lapDeltaSeconds case final delta?)
+          Text(
+            l10n.compareLapDelta(displayDelta(delta)),
             key: const ValueKey('referenceLapDelta'),
             style: theme.textTheme.titleLarge,
+          )
+        else if (comparison != null && comparison.comparison.axis.valid)
+          Text(
+            l10n.referenceLowCoverage((comparison.coverage * 100).floor()),
+            key: const ValueKey('referenceLowCoverage'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
           ),
         Text(l10n.referenceDeltaExplained, style: theme.textTheme.bodySmall),
         Text(l10n.referenceKeptApart, style: theme.textTheme.bodySmall),
@@ -621,9 +759,11 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
               end: range.$2,
               cursor: window.cursor,
               onCursor: (value) => window.cursor.value = value,
-              valueAxis: chartValueAxis([
-                comparison.deltaSeries(0, length, 300),
-              ], zeroLine: true),
+              valueAxis: _axisOf(
+                'delta',
+                () => [comparison.deltaSeries(0, length, 300)],
+                zeroLine: true,
+              ),
               zeroLine: true,
               delta: true,
               note: l10n.referenceDeltaNote,
@@ -662,10 +802,13 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
               end: range.$2,
               cursor: window.cursor,
               onCursor: (value) => window.cursor.value = value,
-              valueAxis: chartValueAxis([
-                for (final (slot, _) in slots)
-                  comparison.channelSeries(slot, alias, 0, length, 300),
-              ]),
+              valueAxis: _axisOf(
+                key,
+                () => [
+                  for (final (slot, _) in slots)
+                    comparison.channelSeries(slot, alias, 0, length, 300),
+                ],
+              ),
               note: note,
               // The reference is not one of the day's recordings.
               source: '',
@@ -823,7 +966,9 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
                   else ...[
                     _header(context, label),
                     const SizedBox(height: 12),
-                    if (!ready)
+                    if (_line != _Line.same)
+                      const SizedBox.shrink()
+                    else if (!ready)
                       Text(
                         comparison == null
                             ? l10n.compareRecordingsUnavailable

@@ -7523,6 +7523,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String referenceSegmentNotTimed(String segment, String reason) {
-    return '$segment: not timed on both laps ($reason)';
+    return '$segment: not timed on one of the laps ($reason)';
+  }
+
+  @override
+  String get referenceRefusedDirection =>
+      'Not used: its laps go round today\'s track the other way.';
+
+  @override
+  String get referenceRefusedLayout =>
+      'Not used: its laps cross today\'s start/finish line but follow another layout of the track.';
+
+  @override
+  String get referenceRefusedExcluded =>
+      'Not used: every one of its laps on today\'s track was excluded on its own day.';
+
+  @override
+  String referenceLapExcluded(String reason) {
+    return 'Excluded on its day: $reason';
+  }
+
+  @override
+  String get referenceLapExcludedNoReason => 'Excluded on its day';
+
+  @override
+  String referenceOnlyFirstFile(String name) {
+    return 'A reference is one recording: only $name is used.';
+  }
+
+  @override
+  String get referenceStale =>
+      'Timed on another start/finish line: today\'s line has changed since. Load it again to compare.';
+
+  @override
+  String get referenceReload => 'Load again';
+
+  @override
+  String get referenceLapAOtherLine =>
+      'Lap A was timed on another start/finish line than the reference, so there is no lap Δ. Choose another lap A.';
+
+  @override
+  String referenceLowCoverage(int percent) {
+    return 'No lap Δ: the reference lap follows only $percent % of lap A\'s line.';
   }
 }

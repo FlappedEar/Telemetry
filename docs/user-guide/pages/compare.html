@@ -63,10 +63,11 @@
   <img src="assets/screens/reference-lap.png" alt="The Reference lap part of the Compare section: the reference named Reference: reference.vbo, lap 2, 1:49.898, with the buttons Compare with today's best, Choose its lap, Load a recording and Clear reference" width="1280" height="800" loading="lazy">
 </figure>
 <ul>
-  <li>At the end of the <strong>Compare</strong> tab, <strong>Load a recording</strong> opens the same file picker as adding sessions: choose one VBO or RaceChrono RCZ file. <strong>From an earlier day</strong> lists the other days of your <a href="profile.html">profile</a>; their recordings must still be where the day found them.</li>
-  <li>The reference is timed on today's start/finish line (the line of the day's best lap), with the same lap timing as your own laps, whatever line the recording had. Its fastest complete lap is the reference; <strong>Choose its lap</strong> picks another, and for an earlier day lists the laps of all its sessions.</li>
+  <li>At the end of the <strong>Compare</strong> tab, <strong>Load a recording</strong> opens the same file picker as adding sessions: choose one VBO or RaceChrono RCZ file (if you pick several, only the first is used, and the app says so). <strong>From an earlier day</strong> lists the other days of your <a href="profile.html">profile</a>; their recordings must still be where the day found them.</li>
+  <li>The reference is timed on today's start/finish line (the line of the day's best lap), with the same lap timing as your own laps, whatever line the recording had. A VBO and an RCZ give longitudes in opposite conventions; the reference is put in today's before it is timed, so an RCZ works against a VBO day and the other way round. Its fastest complete lap is the reference; <strong>Choose its lap</strong> picks another, and for an earlier day lists the laps of all its sessions. A lap that day excluded is marked <em>Excluded on its day</em> with its reason, and is never taken as the fastest, but you can still choose it.</li>
   <li>It is named the same way everywhere: <em>Reference: reference.vbo, lap 2, 1:49.898</em>, or for an earlier day its name and session, such as <em>Reference: Day 2026-08-29 · Session 5, lap 2, 1:49.898</em>.</li>
-  <li>A recording from another track is not used, and the app says why: its GPS never comes within 500 m of today's start/finish line. A recording near the line that never completes a lap across it, one without GPS, and a file that cannot be read are refused with their reason too.</li>
+  <li>A recording from another track is not used, and the app says why: its GPS never comes within 500 m of today's start/finish line. Its laps must also follow the route of today's best lap the same way round: laps driven the other way, or round another layout that crosses the same line, are refused with that reason. A recording near the line that never completes a lap across it, one without GPS, and a file that cannot be read are refused with their reason too.</li>
+  <li>The reference is timed on the line shown when it was loaded. When today's line changes (you show another group, or the day's best lap moves to another line), it says it was timed on another start/finish line and compares nothing until you tap <strong>Load again</strong>.</li>
   <li><strong>Clear reference</strong> drops it.</li>
 </ul>
 
@@ -76,10 +77,10 @@
 </figure>
 <ul>
   <li><strong>Compare with today's best</strong> puts the day's best lap (A, amber) against the reference (blue). Tap the A badge to pick another of today's laps.</li>
-  <li>Δ is A − reference: positive when A is behind. <strong>Lap Δ</strong> is the difference in lap time.</li>
-  <li><strong>Segments against the reference</strong> times today's segments on both laps: A, the reference (<strong>Ref</strong>) and Δ. The segments are your day's approved ones, or the theoretical best's until the day has its own. A segment one lap does not cover says <em>not timed on both laps</em> and why, never a zero.</li>
+  <li>Δ is A − reference: positive when A is behind. <strong>Lap Δ</strong> is the difference in lap time. It is not shown when the reference lap follows less than 90 % of lap A's line, or when lap A was timed on another start/finish line than the reference.</li>
+  <li><strong>Segments against the reference</strong> times today's segments on both laps: A, the reference (<strong>Ref</strong>) and Δ. The segments are your day's approved ones, or the theoretical best's until the day has its own. A segment one lap does not cover says <em>not timed on one of the laps</em> and why, never a zero.</li>
   <li><strong>Channels by track position</strong>: Δ time, then speed, throttle and brake, by position on today's lap, as in a comparison of two laps.</li>
-  <li>Each chart says the unit of each lap. A unit the recording does not declare is the one the speed unit setting assumes for unlabelled speeds (see <a href="troubleshooting.html#speed-unit">Speeds show no unit</a>), and says <em>(assumed)</em>. When the two laps are in different units (km/h and mph), they are drawn as two charts, each in its own unit, and never subtracted.</li>
+  <li>Each chart says the unit of each lap. A unit the recording does not declare is the one the speed unit setting assumes for unlabelled speeds (see <a href="troubleshooting.html#speed-unit">Speeds show no unit</a>), and says <em>(assumed)</em>. When the two laps are in different units (km/h and mph), or neither declares its speed unit and none is assumed (two loggers may record in different units), they are drawn as two charts, each in its own unit, and never subtracted.</li>
 </ul>
 
 <p class="note">Everything on this page is an observed difference between two laps, not an instruction.</p>
