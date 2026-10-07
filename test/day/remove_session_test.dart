@@ -66,7 +66,8 @@ void main() {
     }))!;
     final kept = opened.runs.first.run.id;
     final removed = opened.runs.last.run.id;
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough for the whole overview, every card included.
+    await tester.binding.setSurfaceSize(const Size(1200, 12000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(

@@ -8434,5 +8434,19 @@
   "cornerPhasesMoreThanOneTightPart": "more than one tight part",
   "@cornerPhasesMoreThanOneTightPart": {"description": "Corner details: why a corner (a double apex or a complex) is not split into entry, middle and exit."},
   "cornerPhasesBestNotTimed": "Best lap not timed through the parts: {reason}",
-  "@cornerPhasesBestNotTimed": {"description": "Corner details: the best lap could not be timed through the corner's parts.", "placeholders": {"reason": {"type": "String"}}}
+  "@cornerPhasesBestNotTimed": {"description": "Corner details: the best lap could not be timed through the corner's parts.", "placeholders": {"reason": {"type": "String"}}},
+  "spreadMapHeading": "Where the laps vary",
+  "@spreadMapHeading": {"description": "Consistency card: heading of the map of each segment's spread in one session (FET-224)."},
+  "spreadMapIntro": "Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green: repeatable; red: where the laps differ most.",
+  "@spreadMapIntro": {"description": "Consistency card: under the heading of the spread map."},
+  "spreadMapLabel": "Map of the best lap coloured by each segment's spread in {session}",
+  "@spreadMapLabel": {"description": "Spread map's accessibility label. session is a label such as 'Session 2'.", "placeholders": {"session": {"type": "String"}}},
+  "spreadBandAtMost": "Up to {value} s",
+  "@spreadBandAtMost": {"description": "Spread map legend: the lowest band.", "placeholders": {"value": {"type": "String"}}},
+  "spreadBandBetween": "{from}–{to} s",
+  "@spreadBandBetween": {"description": "Spread map legend: a middle band.", "placeholders": {"from": {"type": "String"}, "to": {"type": "String"}}},
+  "spreadBandAbove": "Over {value} s",
+  "@spreadBandAbove": {"description": "Spread map legend: the highest band.", "placeholders": {"value": {"type": "String"}}},
+  "spreadOutsideSegments": "Not in a segment",
+  "@spreadOutsideSegments": {"description": "Spread map legend: the best lap's trace outside every segment."}
 }
