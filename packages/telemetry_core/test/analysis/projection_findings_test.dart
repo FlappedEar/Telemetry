@@ -49,6 +49,37 @@ const _beyondWindowWorstError = 15.4;
 // fixes and the fix budget thins it as well, so slower speeds are left out.)
 final _whiteNoiseDropped = <double, int>{10.0: 45, 12.0: 2, 15.0: 0, 20.0: 0};
 
+// Finding 2 after the review of FET-256: the fixes refused, rule by rule, on
+// the shapes the review used (see _reviewShapes), and the fixes projected.
+// The rules a cold start, the bound on a segment after a gap and dropping a
+// run on another branch add are named apart.
+final _reviewRefused = <String, Map<Refusal, int>>{
+  'figure-eight 10°, 200 m gaps': {
+    Refusal.coldStartAmbiguity: 54,
+    Refusal.coldStartHeading: 35,
+    Refusal.lockedHeading: 31,
+    Refusal.dropped: 31,
+  },
+  'parallel straights 15 m apart, raw gaps': {
+    Refusal.coldStartAmbiguity: 8635,
+    Refusal.coldStartHeading: 15493,
+    Refusal.lockedAmbiguity: 1061,
+    Refusal.tooFarAhead: 12,
+  },
+  'parallel straights 15 m apart, gap at the lap start': {
+    Refusal.coldStartAmbiguity: 1732,
+    Refusal.coldStartHeading: 2792,
+    Refusal.lockedAmbiguity: 116,
+  },
+  'standing a minute': {Refusal.coldStartHeading: 118, Refusal.lockedHeading: 864},
+};
+final _reviewProjected = <String, (int, int)>{
+  'figure-eight 10°, 200 m gaps': (38126, 38277),
+  'parallel straights 15 m apart, raw gaps': (82556, 107757),
+  'parallel straights 15 m apart, gap at the lap start': (15367, 20007),
+  'standing a minute': (6133, 7115),
+};
+
 /// Two straights of 300 m, [separation] metres apart centre to centre and
 /// driven in opposite directions, joined by hairpins of half that radius.
 SyntheticTrack _parallelStraights(double separation) =>
@@ -178,4 +209,116 @@ void main() {
       expect(refusals.counts[Refusal.lockedHeading], dropped);
     }
   });
+
+  test('finding 2 after the review: the shapes of the review, rule by rule', () {
+    for (final MapEntry(key: name, value: (track, laps)) in _reviewShapes().entries) {
+      final axis = track.axis();
+      final refusals = RefusalTally();
+      var projected = 0, fixes = 0;
+      for (final lap in laps) {
+        final outcome = measureProjection(axis, track, lap);
+        projected += outcome.projected;
+        fixes += outcome.fixes;
+        refusals.replay(axis, lap.session, 0.0, lap.endTime);
+      }
+      print('$name: $projected of $fixes fixes projected ($refusals)');
+      expect(refusals.disagreements, 0);
+      expect(refusals.accepted, projected);
+      expect(refusals.refused, fixes - projected);
+      expect((projected, fixes), _reviewProjected[name]);
+      expect({
+        for (final MapEntry(:key, :value) in refusals.counts.entries)
+          if (value > 0) key: value,
+      }, _reviewRefused[name]);
+    }
+  });
+}
+
+/// The shapes and laps of the review of FET-256: a 10° figure-eight with
+/// 200 m gaps ending within 30 m of the crossing, parallel straights 15 m
+/// apart with a raw gap of 5–40 m on a straight and with a gap at the lap's
+/// start (laps 0.55–0.65 of the separation off their line toward the other
+/// straight), and a car standing for a minute with 0.5 m of GPS error.
+Map<String, (SyntheticTrack, List<DrivenTrackLap>)> _reviewShapes() {
+  final figureEight = SyntheticTrack.figureEight(crossingDegrees: 10.0);
+  final crossing = figureEightCrossing(crossingDegrees: 10.0);
+  final parallel = _parallelStraights(15.0);
+  double offLine(double meters, double offset, double from) {
+    final along = meters % (parallel.lengthMeters / 2);
+    return along > from && along < 130.0 ? offset : 0.0;
+  }
+
+  final standing = SyntheticTrack.loop([
+    straight(600),
+    arc(90, 60),
+    straight(200),
+    arc(90, 25),
+    straight(300),
+  ]);
+  return {
+    'figure-eight 10°, 200 m gaps': (
+      figureEight,
+      [
+        for (var end = -30.0; end <= 30.0; end += 2.0)
+          for (final side in [-1.0, 0.0, 1.0])
+            for (final seed in [1, 2, 3])
+              driveTrack(
+                figureEight,
+                lateral: (_) => side,
+                noise: 0.3,
+                seed: seed,
+                dropFix: (meters) => meters > crossing + end - 200.0 && meters < crossing + end,
+              ),
+      ],
+    ),
+    'parallel straights 15 m apart, raw gaps': (
+      parallel,
+      [
+        for (final share in [0.55, 0.6, 0.65])
+          for (var gapEnd = 25.0; gapEnd <= 130.0; gapEnd += 5.0)
+            for (final gap in [5.0, 20.0, 40.0])
+              for (final seed in [1, 2, 3])
+                driveTrack(
+                  parallel,
+                  lateral: (meters) => offLine(meters, share * 15.0, 20.0),
+                  noise: 0.3,
+                  seed: seed,
+                  dropFix: (meters) => meters > gapEnd - gap && meters < gapEnd,
+                ),
+      ],
+    ),
+    'parallel straights 15 m apart, gap at the lap start': (
+      parallel,
+      [
+        for (final share in [0.55, 0.6, 0.65])
+          for (var gapEnd = 10.0; gapEnd <= 130.0; gapEnd += 10.0)
+            for (final seed in [1, 2, 3])
+              driveTrack(
+                parallel,
+                lateral: (meters) => offLine(meters, share * 15.0, 5.0),
+                noise: 0.3,
+                seed: seed,
+                dropFix: (meters) => meters > 0.5 && meters < gapEnd,
+              ),
+      ],
+    ),
+    'standing a minute': (
+      standing,
+      [
+        for (final seed in _seeds)
+          driveTrack(
+            standing,
+            noise: 0.5,
+            seed: seed,
+            schedule: (i) {
+              final t = i * 0.1;
+              if (t < 500 / 30) return t * 30;
+              if (t < 500 / 30 + 60) return 500.0;
+              final meters = 500 + (t - 500 / 30 - 60) * 30;
+              return meters > standing.lengthMeters ? null : meters;
+            },
+          ),
+      ],
+    ),
+  };
 }

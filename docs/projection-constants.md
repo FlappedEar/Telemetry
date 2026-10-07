@@ -15,9 +15,11 @@ by both:
 - `_segmentStartBackwardMeters` (FET-249, Overlays KAN-237) lets the first
   fix of a segment after a gap fall up to 30 m behind the last progress,
   where Overlays allows only the 3 m backward tolerance.
-- A cold start in the middle of a lap is checked more strictly (FET-256,
-  Overlays KAN-238; finding 2), with one constant Overlays does not have,
-  `_maximumPlausibleSpeedMetersPerSecond`.
+- A cold start in the middle of a lap is checked more strictly, and a
+  segment on another branch cannot move the rest of the lap on by a lap
+  (FET-256, Overlays KAN-238; finding 2), with constants Overlays does not
+  have: `_maximumPlausibleSpeedMetersPerSecond`, `_ownSpeedMargin` with
+  `_ownSpeedFloorMetersPerSecond`, and `_minimumHeadingMovementMeters`.
 
 This page lists them with the evidence behind each and how far each is from
 failing (FET-215). The evidence comes from:
@@ -55,8 +57,10 @@ Real-day and synthetic results are reported separately, as AGENTS.md asks.
 | `minimumHeadingCosine` | 0 (within 90°) | Locking on to a parallel section driven the opposite way, or a hairpin's other side | Overlays KAN-32 (`headingRejectsOppositeDirectionParallelSection`); Dart test "never locks on to the same path driven the opposite way". Real: lowest cosine 0.028, 99.9% of fixes at least 0.65 (0.1% quantile 0.658), no fix refused by it. Synthetic: at least 0.94 on the figure-eights, 0.62 in a 7.5 m hairpin with a 3 m apex cut | Opposite-direction sections lock on | Cornering and line changes are refused; GPS error of ±0.5 m uncorrelated from fix to fix already trips it at 10 Hz (5 seeds on an oval: 45 fixes dropped at 10 m/s, 2 at 12 m/s, none at 15 m/s; `projection_findings_test.dart`) |
 | `_backwardToleranceMeters` | 3 m | GPS jitter projecting just behind the last fix of a segment (often while stopped); such a fix is held at the last progress | Overlays KAN-152 (`b65acbd`, `3b8b6cd`). Synthetic: a fix without a heading 2.9 m back is held, 3.1 m back is refused; with a heading, any step back on a straight is refused by the heading rule first. Real: no fix steps back (0.00 m) | Jitter splits segments | A wrong match behind the car is accepted |
 | `_segmentStartBackwardMeters` | 30 m, at most a quarter of the axis length | The first fix of a segment after a gap, found again from scratch, projecting a little behind the last progress: read as the next lap, it moved the rest of the lap a whole lap forward | FET-249, a deliberate departure from Overlays, which allows the 3 m tolerance here (KAN-237): on a 25 Hz RaceChrono lap each restart after a break was unwrapped one lap on. Synthetic: `track_progress_uneven_test.dart` (a fix found again behind after a gap stays on its lap); a 5 m hairpin re-acquired 3.7 m behind stays on its lap (finding 2) | A segment after a gap starting just behind is unwrapped a whole lap forward | A first fix wrongly matched up to 30 m behind stays on this lap, so progress falls between segments; on a short loop a real jump forward of more than three quarters of a lap would read as a step back, hence the cap |
-| `_maximumGapSeconds` | 5 s | Continuing a stale lock; at the lap start, a first fix within 5 s that projects onto the far half is stored just before 0 | Overlays KAN-32 and KAN-152. Synthetic: a fix 4.9 s after the lock is searched in the window, 5.1 s after it is a cold start. Real: the longest interval between fixes in a lap is 0.10 s. `sampledSegments` already ends a segment at three base intervals (0.3 s at 10 Hz), so the 5 s rule binds only below 0.6 Hz | Short dropouts become cold starts, which have no heading after a raw GPS gap (finding 2) | A stale lock steers the window; the window cap usually just costs a fix |
-| `_maximumPlausibleSpeedMetersPerSecond` | 100 m/s (360 km/h), plus the 30 m allowed behind | A segment after a gap starting on another branch of the track and shifting the rest of the lap (FET-256, finding 2) | Synthetic: refuses the figure-eight fixes found again on the other diagonal, hundreds of metres ahead under a second after the last fix. Real: never binds (the same fixes are projected) | A fast car's segment after a gap is refused | A wrong branch within reach is accepted; after a gap longer than (axis length − 30 m) / 100 m/s (about 20 s at Jastrząb) it cannot tell laps apart |
+| `_maximumGapSeconds` | 5 s | Continuing a stale lock; at the lap start, a first fix within 5 s that projects onto the far half is stored just before 0 | Overlays KAN-32 and KAN-152. Synthetic: a fix 4.9 s after the lock is searched in the window, 5.1 s after it is a cold start. Real: the longest interval between fixes in a lap is 0.10 s. `sampledSegments` already ends a segment at three base intervals (0.3 s at 10 Hz), so the 5 s rule binds only below 0.6 Hz | Short dropouts become cold starts; since FET-256 the direction of travel is kept across a raw GPS gap of up to 5 s, so they keep the heading check (finding 2) | A stale lock steers the window; the window cap usually just costs a fix; the movement across a long gap, taken as the heading of the fix after it, can refuse that fix on a curve |
+| `_maximumPlausibleSpeedMetersPerSecond` | 100 m/s (360 km/h), plus the 30 m allowed behind | A segment after a gap, or the lap's first fix, starting on another branch of the track and shifting the rest of the lap (FET-256, finding 2) | Synthetic: refuses the figure-eight fixes found again on the other diagonal, hundreds of metres ahead under a second after the last fix, and a first fix on the other straight after a gap at the lap start (measured from the gate at the lap's start time, and no more than the 30 m behind it). Guards: a car at 95 m/s keeps every fix after gaps of 50–1,000 m, one at 40 m/s after gaps of 10–900 m. Real: never binds (the same fixes are projected) | A fast car's segment after a gap is refused | A wrong branch within reach is accepted (then the own-speed rule below can still drop it); after a gap longer than (L − 60 m) / 100 m/s, about 20 s at Jastrząb, the next lap is within reach and laps cannot be told apart |
+| `_ownSpeedMargin`, `_ownSpeedFloorMetersPerSecond` | 1.5 × the lap's own speed, at least 40 m/s and at most 100 m/s, plus 30 m | Right fixes after a wrong segment that lies within reach being moved on by a lap once the 100 m/s reach has grown enough (the review of FET-256, finding 2) | The lap's own speed is its fastest progress over a second within a segment. A segment's first fix further ahead of the last projected fix than the own speed allows is read as lying behind the latest segments instead: when it is within the 100 m/s reach of the lock before them, lies more than 30 m behind where they started, and they cover less than a quarter of the axis, they are dropped. Synthetic: the 10° figure-eight with 200 m gaps (279 trials) drops 31 one-fix segments, and none of the 2,511 figure-eight trials with 100–400 m gaps is shifted (31 and 33 of 279 at 10°, 10 of 279 at 30° before). Real: never binds | A car faster than its margin during a gap, behind a short run, could have that run dropped and be placed a lap back; only after a gap of nearly a lap | A wrong run is kept and the right fixes after it refused, or moved on by a lap once within the 100 m/s reach |
+| `_minimumHeadingMovementMeters`, standing | 0.5 m while the lap stands: less than 1 m/s of projected progress over the 0.5 s before its last projected fix, at most 0.5 s old | A cold start taking the GPS jitter of a standing car as its direction of travel (the review of FET-256) | Synthetic: a car standing for a minute with 0.5 m of GPS error, five seeds: 6,133 of 7,115 fixes projected (6,215 before FET-256, 5,880 with jitter as a heading). The heading rule while locked still refuses jitter, as in Overlays (864 fixes). A car crawling through a 3 m hairpin keeps its heading, so the hairpin tests are unchanged. Real: never binds | More fixes of a standing car refused | A cold start of a car rolling slowly after a stop has no heading |
 | Forward window | 1.6 × speed × Δt, clamped to 15–150 m | Searching the whole track while locked (the window keeps crossings and parallel straights out) | Overlays KAN-32. Synthetic: holds the lock at 45 m/s with up to 3.3 s between fixes (148.5 m). Real: from one fix to the next the nearest point on the axis advances at most 12.2 m, 81% of the 15 m floor | Fast or sparse fixes lose the lock | Other branches enter the window |
 | Backward window | min(15 m, 0.3 × forward) | Jitter behind the last lock | Overlays KAN-32; with the 3 m tolerance, anything beyond it is refused anyway | Jitter falls outside the window | — |
 | `gateCoverageToleranceMeters` | 15 m | A lap's projection starting and ending a few fixes inside the gate | Overlays KAN-152 (FET-192); the oblique-gate tests in `track_progress_test.dart`. Real: the first or last projected fix is at most 8.86 m from the gate | The timed delta and the first and last sectors lose the lap's ends | Coverage over a real gap of up to 15 m next to the gate is assumed |
@@ -120,44 +124,82 @@ with them.
      hairpin one lap re-acquired 3.7 m behind its last fix and, within the
      30 m allowance of `_segmentStartBackwardMeters`, stayed on its lap.
 
-   The fix adds three checks, each of which only refuses (a gap, never a
-   guess):
-   - A refused fix keeps the direction of travel: the next fix's movement is
-     measured from it, so the cold start after a refusal has the heading
-     check (a raw GPS gap still forgets it). A lap no longer re-acquires on a
-     parallel straight or a hairpin leg driven the other way.
+   The fix (FET-256, with the fixes of its review) only refuses fixes or
+   drops a run of them (a gap, never a guess):
+   - The direction of travel is kept after a fix the projection refused,
+     across a raw GPS gap of up to 5 s (`_maximumGapSeconds`; at 25 Hz three
+     missed fixes are one), and from the last fix before the lap, if it is
+     at most 5 s old, for the lap's first fix. So the cold start after them
+     has the heading check. It is forgotten after a longer gap or a fix with
+     no coordinate, and while the lap stands a cold start takes no heading
+     from less than 0.5 m of movement (GPS jitter).
    - A cold start also compares the nearest part of the axis within the
      30 m separation that runs the other way from the match (a hairpin's
      other leg) with the same 0.7 ratio, unless the car's movement fits the
      match better than that leg.
    - The first fix of a segment after a gap may lie no further ahead of the
      lap's last projected fix than 100 m/s times the time since, plus the
-     30 m allowed behind (`_maximumPlausibleSpeedMetersPerSecond`); further
-     ahead, it matched another branch and is refused. A segment after a gap
-     is never moved on by a lap, so one wrong fix cannot shift later ones
-     unless the gap is long enough to drive a lap.
+     30 m allowed behind (`_maximumPlausibleSpeedMetersPerSecond`), and the
+     lap's first fix no further ahead of the gate at the lap's start time,
+     nor more than 30 m behind it; otherwise it matched another branch and
+     is refused.
+   - When a segment's first fix lies further ahead than the lap's own speed
+     (1.5 times its fastest progress over a second, at least 40 m/s) could
+     have taken it since the last projected fix, it may instead lie behind
+     the latest segments: if it is within the 100 m/s reach of the lock
+     before them, more than 30 m behind where they started, and they cover
+     less than a quarter of the axis, they matched another branch and are
+     dropped, and the fix continues from that lock.
 
-   Each check is needed: without the first the parallel straights fail,
-   without the second the 3 m hairpin, without the third the figure-eight.
-   After the fix (`test/analysis/cold_start_branch_test.dart`), none of the
-   2,745 figure-eight trials, 45 parallel-straight laps and 40 hairpin laps
-   (3 and 5 m radius, 20 seeds each) has a fix on the wrong branch or a later
-   segment shifted; the figure-eight leaves a gap of a few fixes instead.
+   Without the first rule the parallel straights fail, without the second
+   the 3 m hairpin, without the third the figure-eight with 30 m gaps, and
+   without the fourth the figure-eight with longer gaps. After the fix
+   (`test/analysis/cold_start_branch_test.dart`), no lap has a fix on the
+   wrong branch or a segment shifted in: the 2,745 figure-eight trials with
+   30 m gaps; 2,511 with 100–400 m gaps (before: 12–45 of 279 per angle and
+   gap; with the first version of the fix 31 and 33 of 279 at 10° after 200
+   and 400 m, 10 at 30° after 400 m, shifted by 683–891 m); 45
+   parallel-straight laps; 1,782 laps with a raw gap of 5–40 m on a
+   straight (before 506, 462 and 396 of 594 at 15, 20 and 30 m apart; with
+   the first version 92, 80 and 74, whose wrong segments covered progress
+   the car had not reached, so a sector time read from them came out about
+   3 s early in the review's measurement); 351 laps with a gap at the lap's start (before 89, 85 and 78 of
+   117 moved on by whole laps; with the first version 18 of 117 with fixes
+   up to 140 m out); and 40 hairpin laps (3 and 5 m radius, 20 seeds each;
+   the 5 m one passed before the fix too and is a guard). A car at 95 m/s
+   with gaps of 50–1,000 m and one at 40 m/s with gaps of 10–900 m keep
+   every fix. A car standing for a minute keeps 6,133 of 7,115 fixes (five
+   seeds; 6,215 before the fix, 5,880 with its first version).
    What is left (`projection_findings_test.dart`): the figure-eight trials
-   leave 60, 82 and 357 fixes unprojected in all at 90, 30 and 10 degrees,
-   the worst projected fix 1.3 m out; the parallel-straight lap 0.5 m beyond
-   separation / 1.7 off keeps 137 of 186, 144 of 193 and 156 of 205 fixes,
-   all within 0.8 m. With GPS error as large as the hairpin, the worst fix
-   over five seeds is 5.7 m out in a 3 m hairpin and 6.2 m in a 5 m one,
-   never more than 2 m beyond the fix's own distance from the car, and a
-   segment re-acquires at most 1.0 m behind the last. Limits: a wrong
-   branch within reach of the time since the last fix (a hairpin's other
-   leg just ahead, matched with no movement) is not caught by the third
-   check; and the lap's first fix still has no heading.
+   with 30 m gaps leave 60, 82 and 357 fixes unprojected in all at 90, 30
+   and 10 degrees, the worst projected fix 1.3 m out; the parallel-straight
+   lap 0.5 m beyond separation / 1.7 off keeps 137 of 186, 144 of 193 and
+   156 of 205 fixes, all within 0.8 m. With GPS error as large as the
+   hairpin, the worst fix over five seeds is 5.7 m out in a 3 m hairpin and
+   6.2 m in a 5 m one, never more than 2 m beyond the fix's own distance
+   from the car, and a segment re-acquires at most 1.0 m behind the last.
+   The same test pins, rule by rule, the fixes refused on the shapes of the
+   review.
+
+   Limits. A lap can still lock on to another branch, and move on by a lap,
+   when: the direction of travel is forgotten (a raw gap longer than 5 s, a
+   fix with no coordinate, a lap with no fix in the 5 s before it) or the
+   car stands, and a parallel section driven the other way is the nearer
+   branch; the wrong branch lies within reach of the time since the last
+   fix and no later fix contradicts it (a hairpin's other leg just ahead);
+   a wrong run covers a quarter of the axis or more, so it is kept; or a
+   gap is longer than (L − 60 m) / 100 m/s, after which the next lap is
+   within reach. A real car that drove nearly a whole lap during one gap,
+   faster than its own margin, right after a short run could have that run
+   dropped and be placed a lap back.
    The real day has no crossing or parallel section within 20 m, and none of
    its fixes was misplaced before the fix. It is unchanged: the same 191,686
-   of 193,764 fixes are projected, and laps, best laps and the theoretical
-   best are identical.
+   of 193,764 fixes are projected, at the same progress, and laps, best laps
+   and the theoretical best are identical. Its RaceChrono RCZ files (25 Hz),
+   projected the same way, lose 45 fixes and gain 31 in 10 of the 150 lap
+   projections (444,742 projected instead of 444,756; no fix moves), all
+   with the first version of the fix and none more since; their
+   theoretical best (107.812 s over 14 segments) is unchanged.
 3. **A fix up to 20 m beyond the 150 m forward window is placed at the window's
    end.** Synthetic: at 45 m/s with 3.4 s between fixes (153 m) the lap stays
    one segment with errors of 15 m. It needs more than 150 m between two fixes
