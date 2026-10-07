@@ -1,0 +1,64 @@
+<!-- title: Edycja odcinków | nav: Edycja odcinków -->
+<h1 id="segments">Edycja odcinków</h1>
+<p class="lead">Odcinki to zakręty i proste używane w analizie. Aplikacja proponuje je na podstawie Twojego najlepszego okrążenia; możesz zmieniać ich nazwy, przesuwać, dzielić, łączyć lub usuwać.</p>
+
+<figure>
+  <img src="assets/screens/segment-editor.png" alt="Edytuj odcinki: mapa najlepszego okrążenia z granicami odcinków oraz lista zakrętów i prostych z ich długościami i najszybszymi czasami" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="open">Otwieranie edytora</h2>
+<p>Na stronie dnia, na karcie <a href="theoretical-best.html">Teoretyczny czas okrążenia</a>, dotknij <strong>Edytuj odcinki</strong>.</p>
+
+<h2 id="reading">Co widzisz</h2>
+<ul>
+  <li>Mapę najlepszego okrążenia z granicami odcinków jako kropkami, obok listy, gdy okno jest szersze niż wysokie i ma co najmniej 600 punktów szerokości (na przykład telefon trzymany poziomo). Wybrany odcinek jest niebieski, a jego granice to białe kropki; zmiany, których jeszcze nie zastosowałeś, są fioletowymi kropkami.</li>
+  <li><strong>Automatycznie wyznaczone odcinki</strong> albo <strong>Zmienione odcinki</strong>, teoretyczny czas okrążenia i liczbę odcinków.</li>
+  <li><strong>Przejrzyj propozycje</strong>, co otwiera opcjonalny <a href="#review">przegląd automatycznych propozycji</a>.</li>
+  <li>Odcinki w kolejności na okrążeniu: krótka nazwa (C1, S1…), nazwa, typ, początek i koniec w metrach od linii, długość i najszybszy czas.</li>
+</ul>
+
+<h2 id="edit">Zmiana odcinka</h2>
+<p>Dotknij odcinka, aby go wybrać. Potem:</p>
+<ul>
+  <li><strong>Nazwa</strong> i typ (<strong>Zakręt</strong>, <strong>Prosta</strong>, <strong>Sektor</strong>).</li>
+  <li><strong>Początek</strong> i <strong>Koniec</strong>: przesuń o −10, −1, +1 lub +10 m albo dotknij <strong>Wskaż na mapie</strong> pod jednym z nich, a potem dotknij linii toru na mapie (zobacz <a href="#pick">Ustawianie granicy na mapie</a>). <strong>Przesuń też granicę sąsiedniego odcinka</strong> utrzymuje następny odcinek połączony (domyślnie włączone). Potem <strong>Zastosuj</strong> albo <strong>Resetuj</strong>.</li>
+  <li><strong>Podziel tutaj</strong>: ustaw punkt suwakiem albo przez <strong>Wskaż na mapie</strong>.</li>
+  <li><strong>Połącz z</strong> następnym odcinkiem.</li>
+  <li><strong>Usuń</strong>.</li>
+</ul>
+<p>Każda zmiana ponownie mierzy czasy wszystkich okrążeń. <strong>Cofnij</strong> i <strong>Ponów</strong> są na pasku narzędzi.</p>
+
+<h2 id="pick">Ustawianie granicy na mapie</h2>
+<figure>
+  <img src="assets/screens/segment-pick.png" alt="Edytor odcinków czeka na dotknięcie linii toru, aby ustawić koniec wybranego odcinka" width="1280" height="800" loading="lazy">
+</figure>
+<ol class="steps">
+  <li>Dotknij <strong>Wskaż na mapie</strong> pod <strong>Początek</strong>, <strong>Koniec</strong> albo pod suwakiem podziału. Mapa pokazuje <em>Wskaż punkt na śladzie przejazdu, aby ustawić początek</em> (albo koniec, albo miejsce podziału), a przycisk ma napis <strong>Wskaż punkt na mapie… (anuluj)</strong>; dotknij go ponownie, aby przerwać.</li>
+  <li>Dotknij lub kliknij linię okrążenia w miejscu, gdzie ma być granica. Użyty zostanie najbliższy punkt najlepszego okrążenia, z dokładnością do 0.1 m, widoczny jako fioletowa kropka.</li>
+  <li>Dotknij <strong>Zastosuj</strong> (albo <strong>Podziel tutaj</strong>). Jak każdą zmianę, można to cofnąć.</li>
+</ol>
+<p>Dotknięcie dalej niż około 3% rozmiaru toru od linii pokazuje <em>Wskaż punkt na śladzie przejazdu tego okrążenia.</em> Tam, gdzie obok przebiega inny fragment toru, na przykład skrzyżowanie lub równoległa prosta, aplikacja nie wie, który miałeś na myśli, i pokazuje <em>W pobliżu przebiega inny fragment toru. Ustaw odległość przyciskami.</em> Punkt podziału musi leżeć wewnątrz odcinka. To te same zasady co w FlappedEar Overlays. Na telefonie jeden palec dotyka, a dwa palce nadal powiększają i przesuwają mapę.</p>
+
+<h2 id="review">Przegląd propozycji</h2>
+<figure>
+  <img src="assets/screens/segment-review.png" alt="Propozycje odcinków: każdy automatyczny zakręt i prosta z jego stanem, skrętem, początkiem i końcem wraz z tolerancją oraz geometrycznym wierzchołkiem zakrętu" width="1280" height="800" loading="lazy">
+</figure>
+<p>Odcinki są zatwierdzane automatycznie, więc nigdy nie musisz ich przeglądać: wyniki i następna dodana sesja używają ich od razu. Powstają tylko z najlepszego okrążenia, gdy jego linia GPS zgadza się z pozostałymi sklasyfikowanymi okrążeniami toru: jeśli gdzieś na okrążeniu więcej niż połowa z nich jest dalej niż 30 m od niej (błąd GPS albo okrążenie, które zjechało z toru), odcinki nie powstają, a teoretyczny czas okrążenia podaje przyczynę. Wyklucz z klasyfikacji okrążenia, których linia jest błędna (zobacz <a href="lap.html#exclude">Wykluczanie okrążenia</a>): okrążenia wykluczone nie są porównywane, a przy mniej niż dwóch innych sklasyfikowanych okrążeniach linia nie jest sprawdzana. Gdy aplikacja sama wyznacza tor, okrążenie tak daleko od linii jest już pomijane w klasyfikacji. Odcinki zostają takie same po dodaniu sesji, nawet z nowym najlepszym okrążeniem, więc zakręt zachowuje nazwę i miejsce przez cały dzień; trener na tym polega, aby śledzić zakręt z sesji na sesję. Jeden wyjątek: gdy dodasz sesję, której najlepsze okrążenie pojechało linią, za którą odcinki nie nadążają, więc niektóre jej odcinki nie dostają czasu, odcinki są mierzone ponownie na tym okrążeniu. Nazwa nadana odcinkowi przechodzi na nowy odcinek tego samego rodzaju, obejmujący ten sam fragment okrążenia, jeśli taki jest. Dzień ma wtedy nowe odcinki jako zmiany do zapisania. Dzieje się tak tylko wtedy, gdy odcinki są automatyczne, ze zmienioną nazwą lub bez: gdy przesuniesz, podzielisz, połączysz lub usuniesz którykolwiek z nich, wszystkie zostają takie, jakie są. W edytorze <strong>Przejrzyj propozycje</strong> pokazuje zakręty i proste zaproponowane przez aplikację na podstawie okrążenia, na którym mierzone są odcinki (zwykle najlepszego), tak jak robi to FlappedEar Overlays. Dla każdej propozycji widzisz:</p>
+<ul>
+  <li>Jej stan: <strong>Zatwierdzona</strong> (jest jednym z odcinków), <strong>Proponowana</strong> (otwarta, na przykład po usunięciu tego odcinka), <strong>Odrzucona</strong> albo <strong>Nachodzi na zatwierdzony odcinek</strong> (edytowany przez Ciebie odcinek pokrywa jej część).</li>
+  <li>Jej nazwę i typ; dla zakrętu, jak bardzo skręca i w którą stronę, na przykład <em>Zakręt · 92° w lewo</em>.</li>
+  <li>Jej początek i koniec w metrach od linii, każdy z tolerancją (±), oraz jej długość. <em>Przecina linię startu/mety</em> oznacza odcinek, który biegnie przez linię.</li>
+  <li>Uwagi o niepewności dla początku lub końca, który jest mniej wyraźny: <em>Krótka prosta</em>, <em>Zakręty łączą się bez prostej</em> albo <em>W pobliżu luki GPS na tym okrążeniu</em>.</li>
+  <li>Dla zakrętu jego <em>Geometryczny wierzchołek zakrętu</em>, czyli miejsce, gdzie kształt toru skręca najmocniej (a nie gdzie jechałeś najwolniej), albo powód, dla którego go nie ma, na przykład <em>Kilka wierzchołków — sprawdź ręcznie</em>.</li>
+</ul>
+<p>Co możesz zrobić:</p>
+<ul>
+  <li><strong>Odrzuć</strong> otwartą propozycję i <strong>Przywróć</strong> ją z powrotem. Odrzucenie nie zmienia odcinków; jest zapisywane razem z dniem, tak jak zapisuje je FlappedEar Overlays.</li>
+  <li><strong>Zatwierdź wszystkie</strong> zamienia każdą otwartą propozycję w odcinek, bez względu na jej niepewność; odrzucone zostają poza nimi. Wszystkie okrążenia są mierzone ponownie.</li>
+  <li><strong>Przelicz</strong> wyznacza propozycje od nowa na podstawie okrążenia.</li>
+</ul>
+<p>Każdą zmianę można cofnąć przyciskami <strong>Cofnij</strong> i <strong>Ponów</strong> na pasku narzędzi, tutaj lub w edytorze: mają wspólną historię.</p>
+<p>Po <strong>Przywróć automatyczny podział</strong> w edytorze odrzucona wcześniej propozycja jest znów zatwierdzona razem z pozostałymi; jej odrzucenie pojawi się ponownie, jeśli później usuniesz ten odcinek.</p>
+
+<h2 id="keep">Zachowanie Twoich odcinków</h2>
+<p>Zapisz dzień, aby zachować odcinki. Twoje poprawki są zapisywane razem z dniem i nigdy nie są zastępowane automatycznymi odcinkami. <strong>Przywróć automatyczny podział</strong> wraca do proponowanych odcinków po zapytaniu o potwierdzenie.</p>

@@ -1,0 +1,67 @@
+<!-- title: Twój profil i umiejętności | nav: Profil i umiejętności -->
+<h1 id="profile">Twój profil i umiejętności</h1>
+<p class="lead"><strong>Profil</strong>, w dolnym pasku lub bocznym panelu, podsumowuje wszystkie dni w Twojej <a href="saving.html#library">bibliotece</a>: ile przejechałeś, Twoje rekordy na każdym torze, każdy tor dzień po dniu i Twoje umiejętności. Pojawia się, gdy aplikacja prowadzi bibliotekę.</p>
+<figure>
+  <img src="assets/screens/profile.png" alt="Profil: Wszystkie dni z 1 dniem, 6 sesjami, 25 okrążeniami z czasem, 71.4 km i 1 h 16 min na torze, a dalej umiejętności, zaczynając od Hamowania" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="totals">Wszystkie dni</h2>
+<p>Dni, sesje, okrążenia z czasem, dystans, czas na torze (czas w ruchu), tory i samochody, ze wszystkich dni w Twojej bibliotece. Dystans i czas pochodzą z zapisu każdej sesji. Dzień zapisany przed tą wersją nie ma ich, dopóki nie otworzysz go ponownie; do tego czasu jeden wiersz podaje, ilu sesji dotyczą dystans i czas, a gdy nic nie zmierzono, widać —.</p>
+
+<h2 id="skills">Umiejętności</h2>
+<p>Umiejętności wynikają z 12-umiejętnościowego modelu DrivingCoach i są pogrupowane jako <strong>Hamowanie</strong>, <strong>Zakręt</strong>, <strong>Wyjście</strong> i <strong>Okrążenie</strong>. Każda umiejętność, którą aplikacja mierzy, ma poziom od 1 do 5, wyliczony z Twoich ostatnich 3 dni, w których ją zmierzono. Przedziały są ustalone na podstawie tego, co szybki, doświadczony kierowca powtarza okrążenie po okrążeniu, a nie na podstawie Twojego własnego dnia, więc poziom 5 oznacza jazdę na granicy możliwości. Poziom wymaga też, aby pokazały go okrążenia: poziom 5 potrzebuje 15 sklasyfikowanych okrążeń; przy 5–14 poziom wynosi najwyżej 4, a przy mniejszej liczbie najwyżej 3. Trend porównuje tylko przedziały, więc sama większa liczba okrążeń nie jest zmianą. Obok poziomu widać:</p>
+<ul>
+  <li><strong>Pewność</strong>, wynikającą ze zmierzonych sklasyfikowanych okrążeń: niska poniżej 5, średnia od 5 do 14, wysoka od 15.</li>
+  <li>Ile sklasyfikowanych okrążeń z ilu dni składa się na wynik oraz czy jest to <em>poprawa</em>, <em>bez zmian</em> czy <em>pogorszenie</em> względem wcześniejszych dni.</li>
+  <li>Zmierzona wartość, z której wynika poziom.</li>
+</ul>
+<figure>
+  <img src="assets/screens/profile-skills.png" alt="Umiejętności: Zdecydowanie na gazie na poziomie 4 z 5, Prędkość na wyjściu i Powtarzalność tempa na poziomie 1 z wysoką pewnością z 23 sklasyfikowanych okrążeń, Prowadzenie sekwencji zakrętów na poziomie 3 ze średnią pewnością z 13, każda z zmierzoną wartością, a dalej dystans samochodu, rekordy toru i początek sekcji Dzień po dniu" width="1280" height="800" loading="lazy">
+</figure>
+<table>
+  <tr><th>Umiejętność</th><th>Mierzona jako</th><th>Poziom 5 do, potem 4, 3, 2</th></tr>
+  <tr><td>Moment odpuszczenia gazu</td><td>Czas od odjęcia gazu do hamowania (typowe okrążenie); jazda bez użycia żadnego pedału przez cały dojazd liczy się jako cały ten czas. Wymaga zapisu gazu i hamulca</td><td>0.1, 0.25, 0.5, 0.8 s</td></tr>
+  <tr><td>Powtarzalność punktu hamowania</td><td>Jak daleko od siebie leżą Twoje punkty hamowania w każdym zakręcie (rozrzut środkowej połowy okrążeń)</td><td>2, 4, 7, 12 m</td></tr>
+  <tr><td>Moment zwalniania hamulca</td><td>Jak daleko od siebie leżą punkty, w których puszczasz hamulec w każdym zakręcie. Wymaga zapisu hamulca</td><td>3, 6, 10, 16 m</td></tr>
+  <tr><td>Skuteczność hamowania</td><td>O ile słabiej hamujesz niż w swoim najlepszym hamowaniu w każdym zakręcie tym samochodem, na podstawie średniego opóźnienia (typowe okrążenie). Wymaga zapisu przeciążenia wzdłużnego i hamulca</td><td>0.02, 0.04, 0.07, 0.12 g</td></tr>
+  <tr><td>Powtarzalność wejścia w zakręt</td><td>Jak bardzo różnią się Twoje prędkości wejścia w każdy zakręt</td><td>1, 2, 4, 7 km/h</td></tr>
+  <tr><td>Kontrola prędkości minimalnej</td><td>O ile wolniej niż w swoim najlepszym przejeździe tym samochodem jedziesz w najwolniejszym punkcie każdego zakrętu (typowe okrążenie)</td><td>1, 2, 4, 7 km/h</td></tr>
+  <tr><td>Powtarzalność toru jazdy</td><td>Jak daleko od siebie leżą Twoje linie przejazdu w poprzek toru na wierzchołku każdego zakrętu. Wymaga GPS, który zapisuje swoją dokładność, wynoszącą 0.25 m lub lepiej</td><td>0.4, 0.7, 1.1, 1.8 m</td></tr>
+  <tr><td>Ponowne otwieranie gazu</td><td>Jak daleko od siebie leżą punkty, w których wracasz na gaz po najwolniejszym punkcie każdego zakrętu. Wymaga zapisu gazu</td><td>2, 4, 7, 12 m</td></tr>
+  <tr><td>Zdecydowanie na gazie</td><td>Jak często dodajesz gaz i znów go odejmujesz przed najwolniejszym punktem, w procentach wszystkich zmierzonych przejazdów. Wymaga zapisu gazu i hamulca</td><td>2, 10, 20, 35 % przejazdów</td></tr>
+  <tr><td>Prędkość na wyjściu</td><td>O ile wolniej niż w swoim najlepszym przejeździe tym samochodem wyjeżdżasz z każdego zakrętu (typowe okrążenie)</td><td>1, 2, 4, 7 km/h</td></tr>
+  <tr><td>Prowadzenie sekwencji zakrętów</td><td>O ile więcej czasu tracą Twoje szybsze przejazdy przez zakręt na odcinku tuż za nim niż wolniejsze (typowa wartość każdej połowy, od 4 okrążeń), uśrednione po zakrętach</td><td>0.01, 0.03, 0.06, 0.1 s</td></tr>
+  <tr><td>Powtarzalność tempa</td><td>Rozrzut Twoich czasów okrążeń</td><td>0.5, 1, 2, 4 s</td></tr>
+</table>
+<p>Rozrzut wymaga co najmniej 3 okrążeń w zakręcie. Umiejętność, której jeszcze nic nie zmierzono, na przykład dlatego, że zapis nie ma gazu ani hamulca, ma opis <em>Potrzeba więcej danych</em>. Poziomy odnoszą się do stałych przedziałów, a nie do wyniku punktowego, i podobnie jak trener wskazują możliwość poprawy, a nigdy obiecany zysk.</p>
+<p>Te same umiejętności pojawiają się w sekcji <strong>Trener</strong>, pod kartą <a href="day.html#next">Następna sesja</a>.</p>
+
+<h2 id="cars">Samochody i tory</h2>
+<p><strong>Samochody</strong> wymienia każdy samochód, którym jechałeś, z jego dniami, dystansem i czasem na torze. <strong>Tory</strong> wymienia każdy tor z jego kierunkiem i wizytami (nowy tor przyjmuje nazwę swojego <a href="day.html#circuit-names">toru</a> albo <em>Tor N</em>, gdy żaden nie jest znany) oraz Twoimi rekordami: najlepszym okrążeniem, najlepszym teoretycznym czasem okrążenia i najlepszym typowym okrążeniem (mediana sesji), każdym z datą i sesją. Gdy byłeś na torze więcej niż raz, jeden wiersz mówi, o ile szybsze lub wolniejsze było najlepsze okrążenie z ostatniej wizyty niż z poprzedniej.</p>
+
+<h2 id="notebook">Notatnik toru</h2>
+<p>Każdy tor ma notatnik na następną wizytę. Otwórz go przyciskiem z książką obok toru w <a href="saving.html#library">bibliotece</a> albo z menu <strong>⋮</strong> dnia na tym torze, jako <strong>Notatnik toru</strong>. Notatnik jest przechowywany z torem w Twoim profilu, więc każdy dzień na tym torze pokazuje ten sam notatnik. Zapisuje się w trakcie pisania.</p>
+<figure>
+  <img src="assets/screens/track-notebook.png" alt="Notatnik: Tor 1: dwie rzeczy do wypróbowania, jedna odhaczona w sekcji Zrobione, ogólne notatki o przyczepności i hamowaniu oraz notatka do Zakrętu 1 nad pozostałymi zakrętami" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Do wypróbowania</strong>: rzeczy do spróbowania następnym razem. Wpisz jedną i stuknij <strong>+</strong>. Zaznacz ją, gdy jest zrobiona; przechodzi wtedy do sekcji <strong>Zrobione</strong>. Kosz ją usuwa. Notatnik mieści do 256 rzeczy do wypróbowania.</li>
+  <li><strong>Notatki</strong>: cokolwiek o torze, na przykład przyczepność, nierówności albo miejsca hamowania.</li>
+  <li><strong>Zakręty</strong>: jedna notatka do każdego zakrętu toru. Zakręt zmierzony, gdy notatnik jest otwarty, jest dodawany do listy.</li>
+</ul>
+<p>Gdy importujesz profil z innego urządzenia (zobacz <a href="saving.html#move">Przenoszenie biblioteki na inne urządzenie</a>), notatniki tego samego toru są łączone, niezależnie od tego, czy dodawany jest jakiś dzień: notatki, które się różnią, są dopisywane po Twoich, notatka do zakrętu, którego to urządzenie nie zna, trafia do notatek ogólnych pod nazwą zakrętu, a rzeczy do wypróbowania są dodawane, o ile już ich nie ma. Nic z Twojego nie jest zastępowane. Jeśli coś z pliku się nie mieści (notatnik mieści najwyżej 256 rzeczy do wypróbowania, a każda notatka ma limit długości), zostaje pominięte, a import o tym informuje.</p>
+<h2 id="day-by-day">Dzień po dniu</h2>
+<p><strong>Dzień po dniu</strong> wymienia osobno każdy tor w każdym samochodzie, jedna grupa wierszy na dzień, od najstarszego (ostatnie 10 dni, gdy jest ich więcej); dni bez daty są na końcu i nie wchodzą do trendu ani do nowego rekordu. Czasy okrążeń, prędkości i rozrzuty zależą od toru i samochodu, więc dzień jest porównywany tylko z dniami na tym samym torze w tym samym samochodzie. Dla każdego dnia widać:</p>
+<ul>
+  <li>Najlepsze okrążenie dnia, oznaczone <em>nowy rekord tego toru w tym samochodzie</em>, gdy było szybsze niż w każdym wcześniejszym dniu na tym torze w tym samochodzie (równe nie wystarcza), oraz typowe okrążenie (mediany sesji, ważone ich sklasyfikowanymi okrążeniami).</li>
+  <li>Cztery wartości, te same, które mierzą <a href="#skills">umiejętności</a>: <em>Rozrzut punktu hamowania</em>, <em>Prędkość minimalna poniżej najlepszej</em> (względem Twojego najlepszego przejazdu każdego zakrętu tym samochodem, więc nowy rekord zmienia też wartości wcześniejszych dni), <em>Od odjęcia gazu do hamowania</em> (odjęcie gazu i jazda bez gazu i hamulca przed hamowaniem; wymaga zapisu gazu i hamulca) oraz <em>Rozrzut czasów okrążeń</em>. Dla każdej niższa wartość jest lepsza. Każda jest medianą z zakrętów zmierzonych tego dnia, więc dni mogą różnić się zakrętami, które za nią stoją. Wartość, której dnia nie zmierzono, jest pomijana, nigdy pokazywana jako zero; dzień bez żadnej z nich o tym informuje.</li>
+  <li>Pogoda zachowana dla jego sesji: warunki z modelu pogody i największy opad, jaki podał w jednej sesji, z liczbą sesji dnia, które obejmuje, gdy nie wszystkie, albo informacją, że nie zachowano żadnej pogody.</li>
+</ul>
+<p>Trend wymaga co najmniej 3 dni z datą na tym samym torze w tym samym samochodzie. Przy mniejszej liczbie jeden wiersz podaje, ile ich jest i że trend wymaga co najmniej 3; dni nadal są wymienione. Od 3 dni z datą <strong>Od pierwszego do ostatniego dnia</strong> pokazuje każdą wartość w pierwszym i ostatnim dniu, w którym ją zmierzono, z datami i liczbą dni, w których ją zmierzono. Sama wartość musi być zmierzona w co najmniej 3 dniach: wartość zmierzona w mniejszej liczbie dni (na przykład gdy w niektórych dniach nie zapisano pedałów) podaje zamiast tego, w ilu dniach ją zmierzono.</p>
+<p>Nie zapisuje się, czy tor był mokry, czy suchy. Pogoda pochodzi z modelu pogody dla okolicy w czasie każdej sesji, a nie z nawierzchni toru, więc dni nie są dzielone na mokre i suche; karta o tym informuje.</p>
+<figure>
+  <img src="assets/screens/profile-trends.png" alt="Dzień po dniu: Tor 1, zgodnie z ruchem wskazówek zegara, Mój samochód, 1 dzień z datą na tym torze w tym samochodzie: trend wymaga co najmniej 3 dni; 29 sierpnia 2026 z najlepszym okrążeniem 1:49.898, typowym okrążeniem 2:08.612, rozrzutem punktu hamowania 8.5 m, prędkością minimalną 7.5 km/h poniżej najlepszej, 0.26 s od odjęcia gazu do hamowania i rozrzutem czasów okrążeń 6.08 s oraz brakiem zapisanej pogody dla tego dnia" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="repeated">Zakręty, które ciągle kosztują czas</h2>
+<p>Zakręt trafia na listę, gdy był wśród trzech zakrętów, które kosztowały najwięcej czasu (0.1 s lub więcej), podczas dwóch lub więcej wizyt na torze. Każdy pokazuje średnio utracony czas i liczbę wizyt oraz swój obecny stan: <em>Nadal kosztuje czas</em>, gdy tracił czas podczas jednej z dwóch ostatnich wizyt, które go zmierzyły, <em>Słabnie</em>, gdy dwie ostatnie wizyty od ostatniej straty czasu go nie zmierzyły (nie odczytano tam żadnego okrążenia), oraz <em>Bez straty na dwóch ostatnich wizytach</em>, gdy obie go zmierzyły bez straty czasu. Przy jednej wizycie na torze lista jest pusta i o tym informuje.</p>

@@ -1,0 +1,52 @@
+<!-- title: Telefony i tablety | nav: Telefony i tablety -->
+<h1 id="phone">Telefony i tablety</h1>
+<p class="lead">Aplikacja działa tak samo na telefonie, z układem stworzonym do obsługi dotykiem.</p>
+
+<figure class="pair">
+  <img src="assets/screens/phone-results.png" alt="Wyniki dnia na telefonie, z paskami Najlepsze okrążenie dnia i Teoretyczny czas okrążenia oraz zakładkami Przegląd, Okrążenia, Porównaj i Raport" width="412" height="915" loading="lazy">
+  <img src="assets/screens/phone-lap.png" alt="Okrążenie na telefonie: czas okrążenia, przyciski i mapa pokolorowana według prędkości" width="412" height="915" loading="lazy">
+</figure>
+
+<h2 id="import">Import na telefonie</h2>
+<figure class="phone">
+  <img src="assets/screens/phone-import-done.png" alt="Ekran Start na telefonie po powrocie z dnia z sześcioma sesjami" width="412" height="915" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Importuj sesje…</strong> otwiera wybór plików; wybierz sesję, którą właśnie przejechałeś, albo wszystkie pliki VBO/RCZ z dnia. Trafiają do dzisiejszego dnia, jak opisano w sekcji <a href="import.html#where">Gdzie trafiają sesje</a>. Na telefonie nie ma wyboru folderu.</li>
+  <li>Na iPhonie wybór pokazuje wszystkie pliki; pliki, które nie są zapisami, są wymienione w sekcji Uwagi do importu.</li>
+</ul>
+
+<h2 id="share">Udostępnianie z RaceChrono</h2>
+<ol class="steps">
+  <li>W RaceChrono otwórz sesję i wyeksportuj ją jako VBO (i/lub RCZ).</li>
+  <li>Wybierz <strong>Udostępnij</strong>, a potem <strong>FlappedEar Telemetry</strong>.</li>
+  <li>Aplikacja otworzy się i doda plik do dzisiejszego dnia:
+    <ul>
+      <li>Jeśli jakiś dzień jest otwarty, zapis zostanie do niego dodany jako następna sesja.</li>
+      <li>W przeciwnym razie, jeśli w ciągu ostatnich 24 godzin pracowałeś nad dniem z zapisami z tej samej daty (niezapisanym lub zapisanym; zobacz <a href="import.html#where">Gdzie trafiają sesje</a>), ten dzień się otworzy z dodaną nową sesją.</li>
+      <li>W przeciwnym razie aplikacja zaimportuje plik jako nowy dzień i go otworzy. Jeśli inny dzień ma niezapisane zmiany, import zostaje na ekranie <strong>Start</strong> obok propozycji przywrócenia tego dnia, więc nic nie zostaje zastąpione. Zapisy udostępnione po nim są importowane razem z nim, jako jeden dzień.</li>
+    </ul>
+  </li>
+</ol>
+<p>Udostępniony zapis nigdy nie czeka na przegląd, więc następna sesja nie wymaga zatwierdzenia. Aby najpierw sprawdzić, co stanie się z plikiem, wybierz go przez <strong>Dodaj i przejrzyj zapisy…</strong> w otwartym dniu (zobacz <a href="import.html#review">Przeglądanie plików</a>).</p>
+<p>To działa na Androidzie i iOS, także gdy aplikacja była zamknięta. Gdy sesja zostanie dodana, strona przechodzi do <strong>Trenera</strong>: <a href="day.html#summary">podsumowania sesji</a> i karty <a href="day.html#next">Następna sesja</a>, czyli tego, co spróbować w następnym przejeździe.</p>
+
+<h2 id="layout">Układ</h2>
+<ul>
+  <li>Poniżej 600 punktów szerokości (telefon trzymany pionowo) miejsca w aplikacji (<strong>Start</strong>, <strong>Biblioteka</strong>, <strong>Dzień</strong>, <strong>Trener</strong>, <strong>Profil</strong>) są na pasku u dołu. Od 600 punktów (telefon trzymany poziomo, tablet) są na szynie z boku, którą można przewijać, gdy ekran jest za niski na wszystkie. Poniżej 900 punktów strona dnia ma pod swoją nazwą zakładki <strong>Przegląd</strong>, <strong>Okrążenia</strong>, <strong>Porównaj</strong> i <strong>Raport</strong>; szersze ekrany pokazują obok siebie przegląd i okrążenia, z zakładkami <strong>Przegląd</strong>, <strong>Porównaj</strong> i <strong>Raport</strong>.</li>
+  <li>Strona okrążenia i porównanie układają mapę, wykresy i karty w jedną przewijaną kolumnę.</li>
+  <li>Jeden palec przewija stronę, także nad mapą. Mapy powiększa się i przesuwa dwoma palcami; podwójne dotknięcie przybliża.</li>
+  <li>Dotknij wykresu albo przeciągnij po nim w bok, aby przesunąć kursor. Przeciągnięcie w górę lub w dół nad wykresem przewija stronę.</li>
+  <li>Okrążenie wybrane na karcie, tryb tabeli i odcinek Analizatora zakrętów zostają takie, jakie były, gdy przewiniesz stronę i wrócisz.</li>
+</ul>
+
+<h2 id="sunlight">Czytanie w słońcu</h2>
+<p>Na zewnątrz w jasnym słońcu ciemne ekrany trudno czytać. Otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮) i w sekcji <strong>Wygląd</strong> wybierz <strong>Słoneczny</strong>: czarny tekst na białym tle, głębsze kolory tekstu i przycisków oraz grubsze linie wykresów. Twoje okrążenie zostaje bursztynowe, a okrążenie odniesienia niebieskie. Wybierz <strong>Ciemny</strong>, aby wrócić; wybór jest zapamiętywany.</p>
+<p>Gdy widoczny jest <strong>Trener</strong> i na stronach otwartych z niego, ekran pozostaje włączony, więc karta Następna sesja jest nadal widoczna, gdy wrócisz do telefonu. W pozostałych miejscach, i gdy aplikacja nie jest na wierzchu, ekran wygasa jak zwykle. Oba ustawienia działają tak samo na komputerze. Wyłącz w Ustawieniach <strong>Nie wygaszaj ekranu, gdy widoczny jest Trener</strong>, aby ekran wygasał także w Trenerze.</p>
+<figure class="pair">
+  <img src="assets/screens/phone-sunlight-coach.png" alt="Trener na telefonie w wyglądzie Słoneczny: karta Następna sesja w czerni na białym tle" width="412" height="915" loading="lazy">
+  <img src="assets/screens/phone-sunlight-lap-charts.png" alt="Wykresy kanałów okrążenia na telefonie w wyglądzie Słoneczny, z grubszymi liniami" width="412" height="915" loading="lazy">
+</figure>
+
+<h2 id="days">Zapisane dni na telefonie</h2>
+<p>Dni są przechowywane w Twojej bibliotece wewnątrz aplikacji, zapisują się same i otwiera się je z <strong>Biblioteki</strong>. Odinstalowanie aplikacji je usuwa. Zobacz <a href="saving.html">Twoja biblioteka, zapisywanie i otwieranie</a>.</p>

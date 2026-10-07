@@ -47,7 +47,8 @@ a { color: var(--accent); }
 }
 .brand { font-weight: 700; color: var(--text); text-decoration: none; }
 .brand span { color: var(--muted); font-weight: 500; }
-.repo { margin-left: auto; font-size: 14px; }
+.lang { margin-left: auto; font-size: 14px; font-weight: 600; }
+.repo { font-size: 14px; }
 .menu {
   display: none;
   font: inherit; font-size: 14px;

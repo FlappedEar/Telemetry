@@ -1,0 +1,72 @@
+<!-- title: Okrążenie | nav: Okrążenie -->
+<h1 id="lap">Okrążenie</h1>
+<p class="lead">Otwórz dowolne okrążenie z listy okrążeń, najlepsze okrążenie sesji, pasek Najlepsze okrążenie dnia albo mapę najlepszego okrążenia. Strona pokazuje czas okrążenia, jego mapę i kanały.</p>
+
+<figure>
+  <img src="assets/screens/lap-wide.png" alt="Strona okrążenia: bursztynowy pasek z czasem okrążenia i przyciski u góry, mapa pokolorowana prędkością po lewej i wykresy kanałów po prawej" width="1280" height="800" loading="lazy">
+  <figcaption>Najlepsze okrążenie dnia na szerokim ekranie. Mapa pozostaje widoczna, gdy wykresy po prawej się przewijają. Na telefonie lub w oknie, które nie jest dość wysokie, te same części są ułożone jedna pod drugą; szerokie, ale niskie okno trzyma je w wyśrodkowanej kolumnie.</figcaption>
+</figure>
+
+<h2 id="summary">Podsumowanie</h2>
+<ul>
+  <li>Bursztynowy pasek z czasem okrążenia, opisany jako <em>Najlepsze okrążenie dnia</em>, <em>Najlepsze okrążenie – Sesja N</em> lub <em>To okrążenie</em>.</li>
+  <li>Dla każdego innego okrążenia z czasem pod nim niebieski pasek <strong>Najlepsze okrążenie dnia</strong> z najlepszym okrążeniem dnia i jego czasem (w dniu z więcej niż jedną konfiguracją toru: najlepszym na konfiguracji tego okrążenia) oraz różnicą, na przykład <em>+0.412 s do najlepszego okrążenia dnia</em> (na czerwono, gdy to okrążenie jest wolniejsze). Gdy oba okrążenia można porównać, stuknij niebieski pasek, aby porównać to okrążenie (A, bursztynowe) z najlepszym okrążeniem dnia (B, niebieskie).</li>
+  <li>Czerwona linia dla każdego powodu, dla którego okrążenie nie jest sklasyfikowane.</li>
+  <li><strong>Porównaj z…</strong> oraz <strong>Wyklucz z rankingu…</strong> lub <strong>Przywróć do rankingu</strong>.</li>
+</ul>
+
+<h2 id="exclude">Wykluczanie okrążenia</h2>
+<p>Okrążenie z ruchem na torze lub żółtą flagą może zepsuć najlepsze okrążenie, teoretyczny czas okrążenia i typowe okrążenie. Stuknij <strong>Wyklucz z rankingu…</strong>, wpisz powód i stuknij <strong>Wyklucz</strong> (lub naciśnij Enter).</p>
+<figure>
+  <img src="assets/screens/exclude-dialog.png" alt="Okno Wyklucz to okrążenie z polem Powód" width="1280" height="800" loading="lazy">
+</figure>
+<p>Gdy <a href="laps.html#hidden">okrążenia niesklasyfikowane</a> są ukryte, okrążenie znika z listy okrążeń razem z nimi; gdy są pokazane, widać <em>Wykluczone: &lt;powód&gt;</em>. <strong>Przywróć do rankingu</strong> je przywraca. Wykluczenia są zapisywane razem z dniem.</p>
+
+<h2 id="map">Mapa</h2>
+<ul>
+  <li>Ślad jest pokolorowany według prędkości, od fioletowego (wolno) do żółtego (szybko); pasek pod mapą podaje zakres w km/h.</li>
+  <li>Linia startu/mety jest czarna z białą obwódką (biała na mapie bez tła), ze strzałką wskazującą kierunek.</li>
+  <li>Biała kropka pokazuje, gdzie jest kursor (zobacz <a href="#charts">Wykresy</a>).</li>
+  <li><strong>Pokaż najlepsze okrążenie (…) na szaro</strong> rysuje najlepsze okrążenie dnia pod tym okrążeniem. Na tle ulic, satelity i Apple Maps jest narysowane jasną, półprzezroczystą linią.</li>
+  <li>Powiększaj gestem szczypania lub przewijaniem, przesuwaj przeciąganiem (na telefonie lub tablecie dwoma palcami; jeden palec przewija stronę tam, gdzie strona się przewija). Północ jest u góry.</li>
+</ul>
+<h3 id="background">Tło mapy</h3>
+<p>Przycisk warstw (prawy górny róg mapy) wybiera tło dla każdej mapy w aplikacji, dopóki jej nie zamkniesz:</p>
+<ul>
+  <li><strong>Ulice</strong>: OpenStreetMap.</li>
+  <li><strong>Satelita</strong>: zdjęcia MapTiler, tylko w wersjach, które mają klucz MapTiler. Jest to domyślne tło, gdy jest dostępne.</li>
+  <li><strong>Apple Maps</strong>: mapa Apple, tylko na iPhonie, iPadzie i Macu. Ślad, linia startu/mety, kropki i kursor są na niej rysowane jak na innych tłach i porusza się tak samo, ale powiększa się nieco mniej niż pozostałe tła. <strong>Informacje prawne</strong> (lewy górny róg mapy) otwierają informacje prawne Apple dotyczące mapy.</li>
+</ul>
+<p>Kafelki mapy wymagają połączenia z siecią przy pierwszym pokazaniu toru; kafelki, które już widziałeś, są zachowywane na później. Apple Maps też wymaga połączenia z siecią i samo przechowuje to, co wczytało.</p>
+
+<h2 id="charts">Wykresy</h2>
+<p>Pod mapą, a na szerokim ekranie obok niej, <strong>Kanały</strong> pokazują okrążenie w czasie na wykresach. Domyślnie: prędkość, przeciążenie poprzeczne, przeciążenie wzdłużne oraz gaz lub hamulec, jeśli zapisano.</p>
+<figure class="phone">
+  <img src="assets/screens/phone-lap-charts.png" alt="Wykresy kanałów na telefonie z przyciskami powiększenia, suwakiem kursora i wykresem prędkości" width="412" height="915" loading="lazy">
+</figure>
+<ul>
+  <li>Stuknij wykres lub przeciągnij po nim w bok, aby przesunąć kursor; przy myszy lub gładziku podąża on za wskaźnikiem. Wartość przy kursorze widać w prawym górnym rogu każdego wykresu, a biała kropka na mapie podąża za nią.</li>
+  <li>Suwak przesuwa kursor po całym okrążeniu.</li>
+  <li><strong>Powiększ wokół kursora</strong>, <strong>Pomniejsz</strong> albo pokaż <strong>Całe okrążenie</strong>. Pokazany zakres jest wypisany po prawej.</li>
+  <li>Przeciążenie wzdłużne jest rysowane z hamowaniem do góry.</li>
+  <li>Stuknij nazwę wykresu, aby wybrać dla niego z listy inny zapisany kanał; gdy oznaczysz kanały gwiazdką, lista zawiera tylko je (zobacz <a href="#channel-names">Nazwy kanałów</a>). Dodaj dowolny zapisany kanał przyciskiem <strong>Dodaj kanał</strong> (do czterech wykresów); usuń kanał jego ✕. Twój wybór jest zachowywany dla innych okrążeń, dopóki nie zamkniesz aplikacji. Kanał, który pochodzi z RCZ sesji, ma w menu i pod wykresem opis <em>z RCZ</em> (zobacz <a href="day.html#combined">VBO i RCZ jednej sesji</a>).</li>
+  <li>Wykresy i listy pokazują nazwy, które nadałeś kanałom w <a href="#channel-names">Nazwach kanałów</a>; nazwa z zapisu jest widoczna pod nazwą wykresu, jako <em>w zapisie: accelerator_pos-obd</em>.</li>
+  <li>Wykres kierunku jazdy (kierunku kompasu) jest rysowany jako jedna ciągła linia przez północ, zamiast skakać między 360° a 0°, więc linia okrążenia wznosi się lub opada o pełny obrót, a etykiety na jej skali mogą schodzić poniżej 0 lub przekraczać 360. Wartość przy kursorze jest zawsze zapisanym kierunkiem, od 0 do 360. Wykresy porównania rysują go tak samo.</li>
+  <li>Przerwa w zapisie pozostaje przerwą, także tam, gdzie rejestrator po prostu przestał zapisywać próbki (utrata sygnału GPS, pauza rejestratora): nie rysuje się przez nią linii i żadna wartość zakrętu ani porównania nie jest odczytywana z jej wnętrza. Wykres pokazuje <em>Brak danych w tym zakresie</em> albo powód, dla którego kanał jest niedostępny.</li>
+</ul>
+
+<h2 id="channel-names">Nazwy kanałów</h2>
+<p>Zapisy nazywają kanały tak, jak zapisał je rejestrator, na przykład <em>accelerator_pos-obd</em>. Aby zobaczyć własną nazwę, otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, takim jak telefon, w menu ⋮) i wybierz <strong>Nazwij kanały</strong>. Strona wymienia każdy kanał zapisany w otwartym dniu oraz każdy kanał, któremu nadano już nazwę lub który oznaczono gwiazdką. Wpisz nazwę, na przykład <em>Gaz</em>, w polu kanału; jest używana od razu na wykresach, na listach kanałów, na karcie samochodu i w raporcie dnia. Opróżnij pole lub użyj jego ✕, aby znów pokazać nazwę z zapisu.</p>
+<figure>
+  <img src="assets/screens/channel-names.png" alt="Strona nazw kanałów: każdy zapisany kanał z polem na nazwę i gwiazdką; accelerator_pos-obd nazwano Gaz i oznaczono gwiazdką" width="1280" height="800" loading="lazy">
+  <figcaption>Kanały OBD nazwane Gaz, Hamulec i Obroty, oznaczone gwiazdką dla menu wykresów.</figcaption>
+</figure>
+<p>Zapis może zawierać dziesiątki kanałów. Stuknij gwiazdkę przy kanałach, które najczęściej pokazujesz na wykresach: menu wykresów (nazwa wykresu i <strong>Dodaj kanał</strong>) wymienia wtedy tylko oznaczone gwiazdką kanały, których jeszcze nie ma na wykresach, a <strong>Wszystkie kanały…</strong> na dole wymienia każdy kanał. <strong>Usuń wszystkie gwiazdki</strong> sprawia, że menu znów wymieniają każdy kanał.</p>
+<p>Nazwy i gwiazdki to ustawienie aplikacji na tym urządzeniu. Twoje zapisy i zapisane dni zachowują nazwy z zapisu, więc dzień otwarty we FlappedEar Overlays lub na innym urządzeniu pokazuje je tak, jak zapisano.</p>
+
+<h2 id="coasting">Jazda bez gazu i hamulca</h2>
+<figure>
+  <img src="assets/screens/lap-coasting.png" alt="Karta jazdy bez gazu i hamulca: łączny czas i dystans, sposób pomiaru oraz jazda bez gazu i hamulca według odcinków" width="1280" height="800" loading="lazy">
+</figure>
+<p>Jazda bez gazu i hamulca to czas z prędkością, w którym nie jest wciśnięty żaden pedał. Karta podaje sumę, na przykład <em>4.2 s · 128 m w 9 epizodach (5.1 % okrążenia)</em>, mówi, czy zmierzono ją z pedałów hamulca i gazu, czy wyznaczono pośrednio z przeciążenia wzdłużnego, wymienia ją według odcinków i wypisuje każdy epizod: wybierz jeden, aby przesunąć tam kursor.</p>
+<p>Jazda bez gazu i hamulca sama w sobie nie jest błędem: odjęcie gazu może ustabilizować samochód albo być wymuszone ruchem na torze.</p>

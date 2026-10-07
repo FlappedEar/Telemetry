@@ -1,0 +1,62 @@
+<!-- title: Instalacja | nav: Instalacja -->
+<h1 id="install">Instalacja</h1>
+<p class="lead">Nie ma jeszcze wydania w sklepie z aplikacjami. Wersje na Androida i macOS pobierzesz z GitHub Releases projektu.</p>
+
+<p>Każde wydanie na <a href="https://github.com/FlappedEar/Telemetry/releases">stronie Releases</a> zawiera w sekcji <strong>Assets</strong>:</p>
+<ul>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-android.apk</code>: aplikacja na Androida.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-macos.zip</code>: aplikacja na Maca.</li>
+  <li><code>SHA256SUMS.txt</code>: sumy kontrolne obu plików.</li>
+</ul>
+
+<h2 id="android">Android (Pixel)</h2>
+<ol class="steps">
+  <li>Na telefonie otwórz <a href="https://github.com/FlappedEar/Telemetry/releases">stronę Releases</a> i dotknij pliku <code>.apk</code> w sekcji <strong>Assets</strong> najnowszego wydania.</li>
+  <li>Otwórz pobrany plik. Gdy Android zapyta, zezwól na instalowanie z tej aplikacji, a potem dotknij <strong>Zainstaluj</strong>. Jeśli Play Protect ostrzeże przed nieznaną aplikacją, wybierz <strong>Zainstaluj mimo to</strong>.</li>
+  <li>Otwórz <strong>FlappedEar Telemetry</strong>. Aplikacja startuje na ekranie <strong>Start</strong>.</li>
+</ol>
+<div class="tip"><p>Wydania i wersje z gałęzi <code>main</code> są podpisane tym samym kluczem, więc nowsza wersja instaluje się na starej i zachowuje zapisane dni.</p></div>
+<p>Wersje nowsze niż ostatnie wydanie: na komputerze zalogowanym w GitHubie otwórz najnowsze zielone uruchomienie workflow CI na <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">gałęzi main</a> i pobierz artefakt <code>flappedear-telemetry-android-&lt;commit&gt;</code>. W środku zipa jest plik <code>app-release.apk</code>. Wersje z pull requestów służą tylko do testów.</p>
+<div class="note"><p>Jeśli Android odmawia aktualizacji, bo aplikacja „nie jest zainstalowana” albo podpis się różni, na razie jej nie odinstalowuj: odinstalowanie usuwa dni przechowywane w aplikacji. Najpierw zapisz je w innym miejscu.</p></div>
+
+<h2 id="mac">macOS</h2>
+<p>Aplikacja wymaga macOS 12.0 lub nowszego.</p>
+<ol class="steps">
+  <li>Pobierz plik <code>-macos.zip</code> z najnowszego wydania i otwórz go. Przenieś <strong>FlappedEar Telemetry</strong> do folderu <strong>Programy</strong>.</li>
+  <li>Otwórz aplikację. Wersja na Maca nie jest jeszcze notaryzowana przez Apple, więc przy pierwszym uruchomieniu macOS odmówi jej otwarcia:
+    <ul>
+      <li>macOS 15 i nowszy: kliknij <strong>Gotowe</strong>, otwórz <strong>Ustawienia systemowe &gt; Prywatność i ochrona</strong>, przewiń w dół do komunikatu o FlappedEar Telemetry i kliknij <strong>Otwórz mimo to</strong>, a następnie potwierdź hasłem lub Touch ID.</li>
+      <li>macOS 12 do 14: kliknij aplikację z wciśniętym klawiszem Control, wybierz <strong>Otwórz</strong>, a potem jeszcze raz <strong>Otwórz</strong>.</li>
+    </ul>
+  </li>
+  <li>Potem aplikacja otwiera się normalnie. Nowsze wydanie zastępuje aplikację w folderze Programy; zapisane dni zostają tam, gdzie je zapisano.</li>
+</ol>
+<p>Aby uruchomić najnowszy kod, zainstaluj Flutter 3.47.6 i uruchom aplikację z kopii repozytorium:</p>
+<pre><code>flutter pub get
+flutter run -d macos</code></pre>
+
+<h2 id="iphone">iPhone i iPad</h2>
+<p>Aplikacja na iOS jest budowana i testowana tylko w symulatorze, dopóki nie będzie konta Apple Developer. Nie można jej jeszcze zainstalować na telefonie.</p>
+
+<h2 id="windows">Windows</h2>
+<p>Aplikacja wymaga Windows 10 lub 11 (64-bitowego). Da się ją zbudować dla Windows, ale nie ma jeszcze pliku do pobrania.</p>
+
+<h2 id="updates">Aktualizacje</h2>
+<p>Przy uruchomieniu aplikacja pyta GitHub, czy wyszło nowsze wydanie, najwyżej raz dziennie, i pobiera najnowszą <a href="day.html#circuit-names">listę torów</a>. Jeśli wyszło, pojawi się komunikat; dotknij <strong>Szczegóły</strong>. Aby sprawdzić w dowolnej chwili, wybierz <strong>Sprawdź aktualizacje</strong> w menu ⋮ na ekranie <strong>Start</strong> albo otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮): <strong>Aktualizacje</strong> to pierwsza sekcja i pokazuje posiadaną wersję. Wyłącz tam <strong>Sprawdzaj przy uruchomieniu, czy jest nowa wersja</strong>, aby zatrzymać sprawdzanie przy starcie; lista torów zostanie wtedy bez zmian, dopóki nie wybierzesz <strong>Zaktualizuj listę torów</strong>. Do GitHuba trafiają tylko zapytania o wydania, ich pliki i listę torów; żaden z Twoich zapisów ani ustawień nie jest wysyłany. Bez połączenia, albo gdy GitHub dostał zbyt wiele sprawdzeń z Twojej sieci, sprawdzanie przy uruchomieniu nic nie mówi i próbuje ponownie następnym razem.</p>
+<ul>
+  <li><strong>Android:</strong> dotknij <strong>Pobierz i zainstaluj</strong>. Za pierwszym razem Android prosi o zezwolenie FlappedEar Telemetry na instalowanie aplikacji: włącz je w otwartych ustawieniach, wróć i dotknij <strong>Dalej</strong> (jeśli aplikacja uruchomiła się ponownie, otwórz <strong>Ustawienia</strong> i dotknij <strong>Sprawdź aktualizacje</strong>). Aplikacja pobierze wtedy plik APK, sprawdzi go względem <code>SHA256SUMS.txt</code> wydania i otworzy instalator Androida; potwierdź tam aktualizację. Zapisane dni zostają.</li>
+  <li><strong>Mac:</strong> dotknij <strong>Pobierz</strong> i wybierz, gdzie zapisać plik zip (podpowiadany jest folder Pobrane). Aplikacja sprawdzi go względem <code>SHA256SUMS.txt</code> i pokaże w Finderze. Otwórz go i przenieś <strong>FlappedEar Telemetry</strong> do folderu <strong>Programy</strong>, zastępując starą wersję. macOS odmówi pierwszego uruchomienia nowej kopii, tak jak po pierwszej instalacji: zezwól na nie, jak opisano w sekcji <a href="#mac">macOS</a>.</li>
+  <li><strong>iPhone, iPad i Windows:</strong> wydania nie mają jeszcze plików dla tych systemów, więc aplikacja tylko informuje, że istnieje nowsza wersja; <strong>Co nowego</strong> otwiera wydanie na GitHubie.</li>
+</ul>
+<p>Plik, który nie zgadza się z sumą kontrolną wydania, jest usuwany i nigdy nie jest instalowany.</p>
+
+<h2 id="maps">Tła map</h2>
+<p>Mapy uliczne (OpenStreetMap) działają w każdej wersji. Zdjęcia satelitarne (MapTiler) są dostępne tylko w wersjach zbudowanych z kluczem MapTiler; wydania i wersje na Androida z CI go mają, wersja na Maca budowana przez Ciebie – nie. Na iPhonie, iPadzie i Macu przycisk warstw oferuje też Apple Maps, które nie wymagają klucza; inne platformy ich nie mają. Mapy wymagają połączenia z siecią, gdy tor jest pokazywany po raz pierwszy; zobacz <a href="lap.html#background">Tło mapy</a>.</p>
+
+<h2 id="licences">Licencje</h2>
+<p>FlappedEar Telemetry jest darmowy, a jego kod źródłowy jest na licencji Apache License 2.0. Aby zobaczyć licencje aplikacji i używanego przez nią oprogramowania, wraz z informacjami o autorach map (OpenStreetMap i MapTiler) i pogody (Open-Meteo.com), otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮) i wybierz <strong>Licencje open source</strong>.</p>
+
+<h2 id="language">Język</h2>
+<p>Aplikacja używa języka telefonu lub komputera. Mówi po angielsku i po polsku; na urządzeniu ustawionym na inny język używa angielskiego. W aplikacji nie ma ustawienia języka; aby go zmienić, zmień język urządzenia.</p>
+<p>Liczby mają kropkę dziesiętną w każdym języku, jak na ekranach pomiaru czasu: okrążenie wygląda jak <code>1:49.898</code> także po polsku.</p>
+<div class="note"><p>Polskie tłumaczenie jest nowe. Jeśli jakieś sformułowanie brzmi dziwnie, zgłoś to, jak opisano w sekcji <a href="troubleshooting.html#report">Zgłaszanie problemu</a>.</p></div>

@@ -1,0 +1,44 @@
+<!-- title: Podręcznik FlappedEar Telemetry | nav: Przegląd -->
+<h1 id="overview">Podręcznik FlappedEar Telemetry</h1>
+<p class="lead">FlappedEar Telemetry zamienia zapisy RaceChrono z całego dnia na torze w czasy okrążeń, Twoje najlepsze okrążenie na mapie i wskazanie, gdzie tracisz czas. Działa na Androidzie, iPhonie i iPadzie, macOS oraz Windows.</p>
+
+<figure>
+  <img src="assets/screens/day-wide.png" alt="Wyniki dnia: najlepsze okrążenie dnia na mapie, pokolorowane według prędkości, a po prawej lista sklasyfikowanych okrążeń dnia" width="1280" height="800" loading="lazy">
+  <figcaption>Wyniki dnia: najlepsze okrążenie na początku, po prawej sklasyfikowane okrążenia wszystkich sesji.</figcaption>
+</figure>
+
+<h2 id="what">Co potrafi</h2>
+<ul>
+  <li><strong>Importuj sesje.</strong> Wybieraj pliki VBO lub RCZ każdej sesji na bieżąco, albo pliki z całego dnia, albo udostępnij je prosto z RaceChrono na telefonie. Każdy zapis staje się sesją (Sesja 1, Sesja 2, …) ze swoimi okrążeniami, a sesje z tej samej daty tworzą jeden dzień.</li>
+  <li><strong>Najpierw zobacz najlepsze okrążenie.</strong> Dzień otwiera się na najszybszym okrążeniu, narysowanym na mapie toru i pokolorowanym według prędkości.</li>
+  <li><strong>Znajdź czas.</strong> Teoretyczny czas okrążenia, straty czasu w każdym zakręcie i na każdej prostej oraz krótka lista miejsc, które warto sprawdzić dalej.</li>
+  <li><strong>Porównaj dwa okrążenia</strong> w tym samym miejscu toru: Δ czasu, prędkość, pedały, Analizator zakrętów, G-G, stany jazdy i jazda bez gazu i hamulca.</li>
+  <li><strong>Zapisz dzień</strong> jako plik <code>.fetproject</code>, który otworzy też FlappedEar Overlays.</li>
+</ul>
+<p>Telemetry nie obsługuje wideo. Wideo z kamery pokładowej i nakładki są w osobnej aplikacji, <a href="overlays.html">FlappedEar Overlays</a>.</p>
+
+<h2 id="start">Od czego zacząć</h2>
+<div class="cards">
+  <a href="install.html"><strong>Instalacja</strong>Zainstaluj aplikację na Pixelu lub Macu.</a>
+  <a href="quick-start.html"><strong>Szybki start</strong>Od eksportu z RaceChrono do najlepszego okrążenia w pięciu krokach.</a>
+  <a href="day.html"><strong>Wyniki dnia</strong>Co oznacza każda karta na stronie dnia.</a>
+  <a href="compare.html"><strong>Porównanie okrążeń</strong>Dwa okrążenia obok siebie, A bursztynowe, B niebieskie.</a>
+</div>
+
+<h2 id="terms">Słowa użyte w podręczniku</h2>
+<table>
+  <tr><th>Słowo</th><th>Znaczenie</th></tr>
+  <tr><td>Sesja</td><td>Jeden zapis (jeden wyjazd na tor). Sesje są numerowane w kolejności nagrania.</td></tr>
+  <tr><td>OKR. n, OKR. WYJAZDOWE, OKR. ZJAZDOWE</td><td>Okrążenie między dwoma przejazdami przez linię startu/mety; okrążenie wyjazdowe przed pierwszym przejazdem, okrążenie zjazdowe po ostatnim.</td></tr>
+  <tr><td>Sklasyfikowane</td><td>Pełne okrążenie z pomiarem czasu, na tym samym torze i w tym samym kierunku co pozostałe, więc liczy się do najlepszego okrążenia i do analizy.</td></tr>
+  <tr><td>Odcinek</td><td>Zakręt, prosta lub sektor toru. Aplikacja proponuje je na podstawie Twojego najlepszego okrążenia; możesz je <a href="segments.html">edytować</a>.</td></tr>
+  <tr><td>Teoretyczny czas okrążenia</td><td>Najszybszy czas każdego odcinka, zsumowany ze wszystkich okrążeń.</td></tr>
+  <tr><td>Typowy czas, rozrzut</td><td>Typowy czas to mediana czasów okrążeń; rozrzut to rozstęp międzykwartylowy (szerokość środkowej połowy czasów). Oba wymagają co najmniej trzech okrążeń.</td></tr>
+  <tr><td>Δ (delta)</td><td>A − B. Wartość dodatnia oznacza, że okrążenie A jest wolniejsze.</td></tr>
+</table>
+
+<h2 id="about">O tym podręczniku</h2>
+<p class="note">Każdy zrzut ekranu pochodzi z samej aplikacji i przedstawia prawdziwy dzień: sześć sesji na Jastrząbiu z 29 sierpnia 2026, nagranych w RaceChrono Pro (VBO i RCZ), z danymi z samochodu z OBD i tętnem. Obrazy powstały bez dostępu do sieci, więc mapa uliczna pod każdym śladem jest zostawiona w prostym szarym kolorze; w aplikacji widzisz ulice lub zdjęcia satelitarne prawdziwego toru.</p>
+<p>Podręcznik opisuje aplikację w wersji z gałęzi <code>main</code>. Jest aktualizowany przy każdej zmianie tego, co widać na ekranie; jeśli coś tutaj nie zgadza się z Twoją aplikacją, prawdopodobnie Twoja wersja jest starsza niż ta strona.</p>
+<p>Wyniki w aplikacji to obserwacje z Twoich zapisów. Mówią, czym różniły się okrążenia, a nie dlaczego, i nigdy nie są wskazówkami jazdy.</p>
+<p>Zrzuty ekranu pokazują angielski interfejs aplikacji (sama aplikacja używa języka urządzenia).</p>
