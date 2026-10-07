@@ -12,7 +12,10 @@
 //    typical, each in most of the corners it was measured in;
 //  * late braking: braking later than typical in most corners;
 //  * early throttle: throttle earlier than typical in most corners;
-//  * mixed: two of those at once, or one leaning without the other half;
+//  * mixed: late braking together with early throttle; a single style
+//    whose opposite axis leans the other way (late braking with throttle
+//    mostly later, early throttle with braking mostly earlier); or earlier
+//    braking or later throttle alone, without the other half of conservative;
 //  * typical: none of them;
 //  * outlier: unlike the day's other laps (braking or throttle point three
 //    times the threshold or more from typical in more than half of its
@@ -251,7 +254,8 @@ final class LapStyleGroup {
   /// The group's best lap minus the day's best lap.
   final double bestDeltaSeconds;
 
-  /// How many of the group's laps are among the quicker half of the day's.
+  /// How many of the group's laps are among the quicker half of the day's:
+  /// the quickest (n + 1) ~/ 2 laps, with any lap tied with the last of them.
   final int quickerHalfCount;
 
   /// The median lap time of the group, with at least [lapStylesMinimumLaps]
@@ -265,6 +269,7 @@ final class LapStyles {
     this.unavailableReason = '',
     this.lapCount = 0,
     this.cornerCount = 0,
+    this.cornersNeeded = lapStylesMinimumCorners,
     List<LapStyleResult> laps = const [],
     List<LapStyleGroup> groups = const [],
     this.best,
@@ -277,6 +282,11 @@ final class LapStyles {
   /// Laps given, and corners at which the day has a typical braking or
   /// throttle point.
   final int lapCount, cornerCount;
+
+  /// Corners with a braking or throttle figure a lap needs to be grouped by
+  /// its driving: [lapStylesMinimumCorners], or half the [cornerCount]
+  /// rounded up when that is more.
+  final int cornersNeeded;
 
   /// Every lap, in the order given.
   final List<LapStyleResult> laps;
@@ -484,7 +494,9 @@ LapStyles computeLapStyles(List<LapStyleInput> laps) {
       final early = throttle.mostlyNegative;
       final leaning = brake.mostlyPositive || throttle.mostlyPositive;
       final fired = [conservative, late, early].where((fires) => fires).length;
-      style = fired == 1
+      // A single style whose other axis leans the opposite way is mixed.
+      final contradicted = (late && throttle.mostlyPositive) || (early && brake.mostlyPositive);
+      style = fired == 1 && !contradicted
           ? (conservative
                 ? LapStyle.conservative
                 : late
@@ -522,7 +534,13 @@ LapStyles computeLapStyles(List<LapStyleInput> laps) {
     if (result.seconds < best.seconds) best = result;
   }
   final order = [...results]..sort((a, b) => a.seconds.compareTo(b.seconds));
-  final quicker = {for (final result in order.take((order.length + 1) ~/ 2)) result};
+  // The quicker half is the quickest (n + 1) ~/ 2 laps, rounded up; laps tied
+  // with the slowest of them count too, so a tie never depends on sort order.
+  final cutoff = order[(order.length + 1) ~/ 2 - 1].seconds;
+  final quicker = {
+    for (final result in order)
+      if (result.seconds <= cutoff) result,
+  };
   final groups = <LapStyleGroup>[];
   for (final style in LapStyle.values) {
     final members = [
@@ -545,6 +563,7 @@ LapStyles computeLapStyles(List<LapStyleInput> laps) {
   return LapStyles(
     lapCount: valid.length,
     cornerCount: usable.length,
+    cornersNeeded: enough,
     laps: results,
     groups: groups,
     best: best,

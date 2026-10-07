@@ -95,10 +95,13 @@ void main() {
       // The rectangle declares no unit and none is assumed: read as it is,
       // and flagged.
       expect(styles.speedUnitMissing, isTrue);
+      expect(styles.speedAssumedUnits, isEmpty);
       expect(styles.inputs.first.corners.first.speedUnit, isEmpty);
-      expect(styles.brakeUnitAssumed, isTrue, reason: 'the longitudinal G declares no unit');
+      expect(styles.brakeAssumedUnits, ['g'], reason: 'the longitudinal G declares no unit');
+      // A unit the settings assumed is flagged as assumed, never as declared.
       final assumed = _day(assumed: 'mph').lapStyles!;
       expect(assumed.speedUnitMissing, isFalse);
+      expect(assumed.speedAssumedUnits, ['mph']);
       expect(assumed.inputs.first.corners.first.speedUnit, 'mph');
     });
 

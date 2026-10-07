@@ -319,4 +319,136 @@ void main() {
       expect(_find(styles, 'lap2').speedUnit, '');
     });
   });
+  group('later review', () {
+    test('a single style whose other axis leans the opposite way is mixed', () {
+      // Braking 12 m earlier in every corner with the throttle 15 m earlier:
+      // early throttle fired, but the braking leans conservative.
+      final early = computeLapStyles(_day([_lap(9, 99, brake: _all(62), pickup: _all(15))]));
+      expect(_find(early, 'lap9').style, LapStyle.mixed);
+      // Braking 10 m later with the throttle 15 m later: the same, mirrored.
+      final late = computeLapStyles(_day([_lap(9, 99, brake: _all(40), pickup: _all(45))]));
+      expect(_find(late, 'lap9').style, LapStyle.mixed);
+      // The other axis level does not contradict it.
+      final plain = computeLapStyles(_day([_lap(9, 99, brake: _all(62), pickup: _all(30))]));
+      expect(_find(plain, 'lap9').style, LapStyle.mixed, reason: 'only half of conservative');
+      final level = computeLapStyles(_day([_lap(9, 99, brake: _all(50), pickup: _all(15))]));
+      expect(_find(level, 'lap9').style, LapStyle.earlyThrottle);
+    });
+
+    test('the corners a lap needs are half the usable ones, rounded up, from eight', () {
+      // Eight corners have a typical: a lap measured in only three of them is
+      // too thinly measured, and the result says four are needed.
+      final styles = computeLapStyles([
+        for (var i = 0; i < 3; ++i) _lap(i, 100.0 + i, brake: _all(50, 8), pickup: _all(30, 8)),
+        _lap(8, 99, brake: _all(50, 3), pickup: _all(30, 3)),
+        _lap(9, 98, brake: _all(50, 4), pickup: _all(30, 4)),
+      ]);
+      expect(styles.cornerCount, 8);
+      expect(styles.cornersNeeded, 4);
+      final thin = _find(styles, 'lap8');
+      expect(thin.style, LapStyle.outlier);
+      expect(thin.outlierReason, LapOutlierReason.fewCorners);
+      expect(thin.cornersCompared, 3);
+      expect(_find(styles, 'lap9').outlierReason, LapOutlierReason.none);
+      // With six or fewer corners the minimum of three stands.
+      expect(computeLapStyles(_day([])).cornersNeeded, 3);
+    });
+
+    test('the typical of an even number of laps is the mean of the middle two', () {
+      final styles = computeLapStyles([
+        for (final (i, brake) in [40.0, 48.0, 52.0, 60.0].indexed)
+          _lap(i, 100.0 + i, brake: _all(brake)),
+        _lap(4, 104, brake: _all(50)),
+        _lap(5, 105, brake: _all(50)),
+      ]);
+      // Six laps: 40, 48, 50, 50, 52, 60 → 50. (Four of them give 50 too, so
+      // check the four-lap day on its own.)
+      final four = computeLapStyles([
+        for (final (i, brake) in [40.0, 48.0, 52.0, 70.0].indexed)
+          _lap(i, 100.0 + i, brake: _all(brake)),
+      ]);
+      // Median of 40, 48, 52, 70 is 50.
+      expect(_find(four, 'lap0').medianBrakeMeters, closeTo(-10, 1e-9));
+      expect(_find(four, 'lap3').medianBrakeMeters, closeTo(20, 1e-9));
+      expect(_find(styles, 'lap0').medianBrakeMeters, closeTo(-10, 1e-9));
+    });
+
+    test('the quicker half rounds up, and laps tied with its last lap count', () {
+      LapStyleInput lap(int n, double seconds) =>
+          _lap(n, seconds, brake: _all(50), pickup: _all(30));
+      // Five laps: the quicker half is three; 101 is tied for third.
+      final styles = computeLapStyles([
+        lap(0, 100),
+        lap(1, 100),
+        lap(2, 101),
+        lap(3, 101),
+        lap(4, 102),
+      ]);
+      expect(styles.group(LapStyle.typical)!.quickerHalfCount, 4);
+      // Without a tie: three of five.
+      final plain = computeLapStyles([
+        lap(0, 100),
+        lap(1, 100.5),
+        lap(2, 101),
+        lap(3, 102),
+        lap(4, 103),
+      ]);
+      expect(plain.group(LapStyle.typical)!.quickerHalfCount, 3);
+    });
+
+    test('a day of exactly three laps is grouped, its typical resting on all three', () {
+      final styles = computeLapStyles([
+        _lap(0, 100, brake: _all(50), pickup: _all(30)),
+        _lap(1, 101, brake: _all(50), pickup: _all(30)),
+        _lap(2, 102, brake: _all(62), pickup: _all(30)),
+      ]);
+      expect(styles.available, isTrue);
+      expect(styles.lapCount, 3);
+      // The typical (50) includes the lap compared.
+      expect(_find(styles, 'lap2').medianBrakeMeters, closeTo(12, 1e-9));
+      expect(styles.groups.fold<int>(0, (n, group) => n + group.laps.length), 3);
+    });
+
+    test('braking read from different sources is typical only within a source', () {
+      // Three laps from one source and three from another: each has its own
+      // typical, so a lap's deviation is against its own source's laps.
+      final styles = computeLapStyles([
+        for (var i = 0; i < 3; ++i)
+          _lap(i, 100.0 + i, brake: _all(50), pickup: _all(30), brakeSource: 'longitudinalG|a'),
+        for (var i = 3; i < 5; ++i)
+          _lap(i, 100.0 + i, brake: _all(80), pickup: _all(30), brakeSource: 'speed|b'),
+        _lap(5, 105, brake: _all(92), pickup: _all(30), brakeSource: 'speed|b'),
+      ]);
+      // Source b: 80, 80, 92 → 80; the lap at 92 is 12 m earlier, not 42.
+      expect(_find(styles, 'lap5').medianBrakeMeters, closeTo(12, 1e-9));
+      expect(_find(styles, 'lap0').medianBrakeMeters, closeTo(0, 1e-9));
+    });
+
+    test('speeds from different channels in one unit are not pooled either', () {
+      LapStyleInput lap(int n, String channel, double speed) => LapStyleInput(
+        lap: 'lap$n',
+        seconds: 100.0 + n,
+        corners: [
+          for (var i = 0; i < 4; ++i)
+            LapCornerSample(
+              cornerId: 'c$i',
+              brakeBeforeEntryMeters: 50,
+              brakeSource: _source,
+              pickupAfterEntryMeters: 30,
+              pickupSource: _throttle,
+              minimumSpeed: speed,
+              speedUnit: 'km/h',
+              speedSource: channel,
+            ),
+        ],
+      );
+      final styles = computeLapStyles([
+        for (var i = 0; i < 3; ++i) lap(i, 'velocity', 80),
+        for (var i = 3; i < 5; ++i) lap(i, 'speed-obd', 60),
+      ]);
+      // Two laps on the other channel: no typical there, nothing compared.
+      expect(_find(styles, 'lap3').medianMinimumSpeed, isNull);
+      expect(_find(styles, 'lap0').medianMinimumSpeed, closeTo(0, 1e-9));
+    });
+  });
 }

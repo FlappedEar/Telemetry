@@ -11684,7 +11684,7 @@ abstract class AppLocalizations {
   /// A caution under the lap styles card: thin data and the day's progress.
   ///
   /// In en, this message translates to:
-  /// **'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to repeat, not as a result.'**
+  /// **'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to look at, not as a result.'**
   String get lapStylesFewLaps;
 
   /// Which style group the day's best lap is in.
@@ -11756,7 +11756,7 @@ abstract class AppLocalizations {
   /// The rule of the mixed style.
   ///
   /// In en, this message translates to:
-  /// **'Mixed: late braking together with early throttle, or earlier braking or later throttle without the other half of conservative.'**
+  /// **'Mixed: late braking together with early throttle; late braking with the throttle mostly later, or early throttle with the braking mostly earlier; or earlier braking or later throttle without the other half of conservative.'**
   String get lapStylesRuleMixed;
 
   /// The rule of the typical style.
@@ -11768,7 +11768,7 @@ abstract class AppLocalizations {
   /// The rule of the outlier style.
   ///
   /// In en, this message translates to:
-  /// **'Outlier: braking or throttle far from typical in most of its corners, or measured in too few corners to say how it was driven.'**
+  /// **'Outlier: braking or throttle far from typical in most of its corners, or measured in fewer corners than it takes to tell: 3, or half the corners compared on the day when that is more.'**
   String get lapStylesRuleOutlier;
 
   /// The thresholds behind the lap styles.
@@ -11828,8 +11828,8 @@ abstract class AppLocalizations {
   /// Heading of the comparison of a group's best lap with the day's typical.
   ///
   /// In en, this message translates to:
-  /// **'{lap} against the day\'s typical lap (the median of {count} grouped laps)'**
-  String lapStylesBestAgainst(String lap, int count);
+  /// **'{lap} against the day\'s typical at each corner'**
+  String lapStylesBestAgainst(String lap);
 
   /// Heading of the list of laps of a style group.
   ///
@@ -11928,7 +11928,7 @@ abstract class AppLocalizations {
   /// A median that is zero when rounded.
   ///
   /// In en, this message translates to:
-  /// **'about typical'**
+  /// **'no clear difference'**
   String get lapStylesMedianSame;
 
   /// Why a lap is an outlier: far from typical.
@@ -11937,10 +11937,10 @@ abstract class AppLocalizations {
   /// **'Unlike the day\'s other laps: braking or throttle far from typical in {extreme} of {compared} corners.'**
   String lapStylesOutlierUnlike(int extreme, int compared);
 
-  /// Why a lap is an outlier: too few corners.
+  /// Why a lap is an outlier: too few corners. The number needed is half the corners compared on the day when that is more than 3.
   ///
   /// In en, this message translates to:
-  /// **'Measured in {compared} corners only; at least {needed} are needed to say how it was driven.'**
+  /// **'Measured in {compared, plural, =1{1 corner} other{{compared} corners}} only; at least {needed} are needed to say how it was driven.'**
   String lapStylesOutlierFew(int compared, int needed);
 
   /// Where the braking points of the lap styles come from.
@@ -11955,17 +11955,29 @@ abstract class AppLocalizations {
   /// **'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.'**
   String get lapStylesNoBraking;
 
-  /// The braking points rest on an acceleration with an assumed unit.
+  /// The braking points rest on a channel whose unit is assumed (g, km/h or mph).
   ///
   /// In en, this message translates to:
-  /// **'The acceleration or speed used for the braking points declares no unit and is read as g or km/h.'**
-  String get lapStylesBrakeUnitAssumed;
+  /// **'The acceleration or speed used for the braking points declares no unit; it is read as {units}.'**
+  String lapStylesBrakeUnitAssumed(String units);
 
   /// A speed channel has no declared unit.
   ///
   /// In en, this message translates to:
   /// **'A speed in this day declares no unit, so its speeds are shown without one.'**
   String get lapStylesSpeedUnitMissing;
+
+  /// Speeds read in a unit the settings assumed, not one the recording declares.
+  ///
+  /// In en, this message translates to:
+  /// **'The speeds of this day declare no unit; the unit assumed in the settings, {units}, is used.'**
+  String lapStylesSpeedUnitAssumed(String units);
+
+  /// How the typical of a corner is taken, and what the quicker half is.
+  ///
+  /// In en, this message translates to:
+  /// **'The typical at a corner is the median of the grouped laps measured there the same way, at least {count} of them, and it includes the lap being compared, so a lap\'s difference from it is somewhat damped. Laps from a session that recorded a channel or unit another way are not pooled with the others, so a typical can rest on fewer laps than were grouped. The quicker half is the quickest half of the grouped laps, rounded up, with any lap tied with the last of them.'**
+  String lapStylesTypicalNote(int count);
 }
 
 class _AppLocalizationsDelegate

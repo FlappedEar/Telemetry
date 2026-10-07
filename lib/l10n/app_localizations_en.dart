@@ -8102,7 +8102,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapStylesFewLaps =>
-      'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to repeat, not as a result.';
+      'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to look at, not as a result.';
 
   @override
   String lapStylesBestLine(String lap, String time, String style) {
@@ -8144,14 +8144,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapStylesRuleMixed =>
-      'Mixed: late braking together with early throttle, or earlier braking or later throttle without the other half of conservative.';
+      'Mixed: late braking together with early throttle; late braking with the throttle mostly later, or early throttle with the braking mostly earlier; or earlier braking or later throttle without the other half of conservative.';
 
   @override
   String get lapStylesRuleTypical => 'Typical: none of the above.';
 
   @override
   String get lapStylesRuleOutlier =>
-      'Outlier: braking or throttle far from typical in most of its corners, or measured in too few corners to say how it was driven.';
+      'Outlier: braking or throttle far from typical in most of its corners, or measured in fewer corners than it takes to tell: 3, or half the corners compared on the day when that is more.';
 
   @override
   String lapStylesRuleThresholds(
@@ -8204,8 +8204,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String lapStylesBestAgainst(String lap, int count) {
-    return '$lap against the day\'s typical lap (the median of $count grouped laps)';
+  String lapStylesBestAgainst(String lap) {
+    return '$lap against the day\'s typical at each corner';
   }
 
   @override
@@ -8280,7 +8280,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get lapStylesMedianSame => 'about typical';
+  String get lapStylesMedianSame => 'no clear difference';
 
   @override
   String lapStylesOutlierUnlike(int extreme, int compared) {
@@ -8289,7 +8289,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lapStylesOutlierFew(int compared, int needed) {
-    return 'Measured in $compared corners only; at least $needed are needed to say how it was driven.';
+    String _temp0 = intl.Intl.pluralLogic(
+      compared,
+      locale: localeName,
+      other: '$compared corners',
+      one: '1 corner',
+    );
+    return 'Measured in $_temp0 only; at least $needed are needed to say how it was driven.';
   }
 
   @override
@@ -8301,10 +8307,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.';
 
   @override
-  String get lapStylesBrakeUnitAssumed =>
-      'The acceleration or speed used for the braking points declares no unit and is read as g or km/h.';
+  String lapStylesBrakeUnitAssumed(String units) {
+    return 'The acceleration or speed used for the braking points declares no unit; it is read as $units.';
+  }
 
   @override
   String get lapStylesSpeedUnitMissing =>
       'A speed in this day declares no unit, so its speeds are shown without one.';
+
+  @override
+  String lapStylesSpeedUnitAssumed(String units) {
+    return 'The speeds of this day declare no unit; the unit assumed in the settings, $units, is used.';
+  }
+
+  @override
+  String lapStylesTypicalNote(int count) {
+    return 'The typical at a corner is the median of the grouped laps measured there the same way, at least $count of them, and it includes the lap being compared, so a lap\'s difference from it is somewhat damped. Laps from a session that recorded a channel or unit another way are not pooled with the others, so a typical can rest on fewer laps than were grouped. The quicker half is the quickest half of the grouped laps, rounded up, with any lap tied with the last of them.';
+  }
 }

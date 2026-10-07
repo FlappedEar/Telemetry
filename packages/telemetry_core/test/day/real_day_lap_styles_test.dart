@@ -47,7 +47,7 @@ void main() {
     print(
       'timed laps ${day.timedLapCount}, grouped ${day.groupedLapCount}, corners with a typical '
       '${styles.cornerCount}, braking figures ${day.brakeCornerFigures}, throttle figures '
-      '${day.throttleCornerFigures}, deceleration unit assumed ${day.brakeUnitAssumed}',
+      '${day.throttleCornerFigures}, assumed units ${day.brakeAssumedUnits} ${day.speedAssumedUnits}',
     );
     expect(styles.available, isTrue, reason: styles.unavailableReason);
     expect(day.timedLapCount, 25);
@@ -57,6 +57,21 @@ void main() {
     // The best lap of the day, as the day's other results have it.
     expect(styles.best!.seconds, closeTo(109.898, 0.0005));
     expect(day.rowOf(styles.best!).reference, result.bestLap!.reference);
+
+    // The grouping on the owner's day at the thresholds in lap_styles.dart
+    // (5 m, 10 m): a change here means a threshold or a rule moved, and the
+    // user guide's screenshot and the owner's decisions need another look.
+    expect(styles.cornerCount, 6);
+    expect(styles.cornersNeeded, 3);
+    expect(
+      {for (final group in styles.groups) group.style: group.laps.length},
+      {LapStyle.lateBraking: 2, LapStyle.typical: 21},
+    );
+    expect(styles.best!.style, LapStyle.typical);
+    expect(
+      styles.group(LapStyle.lateBraking)!.laps.map((lap) => day.rowOf(lap).runName),
+      unorderedEquals(['Session 1', 'Session 4']),
+    );
 
     // Braking came from the deceleration, never the pedal.
     for (final input in day.inputs) {

@@ -47,6 +47,7 @@ DayLapStyles _styles({
   String unit = 'km/h',
   int timed = 9,
   bool unitMissing = false,
+  List<String> speedAssumed = const [],
   int brakeFigures = 28,
 }) {
   final inputs = [
@@ -61,7 +62,8 @@ DayLapStyles _styles({
     timedLapCount: timed,
     brakeCornerFigures: brakeFigures,
     throttleCornerFigures: 28,
-    brakeUnitAssumed: true,
+    brakeAssumedUnits: const ['g', 'km/h'],
+    speedAssumedUnits: speedAssumed,
     speedUnitMissing: unitMissing,
   );
 }
@@ -169,10 +171,7 @@ void main() {
     await tester.tap(late);
     await tester.pumpAndSettle();
     expect(
-      find.text(
-        'Session 1 · LAP 4 against the day\'s typical lap (the median of 7 '
-        'grouped laps)',
-      ),
+      find.text('Session 1 · LAP 4 against the day\'s typical at each corner'),
       findsOneWidget,
     );
     expect(
@@ -183,8 +182,8 @@ void main() {
     );
     expect(
       find.text(
-        'Throttle pickup: earlier at 0, later at 0 of 4 corners; median about '
-        'typical',
+        'Throttle pickup: earlier at 0, later at 0 of 4 corners; median no '
+        'clear difference',
       ),
       findsOneWidget,
     );
@@ -247,7 +246,8 @@ void main() {
       expect(find.textContaining('never from the brake pedal'), findsOneWidget);
       expect(
         find.text(
-          'The acceleration or speed used for the braking points declares no unit and is read as g or km/h.',
+          'The acceleration or speed used for the braking points declares no '
+          'unit; it is read as g, km/h.',
         ),
         findsOneWidget,
       );
@@ -262,8 +262,120 @@ void main() {
         find.textContaining('Earlier or later means more than 5 m'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('it includes the lap being compared'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('what to look at'), findsOneWidget);
     },
   );
+
+  testWidgets('a speed unit assumed in the settings is said to be assumed', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      LapStylesCard(result: _result(_styles(speedAssumed: ['mph']))),
+    );
+    expect(
+      find.text(
+        'The speeds of this day declare no unit; the unit assumed in the '
+        'settings, mph, is used.',
+      ),
+      findsOneWidget,
+    );
+    await _pump(tester, LapStylesCard(result: _result(_styles())));
+    expect(find.textContaining('assumed in the settings'), findsNothing);
+  });
+
+  testWidgets('an outlier measured in too few corners says how many it takes', (
+    tester,
+  ) async {
+    // Eight corners have a typical: half of them, four, are needed.
+    LapStyleInput lap(int n, double seconds, int corners) => LapStyleInput(
+      lap: _row(n),
+      seconds: seconds,
+      corners: [
+        for (var i = 0; i < corners; ++i)
+          LapCornerSample(
+            cornerId: 'c$i',
+            brakeBeforeEntryMeters: 50,
+            brakeSource: _brake,
+            pickupAfterEntryMeters: 30,
+            pickupSource: 'measuredThrottle|throttle',
+          ),
+      ],
+    );
+    final inputs = [
+      lap(1, 101, 8),
+      lap(2, 102, 8),
+      lap(3, 103, 8),
+      lap(4, 99, 3),
+    ];
+    final day = DayLapStyles(
+      styles: computeLapStyles(inputs),
+      inputs: inputs,
+      timedLapCount: 4,
+      brakeCornerFigures: 20,
+      throttleCornerFigures: 20,
+    );
+    await _pump(tester, LapStylesCard(result: _result(day)));
+    await tester.tap(find.byKey(const ValueKey('lapStylesGroup outlier')));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Measured in 3 corners only; at least 4 are needed to say how it was '
+        'driven.',
+      ),
+      findsOneWidget,
+    );
+    // One corner: singular, and in Polish the locative "zakręcie".
+    final one = [lap(1, 101, 4), lap(2, 102, 4), lap(3, 103, 4), lap(4, 99, 1)];
+    await _pump(
+      tester,
+      LapStylesCard(
+        key: const ValueKey('one corner'),
+        result: _result(
+          DayLapStyles(
+            styles: computeLapStyles(one),
+            inputs: one,
+            timedLapCount: 4,
+            brakeCornerFigures: 13,
+            throttleCornerFigures: 13,
+          ),
+        ),
+        // The Polish card is pumped below.
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('lapStylesGroup outlier')));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Measured in 1 corner only; at least 3 are needed'),
+      findsOneWidget,
+    );
+    await _pump(
+      tester,
+      LapStylesCard(
+        key: const ValueKey('one corner pl'),
+        result: _result(
+          DayLapStyles(
+            styles: computeLapStyles(one),
+            inputs: one,
+            timedLapCount: 4,
+            brakeCornerFigures: 13,
+            throttleCornerFigures: 13,
+          ),
+        ),
+      ),
+      locale: const Locale('pl'),
+    );
+    await tester.tap(find.byKey(const ValueKey('lapStylesGroup outlier')));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Zmierzone tylko w 1 zakręcie; do oceny stylu jazdy'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('without a braking point the card says why', (tester) async {
     await _pump(
@@ -367,7 +479,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Późne hamowanie · 3 okrążenia'), findsOneWidget);
-    expect(find.text('Ostrożna jazda · 1 okrążenie'), findsOneWidget);
+    expect(
+      find.text('Wcześniejsze hamowanie, późniejszy gaz · 1 okrążenie'),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('lapStylesGroup lateBraking')));
     await tester.pumpAndSettle();
     expect(

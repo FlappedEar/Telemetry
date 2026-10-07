@@ -198,6 +198,13 @@ class _LapStylesCardState extends State<LapStylesCard> {
           style: small,
         ),
       ),
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          l10n.lapStylesTypicalNote(lapStylesMinimumLaps),
+          style: small,
+        ),
+      ),
       ..._notes(context, day),
     ];
   }
@@ -208,8 +215,10 @@ class _LapStylesCardState extends State<LapStylesCard> {
     final notes = [
       if (day.brakeCornerFigures > 0) l10n.lapStylesBrakeNote,
       if (day.brakeCornerFigures == 0) l10n.lapStylesNoBraking,
-      if (day.brakeCornerFigures > 0 && day.brakeUnitAssumed)
-        l10n.lapStylesBrakeUnitAssumed,
+      if (day.brakeCornerFigures > 0 && day.brakeAssumedUnits.isNotEmpty)
+        l10n.lapStylesBrakeUnitAssumed(day.brakeAssumedUnits.join(', ')),
+      if (day.speedAssumedUnits.isNotEmpty)
+        l10n.lapStylesSpeedUnitAssumed(day.speedAssumedUnits.join(', ')),
       if (day.speedUnitMissing) l10n.lapStylesSpeedUnitMissing,
     ];
     return [
@@ -265,10 +274,10 @@ class _LapStylesCardState extends State<LapStylesCard> {
           ),
           const SizedBox(height: 8),
           Text(
-            l10n.lapStylesBestAgainst(l10n.lap(row), day.groupedLapCount),
+            l10n.lapStylesBestAgainst(l10n.lap(row)),
             style: theme.textTheme.titleSmall,
           ),
-          ..._comparison(context, best),
+          ..._comparison(context, best, day.styles.cornersNeeded),
           const SizedBox(height: 8),
           Text(l10n.lapStylesLapsHeading, style: theme.textTheme.titleSmall),
           for (final lap in group.laps)
@@ -288,7 +297,11 @@ class _LapStylesCardState extends State<LapStylesCard> {
   }
 
   /// A lap's braking, throttle and speeds against the day's typical.
-  List<Widget> _comparison(BuildContext context, LapStyleResult lap) {
+  List<Widget> _comparison(
+    BuildContext context,
+    LapStyleResult lap,
+    int cornersNeeded,
+  ) {
     final l10n = context.l10n;
     String braking(double? median) {
       if (median == null) return '';
@@ -363,7 +376,7 @@ class _LapStylesCardState extends State<LapStylesCard> {
       if (lap.outlierReason == LapOutlierReason.unlike)
         l10n.lapStylesOutlierUnlike(lap.extremeCorners, lap.cornersCompared)
       else if (lap.outlierReason == LapOutlierReason.fewCorners)
-        l10n.lapStylesOutlierFew(lap.cornersCompared, lapStylesMinimumCorners),
+        l10n.lapStylesOutlierFew(lap.cornersCompared, cornersNeeded),
     ];
     return [
       for (final line in lines)

@@ -8293,7 +8293,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapStylesFewLaps =>
-      'Na każdą grupę przypada niewiele okrążeń, a okrążenia dnia przyspieszają też w miarę poznawania toru, więc grupy mieszają styl jazdy z postępem. Traktuj je jako wskazówkę, co powtarzać, a nie jako wynik.';
+      'Na każdą grupę przypada niewiele okrążeń, a okrążenia dnia przyspieszają też w miarę poznawania toru, więc grupy mieszają styl jazdy z postępem. Traktuj je jako wskazówkę, na co zwrócić uwagę, a nie jako wynik.';
 
   @override
   String lapStylesBestLine(String lap, String time, String style) {
@@ -8301,7 +8301,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get lapStyleConservative => 'Ostrożna jazda';
+  String get lapStyleConservative => 'Wcześniejsze hamowanie, późniejszy gaz';
 
   @override
   String get lapStyleLateBraking => 'Późne hamowanie';
@@ -8323,7 +8323,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapStylesRuleConservative =>
-      'Ostrożna jazda: hamowanie zaczyna się wcześniej, a gaz wraca później niż typowo, każde w większości zakrętów.';
+      'Wcześniejsze hamowanie, późniejszy gaz: hamowanie zaczyna się wcześniej, a gaz wraca później niż typowo, każde w większości zakrętów.';
 
   @override
   String get lapStylesRuleLateBraking =>
@@ -8335,14 +8335,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapStylesRuleMixed =>
-      'Jazda mieszana: późne hamowanie razem z wczesnym gazem albo wcześniejsze hamowanie lub późniejszy gaz bez drugiej połowy ostrożnej jazdy.';
+      'Jazda mieszana: późne hamowanie razem z wczesnym gazem; późne hamowanie z gazem w większości później albo wczesny gaz z hamowaniem w większości wcześniej; albo wcześniejsze hamowanie lub późniejszy gaz bez drugiej połowy jazdy z wcześniejszym hamowaniem i późniejszym gazem.';
 
   @override
   String get lapStylesRuleTypical => 'Jazda typowa: żadne z powyższych.';
 
   @override
   String get lapStylesRuleOutlier =>
-      'Okrążenia odstające: hamowanie lub gaz daleko od typowych w większości zakrętów albo zmierzone w zbyt małej liczbie zakrętów, by powiedzieć, jak jechano.';
+      'Okrążenia odstające: hamowanie lub gaz daleko od typowych w większości zakrętów albo zmierzone w mniejszej liczbie zakrętów, niż trzeba, by ocenić: 3 albo połowa porównanych w ciągu dnia zakrętów, gdy to więcej.';
 
   @override
   String lapStylesRuleThresholds(
@@ -8397,8 +8397,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String lapStylesBestAgainst(String lap, int count) {
-    return '$lap na tle typowego okrążenia dnia (mediana $count pogrupowanych okrążeń)';
+  String lapStylesBestAgainst(String lap) {
+    return '$lap na tle typowej wartości dnia w każdym zakręcie';
   }
 
   @override
@@ -8473,7 +8473,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get lapStylesMedianSame => 'w okolicach typowej';
+  String get lapStylesMedianSame => 'bez wyraźnej różnicy';
 
   @override
   String lapStylesOutlierUnlike(int extreme, int compared) {
@@ -8482,7 +8482,13 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String lapStylesOutlierFew(int compared, int needed) {
-    return 'Zmierzone tylko w $compared zakrętach; do oceny stylu jazdy potrzeba co najmniej $needed.';
+    String _temp0 = intl.Intl.pluralLogic(
+      compared,
+      locale: localeName,
+      other: 'w $compared zakrętach',
+      one: 'w 1 zakręcie',
+    );
+    return 'Zmierzone tylko $_temp0; do oceny stylu jazdy potrzeba co najmniej $needed.';
   }
 
   @override
@@ -8494,10 +8500,21 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie udało się odczytać punktu hamowania: zapis nie ma ani przyspieszenia wzdłużnego, ani prędkości w znanej jednostce, a pedał hamulca nie jest używany do tych stylów.';
 
   @override
-  String get lapStylesBrakeUnitAssumed =>
-      'Przyspieszenie lub prędkość użyte do punktów hamowania nie podają jednostki i są odczytywane jako g lub km/h.';
+  String lapStylesBrakeUnitAssumed(String units) {
+    return 'Przyspieszenie lub prędkość użyte do punktów hamowania nie podają jednostki; są odczytywane jako $units.';
+  }
 
   @override
   String get lapStylesSpeedUnitMissing =>
       'Prędkość w tym dniu nie podaje jednostki, więc jej wartości są pokazane bez jednostki.';
+
+  @override
+  String lapStylesSpeedUnitAssumed(String units) {
+    return 'Prędkości z tego dnia nie podają jednostki; użyto jednostki przyjętej w ustawieniach: $units.';
+  }
+
+  @override
+  String lapStylesTypicalNote(int count) {
+    return 'Typowa wartość w zakręcie to mediana pogrupowanych okrążeń zmierzonych tam w ten sam sposób, co najmniej $count, i obejmuje ona porównywane okrążenie, więc różnica okrążenia od niej jest nieco zmniejszona. Okrążenia z sesji, w której kanał lub jednostkę zapisano inaczej, nie są łączone z pozostałymi, więc typowa wartość może opierać się na mniejszej liczbie okrążeń, niż pogrupowano. Szybsza połowa to szybsza połowa pogrupowanych okrążeń, zaokrąglona w górę, razem z okrążeniami o czasie równym ostatniemu z nich.';
+  }
 }
