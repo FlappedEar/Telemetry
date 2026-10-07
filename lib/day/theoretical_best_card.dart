@@ -335,7 +335,71 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         selected: lap?.lap.reference,
         onSelect: _choose,
       ),
+      ..._brakingTechnique(context, result),
       ..._variability(context, result),
+    ];
+  }
+
+  // The day's braking technique over its corners (FET-219): the median of
+  // each corner's typical value, from one source; nothing when no corner
+  // has one.
+  List<Widget> _brakingTechnique(
+    BuildContext context,
+    DayTheoreticalBest result,
+  ) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final day = summarizeBrakingTechniqueDay([
+      for (final corner in result.corners) corner.brakingTechnique,
+    ]);
+    if (!day.available) return const [];
+    String bounded(String text, bool lower) =>
+        lower ? l10n.brakingTechniqueAtLeast(text) : text;
+    // A throttle slower than about 10 Hz places the pickup only to 0.1 s.
+    final coarse = result.corners.any(
+      (corner) => corner.brakingTechnique.throttleCoarse,
+    );
+    final figures = [
+      if (day.hit case final hit?)
+        l10n.brakingTechniqueDayHit(
+          bounded('${fixed(hit, 2)}\u00a0g/s', day.hitAtLeast),
+        ),
+      if (day.release case final release?)
+        l10n.brakingTechniqueDayRelease(
+          bounded('${fixed(release, 2)}\u00a0g/s', day.releaseAtLeast),
+        ),
+      if (day.trailSeconds case final trail?)
+        l10n.brakingTechniqueDayTrail('${fixed(trail, 2)}\u00a0s'),
+      if (day.brakeToThrottle case final throttle?)
+        l10n.brakingTechniqueDayThrottle(
+          coarse
+              ? l10n.brakingTechniqueAbout('${fixed(throttle, 1)}\u00a0s')
+              : '${fixed(throttle, 2)}\u00a0s',
+        ),
+    ].join(', ');
+    final source = switch ((day.source, day.unitAssumed)) {
+      (brakingTechniqueFromSpeed, true) =>
+        l10n.brakingTechniqueDayFromSpeedAssumed(
+          day.assumedUnit.isEmpty ? 'km/h' : day.assumedUnit,
+        ),
+      (brakingTechniqueFromSpeed, false) => l10n.brakingTechniqueDayFromSpeed,
+      (_, true) => l10n.brakingTechniqueDayFromGAssumed,
+      _ => l10n.brakingTechniqueDayFromG,
+    };
+    return [
+      const SizedBox(height: 16),
+      Text(l10n.brakingTechniqueDayTitle, style: theme.textTheme.titleSmall),
+      Text(
+        [
+          l10n.brakingTechniqueDaySummary(day.cornersBraked, source, figures),
+          if (day.otherSourceCorners > 0)
+            l10n.brakingTechniqueDayOtherSource(day.otherSourceCorners),
+          if (day.minorityCorners > 0)
+            l10n.brakingTechniqueDayMinority(day.minorityCorners),
+        ].join(' '),
+        key: const ValueKey('brakingTechniqueDay'),
+      ),
+      Text(l10n.brakingTechniqueDayNote, style: theme.textTheme.bodySmall),
     ];
   }
 

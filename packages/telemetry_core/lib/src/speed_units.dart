@@ -50,6 +50,19 @@ String _declared(String unit) {
   return known.isNotEmpty ? known : unit.trim();
 }
 
+/// The metadata key [withEffectiveSpeedUnits] sets for a speed channel it
+/// gave an assumed unit (`speedUnitAssumed.<channel>` holds the unit), so
+/// that analysis can tell a unit the file declares from one the user assumed.
+const String assumedSpeedUnitKeyPrefix = 'speedUnitAssumed.';
+
+/// The speed unit the recording itself declares for channel [name] of
+/// [session]: empty when it declares none, even when [withEffectiveSpeedUnits]
+/// gave the channel an assumed one.
+String fileDeclaredSpeedUnit(TelemetrySession session, String name) =>
+    session.metadata.containsKey('$assumedSpeedUnitKeyPrefix$name')
+    ? ''
+    : declaredSpeedUnit(session, name);
+
 /// The unit analysis reads channel [name] of [session] in: for a speed,
 /// the unit the recording declares, else [assumed] (the unit the user
 /// assumes for unlabelled speeds, "km/h", "mph" or empty); every other
@@ -68,9 +81,13 @@ String effectiveChannelUnit(TelemetrySession session, String name, {String assum
 /// shared, never copied or converted.
 TelemetrySession withEffectiveSpeedUnits(TelemetrySession session, {String assumed = ''}) {
   Map<String, TelemetryChannel>? changed;
+  Map<String, String>? marked;
   for (final MapEntry(key: name, value: channel) in session.channels.entries) {
     if (!isSessionSpeedChannel(session, name)) continue;
     final unit = effectiveChannelUnit(session, name, assumed: assumed);
+    if (unit.isNotEmpty && declaredSpeedUnit(session, name).isEmpty) {
+      (marked ??= Map.of(session.metadata))['$assumedSpeedUnitKeyPrefix$name'] = unit;
+    }
     if (unit == channel.unit) continue;
     (changed ??= Map.of(session.channels))[name] = TelemetryChannel(
       name: channel.name,
@@ -83,7 +100,7 @@ TelemetrySession withEffectiveSpeedUnits(TelemetrySession session, {String assum
   return TelemetrySession(
     duration: session.duration,
     startTime: session.startTime,
-    metadata: session.metadata,
+    metadata: marked ?? session.metadata,
     channels: changed,
     aliases: session.aliases,
     warnings: session.warnings,

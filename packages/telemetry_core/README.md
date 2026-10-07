@@ -216,6 +216,35 @@ a background isolate.
   fixed `cornerClass*` thresholds, the same on every track; a class that
   cannot be told says why. `dayCorners` puts both on each
   `DayCorner.classification`.
+- How each corner is braked into (FlappedEar Telemetry only, FET-219):
+  `measureBrakingTechnique` reads one lap's braking zone from the
+  longitudinal deceleration (the G channel when it has data, otherwise the
+  speed's least-squares slope over ±0.25 s, labelled "from speed"): the
+  initial hit (g/s up to 85 % of the peak from the last moment below a
+  quarter of the peak, at least 0.15 g, so a coast before braking is not
+  counted), the peak and where it falls in the zone by time, trail braking
+  (braking while lateral G is at least 0.3 g, inferred: there is no
+  steering channel), the release (g/s from the last 85 % of the peak back
+  to that floor) and the time from the end of braking to the measured
+  throttle pickup, searched until braking starts again (deceleration
+  through 0.30 g or the pedal pressed again) and for at most 4 s. From
+  speed, a ramp as quick as the slope's window shows is flagged "at least".
+  Units come from `declaredChannelUnit`; an undeclared one is read as g,
+  km/h or % and flagged. `channelUpdateRateHz` measures how often a channel
+  really changes: held values, corners of straight lines, and a least-squares
+  fit of lines bending every candidate period at any phase (periods of 1.4
+  to 12 samples), so OBD pedals that RaceChrono's VBO export draws with
+  straight lines at 10 Hz read about 2 Hz. No ramp or release is read from
+  a channel below 9.5 Hz, and never from a VBO `*-obd` column, so the brake
+  pedal's own application and release are read only from a native 10 Hz
+  pedal. `brakingTechniqueWindow` places the search on a lap, also for a
+  corner across start/finish. `summarizeBrakingTechnique` gives the typical
+  (median) values over at least three ranked laps, never pooling a G channel
+  with speed or different units, and `summarizeBrakingTechniqueDay` the
+  day's over its corners, counting corners measured another way.
+  `dayCorners` puts it on each `DayCorner.brakingTechnique`. Every
+  threshold is a fixed `brakingTechnique*` constant; a figure that cannot
+  be measured says why.
 - A theoretical best whose segments join (FlappedEar Telemetry only,
   FET-222): `computeRealisticTheoreticalBest` picks the fastest combination
   of laps' sector times (dynamic programming over the approved segments) in

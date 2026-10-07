@@ -9,6 +9,7 @@
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import '../analysis/braking_metrics.dart';
+import '../analysis/braking_technique.dart';
 import '../analysis/corner_classes.dart';
 import '../analysis/corner_phase_times.dart';
 import '../analysis/corner_phases.dart' show cornerPhaseInvalidInput;
@@ -97,6 +98,7 @@ final class DayCorner {
     this.phaseSplit = const CornerPhaseSplit(unavailableReason: cornerPhaseInvalidInput),
     this.traces = const {},
     this.classification = const CornerClassification(),
+    this.brakingTechnique = const BrakingTechnique(),
   }) : laps = List.unmodifiable(laps);
 
   /// The segment's position among the approved segments.
@@ -121,6 +123,11 @@ final class DayCorner {
   /// What kind of corner it is (FET-220): its shape from the track, and its
   /// braking and speed from every lap of the group timed here.
   final CornerClassification classification;
+
+  /// How the corner was braked into (FET-219): each lap's hit, peak, trail
+  /// braking, release and brake-to-throttle time, keyed by lap reference,
+  /// and their typical values over the group's laps.
+  final BrakingTechnique brakingTechnique;
 
   /// [reference]'s time through each part of [phaseSplit].
   CornerPhaseTimes phaseTimes(DayLapReference reference) {
@@ -267,6 +274,27 @@ List<DayCorner> dayCorners(
     return found == null ? null : telemetryValueAt(found, time);
   }
 
+  // How [row] braked into [segment], from its recording past the lap's
+  // bounds where the corner needs it.
+  BrakingTechniqueLap brakingOf(DayLapRow row, Map<String, Object?> segment) {
+    final session = sessionOf[row.reference];
+    final trace = traces[row.reference];
+    final window = trace == null
+        ? null
+        : brakingTechniqueWindow(
+            computed.axisLengthMeters,
+            segments,
+            segment,
+            trace,
+            row.start,
+            row.end,
+          );
+    if (session == null || window == null) {
+      return BrakingTechniqueLap()..unavailableReason = brakingTechniqueNotCovered;
+    }
+    return measureBrakingTechnique(session, window.start, window.end, beyondLap: window.beyondLap);
+  }
+
   for (var index = 0; index < segments.length; ++index) {
     final segment = segments[index];
     final id = segment['id'];
@@ -292,6 +320,12 @@ List<DayCorner> dayCorners(
           for (final row in rows)
             if (byReference[row.reference] case final lap?)
               (metrics: lap, speedAtBraking: speedAtBraking(lap)),
+        ]),
+        // The laps timed here, all ranked ([rows] are the group's eligible
+        // laps).
+        brakingTechnique: summarizeBrakingTechnique([
+          for (final row in rows)
+            if (byReference.containsKey(row.reference)) (row.reference, brakingOf(row, segment)),
         ]),
       ),
     );

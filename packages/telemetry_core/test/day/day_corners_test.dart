@@ -219,4 +219,77 @@ void main() {
     expect(corner.classification.driving.approachUnavailableReason, brakingNoChannel);
     expect(corner.classification.driving.speedBand, CornerSpeedBand.slow);
   });
+
+  group('braking technique (FET-219)', () {
+    // Harder braking than the others: from 30 to 12 m/s over 76 m, linear
+    // in distance, so the deceleration starts at about 0.72 g and eases off.
+    final laps = [_lap(250, 12), _lap(260, 12.5), _lap(240, 11.5)];
+    DayTheoreticalBest day({bool pedals = true, bool lateral = true}) {
+      final runs = [_run('run1', rectangleSession(laps, pedals: pedals, lateral: lateral))];
+      final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
+      return dayTheoreticalBest(analyzeDay(runs), outing, random: Random(1));
+    }
+
+    final result = day();
+    final technique = result.corners[1].brakingTechnique;
+
+    test('is measured on every ranked lap from the G channel, and typically', () {
+      expect(technique.unavailableReason, isEmpty);
+      expect(technique.source, brakingTechniqueFromG);
+      expect(technique.laps.length, 3);
+      expect(technique.lapsBraking, 3);
+      for (final (_, lap) in technique.laps) {
+        expect(lap.peakG, closeTo(0.73, 0.1)); // 0.66 to 0.81 g, lap by lap
+        expect(lap.onsetTime, isNotNull);
+      }
+      expect(technique.peak.median, closeTo(0.72, 0.05));
+      expect(technique.peak.laps, 3);
+      // Trail braking: the speed falls to the corner's entry, where lateral
+      // G starts, so there is little or none; it is still measured.
+      expect(technique.trailSeconds.median, isNotNull);
+      // The pedal is recorded at 10 Hz: its application and release are read.
+      expect(technique.brakeRateHz, closeTo(10, 0.01));
+      expect(technique.pedalApplication.median, isNotNull);
+      expect(technique.pedalRelease.median, isNotNull);
+    });
+
+    test('leaves out laps the ranking does not rank', () {
+      final ranked = {for (final lap in result.laps) lap.lap.reference};
+      for (final (reference, _) in technique.laps) {
+        expect(ranked, contains(reference));
+      }
+      // The recording's start before the gate and its end after the last
+      // lap are not laps of the ranking.
+      expect(technique.laps.length, ranked.length);
+    });
+
+    test('leaves out a lap the user excluded from the ranking', () {
+      final runs = [
+        _run('run1', rectangleSession([...laps, _lap(255, 12)])),
+      ];
+      final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
+      final all = dayTheoreticalBest(analyzeDay(runs), outing, random: Random(1));
+      final every = all.corners[1].brakingTechnique;
+      expect(every.laps.length, 4);
+      final excluded = every.laps[1].$1! as DayLapReference;
+      final analysis = analyzeDay(runs, exclusions: {excluded: 'Traffic'});
+      final ranked = dayTheoreticalBest(analysis, outing, random: Random(1));
+      final technique = ranked.corners[1].brakingTechnique;
+      expect(technique.lap(excluded), isNull);
+      expect(technique.laps.length, 3);
+      expect(technique.lapsBraking, 3);
+    });
+
+    test('says why each lap is not known without a G channel or lateral G', () {
+      final noLateral = day(lateral: false).corners[1].brakingTechnique;
+      expect(noLateral.trailSeconds.median, isNull);
+      expect(noLateral.trailSeconds.reason, brakingTechniqueNoLateral);
+      // Without pedals there is no G channel: from the speed, and no
+      // brake-to-throttle time.
+      final fromSpeed = day(pedals: false).corners[1].brakingTechnique;
+      expect(fromSpeed.source, brakingTechniqueFromSpeed);
+      expect(fromSpeed.gChannelReason, brakingTechniqueGMissing);
+      expect(fromSpeed.brakeToThrottle.reason, brakingTechniqueNoThrottle);
+    });
+  });
 }
