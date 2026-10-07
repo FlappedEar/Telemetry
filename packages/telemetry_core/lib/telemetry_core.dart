@@ -106,6 +106,7 @@ export 'src/operation.dart';
 export 'src/profile/driver_profile.dart';
 export 'src/profile/profile_aggregates.dart';
 export 'src/profile/profile_bundle.dart';
+export 'src/profile/profile_reference_files.dart';
 export 'src/profile/profile_tree.dart';
 export 'src/rcz/rcz_archive.dart' show RczFormatError;
 export 'src/source_fingerprint.dart';

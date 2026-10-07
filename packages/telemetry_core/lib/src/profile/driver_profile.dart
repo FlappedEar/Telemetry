@@ -22,6 +22,7 @@ import '../speed_units.dart';
 import '../telemetry_session.dart';
 
 part 'profile_merge.dart';
+part 'profile_reference.dart';
 part 'session_stats.dart';
 part 'track_notebook.dart';
 
@@ -325,6 +326,7 @@ final class ProfileDay {
     List<ProfileSession> sessions = const [],
     this.bestLapSeconds,
     this.theoreticalBestSeconds,
+    this.reference,
     Map<String, Object?> unknown = const {},
   }) : sessions = List.unmodifiable(sessions),
        unknown = Map.unmodifiable(unknown);
@@ -350,19 +352,39 @@ final class ProfileDay {
 
   /// The theoretical best of the day's track: its best segments added up.
   final double? theoreticalBestSeconds;
+
+  /// The reference lap chosen for this day (FET-276), kept in the profile
+  /// so it comes back when the day is opened again; null when none is kept.
+  /// A `reference` this version cannot read is not here: it stays in
+  /// [unknown] and is written back as it was.
+  final ProfileReference? reference;
   final Map<String, Object?> unknown;
 
-  ProfileDay copyWith({String? carId}) => ProfileDay(
+  ProfileDay copyWith({String? carId}) => _copy(carId: carId);
+
+  ProfileDay _copy({
+    String? carId,
+    List<ProfileSession>? sessions,
+    ProfileReference? reference,
+    bool replaceReference = false,
+  }) => ProfileDay(
     eventId: eventId,
     file: file,
     name: name,
     carId: carId ?? this.carId,
     trackId: trackId,
     startMilliseconds: startMilliseconds,
-    sessions: sessions,
+    sessions: sessions ?? this.sessions,
     bestLapSeconds: bestLapSeconds,
     theoreticalBestSeconds: theoreticalBestSeconds,
-    unknown: unknown,
+    reference: replaceReference ? reference : this.reference,
+    // A reference set or cleared replaces what could not be read as well.
+    unknown: replaceReference
+        ? {
+            for (final MapEntry(:key, :value) in unknown.entries)
+              if (key != _referenceKey) key: value,
+          }
+        : unknown,
   );
 }
 
@@ -809,6 +831,9 @@ DriverProfile addDayToProfile(
     theoreticalBestSeconds: day.measuredCorners
         ? day.theoreticalBestSeconds
         : day.theoreticalBestSeconds ?? (sameTrack ? existing.theoreticalBestSeconds : null),
+    // The day's reference lap is the driver's choice, not an analysis: it
+    // stays when the day is added again.
+    reference: existing?.reference,
     unknown: existing?.unknown ?? const {},
   );
   // What reading would refuse is refused here, so a profile is never
@@ -912,18 +937,7 @@ DriverProfile setProfileSessionWeather(
         session,
   ];
   if (!changed) return profile;
-  final entry = ProfileDay(
-    eventId: day.eventId,
-    file: day.file,
-    name: day.name,
-    carId: day.carId,
-    trackId: day.trackId,
-    startMilliseconds: day.startMilliseconds,
-    sessions: sessions,
-    bestLapSeconds: day.bestLapSeconds,
-    theoreticalBestSeconds: day.theoreticalBestSeconds,
-    unknown: day.unknown,
-  );
+  final entry = day._copy(sessions: sessions);
   _verified(_encodeDay(entry), _day);
   return profile._copy(
     days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
@@ -959,18 +973,7 @@ DriverProfile setProfileSessionSetups(
         }(),
   ];
   if (!changed) return profile;
-  final entry = ProfileDay(
-    eventId: day.eventId,
-    file: day.file,
-    name: day.name,
-    carId: day.carId,
-    trackId: day.trackId,
-    startMilliseconds: day.startMilliseconds,
-    sessions: sessions,
-    bestLapSeconds: day.bestLapSeconds,
-    theoreticalBestSeconds: day.theoreticalBestSeconds,
-    unknown: day.unknown,
-  );
+  final entry = day._copy(sessions: sessions);
   _verified(_encodeDay(entry), _day);
   return profile._copy(
     days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
@@ -1060,6 +1063,7 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
   'startMilliseconds': day.startMilliseconds,
   'bestLapSeconds': day.bestLapSeconds,
   if (day.theoreticalBestSeconds != null) 'theoreticalBestSeconds': day.theoreticalBestSeconds,
+  if (day.reference case final reference?) _referenceKey: _encodeReference(reference),
   'sessions': [
     for (final session in day.sessions)
       {
@@ -1241,8 +1245,12 @@ ProfileDay _day(Object? value) {
   if ({for (final session in sessions) session.runId}.length != sessions.length) {
     throw const ProfileFormatError('A day has the same session twice.');
   }
+  final eventId = _string(json['eventId'], 'day event id', allowEmpty: false);
+  // Read leniently, as a setup is: a reference this version cannot read is
+  // never a reason to refuse the profile, and is kept as it is.
+  final reference = _reference(json[_referenceKey], eventId);
   return ProfileDay(
-    eventId: _string(json['eventId'], 'day event id', allowEmpty: false),
+    eventId: eventId,
     file: _checkFile(_string(json['file'], 'day file', allowEmpty: false)),
     name: _string(json['name'], 'day name'),
     carId: _string(json['carId'], 'day car', allowEmpty: false),
@@ -1254,7 +1262,8 @@ ProfileDay _day(Object? value) {
       'day theoretical best',
     ),
     sessions: sessions,
-    unknown: _without(json, const [
+    reference: reference,
+    unknown: _without(json, [
       'eventId',
       'file',
       'name',
@@ -1264,6 +1273,7 @@ ProfileDay _day(Object? value) {
       'bestLapSeconds',
       'theoreticalBestSeconds',
       'sessions',
+      if (reference != null) _referenceKey,
     ]),
   );
 }
