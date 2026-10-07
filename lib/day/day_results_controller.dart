@@ -2240,6 +2240,18 @@ final class DayResultsController extends ChangeNotifier {
     return built;
   }
 
+  /// The segments [row] is measured on against a lap from outside the day
+  /// (a reference lap, FET-175): its run's approved segments, else the
+  /// theoretical best's when [row] is in its group. Reads the day only.
+  ComparisonSegmentation segmentationFor(DayLapRow row) =>
+      dayComparisonSegmentation(
+        _analysis,
+        row,
+        row,
+        documentRuns: _documentRuns,
+        theoreticalBest: _theoreticalBestLoading ? null : _theoreticalBest,
+      );
+
   String _runName(String runId) {
     for (final row in _analysis.rows) {
       if (row.runId == runId) return row.runName;

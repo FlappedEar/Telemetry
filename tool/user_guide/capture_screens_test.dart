@@ -801,6 +801,60 @@ void main() {
     debugDisableShadows = true;
   });
 
+  testWidgets('reference lap, wide', (tester) async {
+    debugDisableShadows = false;
+    await size(tester, _desktop, 1.5);
+    // The reference: the best lap's session as a file under a plain name;
+    // today: the day's other sessions.
+    final whole = importDay();
+    final best = whole.analysis!.ranking!.bestOfDay!;
+    final source = whole.runs
+        .firstWhere((named) => named.run.id == best.runId)
+        .run
+        .sourcePath;
+    String stemOf(String path) =>
+        path.substring(0, path.lastIndexOf('.')).toLowerCase();
+    final stem = stemOf(source);
+    final reference = File(
+      recordings.firstWhere(
+        (path) => stemOf(path) == stem && path.toLowerCase().endsWith('.vbo'),
+      ),
+    ).copySync('${directory.path}/reference.vbo').path;
+    final today = runDayImport((
+      paths: [
+        for (final path in recordings)
+          if (stemOf(path) != stem) path,
+      ],
+      includeSubfolders: false,
+    ));
+    await tester.pumpWidget(
+      app(
+        DayResultsPage(
+          runs: today.runs,
+          analysis: today.analysis!,
+          pickers: _Pickers([reference]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daySection-compare')));
+    await tester.pumpAndSettle();
+    final load = find.byKey(const ValueKey('referenceLoadFile'));
+    await tester.ensureVisible(load);
+    await tester.pumpAndSettle();
+    await tester.tap(load);
+    // The reference is read and timed on the test's thread, on the next
+    // frame.
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('referenceLabel')), findsOneWidget);
+    await toTop(tester, find.byKey(const ValueKey('referenceSection')));
+    await shot(tester, 'reference-lap');
+    await tester.tap(find.byKey(const ValueKey('referenceCompare')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'reference-compare');
+    debugDisableShadows = true;
+  });
+
   testWidgets('corner analyzer from a loss', (tester) async {
     debugDisableShadows = false;
     await showDay(tester, _desktop, 1.5);

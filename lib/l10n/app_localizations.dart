@@ -10708,6 +10708,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'the channel holds only zeros (a placeholder, not a measurement)'**
   String get gripReasonAllZero;
+
+  /// Heading of the reference lap part of the Compare section (FET-175): a lap from outside the day to compare with.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference lap'**
+  String get referenceTitle;
+
+  /// Explains the reference lap under its heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved with the day.'**
+  String get referenceIntro;
+
+  /// Button: choose a VBO or RCZ file to take the reference lap from.
+  ///
+  /// In en, this message translates to:
+  /// **'Load a recording'**
+  String get referenceLoadFile;
+
+  /// Button: choose one of the profile's earlier days to take the reference lap from.
+  ///
+  /// In en, this message translates to:
+  /// **'From an earlier day'**
+  String get referenceLoadDay;
+
+  /// Why a reference cannot be loaded yet.
+  ///
+  /// In en, this message translates to:
+  /// **'A reference is timed on the line of today\'s best lap, so the day needs a ranked lap first.'**
+  String get referenceNeedsLap;
+
+  /// Shown while a reference is read and timed.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing {source} on today\'s start/finish line…'**
+  String referenceLoading(String source);
+
+  /// The reference lap's name everywhere it is shown. source is a file name or a day's name with its session.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference: {source}, lap {lap}, {time}'**
+  String referenceLabel(String source, int lap, String time);
+
+  /// The source of a reference from an earlier day: the day's name and the session.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} · {session}'**
+  String referenceDaySession(String day, String session);
+
+  /// Why a reference was refused: its GPS is far from today's line.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: this recording is from another track. Its GPS comes no closer than {distance} to today\'s start/finish line.'**
+  String referenceRefusedWrongTrack(String distance);
+
+  /// Why a reference was refused: no GPS.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: the recording has no usable GPS position, so it cannot be timed on today\'s line.'**
+  String get referenceRefusedNoGps;
+
+  /// Why a reference was refused: no timed lap on today's line.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: the recording comes near today\'s start/finish line, but no complete lap of it crosses the line.'**
+  String get referenceRefusedNoLap;
+
+  /// Why a reference was refused: today's line is not valid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: today\'s start/finish line is not valid.'**
+  String get referenceRefusedGate;
+
+  /// A reference file or day could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference could not be read: {reason}'**
+  String referenceFailed(String reason);
+
+  /// Reason a profile day gave no reference: its recordings are missing.
+  ///
+  /// In en, this message translates to:
+  /// **'None of that day\'s recordings were found.'**
+  String get referenceDayNoRecordings;
+
+  /// Button: open the comparison of today's best lap with the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with today\'s best'**
+  String get referenceCompare;
+
+  /// Button: choose which lap of the reference recording is the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose its lap'**
+  String get referenceChooseLap;
+
+  /// Button: drop the reference lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear reference'**
+  String get referenceClear;
+
+  /// Under the reference lap: it is not saved anywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept while this day is open; not saved.'**
+  String get referenceNotSaved;
+
+  /// Title of the list of the profile's days.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an earlier day'**
+  String get referencePickDay;
+
+  /// The list of days is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile has no other day yet.'**
+  String get referenceNoDays;
+
+  /// Title of the list of the reference recording's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the reference lap'**
+  String get referencePickLap;
+
+  /// One lap in the list of the reference recording's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{source}, lap {lap}'**
+  String referenceLapOption(String source, int lap);
+
+  /// Title of the page comparing a lap with the reference lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Against the reference'**
+  String get referenceCompareTitle;
+
+  /// Short name of the reference lap next to a chart value, where lap A is 'A'.
+  ///
+  /// In en, this message translates to:
+  /// **'Ref'**
+  String get referenceShort;
+
+  /// How to read the differences against the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ is A − reference: positive when A is behind.'**
+  String get referenceDeltaExplained;
+
+  /// Note under the Δ time chart against the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'+ = A behind the reference'**
+  String get referenceDeltaNote;
+
+  /// Note on the comparison page.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference is not part of this day: it is not ranked and not saved.'**
+  String get referenceKeptApart;
+
+  /// Comparison page after the reference was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'No reference lap is chosen.'**
+  String get referenceGone;
+
+  /// Under a chart: each side's unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Units: A {a} · reference {b}'**
+  String referenceUnits(String a, String b);
+
+  /// A unit the recording does not declare, taken from the setting for unlabelled speeds.
+  ///
+  /// In en, this message translates to:
+  /// **'{unit} (assumed)'**
+  String referenceUnitAssumed(String unit);
+
+  /// A side whose channel has no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'no unit'**
+  String get referenceUnitNone;
+
+  /// Note when today's lap and the reference record a channel in different units.
+  ///
+  /// In en, this message translates to:
+  /// **'Different units: shown apart, never subtracted.'**
+  String get referenceUnitsApart;
+
+  /// Title of a chart that shows only one side, when the units differ.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} · {lap}'**
+  String referenceChartOf(String channel, String lap);
+
+  /// Heading of the per-segment times against the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments against the reference'**
+  String get referenceSegmentsTitle;
+
+  /// The reference cannot be timed per segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s lap has no segments to time yet: approve them in the segment review, or wait for the theoretical best.'**
+  String get referenceSegmentsNone;
+
+  /// Note when the segments come from the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments of the theoretical best; their boundaries can shift by a few metres on these laps.'**
+  String get referenceSegmentsBorrowed;
+
+  /// Column heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment'**
+  String get referenceColumnSegment;
+
+  /// A segment without a time on one of the laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment}: not timed on both laps ({reason})'**
+  String referenceSegmentNotTimed(String segment, String reason);
 }
 
 class _AppLocalizationsDelegate

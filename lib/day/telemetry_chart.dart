@@ -108,6 +108,7 @@ class TelemetryChart extends StatelessWidget {
     this.onPick,
     this.choiceLabel,
     this.height = 120,
+    this.unitsAsRecorded = false,
   });
 
   /// The channel shown, as recorded (the Δ time chart: its name in the
@@ -153,6 +154,15 @@ class TelemetryChart extends StatelessWidget {
   /// The name listed for a choice; [channelMenuLabel] when null.
   final String Function(String channel)? choiceLabel;
   final double height;
+
+  /// Each line's unit is shown as its series carries it, never the open
+  /// day's unit for a channel of that name: for a recording from outside
+  /// the day (a reference lap, FET-175).
+  final bool unitsAsRecorded;
+
+  String _unit(BuildContext context, ChartLine line) => unitsAsRecorded
+      ? line.series.unit
+      : displayUnitOf(context, title, line.series.unit);
 
   double _fraction(double value) =>
       end > start ? (value - start) / (end - start) : 0;
@@ -299,7 +309,7 @@ class TelemetryChart extends StatelessWidget {
                         for (final line in lines)
                           Text(
                             '${line.label.isEmpty ? '' : '${line.label} '}'
-                            '${inside ? _value(line, fraction, displayUnitOf(context, title, line.series.unit)) : '–'}',
+                            '${inside ? _value(line, fraction, _unit(context, line)) : '–'}',
                             key: ValueKey('chartValue $title ${line.label}'),
                             style: theme.textTheme.titleSmall?.copyWith(
                               color: line.color == deltaLineColor
@@ -356,11 +366,11 @@ class TelemetryChart extends StatelessWidget {
                         line.label.isEmpty ? '' : '${line.label}: ',
                         _summaryValue(
                           _spokenLow(line.series),
-                          displayUnitOf(context, title, line.series.unit),
+                          _unit(context, line),
                         ),
                         _summaryValue(
                           _spokenHigh(line.series),
-                          displayUnitOf(context, title, line.series.unit),
+                          _unit(context, line),
                         ),
                       ),
                   ].join(', '),
@@ -395,11 +405,7 @@ class TelemetryChart extends StatelessWidget {
                                         ),
                                       )
                                   ? ''
-                                  : displayUnitOf(
-                                      context,
-                                      title,
-                                      shown.first.series.unit,
-                                    ),
+                                  : _unit(context, shown.first),
                             ),
                           ),
                         ),

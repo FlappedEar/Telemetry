@@ -7380,4 +7380,149 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gripReasonAllZero =>
       'the channel holds only zeros (a placeholder, not a measurement)';
+
+  @override
+  String get referenceTitle => 'Reference lap';
+
+  @override
+  String get referenceIntro =>
+      'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved with the day.';
+
+  @override
+  String get referenceLoadFile => 'Load a recording';
+
+  @override
+  String get referenceLoadDay => 'From an earlier day';
+
+  @override
+  String get referenceNeedsLap =>
+      'A reference is timed on the line of today\'s best lap, so the day needs a ranked lap first.';
+
+  @override
+  String referenceLoading(String source) {
+    return 'Timing $source on today\'s start/finish line…';
+  }
+
+  @override
+  String referenceLabel(String source, int lap, String time) {
+    return 'Reference: $source, lap $lap, $time';
+  }
+
+  @override
+  String referenceDaySession(String day, String session) {
+    return '$day · $session';
+  }
+
+  @override
+  String referenceRefusedWrongTrack(String distance) {
+    return 'Not used: this recording is from another track. Its GPS comes no closer than $distance to today\'s start/finish line.';
+  }
+
+  @override
+  String get referenceRefusedNoGps =>
+      'Not used: the recording has no usable GPS position, so it cannot be timed on today\'s line.';
+
+  @override
+  String get referenceRefusedNoLap =>
+      'Not used: the recording comes near today\'s start/finish line, but no complete lap of it crosses the line.';
+
+  @override
+  String get referenceRefusedGate =>
+      'Not used: today\'s start/finish line is not valid.';
+
+  @override
+  String referenceFailed(String reason) {
+    return 'The reference could not be read: $reason';
+  }
+
+  @override
+  String get referenceDayNoRecordings =>
+      'None of that day\'s recordings were found.';
+
+  @override
+  String get referenceCompare => 'Compare with today\'s best';
+
+  @override
+  String get referenceChooseLap => 'Choose its lap';
+
+  @override
+  String get referenceClear => 'Clear reference';
+
+  @override
+  String get referenceNotSaved => 'Kept while this day is open; not saved.';
+
+  @override
+  String get referencePickDay => 'Choose an earlier day';
+
+  @override
+  String get referenceNoDays => 'Your profile has no other day yet.';
+
+  @override
+  String get referencePickLap => 'Choose the reference lap';
+
+  @override
+  String referenceLapOption(String source, int lap) {
+    return '$source, lap $lap';
+  }
+
+  @override
+  String get referenceCompareTitle => 'Against the reference';
+
+  @override
+  String get referenceShort => 'Ref';
+
+  @override
+  String get referenceDeltaExplained =>
+      'Δ is A − reference: positive when A is behind.';
+
+  @override
+  String get referenceDeltaNote => '+ = A behind the reference';
+
+  @override
+  String get referenceKeptApart =>
+      'The reference is not part of this day: it is not ranked and not saved.';
+
+  @override
+  String get referenceGone => 'No reference lap is chosen.';
+
+  @override
+  String referenceUnits(String a, String b) {
+    return 'Units: A $a · reference $b';
+  }
+
+  @override
+  String referenceUnitAssumed(String unit) {
+    return '$unit (assumed)';
+  }
+
+  @override
+  String get referenceUnitNone => 'no unit';
+
+  @override
+  String get referenceUnitsApart =>
+      'Different units: shown apart, never subtracted.';
+
+  @override
+  String referenceChartOf(String channel, String lap) {
+    return '$channel · $lap';
+  }
+
+  @override
+  String get referenceSegmentsTitle => 'Segments against the reference';
+
+  @override
+  String get referenceSegmentsNone =>
+      'Today\'s lap has no segments to time yet: approve them in the segment review, or wait for the theoretical best.';
+
+  @override
+  String get referenceSegmentsBorrowed =>
+      'Segments of the theoretical best; their boundaries can shift by a few metres on these laps.';
+
+  @override
+  String get referenceColumnSegment => 'Segment';
+
+  @override
+  String referenceSegmentNotTimed(String segment, String reason) {
+    return '$segment: not timed on both laps ($reason)';
+  }
 }
