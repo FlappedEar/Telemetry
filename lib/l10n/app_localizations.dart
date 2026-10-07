@@ -8361,6 +8361,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 recording was not found on this device and is not in the file.} other{{count} recordings were not found on this device and are not in the file.}}'**
   String libraryExportMissing(int count);
 
+  /// After an export: reference recordings the file could not include.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 reference recording was not found in the profile and is not in the file.} other{{count} reference recordings were not found in the profile and are not in the file.}}'**
+  String libraryExportReferencesMissing(int count);
+
   /// Export failed, for example because the disk is full.
   ///
   /// In en, this message translates to:
@@ -9625,6 +9631,18 @@ abstract class AppLocalizations {
   /// **'Some notebook notes from the file did not fit and were left out.'**
   String get libraryImportNotebookCut;
 
+  /// After a profile import: reference laps of the imported days that could not be kept.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The reference lap of 1 day was left out: its recording did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.} other{The reference laps of {count} days were left out: their recordings did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.}}'**
+  String libraryImportReferencesNotKept(int count);
+
+  /// After a profile import: reference recordings the file does not hold.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 reference recording was not in the file: that reference will say it was not found.} other{{count} reference recordings were not in the file: those references will say they were not found.}}'**
+  String libraryImportReferencesMissing(int count);
+
   /// Track notebook: shown instead of the add field when the list of things to try is full.
   ///
   /// In en, this message translates to:
@@ -10718,7 +10736,7 @@ abstract class AppLocalizations {
   /// Explains the reference lap under its heading.
   ///
   /// In en, this message translates to:
-  /// **'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved with the day.'**
+  /// **'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved in the day file. Your driver profile remembers it for this day: a recording file is copied into the profile, a lap of an earlier day is remembered by that day.'**
   String get referenceIntro;
 
   /// Button: choose a VBO or RCZ file to take the reference lap from.
@@ -10811,11 +10829,113 @@ abstract class AppLocalizations {
   /// **'Clear reference'**
   String get referenceClear;
 
-  /// Under the reference lap: it is not saved anywhere.
+  /// Under the reference lap: the day is not kept in the driver profile (or there is no profile), so the reference is not remembered.
   ///
   /// In en, this message translates to:
-  /// **'Kept while this day is open; not saved.'**
+  /// **'Kept while this day is open; not remembered, because this day is not kept in your driver profile.'**
   String get referenceNotSaved;
+
+  /// Under the reference lap: it is kept in the driver profile and comes back when the day is opened again (a lap of an earlier day).
+  ///
+  /// In en, this message translates to:
+  /// **'Remembered for this day in your driver profile.'**
+  String get referenceSaved;
+
+  /// Under the reference lap: it is kept in the driver profile with a copy of the recording file.
+  ///
+  /// In en, this message translates to:
+  /// **'Remembered for this day in your driver profile, with a copy of the recording.'**
+  String get referenceSavedCopy;
+
+  /// Under the reference lap while it is written to the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving to your driver profile…'**
+  String get referenceSaving;
+
+  /// Under the reference lap: it could not be kept in the driver profile. reason is one of the referenceKeep… texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Not remembered: {reason} It stays while this day is open.'**
+  String referenceKeepFailed(String reason);
+
+  /// After clearing the reference: the driver profile could not be written.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference could not be removed from your driver profile, so it comes back when this day is opened again.'**
+  String get referenceForgetFailed;
+
+  /// Button: write the reference to the driver profile again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get referenceKeepRetry;
+
+  /// Why a reference was not kept: the profile's limit of reference recording copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile already keeps {count} reference recordings. Clear the reference of another day first.'**
+  String referenceKeepTooManyFiles(int count);
+
+  /// Why a reference was not kept: the profile's limit of room for reference recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference recordings would take more than {megabytes} MiB in your profile.'**
+  String referenceKeepTooMuch(int megabytes);
+
+  /// Why a reference was not kept: the recording file is too large.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is larger than {megabytes} MiB, the most a reference can be.'**
+  String referenceKeepFileTooLarge(int megabytes);
+
+  /// Why a reference was not kept: the recording file is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is empty.'**
+  String get referenceKeepFileEmpty;
+
+  /// Why a reference was not kept: not a VBO or RCZ file.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a VBO or RCZ recording can be remembered.'**
+  String get referenceKeepFileType;
+
+  /// Why a reference was not kept: the file could not be read or copied.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording could not be copied into your profile.'**
+  String get referenceKeepUnreadable;
+
+  /// Why a reference was not kept: the profile file could not be written or the day is not in it.
+  ///
+  /// In en, this message translates to:
+  /// **'Your driver profile could not be written.'**
+  String get referenceKeepNotWritten;
+
+  /// Why a reference was not kept: any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Your driver profile could not keep it.'**
+  String get referenceKeepOther;
+
+  /// A remembered reference whose recording copy is not in the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording kept for this reference was not found in your driver profile. Clear the reference or load the recording again.'**
+  String get referenceFileMissing;
+
+  /// A remembered reference whose recording copy has another size than when it was saved.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording kept for this reference is not the file that was saved (it changed). Clear the reference or load the recording again.'**
+  String get referenceFileChanged;
+
+  /// A remembered reference taken from a day that was deleted from the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The day this reference was taken from is no longer in your driver profile. Clear the reference or choose another day.'**
+  String get referenceDayMissing;
 
   /// Title of the list of the profile's days.
   ///
@@ -10868,7 +10988,7 @@ abstract class AppLocalizations {
   /// Note on the comparison page.
   ///
   /// In en, this message translates to:
-  /// **'The reference is not part of this day: it is not ranked and not saved.'**
+  /// **'The reference is not part of this day: it is not ranked and not saved in the day file.'**
   String get referenceKeptApart;
 
   /// Comparison page after the reference was cleared.

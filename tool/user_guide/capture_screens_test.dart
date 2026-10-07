@@ -29,6 +29,7 @@ import 'package:telemetry/channel_names.dart';
 import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/reference_lap.dart';
 import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
 import 'package:telemetry/day/next_session_card.dart';
@@ -851,12 +852,26 @@ void main() {
       ],
       includeSubfolders: false,
     ));
+    // The day kept in a profile, as a saved day is: the reference is
+    // remembered there.
+    final profileFolder = '${directory.path}/ReferenceProfile';
+    final controller = DayResultsController(
+      runs: today.runs,
+      analysis: today.analysis!,
+      name: 'Jastrząb',
+    );
+    final dayFile = profileDayPath(profileFolder, controller.eventId);
+    Directory('$profileFolder/Days').createSync(recursive: true);
+    await tester.runAsync(() => controller.save(dayFile));
+    final library = _library(profileFolder);
+    addTearDown(library.dispose);
+    await tester.runAsync(library.load);
     await tester.pumpWidget(
       app(
-        DayResultsPage(
-          runs: today.runs,
-          analysis: today.analysis!,
+        DayResultsPage.controller(
+          controller: controller,
           pickers: _Pickers([reference]),
+          library: library,
         ),
       ),
     );
@@ -871,6 +886,12 @@ void main() {
     // frame.
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('referenceLabel')), findsOneWidget);
+    // Remembered in the profile before the picture is taken.
+    await until(
+      tester,
+      () => referenceLapOf(controller).keepState == ReferenceKeep.saved,
+    );
+    await tester.pumpAndSettle();
     await toTop(tester, find.byKey(const ValueKey('referenceSection')));
     await shot(tester, 'reference-lap');
     await tester.tap(find.byKey(const ValueKey('referenceCompare')));

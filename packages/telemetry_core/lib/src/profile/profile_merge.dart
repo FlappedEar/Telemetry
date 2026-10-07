@@ -13,6 +13,7 @@ final class ProfileMerge {
     this.notAdded = const [],
     this.notebooks = const [],
     this.notebookCut = false,
+    this.referencesNotKept = const [],
   });
 
   /// This profile with the new days.
@@ -33,6 +34,11 @@ final class ProfileMerge {
   /// Whether some of [from]'s notebook text or things to try were left
   /// out, past the profile's limits.
   final bool notebookCut;
+
+  /// Days added without their reference lap (FET-276): it would have passed
+  /// the profile's limits of reference recordings ([maximumReferenceFiles],
+  /// [maximumReferenceBytes]). The day itself came along.
+  final List<String> referencesNotKept;
 }
 
 /// [into] with the days of [from] it does not have yet ([only] of them,
@@ -44,7 +50,10 @@ final class ProfileMerge {
 /// track's as a day's are. Anything else is added. Corners past the
 /// profile's budget are left out, as when a day is added; which car new
 /// days take is unchanged. The notebook of every track both have takes
-/// what [from]'s adds, whichever days are added.
+/// what [from]'s adds, whichever days are added. A day brings its reference
+/// lap (FET-276): a recording copy the profile keeps already (same hash) is
+/// shared, and one that would pass the limits of reference recordings is
+/// left out ([ProfileMerge.referencesNotKept]).
 ProfileMerge mergeDriverProfile(
   DriverProfile into,
   DriverProfile from, {
@@ -65,6 +74,9 @@ ProfileMerge mergeDriverProfile(
       corners += session.stats?.corners.length ?? 0;
     }
   }
+  // The reference recordings the profile keeps, by file name.
+  final referenceFiles = profileReferenceFiles(into);
+  final referencesNotKept = <String>[];
 
   String? car(String id) {
     if (carIds[id] case final mapped?) return mapped;
@@ -168,6 +180,19 @@ ProfileMerge mergeDriverProfile(
     } else {
       corners += count;
     }
+    // Its reference lap comes along; a recording the profile keeps already
+    // is shared, a new one counts against the limits.
+    var reference = day.reference;
+    if (reference is ProfileReferenceFile && !referenceFiles.containsKey(reference.fileName)) {
+      if (referenceFiles.length >= maximumReferenceFiles ||
+          referenceFiles.values.fold(0, (sum, bytes) => sum + bytes) + reference.bytes >
+              maximumReferenceBytes) {
+        reference = null;
+        referencesNotKept.add(day.eventId);
+      } else {
+        referenceFiles[reference.fileName] = reference.bytes;
+      }
+    }
     days.add(
       ProfileDay(
         eventId: day.eventId,
@@ -179,6 +204,7 @@ ProfileMerge mergeDriverProfile(
         sessions: sessions,
         bestLapSeconds: day.bestLapSeconds,
         theoreticalBestSeconds: day.theoreticalBestSeconds,
+        reference: reference,
         unknown: day.unknown,
       ),
     );
@@ -227,6 +253,7 @@ ProfileMerge mergeDriverProfile(
     notAdded: notAdded,
     notebooks: notebooks,
     notebookCut: notebookCut,
+    referencesNotKept: referencesNotKept,
   );
 }
 

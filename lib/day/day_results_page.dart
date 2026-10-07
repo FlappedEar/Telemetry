@@ -41,6 +41,7 @@ import 'lap_page.dart';
 import 'save_shortcuts.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
+import 'profile_reference_store.dart';
 import 'reference_lap.dart';
 import 'reference_lap_page.dart';
 import 'reveal.dart';
@@ -171,9 +172,46 @@ class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
 
   // The day's reference lap (FET-175), kept apart from the day itself and
-  // with it while its pages come and go; disposed with the day.
-  ReferenceLapHolder get _reference =>
-      referenceLapOf(_controller, dayId: _controller.eventId);
+  // with it while its pages come and go; disposed with the day. Its choice
+  // is kept in the driver profile when the day is (FET-276).
+  ReferenceLapHolder get _reference {
+    final controller = _controller;
+    return referenceLapOf(
+      controller,
+      dayId: controller.eventId,
+      store: switch (widget.library) {
+        final library? => ProfileReferenceStore(
+          library,
+          // Closed over the day, not this page: the holder outlives it.
+          keepsDay: () {
+            final path = controller.documentPath;
+            return library.available && (path == null || library.holds(path));
+          },
+        ),
+        null => const UnsavedReferenceStore(),
+      },
+    );
+  }
+
+  /// Reads the reference kept for the day, once today's line is known (the
+  /// day is analysed after the page opens).
+  void _restoreReference() {
+    final reference = _reference;
+    if (reference.restoreTried || reference.state != ReferenceState.none) {
+      return;
+    }
+    if (referenceLine(_controller) case final line?) {
+      unawaited(reference.restore(line));
+    }
+  }
+
+  /// A reference chosen before the day was listed in the profile that it
+  /// had no room for when it was: said on the reference's keep state.
+  void _referenceDropped() {
+    final dropped = widget.library?.referenceDropped(_controller.eventId);
+    if (dropped != null) _reference.keepDropped(dropped.problem);
+  }
+
   bool _relinking = false;
 
   // The tab shown under the title: on a phone Overview, Laps, Compare or
@@ -236,12 +274,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _controller.addListener(_libraryChanged);
     _controller.weather.addListener(_weatherChanged);
     _startLibrary();
-    // A reference kept for the day, once a storage layer keeps one
-    // (FET-175); nothing is kept yet.
-    if (referenceLine(_controller) case final line?
-        when _reference.state == ReferenceState.none) {
-      unawaited(_reference.restore(line));
-    }
+    _controller.addListener(_restoreReference);
+    widget.library?.addListener(_referenceDropped);
+    // The reference kept for the day in the driver profile.
+    _restoreReference();
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
     if (_controller.lastAddition != null) {
@@ -260,6 +296,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _controller.removeListener(_libraryChanged);
+    _controller.removeListener(_restoreReference);
+    widget.library?.removeListener(_referenceDropped);
     _controller.weather.removeListener(_weatherChanged);
     _autosave?.cancel();
     _lifecycle.dispose();

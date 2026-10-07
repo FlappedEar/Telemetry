@@ -21,6 +21,7 @@ import 'package:path/path.dart' as p;
 
 import '../day/day_document.dart';
 import 'driver_profile.dart';
+import 'profile_reference_files.dart';
 
 const profileBundleFormat = 'flappedear-profile-bundle';
 const profileBundleVersion = 1;
@@ -46,6 +47,7 @@ final class ProfileBundleExport {
     this.recordings = 0,
     this.daysMissing = const [],
     this.recordingsMissing = 0,
+    this.referencesMissing = 0,
   });
 
   /// Days written with their documents.
@@ -61,6 +63,11 @@ final class ProfileBundleExport {
   /// Recordings the days use that were not found: their days say so when
   /// opened, as on this device.
   final int recordingsMissing;
+
+  /// Reference recordings (FET-276) of the written days that were not found,
+  /// or not the size the profile says, in the profile's `Recordings` folder: the reference travels and says
+  /// so when the day is opened, as on this device.
+  final int referencesMissing;
 }
 
 /// Writes [profile], kept in [folder], as a bundle at [target]: written
@@ -79,6 +86,10 @@ Future<ProfileBundleExport> writeProfileBundle(
   // Each recording once, by the file it is on this device.
   final written = <String, String>{};
   final names = <String>{};
+  // The reference recordings written, by name; one copy for every day
+  // that uses it, and for a day recording of the same content.
+  final referenceNames = <String>{};
+  final missingReferences = <String>{};
   try {
     encoder.addArchiveFile(
       ArchiveFile.string(
@@ -111,12 +122,17 @@ Future<ProfileBundleExport> writeProfileBundle(
           name = digest is String && RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)
               ? '$digest$extension'
               : _safeName(p.basename(file));
-          for (var copy = 2; names.contains(name); copy++) {
-            name = '${p.basenameWithoutExtension(name!)} ($copy)$extension';
+          if (referenceNames.contains(name)) {
+            // A reference recording of this content is in the bundle.
+            written[file] = name;
+          } else {
+            for (var copy = 2; names.contains(name); copy++) {
+              name = '${p.basenameWithoutExtension(name!)} ($copy)$extension';
+            }
+            await encoder.addFile(File(file), '$profileRecordingsFolderName/$name');
+            names.add(name!);
+            written[file] = name;
           }
-          await encoder.addFile(File(file), '$profileRecordingsFolderName/$name');
-          names.add(name!);
-          written[file] = name;
         }
         source['reference'] = {
           for (final entry in reference.entries)
@@ -131,6 +147,20 @@ Future<ProfileBundleExport> writeProfileBundle(
         ),
       );
       days++;
+      if (day.reference case final ProfileReferenceFile reference) {
+        final copy = profileReferenceFilePath(folder, reference);
+        final name = reference.fileName;
+        // A copy that is not there, or is not the size the profile says, is
+        // missing: the day travels without it, and the count says so.
+        if (copy == null || !_isWhole(copy, reference.bytes)) {
+          missingReferences.add(name);
+        } else if (!names.contains(name)) {
+          await encoder.addFile(File(copy), '$profileRecordingsFolderName/$name');
+          names.add(name);
+          referenceNames.add(name);
+          written[copy] = name;
+        }
+      }
     }
     encoder.addArchiveFile(ArchiveFile.string(profileIndexName, encodeDriverProfile(profile)));
     await encoder.close();
@@ -149,6 +179,7 @@ Future<ProfileBundleExport> writeProfileBundle(
     recordings: written.length,
     daysMissing: daysMissing,
     recordingsMissing: missingRecordings.length,
+    referencesMissing: missingReferences.length,
   );
 }
 
@@ -162,6 +193,8 @@ final class ProfileBundleImport {
     this.recordings = 0,
     this.notebooks = const [],
     this.notebookCut = false,
+    this.referencesNotKept = const [],
+    this.referencesMissing = 0,
     this.source,
   });
 
@@ -186,6 +219,17 @@ final class ProfileBundleImport {
 
   /// Whether some of the bundle's notebook text did not fit.
   final bool notebookCut;
+
+  /// Days added without their reference lap (FET-276): its recording would
+  /// pass the profile's limits ([ProfileMerge.referencesNotKept]), or a
+  /// different file of the same name was already in `Recordings`, which is
+  /// never replaced, or the bundle holds the recording damaged or of another
+  /// size than the profile says.
+  final List<String> referencesNotKept;
+
+  /// Reference recordings of the days added that the bundle does not hold:
+  /// the reference stays and says so when the day is opened.
+  final int referencesMissing;
 
   /// The bundle's own profile, to merge again ([mergeDriverProfile]) into
   /// a profile changed while the bundle was read: merging [profile] would
@@ -311,6 +355,8 @@ Future<ProfileBundleImport> readProfileBundle(
     // Staged files, by the name they take in Recordings.
     final staged = <String, String>{};
     final created = <String>[];
+    var referencesNotPlaced = const <String>{};
+    var referencesAbsent = 0;
     try {
       for (final document in documents.values) {
         for (final source in _telemetrySources(document)) {
@@ -356,6 +402,62 @@ Future<ProfileBundleImport> readProfileBundle(
           }
         }
       }
+      // The reference recordings of the days added (FET-276), by name: each
+      // checked against the hash that names it before it is placed. One a
+      // different file of that name already holds is never replaced; the
+      // days using it come without their reference.
+      final unplaced = <String>{};
+      var referencesMissing = 0;
+      final seen = <String>{};
+      for (final eventId in merge.added) {
+        final reference = merge.profile.day(eventId)?.reference;
+        if (reference is! ProfileReferenceFile || !seen.add(reference.fileName)) continue;
+        final name = reference.fileName;
+        final entry = entries['$profileRecordingsFolderName/$name'];
+        if (entry == null) {
+          referencesMissing++;
+          continue;
+        }
+        // A copy the bundle holds damaged, or larger than a reference may
+        // be, costs the days using it their reference, not the bundle: it is
+        // not unpacked at all when its declared size is wrong.
+        if (entry.size > maximumReferenceFileBytes || entry.size != reference.bytes) {
+          unplaced.add(name);
+          continue;
+        }
+        final stagedAs = staged.entries
+            .where((other) => other.key.toLowerCase() == name)
+            .firstOrNull;
+        if (stagedAs != null) {
+          // A day's recording of this content, already read.
+          if (await _sha256(stagedAs.value) != reference.sha256) unplaced.add(name);
+          continue;
+        }
+        final here = File(p.join(recordings.path, name));
+        if (here.existsSync()) {
+          if (here.lengthSync() != entry.size || await _sha256(here.path) != reference.sha256) {
+            unplaced.add(name);
+          }
+          continue;
+        }
+        staging.createSync(recursive: true);
+        final path = p.join(staging.path, '${staged.length}');
+        try {
+          _extract(entry, path);
+        } on ProfileBundleError {
+          // Its size or CRC-32 is wrong: damaged.
+          unplaced.add(name);
+          continue;
+        }
+        if (await _sha256(path) != reference.sha256) {
+          _delete(path);
+          unplaced.add(name);
+          continue;
+        }
+        staged[name] = path;
+      }
+      referencesNotPlaced = unplaced;
+      referencesAbsent = referencesMissing;
       // Into place: the recordings, then the days that use them.
       if (staged.isNotEmpty) recordings.createSync(recursive: true);
       for (final MapEntry(key: name, value: path) in staged.entries) {
@@ -376,18 +478,37 @@ Future<ProfileBundleImport> readProfileBundle(
     } finally {
       _deleteStaging(folder);
     }
+    // The days whose reference recording could not be placed come without
+    // the reference, and so do they if the profile is merged again.
+    final notPlaced = {
+      for (final eventId in merge.added)
+        if (merge.profile.day(eventId)?.reference case final ProfileReferenceFile file
+            when referencesNotPlaced.contains(file.fileName))
+          eventId,
+    };
     return ProfileBundleImport(
-      profile: merge.profile,
+      profile: removeProfileReferenceFiles(merge.profile, referencesNotPlaced),
       added: merge.added,
       alreadyHere: present,
       notAdded: [...merge.notAdded, ...missing],
       recordings: staged.length,
       notebooks: merge.notebooks,
       notebookCut: merge.notebookCut,
-      source: from,
+      referencesNotKept: [...merge.referencesNotKept, ...notPlaced],
+      referencesMissing: referencesAbsent,
+      source: removeProfileReferenceFiles(from, referencesNotPlaced, only: notPlaced),
     );
   } finally {
     input.closeSync();
+  }
+}
+
+bool _isWhole(String path, int bytes) {
+  try {
+    final file = File(path);
+    return file.existsSync() && file.lengthSync() == bytes;
+  } on FileSystemException {
+    return false;
   }
 }
 

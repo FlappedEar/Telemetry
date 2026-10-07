@@ -164,7 +164,10 @@ const _recordingExtensions = {'.vbo', '.rcz'};
 /// profile's copied recordings, files shared to the app) and that none of
 /// the days at [otherDayPaths] names. Only a `.vbo` or `.rcz` file is ever
 /// deleted that way: a recording anywhere else, or anything else the
-/// document names, is left alone. When one of the other days cannot be
+/// document names, is left alone. [referenceFile] is the copy of the day's
+/// own reference lap recording (FET-276), which goes the same way unless one
+/// of [otherReferenceFiles], the copies other days' reference laps use,
+/// is that file. When one of the other days cannot be
 /// read, no recording is deleted, as it may use them. An emptied folder a
 /// recording was the only file of is removed too, unless it is one of
 /// [ownedFolders]. A day whose own document cannot be read is deleted
@@ -173,6 +176,8 @@ DayFilesDeleted deleteDayFiles({
   required String dayPath,
   required Iterable<String> otherDayPaths,
   required Iterable<String> ownedFolders,
+  String? referenceFile,
+  Iterable<String> otherReferenceFiles = const [],
 }) {
   Set<String>? recordingsOf(String path) {
     if (!File(path).existsSync()) return const {};
@@ -183,7 +188,10 @@ DayFilesDeleted deleteDayFiles({
     }
   }
 
-  final recordings = recordingsOf(dayPath) ?? const <String>{};
+  final recordings = {
+    ...recordingsOf(dayPath) ?? const <String>{},
+    if (referenceFile != null && File(referenceFile).existsSync()) referenceFile,
+  };
   final roots = [for (final folder in ownedFolders) _canonical(folder)];
   bool owned(String file) => roots.any((root) => p.isWithin(root, file));
   final candidates = {
@@ -191,7 +199,7 @@ DayFilesDeleted deleteDayFiles({
       if (_recordingExtensions.contains(p.extension(file).toLowerCase()) && owned(_canonical(file)))
         _canonical(file),
   };
-  final used = <String>{};
+  final used = <String>{for (final file in otherReferenceFiles) _canonical(file)};
   var unreadable = false;
   if (candidates.isNotEmpty) {
     final self = _canonical(dayPath);

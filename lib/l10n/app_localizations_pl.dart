@@ -5760,8 +5760,24 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Nie znaleziono $count zapisów na tym urządzeniu, więc nie ma ich w pliku.',
+          '$count zapisów nie zostało znalezionych na tym urządzeniu, więc nie ma ich w pliku.',
+      few:
+          '$count zapisy nie zostały znalezione na tym urządzeniu, więc nie ma ich w pliku.',
       one: 'Nie znaleziono 1 zapisu na tym urządzeniu, więc nie ma go w pliku.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryExportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count zapisów odniesienia nie zostało znalezionych w profilu, więc nie ma ich w pliku.',
+      few:
+          '$count zapisy odniesienia nie zostały znalezione w profilu, więc nie ma ich w pliku.',
+      one: 'Nie znaleziono 1 zapisu odniesienia w profilu, więc nie ma go w pliku.',
     );
     return '$_temp0';
   }
@@ -6692,6 +6708,34 @@ class AppLocalizationsPl extends AppLocalizations {
       'Część notatek z pliku nie zmieściła się w notatniku i została pominięta.';
 
   @override
+  String libraryImportReferencesNotKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto okrążenia odniesienia $count dni: ich zapisy nie zmieściły się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+      few:
+          'Pominięto okrążenia odniesienia $count dni: ich zapisy nie zmieściły się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+      one: 'Pominięto okrążenie odniesienia 1 dnia: jego zapis nie zmieścił się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count zapisów odniesienia nie było w pliku: te odniesienia powiedzą, że nie znaleziono zapisu.',
+      few:
+          '$count zapisy odniesienia nie były w pliku: te odniesienia powiedzą, że nie znaleziono zapisu.',
+      one: '1 zapisu odniesienia nie było w pliku: to odniesienie powie, że nie znaleziono zapisu.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String notebookFull(int count) {
     return 'Notatnik mieści najwyżej $count rzeczy do wypróbowania. Usuń którąś, aby dodać kolejną.';
   }
@@ -7554,7 +7598,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceIntro =>
-      'Porównaj swoje okrążenia z okrążeniem spoza tego dnia: z zapisu znajomego lub instruktora albo z jednego z Twoich wcześniejszych dni. Jest mierzone na dzisiejszej linii start/meta i trzymane osobno: nie wchodzi do rankingu, teoretycznego czasu okrążenia, postępów ani porad trenera i nie jest zapisywane z dniem.';
+      'Porównaj swoje okrążenia z okrążeniem spoza tego dnia: z zapisu znajomego lub instruktora albo z jednego z Twoich wcześniejszych dni. Jest mierzone na dzisiejszej linii start/meta i trzymane osobno: nie wchodzi do rankingu, teoretycznego czasu okrążenia, postępów ani porad trenera i nie jest zapisywane w pliku dnia. Twój profil kierowcy zapamiętuje je dla tego dnia: plik zapisu jest kopiowany do profilu, a okrążenie z wcześniejszego dnia jest zapamiętywane przez ten dzień.';
 
   @override
   String get referenceLoadFile => 'Wczytaj zapis';
@@ -7618,7 +7662,76 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceNotSaved =>
-      'Trzymane, dopóki ten dzień jest otwarty; nie jest zapisywane.';
+      'Trzymane, dopóki ten dzień jest otwarty; nie jest zapamiętywane, bo ten dzień nie jest w Twoim profilu kierowcy.';
+
+  @override
+  String get referenceSaved =>
+      'Zapamiętane dla tego dnia w Twoim profilu kierowcy.';
+
+  @override
+  String get referenceSavedCopy =>
+      'Zapamiętane dla tego dnia w Twoim profilu kierowcy, razem z kopią zapisu.';
+
+  @override
+  String get referenceSaving => 'Zapisywanie w Twoim profilu kierowcy…';
+
+  @override
+  String referenceKeepFailed(String reason) {
+    return 'Nie zapamiętano: $reason Odniesienie zostaje, dopóki ten dzień jest otwarty.';
+  }
+
+  @override
+  String get referenceForgetFailed =>
+      'Nie udało się usunąć odniesienia z Twojego profilu kierowcy, więc wróci po ponownym otwarciu tego dnia.';
+
+  @override
+  String get referenceKeepRetry => 'Spróbuj ponownie';
+
+  @override
+  String referenceKeepTooManyFiles(int count) {
+    return 'Twój profil przechowuje już $count zapisów odniesienia. Najpierw usuń odniesienie z innego dnia.';
+  }
+
+  @override
+  String referenceKeepTooMuch(int megabytes) {
+    return 'Zapisy odniesienia zajęłyby w Twoim profilu ponad $megabytes MiB.';
+  }
+
+  @override
+  String referenceKeepFileTooLarge(int megabytes) {
+    return 'Zapis jest większy niż $megabytes MiB, czyli maksimum dla odniesienia.';
+  }
+
+  @override
+  String get referenceKeepFileEmpty => 'Zapis jest pusty.';
+
+  @override
+  String get referenceKeepFileType =>
+      'Można zapamiętać tylko zapis VBO lub RCZ.';
+
+  @override
+  String get referenceKeepUnreadable =>
+      'Nie udało się skopiować zapisu do Twojego profilu.';
+
+  @override
+  String get referenceKeepNotWritten =>
+      'Nie udało się zapisać Twojego profilu kierowcy.';
+
+  @override
+  String get referenceKeepOther =>
+      'Twój profil kierowcy nie mógł tego zachować.';
+
+  @override
+  String get referenceFileMissing =>
+      'Zapis zapamiętany dla tego odniesienia nie został znaleziony w Twoim profilu kierowcy. Usuń odniesienie albo wczytaj zapis ponownie.';
+
+  @override
+  String get referenceFileChanged =>
+      'Zapis zapamiętany dla tego odniesienia nie jest tym plikiem, który zapisano (zmienił się). Usuń odniesienie albo wczytaj zapis ponownie.';
+
+  @override
+  String get referenceDayMissing =>
+      'Dnia, z którego pochodzi to odniesienie, nie ma już w Twoim profilu kierowcy. Usuń odniesienie albo wybierz inny dzień.';
 
   @override
   String get referencePickDay => 'Wybierz wcześniejszy dzień';
@@ -7649,7 +7762,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceKeptApart =>
-      'Odniesienie nie jest częścią tego dnia: nie wchodzi do rankingu i nie jest zapisywane.';
+      'Odniesienie nie jest częścią tego dnia: nie wchodzi do rankingu i nie jest zapisywane w pliku dnia.';
 
   @override
   String get referenceGone => 'Nie wybrano okrążenia odniesienia.';
