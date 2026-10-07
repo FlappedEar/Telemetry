@@ -120,6 +120,14 @@ final class ProjectionProbe {
   /// Lowest cosine between the movement and the axis direction at the
   /// match, over fixes that moved at least 0.5 m (heading rule, 0).
   double lowestHeadingCosine = 1.0;
+  final _headingCosines = <double>[];
+
+  /// The [share] quantile of that cosine.
+  double headingCosineQuantile(double share) {
+    if (_headingCosines.isEmpty) return 1.0;
+    final sorted = [..._headingCosines]..sort();
+    return sorted[math.min(sorted.length - 1, (sorted.length * share).floor())];
+  }
 
   /// Longest time between consecutive fixes (gap, 5 s).
   double longestInterval = 0.0;
@@ -204,10 +212,9 @@ final class ProjectionProbe {
           final tx = b.eastMeters - a.eastMeters, ty = b.northMeters - a.northMeters;
           final tangent = math.sqrt(tx * tx + ty * ty);
           if (tangent > 1e-6) {
-            lowestHeadingCosine = math.min(
-              lowestHeadingCosine,
-              (mx * tx + my * ty) / (moved * tangent),
-            );
+            final cosine = (mx * tx + my * ty) / (moved * tangent);
+            _headingCosines.add(cosine);
+            lowestHeadingCosine = math.min(lowestHeadingCosine, cosine);
           }
         }
       }
@@ -231,8 +238,177 @@ final class ProjectionProbe {
       '($coldStartAmbiguous fixes above 0.7), nearest cold-start runner-up '
       '${nearestColdStartRunnerUp.toStringAsFixed(1)} m; '
       'backward step ≤ ${largestBackwardStep.toStringAsFixed(2)} m; '
-      'heading cosine ≥ ${lowestHeadingCosine.toStringAsFixed(3)}; '
+      'heading cosine ≥ ${lowestHeadingCosine.toStringAsFixed(3)} '
+      '(0.1% quantile ${headingCosineQuantile(0.001).toStringAsFixed(3)}); '
       'fix interval ≤ ${longestInterval.toStringAsFixed(3)} s; '
       'advance ≤ ${largestAdvance.toStringAsFixed(2)} m '
       '(${(largestWindowShare * 100).toStringAsFixed(0)}% of the forward window)';
+}
+
+/// The rule of [projectSample] that refused a fix.
+enum Refusal {
+  coldStartProximity('beyond 20 m on a cold start'),
+  coldStartAmbiguity('ambiguous on a cold start'),
+  coldStartHeading('heading on a cold start'),
+  lockedProximity('beyond 20 m while locked'),
+  lockedAmbiguity('ambiguous while locked'),
+  lockedHeading('heading while locked'),
+  backward('more than 3 m back');
+
+  const Refusal(this.label);
+
+  final String label;
+}
+
+/// The nearest axis point to [progressMeters] by the axis's cumulative
+/// distances, as the projection centres its window.
+int _windowCentre(ProgressAxis axis, double progressMeters) {
+  final n = axis.points.length;
+  final length = axis.lengthMeters;
+  final progress = progressMeters - (progressMeters / length).floorToDouble() * length;
+  var low = 0;
+  while (low + 1 < n && axis.cumulative[low + 1] <= progress) {
+    ++low;
+  }
+  final next = low + 1 < n ? axis.cumulative[low + 1] : length;
+  return progress - axis.cumulative[low] >= next - progress ? (low + 1) % n : low;
+}
+
+bool _headingAgrees(ProgressAxis axis, int index, (double, double) movement) {
+  final (mx, my) = movement;
+  final moved = math.sqrt(mx * mx + my * my);
+  if (!(moved > 1e-6)) return true;
+  final n = axis.points.length;
+  final a = axis.points[index], b = axis.points[(index + 1) % n];
+  final tx = b.eastMeters - a.eastMeters, ty = b.northMeters - a.northMeters;
+  final tangent = math.sqrt(tx * tx + ty * ty);
+  if (!(tangent > 1e-6)) return true;
+  return (mx * tx + my * ty) / (moved * tangent) >= 0.0;
+}
+
+/// Counts, rule by rule, the fixes [projectLapTrace] refuses: it replays the
+/// lap fix by fix through the real [projectSample], as [projectLapTrace]
+/// does, and names the rule that refused each fix by applying the rules of
+/// [projectSample] in its order. [disagreements] counts fixes where that
+/// reading and [projectSample] differ; it should stay 0, so the breakdown
+/// cannot drift from the code silently.
+final class RefusalTally {
+  final counts = {for (final refusal in Refusal.values) refusal: 0};
+
+  /// Fixes accepted, and fixes where the rules read here and [projectSample]
+  /// disagree.
+  int accepted = 0;
+  int disagreements = 0;
+
+  /// The progress of the best match of every fix refused for ambiguity
+  /// while locked.
+  final lockedAmbiguityProgress = <double>[];
+
+  int get refused => counts.values.fold(0, (sum, count) => sum + count);
+
+  /// Replays the fixes of [session] in [startTime]..[endTime] onto [axis].
+  void replay(ProgressAxis axis, TelemetrySession session, double startTime, double endTime) {
+    for (final segment in session.sampledSegments('latitude', startTime, endTime, 4000)) {
+      var context = ProjectionContext();
+      MetricPoint? previous;
+      double? previousTime;
+      for (final sample in segment) {
+        final longitude = session.valueAt('longitude', sample.time);
+        final coordinate = GeoCoordinate(sample.value, longitude ?? double.nan);
+        if (longitude == null || !isValidCoordinate(coordinate)) {
+          context = ProjectionContext();
+          previous = previousTime = null;
+          continue;
+        }
+        final local = projectCoordinate(coordinate, axis.origin);
+        var speed = 0.0;
+        var movement = (0.0, 0.0);
+        if (previous != null && previousTime != null && sample.time > previousTime) {
+          movement = (
+            local.eastMeters - previous.eastMeters,
+            local.northMeters - previous.northMeters,
+          );
+          speed =
+              math.sqrt(movement.$1 * movement.$1 + movement.$2 * movement.$2) /
+              (sample.time - previousTime);
+        }
+        previous = local;
+        previousTime = sample.time;
+        final (refusal, progress) = _rule(axis, local, sample.time, speed, movement, context);
+        final projected = projectSample(axis, local, sample.time, speed, movement, context);
+        if (projected.valid != (refusal == null)) ++disagreements;
+        if (projected.valid) {
+          ++accepted;
+          continue;
+        }
+        if (refusal != null) {
+          counts[refusal] = counts[refusal]! + 1;
+          if (refusal == Refusal.lockedAmbiguity) lockedAmbiguityProgress.add(progress);
+        }
+        context = ProjectionContext();
+        previous = previousTime = null;
+      }
+    }
+  }
+
+  /// The rule that refuses [point], or null, and the progress of its best
+  /// match; [context] is not changed.
+  static (Refusal?, double) _rule(
+    ProgressAxis axis,
+    MetricPoint point,
+    double time,
+    double speed,
+    (double, double) movement,
+    ProjectionContext context,
+  ) {
+    final spacing = axis.spacingMeters;
+    final dt = context.hasLock ? time - context.lastTelemetryTime : 0.0;
+    if (!context.hasLock || !(dt > 0) || dt > 5.0) {
+      final (index, progress, distance) = nearestSegment(axis, point);
+      if (index < 0 || distance > 20.0) return (Refusal.coldStartProximity, progress);
+      final second = nearestSegment(
+        axis,
+        point,
+        excluded: index,
+        exclusion: math.max(4, (30.0 / spacing).round()),
+      );
+      if (second.$1 >= 0 && distance > second.$3 * 0.7) {
+        return (Refusal.coldStartAmbiguity, progress);
+      }
+      if (!_headingAgrees(axis, index, movement)) return (Refusal.coldStartHeading, progress);
+      return (null, progress);
+    }
+    final forward = (dt * math.max(0.0, speed) * 1.6).clamp(15.0, 150.0);
+    final backward = math.min(15.0, forward * 0.3);
+    final forwardCount = math.max(1, (forward / spacing).round());
+    final backwardCount = math.max(1, (backward / spacing).round());
+    final start = _windowCentre(axis, context.lastProgressMeters) - backwardCount;
+    final count = forwardCount + backwardCount + 1;
+    final (index, progress, distance) = nearestSegment(axis, point, start: start, count: count);
+    if (index < 0 || distance > 20.0) return (Refusal.lockedProximity, progress);
+    final second = nearestSegment(
+      axis,
+      point,
+      start: start,
+      count: count,
+      excluded: index,
+      exclusion: math.max(3, (10.0 / spacing).round()),
+    );
+    if (second.$1 >= 0 && distance > second.$3 * 0.7) return (Refusal.lockedAmbiguity, progress);
+    if (!_headingAgrees(axis, index, movement)) return (Refusal.lockedHeading, progress);
+    var delta = progress - context.lastProgressMeters;
+    if (delta < -axis.lengthMeters / 2) {
+      delta += axis.lengthMeters;
+    } else if (delta > axis.lengthMeters / 2) {
+      delta -= axis.lengthMeters;
+    }
+    if (delta < -3.0) return (Refusal.backward, progress);
+    return (null, progress);
+  }
+
+  @override
+  String toString() => [
+    for (final refusal in Refusal.values)
+      if (counts[refusal]! > 0) '${counts[refusal]} ${refusal.label}',
+  ].join(', ');
 }

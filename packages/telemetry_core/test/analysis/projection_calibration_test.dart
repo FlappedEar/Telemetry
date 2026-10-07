@@ -183,7 +183,7 @@ void main() {
           _expectFollows(axis, track, lap);
           if (seed == 1) {
             final probe = ProjectionProbe()..measure(axis, lap.times, lap.localPoints);
-            print('Hairpin of $radius m, apex cut $cut m: $probe');
+            print('Hairpin of $radius m, apex cut ${cut.toStringAsFixed(1)} m: $probe');
             expect(probe.lowestHeadingCosine, greaterThan(0.5));
           }
         }
@@ -205,7 +205,9 @@ void main() {
           dropped += outcome.fixes - outcome.projected;
           fixes += outcome.fixes;
         }
-        print('Hairpin of $radius m, apex cut ${0.4 * radius} m: $dropped of $fixes fixes dropped');
+        print(
+          'Hairpin of $radius m, apex cut ${(0.4 * radius).toStringAsFixed(1)} m: $dropped of $fixes fixes dropped',
+        );
       }
     });
 

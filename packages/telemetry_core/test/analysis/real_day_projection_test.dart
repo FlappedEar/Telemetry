@@ -12,6 +12,12 @@ import 'package:test/test.dart';
 
 import '../support/projection_probe.dart';
 
+/// Figures docs/projection-constants.md quotes (finding 1), held within a
+/// tight band: the lap projections split into more than one segment, and the
+/// fixes left unprojected.
+const _splitLaps = 89;
+const _unprojected = 2078;
+
 void main() {
   final folder = Platform.environment['FLAPPEDEAR_REAL_DAY'] ?? '';
   final skip = folder.isEmpty ? 'FLAPPEDEAR_REAL_DAY is not set' : null;
@@ -50,11 +56,15 @@ void main() {
       expect(axes, isNotEmpty);
 
       final probe = ProjectionProbe();
+      final refusals = RefusalTally();
+      // The ambiguity refusals while locked on the first session's axis, by
+      // where on it they fall.
+      var firstAxisRefusals = const <double>[];
       var projectedLaps = 0, splitLaps = 0, fixes = 0, projectedFixes = 0;
       var largestGateGap = 0.0;
       var largestError = 0.0;
       final lengths = [for (final axis in axes) axis.lengthMeters];
-      for (final axis in axes) {
+      for (final (a, axis) in axes.indexed) {
         for (final (s, lapSession) in laps.indexed) {
           final session = sessions[s];
           for (final lap in lapSession.timedLaps.where((lap) => lap.referenceEligible)) {
@@ -77,6 +87,12 @@ void main() {
               session,
               lap.startTelemetryTime,
               lap.endTelemetryTime,
+            );
+            final accepted = refusals.accepted;
+            refusals.replay(axis, session, lap.startTelemetryTime, lap.endTelemetryTime);
+            expect(
+              refusals.accepted - accepted,
+              segments.fold(0, (sum, segment) => sum + segment.samples.length),
             );
             ++projectedLaps;
             if (segments.length != 1) ++splitLaps;
@@ -102,7 +118,9 @@ void main() {
             }
           }
         }
+        if (a == 0) firstAxisRefusals = [...refusals.lockedAmbiguityProgress]..sort();
       }
+      final unprojected = fixes - projectedFixes;
       print(
         '${axes.length} axes of ${lengths.reduce(math.min).toStringAsFixed(0)}–'
         '${lengths.reduce(math.max).toStringAsFixed(0)} m, '
@@ -111,6 +129,23 @@ void main() {
         '$projectedFixes of $fixes fixes projected',
       );
       print('Measured: $probe');
+      print(
+        'Unprojected: $unprojected fixes '
+        '(${(100 * unprojected / fixes).toStringAsFixed(2)}%): $refusals',
+      );
+      double quantile(List<double> sorted, double share) =>
+          sorted[math.min(sorted.length - 1, (sorted.length * share).floor())];
+      if (firstAxisRefusals.isNotEmpty) {
+        int within(double from, double to) =>
+            firstAxisRefusals.where((progress) => progress >= from && progress <= to).length;
+        print(
+          'Ambiguous while locked on the first axis: ${firstAxisRefusals.length} fixes, '
+          '${within(140, 185)} at 140–185 m, ${within(140, 200)} at 140–200 m; '
+          'median ${quantile(firstAxisRefusals, 0.5).toStringAsFixed(0)} m, '
+          'quartiles ${quantile(firstAxisRefusals, 0.25).toStringAsFixed(0)}–'
+          '${quantile(firstAxisRefusals, 0.75).toStringAsFixed(0)} m',
+        );
+      }
       print(
         'Nearest other part of the track: '
         '${axes.map((axis) => nearestOtherPart(axis, 30.0)).reduce(math.min).toStringAsFixed(1)} m '
@@ -130,6 +165,14 @@ void main() {
       expect(probe.largestWindowShare, lessThan(1.0));
       expect(largestGateGap, lessThanOrEqualTo(gateCoverageToleranceMeters));
       expect(probe.lowestHeadingCosine, greaterThan(0.0));
+      // The refusals are read rule by rule, and the reading agrees with
+      // projectSample on every fix.
+      expect(refusals.disagreements, 0);
+      expect(refusals.refused, unprojected);
+      // docs/projection-constants.md quotes these; a change in the
+      // projection that moves them must update the page too.
+      expect(splitLaps, inInclusiveRange(_splitLaps - 2, _splitLaps + 2));
+      expect(unprojected, inInclusiveRange(_unprojected - 20, _unprojected + 20));
       // Not asserted, because the reference day exceeds them (FET-215
       // findings in docs/projection-constants.md): 1% of fixes are more
       // than 12 m off the reference lap's line, and from about 8 m off the
