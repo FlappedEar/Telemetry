@@ -903,6 +903,97 @@ void main() {
       expect(recordings().listSync(), isEmpty, reason: 'its copy went');
     });
 
+    /// A profile of one day whose `reference` is [value] as written by
+    /// another version, with Recordings holding a copy the value names (when
+    /// it says `NAMED`) and an orphan nothing names.
+    Future<({File named, File orphan, ProfileLibrary shelf})> unreadable(
+      Object? value,
+    ) async {
+      final today = await savedDay('today', todayLaps());
+      final folder = profileFolder();
+      final profile = addDayToProfile(
+        DriverProfile.empty(),
+        ProfileDayInput(
+          eventId: today.eventId,
+          file: 'Days/${today.eventId}.fetproject',
+          name: 'Today',
+        ),
+        defaultCarName: 'Car',
+        defaultTrackName: 'Track',
+      );
+      final json =
+          jsonDecode(encodeDriverProfile(profile)) as Map<String, Object?>;
+      final named = keepReferenceFile(
+        folder,
+        write('ref/named.vbo', 'named\n'),
+      );
+      final orphan = keepReferenceFile(
+        folder,
+        write('ref/orphan.vbo', 'orphan\n'),
+      );
+      Object? named_(Object? v) => switch (v) {
+        'NAMED' => named.sha256,
+        final Map m => {for (final e in m.entries) e.key: named_(e.value)},
+        final List l => [for (final e in l) named_(e)],
+        _ => v,
+      };
+      ((json['days'] as List).single as Map<String, Object?>)['reference'] =
+          named_(value);
+      File(p.join(folder, profileFileName)).writeAsStringSync(jsonEncode(json));
+      final shelf = library();
+      await shelf.load();
+      // The sweep runs behind the load; give it its time.
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      return (
+        named: File(p.join(folder, 'Recordings', '${named.sha256}.vbo')),
+        orphan: File(p.join(folder, 'Recordings', '${orphan.sha256}.vbo')),
+        shelf: shelf,
+      );
+    }
+
+    test('the sweep keeps a copy a reference it cannot read names', () async {
+      for (final value in <Object?>[
+        {'kind': 'tape', 'sha256': 'NAMED', 'extension': '.vbo'},
+        {
+          'kind': 'newer',
+          'inner': [
+            {'sha256': 'NAMED'},
+          ],
+        },
+      ]) {
+        if (Directory(profileFolder()).existsSync()) {
+          Directory(profileFolder()).deleteSync(recursive: true);
+        }
+        final r = await unreadable(value);
+        addTearDown(r.shelf.dispose);
+        expect(r.named.existsSync(), isTrue, reason: '$value');
+        expect(r.orphan.existsSync(), isFalse, reason: 'the sweep ran');
+      }
+    });
+
+    test(
+      'the sweep stops when a reference has a shape it cannot read',
+      () async {
+        for (final value in <Object?>[
+          'a path: /home/me/friend.vbo',
+          42,
+          [1],
+        ]) {
+          if (Directory(profileFolder()).existsSync()) {
+            Directory(profileFolder()).deleteSync(recursive: true);
+          }
+          final r = await unreadable(value);
+          addTearDown(r.shelf.dispose);
+          expect(r.named.existsSync(), isTrue, reason: '$value');
+          expect(
+            r.orphan.existsSync(),
+            isTrue,
+            reason: 'nothing is guessed: $value',
+          );
+        }
+      },
+    );
+
     test(
       'copies nothing uses are swept once at start-up, and only those',
       () async {

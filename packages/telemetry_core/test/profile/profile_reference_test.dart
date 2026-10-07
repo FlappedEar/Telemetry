@@ -247,6 +247,43 @@ void main() {
       },
     );
 
+    test(
+      'what an unreadable reference names is found, and a shape that cannot be searched is said',
+      () {
+        DriverProfile with_(Object? value) {
+          final json = _json(_days(2));
+          ((json['days'] as List).first as Map<String, Object?>)['reference'] = value;
+          return decodeDriverProfile(jsonEncode(json));
+        }
+
+        final sha = 'AB' * 32;
+        final found = profileUnreadableReferenceFiles(
+          with_({
+            'kind': 'tape',
+            'deep': [
+              {'sha256': sha},
+            ],
+          }),
+        );
+        expect(found.unreadable, isFalse);
+        expect(found.fileNames, {'${sha.toLowerCase()}.vbo', '${sha.toLowerCase()}.rcz'});
+        expect(profileUnreadableReferenceFiles(with_({'kind': 'tape'})).fileNames, isEmpty);
+        expect(profileUnreadableReferenceFiles(with_(null)).unreadable, isFalse);
+        for (final value in <Object?>[
+          'text',
+          7,
+          [1],
+        ]) {
+          expect(
+            profileUnreadableReferenceFiles(with_(value)).unreadable,
+            isTrue,
+            reason: '$value',
+          );
+        }
+        expect(profileUnreadableReferenceFiles(_days(2)).fileNames, isEmpty);
+      },
+    );
+
     test('setting or clearing a reference replaces one this version could not read', () {
       final json = _json(_days(1));
       ((json['days'] as List).single as Map<String, Object?>)['reference'] = {'kind': 'tape'};

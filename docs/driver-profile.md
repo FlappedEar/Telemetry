@@ -254,9 +254,13 @@ dropped after an import, can leave a copy nothing uses in `Recordings/`. Once
 at start-up, after the profile is read, behind any import and change of a
 reference and never while a choice waits for its day, the app deletes the files
 there that are named like a reference copy (64 hex digits and `.vbo` or `.rcz`)
-and are neither a reference nor a recording of any day in `Days/`, and the
+and are neither a reference (also one this version cannot read: every 64-hex
+`sha256` inside it counts as used, with either extension) nor a recording of any
+day in `Days/`, and the
 half-written `.reference-*.partial` files (`sweepReferenceFiles`). Nothing else
-in that folder is touched, and a day that cannot be read stops the sweep.
+in that folder is touched, and the sweep stops altogether when a day cannot be
+read or a day's `reference` has a shape that cannot be searched (not an
+object), so a newer version's copies are never lost to this one.
 
 A per-track "last reference used" (a fallback when a day has none) is not
 kept: it would need an explicit "cleared" marker so a cleared reference stays

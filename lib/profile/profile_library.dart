@@ -890,7 +890,14 @@ class ProfileLibrary extends ChangeNotifier {
         for (final day in profile.days) pathOf(day)!,
         ..._dayFiles(folder),
       ];
-      final used = profileReferenceFiles(profile).keys.toSet();
+      // A reference this version cannot read (a newer one's) may use any
+      // copy it names, or any at all if it cannot even be searched.
+      final unread = profileUnreadableReferenceFiles(profile);
+      if (unread.unreadable) return;
+      final used = {
+        ...profileReferenceFiles(profile).keys,
+        ...unread.fileNames,
+      };
       try {
         final deleted = await background(_sweepJob(folder, used, days));
         if (deleted > 0) {

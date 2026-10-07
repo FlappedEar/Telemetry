@@ -414,3 +414,43 @@ DriverProfile removeProfileReferenceFiles(
   ];
   return changed ? profile._copy(days: days) : profile;
 }
+
+/// What the `reference` values this version could not read (kept as written
+/// in a day's unknown keys, such as a newer version's) still name:
+/// [fileNames] are the copies they may use, every 64-digit hex string called
+/// `sha256` anywhere inside one, with both `.vbo` and `.rcz`; and
+/// [unreadable] is true when one has a shape that cannot be searched (not an
+/// object), so nothing can be said about what it uses. A caller that deletes
+/// copies treats [fileNames] as used, and deletes nothing when [unreadable].
+({Set<String> fileNames, bool unreadable}) profileUnreadableReferenceFiles(DriverProfile profile) {
+  final names = <String>{};
+  var unreadable = false;
+  void search(Object? value) {
+    if (value is Map) {
+      for (final entry in value.entries) {
+        final inner = entry.value;
+        if (entry.key == 'sha256' && inner is String && _sha256.hasMatch(inner.toLowerCase())) {
+          final sha = inner.toLowerCase();
+          for (final extension in referenceFileExtensions) {
+            names.add('$sha$extension');
+          }
+        }
+        search(inner);
+      }
+    } else if (value is List) {
+      value.forEach(search);
+    }
+  }
+
+  for (final day in profile.days) {
+    if (!day.unknown.containsKey(_referenceKey)) continue;
+    final value = day.unknown[_referenceKey];
+    if (value == null) continue;
+    if (value is! Map) {
+      unreadable = true;
+      continue;
+    }
+    search(value);
+  }
+  return (fileNames: names, unreadable: unreadable);
+}
