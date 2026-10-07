@@ -669,6 +669,32 @@
       }
     }
   },
+  "coachCornerMap": "Best lap trace with today's corners numbered",
+  "@coachCornerMap": {
+    "description": "Screen-reader label of the coach card's map when no item is selected."
+  },
+  "coachCornerMapSelected": "Best lap trace with today's corners numbered, {segment} highlighted",
+  "@coachCornerMapSelected": {
+    "description": "Screen-reader label of the coach card's map: the corner of the item selected is highlighted.",
+    "placeholders": {
+      "segment": {
+        "type": "String",
+        "example": "Corner 10"
+      }
+    }
+  },
+  "coachCornerMapNote": "Corners are numbered as the coach names them.",
+  "@coachCornerMapNote": {
+    "description": "Under the coach card's map when there is no item."
+  },
+  "coachCornerMapNoteSelect": "Corners are numbered as the coach names them. Tap an item to show its corner.",
+  "@coachCornerMapNoteSelect": {
+    "description": "Under the coach card's map: tapping an item highlights its corner."
+  },
+  "coachShowOnMap": "show its corner on the map",
+  "@coachShowOnMap": {
+    "description": "Screen-reader hint of a coach item: what tapping it does."
+  },
   "appleMapLegal": "Legal",
   "@appleMapLegal": {
     "description": "Link to Apple Maps' legal notices, shown on the Apple Maps background."

@@ -345,6 +345,46 @@ final class MapMark {
   int get hashCode => Object.hash(east, north, color, radius);
 }
 
+/// A short text drawn over the trace, such as a corner's number: centred
+/// on [east] and [north] metres around the path's origin, on a [color]
+/// chip. [emphasized] draws it larger, with a white edge.
+@immutable
+final class MapLabel {
+  const MapLabel(
+    this.east,
+    this.north,
+    this.text,
+    this.color, {
+    this.emphasized = false,
+  });
+
+  final double east;
+  final double north;
+  final String text;
+  final Color color;
+  final bool emphasized;
+
+  /// White or black, whichever reads on [color].
+  Color get textColor =>
+      ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+      ? Colors.white
+      : Colors.black;
+
+  double get fontSize => emphasized ? 13 : 11;
+
+  @override
+  bool operator ==(Object other) =>
+      other is MapLabel &&
+      other.east == east &&
+      other.north == north &&
+      other.text == text &&
+      other.color == color &&
+      other.emphasized == emphasized;
+
+  @override
+  int get hashCode => Object.hash(east, north, text, color, emphasized);
+}
+
 /// The GPS trace of a lap coloured by speed, over street or satellite tiles
 /// (a plain background only under tests), with an optional reference lap in
 /// grey under it and the start/finish line. North is up. On a phone or tablet
@@ -361,6 +401,7 @@ class TrackMap extends StatelessWidget {
     this.interactive = true,
     this.pointColor,
     this.marks = const [],
+    this.labels = const [],
     this.movingMarks,
     this.onTapMeters,
   });
@@ -378,8 +419,11 @@ class TrackMap extends StatelessWidget {
   /// repaints when they change, never the trace.
   final ValueListenable<List<MapMark>>? movingMarks;
 
-  /// Points drawn over the trace, last on top.
+  /// Points drawn over the trace and its [labels], last on top.
   final List<MapMark> marks;
+
+  /// Texts drawn over the trace, under the [marks], last on top.
+  final List<MapLabel> labels;
 
   /// The colour of the trace up to each fix, instead of its speed; null for
   /// a fix leaves it in the neutral colour.
@@ -410,6 +454,7 @@ class TrackMap extends StatelessWidget {
                         interactive: interactive,
                         pointColor: pointColor,
                         marks: marks,
+                        labels: labels,
                         movingMarks: movingMarks,
                         onTapMeters: onTapMeters,
                       ),
@@ -440,6 +485,9 @@ class TrackMap extends StatelessWidget {
         gateColor: scheme.onSurface,
         pointColor: pointColor,
         marks: marks,
+        labels: labels,
+        textScaler: MediaQuery.textScalerOf(context),
+        textDirection: Directionality.of(context),
         // On white the light end of the speed ramp needs a dark edge.
         casing: scheme.brightness == Brightness.light ? Colors.black54 : null,
       ),
@@ -604,12 +652,14 @@ class _TiledMap extends StatelessWidget {
     required this.interactive,
     this.pointColor,
     this.marks = const [],
+    this.labels = const [],
     this.movingMarks,
     this.onTapMeters,
   });
 
   final void Function(double east, double north)? onTapMeters;
   final List<MapMark> marks;
+  final List<MapLabel> labels;
   final ValueListenable<List<MapMark>>? movingMarks;
   final TileSource tiles;
   final LapPath path;
@@ -768,6 +818,18 @@ class _TiledMap extends StatelessWidget {
                   borderStrokeWidth: 1.5,
                   borderColor: Colors.white,
                 ),
+              ],
+            ),
+          if (labels.isNotEmpty)
+            MarkerLayer(
+              markers: [
+                for (final label in labels)
+                  Marker(
+                    point: pathLatLng(path.origin, label.east, label.north),
+                    width: 96,
+                    height: 40,
+                    child: Center(child: _LabelChip(label)),
+                  ),
               ],
             ),
           if (marks.isNotEmpty)
@@ -930,8 +992,15 @@ class _TrackPainter extends CustomPainter {
     required this.gateColor,
     this.pointColor,
     this.marks = const [],
+    this.labels = const [],
+    this.textScaler = TextScaler.noScaling,
+    this.textDirection = TextDirection.ltr,
     this.casing,
   }) : range = speedRange(path);
+
+  final List<MapLabel> labels;
+  final TextScaler textScaler;
+  final TextDirection textDirection;
 
   /// Drawn under the trace and around the marks when set (the light look);
   /// marks get a white ring otherwise.
@@ -1020,6 +1089,42 @@ class _TrackPainter extends CustomPainter {
       );
     }
 
+    for (final label in labels) {
+      final text = TextPainter(
+        text: TextSpan(
+          text: label.text,
+          style: TextStyle(
+            color: label.textColor,
+            fontSize: label.fontSize,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: textDirection,
+        textScaler: textScaler,
+        maxLines: 1,
+      )..layout();
+      final centre = at(label.east, label.north);
+      final chip = Rect.fromCenter(
+        center: centre,
+        width: math.max(text.width + 10, text.height + 4),
+        height: text.height + 4,
+      );
+      final shape = RRect.fromRectAndRadius(
+        chip,
+        Radius.circular(chip.height / 2),
+      );
+      if (label.emphasized) {
+        canvas.drawRRect(
+          shape.inflate(2),
+          Paint()..color = casing ?? Colors.white,
+        );
+      }
+      canvas.drawRRect(shape, Paint()..color = label.color);
+      text
+        ..paint(canvas, centre - Offset(text.width / 2, text.height / 2))
+        ..dispose();
+    }
+
     for (final mark in marks) {
       final centre = at(mark.east, mark.north);
       canvas
@@ -1077,7 +1182,10 @@ class _TrackPainter extends CustomPainter {
       old.gateColor != gateColor ||
       old.pointColor != pointColor ||
       old.casing != casing ||
-      !listEquals(old.marks, marks);
+      old.textScaler != textScaler ||
+      old.textDirection != textDirection ||
+      !listEquals(old.marks, marks) ||
+      !listEquals(old.labels, labels);
 }
 
 /// The speed scale under a map: slow and fast ends with their values.
@@ -1214,5 +1322,38 @@ class LabelledSpeedLegend extends StatelessWidget {
         ],
       );
     },
+  );
+}
+
+/// A [MapLabel] on a tiled map: a rounded chip with its text.
+class _LabelChip extends StatelessWidget {
+  const _LabelChip(this.label);
+
+  final MapLabel label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    constraints: const BoxConstraints(minWidth: 20),
+    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+    decoration: BoxDecoration(
+      color: label.color,
+      borderRadius: BorderRadius.circular(12),
+      border: label.emphasized
+          ? Border.all(color: Colors.white, width: 2)
+          : null,
+      boxShadow: const [BoxShadow(blurRadius: 3, color: Colors.black45)],
+    ),
+    child: Text(
+      label.text,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: label.textColor,
+        fontSize: label.fontSize,
+        fontWeight: FontWeight.w700,
+        height: 1.1,
+      ),
+    ),
   );
 }

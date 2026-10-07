@@ -1266,6 +1266,17 @@ void main() {
       // Coach shows the skills across days under what to try next.
       await tester.tap(find.byKey(const ValueKey('place-coach')));
       await settle();
+      // Below the coach's card and its map.
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('skillLevels')),
+        300,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const ValueKey('dayResultsCoach')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.byKey(const ValueKey('skillLevels')), findsOneWidget);
 
       // Profile from the day: the day leaves first, then the library it

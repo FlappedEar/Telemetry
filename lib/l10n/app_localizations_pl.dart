@@ -455,6 +455,26 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get coachCornerMap =>
+      'Ślad najlepszego okrążenia z ponumerowanymi zakrętami dnia';
+
+  @override
+  String coachCornerMapSelected(String segment) {
+    return 'Ślad najlepszego okrążenia z ponumerowanymi zakrętami dnia, wyróżniono: $segment';
+  }
+
+  @override
+  String get coachCornerMapNote =>
+      'Zakręty są ponumerowane tak, jak nazywa je trener.';
+
+  @override
+  String get coachCornerMapNoteSelect =>
+      'Zakręty są ponumerowane tak, jak nazywa je trener. Dotknij sugestii, aby pokazać jej zakręt.';
+
+  @override
+  String get coachShowOnMap => 'pokaż jej zakręt na mapie';
+
+  @override
   String get appleMapLegal => 'Informacje prawne';
 
   @override
