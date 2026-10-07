@@ -427,6 +427,31 @@ void main() {
       expect(channelUpdateRateHz(_channel('brake', pedal, unit: '%')), closeTo(10, 0.01));
     });
 
+    test('a 10 Hz pedal pressed and let off over a few samples is 10 Hz', () {
+      // Each edge bends at three or four samples in a row (as a pedal that
+      // follows the deceleration does): corners a sample apart are the
+      // pedal's own rate, not lines between slower updates.
+      const press = [5.2, 52.8, 92.7];
+      const off = [29.7, 9.3];
+      final values = <double>[];
+      for (var brake = 0; brake < 8; ++brake) {
+        values.addAll(List.filled(20, 0.0));
+        values.addAll(press);
+        for (var level = 90.2; level > 41.4; level *= 0.973) {
+          values.add((level * 10).roundToDouble() / 10);
+        }
+        values.addAll(off);
+      }
+      values.addAll(List.filled(20, 0.0));
+      final channel = _channel(
+        'brake',
+        (t) => values[(t * 10).round()],
+        unit: '%',
+        to: (values.length - 1) / 10,
+      );
+      expect(channelUpdateRateHz(channel), closeTo(10, 0.01));
+    });
+
     test('a channel with no samples has no rate', () {
       final empty = TelemetryChannel(name: 'x', timestamps: Float64List(0), values: Float32List(0));
       expect(channelUpdateRateHz(empty), isNull);

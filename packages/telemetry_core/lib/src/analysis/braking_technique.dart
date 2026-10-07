@@ -249,7 +249,11 @@ double? _updateRate(TelemetryChannel channel) {
       bends[bends.length ~/ 2] >= brakingTechniqueSharpCornerRatio) {
     double quantile(double q) => spacings[(q * (spacings.length - 1)).round()].toDouble();
     final median = quantile(0.5);
-    if (quantile(0.75) - quantile(0.25) <= brakingTechniqueLineSpacingSpread * median) {
+    // Corners a sample apart are a signal bending at its own rate (the
+    // sharp edges of a pedal pressed and let off), not lines between
+    // slower updates.
+    if (median >= 2 &&
+        quantile(0.75) - quantile(0.25) <= brakingTechniqueLineSpacingSpread * median) {
       // The mean spacing: an update period between two row intervals shows
       // as a mix of the two.
       final mean = spacings.fold(0, (sum, spacing) => sum + spacing) / spacings.length;
