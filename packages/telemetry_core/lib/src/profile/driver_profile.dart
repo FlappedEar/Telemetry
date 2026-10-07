@@ -7,6 +7,7 @@ import 'dart:math';
 
 import '../analysis/consistency.dart';
 import '../channel_units.dart' show accelerationGPerUnit;
+import '../analysis/track_progress.dart' show nearestAxisIndex;
 import '../day/compatibility.dart';
 import '../day/day_coach.dart' show CoachCornerPassage, coachCornerPassages;
 import '../day/day_analysis.dart';
