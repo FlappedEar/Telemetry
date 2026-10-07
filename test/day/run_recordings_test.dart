@@ -343,9 +343,6 @@ void main() {
   });
 
   test('clock checks and primary changes wait for a free slot', () async {
-    final previous = DayResultsController.fusionSlots;
-    DayResultsController.fusionSlots = 1;
-    addTearDown(() => DayResultsController.fusionSlots = previous);
     final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
     final (vbo2, rcz2) = writeFusionPair(
       directory.path,
@@ -363,6 +360,7 @@ void main() {
       runs: day.runs,
       analysis: day.analysis!,
       alternatives: day.alternatives,
+      fusionSlots: 1,
       fusionRunner: (job) {
         final gate = Completer<void>();
         if (hold) {
@@ -475,9 +473,6 @@ void main() {
   test(
     'closing the day while a primary change waits for a slot stops it',
     () async {
-      final previous = DayResultsController.fusionSlots;
-      DayResultsController.fusionSlots = 1;
-      addTearDown(() => DayResultsController.fusionSlots = previous);
       final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
       final (vbo2, rcz2) = writeFusionPair(
         directory.path,
@@ -493,6 +488,7 @@ void main() {
         runs: day.runs,
         analysis: day.analysis!,
         alternatives: day.alternatives,
+        fusionSlots: 1,
         fusionRunner: (job) =>
             _GatedTask(hold ? Completer<void>().future : Future.value(), job),
       );
@@ -560,9 +556,6 @@ void main() {
 
     Future<(DayResultsController, String, String, List<Completer<void>>)>
     held() async {
-      final previous = DayResultsController.fusionSlots;
-      DayResultsController.fusionSlots = 1;
-      addTearDown(() => DayResultsController.fusionSlots = previous);
       final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
       final (vbo2, rcz2) = writeFusionPair(
         directory.path,
@@ -579,6 +572,7 @@ void main() {
         runs: day.runs,
         analysis: day.analysis!,
         alternatives: day.alternatives,
+        fusionSlots: 1,
         fusionRunner: (job) {
           final gate = Completer<void>();
           hold ? gates.add(gate) : gate.complete();
