@@ -17,6 +17,7 @@ export 'src/analysis/day_report.dart';
 export 'src/analysis/driving_states.dart';
 export 'src/analysis/driving_variability.dart';
 export 'src/analysis/exit_metrics.dart';
+export 'src/analysis/pedal_scale.dart' show PedalScale, throttleScale;
 export 'src/analysis/focus_areas.dart';
 export 'src/analysis/gg_pairs.dart';
 export 'src/analysis/lap_charts.dart';

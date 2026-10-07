@@ -37,6 +37,8 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       cornerPhaseCrossesGate => l10n.cornerDetailsReasonCrossesGate,
       exitUnitMismatch => l10n.cornerDetailsReasonUnitNotSupported,
       exitUnitUndeclared => l10n.cornerDetailsReasonUnitNotRecorded,
+      exitScaleUnknown => l10n.cornerDetailsReasonScaleUnknown,
+      exitScaleInferred => l10n.cornerDetailsReasonScaleInferred,
       cornerPhaseSpeedChannelMissing => l10n.cornerDetailsReasonNoSpeedChannel,
       cornerSpeedMixedProvenance => l10n.cornerDetailsReasonMixedProvenance,
       cornerSpeedDifferentSegmentOrRevision =>
@@ -191,6 +193,8 @@ class CornerDetails extends StatelessWidget {
           ? l10n.cornerDetailsFromBrakeChannel
           : braking.limitations.contains(brakingBrakeChannelNotUsed)
           ? l10n.cornerDetailsFromDecelerationBrakeUnused
+          : braking.limitations.contains(brakingScaleUnknown)
+          ? l10n.cornerDetailsFromDecelerationBrakeScaleUnknown
           : l10n.cornerDetailsFromDeceleration;
       if (best != null &&
           bestBraking?.brakingPointMeters != null &&

@@ -7,6 +7,7 @@ import 'dart:math' as math;
 
 import '../telemetry_session.dart';
 import 'braking_source.dart';
+import 'pedal_scale.dart';
 import 'track_progress.dart';
 
 const String brakingOnsetAlgorithm = 'braking-onset-v1';
@@ -22,6 +23,10 @@ const String brakingInferenceDisabled = 'inferenceDisabled';
 const String brakingUnitMismatch = 'unitMismatch';
 const String brakingNoSamples = 'noSamplesInWindow';
 
+/// The brake declares no unit, stays within 0..1 and nothing shows whether
+/// that is a fraction or a few percent (FET-205, pedal_scale.dart).
+const String brakingScaleUnknown = 'channelScaleUnknown';
+
 /// Candidate uncertainty reasons.
 const String brakingFollowsGap = 'followsGap';
 const String brakingAlreadyActive = 'alreadyBrakingAtWindowStart';
@@ -33,6 +38,10 @@ const String brakingUnitUndeclared = 'channelUnitUndeclared';
 /// data, or not pressed in most hard brakings), so deceleration is used
 /// (FET-204, braking_source.dart).
 const String brakingBrakeChannelNotUsed = 'brakeChannelNotUsed';
+
+/// The brake declares no unit and is read as a 0..1 fraction, as the hard
+/// brakings show (FET-205): thresholds are divided by 100.
+const String brakingScaleInferred = 'channelScaleInferred';
 
 /// Hysteresis thresholds on braking magnitude, in [unit]. For deceleration
 /// the magnitude is the negated longitudinal acceleration (negative G is
@@ -166,11 +175,19 @@ BrakingOnsetDetection detectBrakingOnsets(
   final hasBrake = quality.hasBrake && !brakeRejected;
   final hasDeceleration = quality.hasDeceleration;
   var sign = 1.0;
+  final fraction = hasBrake && quality.brakeScale == PedalScale.fraction;
   if (hasBrake) {
     result.method = brakingMethodMeasured;
     result.provenance = brakingProvenanceMeasured;
     result.channel = brakeName;
-    result.threshold = options.measuredBrake;
+    result.threshold = fraction
+        ? BrakingThreshold(options.measuredBrake.on / 100.0, options.measuredBrake.off / 100.0, '')
+        : options.measuredBrake;
+    if (quality.brakeScale == PedalScale.unknown) {
+      result.channelUnit = session.channels[brakeName]!.unit;
+      result.unresolvedReason = brakingScaleUnknown;
+      return result;
+    }
   } else if (hasDeceleration) {
     result.method = brakingMethodInferred;
     result.provenance = brakingProvenanceInferred;
@@ -228,7 +245,11 @@ BrakingOnsetDetection detectBrakingOnsets(
             ...current.reasons,
             ?truncation,
             if (!unitDeclared) brakingUnitUndeclared,
-            if (brakeRejected) brakingBrakeChannelNotUsed,
+            if (brakeRejected)
+              quality.brakeScale == PedalScale.unknown
+                  ? brakingScaleUnknown
+                  : brakingBrakeChannelNotUsed,
+            if (fraction) brakingScaleInferred,
           ],
           progressMeters: lapTrace == null ? null : progressAtTime(lapTrace, current.onset),
         ),
