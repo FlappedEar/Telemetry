@@ -573,6 +573,8 @@ void main() {
     await shot(tester, 'segment-spread');
     await scrollIn(tester, summary, find.text('Progression'));
     await shot(tester, 'progression');
+    await scrollIn(tester, summary, find.text('G-G envelope'));
+    await shot(tester, 'gg-envelope');
     await scrollIn(tester, summary, find.text('Best lap of each session'));
     await shot(tester, 'sessions-and-circuits');
 

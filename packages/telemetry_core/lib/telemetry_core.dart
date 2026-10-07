@@ -46,6 +46,7 @@ export 'src/day/day_corner_analyzer.dart';
 export 'src/day/day_corners.dart';
 export 'src/day/day_document.dart';
 export 'src/day/day_fusion.dart';
+export 'src/day/day_gg_envelope.dart';
 export 'src/day/run_primary.dart';
 export 'src/day/day_recovery.dart';
 export 'src/day/day_relink.dart';
