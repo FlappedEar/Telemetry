@@ -963,6 +963,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No run in this group has an approved segment review yet. Approve segments for at least one run first.';
 
   @override
+  String get tbBestLapOffLine =>
+      'The best lap\'s GPS line is far from most of the other laps somewhere, so no segments were made automatically. Exclude the laps whose line is wrong from the ranking.';
+
+  @override
   String get tbNoApprovedSegments =>
       'No approved segments to measure sectors against.';
 

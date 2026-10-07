@@ -16,10 +16,12 @@ import '../analysis/time_loss.dart';
 import '../analysis/track_progress.dart';
 import '../analysis/track_segment_review.dart';
 import '../intake/import_plan.dart';
+import '../laps/lap_session.dart';
 import '../operation.dart';
 import 'day_analysis.dart';
 import 'day_corners.dart';
 import 'day_laps.dart';
+import 'day_ranking.dart';
 
 /// Whether a group's theoretical best was calculated.
 enum DayTheoreticalBestState {
@@ -302,6 +304,28 @@ Map<String, OutingRun> outingRuns(List<NamedRun> runs) => {
 
 Map<String, Object?>? _object(Object? value) => value is Map<String, Object?> ? value : null;
 
+/// The lap traces of [ranking]'s eligible laps other than [best], from
+/// [lapsByRun] (each run's laps): what the best lap's line is checked
+/// against before its segments are adopted (FET-214). Excluded laps and laps
+/// the ranking leaves out are not used.
+List<LapTrace> otherEligibleLapTraces(
+  DayRanking ranking,
+  DayLapRow best,
+  Map<String, LapSession> lapsByRun,
+) {
+  final traces = <LapTrace>[];
+  for (final row in ranking.eligibleLaps) {
+    if (row.runId == best.runId && row.lapNumber == best.lapNumber) continue;
+    for (final trace in lapsByRun[row.runId]?.lapTraces ?? const <LapTrace>[]) {
+      if (trace.lapNumber == row.lapNumber) {
+        traces.add(trace);
+        break;
+      }
+    }
+  }
+  return traces;
+}
+
 /// The theoretical best of [groupId] (by default the group shown) in
 /// [analysis], with [runs]' recordings. [documentRuns] are the day
 /// document's `event.runs`, whose `trackSegments` hold the approved segments.
@@ -344,6 +368,7 @@ DayTheoreticalBest dayTheoreticalBest(
         run['id'] as String: run['trackSegments'],
   };
   var automatic = false;
+  var lineDisagrees = false;
   final best = ranking.bestOfDay;
   // The best lap's proposals: approved for the calculation when the group
   // has no segments yet, and otherwise compared with the approved ones.
@@ -360,7 +385,16 @@ DayTheoreticalBest dayTheoreticalBest(
     );
     if (group.id.startsWith('compatibility-v1:') &&
         !groupHasApprovedSegments(documentRuns, group.id)) {
-      final segments = approveAllProposals(stored[best.runId], review, group.id, random: random);
+      lineDisagrees = lineConsensus(
+        review.axis,
+        otherEligibleLapTraces(ranking, best, {
+          for (final entry in runs.entries) entry.key: entry.value.laps,
+        }),
+        cancelled: cancelled,
+      ).disagrees;
+      final segments = lineDisagrees
+          ? null
+          : approveAllProposals(stored[best.runId], review, group.id, random: random);
       if (segments != null) {
         stored[best.runId] = segments;
         automatic = true;
@@ -373,6 +407,7 @@ DayTheoreticalBest dayTheoreticalBest(
     group.id,
   );
   if (canonical == null) {
+    if (lineDisagrees) return unavailable(automaticSegmentsLineDisagreement);
     return unavailable(
       'No run in this group has an approved segment review yet. '
       'Approve segments for at least one run first.',

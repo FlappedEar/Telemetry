@@ -241,6 +241,7 @@
   "tbNoConfiguration": "Potwierdź zgodną konfigurację toru, aby obliczyć teoretyczny czas okrążenia.",
   "tbNoEligibleLaps": "W tej grupie nie ma okrążeń, które można uwzględnić w obliczeniu teoretycznego czasu okrążenia.",
   "tbNoApprovedRun": "Żadna sesja w tej grupie nie ma jeszcze zatwierdzonych odcinków. Najpierw zatwierdź odcinki dla co najmniej jednej sesji.",
+  "tbBestLapOffLine": "Linia GPS najlepszego okrążenia jest gdzieś daleko od większości pozostałych okrążeń, więc odcinki nie zostały wyznaczone automatycznie. Wyklucz z rankingu okrążenia z błędną linią.",
   "tbNoApprovedSegments": "Brak zatwierdzonych odcinków potrzebnych do pomiaru czasów.",
   "tbIncompleteCoverage": "Co najmniej jeden odcinek nie ma pełnego pomiaru czasu na żadnym okrążeniu uwzględnianym w obliczeniach, dlatego nie pokazano sumy.",
   "tbCancelled": "Obliczanie teoretycznego czasu okrążenia zostało anulowane.",

@@ -77,6 +77,7 @@ extension TheoreticalBestText on AppLocalizations {
     'No run in this group has an approved segment review yet. '
         'Approve segments for at least one run first.' =>
       tbNoApprovedRun,
+    automaticSegmentsLineDisagreement => tbBestLapOffLine,
     'No approved segments to measure sectors against.' => tbNoApprovedSegments,
     'At least one sector has no fully covered time on any eligible lap, so '
         'no total is shown.' =>

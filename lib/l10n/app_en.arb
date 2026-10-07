@@ -1408,6 +1408,10 @@
   "@tbNoApprovedRun": {
     "description": "Why there is no theoretical best."
   },
+  "tbBestLapOffLine": "The best lap's GPS line is far from most of the other laps somewhere, so no segments were made automatically. Exclude the laps whose line is wrong from the ranking.",
+  "@tbBestLapOffLine": {
+    "description": "Why there is no theoretical best: the best lap's GPS line disagrees with the session's other laps (FET-214)."
+  },
   "tbNoApprovedSegments": "No approved segments to measure sectors against.",
   "@tbNoApprovedSegments": {
     "description": "Why there is no theoretical best."
