@@ -6860,7 +6860,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get profileTrendsIntro =>
-      'Każdy tor w każdym samochodzie osobno: wartości zależą od obu, więc dzień porównuje się tylko z dniami na tym samym torze w tym samym samochodzie. Przy rozrzucie punktu hamowania, prędkości minimalnej poniżej najlepszej, czasie od odjęcia gazu do hamowania i rozrzucie czasów okrążeń mniej znaczy lepiej. Prędkość minimalna jest liczona względem Twojej najlepszej w każdym zakręcie tego toru, więc nowa najlepsza zmienia też wartości wcześniejszych dni.';
+      'Każdy tor w każdym samochodzie osobno: wartości zależą od obu, więc dzień porównuje się tylko z dniami na tym samym torze w tym samym samochodzie. Przy rozrzucie punktu hamowania, prędkości minimalnej poniżej najlepszej, czasie od odjęcia gazu do hamowania i rozrzucie czasów okrążeń mniej znaczy lepiej. Każda z tych wartości to mediana z zakrętów zmierzonych danego dnia, więc dni mogą się różnić zakrętami, z których pochodzi. Prędkość minimalna jest liczona względem Twojej najlepszej w każdym zakręcie tego toru, więc nowa najlepsza zmienia też wartości wcześniejszych dni.';
 
   @override
   String get profileTrendsWetDry =>
@@ -6876,10 +6876,11 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days dnia',
-      many: '$days dni',
-      few: '$days dni',
-      one: '1 dzień',
+      other: '$days dnia z datą',
+      many: '$days dni z datą',
+      few: '$days dni z datą',
+      one: '1 dzień z datą',
+      zero: 'Brak dni z datą',
     );
     return '$_temp0 na tym torze w tym samochodzie: trend wymaga co najmniej $minimum dni.';
   }
@@ -6940,22 +6941,47 @@ class AppLocalizationsPl extends AppLocalizations {
   String profileTrendsChange(
     String measure,
     String first,
+    String firstDate,
     String last,
+    String lastDate,
     int days,
   ) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
       other: '$days dnia',
-      many: '$days dni',
-      few: '$days dni',
-      one: '1 dnia',
+      many: '$days dniach',
+      few: '$days dniach',
+      one: '1 dniu',
     );
-    return '$measure: $first → $last w ciągu $_temp0';
+    return '$measure: $first ($firstDate) → $last ($lastDate), zmierzone w $_temp0';
   }
 
   @override
   String profileTrendsRain(String amount) {
     return 'do $amount mm opadu w sesji';
+  }
+
+  @override
+  String profileTrendsFigureTooFew(String measure, int measured, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: 'w $measured dnia z datą',
+      many: 'w $measured dniach z datą',
+      few: 'w $measured dniach z datą',
+      one: 'w 1 dniu z datą',
+      zero: 'w żadnym dniu z datą',
+    );
+    return '$measure: zmierzone $_temp0; trend wymaga wartości z co najmniej $minimum dni.';
+  }
+
+  @override
+  String get profileTrendsUndated =>
+      'Dni bez daty są na końcu listy i nie wchodzą do trendu ani do rekordu.';
+
+  @override
+  String profileTrendsWeatherSome(int sessions, int total) {
+    return '($sessions z $total sesji)';
   }
 }

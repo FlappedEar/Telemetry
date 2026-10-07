@@ -293,16 +293,83 @@ void main() {
     expect(weather.precipitationMm, 1.4);
   });
 
-  test('undated days come last and do not set the order of tracks', () {
+  test('undated days are listed last, never a new best and not in a trend', () {
     final trends = profileTrends(
       _profile([
-        _day('j1', 5, best: 90, sessions: [_session('s1', best: 90)]),
-        _day('j2', null, best: 89, sessions: [_session('s1', best: 89)]),
+        _day('j1', 5, best: 90, sessions: [_session('s1', best: 90, median: 91)]),
+        _day('j2', null, best: 89, sessions: [_session('s1', best: 89, median: 90)]),
+        _day('j3', 6, best: 89.5, sessions: [_session('s1', best: 89.5, median: 90.5)]),
+        _day('j4', 7, best: 89.8, sessions: [_session('s1', best: 89.8, median: 90.2)]),
         _day('p1', 3, track: 'poznan', best: 120, sessions: [_session('s1', best: 120)]),
+        _day('t1', null, track: 'poznan', car: 'car2', sessions: [_session('s1')]),
       ]),
     );
-    expect([for (final t in trends) t.track.id], ['jastrzab', 'poznan']);
-    expect([for (final d in trends.first.days) d.day.eventId], ['j1', 'j2']);
-    expect(trends.first.days.last.personalBest, isTrue);
+    expect(
+      [for (final t in trends) '${t.track.id} ${t.carId}'],
+      [
+        'jastrzab car1',
+        'poznan car1',
+        // Undated only: last.
+        'poznan car2',
+      ],
+    );
+    final jastrzab = trends.first;
+    expect([for (final d in jastrzab.days) d.day.eventId], ['j1', 'j3', 'j4', 'j2']);
+    expect([for (final d in jastrzab.days) d.personalBest], [false, true, false, false]);
+    expect(jastrzab.datedDays, hasLength(3));
+    expect(jastrzab.enoughDays, isTrue);
+    final best = jastrzab.changes.firstWhere((change) => change.measure == 'bestLap');
+    // The undated 1:29.000 is not the last day.
+    expect(best.firstDay.eventId, 'j1');
+    expect(best.lastDay.eventId, 'j4');
+    expect(best.last, 89.8);
+    expect(best.days, 3);
+  });
+
+  test('a tie with the best so far is not a new best', () {
+    final trend = profileTrends(
+      _profile([
+        _day('d1', 0, best: 90, sessions: [_session('s1', best: 90)]),
+        _day('d2', 1, best: 90, sessions: [_session('s1', best: 90)]),
+        _day('d3', 2, best: 89.9, sessions: [_session('s1', best: 89.9)]),
+      ]),
+    ).single;
+    expect([for (final d in trend.days) d.personalBest], [false, false, true]);
+  });
+
+  test('a day without a best lap between two timed days', () {
+    final trend = profileTrends(
+      _profile([
+        _day('d1', 0, best: 90, sessions: [_session('s1', best: 90, median: 91)]),
+        _day('d2', 1, sessions: [_session('s1', median: 92)]),
+        _day('d3', 2, best: 89, sessions: [_session('s1', best: 89, median: 90)]),
+      ]),
+    ).single;
+    expect([for (final d in trend.days) d.personalBest], [false, false, true]);
+    expect(trend.days[1].visit.bestLapSeconds, isNull);
+    expect(trend.enoughDays, isTrue);
+    // Three days, but the best lap on two: no trend for it, and why.
+    expect(trend.measuredDays['bestLap'], 2);
+    expect(trend.measuredDays['typicalLap'], 3);
+    expect([for (final c in trend.changes) c.measure], ['typicalLap']);
+    final typical = trend.changes.single;
+    expect((typical.firstDay.eventId, typical.lastDay.eventId), ('d1', 'd3'));
+  });
+
+  test('weather kept for some sessions says for how many', () {
+    final weather = profileTrends(
+      _profile([
+        _day(
+          'd1',
+          0,
+          sessions: [
+            _session('s1', weather: ProfileWeather(condition: WeatherCondition.clear)),
+            _session('s2'),
+            _session('s3'),
+          ],
+        ),
+      ]),
+    ).single.days.single.weather;
+    expect((weather.sessions, weather.totalSessions), (1, 3));
   });
 }

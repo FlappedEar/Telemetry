@@ -270,7 +270,7 @@ void main() {
             find.byKey(const ValueKey('profileTrendTooFew jastrzab car1')),
           )
           .data,
-      '1 day here in this car: a trend needs at least 3 days.',
+      '1 dated day here in this car: a trend needs at least 3 days.',
     );
     expect(
       tester
@@ -339,7 +339,8 @@ void main() {
     );
     expect(
       tester.widget<Text>(change).data,
-      'Best lap: 1:32.000 → 1:31.000 over 3 days',
+      'Best lap: 1:32.000 (Jan 1, 2025) → 1:31.000 (Jan 15, 2025), '
+      'across 3 measured days',
     );
     expect(
       tester
@@ -351,7 +352,8 @@ void main() {
             ),
           )
           .data,
-      'Braking-point spread: 5.0\u00a0m → 5.0\u00a0m over 3 days',
+      'Braking-point spread: 5.0\u00a0m (Jan 1, 2025) → 5.0\u00a0m (Jan 15, 2025), '
+      'across 3 measured days',
     );
     // Only the day that beat every earlier one is a new best.
     expect(
@@ -374,6 +376,88 @@ void main() {
     );
   });
 
+  testWidgets('day by day: a figure on too few days says why', (tester) async {
+    // Three days; lap times on all, corner figures on two of them only.
+    final bare = _visit('d2', 7, 92.5);
+    await show(
+      tester,
+      _profile([
+        _visit('d1', 0, 92),
+        ProfileDay(
+          eventId: bare.eventId,
+          file: bare.file,
+          name: bare.name,
+          carId: bare.carId,
+          trackId: bare.trackId,
+          startMilliseconds: bare.startMilliseconds,
+          bestLapSeconds: bare.bestLapSeconds,
+          sessions: [
+            _session('s1', best: 92.5, median: 93.5, spread: 1.5),
+            ProfileSession(
+              runId: 's2',
+              name: 'Session 2',
+              lapCount: 3,
+              weather: ProfileWeather(condition: WeatherCondition.clear),
+            ),
+          ],
+        ),
+        _visit('d3', 14, 91),
+      ]),
+    );
+    final reason = find.byKey(
+      const ValueKey('profileTrendTooFew jastrzab car1 brakePointConsistency'),
+    );
+    await tester.scrollUntilVisible(reason, 300);
+    expect(
+      tester.widget<Text>(reason).data,
+      'Braking-point spread: measured on 2 dated days; '
+      'a trend needs a figure on at least 3 days.',
+    );
+    // Lap time spread is on every day: a change, no reason.
+    expect(
+      find.byKey(
+        const ValueKey('profileTrendChange jastrzab car1 paceConsistency'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('profileTrendTooFew jastrzab car1 paceConsistency'),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendWeather d2')))
+          .data,
+      'Weather model: clear (1 of 2 sessions)',
+    );
+  });
+
+  testWidgets('day by day: the last 10 days listed, the change over all', (
+    tester,
+  ) async {
+    await show(
+      tester,
+      _profile([for (var i = 0; i < 12; i++) _visit('d$i', i, 100.0 - i)]),
+    );
+    final change = find.byKey(
+      const ValueKey('profileTrendChange jastrzab car1 bestLap'),
+    );
+    await tester.scrollUntilVisible(change, 300);
+    expect(
+      tester.widget<Text>(change).data,
+      'Best lap: 1:40.000 (Jan 1, 2025) → 1:29.000 (Jan 12, 2025), '
+      'across 12 measured days',
+    );
+    expect(find.text('The last 10 of 12 days here.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('profileTrendDay d0')), findsNothing);
+    expect(find.byKey(const ValueKey('profileTrendDay d1')), findsNothing);
+    // The card is built whole, so a day it leaves out is not just off screen.
+    expect(find.byKey(const ValueKey('profileTrendDay d2')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profileTrendDay d11')), findsOneWidget);
+  });
+
   testWidgets('day by day in Polish', (tester) async {
     await show(tester, _profile([_visit('d1', 0, 92)]), locale: 'pl');
     final card = find.byKey(const ValueKey('profileTrends'));
@@ -385,7 +469,8 @@ void main() {
             find.byKey(const ValueKey('profileTrendTooFew jastrzab car1')),
           )
           .data,
-      '1 dzień na tym torze w tym samochodzie: trend wymaga co najmniej 3 dni.',
+      '1 dzień z datą na tym torze w tym samochodzie: '
+      'trend wymaga co najmniej 3 dni.',
     );
     expect(
       tester

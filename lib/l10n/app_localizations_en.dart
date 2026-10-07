@@ -6717,7 +6717,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTrendsIntro =>
-      'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.';
+      'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Each of those is the median over the corners the day measured, so days may differ in the corners behind it. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.';
 
   @override
   String get profileTrendsWetDry =>
@@ -6733,8 +6733,9 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days days',
-      one: '1 day',
+      other: '$days dated days',
+      one: '1 dated day',
+      zero: 'No dated day',
     );
     return '$_temp0 here in this car: a trend needs at least $minimum days.';
   }
@@ -6793,20 +6794,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String profileTrendsChange(
     String measure,
     String first,
+    String firstDate,
     String last,
+    String lastDate,
     int days,
   ) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days days',
-      one: '1 day',
+      other: '$days measured days',
+      one: '1 measured day',
     );
-    return '$measure: $first → $last over $_temp0';
+    return '$measure: $first ($firstDate) → $last ($lastDate), across $_temp0';
   }
 
   @override
   String profileTrendsRain(String amount) {
     return 'up to $amount mm of rain in a session';
+  }
+
+  @override
+  String profileTrendsFigureTooFew(String measure, int measured, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: '$measured dated days',
+      one: '1 dated day',
+      zero: 'no dated day',
+    );
+    return '$measure: measured on $_temp0; a trend needs a figure on at least $minimum days.';
+  }
+
+  @override
+  String get profileTrendsUndated =>
+      'Undated days are listed last and are not part of a trend or a new best.';
+
+  @override
+  String profileTrendsWeatherSome(int sessions, int total) {
+    return '($sessions of $total sessions)';
   }
 }

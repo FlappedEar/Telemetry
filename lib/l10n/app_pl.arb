@@ -1611,10 +1611,10 @@
   "ggEnvelopeSemantics": "Obwiednia G–G każdej sesji na tle najlepszej obwiedni dnia",
   "ggEnvelopeOutliers": "{session}: {count, plural, =1{1 próbkę} few{{count} próbki} many{{count} próbek} other{{count} próbki}} powyżej {limit} pominięto jako nieprawdopodobne",
   "profileTrends": "Dzień po dniu",
-  "profileTrendsIntro": "Każdy tor w każdym samochodzie osobno: wartości zależą od obu, więc dzień porównuje się tylko z dniami na tym samym torze w tym samym samochodzie. Przy rozrzucie punktu hamowania, prędkości minimalnej poniżej najlepszej, czasie od odjęcia gazu do hamowania i rozrzucie czasów okrążeń mniej znaczy lepiej. Prędkość minimalna jest liczona względem Twojej najlepszej w każdym zakręcie tego toru, więc nowa najlepsza zmienia też wartości wcześniejszych dni.",
+  "profileTrendsIntro": "Każdy tor w każdym samochodzie osobno: wartości zależą od obu, więc dzień porównuje się tylko z dniami na tym samym torze w tym samym samochodzie. Przy rozrzucie punktu hamowania, prędkości minimalnej poniżej najlepszej, czasie od odjęcia gazu do hamowania i rozrzucie czasów okrążeń mniej znaczy lepiej. Każda z tych wartości to mediana z zakrętów zmierzonych danego dnia, więc dni mogą się różnić zakrętami, z których pochodzi. Prędkość minimalna jest liczona względem Twojej najlepszej w każdym zakręcie tego toru, więc nowa najlepsza zmienia też wartości wcześniejszych dni.",
   "profileTrendsWetDry": "Nie zapisuje się, czy tor był mokry, czy suchy. Pokazana pogoda pochodzi z modelu pogody dla okolicy w czasie każdej sesji, a nie z nawierzchni toru, więc dni nie są dzielone na mokre i suche.",
   "profileTrendsGroup": "{track} · {direction} · {car}",
-  "profileTrendsTooFew": "{days, plural, =1{1 dzień} few{{days} dni} many{{days} dni} other{{days} dnia}} na tym torze w tym samochodzie: trend wymaga co najmniej {minimum} dni.",
+  "profileTrendsTooFew": "{days, plural, =0{Brak dni z datą} =1{1 dzień z datą} few{{days} dni z datą} many{{days} dni z datą} other{{days} dnia z datą}} na tym torze w tym samochodzie: trend wymaga co najmniej {minimum} dni.",
   "profileTrendsShowingLast": "Ostatnie {shown} z {total} dni na tym torze.",
   "profileTrendsBestLap": "Najlepsze okrążenie {time}",
   "profileTrendsPersonalBest": "nowy rekord tego toru w tym samochodzie",
@@ -1625,6 +1625,9 @@
   "profileTrendsNoWeather": "Brak zapisanej pogody dla tego dnia.",
   "profileTrendsChanges": "Od pierwszego do ostatniego dnia",
   "profileTrendsMeasure": "{id, select, bestLap{Najlepsze okrążenie} typicalLap{Typowe okrążenie} brakePointConsistency{Rozrzut punktu hamowania} minimumSpeedControl{Prędkość minimalna poniżej najlepszej} liftTiming{Od odjęcia gazu do hamowania} paceConsistency{Rozrzut czasów okrążeń} other{{id}}}",
-  "profileTrendsChange": "{measure}: {first} → {last} w ciągu {days, plural, =1{1 dnia} few{{days} dni} many{{days} dni} other{{days} dnia}}",
-  "profileTrendsRain": "do {amount} mm opadu w sesji"
+  "profileTrendsChange": "{measure}: {first} ({firstDate}) → {last} ({lastDate}), zmierzone w {days, plural, =1{1 dniu} few{{days} dniach} many{{days} dniach} other{{days} dnia}}",
+  "profileTrendsRain": "do {amount} mm opadu w sesji",
+  "profileTrendsFigureTooFew": "{measure}: zmierzone {measured, plural, =0{w żadnym dniu z datą} =1{w 1 dniu z datą} few{w {measured} dniach z datą} many{w {measured} dniach z datą} other{w {measured} dnia z datą}}; trend wymaga wartości z co najmniej {minimum} dni.",
+  "profileTrendsUndated": "Dni bez daty są na końcu listy i nie wchodzą do trendu ani do rekordu.",
+  "profileTrendsWeatherSome": "({sessions} z {total} sesji)"
 }

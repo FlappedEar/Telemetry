@@ -101,8 +101,17 @@ class _TrendGroup extends StatelessWidget {
           ),
           if (!trend.enoughDays)
             Text(
-              l10n.profileTrendsTooFew(days.length, trendMinimumDays),
+              l10n.profileTrendsTooFew(
+                trend.datedDays.length,
+                trendMinimumDays,
+              ),
               key: ValueKey('profileTrendTooFew $key'),
+              style: muted,
+            ),
+          if (trend.datedDays.length < days.length)
+            Text(
+              l10n.profileTrendsUndated,
+              key: ValueKey('profileTrendUndated $key'),
               style: muted,
             ),
           if (shown.length < days.length)
@@ -111,7 +120,7 @@ class _TrendGroup extends StatelessWidget {
               style: muted,
             ),
           for (final day in shown) _TrendDayTile(day: day),
-          if (changes.isNotEmpty) ...[
+          if (trend.enoughDays) ...[
             const SizedBox(height: 8),
             Text(
               l10n.profileTrendsChanges,
@@ -124,12 +133,27 @@ class _TrendGroup extends StatelessWidget {
                 l10n.profileTrendsChange(
                   l10n.profileTrendsMeasure(change.measure),
                   _measureText(change.measure, change.first),
+                  profileDayDate(context, change.firstDay),
                   _measureText(change.measure, change.last),
+                  profileDayDate(context, change.lastDay),
                   change.days,
                 ),
                 key: ValueKey('profileTrendChange $key ${change.measure}'),
                 style: theme.textTheme.bodySmall,
               ),
+            // A figure with too few days says so instead of vanishing.
+            for (final MapEntry(key: id, value: measured)
+                in trend.measuredDays.entries)
+              if (measured < trendMinimumDays)
+                Text(
+                  l10n.profileTrendsFigureTooFew(
+                    l10n.profileTrendsMeasure(id),
+                    measured,
+                    trendMinimumDays,
+                  ),
+                  key: ValueKey('profileTrendTooFew $key $id'),
+                  style: muted,
+                ),
           ],
         ],
       ),
@@ -205,8 +229,10 @@ class _TrendDayTile extends StatelessWidget {
             ? l10n.weatherNoPrecipitation
             : l10n.profileTrendsRain(fixed(rain, 1)),
     ];
-    return parts.isEmpty
-        ? l10n.profileTrendsNoWeather
-        : l10n.profileTrendsWeather(parts.join(', '));
+    if (parts.isEmpty) return l10n.profileTrendsNoWeather;
+    final text = l10n.profileTrendsWeather(parts.join(', '));
+    return weather.sessions < weather.totalSessions
+        ? '$text ${l10n.profileTrendsWeatherSome(weather.sessions, weather.totalSessions)}'
+        : text;
   }
 }

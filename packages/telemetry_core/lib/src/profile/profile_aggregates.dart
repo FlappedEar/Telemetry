@@ -891,7 +891,8 @@ const trendMinimumDays = 3;
 /// The measures followed day by day, as their skills measure them
 /// ([skillCatalogue]): braking-point spread, minimum speed below the best
 /// ever at each corner, off the throttle to braking (lift and coast) and lap
-/// time spread. Lower is better for each.
+/// time spread. Lower is better for each. Each is the median over the
+/// corners a session measured, so days may differ in the corners behind it.
 const trendMeasures = [
   'brakePointConsistency',
   'minimumSpeedControl',
@@ -899,11 +900,20 @@ const trendMeasures = [
   'paceConsistency',
 ];
 
+/// The figures a trend follows: `bestLap`, `typicalLap` (seconds) and
+/// [trendMeasures].
+const trendFigures = ['bestLap', 'typicalLap', ...trendMeasures];
+
 /// The weather kept for one day's sessions: the weather model's for the
 /// area around the track at the session's time, not a measurement at the
 /// track, so it does not say whether the track was wet or dry.
 final class TrendWeather {
-  const TrendWeather({this.conditions = const [], this.precipitationMm, this.sessions = 0});
+  const TrendWeather({
+    this.conditions = const [],
+    this.precipitationMm,
+    this.sessions = 0,
+    this.totalSessions = 0,
+  });
 
   /// The conditions of the day's sessions, each once, in session order;
   /// conditions this version does not know are left out.
@@ -912,8 +922,9 @@ final class TrendWeather {
   /// The most rain the model gave over the hours of one session, mm.
   final double? precipitationMm;
 
-  /// Sessions with any weather kept.
+  /// Sessions with any weather kept, of the day's [totalSessions].
   final int sessions;
+  final int totalSessions;
 }
 
 /// One day at a track in a car, with its measures.
@@ -931,7 +942,9 @@ final class TrendDay {
 
   ProfileDay get day => visit.day;
 
-  /// Its best lap is faster than every earlier day's here in this car.
+  /// A dated day whose best lap is faster than every earlier dated day's
+  /// here in this car (a tie is not). An undated day never is: when it was
+  /// driven is not known.
   final bool personalBest;
 
   /// Per measure of [trendMeasures] the day measured: its sessions' values
@@ -939,30 +952,41 @@ final class TrendDay {
   /// did not measure is absent, never 0.
   final Map<String, double> measures;
   final TrendWeather weather;
+
+  /// Figure [id] of [trendFigures] on this day; null when not measured.
+  double? figure(String id) => switch (id) {
+    'bestLap' => visit.bestLapSeconds,
+    'typicalLap' => visit.typicalLapSeconds,
+    _ => measures[id],
+  };
 }
 
-/// A measure on the first and the last day that measured it.
+/// A figure on the first and the last dated day that measured it.
 final class TrendChange {
   const TrendChange({
     required this.measure,
     required this.first,
     required this.last,
+    required this.firstDay,
+    required this.lastDay,
     required this.days,
   });
 
-  /// A [trendMeasures] id, or `bestLap` or `typicalLap` (seconds).
+  /// A [trendFigures] id.
   final String measure;
   final double first;
   final double last;
+  final ProfileDay firstDay;
+  final ProfileDay lastDay;
 
-  /// Days that measured it.
+  /// Dated days that measured it.
   final int days;
 
-  /// [last] − [first]: negative is lower, which is better for every measure.
+  /// [last] − [first]: negative is lower, which is better for every figure.
   double get change => last - first;
 }
 
-/// Every day at one track in one car, oldest first.
+/// Every day at one track in one car, oldest first; undated days last.
 final class TrackTrend {
   const TrackTrend({required this.track, required this.carId, required this.days});
 
@@ -970,40 +994,47 @@ final class TrackTrend {
   final String carId;
   final List<TrendDay> days;
 
-  /// Enough days for a trend ([trendMinimumDays]).
-  bool get enoughDays => days.length >= trendMinimumDays;
+  /// The dated days: only they can form a trend, as only their order is
+  /// known.
+  Iterable<TrendDay> get datedDays => days.where((day) => day.day.startMilliseconds != null);
 
-  /// Each measure, best lap and typical lap from its first day to its last,
-  /// when at least [trendMinimumDays] days measured it.
-  List<TrendChange> get changes {
-    TrendChange? of(String measure, double? Function(TrendDay day) value) {
-      final values = [for (final day in days) ?value(day)];
-      return values.length < trendMinimumDays
-          ? null
-          : TrendChange(
-              measure: measure,
-              first: values.first,
-              last: values.last,
-              days: values.length,
-            );
-    }
+  /// Enough dated days for a trend ([trendMinimumDays]). A figure still
+  /// needs that many days that measured it ([measuredDays]).
+  bool get enoughDays => datedDays.length >= trendMinimumDays;
 
-    return [
-      ?of('bestLap', (day) => day.visit.bestLapSeconds),
-      ?of('typicalLap', (day) => day.visit.typicalLapSeconds),
-      for (final measure in trendMeasures) ?of(measure, (day) => day.measures[measure]),
-    ];
-  }
+  /// Per figure of [trendFigures], the dated days that measured it.
+  Map<String, int> get measuredDays => {
+    for (final id in trendFigures) id: datedDays.where((day) => day.figure(id) != null).length,
+  };
+
+  /// Each figure from its first dated day to its last, when at least
+  /// [trendMinimumDays] dated days measured it.
+  List<TrendChange> get changes => [
+    for (final id in trendFigures)
+      if ([
+            for (final day in datedDays)
+              if (day.figure(id) case final value?) (day.day, value),
+          ]
+          case final values when values.length >= trendMinimumDays)
+        TrendChange(
+          measure: id,
+          first: values.first.$2,
+          last: values.last.$2,
+          firstDay: values.first.$1,
+          lastDay: values.last.$1,
+          days: values.length,
+        ),
+  ];
 }
 
 /// Per track and car driven there, every day with its lap times, the
-/// [trendMeasures] it measured and the weather kept for it, oldest first;
-/// the track and car driven most recently first. Values depend on the track
-/// and the car, so days compare only within one [TrackTrend]. Nothing is
-/// re-read from recordings: it is what the profile keeps per session.
-/// Minimum speed is against the best ever at each corner in that car over
-/// every day kept, as [skillLevels] measures it, so a new best there changes
-/// the earlier days' figures too.
+/// [trendMeasures] it measured and the weather kept for it, oldest first
+/// (undated days last); the track and car driven most recently first.
+/// Values depend on the track and the car, so days compare only within one
+/// [TrackTrend]. Nothing is re-read from recordings: it is what the profile
+/// keeps per session. Minimum speed is against the best ever at each corner
+/// in that car over every day kept, as [skillLevels] measures it, so a new
+/// best there changes the earlier days' figures too.
 List<TrackTrend> profileTrends(DriverProfile profile) {
   final result = <TrackTrend>[];
   for (final track in profile.tracks) {
@@ -1018,8 +1049,9 @@ List<TrackTrend> profileTrends(DriverProfile profile) {
       final days = <TrendDay>[];
       for (final visit in visits) {
         final best = visit.bestLapSeconds;
-        final personalBest = best != null && fastest != null && best < fastest;
-        if (best != null && (fastest == null || best < fastest)) fastest = best;
+        final dated = visit.day.startMilliseconds != null;
+        final personalBest = dated && best != null && fastest != null && best < fastest;
+        if (dated && best != null && (fastest == null || best < fastest)) fastest = best;
         days.add(
           TrendDay(
             visit: visit,
@@ -1032,14 +1064,19 @@ List<TrackTrend> profileTrends(DriverProfile profile) {
       result.add(TrackTrend(track: track, carId: carId, days: days));
     }
   }
-  // The latest dated day; undated days sort last, as days do.
-  int last(TrackTrend trend) =>
-      trend.days.map((day) => day.day.startMilliseconds ?? -1).fold(-1, max);
-  // Stable: tracks with undated days only keep the profile's order.
+  // The latest dated day; a trend of undated days only sorts last.
+  int? latest(TrackTrend trend) => trend.days
+      .map((day) => day.day.startMilliseconds)
+      .whereType<int>()
+      .fold<int?>(null, (a, b) => a == null || b > a ? b : a);
+  // Stable: equal or missing dates keep the profile's order.
   final order = {for (final (i, trend) in result.indexed) trend: i};
   result.sort((a, b) {
-    final byDate = last(b).compareTo(last(a));
-    return byDate != 0 ? byDate : order[a]!.compareTo(order[b]!);
+    final x = latest(a), y = latest(b);
+    if (x != null && y != null && x != y) return y.compareTo(x);
+    if (x == null && y != null) return 1;
+    if (x != null && y == null) return -1;
+    return order[a]!.compareTo(order[b]!);
   });
   return result;
 }
@@ -1071,5 +1108,10 @@ TrendWeather _trendWeather(ProfileDay day) {
     if (condition != null && !conditions.contains(condition)) conditions.add(condition);
     rain = _higher(rain, weather.precipitationMm);
   }
-  return TrendWeather(conditions: conditions, precipitationMm: rain, sessions: sessions);
+  return TrendWeather(
+    conditions: conditions,
+    precipitationMm: rain,
+    sessions: sessions,
+    totalSessions: day.sessions.length,
+  );
 }

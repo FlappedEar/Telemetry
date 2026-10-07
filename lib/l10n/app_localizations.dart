@@ -9861,7 +9861,7 @@ abstract class AppLocalizations {
   /// Explains the day-by-day figures on the profile.
   ///
   /// In en, this message translates to:
-  /// **'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.'**
+  /// **'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Each of those is the median over the corners the day measured, so days may differ in the corners behind it. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.'**
   String get profileTrendsIntro;
 
   /// Says that a wet or dry track is not recorded, and what the weather shown is.
@@ -9876,10 +9876,10 @@ abstract class AppLocalizations {
   /// **'{track} · {direction} · {car}'**
   String profileTrendsGroup(String track, String direction, String car);
 
-  /// Too few days at a track in a car for a trend.
+  /// Too few dated days at a track in a car for a trend.
   ///
   /// In en, this message translates to:
-  /// **'{days, plural, =1{1 day} other{{days} days}} here in this car: a trend needs at least {minimum} days.'**
+  /// **'{days, plural, =0{No dated day} =1{1 dated day} other{{days} dated days}} here in this car: a trend needs at least {minimum} days.'**
   String profileTrendsTooFew(int days, int minimum);
 
   /// Only the latest days at a track in a car are listed.
@@ -9942,14 +9942,16 @@ abstract class AppLocalizations {
   /// **'{id, select, bestLap{Best lap} typicalLap{Typical lap} brakePointConsistency{Braking-point spread} minimumSpeedControl{Minimum speed below your best} liftTiming{Off the throttle to braking} paceConsistency{Lap time spread} other{{id}}}'**
   String profileTrendsMeasure(String id);
 
-  /// A measure on its first and last day at a track in a car, and the days that measured it.
+  /// A figure on its first and last measured day at a track in a car, with their dates, and the days that measured it.
   ///
   /// In en, this message translates to:
-  /// **'{measure}: {first} → {last} over {days, plural, =1{1 day} other{{days} days}}'**
+  /// **'{measure}: {first} ({firstDate}) → {last} ({lastDate}), across {days, plural, =1{1 measured day} other{{days} measured days}}'**
   String profileTrendsChange(
     String measure,
     String first,
+    String firstDate,
     String last,
+    String lastDate,
     int days,
   );
 
@@ -9958,6 +9960,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'up to {amount} mm of rain in a session'**
   String profileTrendsRain(String amount);
+
+  /// A figure measured on too few days at a track in a car for its first-to-last change.
+  ///
+  /// In en, this message translates to:
+  /// **'{measure}: measured on {measured, plural, =0{no dated day} =1{1 dated day} other{{measured} dated days}}; a trend needs a figure on at least {minimum} days.'**
+  String profileTrendsFigureTooFew(String measure, int measured, int minimum);
+
+  /// Says undated days are not part of the day-by-day trend.
+  ///
+  /// In en, this message translates to:
+  /// **'Undated days are listed last and are not part of a trend or a new best.'**
+  String get profileTrendsUndated;
+
+  /// Weather was kept for only some of a day's sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'({sessions} of {total} sessions)'**
+  String profileTrendsWeatherSome(int sessions, int total);
 }
 
 class _AppLocalizationsDelegate
