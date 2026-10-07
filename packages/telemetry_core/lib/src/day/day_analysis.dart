@@ -434,7 +434,6 @@ DayAnalysis _group(
             direction: manual.direction,
             gateRevision: source.configuration.gateRevision,
           ),
-          previous: source.previous,
         )
       else
         source,
@@ -481,9 +480,10 @@ DayAnalysis _group(
     cancelled,
     // Each run keeps the route it was given, so the next grouping (a
     // recording added, a layout changed) keeps its group's id (FET-259).
+    // A run outside every route group (a manual layout, an ambiguous route)
+    // keeps none, as the saved day has no trackInference for it.
     sources: [
-      for (final source in baseSources)
-        source.withPrevious(grouped.provenance[source.runId] ?? source.previous),
+      for (final source in baseSources) source.withPrevious(grouped.provenance[source.runId]),
     ],
     runMessages: runMessages,
     manualTracks: manualTracks,

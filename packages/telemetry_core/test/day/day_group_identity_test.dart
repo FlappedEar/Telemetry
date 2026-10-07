@@ -72,6 +72,36 @@ void main() {
     });
   });
 
+  // Review of FET-259: memory matches the saved day, which has no
+  // trackInference for a run outside every route group.
+  test('a run with a manual layout keeps no route id, as the saved day', () {
+    final early = _run('0', rectangleSession([(_) => 29, (_) => 29.5]));
+    final late = _run('b', rectangleSession([(_) => 30, (_) => 30.5]));
+    final day = analyzeDay([early, late]);
+    final id = _groupId(day);
+    expect(
+      day.sources.firstWhere((source) => source.runId == late.runId).previous?.layoutId,
+      isNotNull,
+    );
+    final manual = regroupDay(
+      day,
+      manualTracks: {
+        late.runId: const TrackConfiguration(
+          layoutId: 'Club',
+          direction: TrackDirection.counterclockwise,
+        ),
+      },
+    );
+    expect(manual.sources.firstWhere((source) => source.runId == late.runId).previous, isNull);
+
+    // Session 1 removed and the layout cleared: the id the saved day
+    // would give when opened, not the one its stale route held.
+    final alone = regroupDay(dayWithRuns(manual, {late.runId}), manualTracks: const {});
+    final opened = analyzeDay([late]);
+    expect(_groupId(alone), _groupId(opened));
+    expect(_groupId(alone), isNot(id));
+  });
+
   group('groupInferredTracks', () {
     final route = inferTrack(deriveSourceLapSession(rectangleSession([(_) => 30, (_) => 30])));
     const gates = TrackConfiguration(gateRevision: 'gates-v1:x');
