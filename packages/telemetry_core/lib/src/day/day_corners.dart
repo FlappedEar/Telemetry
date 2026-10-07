@@ -8,6 +8,7 @@
 // methods.
 import '../speed_units.dart';
 import '../analysis/braking_metrics.dart';
+import '../analysis/corner_classes.dart';
 import '../analysis/corner_phase_times.dart';
 import '../analysis/corner_phases.dart' show cornerPhaseInvalidInput;
 import '../analysis/corner_speeds.dart';
@@ -94,6 +95,7 @@ final class DayCorner {
     this.bestLap,
     this.phaseSplit = const CornerPhaseSplit(unavailableReason: cornerPhaseInvalidInput),
     this.traces = const {},
+    this.classification = const CornerClassification(),
   }) : laps = List.unmodifiable(laps);
 
   /// The segment's position among the approved segments.
@@ -114,6 +116,10 @@ final class DayCorner {
 
   /// Each lap's projection onto the shared axis, to time [phaseSplit] on.
   final Map<DayLapReference, List<ProgressSegment>> traces;
+
+  /// What kind of corner it is (FET-220): its shape from the track, and its
+  /// braking and speed from every lap of the group timed here.
+  final CornerClassification classification;
 
   /// [reference]'s time through each part of [phaseSplit].
   CornerPhaseTimes phaseTimes(DayLapReference reference) {
@@ -265,6 +271,9 @@ List<DayCorner> dayCorners(
         bestLap: bestLap,
         phaseSplit: cornerPhaseSplit(computed.axis, features, segment),
         traces: traces,
+        classification: classifyCorner(computed.axis, features, segment, [
+          for (final row in rows) ?byReference[row.reference],
+        ]),
       ),
     );
   }

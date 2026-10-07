@@ -10080,6 +10080,233 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Its quickest lap came later: LAP {number}, {gain} quicker than LAP {first}.'**
   String evolutionQuickerLater(int number, String gain, int first);
+
+  /// Corner details: heading of the corner's classes (FET-220).
+  ///
+  /// In en, this message translates to:
+  /// **'Corner type'**
+  String get cornerClassTitle;
+
+  /// Corner details: the corner's shape, read from the track's curvature.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape · from the track'**
+  String get cornerClassShape;
+
+  /// Corner details: braking, lift or flat, typical of the day's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking · from this day\'s laps'**
+  String get cornerClassApproach;
+
+  /// Corner details: slow, medium-speed or fast, from the typical minimum speed of the day's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed · from this day\'s laps'**
+  String get cornerClassSpeed;
+
+  /// Corner shape: one tightest part, about the same radius before and after it.
+  ///
+  /// In en, this message translates to:
+  /// **'Single apex'**
+  String get cornerShapeSingleApex;
+
+  /// Corner shape: one tightest part, late in the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Late apex'**
+  String get cornerShapeLateApex;
+
+  /// Corner shape: the corner tightens.
+  ///
+  /// In en, this message translates to:
+  /// **'Decreasing radius'**
+  String get cornerShapeDecreasingRadius;
+
+  /// Corner shape: the corner opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Increasing radius'**
+  String get cornerShapeIncreasingRadius;
+
+  /// Corner shape: two separate tight parts.
+  ///
+  /// In en, this message translates to:
+  /// **'Double apex'**
+  String get cornerShapeDoubleApex;
+
+  /// Corner shape: several corners in one segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Complex'**
+  String get cornerShapeComplex;
+
+  /// Corner class: braking typically takes 40 km/h or more off.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy braking'**
+  String get cornerApproachHeavyBraking;
+
+  /// Corner class: braked on most laps, less than heavy braking or not measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get cornerApproachBraking;
+
+  /// Corner class: no braking, but speed lost into the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Lift'**
+  String get cornerApproachLift;
+
+  /// Corner class: no braking and almost no speed lost (flat out).
+  ///
+  /// In en, this message translates to:
+  /// **'Flat'**
+  String get cornerApproachFlat;
+
+  /// Corner class: typical minimum speed below 80 km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow corner'**
+  String get cornerSpeedSlow;
+
+  /// Corner class: typical minimum speed from 80 to 130 km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium-speed corner'**
+  String get cornerSpeedMedium;
+
+  /// Corner class: typical minimum speed from 130 km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast corner'**
+  String get cornerSpeedFast;
+
+  /// Corner details: explains a single apex.
+  ///
+  /// In en, this message translates to:
+  /// **'One tightest part, about the same radius before and after it.'**
+  String get cornerShapeNoteSingle;
+
+  /// Corner details: explains a late apex.
+  ///
+  /// In en, this message translates to:
+  /// **'One tightest part, late in the corner.'**
+  String get cornerShapeNoteLate;
+
+  /// Corner details: explains a decreasing radius. ratio is a number such as 1.4.
+  ///
+  /// In en, this message translates to:
+  /// **'Tightens: its second half turns {ratio}× as hard as its first.'**
+  String cornerShapeNoteDecreasing(String ratio);
+
+  /// Corner details: explains an increasing radius. ratio is a number such as 1.9.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens: its first half turns {ratio}× as hard as its second.'**
+  String cornerShapeNoteIncreasing(String ratio);
+
+  /// Corner details: explains a double apex.
+  ///
+  /// In en, this message translates to:
+  /// **'Two separate tight parts, measured as one corner.'**
+  String get cornerShapeNoteDouble;
+
+  /// Corner details: explains a complex with several tight parts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tight parts, measured as one corner: not split into single corners.'**
+  String cornerShapeNoteComplex(int count);
+
+  /// Corner details: explains a complex that changes direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns one way, then the other: several corners measured as one, not split into single corners.'**
+  String get cornerShapeNoteDirection;
+
+  /// Corner details: braking was read from the brake channel.
+  ///
+  /// In en, this message translates to:
+  /// **'brake pedal'**
+  String get cornerClassFromBrakePedal;
+
+  /// Corner details: braking was worked out from the longitudinal G.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred from deceleration'**
+  String get cornerClassFromDeceleration;
+
+  /// Corner details: explains braking or heavy braking. shed is the speed braking takes off with its unit, peak the peak deceleration in g, how where braking was read.
+  ///
+  /// In en, this message translates to:
+  /// **'Typically takes {shed} off under braking (peak {peak} g). Brakes on {braked} of {laps} laps ({how}).'**
+  String cornerApproachNoteShed(
+    String shed,
+    String peak,
+    String how,
+    int braked,
+    int laps,
+  );
+
+  /// Corner details: braking whose deceleration is not known on enough laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Brakes on {braked} of {laps} laps ({how}). The speed braking takes off is not measured on three laps, so it is not split into heavy or not.'**
+  String cornerApproachNoteNoShed(String how, int braked, int laps);
+
+  /// Corner details: explains a lift or flat.
+  ///
+  /// In en, this message translates to:
+  /// **'No braking on {none} of {laps} laps ({how}). Typically {loss} slower at the lowest point than at the corner\'s start.'**
+  String cornerApproachNoteNoBraking(
+    String loss,
+    String how,
+    int none,
+    int laps,
+  );
+
+  /// Corner details: explains a lift or flat when the speeds' units differ.
+  ///
+  /// In en, this message translates to:
+  /// **'No braking on {none} of {laps} laps ({how}).'**
+  String cornerApproachNoteNoBrakingNoSpeed(String how, int none, int laps);
+
+  /// Corner details: explains the speed class.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical minimum speed {speed} over {laps} laps.'**
+  String cornerSpeedNote(String speed, int laps);
+
+  /// Corner details: explains the speed class when the laps' units differ.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical minimum speed over {laps} laps; their speed units differ, so it is not shown.'**
+  String cornerSpeedNoteUnitsDiffer(int laps);
+
+  /// Corner details: a corner class that could not be given, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known: {reason}'**
+  String cornerClassUnavailable(String reason);
+
+  /// Why a corner class is not given.
+  ///
+  /// In en, this message translates to:
+  /// **'fewer than three laps measured here'**
+  String get cornerClassReasonTooFewLaps;
+
+  /// Why a corner class is not given.
+  ///
+  /// In en, this message translates to:
+  /// **'speed unit not known'**
+  String get cornerClassReasonSpeedUnit;
+
+  /// Corner details: how the corner classes are worked out.
+  ///
+  /// In en, this message translates to:
+  /// **'The shape comes from the track\'s curvature on the line of the lap the track axis is built from; braking and speed are typical (median) values of this day\'s laps here. The limits are the same on every track: heavy braking takes at least 40 km/h off; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. Corner complexes are not split into single corners.'**
+  String get cornerClassNote;
 }
 
 class _AppLocalizationsDelegate

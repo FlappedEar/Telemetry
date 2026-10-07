@@ -199,6 +199,16 @@ a background isolate.
   are timed over the same metres and the parts add up to the corner's time.
   `DayCorner.phaseTimes` and `DayCornerComparison.phaseDeltas` give a lap's
   parts against the group's best lap.
+- What kind of corner each corner is (FlappedEar Telemetry only, FET-220):
+  `classifyCornerShape` reads the shape from the axis's curvature (single
+  apex, late apex, decreasing or increasing radius, double apex, complex;
+  a segment holding several corners is not split, FET-115), and
+  `classifyCornerDriving` the approach (heavy braking, braking, lift, flat)
+  and speed band (slow, medium, fast) from the typical (median) Corner
+  Analyzer figures of at least three laps, never pooling a brake pedal with
+  inferred braking. Every class comes from fixed `cornerClass*` thresholds,
+  the same on every track; a class that cannot be told says why.
+  `dayCorners` puts both on each `DayCorner.classification`.
 - A theoretical best whose segments join (FlappedEar Telemetry only,
   FET-222): `computeRealisticTheoreticalBest` picks the fastest combination
   of laps' sector times (dynamic programming over the approved segments) in

@@ -6931,4 +6931,148 @@ class AppLocalizationsEn extends AppLocalizations {
   String evolutionQuickerLater(int number, String gain, int first) {
     return 'Its quickest lap came later: LAP $number, $gain quicker than LAP $first.';
   }
+
+  @override
+  String get cornerClassTitle => 'Corner type';
+
+  @override
+  String get cornerClassShape => 'Shape · from the track';
+
+  @override
+  String get cornerClassApproach => 'Braking · from this day\'s laps';
+
+  @override
+  String get cornerClassSpeed => 'Speed · from this day\'s laps';
+
+  @override
+  String get cornerShapeSingleApex => 'Single apex';
+
+  @override
+  String get cornerShapeLateApex => 'Late apex';
+
+  @override
+  String get cornerShapeDecreasingRadius => 'Decreasing radius';
+
+  @override
+  String get cornerShapeIncreasingRadius => 'Increasing radius';
+
+  @override
+  String get cornerShapeDoubleApex => 'Double apex';
+
+  @override
+  String get cornerShapeComplex => 'Complex';
+
+  @override
+  String get cornerApproachHeavyBraking => 'Heavy braking';
+
+  @override
+  String get cornerApproachBraking => 'Braking';
+
+  @override
+  String get cornerApproachLift => 'Lift';
+
+  @override
+  String get cornerApproachFlat => 'Flat';
+
+  @override
+  String get cornerSpeedSlow => 'Slow corner';
+
+  @override
+  String get cornerSpeedMedium => 'Medium-speed corner';
+
+  @override
+  String get cornerSpeedFast => 'Fast corner';
+
+  @override
+  String get cornerShapeNoteSingle =>
+      'One tightest part, about the same radius before and after it.';
+
+  @override
+  String get cornerShapeNoteLate => 'One tightest part, late in the corner.';
+
+  @override
+  String cornerShapeNoteDecreasing(String ratio) {
+    return 'Tightens: its second half turns $ratio× as hard as its first.';
+  }
+
+  @override
+  String cornerShapeNoteIncreasing(String ratio) {
+    return 'Opens: its first half turns $ratio× as hard as its second.';
+  }
+
+  @override
+  String get cornerShapeNoteDouble =>
+      'Two separate tight parts, measured as one corner.';
+
+  @override
+  String cornerShapeNoteComplex(int count) {
+    return '$count tight parts, measured as one corner: not split into single corners.';
+  }
+
+  @override
+  String get cornerShapeNoteDirection =>
+      'Turns one way, then the other: several corners measured as one, not split into single corners.';
+
+  @override
+  String get cornerClassFromBrakePedal => 'brake pedal';
+
+  @override
+  String get cornerClassFromDeceleration => 'inferred from deceleration';
+
+  @override
+  String cornerApproachNoteShed(
+    String shed,
+    String peak,
+    String how,
+    int braked,
+    int laps,
+  ) {
+    return 'Typically takes $shed off under braking (peak $peak g). Brakes on $braked of $laps laps ($how).';
+  }
+
+  @override
+  String cornerApproachNoteNoShed(String how, int braked, int laps) {
+    return 'Brakes on $braked of $laps laps ($how). The speed braking takes off is not measured on three laps, so it is not split into heavy or not.';
+  }
+
+  @override
+  String cornerApproachNoteNoBraking(
+    String loss,
+    String how,
+    int none,
+    int laps,
+  ) {
+    return 'No braking on $none of $laps laps ($how). Typically $loss slower at the lowest point than at the corner\'s start.';
+  }
+
+  @override
+  String cornerApproachNoteNoBrakingNoSpeed(String how, int none, int laps) {
+    return 'No braking on $none of $laps laps ($how).';
+  }
+
+  @override
+  String cornerSpeedNote(String speed, int laps) {
+    return 'Typical minimum speed $speed over $laps laps.';
+  }
+
+  @override
+  String cornerSpeedNoteUnitsDiffer(int laps) {
+    return 'Typical minimum speed over $laps laps; their speed units differ, so it is not shown.';
+  }
+
+  @override
+  String cornerClassUnavailable(String reason) {
+    return 'Not known: $reason';
+  }
+
+  @override
+  String get cornerClassReasonTooFewLaps =>
+      'fewer than three laps measured here';
+
+  @override
+  String get cornerClassReasonSpeedUnit => 'speed unit not known';
+
+  @override
+  String get cornerClassNote =>
+      'The shape comes from the track\'s curvature on the line of the lap the track axis is built from; braking and speed are typical (median) values of this day\'s laps here. The limits are the same on every track: heavy braking takes at least 40 km/h off; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. Corner complexes are not split into single corners.';
 }

@@ -7085,4 +7085,149 @@ class AppLocalizationsPl extends AppLocalizations {
   String evolutionQuickerLater(int number, String gain, int first) {
     return 'Najszybsze okrążenie przyszło później: OKR. $number, o $gain szybsze niż OKR. $first.';
   }
+
+  @override
+  String get cornerClassTitle => 'Rodzaj zakrętu';
+
+  @override
+  String get cornerClassShape => 'Kształt · z toru';
+
+  @override
+  String get cornerClassApproach => 'Hamowanie · z okrążeń tego dnia';
+
+  @override
+  String get cornerClassSpeed => 'Prędkość · z okrążeń tego dnia';
+
+  @override
+  String get cornerShapeSingleApex => 'Jeden wierzchołek';
+
+  @override
+  String get cornerShapeLateApex => 'Późny wierzchołek';
+
+  @override
+  String get cornerShapeDecreasingRadius => 'Zacieśniający się';
+
+  @override
+  String get cornerShapeIncreasingRadius => 'Otwierający się';
+
+  @override
+  String get cornerShapeDoubleApex => 'Podwójny wierzchołek';
+
+  @override
+  String get cornerShapeComplex => 'Kombinacja zakrętów';
+
+  @override
+  String get cornerApproachHeavyBraking => 'Mocne hamowanie';
+
+  @override
+  String get cornerApproachBraking => 'Hamowanie';
+
+  @override
+  String get cornerApproachLift => 'Odjęcie gazu';
+
+  @override
+  String get cornerApproachFlat => 'Pełny gaz';
+
+  @override
+  String get cornerSpeedSlow => 'Wolny zakręt';
+
+  @override
+  String get cornerSpeedMedium => 'Średnio szybki zakręt';
+
+  @override
+  String get cornerSpeedFast => 'Szybki zakręt';
+
+  @override
+  String get cornerShapeNoteSingle =>
+      'Jedna najciaśniejsza część, z podobnym promieniem przed nią i za nią.';
+
+  @override
+  String get cornerShapeNoteLate =>
+      'Jedna najciaśniejsza część, późno w zakręcie.';
+
+  @override
+  String cornerShapeNoteDecreasing(String ratio) {
+    return 'Zacieśnia się: druga połowa skręca $ratio× mocniej niż pierwsza.';
+  }
+
+  @override
+  String cornerShapeNoteIncreasing(String ratio) {
+    return 'Otwiera się: pierwsza połowa skręca $ratio× mocniej niż druga.';
+  }
+
+  @override
+  String get cornerShapeNoteDouble =>
+      'Dwie oddzielne ciasne części, mierzone jako jeden zakręt.';
+
+  @override
+  String cornerShapeNoteComplex(int count) {
+    return 'Ciasne części: $count, mierzone jako jeden zakręt, bez podziału na pojedyncze zakręty.';
+  }
+
+  @override
+  String get cornerShapeNoteDirection =>
+      'Skręca w jedną stronę, potem w drugą: kilka zakrętów mierzonych jako jeden, bez podziału na pojedyncze zakręty.';
+
+  @override
+  String get cornerClassFromBrakePedal => 'pedał hamulca';
+
+  @override
+  String get cornerClassFromDeceleration => 'wywnioskowane z opóźnienia';
+
+  @override
+  String cornerApproachNoteShed(
+    String shed,
+    String peak,
+    String how,
+    int braked,
+    int laps,
+  ) {
+    return 'Hamowanie zwykle odbiera $shed (szczyt $peak g). Hamowanie na $braked z $laps okrążeń ($how).';
+  }
+
+  @override
+  String cornerApproachNoteNoShed(String how, int braked, int laps) {
+    return 'Hamowanie na $braked z $laps okrążeń ($how). Prędkość odebrana hamowaniem nie jest zmierzona na trzech okrążeniach, więc nie wiadomo, czy hamowanie jest mocne.';
+  }
+
+  @override
+  String cornerApproachNoteNoBraking(
+    String loss,
+    String how,
+    int none,
+    int laps,
+  ) {
+    return 'Bez hamowania na $none z $laps okrążeń ($how). W najwolniejszym miejscu zwykle o $loss wolniej niż na początku zakrętu.';
+  }
+
+  @override
+  String cornerApproachNoteNoBrakingNoSpeed(String how, int none, int laps) {
+    return 'Bez hamowania na $none z $laps okrążeń ($how).';
+  }
+
+  @override
+  String cornerSpeedNote(String speed, int laps) {
+    return 'Typowa prędkość minimalna $speed z $laps okrążeń.';
+  }
+
+  @override
+  String cornerSpeedNoteUnitsDiffer(int laps) {
+    return 'Typowa prędkość minimalna z $laps okrążeń; ich jednostki prędkości się różnią, więc nie jest pokazana.';
+  }
+
+  @override
+  String cornerClassUnavailable(String reason) {
+    return 'Nieznane: $reason';
+  }
+
+  @override
+  String get cornerClassReasonTooFewLaps =>
+      'zmierzono tu mniej niż trzy okrążenia';
+
+  @override
+  String get cornerClassReasonSpeedUnit => 'nieznana jednostka prędkości';
+
+  @override
+  String get cornerClassNote =>
+      'Kształt wynika z krzywizny toru na linii okrążenia, z którego zbudowano oś toru; hamowanie i prędkość to typowe (mediana) wartości okrążeń tego dnia w tym miejscu. Progi są takie same na każdym torze: mocne hamowanie odbiera co najmniej 40 km/h; odjęcie gazu to utrata co najmniej 5 % prędkości z początku zakrętu bez hamowania, mniej to pełny gaz; wolny zakręt to poniżej 80 km/h, szybki od 130 km/h. Kombinacje zakrętów nie są dzielone na pojedyncze zakręty.';
 }

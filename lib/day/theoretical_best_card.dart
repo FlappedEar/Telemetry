@@ -426,6 +426,9 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     final comparison = corner?.compare(lap.lap.reference);
     speedUnitOf(context); // The summary's speeds follow the setting.
     final summary = comparison == null ? null : cornerSummary(l10n, comparison);
+    final kind = corner == null
+        ? null
+        : cornerClassSummary(l10n, corner.classification);
     final loss = Text(
       lap.lossSeconds[index] == null
           ? '—'
@@ -472,6 +475,13 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                   Text(
                     summary,
                     key: ValueKey('cornerSummary ${corner!.name}'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                // What kind of corner it is (FET-220), the same on every lap.
+                if (kind != null)
+                  Text(
+                    kind,
+                    key: ValueKey('cornerClassSummary ${corner!.name}'),
                     style: theme.textTheme.bodySmall,
                   ),
               ],
