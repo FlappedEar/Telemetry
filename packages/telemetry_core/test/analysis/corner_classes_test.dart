@@ -255,6 +255,7 @@ void main() {
       final driving = classifyCornerDriving(_three(atBraking: null));
       expect(driving.approach, CornerApproach.braking);
       expect(driving.heavyUnknown, isTrue);
+      expect(driving.heavyUnknownReason, isEmpty);
       expect(driving.typicalSpeedShedMetresPerSecond, isNull);
       expect(driving.shedLaps, 0);
     });
@@ -315,7 +316,7 @@ void main() {
       // Not braking on most laps, but only two laps without braking to read
       // a lift or flat from.
       expect(once.approach, isNull);
-      expect(once.approachUnavailableReason, cornerClassTooFewLaps);
+      expect(once.approachUnavailableReason, cornerClassTooFewLapsWithoutBraking);
     });
 
     test('a brake pedal and deceleration are never pooled: the method most laps used '
@@ -355,6 +356,7 @@ void main() {
       expect(unknown.speedBandUnavailableReason, cornerClassSpeedUnitUnknown);
       expect(unknown.approach, CornerApproach.braking);
       expect(unknown.heavyUnknown, isTrue);
+      expect(unknown.heavyUnknownReason, cornerClassSpeedUnitUnknown);
       final coasting = classifyCornerDriving(
         _three(unit: 'furlong/fortnight', braked: false, minimum: 90),
       );
@@ -391,6 +393,8 @@ void main() {
         _lap(unit: 'km/h'),
         _lap(unit: 'km/h'),
       ]);
+      // An even split: the unit met first in lap order counts.
+      expect(split.speedUnit, 'mph');
       expect(split.speedBand, isNull);
       expect(split.otherUnitLaps, 2);
       expect(split.heavyUnknown, isTrue);

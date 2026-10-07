@@ -10313,6 +10313,23 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'km/h (assumed)'**
   String get cornerClassAssumedKmh;
+
+  /// Why lift or flat is not given: most laps did not brake, but fewer than three laps without braking were measured.
+  ///
+  /// In en, this message translates to:
+  /// **'fewer than three laps without braking'**
+  String get cornerClassReasonTooFewLapsWithoutBraking;
+
+  /// Corner details: braking whose heaviness cannot be told, and why (such as the speed unit not being known).
+  ///
+  /// In en, this message translates to:
+  /// **'Brakes on {braked} of {laps} laps ({how}). Heavy or not is not known: {reason}.'**
+  String cornerApproachNoteNoShedReason(
+    String how,
+    int braked,
+    int laps,
+    String reason,
+  );
 }
 
 class _AppLocalizationsDelegate

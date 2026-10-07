@@ -8738,5 +8738,9 @@
   "cornerClassOtherUnits": "{count, plural, =1{1 lap recorded in another speed unit is left out of the speeds.} other{{count} laps recorded in another speed unit are left out of the speeds.}}",
   "@cornerClassOtherUnits": {"description": "Corner details: laps whose speeds are in another unit are not pooled.", "placeholders": {"count": {"type": "int"}}},
   "cornerClassAssumedKmh": "km/h (assumed)",
-  "@cornerClassAssumedKmh": {"description": "Corner details: unit shown with speeds that were recorded without a unit and read as km/h."}
+  "@cornerClassAssumedKmh": {"description": "Corner details: unit shown with speeds that were recorded without a unit and read as km/h."},
+  "cornerClassReasonTooFewLapsWithoutBraking": "fewer than three laps without braking",
+  "@cornerClassReasonTooFewLapsWithoutBraking": {"description": "Why lift or flat is not given: most laps did not brake, but fewer than three laps without braking were measured."},
+  "cornerApproachNoteNoShedReason": "Brakes on {braked} of {laps} laps ({how}). Heavy or not is not known: {reason}.",
+  "@cornerApproachNoteNoShedReason": {"description": "Corner details: braking whose heaviness cannot be told, and why (such as the speed unit not being known).", "placeholders": {"how": {"type": "String"}, "braked": {"type": "int"}, "laps": {"type": "int"}, "reason": {"type": "String"}}}
 }

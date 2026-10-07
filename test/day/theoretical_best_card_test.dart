@@ -709,6 +709,41 @@ void main() {
         findsOneWidget,
       );
     }
+
+    // A speed unit that is not known is named as the reason.
+    final unknownUnit = CornerClassification(
+      driving: classifyCornerDriving([
+        for (var i = 0; i < 3; i++)
+          (metrics: lap('furlong/fortnight'), speedAtBraking: 120.0),
+      ]),
+    );
+    for (final (locale, expected) in [
+      (
+        'en',
+        'Brakes on 3 of 3 laps (brake pedal). Heavy or not is not known: '
+            'speed unit not known.',
+      ),
+      (
+        'pl',
+        'Hamowanie na 3 z 3 okrążeń (pedał hamulca). Nie wiadomo, czy '
+            'hamowanie jest mocne: nieznana jednostka prędkości.',
+      ),
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          key: UniqueKey(),
+          locale: Locale(locale),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CornerClassSection(classification: unknownUnit),
+            ),
+          ),
+        ),
+      );
+      expect(find.text(expected), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
   });
 
@@ -757,6 +792,17 @@ void main() {
     expect(
       cornerReasonText(english, cornerClassSpeedUnitUnknown),
       'speed unit not known',
+    );
+    expect(
+      cornerReasonText(english, cornerClassTooFewLapsWithoutBraking),
+      'fewer than three laps without braking',
+    );
+    expect(
+      cornerReasonText(
+        lookupAppLocalizations(const Locale('pl')),
+        cornerClassTooFewLapsWithoutBraking,
+      ),
+      'mniej niż trzy okrążenia bez hamowania',
     );
     expect(tester.takeException(), isNull);
   });

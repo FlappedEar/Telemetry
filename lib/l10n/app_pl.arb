@@ -1684,5 +1684,7 @@
   "cornerClassNote": "Kształt wynika z krzywizny toru na linii okrążenia, z którego zbudowano oś toru, w tej części odcinka, która skręca; hamowanie i prędkość to typowe (mediana) wartości okrążeń tego dnia w tym miejscu, z kanału prędkości. Progi są takie same na każdym torze: mocne hamowanie to co najmniej 40 km/h mniej w najwolniejszym miejscu niż tam, gdzie zaczyna się hamowanie; odjęcie gazu to utrata co najmniej 5 % prędkości z początku zakrętu bez hamowania, mniej to pełny gaz; wolny zakręt to poniżej 80 km/h, szybki od 130 km/h. Odcinek z kilkoma zakrętami jest klasyfikowany jako całość.",
   "cornerApproachBrakingHeavyUnknown": "Hamowanie (siła nieznana)",
   "cornerClassOtherUnits": "{count, plural, =1{Pominięto prędkości 1 okrążenia zapisanego w innej jednostce.} few{Pominięto prędkości {count} okrążeń zapisanych w innej jednostce.} many{Pominięto prędkości {count} okrążeń zapisanych w innej jednostce.} other{Pominięto prędkości {count} okrążenia zapisanego w innej jednostce.}}",
-  "cornerClassAssumedKmh": "km/h (przyjęte)"
+  "cornerClassAssumedKmh": "km/h (przyjęte)",
+  "cornerClassReasonTooFewLapsWithoutBraking": "mniej niż trzy okrążenia bez hamowania",
+  "cornerApproachNoteNoShedReason": "Hamowanie na {braked} z {laps} okrążeń ({how}). Nie wiadomo, czy hamowanie jest mocne: {reason}."
 }

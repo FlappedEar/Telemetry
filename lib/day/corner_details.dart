@@ -67,6 +67,8 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       // Corner classes.
       cornerClassTooFewLaps => l10n.cornerClassReasonTooFewLaps,
       cornerClassSpeedUnitUnknown => l10n.cornerClassReasonSpeedUnit,
+      cornerClassTooFewLapsWithoutBraking =>
+        l10n.cornerClassReasonTooFewLapsWithoutBraking,
       _ => l10n.cornerDetailsReasonNotAvailable,
     };
 
@@ -635,7 +637,14 @@ class CornerClassSection extends StatelessWidget {
     final approachNote = switch (driving.approach) {
       null => unavailable(driving.approachUnavailableReason),
       CornerApproach.heavyBraking || CornerApproach.braking =>
-        speed(driving.typicalSpeedShedMetresPerSecond).isEmpty
+        driving.heavyUnknownReason.isNotEmpty
+            ? l10n.cornerApproachNoteNoShedReason(
+                how,
+                driving.brakingLaps,
+                driving.lapsMeasured,
+                cornerReasonText(l10n, driving.heavyUnknownReason),
+              )
+            : speed(driving.typicalSpeedShedMetresPerSecond).isEmpty
             ? l10n.cornerApproachNoteNoShed(
                 how,
                 driving.brakingLaps,

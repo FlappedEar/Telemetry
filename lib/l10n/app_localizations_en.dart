@@ -7083,4 +7083,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cornerClassAssumedKmh => 'km/h (assumed)';
+
+  @override
+  String get cornerClassReasonTooFewLapsWithoutBraking =>
+      'fewer than three laps without braking';
+
+  @override
+  String cornerApproachNoteNoShedReason(
+    String how,
+    int braked,
+    int laps,
+    String reason,
+  ) {
+    return 'Brakes on $braked of $laps laps ($how). Heavy or not is not known: $reason.';
+  }
 }

@@ -85,6 +85,10 @@ const int cornerClassComplexApexCount = 3;
 const String cornerClassTooFewLaps = 'tooFewLaps';
 const String cornerClassSpeedUnitUnknown = 'speedUnitUnknown';
 
+/// Not braking on most laps, but fewer than three laps without braking to
+/// tell a lift from flat.
+const String cornerClassTooFewLapsWithoutBraking = 'tooFewLapsWithoutBraking';
+
 /// The corner's shape.
 enum CornerShape {
   /// One tightest part, not late, neither tightening to the end nor opening
@@ -206,6 +210,7 @@ final class CornerDrivingClass {
     this.brakingMethod = '',
     this.typicalSpeedShedMetresPerSecond,
     this.shedLaps = 0,
+    this.heavyUnknownReason = '',
     this.typicalSpeedLossFraction,
     this.typicalSpeedLossMetresPerSecond,
     this.speedBand,
@@ -233,6 +238,10 @@ final class CornerDrivingClass {
   /// told heavy or not.
   final double? typicalSpeedShedMetresPerSecond;
   final int shedLaps;
+
+  /// Why [heavyUnknown]: [cornerClassSpeedUnitUnknown] when the speeds'
+  /// unit is not known; empty when too few laps have both speeds.
+  final String heavyUnknownReason;
 
   /// Braking, but whether it is heavy is not known.
   bool get heavyUnknown =>
@@ -359,10 +368,11 @@ CornerShapeClass classifyCornerShape(
 /// How a corner was driven over [laps]. Braking measured from a brake pedal
 /// and braking inferred from deceleration are never pooled: the method most
 /// laps used decides. Speeds come only from the laps in the unit most laps
-/// were recorded in.
+/// were recorded in (on an even split, the unit of the first such lap in
+/// [laps]' order).
 CornerDrivingClass classifyCornerDriving(List<CornerClassLap> laps) {
-  // The speed unit: the largest group of laps recorded in one unit (the
-  // first one met on a tie).
+  // The speed unit: the largest group of laps recorded in one unit; on an
+  // even split, the unit met first in lap order.
   final groups = <String, int>{};
   for (final (:metrics, speedAtBraking: _) in laps) {
     if (metrics.speeds.entry.value == null && _minimum(metrics) == null) continue;
@@ -408,6 +418,7 @@ CornerDrivingClass classifyCornerDriving(List<CornerClassLap> laps) {
     String method = '',
     double? shed,
     int shedLaps = 0,
+    String heavyUnknownReason = '',
     double? loss,
     double? lossSpeed,
   }) => CornerDrivingClass(
@@ -418,6 +429,7 @@ CornerDrivingClass classifyCornerDriving(List<CornerClassLap> laps) {
     brakingMethod: method,
     typicalSpeedShedMetresPerSecond: shed,
     shedLaps: shedLaps,
+    heavyUnknownReason: heavyUnknownReason,
     typicalSpeedLossFraction: loss,
     typicalSpeedLossMetresPerSecond: lossSpeed,
     speedBand: speedBand,
@@ -477,6 +489,9 @@ CornerDrivingClass classifyCornerDriving(List<CornerClassLap> laps) {
       method: method,
       shed: typicalShed,
       shedLaps: sheds.length,
+      heavyUnknownReason: typicalShed == null && unit != null && factor == null
+          ? cornerClassSpeedUnitUnknown
+          : '',
     );
   }
   // No braking on most laps: a lift or flat, by the speed those laps lost
@@ -496,8 +511,8 @@ CornerDrivingClass classifyCornerDriving(List<CornerClassLap> laps) {
   final typicalLossSpeed = summarizeConsistency([for (final lap in losses) ?lap.speed]);
   if (!typicalLoss.available) {
     return result(
-      reason: unit != null && factor == null
-          ? cornerClassSpeedUnitUnknown
+      reason: coasting.length < cornerClassMinimumLaps
+          ? cornerClassTooFewLapsWithoutBraking
           : _commonReason([
               for (final lap in coasting)
                 if (lap.speeds.entry.value == null)

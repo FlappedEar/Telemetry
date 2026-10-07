@@ -69,9 +69,8 @@ final class GgPairs {
   bool valid = false;
 }
 
-/// Factor from an acceleration in [unit] to g ("g", no unit, or m/s²), or
-/// null for a unit that cannot be interpreted.
-double? gPerAccelerationUnit(String unit) {
+// Factor to g, or null for a unit that cannot be interpreted.
+double? _toGFactor(String unit) {
   final normalized = unit.trim().toLowerCase().replaceAll(' ', '');
   if (normalized.isEmpty || normalized == 'g') return 1.0;
   if (normalized == 'm/s2' || normalized == 'm/s^2' || normalized == 'm/s²') {
@@ -99,8 +98,8 @@ GgPairs buildGgPairs(TelemetrySession session, double startTime, double endTime)
   result.longitudinalUnit = longitudinal.unit;
   result.lateralUnit = lateral.unit;
   result.unitsDeclared = longitudinal.unit.trim().isNotEmpty && lateral.unit.trim().isNotEmpty;
-  final longitudinalFactor = gPerAccelerationUnit(longitudinal.unit);
-  final lateralFactor = gPerAccelerationUnit(lateral.unit);
+  final longitudinalFactor = _toGFactor(longitudinal.unit);
+  final lateralFactor = _toGFactor(lateral.unit);
   if (longitudinalFactor == null || lateralFactor == null) {
     result.unavailableReason = ggUnsupportedUnit;
     return result;
