@@ -327,6 +327,101 @@ void main() {
     });
   });
 
+  // FET-259: the kept corners are stored under the group's id; adding a
+  // recording whose id sorts before Session 1's must not rename the group.
+  test('the day keeps its group and kept corners when a recording that '
+      'sorts first is added, and saved and opened again', () async {
+    final a = '${directory.path}/a.vbo';
+    File(a)
+        .writeAsStringSync(rectangleVbo([(_) => 30, (_) => 30.5, (_) => 30]));
+    final first = runDayImport((paths: [a], includeSubfolders: false));
+    final firstId = first.runs.single.run.id;
+    // A slower drive of the same circuit whose recording sorts first, so
+    // the kept corners still time every lap.
+    String? b;
+    for (var k = 0; k < 64 && b == null; ++k) {
+      final candidate = '${directory.path}/b$k.vbo';
+      File(candidate).writeAsStringSync(
+        rectangleVbo([(_) => 29 - k / 100, (_) => 29.5, (_) => 29]),
+      );
+      final run = runDayImport((paths: [candidate], includeSubfolders: false))
+          .runs
+          .single
+          .run;
+      if (run.id.compareTo(firstId) < 0) b = candidate;
+    }
+    expect(b, isNotNull);
+
+    /// Session 1 alone, with a corner named, so its corners are kept.
+    Future<DayResultsController> named() async {
+      final controller = DayResultsController(
+        runs: first.runs,
+        analysis: first.analysis!,
+        appender: _SyncAppender(),
+      );
+      await controller.requestTheoreticalBest();
+      final shown = controller.theoreticalBest!;
+      final corner = shown.runSegments.firstWhere(
+        (segment) => segment['type'] == 'corner',
+      );
+      expect(
+        controller.editSegment(
+          corner['id']! as String,
+          name: 'Hairpin',
+          type: 'corner',
+          startMeters: corner['startProgressMeters']! as double,
+          endMeters: corner['endProgressMeters']! as double,
+        ),
+        isEmpty,
+      );
+      await controller.requestTheoreticalBest();
+      return controller;
+    }
+
+    final unsaved = await named();
+    final groupId = unsaved.theoreticalBest!.groupId;
+    List<Object?> keptOf(DayResultsController day) => [
+      for (final s in day.theoreticalBest!.runSegments) s['id'],
+    ];
+
+    void expectKept(DayResultsController day, List<Object?> kept) {
+      expect(day.analysis.chosenGroupId, groupId);
+      final result = day.theoreticalBest!;
+      expect(result.groupId, groupId);
+      expect(result.automaticSegments, isFalse);
+      expect(result.remeasuredRuns, isEmpty);
+      expect(result.segmentRunId, firstId);
+      expect([for (final s in result.runSegments) s['id']], kept);
+      expect(
+        result.segments.where((segment) => segment.name == 'Hairpin'),
+        hasLength(1),
+      );
+    }
+
+    // Added to a day not saved yet.
+    final keptUnsaved = keptOf(unsaved);
+    expect((await unsaved.addRecordings([b!])).added, ['Session 2']);
+    await unsaved.requestTheoreticalBest();
+    expectKept(unsaved, keptUnsaved);
+
+    // Added to a saved day, which is saved again at once, then opened.
+    final saved = await named();
+    final kept = keptOf(saved);
+    final path = '${directory.path}/Day.fetproject';
+    await saved.save(path);
+    expect((await saved.addRecordings([b])).added, ['Session 2']);
+    await saved.requestTheoreticalBest();
+    expectKept(saved, kept);
+    final opened = DayResultsController.opened(
+      openDay(path),
+      appender: _SyncAppender(),
+    );
+    expect(opened.runs, hasLength(2));
+    await opened.requestTheoreticalBest();
+    expectKept(opened, kept);
+    expect(opened.dirty, isFalse);
+  });
+
   test('a recording already in the day is not added twice', () async {
     final a = write('a.vbo', [30, 28, 31]);
     final copy = write('copy.vbo', [30, 28, 31]);

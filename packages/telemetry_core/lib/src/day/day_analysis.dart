@@ -25,6 +25,7 @@ final class DayRunInput {
     required this.laps,
     this.layoutName,
     this.direction,
+    this.route,
   });
 
   final String runId;
@@ -39,6 +40,11 @@ final class DayRunInput {
   /// used for this run.
   final String? layoutName;
   final TrackDirection? direction;
+
+  /// The detected route the day document saved for this run
+  /// (`trackInference`): its group keeps that id while it still applies
+  /// (FET-259).
+  final TrackRouteProvenance? route;
 
   bool get manual => layoutName != null || direction != null;
 }
@@ -264,6 +270,7 @@ DayRunsPart analyzeDayRuns(
           runId: run.runId,
           contentSha256: run.contentSha256,
           configuration: TrackConfiguration(gateRevision: sessionGateRevision(run.session)),
+          previous: run.route,
         ),
       );
       if (run.session.metadata['firstTimestampMilliseconds'] == null) {
@@ -297,7 +304,8 @@ DayRunsPart analyzeDayRuns(
 /// [day] (none for a new day) with the runs of [added], grouped and ranked
 /// again with the user's [manualTracks], [exclusions] and
 /// [preferredGroupId]. The same day as [analyzeDay] of all the runs, in the
-/// same order, without reading the earlier runs again.
+/// same order, without reading the earlier runs again, except that a route
+/// group keeps the id it had in [day] (FET-259).
 DayAnalysis extendDay(
   DayAnalysis? day,
   DayRunsPart added, {
@@ -426,6 +434,7 @@ DayAnalysis _group(
             direction: manual.direction,
             gateRevision: source.configuration.gateRevision,
           ),
+          previous: source.previous,
         )
       else
         source,
@@ -470,7 +479,12 @@ DayAnalysis _group(
     exclusions,
     preferredGroupId,
     cancelled,
-    sources: baseSources,
+    // Each run keeps the route it was given, so the next grouping (a
+    // recording added, a layout changed) keeps its group's id (FET-259).
+    sources: [
+      for (final source in baseSources)
+        source.withPrevious(grouped.provenance[source.runId] ?? source.previous),
+    ],
     runMessages: runMessages,
     manualTracks: manualTracks,
   );

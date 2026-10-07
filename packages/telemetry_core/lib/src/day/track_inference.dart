@@ -342,6 +342,81 @@ TrackInference inferTrack(
   return TrackInference(route: route, matchingLaps: Set.unmodifiable(matching));
 }
 
+/// The detected route a run was given, as a day document stores it in the
+/// run's `trackInference` (Overlays' provenance). A later grouping keeps
+/// [layoutId] while the run's recording, gates and direction are unchanged,
+/// so a recording added to the day never renames the route the driver's kept
+/// corners are stored under (FET-259).
+final class TrackRouteProvenance {
+  const TrackRouteProvenance({
+    required this.algorithm,
+    required this.sourceRevision,
+    required this.gateRevision,
+    required this.layoutId,
+    required this.direction,
+  });
+
+  /// The stored `trackInference` object, or null when it is not one this
+  /// version can use (malformed, or another algorithm's).
+  static TrackRouteProvenance? fromJson(Object? value) {
+    if (value is! Map) return null;
+    final algorithm = value['algorithm'];
+    final revision = value['sourceRevision'];
+    final gate = value['gateRevision'];
+    final layout = value['layoutId'];
+    final direction = switch (value['direction']) {
+      'clockwise' => TrackDirection.clockwise,
+      'counterclockwise' => TrackDirection.counterclockwise,
+      _ => null,
+    };
+    if (algorithm is! String ||
+        revision is! String ||
+        (gate != null && gate is! String) ||
+        layout is! String ||
+        !layout.startsWith('$trackInferenceVersion:') ||
+        direction == null) {
+      return null;
+    }
+    return TrackRouteProvenance(
+      algorithm: algorithm,
+      sourceRevision: revision,
+      gateRevision: gate as String?,
+      layoutId: layout,
+      direction: direction,
+    );
+  }
+
+  final String algorithm;
+
+  /// The content SHA-256 of the recording the route was detected from.
+  final String sourceRevision;
+  final String? gateRevision;
+
+  /// The `gps-route-v1:` layout id.
+  final String layoutId;
+  final TrackDirection direction;
+
+  Map<String, Object?> toJson() => {
+    'algorithm': algorithm,
+    'sourceRevision': sourceRevision,
+    'gateRevision': gateRevision,
+    'layoutId': layoutId,
+    'direction': direction.name,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is TrackRouteProvenance &&
+      other.algorithm == algorithm &&
+      other.sourceRevision == sourceRevision &&
+      other.gateRevision == gateRevision &&
+      other.layoutId == layoutId &&
+      other.direction == direction;
+
+  @override
+  int get hashCode => Object.hash(algorithm, sourceRevision, gateRevision, layoutId, direction);
+}
+
 /// One run's input to [groupInferredTracks].
 final class TrackGroupingSource {
   const TrackGroupingSource({
@@ -349,6 +424,7 @@ final class TrackGroupingSource {
     required this.contentSha256,
     required this.configuration,
     this.manual = false,
+    this.previous,
   });
 
   final String runId;
@@ -360,16 +436,37 @@ final class TrackGroupingSource {
 
   /// The user set the layout or direction; inference never overrides it.
   final bool manual;
+
+  /// The route this run was given before (the saved `trackInference`, or
+  /// the day's last grouping); its id is kept when it still applies.
+  final TrackRouteProvenance? previous;
+
+  /// This source with [previous] replaced.
+  TrackGroupingSource withPrevious(TrackRouteProvenance? previous) => TrackGroupingSource(
+    runId: runId,
+    contentSha256: contentSha256,
+    configuration: configuration,
+    manual: manual,
+    previous: previous,
+  );
 }
 
 /// The configurations after grouping, and the runs that could not be placed.
 final class InferredTrackGroups {
-  const InferredTrackGroups({required this.configurations, required this.reasons});
+  const InferredTrackGroups({
+    required this.configurations,
+    required this.reasons,
+    this.provenance = const {},
+  });
 
   final Map<String, TrackConfiguration> configurations;
 
   /// Run id → why its route could not be assigned automatically.
   final Map<String, String> reasons;
+
+  /// Run id → the detected route it was placed on, for every run in a
+  /// route group.
+  final Map<String, TrackRouteProvenance> provenance;
 }
 
 /// Groups runs whose routes match, complete-link (a near match cannot bridge
@@ -423,22 +520,64 @@ InferredTrackGroups groupInferredTracks(
     cluster.removeWhere(reasons.containsKey);
   }
   clusters.removeWhere((cluster) => cluster.isEmpty);
+  // FET-259, as Overlays: a group keeps the id one of its runs was given
+  // before, while that run's recording, gates and direction are unchanged.
+  // Seeding from the first run id alone would rename the group whenever a
+  // recording whose id sorts first joined it, and lose what is stored under
+  // the old id. An id claimed by two groups is kept by neither.
+  final previousByCluster = <List<String>>[];
+  final claims = <String, int>{};
   final reserved = <String>{};
   for (final cluster in clusters) {
-    final seed = utf8.encode('${cluster.first}\u0000${byId[cluster.first]!.contentSha256}');
-    String layoutId;
-    var salt = 0;
-    do {
-      layoutId =
-          '$trackInferenceVersion:${sha256.convert([...seed, 0, ...ascii.encode('${salt++}')])}';
-    } while (reserved.contains(layoutId));
-    reserved.add(layoutId);
+    final previousIds = <String>{
+      for (final id in cluster)
+        if (byId[id]!.previous case final previous?
+            when previous.algorithm == trackInferenceVersion &&
+                previous.sourceRevision == byId[id]!.contentSha256 &&
+                previous.gateRevision == byId[id]!.configuration.gateRevision &&
+                previous.direction == inferences[id]!.route!.direction &&
+                previous.layoutId.startsWith('$trackInferenceVersion:'))
+          previous.layoutId,
+    }.toList()..sort();
+    for (final id in previousIds) {
+      claims[id] = (claims[id] ?? 0) + 1;
+      reserved.add(id);
+    }
+    previousByCluster.add(previousIds);
+  }
+  final provenance = <String, TrackRouteProvenance>{};
+  for (var index = 0; index < clusters.length; ++index) {
+    final cluster = clusters[index];
+    String? layoutId;
+    for (final id in previousByCluster[index]) {
+      if (claims[id] == 1) {
+        layoutId = id;
+        break;
+      }
+    }
+    if (layoutId == null) {
+      final seed = utf8.encode('${cluster.first}\u0000${byId[cluster.first]!.contentSha256}');
+      var salt = 0;
+      do {
+        layoutId =
+            '$trackInferenceVersion:${sha256.convert([...seed, 0, ...ascii.encode('${salt++}')])}';
+      } while (reserved.contains(layoutId));
+      reserved.add(layoutId);
+    }
     for (final id in cluster) {
       final source = byId[id]!;
+      final direction = inferences[id]!.route!.direction;
+      provenance[id] = TrackRouteProvenance(
+        algorithm: trackInferenceVersion,
+        sourceRevision: source.contentSha256,
+        gateRevision: source.configuration.gateRevision,
+        layoutId: layoutId,
+        direction: direction,
+      );
       if (source.manual) continue;
       configurations[id] = TrackConfiguration(
         layoutId: layoutId,
-        direction: inferences[id]!.route!.direction,
+        direction: direction,
         gateRevision: source.configuration.gateRevision,
       );
     }
@@ -446,5 +585,6 @@ InferredTrackGroups groupInferredTracks(
   return InferredTrackGroups(
     configurations: Map.unmodifiable(configurations),
     reasons: Map.unmodifiable(reasons),
+    provenance: Map.unmodifiable(provenance),
   );
 }
