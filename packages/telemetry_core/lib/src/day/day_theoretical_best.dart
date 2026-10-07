@@ -454,7 +454,7 @@ DayTheoreticalBest dayTheoreticalBest(
             ],
           );
         }(),
-  ]);
+  ], cancelled: cancelled);
   return DayTheoreticalBest(
     groupId: id,
     state: DayTheoreticalBestState.ready,

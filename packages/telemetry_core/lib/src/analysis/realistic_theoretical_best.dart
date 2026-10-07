@@ -15,6 +15,7 @@
 // Beside it, the repeatable theoretical best: the sum of each segment's
 // quickest typical (median) time in one session, what the laps did through
 // each segment as a rule rather than once.
+import '../operation.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'outing_results.dart';
@@ -114,8 +115,9 @@ double? speedMetresPerSecondAt(TelemetrySession session, double? time) {
 /// left out, as the raw theoretical best leaves them out.
 RealisticTheoreticalBest computeRealisticTheoreticalBest(
   ApprovedSegmentation approved,
-  List<RealisticLapInput> laps,
-) {
+  List<RealisticLapInput> laps, {
+  CancellationCheck? cancelled,
+}) {
   final segments = approved.segments;
   final ids = [
     for (final segment in segments) segment['id'] is String ? segment['id'] as String : '',
@@ -222,6 +224,7 @@ RealisticTheoreticalBest computeRealisticTheoreticalBest(
 
   (double, List<int>)? quickest;
   for (final first in closes ? [for (var k = 0; k < population.length; ++k) k] : [null]) {
+    throwIfCancelled(cancelled);
     final found = chain(first);
     if (found != null && (quickest == null || found.$1 < quickest.$1)) quickest = found;
   }
