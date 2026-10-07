@@ -57,7 +57,18 @@ PhaseReference dayPhaseReference(
         for (final k in population)
           corner.phaseTimes(computed.population[k].times.lapReference as DayLapReference),
       ];
-      if (times.any((time) => time.valid)) {
+      // Split only when every lap timed through the whole corner is timed
+      // through its parts too: a lap left out of the parts could be the
+      // fastest through the corner, and the parts then would not be a finer
+      // grain of the theoretical best.
+      var every = true;
+      for (final (position, k) in population.indexed) {
+        final timed = computed.population[k].times.sectors
+            .where((sector) => sector.segmentId == id)
+            .any((sector) => sector.seconds != null);
+        if (timed && !times[position].valid) every = false;
+      }
+      if (every && times.any((time) => time.valid)) {
         phases[index] = times;
         for (final part in [PhasePart.entry, PhasePart.middle, PhasePart.exit]) {
           pieces.add(
@@ -91,7 +102,9 @@ PhaseReference dayPhaseReference(
     final times = computed.population[k].times;
     final session = k < computed.runIds.length ? sessions[computed.runIds[k]] : null;
     final trace = k < computed.traces.length ? computed.traces[k] : const <ProgressSegment>[];
-    if (session?.channel('speed') case final channel?) units.add(normalizedSpeedUnit(channel.unit));
+    if (session?.channel('speed') case final channel?) {
+      units.add(normalizedSpeedUnit(channel.unit.trim().isEmpty ? '' : channel.unit));
+    }
     double? speed(double? time) => session == null ? null : speedMetresPerSecondAt(session, time);
     SectorTime? sector(String id) {
       for (final candidate in times.sectors) {
@@ -149,7 +162,9 @@ PhaseReference dayPhaseReference(
     laps,
     segmentMeets: meets,
     closes: closes,
-    speedUnit: units.length == 1 ? units.single : '',
+    // A speed without a unit is read as km/h (speedInMetresPerSecond).
+    speedUnit: units.length == 1 ? (units.single.isEmpty ? 'km/h' : units.single) : '',
+    speedUnitAssumed: units.contains(''),
     cancelled: cancelled,
   );
 }

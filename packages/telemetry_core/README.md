@@ -236,12 +236,15 @@ a background isolate.
   middle and exit (FET-221) and every other segment whole (a corner not
   split keeps `PhasePiece.splitReason`), times the group's ranked laps
   through each, and `computePhaseReference` takes each piece's fastest lap
-  (the first wins a tie). It is the raw theoretical best at a finer grain,
-  never slower. Each join between two laps is judged by the realistic
+  (the first wins a tie). It is the raw theoretical best at a finer grain;
+  a corner is split only when every lap timed through it is timed through
+  its parts, so it is then never slower (the app compares the totals before
+  saying so). Each join between two laps is judged by the realistic
   best's rule (`PhaseJoin`: joins, apart, or unknown without a speed in a
   known unit), and `joinedSeconds` is the quickest combination of pieces
-  that joins everywhere (never slower than the realistic best's segments).
-  Times are seconds; speeds are compared only in m/s.
+  that joins everywhere (never slower than the realistic best's segments, on the same condition).
+  Times are seconds; speeds are compared only in m/s, a speed without a
+  unit read as km/h (`PhaseReference.speedUnitAssumed`).
   `DayTheoreticalBest.bestPhases` holds it.
 - Where a session's laps vary (FlappedEar Telemetry only, FET-224):
   `segmentSpreadBand` puts a segment's spread in one session (its

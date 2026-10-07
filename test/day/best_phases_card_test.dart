@@ -206,12 +206,28 @@ void main() {
       value('bestPhasesTypical value'),
       displayTime(repeatableTheoreticalBest(sections)!),
     );
-    // The recordings declare no speed unit: differences are in m/s.
-    expect(phases.speedUnit, isEmpty);
+    // The recordings declare no speed unit: read as km/h, and said so.
+    expect(phases.speedUnit, 'km/h');
+    expect(phases.speedUnitAssumed, isTrue);
     expect(
-      find.textContaining('at most 0.6\u00a0m/s wherever two laps meet'),
+      find.textContaining('at most 2.0\u00a0km/h wherever two laps meet'),
       findsOneWidget,
     );
+    expect(
+      find.textContaining('Speeds without a unit are read as km/h.'),
+      findsOneWidget,
+    );
+    // "Never slower" is said because the two totals show it.
+    expect(
+      phases.totalSeconds,
+      lessThanOrEqualTo(result.theoreticalBestSeconds! + 1e-6),
+    );
+    expect(find.textContaining('Best phases is never slower'), findsOneWidget);
+    expect(
+      find.textContaining('Never slower than segments that join.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('The parts need not join.'), findsOneWidget);
 
     // A split corner: its three parts with the best lap's losses.
     final split = phases.pieces.indexWhere(
@@ -476,6 +492,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Część po części'), findsOneWidget);
+    expect(find.textContaining('Części nie muszą się łączyć'), findsOneWidget);
     expect(find.text('Traci'), findsOneWidget);
     expect(find.textContaining('Best'), findsNothing);
   });

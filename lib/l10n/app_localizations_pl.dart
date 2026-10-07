@@ -7782,12 +7782,11 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count okrążeń',
       one: '1 okrążenia',
     );
-    return 'Najszybszy czas każdej części, z $_temp0.';
+    return 'Najszybszy czas każdej części, z $_temp0. Części nie muszą się łączyć.';
   }
 
   @override
-  String get bpRawNote =>
-      'Ta sama zasada, ale całymi odcinkami. Najlepsze fazy nigdy nie są wolniejsze: trzy części zakrętu mogą pochodzić z trzech okrążeń.';
+  String get bpRawNote => 'Ta sama zasada, ale całymi odcinkami.';
 
   @override
   String get bpJoinedLabel => 'Najlepsze fazy, które się łączą';
@@ -7800,7 +7799,7 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count okrążeń',
       one: '1 okrążenia',
     );
-    return 'Szacunek: najszybsze części, których prędkości różnią się najwyżej o $tolerance wszędzie tam, gdzie spotykają się dwa okrążenia, także na granicach wewnątrz zakrętów. Złożone z $_temp0. Nigdy nie wolniejsze od odcinków, które się łączą.';
+    return 'Szacunek: najszybsze części, których prędkości różnią się najwyżej o $tolerance wszędzie tam, gdzie spotykają się dwa okrążenia, także na granicach wewnątrz zakrętów. Złożone z $_temp0.';
   }
 
   @override
@@ -7880,7 +7879,7 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get bpLapSetIt => 'ustanowione na tym okrążeniu';
+  String get bpLapSetIt => 'ten czas ustanowiono na tym okrążeniu';
 
   @override
   String get bpLapNotTimed => 'to okrążenie nie ma tu czasu';
@@ -7896,4 +7895,16 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get bpPiecesNote =>
       'Najlepsze fazy składają się z części różnych okrążeń, a nie z jednego nagrania, więc są tu porównywane część po części i nie są dostępne jako okrążenie odniesienia.';
+
+  @override
+  String get bpRawNever =>
+      'Najlepsze fazy nigdy nie są wolniejsze: trzy części zakrętu mogą pochodzić z trzech okrążeń.';
+
+  @override
+  String get bpJoinedNever =>
+      'Nigdy nie wolniejsze od odcinków, które się łączą.';
+
+  @override
+  String get bpSpeedAssumed =>
+      'Prędkości bez jednostki są odczytywane jako km/h.';
 }

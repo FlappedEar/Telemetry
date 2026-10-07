@@ -7612,12 +7612,11 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count laps',
       one: '1 lap',
     );
-    return 'Each part\'s fastest time, from $_temp0.';
+    return 'Each part\'s fastest time, from $_temp0. The parts need not join.';
   }
 
   @override
-  String get bpRawNote =>
-      'The same idea a whole segment at a time. Best phases is never slower: a corner\'s three parts may come from three laps.';
+  String get bpRawNote => 'The same idea a whole segment at a time.';
 
   @override
   String get bpJoinedLabel => 'Best phases that join';
@@ -7630,7 +7629,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count laps',
       one: '1 lap',
     );
-    return 'An estimate: the fastest parts whose speeds differ by at most $tolerance wherever two laps meet, at the lines inside each corner too. Made of $_temp0. Never slower than segments that join.';
+    return 'An estimate: the fastest parts whose speeds differ by at most $tolerance wherever two laps meet, at the lines inside each corner too. Made of $_temp0.';
   }
 
   @override
@@ -7726,4 +7725,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bpPiecesNote =>
       'The best phases is made of parts of different laps, not one recording, so it is compared part by part here and is not offered as a reference lap.';
+
+  @override
+  String get bpRawNever =>
+      'Best phases is never slower: a corner\'s three parts may come from three laps.';
+
+  @override
+  String get bpJoinedNever => 'Never slower than segments that join.';
+
+  @override
+  String get bpSpeedAssumed => 'Speeds without a unit are read as km/h.';
 }

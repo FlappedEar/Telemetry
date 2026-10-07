@@ -7,8 +7,10 @@
 //
 // It is the raw theoretical best (each segment's fastest time from any lap)
 // at a finer grain: a split corner's three parts may come from three laps
-// where the theoretical best takes the whole corner from one, so it is never
-// slower. Like the raw best it ignores whether the pieces join; the rule of
+// where the theoretical best takes the whole corner from one. A corner is
+// split only when every lap timed through it is timed through its parts, so
+// the sum is then never slower; the cards still compare the two totals
+// before saying so. Like the raw best it ignores whether the pieces join; the rule of
 // the realistic best (FET-222) says where they do: two laps join where their
 // speeds differ by at most [realisticJoinMetresPerSecond], and the quickest
 // combination of pieces that joins everywhere is worked out beside it.
@@ -136,6 +138,7 @@ final class PhaseReference {
     this.joinedUnavailableReason = '',
     Map<Object?, List<double?>> lapSeconds = const {},
     this.speedUnit = '',
+    this.speedUnitAssumed = false,
   }) : pieces = List.unmodifiable(pieces),
        lapSeconds = Map.unmodifiable({
          for (final MapEntry(:key, :value) in lapSeconds.entries)
@@ -165,6 +168,10 @@ final class PhaseReference {
   /// The unit the laps' speeds are recorded in when they all declare the
   /// same one, else empty. Joins are compared in m/s.
   final String speedUnit;
+
+  /// Some lap's speed declares no unit and is read as km/h (as everywhere:
+  /// [speedInMetresPerSecond]), so the differences rest on that assumption.
+  final bool speedUnitAssumed;
 
   bool get valid => unavailableReason.isEmpty && totalSeconds != null;
 
@@ -216,6 +223,7 @@ PhaseReference computePhaseReference(
   List<bool> segmentMeets = const [],
   bool closes = false,
   String speedUnit = '',
+  bool speedUnitAssumed = false,
   CancellationCheck? cancelled,
 }) {
   final count = pieces.length;
@@ -335,5 +343,6 @@ PhaseReference computePhaseReference(
       for (var k = 0; k < population.length; ++k) population[k].lapReference: seconds[k],
     },
     speedUnit: speedUnit,
+    speedUnitAssumed: speedUnitAssumed,
   );
 }

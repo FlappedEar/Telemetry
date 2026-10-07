@@ -141,7 +141,9 @@ void main() {
     // The best lap's pieces add up to its lap.
     final best = result.bestLap!.reference;
     expect(phases.lapTotal(best), closeTo(result.bestLapSeconds!, 1e-6));
-    expect(phases.speedUnit, isEmpty, reason: 'the speed declares no unit');
+    // The speed declares no unit: read as km/h, and said to be assumed.
+    expect(phases.speedUnit, 'km/h');
+    expect(phases.speedUnitAssumed, isTrue);
     // The joins between laps follow the realistic best's rule.
     for (final piece in phases.pieces) {
       switch (piece.join) {
@@ -197,6 +199,44 @@ void main() {
     expect(reference.joinedUnavailableReason, phaseReferenceNoSpeed);
   });
 
+  test('a corner is taken whole when a lap timed through it has no parts', () {
+    final corner = result.corners.firstWhere((corner) => corner.phaseSplit.valid);
+    final whole = result.segments[corner.segmentIndex];
+    // The lap fastest through the whole corner has no projection here: its
+    // parts are not timed, so splitting would drop it and could be slower.
+    final fastest = whole.sourceLapReference as DayLapReference;
+    final dropped = DayCorner(
+      segmentIndex: corner.segmentIndex,
+      segmentId: corner.segmentId,
+      name: corner.name,
+      startProgressMeters: corner.startProgressMeters,
+      endProgressMeters: corner.endProgressMeters,
+      laps: corner.laps,
+      bestLap: corner.bestLap,
+      phaseSplit: corner.phaseSplit,
+      traces: {
+        for (final entry in corner.traces.entries)
+          if (entry.key != fastest) entry.key: entry.value,
+      },
+      classification: corner.classification,
+    );
+    final reference = dayPhaseReference(result.computed!, [
+      for (final c in result.corners)
+        if (c.segmentIndex == corner.segmentIndex) dropped else c,
+    ], sessions);
+    final pieces = reference.pieces.where((p) => p.piece.segmentIndex == corner.segmentIndex);
+    expect(pieces, hasLength(1));
+    expect(pieces.single.piece.part, PhasePart.whole);
+    expect(pieces.single.piece.splitReason, cornerPhaseTimesNotTimed);
+    expect(pieces.single.seconds, whole.seconds);
+    expect(pieces.single.lapReference, fastest);
+    // So the claim holds: never slower than the raw best.
+    expect(reference.totalSeconds, lessThanOrEqualTo(result.theoreticalBestSeconds! + 1e-6));
+    expect(reference.joinedSeconds, lessThanOrEqualTo(result.realistic!.totalSeconds! + 1e-6));
+    // A lap with no time through the corner at all does not stop the split.
+    expect(phases.pieces.where((p) => p.piece.segmentIndex == corner.segmentIndex), hasLength(3));
+  });
+
   test('a lap that is not ranked gives no piece', () {
     final fastest = phases.pieces.first.lapReference as DayLapReference;
     final excluded = _day(exclusions: {fastest: 'test'}).result.bestPhases!;
@@ -210,6 +250,11 @@ void main() {
     final kmh = _day(firstUnit: 'km/h', secondUnit: 'km/h').result.bestPhases!;
     final mph = _day(firstUnit: 'km/h', secondUnit: 'mph', perKmh: 1 / 1.609344).result.bestPhases!;
     expect(kmh.speedUnit, 'km/h');
+    expect(kmh.speedUnitAssumed, isFalse, reason: 'declared');
+    // One undeclared, one declared: read as km/h, said so, no one unit.
+    final mixed = _day(firstUnit: 'mph', secondUnit: '', perKmh: 1 / 1.609344).result.bestPhases!;
+    expect(mixed.speedUnit, isEmpty);
+    expect(mixed.speedUnitAssumed, isTrue);
     // Mixed units: no one unit to show differences in.
     expect(mph.speedUnit, isEmpty);
     expect(

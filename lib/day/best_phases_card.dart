@@ -8,6 +8,11 @@ import 'corner_details.dart' show cornerPhaseReasonText;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
 
+/// Whether [fine] is not above [coarse] (both known), to a millisecond's
+/// thousandth: what "never slower" claims, checked rather than assumed.
+bool neverSlower(double? fine, double? coarse) =>
+    fine != null && coarse != null && fine <= coarse + 1e-6;
+
 /// [metresPerSecond] as a speed difference in [unit], the unit every lap's
 /// speed declares; in m/s when they declare none or different ones, so a
 /// unit is never put on a number it was not measured in.
@@ -67,6 +72,10 @@ class _BestPhasesCardState extends State<BestPhasesCard> {
   // Kept for the page: the list rebuilds the card when it scrolls back.
   late bool _open = readPageState<bool>(context, _openStorage) ?? false;
   late DayLapReference? _selected = readPageState(context, _lapStorage);
+
+  // The best typical total, worked out again only when the sections change.
+  SectionProgression? _typicalOf;
+  double? _typical;
   static const _openStorage = 'bestPhasesOpen', _lapStorage = 'bestPhasesLap';
 
   void _toggle() {
@@ -77,6 +86,16 @@ class _BestPhasesCardState extends State<BestPhasesCard> {
   void _choose(DayLapReference? reference) {
     setState(() => _selected = reference);
     writePageState(context, _lapStorage, reference);
+  }
+
+  double? _typicalTotal() {
+    final sections = widget.sections;
+    if (sections == null) return null;
+    if (!identical(sections, _typicalOf)) {
+      _typicalOf = sections;
+      _typical = repeatableTheoreticalBest(sections);
+    }
+    return _typical;
   }
 
   // The chosen lap, or the best lap.
@@ -175,7 +194,12 @@ class _BestPhasesCardState extends State<BestPhasesCard> {
       const SizedBox(height: 12),
       if (lap != null) _Headline(phases: phases, lap: lap),
       const SizedBox(height: 16),
-      _Bests(result: result, phases: phases, sections: widget.sections),
+      _Bests(
+        result: result,
+        phases: phases,
+        sections: widget.sections,
+        typical: _typicalTotal(),
+      ),
       const SizedBox(height: 16),
       ..._joins(context, result, phases),
       if (lap != null) ...[
@@ -266,7 +290,13 @@ class _BestPhasesCardState extends State<BestPhasesCard> {
         ),
       Padding(
         padding: const EdgeInsets.only(top: 4),
-        child: Text(l10n.bpJoinsNote, style: theme.textTheme.bodySmall),
+        child: Text(
+          phases.speedUnitAssumed
+              ? '${l10n.bpJoinsNote} ${l10n.bpSpeedAssumed}'
+              : l10n.bpJoinsNote,
+          key: const ValueKey('bestPhasesJoinsNote'),
+          style: theme.textTheme.bodySmall,
+        ),
       ),
     ];
   }
@@ -472,20 +502,25 @@ class _Headline extends StatelessWidget {
 /// fastest segments and segments that join at a finer grain, and a
 /// different one from the best typical.
 class _Bests extends StatelessWidget {
-  const _Bests({required this.result, required this.phases, this.sections});
+  const _Bests({
+    required this.result,
+    required this.phases,
+    this.sections,
+    this.typical,
+  });
 
   final DayTheoreticalBest result;
   final PhaseReference phases;
   final SectionProgression? sections;
+
+  /// [repeatableTheoreticalBest] of [sections], kept by the card.
+  final double? typical;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final sections = this.sections;
-    final typical = sections == null
-        ? null
-        : repeatableTheoreticalBest(sections);
     final realistic = result.realistic?.totalSeconds;
     String time(double? seconds) =>
         seconds == null ? '—' : displayTime(seconds);
@@ -528,23 +563,21 @@ class _Bests extends StatelessWidget {
         row(
           'bestPhasesRaw',
           l10n.tbRawLabel,
-          l10n.bpRawNote,
+          // Said only when the two totals show it.
+          neverSlower(phases.totalSeconds, result.theoreticalBestSeconds)
+              ? '${l10n.bpRawNote} ${l10n.bpRawNever}'
+              : l10n.bpRawNote,
           time(result.theoreticalBestSeconds),
         ),
-        row(
-          'bestPhasesJoined',
-          l10n.bpJoinedLabel,
-          switch (phases.joinedUnavailableReason) {
-            '' when phases.joinedSeconds != null => l10n.bpJoinedNote(
-              phaseSpeedText(realisticJoinMetresPerSecond, phases.speedUnit),
-              phases.joinedLapCount,
-            ),
-            phaseReferenceNoSpeed => l10n.tbRealisticNoSpeed,
-            phaseReferenceNoJoin => l10n.bpJoinedNoJoin,
-            _ => l10n.bpIncomplete,
-          },
-          time(phases.joinedSeconds),
-        ),
+        row('bestPhasesJoined', l10n.bpJoinedLabel, switch (phases
+            .joinedUnavailableReason) {
+          '' when phases.joinedSeconds != null =>
+            '${l10n.bpJoinedNote(phaseSpeedText(realisticJoinMetresPerSecond, phases.speedUnit), phases.joinedLapCount)}'
+                '${neverSlower(phases.joinedSeconds, realistic) ? ' ${l10n.bpJoinedNever}' : ''}',
+          phaseReferenceNoSpeed => l10n.tbRealisticNoSpeed,
+          phaseReferenceNoJoin => l10n.bpJoinedNoJoin,
+          _ => l10n.bpIncomplete,
+        }, time(phases.joinedSeconds)),
         row(
           'bestPhasesRealistic',
           l10n.tbRealisticLabel,
