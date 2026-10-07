@@ -166,34 +166,30 @@ void main() {
   // would depart from Overlays. Left as the expectation for the departure
   // (FET-251); `corner_phases.dart` still uses count times mean spacing.
   group('proposeCornerGeometryPhases', () {
-    test(
-      'the apex sits half way between the region\'s own progress, not its point count',
-      skip: 'departs from Overlays parity, see above',
-      () {
-        final axis = _unevenAxis();
-        final features = computeTrackFeatures(axis, 6.0);
-        expect(features.valid, isTrue);
-        final corner = TrackSegmentProposal(
-          type: TrackSegmentType.corner,
-          name: 'Circle',
-          start: SegmentProposalBoundary(10.0, 7.0),
-          end: SegmentProposalBoundary(axis.lengthMeters - 10.0, 7.0),
-          turnRadians: 2 * math.pi,
-          peakCurvaturePerMeter: 0.01,
-        );
-        final phases = proposeCornerGeometryPhases(axis, features, corner);
-        expect(phases.valid, isTrue);
-        expect(phases.apex.resolved, isTrue, reason: phases.apex.unresolvedReason);
-        final first = phases.apex.evidence['regionStartMeters']! as double;
-        final last = phases.apex.evidence['regionEndMeters']! as double;
-        // The region is the 3 m spaced half: its points are 3 m apart, not the
-        // 1.5 m mean spacing.
-        expect(last - first, greaterThan(100.0));
-        expect(phases.apex.progressMeters, closeTo((first + last) / 2.0, 1e-6));
-        // The tolerance covers half the region plus a point spacing, on the
-        // ground it spans.
-        expect(phases.apex.toleranceMeters, closeTo((last - first) / 2.0 + 3.0, 4.0));
-      },
-    );
+    test('the apex sits half way between the region\'s own progress, not its point count', skip: 'departs from Overlays parity (KAN-244); corner_classes.dart along() divides by spacingMeters the same way', () {
+      final axis = _unevenAxis();
+      final features = computeTrackFeatures(axis, 6.0);
+      expect(features.valid, isTrue);
+      final corner = TrackSegmentProposal(
+        type: TrackSegmentType.corner,
+        name: 'Circle',
+        start: SegmentProposalBoundary(10.0, 7.0),
+        end: SegmentProposalBoundary(axis.lengthMeters - 10.0, 7.0),
+        turnRadians: 2 * math.pi,
+        peakCurvaturePerMeter: 0.01,
+      );
+      final phases = proposeCornerGeometryPhases(axis, features, corner);
+      expect(phases.valid, isTrue);
+      expect(phases.apex.resolved, isTrue, reason: phases.apex.unresolvedReason);
+      final first = phases.apex.evidence['regionStartMeters']! as double;
+      final last = phases.apex.evidence['regionEndMeters']! as double;
+      // The region is the 3 m spaced half: its points are 3 m apart, not the
+      // 1.5 m mean spacing.
+      expect(last - first, greaterThan(100.0));
+      expect(phases.apex.progressMeters, closeTo((first + last) / 2.0, 1e-6));
+      // The tolerance covers half the region plus a point spacing, on the
+      // ground it spans.
+      expect(phases.apex.toleranceMeters, closeTo((last - first) / 2.0 + 3.0, 4.0));
+    });
   });
 }

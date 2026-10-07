@@ -461,7 +461,7 @@ double _nearestOtherLeg(
 
 /// The axis point nearest [progressMeters] along the axis (taken modulo its
 /// length), by the axis's own cumulative distances (FET-249, KAN-237; used for
-/// the profile's corner positions and the corner phases too, FET-251). Overlays
+/// the profile's corner positions, FET-251; corner_phases.dart and corner_classes.dart still divide by the spacing, KAN-244). Overlays
 /// divides by [ProgressAxis.spacingMeters] instead, which is the raw path's
 /// length over the point count, while [ProgressAxis.cumulative] adds up the
 /// straight lines between the resampled points: shorter, by about 4 m on a

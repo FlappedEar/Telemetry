@@ -338,3 +338,15 @@ a curvature region's width as point count times mean spacing: using the samples'
 own progress moves the apex progress and tolerance in `corner_analyzer_parity`
 and `corner_metrics_parity` by up to 0.27 m, so it is a departure too
 (`axis_progress_conversion_test.dart`, skipped test).
+
+Profiles already stored keep the corner positions the old conversion gave them;
+they are not migrated. Matching a re-analysed day to a track's corners is by
+overlap (at least half of the shorter span), not by a distance, so a corner
+moved by up to 13.9 m (0.7% of a 2 km lap) still merges instead of becoming a
+duplicate (`profile_aggregates_test.dart`, "measured at its old position"). Only
+a corner shorter than about twice the shift (under ~28 m) could fail to merge.
+
+`corner_classes.dart` (`along()`, FET-220) turns progress into a sample index the
+same way, by dividing by `spacingMeters`, and is left alone for the same reason
+(KAN-244). Changing it leaves `test/parity` green, but no parity fixture
+exercises corner classes, so that is no evidence that it is safe.
