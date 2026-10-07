@@ -565,6 +565,16 @@ void main() {
     await tester.pumpAndSettle();
     await toTop(tester, find.text('Lap to lap in each corner'));
     await shot(tester, 'corner-variability');
+    // The best phases of the day (FET-226): closed at first, opened for the
+    // shots.
+    final bestPhases = find.byKey(const ValueKey('bestPhasesToggle'));
+    await scrollIn(tester, summary, bestPhases);
+    await tester.tap(bestPhases);
+    await tester.pumpAndSettle();
+    await toTop(tester, bestPhases);
+    await shot(tester, 'best-phases');
+    await scrollIn(tester, summary, find.text('Part by part'));
+    await shot(tester, 'best-phases-parts');
     await scrollIn(tester, summary, find.text('Time losses'));
     await shot(tester, 'time-losses');
     await scrollIn(tester, summary, find.text('Consistency'));

@@ -712,7 +712,9 @@ void main() {
     );
     final first = outcome.runs.first.run.id;
     final documents = FakeDocuments(location: '${directory.path}/d.fetproject');
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough that the session list is built below the best phases
+    // card (FET-226).
+    await tester.binding.setSurfaceSize(const Size(1200, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(

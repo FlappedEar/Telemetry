@@ -11002,6 +11002,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s lap has no route to check against, so the reference\'s route and direction were not checked: only today\'s start/finish line.'**
   String get referenceRouteUnchecked;
+
+  /// Day page: heading of the card with each corner's best entry, middle and exit of the day (FET-226), and the name of its total.
+  ///
+  /// In en, this message translates to:
+  /// **'Best phases'**
+  String get bpHeading;
+
+  /// Best phases card, closed or before it is worked out: what it holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Each corner\'s best entry, middle and exit of the day, as a target.'**
+  String get bpSummary;
+
+  /// Best phases card, closed: what it holds and its total.
+  ///
+  /// In en, this message translates to:
+  /// **'Each corner\'s best entry, middle and exit of the day, as a target: {time}.'**
+  String bpSummaryTime(String time);
+
+  /// Best phases card: shown while the theoretical best's background job runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Worked out with the theoretical best…'**
+  String get bpWorking;
+
+  /// Best phases card: why there is nothing to show (the theoretical best's reason).
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: {reason}'**
+  String bpUnavailable(String reason);
+
+  /// Best phases card: how it is put together.
+  ///
+  /// In en, this message translates to:
+  /// **'Each corner is split where it is tightest into entry, middle and exit, and each part comes from the ranked lap fastest through it. Straights, and corners that are not split, come whole from the lap fastest through them. Laps that are not ranked are left out.'**
+  String get bpIntro;
+
+  /// Best phases card: a piece has no time, so no total is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'No total: a part has no time on any ranked lap.'**
+  String get bpIncomplete;
+
+  /// Best phases card headline: the chosen lap's time minus the best phases.
+  ///
+  /// In en, this message translates to:
+  /// **'Loses'**
+  String get bpLoses;
+
+  /// Best phases card: heading over the best phases next to the theoretical best card's three totals.
+  ///
+  /// In en, this message translates to:
+  /// **'Against the theoretical bests'**
+  String get bpBestsTitle;
+
+  /// Best phases card: what the best phases total is, and how many laps it comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'Each part\'s fastest time, from {count, plural, =1{1 lap} other{{count} laps}}. The parts need not join.'**
+  String bpTotalNote(int count);
+
+  /// Best phases card: how the theoretical best (fastest segments) relates to the best phases.
+  ///
+  /// In en, this message translates to:
+  /// **'The same idea a whole segment at a time.'**
+  String get bpRawNote;
+
+  /// Best phases card: the quickest parts whose speeds match wherever two laps meet.
+  ///
+  /// In en, this message translates to:
+  /// **'Best phases that join'**
+  String get bpJoinedLabel;
+
+  /// Best phases card: what best phases that join is.
+  ///
+  /// In en, this message translates to:
+  /// **'An estimate: the fastest parts whose speeds differ by at most {tolerance} wherever two laps meet, at the lines inside each corner too. Made of {count, plural, =1{1 lap} other{{count} laps}}.'**
+  String bpJoinedNote(String tolerance, int count);
+
+  /// Best phases card: no combination of parts joins.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: every part has a time, but no laps join at the speed the car had at every line between them.'**
+  String get bpJoinedNoJoin;
+
+  /// Best phases card: how segments that join relates to best phases that join.
+  ///
+  /// In en, this message translates to:
+  /// **'The same rule a whole segment at a time.'**
+  String get bpRealisticNote;
+
+  /// Best phases card: how the best typical relates to the best phases.
+  ///
+  /// In en, this message translates to:
+  /// **'A different idea: each segment\'s quickest typical (median) time in one session, what you did as a rule, not once. It is not split into parts.'**
+  String get bpTypicalNote;
+
+  /// Best phases card: heading over where parts from two different laps meet.
+  ///
+  /// In en, this message translates to:
+  /// **'Where laps meet'**
+  String get bpJoinsTitle;
+
+  /// Best phases card: all parts from the same lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Every part comes from one lap: there is nothing to join.'**
+  String get bpJoinsNone;
+
+  /// Best phases card: every join between two laps is within the tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'At all {count, plural, =1{1 line} other{{count} lines}} where two laps meet, their speeds differ by at most {tolerance}.'**
+  String bpJoinsAll(int count, String tolerance);
+
+  /// Best phases card: how many joins between two laps exceed the tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'At {apart} of {count, plural, =1{1 line} other{{count} lines}} where two laps meet, their speeds differ by more than {tolerance}: there the best phases is not a lap the car drove.'**
+  String bpJoinsApart(int apart, int count, String tolerance);
+
+  /// Best phases card: one line where two laps meet and their speeds differ too much.
+  ///
+  /// In en, this message translates to:
+  /// **'{where}: {difference} apart'**
+  String bpJoinApart(String where, String difference);
+
+  /// Best phases card: joins whose speed is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more line} other{{count} more lines}} could not be checked: a lap has no speed in a known unit there.'**
+  String bpJoinsUnknown(int count);
+
+  /// Best phases card: what the join rule can and cannot tell.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching speeds are needed for two laps to join, not proof that they do: two laps can be on different lines at the same speed.'**
+  String get bpJoinsNote;
+
+  /// Best phases card: heading over each segment's parts against the chosen lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Part by part'**
+  String get bpByPart;
+
+  /// Best phases card: a part's fastest time and the lap that set it.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {time} s, {lap}'**
+  String bpBest(String time, String lap);
+
+  /// Best phases card: no lap has a time through this part.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap is timed here'**
+  String get bpNoTime;
+
+  /// Best phases card: the chosen lap's own time through a part.
+  ///
+  /// In en, this message translates to:
+  /// **'this lap {time} s'**
+  String bpLapTime(String time);
+
+  /// Best phases card: the chosen lap is the one that set the part's best.
+  ///
+  /// In en, this message translates to:
+  /// **'this lap set it'**
+  String get bpLapSetIt;
+
+  /// Best phases card: the chosen lap has no time through this part.
+  ///
+  /// In en, this message translates to:
+  /// **'this lap is not timed here'**
+  String get bpLapNotTimed;
+
+  /// Best phases card: this part's lap and the one before it differ in speed by more than the tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not join the part before: {difference} apart'**
+  String bpDoesNotJoin(String difference);
+
+  /// Best phases card: a segment taken whole, not split into parts.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole'**
+  String get bpWhole;
+
+  /// Best phases card: why it is not a reference lap with a delta trace.
+  ///
+  /// In en, this message translates to:
+  /// **'The best phases is made of parts of different laps, not one recording, so it is compared part by part here and is not offered as a reference lap.'**
+  String get bpPiecesNote;
+
+  /// Best phases card: shown only when the best phases total is not above the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Best phases is never slower: a corner\'s three parts may come from three laps.'**
+  String get bpRawNever;
+
+  /// Best phases card: shown only when best phases that join is not above segments that join.
+  ///
+  /// In en, this message translates to:
+  /// **'Never slower than segments that join.'**
+  String get bpJoinedNever;
+
+  /// Best phases card: a lap's speed declares no unit, so differences rest on reading it as km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Speeds without a unit are read as km/h.'**
+  String get bpSpeedAssumed;
 }
 
 class _AppLocalizationsDelegate

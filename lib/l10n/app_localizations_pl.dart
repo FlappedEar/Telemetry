@@ -7739,4 +7739,172 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get referenceRouteUnchecked =>
       'Dzisiejsze okrążenie nie ma trasy do porównania, więc nie sprawdzono trasy ani kierunku odniesienia: tylko dzisiejszą linię start/meta.';
+
+  @override
+  String get bpHeading => 'Najlepsze fazy';
+
+  @override
+  String get bpSummary =>
+      'Najlepsze wejście, środek i wyjście każdego zakrętu z całego dnia, jako cel.';
+
+  @override
+  String bpSummaryTime(String time) {
+    return 'Najlepsze wejście, środek i wyjście każdego zakrętu z całego dnia, jako cel: $time.';
+  }
+
+  @override
+  String get bpWorking => 'Liczone razem z teoretycznie najlepszym okrążeniem…';
+
+  @override
+  String bpUnavailable(String reason) {
+    return 'Nie pokazano: $reason';
+  }
+
+  @override
+  String get bpIntro =>
+      'Każdy zakręt jest dzielony w najciaśniejszym miejscu na wejście, środek i wyjście, a każda część pochodzi z okrążenia w rankingu, które przejechało ją najszybciej. Proste i zakręty, których nie podzielono, pochodzą w całości z okrążenia najszybszego na nich. Okrążenia spoza rankingu są pominięte.';
+
+  @override
+  String get bpIncomplete =>
+      'Brak sumy: jedna z części nie ma czasu na żadnym okrążeniu w rankingu.';
+
+  @override
+  String get bpLoses => 'Traci';
+
+  @override
+  String get bpBestsTitle => 'Na tle teoretycznie najlepszych';
+
+  @override
+  String bpTotalNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Najszybszy czas każdej części, z $_temp0. Części nie muszą się łączyć.';
+  }
+
+  @override
+  String get bpRawNote => 'Ta sama zasada, ale całymi odcinkami.';
+
+  @override
+  String get bpJoinedLabel => 'Najlepsze fazy, które się łączą';
+
+  @override
+  String bpJoinedNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Szacunek: najszybsze części, których prędkości różnią się najwyżej o $tolerance wszędzie tam, gdzie spotykają się dwa okrążenia, także na granicach wewnątrz zakrętów. Złożone z $_temp0.';
+  }
+
+  @override
+  String get bpJoinedNoJoin =>
+      'Nie pokazano: każda część ma czas, ale żadne okrążenia nie łączą się z prędkością, jaką miał samochód na każdej granicy między nimi.';
+
+  @override
+  String get bpRealisticNote => 'Ta sama zasada, ale całymi odcinkami.';
+
+  @override
+  String get bpTypicalNote =>
+      'Inna zasada: najszybszy typowy czas (mediana) każdego odcinka w jednej sesji, to, co robisz tam zwykle, a nie raz. Nie jest dzielony na części.';
+
+  @override
+  String get bpJoinsTitle => 'Gdzie spotykają się okrążenia';
+
+  @override
+  String get bpJoinsNone =>
+      'Wszystkie części pochodzą z jednego okrążenia: nie ma czego łączyć.';
+
+  @override
+  String bpJoinsAll(int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'wszystkich $count granicach',
+      one: 'jedynej granicy',
+    );
+    return 'Na $_temp0, gdzie spotykają się dwa okrążenia, prędkości różnią się najwyżej o $tolerance.';
+  }
+
+  @override
+  String bpJoinsApart(int apart, int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count granic',
+      one: '1 granicy',
+    );
+    return 'Na $apart z $_temp0, gdzie spotykają się dwa okrążenia, prędkości różnią się o więcej niż $tolerance: tam najlepsze fazy nie są okrążeniem, które samochód przejechał.';
+  }
+
+  @override
+  String bpJoinApart(String where, String difference) {
+    return '$where: różnica $difference';
+  }
+
+  @override
+  String bpJoinsUnknown(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Kolejnych $count granic',
+      one: 'Jednej kolejnej granicy',
+    );
+    return '$_temp0 nie dało się sprawdzić: okrążenie nie ma tam prędkości w znanej jednostce.';
+  }
+
+  @override
+  String get bpJoinsNote =>
+      'Zgodne prędkości są konieczne, by dwa okrążenia się połączyły, ale tego nie dowodzą: dwa okrążenia mogą jechać różnymi liniami z tą samą prędkością.';
+
+  @override
+  String get bpByPart => 'Część po części';
+
+  @override
+  String bpBest(String time, String lap) {
+    return 'Najlepiej $time s, $lap';
+  }
+
+  @override
+  String get bpNoTime => 'Żadne okrążenie nie ma tu czasu';
+
+  @override
+  String bpLapTime(String time) {
+    return 'to okrążenie $time s';
+  }
+
+  @override
+  String get bpLapSetIt => 'ten czas ustanowiono na tym okrążeniu';
+
+  @override
+  String get bpLapNotTimed => 'to okrążenie nie ma tu czasu';
+
+  @override
+  String bpDoesNotJoin(String difference) {
+    return 'Nie łączy się z poprzednią częścią: różnica $difference';
+  }
+
+  @override
+  String get bpWhole => 'Całość';
+
+  @override
+  String get bpPiecesNote =>
+      'Najlepsze fazy składają się z części różnych okrążeń, a nie z jednego nagrania, więc są tu porównywane część po części i nie są dostępne jako okrążenie odniesienia.';
+
+  @override
+  String get bpRawNever =>
+      'Najlepsze fazy nigdy nie są wolniejsze: trzy części zakrętu mogą pochodzić z trzech okrążeń.';
+
+  @override
+  String get bpJoinedNever =>
+      'Nigdy nie wolniejsze od odcinków, które się łączą.';
+
+  @override
+  String get bpSpeedAssumed =>
+      'Prędkości bez jednostki są odczytywane jako km/h.';
 }

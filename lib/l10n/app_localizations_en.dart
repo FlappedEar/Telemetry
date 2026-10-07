@@ -7570,4 +7570,169 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get referenceRouteUnchecked =>
       'Today\'s lap has no route to check against, so the reference\'s route and direction were not checked: only today\'s start/finish line.';
+
+  @override
+  String get bpHeading => 'Best phases';
+
+  @override
+  String get bpSummary =>
+      'Each corner\'s best entry, middle and exit of the day, as a target.';
+
+  @override
+  String bpSummaryTime(String time) {
+    return 'Each corner\'s best entry, middle and exit of the day, as a target: $time.';
+  }
+
+  @override
+  String get bpWorking => 'Worked out with the theoretical best…';
+
+  @override
+  String bpUnavailable(String reason) {
+    return 'Not shown: $reason';
+  }
+
+  @override
+  String get bpIntro =>
+      'Each corner is split where it is tightest into entry, middle and exit, and each part comes from the ranked lap fastest through it. Straights, and corners that are not split, come whole from the lap fastest through them. Laps that are not ranked are left out.';
+
+  @override
+  String get bpIncomplete => 'No total: a part has no time on any ranked lap.';
+
+  @override
+  String get bpLoses => 'Loses';
+
+  @override
+  String get bpBestsTitle => 'Against the theoretical bests';
+
+  @override
+  String bpTotalNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Each part\'s fastest time, from $_temp0. The parts need not join.';
+  }
+
+  @override
+  String get bpRawNote => 'The same idea a whole segment at a time.';
+
+  @override
+  String get bpJoinedLabel => 'Best phases that join';
+
+  @override
+  String bpJoinedNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'An estimate: the fastest parts whose speeds differ by at most $tolerance wherever two laps meet, at the lines inside each corner too. Made of $_temp0.';
+  }
+
+  @override
+  String get bpJoinedNoJoin =>
+      'Not shown: every part has a time, but no laps join at the speed the car had at every line between them.';
+
+  @override
+  String get bpRealisticNote => 'The same rule a whole segment at a time.';
+
+  @override
+  String get bpTypicalNote =>
+      'A different idea: each segment\'s quickest typical (median) time in one session, what you did as a rule, not once. It is not split into parts.';
+
+  @override
+  String get bpJoinsTitle => 'Where laps meet';
+
+  @override
+  String get bpJoinsNone =>
+      'Every part comes from one lap: there is nothing to join.';
+
+  @override
+  String bpJoinsAll(int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines',
+      one: '1 line',
+    );
+    return 'At all $_temp0 where two laps meet, their speeds differ by at most $tolerance.';
+  }
+
+  @override
+  String bpJoinsApart(int apart, int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines',
+      one: '1 line',
+    );
+    return 'At $apart of $_temp0 where two laps meet, their speeds differ by more than $tolerance: there the best phases is not a lap the car drove.';
+  }
+
+  @override
+  String bpJoinApart(String where, String difference) {
+    return '$where: $difference apart';
+  }
+
+  @override
+  String bpJoinsUnknown(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more lines',
+      one: '1 more line',
+    );
+    return '$_temp0 could not be checked: a lap has no speed in a known unit there.';
+  }
+
+  @override
+  String get bpJoinsNote =>
+      'Matching speeds are needed for two laps to join, not proof that they do: two laps can be on different lines at the same speed.';
+
+  @override
+  String get bpByPart => 'Part by part';
+
+  @override
+  String bpBest(String time, String lap) {
+    return 'Best $time s, $lap';
+  }
+
+  @override
+  String get bpNoTime => 'No lap is timed here';
+
+  @override
+  String bpLapTime(String time) {
+    return 'this lap $time s';
+  }
+
+  @override
+  String get bpLapSetIt => 'this lap set it';
+
+  @override
+  String get bpLapNotTimed => 'this lap is not timed here';
+
+  @override
+  String bpDoesNotJoin(String difference) {
+    return 'Does not join the part before: $difference apart';
+  }
+
+  @override
+  String get bpWhole => 'Whole';
+
+  @override
+  String get bpPiecesNote =>
+      'The best phases is made of parts of different laps, not one recording, so it is compared part by part here and is not offered as a reference lap.';
+
+  @override
+  String get bpRawNever =>
+      'Best phases is never slower: a corner\'s three parts may come from three laps.';
+
+  @override
+  String get bpJoinedNever => 'Never slower than segments that join.';
+
+  @override
+  String get bpSpeedAssumed => 'Speeds without a unit are read as km/h.';
 }
