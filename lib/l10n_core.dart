@@ -216,6 +216,8 @@ extension CoreText on AppLocalizations {
       'VBO contains no valid timestamped data rows.' => coreVboNoValidRows,
       'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.' =>
         coreVboNoTimeColumn,
+      'VBO header has more names than its rows have values, so the time column cannot be found with certainty.' =>
+        coreVboHeaderRowMismatch,
       'VBO exceeds the supported 128 MiB file size limit.' => coreVboFileSize,
       'VBO text exceeds the supported complexity limit.' => coreVboComplexity,
       'VBO has more values (rows x columns) than the supported 40 million.' =>

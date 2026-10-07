@@ -6915,6 +6915,12 @@ abstract class AppLocalizations {
   /// **'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.'**
   String get coreVboNoTimeColumn;
 
+  /// A VBO recording has more column names than most rows have values and its time column is not first, so the time column may be misread and the file is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO header has more names than its rows have values, so the time column cannot be found with certainty.'**
+  String get coreVboHeaderRowMismatch;
+
   /// A VBO recording is too large to read.
   ///
   /// In en, this message translates to:

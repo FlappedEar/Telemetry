@@ -4690,6 +4690,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Plik VBO nie ma kolumny czasu (time, timestamp ani utc_time), więc jego próbek nie da się umieścić w czasie.';
 
   @override
+  String get coreVboHeaderRowMismatch =>
+      'Plik VBO ma w nagłówku więcej nazw niż wiersze mają wartości, więc nie da się mieć pewności, która kolumna jest czasem.';
+
+  @override
   String get coreVboFileSize =>
       'Plik VBO przekracza obsługiwany limit rozmiaru 128 MiB.';
 

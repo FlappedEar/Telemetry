@@ -4587,6 +4587,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.';
 
   @override
+  String get coreVboHeaderRowMismatch =>
+      'VBO header has more names than its rows have values, so the time column cannot be found with certainty.';
+
+  @override
   String get coreVboFileSize =>
       'VBO exceeds the supported 128 MiB file size limit.';
 
