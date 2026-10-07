@@ -20,3 +20,10 @@ const readingDepartures = {
   // 01:00 (FET-211, KAN-233; test/vbo_parser_test.dart).
   'midnight rollover': 'FET-211',
 };
+
+const lapDepartures = {
+  // Pass detection and lap validation share one GPS gap rule, the smaller
+  // of the latitude's and longitude's; Overlays detects passes with the
+  // larger (FET-212, KAN-234; test/lap_detection_test.dart).
+  'GPS gap rule': 'FET-212',
+};
