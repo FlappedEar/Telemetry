@@ -37,6 +37,7 @@ export 'src/analysis/track_progress.dart';
 export 'src/analysis/track_segment_editing.dart';
 export 'src/analysis/track_segment_proposals.dart';
 export 'src/analysis/track_segment_review.dart';
+export 'src/channel_units.dart';
 export 'src/day/circuits.dart';
 export 'src/day/compatibility.dart';
 export 'src/day/day_analysis.dart';

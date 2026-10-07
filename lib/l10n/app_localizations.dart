@@ -10346,7 +10346,7 @@ abstract class AppLocalizations {
   /// Plain explanation under the grip and balance card's title.
   ///
   /// In en, this message translates to:
-  /// **'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ({count} at least); peak is the highest lap.'**
+  /// **'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ({count} at least); peak is the highest lap\'s value.'**
   String gripIntro(int count);
 
   /// Shown while the theoretical best (which carries the grip proxies) is calculated.
@@ -10436,7 +10436,7 @@ abstract class AppLocalizations {
   /// Under the per-session table.
   ///
   /// In en, this message translates to:
-  /// **'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s.'**
+  /// **'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s value.'**
   String get gripTableNote;
 
   /// The unit of a column, as the recording declares it.
@@ -10526,7 +10526,7 @@ abstract class AppLocalizations {
   /// A value whose unit is assumed, not declared by the recording.
   ///
   /// In en, this message translates to:
-  /// **'{value} (unit assumed)'**
+  /// **'{value} (g assumed)'**
   String gripAssumedUnit(String value);
 
   /// Heading of the explanations at the card's end.
@@ -10556,19 +10556,19 @@ abstract class AppLocalizations {
   /// Explains the balance figure.
   ///
   /// In en, this message translates to:
-  /// **'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from {g} g and {speed} m/s. About 1: it turned as its path curved; above 1 it rotated more (oversteer-like), below 1 less (understeer-like). It needs the car\'s own yaw-rate channel and is inferred: no steering is recorded.'**
+  /// **'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from {g} g and {speed} m/s. In steady cornering it is about 1 whether the car understeers or oversteers: telling those apart needs the steering angle, which is not recorded. Above 1 the car rotated faster than its path curved (its slip angle growing); below 1, slower. Samples whose yaw rate turns against the cornering are left out. It needs the car\'s own yaw-rate channel and is inferred.'**
   String gripMeaningBalance(String g, String speed);
 
   /// Why: too few laps.
   ///
   /// In en, this message translates to:
-  /// **'fewer than {count} laps'**
+  /// **'{count, plural, =1{fewer than 1 lap} other{fewer than {count} laps}}'**
   String gripReasonTooFewLaps(int count);
 
   /// Why: too few samples.
   ///
   /// In en, this message translates to:
-  /// **'too few samples on every lap'**
+  /// **'not enough samples on any lap'**
   String get gripReasonTooFewSamples;
 
   /// Why: no lateral acceleration channel.
@@ -10625,12 +10625,6 @@ abstract class AppLocalizations {
   /// **'no slowest point found in the corner'**
   String get gripReasonNoMinimum;
 
-  /// Why: no braking (or no acceleration) at all.
-  ///
-  /// In en, this message translates to:
-  /// **'none on any lap'**
-  String get gripReasonNone;
-
   /// Why: the session's recording is missing.
   ///
   /// In en, this message translates to:
@@ -10660,6 +10654,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide'**
   String get gripHide;
+
+  /// A value derived from the speed's change (no longitudinal acceleration channel).
+  ///
+  /// In en, this message translates to:
+  /// **'{value} from speed'**
+  String gripFromSpeedValue(String value);
+
+  /// A value derived from a speed that declares no unit; km/h is assumed for it.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} from speed (km/h assumed)'**
+  String gripFromSpeedValueAssumed(String value);
+
+  /// A balance worked out from a lateral acceleration or speed whose unit is assumed (g or km/h).
+  ///
+  /// In en, this message translates to:
+  /// **'{text}; units assumed'**
+  String gripBalanceUnitsAssumed(String text);
+
+  /// A speed band of a speed that declares no unit: its edges are km/h, assumed.
+  ///
+  /// In en, this message translates to:
+  /// **'{band} (km/h assumed)'**
+  String gripBandSpeedAssumed(String band);
+
+  /// One figure in a corner's summary when there are too few laps for a typical value: the highest lap's value.
+  ///
+  /// In en, this message translates to:
+  /// **'{what} peak {value}'**
+  String gripCornerSummaryPeak(String what, String value);
+
+  /// How many ranked laps timed through the corner gave no value (too few samples, not timed, …).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 ranked lap has no value} other{{count} ranked laps have no value}}'**
+  String gripNoValueLaps(int count);
+
+  /// Why: no deceleration at all.
+  ///
+  /// In en, this message translates to:
+  /// **'no braking on any lap'**
+  String get gripReasonNoBraking;
+
+  /// Why: no forward acceleration at all.
+  ///
+  /// In en, this message translates to:
+  /// **'no acceleration on any lap'**
+  String get gripReasonNoAcceleration;
+
+  /// Why: an acceleration channel of zeros only.
+  ///
+  /// In en, this message translates to:
+  /// **'the channel holds only zeros (a placeholder, not a measurement)'**
+  String get gripReasonAllZero;
 }
 
 class _AppLocalizationsDelegate

@@ -365,7 +365,7 @@ void main() {
       expect(at[0].lateral.reason, gripTooFewSamples);
       expect(at[1].lateral.value, closeTo(0.5, 1e-6));
       expect(at[1].braking.value, closeTo(0.4, 1e-6));
-      expect(at[1].accelerating.reason, gripNoBraking, reason: 'never accelerating');
+      expect(at[1].accelerating.reason, gripNoAcceleration, reason: 'never accelerating');
       final high = banded('km/h', (_) => 120).bandPeaks(0, 10);
       expect(high[2].lateral.value, closeTo(0.5, 1e-6));
     });
@@ -453,5 +453,203 @@ void main() {
       expect(missing.sessions.single.lapCount, rows.length);
       expect(missing.corners.first.traction.reason, gripNoRecording);
     });
+  });
+
+  group('placeholders of zeros', () {
+    final zeros = GripChannels.of(
+      _session({
+        'latacc': ('g', (_) => 0.0),
+        'longacc': ('g', (_) => 0.0),
+        'velocity': ('km/h', (_) => 90),
+      }, aliases: _accelerations),
+    );
+
+    test('a channel of zeros only is not known, never 0.00 g', () {
+      expect(zeros.peakLateral(0, 5).reason, gripAllZero);
+      expect(zeros.meanAcceleration(0, 5).reason, gripAllZero);
+      expect(zeros.peakDeceleration(0, 5).reason, gripAllZero);
+      final bands = zeros.bandPeaks(0, 10);
+      expect(bands[1].lateral.reason, gripAllZero);
+      expect(bands[1].braking.reason, gripAllZero);
+      expect(bands[1].accelerating.reason, gripAllZero);
+    });
+
+    test('one sample off zero is a value', () {
+      final one = GripChannels.of(
+        _session({
+          'latacc': ('g', (t) => t == 1.0 ? 0.2 : 0.0),
+          'velocity': ('km/h', (_) => 90),
+        }, aliases: _accelerations),
+      );
+      expect(one.peakLateral(0, 5).value, closeTo(0.2, 1e-6));
+    });
+
+    test('from speed, a steady speed is a real zero', () {
+      final steady = GripChannels.of(
+        _session({'velocity': ('km/h', (_) => 90)}, aliases: {'speed': 'velocity'}),
+      );
+      expect(steady.meanAcceleration(1, 5).value, 0.0);
+      expect(steady.peakDeceleration(1, 5).reason, gripNoBraking);
+    });
+  });
+
+  group('balance signs', () {
+    // Cornering at 1 g and 20 m/s; the yaw rate matches it, with the sign
+    // [sign] gives it at each time.
+    GripChannels signed(double Function(double t) sign) => GripChannels.of(
+      _session(
+        {
+          'latacc': ('g', (t) => 1.0),
+          'velocity': ('km/h', (_) => 72),
+          'yaw_rate': ('deg/s', (t) => sign(t) * standardGravity / 20 * 180 / pi),
+        },
+        aliases: {'lateralAcceleration': 'latacc', 'speed': 'velocity'},
+      ),
+    );
+
+    test('a yaw rate of the other sign convention reads the same', () {
+      expect(signed((_) => -1).balance(0, 5).value, closeTo(1.0, 1e-4));
+    });
+
+    test('samples against the convention most follow are skipped', () {
+      // Against it from 2 s on, and three times as large: left out.
+      final mixed = GripChannels.of(
+        _session(
+          {
+            'latacc': ('g', (t) => 1.0),
+            'velocity': ('km/h', (_) => 72),
+            'yaw_rate': ('deg/s', (t) => (t < 3.95 ? 1 : -3) * standardGravity / 20 * 180 / pi),
+          },
+          aliases: {'lateralAcceleration': 'latacc', 'speed': 'velocity'},
+        ),
+      );
+      final value = mixed.balance(0, 5);
+      expect(value.value, closeTo(1.0, 1e-4));
+      expect(value.samples, 40, reason: '0.0 to 3.9 s');
+    });
+
+    test('a gyro named for yaw but in device axes is not the car\'s', () {
+      final device = GripChannels.of(
+        _session(
+          {
+            'latacc': ('g', (_) => 1.0),
+            'velocity': ('km/h', (_) => 72),
+            'yaw_rate-gyro': ('deg/s', (_) => 28),
+          },
+          aliases: {'lateralAcceleration': 'latacc', 'speed': 'velocity'},
+        ),
+      );
+      expect(device.balance(0, 5).reason, gripDeviceAxesOnly);
+    });
+
+    test('a balance with a unit assumed says so', () {
+      final assumed = GripChannels.of(
+        _session(
+          {
+            'latacc': ('', (_) => 1.0),
+            'velocity': ('km/h', (_) => 72),
+            'yaw_rate': ('deg/s', (_) => standardGravity / 20 * 180 / pi),
+          },
+          aliases: {'lateralAcceleration': 'latacc', 'speed': 'velocity'},
+        ),
+      );
+      expect(assumed.balance(0, 5).source.unitAssumed, isTrue);
+    });
+  });
+
+  test('a speed without a unit gets km/h bands, marked assumed', () {
+    final rows = [_row(0)];
+    final grip = dayGripProxies(
+      rows,
+      const [],
+      (_) => _session(
+        {'latacc': ('g', (_) => 0.5), 'velocity': ('', (_) => 60)},
+        aliases: _accelerations,
+        seconds: 100,
+      ),
+      (_, _) => null,
+    );
+    final band = grip.sessions.single.bands.first;
+    expect(band.upper, 80);
+    expect(band.speedUnit, '');
+    expect(band.speedUnitAssumed, isTrue);
+  });
+
+  test('laps without a value are counted', () {
+    final figure = aggregateGripLaps([
+      _value(1, 0.8),
+      GripLapValue(lap: _row(2), reason: gripTooFewSamples),
+    ]);
+    expect(figure.lapCount, 1);
+    expect(figure.unmeasured, 1);
+    expect(aggregateGripLaps([GripLapValue(lap: _row(2), reason: gripNotTimed)]).unmeasured, 1);
+  });
+
+  test('a corner across the start/finish line is read from both stretches of the lap', () {
+    double Function(double) lap(double brake, double slow) => (d) {
+      if (d < brake) return 30;
+      if (d < 326) return 30 + (slow - 30) * (d - brake) / (326 - brake);
+      if (d < 360) return slow;
+      if (d < 420) return slow + (30 - slow) * (d - 360) / 60;
+      return 30;
+    };
+    final session = rectangleSession(
+      [lap(250, 18), lap(270, 20), lap(240, 17)],
+      pedals: true,
+      lateral: true,
+    );
+    final input = DayRunInput(
+      runId: 'run1',
+      name: 'Session 1',
+      contentSha256: 'a' * 64,
+      session: session,
+      laps: deriveSourceLapSession(session),
+    );
+    final result = dayTheoreticalBest(analyzeDay([input]), {
+      'run1': OutingRun(input.session, input.laps),
+    }, random: Random(1));
+    // The second corner (where the laps brake and pick up again), stretched
+    // back across the line to 60 m before it.
+    final first = result.corners[1];
+    final length = result.axisLengthMeters;
+    final across = DayCorner(
+      segmentIndex: 99,
+      segmentId: 'across',
+      name: 'Across',
+      startProgressMeters: length - 60,
+      endProgressMeters: first.endProgressMeters,
+      laps: first.laps,
+      traces: first.traces,
+    );
+    final rows = [for (final lap in result.laps) lap.lap];
+    final grip = dayGripProxies(rows, [across], (_) => session, (_, _) => null);
+    final corner = grip.corners.single;
+    expect(corner.lateral.known, isTrue, reason: corner.lateral.reason);
+    expect(corner.lateral.lapCount, rows.length);
+    // Read on its own, the second corner.
+    final alone = dayGripProxies(rows, [first], (_) => session, (lap, index) {
+      final sectors = result.laps.firstWhere((l) => l.lap.reference == lap.reference).times.sectors;
+      final s = sectors[first.segmentIndex];
+      return (s.startTime!, s.endTime!);
+    });
+    // Its stretch after the line also holds the first corner, taken faster.
+    expect(corner.lateral.peak, greaterThanOrEqualTo(alone.corners.single.lateral.peak!));
+    expect(corner.braking.peak, closeTo(alone.corners.single.braking.peak!, 1e-6));
+    expect(corner.traction.known, isTrue, reason: corner.traction.reason);
+    expect(across.endProgressMeters, lessThan(across.startProgressMeters));
+    // Without the crossing handled, the same corner would not be timed.
+    final untimed = DayCorner(
+      segmentIndex: 99,
+      segmentId: 'inside',
+      name: 'Inside',
+      startProgressMeters: 10,
+      endProgressMeters: first.endProgressMeters,
+      laps: first.laps,
+      traces: first.traces,
+    );
+    expect(
+      dayGripProxies(rows, [untimed], (_) => session, (_, _) => null).corners.single.lateral.reason,
+      gripNotTimed,
+    );
   });
 }

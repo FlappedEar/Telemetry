@@ -7106,7 +7106,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gripIntro(int count) {
-    return 'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ($count at least); peak is the highest lap.';
+    return 'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ($count at least); peak is the highest lap\'s value.';
   }
 
   @override
@@ -7170,7 +7170,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gripTableNote =>
-      'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s.';
+      'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s value.';
 
   @override
   String gripUnitNote(String what, String unit) {
@@ -7254,7 +7254,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gripAssumedUnit(String value) {
-    return '$value (unit assumed)';
+    return '$value (g assumed)';
   }
 
   @override
@@ -7274,16 +7274,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gripMeaningBalance(String g, String speed) {
-    return 'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from $g g and $speed m/s. About 1: it turned as its path curved; above 1 it rotated more (oversteer-like), below 1 less (understeer-like). It needs the car\'s own yaw-rate channel and is inferred: no steering is recorded.';
+    return 'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from $g g and $speed m/s. In steady cornering it is about 1 whether the car understeers or oversteers: telling those apart needs the steering angle, which is not recorded. Above 1 the car rotated faster than its path curved (its slip angle growing); below 1, slower. Samples whose yaw rate turns against the cornering are left out. It needs the car\'s own yaw-rate channel and is inferred.';
   }
 
   @override
   String gripReasonTooFewLaps(int count) {
-    return 'fewer than $count laps';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'fewer than $count laps',
+      one: 'fewer than 1 lap',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get gripReasonTooFewSamples => 'too few samples on every lap';
+  String get gripReasonTooFewSamples => 'not enough samples on any lap';
 
   @override
   String get gripReasonNoLateral => 'the recording has no lateral acceleration';
@@ -7315,9 +7321,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gripReasonNoMinimum => 'no slowest point found in the corner';
 
   @override
-  String get gripReasonNone => 'none on any lap';
-
-  @override
   String get gripReasonNoRecording => 'the recording is not loaded';
 
   @override
@@ -7332,4 +7335,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gripHide => 'Hide';
+
+  @override
+  String gripFromSpeedValue(String value) {
+    return '$value from speed';
+  }
+
+  @override
+  String gripFromSpeedValueAssumed(String value) {
+    return '$value from speed (km/h assumed)';
+  }
+
+  @override
+  String gripBalanceUnitsAssumed(String text) {
+    return '$text; units assumed';
+  }
+
+  @override
+  String gripBandSpeedAssumed(String band) {
+    return '$band (km/h assumed)';
+  }
+
+  @override
+  String gripCornerSummaryPeak(String what, String value) {
+    return '$what peak $value';
+  }
+
+  @override
+  String gripNoValueLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ranked laps have no value',
+      one: '1 ranked lap has no value',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripReasonNoBraking => 'no braking on any lap';
+
+  @override
+  String get gripReasonNoAcceleration => 'no acceleration on any lap';
+
+  @override
+  String get gripReasonAllZero =>
+      'the channel holds only zeros (a placeholder, not a measurement)';
 }

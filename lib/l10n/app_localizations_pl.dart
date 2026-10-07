@@ -7262,7 +7262,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String gripIntro(int count) {
-    return 'Wnioskowane z zapisanych przyspieszeń, prędkości i, jeśli nagranie ją ma, prędkości odchylenia (yaw) samochodu na okrążeniach w rankingu. Kąt skrętu kierownicy, opony ani koła nie są zapisywane, więc te liczby mówią, jak mocno samochód pracował, a nie ile przyczepności zostało. Typowa wartość to mediana okrążeń (co najmniej $count); szczyt to najwyższe okrążenie.';
+    return 'Wnioskowane z zapisanych przyspieszeń, prędkości i, jeśli nagranie ją ma, prędkości odchylenia (yaw) samochodu na okrążeniach w rankingu. Nie są zapisywane ani kąt skrętu kierownicy, ani dane opon czy kół, więc te liczby mówią, jak mocno samochód pracował, a nie ile przyczepności zostało. Typowa wartość to mediana okrążeń (co najmniej $count); szczyt to wartość najlepszego okrążenia.';
   }
 
   @override
@@ -7328,11 +7328,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get gripTableNote =>
-      'Każda komórka: typowa z najwyższych wartości okrążeń w tym zakresie prędkości oraz najwyższe okrążenie.';
+      'Każda komórka: typowa z najwyższych wartości okrążeń w tym zakresie prędkości oraz wartość najlepszego okrążenia.';
 
   @override
   String gripUnitNote(String what, String unit) {
-    return '$what: w $unit.';
+    return '$what: jednostka $unit.';
   }
 
   @override
@@ -7414,7 +7414,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String gripAssumedUnit(String value) {
-    return '$value (jednostka przyjęta)';
+    return '$value (przyjęto g)';
   }
 
   @override
@@ -7434,16 +7434,25 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String gripMeaningBalance(String g, String speed) {
-    return 'Balans: prędkość odchylenia samochodu podzielona przez prędkość odchylenia, której wymagają siła w zakręcie i prędkość, od $g g i $speed m/s. Około 1: skręcał tak, jak zakrzywiał się tor; powyżej 1 obracał się bardziej (jak przy nadsterowności), poniżej 1 mniej (jak przy podsterowności). Wymaga kanału prędkości odchylenia samego samochodu i jest wnioskowany: kąt skrętu nie jest zapisywany.';
+    return 'Balans: prędkość odchylenia samochodu podzielona przez prędkość odchylenia, której wymagają siła w zakręcie i prędkość, od $g g i $speed m/s. W ustalonym zakręcie wynosi około 1 niezależnie od tego, czy samochód jest pod-, czy nadsterowny: rozróżnienie wymaga kąta skrętu kierownicy, który nie jest zapisywany. Powyżej 1 samochód obracał się szybciej, niż zakrzywiał się tor (kąt znoszenia rósł); poniżej 1 wolniej. Próbki, w których odchylenie jest przeciwne do kierunku zakrętu, są pomijane. Wymaga kanału prędkości odchylenia samego samochodu i jest wnioskowany.';
   }
 
   @override
   String gripReasonTooFewLaps(int count) {
-    return 'mniej niż $count okrążenia';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'mniej niż $count okrążenia',
+      many: 'mniej niż $count okrążeń',
+      few: 'mniej niż $count okrążenia',
+      one: 'mniej niż 1 okrążenie',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get gripReasonTooFewSamples => 'za mało próbek na każdym okrążeniu';
+  String get gripReasonTooFewSamples =>
+      'na żadnym okrążeniu nie ma dość próbek';
 
   @override
   String get gripReasonNoLateral => 'nagranie nie ma przyspieszenia bocznego';
@@ -7453,7 +7462,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get gripReasonUnsupportedUnit =>
-      'jego jednostki aplikacja nie odczytuje';
+      'aplikacja nie odczytuje jednostki tego kanału';
 
   @override
   String get gripReasonSpeedUnit => 'jednostka prędkości to nie km/h ani mph';
@@ -7477,9 +7486,6 @@ class AppLocalizationsPl extends AppLocalizations {
       'nie znaleziono najwolniejszego miejsca w zakręcie';
 
   @override
-  String get gripReasonNone => 'brak na żadnym okrążeniu';
-
-  @override
   String get gripReasonNoRecording => 'nagranie nie jest wczytane';
 
   @override
@@ -7494,4 +7500,53 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get gripHide => 'Ukryj';
+
+  @override
+  String gripFromSpeedValue(String value) {
+    return '$value z prędkości';
+  }
+
+  @override
+  String gripFromSpeedValueAssumed(String value) {
+    return '$value z prędkości (przyjęto km/h)';
+  }
+
+  @override
+  String gripBalanceUnitsAssumed(String text) {
+    return '$text; jednostki przyjęte';
+  }
+
+  @override
+  String gripBandSpeedAssumed(String band) {
+    return '$band (przyjęto km/h)';
+  }
+
+  @override
+  String gripCornerSummaryPeak(String what, String value) {
+    return '$what szczyt $value';
+  }
+
+  @override
+  String gripNoValueLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia w rankingu nie mają wartości',
+      many: '$count okrążeń w rankingu nie ma wartości',
+      few: '$count okrążenia w rankingu nie mają wartości',
+      one: '1 okrążenie w rankingu nie ma wartości',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripReasonNoBraking => 'brak hamowania na żadnym okrążeniu';
+
+  @override
+  String get gripReasonNoAcceleration =>
+      'brak przyspieszania na żadnym okrążeniu';
+
+  @override
+  String get gripReasonAllZero =>
+      'kanał zawiera same zera (wypełniacz, a nie pomiar)';
 }

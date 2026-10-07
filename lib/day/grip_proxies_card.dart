@@ -21,7 +21,9 @@ extension GripText on AppLocalizations {
     gripYawUnitUnknown => gripReasonYawUnit,
     gripNotTimed => gripReasonNotTimed,
     gripNoMinimumSpeed => gripReasonNoMinimum,
-    gripNoBraking => gripReasonNone,
+    gripNoBraking => gripReasonNoBraking,
+    gripNoAcceleration => gripReasonNoAcceleration,
+    gripAllZero => gripReasonAllZero,
     gripNoRecording => gripReasonNoRecording,
     _ => gripReasonOther,
   };
@@ -33,11 +35,23 @@ String gripNumber(double value) {
   return value < 0 && double.parse(text) != 0 ? '−$text' : text;
 }
 
-/// [value] with [source]'s unit as the recording declares it; an assumed g
-/// says it is assumed.
+/// [value] with [source]'s unit as the recording declares it. An assumed g
+/// says so; a value from the speed's change says so, and that km/h was
+/// assumed for a speed without a unit.
 String gripValueText(AppLocalizations l10n, double value, GripSource source) {
-  final text = '${gripNumber(value)} ${source.unit}';
+  final text = '${gripNumber(value)}\u00a0${source.unit}';
+  if (source.fromSpeed) {
+    return source.unitAssumed
+        ? l10n.gripFromSpeedValueAssumed(text)
+        : l10n.gripFromSpeedValue(text);
+  }
   return source.unitAssumed ? l10n.gripAssumedUnit(text) : text;
+}
+
+/// A balance ratio, saying when a unit it was worked out from is assumed.
+String gripBalanceText(AppLocalizations l10n, GripFigure figure) {
+  final text = l10n.gripBalanceTypical(gripNumber(figure.typical!));
+  return figure.source.unitAssumed ? l10n.gripBalanceUnitsAssumed(text) : text;
 }
 
 /// Grip and balance proxies of the shown group's ranked laps (FET-229): per
@@ -169,12 +183,15 @@ class _GripProxiesCardState extends State<GripProxiesCard> {
       fontFeatures: const [FontFeature.tabularFigures()],
       fontWeight: FontWeight.w600,
     );
+    // A speed without a unit gets km/h's edges: the number only, and the
+    // band says km/h is assumed.
     String speed(double value, String unit) {
+      if (unit.isEmpty) return fixed(value, 0);
       final shown = speedUnitOf(context, unit).trim();
-      return shown.isEmpty ? fixed(value, 0) : '${fixed(value, 0)} $shown';
+      return shown.isEmpty ? fixed(value, 0) : '${fixed(value, 0)}\u00a0$shown';
     }
 
-    String bandName(GripBand band) => switch ((band.lower, band.upper)) {
+    String bandRange(GripBand band) => switch ((band.lower, band.upper)) {
       (null, final upper?) => l10n.gripBandBelow(speed(upper, band.speedUnit)),
       (final lower?, null) => l10n.gripBandAbove(speed(lower, band.speedUnit)),
       (final lower?, final upper?) => l10n.gripBandBetween(
@@ -183,6 +200,11 @@ class _GripProxiesCardState extends State<GripProxiesCard> {
       ),
       _ => '',
     };
+
+    String bandName(GripBand band) {
+      final name = bandRange(band);
+      return band.speedUnitAssumed ? l10n.gripBandSpeedAssumed(name) : name;
+    }
 
     Widget cell(GripFigure figure, String key) => Expanded(
       child: Column(
@@ -272,7 +294,7 @@ class _GripProxiesCardState extends State<GripProxiesCard> {
     final balance = session.balance;
     notes.add(
       balance.typical != null
-          ? '${l10n.gripBalance}: ${l10n.gripBalanceTypical(gripNumber(balance.typical!))}'
+          ? '${l10n.gripBalance}: ${gripBalanceText(l10n, balance)}'
           : l10n.gripNotKnownLine(
               l10n.gripBalance,
               l10n.gripReason(
@@ -350,8 +372,11 @@ class _GripProxiesCardState extends State<GripProxiesCard> {
     // A known figure's typical value, peak and laps.
     String detail(GripFigure figure, {bool balance = false}) {
       if (balance) {
-        return '${l10n.gripBalanceTypical(gripNumber(figure.typical!))} · '
-            '${l10n.gripLapCount(figure.lapCount)}';
+        return [
+          gripBalanceText(l10n, figure),
+          l10n.gripLapCount(figure.lapCount),
+          if (figure.unmeasured > 0) l10n.gripNoValueLaps(figure.unmeasured),
+        ].join(' · ');
       }
       final peak = gripValueText(l10n, figure.peak!, figure.source);
       final lap = figure.peakLap == null ? '—' : l10n.lap(figure.peakLap!);
@@ -366,6 +391,7 @@ class _GripProxiesCardState extends State<GripProxiesCard> {
           l10n.gripPeakOnly(peak, lap, gripMinimumTypicalLaps),
         l10n.gripLapCount(figure.lapCount),
         if (figure.leftOut > 0) l10n.gripLeftOut(figure.leftOut),
+        if (figure.unmeasured > 0) l10n.gripNoValueLaps(figure.unmeasured),
       ];
       return parts.join(' · ');
     }
@@ -376,10 +402,15 @@ class _GripProxiesCardState extends State<GripProxiesCard> {
         (l10n.gripBraking, corner.braking),
         (l10n.gripExit, corner.traction),
       ])
-        if (figure.typical ?? figure.peak case final value?)
+        if (figure.typical case final typical?)
           l10n.gripCornerSummary(
             name,
-            gripValueText(l10n, value, figure.source),
+            gripValueText(l10n, typical, figure.source),
+          )
+        else if (figure.peak case final peak?)
+          l10n.gripCornerSummaryPeak(
+            name,
+            gripValueText(l10n, peak, figure.source),
           ),
     ].join(' · ');
 

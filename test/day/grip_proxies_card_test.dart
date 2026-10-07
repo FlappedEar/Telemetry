@@ -56,7 +56,9 @@ DayGripProxies _grip() => DayGripProxies(
         GripBand(
           lower: null,
           upper: 80,
-          speedUnit: 'km/h',
+          // The speed declares no unit: km/h's edges, assumed.
+          speedUnit: '',
+          speedUnitAssumed: true,
           lateral: const GripFigure(
             peak: 0.71,
             lapCount: 2,
@@ -152,6 +154,42 @@ DayGripProxies _grip() => DayGripProxies(
       traction: GripFigure(reason: gripNotTimed),
       balance: GripFigure(reason: gripNoYawChannel),
     ),
+    GripCorner(
+      segmentIndex: 4,
+      segmentId: 'c3',
+      name: 'Corner 3',
+      lateral: GripFigure(
+        peak: 0.61,
+        peakLap: _lap('run1', 'Session 1', 2),
+        lapCount: 2,
+        unmeasured: 3,
+        source: _g,
+        typicalReason: gripTooFewLaps,
+      ),
+      braking: _figure(
+        0.52,
+        0.6,
+        source: const GripSource(
+          channel: 'velocity',
+          unit: 'g',
+          fromSpeed: true,
+          unitAssumed: true,
+        ),
+        lap: _lap('run1', 'Session 1', 1),
+      ),
+      traction: const GripFigure(reason: gripAllZero),
+      balance: const GripFigure(
+        peak: 1.2,
+        typical: 1.05,
+        lapCount: 4,
+        unmeasured: 1,
+        source: GripSource(
+          channel: 'yaw_rate',
+          unit: 'deg/s',
+          unitAssumed: true,
+        ),
+      ),
+    ),
   ],
 );
 
@@ -230,9 +268,9 @@ void main() {
       await _pump(tester, GripProxiesCard(result: _result(_grip())));
       // The latest session first.
       expect(find.text('Session 2 · 4 ranked laps'), findsOneWidget);
-      expect(find.text('below 80 km/h'), findsOneWidget);
-      expect(find.text('80–120 km/h'), findsOneWidget);
-      expect(find.text('120 km/h and above'), findsOneWidget);
+      expect(find.text('below 80\u00a0km/h'), findsOneWidget);
+      expect(find.text('80–120\u00a0km/h'), findsOneWidget);
+      expect(find.text('120\u00a0km/h and above'), findsOneWidget);
       expect(
         _text(tester, find.byKey(const ValueKey('gripLateral 0'))),
         '0.99|peak 1.03',
@@ -256,8 +294,8 @@ void main() {
       );
       expect(
         find.text(
-          'Cornering, Braking, Accelerating · 120 km/h and above: not known: '
-          'too few samples on every lap.',
+          'Cornering, Braking, Accelerating · 120\u00a0km/h and above: not known: '
+          'not enough samples on any lap.',
         ),
         findsOneWidget,
       );
@@ -279,6 +317,7 @@ void main() {
         _text(tester, find.byKey(const ValueKey('gripLateral 0'))),
         '—|peak 0.71',
       );
+      expect(find.text('below 80 (km/h assumed)'), findsOneWidget);
       expect(
         find.text(
           'Braking and accelerating: from the change in speed (no longitudinal acceleration '
@@ -305,8 +344,8 @@ void main() {
       find.descendant(
         of: corner,
         matching: find.text(
-          'Cornering 0.72 g · Braking 0.55 g (unit assumed) · '
-          'Exit acceleration −0.04 g (unit assumed)',
+          'Cornering 0.72\u00a0g · Braking 0.55\u00a0g (g assumed) · '
+          'Exit acceleration −0.04\u00a0g (g assumed)',
         ),
       ),
       findsOneWidget,
@@ -316,14 +355,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.text(
-        'Cornering: typical 0.72 g · peak 1.03 g (Session 2 · LAP 2) · from 6 laps · '
+        'Cornering: typical 0.72\u00a0g · peak 1.03\u00a0g (Session 2 · LAP 2) · from 6 laps · '
         '1 lap measured differently is left out.',
       ),
       findsOneWidget,
     );
     expect(
       find.text(
-        'Braking: typical 0.55 g (unit assumed) · peak 0.71 g (unit assumed) '
+        'Braking: typical 0.55\u00a0g (g assumed) · peak 0.71\u00a0g (g assumed) '
         '(Session 2 · LAP 3) · from 4 laps',
       ),
       findsOneWidget,
@@ -359,12 +398,56 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('from 0.3 g and 10 m/s'), findsOneWidget);
+    expect(
+      find.textContaining('about 1 whether the car understeers or oversteers'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('-like'), findsNothing);
+
+    // Too few laps for a typical value: the summary says peak; a value from
+    // the speed's change says so, and that km/h was assumed.
+    final third = find.byKey(const ValueKey('gripCorner Corner 3'));
+    expect(
+      find.descendant(
+        of: third,
+        matching: find.text(
+          'Cornering peak 0.61\u00a0g · Braking 0.52\u00a0g from speed (km/h assumed)',
+        ),
+      ),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(third);
+    await tester.tap(
+      find.descendant(of: third, matching: find.text('Corner 3')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Cornering: peak 0.61\u00a0g (Session 1 · LAP 2); typical needs 3 laps · '
+        'from 2 laps · 3 ranked laps have no value',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Exit acceleration: not known: the channel holds only zeros (a placeholder, '
+        'not a measurement).',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Balance: typical 1.05 (yaw rate ÷ what the cornering needs); units assumed · '
+        'from 4 laps · 1 ranked lap has no value',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('fits a small phone with text ×2, open and with corners open', (
+  testWidgets('fits a small phone with text ×2, open and with a corner open', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(320, 4000));
+    await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -383,18 +466,45 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await tester.tap(find.byKey(const ValueKey('gripToggle')));
-    await tester.pumpAndSettle();
+    final toggle = find.byKey(const ValueKey('gripToggle'));
+    expect(tester.getSize(toggle).height, greaterThanOrEqualTo(48));
+    // A tap that misses fails here rather than warning.
+    Future<void> tapOn(Finder target) async {
+      await tester.scrollUntilVisible(
+        target,
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(target.hitTestable(), findsOneWidget);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
+
+    await tapOn(toggle);
     expect(tester.takeException(), isNull);
-    final corner = find.byKey(const ValueKey('gripCorner Corner 1'));
-    await tester.ensureVisible(corner);
-    await tester.tap(corner);
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('gripToggle'))).height,
-      greaterThanOrEqualTo(48),
+    expect(find.text('By corner'), findsOneWidget);
+    await tapOn(
+      find.descendant(
+        of: find.byKey(const ValueKey('gripCorner Corner 1')),
+        matching: find.text('Corner 1'),
+      ),
     );
+    expect(tester.takeException(), isNull);
+    final opened = find.text(
+      'Cornering: typical 0.72 g · peak 1.03 g (Session 2 · LAP 2) · from 6 laps · '
+      '1 lap measured differently is left out.',
+    );
+    await tester.scrollUntilVisible(
+      opened,
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    // Opened, and its start on the screen (at ×2 it is taller than half of
+    // it, so its middle may be below).
+    expect(opened, findsOneWidget);
+    expect(tester.getRect(opened).top, lessThan(640));
+    expect(tester.getRect(opened).width, lessThanOrEqualTo(320));
   });
 
   testWidgets('the card speaks Polish', (tester) async {
@@ -407,7 +517,7 @@ void main() {
     expect(find.text('Przyczepność i balans'), findsOneWidget);
     expect(find.text('Wnioskowane'), findsOneWidget);
     expect(find.text('Sesja 2 · 4 okrążenia w rankingu'), findsOneWidget);
-    expect(find.text('poniżej 80 km/h'), findsOneWidget);
+    expect(find.text('poniżej 80\u00a0km/h'), findsOneWidget);
     expect(find.textContaining('Grip'), findsNothing);
   });
 
