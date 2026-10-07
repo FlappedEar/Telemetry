@@ -39,12 +39,15 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry/profile/profile_page.dart';
+import 'package:telemetry/profile/track_notebook_page.dart';
 import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry_core/telemetry_core.dart'
     show
         DayRecovery,
+        NotebookItem,
+        TrackNotebook,
         ImportChoices,
         clearDayRecovery,
         readDayRecovery,
@@ -843,6 +846,40 @@ void main() {
       find.byKey(const ValueKey('skill paceConsistency')),
     );
     await shot(tester, 'profile-skills');
+
+    // The track's notebook, with a few example notes.
+    final track = library.profile!.tracks.first;
+    final corners = track.corners;
+    // Off the fake clock, as the profile's writes are.
+    await tester.runAsync(() async {
+      library.setTrackNotebook(
+        track.id,
+        TrackNotebook(
+          notes: 'Grippy when dry. Bumpy braking into the first corner.',
+          cornerNotes: {
+            if (corners.isNotEmpty)
+              corners.first.id: 'Brake at the 100 m board',
+          },
+          toTry: [
+            NotebookItem(id: 'a', text: 'Third gear through the chicane'),
+            NotebookItem(id: 'b', text: 'Later turn-in, earlier throttle'),
+            NotebookItem(id: 'c', text: 'Use all the kerb on exit', done: true),
+          ],
+        ),
+      );
+      await library.flush();
+    });
+    // Opened over the profile: the app keeps one navigator.
+    unawaited(
+      Navigator.of(tester.element(find.byType(ProfilePage))).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              TrackNotebookPage(library: library, trackId: track.id),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await shot(tester, 'track-notebook');
     debugDisableShadows = true;
   });
 

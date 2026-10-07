@@ -160,6 +160,9 @@ final class ProfileBundleImport {
     this.alreadyHere = const [],
     this.notAdded = const [],
     this.recordings = 0,
+    this.notebooks = const [],
+    this.notebookCut = false,
+    this.source,
   });
 
   /// The profile with the days added: the caller writes it.
@@ -176,6 +179,18 @@ final class ProfileBundleImport {
 
   /// Recording files added to the profile's folder.
   final int recordings;
+
+  /// Tracks whose notebook took something of the bundle's
+  /// ([ProfileMerge.notebooks]).
+  final List<String> notebooks;
+
+  /// Whether some of the bundle's notebook text did not fit.
+  final bool notebookCut;
+
+  /// The bundle's own profile, to merge again ([mergeDriverProfile]) into
+  /// a profile changed while the bundle was read: merging [profile] would
+  /// bring back what was changed meanwhile.
+  final DriverProfile? source;
 }
 
 /// A bundle that cannot be read: not one, damaged, or too large.
@@ -367,6 +382,9 @@ Future<ProfileBundleImport> readProfileBundle(
       alreadyHere: present,
       notAdded: [...merge.notAdded, ...missing],
       recordings: staged.length,
+      notebooks: merge.notebooks,
+      notebookCut: merge.notebookCut,
+      source: from,
     );
   } finally {
     input.closeSync();

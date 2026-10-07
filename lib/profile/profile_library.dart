@@ -547,6 +547,11 @@ class ProfileLibrary extends ChangeNotifier {
         ownedFolders: owned,
       );
 
+  /// Keeps [notebook] as track [trackId]'s ([setProfileTrackNotebook]).
+  /// False when it could not be kept: no profile, or past its limits.
+  bool setTrackNotebook(String trackId, TrackNotebook notebook) =>
+      _change((profile) => setProfileTrackNotebook(profile, trackId, notebook));
+
   /// Writes the profile, its days and their recordings to one bundle at
   /// [target] ([writeProfileBundle]), once the changes asked for so far are
   /// written. Null when there is no profile.
@@ -573,7 +578,7 @@ class ProfileLibrary extends ChangeNotifier {
         final read = await background(_importJob(profile, folder, bundle));
         // A day deleted earlier and brought back is the profile's again.
         _deleted.removeAll(read.added);
-        if (read.added.isEmpty) return read;
+        if (read.added.isEmpty && read.notebooks.isEmpty) return read;
         var result = read;
         try {
           // A day recorded while the bundle was read is kept: the bundle's
@@ -581,9 +586,12 @@ class ProfileLibrary extends ChangeNotifier {
           final current = _profile!;
           var next = read.profile;
           if (!identical(current, profile)) {
+            // From the bundle's own profile: this profile as it was when
+            // the bundle was read would bring back notebook edits made
+            // meanwhile.
             final merge = mergeDriverProfile(
               current,
-              read.profile,
+              read.source ?? read.profile,
               only: {...read.added},
             );
             next = merge.profile;
@@ -593,6 +601,9 @@ class ProfileLibrary extends ChangeNotifier {
               alreadyHere: [...read.alreadyHere, ...merge.alreadyHere],
               notAdded: [...read.notAdded, ...merge.notAdded],
               recordings: read.recordings,
+              notebooks: merge.notebooks,
+              notebookCut: merge.notebookCut,
+              source: read.source,
             );
           }
           _profile = next;
@@ -641,21 +652,23 @@ class ProfileLibrary extends ChangeNotifier {
   ) =>
       () => readProfileBundle(profile, folder, bundle);
 
-  void _change(DriverProfile Function(DriverProfile) change) {
+  // False when there is no profile or the change is past its limits.
+  bool _change(DriverProfile Function(DriverProfile) change) {
     final profile = _profile;
     final folder = _folder;
-    if (profile == null || folder == null) return;
+    if (profile == null || folder == null) return false;
     final DriverProfile next;
     try {
       next = change(profile);
     } on ProfileFormatError catch (error) {
       debugPrint('Driver profile not changed: ${error.message}');
-      return;
+      return false;
     }
-    if (identical(next, profile)) return;
+    if (identical(next, profile)) return true;
     _profile = next;
     notifyListeners();
     _writes = _writes.then((_) => _write(folder, next, background));
+    return true;
   }
 
   /// Waits for the days being measured and the writes asked for so far.
