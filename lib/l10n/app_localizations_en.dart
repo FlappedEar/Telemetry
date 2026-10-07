@@ -8056,4 +8056,255 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get lapStylesHeading => 'Lap styles';
+
+  @override
+  String get lapStylesInferredBadge => 'Inferred';
+
+  @override
+  String get lapStylesSummary =>
+      'Ranked laps grouped by how they were braked and driven on the throttle, and the best lap of each group.';
+
+  @override
+  String get lapStylesShow => 'Show';
+
+  @override
+  String get lapStylesHide => 'Hide';
+
+  @override
+  String lapStylesIntro(int count) {
+    return 'Each ranked lap is compared with the day\'s typical at every corner: where braking started, where the throttle came back and how fast the corner was taken. A group says how its laps sat against the day\'s other laps, not why they were quick: nothing here shows that a style made a lap faster. Typical is the median of the day\'s laps and needs at least $count laps.';
+  }
+
+  @override
+  String get lapStylesWorking => 'Working out the lap styles…';
+
+  @override
+  String get lapStylesUnavailable =>
+      'Not known until the day\'s laps are timed through its segments.';
+
+  @override
+  String lapStylesTooFewLaps(int count) {
+    return 'Lap styles need at least $count ranked laps.';
+  }
+
+  @override
+  String lapStylesTooFewCorners(int count) {
+    return 'Fewer than $count corners have a braking or throttle point on enough laps to compare, so the laps are not grouped.';
+  }
+
+  @override
+  String lapStylesBasis(int grouped, int timed, int corners) {
+    return 'Laps grouped: $grouped of $timed timed (out laps, in laps, excluded laps and laps with issues are left out). Corners compared: $corners.';
+  }
+
+  @override
+  String get lapStylesFewLaps =>
+      'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to repeat, not as a result.';
+
+  @override
+  String lapStylesBestLine(String lap, String time, String style) {
+    return 'The day\'s best lap, $lap ($time), is in the “$style” group.';
+  }
+
+  @override
+  String get lapStyleConservative => 'Conservative';
+
+  @override
+  String get lapStyleLateBraking => 'Late braking';
+
+  @override
+  String get lapStyleEarlyThrottle => 'Early throttle';
+
+  @override
+  String get lapStyleMixed => 'Mixed';
+
+  @override
+  String get lapStyleTypical => 'Typical';
+
+  @override
+  String get lapStyleOutlier => 'Outlier';
+
+  @override
+  String get lapStylesRulesHeading => 'How the groups are made';
+
+  @override
+  String get lapStylesRuleConservative =>
+      'Conservative: braking starts earlier and the throttle comes later than typical, each in most corners.';
+
+  @override
+  String get lapStylesRuleLateBraking =>
+      'Late braking: braking starts later than typical in most corners.';
+
+  @override
+  String get lapStylesRuleEarlyThrottle =>
+      'Early throttle: the throttle comes back earlier than typical in most corners.';
+
+  @override
+  String get lapStylesRuleMixed =>
+      'Mixed: late braking together with early throttle, or earlier braking or later throttle without the other half of conservative.';
+
+  @override
+  String get lapStylesRuleTypical => 'Typical: none of the above.';
+
+  @override
+  String get lapStylesRuleOutlier =>
+      'Outlier: braking or throttle far from typical in most of its corners, or measured in too few corners to say how it was driven.';
+
+  @override
+  String lapStylesRuleThresholds(
+    String brake,
+    String throttle,
+    String speed,
+    String factor,
+    int corners,
+  ) {
+    return 'Earlier or later means more than $brake m for braking and $throttle m for the throttle (a throttle channel recorded from the car\'s OBD port updates about twice a second); faster or slower means more than $speed% of the typical speed. “Most” is more than half of the corners measured, and at least $corners. “Far from typical” is $factor times those distances. Speeds do not decide a style: they follow the lap\'s pace.';
+  }
+
+  @override
+  String lapStylesGroupTitle(String style, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$style · $_temp0';
+  }
+
+  @override
+  String lapStylesGroupBest(String lap, String time) {
+    return 'Best: $lap · $time';
+  }
+
+  @override
+  String get lapStylesGroupIsDayBest => 'the day\'s best lap';
+
+  @override
+  String lapStylesGroupBehind(String delta) {
+    return '$delta against the day\'s best lap';
+  }
+
+  @override
+  String lapStylesGroupTypical(String time) {
+    return 'typical lap $time';
+  }
+
+  @override
+  String lapStylesGroupTypicalNeeds(int count) {
+    return 'a typical time needs $count laps';
+  }
+
+  @override
+  String lapStylesGroupQuickerHalf(int count, int total) {
+    return '$count of $total in the quicker half of the day\'s laps';
+  }
+
+  @override
+  String lapStylesBestAgainst(String lap, int count) {
+    return '$lap against the day\'s typical lap (the median of $count grouped laps)';
+  }
+
+  @override
+  String get lapStylesLapsHeading => 'Laps in this group';
+
+  @override
+  String get lapStylesBrakeName => 'Braking point';
+
+  @override
+  String get lapStylesThrottleName => 'Throttle pickup';
+
+  @override
+  String get lapStylesMinimumName => 'Minimum speed';
+
+  @override
+  String get lapStylesExitName => 'Exit speed';
+
+  @override
+  String lapStylesNotMeasured(String what) {
+    return '$what: not measured on this lap';
+  }
+
+  @override
+  String lapStylesBrakeLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Braking point: earlier at $earlier, later at $later of $measured corners; median $median';
+  }
+
+  @override
+  String lapStylesThrottleLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Throttle pickup: earlier at $earlier, later at $later of $measured corners; median $median';
+  }
+
+  @override
+  String lapStylesSpeedLine(
+    String what,
+    int faster,
+    int slower,
+    int measured,
+    String median,
+  ) {
+    return '$what: faster at $faster, slower at $slower of $measured corners; median $median';
+  }
+
+  @override
+  String lapStylesMedianMetresEarlier(int count) {
+    return '$count m earlier';
+  }
+
+  @override
+  String lapStylesMedianMetresLater(int count) {
+    return '$count m later';
+  }
+
+  @override
+  String lapStylesMedianFaster(String value) {
+    return '$value faster';
+  }
+
+  @override
+  String lapStylesMedianSlower(String value) {
+    return '$value slower';
+  }
+
+  @override
+  String get lapStylesMedianSame => 'about typical';
+
+  @override
+  String lapStylesOutlierUnlike(int extreme, int compared) {
+    return 'Unlike the day\'s other laps: braking or throttle far from typical in $extreme of $compared corners.';
+  }
+
+  @override
+  String lapStylesOutlierFew(int compared, int needed) {
+    return 'Measured in $compared corners only; at least $needed are needed to say how it was driven.';
+  }
+
+  @override
+  String get lapStylesBrakeNote =>
+      'Braking points are read from the longitudinal acceleration, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.';
+
+  @override
+  String get lapStylesNoBraking =>
+      'No braking point could be read: the recording has no longitudinal acceleration in g, and the brake pedal is not used for these styles.';
+
+  @override
+  String get lapStylesBrakeUnitAssumed =>
+      'The longitudinal acceleration declares no unit and is read as g.';
+
+  @override
+  String get lapStylesSpeedUnitMissing =>
+      'A speed in this day declares no unit, so its speeds are shown without one.';
 }

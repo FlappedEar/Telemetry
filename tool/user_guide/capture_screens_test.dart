@@ -602,6 +602,16 @@ void main() {
     await tester.pumpAndSettle();
     await toTop(tester, find.text('Grip and balance'));
     await shot(tester, 'grip-and-balance');
+    // The lap styles (FET-223): closed at first, opened with the group of
+    // the day's best lap.
+    await scrollIn(tester, summary, find.text('Lap styles'));
+    await tester.tap(find.byKey(const ValueKey('lapStylesToggle')));
+    await tester.pumpAndSettle();
+    // The group of the day's best lap, opened.
+    await tester.tap(find.byKey(const ValueKey('lapStylesGroup typical')));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Lap styles'));
+    await shot(tester, 'lap-styles');
     await scrollIn(tester, summary, find.text('Best lap of each session'));
     await shot(tester, 'sessions-and-circuits');
 
