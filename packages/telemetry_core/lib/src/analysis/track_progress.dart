@@ -158,6 +158,18 @@ const _standingMetersPerSecond = 1.0;
 /// along is never closer than 0.93 of the way within the 20 m proximity.
 const _flatBranchRatio = 0.95;
 
+/// A fix kept off the line by that comparison must not lie on the inside of
+/// a bend by more than this share of the bend's radius (FET-257): further in,
+/// the car may be anywhere around the bend, or past its centre on another
+/// part of the track, and the nearest point of the axis no longer says
+/// where (a hairpin driven 8 m inside at 1 Hz, a tight ess cut).
+const _insideBendShare = 0.5;
+
+/// The match's own branch, for that comparison, runs within 90° of the
+/// match's direction; a part turned further, such as a hairpin's other leg,
+/// is compared as a runner-up however near (FET-257).
+const _sameBranchCosine = 0.0;
+
 double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
 
 /// Where a closed path (last point == first) crosses the gate segment
@@ -295,92 +307,114 @@ _Candidate _bestCandidateInRange(
   return best;
 }
 
-/// The runner-up of a locked fix: the best match within [count] axis
-/// segments from [startIndex] (the search window) that lies on another part
-/// of the track than [best] (FET-257). The part of the window around [best]
-/// that would itself make the fix ambiguous (within [ambiguityRatio] of its
-/// distance) and runs the same way as it, unbroken along the axis, is the
-/// same branch: a fix a few metres off a straight is nearly as close to the
-/// line 10 m further on, and comparing the line with itself refused it
-/// (finding 1). Another branch is beyond a stretch of the window that is
-/// clearly further from the fix (a hairpin's apex, the loop between the two
-/// passes of a crossing) or that runs the other way (a hairpin's other
-/// leg). A part of the branch that is nearly as near the fix as [best]
-/// ([_flatBranchRatio]) still counts: the fix is near the centre of a
-/// corner. As before, nothing within [minimumSeparation] points of [best]
-/// counts.
+/// The runner-up of a fix kept a few metres off the line while locked: the
+/// best match anywhere on the axis that lies on another part of the track
+/// than [best] (FET-257). The run of the axis around [best] that would itself
+/// make the fix ambiguous (within [ambiguityRatio] of its distance) and runs
+/// within 90° of its direction ([_sameBranchCosine]), unbroken along the axis,
+/// is the same branch: a fix a few metres off a straight is nearly as close
+/// to the line 10 m further on, and comparing the line with itself refused it
+/// (finding 1). Every other part of the axis is another branch, however far
+/// along it lies: a hairpin's other leg, a parallel straight, the other pass
+/// of a crossing. A part of the branch that is nearly as near the fix as
+/// [best] ([_flatBranchRatio]) still counts: the fix is near the centre of a
+/// corner. As in the window, nothing within [minimumSeparation] points of
+/// [best] counts.
 _Candidate _runnerUpOnAnotherPart(
   ProgressAxis axis,
   MetricPoint point,
-  int startIndex,
-  int count,
   _Candidate best,
   int minimumSeparation,
   double ambiguityRatio,
 ) {
   final n = axis.points.length;
-  final bounded = math.min(count, n);
-  int indexAt(int step) => ((startIndex + step) % n + n) % n;
-  final distances = List<double>.filled(bounded, double.infinity);
-  final fractions = List<double>.filled(bounded, 0.0);
-  var bestStep = -1;
-  for (var step = 0; step < bounded; ++step) {
-    final index = indexAt(step);
+  int indexAt(int offset) => ((best.index + offset) % n + n) % n;
+  final distances = List<double>.filled(n, double.infinity);
+  final fractions = List<double>.filled(n, 0.0);
+  for (var index = 0; index < n; ++index) {
     final (fraction, distance) = _projectOntoSegment(
       point,
       axis.points[index],
       axis.points[(index + 1) % n],
     );
-    distances[step] = distance;
-    fractions[step] = fraction;
-    if (bestStep < 0 && index == best.index) bestStep = step;
+    distances[index] = distance;
+    fractions[index] = fraction;
   }
-  final runnerUp = _Candidate();
-  if (bestStep < 0) return runnerUp;
   final (bx, by) = _axisTangent(axis, best.index);
-  // Whether the segment at [step] belongs to the same branch as [best]:
+  // Whether the segment at [index] belongs to the same branch as [best]:
   // near enough to make the fix ambiguous, and running the same way.
-  bool sameBranch(int step) {
-    if (!(best.distance > distances[step] * ambiguityRatio)) return false;
-    final (tx, ty) = _axisTangent(axis, indexAt(step));
-    return tx * bx + ty * by >= 0.0;
+  bool sameBranch(int index) {
+    if (!(best.distance > distances[index] * ambiguityRatio)) return false;
+    final (tx, ty) = _axisTangent(axis, index);
+    return tx * bx + ty * by >= _sameBranchCosine;
   }
 
-  // The branch of [best] within the window, as steps from it; a window that
-  // covers the whole loop wraps.
-  final wraps = bounded == n;
+  // The branch of [best], as offsets along the axis either side of it.
   var behind = 0, ahead = 0;
-  while (behind + ahead + 1 < bounded) {
-    final step = bestStep - behind - 1;
-    if (step < 0 && !wraps) break;
-    if (!sameBranch((step % bounded + bounded) % bounded)) break;
+  while (behind + ahead + 1 < n && sameBranch(indexAt(-behind - 1))) {
     ++behind;
   }
-  while (behind + ahead + 1 < bounded) {
-    final step = bestStep + ahead + 1;
-    if (step >= bounded && !wraps) break;
-    if (!sameBranch(step % bounded)) break;
+  while (behind + ahead + 1 < n && sameBranch(indexAt(ahead + 1))) {
     ++ahead;
   }
-  for (var step = 0; step < bounded; ++step) {
-    var offset = step - bestStep;
-    if (wraps) offset = ((offset % bounded) + bounded) % bounded;
-    final onBranch = wraps
-        ? offset <= ahead || bounded - offset <= behind
-        : offset >= -behind && offset <= ahead;
-    if (onBranch && !(best.distance > distances[step] * _flatBranchRatio)) continue;
-    final index = indexAt(step);
-    var separation = (index - best.index).abs();
-    separation = math.min(separation, n - separation);
-    if (separation < minimumSeparation) continue;
-    if (distances[step] < runnerUp.distance) {
+  final runnerUp = _Candidate();
+  for (var offset = -(n ~/ 2); offset < n - n ~/ 2; ++offset) {
+    final index = indexAt(offset);
+    final onBranch = offset >= -behind && offset <= ahead;
+    if (onBranch && !(best.distance > distances[index] * _flatBranchRatio)) continue;
+    if (offset.abs() < minimumSeparation) continue;
+    if (distances[index] < runnerUp.distance) {
       runnerUp.index = index;
-      runnerUp.distance = distances[step];
-      runnerUp.fraction = fractions[step];
-      runnerUp.progressMeters = _progressAtSegment(axis, index, fractions[step]);
+      runnerUp.distance = distances[index];
+      runnerUp.fraction = fractions[index];
+      runnerUp.progressMeters = _progressAtSegment(axis, index, fractions[index]);
     }
   }
   return runnerUp;
+}
+
+/// Whether [point] lies on the inside of a bend of the match's own branch
+/// further from the axis than [_insideBendShare] of the bend's radius
+/// (FET-257). The branch is the run of the axis next to [best] near enough
+/// to make the fix ambiguous ([ambiguityRatio]); each point's radius comes
+/// from the turn over 2 points either side. There the nearest point of the
+/// axis stops following where the car is: near or past the centre of a
+/// hairpin, or off the inside of an ess by more than its radius.
+bool _insideBend(ProgressAxis axis, MetricPoint point, _Candidate best, double ambiguityRatio) {
+  final n = axis.points.length;
+  int wrap(int index) => (index % n + n) % n;
+  final (tx, ty) = _axisTangent(axis, best.index);
+  final a = axis.points[best.index], b = axis.points[wrap(best.index + 1)];
+  final footX = a.eastMeters + (b.eastMeters - a.eastMeters) * best.fraction;
+  final footY = a.northMeters + (b.northMeters - a.northMeters) * best.fraction;
+  final side = _cross(tx, ty, point.eastMeters - footX, point.northMeters - footY);
+  if (side == 0) return false;
+  bool near(int index) {
+    final (_, distance) = _projectOntoSegment(
+      point,
+      axis.points[wrap(index)],
+      axis.points[wrap(index + 1)],
+    );
+    return best.distance > distance * ambiguityRatio;
+  }
+
+  bool tooTight(int index) {
+    final (ax, ay) = _axisTangent(axis, wrap(index - 2));
+    final (bx, by) = _axisTangent(axis, wrap(index + 2));
+    final turn = math.atan2(_cross(ax, ay, bx, by), ax * bx + ay * by);
+    // Turning toward the fix: the fix is on the inside of the bend.
+    if (!(turn * side > 0)) return false;
+    final radius = 4 * axis.spacingMeters / turn.abs();
+    return best.distance > _insideBendShare * radius;
+  }
+
+  if (tooTight(best.index)) return true;
+  for (final direction in [-1, 1]) {
+    for (var step = 1; step < n ~/ 2 && near(best.index + direction * step); ++step) {
+      if (tooTight(best.index + direction * step)) return true;
+    }
+  }
+  return false;
 }
 
 /// Distance from [point] to the nearest axis segment within [separation]
@@ -698,8 +732,10 @@ ProjectedSample projectSample(
     return lock(best.progressMeters);
   }
 
-  // Adaptive, forward-biased local window: the rest of the track is never
-  // considered, which keeps a hairpin apex or a parallel straight out.
+  // Adaptive, forward-biased local window around the previous lock: a fix
+  // matches only near where the lap was. That alone does not keep another
+  // branch out (it can lie inside the window, or beyond it); the runner-up
+  // checks below do.
   final expectedTravel = dt * math.max(0.0, speedMetersPerSecond);
   final forwardWindow = (expectedTravel * 1.6).clamp(15.0, 150.0);
   final backwardWindow = math.min(15.0, forwardWindow * 0.3);
@@ -719,16 +755,33 @@ ProjectedSample projectSample(
     return invalid;
   }
   final minimumSeparation = math.max(3, _lround(windowedSeparationMeters / axis.spacingMeters));
-  final second = _runnerUpOnAnotherPart(
+  // Overlays' runner-up: the best match in the window at least the windowed
+  // separation from [best]. On a straight it is the same line 10 m on, so a
+  // fix about 8 m off the line is refused by it (finding 1).
+  final windowed = _bestCandidateInRange(
     axis,
     localPoint,
     startIndex,
     count,
-    best,
-    minimumSeparation,
-    ambiguityRatio,
+    excludeIndex: best.index,
+    minimumSeparation: minimumSeparation,
   );
-  if (second.index >= 0 && best.distance > second.distance * ambiguityRatio) return invalid;
+  if (windowed.index >= 0 && best.distance > windowed.distance * ambiguityRatio) {
+    // Such a fix is kept only when every other branch of the track is
+    // ruled out (FET-257). The window alone does not show that: another
+    // branch can lie beyond it (a hairpin's exit leg at 1 Hz, a parallel
+    // straight). So no part of the whole axis beyond the match's own branch
+    // may be nearly as near, and the fix must not lie well inside a bend.
+    final second = _runnerUpOnAnotherPart(
+      axis,
+      localPoint,
+      best,
+      minimumSeparation,
+      ambiguityRatio,
+    );
+    if (second.index >= 0 && best.distance > second.distance * ambiguityRatio) return invalid;
+    if (_insideBend(axis, localPoint, best, ambiguityRatio)) return invalid;
+  }
   if (!_headingAgrees(axis, best.index, movementDirection, minimumHeadingCosine)) return invalid;
 
   var delta = best.progressMeters - context.lastProgressMeters;

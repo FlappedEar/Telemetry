@@ -212,7 +212,7 @@ void main() {
     });
 
     test('without GPS error an apex cut of 4.5 m holds; 6 m holds in a 15 m hairpin and '
-        'drops a fix in a 10 m one but never jumps', () {
+        'drops fixes in a 10 m one but never jumps', () {
       for (final radius in [7.5, 10.0, 15.0]) {
         final track = _parallelStraights(2 * radius);
         final axis = track.axis();
@@ -221,7 +221,8 @@ void main() {
           final outcome = measureProjection(axis, track, cutting(track, radius, 6.0, noise: 0.0));
           print('Hairpin of $radius m, apex cut 6 m: $outcome');
           // Before FET-257 both dropped fixes (18 and 2): the runner-up was
-          // the same leg 10 m on.
+          // the same leg 10 m on. In the 10 m one the cut lies more than
+          // half the radius inside the bend, so it still drops 18.
           expect(outcome.tracks(_error), radius == 15.0, reason: '$outcome');
           expect(outcome.maximumError, lessThan(_error), reason: '$outcome');
         }

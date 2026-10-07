@@ -27,14 +27,15 @@ final _figureEightWorstError = <double, double>{90.0: 1.19, 30.0: 1.16, 10.0: 1.
 
 // Finding 2, parallel straights driven in opposite directions: a lap 0.5 m
 // beyond separation / 1.7 off its line toward the other straight, by
-// separation: the fixes projected (of all) and the worst error. Before
-// FET-257 (finding 1) it kept 137, 144 and 156 of them, within 0.8 m.
+// separation: the fixes projected (of all) and the worst error. The fixes
+// nearer the other straight than 0.7 of the way are refused, as before
+// FET-257: from the axis alone they could be on either.
 final _parallelProjected = <double, (int, int)>{
-  15.0: (186, 186),
-  20.0: (193, 193),
-  30.0: (205, 205),
+  15.0: (137, 186),
+  20.0: (144, 193),
+  30.0: (156, 205),
 };
-final _parallelWorstError = <double, double>{15.0: 0.90, 20.0: 0.90, 30.0: 0.90};
+final _parallelWorstError = <double, double>{15.0: 0.73, 20.0: 0.77, 30.0: 0.75};
 
 // Finding 2, hairpins cut by 40% with 1 m of GPS error, five seeds: the
 // worst error by radius, and how far behind the last fix a segment
@@ -69,14 +70,16 @@ final _reviewRefused = <String, Map<Refusal, int>>{
     Refusal.dropped: 31,
   },
   'parallel straights 15 m apart, raw gaps': {
-    Refusal.coldStartAmbiguity: 1466,
-    Refusal.coldStartHeading: 3010,
+    Refusal.coldStartAmbiguity: 8635,
+    Refusal.coldStartHeading: 15481,
+    Refusal.lockedAmbiguity: 1061,
     Refusal.lockedHeading: 12,
     Refusal.dropped: 12,
   },
   'parallel straights 15 m apart, gap at the lap start': {
-    Refusal.coldStartAmbiguity: 492,
-    Refusal.coldStartHeading: 1029,
+    Refusal.coldStartAmbiguity: 1732,
+    Refusal.coldStartHeading: 2792,
+    Refusal.lockedAmbiguity: 116,
   },
   'standing a minute': {Refusal.coldStartHeading: 118, Refusal.lockedHeading: 864},
   'figure-eight 10°, 340 m gap to the second pass': {
@@ -88,9 +91,8 @@ final _reviewRefused = <String, Map<Refusal, int>>{
 };
 final _reviewProjected = <String, (int, int)>{
   'figure-eight 10°, 200 m gaps': (38126, 38277),
-  // Before FET-257 (finding 1): 82,556 and 15,367.
-  'parallel straights 15 m apart, raw gaps': (103257, 107757),
-  'parallel straights 15 m apart, gap at the lap start': (18486, 20007),
+  'parallel straights 15 m apart, raw gaps': (82556, 107757),
+  'parallel straights 15 m apart, gap at the lap start': (15367, 20007),
   'standing a minute': (6133, 7115),
   'figure-eight 10°, 340 m gap to the second pass': (56561, 56799),
 };

@@ -60,60 +60,90 @@ double _distance(MetricPoint a, MetricPoint b) => math.sqrt(
   return best;
 }
 
-/// The runner-up of a locked fix at [point] whose best match is segment
-/// [best] at [bestDistance], among [count] segments from [start] (the
-/// window, wrapping): the best segment that is not on the branch of [best]
-/// and not within [exclusion] points of it (FET-257). The branch of [best]
-/// is the run of segments next to it, unbroken along the axis, each near
-/// enough to make the fix ambiguous (0.7 of its distance) and running
-/// the same way as [best]; a segment of it nearly as near the fix as [best]
-/// (0.95 of its distance: the fix is near a corner's centre) still counts. (index, progress, distance), index −1 when none.
+/// The runner-up of a fix at [point] kept off the line while locked, whose
+/// best match is segment [best] at [bestDistance]: the best segment anywhere
+/// on the axis that is not on the branch of [best] and not within
+/// [exclusion] points of it (FET-257). The branch of [best] is the run of
+/// segments next to it, unbroken along the axis, each near enough to make
+/// the fix ambiguous (0.7 of its distance) and running within 90° of [best];
+/// a segment of it nearly as near the fix as [best] (0.95 of its distance:
+/// the fix is near a corner's centre) still counts. (index, progress,
+/// distance), index −1 when none.
 (int, double, double) runnerUpOnAnotherPart(
   ProgressAxis axis,
   MetricPoint point, {
-  required int start,
-  required int count,
   required int best,
   required double bestDistance,
   required int exclusion,
 }) {
   final n = axis.points.length;
-  final steps = math.min(count, n);
-  final indices = [for (var step = 0; step < steps; ++step) ((start + step) % n + n) % n];
-  final onBranch = List<bool>.filled(steps, false);
-  final at = indices.indexOf(best);
-  if (at < 0) return (-1, 0.0, double.infinity);
+  final distance = [for (var index = 0; index < n; ++index) _onSegment(axis, index, point).$2];
   final (bx, by) = _tangent(axis, best);
-  bool sameBranch(int step) {
-    final (tx, ty) = _tangent(axis, indices[step]);
-    return bestDistance > _onSegment(axis, indices[step], point).$2 * 0.7 &&
-        tx * bx + ty * by >= 0.0;
+  bool sameBranch(int index) {
+    final (tx, ty) = _tangent(axis, index);
+    return bestDistance > distance[index] * 0.7 && tx * bx + ty * by >= 0.0;
   }
 
-  onBranch[at] = true;
-  final wraps = steps == n;
+  final onBranch = List<bool>.filled(n, false)..[best] = true;
   for (final direction in [-1, 1]) {
-    var step = at;
+    var index = best;
     while (true) {
-      step += direction;
-      if (!wraps && (step < 0 || step >= steps)) break;
-      step = (step % steps + steps) % steps;
-      if (onBranch[step] || !sameBranch(step)) break;
-      onBranch[step] = true;
+      index = ((index + direction) % n + n) % n;
+      if (onBranch[index] || !sameBranch(index)) break;
+      onBranch[index] = true;
     }
   }
   var runnerUp = (-1, 0.0, double.infinity);
-  for (var step = 0; step < steps; ++step) {
-    if (onBranch[step] && !(bestDistance > _onSegment(axis, indices[step], point).$2 * 0.95)) {
-      continue;
-    }
-    var separation = (indices[step] - best).abs();
+  for (var index = 0; index < n; ++index) {
+    if (onBranch[index] && !(bestDistance > distance[index] * 0.95)) continue;
+    var separation = (index - best).abs();
     separation = math.min(separation, n - separation);
     if (separation < exclusion) continue;
-    final (progress, distance) = _onSegment(axis, indices[step], point);
-    if (distance < runnerUp.$3) runnerUp = (indices[step], progress, distance);
+    if (distance[index] < runnerUp.$3) {
+      runnerUp = (index, _onSegment(axis, index, point).$1, distance[index]);
+    }
   }
   return runnerUp;
+}
+
+/// Whether [point], matched to segment [best] at [bestDistance], lies on
+/// the inside of a bend of the match's branch (the segments next to [best]
+/// within 0.7 of the fix's distance) by more than half the bend's radius,
+/// each segment's radius taken from the turn between the segments two
+/// either side of it (FET-257).
+bool insideBend(ProgressAxis axis, MetricPoint point, int best, double bestDistance) {
+  final n = axis.points.length;
+  int wrap(int index) => (index % n + n) % n;
+  final a = axis.points[best], b = axis.points[wrap(best + 1)];
+  final (tx, ty) = _tangent(axis, best);
+  final abx = b.eastMeters - a.eastMeters, aby = b.northMeters - a.northMeters;
+  final length2 = abx * abx + aby * aby;
+  final t = length2 > 1e-9
+      ? (((point.eastMeters - a.eastMeters) * abx + (point.northMeters - a.northMeters) * aby) /
+                length2)
+            .clamp(0.0, 1.0)
+      : 0.0;
+  final side =
+      tx * (point.northMeters - (a.northMeters + aby * t)) -
+      ty * (point.eastMeters - (a.eastMeters + abx * t));
+  if (side == 0) return false;
+  bool tooTight(int index) {
+    final (ax, ay) = _tangent(axis, wrap(index - 2));
+    final (cx, cy) = _tangent(axis, wrap(index + 2));
+    final turn = math.atan2(ax * cy - ay * cx, ax * cx + ay * cy);
+    if (!(turn * side > 0)) return false;
+    return bestDistance > 0.5 * 4 * axis.spacingMeters / turn.abs();
+  }
+
+  if (tooTight(best)) return true;
+  for (final direction in [-1, 1]) {
+    for (var step = 1; step < n ~/ 2; ++step) {
+      final index = wrap(best + direction * step);
+      if (!(bestDistance > _onSegment(axis, index, point).$2 * 0.7)) break;
+      if (tooTight(index)) return true;
+    }
+  }
+  return false;
 }
 
 /// The closest two points of [axis] get to each other while being more
@@ -156,9 +186,10 @@ final class ProjectionProbe {
   }
 
   /// Best distance over the runner-up's in the projection's own window,
-  /// runner-ups within 10 m along the axis or on the same branch skipped
-  /// (ambiguity ratio 0.7 while locked, FET-257), and the fixes it would
-  /// reject.
+  /// runner-ups within 10 m along the axis skipped; where that is above
+  /// 0.7, over the runner-up anywhere on the axis beyond the match's own
+  /// branch instead (ambiguity ratio 0.7 while locked, FET-257); and the
+  /// fixes it would reject.
   double largestWindowedRatio = 0.0;
   int windowedAmbiguous = 0;
 
@@ -245,15 +276,23 @@ final class ProjectionProbe {
         final backward = math.min(15.0, forward * 0.3);
         final backwardCount = math.max(1, (backward / spacing).round());
         final forwardCount = math.max(1, (forward / spacing).round());
-        final runnerUp = runnerUpOnAnotherPart(
+        var runnerUp = nearestSegment(
           axis,
           point,
           start: (lastProgress / spacing).round() - backwardCount,
           count: forwardCount + backwardCount + 1,
-          best: index,
-          bestDistance: distance,
+          excluded: index,
           exclusion: windowedExclusion,
         );
+        if (runnerUp.$1 >= 0 && distance > runnerUp.$3 * 0.7) {
+          runnerUp = runnerUpOnAnotherPart(
+            axis,
+            point,
+            best: index,
+            bestDistance: distance,
+            exclusion: windowedExclusion,
+          );
+        }
         if (runnerUp.$1 >= 0) {
           final ratio = distance / runnerUp.$3;
           largestWindowedRatio = math.max(largestWindowedRatio, ratio);
@@ -312,6 +351,7 @@ enum Refusal {
   lockedProximity('beyond 20 m while locked'),
   beyondWindow('beyond the forward window while locked'),
   lockedAmbiguity('ambiguous while locked'),
+  insideBend('inside a bend while locked'),
   lockedHeading('heading while locked'),
   backward('more than 3 m back'),
   tooFarAhead('out of reach of the lap'),
@@ -610,16 +650,29 @@ final class RefusalTally {
       final end = axis.points[(lastIndex + 1) % n];
       if (_distance(point, end) <= distance + 1e-9) return (Refusal.beyondWindow, progress);
     }
-    final second = runnerUpOnAnotherPart(
+    // Overlays' runner-up in the window, 10 m along; when it would refuse
+    // the fix, the runner-up anywhere on the axis beyond the match's own
+    // branch decides, and the fix must not lie well inside a bend (FET-257).
+    final exclusion = math.max(3, (10.0 / spacing).round());
+    final windowed = nearestSegment(
       axis,
       point,
       start: start,
       count: count,
-      best: index,
-      bestDistance: distance,
-      exclusion: math.max(3, (10.0 / spacing).round()),
+      excluded: index,
+      exclusion: exclusion,
     );
-    if (second.$1 >= 0 && distance > second.$3 * 0.7) return (Refusal.lockedAmbiguity, progress);
+    if (windowed.$1 >= 0 && distance > windowed.$3 * 0.7) {
+      final second = runnerUpOnAnotherPart(
+        axis,
+        point,
+        best: index,
+        bestDistance: distance,
+        exclusion: exclusion,
+      );
+      if (second.$1 >= 0 && distance > second.$3 * 0.7) return (Refusal.lockedAmbiguity, progress);
+      if (insideBend(axis, point, index, distance)) return (Refusal.insideBend, progress);
+    }
     if (!_headingAgrees(axis, index, movement)) return (Refusal.lockedHeading, progress);
     var delta = progress - context.lastProgressMeters;
     if (delta < -axis.lengthMeters / 2) {

@@ -3,15 +3,20 @@
 // Finding 1: while locked, the runner-up of a fix only had to be 10 m along
 // the axis, and on a straight that is the same line 10 m further on: a fix
 // about 8 m off it was as near to that as to its own match, so the 0.7
-// ambiguity ratio refused it, long before the 20 m proximity. The runner-up
-// must now lie on another part of the track; true ambiguity (a hairpin's
-// legs, the other straight of a pair, a crossing) is still refused.
+// ambiguity ratio refused it, long before the 20 m proximity. Such a fix is
+// now kept when no other part of the whole axis is nearly as near and it
+// does not lie well inside a bend; true ambiguity (a hairpin's legs, the
+// other straight of a pair, a crossing) is still refused. The review of the
+// first version (which looked only in the search window) adds 1–2 Hz laps,
+// where another branch can lie beyond the window.
 //
 // Finding 3: a fix whose nearest point lay beyond the forward end of the
 // search window was placed at the window's end. It is refused now.
 //
 // Each synthetic lap is driven with a known distance at every fix. A fix may
 // be refused (a gap), never misplaced.
+import 'dart:math' as math;
+
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
@@ -49,6 +54,22 @@ ProjectedSample _lockedThen(
   return projectSample(axis, to, seconds, speed, movement, context);
 }
 
+/// The largest distance of a projected fix of [lap] from where the car
+/// truly is, either way round the loop (a fix at the gate may be read at the
+/// end of the lap or at its start).
+double _worstError(ProgressAxis axis, SyntheticTrack track, DrivenTrackLap lap) {
+  final scale = axis.lengthMeters / track.lengthMeters;
+  final truthAt = {for (var i = 0; i < lap.times.length; ++i) lap.times[i]: lap.truth[i] * scale};
+  var worst = 0.0;
+  for (final segment in projectLapTrace(axis, lap.session, 0.0, lap.endTime)) {
+    for (final sample in segment.samples) {
+      final error = (sample.progressMeters - truthAt[sample.telemetryTime]!).abs();
+      worst = math.max(worst, math.min(error, (axis.lengthMeters - error).abs()));
+    }
+  }
+  return worst;
+}
+
 void main() {
   group('finding 1: a lap off the reference line keeps its fixes while locked', () {
     final axis = _oval.axis();
@@ -70,8 +91,11 @@ void main() {
       });
     }
 
-    test('a lap beyond separation / 1.7 off its line toward the other straight stays on its '
-        'own straight and keeps every fix', () {
+    test('a lap beyond separation / 1.7 off its line toward the other straight is refused '
+        'there, never placed on either straight', () {
+      // Nearer the other straight than 0.7 of the way, a fix could be on
+      // either: the other straight lies beyond the window, but only the
+      // whole axis can show that it is not the car's (FET-257 review).
       for (final separation in [15.0, 20.0, 30.0]) {
         final track = _parallelStraights(separation);
         final half = track.lengthMeters / 2;
@@ -85,7 +109,8 @@ void main() {
           },
         );
         final outcome = measureProjection(track.axis(), track, lap);
-        expect(outcome.tracks(_error), isTrue, reason: '$separation m apart: $outcome');
+        expect(outcome.maximumError, lessThan(_error), reason: '$separation m apart: $outcome');
+        expect(outcome.projected, lessThan(outcome.fixes), reason: '$separation m apart: $outcome');
       }
     });
 
@@ -178,6 +203,77 @@ void main() {
       );
       expect(midway.valid, isFalse);
     });
+  });
+
+  group('review: at 1–2 Hz an off-line fix is kept only when no other branch is near', () {
+    for (final radius in [5.0, 6.0, 7.5, 8.0]) {
+      test('a fix on the other leg of a $radius m hairpin, beyond the window, is not placed on '
+          'this leg', () {
+        // Locked 15 m before the hairpin, eastbound; a second later (1 Hz)
+        // the car is on the westbound leg, 10 m past the hairpin, exactly
+        // on the line. The window, sized by the 5–17 m the GPS moved, ends
+        // before the hairpin; the eastbound leg 2 × radius away was the
+        // nearest point in it, and was taken (FET-257 review).
+        final track = _parallelStraights(2 * radius);
+        final axis = track.axis();
+        final scale = axis.lengthMeters / track.lengthMeters;
+        final to = MetricPoint(140.0, 2 * radius);
+        final moved = MetricPoint(5.0, 2 * radius);
+        final speed = math.sqrt(
+          moved.eastMeters * moved.eastMeters + moved.northMeters * moved.northMeters,
+        );
+        final fix = _lockedThen(axis, const MetricPoint(135.0, 0.0), to, speed: speed);
+        final truth = (150.0 + math.pi * radius + 10.0) * scale;
+        expect(
+          !fix.valid || (fix.progressMeters - truth).abs() < _error,
+          isTrue,
+          reason:
+              'placed at ${fix.progressMeters.toStringAsFixed(1)} m, truly at '
+              '${truth.toStringAsFixed(1)} m',
+        );
+      });
+    }
+
+    // Hairpins of 6–8 m (parallel straights 12–16 m apart) and a 20°
+    // figure-eight with 80 m diagonals, driven at 1 Hz and 2 Hz on the line
+    // and 3 m either side of it, at four top speeds, without and with 1 m
+    // of GPS error: no projected fix is more than 10 m from where the car
+    // is. Before the review's fix, a fix a few metres off one leg with the
+    // other leg beyond the window was placed on the wrong one.
+    final shapes = <String, (SyntheticTrack, double)>{
+      for (final radius in [6.0, 7.5, 8.0])
+        'a $radius m hairpin': (_parallelStraights(2 * radius), 3.0),
+      'a 20° figure-eight with 80 m diagonals': (
+        SyntheticTrack.figureEight(diagonalMeters: 80.0, crossingDegrees: 20.0),
+        4.0,
+      ),
+    };
+    for (final MapEntry(key: name, value: (track, off)) in shapes.entries) {
+      test('laps of $name at 1–2 Hz are never misplaced', () {
+        final axis = track.axis();
+        for (final interval in [1.0, 0.5]) {
+          for (final offset in [0.0, off, -off]) {
+            for (final top in [36.0, 40.0, 44.0, 48.0]) {
+              for (final seed in [1, 2, 3]) {
+                final lap = driveTrack(
+                  track,
+                  interval: interval,
+                  noise: seed == 1 ? 0.0 : 1.0,
+                  seed: seed,
+                  lateral: (_) => offset,
+                  speed: (meters) => track.cornerSpeed(meters, topSpeed: top),
+                );
+                expect(
+                  _worstError(axis, track, lap),
+                  lessThan(10.0),
+                  reason: '$interval s, $offset m, $top m/s, seed $seed',
+                );
+              }
+            }
+          }
+        }
+      });
+    }
   });
 
   group('finding 3: a fix beyond the forward window', () {

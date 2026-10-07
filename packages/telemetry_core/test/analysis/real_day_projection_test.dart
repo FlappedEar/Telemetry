@@ -16,8 +16,8 @@ import '../support/projection_probe.dart';
 /// tight band: the lap projections split into more than one segment, and the
 /// fixes left unprojected. Before FET-257 fixed finding 1 they were 89 and
 /// 2,078.
-const _splitLaps = 13;
-const _unprojected = 698;
+const _splitLaps = 46;
+const _unprojected = 982;
 
 void main() {
   final folder = Platform.environment['FLAPPEDEAR_REAL_DAY'] ?? '';
@@ -177,9 +177,10 @@ void main() {
       // Not asserted, because the reference day exceeds it (FET-215
       // findings in docs/projection-constants.md): one off-track
       // excursion goes beyond the 20 m proximity. 1% of fixes are more
-      // than 12 m off the reference lap's line; since FET-257 they keep
-      // their place while locked (finding 1), apart from 14 near a
-      // corner's centre.
+      // than 12 m off the reference lap's line; since FET-257 most keep
+      // their place while locked (finding 1), apart from those well inside
+      // a bend, near another part of the track, or before a fix close to
+      // the line confirms the lock.
     },
     skip: skip,
     timeout: const Timeout(Duration(minutes: 10)),
