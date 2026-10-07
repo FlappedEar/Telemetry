@@ -51,6 +51,9 @@ void main() {
     );
     expect(rcz.segments.length, vbo.segments.length);
     expect(rcz.bestLapSeconds, closeTo(vbo.bestLapSeconds!, 0.01));
+    // The VBO result is unchanged by FET-249.
+    expect(vbo.segments.length, 14);
+    expect(vbo.theoreticalBestSeconds, closeTo(107.905, 0.001));
     expect(rcz.theoreticalBestSeconds, closeTo(vbo.theoreticalBestSeconds!, 0.5));
   }, skip: skip);
 }

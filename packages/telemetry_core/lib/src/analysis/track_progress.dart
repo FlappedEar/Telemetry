@@ -39,7 +39,8 @@ final class ProgressAxis {
   /// Length of the closed reference loop.
   final double lengthMeters;
 
-  /// [lengthMeters] / point count; the points are evenly arc-spaced.
+  /// [lengthMeters] / point count. The points are evenly spaced along the raw
+  /// path, not along [cumulative], which is shorter (FET-249).
   final double spacingMeters;
   final GeoCoordinate origin;
   final bool valid;
@@ -118,6 +119,8 @@ const _maximumGapSeconds = 5.0;
 /// may project and still be on the same lap (FET-249, KAN-237). Overlays allows only
 /// [_backwardToleranceMeters], so a fix found again 4 m behind moved the rest
 /// of the lap one whole lap on.
+/// Capped at a quarter of the axis, so a short loop never reads a jump forward
+/// as one backward.
 const _segmentStartBackwardMeters = 30.0;
 
 double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
@@ -254,11 +257,14 @@ _Candidate _bestCandidateInRange(
 
 /// The axis point nearest [progressMeters] along the axis (taken modulo its
 /// length), by the axis's own cumulative distances (FET-249, KAN-237). Overlays
-/// divides by the mean spacing instead; on an axis whose points are not
-/// evenly spaced (a 25 Hz RaceChrono RCZ lap: 8 points, 16 m, behind after
-/// 1.7 km) that centre lags the car until the search window no longer
-/// reaches it. The same index as `lround(progress / spacing)` on an evenly
-/// spaced axis.
+/// divides by [ProgressAxis.spacingMeters] instead, which is the raw path's
+/// length over the point count, while [ProgressAxis.cumulative] adds up the
+/// straight lines between the resampled points: shorter, by about 4 m on a
+/// VBO lap and 19 m on a 25 Hz RaceChrono RCZ lap. On the RCZ lap that
+/// centre ended up 8 points (16 m) behind the car after 1.7 km, until the
+/// search window no longer reached it. Projection measures progress by
+/// [ProgressAxis.cumulative], so the centre does too; the two indices differ
+/// by up to 2 points on a VBO lap.
 int _nearestAxisIndex(ProgressAxis axis, double progressMeters) {
   final n = axis.points.length;
   final cumulative = axis.cumulative;
@@ -638,7 +644,7 @@ List<ProgressSegment> projectLapTrace(
         // than the jitter tolerance (FET-249): up to
         // [_segmentStartBackwardMeters] is the same lap, not one lap on.
         final backward = current.samples.isEmpty
-            ? _segmentStartBackwardMeters
+            ? math.min(_segmentStartBackwardMeters, axis.lengthMeters / 4)
             : _backwardToleranceMeters;
         progress +=
             ((last - backward - progress) / axis.lengthMeters).ceilToDouble() * axis.lengthMeters;
