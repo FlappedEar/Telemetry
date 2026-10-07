@@ -414,7 +414,8 @@ class GgEnvelopeView extends StatelessWidget {
       ],
       const SizedBox(height: 8),
       for (final note in notes) Text(note, style: small),
-      for (final session in valid)
+      // Every session, with an envelope or not.
+      for (final session in envelope.sessions)
         if (session.excludedOutliers > 0)
           Text(
             l10n.ggEnvelopeOutliers(

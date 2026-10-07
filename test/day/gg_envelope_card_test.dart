@@ -181,6 +181,20 @@ void main() {
       _text(tester, 'ggEnvelopeOutliers 1'),
       'Sesja 1: 1 próbkę powyżej 4\u00a0g pominięto jako nieprawdopodobne',
     );
+    // A session too short for an envelope still says what it lost.
+    final short = dayGgEnvelope(
+      [_lap('1', 1000), _lap('2', 2000)],
+      {
+        '1': _session(1.0),
+        '2': _session(1.0, perDirection: 2, extra: [(-5.0, 0.0)]),
+      },
+    );
+    expect(short.sessions.last.unavailableReason, isNotEmpty);
+    await _pumpView(tester, GgEnvelopeView(envelope: short));
+    expect(
+      _text(tester, 'ggEnvelopeOutliers 2'),
+      'Session 2: 1 sample beyond 4\u00a0g left out as implausible',
+    );
     // None lost: no line.
     await _pumpView(tester, GgEnvelopeView(envelope: _day()));
     expect(
