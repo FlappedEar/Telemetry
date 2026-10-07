@@ -1,6 +1,6 @@
 <!-- title: Your profile and skills | nav: Profile and skills -->
 <h1 id="profile">Your profile and skills</h1>
-<p class="lead"><strong>Profile</strong>, in the bar at the bottom or the rail at the side, adds up every day in your <a href="saving.html#library">library</a>: how much you have driven, your records at each track, and your skills. It appears once the app keeps a library.</p>
+<p class="lead"><strong>Profile</strong>, in the bar at the bottom or the rail at the side, adds up every day in your <a href="saving.html#library">library</a>: how much you have driven, your records at each track, each track day by day, and your skills. It appears once the app keeps a library.</p>
 <figure>
   <img src="assets/screens/profile.png" alt="Profile: all days with 1 day, 6 sessions, 25 timed laps, 71.4 km and 1 h 16 min on track, then the skills, starting with Braking" width="1280" height="800" loading="lazy">
 </figure>
@@ -16,7 +16,7 @@
   <li>The measured value the level comes from.</li>
 </ul>
 <figure>
-  <img src="assets/screens/profile-skills.png" alt="Skills: Throttle commitment at level 4 of 5, Exit speed execution and Pace consistency at level 1 with high confidence over 23 ranked laps, Corner sequence management at level 3 with medium confidence over 13, each with its measured value, then the car's distance, the track's records, and no corner yet that keeps costing time, as there is only one visit" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/profile-skills.png" alt="Skills: Throttle commitment at level 4 of 5, Exit speed execution and Pace consistency at level 1 with high confidence over 23 ranked laps, Corner sequence management at level 3 with medium confidence over 13, each with its measured value, then the car's distance, the track's records and the start of Day by day" width="1280" height="800" loading="lazy">
 </figure>
 <table>
   <tr><th>Skill</th><th>Measured as</th><th>Level 5 up to, then 4, 3, 2</th></tr>
@@ -50,6 +50,18 @@
   <li><strong>Corners</strong>: one note for each of the track's corners. A corner measured while the notebook is open is added to the list.</li>
 </ul>
 <p>When you import a profile from another device (see <a href="saving.html#move">Moving your library to another device</a>), the notebooks of the same track are combined, whether or not a day is added: notes that differ are added after yours, a note on a corner this device does not know joins the general notes under the corner's name, and things to try are added unless they are already there. Nothing of yours is replaced. If something from the file does not fit (a notebook holds at most 256 things to try, and each note has a length limit), it is left out and the import says so.</p>
+<h2 id="day-by-day">Day by day</h2>
+<p><strong>Day by day</strong> lists each track in each car on its own, one group of lines per day, oldest first (the last 10 days when there are more); undated days come last and are not part of a trend or a new best. Lap times, speeds and spreads depend on the track and the car, so a day is only compared with days at the same track in the same car. For each day:</p>
+<ul>
+  <li>The day's best lap, marked <em>new best here in this car</em> when it was faster than every earlier day there in that car (equal is not), and the typical lap (the sessions' medians, weighted by their ranked laps).</li>
+  <li>Four figures, the same ones the <a href="#skills">skills</a> measure: <em>Braking-point spread</em>, <em>Minimum speed below your best</em> (against your best ever at each corner there in that car, so a new best there changes the earlier days' figures too), <em>Off the throttle to braking</em> (lifting and coasting before braking; needs the throttle and brake recorded) and <em>Lap time spread</em>. Lower is better for each. Each is the median over the corners the day measured, so days may differ in the corners behind it. A figure the day did not measure is left out, never shown as zero; a day with none of them says so.</li>
+  <li>The weather kept for its sessions: the weather model's conditions and the most rain it gave over one session, with how many of the day's sessions it covers when not all of them, or that no weather was kept.</li>
+</ul>
+<p>A trend needs at least 3 dated days at the same track in the same car. With fewer, a line says how many there are and that a trend needs at least 3; the days are still listed. From 3 dated days on, <strong>First day to last</strong> shows each figure on the first and the last day that measured it, with their dates and how many days measured it. A figure needs to be measured on at least 3 days itself: one measured on fewer (no pedals recorded on some days, say) says on how many days it was measured instead.</p>
+<p>Whether the track was wet or dry is not recorded. The weather comes from a weather model for the area at each session's time, not from the track surface, so days are not split into wet and dry; the card says so.</p>
+<figure>
+  <img src="assets/screens/profile-trends.png" alt="Day by day: Track 1, clockwise, My car, 1 dated day here in this car: a trend needs at least 3 days; 29 August 2026 with best lap 1:49.898, typical lap 2:08.612, braking-point spread 8.5 m, minimum speed 7.5 km/h below your best, 0.26 s off the throttle to braking and a lap time spread of 6.08 s, and no weather kept for the day" width="1280" height="800" loading="lazy">
+</figure>
 
 <h2 id="repeated">Corners that keep costing time</h2>
 <p>A corner is listed when it was among the three corners that cost the most time (0.1 s or more) on two or more visits to a track. Each shows the time lost on average and on how many visits, and how it stands now: <em>Still costing time</em> when it lost time on one of the last two visits that measured it, <em>Fading</em> when the last two visits since it last lost time did not measure it (no lap was read there), and <em>Not lost on the last two visits</em> when both measured it without losing time. With one visit to a track the list is empty and says so.</p>

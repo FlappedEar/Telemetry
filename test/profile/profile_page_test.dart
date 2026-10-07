@@ -223,6 +223,11 @@ void main() {
       findsOneWidget,
     );
 
+    // Below the day-by-day figures.
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('profileRepeated')),
+      300,
+    );
     // Corner 1 lost time on both visits; Corner 2 too little to count.
     expect(find.byKey(const ValueKey('profileRepeated 0')), findsOneWidget);
     expect(find.text('Jastrząb · Corner 1'), findsOneWidget);
@@ -250,6 +255,246 @@ void main() {
           )
           .data,
       contains('16 sklasyfikowanych okrążeń z 2 dni'),
+    );
+  });
+
+  testWidgets('day by day: one day is too few for a trend', (tester) async {
+    await show(tester, _profile([_visit('d1', 0, 92)]));
+    final card = find.byKey(const ValueKey('profileTrends'));
+    await tester.scrollUntilVisible(card, 300);
+    expect(card, findsOneWidget);
+    expect(find.text('Jastrząb · Clockwise · Clio'), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(
+            find.byKey(const ValueKey('profileTrendTooFew jastrzab car1')),
+          )
+          .data,
+      '1 dated day here in this car: a trend needs at least 3 days.',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendTimes d1')))
+          .data,
+      'Best lap 1:32.000 · Typical lap 1:33.000',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendMeasures d1')))
+          .data,
+      'Braking-point spread: 5.0\u00a0m · '
+      'Minimum speed below your best: 1.8\u00a0km/h · '
+      'Off the throttle to braking: 0.30\u00a0s · '
+      'Lap time spread: 1.50\u00a0s',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendWeather d1')))
+          .data,
+      'No weather kept for this day.',
+    );
+    expect(find.byKey(const ValueKey('profileTrendsWetDry')), findsOneWidget);
+    expect(find.textContaining('First day to last'), findsNothing);
+  });
+
+  testWidgets('day by day: three days show first to last', (tester) async {
+    final rainy = _visit('d3', 14, 91);
+    await show(
+      tester,
+      _profile([
+        _visit('d1', 0, 92),
+        _visit('d2', 7, 92.5),
+        ProfileDay(
+          eventId: rainy.eventId,
+          file: rainy.file,
+          name: rainy.name,
+          carId: rainy.carId,
+          trackId: rainy.trackId,
+          startMilliseconds: rainy.startMilliseconds,
+          bestLapSeconds: rainy.bestLapSeconds,
+          sessions: [
+            for (final session in rainy.sessions)
+              ProfileSession(
+                runId: session.runId,
+                name: session.name,
+                lapCount: session.lapCount,
+                bestLapSeconds: session.bestLapSeconds,
+                stats: session.stats,
+                weather: ProfileWeather(
+                  condition: WeatherCondition.rain,
+                  precipitationMm: 1.4,
+                ),
+              ),
+          ],
+        ),
+      ]),
+    );
+    final change = find.byKey(
+      const ValueKey('profileTrendChange jastrzab car1 bestLap'),
+    );
+    await tester.scrollUntilVisible(change, 300);
+    expect(
+      find.byKey(const ValueKey('profileTrendTooFew jastrzab car1')),
+      findsNothing,
+    );
+    expect(
+      tester.widget<Text>(change).data,
+      'Best lap: 1:32.000 (Jan 1, 2025) → 1:31.000 (Jan 15, 2025), '
+      'across 3 measured days',
+    );
+    expect(
+      tester
+          .widget<Text>(
+            find.byKey(
+              const ValueKey(
+                'profileTrendChange jastrzab car1 brakePointConsistency',
+              ),
+            ),
+          )
+          .data,
+      'Braking-point spread: 5.0\u00a0m (Jan 1, 2025) → 5.0\u00a0m (Jan 15, 2025), '
+      'across 3 measured days',
+    );
+    // Only the day that beat every earlier one is a new best.
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendTimes d3')))
+          .data,
+      'Best lap 1:31.000 · new best here in this car · Typical lap 1:32.000',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendTimes d2')))
+          .data,
+      isNot(contains('new best')),
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendWeather d3')))
+          .data,
+      'Weather model: rain, up to 1.4\u00a0mm of rain in a session',
+    );
+  });
+
+  testWidgets('day by day: a figure on too few days says why', (tester) async {
+    // Three days; lap times on all, corner figures on two of them only.
+    final bare = _visit('d2', 7, 92.5);
+    await show(
+      tester,
+      _profile([
+        _visit('d1', 0, 92),
+        ProfileDay(
+          eventId: bare.eventId,
+          file: bare.file,
+          name: bare.name,
+          carId: bare.carId,
+          trackId: bare.trackId,
+          startMilliseconds: bare.startMilliseconds,
+          bestLapSeconds: bare.bestLapSeconds,
+          sessions: [
+            _session('s1', best: 92.5, median: 93.5, spread: 1.5),
+            ProfileSession(
+              runId: 's2',
+              name: 'Session 2',
+              lapCount: 3,
+              weather: ProfileWeather(condition: WeatherCondition.clear),
+            ),
+          ],
+        ),
+        _visit('d3', 14, 91),
+      ]),
+    );
+    final reason = find.byKey(
+      const ValueKey('profileTrendTooFew jastrzab car1 brakePointConsistency'),
+    );
+    await tester.scrollUntilVisible(reason, 300);
+    expect(
+      tester.widget<Text>(reason).data,
+      'Braking-point spread: measured on 2 dated days; '
+      'a trend needs a figure on at least 3 days.',
+    );
+    // Lap time spread is on every day: a change, no reason.
+    expect(
+      find.byKey(
+        const ValueKey('profileTrendChange jastrzab car1 paceConsistency'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('profileTrendTooFew jastrzab car1 paceConsistency'),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendWeather d2')))
+          .data,
+      'Weather model: clear (1 of 2 sessions)',
+    );
+  });
+
+  testWidgets('day by day: the last 10 days listed, the change over all', (
+    tester,
+  ) async {
+    await show(
+      tester,
+      _profile([for (var i = 0; i < 12; i++) _visit('d$i', i, 100.0 - i)]),
+    );
+    final change = find.byKey(
+      const ValueKey('profileTrendChange jastrzab car1 bestLap'),
+    );
+    await tester.scrollUntilVisible(change, 300);
+    expect(
+      tester.widget<Text>(change).data,
+      'Best lap: 1:40.000 (Jan 1, 2025) → 1:29.000 (Jan 12, 2025), '
+      'across 12 measured days',
+    );
+    expect(find.text('The last 10 of 12 days here.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('profileTrendDay d0')), findsNothing);
+    expect(find.byKey(const ValueKey('profileTrendDay d1')), findsNothing);
+    // The card is built whole, so a day it leaves out is not just off screen.
+    expect(find.byKey(const ValueKey('profileTrendDay d2')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profileTrendDay d11')), findsOneWidget);
+  });
+
+  testWidgets('day by day in Polish', (tester) async {
+    await show(tester, _profile([_visit('d1', 0, 92)]), locale: 'pl');
+    final card = find.byKey(const ValueKey('profileTrends'));
+    await tester.scrollUntilVisible(card, 300);
+    expect(find.text('Dzień po dniu'), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(
+            find.byKey(const ValueKey('profileTrendTooFew jastrzab car1')),
+          )
+          .data,
+      '1 dzień z datą na tym torze w tym samochodzie: '
+      'trend wymaga co najmniej 3 dni.',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendTimes d1')))
+          .data,
+      'Najlepsze okrążenie 1:32.000 · Typowe okrążenie 1:33.000',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendMeasures d1')))
+          .data,
+      startsWith('Rozrzut punktu hamowania: 5.0\u00a0m · '),
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendWeather d1')))
+          .data,
+      'Brak zapisanej pogody dla tego dnia.',
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('profileTrendsWetDry')))
+          .data,
+      startsWith('Nie zapisuje się, czy tor był mokry, czy suchy.'),
     );
   });
 

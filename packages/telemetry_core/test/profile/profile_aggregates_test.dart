@@ -1802,6 +1802,7 @@ void main() {
       trackProgress(many, 'jastrzab');
       repeatedLosses(many);
       skillLevels(many);
+      profileTrends(many);
       expect(watch.elapsedMilliseconds, lessThan(5000));
       final text = encodeDriverProfile(many);
       expect(text.length, lessThan(maximumProfileCharacters));
