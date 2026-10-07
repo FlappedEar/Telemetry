@@ -3602,12 +3602,6 @@ abstract class AppLocalizations {
   /// **'Throttle pickup'**
   String get variabilityPickup;
 
-  /// How far apart the laps' lines are at the apex.
-  ///
-  /// In en, this message translates to:
-  /// **'Line: spread {spread} m · {accuracy}'**
-  String variabilityLine(String spread, String accuracy);
-
   /// The recording's typical GPS accuracy.
   ///
   /// In en, this message translates to:
@@ -3619,12 +3613,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GPS accuracy not recorded'**
   String get variabilityGpsUnknown;
-
-  /// Appended when the line spread is no larger than the GPS accuracy.
-  ///
-  /// In en, this message translates to:
-  /// **' · not distinguishable from GPS error'**
-  String get variabilityLineUnresolved;
 
   /// Button: run the theoretical best calculation again after it failed or had nothing to use.
   ///

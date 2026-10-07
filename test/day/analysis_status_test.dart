@@ -80,7 +80,7 @@ void main() {
         'Braking point: too few laps (2 laps · inferred)',
         'Minimum speed: typical 72.4\u00a0km/h · spread 1.8\u00a0km/h · 5 laps',
         'Throttle pickup: spread 3.0\u00a0m · 4 laps · inferred',
-        'Line: spread 1.4\u00a0m · GPS accuracy about 0.80\u00a0m',
+        'Line spread: apex 1.4\u00a0m · GPS accuracy about 0.80\u00a0m',
       ]);
       expect(
         variabilityLines(
@@ -88,10 +88,8 @@ void main() {
           CornerVariability(lineOffset: summary(4, 0, 0.5)),
           '',
         ),
-        [
-          'Line: spread 0.5\u00a0m · GPS accuracy not recorded'
-              ' · not distinguishable from GPS error',
-        ],
+        // Without the GPS accuracy nothing is said about GPS error.
+        ['Line spread: apex 0.5\u00a0m · GPS accuracy not recorded'],
       );
       expect(variabilityLines(l10n, const CornerVariability(), ''), isEmpty);
     });
@@ -115,7 +113,7 @@ void main() {
               'from GPS error',
         ],
       );
-      // A part with too few laps is left out; all within GPS error.
+      // A part with too few laps is left out.
       expect(
         variabilityLines(
           l10n,
@@ -125,10 +123,7 @@ void main() {
           ),
           '',
         ),
-        [
-          'Line spread: entry 0.3 m · GPS accuracy not recorded'
-              ' · entry: not distinguishable from GPS error',
-        ],
+        ['Line spread: entry 0.3 m · GPS accuracy not recorded'],
       );
       expect(
         variabilityLines(

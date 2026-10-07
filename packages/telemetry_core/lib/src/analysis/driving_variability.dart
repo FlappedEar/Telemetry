@@ -41,7 +41,10 @@ final class CornerLapObservation {
   double? lineOffsetMeters;
 
   /// The same at the corner's start and end (FlappedEar Telemetry only,
-  /// FET-225), so the line's spread can be told on the way in and out.
+  /// FET-225), so the line's spread can be told on the way in and out. Read
+  /// against [gpsAccuracyMeters], which is taken at the apex. For a corner
+  /// across start/finish the two come from different passes (the end of
+  /// the lap and its start), so they are spread across laps, never paired.
   double? entryLineOffsetMeters;
   double? exitLineOffsetMeters;
 

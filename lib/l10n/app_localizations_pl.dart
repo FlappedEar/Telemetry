@@ -2526,20 +2526,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get variabilityPickup => 'Punkt ponownego dodania gazu';
 
   @override
-  String variabilityLine(String spread, String accuracy) {
-    return 'Tor jazdy: rozrzut $spread m · $accuracy';
-  }
-
-  @override
   String variabilityGpsAccuracy(String meters) {
     return 'dokładność GPS około $meters m';
   }
 
   @override
   String get variabilityGpsUnknown => 'dokładność GPS nie jest zapisana';
-
-  @override
-  String get variabilityLineUnresolved => ' · nie do odróżnienia od błędu GPS';
 
   @override
   String get calculateAgain => 'Oblicz ponownie';

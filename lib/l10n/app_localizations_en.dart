@@ -2467,21 +2467,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get variabilityPickup => 'Throttle pickup';
 
   @override
-  String variabilityLine(String spread, String accuracy) {
-    return 'Line: spread $spread m · $accuracy';
-  }
-
-  @override
   String variabilityGpsAccuracy(String meters) {
     return 'GPS accuracy about $meters m';
   }
 
   @override
   String get variabilityGpsUnknown => 'GPS accuracy not recorded';
-
-  @override
-  String get variabilityLineUnresolved =>
-      ' · not distinguishable from GPS error';
 
   @override
   String get calculateAgain => 'Calculate again';

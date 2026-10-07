@@ -625,8 +625,8 @@ List<String> variabilityLines(
 }
 
 // The line's spread where the corner starts, at its apex and where it ends
-// (FET-225), each part only when enough laps have it; the apex alone, as
-// before, when the ends are not measured.
+// (FET-225), each part only when enough laps have it. Which parts cannot be
+// told from GPS error is said only when the GPS accuracy is known.
 String? _lineText(AppLocalizations l10n, CornerVariability variability) {
   final accuracy = variability.typicalGpsAccuracyMeters;
   final gps = accuracy == null
@@ -635,13 +635,6 @@ String? _lineText(AppLocalizations l10n, CornerVariability variability) {
   final apex = variability.lineOffset;
   final entry = variability.entryLineOffset;
   final exit = variability.exitLineOffset;
-  if (!entry.available && !exit.available) {
-    if (!apex.available) return null;
-    return l10n.variabilityLine(fixed(apex.interquartileRange!, 1), gps) +
-        (variability.lineSpreadResolvable
-            ? ''
-            : l10n.variabilityLineUnresolved);
-  }
   final parts = [
     if (entry.available)
       (
@@ -662,9 +655,11 @@ String? _lineText(AppLocalizations l10n, CornerVariability variability) {
         variability.exitLineResolvable,
       ),
   ];
+  if (parts.isEmpty) return null;
   final unresolved = [
-    for (final (_, name, resolvable) in parts)
-      if (!resolvable) name,
+    if (accuracy != null)
+      for (final (_, name, resolvable) in parts)
+        if (!resolvable) name,
   ];
   return l10n.variabilityLineParts(
         [for (final (text, _, _) in parts) text].join(', '),

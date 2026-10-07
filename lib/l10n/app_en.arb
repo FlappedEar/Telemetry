@@ -3697,20 +3697,6 @@
   "@variabilityPickup": {
     "description": "Label: where the driver goes back on the throttle."
   },
-  "variabilityLine": "Line: spread {spread} m · {accuracy}",
-  "@variabilityLine": {
-    "description": "How far apart the laps' lines are at the apex.",
-    "placeholders": {
-      "spread": {
-        "type": "String",
-        "example": "1.4"
-      },
-      "accuracy": {
-        "type": "String",
-        "example": "GPS accuracy about 0.8 m"
-      }
-    }
-  },
   "variabilityGpsAccuracy": "GPS accuracy about {meters} m",
   "@variabilityGpsAccuracy": {
     "description": "The recording's typical GPS accuracy.",
@@ -3724,10 +3710,6 @@
   "variabilityGpsUnknown": "GPS accuracy not recorded",
   "@variabilityGpsUnknown": {
     "description": "The recording does not state its GPS accuracy."
-  },
-  "variabilityLineUnresolved": " · not distinguishable from GPS error",
-  "@variabilityLineUnresolved": {
-    "description": "Appended when the line spread is no larger than the GPS accuracy."
   },
   "calculateAgain": "Calculate again",
   "@calculateAgain": {
