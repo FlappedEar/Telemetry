@@ -5,10 +5,8 @@
 // preferAlternative every finite alternative sample, the other source's
 // samples appear only outside the preferred source's coverage, every fused
 // value is a real recorded sample, nothing reads across a declared gap, and
-// the order of alternatives whose channel keys are disjoint, and of the
-// channels, does not change the result. With two alternatives that share a
-// ruled key the result does depend on their order; FET-208 fixes that and is
-// not merged here, so that case is not asserted.
+// the order of the alternatives, including two that share ruled channel
+// keys (FET-208), and of the channels, does not change the result.
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -466,11 +464,10 @@ void main() {
     expect(readings, greaterThan(1000));
   });
 
-  // Only alternatives with disjoint channel keys: for two that share a ruled
-  // key fuseChannels depends on their order, which FET-208 fixes (not merged
-  // here). Then the property holds by construction, so it guards the
-  // channel and alias bookkeeping rather than the merge.
-  test('the order of alternatives with disjoint channel keys, and of channels, does not '
+  // The second alternative carries the first one's channels too, on its own
+  // clock, so both share every ruled key: FET-208 takes alternatives in
+  // source ID order, so listing them the other way round changes nothing.
+  test('the order of alternatives sharing ruled channel keys, and of channels, does not '
       'change the fusion', () {
     final random = math.Random(_seed + 3);
     for (var index = 0; index < _cases ~/ 3; ++index) {
@@ -495,10 +492,11 @@ void main() {
       );
       TelemetrySession second() => _session(
         _shuffled(random, {
+          ...c.alternative.channels,
           'hr': _channel('hr', 'bpm', heart),
           'oil': _channel('oil', 'C', temperature),
         }),
-        const {'heartRate': 'hr'},
+        {...c.alternative.aliases, 'heartRate': 'hr'},
       );
       FusionSource first() => FusionSource(
         sourceId: 'alt',
