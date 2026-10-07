@@ -10,6 +10,7 @@ import 'dart:math' as math;
 import '../analysis/automatic_segments.dart';
 import '../analysis/outing_results.dart';
 import '../analysis/outing_theoretical_best.dart';
+import '../analysis/realistic_theoretical_best.dart';
 import '../analysis/sector_timing.dart';
 import '../analysis/time_loss.dart';
 import '../analysis/track_progress.dart';
@@ -84,6 +85,7 @@ final class DayTheoreticalBest {
     List<Map<String, Object?>> runSegments = const [],
     List<SegmentReviewItem> proposalReview = const [],
     Map<String, List<Map<String, Object?>>> remeasuredRuns = const {},
+    this.realistic,
   }) : laps = List.unmodifiable(laps),
        corners = List.unmodifiable(corners),
        runSegments = List.unmodifiable(runSegments),
@@ -131,6 +133,10 @@ final class DayTheoreticalBest {
   /// which the day keeps as approved. Empty otherwise.
   final Map<String, List<Map<String, Object?>>> remeasuredRuns;
 
+  /// The fastest combination of segments that join at the speed the car had
+  /// ([computeRealisticTheoreticalBest]); null without a result.
+  final RealisticTheoreticalBest? realistic;
+
   /// This result with [runs] as its [remeasuredRuns].
   DayTheoreticalBest withRemeasuredRuns(Map<String, List<Map<String, Object?>>> runs) =>
       DayTheoreticalBest(
@@ -147,6 +153,7 @@ final class DayTheoreticalBest {
         runSegments: runSegments,
         proposalReview: proposalReview,
         remeasuredRuns: runs,
+        realistic: realistic,
       );
 
   /// The length of the shared axis the segments are edited on.
@@ -422,6 +429,31 @@ DayTheoreticalBest dayTheoreticalBest(
       bestOfDay: reference == best?.reference,
     );
   }
+  // Each timed lap's speed at each segment's start and end, for the
+  // realistic best.
+  final segmentIds = [for (final segment in computed.approved.segments) segment['id']];
+  final realistic = computeRealisticTheoreticalBest(computed.approved, [
+    for (var k = 0; k < computed.population.length; ++k)
+      if (runs[computed.runIds[k]]?.session case final session?)
+        () {
+          SectorTime? sector(Object? id) {
+            for (final candidate in computed.population[k].times.sectors) {
+              if (candidate.segmentId == id) return candidate;
+            }
+            return null;
+          }
+
+          return RealisticLapInput(
+            times: computed.population[k].times,
+            entrySpeeds: [
+              for (final id in segmentIds) speedMetresPerSecondAt(session, sector(id)?.startTime),
+            ],
+            exitSpeeds: [
+              for (final id in segmentIds) speedMetresPerSecondAt(session, sector(id)?.endTime),
+            ],
+          );
+        }(),
+  ]);
   return DayTheoreticalBest(
     groupId: id,
     state: DayTheoreticalBestState.ready,
@@ -448,6 +480,7 @@ DayTheoreticalBest dayTheoreticalBest(
             canonical.approved,
             review.axis.lengthMeters,
           ),
+    realistic: realistic,
   );
 }
 

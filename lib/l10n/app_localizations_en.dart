@@ -6422,4 +6422,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spreadOutsideSegments => 'Not in a segment';
+
+  @override
+  String get tbThreeTitle => 'Three ways to add it up';
+
+  @override
+  String get tbRawLabel => 'Fastest segments';
+
+  @override
+  String get tbRawNote => 'Each segment\'s fastest time from any lap.';
+
+  @override
+  String get tbRealisticLabel => 'Segments that join';
+
+  @override
+  String tbRealisticNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'The fastest segments whose speeds differ by at most $tolerance km/h where two laps meet, as the car cannot change speed at a line. From $_temp0.';
+  }
+
+  @override
+  String get tbRealisticNoSpeed =>
+      'Not shown: no lap records speed in a known unit, so no two laps can be joined.';
+
+  @override
+  String get tbRealisticIncomplete =>
+      'Not shown: a segment has no time on any lap.';
+
+  @override
+  String get tbRepeatableLabel => 'Best typical';
+
+  @override
+  String get tbRepeatableNote =>
+      'Each segment\'s quickest typical (median) time in one session: what you did there as a rule, not once.';
+
+  @override
+  String tbRepeatableNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Not shown: needs a session with at least $_temp0 through every segment.';
+  }
 }

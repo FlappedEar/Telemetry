@@ -9438,6 +9438,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not in a segment'**
   String get spreadOutsideSegments;
+
+  /// Theoretical best card: heading over the raw, realistic and repeatable theoretical bests (FET-222).
+  ///
+  /// In en, this message translates to:
+  /// **'Three ways to add it up'**
+  String get tbThreeTitle;
+
+  /// The raw theoretical best: each segment's fastest time.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest segments'**
+  String get tbRawLabel;
+
+  /// Note under the raw theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment\'s fastest time from any lap.'**
+  String get tbRawNote;
+
+  /// The realistic theoretical best: the fastest segments whose speeds match where two laps meet.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments that join'**
+  String get tbRealisticLabel;
+
+  /// Note under the realistic theoretical best. tolerance is a number such as '2'.
+  ///
+  /// In en, this message translates to:
+  /// **'The fastest segments whose speeds differ by at most {tolerance} km/h where two laps meet, as the car cannot change speed at a line. From {count, plural, =1{1 lap} other{{count} laps}}.'**
+  String tbRealisticNote(String tolerance, int count);
+
+  /// Realistic theoretical best when no lap has speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: no lap records speed in a known unit, so no two laps can be joined.'**
+  String get tbRealisticNoSpeed;
+
+  /// Realistic theoretical best when a segment is not timed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: a segment has no time on any lap.'**
+  String get tbRealisticIncomplete;
+
+  /// The repeatable theoretical best: each segment's quickest typical time in one session.
+  ///
+  /// In en, this message translates to:
+  /// **'Best typical'**
+  String get tbRepeatableLabel;
+
+  /// Note under the repeatable theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment\'s quickest typical (median) time in one session: what you did there as a rule, not once.'**
+  String get tbRepeatableNote;
+
+  /// Repeatable theoretical best when a segment has no session with enough laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: needs a session with at least {count, plural, =1{1 lap} other{{count} laps}} through every segment.'**
+  String tbRepeatableNeedsLaps(int count);
 }
 
 class _AppLocalizationsDelegate
