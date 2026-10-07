@@ -150,6 +150,98 @@ finds the profile changed while the bundle was read merges the bundle's own
 profile (`ProfileBundleImport.source`) into the changed one again, so edits made
 meanwhile stay.
 
+## A day's reference lap (`reference`, FET-276)
+
+The reference lap of a day (FET-175: a friend's or an instructor's recording,
+or a lap of another day) is kept in the profile, not in the day file: the owner
+chose that on 2026-10-07. It is a new optional key `reference` on the day's
+entry in `days[]` (an open object, like the notebook on a track). It is written
+only when the day has a reference; no closed object got a key and the
+`.fetproject` day format is unchanged.
+
+```json
+"reference": {
+  "kind": "file",
+  "name": "friend.vbo",
+  "recordingId": "friend.vbo",
+  "lapNumber": 3,
+  "sha256": "<64 lower-case hex>",
+  "extension": ".vbo",
+  "bytes": 8123456
+}
+```
+
+or, for a lap of another day of the profile:
+
+```json
+"reference": {
+  "kind": "day", "name": "Day 2026-08-29",
+  "recordingId": "<run id of that day's session>", "lapNumber": 2,
+  "eventId": "<the other day's event id>"
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `kind` | `file` or `day`. |
+| `recordingId` | The session's run id (`day`) or the file's name (`file`); with `lapNumber` it names the lap on today's line, never the recording's position in its source. 1 to 4096 code units. |
+| `lapNumber` | 1 to 100 000. If that lap is no longer there (today's line changed), the source's fastest lap is shown and the stored choice is left as it was. |
+| `name` | Optional. The file's name (cut at 255 code units) or the other day's name when it was chosen: only used to say what is not found. Never used as a path. |
+| `sha256`, `extension`, `bytes` (`file`) | The copy in `Recordings/<sha256><extension>` of the profile folder: 64 lower-case hex digits, `.vbo` or `.rcz`, 1 byte to 128 MiB. The path is built only from these two checked values, so a profile cannot point outside `Recordings`; the user's own path is never stored. |
+| `eventId` (`day`) | The other day. It works while that day is in the profile; when it is not (deleted), the reference stays and says so, and works again if the day comes back (same event id, such as from a bundle). A day is never its own reference. |
+
+Unknown keys of the object are kept. A `reference` this version cannot read (an
+unknown `kind`, a bad hash or extension, a number out of range, not an object)
+never refuses the profile: it is kept as written in the day's unknown keys,
+shows as no reference, and is replaced when a reference is set or cleared.
+Absent means no reference, also after the driver cleared one: clearing removes the key
+and the copy.
+
+Limits: a recording is kept as one copy, however many days use it, at most
+**32 distinct copies**, **128 MiB each** (the size the importers read at most,
+so a larger file could never be read again) and **512 MiB together**. One
+reference per day, so at most one per day entry (10 000 days). At a limit a
+change is refused (`ProfileReferenceError`: too many files, too much, too
+large, empty, not a VBO or RCZ file, unreadable, not written) and nothing is
+changed: the copy made for it is removed unless something else uses it, and the
+day page says the reference is not remembered and why, with a retry; the
+reference still works while the day is open. A profile read with more than the
+limits (a newer or hand-made one) is not refused: only new copies are.
+`bytes` of a restored reference is checked against the copy's size when read
+(the day says the recording changed if it differs); the copy is not hashed again.
+
+Where it lives and what happens:
+
+- **Saving.** The page asks the store (`ProfileReferenceStore`, `ProfileLibrary.setFileReference`
+  / `setDayReference` / `clearReference`). The file is hashed and copied in
+  64 KiB pieces off the UI thread to a `.reference-*.partial` file beside, then
+  moved to `Recordings/<sha256><extension>`; an existing copy is reused after
+  its content matches the name (a damaged one is replaced). The profile is written
+  and the change is only reported kept once the write succeeded; if it fails the
+  profile in memory goes back and the user is told. A copy nothing uses any
+  more (replaced or cleared reference) is deleted unless another day's reference or
+  any day's recording names the same file (`deleteUnusedReferenceFile`). A day
+  not yet listed in the profile (a new day, listed once it is measured) holds
+  the choice and gets it when it is added.
+- **Restoring.** Once per opening of the day, as soon as today's line is known.
+  A missing copy, a copy of another size, a day no longer in the profile or a
+  recording that cannot be read shows as not found with its reason; it never
+  blocks the day and never forgets the stored choice. Only an explicit clear does.
+- **A day added again** (`addDayToProfile`, weather, setups, car) keeps its reference.
+- **Deleting a day** (FET-241, `deleteDayFiles`) forgets its reference with the
+  day's entry and deletes its copy unless another day's reference (`otherReferenceFiles`)
+  or recording uses it. Other days' references to the deleted day stay and say
+  the day is gone.
+- **Merging** (`mergeDriverProfile`): an added day brings its reference. A copy this
+  profile keeps already (same hash) is shared; a new one counts against the limits and, past
+  them, the day comes without its reference (`ProfileMerge.referencesNotKept`).
+  A day already here keeps its own.
+- **Bundle** (below): the copy is in the bundle once; reading it checks hash and size.
+
+A per-track "last reference used" (a fallback when a day has none) is not
+kept: it would need an explicit "cleared" marker so a cleared reference stays
+cleared, and nothing asked for it yet.
+
 ## Cars
 
 Adding a day never asks. A new day takes the car of the last new day or the
@@ -424,7 +516,10 @@ zip file, also with the `.feprofile` extension (the index alone is
   keys kept).
 - `Recordings/<name>`: each recording once, however many days use it; a
   recording not found is left out and counted (`recordingsMissing`), and its
-  day still comes along and reports it missing when opened.
+  day still comes along and reports it missing when opened. The copy of a
+  day's reference lap (FET-276) is one of these, as `<sha256><extension>`; a
+  recording that is both a day's recording and a reference is one file. A copy
+  not found is counted (`referencesMissing`) and its reference says so there.
 
 Recordings are deflated as they are added; the encoder keeps one recording's
 compressed bytes in memory at a time (about twice that at most), which is fine
@@ -449,7 +544,13 @@ are; anything else is added within the profile's limits (`notAdded`
 otherwise, leaving no car or track of its own).
 
 All of it is read and checked first: the documents in memory, the recordings
-unpacked into a `.bundle-import-*` folder beside the index. Only then are the
+unpacked into a `.bundle-import-*` folder beside the index. A reference copy
+(of an added day) must be the size its reference says (and at most 128 MiB) and
+hash to the name that is its `sha256`, else the whole bundle is refused
+(`ProfileBundleError`); one already in `Recordings/` is reused when its content
+is that hash, and a different file of that name is never replaced: the days
+using it are added without their reference (`ProfileBundleImport.referencesNotKept`,
+also those past the limits of reference recordings). Only then are the
 recordings moved into `Recordings/` and the documents written; a failure there
 removes what this import wrote, and a staging folder left by a crash is removed
 by the next import. A recording already in `Recordings/` is reused only when

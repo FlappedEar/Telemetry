@@ -196,15 +196,18 @@ class ProfileLibrary extends ChangeNotifier {
       _change(
         (profile) => profile.days.any((known) => known.eventId == day.eventId)
             ? profile
-            : addDayToProfile(
-                profile,
-                ProfileDayInput(
-                  eventId: day.eventId,
-                  file: day.file,
-                  name: day.name,
+            : _withPendingReference(
+                addDayToProfile(
+                  profile,
+                  ProfileDayInput(
+                    eventId: day.eventId,
+                    file: day.file,
+                    name: day.name,
+                  ),
+                  defaultCarName: defaultCarName,
+                  defaultTrackName: defaultTrackName(profile.tracks.length + 1),
                 ),
-                defaultCarName: defaultCarName,
-                defaultTrackName: defaultTrackName(profile.tracks.length + 1),
+                day.eventId,
               ),
       );
     }
@@ -369,7 +372,10 @@ class ProfileLibrary extends ChangeNotifier {
         defaultCarName: defaultCarName,
         defaultTrackName: defaultTrackName(profile.tracks.length + 1),
       );
-      return held == null ? next : setProfileSessionSetups(next, eventId, held);
+      return _withPendingReference(
+        held == null ? next : setProfileSessionSetups(next, eventId, held),
+        eventId,
+      );
     });
   }
 
@@ -477,7 +483,10 @@ class ProfileLibrary extends ChangeNotifier {
   /// anywhere else are the driver's own files and stay. Null when the
   /// profile has no such day. Throws when the document could not be
   /// deleted; the profile then still lists the day.
-  Future<DayFilesDeleted?> deleteDay(String eventId) async {
+  Future<DayFilesDeleted?> deleteDay(String eventId) =>
+      _referenceWork(() => _deleteDay(eventId));
+
+  Future<DayFilesDeleted?> _deleteDay(String eventId) async {
     if (!_loaded) await load();
     _deleted.add(eventId);
     // A measure of the day still running would list it again.
@@ -501,11 +510,26 @@ class ProfileLibrary extends ChangeNotifier {
       p.join(folder, profileRecordingsFolderName),
       ...await ownedRecordingFolders(),
     ];
+    // The day's own reference lap goes with it (the copy of its recording
+    // unless another day's reference still uses it); other days' references
+    // to this day stay, and say so when opened.
+    final reference = day.reference;
+    final referenceFile = reference is ProfileReferenceFile
+        ? profileReferenceFilePath(folder, reference)
+        : null;
+    final otherReferences = [
+      for (final other in profile.days)
+        if (other.eventId != eventId)
+          if (other.reference case final ProfileReferenceFile file)
+            ?profileReferenceFilePath(folder, file),
+    ];
     // A document outside the profile's days is never deleted from here.
     final DayFilesDeleted deleted;
     try {
       deleted = holds(path)
-          ? await background(_deleteJob(path, others, owned))
+          ? await background(
+              _deleteJob(path, others, owned, referenceFile, otherReferences),
+            )
           : const DayFilesDeleted(recordings: 0, recordingsKept: 0);
     } on Object {
       // Still listed, so it may be recorded again.
@@ -514,6 +538,7 @@ class ProfileLibrary extends ChangeNotifier {
     }
     _weather.remove(eventId);
     _setups.remove(eventId);
+    _pendingReferences.remove(eventId);
     _change((profile) => removeProfileDay(profile, eventId));
     return deleted;
   }
@@ -540,17 +565,250 @@ class ProfileLibrary extends ChangeNotifier {
     String path,
     List<String> others,
     List<String> owned,
+    String? referenceFile,
+    List<String> otherReferences,
   ) =>
       () => deleteDayFiles(
         dayPath: path,
         otherDayPaths: others,
         ownedFolders: owned,
+        referenceFile: referenceFile,
+        otherReferenceFiles: otherReferences,
       );
 
   /// Keeps [notebook] as track [trackId]'s ([setProfileTrackNotebook]).
   /// False when it could not be kept: no profile, or past its limits.
   bool setTrackNotebook(String trackId, TrackNotebook notebook) =>
       _change((profile) => setProfileTrackNotebook(profile, trackId, notebook));
+
+  // ---------------------------------------------------------------------
+  // Reference laps (FET-276)
+
+  /// A reference chosen for a day the profile does not list yet (a new
+  /// day is listed once it is measured), by event id: given to the day
+  /// when it is added.
+  final _pendingReferences = <String, ProfileReference>{};
+
+  /// One change of a reference at a time: the copy of a recording, the
+  /// profile and the removal of a copy nothing uses any more must not
+  /// interleave with those of another day.
+  Future<void> _references = Future.value();
+
+  Future<R> _referenceWork<R>(Future<R> Function() work) async {
+    final previous = _references;
+    final done = Completer<void>();
+    _references = done.future;
+    try {
+      await previous;
+      return await work();
+    } finally {
+      done.complete();
+    }
+  }
+
+  /// The reference lap kept for day [eventId]: the one given for a day not
+  /// listed yet, else the day's own; null when none.
+  ProfileReference? referenceOf(String eventId) =>
+      _pendingReferences[eventId] ?? _profile?.day(eventId)?.reference;
+
+  /// Where the copy of [reference]'s recording is; null when it cannot be
+  /// found from the profile ([profileReferenceFilePath]).
+  String? referenceFilePath(ProfileReferenceFile reference) {
+    final folder = _folder;
+    return folder == null ? null : profileReferenceFilePath(folder, reference);
+  }
+
+  /// Keeps the lap [lapNumber] of [recordingId] in the recording file
+  /// [source] as day [eventId]'s reference: the file is copied into the
+  /// profile's `Recordings` folder (named by its hash, once however many
+  /// days use it), and only the choice and that name are kept in the
+  /// profile, never [source]'s path. [name] is the file's name as the
+  /// reference is called. A file already in `Recordings` is not copied
+  /// again. Throws [ProfileReferenceError] when it could not be kept (not
+  /// a VBO or RCZ file, too large, past the limits of reference
+  /// recordings, unreadable, or the profile could not be written); then
+  /// nothing is kept, and a copy made for it that nothing else uses is
+  /// removed.
+  Future<void> setFileReference(
+    String eventId, {
+    required String source,
+    required String name,
+    required String recordingId,
+    required int lapNumber,
+  }) => _referenceWork(() async {
+    final folder = await _referenceFolder();
+    final ReferenceFileCopy copy = await background(_copyJob(folder, source));
+    final reference = copy.reference(name, recordingId, lapNumber);
+    try {
+      await _setReference(eventId, reference);
+    } on Object {
+      await _forgetCopy(reference);
+      rethrow;
+    }
+  });
+
+  /// Keeps lap [lapNumber] of [recordingId] (a session of the day) of
+  /// another day of the profile, [otherEventId], as day [eventId]'s
+  /// reference: only the other day's event id is kept, so it works while
+  /// that day is in the profile. Throws [ProfileReferenceError].
+  Future<void> setDayReference(
+    String eventId, {
+    required String otherEventId,
+    required String name,
+    required String recordingId,
+    required int lapNumber,
+  }) => _referenceWork(() async {
+    await _referenceFolder();
+    await _setReference(
+      eventId,
+      ProfileReferenceDay(
+        recordingId: recordingId,
+        lapNumber: lapNumber,
+        eventId: otherEventId,
+        name: name,
+      ),
+    );
+  });
+
+  /// Forgets day [eventId]'s reference lap, and its copy of a recording
+  /// unless another day or reference still uses it.
+  Future<void> clearReference(String eventId) => _referenceWork(() async {
+    await _referenceFolder();
+    await _setReference(eventId, null);
+  });
+
+  Future<String> _referenceFolder() async {
+    if (!_loaded) await load();
+    final folder = _folder;
+    if (folder == null || _profile == null) {
+      throw const ProfileReferenceError(
+        ProfileReferenceProblem.notWritten,
+        'Days are not kept in a profile.',
+      );
+    }
+    return folder;
+  }
+
+  // Sets [reference] (null forgets it) and waits for it to be written.
+  Future<void> _setReference(
+    String eventId,
+    ProfileReference? reference,
+  ) async {
+    final profile = _profile!;
+    final day = profile.day(eventId);
+    final before = referenceOf(eventId);
+    if (day == null) {
+      // Not listed yet: given to the day when it is, if it is going to be.
+      if (_deleted.contains(eventId)) {
+        throw const ProfileReferenceError(
+          ProfileReferenceProblem.notWritten,
+          'The day is not in the profile.',
+        );
+      }
+      if (reference == null) {
+        _pendingReferences.remove(eventId);
+      } else {
+        _pendingReferences[eventId] = checkProfileReference(
+          profile,
+          eventId,
+          reference,
+        );
+      }
+    } else {
+      final failures = _writeFailures;
+      _change((profile) => setProfileDayReference(profile, eventId, reference));
+      final changed = _profile;
+      await flush();
+      if (_writeFailures != failures) {
+        // Not on disk, so not kept: the profile is as it was.
+        if (identical(_profile, changed) && !identical(changed, profile)) {
+          _profile = profile;
+          notifyListeners();
+        }
+        throw const ProfileReferenceError(
+          ProfileReferenceProblem.notWritten,
+          'The profile could not be written.',
+        );
+      }
+    }
+    if (before is ProfileReferenceFile) await _forgetCopy(before);
+  }
+
+  /// A reference given to a day not listed before, now that it is.
+  DriverProfile _withPendingReference(DriverProfile profile, String eventId) {
+    final pending = _pendingReferences.remove(eventId);
+    if (pending == null || profile.day(eventId) == null) return profile;
+    try {
+      return setProfileDayReference(profile, eventId, pending);
+    } on ProfileReferenceError catch (error) {
+      // Checked when it was given; the profile has changed since.
+      debugPrint('Reference not kept: ${error.message}');
+      return profile;
+    }
+  }
+
+  /// Deletes the copy of [reference]'s recording unless the profile's days
+  /// or a day's recordings still use it.
+  Future<void> _forgetCopy(ProfileReference? reference) async {
+    final folder = _folder, profile = _profile;
+    if (reference is! ProfileReferenceFile ||
+        folder == null ||
+        profile == null) {
+      return;
+    }
+    final used = {
+      ...profileReferenceFiles(profile).keys,
+      for (final pending in _pendingReferences.values)
+        if (pending is ProfileReferenceFile) pending.fileName,
+    };
+    final days = [
+      for (final day in profile.days) pathOf(day)!,
+      ..._dayFiles(folder),
+    ];
+    try {
+      await background(_forgetJob(folder, reference, used, days));
+    } on Object catch (error) {
+      debugPrint('Reference recording copy not removed: $error');
+    }
+  }
+
+  // Take only what they are given, so they can be sent to another isolate.
+  static ReferenceFileCopy Function() _copyJob(String folder, String source) =>
+      () => _copyReferenceFile(folder, source);
+
+  static bool Function() _forgetJob(
+    String folder,
+    ProfileReferenceFile reference,
+    Set<String> used,
+    List<String> days,
+  ) =>
+      () => deleteUnusedReferenceFile(
+        folder: folder,
+        reference: reference,
+        stillReferenced: used,
+        dayPaths: days,
+      );
+
+  static ReferenceFileCopy _copyReferenceFile(String folder, String source) {
+    // A recording that is already one of the profile's copies is not
+    // copied onto itself.
+    final recordings = p.join(folder, profileRecordingsFolderName);
+    final name = p.basename(source);
+    final match = RegExp(r'^([0-9a-f]{64})(\.vbo|\.rcz)$').firstMatch(name);
+    if (match != null &&
+        p.equals(p.dirname(source), recordings) &&
+        File(source).existsSync()) {
+      final bytes = File(source).lengthSync();
+      if (bytes > 0 && bytes <= maximumReferenceFileBytes) {
+        return ReferenceFileCopy(
+          sha256: match.group(1)!,
+          extension: match.group(2)!,
+          bytes: bytes,
+        );
+      }
+    }
+    return keepReferenceFile(folder, source);
+  }
 
   /// Writes the profile, its days and their recordings to one bundle at
   /// [target] ([writeProfileBundle]), once the changes asked for so far are
@@ -580,6 +838,8 @@ class ProfileLibrary extends ChangeNotifier {
         _deleted.removeAll(read.added);
         if (read.added.isEmpty && read.notebooks.isEmpty) return read;
         var result = read;
+        // Copies placed for a reference this profile had no room for.
+        final noRoom = <ProfileReference>[];
         try {
           // A day recorded while the bundle was read is kept: the bundle's
           // days are merged into the profile as it is now.
@@ -603,8 +863,18 @@ class ProfileLibrary extends ChangeNotifier {
               recordings: read.recordings,
               notebooks: merge.notebooks,
               notebookCut: merge.notebookCut,
+              referencesNotKept: [
+                ...read.referencesNotKept,
+                ...merge.referencesNotKept,
+              ],
+              referencesMissing: read.referencesMissing,
               source: read.source,
             );
+            for (final eventId in merge.referencesNotKept) {
+              if (read.profile.day(eventId)?.reference case final reference?) {
+                noRoom.add(reference);
+              }
+            }
           }
           _profile = next;
           notifyListeners();
@@ -613,6 +883,9 @@ class ProfileLibrary extends ChangeNotifier {
           );
           _writes = written.then((_) {}, onError: (Object error) {});
           await written;
+          for (final reference in noRoom) {
+            await _referenceWork(() => _forgetCopy(reference));
+          }
         } on Object catch (error) {
           debugPrint('Imported days not written to the profile: $error');
           throw ProfileNotSaved(result);
@@ -671,13 +944,17 @@ class ProfileLibrary extends ChangeNotifier {
     return true;
   }
 
+  /// How many writes of the profile failed so far: a change that must be
+  /// told as not saved ([setFileReference]) compares it before and after.
+  int _writeFailures = 0;
+
   /// Waits for the days being measured and the writes asked for so far.
   Future<void> flush() async {
     await Future.wait([..._measuring]);
     await _writes;
   }
 
-  static Future<void> _write(
+  Future<void> _write(
     String folder,
     DriverProfile profile,
     Future<R> Function<R>(FutureOr<R> Function()) background,
@@ -685,6 +962,7 @@ class ProfileLibrary extends ChangeNotifier {
     try {
       await background(_writeJob(folder, profile));
     } on Object catch (error) {
+      ++_writeFailures;
       debugPrint('Driver profile not written: $error');
     }
   }

@@ -99,6 +99,8 @@ class _LibraryPageState extends State<LibraryPage> {
                 l10n.libraryExportDaysMissing(export.daysMissing.length),
               if (export.recordingsMissing > 0)
                 l10n.libraryExportMissing(export.recordingsMissing),
+              if (export.referencesMissing > 0)
+                l10n.libraryExportReferencesMissing(export.referencesMissing),
             ].join(' '),
           ),
         ),
@@ -137,6 +139,10 @@ class _LibraryPageState extends State<LibraryPage> {
         if (read.notebooks.isNotEmpty)
           l10n.libraryImportNotebooks(read.notebooks.length),
         if (read.notebookCut) l10n.libraryImportNotebookCut,
+        if (read.referencesNotKept.isNotEmpty)
+          l10n.libraryImportReferencesNotKept(read.referencesNotKept.length),
+        if (read.referencesMissing > 0)
+          l10n.libraryImportReferencesMissing(read.referencesMissing),
       ].join(' ');
     } on ProfileNotSaved catch (error) {
       message = l10n.libraryImportNotSaved(error.import.added.length);

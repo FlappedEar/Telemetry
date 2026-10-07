@@ -5647,6 +5647,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String libraryExportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count reference recordings were not found in the profile and are not in the file.',
+      one: '1 reference recording was not found in the profile and is not in the file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get libraryExportFailed => 'The profile could not be exported.';
 
   @override
@@ -6552,6 +6564,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some notebook notes from the file did not fit and were left out.';
 
   @override
+  String libraryImportReferencesNotKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The reference laps of $count days were left out: their recordings did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.',
+      one: 'The reference lap of 1 day was left out: its recording did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count reference recordings were not in the file: those references will say they were not found.',
+      one: '1 reference recording was not in the file: that reference will say it was not found.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String notebookFull(int count) {
     return 'The notebook holds at most $count things to try. Remove some to add more.';
   }
@@ -7386,7 +7422,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceIntro =>
-      'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved with the day.';
+      'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved in the day file. Your driver profile remembers it for this day: a recording file is copied into the profile, a lap of an earlier day is remembered by that day.';
 
   @override
   String get referenceLoadFile => 'Load a recording';
@@ -7449,7 +7485,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String get referenceClear => 'Clear reference';
 
   @override
-  String get referenceNotSaved => 'Kept while this day is open; not saved.';
+  String get referenceNotSaved =>
+      'Kept while this day is open; not remembered, because this day is not kept in your driver profile.';
+
+  @override
+  String get referenceSaved =>
+      'Remembered for this day in your driver profile.';
+
+  @override
+  String get referenceSavedCopy =>
+      'Remembered for this day in your driver profile, with a copy of the recording.';
+
+  @override
+  String get referenceSaving => 'Saving to your driver profile…';
+
+  @override
+  String referenceKeepFailed(String reason) {
+    return 'Not remembered: $reason It stays while this day is open.';
+  }
+
+  @override
+  String get referenceForgetFailed =>
+      'The reference could not be removed from your driver profile, so it comes back when this day is opened again.';
+
+  @override
+  String get referenceKeepRetry => 'Try again';
+
+  @override
+  String referenceKeepTooManyFiles(int count) {
+    return 'Your profile already keeps $count reference recordings. Clear the reference of another day first.';
+  }
+
+  @override
+  String referenceKeepTooMuch(int megabytes) {
+    return 'The reference recordings would take more than $megabytes MB in your profile.';
+  }
+
+  @override
+  String referenceKeepFileTooLarge(int megabytes) {
+    return 'The recording is larger than $megabytes MB, the most a reference can be.';
+  }
+
+  @override
+  String get referenceKeepFileEmpty => 'The recording is empty.';
+
+  @override
+  String get referenceKeepFileType =>
+      'Only a VBO or RCZ recording can be remembered.';
+
+  @override
+  String get referenceKeepUnreadable =>
+      'The recording could not be copied into your profile.';
+
+  @override
+  String get referenceKeepNotWritten =>
+      'Your driver profile could not be written.';
+
+  @override
+  String get referenceKeepOther => 'Your driver profile could not keep it.';
+
+  @override
+  String get referenceFileMissing =>
+      'The recording kept for this reference was not found in your driver profile. Clear the reference or load the recording again.';
+
+  @override
+  String get referenceFileChanged =>
+      'The recording kept for this reference is not the file that was saved (it changed). Clear the reference or load the recording again.';
+
+  @override
+  String get referenceDayMissing =>
+      'The day this reference was taken from is no longer in your driver profile. Clear the reference or choose another day.';
 
   @override
   String get referencePickDay => 'Choose an earlier day';
@@ -7480,7 +7585,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceKeptApart =>
-      'The reference is not part of this day: it is not ranked and not saved.';
+      'The reference is not part of this day: it is not ranked and not saved in the day file.';
 
   @override
   String get referenceGone => 'No reference lap is chosen.';
