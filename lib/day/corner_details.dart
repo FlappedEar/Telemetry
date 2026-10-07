@@ -852,7 +852,7 @@ class BrakingTechniqueSection extends StatelessWidget {
 
     // A typical resting on under three quarters of the braking laps says
     // how many, and why the others have none.
-    String subset(BrakingTechniqueTypical typical) {
+    String subset(BrakingTechniqueTypical typical, double? rate) {
       if (!typical.partial) return '';
       final dropped = typical.droppedReason;
       return switch (dropped) {
@@ -861,7 +861,7 @@ class BrakingTechniqueSection extends StatelessWidget {
         _ => l10n.brakingTechniqueSubsetOther(
           typical.laps,
           typical.brakingLaps,
-          reason(dropped, rate: technique.rateHz),
+          reason(dropped, rate: rate),
         ),
       };
     }
@@ -977,7 +977,7 @@ class BrakingTechniqueSection extends StatelessWidget {
             gPerSecond,
             atLeast: (lap) => lap.hitAtLeast,
           ),
-          subset(technique.hit),
+          subset(technique.hit, technique.rateHz),
         ),
         item(
           'brakingTechniquePeak',
@@ -988,7 +988,7 @@ class BrakingTechniqueSection extends StatelessWidget {
             technique.peak,
             g,
           ),
-          notes([peakNotes, subset(technique.peak)]),
+          notes([peakNotes, subset(technique.peak, technique.rateHz)]),
         ),
         item(
           'brakingTechniqueTrail',
@@ -1008,7 +1008,14 @@ class BrakingTechniqueSection extends StatelessWidget {
               if (technique.lateralUnitAssumed)
                 l10n.brakingTechniqueLateralAssumed,
             ].join(' · '),
-            subset(technique.trailSeconds),
+            if (technique.speedUnitAssumed)
+              l10n.brakingTechniqueSpeedAssumed(technique.speedAssumedUnit),
+            subset(technique.trailSeconds, technique.lateralRateHz),
+            if (subset(technique.trailMeters, technique.lateralRateHz)
+                case final line
+                when line !=
+                    subset(technique.trailSeconds, technique.lateralRateHz))
+              line,
           ]),
         ),
         item(
@@ -1021,7 +1028,7 @@ class BrakingTechniqueSection extends StatelessWidget {
             gPerSecond,
             atLeast: (lap) => lap.releaseAtLeast,
           ),
-          subset(technique.release),
+          subset(technique.release, technique.rateHz),
         ),
         if (hasThrottle)
           item(
@@ -1048,7 +1055,7 @@ class BrakingTechniqueSection extends StatelessWidget {
                 l10n.brakingTechniqueThrottleAssumed,
               if (technique.throttleScaleInferred)
                 l10n.brakingTechniqueThrottleScaleInferred,
-              subset(technique.brakeToThrottle),
+              subset(technique.brakeToThrottle, throttleRate),
             ].join(' '),
           ),
         if (hasBrake)
@@ -1094,7 +1101,9 @@ class BrakingTechniqueSection extends StatelessWidget {
                       l10n.brakingTechniqueBrakeAssumed,
                     if (technique.brakeScaleInferred)
                       l10n.brakingTechniqueBrakeScaleInferred,
-                  ].join(' '),
+                    subset(technique.pedalApplication, brakeRate),
+                    subset(technique.pedalRelease, brakeRate),
+                  ].where((note) => note.isNotEmpty).toSet().join(' '),
                 ),
         Text(
           l10n.brakingTechniqueNote,

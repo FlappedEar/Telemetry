@@ -534,6 +534,49 @@ void main() {
       expect(none.peakG, closeTo(reference.peakG!, 0.01));
     });
 
+    test('a G channel with an undeclared speed says the metres are assumed', () {
+      TelemetrySession withSpeedUnit(String unit, {Map<String, String> metadata = const {}}) {
+        final base = _session();
+        final speed = base.channels['velocity']!;
+        return TelemetrySession(
+          duration: base.duration,
+          startTime: 0,
+          metadata: metadata,
+          channels: {
+            ...base.channels,
+            'velocity': TelemetryChannel(
+              name: 'velocity',
+              unit: unit,
+              timestamps: speed.timestamps,
+              values: speed.values,
+            ),
+          },
+          aliases: base.aliases,
+          warnings: const [],
+          timingGates: const [],
+          sampleCount: base.sampleCount,
+        );
+      }
+
+      final plain = _measure(withSpeedUnit(''));
+      expect(plain.source, brakingTechniqueFromG);
+      expect(plain.unitAssumed, isFalse);
+      expect(plain.zoneMeters, isNotNull);
+      expect(plain.speedUnitAssumed, isTrue);
+      expect(plain.speedAssumedUnit, 'km/h');
+      final mph = _measure(withEffectiveSpeedUnits(withSpeedUnit(''), assumed: 'mph'));
+      expect(mph.speedUnitAssumed, isTrue);
+      expect(mph.speedAssumedUnit, 'mph');
+      final declared = _measure(withSpeedUnit('km/h'));
+      expect(declared.speedUnitAssumed, isFalse);
+      final header = _measure(withSpeedUnit('', metadata: const {'header.0': 'velocity kmh'}));
+      expect(header.speedUnitAssumed, isFalse);
+      final day = summarizeBrakingTechnique([('a', plain), ('b', plain), ('c', plain)]);
+      expect(day.speedUnitAssumed, isTrue);
+      expect(day.speedAssumedUnit, 'km/h');
+      expect(day.unitAssumed, isFalse);
+    });
+
     test('a declared unit is never overridden by the setting', () {
       final declared = speedIn('mph', metadata: const {'header.0': 'velocity mph'});
       final lap = _measure(withEffectiveSpeedUnits(declared, assumed: 'km/h'));

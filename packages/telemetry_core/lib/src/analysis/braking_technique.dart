@@ -568,6 +568,11 @@ final class BrakingTechniqueLap {
   /// [unitAssumed] and the deceleration comes from speed; else empty.
   String assumedUnit = '';
 
+  /// The speed (which gives the metres, and the deceleration without a G
+  /// channel) declares no unit: it was read in [speedAssumedUnit].
+  bool speedUnitAssumed = false;
+  String speedAssumedUnit = '';
+
   /// The deceleration channel's update rate.
   double? rateHz;
 
@@ -919,6 +924,13 @@ BrakingTechniqueLap measureBrakingTechnique(
   final speedFactor = speed == null || speed.timestamps.length != speed.values.length
       ? null
       : metresPerSecondPerSpeedUnit(speedUnit);
+  // Metres come from the speed whatever the deceleration comes from: an
+  // undeclared speed unit is assumed there too, and says so.
+  if (speedFactor != null && speedDeclared.isEmpty) {
+    result
+      ..speedUnitAssumed = true
+      ..speedAssumedUnit = speedUnit.isEmpty ? 'km/h' : speedUnit;
+  }
 
   // The deceleration: a G channel with data, else the speed.
   final gName = session.aliases['longitudinalAcceleration'] ?? '';
@@ -1398,6 +1410,16 @@ final class BrakingTechnique {
   double? get lateralRateHz => _slowest([for (final (_, lap) in laps) lap.lateralRateHz]);
 
   bool _any(bool Function(BrakingTechniqueLap) test) => laps.any((entry) => test(entry.$2));
+
+  /// Some lap's metres come from a speed with no declared unit, read in
+  /// [speedAssumedUnit] ("km/h" or "mph").
+  bool get speedUnitAssumed => _any((lap) => lap.speedUnitAssumed);
+  String get speedAssumedUnit {
+    for (final (_, lap) in laps) {
+      if (lap.speedUnitAssumed) return lap.speedAssumedUnit;
+    }
+    return '';
+  }
 
   /// The unit an undeclared speed was read in ("km/h" or "mph") when
   /// [source] is speed and [unitAssumed]; else empty.

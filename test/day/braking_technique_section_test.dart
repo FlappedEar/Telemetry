@@ -224,7 +224,9 @@ void main() {
         rowText(tester, 'brakingTechniqueTrail'),
         'Trail braking · inferred | This lap: not known, no lateral G channel '
         '· typical: not known, no lateral G channel | Braking while the '
-        'lateral G is at least 0.3 g. Inferred: there is no steering channel.',
+        'lateral G is at least 0.3 g. Inferred: there is no steering channel. '
+        // The synthetic VBO's speed declares no unit either.
+        'The speed has no unit recorded: distances read in km/h.',
       );
       expect(
         rowText(tester, 'brakingTechniqueRelease'),
@@ -385,6 +387,55 @@ void main() {
         isNot(contains('5 of 16')),
       );
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a dropped reason is told at its own channel\'s rate, and an '
+      'undeclared speed is noted under the trail line', (tester) async {
+    BrakingTechniqueLap slowLateral() => _lap(0.7)
+      ..trailSeconds = null
+      ..trailMeters = null
+      ..trailReason = brakingTechniqueLateralTooSlow
+      ..lateralRateHz = 4.0
+      ..speedUnitAssumed = true
+      ..speedAssumedUnit = 'mph';
+    final technique = summarizeBrakingTechnique([
+      for (var i = 0; i < 5; ++i) (i == 1 ? _b : i, _lap(0.7)),
+      for (var i = 5; i < 16; ++i) (i, slowLateral()),
+    ]);
+    expect(technique.trailSeconds.partial, isTrue);
+    await show(
+      tester,
+      const Locale('en'),
+      Scaffold(
+        body: SingleChildScrollView(
+          child: BrakingTechniqueSection(technique: technique, lap: _b),
+        ),
+      ),
+    );
+    final trail = rowText(tester, 'brakingTechniqueTrail');
+    expect(trail, contains('From 5 of 16 braking laps'));
+    expect(trail, contains('(4.0 Hz)'));
+    expect(trail, isNot(contains('10.0 Hz')));
+    expect(
+      trail,
+      contains('The speed has no unit recorded: distances read in mph.'),
+    );
+    await show(
+      tester,
+      const Locale('pl'),
+      Scaffold(
+        body: SingleChildScrollView(
+          child: BrakingTechniqueSection(technique: technique, lap: _b),
+        ),
+      ),
+    );
+    expect(
+      rowText(tester, 'brakingTechniqueTrail'),
+      contains(
+        'Prędkość nie ma zapisanej jednostki: odległości odczytane w mph.',
+      ),
+    );
     expect(tester.takeException(), isNull);
   });
 

@@ -7860,7 +7860,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get brakingTechniqueNote =>
-      'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.';
+      'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count, and a dip of at least a tenth of the peak just before the rise starts the hit there; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.';
 
   @override
   String brakingTechniqueReasonTooSlow(String rate) {
@@ -8028,6 +8028,11 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 corner measured another way (G channel or speed, or another unit) is left out.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueSpeedAssumed(String unit) {
+    return 'The speed has no unit recorded: distances read in $unit.';
   }
 
   @override

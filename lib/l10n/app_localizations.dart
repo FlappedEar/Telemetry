@@ -11372,7 +11372,7 @@ abstract class AppLocalizations {
   /// Braking technique: how the figures are read and the thresholds.
   ///
   /// In en, this message translates to:
-  /// **'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.'**
+  /// **'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count, and a dip of at least a tenth of the peak just before the rise starts the hit there; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.'**
   String get brakingTechniqueNote;
 
   /// Why a braking figure is not known: the channel it would come from updates slower than about 10 Hz.
@@ -11590,6 +11590,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 corner measured another way (G channel or speed, or another unit) is left out.} other{{count} corners measured another way (G channel or speed, or another unit) are left out.}}'**
   String brakingTechniqueDayOtherSource(int count);
+
+  /// Braking technique: distances come from a speed that declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The speed has no unit recorded: distances read in {unit}.'**
+  String brakingTechniqueSpeedAssumed(String unit);
 
   /// Braking technique: a typical resting on a few of the braking laps, the others having braked again or coasted.
   ///

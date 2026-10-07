@@ -8040,7 +8040,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get brakingTechniqueNote =>
-      'Hamowanie zaczyna się i kończy tam, gdzie opóźnienie przekracza 0.15 g (wykrywane od 0.30 g). Narastanie to tempo wzrostu do 85 % szczytu od ostatniej chwili poniżej jednej czwartej szczytu (co najmniej 0.15 g), więc toczenie się lub lekkie odpuszczenie gazu przed hamowaniem się nie liczy; odpuszczanie to tempo spadku od 85 % z powrotem do tego poziomu. Oba wymagają szczytu co najmniej 0.40 g i nie są odczytywane z kanału wolniejszego niż około 10 Hz. Z prędkości narastanie szybsze, niż pokazuje wygładzanie w oknie 0.5 s, jest oznaczone jako „co najmniej”. Wartość typowa to mediana z co najmniej trzech okrążeń.';
+      'Hamowanie zaczyna się i kończy tam, gdzie opóźnienie przekracza 0.15 g (wykrywane od 0.30 g). Narastanie to tempo wzrostu do 85 % szczytu od ostatniej chwili poniżej jednej czwartej szczytu (co najmniej 0.15 g), więc toczenie się lub lekkie odpuszczenie gazu przed hamowaniem się nie liczy, a spadek o co najmniej jedną dziesiątą szczytu tuż przed wzrostem zaczyna narastanie właśnie tam; odpuszczanie to tempo spadku od 85 % z powrotem do tego poziomu. Oba wymagają szczytu co najmniej 0.40 g i nie są odczytywane z kanału wolniejszego niż około 10 Hz. Z prędkości narastanie szybsze, niż pokazuje wygładzanie w oknie 0.5 s, jest oznaczone jako „co najmniej”. Wartość typowa to mediana z co najmniej trzech okrążeń.';
 
   @override
   String brakingTechniqueReasonTooSlow(String rate) {
@@ -8215,6 +8215,11 @@ class AppLocalizationsPl extends AppLocalizations {
       one: 'Pominięto 1 zakręt zmierzony inaczej (z kanału G lub z prędkości albo w innej jednostce).',
     );
     return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueSpeedAssumed(String unit) {
+    return 'Prędkość nie ma zapisanej jednostki: odległości odczytane w $unit.';
   }
 
   @override
