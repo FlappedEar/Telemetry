@@ -245,15 +245,17 @@ final class ProjectionProbe {
       '(${(largestWindowShare * 100).toStringAsFixed(0)}% of the forward window)';
 }
 
-/// The rule of [projectSample] that refused a fix.
+/// The rule of [projectSample] or [projectLapTrace] that refused a fix.
 enum Refusal {
   coldStartProximity('beyond 20 m on a cold start'),
   coldStartAmbiguity('ambiguous on a cold start'),
+  coldStartOtherLeg('nearer the other leg on a cold start'),
   coldStartHeading('heading on a cold start'),
   lockedProximity('beyond 20 m while locked'),
   lockedAmbiguity('ambiguous while locked'),
   lockedHeading('heading while locked'),
-  backward('more than 3 m back');
+  backward('more than 3 m back'),
+  tooFarAhead('too far ahead after a gap');
 
   const Refusal(this.label);
 
@@ -286,10 +288,40 @@ bool _headingAgrees(ProgressAxis axis, int index, (double, double) movement) {
   return (mx * tx + my * ty) / (moved * tangent) >= 0.0;
 }
 
+/// The unit direction of axis segment [index], (0, 0) when degenerate.
+(double, double) _tangent(ProgressAxis axis, int index) {
+  final n = axis.points.length;
+  final a = axis.points[index], b = axis.points[(index + 1) % n];
+  final tx = b.eastMeters - a.eastMeters, ty = b.northMeters - a.northMeters;
+  final length = math.sqrt(tx * tx + ty * ty);
+  return length > 1e-6 ? (tx / length, ty / length) : (0.0, 0.0);
+}
+
+/// Distance from [point] to the nearest segment within the cold-start
+/// separation of [index] that runs the other way (a hairpin's other leg),
+/// leaving out legs the [movement] fits worse than the match (FET-256).
+double _otherLeg(ProgressAxis axis, MetricPoint point, int index, (double, double) movement) {
+  final n = axis.points.length;
+  final separation = math.max(4, (30.0 / axis.spacingMeters).round());
+  final (tx, ty) = _tangent(axis, index);
+  if (tx == 0 && ty == 0) return double.infinity;
+  final (mx, my) = movement;
+  final fit = mx * tx + my * ty;
+  var nearest = double.infinity;
+  for (var offset = 1 - separation; offset < separation; ++offset) {
+    final other = ((index + offset) % n + n) % n;
+    final (ox, oy) = _tangent(axis, other);
+    if (ox * tx + oy * ty >= 0.0 || mx * ox + my * oy < fit) continue;
+    nearest = math.min(nearest, _onSegment(axis, other, point).$2);
+  }
+  return nearest;
+}
+
 /// Counts, rule by rule, the fixes [projectLapTrace] refuses: it replays the
 /// lap fix by fix through the real [projectSample], as [projectLapTrace]
 /// does, and names the rule that refused each fix by applying the rules of
-/// [projectSample] in its order. [disagreements] counts fixes where that
+/// [projectSample] in its order, then the bound [projectLapTrace] puts on
+/// how far ahead a segment after a gap may start. [disagreements] counts fixes where that
 /// reading and [projectSample] differ; it should stay 0, so the breakdown
 /// cannot drift from the code silently.
 final class RefusalTally {
@@ -308,16 +340,20 @@ final class RefusalTally {
 
   /// Replays the fixes of [session] in [startTime]..[endTime] onto [axis].
   void replay(ProgressAxis axis, TelemetrySession session, double startTime, double endTime) {
+    final length = axis.lengthMeters;
+    double? lastProgress, lastProgressTime;
     for (final segment in session.sampledSegments('latitude', startTime, endTime, 4000)) {
       var context = ProjectionContext();
       MetricPoint? previous;
       double? previousTime;
+      var segmentEmpty = true;
       for (final sample in segment) {
         final longitude = session.valueAt('longitude', sample.time);
         final coordinate = GeoCoordinate(sample.value, longitude ?? double.nan);
         if (longitude == null || !isValidCoordinate(coordinate)) {
           context = ProjectionContext();
           previous = previousTime = null;
+          segmentEmpty = true;
           continue;
         }
         final local = projectCoordinate(coordinate, axis.origin);
@@ -332,13 +368,35 @@ final class RefusalTally {
               math.sqrt(movement.$1 * movement.$1 + movement.$2 * movement.$2) /
               (sample.time - previousTime);
         }
+        // A refused fix still keeps the direction of travel (FET-256).
         previous = local;
         previousTime = sample.time;
         final (refusal, progress) = _rule(axis, local, sample.time, speed, movement, context);
         final projected = projectSample(axis, local, sample.time, speed, movement, context);
         if (projected.valid != (refusal == null)) ++disagreements;
         if (projected.valid) {
+          // The unwrapping of projectLapTrace, and its bound on how far
+          // ahead a segment after a gap may start.
+          var unwrapped = projected.progressMeters;
+          final last = lastProgress;
+          if (last == null) {
+            if (unwrapped > length / 2 && sample.time - startTime <= 5.0) unwrapped -= length;
+          } else {
+            final backward = segmentEmpty ? math.min(30.0, length / 4) : 3.0;
+            unwrapped += ((last - backward - unwrapped) / length).ceilToDouble() * length;
+            if (segmentEmpty &&
+                unwrapped - last > (sample.time - lastProgressTime!) * 100.0 + 30.0) {
+              counts[Refusal.tooFarAhead] = counts[Refusal.tooFarAhead]! + 1;
+              context = ProjectionContext();
+              segmentEmpty = true;
+              continue;
+            }
+            if (!segmentEmpty) unwrapped = math.max(unwrapped, last);
+          }
           ++accepted;
+          segmentEmpty = false;
+          lastProgress = unwrapped;
+          lastProgressTime = sample.time;
           continue;
         }
         if (refusal != null) {
@@ -346,7 +404,7 @@ final class RefusalTally {
           if (refusal == Refusal.lockedAmbiguity) lockedAmbiguityProgress.add(progress);
         }
         context = ProjectionContext();
-        previous = previousTime = null;
+        segmentEmpty = true;
       }
     }
   }
@@ -374,6 +432,9 @@ final class RefusalTally {
       );
       if (second.$1 >= 0 && distance > second.$3 * 0.7) {
         return (Refusal.coldStartAmbiguity, progress);
+      }
+      if (distance > _otherLeg(axis, point, index, movement) * 0.7) {
+        return (Refusal.coldStartOtherLeg, progress);
       }
       if (!_headingAgrees(axis, index, movement)) return (Refusal.coldStartHeading, progress);
       return (null, progress);

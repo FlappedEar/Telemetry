@@ -123,6 +123,15 @@ const _maximumGapSeconds = 5.0;
 /// as one backward.
 const _segmentStartBackwardMeters = 30.0;
 
+/// Faster than any car on a track day (360 km/h). A segment that starts after
+/// a gap in a lap may lie at most this speed times the time since the lap's
+/// last projected fix, plus [_segmentStartBackwardMeters], ahead of that fix
+/// (FET-256): a cold start that matched another branch of the track (the
+/// other diagonal of a crossing, the other leg of a hairpin, a parallel
+/// straight) lands a long way off along the axis, and the lap could not have
+/// driven there in the time.
+const _maximumPlausibleSpeedMetersPerSecond = 100.0;
+
 double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
 
 /// Where a closed path (last point == first) crosses the gate segment
@@ -253,6 +262,39 @@ _Candidate _bestCandidateInRange(
     }
   }
   return best;
+}
+
+/// Distance from [point] to the nearest axis segment within [separation]
+/// points of [index] (either way) whose direction is more than 90° from the
+/// direction at [index]: the other leg of a tight hairpin (FET-256). When the
+/// car's [movementDirection] fits the direction at [index] better than a
+/// leg's, that leg is no alternative. Infinity when there is none.
+double _nearestOtherLeg(
+  ProgressAxis axis,
+  MetricPoint point,
+  int index,
+  int separation,
+  (double, double) movementDirection,
+) {
+  final n = axis.points.length;
+  final (tx, ty) = _axisTangent(axis, index);
+  var nearest = double.infinity;
+  if (tx == 0 && ty == 0) return nearest;
+  final (mx, my) = movementDirection;
+  final fit = mx * tx + my * ty; // 0 without a movement: every leg counts
+  for (var offset = -separation + 1; offset < separation; ++offset) {
+    final other = ((index + offset) % n + n) % n;
+    final (ox, oy) = _axisTangent(axis, other);
+    if (ox * tx + oy * ty >= 0.0) continue;
+    if (mx * ox + my * oy < fit) continue;
+    final (_, distance) = _projectOntoSegment(
+      point,
+      axis.points[other],
+      axis.points[(other + 1) % n],
+    );
+    nearest = math.min(nearest, distance);
+  }
+  return nearest;
 }
 
 /// The axis point nearest [progressMeters] along the axis (taken modulo its
@@ -517,6 +559,20 @@ ProjectedSample projectSample(
       minimumSeparation: minimumSeparation,
     );
     if (second.index >= 0 && best.distance > second.distance * ambiguityRatio) return invalid;
+    // The separation keeps the same branch out of the comparison, but in a
+    // hairpin tighter than about 10 m radius the other leg is nearer than
+    // that along the axis, so it was never compared and a fix midway between
+    // the legs locked on to either (FET-256). A part of the axis running the
+    // other way from the match is another branch, however near, unless the
+    // direction of travel rules it out.
+    final otherLeg = _nearestOtherLeg(
+      axis,
+      localPoint,
+      best.index,
+      minimumSeparation,
+      movementDirection,
+    );
+    if (best.distance > otherLeg * ambiguityRatio) return invalid;
     if (!_headingAgrees(axis, best.index, movementDirection, minimumHeadingCosine)) {
       return invalid;
     }
@@ -570,6 +626,10 @@ ProjectedSample projectSample(
 /// negative value, and fixes past the finish continue beyond the axis length.
 /// A fix projecting slightly behind the previous one in its segment is held at
 /// the previous progress, so progress never falls within a segment.
+///
+/// A segment after a gap must start no further ahead of the lap's last
+/// projected fix than the lap could have driven since (FET-256); a fix that
+/// does matched another branch of the track and is refused.
 List<ProgressSegment> projectLapTrace(
   ProgressAxis axis,
   TelemetrySession session,
@@ -586,14 +646,23 @@ List<ProgressSegment> projectLapTrace(
   MetricPoint? previousLocal;
   double? previousTime;
   double? lastProgress; // unwrapped; kept across segments of this lap
-  void flush() {
+  double? lastProgressTime; // when the fix at [lastProgress] was taken
+  // Ends the current segment; the next fix is a cold start. A fix the
+  // projection refused still keeps the direction of travel: the next fix's
+  // movement is measured from it, so the cold start has a heading to check
+  // (FET-256). Overlays forgets it, so a cold start right after a refusal
+  // could lock on to a hairpin's other leg or a parallel straight driven the
+  // other way. A raw GPS gap or a missing coordinate forgets it too.
+  void flush({bool keepMovement = false}) {
     if (current.samples.isNotEmpty) {
       result.add(current);
       current = ProgressSegment();
     }
     context = ProjectionContext();
-    previousLocal = null;
-    previousTime = null;
+    if (!keepMovement) {
+      previousLocal = null;
+      previousTime = null;
+    }
   }
 
   for (final segment in latitudeSegments) {
@@ -623,7 +692,7 @@ List<ProgressSegment> projectLapTrace(
 
       final projected = projectSample(axis, local, time, speed, movement, context);
       if (!projected.valid) {
-        flush();
+        flush(keepMovement: true);
         continue;
       }
 
@@ -648,6 +717,18 @@ List<ProgressSegment> projectLapTrace(
             : _backwardToleranceMeters;
         progress +=
             ((last - backward - progress) / axis.lengthMeters).ceilToDouble() * axis.lengthMeters;
+        // A segment's first fix is a cold start, found on the whole axis.
+        // When it lies further ahead than the lap could have driven since its
+        // last projected fix, it matched another branch of the track: refuse
+        // it, leaving a gap, rather than move it and every later fix of the
+        // lap on by up to whole laps (FET-256).
+        final sinceLast = time - (lastProgressTime ?? time);
+        if (current.samples.isEmpty &&
+            progress - last >
+                sinceLast * _maximumPlausibleSpeedMetersPerSecond + _segmentStartBackwardMeters) {
+          flush(keepMovement: true);
+          continue;
+        }
       }
       // A fix projecting up to the backward tolerance behind the last one in
       // this segment (GPS jitter, often while stopped) is held at the last
@@ -658,6 +739,7 @@ List<ProgressSegment> projectLapTrace(
         progress = math.max(progress, current.samples.last.progressMeters);
       }
       lastProgress = progress;
+      lastProgressTime = time;
       current.samples.add(
         ProjectedSample(projected.telemetryTime, progressMeters: progress, valid: true),
       );
