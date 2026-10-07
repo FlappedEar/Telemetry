@@ -18,6 +18,7 @@ import '../analysis/track_segment_review.dart';
 import '../intake/import_plan.dart';
 import '../laps/lap_session.dart';
 import '../operation.dart';
+import '../telemetry_session.dart';
 import 'day_analysis.dart';
 import 'day_corners.dart';
 import 'day_laps.dart';
@@ -305,22 +306,39 @@ Map<String, OutingRun> outingRuns(List<NamedRun> runs) => {
 Map<String, Object?>? _object(Object? value) => value is Map<String, Object?> ? value : null;
 
 /// The lap traces of [ranking]'s eligible laps other than [best], from
-/// [lapsByRun] (each run's laps): what the best lap's line is checked
-/// against before its segments are adopted (FET-214). Excluded laps and laps
-/// the ranking leaves out are not used.
+/// [runs] (each run's recording and laps): what the best lap's line is
+/// checked against before its segments are adopted (FET-214). Excluded laps
+/// and laps the ranking leaves out are not used. A run whose GPS longitude
+/// convention differs from the best lap's run (a west-positive VBO against
+/// an RCZ) has its traces mirrored east to west, so all are in the best
+/// lap's frame.
 List<LapTrace> otherEligibleLapTraces(
   DayRanking ranking,
   DayLapRow best,
-  Map<String, LapSession> lapsByRun,
+  Map<String, (TelemetrySession, LapSession)> runs,
 ) {
+  bool westPositive(String runId) =>
+      runs[runId]?.$1.metadata['gpsLongitudeConvention'] == 'west-positive';
+  final bestWestPositive = westPositive(best.runId);
   final traces = <LapTrace>[];
   for (final row in ranking.eligibleLaps) {
     if (row.runId == best.runId && row.lapNumber == best.lapNumber) continue;
-    for (final trace in lapsByRun[row.runId]?.lapTraces ?? const <LapTrace>[]) {
-      if (trace.lapNumber == row.lapNumber) {
-        traces.add(trace);
-        break;
-      }
+    for (final trace in runs[row.runId]?.$2.lapTraces ?? const <LapTrace>[]) {
+      if (trace.lapNumber != row.lapNumber) continue;
+      traces.add(
+        westPositive(row.runId) == bestWestPositive
+            ? trace
+            : LapTrace(
+                lapNumber: trace.lapNumber,
+                startTelemetryTime: trace.startTelemetryTime,
+                durationSeconds: trace.durationSeconds,
+                points: [
+                  for (final point in trace.points)
+                    LapTracePoint(point.telemetryTime, -point.eastMeters, point.northMeters),
+                ],
+              ),
+      );
+      break;
     }
   }
   return traces;
@@ -388,7 +406,7 @@ DayTheoreticalBest dayTheoreticalBest(
       lineDisagrees = lineConsensus(
         review.axis,
         otherEligibleLapTraces(ranking, best, {
-          for (final entry in runs.entries) entry.key: entry.value.laps,
+          for (final entry in runs.entries) entry.key: (entry.value.session, entry.value.laps),
         }),
         cancelled: cancelled,
       ).disagrees;

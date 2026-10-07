@@ -553,7 +553,7 @@ void _approveAutomaticSegments(
       startTime: best.start,
       endTime: best.end,
       otherLaps: otherEligibleLapTraces(analysis.ranking!, best, {
-        for (final other in runs) other.run.id: other.run.laps,
+        for (final other in runs) other.run.id: (other.run.telemetry, other.run.laps),
       }),
       random: random,
     );

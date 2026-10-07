@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
@@ -56,6 +57,38 @@ DayRunInput _input(TelemetrySession session) => DayRunInput(
 
 DayTheoreticalBest _best(DayAnalysis day, DayRunInput run) =>
     dayTheoreticalBest(day, {'run1': OutingRun(run.session, run.laps)}, random: Random(1));
+
+// [session] as RaceChrono writes a VBO: longitudes west-positive.
+TelemetrySession _westPositive(TelemetrySession session) {
+  GeoCoordinate flip(GeoCoordinate c) => GeoCoordinate(c.latitudeDegrees, -c.longitudeDegrees);
+  final longitude = session.channels['longitude']!;
+  return TelemetrySession(
+    duration: session.duration,
+    startTime: session.startTime,
+    metadata: {...session.metadata, 'gpsLongitudeConvention': 'west-positive'},
+    channels: {
+      ...session.channels,
+      'longitude': TelemetryChannel(
+        name: 'longitude',
+        timestamps: longitude.timestamps,
+        values: Float32List.fromList([for (final v in longitude.values) -v]),
+      ),
+    },
+    aliases: session.aliases,
+    warnings: session.warnings,
+    timingGates: [
+      for (final gate in session.timingGates)
+        TimingGate(
+          type: gate.type,
+          sourceName: gate.sourceName,
+          endpointA: flip(gate.endpointA),
+          endpointB: flip(gate.endpointB),
+          sourceDescription: gate.sourceDescription,
+        ),
+    ],
+    sampleCount: session.sampleCount,
+  );
+}
 
 void main() {
   test('a best lap off the others\' line disagrees', () {
@@ -120,7 +153,7 @@ void main() {
         otherLaps: otherEligibleLapTraces(
           day.chosenGroup!.ranking!,
           day.chosenGroup!.ranking!.bestOfDay!,
-          {'run1': run.laps},
+          {'run1': (run.session, run.laps)},
         ),
         random: Random(1),
       ),
@@ -172,6 +205,39 @@ void main() {
     final day = analyzeDay([run]);
     expect(day.chosenGroup!.ranking!.bestOfDay!.lapNumber, 4);
     final result = _best(day, run);
+    expect(result.state, DayTheoreticalBestState.ready);
+    expect(result.automaticSegments, isTrue);
+  });
+  test('compares a west-positive VBO with an east-positive recording in one frame', () {
+    DayRunInput input(String id, TelemetrySession session) => DayRunInput(
+      runId: id,
+      name: id,
+      contentSha256: id.substring(id.length - 1) * 64,
+      session: session,
+      laps: deriveSourceLapSession(session),
+    );
+    // The best lap is in the west-positive run; most other laps are not.
+    final vbo = input(
+      'run1',
+      _westPositive(
+        rectangleSession([
+          for (final s in [28.0, 40.0, 29.0]) _speed(s),
+        ]),
+      ),
+    );
+    final rcz = input(
+      'run2',
+      rectangleSession([
+        for (final s in [28.0, 30.0, 29.0]) _speed(s),
+      ]),
+    );
+    final day = analyzeDay([vbo, rcz]);
+    final ranking = day.chosenGroup!.ranking!;
+    expect(ranking.bestOfDay!.runId, 'run1');
+    expect(day.groups.where((group) => group.resolved), hasLength(1));
+    final result = dayTheoreticalBest(day, {
+      for (final run in [vbo, rcz]) run.runId: OutingRun(run.session, run.laps),
+    }, random: Random(1));
     expect(result.state, DayTheoreticalBestState.ready);
     expect(result.automaticSegments, isTrue);
   });
