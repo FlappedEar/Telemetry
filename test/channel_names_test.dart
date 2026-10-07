@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/channel_names.dart';
-import 'package:telemetry/day/channel_sources.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/lap_page.dart';
@@ -114,13 +114,16 @@ void main() {
       runs: outcome.runs,
       analysis: outcome.analysis!,
     );
-    expect(dayRecordedChannels, containsAll(['velocity', 'throttle', 'brake']));
     expect(
-      dayRecordedChannels,
-      orderedEquals([...dayRecordedChannels]..sort()),
+      openDayContext.recordedChannels,
+      containsAll(['velocity', 'throttle', 'brake']),
+    );
+    expect(
+      openDayContext.recordedChannels,
+      orderedEquals([...openDayContext.recordedChannels]..sort()),
     );
     controller.dispose();
-    expect(dayRecordedChannels, isEmpty);
+    expect(openDayContext.recordedChannels, isEmpty);
   });
 
   testWidgets('a chart shows its given name and swaps channel from its title', (
@@ -193,7 +196,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('openChannelNames')));
     await tester.pumpAndSettle();
-    for (final channel in dayRecordedChannels) {
+    for (final channel in openDayContext.recordedChannels) {
       expect(find.byKey(ValueKey('channelName $channel')), findsOneWidget);
     }
     expect(find.byKey(const ValueKey('channelNamesNoDay')), findsNothing);
@@ -260,7 +263,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final hidden = [
-      for (final channel in dayRecordedChannels)
+      for (final channel in openDayContext.recordedChannels)
         if (channel != 'brake' &&
             find.byKey(ValueKey('lapChart $channel')).evaluate().isEmpty &&
             channel != 'latitude' &&

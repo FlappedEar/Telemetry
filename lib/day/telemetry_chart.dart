@@ -8,7 +8,7 @@ import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
-import 'channel_sources.dart';
+import 'day_context.dart';
 import 'touch.dart';
 
 /// The colour of the Δ time line (one line, not an A/B pair): neutral, so it
@@ -135,7 +135,7 @@ class TelemetryChart extends StatelessWidget {
 
   /// The format of the other recording the channel came from ("RCZ"), said
   /// under the title; empty when it is the session's own. When null, the
-  /// open day says ([dayChannelSources]).
+  /// open day says ([DayContext.channelSources] of [openDayContext]).
   final String? source;
 
   /// The values are seconds of difference, shown with [displayDelta].
@@ -235,7 +235,7 @@ class TelemetryChart extends StatelessWidget {
               '${line.series.reason.isEmpty ? l10n.chartNoDataInRange : chartReasonText(l10n, line.series.reason)}',
     ];
     final braking = lines.any((line) => line.series.brakingUp);
-    final from = source ?? dayChannelSources[title] ?? '';
+    final from = source ?? openDayContext.channelSources[title] ?? '';
     final provenance = from.isEmpty ? '' : l10n.channelFromSource(from);
     final name = channelNameOf(context, title);
     final recordedAs = name == title ? '' : l10n.chartRecordedAs(title);
@@ -797,13 +797,13 @@ class ChartWindowControls extends StatelessWidget {
 
 /// [channel] as a chart menu lists it: its names ([channelLabelOf]) and,
 /// when it came from another recording, " · from RCZ" ([sources], or the
-/// open day's [dayChannelSources] when null).
+/// open day's [DayContext.channelSources] when null).
 String channelMenuLabel(
   BuildContext context,
   String channel, [
   Map<String, String>? sources,
 ]) {
-  final source = (sources ?? dayChannelSources)[channel] ?? '';
+  final source = (sources ?? openDayContext.channelSources)[channel] ?? '';
   final name = channelLabelOf(context, channel);
   return source.isEmpty
       ? name
@@ -830,7 +830,7 @@ class AddChannelButton extends StatelessWidget {
   final ValueChanged<String> onAdd;
 
   /// The channels that came from another recording, with its format
-  /// ("RCZ"); when null, the open day's ([dayChannelSources]).
+  /// ("RCZ"); when null, the open day's ([DayContext.channelSources]).
   final Map<String, String>? sources;
 
   /// The name listed for a channel; [channelMenuLabel] with [sources] when

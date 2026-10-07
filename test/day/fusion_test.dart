@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/document_pickers.dart';
@@ -179,6 +180,94 @@ void main() {
 
   DayImportOutcome importDay(List<String> paths) =>
       runDayImport((paths: paths, includeSubfolders: false));
+
+  // FET-209: what the open day tells the rest of the app is owned by that
+  // day; another day, or a fusion ending after the close, never changes it.
+  test(
+    'the open day\'s channel sources follow its fusion and only its own day',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final both = importDay([vbo, rcz]);
+      final runId = both.runs.single.run.id;
+      final held = _HeldFusions();
+      final fused = DayResultsController(
+        runs: both.runs,
+        analysis: both.analysis!,
+        alternatives: both.alternatives,
+        fusionRunner: held.call,
+      );
+      expect(openDayContext.channelSources, isEmpty);
+      expect(openDayContext.recordedChannels, isNot(contains('rpm-obd')));
+      await held.release(0);
+      await fused.fusionsSettled;
+      expect(fused.channelSource(runId, 'rpm-obd'), 'RCZ');
+      expect(openDayContext.channelSources, containsPair('rpm-obd', 'RCZ'));
+      expect(openDayContext.recordedChannels, contains('rpm-obd'));
+
+      // A second day opened takes over; the first changing or closing leaves
+      // the second's in place.
+      final alone = importDay([vbo]);
+      final other = DayResultsController(
+        runs: alone.runs,
+        analysis: alone.analysis!,
+      );
+      final second = openDayContext;
+      expect(second.channelSources, isEmpty);
+      final changing = fused.setFusionRule(runId, 'sats', FusionRule.fillGaps);
+      await held.release(1);
+      await changing;
+      expect(fused.fusion(runId)!.ruleOf('sats'), FusionRule.fillGaps);
+      expect(openDayContext, same(second));
+      fused.dispose();
+      expect(openDayContext, same(second));
+      other.dispose();
+      expect(openDayContext, same(DayContext.none));
+    },
+  );
+
+  test(
+    'a fusion ending after another day opened leaves that day\'s context',
+    () async {
+      final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+      final both = importDay([vbo, rcz]);
+      final runId = both.runs.single.run.id;
+      final held = _HeldFusions();
+      final fused = DayResultsController(
+        runs: both.runs,
+        analysis: both.analysis!,
+        alternatives: both.alternatives,
+        fusionRunner: held.call,
+      );
+      addTearDown(fused.dispose);
+      final alone = importDay([vbo]);
+      final other = DayResultsController(
+        runs: alone.runs,
+        analysis: alone.analysis!,
+      );
+      addTearDown(other.dispose);
+      final second = openDayContext;
+      await held.release(0);
+      await fused.fusionsSettled;
+      expect(fused.channelSource(runId, 'rpm-obd'), 'RCZ');
+      expect(openDayContext, same(second));
+    },
+  );
+
+  test('a day closed while its recordings are combined leaves no context', () {
+    final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
+    final both = importDay([vbo, rcz]);
+    final held = _HeldFusions();
+    final fused = DayResultsController(
+      runs: both.runs,
+      analysis: both.analysis!,
+      alternatives: both.alternatives,
+      fusionRunner: held.call,
+    );
+    expect(openDayContext, isNot(same(DayContext.none)));
+    fused.dispose();
+    expect(held.jobs.single.cancelled, isTrue);
+    expect(openDayContext, same(DayContext.none));
+  });
 
   test('the results show first, and the RCZ is combined after', () async {
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);

@@ -11,7 +11,7 @@ import '../diagnostics/app_errors.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
-import 'channel_sources.dart';
+import 'day_context.dart';
 import 'coach_job.dart';
 import 'day_weather.dart';
 import 'recovery_store.dart';
@@ -267,10 +267,8 @@ final class DayResultsController extends ChangeNotifier {
        _writer = writer ?? saveDayWithJournal,
        _setupsSaved = !recovered,
        _dirty = recovered || changed {
-    declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
-    _declaredSpeedUnits = declaredSpeedUnits;
     speedUnitSetting.addListener(_speedUnitAssumed);
-    _declareChannelSources();
+    _dayContext.open(_buildDayContext());
     // A restored day is what its snapshot holds: written again only when it
     // changes, so a day restored and not taken leaves the snapshot as it was.
     if (!recovered) _scheduleRecovery();
@@ -527,25 +525,17 @@ final class DayResultsController extends ChangeNotifier {
       channel: channelSource(runId, channel),
   };
 
-  // This day's [dayChannelSources] and [dayRecordedChannels], cleared when
-  // it closes unless another day has declared its own since.
-  Map<String, String> _declaredChannelSources = const {};
-  List<String> _declaredRecordedChannels = const [];
+  // This day's hold on [openDayContext]: what it tells the rest of the app
+  // about its recordings, cleared when it closes unless another day has
+  // opened since.
+  final _dayContext = DayContextOwner();
 
-  void _declareChannelSources() {
-    final sources = <String, String>{};
-    final recorded = <String>{};
-    for (final named in _runs) {
-      sources.addAll(channelSources(named.run.id));
-      recorded
-        ..addAll(named.run.telemetry.channelNames())
-        ..addAll(sources.keys);
-    }
-    dayChannelSources = _declaredChannelSources = Map.unmodifiable(sources);
-    dayRecordedChannels = _declaredRecordedChannels = List.unmodifiable(
-      recorded.toList()..sort(),
-    );
-  }
+  DayContext _buildDayContext() => DayContext.of(
+    [for (final named in _runs) named.run.telemetry],
+    channelSources: {
+      for (final named in _runs) ...channelSources(named.run.id),
+    },
+  );
 
   // [runs] with each fused session in place of its recording: what the
   // analysis that reads channels uses. Laps stay the primary's own.
@@ -1322,13 +1312,6 @@ final class DayResultsController extends ChangeNotifier {
       _groupId = _analysis.chosenGroupId;
     }
     _channelRuns = _recordingRuns = null;
-    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
-      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
-      _declaredSpeedUnits = declaredSpeedUnits;
-    }
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      _declareChannelSources();
-    }
     _explainedFor = null;
     _additionClock = null;
     _resetTheoreticalBest();
@@ -1341,9 +1324,7 @@ final class DayResultsController extends ChangeNotifier {
     _channelRuns = _recordingRuns = null;
     _comparisons.clear();
     _resetChannelSummaries();
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      _declareChannelSources();
-    }
+    _dayContext.update(_buildDayContext());
   }
 
   /// Where background calculation times go.
@@ -1411,10 +1392,6 @@ final class DayResultsController extends ChangeNotifier {
   bool _theoreticalBestLoading = false;
   int _theoreticalBestGeneration = 0;
   bool _disposed = false;
-
-  // This day's [declaredSpeedUnits], cleared when it closes unless another
-  // day has opened since.
-  late List<String> _declaredSpeedUnits;
 
   /// How long changes wait before the unsaved day is written for recovery.
   static const recoveryDelay = Duration(milliseconds: 500);
@@ -1981,13 +1958,7 @@ final class DayResultsController extends ChangeNotifier {
     // What reads channels includes the new sessions.
     _channelRuns = _recordingRuns = null;
     // The new session's speed unit counts as much as the others'.
-    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
-      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
-      _declaredSpeedUnits = declaredSpeedUnits;
-    }
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      _declareChannelSources();
-    }
+    _dayContext.update(_buildDayContext());
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
     _revision++;
@@ -3327,15 +3298,7 @@ final class DayResultsController extends ChangeNotifier {
     _fusionsSettled = null;
     settled?.complete();
     _alignmentEnded();
-    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
-      declareDaySpeedUnits(const []);
-    }
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      dayChannelSources = const {};
-    }
-    if (identical(dayRecordedChannels, _declaredRecordedChannels)) {
-      dayRecordedChannels = const [];
-    }
+    _dayContext.close();
     _appendJob?.cancel();
     _previewJob?.cancel();
     // Changes made just before leaving the day are still written; best

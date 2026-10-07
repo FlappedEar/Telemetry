@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart' show deltaTimeChannel;
 
-import 'day/channel_sources.dart';
+import 'day/day_context.dart';
 import 'l10n.dart';
 import 'ui/readable_list.dart';
 
@@ -192,7 +192,7 @@ class _ChannelNamesPageState extends State<ChannelNamesPage> {
         valueListenable: channelNamesSetting,
         builder: (context, names, _) {
           _listed.addAll([
-            ...dayRecordedChannels,
+            ...openDayContext.recordedChannels,
             ...names.keys,
             ...listedChannelsSetting.value,
           ]);
@@ -220,7 +220,7 @@ class _ChannelNamesPageState extends State<ChannelNamesPage> {
                         ),
                       ),
               ),
-              if (dayRecordedChannels.isEmpty) ...[
+              if (openDayContext.recordedChannels.isEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   l10n.channelNamesNoDay,

@@ -26,7 +26,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/app/app_navigation.dart';
 import 'package:telemetry/channel_names.dart';
-import 'package:telemetry/day/channel_sources.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/day_weather.dart';
@@ -697,7 +697,7 @@ void main() {
       ('brake_pos-obd', 'Brake'),
       ('rpm-obd', 'RPM'),
     ]) {
-      if (!dayRecordedChannels.contains(channel)) continue;
+      if (!openDayContext.recordedChannels.contains(channel)) continue;
       setChannelName(channel, name);
       setChannelListed(channel, true);
     }
