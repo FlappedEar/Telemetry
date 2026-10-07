@@ -16,6 +16,7 @@ import 'dart:math' as math;
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_source.dart';
+import 'pedal_scale.dart';
 import 'braking_onset.dart' show BrakingThreshold;
 
 const String drivingStatesAlgorithm = 'driving-states-v1';
@@ -90,9 +91,15 @@ final class DrivingStateTrack {
   final List<DrivingStateInterval> active = [];
   final List<DrivingStateInterval> known = [];
 
-  /// Why the state is unknown throughout.
+  /// Why the state is unknown throughout: `unitMismatch`, `scaleUnknown`
+  /// (a pedal with no unit within 0..1 whose scale nothing shows, FET-205)
+  /// and others.
   String unresolvedReason = '';
   int rejectedSpikes = 0;
+
+  /// How a measured pedal's values were read: a pedal with no unit read as
+  /// a 0..1 fraction ([PedalScale.fraction]) has [threshold] divided by 100.
+  PedalScale scale = PedalScale.percent;
 
   bool get isKnown => provenance != drivingStateUnknown;
 }
@@ -269,6 +276,19 @@ void _pedalState(
     if (!_unitMatches(pedal.unit, [measured.unit])) {
       track.unresolvedReason = 'unitMismatch';
       return;
+    }
+    track.scale = pedalAlias == 'brake'
+        ? brakingSourceQuality(session).brakeScale
+        : pedalAlias == 'throttle'
+        ? throttleScale(session)
+        : PedalScale.percent;
+    if (track.scale == PedalScale.unknown) {
+      track.unresolvedReason = 'scaleUnknown';
+      return;
+    }
+    if (track.scale == PedalScale.fraction) {
+      measured = BrakingThreshold(measured.on / 100.0, measured.off / 100.0, '');
+      track.threshold = measured;
     }
     track.provenance = drivingStateMeasured;
     _classify(pedal, (value) => value, measured, options.minimumDurationSeconds, start, end, track);

@@ -34,6 +34,7 @@ import '../analysis/braking_onset.dart'
         brakingInterruptedByGap,
         brakingTruncatedAtWindowEnd;
 import '../analysis/braking_source.dart' show brakingSourceQuality;
+import '../analysis/pedal_scale.dart' show PedalScale, throttleScale;
 import '../analysis/coasting_analysis.dart';
 import '../analysis/gg_pairs.dart' show buildGgPairs, ggMagnitude;
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
@@ -645,15 +646,16 @@ double _median(Iterable<double> values) {
   return sorted.length.isOdd ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-/// [channel]'s full travel: its values are a fraction (0..1) or a
-/// percentage.
-double _throttleScale(TelemetryChannel channel) {
-  var peak = 0.0;
-  for (final value in channel.values) {
-    if (value.isFinite && value > peak) peak = value;
-  }
-  return channel.unit.trim() == '%' || peak > 1.5 ? 100.0 : 1.0;
-}
+/// The full travel of [session]'s [alias] pedal (`throttle` or `brake`):
+/// 1 for a 0..1 fraction, 100 for a percentage; null when its scale is
+/// unknown (no unit, within 0..1, and the G does not show which, FET-205):
+/// such a pedal tells nothing.
+double? _pedalTravel(TelemetrySession session, String alias) =>
+    switch (alias == 'brake' ? brakingSourceQuality(session).brakeScale : throttleScale(session)) {
+      PedalScale.percent => 100.0,
+      PedalScale.fraction => 1.0,
+      PedalScale.unknown => null,
+    };
 
 /// Whether the car coasts from [fromTime] to [toTime]: the throttle
 /// released (8 % or less, as [_liftProgress] reads a release) and the
@@ -663,8 +665,9 @@ double _throttleScale(TelemetryChannel channel) {
 bool _coastingThroughout(TelemetrySession session, double fromTime, double toTime) {
   bool below(String alias, double fraction) {
     final channel = session.channels[session.aliases[alias] ?? ''];
-    if (channel == null || channel.sampleCount < 2) return false;
-    final limit = fraction * _throttleScale(channel);
+    final travel = _pedalTravel(session, alias);
+    if (channel == null || channel.sampleCount < 2 || travel == null) return false;
+    final limit = fraction * travel;
     final times = channel.timestamps, values = channel.values;
     var previous = fromTime;
     var count = 0;
@@ -681,8 +684,9 @@ bool _coastingThroughout(TelemetrySession session, double fromTime, double toTim
 
   // A throttle never pressed (unplugged, logging zeros) shows no lift.
   final throttle = session.channels[session.aliases['throttle'] ?? ''];
-  if (throttle == null) return false;
-  final pressed = 0.20 * _throttleScale(throttle);
+  final travel = _pedalTravel(session, 'throttle');
+  if (throttle == null || travel == null) return false;
+  final pressed = 0.20 * travel;
   if (!throttle.values.any((v) => v.isFinite && v >= pressed)) return false;
   return below('throttle', 0.08) && below('brake', 0.10);
 }
@@ -698,9 +702,10 @@ bool _coastingThroughout(TelemetrySession session, double fromTime, double toTim
   double to,
 ) {
   final channel = session.channels[session.aliases['throttle'] ?? ''];
-  if (channel == null || channel.sampleCount < 2) return null;
+  final travel = _pedalTravel(session, 'throttle');
+  if (channel == null || channel.sampleCount < 2 || travel == null) return null;
   final times = channel.timestamps, values = channel.values;
-  final off = coachThrottleOff * _throttleScale(channel);
+  final off = coachThrottleOff * travel;
   var best = (seconds: 0.0, meters: 0.0);
   double? since;
   void close(double end) {
@@ -738,9 +743,9 @@ double? _liftProgress(
   double toTime,
 ) {
   final channel = session.channels[session.aliases['throttle'] ?? ''];
-  if (channel == null || channel.sampleCount < 2) return null;
+  final scale = _pedalTravel(session, 'throttle');
+  if (channel == null || channel.sampleCount < 2 || scale == null) return null;
   final times = channel.timestamps, values = channel.values;
-  final scale = _throttleScale(channel);
   final high = 0.20 * scale, low = 0.08 * scale;
   double? result;
   var established = false;
@@ -796,15 +801,19 @@ double? _liftProgress(
 ) {
   final channel = session.channels[session.aliases['throttle'] ?? ''];
   final brake = session.channels[session.aliases['brake'] ?? ''];
-  if (channel == null || channel.sampleCount < 2 || brake == null || brake.sampleCount < 2) {
+  final scale = _pedalTravel(session, 'throttle');
+  final brakeTravel = _pedalTravel(session, 'brake');
+  if (channel == null ||
+      channel.sampleCount < 2 ||
+      brake == null ||
+      brake.sampleCount < 2 ||
+      scale == null ||
+      brakeTravel == null) {
     return null;
   }
   final times = channel.timestamps, values = channel.values;
-  final scale = _throttleScale(channel);
   final high = 0.20 * scale, low = 0.08 * scale;
-  // The throttle's scale heuristic suits the brake: a measured braking
-  // (needed for the window) has the brake in % (see brakingUnitMismatch).
-  final braking = 0.10 * _throttleScale(brake);
+  final braking = 0.10 * brakeTravel;
   // The slowest the car has been since [fromTime] or the last reset.
   var slowest = double.infinity;
   double? rising, pickedUp, releasedAt;
@@ -1177,11 +1186,14 @@ DayCoach _dayCoach(
               !rise.limitations.contains(exitFollowsGap)
           ? rise.progressMeters
           : null;
-      // A brake that does not show the braking is no pedal (FET-204).
+      // A brake that does not show the braking (FET-204), or a pedal whose
+      // scale is unknown (FET-205), is no pedal.
       if (lap.runId == coached &&
-          (session.channels.containsKey(session.aliases['throttle'] ?? '') ||
+          ((session.channels.containsKey(session.aliases['throttle'] ?? '') &&
+                  throttleScale(session) != PedalScale.unknown) ||
               (session.channels.containsKey(session.aliases['brake'] ?? '') &&
-                  !brakingSourceQuality(session).brakeRejected))) {
+                  !brakingSourceQuality(session).brakeRejected &&
+                  brakingSourceQuality(session).brakeScale != PedalScale.unknown))) {
         pedals = true;
       }
       double? lift, liftSeconds;

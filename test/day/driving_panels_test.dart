@@ -9,6 +9,7 @@ import 'package:telemetry/day/driving_panels.dart';
 import 'package:telemetry/day/lap_coasting_panel.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/import/import_runner.dart';
+import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -345,6 +346,23 @@ void main() {
     expect(find.text('Według odcinków'), findsOneWidget);
     expect(find.textContaining('Zakręt'), findsWidgets);
     expect(find.textContaining('Corner'), findsNothing);
+  });
+
+  test('a pedal whose scale is not known says so in both languages', () {
+    // FET-205: a pedal with no unit within 0..1 that nothing shows the
+    // scale of.
+    final states = DrivingStateClassification();
+    states.braking
+      ..channel = 'brake'
+      ..unresolvedReason = 'scaleUnknown';
+    for (final (locale, label, sentence) in [
+      ('en', 'pedal scale unknown', 'is not known'),
+      ('pl', 'nieznana skala pedału', 'skali (0–1 czy %)'),
+    ]) {
+      final l10n = lookupAppLocalizations(Locale(locale));
+      expect(provenanceLabel(l10n, states.braking), label);
+      expect(pedalSourceText(l10n, states), contains(sentence));
+    }
   });
 
   test('the G-G scale grows past 1\u00a0g in half steps', () {

@@ -91,8 +91,10 @@ final class _PassageCluster {
 /// line or the other side, and reaches the line within the gate's span
 /// (widened by the inner corridor at each end). Coming close and leaving on
 /// the same side is not a pass (FET-198; Overlays accepts it).
-/// The first accepted crossing direction locks; later passes the other way are
-/// rejected. A GPS gap or invalid fix breaks continuity.
+/// All passes take one crossing direction: the one that accepts the most
+/// passes, the faster ones on a tie (FET-206). Overlays locks the first accepted direction, so one
+/// early pass the wrong way rejects every real lap (departure: KAN-229).
+/// Passes the other way are rejected. A GPS gap or invalid fix breaks continuity.
 LapSession detectLaps(
   TelemetrySession session,
   TimingGate startGate, {
@@ -101,7 +103,7 @@ LapSession detectLaps(
 }) {
   options.validate();
   throwIfCancelled(cancelled);
-  final diagnostics = LapDetectionDiagnostics();
+  var diagnostics = LapDetectionDiagnostics();
   LapSession result(
     LapSessionStatus status, [
     List<GatePass> passes = const [],
@@ -174,128 +176,160 @@ LapSession detectLaps(
   final longitudeGap = telemetryGapThreshold(longitude);
   final gapThreshold = latitudeGap > longitudeGap ? latitudeGap : longitudeGap;
 
-  final passes = <GatePass>[];
-  _GpsSample? previous;
-  var cluster = _PassageCluster();
-  var armed = false;
-  var acceptedDirection = 0;
-  double? lastAcceptedTime;
+  // One scan of the GPS for passes, with the crossing direction locked to
+  // [lock] (+1 or −1), or to the first accepted pass's when 0. Each scan
+  // counts into its own diagnostics.
+  List<GatePass> scan(int lock, LapDetectionDiagnostics diagnostics) {
+    final passes = <GatePass>[];
+    _GpsSample? previous;
+    var cluster = _PassageCluster();
+    var armed = false;
+    var acceptedDirection = lock;
+    double? lastAcceptedTime;
 
-  void discardContinuity() {
-    if (cluster.active) ++diagnostics.discardedGapClusters;
-    cluster = _PassageCluster();
-    previous = null;
-    armed = false;
-  }
+    void discardContinuity() {
+      if (cluster.active) ++diagnostics.discardedGapClusters;
+      cluster = _PassageCluster();
+      previous = null;
+      armed = false;
+    }
 
-  void finalizeCluster() {
-    if (!cluster.active) return;
-    ++diagnostics.candidateClusters;
-    final duration = cluster.lastTime - cluster.firstTime;
-    final displacement = cluster.lastPoint - cluster.firstPoint;
-    final groundSpeed = duration > 0.0 ? displacement.length / duration : 0.0;
-    final normalSpeed = duration > 0.0 ? displacement.dot(gateNormal) / duration : 0.0;
-    final normalRatio = groundSpeed > 0.0 ? normalSpeed.abs() / groundSpeed : 0.0;
-    if (!duration.isFinite || duration <= 0.0 || duration > options.maximumClusterSeconds) {
-      ++diagnostics.rejectedLongClusters;
-    } else if (cluster.firstSide == 0 ||
-        cluster.lastSide == cluster.firstSide ||
-        !cluster.reachedLineInSpan) {
-      ++diagnostics.rejectedNotCrossingClusters;
-    } else if (!groundSpeed.isFinite || groundSpeed < options.minimumGroundSpeedMetersPerSecond) {
-      ++diagnostics.rejectedSlowClusters;
-    } else if (!normalSpeed.isFinite ||
-        normalSpeed.abs() < options.minimumNormalSpeedMetersPerSecond ||
-        !normalRatio.isFinite ||
-        normalRatio < options.minimumNormalMotionRatio) {
-      ++diagnostics.rejectedParallelClusters;
-    } else {
-      final direction = normalSpeed > 0.0 ? 1 : -1;
-      if (acceptedDirection != 0 && direction != acceptedDirection) {
-        ++diagnostics.rejectedOppositeDirectionClusters;
+    void finalizeCluster() {
+      if (!cluster.active) return;
+      ++diagnostics.candidateClusters;
+      final duration = cluster.lastTime - cluster.firstTime;
+      final displacement = cluster.lastPoint - cluster.firstPoint;
+      final groundSpeed = duration > 0.0 ? displacement.length / duration : 0.0;
+      final normalSpeed = duration > 0.0 ? displacement.dot(gateNormal) / duration : 0.0;
+      final normalRatio = groundSpeed > 0.0 ? normalSpeed.abs() / groundSpeed : 0.0;
+      if (!duration.isFinite || duration <= 0.0 || duration > options.maximumClusterSeconds) {
+        ++diagnostics.rejectedLongClusters;
+      } else if (cluster.firstSide == 0 ||
+          cluster.lastSide == cluster.firstSide ||
+          !cluster.reachedLineInSpan) {
+        ++diagnostics.rejectedNotCrossingClusters;
+      } else if (!groundSpeed.isFinite || groundSpeed < options.minimumGroundSpeedMetersPerSecond) {
+        ++diagnostics.rejectedSlowClusters;
+      } else if (!normalSpeed.isFinite ||
+          normalSpeed.abs() < options.minimumNormalSpeedMetersPerSecond ||
+          !normalRatio.isFinite ||
+          normalRatio < options.minimumNormalMotionRatio) {
+        ++diagnostics.rejectedParallelClusters;
       } else {
-        if (acceptedDirection == 0) acceptedDirection = direction;
-        if (passes.length >= options.maximumAcceptedPasses) {
-          throw const ResourceLimitError('Lap detector produced too many accepted passes.');
+        final direction = normalSpeed > 0.0 ? 1 : -1;
+        if (acceptedDirection != 0 && direction != acceptedDirection) {
+          ++diagnostics.rejectedOppositeDirectionClusters;
+        } else {
+          if (acceptedDirection == 0) acceptedDirection = direction;
+          if (passes.length >= options.maximumAcceptedPasses) {
+            throw const ResourceLimitError('Lap detector produced too many accepted passes.');
+          }
+          passes.add(
+            GatePass(
+              telemetryTime: cluster.candidateTime,
+              closestDistanceMeters: cluster.candidateDistance,
+              direction: direction,
+              gateFraction: cluster.candidateGateFraction,
+              groundSpeedMetersPerSecond: groundSpeed,
+              normalSpeedMetersPerSecond: normalSpeed,
+            ),
+          );
+          lastAcceptedTime = cluster.candidateTime;
         }
-        passes.add(
-          GatePass(
-            telemetryTime: cluster.candidateTime,
-            closestDistanceMeters: cluster.candidateDistance,
-            direction: direction,
-            gateFraction: cluster.candidateGateFraction,
-            groundSpeedMetersPerSecond: groundSpeed,
-            normalSpeedMetersPerSecond: normalSpeed,
-          ),
-        );
-        lastAcceptedTime = cluster.candidateTime;
       }
+      cluster = _PassageCluster();
+      armed = false;
     }
-    cluster = _PassageCluster();
-    armed = false;
-  }
 
-  for (var index = 0; index < sampleCount; ++index) {
-    if ((index & 0xff) == 0) throwIfCancelled(cancelled);
-    final current = _gpsSampleAt(latitude, longitude, index, origin);
-    if (current == null) {
-      discardContinuity();
-      continue;
-    }
-    final before = previous;
-    if (before == null) {
-      previous = current;
-      continue;
-    }
-    final interval = current.time - before.time;
-    if (!interval.isFinite || interval <= 0.0 || gapThreshold <= 0.0 || interval > gapThreshold) {
-      discardContinuity();
-      previous = current;
-      continue;
-    }
-    ++diagnostics.usableGpsSegments;
-    final closest = closestSegments(before.point, current.point, gateA, gateB);
-    if (!closest.distanceMeters.isFinite) {
-      discardContinuity();
-      previous = current;
-      continue;
-    }
-    final outsideOuter = closest.distanceMeters > options.outerCorridorMeters;
-    if (cluster.active && outsideOuter) finalizeCluster();
-    if (!cluster.active && outsideOuter) {
-      final last = lastAcceptedTime;
-      if (last == null || current.time - last >= options.refractorySeconds) armed = true;
-    }
-    if (armed && !cluster.active && closest.distanceMeters <= options.innerCorridorMeters) {
-      cluster
-        ..active = true
-        ..firstTime = before.time
-        ..lastTime = current.time
-        ..firstPoint = before.point
-        ..lastPoint = current.point
-        ..candidateTime = before.time + closest.vehicleFraction * interval
-        ..candidateDistance = closest.distanceMeters
-        ..candidateGateFraction = closest.gateFraction
-        ..firstSide = sideOf(before.point)
-        ..lastSide = sideOf(current.point)
-        ..reachedLineInSpan = reachesLineInSpan(before.point, current.point);
-    } else if (cluster.active && !outsideOuter) {
-      cluster
-        ..lastTime = current.time
-        ..lastPoint = current.point
-        ..lastSide = sideOf(current.point);
-      if (reachesLineInSpan(before.point, current.point)) cluster.reachedLineInSpan = true;
-      if (closest.distanceMeters < cluster.candidateDistance) {
+    for (var index = 0; index < sampleCount; ++index) {
+      if ((index & 0xff) == 0) throwIfCancelled(cancelled);
+      final current = _gpsSampleAt(latitude, longitude, index, origin);
+      if (current == null) {
+        discardContinuity();
+        continue;
+      }
+      final before = previous;
+      if (before == null) {
+        previous = current;
+        continue;
+      }
+      final interval = current.time - before.time;
+      if (!interval.isFinite || interval <= 0.0 || gapThreshold <= 0.0 || interval > gapThreshold) {
+        discardContinuity();
+        previous = current;
+        continue;
+      }
+      ++diagnostics.usableGpsSegments;
+      final closest = closestSegments(before.point, current.point, gateA, gateB);
+      if (!closest.distanceMeters.isFinite) {
+        discardContinuity();
+        previous = current;
+        continue;
+      }
+      final outsideOuter = closest.distanceMeters > options.outerCorridorMeters;
+      if (cluster.active && outsideOuter) finalizeCluster();
+      if (!cluster.active && outsideOuter) {
+        final last = lastAcceptedTime;
+        if (last == null || current.time - last >= options.refractorySeconds) armed = true;
+      }
+      if (armed && !cluster.active && closest.distanceMeters <= options.innerCorridorMeters) {
         cluster
+          ..active = true
+          ..firstTime = before.time
+          ..lastTime = current.time
+          ..firstPoint = before.point
+          ..lastPoint = current.point
           ..candidateTime = before.time + closest.vehicleFraction * interval
           ..candidateDistance = closest.distanceMeters
-          ..candidateGateFraction = closest.gateFraction;
+          ..candidateGateFraction = closest.gateFraction
+          ..firstSide = sideOf(before.point)
+          ..lastSide = sideOf(current.point)
+          ..reachedLineInSpan = reachesLineInSpan(before.point, current.point);
+      } else if (cluster.active && !outsideOuter) {
+        cluster
+          ..lastTime = current.time
+          ..lastPoint = current.point
+          ..lastSide = sideOf(current.point);
+        if (reachesLineInSpan(before.point, current.point)) cluster.reachedLineInSpan = true;
+        if (closest.distanceMeters < cluster.candidateDistance) {
+          cluster
+            ..candidateTime = before.time + closest.vehicleFraction * interval
+            ..candidateDistance = closest.distanceMeters
+            ..candidateGateFraction = closest.gateFraction;
+        }
       }
+      previous = current;
     }
-    previous = current;
+    finalizeCluster();
+    throwIfCancelled(cancelled);
+    return passes;
   }
-  finalizeCluster();
-  throwIfCancelled(cancelled);
+
+  // The direction is the one most passes take (FET-206): a single early
+  // artefact, pit movement or reverse manoeuvre the other way must not lock
+  // out every real lap. Each direction is counted by a scan locked to it
+  // (an accepted pass starts the refractory time, so the scans can group
+  // crossings differently). On a tie the faster passes win, summing the
+  // speed across the line: a pit or reverse manoeuvre is slow. Otherwise the
+  // first pass's direction stays.
+  double across(List<GatePass> passes) {
+    var sum = 0.0;
+    for (final pass in passes) {
+      sum += pass.normalSpeedMetersPerSecond.abs();
+    }
+    return sum;
+  }
+
+  var passes = scan(0, diagnostics);
+  if (diagnostics.rejectedOppositeDirectionClusters > 0 && passes.isNotEmpty) {
+    final other = LapDetectionDiagnostics();
+    final reversed = scan(-passes.first.direction, other);
+    if (reversed.length > passes.length ||
+        (reversed.length == passes.length && across(reversed) > across(passes))) {
+      passes = reversed;
+      diagnostics = other;
+    }
+  }
   if (diagnostics.usableGpsSegments == 0) return result(LapSessionStatus.noUsableGps);
 
   final measured = <TimedLap>[];

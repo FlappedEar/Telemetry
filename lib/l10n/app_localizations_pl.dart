@@ -3030,6 +3030,14 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get drivingScaleUnknown => 'nieznana skala pedału';
+
+  @override
+  String drivingScaleUnknownChannel(String channel) {
+    return 'nie wiadomo, w jakiej skali (0–1 czy %) jest $channel';
+  }
+
+  @override
   String get drivingNoBrakeChannel => 'brak kanału hamulca';
 
   @override
@@ -3286,6 +3294,13 @@ class AppLocalizationsPl extends AppLocalizations {
       'jednostka kanału nie jest zapisana';
 
   @override
+  String get cornerDetailsReasonScaleUnknown =>
+      'nieznana skala pedału (0–1 czy %)';
+
+  @override
+  String get cornerDetailsReasonScaleInferred => 'pedał odczytany w skali 0–1';
+
+  @override
   String get cornerDetailsReasonNoSpeedChannel => 'brak kanału prędkości';
 
   @override
@@ -3358,6 +3373,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get cornerDetailsFromDecelerationBrakeUnused =>
       'Wyznaczone pośrednio z przeciążenia przy hamowaniu: kanał hamulca nie pokazuje hamowania';
+
+  @override
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown =>
+      'Wyznaczone pośrednio z przeciążenia przy hamowaniu: nie wiadomo, w jakiej skali (0–1 czy %) jest kanał hamulca';
 
   @override
   String get cornerDetailsReasonBrakeChannelNotUsed =>
@@ -6483,4 +6502,34 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get changesTitleNone => 'Zmiany na odcinkach';
+
+  @override
+  String get cornerPhasesTitle => 'Skąd wziął się czas';
+
+  @override
+  String get cornerPhaseEntry => 'Wejście';
+
+  @override
+  String get cornerPhaseMiddle => 'Środek';
+
+  @override
+  String get cornerPhaseExit => 'Wyjście';
+
+  @override
+  String get cornerPhasesNote =>
+      'Wejście trwa do miejsca, w którym zakręt jest najciaśniejszy, środek obejmuje tę część, a wyjście sięga do końca zakrętu. Podział wynika z kształtu toru, więc oba okrążenia są mierzone na tych samych metrach, a trzy czasy sumują się do czasu zakrętu.';
+
+  @override
+  String cornerPhasesUnavailable(String reason) {
+    return 'Nie podzielono: $reason';
+  }
+
+  @override
+  String get cornerPhasesMoreThanOneTightPart =>
+      'więcej niż jedna najciaśniejsza część';
+
+  @override
+  String cornerPhasesBestNotTimed(String reason) {
+    return 'Najlepsze okrążenie nie zostało zmierzone w częściach: $reason';
+  }
 }

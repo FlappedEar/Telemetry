@@ -4409,6 +4409,19 @@
       }
     }
   },
+  "drivingScaleUnknown": "pedal scale unknown",
+  "@drivingScaleUnknown": {
+    "description": "Why a pedal state is unknown: the pedal channel has no unit, stays within 0..1, and nothing shows whether it is a 0..1 fraction or a few percent."
+  },
+  "drivingScaleUnknownChannel": "the scale of {channel} (0–1 or %) is not known",
+  "@drivingScaleUnknownChannel": {
+    "description": "A pedal channel with no unit whose values stay within 0..1, and nothing shows whether that is a fraction or a few percent.",
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
   "drivingNoBrakeChannel": "no brake channel",
   "@drivingNoBrakeChannel": {
     "description": "A lap without a brake pedal channel."
@@ -4743,6 +4756,14 @@
   "@cornerDetailsReasonUnitNotRecorded": {
     "description": "Why a corner figure is missing, lower case: channel unit not recorded."
   },
+  "cornerDetailsReasonScaleUnknown": "pedal scale (0–1 or %) not known",
+  "@cornerDetailsReasonScaleUnknown": {
+    "description": "Why a corner figure is missing, lower case: the pedal channel has no unit, stays within 0..1, and nothing shows its scale."
+  },
+  "cornerDetailsReasonScaleInferred": "pedal read as 0–1",
+  "@cornerDetailsReasonScaleInferred": {
+    "description": "A note on a corner figure, lower case: the pedal channel has no unit and was read as a 0..1 fraction, as the longitudinal G shows."
+  },
   "cornerDetailsReasonNoSpeedChannel": "no speed channel",
   "@cornerDetailsReasonNoSpeedChannel": {
     "description": "Why a corner figure is missing, lower case: no speed channel."
@@ -4826,6 +4847,10 @@
   "cornerDetailsFromDecelerationBrakeUnused": "Inferred from deceleration: the brake channel does not show the braking",
   "@cornerDetailsFromDecelerationBrakeUnused": {
     "description": "How a lap's braking point was found: from the deceleration, because the session's brake channel has no data or is not pressed in most hard brakings."
+  },
+  "cornerDetailsFromDecelerationBrakeScaleUnknown": "Inferred from deceleration: the brake channel's scale (0–1 or %) is not known",
+  "@cornerDetailsFromDecelerationBrakeScaleUnknown": {
+    "description": "How a lap's braking point was found: from the deceleration, because the brake channel has no unit, stays within 0..1, and nothing shows its scale."
   },
   "cornerDetailsReasonBrakeChannelNotUsed": "the brake channel does not show the braking",
   "@cornerDetailsReasonBrakeChannelNotUsed": {
@@ -8393,5 +8418,21 @@
   "changesSpread": "Spread {now} s ({session}: {before} s)",
   "@changesSpread": {"description": "A segment's interquartile range now and in the session before.", "placeholders": {"now": {"type": "String"}, "session": {"type": "String"}, "before": {"type": "String"}}},
   "changesTitleNone": "Segment changes",
-  "@changesTitleNone": {"description": "Title of the page of segment changes when there is no session before to compare with."}
+  "@changesTitleNone": {"description": "Title of the page of segment changes when there is no session before to compare with."},
+  "cornerPhasesTitle": "Where the time came from",
+  "@cornerPhasesTitle": {"description": "Corner details: heading over the corner split into entry, middle and exit (FET-221)."},
+  "cornerPhaseEntry": "Entry",
+  "@cornerPhaseEntry": {"description": "Corner details: from the corner's start to where it is tightest."},
+  "cornerPhaseMiddle": "Middle",
+  "@cornerPhaseMiddle": {"description": "Corner details: through the corner's tightest part."},
+  "cornerPhaseExit": "Exit",
+  "@cornerPhaseExit": {"description": "Corner details: from the end of the tightest part to the corner's end."},
+  "cornerPhasesNote": "Entry runs to where the corner is tightest, the middle through that part, and the exit to the corner's end. The split comes from the track's shape, so both laps are timed over the same metres, and the three add up to the corner's time.",
+  "@cornerPhasesNote": {"description": "Corner details: how the corner is split."},
+  "cornerPhasesUnavailable": "Not split: {reason}",
+  "@cornerPhasesUnavailable": {"description": "Corner details: the corner could not be split into entry, middle and exit.", "placeholders": {"reason": {"type": "String"}}},
+  "cornerPhasesMoreThanOneTightPart": "more than one tight part",
+  "@cornerPhasesMoreThanOneTightPart": {"description": "Corner details: why a corner (a double apex or a complex) is not split into entry, middle and exit."},
+  "cornerPhasesBestNotTimed": "Best lap not timed through the parts: {reason}",
+  "@cornerPhasesBestNotTimed": {"description": "Corner details: the best lap could not be timed through the corner's parts.", "placeholders": {"reason": {"type": "String"}}}
 }

@@ -312,7 +312,106 @@ void main() {
         rowText('cornerBest Latest braking point'),
         contains(best.displayName),
       );
+      // The rectangle's corner turns in steps: it is not split, and says
+      // why.
+      expect(
+        rowText('cornerPhasesReason'),
+        'Not split: more than one tight part',
+      );
       expect(tester.takeException(), isNull);
+
+      // A corner that is split: each part against the best lap. (Not
+      // TelemetryApp: its navigator would keep the sheet open.)
+      await tester.pumpWidget(
+        MaterialApp(
+          key: UniqueKey(),
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ListView(
+              children: [
+                CornerDetails(
+                  corner: corner,
+                  comparison: DayCornerComparison(
+                    lap: comparison.lap,
+                    metrics: comparison.metrics,
+                    bestLap: comparison.bestLap,
+                    bestLapMetrics: comparison.bestLapMetrics,
+                    phases: const CornerPhaseTimes.timed(
+                      entry: 1.25,
+                      mid: 0.9,
+                      exit: 1.5,
+                    ),
+                    bestLapPhases: const CornerPhaseTimes.timed(
+                      entry: 1.1,
+                      mid: 0.95,
+                      exit: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        rowText('cornerPhaseEntry'),
+        'Entry | 1.25\u00a0s | 1.10\u00a0s | +0.15\u00a0s',
+      );
+      expect(
+        rowText('cornerPhaseMiddle'),
+        'Middle | 0.90\u00a0s | 0.95\u00a0s | −0.05\u00a0s',
+      );
+      expect(
+        rowText('cornerPhaseExit'),
+        'Exit | 1.50\u00a0s | 1.50\u00a0s | ±0.00\u00a0s',
+      );
+      expect(find.byKey(const ValueKey('cornerPhasesNote')), findsOneWidget);
+      expect(find.byKey(const ValueKey('cornerPhasesReason')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('cornerPhasesBestReason')),
+        findsNothing,
+      );
+
+      // The best lap not timed through the parts says why.
+      await tester.pumpWidget(
+        MaterialApp(
+          key: UniqueKey(),
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ListView(
+              children: [
+                CornerDetails(
+                  corner: corner,
+                  comparison: DayCornerComparison(
+                    lap: comparison.lap,
+                    metrics: comparison.metrics,
+                    bestLap: comparison.bestLap,
+                    bestLapMetrics: comparison.bestLapMetrics,
+                    phases: const CornerPhaseTimes.timed(
+                      entry: 1.25,
+                      mid: 0.9,
+                      exit: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(rowText('cornerPhaseEntry'), 'Entry | 1.25\u00a0s | — | —');
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('cornerPhasesBestReason')))
+            .data,
+        'Best lap not timed through the parts: lap not fully covered here',
+      );
     },
   );
 

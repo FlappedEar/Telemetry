@@ -182,6 +182,15 @@ a background isolate.
   functions, which never compare values measured differently.
   `calculateOutingTheoreticalBest` measures them for every lap and corner
   (`cornerMetrics`).
+- Where a corner's time came from (FlappedEar Telemetry only, FET-221):
+  `cornerPhaseSplit` splits an approved corner at the start and end of its
+  tightest part (the apex region of `proposeCornerGeometryPhases`) into entry,
+  middle and exit, or gives the geometry's reason (more than one tight part,
+  across the gate); `cornerPhaseTimes` times each part on one lap's projected
+  trace, never bridging a gap. The boundaries are track geometry, so two laps
+  are timed over the same metres and the parts add up to the corner's time.
+  `DayCorner.phaseTimes` and `DayCornerComparison.phaseDeltas` give a lap's
+  parts against the group's best lap.
 - The Corner Analyzer of two compared laps (Overlays
   `AnalysisControllerCornerAnalyzer.cpp`, `d4d1039`): `CornerAnalyzer` on a
   comparison's shared axis lists the segments both laps share

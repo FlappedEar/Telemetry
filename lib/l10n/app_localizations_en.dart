@@ -2963,6 +2963,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get drivingScaleUnknown => 'pedal scale unknown';
+
+  @override
+  String drivingScaleUnknownChannel(String channel) {
+    return 'the scale of $channel (0–1 or %) is not known';
+  }
+
+  @override
   String get drivingNoBrakeChannel => 'no brake channel';
 
   @override
@@ -3214,6 +3222,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cornerDetailsReasonUnitNotRecorded => 'channel unit not recorded';
 
   @override
+  String get cornerDetailsReasonScaleUnknown =>
+      'pedal scale (0–1 or %) not known';
+
+  @override
+  String get cornerDetailsReasonScaleInferred => 'pedal read as 0–1';
+
+  @override
   String get cornerDetailsReasonNoSpeedChannel => 'no speed channel';
 
   @override
@@ -3281,6 +3296,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cornerDetailsFromDecelerationBrakeUnused =>
       'Inferred from deceleration: the brake channel does not show the braking';
+
+  @override
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown =>
+      'Inferred from deceleration: the brake channel\'s scale (0–1 or %) is not known';
 
   @override
   String get cornerDetailsReasonBrakeChannelNotUsed =>
@@ -6344,4 +6363,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get changesTitleNone => 'Segment changes';
+
+  @override
+  String get cornerPhasesTitle => 'Where the time came from';
+
+  @override
+  String get cornerPhaseEntry => 'Entry';
+
+  @override
+  String get cornerPhaseMiddle => 'Middle';
+
+  @override
+  String get cornerPhaseExit => 'Exit';
+
+  @override
+  String get cornerPhasesNote =>
+      'Entry runs to where the corner is tightest, the middle through that part, and the exit to the corner\'s end. The split comes from the track\'s shape, so both laps are timed over the same metres, and the three add up to the corner\'s time.';
+
+  @override
+  String cornerPhasesUnavailable(String reason) {
+    return 'Not split: $reason';
+  }
+
+  @override
+  String get cornerPhasesMoreThanOneTightPart => 'more than one tight part';
+
+  @override
+  String cornerPhasesBestNotTimed(String reason) {
+    return 'Best lap not timed through the parts: $reason';
+  }
 }

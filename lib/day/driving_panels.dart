@@ -61,6 +61,7 @@ String provenanceLabel(AppLocalizations l10n, DrivingStateTrack track) =>
       drivingStateInferred => l10n.drivingInferred,
       _ => switch (track.unresolvedReason) {
         'unitMismatch' => l10n.drivingUnexpectedUnit,
+        'scaleUnknown' => l10n.drivingScaleUnknown,
         'inferenceDisabled' => l10n.drivingNotRecorded,
         'pedalStateUnknown' => l10n.drivingPedalsUnknown,
         'noSpeedChannel' => l10n.drivingNoSpeed,
@@ -81,10 +82,15 @@ String pedalSourceText(
   ) => switch (track.provenance) {
     drivingStateMeasured => measured,
     drivingStateInferred => inferred,
-    _ =>
-      track.unresolvedReason == 'unitMismatch'
-          ? l10n.drivingUnexpectedUnitChannel(channelDisplayName(track.channel))
-          : none,
+    _ => switch (track.unresolvedReason) {
+      'unitMismatch' => l10n.drivingUnexpectedUnitChannel(
+        channelDisplayName(track.channel),
+      ),
+      'scaleUnknown' => l10n.drivingScaleUnknownChannel(
+        channelDisplayName(track.channel),
+      ),
+      _ => none,
+    },
   };
   final braking = pedal(
     states.braking,
