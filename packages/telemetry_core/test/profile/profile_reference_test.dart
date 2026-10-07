@@ -382,6 +382,52 @@ void main() {
       expect(_roundTrip(profile).days.where((day) => day.reference != null), hasLength(32));
     });
 
+    test('recordings kept for days not in the profile yet count too', () {
+      final profile = _days(2);
+      final waiting = {for (var i = 0; i < maximumReferenceFiles; i++) '${_shaOf(i)}.vbo': 100};
+      expect(
+        () => setProfileDayReference(
+          profile,
+          'd0',
+          _file(sha: 'f' * 64, bytes: 100),
+          alsoKept: waiting,
+        ),
+        throwsA(
+          isA<ProfileReferenceError>().having(
+            (error) => error.problem,
+            'problem',
+            ProfileReferenceProblem.tooManyFiles,
+          ),
+        ),
+      );
+      // One of them again is the same copy: no room needed.
+      expect(
+        setProfileDayReference(
+          profile,
+          'd0',
+          _file(sha: _shaOf(3), bytes: 100),
+          alsoKept: waiting,
+        ).day('d0')!.reference,
+        isNotNull,
+      );
+      // The bytes count too.
+      expect(
+        () => checkProfileReference(
+          profile,
+          'd0',
+          _file(sha: 'f' * 64, bytes: maximumReferenceFileBytes),
+          alsoKept: {for (var i = 0; i < 4; i++) '${_shaOf(i)}.vbo': maximumReferenceFileBytes},
+        ),
+        throwsA(
+          isA<ProfileReferenceError>().having(
+            (error) => error.problem,
+            'problem',
+            ProfileReferenceProblem.tooMuch,
+          ),
+        ),
+      );
+    });
+
     test('all the recordings together take at most maximumReferenceBytes', () {
       var profile = _days(5);
       const each = maximumReferenceFileBytes;
@@ -775,6 +821,43 @@ void main() {
       return path;
     }
 
+    test('a damaged copy is counted missing on export, and its days still import', () async {
+      final (profile, a, copy) = await twoDaysWithReference();
+      final path = p.join(a, 'Recordings', '${copy.sha256}.vbo');
+      final whole = File(path).readAsBytesSync();
+      File(path).writeAsBytesSync(whole.sublist(0, whole.length ~/ 2));
+      final bundle = p.join(root(), 'driver$profileBundleExtension');
+      final export = await writeProfileBundle(profile, a, bundle);
+      expect(export.days, 2);
+      expect(export.referencesMissing, 1);
+      final b = p.join(root(), 'B');
+      final read = await readProfileBundle(DriverProfile.empty(Random(2)), b, bundle);
+      expect(read.added, ['e1', 'e2']);
+      expect(read.referencesMissing, 1);
+      expect(File(p.join(b, 'Days', 'e1.fetproject')).existsSync(), isTrue);
+    });
+
+    test('a damaged reference entry does not refuse the other days or recordings', () async {
+      final (profile, a, copy) = await twoDaysWithReference();
+      final bundle = p.join(root(), 'driver$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      // Same size, other content: the CRC-32 of the entry no longer matches
+      // what it declares only if the entry is rewritten badly, so cut it
+      // short in the archive instead.
+      final cut = rewritten(
+        bundle,
+        p.join(root(), 'cut.feprofile'),
+        (entry) => entry == 'Recordings/${copy.sha256}.vbo'
+            ? File(p.join(a, 'Recordings', '${copy.sha256}.vbo')).readAsBytesSync().sublist(0, 20)
+            : null,
+      );
+      final b = p.join(root(), 'B');
+      final read = await readProfileBundle(DriverProfile.empty(Random(2)), b, cut);
+      expect(read.added, ['e1', 'e2']);
+      expect(read.referencesNotKept, ['e1', 'e2']);
+      expect(read.recordings, 2, reason: 'the days\' own recordings are placed');
+    });
+
     test('hostile references in a bundle write nothing or are left out', () async {
       final (profile, a, copy) = await twoDaysWithReference();
       final bundle = p.join(root(), 'driver$profileBundleExtension');
@@ -789,11 +872,18 @@ void main() {
         p.join(root(), 'damaged.feprofile'),
         (entry) => entry == name ? utf8.encode(circuitVbo([20, 20])) : null,
       );
-      await expectLater(
-        readProfileBundle(DriverProfile.empty(Random(2)), b, damaged),
-        throwsA(isA<ProfileBundleError>()),
+      // costs its days the reference, not the bundle; nothing is placed
+      final damagedRead = await readProfileBundle(DriverProfile.empty(Random(2)), b, damaged);
+      expect(damagedRead.added, ['e1', 'e2']);
+      expect(damagedRead.referencesNotKept, ['e1', 'e2']);
+      expect(damagedRead.profile.day('e1')!.reference, isNull);
+      expect(File(p.join(b, 'Recordings', '${copy.sha256}.vbo')).existsSync(), isFalse);
+      expect(
+        Directory(b).listSync().map((e) => p.basename(e.path)).where((n) => n.startsWith('.')),
+        isEmpty,
       );
-      expect(Directory(b).listSync(), isEmpty);
+      Directory(b).deleteSync(recursive: true);
+      Directory(b).createSync();
 
       // A recording larger than a reference may be.
       final index = jsonDecode(
@@ -812,12 +902,12 @@ void main() {
         p.join(root(), 'lying.feprofile'),
         (entry) => entry == profileIndexName ? utf8.encode(jsonEncode(index)) : null,
       );
-      await expectLater(
-        readProfileBundle(DriverProfile.empty(Random(2)), b, lying),
-        throwsA(isA<ProfileBundleError>()),
-        reason: 'the size the profile says is not the recording\'s',
-      );
-      expect(Directory(b).listSync(), isEmpty);
+      final lyingRead = await readProfileBundle(DriverProfile.empty(Random(2)), b, lying);
+      expect(lyingRead.referencesNotKept, ['e1', 'e2'], reason: 'the size is not the recording\'s');
+      expect(lyingRead.profile.day('e1')!.reference, isNull);
+      expect(File(p.join(b, 'Recordings', '${copy.sha256}.vbo')).existsSync(), isFalse);
+      Directory(b).deleteSync(recursive: true);
+      Directory(b).createSync();
 
       // A reference naming a path instead of a hash is not read at all.
       for (final day in index['days'] as List) {
@@ -928,6 +1018,64 @@ void main() {
       expect(deleted.recordings, greaterThanOrEqualTo(1));
       expect(profile.day('e1')!.reference, isNotNull);
     });
+
+    test(
+      'a sweep deletes only unused copies named like copies, never a day\'s recording',
+      () async {
+        final a = p.join(root(), 'A');
+        final recordings = Directory(p.join(a, 'Recordings'))..createSync(recursive: true);
+        final used = keepReferenceFile(a, friend('used.vbo', [27, 26, 28]));
+        final orphan = keepReferenceFile(a, friend('orphan.vbo', [20, 21, 22]));
+        final dayCopy = keepReferenceFile(a, friend('day.vbo', [30, 28, 31]));
+        File(p.join(recordings.path, 'notes.vbo')).writeAsStringSync('mine');
+        File(p.join(recordings.path, '${'c' * 64}.txt')).writeAsStringSync('mine too');
+        File(p.join(recordings.path, '.reference-abcd.partial')).writeAsStringSync('half');
+        // A day whose own recording is one of the copies.
+        final dayRecording = p.join(recordings.path, '${dayCopy.sha256}.vbo');
+        final runs = nameRunsInRecordingOrder(prepareTelemetryImport([dayRecording]).runs);
+        final analysis = analyzeDay([
+          for (final n in runs)
+            DayRunInput(
+              runId: n.run.id,
+              name: n.name,
+              contentSha256: n.run.contentSha256,
+              session: n.run.telemetry,
+              laps: n.run.laps,
+            ),
+        ]);
+        final path = p.join(a, 'Days', 'e1.fetproject');
+        Directory(p.dirname(path)).createSync(recursive: true);
+        await saveDayDocument(
+          path,
+          dayDocument(eventId: 'e1', name: 'D', runs: runs, analysis: analysis, projectPath: path),
+        );
+        final deleted = sweepReferenceFiles(
+          folder: a,
+          stillReferenced: {'${used.sha256}.vbo'},
+          dayPaths: [path],
+        );
+        expect(deleted, 2, reason: 'the orphan and the half-written file');
+        expect(File(p.join(recordings.path, '${orphan.sha256}.vbo')).existsSync(), isFalse);
+        expect(File(p.join(recordings.path, '${used.sha256}.vbo')).existsSync(), isTrue);
+        expect(File(dayRecording).existsSync(), isTrue);
+        expect(File(p.join(recordings.path, 'notes.vbo')).existsSync(), isTrue);
+        expect(File(p.join(recordings.path, '${'c' * 64}.txt')).existsSync(), isTrue);
+        // A day that cannot be read may use anything: nothing more goes.
+        File(path).writeAsStringSync('not a day');
+        final other = keepReferenceFile(a, friend('other.vbo', [25, 25, 25]));
+        expect(sweepReferenceFiles(folder: a, stillReferenced: const {}, dayPaths: [path]), 0);
+        expect(File(p.join(recordings.path, '${other.sha256}.vbo')).existsSync(), isTrue);
+        // No Recordings folder, nothing to do.
+        expect(
+          sweepReferenceFiles(
+            folder: p.join(root(), 'nowhere'),
+            stillReferenced: const {},
+            dayPaths: const [],
+          ),
+          0,
+        );
+      },
+    );
 
     test('a reference file outside the owned folders is never deleted with a day', () async {
       final a = p.join(root(), 'A');

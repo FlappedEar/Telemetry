@@ -64,8 +64,8 @@ final class ProfileBundleExport {
   /// opened, as on this device.
   final int recordingsMissing;
 
-  /// Reference recordings (FET-276) of the written days that were not found
-  /// in the profile's `Recordings` folder: the reference travels and says
+  /// Reference recordings (FET-276) of the written days that were not found,
+  /// or not the size the profile says, in the profile's `Recordings` folder: the reference travels and says
   /// so when the day is opened, as on this device.
   final int referencesMissing;
 }
@@ -150,7 +150,9 @@ Future<ProfileBundleExport> writeProfileBundle(
       if (day.reference case final ProfileReferenceFile reference) {
         final copy = profileReferenceFilePath(folder, reference);
         final name = reference.fileName;
-        if (copy == null || !File(copy).existsSync()) {
+        // A copy that is not there, or is not the size the profile says, is
+        // missing: the day travels without it, and the count says so.
+        if (copy == null || !_isWhole(copy, reference.bytes)) {
           missingReferences.add(name);
         } else if (!names.contains(name)) {
           await encoder.addFile(File(copy), '$profileRecordingsFolderName/$name');
@@ -221,7 +223,8 @@ final class ProfileBundleImport {
   /// Days added without their reference lap (FET-276): its recording would
   /// pass the profile's limits ([ProfileMerge.referencesNotKept]), or a
   /// different file of the same name was already in `Recordings`, which is
-  /// never replaced.
+  /// never replaced, or the bundle holds the recording damaged or of another
+  /// size than the profile says.
   final List<String> referencesNotKept;
 
   /// Reference recordings of the days added that the bundle does not hold:
@@ -415,11 +418,12 @@ Future<ProfileBundleImport> readProfileBundle(
           referencesMissing++;
           continue;
         }
-        if (entry.size > maximumReferenceFileBytes) {
-          throw ProfileBundleError('$name in the bundle is too large for a reference.');
-        }
-        if (entry.size != reference.bytes) {
-          throw ProfileBundleError('$name in the bundle is damaged.');
+        // A copy the bundle holds damaged, or larger than a reference may
+        // be, costs the days using it their reference, not the bundle: it is
+        // not unpacked at all when its declared size is wrong.
+        if (entry.size > maximumReferenceFileBytes || entry.size != reference.bytes) {
+          unplaced.add(name);
+          continue;
         }
         final stagedAs = staged.entries
             .where((other) => other.key.toLowerCase() == name)
@@ -438,11 +442,19 @@ Future<ProfileBundleImport> readProfileBundle(
         }
         staging.createSync(recursive: true);
         final path = p.join(staging.path, '${staged.length}');
-        _extract(entry, path);
-        staged[name] = path;
-        if (await _sha256(path) != reference.sha256) {
-          throw ProfileBundleError('$name in the bundle is damaged.');
+        try {
+          _extract(entry, path);
+        } on ProfileBundleError {
+          // Its size or CRC-32 is wrong: damaged.
+          unplaced.add(name);
+          continue;
         }
+        if (await _sha256(path) != reference.sha256) {
+          _delete(path);
+          unplaced.add(name);
+          continue;
+        }
+        staged[name] = path;
       }
       referencesNotPlaced = unplaced;
       referencesAbsent = referencesMissing;
@@ -488,6 +500,15 @@ Future<ProfileBundleImport> readProfileBundle(
     );
   } finally {
     input.closeSync();
+  }
+}
+
+bool _isWhole(String path, int bytes) {
+  try {
+    final file = File(path);
+    return file.existsSync() && file.lengthSync() == bytes;
+  } on FileSystemException {
+    return false;
   }
 }
 

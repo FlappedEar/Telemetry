@@ -211,6 +211,61 @@ bool deleteUnusedReferenceFile({
   }
 }
 
+/// Deletes the reference recording copies in [folder]'s `Recordings` that
+/// nothing uses: a file named like a copy (a SHA-256 and `.vbo` or `.rcz`)
+/// that is not in [stillReferenced] (the file names the profile's days and
+/// pending references keep) and is no recording of the days at [dayPaths]
+/// (every day in the days folder, listed in the profile or not), and the
+/// half-written `.reference-*.partial` files. Anything else in the folder is
+/// left alone, and a day that cannot be read stops the sweep: it may use
+/// any of them. The caller makes sure no copy is being made or placed.
+/// How many files were deleted.
+int sweepReferenceFiles({
+  required String folder,
+  required Set<String> stillReferenced,
+  required Iterable<String> dayPaths,
+}) {
+  final recordings = Directory(p.join(folder, 'Recordings'));
+  final List<FileSystemEntity> entries;
+  try {
+    if (!recordings.existsSync()) return 0;
+    entries = recordings.listSync(followLinks: false);
+  } on FileSystemException {
+    return 0;
+  }
+  final used = <String>{};
+  var daysRead = false;
+  var deleted = 0;
+  for (final entry in entries) {
+    if (entry is! File) continue;
+    final name = p.basename(entry.path);
+    final partial = name.startsWith('.reference-') && name.endsWith('.partial');
+    if (!partial) {
+      if (!_copyName.hasMatch(name) || stillReferenced.contains(name)) continue;
+      if (!daysRead) {
+        for (final dayPath in dayPaths) {
+          try {
+            used.addAll(dayRecordingPaths(readDayDocument(dayPath), dayPath).map(_canonical));
+          } on Object {
+            return deleted;
+          }
+        }
+        daysRead = true;
+      }
+      if (used.contains(_canonical(entry.path))) continue;
+    }
+    try {
+      entry.deleteSync();
+      deleted++;
+    } on FileSystemException {
+      // Left; tried again next time.
+    }
+  }
+  return deleted;
+}
+
+final _copyName = RegExp(r'^[0-9a-f]{64}(\.vbo|\.rcz)$');
+
 String _canonical(String path) {
   final absolute = p.normalize(p.absolute(path));
   try {

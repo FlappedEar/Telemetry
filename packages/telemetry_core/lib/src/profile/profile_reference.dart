@@ -331,14 +331,18 @@ ProfileReference _checkedReference(ProfileReference reference, String dayId) {
 /// it against the limits ([maximumReferenceFiles], [maximumReferenceBytes],
 /// [maximumReferenceFileBytes]): a file reference counts its recording once
 /// however many days use it. Throws [ProfileReferenceError].
+///
+/// [alsoKept] names recordings (file name to bytes) that references of days
+/// not in the profile yet will keep: they count against the limits too.
 ProfileReference checkProfileReference(
   DriverProfile profile,
   String eventId,
-  ProfileReference reference,
-) {
+  ProfileReference reference, {
+  Map<String, int> alsoKept = const {},
+}) {
   final kept = _checkedReference(reference, eventId);
   if (kept is ProfileReferenceFile) {
-    final others = profileReferenceFiles(profile, except: eventId);
+    final others = {...alsoKept, ...profileReferenceFiles(profile, except: eventId)};
     if (!others.containsKey(kept.fileName)) {
       if (others.length >= maximumReferenceFiles) {
         throw const ProfileReferenceError(
@@ -366,11 +370,14 @@ ProfileReference checkProfileReference(
 DriverProfile setProfileDayReference(
   DriverProfile profile,
   String eventId,
-  ProfileReference? reference,
-) {
+  ProfileReference? reference, {
+  Map<String, int> alsoKept = const {},
+}) {
   final day = profile.day(eventId);
   if (day == null) return profile;
-  final kept = reference == null ? null : checkProfileReference(profile, eventId, reference);
+  final kept = reference == null
+      ? null
+      : checkProfileReference(profile, eventId, reference, alsoKept: alsoKept);
   if (kept == null
       ? day.reference == null && !day.unknown.containsKey(_referenceKey)
       : day.reference != null &&
