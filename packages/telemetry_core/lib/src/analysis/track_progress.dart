@@ -39,7 +39,8 @@ final class ProgressAxis {
   /// Length of the closed reference loop.
   final double lengthMeters;
 
-  /// [lengthMeters] / point count; the points are evenly arc-spaced.
+  /// [lengthMeters] / point count. The points are evenly spaced along the raw
+  /// path, not along [cumulative], which is shorter (FET-249).
   final double spacingMeters;
   final GeoCoordinate origin;
   final bool valid;
@@ -113,6 +114,14 @@ const _backwardToleranceMeters = 3.0;
 
 /// A lock older than this is not continued: the next fix is a cold start.
 const _maximumGapSeconds = 5.0;
+
+/// How far behind the last progress the first fix of a segment after a gap
+/// may project and still be on the same lap (FET-249, KAN-237). Overlays allows only
+/// [_backwardToleranceMeters], so a fix found again 4 m behind moved the rest
+/// of the lap one whole lap on.
+/// Capped at a quarter of the axis, so a short loop never reads a jump forward
+/// as one backward.
+const _segmentStartBackwardMeters = 30.0;
 
 double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
 
@@ -244,6 +253,39 @@ _Candidate _bestCandidateInRange(
     }
   }
   return best;
+}
+
+/// The axis point nearest [progressMeters] along the axis (taken modulo its
+/// length), by the axis's own cumulative distances (FET-249, KAN-237). Overlays
+/// divides by [ProgressAxis.spacingMeters] instead, which is the raw path's
+/// length over the point count, while [ProgressAxis.cumulative] adds up the
+/// straight lines between the resampled points: shorter, by about 4 m on a
+/// VBO lap and 19 m on a 25 Hz RaceChrono RCZ lap. On the RCZ lap that
+/// centre ended up 8 points (16 m) behind the car after 1.7 km, until the
+/// search window no longer reached it. Projection measures progress by
+/// [ProgressAxis.cumulative], so the centre does too; the two indices differ
+/// by up to 2 points on a VBO lap.
+int _nearestAxisIndex(ProgressAxis axis, double progressMeters) {
+  final n = axis.points.length;
+  final cumulative = axis.cumulative;
+  final length = axis.lengthMeters;
+  if (cumulative.length != n || !(length > 0.0) || !progressMeters.isFinite) {
+    return ((_lround(progressMeters / axis.spacingMeters) % n) + n) % n;
+  }
+  final progress = progressMeters - (progressMeters / length).floorToDouble() * length;
+  // The last point at or before [progress].
+  var low = 0, high = n - 1;
+  while (low < high) {
+    final middle = (low + high + 1) >> 1;
+    if (cumulative[middle] <= progress) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  final next = low + 1 < n ? cumulative[low + 1] : length;
+  // Half way rounds forward, as lround does.
+  return progress - cumulative[low] >= next - progress ? (low + 1) % n : low;
 }
 
 /// Unit tangent of the axis at [index], toward index + 1 (the direction of
@@ -488,7 +530,7 @@ ProjectedSample projectSample(
   final backwardWindow = math.min(15.0, forwardWindow * 0.3);
   final forwardCount = math.max(1, _lround(forwardWindow / axis.spacingMeters));
   final backwardCount = math.max(1, _lround(backwardWindow / axis.spacingMeters));
-  final centerIndex = ((_lround(context.lastProgressMeters / axis.spacingMeters) % n) + n) % n;
+  final centerIndex = _nearestAxisIndex(axis, context.lastProgressMeters);
   final startIndex = centerIndex - backwardCount;
   final count = forwardCount + backwardCount + 1;
 
@@ -597,9 +639,15 @@ List<ProgressSegment> projectLapTrace(
           progress -= axis.lengthMeters;
         }
       } else {
+        // A segment after a gap continues from the last progress too, but its
+        // first fix, found again from scratch, may be a little more behind
+        // than the jitter tolerance (FET-249): up to
+        // [_segmentStartBackwardMeters] is the same lap, not one lap on.
+        final backward = current.samples.isEmpty
+            ? math.min(_segmentStartBackwardMeters, axis.lengthMeters / 4)
+            : _backwardToleranceMeters;
         progress +=
-            ((last - _backwardToleranceMeters - progress) / axis.lengthMeters).ceilToDouble() *
-            axis.lengthMeters;
+            ((last - backward - progress) / axis.lengthMeters).ceilToDouble() * axis.lengthMeters;
       }
       // A fix projecting up to the backward tolerance behind the last one in
       // this segment (GPS jitter, often while stopped) is held at the last
