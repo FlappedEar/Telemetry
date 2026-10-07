@@ -87,7 +87,7 @@ void main() {
         find.descendant(
           of: find.byKey(const ValueKey('realisticBest')),
           matching: find.textContaining(
-            'at most 2\u00a0km/h where two laps meet',
+            'at most 2\u00a0km/h wherever two laps meet',
           ),
         ),
         findsOneWidget,
@@ -581,6 +581,8 @@ void main() {
     expect(find.text('Najlepsze czasy'), findsOneWidget);
     expect(find.text('Trzy sposoby liczenia'), findsOneWidget);
     expect(find.text('Odcinki, które się łączą'), findsOneWidget);
+    expect(find.text('Najlepszy typowy czas'), findsOneWidget);
+    expect(find.textContaining('Złożony z '), findsOneWidget);
     // Without the sessions' segment times the best typical waits for them.
     expect(
       find.text(

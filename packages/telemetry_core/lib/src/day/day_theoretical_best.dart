@@ -429,6 +429,7 @@ DayTheoreticalBest dayTheoreticalBest(
       bestOfDay: reference == best?.reference,
     );
   }
+  throwIfCancelled(cancelled);
   // Each timed lap's speed at each segment's start and end, for the
   // realistic best.
   final segmentIds = [for (final segment in computed.approved.segments) segment['id']];

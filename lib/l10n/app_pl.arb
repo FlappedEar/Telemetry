@@ -1546,10 +1546,11 @@
   "tbRawLabel": "Najszybsze odcinki",
   "tbRawNote": "Najszybszy czas każdego odcinka z dowolnego okrążenia.",
   "tbRealisticLabel": "Odcinki, które się łączą",
-  "tbRealisticNote": "Najszybsze odcinki, których prędkości różnią się najwyżej o {tolerance} km/h tam, gdzie spotykają się dwa okrążenia, bo samochód nie zmienia prędkości skokowo. Z {count, plural, =1{1 okrążenia} other{{count} okrążeń}}.",
+  "tbRealisticNote": "Szacunek: najszybsze odcinki, których prędkości różnią się najwyżej o {tolerance} km/h wszędzie tam, gdzie spotykają się dwa okrążenia, bo samochód nie zmienia prędkości skokowo. Złożony z {count, plural, =1{1 okrążenia} other{{count} okrążeń}}.",
   "tbRealisticNoSpeed": "Nie pokazano: żadne okrążenie nie ma prędkości w znanej jednostce, więc nie da się połączyć dwóch okrążeń.",
   "tbRealisticIncomplete": "Nie pokazano: jeden z odcinków nie ma czasu na żadnym okrążeniu.",
-  "tbRepeatableLabel": "Najlepszy typowy",
+  "tbRepeatableLabel": "Najlepszy typowy czas",
   "tbRepeatableNote": "Najszybszy typowy czas (mediana) każdego odcinka w jednej sesji: to, co robisz tam zwykle, a nie raz.",
-  "tbRepeatableNeedsLaps": "Nie pokazano: potrzebna sesja z co najmniej {count, plural, =1{1 okrążeniem} other{{count} okrążeniami}} przez każdy odcinek."
+  "tbRepeatableNeedsLaps": "Nie pokazano: potrzeba co najmniej {count, plural, =1{1 okrążenia} few{{count} okrążeń} many{{count} okrążeń} other{{count} okrążenia}} przez każdy odcinek w jednej sesji.",
+  "tbRealisticNoJoin": "Nie pokazano: każdy odcinek ma czas, ale żadne okrążenia nie łączą się z prędkością, jaką miał samochód na każdej granicy między nimi."
 }

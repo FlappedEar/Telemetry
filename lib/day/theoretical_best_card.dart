@@ -249,8 +249,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     return [
       const SizedBox(height: 8),
       _Headline(result: result),
-      const SizedBox(height: 12),
-      _ThreeBests(result: result, sections: widget.sections),
+
       if (result.message.isNotEmpty) ...[
         const SizedBox(height: 4),
         Text(l10n.tbMessage(result.message)),
@@ -265,6 +264,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             : ' ${l10n.tbSegmentsCorrected}'}',
         style: theme.textTheme.bodySmall,
       ),
+      const SizedBox(height: 12),
+      _ThreeBests(result: result, sections: widget.sections),
       if (widget.onEditSegments != null)
         Align(
           alignment: Alignment.centerLeft,
@@ -796,6 +797,8 @@ class _ThreeBests extends StatelessWidget {
             ),
             RealisticTheoreticalBest(unavailableReason: realisticNoSpeed) =>
               l10n.tbRealisticNoSpeed,
+            RealisticTheoreticalBest(unavailableReason: realisticNoJoin) =>
+              l10n.tbRealisticNoJoin,
             _ => l10n.tbRealisticIncomplete,
           },
           realistic?.totalSeconds == null

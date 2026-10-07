@@ -8457,7 +8457,7 @@
   "@tbRawNote": {"description": "Note under the raw theoretical best."},
   "tbRealisticLabel": "Segments that join",
   "@tbRealisticLabel": {"description": "The realistic theoretical best: the fastest segments whose speeds match where two laps meet."},
-  "tbRealisticNote": "The fastest segments whose speeds differ by at most {tolerance} km/h where two laps meet, as the car cannot change speed at a line. From {count, plural, =1{1 lap} other{{count} laps}}.",
+  "tbRealisticNote": "An estimate: the fastest segments whose speeds differ by at most {tolerance} km/h wherever two laps meet, as the car cannot change speed at a line. Made of {count, plural, =1{1 lap} other{{count} laps}}.",
   "@tbRealisticNote": {"description": "Note under the realistic theoretical best. tolerance is a number such as '2'.", "placeholders": {"tolerance": {"type": "String"}, "count": {"type": "int"}}},
   "tbRealisticNoSpeed": "Not shown: no lap records speed in a known unit, so no two laps can be joined.",
   "@tbRealisticNoSpeed": {"description": "Realistic theoretical best when no lap has speed."},
@@ -8467,6 +8467,8 @@
   "@tbRepeatableLabel": {"description": "The repeatable theoretical best: each segment's quickest typical time in one session."},
   "tbRepeatableNote": "Each segment's quickest typical (median) time in one session: what you did there as a rule, not once.",
   "@tbRepeatableNote": {"description": "Note under the repeatable theoretical best."},
-  "tbRepeatableNeedsLaps": "Not shown: needs a session with at least {count, plural, =1{1 lap} other{{count} laps}} through every segment.",
-  "@tbRepeatableNeedsLaps": {"description": "Repeatable theoretical best when a segment has no session with enough laps.", "placeholders": {"count": {"type": "int"}}}
+  "tbRepeatableNeedsLaps": "Not shown: needs at least {count, plural, =1{1 lap} other{{count} laps}} through each segment in one session.",
+  "@tbRepeatableNeedsLaps": {"description": "Repeatable theoretical best when a segment has no session with enough laps.", "placeholders": {"count": {"type": "int"}}},
+  "tbRealisticNoJoin": "Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.",
+  "@tbRealisticNoJoin": {"description": "Realistic theoretical best when segments are timed but no chain of laps joins."}
 }

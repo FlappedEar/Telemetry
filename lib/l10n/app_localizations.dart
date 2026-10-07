@@ -9466,7 +9466,7 @@ abstract class AppLocalizations {
   /// Note under the realistic theoretical best. tolerance is a number such as '2'.
   ///
   /// In en, this message translates to:
-  /// **'The fastest segments whose speeds differ by at most {tolerance} km/h where two laps meet, as the car cannot change speed at a line. From {count, plural, =1{1 lap} other{{count} laps}}.'**
+  /// **'An estimate: the fastest segments whose speeds differ by at most {tolerance} km/h wherever two laps meet, as the car cannot change speed at a line. Made of {count, plural, =1{1 lap} other{{count} laps}}.'**
   String tbRealisticNote(String tolerance, int count);
 
   /// Realistic theoretical best when no lap has speed.
@@ -9496,8 +9496,14 @@ abstract class AppLocalizations {
   /// Repeatable theoretical best when a segment has no session with enough laps.
   ///
   /// In en, this message translates to:
-  /// **'Not shown: needs a session with at least {count, plural, =1{1 lap} other{{count} laps}} through every segment.'**
+  /// **'Not shown: needs at least {count, plural, =1{1 lap} other{{count} laps}} through each segment in one session.'**
   String tbRepeatableNeedsLaps(int count);
+
+  /// Realistic theoretical best when segments are timed but no chain of laps joins.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.'**
+  String get tbRealisticNoJoin;
 }
 
 class _AppLocalizationsDelegate

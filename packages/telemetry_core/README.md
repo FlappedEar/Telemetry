@@ -197,7 +197,11 @@ a background isolate.
   which, wherever segments from two laps meet, the speed leaving one and
   entering the next differ by at most `realisticJoinMetresPerSecond` (2 km/h,
   compared in m/s); one lap always continues, segments that do not meet join
-  freely, and the lap's start is not joined to its end.
+  freely, and the lap's start is not joined to its end unless the last
+  segment runs across the gate into the first (then that join is checked
+  too, by fixing the first segment's lap). It is an estimate: matching
+  speeds is necessary, not sufficient. Without a chain it says why
+  (`realisticNoJoin`, `realisticNoSpeed`, `realisticIncompleteCoverage`).
   `DayTheoreticalBest.realistic` holds it. `repeatableTheoreticalBest` adds
   each segment's quickest typical time in one session
   (`SectionProgressionRow.fastestTypical`).

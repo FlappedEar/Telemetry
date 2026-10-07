@@ -6584,7 +6584,7 @@ class AppLocalizationsPl extends AppLocalizations {
       other: '$count okrążeń',
       one: '1 okrążenia',
     );
-    return 'Najszybsze odcinki, których prędkości różnią się najwyżej o $tolerance km/h tam, gdzie spotykają się dwa okrążenia, bo samochód nie zmienia prędkości skokowo. Z $_temp0.';
+    return 'Szacunek: najszybsze odcinki, których prędkości różnią się najwyżej o $tolerance km/h wszędzie tam, gdzie spotykają się dwa okrążenia, bo samochód nie zmienia prędkości skokowo. Złożony z $_temp0.';
   }
 
   @override
@@ -6596,7 +6596,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Nie pokazano: jeden z odcinków nie ma czasu na żadnym okrążeniu.';
 
   @override
-  String get tbRepeatableLabel => 'Najlepszy typowy';
+  String get tbRepeatableLabel => 'Najlepszy typowy czas';
 
   @override
   String get tbRepeatableNote =>
@@ -6607,9 +6607,15 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count okrążeniami',
-      one: '1 okrążeniem',
+      other: '$count okrążenia',
+      many: '$count okrążeń',
+      few: '$count okrążeń',
+      one: '1 okrążenia',
     );
-    return 'Nie pokazano: potrzebna sesja z co najmniej $_temp0 przez każdy odcinek.';
+    return 'Nie pokazano: potrzeba co najmniej $_temp0 przez każdy odcinek w jednej sesji.';
   }
+
+  @override
+  String get tbRealisticNoJoin =>
+      'Nie pokazano: każdy odcinek ma czas, ale żadne okrążenia nie łączą się z prędkością, jaką miał samochód na każdej granicy między nimi.';
 }

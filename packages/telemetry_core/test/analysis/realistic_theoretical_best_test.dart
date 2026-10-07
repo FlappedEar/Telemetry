@@ -67,29 +67,34 @@ RealisticLapInput _lap(
   );
 }
 
-/// Every combination of laps, one per segment, whose joins are possible:
+/// Every combination of laps, one per segment, whose joins are possible
+/// ([meets]: segment i meets i + 1; [closes]: the last meets the first):
 /// the quickest total, by brute force.
-double? _exhaustive(List<RealisticLapInput> laps, List<bool> meets) {
+double? _exhaustive(List<RealisticLapInput> laps, List<bool> meets, {bool closes = false}) {
+  final count = meets.length + 1;
+  bool joins(int j, int k, int i) {
+    if (j == k) return true;
+    final out = laps[j].exitSpeeds[i], into = laps[k].entrySpeeds[(i + 1) % count];
+    return out != null && into != null && (out - into).abs() <= realisticJoinMetresPerSecond;
+  }
+
   double? best;
-  void walk(int segment, int? previous, double total) {
-    if (segment == meets.length + 1) {
+  void walk(List<int> chosen, double total) {
+    final segment = chosen.length;
+    if (segment == count) {
+      if (closes && !joins(chosen.last, chosen.first, count - 1)) return;
       if (best == null || total < best!) best = total;
       return;
     }
     for (var k = 0; k < laps.length; ++k) {
       final time = laps[k].times.sectors[segment].seconds;
       if (time == null) continue;
-      if (previous != null && previous != k && meets[segment - 1]) {
-        final out = laps[previous].exitSpeeds[segment - 1], into = laps[k].entrySpeeds[segment];
-        if (out == null || into == null || (out - into).abs() > realisticJoinMetresPerSecond) {
-          continue;
-        }
-      }
-      walk(segment + 1, k, total + time);
+      if (segment > 0 && meets[segment - 1] && !joins(chosen.last, k, segment - 1)) continue;
+      walk([...chosen, k], total + time);
     }
   }
 
-  walk(0, null, 0);
+  walk([], 0);
   return best;
 }
 
@@ -180,30 +185,109 @@ void main() {
       expect(computeRealisticTheoreticalBest(_approved, laps).totalSeconds, closeTo(10, 1e-9));
     });
 
-    test('matches every combination tried by hand', () {
+    test('a chain of segments that never joins says so', () {
+      final laps = [
+        _lap('A', [3, null, null], entry: [30, 30, 30], exit: [30, 30, 30]),
+        _lap('B', [null, 4, 3], entry: [40, 40, 40], exit: [40, 40, 40]),
+      ];
+      final result = computeRealisticTheoreticalBest(_approved, laps);
+      expect(result.totalSeconds, isNull);
+      expect(result.unavailableReason, realisticNoJoin);
+      expect(
+        computeRealisticTheoreticalBest(_approved, []).unavailableReason,
+        realisticIncompleteCoverage,
+      );
+    });
+
+    test('a last segment across the gate joins the first', () {
+      // c runs across the gate from 900 m to 50 m, where a starts.
+      final across = approvedSegmentation([
+        _segment('a', 50, 300),
+        _segment('b', 300, 900),
+        _segment('c', 900, 50),
+      ], _group);
+      // B is quickest through c but leaves it at 50 m/s; A enters a at 20.
+      final laps = [
+        _lap('A', [3, 4, 3], entry: [20, 30, 30], exit: [30, 30, 20], approved: across),
+        _lap('B', [5, 4.5, 2], entry: [50, 30, 30], exit: [30, 30, 50], approved: across),
+      ];
+      final result = computeRealisticTheoreticalBest(across, laps);
+      expect(result.totalSeconds, closeTo(10, 1e-9));
+      expect([for (final s in result.segments) s.lapReference], ['A', 'A', 'A']);
+      // Without the join across the gate, A, A, B would be quicker.
+      expect(_exhaustive(laps, [true, true]), closeTo(9, 1e-9));
+      expect(_exhaustive(laps, [true, true], closes: true), closeTo(10, 1e-9));
+    });
+
+    test('matches every combination tried by hand, and its joins hold', () {
       final random = Random(7);
-      for (var round = 0; round < 200; ++round) {
-        final count = 1 + random.nextInt(5);
+      for (var round = 0; round < 2000; ++round) {
+        final count = 1 + random.nextInt(6);
+        // Segments of 100 m, some with a gap after them; the last may run
+        // across the gate into the first.
+        final wraps = count > 1 && random.nextBool();
+        final segments = <Map<String, Object?>>[];
+        var at = wraps ? 50.0 : 0.0;
+        for (var i = 0; i < count; ++i) {
+          final gap = i > 0 && random.nextInt(4) == 0 ? 10.0 : 0.0;
+          final start = at + gap;
+          final end = i == count - 1 && wraps ? 50.0 : start + 100;
+          segments.add(_segment('s$i', start, i == count - 1 && wraps ? end : end));
+          at = end;
+        }
+        if (wraps) segments.last['startProgressMeters'] = 900.0;
+        final approved = approvedSegmentation(segments, _group);
+        expect(approved.valid, isTrue, reason: '$segments');
+        final meets = [
+          for (var i = 0; i + 1 < count; ++i)
+            segments[i]['endProgressMeters'] == segments[i + 1]['startProgressMeters'],
+        ];
+        final lapCount = 1 + random.nextInt(5);
         double? speed() => random.nextInt(8) == 0 ? null : 30 + random.nextDouble() * 2;
         double? time() => random.nextInt(10) == 0 ? null : 2 + random.nextDouble() * 3;
         final laps = [
-          for (var k = 0; k < count; ++k)
+          for (var k = 0; k < lapCount; ++k)
             _lap(
               'L$k',
-              [time(), time(), time()],
-              entry: [speed(), speed(), speed()],
-              exit: [speed(), speed(), speed()],
+              [for (var i = 0; i < count; ++i) time()],
+              entry: [for (var i = 0; i < count; ++i) speed()],
+              exit: [for (var i = 0; i < count; ++i) speed()],
+              approved: approved,
             ),
         ];
-        final expected = _exhaustive(laps, [true, true]);
-        final result = computeRealisticTheoreticalBest(_approved, laps);
+        final result = computeRealisticTheoreticalBest(approved, laps);
+        if (laps.every((l) => [...l.entrySpeeds, ...l.exitSpeeds].every((v) => v == null))) {
+          // Without any speed no two laps can be said to join.
+          expect(result.totalSeconds, isNull, reason: 'round $round');
+          continue;
+        }
+        final expected = _exhaustive(laps, meets, closes: wraps);
         if (expected == null) {
           expect(result.totalSeconds, isNull, reason: 'round $round');
-        } else {
-          expect(result.totalSeconds, closeTo(expected, 1e-9), reason: 'round $round');
-          // The segments it names add up to it.
-          expect(result.segments.fold(0.0, (sum, s) => sum + s.seconds), closeTo(expected, 1e-9));
+          continue;
         }
+        expect(result.totalSeconds, closeTo(expected, 1e-9), reason: 'round $round');
+        // The chain it names: each lap's own time, adding up, every join
+        // within the tolerance.
+        final lap = {for (final l in laps) l.times.lapReference: l};
+        var sum = 0.0;
+        for (final (i, segment) in result.segments.indexed) {
+          final own = lap[segment.lapReference]!;
+          expect(segment.seconds, own.times.sectors[i].seconds);
+          sum += segment.seconds;
+          final before = i == 0 ? count - 1 : i - 1;
+          final met = i == 0 ? wraps : meets[before];
+          final previous = result.segments[before].lapReference;
+          if (!met || previous == segment.lapReference || count == 1) {
+            expect(segment.joinMetresPerSecond, isNull);
+            continue;
+          }
+          final out = lap[previous]!.exitSpeeds[before]!;
+          final into = own.entrySpeeds[i]!;
+          expect((out - into).abs(), lessThanOrEqualTo(realisticJoinMetresPerSecond));
+          expect(segment.joinMetresPerSecond, closeTo((out - into).abs(), 1e-12));
+        }
+        expect(sum, closeTo(expected, 1e-9));
       }
     });
   });

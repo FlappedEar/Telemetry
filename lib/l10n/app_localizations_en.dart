@@ -6443,7 +6443,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count laps',
       one: '1 lap',
     );
-    return 'The fastest segments whose speeds differ by at most $tolerance km/h where two laps meet, as the car cannot change speed at a line. From $_temp0.';
+    return 'An estimate: the fastest segments whose speeds differ by at most $tolerance km/h wherever two laps meet, as the car cannot change speed at a line. Made of $_temp0.';
   }
 
   @override
@@ -6469,6 +6469,10 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count laps',
       one: '1 lap',
     );
-    return 'Not shown: needs a session with at least $_temp0 through every segment.';
+    return 'Not shown: needs at least $_temp0 through each segment in one session.';
   }
+
+  @override
+  String get tbRealisticNoJoin =>
+      'Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.';
 }

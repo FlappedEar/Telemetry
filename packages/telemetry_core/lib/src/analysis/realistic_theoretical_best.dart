@@ -4,8 +4,13 @@
 // the straight before came from. A car cannot change speed at a line: here
 // the fastest combination is chosen in which, wherever two laps meet, the
 // speed leaving one segment and the speed entering the next differ by at
-// most [realisticJoinMetresPerSecond]. Segments of one lap always join. The
-// lap's own start, at the timing gate, is not joined to its end.
+// most [realisticJoinMetresPerSecond]. Segments of one lap always join.
+// When the last segment runs across the timing gate and ends where the first
+// starts, that join is checked too; otherwise the lap's start, at the gate,
+// is not joined to its end. It is an estimate: matching speeds is necessary
+// for two laps to join, not proof that the car could (two laps can be on
+// different lines at the same speed), and at 1 g of braking 2 km/h is about
+// 0.06 s, near the crossing time's own error at 10 Hz.
 //
 // Beside it, the repeatable theoretical best: the sum of each segment's
 // quickest typical (median) time in one session, what the laps did through
@@ -30,6 +35,9 @@ const String realisticIncompleteCoverage = 'incompleteCoverage';
 
 /// No lap records a speed in a known unit, so no two laps can be joined.
 const String realisticNoSpeed = 'noSpeed';
+
+/// Every segment is timed, but no laps join at every line between them.
+const String realisticNoJoin = 'noJoin';
 
 /// One lap of the population: its sector times and the speed at each
 /// segment's start and end in m/s (null where the speed was not recorded).
@@ -61,7 +69,9 @@ final class RealisticSegment {
   final Object? lapReference;
 
   /// The speed difference with the segment before where two laps meet; null
-  /// where the same lap continues, or for the first segment.
+  /// where the same lap continues or the segments do not meet (the first
+  /// segment meets the last only when the last runs across the gate into
+  /// it).
   final double? joinMetresPerSecond;
 }
 
@@ -106,8 +116,9 @@ RealisticTheoreticalBest computeRealisticTheoreticalBest(
   ApprovedSegmentation approved,
   List<RealisticLapInput> laps,
 ) {
+  final segments = approved.segments;
   final ids = [
-    for (final segment in approved.segments) segment['id'] is String ? segment['id'] as String : '',
+    for (final segment in segments) segment['id'] is String ? segment['id'] as String : '',
   ];
   if (!approved.valid || approved.revision.isEmpty || ids.isEmpty) {
     return RealisticTheoreticalBest(unavailableReason: realisticIncompleteCoverage);
@@ -121,95 +132,130 @@ RealisticTheoreticalBest computeRealisticTheoreticalBest(
           lap.exitSpeeds.length == ids.length)
         lap,
   ];
-  // Each lap's time and bounds through each segment, by approved order.
-  SectorTime? sector(RealisticLapInput lap, int index) {
-    for (final candidate in lap.times.sectors) {
-      if (candidate.segmentId == ids[index]) return candidate;
-    }
-    return null;
-  }
-
+  final count = ids.length;
   final seconds = [
     for (final lap in population)
       [
-        for (var i = 0; i < ids.length; ++i)
-          if (sector(lap, i)?.seconds case final time? when time.isFinite) time else null,
+        for (var i = 0; i < count; ++i)
+          if (_sector(lap, ids[i])?.seconds case final time? when time.isFinite) time else null,
       ],
   ];
-  // Whether segment i ends where segment i + 1 starts, from any lap's bounds
-  // (they are the approved segments', the same on every lap).
-  final meets = List<bool>.filled(ids.length, false);
-  for (var i = 0; i + 1 < ids.length; ++i) {
-    for (final lap in population) {
-      final a = sector(lap, i), b = sector(lap, i + 1);
-      if (a == null || b == null) continue;
-      meets[i] = (a.endProgressMeters - b.startProgressMeters).abs() <= realisticJoinGapMeters;
-      break;
-    }
+  if (population.isEmpty ||
+      [for (var i = 0; i < count; ++i) i].any((i) => seconds.every((lap) => lap[i] == null))) {
+    return RealisticTheoreticalBest(unavailableReason: realisticIncompleteCoverage);
   }
-  if (!population.any((lap) => lap.entrySpeeds.any((v) => v != null))) {
+  if (!population.any((lap) => [...lap.entrySpeeds, ...lap.exitSpeeds].any((v) => v != null))) {
     return RealisticTheoreticalBest(unavailableReason: realisticNoSpeed);
   }
 
-  // The fastest time to the end of segment i finishing on lap k, and the lap
-  // segment i - 1 came from.
-  final best = [for (final _ in population) List<double?>.filled(ids.length, null)];
-  final from = [for (final _ in population) List<int>.filled(ids.length, -1)];
-  for (var k = 0; k < population.length; ++k) {
-    best[k][0] = seconds[k][0];
+  // Where segment i ends and the next (for the last, the first) starts, from
+  // the approved segments: the same on every lap.
+  double? bound(int i, String key) => switch (segments[i][key]) {
+    final num value when value.isFinite => value.toDouble(),
+    _ => null,
+  };
+  bool near(double? a, double? b) =>
+      a != null && b != null && (a - b).abs() <= realisticJoinGapMeters;
+  final meets = [
+    for (var i = 0; i + 1 < count; ++i)
+      near(bound(i, 'endProgressMeters'), bound(i + 1, 'startProgressMeters')),
+  ];
+  // The last segment runs across the gate into the first: one more join.
+  final lastStart = bound(count - 1, 'startProgressMeters');
+  final lastEnd = bound(count - 1, 'endProgressMeters');
+  final closes =
+      count > 1 &&
+      lastStart != null &&
+      lastEnd != null &&
+      lastEnd < lastStart &&
+      near(lastEnd, bound(0, 'startProgressMeters'));
+
+  // Whether lap j leaving segment i joins lap k entering the next.
+  bool joins(int j, int k, int i) {
+    if (j == k) return true;
+    final out = population[j].exitSpeeds[i];
+    final into = population[k].entrySpeeds[(i + 1) % count];
+    return out != null && into != null && (out - into).abs() <= realisticJoinMetresPerSecond;
   }
-  for (var i = 1; i < ids.length; ++i) {
+
+  // The quickest chain with segment 0 from [first] (any lap when null): its
+  // total and the lap of each segment.
+  (double, List<int>)? chain(int? first) {
+    final best = [for (final _ in population) List<double?>.filled(count, null)];
+    final from = [for (final _ in population) List<int>.filled(count, -1)];
     for (var k = 0; k < population.length; ++k) {
-      final time = seconds[k][i];
-      if (time == null) continue;
-      double? quickest;
-      var source = -1;
-      for (var j = 0; j < population.length; ++j) {
-        final before = best[j][i - 1];
-        if (before == null) continue;
-        if (j != k && meets[i - 1]) {
-          final out = population[j].exitSpeeds[i - 1], into = population[k].entrySpeeds[i];
-          if (out == null || into == null || (out - into).abs() > realisticJoinMetresPerSecond) {
-            continue;
+      if (first == null || first == k) best[k][0] = seconds[k][0];
+    }
+    for (var i = 1; i < count; ++i) {
+      for (var k = 0; k < population.length; ++k) {
+        final time = seconds[k][i];
+        if (time == null) continue;
+        double? quickest;
+        var source = -1;
+        for (var j = 0; j < population.length; ++j) {
+          final before = best[j][i - 1];
+          if (before == null || (meets[i - 1] && !joins(j, k, i - 1))) continue;
+          if (quickest == null || before < quickest) {
+            quickest = before;
+            source = j;
           }
         }
-        if (quickest == null || before < quickest) {
-          quickest = before;
-          source = j;
+        if (quickest != null) {
+          best[k][i] = quickest + time;
+          from[k][i] = source;
         }
       }
-      if (quickest != null) {
-        best[k][i] = quickest + time;
-        from[k][i] = source;
-      }
     }
+    var last = -1;
+    for (var k = 0; k < population.length; ++k) {
+      final total = best[k][count - 1];
+      if (total == null || (closes && first != null && !joins(k, first, count - 1))) continue;
+      if (last < 0 || total < best[last][count - 1]!) last = k;
+    }
+    if (last < 0) return null;
+    final chosen = List<int>.filled(count, -1);
+    for (var i = count - 1, k = last; i >= 0; k = from[k][i], --i) {
+      chosen[i] = k;
+    }
+    return (best[last][count - 1]!, chosen);
   }
-  var last = -1;
-  for (var k = 0; k < population.length; ++k) {
-    final total = best[k][ids.length - 1];
-    if (total != null && (last < 0 || total < best[last][ids.length - 1]!)) last = k;
+
+  (double, List<int>)? quickest;
+  for (final first in closes ? [for (var k = 0; k < population.length; ++k) k] : [null]) {
+    final found = chain(first);
+    if (found != null && (quickest == null || found.$1 < quickest.$1)) quickest = found;
   }
-  if (last < 0) return RealisticTheoreticalBest(unavailableReason: realisticIncompleteCoverage);
-  final chosen = List<int>.filled(ids.length, -1);
-  for (var i = ids.length - 1, k = last; i >= 0; k = from[k][i], --i) {
-    chosen[i] = k;
+  if (quickest == null) return RealisticTheoreticalBest(unavailableReason: realisticNoJoin);
+  final (total, chosen) = quickest;
+  double? joinAt(int i) {
+    // The join into segment i from the one before it (for the first, the
+    // last when the lap closes there).
+    final before = i == 0 ? count - 1 : i - 1;
+    final met = i == 0 ? closes : meets[before];
+    if (!met || chosen[before] == chosen[i]) return null;
+    return (population[chosen[before]].exitSpeeds[before]! - population[chosen[i]].entrySpeeds[i]!)
+        .abs();
   }
+
   return RealisticTheoreticalBest(
-    totalSeconds: best[last][ids.length - 1],
+    totalSeconds: total,
     segments: [
-      for (var i = 0; i < ids.length; ++i)
+      for (var i = 0; i < count; ++i)
         RealisticSegment(
           segmentId: ids[i],
           seconds: seconds[chosen[i]][i]!,
           lapReference: population[chosen[i]].times.lapReference,
-          joinMetresPerSecond: i == 0 || chosen[i] == chosen[i - 1] || !meets[i - 1]
-              ? null
-              : (population[chosen[i - 1]].exitSpeeds[i - 1]! -
-                        population[chosen[i]].entrySpeeds[i]!)
-                    .abs(),
+          joinMetresPerSecond: joinAt(i),
         ),
     ],
   );
+}
+
+SectorTime? _sector(RealisticLapInput lap, String id) {
+  for (final candidate in lap.times.sectors) {
+    if (candidate.segmentId == id) return candidate;
+  }
+  return null;
 }
 
 /// The repeatable theoretical best: the sum of each segment's quickest
