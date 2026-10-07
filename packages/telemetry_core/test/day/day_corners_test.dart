@@ -172,6 +172,31 @@ void main() {
       }
       expect(result.segments[1].variability, isNull, reason: 'a straight');
     });
+
+    test('classifies each corner from its shape and the laps (FET-220)', () {
+      // Brakes from 30 m/s to about 18 m/s on every lap: over 40 km/h off.
+      final braking = corner.classification;
+      expect(braking.driving.approach, CornerApproach.heavyBraking);
+      // From 30 m/s where braking starts to the typical lowest 18 m/s, read
+      // from each lap's speed channel.
+      expect(braking.driving.typicalSpeedShedMetresPerSecond, closeTo(12, 0.5));
+      expect(braking.driving.shedLaps, 3);
+      expect((braking.driving.brakingLaps, braking.driving.lapsMeasured), (3, 3));
+      expect(braking.driving.brakingMethod, brakingMethodMeasured);
+      expect(braking.driving.speedBand, CornerSpeedBand.slow);
+      expect(braking.driving.typicalMinimumSpeedMetresPerSecond, closeTo(18, 0.5));
+      // The same steps that leave it unsplit (FET-221) make it two tight parts.
+      expect(braking.shape.shape, CornerShape.doubleApex);
+      // The others are taken at a steady 30 m/s (108 km/h): flat and medium,
+      // even though no lowest speed can be located in them.
+      for (final index in [0, 2, 3]) {
+        final other = result.corners[index].classification;
+        expect(other.driving.approach, CornerApproach.flat);
+        expect(other.driving.typicalSpeedLossFraction, closeTo(0, 1e-6));
+        expect(other.driving.speedBand, CornerSpeedBand.medium);
+        expect(other.shape.shape, CornerShape.singleApex);
+      }
+    });
   });
 
   test('without pedal channels the braking point and pickup are unavailable', () {
@@ -188,5 +213,10 @@ void main() {
     expect(comparison.latestBrakingPoint, isNull);
     expect(comparison.earliestPickup, isNull);
     expect(comparison.highestMinimumSpeed!.lap.lapNumber, 2);
+    // No class from braking that cannot be measured; the speeds still give
+    // the band (FET-220).
+    expect(corner.classification.driving.approach, isNull);
+    expect(corner.classification.driving.approachUnavailableReason, brakingNoChannel);
+    expect(corner.classification.driving.speedBand, CornerSpeedBand.slow);
   });
 }

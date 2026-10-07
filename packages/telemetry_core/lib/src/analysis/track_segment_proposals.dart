@@ -43,7 +43,7 @@ final class ProgressRange {
 /// Thresholds of [proposeTrackSegments].
 final class SegmentProposalOptions {
   const SegmentProposalOptions({
-    this.cornerCurvaturePerMeter = 1.0 / 250.0,
+    this.cornerCurvaturePerMeter = defaultCornerCurvaturePerMeter,
     this.minimumCornerTurnRadians = 0.35,
     this.connectedStraightMeters = 20.0,
     this.certainStraightMeters = 40.0,
@@ -51,6 +51,10 @@ final class SegmentProposalOptions {
 
   /// |curvature| at or above this is turning.
   final double cornerCurvaturePerMeter;
+
+  /// [cornerCurvaturePerMeter] by default (also the turning part of the
+  /// corner classes, FET-220).
+  static const double defaultCornerCurvaturePerMeter = 1.0 / 250.0;
 
   /// Smaller turning runs are kinks, kept in the straight.
   final double minimumCornerTurnRadians;

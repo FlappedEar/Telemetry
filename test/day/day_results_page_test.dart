@@ -785,7 +785,8 @@ void main() {
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough to build the whole page, corner types included (FET-220).
+    await tester.binding.setSurfaceSize(const Size(1200, 8000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(

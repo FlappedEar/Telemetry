@@ -874,6 +874,9 @@ void main() {
     await tester.scrollUntilVisible(
       detailsTile(first),
       300,
+      // The day page is long at this size: each corner's row also says
+      // what kind of corner it is (FET-220).
+      maxScrolls: 80,
       scrollable: find
           .descendant(
             of: find.byKey(const ValueKey('dayResultsSummary')),

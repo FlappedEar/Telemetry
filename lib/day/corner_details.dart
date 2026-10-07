@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../format.dart';
 import '../l10n.dart';
 import '../ui/label_value_row.dart';
 import '../units.dart';
@@ -63,6 +64,11 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       theoreticalBestNoApprovedSegmentation =>
         l10n.cornerDetailsReasonNoApprovedSegments,
       drivingStateUnknownReason => l10n.cornerDetailsReasonDrivingStateUnknown,
+      // Corner classes.
+      cornerClassTooFewLaps => l10n.cornerClassReasonTooFewLaps,
+      cornerClassSpeedUnitUnknown => l10n.cornerClassReasonSpeedUnit,
+      cornerClassTooFewLapsWithoutBraking =>
+        l10n.cornerClassReasonTooFewLapsWithoutBraking,
       _ => l10n.cornerDetailsReasonNotAvailable,
     };
 
@@ -495,6 +501,215 @@ class CornerDetails extends StatelessWidget {
           ),
         const SizedBox(height: 8),
         Text(l10n.cornerDetailsExplanation, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 12),
+        CornerClassSection(classification: corner.classification),
+      ],
+    );
+  }
+}
+
+/// [shape] in the app's language.
+String cornerShapeText(AppLocalizations l10n, CornerShape shape) =>
+    switch (shape) {
+      CornerShape.singleApex => l10n.cornerShapeSingleApex,
+      CornerShape.lateApex => l10n.cornerShapeLateApex,
+      CornerShape.decreasingRadius => l10n.cornerShapeDecreasingRadius,
+      CornerShape.increasingRadius => l10n.cornerShapeIncreasingRadius,
+      CornerShape.doubleApex => l10n.cornerShapeDoubleApex,
+      CornerShape.complex => l10n.cornerShapeComplex,
+    };
+
+/// [driving]'s approach in the app's language (braking whose heaviness is
+/// not known says so), or null when it is not known.
+String? cornerApproachText(AppLocalizations l10n, CornerDrivingClass driving) =>
+    switch (driving.approach) {
+      null => null,
+      CornerApproach.heavyBraking => l10n.cornerApproachHeavyBraking,
+      CornerApproach.braking =>
+        driving.heavyUnknown
+            ? l10n.cornerApproachBrakingHeavyUnknown
+            : l10n.cornerApproachBraking,
+      CornerApproach.lift => l10n.cornerApproachLift,
+      CornerApproach.flat => l10n.cornerApproachFlat,
+    };
+
+/// [band] in the app's language.
+String cornerSpeedBandText(AppLocalizations l10n, CornerSpeedBand band) =>
+    switch (band) {
+      CornerSpeedBand.slow => l10n.cornerSpeedSlow,
+      CornerSpeedBand.medium => l10n.cornerSpeedMedium,
+      CornerSpeedBand.fast => l10n.cornerSpeedFast,
+    };
+
+/// The corner's classes that are known, on one line ("Heavy braking · Slow
+/// corner · Decreasing radius"); null when none is.
+String? cornerClassSummary(
+  AppLocalizations l10n,
+  CornerClassification classification,
+) {
+  final parts = [
+    ?cornerApproachText(l10n, classification.driving),
+    if (classification.driving.speedBand case final band?)
+      cornerSpeedBandText(l10n, band),
+    if (classification.shape.shape case final shape?)
+      cornerShapeText(l10n, shape),
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
+
+/// What kind of corner it is (FET-220): its shape from the track, and its
+/// braking and speed from the day's laps, each with what it was read from,
+/// or why it is not known.
+class CornerClassSection extends StatelessWidget {
+  const CornerClassSection({super.key, required this.classification});
+
+  final CornerClassification classification;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final shape = classification.shape;
+    final driving = classification.driving;
+    // Unlabelled speeds are read as km/h, and say so.
+    final label = driving.speedUnit == null
+        ? ''
+        : speedUnitOf(context, driving.speedUnit!).trim();
+    final unit = label.isEmpty && driving.speedUnit != null
+        ? l10n.cornerClassAssumedKmh
+        : label;
+    // A typical speed in the laps' unit, with the unit when one is known.
+    String speed(double? metresPerSecond) {
+      final value = switch (driving.inSpeedUnit(metresPerSecond)) {
+        final value? => fixed(value, 0),
+        null => null,
+      };
+      if (value == null) return '';
+      return unit.isEmpty ? value : '$value\u00a0$unit';
+    }
+
+    final how = driving.brakingMethod == brakingMethodMeasured
+        ? l10n.cornerClassFromBrakePedal
+        : l10n.cornerClassFromDeceleration;
+
+    Widget item(String key, String label, String? value, String note) =>
+        Padding(
+          key: ValueKey(key),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.labelMedium),
+              if (value != null)
+                Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (note.isNotEmpty) Text(note, style: theme.textTheme.bodySmall),
+            ],
+          ),
+        );
+
+    String unavailable(String reason) =>
+        l10n.cornerClassUnavailable(cornerReasonText(l10n, reason));
+
+    final shapeNote = switch (shape.shape) {
+      null => unavailable(shape.unavailableReason),
+      CornerShape.singleApex => l10n.cornerShapeNoteSingle,
+      CornerShape.lateApex => l10n.cornerShapeNoteLate,
+      CornerShape.decreasingRadius =>
+        shape.radiusRatio == null
+            ? ''
+            : l10n.cornerShapeNoteDecreasing(fixed(shape.radiusRatio!, 1)),
+      CornerShape.increasingRadius =>
+        shape.radiusRatio == null || !(shape.radiusRatio! > 0)
+            ? ''
+            : l10n.cornerShapeNoteIncreasing(fixed(1 / shape.radiusRatio!, 1)),
+      CornerShape.doubleApex => l10n.cornerShapeNoteDouble,
+      CornerShape.complex =>
+        shape.changesDirection
+            ? l10n.cornerShapeNoteDirection
+            : l10n.cornerShapeNoteComplex(shape.tightParts),
+    };
+    final notBraking = driving.lapsMeasured - driving.brakingLaps;
+    final approachNote = switch (driving.approach) {
+      null => unavailable(driving.approachUnavailableReason),
+      CornerApproach.heavyBraking || CornerApproach.braking =>
+        driving.heavyUnknownReason.isNotEmpty
+            ? l10n.cornerApproachNoteNoShedReason(
+                how,
+                driving.brakingLaps,
+                driving.lapsMeasured,
+                cornerReasonText(l10n, driving.heavyUnknownReason),
+              )
+            : speed(driving.typicalSpeedShedMetresPerSecond).isEmpty
+            ? l10n.cornerApproachNoteNoShed(
+                how,
+                driving.brakingLaps,
+                driving.lapsMeasured,
+              )
+            : l10n.cornerApproachNoteShed(
+                speed(driving.typicalSpeedShedMetresPerSecond),
+                how,
+                driving.brakingLaps,
+                driving.lapsMeasured,
+              ),
+      CornerApproach.lift || CornerApproach.flat =>
+        speed(driving.typicalSpeedLossMetresPerSecond).isEmpty
+            ? l10n.cornerApproachNoteNoBrakingNoSpeed(
+                how,
+                notBraking,
+                driving.lapsMeasured,
+              )
+            : l10n.cornerApproachNoteNoBraking(
+                speed(driving.typicalSpeedLossMetresPerSecond),
+                how,
+                notBraking,
+                driving.lapsMeasured,
+              ),
+    };
+    final speedNote = [
+      driving.speedBand == null
+          ? unavailable(driving.speedBandUnavailableReason)
+          : l10n.cornerSpeedNote(
+              speed(driving.typicalMinimumSpeedMetresPerSecond),
+              driving.speedLaps,
+            ),
+      if (driving.otherUnitLaps > 0)
+        l10n.cornerClassOtherUnits(driving.otherUnitLaps),
+    ].join(' ');
+
+    return Column(
+      key: const ValueKey('cornerClass'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.cornerClassTitle,
+          key: const ValueKey('cornerClassTitle'),
+          style: theme.textTheme.titleSmall,
+        ),
+        item(
+          'cornerClassApproach',
+          l10n.cornerClassApproach,
+          cornerApproachText(l10n, driving),
+          approachNote,
+        ),
+        item(
+          'cornerClassSpeed',
+          l10n.cornerClassSpeed,
+          switch (driving.speedBand) {
+            final band? => cornerSpeedBandText(l10n, band),
+            null => null,
+          },
+          speedNote,
+        ),
+        item('cornerClassShape', l10n.cornerClassShape, switch (shape.shape) {
+          final value? => cornerShapeText(l10n, value),
+          null => null,
+        }, shapeNote),
+        Text(l10n.cornerClassNote, style: theme.textTheme.bodySmall),
       ],
     );
   }

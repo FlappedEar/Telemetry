@@ -127,6 +127,11 @@ List<int> _cornerIndices(TrackFeatures features, TrackSegmentProposal corner) {
   return indices;
 }
 
+/// The indices of [features]' samples inside [corner], in travel order,
+/// across the gate too (FET-220 reads the curvature profile from them).
+List<int> cornerSampleIndices(TrackFeatures features, TrackSegmentProposal corner) =>
+    _cornerIndices(features, corner);
+
 bool _validCorner(TrackSegmentProposal corner, double length) {
   bool inAxis(double value) => value.isFinite && value >= 0.0 && value <= length;
   return corner.type == TrackSegmentType.corner &&

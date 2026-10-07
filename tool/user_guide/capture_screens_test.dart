@@ -634,6 +634,10 @@ void main() {
     await tester.tap(corner.first);
     await tester.pumpAndSettle();
     await shot(tester, 'corner-details');
+    // What kind of corner it is (FET-220), further down the same sheet.
+    await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'corner-type');
     // Beside the rail: the page's own top edge closes the details.
     await tester.tapAt(const Offset(120, 4));
     await tester.pumpAndSettle();
