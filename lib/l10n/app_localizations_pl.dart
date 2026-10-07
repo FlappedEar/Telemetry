@@ -977,6 +977,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Żadna sesja w tej grupie nie ma jeszcze zatwierdzonych odcinków. Najpierw zatwierdź odcinki dla co najmniej jednej sesji.';
 
   @override
+  String get tbBestLapOffLine =>
+      'Linia GPS najlepszego okrążenia jest gdzieś daleko od większości pozostałych okrążeń, więc odcinki nie zostały wyznaczone automatycznie. Wyklucz z rankingu okrążenia z błędną linią.';
+
+  @override
   String get tbNoApprovedSegments =>
       'Brak zatwierdzonych odcinków potrzebnych do pomiaru czasów.';
 

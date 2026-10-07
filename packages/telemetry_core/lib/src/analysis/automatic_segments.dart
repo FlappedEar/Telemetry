@@ -5,6 +5,10 @@
 // (KAN-136). When no run of a track configuration has approved segments, every
 // proposal of the day's best lap is approved into that lap's run, so segment
 // results work straight after import. They are ordinary approved segments.
+//
+// Departure (FET-214, KAN-236): the best lap's proposals are adopted only
+// when its GPS line agrees with the run's other eligible laps
+// ([lineConsensus]); Overlays adopts them unchecked.
 import 'dart:math' as math;
 
 import 'package:fetproject/fetproject.dart' show makeTrackSegment;
@@ -40,6 +44,151 @@ List<ProgressRange> coverageGaps(List<ProgressSegment> trace, double length) {
   }
   addGap(reached, length);
   return gaps;
+}
+
+/// How far, in metres, a lap's line may be from most of the other eligible
+/// laps anywhere along it for its proposals to be adopted without review
+/// (FET-214). On the real Jastrząb and Silesia days (38 ranked laps, each
+/// checked against 8 others) every lap is within 13.5 m, the days' best laps
+/// within 5.2 m and 3.9 m; a check takes at most 50 ms. A line off by more
+/// than 30 m, about two track widths, draws corners that are not there.
+const double segmentConsensusMaximumMeters = 30.0;
+
+/// At least this many other eligible laps check a lap's line; with fewer the
+/// proposals are adopted unchecked, as Overlays does.
+const int segmentConsensusMinimumLaps = 2;
+
+/// At most this many other laps, spread over the day, are compared.
+const int segmentConsensusMaximumLaps = 8;
+
+/// The lap's line is checked every this many metres along its axis.
+const double segmentConsensusStepMeters = 5.0;
+
+/// Why no segments were adopted: the best lap's GPS line and the other
+/// eligible laps' lines are far apart somewhere (FET-214).
+const String automaticSegmentsLineDisagreement =
+    "The best lap's GPS line is far from most of the other laps somewhere, so no "
+    'segments were made automatically. Exclude the laps whose line is wrong from the ranking.';
+
+/// How well a lap's line agrees with the other eligible laps.
+final class LineConsensus {
+  const LineConsensus({
+    this.checkedLaps = 0,
+    this.worstDistanceMeters = 0.0,
+    this.worstProgressMeters = 0.0,
+  });
+
+  /// Other laps compared; none when there were too few to check.
+  final int checkedLaps;
+
+  /// The largest, along the lap, of the distance within which at least half
+  /// of the other laps' lines pass: the middle distance with an odd number
+  /// of laps, the smaller middle one with an even number.
+  final double worstDistanceMeters;
+
+  /// Where along the lap's axis [worstDistanceMeters] is.
+  final double worstProgressMeters;
+
+  /// Whether enough laps were compared to judge.
+  bool get checked => checkedLaps >= segmentConsensusMinimumLaps;
+
+  /// Whether, somewhere along the lap, more than half of the other laps are
+  /// farther than [segmentConsensusMaximumMeters] from it.
+  bool get disagrees => checked && !(worstDistanceMeters <= segmentConsensusMaximumMeters);
+}
+
+// One lap's line cut into runs of up to 32 segments, each with its bounding
+// box, so most runs are passed over without measuring their segments.
+final class _Line {
+  _Line(List<LapTracePoint> points) : points = points {
+    for (var first = 0; first + 1 < points.length; first += 32) {
+      final last = math.min(first + 32, points.length - 1);
+      var minEast = double.infinity, maxEast = -double.infinity;
+      var minNorth = double.infinity, maxNorth = -double.infinity;
+      for (var i = first; i <= last; ++i) {
+        minEast = math.min(minEast, points[i].eastMeters);
+        maxEast = math.max(maxEast, points[i].eastMeters);
+        minNorth = math.min(minNorth, points[i].northMeters);
+        maxNorth = math.max(maxNorth, points[i].northMeters);
+      }
+      runs.add((first, last, minEast, maxEast, minNorth, maxNorth));
+    }
+  }
+
+  final List<LapTracePoint> points;
+  final runs = <(int, int, double, double, double, double)>[];
+
+  double distanceTo(MetricPoint point) {
+    final px = point.eastMeters, py = point.northMeters;
+    if (points.length == 1) {
+      return hypot(px - points.first.eastMeters, py - points.first.northMeters);
+    }
+    var best = double.infinity;
+    for (final (first, last, minEast, maxEast, minNorth, maxNorth) in runs) {
+      final dx = px < minEast ? minEast - px : (px > maxEast ? px - maxEast : 0.0);
+      final dy = py < minNorth ? minNorth - py : (py > maxNorth ? py - maxNorth : 0.0);
+      if (hypot(dx, dy) >= best) continue;
+      for (var i = first; i < last; ++i) {
+        final a = points[i], b = points[i + 1];
+        final abx = b.eastMeters - a.eastMeters, aby = b.northMeters - a.northMeters;
+        final apx = px - a.eastMeters, apy = py - a.northMeters;
+        final length2 = abx * abx + aby * aby;
+        final t = length2 > 0.0 ? ((apx * abx + apy * aby) / length2).clamp(0.0, 1.0) : 0.0;
+        final distance = hypot(apx - t * abx, apy - t * aby);
+        if (distance < best) best = distance;
+      }
+    }
+    return best;
+  }
+}
+
+/// How well [axis] agrees with [others], the other eligible laps' traces in
+/// metres around the same origin (laps of one track configuration share
+/// their start gate, so their origin): every [segmentConsensusStepMeters]
+/// along the axis, the distance within which at least half of them pass
+/// (FET-214). Up to [segmentConsensusMaximumLaps] of [others], spread over
+/// them; unchecked with fewer than [segmentConsensusMinimumLaps].
+LineConsensus lineConsensus(
+  ProgressAxis axis,
+  List<LapTrace> others, {
+  CancellationCheck? cancelled,
+}) {
+  final usable = [
+    for (final trace in others)
+      if (trace.points.isNotEmpty) trace,
+  ];
+  if (!axis.valid || usable.length < segmentConsensusMinimumLaps) return const LineConsensus();
+  final chosen = usable.length <= segmentConsensusMaximumLaps
+      ? usable
+      : [
+          for (var i = 0; i < segmentConsensusMaximumLaps; ++i)
+            usable[(i * (usable.length - 1)) ~/ (segmentConsensusMaximumLaps - 1)],
+        ];
+  final lines = [for (final trace in chosen) _Line(trace.points)];
+  final spacing = axis.spacingMeters > 0.0 ? axis.spacingMeters : segmentConsensusStepMeters;
+  final stride = math.max(1, (segmentConsensusStepMeters / spacing).round());
+  var worst = 0.0, worstAt = 0.0;
+  final distances = List<double>.filled(lines.length, 0.0);
+  for (var index = 0; index < axis.points.length; index += stride) {
+    throwIfCancelled(cancelled);
+    final point = axis.points[index];
+    for (var lap = 0; lap < lines.length; ++lap) {
+      distances[lap] = lines[lap].distanceTo(point);
+    }
+    distances.sort();
+    // At least half of the laps pass within this distance, so it is over
+    // the limit only when more than half are farther.
+    final majority = distances[(distances.length - 1) ~/ 2];
+    if (!(majority <= worst)) {
+      worst = majority;
+      worstAt = index < axis.cumulative.length ? axis.cumulative[index] : 0.0;
+    }
+  }
+  return LineConsensus(
+    checkedLaps: lines.length,
+    worstDistanceMeters: worst,
+    worstProgressMeters: worstAt,
+  );
 }
 
 /// The segment proposals of one lap, or why there are none.
@@ -199,7 +348,8 @@ List<Map<String, Object?>>? approveAllProposals(
 /// not a resolved `compatibility-v1` group or any of [documentRuns] already
 /// has segments approved for it; otherwise the best lap's proposals approved
 /// into [storedSegments], its run's current `trackSegments` (null when none
-/// could be approved).
+/// could be approved, or when the lap's line disagrees with [otherLaps], the
+/// group's other eligible laps: [lineConsensus], FET-214).
 List<Map<String, Object?>>? automaticTrackSegments({
   required Iterable<Object?> documentRuns,
   required String groupId,
@@ -209,6 +359,7 @@ List<Map<String, Object?>>? automaticTrackSegments({
   required int lapNumber,
   required double startTime,
   required double endTime,
+  List<LapTrace> otherLaps = const [],
   math.Random? random,
   CancellationCheck? cancelled,
 }) {
@@ -223,5 +374,6 @@ List<Map<String, Object?>>? automaticTrackSegments({
     endTime: endTime,
     cancelled: cancelled,
   );
+  if (lineConsensus(review.axis, otherLaps, cancelled: cancelled).disagrees) return null;
   return approveAllProposals(storedSegments, review, groupId, random: random);
 }

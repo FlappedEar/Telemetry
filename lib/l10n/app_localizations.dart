@@ -1544,6 +1544,12 @@ abstract class AppLocalizations {
   /// **'No run in this group has an approved segment review yet. Approve segments for at least one run first.'**
   String get tbNoApprovedRun;
 
+  /// Why there is no theoretical best: the best lap's GPS line disagrees with the session's other laps (FET-214).
+  ///
+  /// In en, this message translates to:
+  /// **'The best lap\'s GPS line is far from most of the other laps somewhere, so no segments were made automatically. Exclude the laps whose line is wrong from the ranking.'**
+  String get tbBestLapOffLine;
+
   /// Why there is no theoretical best.
   ///
   /// In en, this message translates to:

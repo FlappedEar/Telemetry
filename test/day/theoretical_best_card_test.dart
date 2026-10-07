@@ -545,6 +545,28 @@ void main() {
     expect(find.text('Timing every lap on one track axis…'), findsOneWidget);
   });
 
+  testWidgets('says when the best lap is off the other laps\' line (FET-214)', (
+    tester,
+  ) async {
+    final result = DayTheoreticalBest(
+      groupId: 'g',
+      state: DayTheoreticalBestState.unavailable,
+      message: automaticSegmentsLineDisagreement,
+    );
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(body: TheoreticalBestCard(result: result)),
+      ),
+    );
+    expect(find.text(english.tbBestLapOffLine), findsOneWidget);
+    final polish = lookupAppLocalizations(const Locale('pl'));
+    expect(
+      polish.tbMessage(automaticSegmentsLineDisagreement),
+      polish.tbBestLapOffLine,
+    );
+    expect(polish.tbBestLapOffLine, contains('Wyklucz'));
+  });
+
   testWidgets('the theoretical best speaks Polish', (tester) async {
     addTearDown(() => Intl.defaultLocale = null);
     final outcome = importDay();
