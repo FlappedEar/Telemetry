@@ -80,15 +80,11 @@ Future<void> Function() _held(
 };
 
 void main() {
-  test('takes its slot count when made, from the default unless given', () {
-    final previous = FusionJobs.defaultSlots;
-    addTearDown(() => FusionJobs.defaultSlots = previous);
-    FusionJobs.defaultSlots = 2;
-    final made = FusionJobs(_Runner().call);
-    FusionJobs.defaultSlots = 5;
-    expect(made.slots, 2, reason: 'a later default does not change a day');
-    expect(FusionJobs(_Runner().call).slots, 5);
+  test('takes its slot count when made, the default unless given', () {
+    expect(FusionJobs.defaultSlots, inInclusiveRange(1, 3));
+    expect(FusionJobs(_Runner().call).slots, FusionJobs.defaultSlots);
     expect(FusionJobs(_Runner().call, slots: 1).slots, 1);
+    expect(FusionJobs(_Runner().call, slots: 2).slots, 2);
   });
 
   test('runs at most its slots at once, in the order asked', () async {

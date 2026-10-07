@@ -128,8 +128,7 @@ final class FusionJobs {
 
   /// How many runs a day aligns at once unless told otherwise: each
   /// isolate holds both recordings.
-  @visibleForTesting
-  static int defaultSlots = kIsWeb
+  static final int defaultSlots = kIsWeb
       ? 1
       : max(1, min(3, Platform.numberOfProcessors - 1));
 
@@ -183,7 +182,10 @@ final class FusionJobs {
   /// Waits for [task], the work reading [runId]'s recordings beside its
   /// fusion work, which [stop] or [dispose] stops.
   Future<T> runBackground<T>(String runId, BackgroundTask<T> task) async {
-    if (_disposed) task.cancel();
+    if (_disposed) {
+      task.cancel();
+      return task.result;
+    }
     _backgroundTasks[runId] = task;
     try {
       return await task.result;

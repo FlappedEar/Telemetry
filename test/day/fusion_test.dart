@@ -590,9 +590,6 @@ void main() {
   );
 
   test('queued alignments do not start once the day closes', () async {
-    final slots = FusionJobs.defaultSlots;
-    FusionJobs.defaultSlots = 1;
-    addTearDown(() => FusionJobs.defaultSlots = slots);
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final other = Directory('${directory.path}/other')..createSync();
     final (vbo2, rcz2) = writeFusionPair(
@@ -608,6 +605,7 @@ void main() {
       analysis: both.analysis!,
       alternatives: both.alternatives,
       fusionRunner: held.call,
+      fusionSlots: 1,
     );
     await pumpEventQueue();
     expect(held.jobs, hasLength(1), reason: 'one at a time');

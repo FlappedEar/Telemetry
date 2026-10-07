@@ -44,7 +44,8 @@ Android, written in Flutter. The brand is written **FlappedEar**, without a spac
   generation counter, queue, cache or background job). New stateful work goes
   in its own class, which the controller holds and calls; existing parts move
   out the same way when they are next changed (candidates: persistence and
-  recovery, fusion jobs, derived analysis, comparison state).
+  recovery, fusion and clock-check state on top of `FusionJobs`, derived
+  analysis, comparison state).
 - A newer run never cancels a CI run (`ci.yml`) on `main`, so every `main`
   revision gets a full result; runs on a pull request cancel when a newer push
   arrives. The user guide's Pages deploy still lets the newest `main` win.
