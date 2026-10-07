@@ -103,7 +103,10 @@ PhaseReference dayPhaseReference(
     final session = k < computed.runIds.length ? sessions[computed.runIds[k]] : null;
     final trace = k < computed.traces.length ? computed.traces[k] : const <ProgressSegment>[];
     if (session?.channel('speed') case final channel?) {
-      units.add(normalizedSpeedUnit(channel.unit.trim().isEmpty ? '' : channel.unit));
+      // As written; only the spellings of km/h and mph are folded together.
+      final written = channel.unit.trim();
+      final folded = normalizedSpeedUnit(written);
+      units.add(folded.isNotEmpty ? folded : written);
     }
     double? speed(double? time) => session == null ? null : speedMetresPerSecondAt(session, time);
     SectorTime? sector(String id) {
@@ -162,8 +165,16 @@ PhaseReference dayPhaseReference(
     laps,
     segmentMeets: meets,
     closes: closes,
-    // A speed without a unit is read as km/h (speedInMetresPerSecond).
-    speedUnit: units.length == 1 ? (units.single.isEmpty ? 'km/h' : units.single) : '',
+    // One unit shared by every lap, if it is known: a speed without a unit
+    // is read as km/h (speedInMetresPerSecond) and said to be assumed; a
+    // declared unit is never relabelled, and one that is not known (or
+    // several) leaves differences in m/s.
+    speedUnit: switch (units.length == 1 ? units.single : null) {
+      null => '',
+      '' => 'km/h',
+      final unit when metresPerSecondPerSpeedUnit(unit) != null => unit,
+      _ => '',
+    },
     speedUnitAssumed: units.contains(''),
     cancelled: cancelled,
   );

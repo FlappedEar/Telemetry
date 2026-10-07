@@ -57,10 +57,11 @@ final _speeds = [
   String firstUnit = '',
   String secondUnit = '',
   double perKmh = 1,
+  double firstPerKmh = 1,
   Map<DayLapReference, String> exclusions = const {},
 }) {
   final runs = [
-    _run('run1', _inUnit(rectangleSession(_speeds[0]), firstUnit, 1)),
+    _run('run1', _inUnit(rectangleSession(_speeds[0]), firstUnit, firstPerKmh)),
     _run('run2', _inUnit(rectangleSession(_speeds[1]), secondUnit, perKmh)),
   ];
   final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
@@ -251,6 +252,19 @@ void main() {
     final mph = _day(firstUnit: 'km/h', secondUnit: 'mph', perKmh: 1 / 1.609344).result.bestPhases!;
     expect(kmh.speedUnit, 'km/h');
     expect(kmh.speedUnitAssumed, isFalse, reason: 'declared');
+    // A declared unit is never taken for an assumed one.
+    final metres = _day(
+      firstUnit: 'm/s',
+      secondUnit: 'm/s',
+      perKmh: 1 / 3.6,
+      firstPerKmh: 1 / 3.6,
+    ).result.bestPhases!;
+    expect(metres.speedUnit, 'm/s');
+    expect(metres.speedUnitAssumed, isFalse);
+    final strange = _day(firstUnit: 'furlongs', secondUnit: 'furlongs').result.bestPhases!;
+    expect(strange.speedUnit, isEmpty, reason: 'no km/h claim');
+    expect(strange.speedUnitAssumed, isFalse);
+    expect(strange.joinsOf(PhaseJoin.joins) + strange.joinsOf(PhaseJoin.apart), isEmpty);
     // One undeclared, one declared: read as km/h, said so, no one unit.
     final mixed = _day(firstUnit: 'mph', secondUnit: '', perKmh: 1 / 1.609344).result.bestPhases!;
     expect(mixed.speedUnit, isEmpty);
