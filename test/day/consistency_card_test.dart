@@ -173,13 +173,19 @@ void main() {
 
   group('where the laps vary', () {
     // The best lap's trace at 10 Hz; where it is drawn does not matter.
-    LapPath pathOf(DayTheoreticalBest result) {
+    // With [before], also a second before the lap starts, outside every
+    // segment.
+    LapPath pathOf(DayTheoreticalBest result, {bool before = false}) {
       final best = result.bestLap!;
       return LapPath(
         origin: const GeoCoordinate(0, 0),
         segments: [
           [
-            for (var t = best.start; t <= best.end; t += 0.1)
+            for (
+              var t = before ? best.start - 1 : best.start;
+              t <= best.end;
+              t += 0.1
+            )
               PathPoint(t, t, 0, null),
           ],
         ],
@@ -193,6 +199,7 @@ void main() {
       WidgetTester tester, {
       Locale locale = const Locale('en'),
       bool longerLatest = false,
+      bool before = false,
     }) async {
       final outcome = importDay(longerLatest: longerLatest);
       final analysis = outcome.analysis!;
@@ -202,7 +209,7 @@ void main() {
         for (final named in outcome.runs)
           ProgressionRunInfo(id: named.run.id, name: named.name),
       ]);
-      final path = pathOf(result);
+      final path = pathOf(result, before: before);
       await tester.binding.setSurfaceSize(const Size(412, 4000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       String? chosen;
@@ -362,6 +369,7 @@ void main() {
         '0.50–1.00 s',
         'Over 1.00 s',
         'Needs at least 3 laps',
+        'Not in a segment',
       ]) {
         expect(legend, contains(band));
       }
@@ -371,6 +379,7 @@ void main() {
       addTearDown(() => Intl.defaultLocale = null);
       await show(tester, locale: const Locale('pl'));
       expect(find.text('Gdzie okrążenia się różnią'), findsOneWidget);
+      expect(find.text('Not in a segment'), findsNothing);
       expect(find.text('Do 0.10 s'), findsOneWidget);
       expect(find.text('Ponad 1.00 s'), findsOneWidget);
       expect(find.text('Where the laps vary'), findsNothing);
