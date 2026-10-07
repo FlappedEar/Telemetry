@@ -7907,4 +7907,236 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get bpSpeedAssumed =>
       'Prędkości bez jednostki są odczytywane jako km/h.';
+
+  @override
+  String get brakingTechniqueTitle => 'Technika hamowania';
+
+  @override
+  String brakingTechniqueFromG(String rate) {
+    return 'Z kanału przyspieszenia wzdłużnego ($rate Hz), na sklasyfikowanych okrążeniach tego dnia.';
+  }
+
+  @override
+  String brakingTechniqueFromGAssumed(String rate) {
+    return 'Z kanału przyspieszenia wzdłużnego ($rate Hz, bez zapisanej jednostki: odczytane jako g), na sklasyfikowanych okrążeniach tego dnia.';
+  }
+
+  @override
+  String brakingTechniqueFromSpeed(String rate, String why) {
+    return 'Z prędkości ($rate Hz), jej nachylenie wygładzone w oknie pół sekundy, na sklasyfikowanych okrążeniach tego dnia: $why.';
+  }
+
+  @override
+  String get brakingTechniqueNoGChannel =>
+      'brak kanału przyspieszenia wzdłużnego';
+
+  @override
+  String get brakingTechniqueGChannelEmpty =>
+      'kanał przyspieszenia wzdłużnego nie zawiera danych';
+
+  @override
+  String get brakingTechniqueHit => 'Narastanie hamowania';
+
+  @override
+  String get brakingTechniquePeak => 'Szczytowe opóźnienie';
+
+  @override
+  String get brakingTechniqueTrail =>
+      'Hamowanie w zakręcie (trail braking) · wywnioskowane';
+
+  @override
+  String get brakingTechniqueRelease => 'Odpuszczanie hamulca';
+
+  @override
+  String get brakingTechniqueBrakeToThrottle => 'Od hamulca do gazu';
+
+  @override
+  String get brakingTechniquePedal => 'Pedał hamulca: wciskanie i puszczanie';
+
+  @override
+  String brakingTechniqueThisLap(String value) {
+    return 'To okrążenie $value';
+  }
+
+  @override
+  String brakingTechniqueThisLapUnknown(String reason) {
+    return 'To okrążenie: nieznane, $reason';
+  }
+
+  @override
+  String brakingTechniqueTypical(String value, int laps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: 'typowo $value ($laps okrążenia)',
+      many: 'typowo $value ($laps okrążeń)',
+      few: 'typowo $value ($laps okrążenia)',
+      one: 'typowo $value (1 okrążenie)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueTypicalUnknown(String reason) {
+    return 'typowo: nieznane, $reason';
+  }
+
+  @override
+  String brakingTechniquePeakWhere(int after, int zone) {
+    return 'Szczyt $after m od początku hamowania na odcinku $zone m.';
+  }
+
+  @override
+  String get brakingTechniquePeakEarly =>
+      'Zwykle w pierwszej trzeciej części hamowania.';
+
+  @override
+  String get brakingTechniquePeakMiddle =>
+      'Zwykle w środkowej trzeciej części hamowania.';
+
+  @override
+  String get brakingTechniquePeakLate =>
+      'Zwykle w ostatniej trzeciej części hamowania.';
+
+  @override
+  String get brakingTechniqueTrailNote =>
+      'Hamowanie przy przeciążeniu bocznym co najmniej 0.3 g. Wywnioskowane: nie ma kanału kąta skrętu kierownicy.';
+
+  @override
+  String brakingTechniqueThrottleNote(String rate, String error) {
+    return 'Od końca hamowania do ponownego dodania gazu. Gaz jest zapisywany z częstotliwością $rate Hz, więc moment dodania gazu jest znany z dokładnością około $error s.';
+  }
+
+  @override
+  String brakingTechniquePedalSlow(String rate) {
+    return 'Nieznane: kanał hamulca jest zbyt wolny ($rate Hz). Pokazuje, kiedy trwa hamowanie, ale nie jak porusza się pedał, dlatego narastanie i odpuszczanie powyżej pochodzą z opóźnienia.';
+  }
+
+  @override
+  String brakingTechniqueUnavailable(String reason) {
+    return 'Nieznane: $reason';
+  }
+
+  @override
+  String brakingTechniqueBrakingLaps(int braked, int laps) {
+    return 'Hamowanie na $braked z $laps okrążeń.';
+  }
+
+  @override
+  String brakingTechniqueOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto $count okrążenia zmierzonego inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      many:
+          'Pominięto $count okrążeń zmierzonych inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      few:
+          'Pominięto $count okrążenia zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      one: 'Pominięto 1 okrążenie zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brakingTechniqueNote =>
+      'Hamowanie zaczyna się i kończy tam, gdzie opóźnienie przekracza 0.15 g (wykrywane od 0.30 g). Narastanie to tempo wzrostu od 0.15 g do 85 % szczytu; odpuszczanie to tempo spadku od tego poziomu z powrotem do 0.15 g. Oba wymagają szczytu co najmniej 0.40 g i nie są odczytywane z kanału wolniejszego niż około 10 Hz. Wartość typowa to mediana z co najmniej trzech okrążeń.';
+
+  @override
+  String brakingTechniqueReasonTooSlow(String rate) {
+    return 'kanał zbyt wolny ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonBrakeTooSlow(String rate) {
+    return 'kanał hamulca zbyt wolny ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonLateralTooSlow(String rate) {
+    return 'kanał przeciążenia bocznego zbyt wolny ($rate Hz)';
+  }
+
+  @override
+  String get brakingTechniqueReasonNoDeceleration =>
+      'brak zapisu przyspieszenia wzdłużnego i prędkości';
+
+  @override
+  String get brakingTechniqueReasonNoBraking => 'brak hamowania w tym miejscu';
+
+  @override
+  String get brakingTechniqueReasonGap => 'przerwa w zapisie';
+
+  @override
+  String get brakingTechniqueReasonTruncated =>
+      'hamowanie trwa dłużej niż zapis';
+
+  @override
+  String get brakingTechniqueReasonTooLight =>
+      'szczyt hamowania poniżej 0.40 g';
+
+  @override
+  String get brakingTechniqueReasonTooQuick => 'szybciej, niż pokazują próbki';
+
+  @override
+  String get brakingTechniqueReasonNoLateral =>
+      'brak kanału przeciążenia bocznego';
+
+  @override
+  String get brakingTechniqueReasonLateralEmpty =>
+      'kanał przeciążenia bocznego nie zawiera danych';
+
+  @override
+  String get brakingTechniqueReasonNoThrottle => 'brak kanału gazu';
+
+  @override
+  String get brakingTechniqueReasonNoBrake => 'brak kanału pedału hamulca';
+
+  @override
+  String get brakingTechniqueDayTitle => 'Technika hamowania';
+
+  @override
+  String brakingTechniqueDaySummary(
+    int corners,
+    String source,
+    String figures,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      corners,
+      locale: localeName,
+      other: 'Typowo w $corners zakrętach',
+      one: 'Typowo w 1 zakręcie',
+    );
+    return '$_temp0, $source: $figures.';
+  }
+
+  @override
+  String get brakingTechniqueDayFromG => 'z przyspieszenia wzdłużnego';
+
+  @override
+  String get brakingTechniqueDayFromSpeed => 'z prędkości';
+
+  @override
+  String brakingTechniqueDayHit(String value) {
+    return 'narastanie $value';
+  }
+
+  @override
+  String brakingTechniqueDayRelease(String value) {
+    return 'odpuszczanie $value';
+  }
+
+  @override
+  String brakingTechniqueDayTrail(String value) {
+    return 'hamowanie w zakręcie $value (wywnioskowane)';
+  }
+
+  @override
+  String brakingTechniqueDayThrottle(String value) {
+    return 'od hamulca do gazu $value';
+  }
+
+  @override
+  String get brakingTechniqueDayNote =>
+      'Stuknij zakręt powyżej, aby zobaczyć hamowanie okrążenie po okrążeniu.';
 }

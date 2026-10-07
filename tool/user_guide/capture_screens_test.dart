@@ -654,6 +654,10 @@ void main() {
     await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
     await tester.pumpAndSettle();
     await shot(tester, 'corner-type');
+    // How it is braked into (FET-219), under the corner type.
+    await tester.ensureVisible(find.byKey(const ValueKey('brakingTechnique')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'braking-technique');
     // Beside the rail: the page's own top edge closes the details.
     await tester.tapAt(const Offset(120, 4));
     await tester.pumpAndSettle();

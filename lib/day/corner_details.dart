@@ -509,6 +509,11 @@ class CornerDetails extends StatelessWidget {
         Text(l10n.cornerDetailsExplanation, style: theme.textTheme.bodySmall),
         const SizedBox(height: 12),
         CornerClassSection(classification: corner.classification),
+        const SizedBox(height: 12),
+        BrakingTechniqueSection(
+          technique: corner.brakingTechnique,
+          lap: comparison.lap.reference,
+        ),
       ],
     );
   }
@@ -716,6 +721,329 @@ class CornerClassSection extends StatelessWidget {
           null => null,
         }, shapeNote),
         Text(l10n.cornerClassNote, style: theme.textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+String _rate(double? hz) => hz == null ? '—' : fixed(hz, 1);
+
+/// Why a braking technique figure is not known, in a short plain phrase;
+/// a channel too slow says its rate ([rate]). Reasons it shares with the
+/// other corner analyses read as they do.
+String brakingTechniqueReasonText(
+  AppLocalizations l10n,
+  String reason, {
+  double? rate,
+}) => switch (reason) {
+  brakingTechniqueNoDeceleration => l10n.brakingTechniqueReasonNoDeceleration,
+  brakingTechniqueDecelerationTooSlow => l10n.brakingTechniqueReasonTooSlow(
+    _rate(rate),
+  ),
+  brakingTechniqueSpeedUnitUnknown => l10n.cornerClassReasonSpeedUnit,
+  brakingTechniqueNotCovered => l10n.cornerDetailsReasonNotCovered,
+  brakingTechniqueNoBraking => l10n.brakingTechniqueReasonNoBraking,
+  brakingTechniqueAlreadyBraking => l10n.cornerDetailsReasonAlreadyBraking,
+  brakingTechniqueGap => l10n.brakingTechniqueReasonGap,
+  brakingTechniqueTruncated => l10n.brakingTechniqueReasonTruncated,
+  brakingTechniqueTooLight => l10n.brakingTechniqueReasonTooLight,
+  brakingTechniqueTooQuick => l10n.brakingTechniqueReasonTooQuick,
+  brakingTechniqueNoLateral => l10n.brakingTechniqueReasonNoLateral,
+  brakingTechniqueLateralPlaceholder => l10n.brakingTechniqueReasonLateralEmpty,
+  brakingTechniqueLateralTooSlow => l10n.brakingTechniqueReasonLateralTooSlow(
+    _rate(rate),
+  ),
+  brakingTechniqueUnitNotSupported => l10n.cornerDetailsReasonUnitNotSupported,
+  brakingTechniqueNoThrottle => l10n.brakingTechniqueReasonNoThrottle,
+  brakingTechniqueNoPickup => l10n.cornerDetailsReasonNoPickup,
+  brakingTechniqueNoBrake => l10n.brakingTechniqueReasonNoBrake,
+  brakingTechniqueBrakeTooSlow => l10n.brakingTechniqueReasonBrakeTooSlow(
+    _rate(rate),
+  ),
+  brakingTechniqueBrakeNotUsed => l10n.cornerDetailsReasonBrakeChannelNotUsed,
+  brakingTechniqueBrakeScaleUnknown => l10n.cornerDetailsReasonScaleUnknown,
+  brakingTechniqueTooFewLaps => l10n.cornerClassReasonTooFewLaps,
+  _ => cornerReasonText(l10n, reason),
+};
+
+/// How the corner is braked into (FET-219): this lap's and the typical
+/// initial hit, peak deceleration, trail braking (inferred), release and
+/// brake-to-throttle time, with what they come from, and why any is not
+/// known. The brake pedal's own ramp is shown only from a channel of about
+/// 10 Hz; a slower one says its rate.
+class BrakingTechniqueSection extends StatelessWidget {
+  const BrakingTechniqueSection({
+    super.key,
+    required this.technique,
+    required this.lap,
+  });
+
+  final BrakingTechnique technique;
+
+  /// The lap the details are for.
+  final DayLapReference lap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final own = technique.lap(lap);
+    String reason(String reason, {double? rate}) =>
+        brakingTechniqueReasonText(l10n, reason, rate: rate);
+
+    Widget item(String key, String label, String value, [String note = '']) =>
+        Padding(
+          key: ValueKey(key),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.labelMedium),
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              if (note.isNotEmpty) Text(note, style: theme.textTheme.bodySmall),
+            ],
+          ),
+        );
+
+    // "This lap 0.84 g/s · typical 0.70 g/s (16 laps)", each part saying
+    // why when it is not known.
+    String values(
+      double? Function(BrakingTechniqueLap) read,
+      String Function(BrakingTechniqueLap) why,
+      BrakingTechniqueTypical typical,
+      String Function(double) format, {
+      double? rate,
+    }) {
+      final mine = own == null ? null : read(own);
+      return [
+        if (own != null)
+          mine != null
+              ? l10n.brakingTechniqueThisLap(format(mine))
+              : l10n.brakingTechniqueThisLapUnknown(
+                  reason(
+                    own.measured ? why(own) : own.unavailableReason,
+                    rate: rate ?? own.rateHz,
+                  ),
+                ),
+        typical.median != null
+            ? l10n.brakingTechniqueTypical(
+                format(typical.median!),
+                typical.laps,
+              )
+            : l10n.brakingTechniqueTypicalUnknown(
+                reason(typical.reason, rate: rate ?? technique.rateHz),
+              ),
+      ].join(' · ');
+    }
+
+    String gPerSecond(double value) => '${fixed(value, 2)}\u00a0g/s';
+    String g(double value) => '${fixed(value, 2)}\u00a0g';
+    String seconds(double value) => '${fixed(value, 2)}\u00a0s';
+
+    final title = Text(
+      l10n.brakingTechniqueTitle,
+      key: const ValueKey('brakingTechniqueTitle'),
+      style: theme.textTheme.titleSmall,
+    );
+    final rate = _rate(technique.rateHz);
+    final source = switch (technique.source) {
+      brakingTechniqueFromG when technique.unitAssumed =>
+        l10n.brakingTechniqueFromGAssumed(rate),
+      brakingTechniqueFromG => l10n.brakingTechniqueFromG(rate),
+      brakingTechniqueFromSpeed => l10n.brakingTechniqueFromSpeed(
+        rate,
+        technique.gChannelReason == brakingTechniqueGPlaceholder
+            ? l10n.brakingTechniqueGChannelEmpty
+            : l10n.brakingTechniqueNoGChannel,
+      ),
+      _ => '',
+    };
+    final counts = [
+      if (source.isNotEmpty) source,
+      if (technique.lapsMeasured > 0)
+        l10n.brakingTechniqueBrakingLaps(
+          technique.lapsBraking,
+          technique.lapsMeasured,
+        ),
+      if (technique.otherSourceLaps > 0)
+        l10n.brakingTechniqueOtherSource(technique.otherSourceLaps),
+    ].join(' ');
+    if (technique.unavailableReason.isNotEmpty &&
+        (own == null || !own.measured)) {
+      return Column(
+        key: const ValueKey('brakingTechnique'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          Padding(
+            key: const ValueKey('brakingTechniqueReason'),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text(
+              l10n.brakingTechniqueUnavailable(
+                reason(
+                  own != null && own.unavailableReason.isNotEmpty
+                      ? own.unavailableReason
+                      : technique.unavailableReason,
+                  rate: own?.rateHz ?? technique.rateHz,
+                ),
+              ),
+            ),
+          ),
+          if (counts.isNotEmpty) Text(counts, style: theme.textTheme.bodySmall),
+        ],
+      );
+    }
+
+    // Where the peak falls: this lap's metres, and the typical third.
+    final peakNotes = [
+      if (own?.peakAfterOnsetMeters != null && own?.zoneMeters != null)
+        l10n.brakingTechniquePeakWhere(
+          own!.peakAfterOnsetMeters!.round(),
+          own.zoneMeters!.round(),
+        ),
+      switch (technique.peakFraction.median) {
+        null => '',
+        < 1 / 3 => l10n.brakingTechniquePeakEarly,
+        < 2 / 3 => l10n.brakingTechniquePeakMiddle,
+        _ => l10n.brakingTechniquePeakLate,
+      },
+    ].where((note) => note.isNotEmpty).join(' ');
+    final throttleRate = technique.throttleRateHz;
+    final hasThrottle = technique.laps.any(
+      (entry) => entry.$2.throttleChannel.isNotEmpty,
+    );
+    final brakeRate = technique.brakeRateHz;
+    final hasBrake = technique.laps.any(
+      (entry) => entry.$2.brakeChannel.isNotEmpty,
+    );
+    final pedalSlow =
+        brakeRate != null && brakeRate < brakingTechniqueMinimumRateHz;
+
+    return Column(
+      key: const ValueKey('brakingTechnique'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        title,
+        if (counts.isNotEmpty)
+          Text(
+            counts,
+            key: const ValueKey('brakingTechniqueSource'),
+            style: theme.textTheme.bodySmall,
+          ),
+        item(
+          'brakingTechniqueHit',
+          l10n.brakingTechniqueHit,
+          values(
+            (lap) => lap.hitGPerSecond,
+            (lap) => lap.hitReason,
+            technique.hit,
+            gPerSecond,
+          ),
+        ),
+        item(
+          'brakingTechniquePeak',
+          l10n.brakingTechniquePeak,
+          values(
+            (lap) => lap.peakG,
+            (lap) => brakingTechniqueNotCovered,
+            technique.peak,
+            g,
+          ),
+          peakNotes,
+        ),
+        item(
+          'brakingTechniqueTrail',
+          l10n.brakingTechniqueTrail,
+          values(
+            (lap) => lap.trailSeconds,
+            (lap) => lap.trailReason,
+            technique.trailSeconds,
+            (value) => seconds(value),
+            rate: technique.lateralRateHz,
+          ),
+          [
+            if (own?.trailMeters != null)
+              l10n.brakingTechniqueThisLap(_meters(own!.trailMeters)),
+            l10n.brakingTechniqueTrailNote,
+          ].join(' · '),
+        ),
+        item(
+          'brakingTechniqueRelease',
+          l10n.brakingTechniqueRelease,
+          values(
+            (lap) => lap.releaseGPerSecond,
+            (lap) => lap.releaseReason,
+            technique.release,
+            gPerSecond,
+          ),
+        ),
+        if (hasThrottle)
+          item(
+            'brakingTechniqueThrottle',
+            l10n.brakingTechniqueBrakeToThrottle,
+            values(
+              (lap) => lap.brakeToThrottleSeconds,
+              (lap) => lap.brakeToThrottleReason,
+              technique.brakeToThrottle,
+              seconds,
+            ),
+            throttleRate == null
+                ? ''
+                : l10n.brakingTechniqueThrottleNote(
+                    _rate(throttleRate),
+                    fixed(1 / throttleRate, 1),
+                  ),
+          ),
+        if (hasBrake)
+          pedalSlow
+              ? Padding(
+                  key: const ValueKey('brakingTechniquePedal'),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.brakingTechniquePedal,
+                        style: theme.textTheme.labelMedium,
+                      ),
+                      Text(
+                        l10n.brakingTechniquePedalSlow(_rate(brakeRate)),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                )
+              : item(
+                  'brakingTechniquePedal',
+                  l10n.brakingTechniquePedal,
+                  [
+                    values(
+                      (lap) => lap.pedalApplicationPerSecond,
+                      (lap) => lap.pedalReason,
+                      technique.pedalApplication,
+                      (value) => '${fixed(value, 0)}\u00a0%/s',
+                      rate: brakeRate,
+                    ),
+                    values(
+                      (lap) => lap.pedalReleasePerSecond,
+                      (lap) => lap.pedalReason,
+                      technique.pedalRelease,
+                      (value) => '${fixed(value, 0)}\u00a0%/s',
+                      rate: brakeRate,
+                    ),
+                  ].join('\n'),
+                ),
+        Text(
+          l10n.brakingTechniqueNote,
+          key: const ValueKey('brakingTechniqueNote'),
+          style: theme.textTheme.bodySmall,
+        ),
       ],
     );
   }

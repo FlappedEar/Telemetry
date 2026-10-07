@@ -50,7 +50,7 @@
 <p class="note">Later braking or an earlier pickup is not automatically faster. The parts show where on the corner the time went, not why.</p>
 
 <h2 id="type">Corner type</h2>
-<p>At the bottom of the corner details, <strong>Corner type</strong> says what kind of corner it is, in three parts. The same short line is on the corner's row in <a href="theoretical-best.html#where">Where the time goes</a>. It is the same for every lap you pick: it describes the corner, not one lap.</p>
+<p>Near the bottom of the corner details, <strong>Corner type</strong> says what kind of corner it is, in three parts. The same short line is on the corner's row in <a href="theoretical-best.html#where">Where the time goes</a>. It is the same for every lap you pick: it describes the corner, not one lap.</p>
 <figure>
   <img src="assets/screens/corner-type.png" alt="Corner type of Corner 1: Heavy braking, typically 44 km/h slower at the lowest point than where braking starts, brakes on 23 of 23 laps (brake pedal); Slow corner, typical minimum speed 43 km/h over 18 laps; Single apex" width="1280" height="800" loading="lazy">
 </figure>
@@ -68,3 +68,27 @@
   <li>A segment that holds several corners (such as an automatic <em>Corners 9–16</em>) is not divided into single corners: it is classed as a whole, usually as a <em>Double apex</em> or <em>Complex</em>. A segment across the start/finish line has its shape, but no braking or speed class, because each lap's two halves of it are on different passes.</li>
 </ul>
 <p class="note">The type describes the corner and how it was driven that day; it is not advice on how to drive it.</p>
+
+<h2 id="braking">Braking technique</h2>
+<p>Under the corner type, <strong>Braking technique</strong> says how the corner is braked into: on the lap you picked and typically over the day's ranked laps. Each line shows <em>This lap …</em> and <em>typical … (N laps)</em>.</p>
+<figure>
+  <img src="assets/screens/braking-technique.png" alt="Braking technique of Corner 1 on Session 4 lap 5, from the longitudinal G channel at 10 Hz read as g, braking on 22 of 23 laps: initial hit 0.56 g/s, typical 0.70 g/s; peak deceleration 0.65 g, typical 0.54 g, 36 m into 65 m of braking; trail braking (inferred) 2.10 s, typical 1.56 s; release 0.32 g/s, typical 0.22 g/s; brake to throttle 0.04 s, typical 1.02 s; brake pedal not known: brake channel too slow (2.1 Hz)" width="1280" height="800" loading="lazy">
+</figure>
+<table>
+  <thead><tr><th>Line</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Initial hit</strong></td><td>How fast the deceleration builds, in g per second: from where braking starts (0.15 g) to 85 % of its peak.</td></tr>
+    <tr><td><strong>Peak deceleration</strong></td><td>The highest deceleration in the braking, in g, with how many metres into the braking it comes on this lap and whether it typically falls in the first, middle or last third.</td></tr>
+    <tr><td><strong>Trail braking · inferred</strong></td><td>How long, and how many metres, braking goes on while the lateral G is at least 0.3 g. It is inferred: braking while the car is already cornering, read from the lateral G, as there is no steering channel.</td></tr>
+    <tr><td><strong>Release</strong></td><td>How fast the deceleration falls off into the apex, in g per second: from 85 % of the peak, after it, back to 0.15 g.</td></tr>
+    <tr><td><strong>Brake to throttle</strong></td><td>The time from the end of braking to the throttle pickup. Shown only when the recording has a throttle channel, with how precisely its rate places the pickup.</td></tr>
+    <tr><td><strong>Brake pedal: application and release</strong></td><td>How fast the pedal itself is pressed and let off, in % per second. Only from a brake channel of about 10 Hz or faster; a slower one (an OBD pedal, about 2 Hz) says <em>Not known: brake channel too slow (2.1 Hz)</em>. It still shows when braking happens, but the hit and release then come from the deceleration only.</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li>The deceleration comes from the longitudinal G channel when the recording has one with data, otherwise from the slope of the speed, smoothed over half a second (the line under the title says which, and the channel's rate). A G channel that records no unit is read as g and says so. Laps measured from G and from speed, or in different units, are never mixed.</li>
+  <li>Braking is found where the deceleration passes 0.30 g and runs while it is at least 0.15 g, from up to 200 m before the corner to its end. Shorter than 0.3 s is a bump, not braking. The hit and release need a peak of at least 0.40 g, at least three samples, and a channel of about 10 Hz or faster.</li>
+  <li>Typical is the median of at least three of the day's ranked laps that braked here. A line that cannot be told says why, for example <em>Not known: braking peaks below 0.40 g</em>, <em>no lateral G channel</em> or <em>channel too slow (4.0 Hz)</em>. A corner across the start/finish line is measured too: its braking may start before the line.</li>
+  <li>A segment holding several corners (such as <em>Corners 9–16</em>) is measured on its first braking, and its brake-to-throttle time runs to the first pickup after that braking, which may come after a later corner.</li>
+</ul>
+<p class="note">The figures describe how you braked that day. A recording's smoothed G channel makes the hit and release read slower than the car really braked. They are observations, not advice on how to brake.</p>

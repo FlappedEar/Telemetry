@@ -7735,4 +7735,226 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bpSpeedAssumed => 'Speeds without a unit are read as km/h.';
+
+  @override
+  String get brakingTechniqueTitle => 'Braking technique';
+
+  @override
+  String brakingTechniqueFromG(String rate) {
+    return 'From the longitudinal G channel ($rate Hz) on this day\'s ranked laps.';
+  }
+
+  @override
+  String brakingTechniqueFromGAssumed(String rate) {
+    return 'From the longitudinal G channel ($rate Hz, no unit recorded: read as g) on this day\'s ranked laps.';
+  }
+
+  @override
+  String brakingTechniqueFromSpeed(String rate, String why) {
+    return 'From speed ($rate Hz), its slope smoothed over half a second, on this day\'s ranked laps: $why.';
+  }
+
+  @override
+  String get brakingTechniqueNoGChannel => 'no longitudinal G channel';
+
+  @override
+  String get brakingTechniqueGChannelEmpty =>
+      'the longitudinal G channel holds no data';
+
+  @override
+  String get brakingTechniqueHit => 'Initial hit';
+
+  @override
+  String get brakingTechniquePeak => 'Peak deceleration';
+
+  @override
+  String get brakingTechniqueTrail => 'Trail braking · inferred';
+
+  @override
+  String get brakingTechniqueRelease => 'Release';
+
+  @override
+  String get brakingTechniqueBrakeToThrottle => 'Brake to throttle';
+
+  @override
+  String get brakingTechniquePedal => 'Brake pedal: application and release';
+
+  @override
+  String brakingTechniqueThisLap(String value) {
+    return 'This lap $value';
+  }
+
+  @override
+  String brakingTechniqueThisLapUnknown(String reason) {
+    return 'This lap: not known, $reason';
+  }
+
+  @override
+  String brakingTechniqueTypical(String value, int laps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: 'typical $value ($laps laps)',
+      one: 'typical $value (1 lap)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueTypicalUnknown(String reason) {
+    return 'typical: not known, $reason';
+  }
+
+  @override
+  String brakingTechniquePeakWhere(int after, int zone) {
+    return 'Peak $after m into $zone m of braking.';
+  }
+
+  @override
+  String get brakingTechniquePeakEarly =>
+      'Typically in the first third of the braking.';
+
+  @override
+  String get brakingTechniquePeakMiddle =>
+      'Typically in the middle third of the braking.';
+
+  @override
+  String get brakingTechniquePeakLate =>
+      'Typically in the last third of the braking.';
+
+  @override
+  String get brakingTechniqueTrailNote =>
+      'Braking while the lateral G is at least 0.3 g. Inferred: there is no steering channel.';
+
+  @override
+  String brakingTechniqueThrottleNote(String rate, String error) {
+    return 'From the end of braking to the throttle pickup. The throttle is recorded at $rate Hz, so the pickup is placed to about $error s.';
+  }
+
+  @override
+  String brakingTechniquePedalSlow(String rate) {
+    return 'Not known: brake channel too slow ($rate Hz). It shows when braking happens, not how the pedal moves, so the hit and release above come from the deceleration.';
+  }
+
+  @override
+  String brakingTechniqueUnavailable(String reason) {
+    return 'Not known: $reason';
+  }
+
+  @override
+  String brakingTechniqueBrakingLaps(int braked, int laps) {
+    return 'Brakes on $braked of $laps laps.';
+  }
+
+  @override
+  String brakingTechniqueOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count laps measured another way (G channel or speed, or another unit) are left out.',
+      one: '1 lap measured another way (G channel or speed, or another unit) is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brakingTechniqueNote =>
+      'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises from 0.15 g to 85 % of its peak; the release how fast it falls from there back to 0.15 g. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. Typical is the median of at least three laps.';
+
+  @override
+  String brakingTechniqueReasonTooSlow(String rate) {
+    return 'channel too slow ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonBrakeTooSlow(String rate) {
+    return 'brake channel too slow ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonLateralTooSlow(String rate) {
+    return 'lateral G channel too slow ($rate Hz)';
+  }
+
+  @override
+  String get brakingTechniqueReasonNoDeceleration =>
+      'no longitudinal G or speed recorded';
+
+  @override
+  String get brakingTechniqueReasonNoBraking => 'no braking here';
+
+  @override
+  String get brakingTechniqueReasonGap => 'a gap in the recording';
+
+  @override
+  String get brakingTechniqueReasonTruncated =>
+      'braking runs past the recording';
+
+  @override
+  String get brakingTechniqueReasonTooLight => 'braking peaks below 0.40 g';
+
+  @override
+  String get brakingTechniqueReasonTooQuick => 'quicker than the samples show';
+
+  @override
+  String get brakingTechniqueReasonNoLateral => 'no lateral G channel';
+
+  @override
+  String get brakingTechniqueReasonLateralEmpty =>
+      'the lateral G channel holds no data';
+
+  @override
+  String get brakingTechniqueReasonNoThrottle => 'no throttle channel';
+
+  @override
+  String get brakingTechniqueReasonNoBrake => 'no brake pedal channel';
+
+  @override
+  String get brakingTechniqueDayTitle => 'Braking technique';
+
+  @override
+  String brakingTechniqueDaySummary(
+    int corners,
+    String source,
+    String figures,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      corners,
+      locale: localeName,
+      other: 'Typical over $corners corners',
+      one: 'Typical over 1 corner',
+    );
+    return '$_temp0, $source: $figures.';
+  }
+
+  @override
+  String get brakingTechniqueDayFromG => 'from longitudinal G';
+
+  @override
+  String get brakingTechniqueDayFromSpeed => 'from speed';
+
+  @override
+  String brakingTechniqueDayHit(String value) {
+    return 'initial hit $value';
+  }
+
+  @override
+  String brakingTechniqueDayRelease(String value) {
+    return 'release $value';
+  }
+
+  @override
+  String brakingTechniqueDayTrail(String value) {
+    return 'trail braking $value (inferred)';
+  }
+
+  @override
+  String brakingTechniqueDayThrottle(String value) {
+    return 'brake to throttle $value';
+  }
+
+  @override
+  String get brakingTechniqueDayNote =>
+      'Tap a corner above for its braking lap by lap.';
 }

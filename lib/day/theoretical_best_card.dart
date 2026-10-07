@@ -335,7 +335,48 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         selected: lap?.lap.reference,
         onSelect: _choose,
       ),
+      ..._brakingTechnique(context, result),
       ..._variability(context, result),
+    ];
+  }
+
+  // The day's braking technique over its corners (FET-219): the median of
+  // each corner's typical value, from one source; nothing when no corner
+  // has one.
+  List<Widget> _brakingTechnique(
+    BuildContext context,
+    DayTheoreticalBest result,
+  ) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final day = summarizeBrakingTechniqueDay([
+      for (final corner in result.corners) corner.brakingTechnique,
+    ]);
+    if (!day.available) return const [];
+    final figures = [
+      if (day.hit case final hit?)
+        l10n.brakingTechniqueDayHit('${fixed(hit, 2)}\u00a0g/s'),
+      if (day.release case final release?)
+        l10n.brakingTechniqueDayRelease('${fixed(release, 2)}\u00a0g/s'),
+      if (day.trailSeconds case final trail?)
+        l10n.brakingTechniqueDayTrail('${fixed(trail, 2)}\u00a0s'),
+      if (day.brakeToThrottle case final throttle?)
+        l10n.brakingTechniqueDayThrottle('${fixed(throttle, 2)}\u00a0s'),
+    ].join(', ');
+    return [
+      const SizedBox(height: 16),
+      Text(l10n.brakingTechniqueDayTitle, style: theme.textTheme.titleSmall),
+      Text(
+        l10n.brakingTechniqueDaySummary(
+          day.cornersBraked,
+          day.source == brakingTechniqueFromSpeed
+              ? l10n.brakingTechniqueDayFromSpeed
+              : l10n.brakingTechniqueDayFromG,
+          figures,
+        ),
+        key: const ValueKey('brakingTechniqueDay'),
+      ),
+      Text(l10n.brakingTechniqueDayNote, style: theme.textTheme.bodySmall),
     ];
   }
 
