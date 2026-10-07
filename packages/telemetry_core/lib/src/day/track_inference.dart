@@ -115,6 +115,13 @@ RouteShape? _shape(LapTrace trace, GeoCoordinate origin, bool westPositive) {
   );
 }
 
+/// [trace]'s route: the lap resampled as [RouteShape] around [origin], its
+/// east metres mirrored when the recording's longitudes are west-positive
+/// (as [inferTrack] does); null for a lap too short, too long, open or
+/// self-cancelling to have one.
+RouteShape? lapRouteShape(LapTrace trace, GeoCoordinate origin, {bool westPositive = false}) =>
+    _shape(trace, origin, westPositive);
+
 /// Whether two routes are the same circuit: same direction, length within
 /// 5 %, and, for some starting offset, every point within 25 m of the other
 /// route's path with an RMS of at most 10 m. Never rotated, mirrored or
