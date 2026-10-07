@@ -353,27 +353,46 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
       for (final corner in result.corners) corner.brakingTechnique,
     ]);
     if (!day.available) return const [];
+    String bounded(String text, bool lower) =>
+        lower ? l10n.brakingTechniqueAtLeast(text) : text;
+    // A throttle slower than about 10 Hz places the pickup only to 0.1 s.
+    final coarse = result.corners.any(
+      (corner) => corner.brakingTechnique.throttleCoarse,
+    );
     final figures = [
       if (day.hit case final hit?)
-        l10n.brakingTechniqueDayHit('${fixed(hit, 2)}\u00a0g/s'),
+        l10n.brakingTechniqueDayHit(
+          bounded('${fixed(hit, 2)}\u00a0g/s', day.hitAtLeast),
+        ),
       if (day.release case final release?)
-        l10n.brakingTechniqueDayRelease('${fixed(release, 2)}\u00a0g/s'),
+        l10n.brakingTechniqueDayRelease(
+          bounded('${fixed(release, 2)}\u00a0g/s', day.releaseAtLeast),
+        ),
       if (day.trailSeconds case final trail?)
         l10n.brakingTechniqueDayTrail('${fixed(trail, 2)}\u00a0s'),
       if (day.brakeToThrottle case final throttle?)
-        l10n.brakingTechniqueDayThrottle('${fixed(throttle, 2)}\u00a0s'),
+        l10n.brakingTechniqueDayThrottle(
+          coarse
+              ? l10n.brakingTechniqueAbout('${fixed(throttle, 1)}\u00a0s')
+              : '${fixed(throttle, 2)}\u00a0s',
+        ),
     ].join(', ');
+    final source = switch ((day.source, day.unitAssumed)) {
+      (brakingTechniqueFromSpeed, true) =>
+        l10n.brakingTechniqueDayFromSpeedAssumed,
+      (brakingTechniqueFromSpeed, false) => l10n.brakingTechniqueDayFromSpeed,
+      (_, true) => l10n.brakingTechniqueDayFromGAssumed,
+      _ => l10n.brakingTechniqueDayFromG,
+    };
     return [
       const SizedBox(height: 16),
       Text(l10n.brakingTechniqueDayTitle, style: theme.textTheme.titleSmall),
       Text(
-        l10n.brakingTechniqueDaySummary(
-          day.cornersBraked,
-          day.source == brakingTechniqueFromSpeed
-              ? l10n.brakingTechniqueDayFromSpeed
-              : l10n.brakingTechniqueDayFromG,
-          figures,
-        ),
+        [
+          l10n.brakingTechniqueDaySummary(day.cornersBraked, source, figures),
+          if (day.otherSourceCorners > 0)
+            l10n.brakingTechniqueDayOtherSource(day.otherSourceCorners),
+        ].join(' '),
         key: const ValueKey('brakingTechniqueDay'),
       ),
       Text(l10n.brakingTechniqueDayNote, style: theme.textTheme.bodySmall),

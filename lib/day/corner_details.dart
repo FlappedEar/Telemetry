@@ -763,6 +763,9 @@ String brakingTechniqueReasonText(
   brakingTechniqueBrakeNotUsed => l10n.cornerDetailsReasonBrakeChannelNotUsed,
   brakingTechniqueBrakeScaleUnknown => l10n.cornerDetailsReasonScaleUnknown,
   brakingTechniqueTooFewLaps => l10n.cornerClassReasonTooFewLaps,
+  brakingTechniqueBrakingAgain => l10n.brakingTechniqueReasonBrakingAgain,
+  brakingTechniqueCoasting => l10n.brakingTechniqueReasonCoasting,
+  brakingTechniqueBrakeResampled => l10n.brakingTechniqueReasonBrakeResampled,
   _ => cornerReasonText(l10n, reason),
 };
 
@@ -819,12 +822,17 @@ class BrakingTechniqueSection extends StatelessWidget {
       BrakingTechniqueTypical typical,
       String Function(double) format, {
       double? rate,
+      bool Function(BrakingTechniqueLap)? atLeast,
     }) {
       final mine = own == null ? null : read(own);
+      String bounded(String text, bool lower) =>
+          lower ? l10n.brakingTechniqueAtLeast(text) : text;
       return [
         if (own != null)
           mine != null
-              ? l10n.brakingTechniqueThisLap(format(mine))
+              ? l10n.brakingTechniqueThisLap(
+                  bounded(format(mine), atLeast != null && atLeast(own)),
+                )
               : l10n.brakingTechniqueThisLapUnknown(
                   reason(
                     own.measured ? why(own) : own.unavailableReason,
@@ -833,7 +841,7 @@ class BrakingTechniqueSection extends StatelessWidget {
                 ),
         typical.median != null
             ? l10n.brakingTechniqueTypical(
-                format(typical.median!),
+                bounded(format(typical.median!), typical.atLeast),
                 typical.laps,
               )
             : l10n.brakingTechniqueTypicalUnknown(
@@ -852,16 +860,16 @@ class BrakingTechniqueSection extends StatelessWidget {
       style: theme.textTheme.titleSmall,
     );
     final rate = _rate(technique.rateHz);
+    final noG = technique.gChannelReason == brakingTechniqueGPlaceholder
+        ? l10n.brakingTechniqueGChannelEmpty
+        : l10n.brakingTechniqueNoGChannel;
     final source = switch (technique.source) {
       brakingTechniqueFromG when technique.unitAssumed =>
         l10n.brakingTechniqueFromGAssumed(rate),
       brakingTechniqueFromG => l10n.brakingTechniqueFromG(rate),
-      brakingTechniqueFromSpeed => l10n.brakingTechniqueFromSpeed(
-        rate,
-        technique.gChannelReason == brakingTechniqueGPlaceholder
-            ? l10n.brakingTechniqueGChannelEmpty
-            : l10n.brakingTechniqueNoGChannel,
-      ),
+      brakingTechniqueFromSpeed when technique.unitAssumed =>
+        l10n.brakingTechniqueFromSpeedAssumed(rate, noG),
+      brakingTechniqueFromSpeed => l10n.brakingTechniqueFromSpeed(rate, noG),
       _ => '',
     };
     final counts = [
@@ -900,12 +908,12 @@ class BrakingTechniqueSection extends StatelessWidget {
       );
     }
 
-    // Where the peak falls: this lap's metres, and the typical third.
+    // Where the peak falls, by time: this lap's, and the typical third.
     final peakNotes = [
-      if (own?.peakAfterOnsetMeters != null && own?.zoneMeters != null)
+      if (own != null && own.measured)
         l10n.brakingTechniquePeakWhere(
-          own!.peakAfterOnsetMeters!.round(),
-          own.zoneMeters!.round(),
+          fixed(own.peakTime! - own.onsetTime!, 1),
+          fixed(own.zoneSeconds!, 1),
         ),
       switch (technique.peakFraction.median) {
         null => '',
@@ -944,6 +952,7 @@ class BrakingTechniqueSection extends StatelessWidget {
             (lap) => lap.hitReason,
             technique.hit,
             gPerSecond,
+            atLeast: (lap) => lap.hitAtLeast,
           ),
         ),
         item(
@@ -971,6 +980,8 @@ class BrakingTechniqueSection extends StatelessWidget {
             if (own?.trailMeters != null)
               l10n.brakingTechniqueThisLap(_meters(own!.trailMeters)),
             l10n.brakingTechniqueTrailNote,
+            if (technique.lateralUnitAssumed)
+              l10n.brakingTechniqueLateralAssumed,
           ].join(' · '),
         ),
         item(
@@ -981,6 +992,7 @@ class BrakingTechniqueSection extends StatelessWidget {
             (lap) => lap.releaseReason,
             technique.release,
             gPerSecond,
+            atLeast: (lap) => lap.releaseAtLeast,
           ),
         ),
         if (hasThrottle)
@@ -991,14 +1003,24 @@ class BrakingTechniqueSection extends StatelessWidget {
               (lap) => lap.brakeToThrottleSeconds,
               (lap) => lap.brakeToThrottleReason,
               technique.brakeToThrottle,
-              seconds,
+              // A throttle slower than about 10 Hz places the pickup only
+              // to its update interval: to 0.1 s, and "about".
+              technique.throttleCoarse
+                  ? (value) =>
+                        l10n.brakingTechniqueAbout('${fixed(value, 1)}\u00a0s')
+                  : seconds,
             ),
-            throttleRate == null
-                ? ''
-                : l10n.brakingTechniqueThrottleNote(
-                    _rate(throttleRate),
-                    fixed(1 / throttleRate, 1),
-                  ),
+            [
+              if (throttleRate != null)
+                l10n.brakingTechniqueThrottleNote(
+                  _rate(throttleRate),
+                  fixed(1 / throttleRate, 1),
+                ),
+              if (technique.throttleUnitAssumed)
+                l10n.brakingTechniqueThrottleAssumed,
+              if (technique.throttleScaleInferred)
+                l10n.brakingTechniqueThrottleScaleInferred,
+            ].join(' '),
           ),
         if (hasBrake)
           pedalSlow
@@ -1038,6 +1060,12 @@ class BrakingTechniqueSection extends StatelessWidget {
                       rate: brakeRate,
                     ),
                   ].join('\n'),
+                  [
+                    if (technique.brakeUnitAssumed)
+                      l10n.brakingTechniqueBrakeAssumed,
+                    if (technique.brakeScaleInferred)
+                      l10n.brakingTechniqueBrakeScaleInferred,
+                  ].join(' '),
                 ),
         Text(
           l10n.brakingTechniqueNote,

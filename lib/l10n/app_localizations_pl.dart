@@ -7923,7 +7923,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String brakingTechniqueFromSpeed(String rate, String why) {
-    return 'Z prędkości ($rate Hz), jej nachylenie wygładzone w oknie pół sekundy, na sklasyfikowanych okrążeniach tego dnia: $why.';
+    return 'Z prędkości ($rate Hz), jej zmiana wygładzona w oknie 0.5 s, na sklasyfikowanych okrążeniach tego dnia: $why. Nieporównywalne z wartościami z kanału G.';
   }
 
   @override
@@ -7955,7 +7955,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String brakingTechniqueThisLap(String value) {
-    return 'To okrążenie $value';
+    return 'To okrążenie: $value';
   }
 
   @override
@@ -7982,21 +7982,21 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String brakingTechniquePeakWhere(int after, int zone) {
-    return 'Szczyt $after m od początku hamowania na odcinku $zone m.';
+  String brakingTechniquePeakWhere(String after, String zone) {
+    return 'Szczyt $after s od początku hamowania trwającego $zone s.';
   }
 
   @override
   String get brakingTechniquePeakEarly =>
-      'Zwykle w pierwszej trzeciej części hamowania.';
+      'Zwykle na początku (1/3) hamowania, wg czasu.';
 
   @override
   String get brakingTechniquePeakMiddle =>
-      'Zwykle w środkowej trzeciej części hamowania.';
+      'Zwykle w środku (2/3) hamowania, wg czasu.';
 
   @override
   String get brakingTechniquePeakLate =>
-      'Zwykle w ostatniej trzeciej części hamowania.';
+      'Zwykle na końcu (3/3) hamowania, wg czasu.';
 
   @override
   String get brakingTechniqueTrailNote =>
@@ -8004,7 +8004,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String brakingTechniqueThrottleNote(String rate, String error) {
-    return 'Od końca hamowania do ponownego dodania gazu. Gaz jest zapisywany z częstotliwością $rate Hz, więc moment dodania gazu jest znany z dokładnością około $error s.';
+    return 'Od końca hamowania do ponownego dodania gazu, szukane do ponownego hamowania i najwyżej 4 s. Gaz jest zapisywany z częstotliwością $rate Hz, więc moment dodania gazu jest znany z dokładnością około $error s.';
   }
 
   @override
@@ -8040,7 +8040,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get brakingTechniqueNote =>
-      'Hamowanie zaczyna się i kończy tam, gdzie opóźnienie przekracza 0.15 g (wykrywane od 0.30 g). Narastanie to tempo wzrostu od 0.15 g do 85 % szczytu; odpuszczanie to tempo spadku od tego poziomu z powrotem do 0.15 g. Oba wymagają szczytu co najmniej 0.40 g i nie są odczytywane z kanału wolniejszego niż około 10 Hz. Wartość typowa to mediana z co najmniej trzech okrążeń.';
+      'Hamowanie zaczyna się i kończy tam, gdzie opóźnienie przekracza 0.15 g (wykrywane od 0.30 g). Narastanie to tempo wzrostu do 85 % szczytu od ostatniej chwili poniżej jednej czwartej szczytu (co najmniej 0.15 g), więc toczenie się lub lekkie odpuszczenie gazu przed hamowaniem się nie liczy; odpuszczanie to tempo spadku od 85 % z powrotem do tego poziomu. Oba wymagają szczytu co najmniej 0.40 g i nie są odczytywane z kanału wolniejszego niż około 10 Hz. Z prędkości narastanie szybsze, niż pokazuje wygładzanie w oknie 0.5 s, jest oznaczone jako „co najmniej”. Wartość typowa to mediana z co najmniej trzech okrążeń.';
 
   @override
   String brakingTechniqueReasonTooSlow(String rate) {
@@ -8076,7 +8076,8 @@ class AppLocalizationsPl extends AppLocalizations {
       'szczyt hamowania poniżej 0.40 g';
 
   @override
-  String get brakingTechniqueReasonTooQuick => 'szybciej, niż pokazują próbki';
+  String get brakingTechniqueReasonTooQuick =>
+      'zbyt szybkie jak na częstotliwość próbek';
 
   @override
   String get brakingTechniqueReasonNoLateral =>
@@ -8139,4 +8140,75 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get brakingTechniqueDayNote =>
       'Stuknij zakręt powyżej, aby zobaczyć hamowanie okrążenie po okrążeniu.';
+
+  @override
+  String brakingTechniqueFromSpeedAssumed(String rate, String why) {
+    return 'Z prędkości ($rate Hz, bez zapisanej jednostki: odczytane jako km/h), jej zmiana wygładzona w oknie 0.5 s, na sklasyfikowanych okrążeniach tego dnia: $why. Nieporównywalne z wartościami z kanału G.';
+  }
+
+  @override
+  String brakingTechniqueAtLeast(String value) {
+    return 'co najmniej $value';
+  }
+
+  @override
+  String brakingTechniqueAbout(String value) {
+    return 'około $value';
+  }
+
+  @override
+  String get brakingTechniqueLateralAssumed =>
+      'Przeciążenie boczne nie ma zapisanej jednostki: odczytane jako g.';
+
+  @override
+  String get brakingTechniqueThrottleAssumed =>
+      'Gaz nie ma zapisanej jednostki: odczytany jako %.';
+
+  @override
+  String get brakingTechniqueThrottleScaleInferred =>
+      'Gaz jest zapisany w zakresie od 0 do 1: odczytany jako od 0 do 100 %.';
+
+  @override
+  String get brakingTechniqueBrakeAssumed =>
+      'Hamulec nie ma zapisanej jednostki: odczytany jako %.';
+
+  @override
+  String get brakingTechniqueBrakeScaleInferred =>
+      'Hamulec jest zapisany w zakresie od 0 do 1: odczytany jako od 0 do 100 %.';
+
+  @override
+  String get brakingTechniqueReasonBrakingAgain =>
+      'ponowne hamowanie przed dodaniem gazu';
+
+  @override
+  String get brakingTechniqueReasonCoasting =>
+      'brak gazu w ciągu 4 s od końca hamowania';
+
+  @override
+  String get brakingTechniqueReasonBrakeResampled =>
+      'hamulec to kanał OBD przepróbkowany do wierszy zapisu, jego własna częstotliwość nie jest znana';
+
+  @override
+  String get brakingTechniqueDayFromGAssumed =>
+      'z przyspieszenia wzdłużnego (bez zapisanej jednostki: odczytane jako g)';
+
+  @override
+  String get brakingTechniqueDayFromSpeedAssumed =>
+      'z prędkości (bez zapisanej jednostki: odczytane jako km/h)';
+
+  @override
+  String brakingTechniqueDayOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto $count zakrętu zmierzonego inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      many:
+          'Pominięto $count zakrętów zmierzonych inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      few:
+          'Pominięto $count zakręty zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      one: 'Pominięto 1 zakręt zmierzony inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+    );
+    return '$_temp0';
+  }
 }

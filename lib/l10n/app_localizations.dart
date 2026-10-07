@@ -11234,7 +11234,7 @@ abstract class AppLocalizations {
   /// Braking technique: deceleration worked out from the speed channel, and why no G channel was used.
   ///
   /// In en, this message translates to:
-  /// **'From speed ({rate} Hz), its slope smoothed over half a second, on this day\'s ranked laps: {why}.'**
+  /// **'From speed ({rate} Hz), its change smoothed over a 0.5 s window, on this day\'s ranked laps: {why}. Not comparable with figures from a G channel.'**
   String brakingTechniqueFromSpeed(String rate, String why);
 
   /// Why the deceleration comes from speed: the recording has no longitudinal G.
@@ -11288,7 +11288,7 @@ abstract class AppLocalizations {
   /// Braking technique: this lap's value.
   ///
   /// In en, this message translates to:
-  /// **'This lap {value}'**
+  /// **'This lap: {value}'**
   String brakingTechniqueThisLap(String value);
 
   /// Braking technique: this lap's value is not known, and why.
@@ -11309,28 +11309,28 @@ abstract class AppLocalizations {
   /// **'typical: not known, {reason}'**
   String brakingTechniqueTypicalUnknown(String reason);
 
-  /// Braking technique: where this lap's peak deceleration falls in its braking zone.
+  /// Braking technique: when this lap's peak deceleration comes in its braking, by time; the values are seconds with one decimal.
   ///
   /// In en, this message translates to:
-  /// **'Peak {after} m into {zone} m of braking.'**
-  String brakingTechniquePeakWhere(int after, int zone);
+  /// **'Peak {after} s into {zone} s of braking.'**
+  String brakingTechniquePeakWhere(String after, String zone);
 
   /// Braking technique: where the peak typically falls, by distance (or time without a speed).
   ///
   /// In en, this message translates to:
-  /// **'Typically in the first third of the braking.'**
+  /// **'Typically in the first third of the braking, by time.'**
   String get brakingTechniquePeakEarly;
 
   /// Braking technique: where the peak typically falls.
   ///
   /// In en, this message translates to:
-  /// **'Typically in the middle third of the braking.'**
+  /// **'Typically in the middle third of the braking, by time.'**
   String get brakingTechniquePeakMiddle;
 
   /// Braking technique: where the peak typically falls.
   ///
   /// In en, this message translates to:
-  /// **'Typically in the last third of the braking.'**
+  /// **'Typically in the last third of the braking, by time.'**
   String get brakingTechniquePeakLate;
 
   /// Braking technique: what trail braking is read from.
@@ -11342,7 +11342,7 @@ abstract class AppLocalizations {
   /// Braking technique: brake-to-throttle time and how precise the throttle channel lets it be.
   ///
   /// In en, this message translates to:
-  /// **'From the end of braking to the throttle pickup. The throttle is recorded at {rate} Hz, so the pickup is placed to about {error} s.'**
+  /// **'From the end of braking to the throttle pickup, looked for until braking starts again and at most 4 s. The throttle is recorded at {rate} Hz, so the pickup is placed to about {error} s.'**
   String brakingTechniqueThrottleNote(String rate, String error);
 
   /// Braking technique: the brake pedal updates slower than about 10 Hz (an OBD pedal), so no pedal ramp or release is read from it.
@@ -11372,7 +11372,7 @@ abstract class AppLocalizations {
   /// Braking technique: how the figures are read and the thresholds.
   ///
   /// In en, this message translates to:
-  /// **'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises from 0.15 g to 85 % of its peak; the release how fast it falls from there back to 0.15 g. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. Typical is the median of at least three laps.'**
+  /// **'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.'**
   String get brakingTechniqueNote;
 
   /// Why a braking figure is not known: the channel it would come from updates slower than about 10 Hz.
@@ -11426,7 +11426,7 @@ abstract class AppLocalizations {
   /// Why the hit or release is not known: it happened between two samples.
   ///
   /// In en, this message translates to:
-  /// **'quicker than the samples show'**
+  /// **'too quick for the sample rate'**
   String get brakingTechniqueReasonTooQuick;
 
   /// Why trail braking is not known.
@@ -11506,6 +11506,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap a corner above for its braking lap by lap.'**
   String get brakingTechniqueDayNote;
+
+  /// Braking technique: deceleration from a speed channel that declares no unit, read as km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'From speed ({rate} Hz, no unit recorded: read as km/h), its change smoothed over a 0.5 s window, on this day\'s ranked laps: {why}. Not comparable with figures from a G channel.'**
+  String brakingTechniqueFromSpeedAssumed(String rate, String why);
+
+  /// Braking technique: a hit or release from speed as fast as its smoothing can show; the real one may be quicker.
+  ///
+  /// In en, this message translates to:
+  /// **'at least {value}'**
+  String brakingTechniqueAtLeast(String value);
+
+  /// Braking technique: brake-to-throttle time from a throttle slower than about 10 Hz, to 0.1 s.
+  ///
+  /// In en, this message translates to:
+  /// **'about {value}'**
+  String brakingTechniqueAbout(String value);
+
+  /// Braking technique: the lateral G declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The lateral G has no unit recorded: read as g.'**
+  String get brakingTechniqueLateralAssumed;
+
+  /// Braking technique: the throttle declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The throttle has no unit recorded: read as %.'**
+  String get brakingTechniqueThrottleAssumed;
+
+  /// Braking technique: the throttle's 0 to 1 scale was inferred from its values.
+  ///
+  /// In en, this message translates to:
+  /// **'The throttle is recorded from 0 to 1: read as 0 to 100 %.'**
+  String get brakingTechniqueThrottleScaleInferred;
+
+  /// Braking technique: the brake pedal declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The brake has no unit recorded: read as %.'**
+  String get brakingTechniqueBrakeAssumed;
+
+  /// Braking technique: the brake's 0 to 1 scale was inferred from its values.
+  ///
+  /// In en, this message translates to:
+  /// **'The brake is recorded from 0 to 1: read as 0 to 100 %.'**
+  String get brakingTechniqueBrakeScaleInferred;
+
+  /// Why brake-to-throttle time is not known: braking starts again (a segment of two corners) before any throttle pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'braking again before the throttle'**
+  String get brakingTechniqueReasonBrakingAgain;
+
+  /// Why brake-to-throttle time is not known: the pickup comes more than 4 s after braking, past this corner.
+  ///
+  /// In en, this message translates to:
+  /// **'no throttle within 4 s of braking'**
+  String get brakingTechniqueReasonCoasting;
+
+  /// Why the brake pedal's ramps are not read: a RaceChrono VBO OBD column (name ending -obd).
+  ///
+  /// In en, this message translates to:
+  /// **'the brake is an OBD channel resampled to the recording\'s rows, its own rate not known'**
+  String get brakingTechniqueReasonBrakeResampled;
+
+  /// Day page: the source of the braking figures when the G channel declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'from longitudinal G (no unit recorded: read as g)'**
+  String get brakingTechniqueDayFromGAssumed;
+
+  /// Day page: the source of the braking figures when the speed declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'from speed (no unit recorded: read as km/h)'**
+  String get brakingTechniqueDayFromSpeedAssumed;
+
+  /// Day page: corners whose braking comes from another source are never pooled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 corner measured another way (G channel or speed, or another unit) is left out.} other{{count} corners measured another way (G channel or speed, or another unit) are left out.}}'**
+  String brakingTechniqueDayOtherSource(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -7751,7 +7751,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String brakingTechniqueFromSpeed(String rate, String why) {
-    return 'From speed ($rate Hz), its slope smoothed over half a second, on this day\'s ranked laps: $why.';
+    return 'From speed ($rate Hz), its change smoothed over a 0.5 s window, on this day\'s ranked laps: $why. Not comparable with figures from a G channel.';
   }
 
   @override
@@ -7781,7 +7781,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String brakingTechniqueThisLap(String value) {
-    return 'This lap $value';
+    return 'This lap: $value';
   }
 
   @override
@@ -7806,21 +7806,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String brakingTechniquePeakWhere(int after, int zone) {
-    return 'Peak $after m into $zone m of braking.';
+  String brakingTechniquePeakWhere(String after, String zone) {
+    return 'Peak $after s into $zone s of braking.';
   }
 
   @override
   String get brakingTechniquePeakEarly =>
-      'Typically in the first third of the braking.';
+      'Typically in the first third of the braking, by time.';
 
   @override
   String get brakingTechniquePeakMiddle =>
-      'Typically in the middle third of the braking.';
+      'Typically in the middle third of the braking, by time.';
 
   @override
   String get brakingTechniquePeakLate =>
-      'Typically in the last third of the braking.';
+      'Typically in the last third of the braking, by time.';
 
   @override
   String get brakingTechniqueTrailNote =>
@@ -7828,7 +7828,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String brakingTechniqueThrottleNote(String rate, String error) {
-    return 'From the end of braking to the throttle pickup. The throttle is recorded at $rate Hz, so the pickup is placed to about $error s.';
+    return 'From the end of braking to the throttle pickup, looked for until braking starts again and at most 4 s. The throttle is recorded at $rate Hz, so the pickup is placed to about $error s.';
   }
 
   @override
@@ -7860,7 +7860,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get brakingTechniqueNote =>
-      'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises from 0.15 g to 85 % of its peak; the release how fast it falls from there back to 0.15 g. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. Typical is the median of at least three laps.';
+      'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.';
 
   @override
   String brakingTechniqueReasonTooSlow(String rate) {
@@ -7895,7 +7895,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get brakingTechniqueReasonTooLight => 'braking peaks below 0.40 g';
 
   @override
-  String get brakingTechniqueReasonTooQuick => 'quicker than the samples show';
+  String get brakingTechniqueReasonTooQuick => 'too quick for the sample rate';
 
   @override
   String get brakingTechniqueReasonNoLateral => 'no lateral G channel';
@@ -7957,4 +7957,71 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get brakingTechniqueDayNote =>
       'Tap a corner above for its braking lap by lap.';
+
+  @override
+  String brakingTechniqueFromSpeedAssumed(String rate, String why) {
+    return 'From speed ($rate Hz, no unit recorded: read as km/h), its change smoothed over a 0.5 s window, on this day\'s ranked laps: $why. Not comparable with figures from a G channel.';
+  }
+
+  @override
+  String brakingTechniqueAtLeast(String value) {
+    return 'at least $value';
+  }
+
+  @override
+  String brakingTechniqueAbout(String value) {
+    return 'about $value';
+  }
+
+  @override
+  String get brakingTechniqueLateralAssumed =>
+      'The lateral G has no unit recorded: read as g.';
+
+  @override
+  String get brakingTechniqueThrottleAssumed =>
+      'The throttle has no unit recorded: read as %.';
+
+  @override
+  String get brakingTechniqueThrottleScaleInferred =>
+      'The throttle is recorded from 0 to 1: read as 0 to 100 %.';
+
+  @override
+  String get brakingTechniqueBrakeAssumed =>
+      'The brake has no unit recorded: read as %.';
+
+  @override
+  String get brakingTechniqueBrakeScaleInferred =>
+      'The brake is recorded from 0 to 1: read as 0 to 100 %.';
+
+  @override
+  String get brakingTechniqueReasonBrakingAgain =>
+      'braking again before the throttle';
+
+  @override
+  String get brakingTechniqueReasonCoasting =>
+      'no throttle within 4 s of braking';
+
+  @override
+  String get brakingTechniqueReasonBrakeResampled =>
+      'the brake is an OBD channel resampled to the recording\'s rows, its own rate not known';
+
+  @override
+  String get brakingTechniqueDayFromGAssumed =>
+      'from longitudinal G (no unit recorded: read as g)';
+
+  @override
+  String get brakingTechniqueDayFromSpeedAssumed =>
+      'from speed (no unit recorded: read as km/h)';
+
+  @override
+  String brakingTechniqueDayOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count corners measured another way (G channel or speed, or another unit) are left out.',
+      one: '1 corner measured another way (G channel or speed, or another unit) is left out.',
+    );
+    return '$_temp0';
+  }
 }
