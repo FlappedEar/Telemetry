@@ -6618,4 +6618,69 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get tbRealisticNoJoin =>
       'Nie pokazano: każdy odcinek ma czas, ale żadne okrążenia nie łączą się z prędkością, jaką miał samochód na każdej granicy między nimi.';
+
+  @override
+  String get notebookTitle => 'Notatnik toru';
+
+  @override
+  String notebookTitleOf(String track) {
+    return 'Notatnik: $track';
+  }
+
+  @override
+  String get notebookIntro =>
+      'Przechowywany z torem w bibliotece, więc każda wizyta na nim pokazuje ten sam notatnik. Zapisywany na bieżąco.';
+
+  @override
+  String get notebookToTry => 'Do wypróbowania';
+
+  @override
+  String get notebookNothingToTry => 'Na razie nic do wypróbowania.';
+
+  @override
+  String get notebookAddHint => 'Coś do wypróbowania następnym razem';
+
+  @override
+  String get notebookAdd => 'Dodaj';
+
+  @override
+  String get notebookRemove => 'Usuń';
+
+  @override
+  String get notebookDone => 'Zrobione';
+
+  @override
+  String get notebookNotes => 'Notatki';
+
+  @override
+  String get notebookNotesHint =>
+      'Przyczepność, tarki, punkty orientacyjne, zagrożenia, ustawienia…';
+
+  @override
+  String get notebookCorners => 'Zakręty';
+
+  @override
+  String get notebookNoCorners =>
+      'Zakręty toru pojawią się tutaj po zmierzeniu pierwszego dnia na tym torze.';
+
+  @override
+  String get notebookNoTrack => 'Tego toru nie ma już w bibliotece.';
+
+  @override
+  String libraryImportNotebooks(int count) {
+    return 'Notatniki torów uzupełnione notatkami z pliku: $count.';
+  }
+
+  @override
+  String get libraryImportNotebookCut =>
+      'Część notatek z pliku nie zmieściła się w notatniku i została pominięta.';
+
+  @override
+  String notebookFull(int count) {
+    return 'Notatnik mieści najwyżej $count rzeczy do wypróbowania. Usuń którąś, aby dodać kolejną.';
+  }
+
+  @override
+  String get notebookNotSaved =>
+      'Nie udało się zapisać ostatniej zmiany: notatnik przekracza to, co mieści biblioteka.';
 }

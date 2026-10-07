@@ -1490,6 +1490,51 @@ void main() {
       );
     });
 
+    test('keeps notebook edits made while a bundle is read', () async {
+      final here = await withDay(profileFolder());
+      here.setTrackNotebook(
+        here.profile!.tracks.single.id,
+        TrackNotebook(notes: 'Theirs'),
+      );
+      final bundle = p.join(directory.path, 'driver.feprofile');
+      await here.exportBundle(bundle);
+      // The same day on this device, with its own notebook.
+      final elsewhere = p.join(directory.path, 'Other');
+      final gate = Completer<void>();
+      final reading = Completer<void>();
+      final there = await withDay(
+        elsewhere,
+        background: <R>(FutureOr<R> Function() job) async {
+          final result = await job();
+          if (result is ProfileBundleImport) {
+            reading.complete();
+            await gate.future;
+          }
+          return result;
+        },
+      );
+      final track = there.profile!.tracks.single.id;
+      there.setTrackNotebook(
+        track,
+        TrackNotebook(
+          notes: 'Old',
+          toTry: [NotebookItem(id: 'i1', text: 'Gone soon')],
+        ),
+      );
+      final imported = there.importBundle(bundle);
+      await reading.future;
+      // Meanwhile the notebook is edited on this device.
+      there.setTrackNotebook(track, TrackNotebook(notes: 'New'));
+      gate.complete();
+      final read = (await imported)!;
+      expect(read.added, isEmpty);
+      expect(read.notebooks, [track]);
+      final notebook = there.profile!.track(track)!.notebook;
+      expect(notebook.notes, 'New\n\nTheirs');
+      expect(notebook.toTry, isEmpty);
+      await there.flush();
+    });
+
     test('says when the imported days could not be written', () async {
       final here = await withDay(profileFolder());
       final bundle = p.join(directory.path, 'driver.feprofile');

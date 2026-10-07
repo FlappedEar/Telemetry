@@ -23,6 +23,7 @@ import '../telemetry_session.dart';
 
 part 'profile_merge.dart';
 part 'session_stats.dart';
+part 'track_notebook.dart';
 
 /// The `format` of a driver profile.
 const driverProfileFormat = 'flappedear-driver-profile';
@@ -82,9 +83,11 @@ final class ProfileTrack {
     required this.name,
     required this.route,
     List<TrackCorner> corners = const [],
+    TrackNotebook? notebook,
     Map<String, Object?> unknown = const {},
     Map<String, Object?> unknownRoute = const {},
-  }) : corners = List.unmodifiable(corners),
+  }) : notebook = notebook ?? TrackNotebook(),
+       corners = List.unmodifiable(corners),
        unknown = Map.unmodifiable(unknown),
        unknownRoute = Map.unmodifiable(unknownRoute);
 
@@ -96,19 +99,24 @@ final class ProfileTrack {
 
   /// Its corners, the same on every visit, in the order first found.
   final List<TrackCorner> corners;
+
+  /// What the driver wrote down about the track ([setProfileTrackNotebook]).
+  final TrackNotebook notebook;
   final Map<String, Object?> unknown;
 
   /// `route` keys this version does not know.
   final Map<String, Object?> unknownRoute;
 
-  ProfileTrack copyWith({String? name, List<TrackCorner>? corners}) => ProfileTrack(
-    id: id,
-    name: name ?? this.name,
-    route: route,
-    corners: corners ?? this.corners,
-    unknown: unknown,
-    unknownRoute: unknownRoute,
-  );
+  ProfileTrack copyWith({String? name, List<TrackCorner>? corners, TrackNotebook? notebook}) =>
+      ProfileTrack(
+        id: id,
+        name: name ?? this.name,
+        route: route,
+        corners: corners ?? this.corners,
+        notebook: notebook ?? this.notebook,
+        unknown: unknown,
+        unknownRoute: unknownRoute,
+      );
 }
 
 /// The weather during a session, as the profile keeps it: a few values of
@@ -1039,6 +1047,7 @@ Map<String, Object?> _encodeTrack(ProfileTrack track) => {
   'route': {...track.unknownRoute, ..._encodeRoute(track.route)},
   if (track.corners.isNotEmpty)
     'corners': [for (final corner in track.corners) _encodeTrackCorner(corner)],
+  if (!track.notebook.isEmpty) 'notebook': _encodeNotebook(track.notebook),
 };
 
 Map<String, Object?> _encodeDay(ProfileDay day) => {
@@ -1176,7 +1185,8 @@ ProfileTrack _track(Object? value) {
     name: _string(json['name'], 'track name', allowEmpty: false),
     route: _route(json['route']),
     corners: corners,
-    unknown: _without(json, const ['id', 'name', 'route', 'corners']),
+    notebook: json['notebook'] == null ? null : _notebook(json['notebook']),
+    unknown: _without(json, const ['id', 'name', 'route', 'corners', 'notebook']),
     unknownRoute: _without(_map(json['route'], 'route'), const [
       'origin',
       'lengthMeters',

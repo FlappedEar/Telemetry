@@ -11,6 +11,8 @@ final class ProfileMerge {
     this.added = const [],
     this.alreadyHere = const [],
     this.notAdded = const [],
+    this.notebooks = const [],
+    this.notebookCut = false,
   });
 
   /// This profile with the new days.
@@ -24,6 +26,13 @@ final class ProfileMerge {
 
   /// Days past this profile's limits of days, cars or tracks.
   final List<String> notAdded;
+
+  /// Ids of this profile's tracks whose notebook took something of [from]'s.
+  final List<String> notebooks;
+
+  /// Whether some of [from]'s notebook text or things to try were left
+  /// out, past the profile's limits.
+  final bool notebookCut;
 }
 
 /// [into] with the days of [from] it does not have yet ([only] of them,
@@ -34,7 +43,8 @@ final class ProfileMerge {
 /// that, the same route ([routesMatch]), its corners placed on this
 /// track's as a day's are. Anything else is added. Corners past the
 /// profile's budget are left out, as when a day is added; which car new
-/// days take is unchanged.
+/// days take is unchanged. The notebook of every track both have takes
+/// what [from]'s adds, whichever days are added.
 ProfileMerge mergeDriverProfile(
   DriverProfile into,
   DriverProfile from, {
@@ -175,6 +185,38 @@ ProfileMerge mergeDriverProfile(
     known.add(day.eventId);
     added.add(day.eventId);
   }
+  // Their notebooks join mine on every track both profiles have, whether
+  // or not a day was added to it: two devices with the same days still
+  // share what was written on either.
+  final notebooks = <String>[];
+  var notebookCut = false;
+  for (final theirs in from.tracks) {
+    if (theirs.notebook.isEmpty) continue;
+    var index = -1;
+    if (trackIds[theirs.id] case final mapped?) {
+      index = tracks.indexWhere((track) => track.id == mapped);
+    } else {
+      index = tracks.indexWhere((track) => track.id == theirs.id);
+      if (index < 0) {
+        index = tracks.indexWhere((track) => routesMatch(track.route, theirs.route));
+      }
+    }
+    // Their track came along whole, notebook and all; or it is not here.
+    if (index < 0 || identical(tracks[index], theirs)) continue;
+    final mine = tracks[index];
+    final (notebook, cut) = _mergeNotebook(
+      mine.notebook,
+      theirs.notebook,
+      ids: matchTrackCorners(mine, _cornerSpans(theirs)),
+      names: {for (final corner in theirs.corners) corner.id: corner.name},
+    );
+    notebookCut |= cut;
+    if (jsonEncode(_encodeNotebook(notebook)) == jsonEncode(_encodeNotebook(mine.notebook))) {
+      continue;
+    }
+    tracks[index] = _verified(_encodeTrack(mine.copyWith(notebook: notebook)), _track);
+    if (!notebooks.contains(mine.id)) notebooks.add(mine.id);
+  }
   final merged = into._copy(cars: cars, tracks: tracks, days: days);
   // Read back as it will be written: a merge never leaves a profile that
   // cannot be opened.
@@ -183,6 +225,8 @@ ProfileMerge mergeDriverProfile(
     added: added,
     alreadyHere: alreadyHere,
     notAdded: notAdded,
+    notebooks: notebooks,
+    notebookCut: notebookCut,
   );
 }
 

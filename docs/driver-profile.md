@@ -48,7 +48,12 @@ version does not know, so a newer app's additions survive a re-save.
       },
       "corners": [
         { "id": "<32 hex>", "name": "Corner 1", "start": 0.0621, "end": 0.1143 }
-      ]
+      ],
+      "notebook": {
+        "notes": "Bumpy braking into Corner 1",
+        "corners": [ { "cornerId": "<track corner id>", "note": "Brake at the 100 board" } ],
+        "toTry": [ { "id": "<32 hex>", "text": "Third gear in Corner 2", "done": false } ]
+      }
     }
   ],
   "days": [
@@ -116,6 +121,34 @@ every point within 25 m of the other path, RMS at most 10 m); a route no track
 matches adds a track. A day added again without a route (recordings missing,
 every lap left out) keeps its track. The first match wins; choosing the closest
 of several matching tracks, and merging tracks, are left for later.
+
+## Track notebook (`notebook`, FET-231)
+
+What the driver writes down about a track for the next visit: general `notes`,
+a note per corner and things to try. It is kept on the track, not on a day, so
+every day at the track shares it. Written only when it holds something. Each
+text is at most 4096 code units; at most 256 things to try, with unique ids, and
+at most 128 corner entries (`maximumProfileCorners`), each naming one of the
+track's corners. Blank notes and blank things to try are dropped unless they
+carry keys a newer version wrote; a corner entry whose note is cleared is kept
+with an empty `note` for the same reason. A change past these limits is refused
+and the notebook page says it was not saved. The page limits each field to 4096
+characters as the user sees them; text with emoji can be longer in code units,
+and the part past 4096 code units is cut when it is kept.
+
+Merging two profiles (`mergeDriverProfile`) joins the notebooks of every track
+both have, whether or not a day is added, and changes nothing of this profile's:
+the other's notes follow these when they are not already held; a note on a
+corner both have follows this one's the same way; a note on a corner of the
+other's that is not one of this track's joins the general notes as
+`<corner name>: <note>`; the other's things to try not already present by id or
+text follow these. A corner entry of the other's that names no corner of
+this track and holds no note (only keys a newer version wrote) is not kept. Text or things to try that would go past the limits are left
+out whole, and the merge reports it (`ProfileMerge.notebookCut`); the tracks
+whose notebook took something are `ProfileMerge.notebooks`. A bundle import that
+finds the profile changed while the bundle was read merges the bundle's own
+profile (`ProfileBundleImport.source`) into the changed one again, so edits made
+meanwhile stay.
 
 ## Cars
 

@@ -9504,6 +9504,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.'**
   String get tbRealisticNoJoin;
+
+  /// Name of the track notebook (FET-231): menu item, button tooltip and page title without a track.
+  ///
+  /// In en, this message translates to:
+  /// **'Track notebook'**
+  String get notebookTitle;
+
+  /// Track notebook page title. track is the track's name in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Notebook: {track}'**
+  String notebookTitleOf(String track);
+
+  /// Under the track notebook's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept with the track in your library, so every visit to it shows the same notebook. Saved as you type.'**
+  String get notebookIntro;
+
+  /// Track notebook: heading of the list of things to try.
+  ///
+  /// In en, this message translates to:
+  /// **'To try'**
+  String get notebookToTry;
+
+  /// Track notebook: the list of things to try is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to try yet.'**
+  String get notebookNothingToTry;
+
+  /// Track notebook: hint of the field that adds a thing to try.
+  ///
+  /// In en, this message translates to:
+  /// **'Something to try next time'**
+  String get notebookAddHint;
+
+  /// Track notebook: tooltip of the button that adds a thing to try.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get notebookAdd;
+
+  /// Track notebook: tooltip of the button that removes a thing to try.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get notebookRemove;
+
+  /// Track notebook: heading over the things to try that are ticked off.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get notebookDone;
+
+  /// Track notebook: heading of the track's general notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notebookNotes;
+
+  /// Track notebook: hint of the general notes field.
+  ///
+  /// In en, this message translates to:
+  /// **'Grip, kerbs, markers, hazards, setup…'**
+  String get notebookNotesHint;
+
+  /// Track notebook: heading of the notes per corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners'**
+  String get notebookCorners;
+
+  /// Track notebook: the track has no corners in the library yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The track\'s corners appear here once a day on it has been measured.'**
+  String get notebookNoCorners;
+
+  /// Track notebook: the track was not found.
+  ///
+  /// In en, this message translates to:
+  /// **'This track is no longer in your library.'**
+  String get notebookNoTrack;
+
+  /// After a profile import: how many tracks' notebooks took notes from the imported file (FET-231).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The notebook of 1 track took notes from the file.} other{The notebooks of {count} tracks took notes from the file.}}'**
+  String libraryImportNotebooks(int count);
+
+  /// After a profile import: some imported notebook text or things to try were past the notebook's limits.
+  ///
+  /// In en, this message translates to:
+  /// **'Some notebook notes from the file did not fit and were left out.'**
+  String get libraryImportNotebookCut;
+
+  /// Track notebook: shown instead of the add field when the list of things to try is full.
+  ///
+  /// In en, this message translates to:
+  /// **'The notebook holds at most {count} things to try. Remove some to add more.'**
+  String notebookFull(int count);
+
+  /// Track notebook: a change could not be kept in the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The last change could not be saved: the notebook is past what the library can hold.'**
+  String get notebookNotSaved;
 }
 
 class _AppLocalizationsDelegate

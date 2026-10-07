@@ -6475,4 +6475,74 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tbRealisticNoJoin =>
       'Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.';
+
+  @override
+  String get notebookTitle => 'Track notebook';
+
+  @override
+  String notebookTitleOf(String track) {
+    return 'Notebook: $track';
+  }
+
+  @override
+  String get notebookIntro =>
+      'Kept with the track in your library, so every visit to it shows the same notebook. Saved as you type.';
+
+  @override
+  String get notebookToTry => 'To try';
+
+  @override
+  String get notebookNothingToTry => 'Nothing to try yet.';
+
+  @override
+  String get notebookAddHint => 'Something to try next time';
+
+  @override
+  String get notebookAdd => 'Add';
+
+  @override
+  String get notebookRemove => 'Remove';
+
+  @override
+  String get notebookDone => 'Done';
+
+  @override
+  String get notebookNotes => 'Notes';
+
+  @override
+  String get notebookNotesHint => 'Grip, kerbs, markers, hazards, setup…';
+
+  @override
+  String get notebookCorners => 'Corners';
+
+  @override
+  String get notebookNoCorners =>
+      'The track\'s corners appear here once a day on it has been measured.';
+
+  @override
+  String get notebookNoTrack => 'This track is no longer in your library.';
+
+  @override
+  String libraryImportNotebooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The notebooks of $count tracks took notes from the file.',
+      one: 'The notebook of 1 track took notes from the file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryImportNotebookCut =>
+      'Some notebook notes from the file did not fit and were left out.';
+
+  @override
+  String notebookFull(int count) {
+    return 'The notebook holds at most $count things to try. Remove some to add more.';
+  }
+
+  @override
+  String get notebookNotSaved =>
+      'The last change could not be saved: the notebook is past what the library can hold.';
 }

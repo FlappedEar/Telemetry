@@ -8,6 +8,7 @@ import '../format.dart';
 import '../l10n.dart';
 import 'profile_bundle_pickers.dart';
 import 'profile_library.dart';
+import 'track_notebook_page.dart';
 
 /// Every day kept in the driver profile, as Car > Year > Track > Date >
 /// sessions. Tapping a day opens it with [open]; each day's menu moves it
@@ -133,6 +134,9 @@ class _LibraryPageState extends State<LibraryPage> {
         l10n.libraryImported(read.added.length),
         if (read.notAdded.isNotEmpty)
           l10n.libraryImportNotAdded(read.notAdded.length),
+        if (read.notebooks.isNotEmpty)
+          l10n.libraryImportNotebooks(read.notebooks.length),
+        if (read.notebookCut) l10n.libraryImportNotebookCut,
       ].join(' ');
     } on ProfileNotSaved catch (error) {
       message = l10n.libraryImportNotSaved(error.import.added.length);
@@ -390,17 +394,37 @@ class _LibraryPageState extends State<LibraryPage> {
                     title: Text(track.track?.name ?? l10n.libraryUnknownTrack),
                     trailing: track.track == null
                         ? null
-                        : IconButton(
-                            tooltip: l10n.libraryRenameTrack,
-                            icon: const Icon(Icons.edit_outlined),
-                            onPressed: () => _rename(
-                              title: l10n.libraryRenameTrack,
-                              current: track.track!.name,
-                              rename: (name) => widget.library.renameTrack(
-                                track.track!.id,
-                                name,
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                key: ValueKey(
+                                  'trackNotebook ${track.track!.id}',
+                                ),
+                                tooltip: l10n.notebookTitle,
+                                icon: const Icon(Icons.menu_book_outlined),
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => TrackNotebookPage(
+                                      library: widget.library,
+                                      trackId: track.track!.id,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              IconButton(
+                                tooltip: l10n.libraryRenameTrack,
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () => _rename(
+                                  title: l10n.libraryRenameTrack,
+                                  current: track.track!.name,
+                                  rename: (name) => widget.library.renameTrack(
+                                    track.track!.id,
+                                    name,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                   for (final date in track.dates)

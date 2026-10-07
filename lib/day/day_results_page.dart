@@ -16,6 +16,7 @@ import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers, isDesktopPlatform;
 import '../import/import_review_page.dart';
 import '../l10n.dart';
+import '../profile/track_notebook_page.dart';
 import '../profile/last_time_here_card.dart';
 import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
@@ -1497,6 +1498,24 @@ class _DayResultsPageState extends State<DayResultsPage> {
                 onTap: _addAndReview,
                 child: Text(context.l10n.addAndReviewRecordings),
               ),
+              // The notebook of the day's track, for a day in the library.
+              if (widget.library case final library?
+                  when library.holds(_controller.documentPath ?? ''))
+                if (library.profile?.day(_controller.eventId)?.trackId
+                    case final trackId?)
+                  PopupMenuItem(
+                    key: const ValueKey('trackNotebookMenuItem'),
+                    height: kMinInteractiveDimension,
+                    onTap: () => Navigator.of(this.context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => TrackNotebookPage(
+                          library: library,
+                          trackId: trackId,
+                        ),
+                      ),
+                    ),
+                    child: Text(context.l10n.notebookTitle),
+                  ),
               PopupMenuItem(
                 key: const ValueKey('removeSessionMenu'),
                 height: kMinInteractiveDimension,
