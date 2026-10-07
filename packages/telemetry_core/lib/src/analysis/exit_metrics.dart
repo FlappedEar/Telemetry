@@ -212,6 +212,65 @@ _Rise _firstSustainedRise(
   );
 }
 
+/// The measured throttle's first sustained pickup over
+/// [startTime]..[endTime], with [options]' throttle thresholds and scale as
+/// [computeExitMetrics] reads them, but by time alone: FET-219 times the end
+/// of braking to it, also in a corner across start/finish. Its time, or why
+/// there is none; no progress is set.
+ThrottlePickup measuredThrottlePickup(
+  TelemetrySession session,
+  double startTime,
+  double endTime, [
+  ExitMetricsOptions options = const ExitMetricsOptions(),
+]) {
+  final pickup = ThrottlePickup();
+  final name = session.aliases['throttle'] ?? '';
+  final channel = session.channels[name];
+  if (name.isEmpty || channel == null) {
+    pickup.unavailableReason = exitNoChannel;
+    return pickup;
+  }
+  pickup
+    ..method = pickupMethodMeasured
+    ..provenance = 'measured'
+    ..channel = name
+    ..unit = channel.unit
+    ..threshold = options.throttle;
+  final scale = throttleScale(session);
+  if (scale == PedalScale.fraction) {
+    pickup.threshold = ExitThreshold(options.throttle.on / 100.0, options.throttle.off / 100.0, '');
+  }
+  final declared = channel.unit.trim().isNotEmpty;
+  if (declared && channel.unit.trim().toLowerCase() != pickup.threshold.unit.trim().toLowerCase()) {
+    pickup.unavailableReason = exitUnitMismatch;
+  } else if (scale == PedalScale.unknown) {
+    pickup.unavailableReason = exitScaleUnknown;
+  } else if (!startTime.isFinite || !endTime.isFinite || !(endTime > startTime)) {
+    pickup.unavailableReason = exitIncompleteCoverage;
+  } else {
+    final rise = _firstSustainedRise(
+      channel,
+      pickup.threshold.on,
+      pickup.threshold.off,
+      options.minimumDurationSeconds,
+      startTime,
+      endTime,
+    );
+    if (rise.time == null) {
+      pickup.unavailableReason = rise.reason;
+    } else {
+      pickup
+        ..telemetryTime = rise.time
+        ..limitations = [
+          ...rise.limitations,
+          if (!declared) exitUnitUndeclared,
+          if (scale == PedalScale.fraction) exitScaleInferred,
+        ];
+    }
+  }
+  return pickup;
+}
+
 double? _speedAtProgress(
   List<ProgressSegment> lap,
   TelemetrySession session,
