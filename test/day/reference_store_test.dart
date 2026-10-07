@@ -62,6 +62,30 @@ final class _FakeStore implements ReferenceStore {
 Future<R> _inPlace<R>(FutureOr<R> Function() computation) async =>
     computation();
 
+Type _typeOf<T>() => T;
+
+/// A disk whose writes of the profile can be held back and made to fail,
+/// one by one, to tell which write failed.
+final class _Disk {
+  /// While set, a write of the profile waits for it.
+  Completer<void>? hold;
+
+  /// How many of the next writes of the profile fail.
+  int failing = 0;
+
+  Future<R> background<R>(FutureOr<R> Function() computation) async {
+    // The profile is written by the one job that returns nothing.
+    if (R == _typeOf<void>()) {
+      if (hold case final hold?) await hold.future;
+      if (failing > 0) {
+        failing--;
+        throw const FileSystemException('disk full');
+      }
+    }
+    return computation();
+  }
+}
+
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('refstore'));
@@ -74,6 +98,16 @@ void main() {
     defaultCarName: 'Car',
     defaultTrackName: (number) => 'Track $number',
     background: _inPlace,
+  );
+
+  ProfileLibrary libraryOn(
+    String folder, {
+    Future<R> Function<R>(FutureOr<R> Function())? background,
+  }) => ProfileLibrary(
+    store: FolderProfileStore(folder),
+    defaultCarName: 'Car',
+    defaultTrackName: (number) => 'Track $number',
+    background: background ?? _inPlace,
   );
 
   String write(String name, String text) {
@@ -533,6 +567,380 @@ void main() {
     );
   });
 
+  group('the library keeps references in order and tells what it did', () {
+    ReferenceChoice choice(String path, [int lap = 2]) => ReferenceChoice(
+      source: ReferenceFile(path),
+      recordingId: p.basename(path),
+      lapNumber: lap,
+    );
+
+    Directory recordings() => Directory(p.join(profileFolder(), 'Recordings'));
+
+    Future<String> newDay(ProfileLibrary shelf, String id) async {
+      final outcome = runDayImport((
+        paths: [write('own/$id.vbo', rectangleVbo(todayLaps(), pedals: true))],
+        includeSubfolders: false,
+      ));
+      final path = (await shelf.dayPath(id))!;
+      File(path).writeAsStringSync(
+        jsonEncode(
+          dayDocument(
+            eventId: id,
+            name: id,
+            runs: outcome.runs,
+            analysis: outcome.analysis!,
+            projectPath: path,
+          ),
+        ),
+      );
+      return path;
+    }
+
+    DayAnalysis analysisOf(String id) => runDayImport((
+      paths: [write('own/$id.vbo', rectangleVbo(todayLaps(), pedals: true))],
+      includeSubfolders: false,
+    )).analysis!;
+
+    test(
+      'a restore sees what was asked just before it, kept or cleared',
+      () async {
+        final today = await savedDay('today', todayLaps());
+        final shelf = library();
+        await shelf.load();
+        final store = storeOf(shelf);
+        final keeping = store.keep(today.eventId, choice(friend()));
+        // Not waited for: the copy is still being made.
+        final restored = await store.restore(today.eventId);
+        expect(restored!.lapNumber, 2);
+        expect((restored.source as ReferenceFile).name, 'friend.vbo');
+        await keeping;
+        final clearing = store.keep(today.eventId, null);
+        expect(await store.restore(today.eventId), isNull);
+        await clearing;
+        // A day not in the profile yet is held, and read the same way.
+        await newDay(shelf, 'brandnew');
+        final holding = store.keep('brandnew', choice(friend('b.vbo'), 3));
+        expect((await store.restore('brandnew'))!.lapNumber, 3);
+        await holding;
+      },
+    );
+
+    test(
+      'a copy a day waiting to be listed uses stays when another day goes',
+      () async {
+        final a = await savedDay('a', todayLaps());
+        final shelf = library();
+        await shelf.load();
+        final shared = friend('shared.vbo');
+        await newDay(shelf, 'waiting');
+        expect(
+          await shelf.setFileReference(
+            a.eventId,
+            source: shared,
+            name: 'shared.vbo',
+            recordingId: 'shared.vbo',
+            lapNumber: 1,
+          ),
+          isTrue,
+        );
+        await shelf.setFileReference(
+          'waiting',
+          source: shared,
+          name: 'shared.vbo',
+          recordingId: 'shared.vbo',
+          lapNumber: 2,
+        );
+        final copy = recordings().listSync().single.path;
+        await shelf.deleteDay(a.eventId);
+        expect(
+          File(copy).existsSync(),
+          isTrue,
+          reason: 'the waiting day uses it',
+        );
+        await shelf.recordDay(
+          eventId: 'waiting',
+          path: (await shelf.dayPath('waiting'))!,
+          name: 'waiting',
+          analysis: analysisOf('waiting'),
+        );
+        await shelf.flush();
+        expect(shelf.profile!.day('waiting')!.reference, isNotNull);
+        expect(File(copy).existsSync(), isTrue);
+      },
+    );
+
+    test(
+      'a day outside the profile\'s days folder is not deleted, its copy is',
+      () async {
+        final x = await savedDay('x', todayLaps());
+        final folder = profileFolder();
+        final moved = p.join(folder, 'Elsewhere', 'x.fetproject');
+        Directory(p.dirname(moved)).createSync(recursive: true);
+        File(x.documentPath!).renameSync(moved);
+        final copy = keepReferenceFile(folder, friend());
+        var profile = addDayToProfile(
+          DriverProfile.empty(),
+          ProfileDayInput(
+            eventId: x.eventId,
+            file: 'Elsewhere/x.fetproject',
+            name: 'X',
+          ),
+          defaultCarName: 'Car',
+          defaultTrackName: 'Track',
+        );
+        profile = setProfileDayReference(
+          profile,
+          x.eventId,
+          copy.reference('friend.vbo', 'friend.vbo', 1),
+        );
+        File(p.join(folder, profileFileName))
+            .writeAsStringSync(encodeDriverProfile(profile));
+        final shelf = library();
+        await shelf.load();
+        expect(shelf.referenceOf(x.eventId), isNotNull);
+        final copyPath = p.join(folder, 'Recordings', '${copy.sha256}.vbo');
+        await shelf.deleteDay(x.eventId);
+        await shelf.flush();
+        expect(
+          File(moved).existsSync(),
+          isTrue,
+          reason: 'not the profile\'s to delete',
+        );
+        expect(File(copyPath).existsSync(), isFalse);
+        expect(shelf.profile!.day(x.eventId), isNull);
+      },
+    );
+
+    test('references waiting for their day count against the limits', () async {
+      final today = await savedDay('today', todayLaps());
+      final shelf = library();
+      await shelf.load();
+      for (var i = 0; i < maximumReferenceFiles; i++) {
+        await shelf.setFileReference(
+          'waiting$i',
+          source: write('ref/$i.vbo', 'recording number $i\n'),
+          name: '$i.vbo',
+          recordingId: '$i.vbo',
+          lapNumber: 1,
+        );
+      }
+      Future<ProfileReferenceProblem?> problem(String id) async {
+        try {
+          await shelf.setFileReference(
+            id,
+            source: write('ref/more-$id.vbo', 'one more for $id\n'),
+            name: 'more.vbo',
+            recordingId: 'more.vbo',
+            lapNumber: 1,
+          );
+          return null;
+        } on ProfileReferenceError catch (error) {
+          return error.problem;
+        }
+      }
+
+      expect(
+        await problem(today.eventId),
+        ProfileReferenceProblem.tooManyFiles,
+      );
+      expect(
+        await problem('waitingMore'),
+        ProfileReferenceProblem.tooManyFiles,
+      );
+      expect(recordings().listSync(), hasLength(maximumReferenceFiles));
+      expect(shelf.referenceOf(today.eventId), isNull);
+    });
+
+    test('a waiting reference the profile has no room for when its day is '
+        'listed is dropped, its copy removed, and the user told', () async {
+      // A bundle from another profile brings one more recording.
+      final source = libraryOn(p.join(directory.path, 'Source'));
+      await source.load();
+      final path = await newDay(source, 'brought');
+      await source.recordDay(
+        eventId: 'brought',
+        path: path,
+        name: 'brought',
+        analysis: analysisOf('brought'),
+      );
+      await source.setFileReference(
+        'brought',
+        source: friend('brought.vbo'),
+        name: 'brought.vbo',
+        recordingId: 'brought.vbo',
+        lapNumber: 1,
+      );
+      final bundle = p.join(directory.path, 'x$profileBundleExtension');
+      expect(await source.exportBundle(bundle), isNotNull);
+
+      final shelf = library();
+      await shelf.load();
+      for (var i = 0; i < maximumReferenceFiles - 1; i++) {
+        await shelf.setFileReference(
+          'waiting$i',
+          source: write('ref/$i.vbo', 'recording number $i\n'),
+          name: '$i.vbo',
+          recordingId: '$i.vbo',
+          lapNumber: 1,
+        );
+      }
+      await newDay(shelf, 'last');
+      final lastFile = write('ref/last.vbo', 'distinct content of the last\n');
+      await shelf.setFileReference(
+        'last',
+        source: lastFile,
+        name: 'last.vbo',
+        recordingId: 'last.vbo',
+        lapNumber: 1,
+      );
+      expect(recordings().listSync(), hasLength(maximumReferenceFiles));
+      final imported = (await shelf.importBundle(bundle))!;
+      expect(imported.added, ['brought']);
+      expect(imported.referencesNotKept, isEmpty);
+
+      var told = 0;
+      shelf.addListener(() {
+        if (shelf.referenceDropped('last') != null) told++;
+      });
+      await shelf.recordDay(
+        eventId: 'last',
+        path: (await shelf.dayPath('last'))!,
+        name: 'last',
+        analysis: analysisOf('last'),
+      );
+      await shelf.flush();
+      expect(shelf.profile!.day('last')!.reference, isNull);
+      expect(
+        shelf.referenceDropped('last')!.problem,
+        ProfileReferenceProblem.tooManyFiles,
+      );
+      expect(told, greaterThan(0));
+      // Its copy goes once the changes of references so far are done.
+      await shelf.restoreReference('last');
+      final lastCopy = keepReferenceFile(
+        p.join(directory.path, 'probe'),
+        lastFile,
+      );
+      expect(
+        File(p.join(profileFolder(), 'Recordings', '${lastCopy.sha256}.vbo'))
+            .existsSync(),
+        isFalse,
+      );
+      final broughtCopy =
+          shelf.profile!.day('brought')!.reference as ProfileReferenceFile;
+      expect(File(shelf.referenceFilePath(broughtCopy)!).existsSync(), isTrue);
+    });
+
+    test(
+      'a write that failed is this change\'s failure, not another\'s',
+      () async {
+        final today = await savedDay('today', todayLaps());
+        final disk = _Disk();
+        final shelf = libraryOn(profileFolder(), background: disk.background);
+        await shelf.load();
+        await shelf.flush();
+        // Another change's write is held, then fails; this change's follows.
+        disk.hold = Completer<void>();
+        shelf.renameCar(shelf.profile!.cars.first.id, 'Renamed');
+        final keeping = shelf.setFileReference(
+          today.eventId,
+          source: friend(),
+          name: 'friend.vbo',
+          recordingId: 'friend.vbo',
+          lapNumber: 2,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        disk.failing = 1;
+        disk.hold!.complete();
+        expect(await keeping, isTrue);
+        await shelf.flush();
+        expect(shelf.referenceOf(today.eventId), isNotNull);
+        expect(profileText(), contains('friend.vbo'));
+        expect(recordings().listSync(), hasLength(1));
+      },
+    );
+
+    test('a write that failed takes the reference back from the profile as '
+        'it is now, and nothing else', () async {
+      final today = await savedDay('today', todayLaps());
+      final disk = _Disk();
+      final shelf = libraryOn(profileFolder(), background: disk.background);
+      await shelf.load();
+      await shelf.flush();
+      disk.hold = Completer<void>();
+      final keeping = shelf.setFileReference(
+        today.eventId,
+        source: friend(),
+        name: 'friend.vbo',
+        recordingId: 'friend.vbo',
+        lapNumber: 2,
+      );
+      Object? failure;
+      final told = keeping.then<void>(
+        (_) {},
+        onError: (Object e) => failure = e,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      // Another change is made while the write is on its way.
+      shelf.renameCar(shelf.profile!.cars.first.id, 'Renamed');
+      disk.failing = 1;
+      disk.hold!.complete();
+      await told;
+      await shelf.flush();
+      expect(
+        failure,
+        isA<ProfileReferenceError>().having(
+          (error) => error.problem,
+          'problem',
+          ProfileReferenceProblem.notWritten,
+        ),
+      );
+      expect(shelf.referenceOf(today.eventId), isNull);
+      final onDisk = decodeDriverProfile(profileText());
+      expect(onDisk.day(today.eventId)!.reference, isNull);
+      expect(onDisk.cars.first.name, 'Renamed');
+      expect(shelf.profile!.cars.first.name, 'Renamed');
+      expect(recordings().listSync(), isEmpty, reason: 'its copy went');
+    });
+
+    test(
+      'copies nothing uses are swept once at start-up, and only those',
+      () async {
+        final today = await savedDay('today', todayLaps());
+        final first = library();
+        await first.load();
+        await first.setFileReference(
+          today.eventId,
+          source: friend(),
+          name: 'friend.vbo',
+          recordingId: 'friend.vbo',
+          lapNumber: 1,
+        );
+        final folder = profileFolder();
+        final orphan = keepReferenceFile(
+          folder,
+          write('ref/orphan.vbo', 'nothing uses this\n'),
+        );
+        final notes = File(p.join(folder, 'Recordings', 'notes.vbo'))
+          ..writeAsStringSync('mine');
+        final kept = recordings().listSync().map((e) => e.path).toSet()
+          ..remove(p.join(folder, 'Recordings', '${orphan.sha256}.vbo'))
+          ..remove(notes.path);
+        final again = library();
+        await again.load();
+        final gone = File(p.join(folder, 'Recordings', '${orphan.sha256}.vbo'));
+        for (var i = 0; i < 100 && gone.existsSync(); i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
+        expect(gone.existsSync(), isFalse);
+        expect(notes.existsSync(), isTrue);
+        expect(kept.single, isNotEmpty);
+        expect(File(kept.single).existsSync(), isTrue, reason: 'a reference');
+        expect(again.referenceOf(today.eventId), isNotNull);
+      },
+    );
+  });
+
   group('ReferenceLapHolder with a store', () {
     late ReferenceLine line;
     setUp(() => line = realLine());
@@ -626,6 +1034,55 @@ void main() {
       },
     );
 
+    test('a lap that is gone shows the fastest and leaves the choice as it '
+        'was, until a lap is chosen on purpose', () async {
+      final store = _FakeStore()
+        ..restored = ReferenceChoice(
+          source: ReferenceFile(friend()),
+          recordingId: 'friend.vbo',
+          lapNumber: 99,
+        );
+      final h = ReferenceLapHolder(dayId: 'day', store: store);
+      addTearDown(h.dispose);
+      await h.restore(line);
+      await Future<void>.delayed(Duration.zero);
+      expect(h.state, ReferenceState.ready);
+      expect(h.lap!.lapNumber, isNot(99));
+      expect(h.keepState, ReferenceKeep.saved);
+      expect(store.kept, isEmpty);
+      // Read again (today's line changed): still the stored lap asked for.
+      await h.reload(line);
+      await Future<void>.delayed(Duration.zero);
+      expect(store.kept, isEmpty);
+      // A lap chosen on purpose is the new choice.
+      final other = h.timing!.candidates.last;
+      h.choose(other);
+      await Future<void>.delayed(Duration.zero);
+      expect(store.kept.single!.lapNumber, other.lapNumber);
+    });
+
+    test('a choice the store could not keep after all is told, and tried '
+        'again on request', () async {
+      final store = _FakeStore()
+        ..restored = ReferenceChoice(
+          source: ReferenceFile(friend()),
+          recordingId: 'friend.vbo',
+          lapNumber: 2,
+        );
+      final h = ReferenceLapHolder(dayId: 'day', store: store);
+      addTearDown(h.dispose);
+      await h.restore(line);
+      await Future<void>.delayed(Duration.zero);
+      expect(h.keepState, ReferenceKeep.saved);
+      h.keepDropped(ProfileReferenceProblem.tooManyFiles);
+      expect(h.keepState, ReferenceKeep.failed);
+      expect(h.keepProblem, ProfileReferenceProblem.tooManyFiles);
+      h.retryKeep();
+      await Future<void>.delayed(Duration.zero);
+      expect(h.keepState, ReferenceKeep.saved);
+      expect(store.kept.single!.lapNumber, 2);
+    });
+
     test('a store that keeps nothing says so', () async {
       final store = _FakeStore()..answer = false;
       final h = ReferenceLapHolder(dayId: 'day', store: store);
@@ -674,10 +1131,14 @@ void main() {
 
     /// Lets the library and the reference read in the background finish.
     Future<void> settle(WidgetTester tester) async {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 500)),
-      );
-      await tester.pumpAndSettle();
+      // Work started in the real zone (the library's own, at start-up) and
+      // in the test's fake one hands over to each other a few times.
+      for (var round = 0; round < 4; round++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 150)),
+        );
+        await tester.pumpAndSettle();
+      }
     }
 
     Future<DayResultsController> reopened(DayResultsController day) async =>

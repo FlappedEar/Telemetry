@@ -21,9 +21,9 @@ final class ProfileReferenceStore implements ReferenceStore {
 
   @override
   Future<ReferenceChoice?> restore(String eventId) async {
-    await library.load();
-    if (!library.available) return null;
-    final reference = library.referenceOf(eventId);
+    // In turn with the changes of references asked for before: a reference
+    // being copied or cleared when the day was closed is seen as it ends.
+    final reference = await library.restoreReference(eventId);
     switch (reference) {
       case null:
         return null;
@@ -56,29 +56,30 @@ final class ProfileReferenceStore implements ReferenceStore {
   }
 
   @override
-  Future<bool> keep(String eventId, ReferenceChoice? choice) async {
-    await library.load();
-    if (!library.available || !keepsDay()) return false;
+  Future<bool> keep(String eventId, ReferenceChoice? choice) {
+    // Asked of the library at once, not after an await, so that what is
+    // kept and restored follows the order the page asked in.
     switch (choice?.source) {
       case null:
-        await library.clearReference(eventId);
+        return library.clearReference(eventId, when: keepsDay);
       case final ReferenceFile file:
-        await library.setFileReference(
+        return library.setFileReference(
           eventId,
           source: file.path,
           name: file.name,
           recordingId: choice!.recordingId,
           lapNumber: choice.lapNumber,
+          when: keepsDay,
         );
       case final ReferenceProfileDay day:
-        await library.setDayReference(
+        return library.setDayReference(
           eventId,
           otherEventId: day.eventId,
           name: day.dayName,
           recordingId: choice!.recordingId,
           lapNumber: choice.lapNumber,
+          when: keepsDay,
         );
     }
-    return true;
   }
 }

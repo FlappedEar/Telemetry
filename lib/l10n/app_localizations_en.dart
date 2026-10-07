@@ -7518,12 +7518,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String referenceKeepTooMuch(int megabytes) {
-    return 'The reference recordings would take more than $megabytes MB in your profile.';
+    return 'The reference recordings would take more than $megabytes MiB in your profile.';
   }
 
   @override
   String referenceKeepFileTooLarge(int megabytes) {
-    return 'The recording is larger than $megabytes MB, the most a reference can be.';
+    return 'The recording is larger than $megabytes MiB, the most a reference can be.';
   }
 
   @override

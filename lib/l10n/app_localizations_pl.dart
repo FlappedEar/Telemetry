@@ -5760,7 +5760,9 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Nie znaleziono $count zapisów na tym urządzeniu, więc nie ma ich w pliku.',
+          '$count zapisów nie zostało znalezionych na tym urządzeniu, więc nie ma ich w pliku.',
+      few:
+          '$count zapisy nie zostały znalezione na tym urządzeniu, więc nie ma ich w pliku.',
       one: 'Nie znaleziono 1 zapisu na tym urządzeniu, więc nie ma go w pliku.',
     );
     return '$_temp0';
@@ -5772,7 +5774,9 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Nie znaleziono $count zapisów odniesienia w profilu, więc nie ma ich w pliku.',
+          '$count zapisów odniesienia nie zostało znalezionych w profilu, więc nie ma ich w pliku.',
+      few:
+          '$count zapisy odniesienia nie zostały znalezione w profilu, więc nie ma ich w pliku.',
       one: 'Nie znaleziono 1 zapisu odniesienia w profilu, więc nie ma go w pliku.',
     );
     return '$_temp0';
@@ -6710,6 +6714,8 @@ class AppLocalizationsPl extends AppLocalizations {
       locale: localeName,
       other:
           'Pominięto okrążenia odniesienia $count dni: ich zapisy nie zmieściły się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+      few:
+          'Pominięto okrążenia odniesienia $count dni: ich zapisy nie zmieściły się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
       one: 'Pominięto okrążenie odniesienia 1 dnia: jego zapis nie zmieścił się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
     );
     return '$_temp0';
@@ -6722,6 +6728,8 @@ class AppLocalizationsPl extends AppLocalizations {
       locale: localeName,
       other:
           '$count zapisów odniesienia nie było w pliku: te odniesienia powiedzą, że nie znaleziono zapisu.',
+      few:
+          '$count zapisy odniesienia nie były w pliku: te odniesienia powiedzą, że nie znaleziono zapisu.',
       one: '1 zapisu odniesienia nie było w pliku: to odniesienie powie, że nie znaleziono zapisu.',
     );
     return '$_temp0';
@@ -7686,12 +7694,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String referenceKeepTooMuch(int megabytes) {
-    return 'Zapisy odniesienia zajęłyby w Twoim profilu ponad $megabytes MB.';
+    return 'Zapisy odniesienia zajęłyby w Twoim profilu ponad $megabytes MiB.';
   }
 
   @override
   String referenceKeepFileTooLarge(int megabytes) {
-    return 'Zapis jest większy niż $megabytes MB, czyli maksimum dla odniesienia.';
+    return 'Zapis jest większy niż $megabytes MiB, czyli maksimum dla odniesienia.';
   }
 
   @override

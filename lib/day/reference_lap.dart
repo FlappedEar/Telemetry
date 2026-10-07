@@ -289,6 +289,18 @@ class ReferenceLapHolder extends ChangeNotifier {
   bool _failedForget = false;
   int _keepGeneration = 0;
 
+  /// Whether the lap shown is the recording's fastest because the lap kept
+  /// (or chosen before a reload) is no longer there: the choice kept is
+  /// left as it was until a lap is chosen on purpose.
+  bool _lapFellBack = false;
+
+  /// The lap that was asked for and not found, while [_lapFellBack]: asked
+  /// for again when the source is read again.
+  ({String? recordingId, int? lapNumber}) _wanted = (
+    recordingId: null,
+    lapNumber: null,
+  );
+
   ReferenceState get state => _state;
 
   /// Whether [restore] was called: it reads what the store kept once.
@@ -338,6 +350,7 @@ class ReferenceLapHolder extends ChangeNotifier {
     _keepState = ReferenceKeep.none;
     _keepProblem = null;
     _failedChoice = null;
+    _lapFellBack = false;
     _state = ReferenceState.loading;
     _source = source;
     _timing = null;
@@ -365,15 +378,15 @@ class ReferenceLapHolder extends ChangeNotifier {
         _state = ReferenceState.refused;
       } else {
         _state = ReferenceState.ready;
-        _lap =
-            timing.candidates
-                .where(
-                  (lap) =>
-                      lap.recordingId == recordingId &&
-                      lap.lapNumber == lapNumber,
-                )
-                .firstOrNull ??
-            timing.fastest;
+        final wanted = timing.candidates
+            .where(
+              (lap) =>
+                  lap.recordingId == recordingId && lap.lapNumber == lapNumber,
+            )
+            .firstOrNull;
+        _lap = wanted ?? timing.fastest;
+        _lapFellBack = wanted == null && recordingId != null;
+        _wanted = (recordingId: recordingId, lapNumber: lapNumber);
       }
     }
     if (restored != null) {
@@ -399,11 +412,13 @@ class ReferenceLapHolder extends ChangeNotifier {
     final source = _source;
     if (source == null) return;
     final lap = _lap;
+    // The lap kept and not found stays the one asked for, not the fastest
+    // lap shown in its place.
     await load(
       source,
       line,
-      recordingId: lap?.recordingId,
-      lapNumber: lap?.lapNumber,
+      recordingId: _lapFellBack ? _wanted.recordingId : lap?.recordingId,
+      lapNumber: _lapFellBack ? _wanted.lapNumber : lap?.lapNumber,
     );
   }
 
@@ -441,6 +456,7 @@ class ReferenceLapHolder extends ChangeNotifier {
     }
     _state = ReferenceState.ready;
     _lap = lap;
+    _lapFellBack = false;
     notifyListeners();
     _keep();
   }
@@ -465,7 +481,7 @@ class ReferenceLapHolder extends ChangeNotifier {
   /// not forget the choice kept before it.
   void _keep() {
     final source = _source, lap = _lap;
-    if (source == null || lap == null) return;
+    if (source == null || lap == null || _lapFellBack) return;
     final choice = ReferenceChoice(
       source: source,
       recordingId: lap.recordingId,
@@ -478,6 +494,24 @@ class ReferenceLapHolder extends ChangeNotifier {
       return;
     }
     unawaited(_write(choice));
+  }
+
+  /// Tells that the choice the store took could not be kept after all
+  /// (it was held for a day not yet in the profile, which had no room for
+  /// it when the day was listed): shown as failed, and [retryKeep] tries
+  /// again.
+  void keepDropped(ProfileReferenceProblem? problem) {
+    final kept = _lastKept;
+    if (_disposed || kept == null || _keepState == ReferenceKeep.saving) {
+      return;
+    }
+    ++_keepGeneration;
+    _keepState = ReferenceKeep.failed;
+    _keepProblem = problem;
+    _failedChoice = kept;
+    _failedForget = false;
+    _lastKept = null;
+    notifyListeners();
   }
 
   /// Writes the choice again after it could not be kept.

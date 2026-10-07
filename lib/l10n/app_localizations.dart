@@ -10880,13 +10880,13 @@ abstract class AppLocalizations {
   /// Why a reference was not kept: the profile's limit of room for reference recordings.
   ///
   /// In en, this message translates to:
-  /// **'The reference recordings would take more than {megabytes} MB in your profile.'**
+  /// **'The reference recordings would take more than {megabytes} MiB in your profile.'**
   String referenceKeepTooMuch(int megabytes);
 
   /// Why a reference was not kept: the recording file is too large.
   ///
   /// In en, this message translates to:
-  /// **'The recording is larger than {megabytes} MB, the most a reference can be.'**
+  /// **'The recording is larger than {megabytes} MiB, the most a reference can be.'**
   String referenceKeepFileTooLarge(int megabytes);
 
   /// Why a reference was not kept: the recording file is empty.

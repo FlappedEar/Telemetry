@@ -205,6 +205,13 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
+  /// A reference chosen before the day was listed in the profile that it
+  /// had no room for when it was: said on the reference's keep state.
+  void _referenceDropped() {
+    final dropped = widget.library?.referenceDropped(_controller.eventId);
+    if (dropped != null) _reference.keepDropped(dropped.problem);
+  }
+
   bool _relinking = false;
 
   // The tab shown under the title: on a phone Overview, Laps, Compare or
@@ -268,6 +275,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _controller.weather.addListener(_weatherChanged);
     _startLibrary();
     _controller.addListener(_restoreReference);
+    widget.library?.addListener(_referenceDropped);
     // The reference kept for the day in the driver profile.
     _restoreReference();
     // An addition made before the page opened, such as a shared recording
@@ -289,6 +297,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _controller.removeListener(_reportAddition);
     _controller.removeListener(_libraryChanged);
     _controller.removeListener(_restoreReference);
+    widget.library?.removeListener(_referenceDropped);
     _controller.weather.removeListener(_weatherChanged);
     _autosave?.cancel();
     _lifecycle.dispose();
