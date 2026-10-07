@@ -7536,7 +7536,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceRefusedExcluded =>
-      'Not used: every one of its laps on today\'s track was excluded on its own day.';
+      'Every one of its laps on today\'s track was excluded on its own day. Choose one with Choose its lap to use it anyway.';
 
   @override
   String referenceLapExcluded(String reason) {
@@ -7566,4 +7566,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String referenceLowCoverage(int percent) {
     return 'No lap Δ: the reference lap follows only $percent % of lap A\'s line.';
   }
+
+  @override
+  String get referenceRouteUnchecked =>
+      'Today\'s lap has no route to check against, so the reference\'s route and direction were not checked: only today\'s start/finish line.';
 }

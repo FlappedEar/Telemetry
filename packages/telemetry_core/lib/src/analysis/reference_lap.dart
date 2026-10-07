@@ -28,8 +28,9 @@ const double referenceMaximumGateDistanceMeters = 500.0;
 
 /// How much of today's lap's track axis (a fraction) the reference lap's
 /// projection must cover for a lap Δ to be shown; less, and the two laps do
-/// not follow one line from start to finish.
-const double referenceMinimumCoverage = 0.9;
+/// not follow one line from start to finish. On the real Jastrząb day a
+/// reference covers 99.9 %.
+const double referenceMinimumCoverage = 0.97;
 
 /// Seconds of a reference recording kept either side of its candidate laps.
 const double referenceTrimMarginSeconds = 5.0;
@@ -255,8 +256,13 @@ final class ReferenceTiming {
   /// Each kept recording's laps on [gate], in [recordings] order.
   final List<LapSession> laps;
 
-  /// Every complete lap on today's line and route, in recording order.
+  /// Every complete lap on today's line and route, in recording order;
+  /// also with [ReferenceRefusal.onlyExcludedLaps], so one can be chosen.
   final List<ReferenceLapCandidate> candidates;
+
+  /// Today's lap had no route shape, so the laps were not checked against
+  /// today's route.
+  bool get routeUnchecked => line.route == null;
 
   bool get usable => refusal == ReferenceRefusal.none && candidates.isNotEmpty;
 
@@ -521,7 +527,8 @@ ReferenceTiming timeReferenceLaps(
   } else {
     refusal = ReferenceRefusal.none;
   }
-  final usable = refusal == ReferenceRefusal.none;
+  // Laps its day excluded can still be chosen on purpose.
+  final usable = refusal == ReferenceRefusal.none || refusal == ReferenceRefusal.onlyExcludedLaps;
   return ReferenceTiming._(
     refusal: refusal,
     line: line,

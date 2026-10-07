@@ -335,7 +335,7 @@ void main() {
       referenceSession: timing.recordings[fastest.recordingIndex].session,
     );
     expect(compared.comparison.axis.valid, isTrue);
-    expect(compared.coverage, greaterThan(0.95));
+    expect(compared.coverage, greaterThan(referenceMinimumCoverage));
     expect(compared.lapDeltaSeconds, closeTo(0, 0.15));
 
     // An RCZ day takes a VBO reference the other way round.
@@ -378,6 +378,8 @@ void main() {
       ReferenceRecording(label: 'reverse.vbo', session: backwards),
     ], ReferenceLine(gate: gate));
     expect(unchecked.refusal, ReferenceRefusal.none);
+    expect(unchecked.routeUnchecked, isTrue);
+    expect(timing.routeUnchecked, isFalse);
   });
 
   test('refuses another layout through the same line', () {
@@ -460,6 +462,10 @@ void main() {
     ], line);
     expect(allExcluded.refusal, ReferenceRefusal.onlyExcludedLaps);
     expect(allExcluded.usable, isFalse);
+    expect(allExcluded.fastest, isNull);
+    // Kept, all marked, so one can still be chosen on purpose.
+    expect(allExcluded.candidates, hasLength(laps.length));
+    expect(allExcluded.candidates.every((lap) => lap.excluded), isTrue);
   });
 
   test('keeps only recordings with laps, trimmed to them', () {

@@ -342,11 +342,14 @@ class ReferenceLapHolder extends ChangeNotifier {
   }
 
   /// Makes [lap], one of the timing's candidates, the reference.
+  /// A source whose only laps its day excluded is refused until one of
+  /// them is chosen on purpose.
   void choose(ReferenceLapCandidate lap) {
-    if (_state != ReferenceState.ready ||
+    if ((_state != ReferenceState.ready && _state != ReferenceState.refused) ||
         !(_timing?.candidates.contains(lap) ?? false)) {
       return;
     }
+    _state = ReferenceState.ready;
     _lap = lap;
     notifyListeners();
     _keep();

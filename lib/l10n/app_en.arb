@@ -8949,7 +8949,7 @@
   "@referenceRefusedDirection": {"description": "Why a reference was refused: its laps go round today's route in the opposite direction."},
   "referenceRefusedLayout": "Not used: its laps cross today's start/finish line but follow another layout of the track.",
   "@referenceRefusedLayout": {"description": "Why a reference was refused: its laps cross today's line but follow another route."},
-  "referenceRefusedExcluded": "Not used: every one of its laps on today's track was excluded on its own day.",
+  "referenceRefusedExcluded": "Every one of its laps on today's track was excluded on its own day. Choose one with Choose its lap to use it anyway.",
   "@referenceRefusedExcluded": {"description": "Why a reference from an earlier day was refused: all of its laps on today's route were excluded on that day."},
   "referenceLapExcluded": "Excluded on its day: {reason}",
   "@referenceLapExcluded": {"description": "In the reference lap picker: this lap was excluded on its own day, with the reason given there.", "placeholders": {"reason": {"type": "String", "example": "Pit lane"}}},
@@ -8964,5 +8964,7 @@
   "referenceLapAOtherLine": "Lap A was timed on another start/finish line than the reference, so there is no lap Δ. Choose another lap A.",
   "@referenceLapAOtherLine": {"description": "On the reference comparison: lap A's session has another start/finish line than the one the reference was timed on."},
   "referenceLowCoverage": "No lap Δ: the reference lap follows only {percent} % of lap A's line.",
-  "@referenceLowCoverage": {"description": "On the reference comparison: the reference lap's position covers too little of lap A's line for a lap delta.", "placeholders": {"percent": {"type": "int", "example": "84"}}}
+  "@referenceLowCoverage": {"description": "On the reference comparison: the reference lap's position covers too little of lap A's line for a lap delta.", "placeholders": {"percent": {"type": "int", "example": "84"}}},
+  "referenceRouteUnchecked": "Today's lap has no route to check against, so the reference's route and direction were not checked: only today's start/finish line.",
+  "@referenceRouteUnchecked": {"description": "Today's best lap has no route shape (too short, open or self-crossing), so reference laps were timed on the line without the route check."}
 }

@@ -778,27 +778,135 @@ void main() {
     );
   });
 
-  test('the reference lap goes with its day, and stops loading', () async {
-    final controller = today();
-    final holder = referenceLapOf(controller, dayId: controller.eventId);
-    expect(identical(referenceLapOf(controller), holder), isTrue);
-    final cancelled = Completer<void>();
-    final loading = holder.load(
-      ReferenceFile(friend()),
-      referenceLine(controller)!,
-    );
-    holder.addListener(() {
-      if (holder.disposed) cancelled.complete();
+  for (final isolate in [false, true]) {
+    test('the reference lap goes with its day, and stops loading'
+        '${isolate ? ' in its isolate' : ''}', () async {
+      debugRunInIsolate = isolate;
+      addTearDown(() => debugRunInIsolate = false);
+      final controller = today();
+      final holder = referenceLapOf(controller, dayId: controller.eventId);
+      expect(identical(referenceLapOf(controller), holder), isTrue);
+      var notified = 0;
+      final loading = holder.load(
+        ReferenceFile(friend()),
+        referenceLine(controller)!,
+      );
+      holder.addListener(() => ++notified);
+      expect(holder.state, ReferenceState.loading);
+      // The shell disposing (or discarding) the day disposes its reference
+      // and stops the reading under way.
+      controller.dispose();
+      expect(holder.disposed, isTrue);
+      await loading.timeout(const Duration(seconds: 30));
+      expect(holder.lap, isNull);
+      expect(holder.timing, isNull);
+      expect(notified, 0);
+      // A later page of a new day gets a new holder.
+      final next = today();
+      addTearDown(next.dispose);
+      expect(identical(referenceLapOf(next), holder), isFalse);
     });
-    // The shell disposing (or discarding) the day disposes its reference.
-    controller.dispose();
-    expect(holder.disposed, isTrue);
-    await loading;
-    expect(holder.lap, isNull);
-    expect(cancelled.isCompleted, isFalse);
-    // A later page of a new day gets a new holder.
-    final next = today();
-    addTearDown(next.dispose);
-    expect(identical(referenceLapOf(next), holder), isFalse);
+  }
+
+  testWidgets('a source whose laps were all excluded on their day offers '
+      'them, marked', (tester) async {
+    final controller = today();
+    final path = friend();
+    final laps = parseVboFile(path);
+    final holder = ReferenceLapHolder(
+      loader: (request) => runInBackground((
+        ReferenceRequest request,
+        CancellationCheck cancelled,
+      ) {
+        final timed = timeReferenceLaps([
+          ReferenceRecording(label: 'friend.vbo', session: laps),
+        ], request.line);
+        return ReferenceLoaded(
+          timeReferenceLaps([
+            ReferenceRecording(
+              label: 'friend.vbo',
+              session: laps,
+              exclusions: [
+                for (final lap in timed.candidates)
+                  (start: lap.start, end: lap.end, reason: 'Wet'),
+              ],
+            ),
+          ], request.line),
+        );
+      }, request),
+    );
+    addTearDown(holder.dispose);
+    await tester.binding.setSurfaceSize(const Size(1000, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ReferenceLapSection(
+              controller: controller,
+              holder: holder,
+              pickers: _Pickers([path]),
+              onCompare: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tapKey(tester, 'referenceLoadFile');
+    expect(holder.state, ReferenceState.refused);
+    expect(holder.timing!.refusal, ReferenceRefusal.onlyExcludedLaps);
+    expect(
+      textOf(tester, 'referenceProblem'),
+      startsWith('Every one of its laps on today\'s track was excluded'),
+    );
+    expect(find.byKey(const ValueKey('referenceLabel')), findsNothing);
+    await tapKey(tester, 'referenceChooseLap');
+    expect(find.text('Excluded on its day: Wet'), findsNWidgets(3));
+    await tapKey(tester, 'referenceLap 0 2');
+    expect(holder.state, ReferenceState.ready);
+    expect(holder.lap!.lapNumber, 2);
+    expect(find.byKey(const ValueKey('referenceProblem')), findsNothing);
+    expect(find.byKey(const ValueKey('referenceLabel')), findsOneWidget);
+    // Today's lap has a route: it was checked.
+    expect(find.byKey(const ValueKey('referenceRouteUnchecked')), findsNothing);
+  });
+
+  testWidgets('segments arriving after the comparison opened are shown', (
+    tester,
+  ) async {
+    final controller = today();
+    final holder = ReferenceLapHolder();
+    addTearDown(holder.dispose);
+    await tester.runAsync(
+      () => holder.load(ReferenceFile(friend()), referenceLine(controller)!),
+    );
+    final best = controller.ranking!.bestOfDay!;
+    await tester.binding.setSurfaceSize(const Size(1000, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: ReferenceComparisonPage(
+          controller: controller,
+          holder: holder,
+          a: best,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // No approved segments and no theoretical best yet.
+    expect(find.byKey(const ValueKey('referenceSegmentsNone')), findsOneWidget);
+    await tester.runAsync(controller.requestTheoreticalBest);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('referenceSegmentsNone')), findsNothing);
+    final segments = comparisonApprovedSegments(
+      controller.segmentationFor(best).shared,
+    );
+    expect(segments, isNotEmpty);
+    for (final segment in segments) {
+      expect(
+        find.byKey(ValueKey('referenceSegment ${segment.id}')),
+        findsOneWidget,
+      );
+    }
   });
 }

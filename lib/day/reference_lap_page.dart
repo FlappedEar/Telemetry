@@ -331,6 +331,12 @@ class ReferenceLapSection extends StatelessWidget {
                 color: theme.colorScheme.error,
               ),
             ),
+          if (holder.timing?.routeUnchecked ?? false)
+            Text(
+              l10n.referenceRouteUnchecked,
+              key: const ValueKey('referenceRouteUnchecked'),
+              style: muted,
+            ),
           if (label != null)
             Card(
               clipBehavior: Clip.antiAlias,
@@ -366,9 +372,11 @@ class ReferenceLapSection extends StatelessWidget {
                   icon: const Icon(Icons.compare_arrows),
                   label: Text(l10n.referenceCompare),
                 ),
-              if (label != null &&
-                  !stale &&
-                  (holder.timing?.candidates.length ?? 0) > 1)
+              if (!stale &&
+                  ((label != null &&
+                          (holder.timing?.candidates.length ?? 0) > 1) ||
+                      (holder.state == ReferenceState.refused &&
+                          (holder.timing?.candidates.isNotEmpty ?? false))))
                 OutlinedButton(
                   key: const ValueKey('referenceChooseLap'),
                   onPressed: () => _chooseLap(context),
@@ -503,7 +511,24 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
   // Today's line can change under the page (another group, a new best
   // lap): the comparison stops until the reference is read again.
   void _dayChanged() {
-    if (_lineOf() != _line) setState(_build);
+    if (_lineOf() != _line ||
+        _segmentationKey(widget.controller.segmentationFor(_a)) !=
+            _builtSegmentation) {
+      setState(_build);
+    }
+  }
+
+  // What tells one segmentation from another: approving segments or the
+  // theoretical best finishing gives lap A other segments.
+  String _builtSegmentation = '';
+
+  static String _segmentationKey(ComparisonSegmentation segmentation) {
+    final shared = segmentation.shared;
+    return shared == null
+        ? ''
+        : '${shared.trackConfigurationReference}|${shared.revision}|'
+              '${shared.valid}|${shared.segments.length}|'
+              '${segmentation.borrowed}';
   }
 
   NamedRun? get _runA {
@@ -541,6 +566,8 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
     final holder = widget.holder, controller = widget.controller;
     final lap = _builtFor = holder.lap;
     _line = _lineOf();
+    final segmentation = controller.segmentationFor(_a);
+    _builtSegmentation = _segmentationKey(segmentation);
     final timing = holder.timing, recording = holder.session;
     if (lap == null || timing == null || recording == null) return;
     if (_line != _Line.same) return;
@@ -567,7 +594,7 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
         ),
         westPositive: longitudeWestPositive(run.telemetry),
       ),
-      segmentation: controller.segmentationFor(_a),
+      segmentation: segmentation,
     );
     if (!comparison.comparison.axis.valid) return;
     _window = ChartWindow(0, comparison.comparison.axisLengthMeters);
@@ -717,6 +744,12 @@ class _ReferenceComparisonPageState extends State<ReferenceComparisonPage> {
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.error,
             ),
+          ),
+        if (widget.holder.timing?.routeUnchecked ?? false)
+          Text(
+            l10n.referenceRouteUnchecked,
+            key: const ValueKey('referenceComparisonRouteUnchecked'),
+            style: theme.textTheme.bodySmall,
           ),
         Text(l10n.referenceDeltaExplained, style: theme.textTheme.bodySmall),
         Text(l10n.referenceKeptApart, style: theme.textTheme.bodySmall),

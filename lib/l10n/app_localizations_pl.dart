@@ -7697,23 +7697,23 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceRefusedDirection =>
-      'Nie użyto: jego okrążenia biegną po dzisiejszym torze w przeciwnym kierunku.';
+      'Nie użyto: jego okrążenia na dzisiejszym torze są przejechane w przeciwnym kierunku.';
 
   @override
   String get referenceRefusedLayout =>
-      'Nie użyto: jego okrążenia przecinają dzisiejszą linię start/meta, ale biegną inną konfiguracją toru.';
+      'Nie użyto: jego okrążenia przecinają dzisiejszą linię start/meta, ale należą do innej konfiguracji toru.';
 
   @override
   String get referenceRefusedExcluded =>
-      'Nie użyto: wszystkie jego okrążenia na dzisiejszym torze wykluczono w ich dniu.';
+      'Wszystkie jego okrążenia na dzisiejszym torze wykluczono w dniu, z którego pochodzą. Wybierz okrążenie, aby mimo to użyć jednego z nich.';
 
   @override
   String referenceLapExcluded(String reason) {
-    return 'Wykluczone w swoim dniu: $reason';
+    return 'Wykluczone tamtego dnia: $reason';
   }
 
   @override
-  String get referenceLapExcludedNoReason => 'Wykluczone w swoim dniu';
+  String get referenceLapExcludedNoReason => 'Wykluczone tamtego dnia';
 
   @override
   String referenceOnlyFirstFile(String name) {
@@ -7735,4 +7735,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String referenceLowCoverage(int percent) {
     return 'Brak Δ okrążenia: okrążenie odniesienia pokrywa tylko $percent % linii okrążenia A.';
   }
+
+  @override
+  String get referenceRouteUnchecked =>
+      'Dzisiejsze okrążenie nie ma trasy do porównania, więc nie sprawdzono trasy ani kierunku odniesienia: tylko dzisiejszą linię start/meta.';
 }

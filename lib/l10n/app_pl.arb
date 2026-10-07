@@ -1788,14 +1788,15 @@
   "referenceSegmentsBorrowed": "Odcinki teoretycznego czasu okrążenia; ich granice mogą przesunąć się o kilka metrów na tych okrążeniach.",
   "referenceColumnSegment": "Odcinek",
   "referenceSegmentNotTimed": "{segment}: nie zmierzono na jednym z okrążeń ({reason})",
-  "referenceRefusedDirection": "Nie użyto: jego okrążenia biegną po dzisiejszym torze w przeciwnym kierunku.",
-  "referenceRefusedLayout": "Nie użyto: jego okrążenia przecinają dzisiejszą linię start/meta, ale biegną inną konfiguracją toru.",
-  "referenceRefusedExcluded": "Nie użyto: wszystkie jego okrążenia na dzisiejszym torze wykluczono w ich dniu.",
-  "referenceLapExcluded": "Wykluczone w swoim dniu: {reason}",
-  "referenceLapExcludedNoReason": "Wykluczone w swoim dniu",
+  "referenceRefusedDirection": "Nie użyto: jego okrążenia na dzisiejszym torze są przejechane w przeciwnym kierunku.",
+  "referenceRefusedLayout": "Nie użyto: jego okrążenia przecinają dzisiejszą linię start/meta, ale należą do innej konfiguracji toru.",
+  "referenceRefusedExcluded": "Wszystkie jego okrążenia na dzisiejszym torze wykluczono w dniu, z którego pochodzą. Wybierz okrążenie, aby mimo to użyć jednego z nich.",
+  "referenceLapExcluded": "Wykluczone tamtego dnia: {reason}",
+  "referenceLapExcludedNoReason": "Wykluczone tamtego dnia",
   "referenceOnlyFirstFile": "Odniesienie to jeden zapis: użyto tylko {name}.",
   "referenceStale": "Zmierzone na innej linii start/meta: dzisiejsza linia od tego czasu się zmieniła. Wczytaj je ponownie, aby porównać.",
   "referenceReload": "Wczytaj ponownie",
   "referenceLapAOtherLine": "Okrążenie A zmierzono na innej linii start/meta niż odniesienie, więc nie ma Δ okrążenia. Wybierz inne okrążenie A.",
-  "referenceLowCoverage": "Brak Δ okrążenia: okrążenie odniesienia pokrywa tylko {percent} % linii okrążenia A."
+  "referenceLowCoverage": "Brak Δ okrążenia: okrążenie odniesienia pokrywa tylko {percent} % linii okrążenia A.",
+  "referenceRouteUnchecked": "Dzisiejsze okrążenie nie ma trasy do porównania, więc nie sprawdzono trasy ani kierunku odniesienia: tylko dzisiejszą linię start/meta."
 }

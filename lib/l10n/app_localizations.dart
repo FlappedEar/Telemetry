@@ -10952,7 +10952,7 @@ abstract class AppLocalizations {
   /// Why a reference from an earlier day was refused: all of its laps on today's route were excluded on that day.
   ///
   /// In en, this message translates to:
-  /// **'Not used: every one of its laps on today\'s track was excluded on its own day.'**
+  /// **'Every one of its laps on today\'s track was excluded on its own day. Choose one with Choose its lap to use it anyway.'**
   String get referenceRefusedExcluded;
 
   /// In the reference lap picker: this lap was excluded on its own day, with the reason given there.
@@ -10996,6 +10996,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No lap Δ: the reference lap follows only {percent} % of lap A\'s line.'**
   String referenceLowCoverage(int percent);
+
+  /// Today's best lap has no route shape (too short, open or self-crossing), so reference laps were timed on the line without the route check.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s lap has no route to check against, so the reference\'s route and direction were not checked: only today\'s start/finish line.'**
+  String get referenceRouteUnchecked;
 }
 
 class _AppLocalizationsDelegate
