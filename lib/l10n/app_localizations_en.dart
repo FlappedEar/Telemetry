@@ -6589,4 +6589,126 @@ class AppLocalizationsEn extends AppLocalizations {
   String variabilityLinePartsUnresolved(String parts) {
     return ' · $parts: not distinguishable from GPS error';
   }
+
+  @override
+  String get ggEnvelopeTitle => 'G-G envelope';
+
+  @override
+  String get ggEnvelopeIntro =>
+      'How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.';
+
+  @override
+  String get ggEnvelopeCalculating => 'Calculating the G-G envelope…';
+
+  @override
+  String ggEnvelopeFailed(String error) {
+    return 'The G-G envelope could not be calculated: $error';
+  }
+
+  @override
+  String get ggEnvelopeNone => 'No session has enough G data for an envelope.';
+
+  @override
+  String get ggEnvelopeDirection => 'Direction';
+
+  @override
+  String get ggEnvelopeBestOfDay => 'Day\'s best';
+
+  @override
+  String ggEnvelopeLatest(String session) {
+    return '$session, latest';
+  }
+
+  @override
+  String ggEnvelopeBestValue(String value, String session) {
+    return '$value · $session';
+  }
+
+  @override
+  String get ggDirectionAccelerating => 'Accelerating';
+
+  @override
+  String get ggDirectionAcceleratingLeft => 'Accelerating + turning left';
+
+  @override
+  String get ggDirectionLeft => 'Turning left';
+
+  @override
+  String get ggDirectionBrakingLeft => 'Braking + turning left';
+
+  @override
+  String get ggDirectionBraking => 'Braking';
+
+  @override
+  String get ggDirectionBrakingRight => 'Braking + turning right';
+
+  @override
+  String get ggDirectionRight => 'Turning right';
+
+  @override
+  String get ggDirectionAcceleratingRight => 'Accelerating + turning right';
+
+  @override
+  String ggEnvelopeUnused(String session, String directions) {
+    return 'Unused envelope in $session: $directions.';
+  }
+
+  @override
+  String ggEnvelopeUnusedItem(
+    String direction,
+    String latest,
+    String best,
+    String session,
+  ) {
+    return '$direction $latest against $best ($session)';
+  }
+
+  @override
+  String ggEnvelopeAllUsed(String session, String margin) {
+    return '$session came within $margin of the day\'s best in every direction it has a value for.';
+  }
+
+  @override
+  String get ggEnvelopeOneSession =>
+      'Only one session has an envelope, so there is nothing to compare it with yet.';
+
+  @override
+  String ggEnvelopeLatestNone(String session) {
+    return '$session has no envelope, so nothing is compared.';
+  }
+
+  @override
+  String ggEnvelopeSessionUnavailable(String session, String reason) {
+    return '$session: $reason';
+  }
+
+  @override
+  String ggEnvelopeTooFewSamples(int count) {
+    return 'Too little data: fewer than $count samples in every direction';
+  }
+
+  @override
+  String ggEnvelopeMissingNote(int count) {
+    return '— means fewer than $count samples in that direction.';
+  }
+
+  @override
+  String ggEnvelopeNote(String margin) {
+    return 'Observed accelerations, not a share of available grip. Unused means at least $margin below the day\'s best. Rings every 0.5 g; the dashed line is the best of the day, the thick line the latest session.';
+  }
+
+  @override
+  String get ggEnvelopeSemantics =>
+      'G-G envelope of each session against the best of the day';
+
+  @override
+  String ggEnvelopeOutliers(String session, int count, String limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count samples',
+      one: '1 sample',
+    );
+    return '$session: $_temp0 beyond $limit left out as implausible';
+  }
 }

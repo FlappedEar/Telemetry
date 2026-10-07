@@ -305,8 +305,8 @@ class _ComparisonGgPanelState
       final pairs = slot < laps.length ? laps[slot].pairs : null;
       if (pairs == null) continue;
       final calculated =
-          pairs.longitudinalChannel.toLowerCase().endsWith('-calc') ||
-          pairs.lateralChannel.toLowerCase().endsWith('-calc');
+          ggChannelCalculated(pairs.longitudinalChannel) ||
+          ggChannelCalculated(pairs.lateralChannel);
       sources.add(
         '${l10n.drivingGgSource(_lapNames[slot], pairs.longitudinalChannel, pairs.lateralChannel, calculated ? l10n.drivingGgCalculated : l10n.drivingMeasured)}'
         '${pairs.unitsDeclared ? '' : ', ${l10n.channelUnitsNotDeclared}'}',

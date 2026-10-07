@@ -9678,6 +9678,179 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **' · {parts}: not distinguishable from GPS error'**
   String variabilityLinePartsUnresolved(String parts);
+
+  /// Heading of the day card with each session's G-G envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'G-G envelope'**
+  String get ggEnvelopeTitle;
+
+  /// G-G envelope card: what the envelope is.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.'**
+  String get ggEnvelopeIntro;
+
+  /// G-G envelope card while it is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating the G-G envelope…'**
+  String get ggEnvelopeCalculating;
+
+  /// G-G envelope card when its calculation failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The G-G envelope could not be calculated: {error}'**
+  String ggEnvelopeFailed(String error);
+
+  /// G-G envelope card when no session has an envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'No session has enough G data for an envelope.'**
+  String get ggEnvelopeNone;
+
+  /// G-G envelope table: heading of the direction column.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction'**
+  String get ggEnvelopeDirection;
+
+  /// G-G envelope: the day's best envelope (table heading and legend).
+  ///
+  /// In en, this message translates to:
+  /// **'Day\'s best'**
+  String get ggEnvelopeBestOfDay;
+
+  /// G-G envelope table: heading of the latest session's column.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}, latest'**
+  String ggEnvelopeLatest(String session);
+
+  /// G-G envelope table: the day's best in a direction and the session it comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} · {session}'**
+  String ggEnvelopeBestValue(String value, String session);
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating'**
+  String get ggDirectionAccelerating;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating + turning left'**
+  String get ggDirectionAcceleratingLeft;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning left'**
+  String get ggDirectionLeft;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking + turning left'**
+  String get ggDirectionBrakingLeft;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get ggDirectionBraking;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking + turning right'**
+  String get ggDirectionBrakingRight;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning right'**
+  String get ggDirectionRight;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating + turning right'**
+  String get ggDirectionAcceleratingRight;
+
+  /// G-G envelope: the directions in which the latest session stays short of the day's best.
+  ///
+  /// In en, this message translates to:
+  /// **'Unused envelope in {session}: {directions}.'**
+  String ggEnvelopeUnused(String session, String directions);
+
+  /// G-G envelope: one unused direction, the latest session's value against the day's best and the session it comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'{direction} {latest} against {best} ({session})'**
+  String ggEnvelopeUnusedItem(
+    String direction,
+    String latest,
+    String best,
+    String session,
+  );
+
+  /// G-G envelope: the latest session leaves no direction unused.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} came within {margin} of the day\'s best in every direction it has a value for.'**
+  String ggEnvelopeAllUsed(String session, String margin);
+
+  /// G-G envelope with a single session.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one session has an envelope, so there is nothing to compare it with yet.'**
+  String get ggEnvelopeOneSession;
+
+  /// G-G envelope: the latest session has no envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no envelope, so nothing is compared.'**
+  String ggEnvelopeLatestNone(String session);
+
+  /// G-G envelope: why a session has no envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {reason}'**
+  String ggEnvelopeSessionUnavailable(String session, String reason);
+
+  /// G-G envelope: why a session has no envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'Too little data: fewer than {count} samples in every direction'**
+  String ggEnvelopeTooFewSamples(int count);
+
+  /// G-G envelope: what a dash in the table means.
+  ///
+  /// In en, this message translates to:
+  /// **'— means fewer than {count} samples in that direction.'**
+  String ggEnvelopeMissingNote(int count);
+
+  /// Under the G-G envelope diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed accelerations, not a share of available grip. Unused means at least {margin} below the day\'s best. Rings every 0.5 g; the dashed line is the best of the day, the thick line the latest session.'**
+  String ggEnvelopeNote(String margin);
+
+  /// Screen reader label of the G-G envelope diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'G-G envelope of each session against the best of the day'**
+  String get ggEnvelopeSemantics;
+
+  /// G-G envelope: samples of a session left out because they are beyond the plausible limit for a road car.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {count, plural, =1{1 sample} other{{count} samples}} beyond {limit} left out as implausible'**
+  String ggEnvelopeOutliers(String session, int count, String limit);
 }
 
 class _AppLocalizationsDelegate

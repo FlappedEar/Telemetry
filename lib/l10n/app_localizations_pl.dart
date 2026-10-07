@@ -6729,4 +6729,129 @@ class AppLocalizationsPl extends AppLocalizations {
   String variabilityLinePartsUnresolved(String parts) {
     return ' · $parts: nie do odróżnienia od błędu GPS';
   }
+
+  @override
+  String get ggEnvelopeTitle => 'Obwiednia G–G';
+
+  @override
+  String get ggEnvelopeIntro =>
+      'Jak mocno każda sesja obciążała samochód w każdym kierunku (łączne przeciążenie): 95. percentyl łącznego przeciążenia na jej sklasyfikowanych okrążeniach, więc pojedynczy skok go nie wyznacza. Okrążenia wyjazdowe, zjazdowe i wykluczone są pominięte.';
+
+  @override
+  String get ggEnvelopeCalculating => 'Obliczanie obwiedni G–G…';
+
+  @override
+  String ggEnvelopeFailed(String error) {
+    return 'Nie udało się obliczyć obwiedni G–G: $error';
+  }
+
+  @override
+  String get ggEnvelopeNone =>
+      'Żadna sesja nie ma dość danych o przeciążeniach, by wyznaczyć obwiednię.';
+
+  @override
+  String get ggEnvelopeDirection => 'Kierunek';
+
+  @override
+  String get ggEnvelopeBestOfDay => 'Najlepsza dnia';
+
+  @override
+  String ggEnvelopeLatest(String session) {
+    return '$session, ostatnia';
+  }
+
+  @override
+  String ggEnvelopeBestValue(String value, String session) {
+    return '$value · $session';
+  }
+
+  @override
+  String get ggDirectionAccelerating => 'Przyspieszanie';
+
+  @override
+  String get ggDirectionAcceleratingLeft => 'Przyspieszanie + skręt w lewo';
+
+  @override
+  String get ggDirectionLeft => 'Skręt w lewo';
+
+  @override
+  String get ggDirectionBrakingLeft => 'Hamowanie + skręt w lewo';
+
+  @override
+  String get ggDirectionBraking => 'Hamowanie';
+
+  @override
+  String get ggDirectionBrakingRight => 'Hamowanie + skręt w prawo';
+
+  @override
+  String get ggDirectionRight => 'Skręt w prawo';
+
+  @override
+  String get ggDirectionAcceleratingRight => 'Przyspieszanie + skręt w prawo';
+
+  @override
+  String ggEnvelopeUnused(String session, String directions) {
+    return '$session, niewykorzystana obwiednia: $directions.';
+  }
+
+  @override
+  String ggEnvelopeUnusedItem(
+    String direction,
+    String latest,
+    String best,
+    String session,
+  ) {
+    return '$direction $latest wobec $best ($session)';
+  }
+
+  @override
+  String ggEnvelopeAllUsed(String session, String margin) {
+    return '$session: mniej niż $margin poniżej najlepszej obwiedni dnia w każdym kierunku, w którym ma wartość.';
+  }
+
+  @override
+  String get ggEnvelopeOneSession =>
+      'Tylko jedna sesja ma obwiednię, więc nie ma jeszcze z czym jej porównać.';
+
+  @override
+  String ggEnvelopeLatestNone(String session) {
+    return '$session: brak obwiedni, więc nie ma porównania.';
+  }
+
+  @override
+  String ggEnvelopeSessionUnavailable(String session, String reason) {
+    return '$session: $reason';
+  }
+
+  @override
+  String ggEnvelopeTooFewSamples(int count) {
+    return 'Za mało danych: mniej niż $count próbek w każdym kierunku';
+  }
+
+  @override
+  String ggEnvelopeMissingNote(int count) {
+    return '— oznacza mniej niż $count próbek w tym kierunku.';
+  }
+
+  @override
+  String ggEnvelopeNote(String margin) {
+    return 'Zaobserwowane przyspieszenia nie określają procentu wykorzystania dostępnej przyczepności. Niewykorzystana oznacza co najmniej $margin poniżej najlepszej obwiedni dnia. Okręgi co 0.5 g; linia przerywana to najlepsza obwiednia dnia, gruba linia to ostatnia sesja.';
+  }
+
+  @override
+  String get ggEnvelopeSemantics =>
+      'Obwiednia G–G każdej sesji na tle najlepszej obwiedni dnia';
+
+  @override
+  String ggEnvelopeOutliers(String session, int count, String limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count próbki',
+      many: '$count próbek',
+      few: '$count próbki',
+      one: '1 próbkę',
+    );
+    return '$session: $_temp0 powyżej $limit pominięto jako nieprawdopodobne';
+  }
 }

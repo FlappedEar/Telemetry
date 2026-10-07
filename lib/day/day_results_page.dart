@@ -31,6 +31,7 @@ import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
 import 'fusion_panel.dart';
+import 'gg_envelope_card.dart';
 import 'next_session_card.dart';
 import '../profile/skill_levels_card.dart';
 import 'lap_page.dart';
@@ -1851,6 +1852,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           loading: _controller.theoreticalBestLoading,
           onOpenLap: _open,
           weatherOf: _controller.weather.of,
+        ),
+        const SizedBox(height: 12),
+        GgEnvelopeCard(
+          laps: dayEligibleLaps(analysis),
+          sessionOf: _controller.session,
         ),
         // Only for a day kept in the library: a copy saved elsewhere
         // shares its event id.
