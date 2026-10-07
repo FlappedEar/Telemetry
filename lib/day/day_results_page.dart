@@ -2047,6 +2047,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return TheoreticalBestCard(
       result: result,
       loading: _controller.theoreticalBestLoading,
+      sections: _controller.theoreticalBestLoading ? null : _sections(),
       path: path,
       gate: _mapGate,
       wide: wide,

@@ -1280,7 +1280,8 @@ void main() {
         DayResultsController? replaced;
         final day = rczOnly ? DayResultsController.opened(opened) : null;
         if (day != null) await tester.runAsync(() => day.fusionsSettled);
-        await tester.binding.setSurfaceSize(const Size(400, 8000));
+        // Tall enough that the long overview builds down to the fusion notice.
+        await tester.binding.setSurfaceSize(const Size(400, 12000));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
           TelemetryApp(

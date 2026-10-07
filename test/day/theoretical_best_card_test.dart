@@ -76,6 +76,39 @@ void main() {
         tester.widget<Text>(find.byKey(const ValueKey('availableTime'))).data,
         '${expected.availableSeconds!.toStringAsFixed(3)}\u00a0s',
       );
+      // The three ways to add it up (FET-222).
+      String valueOf(String key) =>
+          tester.widget<Text>(find.byKey(ValueKey('$key value'))).data!;
+      expect(valueOf('rawBest'), displayTime(expected.theoreticalBestSeconds!));
+      final realistic = expected.realistic!;
+      expect(realistic.valid, isTrue);
+      expect(valueOf('realisticBest'), displayTime(realistic.totalSeconds!));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('realisticBest')),
+          matching: find.textContaining(
+            'at most 2\u00a0km/h wherever two laps meet',
+          ),
+        ),
+        findsOneWidget,
+      );
+      final repeatable = repeatableTheoreticalBest(
+        expected.sectionProgression([
+          for (final named in outcome.runs)
+            ProgressionRunInfo(id: named.run.id, name: named.name),
+        ]),
+      );
+      expect(repeatable, isNotNull);
+      expect(valueOf('repeatableBest'), displayTime(repeatable!));
+      // Quickest each segment, then joined, then as a rule.
+      expect(
+        realistic.totalSeconds,
+        greaterThanOrEqualTo(expected.theoreticalBestSeconds! - 1e-9),
+      );
+      expect(
+        repeatable,
+        greaterThanOrEqualTo(expected.theoreticalBestSeconds!),
+      );
       // Blue as the Theoretical best bar; what is available as a gain.
       expect(
         tester
@@ -546,6 +579,17 @@ void main() {
     expect(find.text('Czasy odcinków'), findsOneWidget);
     expect(find.text('Zakręt 1'), findsWidgets);
     expect(find.text('Najlepsze czasy'), findsOneWidget);
+    expect(find.text('Trzy sposoby liczenia'), findsOneWidget);
+    expect(find.text('Odcinki, które się łączą'), findsOneWidget);
+    expect(find.text('Najlepszy typowy czas'), findsOneWidget);
+    expect(find.textContaining('Złożony z '), findsOneWidget);
+    // Without the sessions' segment times the best typical waits for them.
+    expect(
+      find.text(
+        'Obliczanie powtarzalności wraz z teoretycznym czasem okrążenia…',
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('OKR. '), findsWidgets);
     expect(find.textContaining('najlepsze'), findsWidgets);
     expect(

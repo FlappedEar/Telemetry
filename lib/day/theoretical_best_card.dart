@@ -104,6 +104,7 @@ class TheoreticalBestCard extends StatefulWidget {
     this.onEditSegments,
     this.onAnalyze,
     this.onRetry,
+    this.sections,
   });
 
   /// Calculates again after a failure or with nothing to use, as Overlays'
@@ -120,6 +121,10 @@ class TheoreticalBestCard extends StatefulWidget {
   /// Null while it is calculated for the first time.
   final DayTheoreticalBest? result;
   final bool loading;
+
+  /// Each session's segment times, for the best typical lap; null while
+  /// they are worked out.
+  final SectionProgression? sections;
 
   /// The best lap's trace, for the loss map.
   final LapPath? path;
@@ -244,6 +249,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     return [
       const SizedBox(height: 8),
       _Headline(result: result),
+
       if (result.message.isNotEmpty) ...[
         const SizedBox(height: 4),
         Text(l10n.tbMessage(result.message)),
@@ -258,6 +264,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             : ' ${l10n.tbSegmentsCorrected}'}',
         style: theme.textTheme.bodySmall,
       ),
+      const SizedBox(height: 12),
+      _ThreeBests(result: result, sections: widget.sections),
       if (widget.onEditSegments != null)
         Align(
           alignment: Alignment.centerLeft,
@@ -718,6 +726,95 @@ class _Headline extends StatelessWidget {
           available == null ? '—' : '${available.toStringAsFixed(3)}\u00a0s',
           const ValueKey('availableTime'),
           FetColors.of(context).gain,
+        ),
+      ],
+    );
+  }
+}
+
+/// The theoretical best three ways (FET-222): the fastest segments from any
+/// lap, the fastest that join at the speed the car had, and each segment's
+/// best typical time.
+class _ThreeBests extends StatelessWidget {
+  const _ThreeBests({required this.result, this.sections});
+
+  final DayTheoreticalBest result;
+  final SectionProgression? sections;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final raw = result.theoreticalBestSeconds;
+    final realistic = result.realistic;
+    final sections = this.sections;
+    final repeatable = sections == null
+        ? null
+        : repeatableTheoreticalBest(sections);
+    Widget row(String label, String note, String value, Key key) => Padding(
+      key: key,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                Text(note, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            value,
+            key: ValueKey('${(key as ValueKey<String>).value} value'),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+    return Column(
+      key: const ValueKey('threeBests'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.tbThreeTitle, style: theme.textTheme.titleSmall),
+        row(
+          l10n.tbRawLabel,
+          l10n.tbRawNote,
+          raw == null ? '—' : displayTime(raw),
+          const ValueKey('rawBest'),
+        ),
+        row(
+          l10n.tbRealisticLabel,
+          switch (realistic) {
+            final best? when best.valid => l10n.tbRealisticNote(
+              fixed(realisticJoinMetresPerSecond * 3.6, 0),
+              best.lapCount,
+            ),
+            RealisticTheoreticalBest(unavailableReason: realisticNoSpeed) =>
+              l10n.tbRealisticNoSpeed,
+            RealisticTheoreticalBest(unavailableReason: realisticNoJoin) =>
+              l10n.tbRealisticNoJoin,
+            _ => l10n.tbRealisticIncomplete,
+          },
+          realistic?.totalSeconds == null
+              ? '—'
+              : displayTime(realistic!.totalSeconds!),
+          const ValueKey('realisticBest'),
+        ),
+        row(
+          l10n.tbRepeatableLabel,
+          sections == null
+              ? l10n.consistencyMeasuring
+              : repeatable == null
+              ? l10n.tbRepeatableNeedsLaps(minimumConsistencySamples)
+              : l10n.tbRepeatableNote,
+          repeatable == null ? '—' : displayTime(repeatable),
+          const ValueKey('repeatableBest'),
         ),
       ],
     );

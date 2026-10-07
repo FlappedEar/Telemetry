@@ -191,6 +191,20 @@ a background isolate.
   are timed over the same metres and the parts add up to the corner's time.
   `DayCorner.phaseTimes` and `DayCornerComparison.phaseDeltas` give a lap's
   parts against the group's best lap.
+- A theoretical best whose segments join (FlappedEar Telemetry only,
+  FET-222): `computeRealisticTheoreticalBest` picks the fastest combination
+  of laps' sector times (dynamic programming over the approved segments) in
+  which, wherever segments from two laps meet, the speed leaving one and
+  entering the next differ by at most `realisticJoinMetresPerSecond` (2 km/h,
+  compared in m/s); one lap always continues, segments that do not meet join
+  freely, and the lap's start is not joined to its end unless the last
+  segment runs across the gate into the first (then that join is checked
+  too, by fixing the first segment's lap). It is an estimate: matching
+  speeds is necessary, not sufficient. Without a chain it says why
+  (`realisticNoJoin`, `realisticNoSpeed`, `realisticIncompleteCoverage`).
+  `DayTheoreticalBest.realistic` holds it. `repeatableTheoreticalBest` adds
+  each segment's quickest typical time in one session
+  (`SectionProgressionRow.fastestTypical`).
 - Where a session's laps vary (FlappedEar Telemetry only, FET-224):
   `segmentSpreadBand` puts a segment's spread in one session (its
   interquartile range from the section progression) in one of five fixed

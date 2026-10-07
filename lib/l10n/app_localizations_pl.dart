@@ -6562,4 +6562,60 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get spreadOutsideSegments => 'Poza odcinkami';
+
+  @override
+  String get tbThreeTitle => 'Trzy sposoby liczenia';
+
+  @override
+  String get tbRawLabel => 'Najszybsze odcinki';
+
+  @override
+  String get tbRawNote =>
+      'Najszybszy czas każdego odcinka z dowolnego okrążenia.';
+
+  @override
+  String get tbRealisticLabel => 'Odcinki, które się łączą';
+
+  @override
+  String tbRealisticNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Szacunek: najszybsze odcinki, których prędkości różnią się najwyżej o $tolerance km/h wszędzie tam, gdzie spotykają się dwa okrążenia, bo samochód nie zmienia prędkości skokowo. Złożony z $_temp0.';
+  }
+
+  @override
+  String get tbRealisticNoSpeed =>
+      'Nie pokazano: żadne okrążenie nie ma prędkości w znanej jednostce, więc nie da się połączyć dwóch okrążeń.';
+
+  @override
+  String get tbRealisticIncomplete =>
+      'Nie pokazano: jeden z odcinków nie ma czasu na żadnym okrążeniu.';
+
+  @override
+  String get tbRepeatableLabel => 'Najlepszy typowy czas';
+
+  @override
+  String get tbRepeatableNote =>
+      'Najszybszy typowy czas (mediana) każdego odcinka w jednej sesji: to, co robisz tam zwykle, a nie raz.';
+
+  @override
+  String tbRepeatableNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia',
+      many: '$count okrążeń',
+      few: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Nie pokazano: potrzeba co najmniej $_temp0 przez każdy odcinek w jednej sesji.';
+  }
+
+  @override
+  String get tbRealisticNoJoin =>
+      'Nie pokazano: każdy odcinek ma czas, ale żadne okrążenia nie łączą się z prędkością, jaką miał samochód na każdej granicy między nimi.';
 }
