@@ -8819,7 +8819,7 @@
   "@gripMeaningExit": {"description": "Explains the exit acceleration (traction) figure."},
   "gripMeaningBalance": "Balance: the car's yaw rate divided by the yaw rate its cornering force and speed need, from {g} g and {speed} m/s. In steady cornering it is about 1 whether the car understeers or oversteers: telling those apart needs the steering angle, which is not recorded. Above 1 the car rotated faster than its path curved (its slip angle growing); below 1, slower. Samples whose yaw rate turns against the cornering are left out. It needs the car's own yaw-rate channel and is inferred.",
   "@gripMeaningBalance": {"description": "Explains the balance figure.", "placeholders": {"g": {"type": "String", "example": "0.3"}, "speed": {"type": "String", "example": "10"}}},
-  "gripReasonTooFewLaps": "{count, plural, =1{fewer than 1 lap} other{fewer than {count} laps}}",
+  "gripReasonTooFewLaps": "{count, plural, other{fewer than {count} laps}}",
   "@gripReasonTooFewLaps": {"description": "Why: too few laps.", "placeholders": {"count": {"type": "int"}}},
   "gripReasonTooFewSamples": "not enough samples on any lap",
   "@gripReasonTooFewSamples": {"description": "Why: too few samples."},

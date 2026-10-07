@@ -7262,7 +7262,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String gripIntro(int count) {
-    return 'Wnioskowane z zapisanych przyspieszeń, prędkości i, jeśli nagranie ją ma, prędkości odchylenia (yaw) samochodu na okrążeniach w rankingu. Nie są zapisywane ani kąt skrętu kierownicy, ani dane opon czy kół, więc te liczby mówią, jak mocno samochód pracował, a nie ile przyczepności zostało. Typowa wartość to mediana okrążeń (co najmniej $count); szczyt to wartość najlepszego okrążenia.';
+    return 'Wnioskowane z zapisanych przyspieszeń, prędkości i, jeśli nagranie ją ma, prędkości odchylenia (yaw) samochodu na okrążeniach w rankingu. Nie są zapisywane ani kąt skrętu kierownicy, ani dane opon czy kół, więc te liczby mówią, jak mocno samochód pracował, a nie ile przyczepności zostało. Typowa wartość to mediana okrążeń (co najmniej $count); szczyt to najwyższa wartość spośród okrążeń.';
   }
 
   @override
@@ -7328,7 +7328,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get gripTableNote =>
-      'Każda komórka: typowa z najwyższych wartości okrążeń w tym zakresie prędkości oraz wartość najlepszego okrążenia.';
+      'Każda komórka: typowa z najwyższych wartości okrążeń w tym zakresie prędkości oraz najwyższa wartość spośród okrążeń.';
 
   @override
   String gripUnitNote(String what, String unit) {
@@ -7445,7 +7445,6 @@ class AppLocalizationsPl extends AppLocalizations {
       other: 'mniej niż $count okrążenia',
       many: 'mniej niż $count okrążeń',
       few: 'mniej niż $count okrążenia',
-      one: 'mniej niż 1 okrążenie',
     );
     return '$_temp0';
   }

@@ -511,21 +511,26 @@ void main() {
       expect(signed((_) => -1).balance(0, 5).value, closeTo(1.0, 1e-4));
     });
 
-    test('samples against the convention most follow are skipped', () {
-      // Against it from 2 s on, and three times as large: left out.
+    test('the sign convention is the recording\'s: samples against it are skipped', () {
+      // Against it from 8 s on (21 of 101 samples), and three times as large.
       final mixed = GripChannels.of(
         _session(
           {
             'latacc': ('g', (t) => 1.0),
             'velocity': ('km/h', (_) => 72),
-            'yaw_rate': ('deg/s', (t) => (t < 3.95 ? 1 : -3) * standardGravity / 20 * 180 / pi),
+            'yaw_rate': ('deg/s', (t) => (t < 7.95 ? 1 : -3) * standardGravity / 20 * 180 / pi),
           },
           aliases: {'lateralAcceleration': 'latacc', 'speed': 'velocity'},
         ),
       );
-      final value = mixed.balance(0, 5);
+      expect(mixed.yawSignMatchesLateral, isTrue);
+      final value = mixed.balance(0, 10);
       expect(value.value, closeTo(1.0, 1e-4));
-      expect(value.samples, 40, reason: '0.0 to 3.9 s');
+      expect(value.samples, 80, reason: '0.0 to 7.9 s');
+      // Decided once for the recording, not per window: in a window of only
+      // samples against it, they are still skipped.
+      expect(mixed.balance(8, 10).reason, gripTooFewSamples);
+      expect(mixed.balance(8, 10).samples, 0);
     });
 
     test('a gyro named for yaw but in device axes is not the car\'s', () {
@@ -651,5 +656,32 @@ void main() {
       dayGripProxies(rows, [untimed], (_) => session, (_, _) => null).corners.single.lateral.reason,
       gripNotTimed,
     );
+  });
+
+  group('the slowest point', () {
+    // Slowest at 3 s; the speed is missing from 1.0 to 1.5 s.
+    final gappy = GripChannels.of(
+      _session(
+        {'velocity': ('km/h', (t) => t >= 0.95 && t <= 1.55 ? double.nan : 60 + (t - 3).abs())},
+        aliases: {'speed': 'velocity'},
+      ),
+    );
+
+    test('is the lowest recorded speed in the stretches', () {
+      expect(gappy.slowestTime([(2.0, 4.0)]), closeTo(3.0, 1e-9));
+      expect(
+        gappy.slowestTime([(2.0, 2.5), (3.5, 4.0)]),
+        anyOf(closeTo(2.5, 1e-9), closeTo(3.5, 1e-9)),
+      );
+    });
+
+    test('skips a stretch where the speed has a gap', () {
+      expect(gappy.slowestTime([(0.0, 4.0)]), isNull);
+      expect(gappy.slowestTime([(0.0, 4.0), (5.0, 6.0)]), closeTo(5.0, 1e-9));
+    });
+
+    test('skips a stretch whose ends lie past the samples', () {
+      expect(gappy.slowestTime([(8.0, 12.0)]), isNull, reason: 'the recording ends at 10 s');
+    });
   });
 }

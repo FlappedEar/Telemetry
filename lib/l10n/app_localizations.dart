@@ -10562,7 +10562,7 @@ abstract class AppLocalizations {
   /// Why: too few laps.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{fewer than 1 lap} other{fewer than {count} laps}}'**
+  /// **'{count, plural, other{fewer than {count} laps}}'**
   String gripReasonTooFewLaps(int count);
 
   /// Why: too few samples.

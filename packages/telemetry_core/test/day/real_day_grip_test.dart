@@ -54,8 +54,13 @@ void main() {
       expect(corner.braking.known, isTrue, reason: '${corner.name}: ${corner.braking.reason}');
       expect(corner.traction.known, isTrue, reason: '${corner.name}: ${corner.traction.reason}');
       expect(corner.lateral.typical, isNotNull, reason: corner.name);
-      // Every lap of a corner timed there is read: none is "not timed".
-      expect(corner.lateral.lapCount + corner.lateral.unmeasured, laps.length);
+      // Every lap of a corner timed there is read: none is left without a
+      // value ("not timed" or otherwise), and none is measured differently.
+      for (final figure in [corner.lateral, corner.braking, corner.traction]) {
+        expect(figure.unmeasured, 0, reason: corner.name);
+        expect(figure.leftOut, 0, reason: corner.name);
+        expect(figure.lapCount, laps.length, reason: corner.name);
+      }
     }
     for (final session in grip.sessions) {
       expect(session.bands, isNotEmpty, reason: session.bandsReason);

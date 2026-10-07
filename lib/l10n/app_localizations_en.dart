@@ -7283,7 +7283,6 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other: 'fewer than $count laps',
-      one: 'fewer than 1 lap',
     );
     return '$_temp0';
   }

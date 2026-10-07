@@ -512,23 +512,72 @@ final class GripChannels {
     return value == null ? null : value * factor;
   }
 
-  /// When the speed is lowest in [windows], or null without a speed.
+  /// When the recorded speed is lowest in [windows], or null without a
+  /// speed. A window where the speed has a gap (a missing sample, or samples
+  /// further apart than [telemetryGapThreshold], its ends included) is
+  /// skipped: the lowest speed could be in the gap.
   double? slowestTime(List<GripWindow> windows) {
     final speed = this.speed;
     if (speed == null) return null;
+    final gap = telemetryGapThreshold(speed);
+    final times = speed.timestamps;
     double? time, lowest;
     for (final (start, end) in windows) {
       if (!start.isFinite || !end.isFinite || end <= start) continue;
-      final times = speed.timestamps;
+      double? windowTime, windowLowest;
+      var previous = start;
+      var complete = true;
       for (var i = math.max(0, lowerBound(times, start)); i < times.length; ++i) {
         if (times[i] > end) break;
         final double value = speed.values[i];
-        if (!value.isFinite) continue;
-        if (lowest == null || value < lowest) (time, lowest) = (times[i], value);
+        if (!value.isFinite || times[i] - previous > gap) {
+          complete = false;
+          break;
+        }
+        previous = times[i];
+        if (windowLowest == null || value < windowLowest) {
+          (windowTime, windowLowest) = (times[i], value);
+        }
       }
+      if (!complete || end - previous > gap || windowLowest == null) continue;
+      if (lowest == null || windowLowest < lowest) (time, lowest) = (windowTime, windowLowest);
     }
     return time;
   }
+
+  // Each cornering sample's ratio in [windows] (see [balanceIn]), and
+  // whether its yaw rate and lateral acceleration have the same sign.
+  Iterable<(double ratio, bool sameSign)> _balanceSamples(List<GripWindow> windows) sync* {
+    final yaw = this.yaw;
+    if (!hasBalance || yaw == null) return;
+    final toG = _gPerUnit(lateralSource.unit)!;
+    for (final (time, value) in lateralSamples(windows)) {
+      final lateralG = value.abs() * toG;
+      if (lateralG < gripBalanceMinimumLateralG) continue;
+      final speed = speedMetresPerSecond(time);
+      if (speed == null || speed < gripBalanceMinimumSpeedMetresPerSecond) continue;
+      final rate = telemetryValueAt(yaw, time);
+      if (rate == null || rate == 0.0) continue;
+      final ratio = rate.abs() * yawFactor / (lateralG * standardGravity / speed);
+      if (ratio.isFinite) yield (ratio, (rate > 0) == (value > 0));
+    }
+  }
+
+  /// Whether the yaw rate is positive when the lateral acceleration is (the
+  /// sign convention most of the whole recording's cornering samples
+  /// follow; a tie keeps it the same), decided once per recording.
+  late final bool yawSignMatchesLateral = () {
+    var same = 0, total = 0;
+    final lateral = this.lateral;
+    if (lateral == null || lateral.timestamps.isEmpty) return true;
+    for (final (_, sameSign) in _balanceSamples([
+      (lateral.timestamps.first, lateral.timestamps.last),
+    ])) {
+      ++total;
+      if (sameSign) ++same;
+    }
+    return same * 2 >= total;
+  }();
 
   /// Balance from [start] to [end] ([balanceIn]).
   GripLapValue balance(double start, double end) => balanceIn([(start, end)]);
@@ -543,30 +592,16 @@ final class GripChannels {
   /// the steering angle, which is not recorded. Above 1 the car rotates
   /// faster than its path (its slip angle growing), below 1 slower.
   ///
-  /// The yaw rate's sign convention is not declared: the one most of these
-  /// samples follow (yaw and lateral acceleration of the same sign, or of
-  /// opposite signs) is taken as the channel's, and samples against it are
-  /// skipped (a car rotating against its turn, or noise near zero).
+  /// The yaw rate's sign convention is not declared: the one most of the
+  /// recording's cornering samples follow ([yawSignMatchesLateral]) is taken
+  /// as the channel's, and samples against it are skipped (a car rotating
+  /// against its turn, or noise near zero).
   GripLapValue balanceIn(List<GripWindow> windows) {
     final yaw = this.yaw;
     if (!hasBalance || yaw == null) return GripLapValue(reason: yawReason);
-    final toG = _gPerUnit(lateralSource.unit)!;
-    final ratios = <(double ratio, bool sameSign)>[];
-    for (final (time, value) in lateralSamples(windows)) {
-      final lateralG = value.abs() * toG;
-      if (lateralG < gripBalanceMinimumLateralG) continue;
-      final speed = speedMetresPerSecond(time);
-      if (speed == null || speed < gripBalanceMinimumSpeedMetresPerSecond) continue;
-      final rate = telemetryValueAt(yaw, time);
-      if (rate == null || rate == 0.0) continue;
-      final needed = lateralG * standardGravity / speed;
-      final ratio = rate.abs() * yawFactor / needed;
-      if (ratio.isFinite) ratios.add((ratio, (rate > 0) == (value > 0)));
-    }
-    final same = ratios.where((entry) => entry.$2).length;
-    final convention = same * 2 >= ratios.length;
+    final convention = yawSignMatchesLateral;
     final kept = [
-      for (final (ratio, sameSign) in ratios)
+      for (final (ratio, sameSign) in _balanceSamples(windows))
         if (sameSign == convention) ratio,
     ];
     if (kept.length < gripBalanceMinimumSamples) {
@@ -898,8 +933,9 @@ DayGripProxies dayGripProxies(
       }
       lateral.add(reader.peakLateralIn(windows).withLap(lap));
       balance.add(reader.balanceIn(windows).withLap(lap));
-      // The slowest point the corner analysis found, else (across the line,
-      // where it finds none) the lowest speed in the corner's stretches.
+      // The slowest point the corner analysis found, when it is in the
+      // corner's stretches; else (across the line it finds none) the lowest
+      // recorded speed in the stretches whose speed has no gap.
       var slowest = metrics.speeds.minimum.telemetryTime;
       bool inside(double time) => windows.any((window) => time >= window.$1 && time <= window.$2);
       if (slowest == null || !inside(slowest)) slowest = reader.slowestTime(windows);
