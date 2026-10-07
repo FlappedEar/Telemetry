@@ -15,6 +15,7 @@ import 'day_context.dart';
 import 'coach_job.dart';
 import 'day_weather.dart';
 import 'recovery_store.dart';
+import 'reference_lap.dart' show disposeReferenceLapOf;
 import 'recovery_writes.dart';
 import 'save_journal.dart';
 import 'segment_remeasure.dart';
@@ -2240,6 +2241,18 @@ final class DayResultsController extends ChangeNotifier {
     return built;
   }
 
+  /// The segments [row] is measured on against a lap from outside the day
+  /// (a reference lap, FET-175): its run's approved segments, else the
+  /// theoretical best's when [row] is in its group. Reads the day only.
+  ComparisonSegmentation segmentationFor(DayLapRow row) =>
+      dayComparisonSegmentation(
+        _analysis,
+        row,
+        row,
+        documentRuns: _documentRuns,
+        theoreticalBest: _theoreticalBestLoading ? null : _theoreticalBest,
+      );
+
   String _runName(String runId) {
     for (final row in _analysis.rows) {
       if (row.runId == runId) return row.runName;
@@ -3277,6 +3290,9 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    // The reference lap (FET-175) is kept apart from the day, but not
+    // beyond it.
+    disposeReferenceLapOf(this);
     _coachJob.cancel();
     speedUnitSetting.removeListener(_speedUnitAssumed);
     weather.dispose();

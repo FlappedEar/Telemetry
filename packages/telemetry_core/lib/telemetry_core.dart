@@ -16,6 +16,7 @@ export 'src/analysis/corner_phases.dart';
 export 'src/analysis/corner_phase_times.dart';
 export 'src/analysis/corner_speeds.dart';
 export 'src/analysis/realistic_theoretical_best.dart';
+export 'src/analysis/reference_lap.dart';
 export 'src/analysis/segment_spread.dart';
 export 'src/analysis/day_report.dart';
 export 'src/analysis/driving_states.dart';

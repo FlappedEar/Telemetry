@@ -39,6 +39,8 @@ import 'lap_page.dart';
 import 'save_shortcuts.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
+import 'reference_lap.dart';
+import 'reference_lap_page.dart';
 import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
@@ -165,6 +167,11 @@ void markAdditionReported(DayResultsController day) {
 
 class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
+
+  // The day's reference lap (FET-175), kept apart from the day itself and
+  // with it while its pages come and go; disposed with the day.
+  ReferenceLapHolder get _reference =>
+      referenceLapOf(_controller, dayId: _controller.eventId);
   bool _relinking = false;
 
   // The tab shown under the title: on a phone Overview, Laps, Compare or
@@ -227,6 +234,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _controller.addListener(_libraryChanged);
     _controller.weather.addListener(_weatherChanged);
     _startLibrary();
+    // A reference kept for the day, once a storage layer keeps one
+    // (FET-175); nothing is kept yet.
+    if (referenceLine(_controller) case final line?
+        when _reference.state == ReferenceState.none) {
+      unawaited(_reference.restore(line));
+    }
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
     if (_controller.lastAddition != null) {
@@ -2636,8 +2649,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ),
           ),
       ],
+      const SizedBox(height: 24),
+      ReferenceLapSection(
+        controller: _controller,
+        holder: _reference,
+        pickers: widget.pickers,
+        library: widget.library,
+        onCompare: _compareWithReference,
+      ),
     ];
   }
+
+  /// Opens today's lap [a] against the reference lap (FET-175).
+  Future<void> _compareWithReference(DayLapRow a) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => saveShortcuts(
+        _saveFromShortcut,
+        ReferenceComparisonPage(
+          controller: _controller,
+          holder: _reference,
+          a: a,
+        ),
+      ),
+    ),
+  );
 
   List<Widget> _lapList(BuildContext context) {
     final theme = Theme.of(context);
