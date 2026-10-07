@@ -40,6 +40,11 @@ final class CornerLapObservation {
   /// Positive left of the reference line.
   double? lineOffsetMeters;
 
+  /// The same at the corner's start and end (FlappedEar Telemetry only,
+  /// FET-225), so the line's spread can be told on the way in and out.
+  double? entryLineOffsetMeters;
+  double? exitLineOffsetMeters;
+
   /// The recording's own accuracy at that point.
   double? gpsAccuracyMeters;
 }
@@ -59,6 +64,8 @@ final class CornerVariability {
     this.lineOffset = const ConsistencySummary(),
     this.typicalGpsAccuracyMeters,
     this.lineSpreadResolvable = false,
+    this.entryLineOffset = const ConsistencySummary(),
+    this.exitLineOffset = const ConsistencySummary(),
   });
 
   final String segmentId;
@@ -78,6 +85,22 @@ final class CornerVariability {
   /// The line spread (IQR) is larger than the typical GPS accuracy, so the
   /// difference in line can be told apart from GPS noise.
   final bool lineSpreadResolvable;
+
+  /// The line's offset at the corner's start and end (FET-225), each to be
+  /// read against [typicalGpsAccuracyMeters] as [lineOffset] is.
+  final ConsistencySummary entryLineOffset;
+  final ConsistencySummary exitLineOffset;
+
+  /// [entryLineOffset]'s spread is larger than the typical GPS accuracy.
+  bool get entryLineResolvable => _resolvable(entryLineOffset);
+
+  /// [exitLineOffset]'s spread is larger than the typical GPS accuracy.
+  bool get exitLineResolvable => _resolvable(exitLineOffset);
+
+  bool _resolvable(ConsistencySummary line) =>
+      line.available &&
+      typicalGpsAccuracyMeters != null &&
+      line.interquartileRange! > typicalGpsAccuracyMeters!;
 }
 
 /// The variability of one corner over [observations].
@@ -91,6 +114,7 @@ CornerVariability summarizeCornerVariability(
   final apex = <double>[], minimum = <double>[], exit = <double>[];
   final pickupMeasured = <double>[], pickupInferred = <double>[];
   final line = <double>[], accuracy = <double>[];
+  final entryLine = <double>[], exitLine = <double>[];
   // Speeds are pooled only in one unit (see [sameSpeedUnit]); a corner
   // whose laps are in different units has no speed spread.
   String? speedUnit;
@@ -121,6 +145,8 @@ CornerVariability summarizeCornerVariability(
       if (lap.exitSpeed case final value?) exit.add(value);
     }
     if (lap.lineOffsetMeters case final value?) line.add(value);
+    if (lap.entryLineOffsetMeters case final value?) entryLine.add(value);
+    if (lap.exitLineOffsetMeters case final value?) exitLine.add(value);
     if (lap.gpsAccuracyMeters case final value? when value.isFinite && value >= 0.0) {
       accuracy.add(value);
     }
@@ -148,6 +174,8 @@ CornerVariability summarizeCornerVariability(
         lineOffset.available &&
         typicalAccuracy != null &&
         lineOffset.interquartileRange! > typicalAccuracy,
+    entryLineOffset: summary(entryLine),
+    exitLineOffset: summary(exitLine),
   );
 }
 

@@ -9612,6 +9612,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The last change could not be saved: the notebook is past what the library can hold.'**
   String get notebookNotSaved;
+
+  /// How far apart the laps' lines are where the corner starts, at its apex and where it ends (FET-225). {parts} joins variabilityLineEntry, variabilityLineApex and variabilityLineExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Line spread: {parts} · {accuracy}'**
+  String variabilityLineParts(String parts, String accuracy);
+
+  /// Line spread where the corner starts.
+  ///
+  /// In en, this message translates to:
+  /// **'entry {spread} m'**
+  String variabilityLineEntry(String spread);
+
+  /// Line spread at the corner's apex (or its middle).
+  ///
+  /// In en, this message translates to:
+  /// **'apex {spread} m'**
+  String variabilityLineApex(String spread);
+
+  /// Line spread where the corner ends.
+  ///
+  /// In en, this message translates to:
+  /// **'exit {spread} m'**
+  String variabilityLineExit(String spread);
+
+  /// Where the corner starts, in a list of the parts whose line spread is within GPS error.
+  ///
+  /// In en, this message translates to:
+  /// **'entry'**
+  String get variabilityLineEntryName;
+
+  /// The corner's apex, in a list of the parts whose line spread is within GPS error.
+  ///
+  /// In en, this message translates to:
+  /// **'apex'**
+  String get variabilityLineApexName;
+
+  /// Where the corner ends, in a list of the parts whose line spread is within GPS error.
+  ///
+  /// In en, this message translates to:
+  /// **'exit'**
+  String get variabilityLineExitName;
+
+  /// Appended when the line spread at some parts of the corner is no larger than the GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **' · {parts}: not distinguishable from GPS error'**
+  String variabilityLinePartsUnresolved(String parts);
 }
 
 class _AppLocalizationsDelegate

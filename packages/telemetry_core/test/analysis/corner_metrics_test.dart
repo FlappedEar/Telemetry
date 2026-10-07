@@ -100,6 +100,34 @@ void main() {
     expect(variability.lineOffset.count, 0);
   });
 
+  test('corner variability gives the line at the start, apex and end, each against GPS', () {
+    CornerLapObservation lap(double entry, double apex, double? exit) => CornerLapObservation()
+      ..entryLineOffsetMeters = entry
+      ..lineOffsetMeters = apex
+      ..exitLineOffsetMeters = exit
+      ..gpsAccuracyMeters = 0.5;
+    final variability = summarizeCornerVariability('c1', 'Corner 1', [
+      lap(-2, 0.1, 1),
+      lap(0, 0.2, null),
+      lap(2, 0.3, 2),
+      lap(4, 0.4, null),
+    ]);
+    expect(variability.entryLineOffset.count, 4);
+    expect(variability.entryLineOffset.interquartileRange, greaterThan(0.5));
+    expect(variability.entryLineResolvable, isTrue);
+    expect(variability.lineSpreadResolvable, isFalse, reason: 'within GPS error');
+    expect(variability.exitLineOffset.count, 2);
+    expect(variability.exitLineOffset.available, isFalse);
+    expect(variability.exitLineResolvable, isFalse);
+    // Without a stated accuracy nothing is claimed resolvable.
+    final unknown = summarizeCornerVariability('c1', 'Corner 1', [
+      for (final value in [-2.0, 0.0, 2.0, 4.0])
+        CornerLapObservation()..entryLineOffsetMeters = value,
+    ]);
+    expect(unknown.entryLineOffset.available, isTrue);
+    expect(unknown.entryLineResolvable, isFalse);
+  });
+
   test('corner speeds are never compared across channels', () {
     final stamp = const SegmentationResultStamp(revision: 'r');
     CornerSpeeds speeds(String channel, double minimum) => CornerSpeeds(

@@ -192,6 +192,23 @@ CornerLapMetrics measureCornerLap(
     }
     observation.gpsAccuracyMeters = session.valueAt('accuracy', time);
   }
+  // And where the corner starts and ends (FET-225).
+  double? offsetAt(double progress) {
+    final time = timeAtProgress(trace, progress);
+    if (time == null) return null;
+    final latitude = session.valueAt('latitude', time);
+    final longitude = session.valueAt('longitude', time);
+    if (latitude == null || longitude == null) return null;
+    return lateralOffsetMeters(
+      axis,
+      progress,
+      projectCoordinate(GeoCoordinate(latitude, longitude), axis.origin),
+    );
+  }
+
+  observation
+    ..entryLineOffsetMeters = offsetAt(start)
+    ..exitLineOffsetMeters = offsetAt(end);
   return CornerLapMetrics(
     lapReference: lapReference,
     speeds: speeds,

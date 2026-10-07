@@ -8506,5 +8506,21 @@
   "notebookFull": "The notebook holds at most {count} things to try. Remove some to add more.",
   "@notebookFull": {"description": "Track notebook: shown instead of the add field when the list of things to try is full.", "placeholders": {"count": {"type": "int"}}},
   "notebookNotSaved": "The last change could not be saved: the notebook is past what the library can hold.",
-  "@notebookNotSaved": {"description": "Track notebook: a change could not be kept in the profile."}
+  "@notebookNotSaved": {"description": "Track notebook: a change could not be kept in the profile."},
+  "variabilityLineParts": "Line spread: {parts} · {accuracy}",
+  "@variabilityLineParts": {"description": "How far apart the laps' lines are where the corner starts, at its apex and where it ends (FET-225). {parts} joins variabilityLineEntry, variabilityLineApex and variabilityLineExit.", "placeholders": {"parts": {"type": "String", "example": "entry 1.2 m, apex 0.8 m, exit 2.4 m"}, "accuracy": {"type": "String", "example": "GPS accuracy about 0.8 m"}}},
+  "variabilityLineEntry": "entry {spread} m",
+  "@variabilityLineEntry": {"description": "Line spread where the corner starts.", "placeholders": {"spread": {"type": "String", "example": "1.2"}}},
+  "variabilityLineApex": "apex {spread} m",
+  "@variabilityLineApex": {"description": "Line spread at the corner's apex (or its middle).", "placeholders": {"spread": {"type": "String", "example": "0.8"}}},
+  "variabilityLineExit": "exit {spread} m",
+  "@variabilityLineExit": {"description": "Line spread where the corner ends.", "placeholders": {"spread": {"type": "String", "example": "2.4"}}},
+  "variabilityLineEntryName": "entry",
+  "@variabilityLineEntryName": {"description": "Where the corner starts, in a list of the parts whose line spread is within GPS error."},
+  "variabilityLineApexName": "apex",
+  "@variabilityLineApexName": {"description": "The corner's apex, in a list of the parts whose line spread is within GPS error."},
+  "variabilityLineExitName": "exit",
+  "@variabilityLineExitName": {"description": "Where the corner ends, in a list of the parts whose line spread is within GPS error."},
+  "variabilityLinePartsUnresolved": " · {parts}: not distinguishable from GPS error",
+  "@variabilityLinePartsUnresolved": {"description": "Appended when the line spread at some parts of the corner is no larger than the GPS accuracy.", "placeholders": {"parts": {"type": "String", "example": "entry, apex"}}}
 }

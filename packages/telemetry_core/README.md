@@ -172,6 +172,14 @@ a background isolate.
   and `publishTheoreticalBest` gives what Overlays' theoretical-best dialog
   shows (best lap, theoretical best, time available, segments by loss, the
   map), with each corner's repeatability (`summarizeCornerVariability`).
+- The line where each corner starts and ends (FlappedEar Telemetry only,
+  FET-225): `measureCornerLap` also gives each lap's sideways offset from the
+  reference lap's line at the corner's start and end
+  (`CornerLapObservation.entryLineOffsetMeters`, `exitLineOffsetMeters`), and
+  `summarizeCornerVariability` their spreads (`CornerVariability.entryLineOffset`,
+  `exitLineOffset`), each read against the same typical GPS accuracy as the
+  apex's line (`entryLineResolvable`, `exitLineResolvable`). The Overlays
+  fields are unchanged.
 - The Corner Analyzer (Overlays `d4d1039`): `proposeCornerGeometryPhases`
   (entry, apex and exit from curvature), `computeCornerSpeeds` (entry, apex,
   minimum and exit speed), `detectBrakingOnsets` and `computeBrakingMetrics`

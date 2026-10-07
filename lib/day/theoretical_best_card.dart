@@ -596,8 +596,6 @@ List<String> variabilityLines(
     );
   }
 
-  final line = variability.lineOffset;
-  final accuracy = variability.typicalGpsAccuracyMeters;
   return [
     ?spread(
       l10n.variabilityBraking,
@@ -622,19 +620,59 @@ List<String> variabilityLines(
       variability.pickupInferred,
       l10n.variabilityInferred,
     ),
-    if (line.available)
-      l10n.variabilityLine(
-            fixed(line.interquartileRange!, 1),
-            accuracy == null
-                ? l10n.variabilityGpsUnknown
-                : l10n.variabilityGpsAccuracy(
-                    fixed(accuracy, accuracy < 1 ? 2 : 1),
-                  ),
-          ) +
-          (variability.lineSpreadResolvable
-              ? ''
-              : l10n.variabilityLineUnresolved),
+    ?_lineText(l10n, variability),
   ];
+}
+
+// The line's spread where the corner starts, at its apex and where it ends
+// (FET-225), each part only when enough laps have it; the apex alone, as
+// before, when the ends are not measured.
+String? _lineText(AppLocalizations l10n, CornerVariability variability) {
+  final accuracy = variability.typicalGpsAccuracyMeters;
+  final gps = accuracy == null
+      ? l10n.variabilityGpsUnknown
+      : l10n.variabilityGpsAccuracy(fixed(accuracy, accuracy < 1 ? 2 : 1));
+  final apex = variability.lineOffset;
+  final entry = variability.entryLineOffset;
+  final exit = variability.exitLineOffset;
+  if (!entry.available && !exit.available) {
+    if (!apex.available) return null;
+    return l10n.variabilityLine(fixed(apex.interquartileRange!, 1), gps) +
+        (variability.lineSpreadResolvable
+            ? ''
+            : l10n.variabilityLineUnresolved);
+  }
+  final parts = [
+    if (entry.available)
+      (
+        l10n.variabilityLineEntry(fixed(entry.interquartileRange!, 1)),
+        l10n.variabilityLineEntryName,
+        variability.entryLineResolvable,
+      ),
+    if (apex.available)
+      (
+        l10n.variabilityLineApex(fixed(apex.interquartileRange!, 1)),
+        l10n.variabilityLineApexName,
+        variability.lineSpreadResolvable,
+      ),
+    if (exit.available)
+      (
+        l10n.variabilityLineExit(fixed(exit.interquartileRange!, 1)),
+        l10n.variabilityLineExitName,
+        variability.exitLineResolvable,
+      ),
+  ];
+  final unresolved = [
+    for (final (_, name, resolvable) in parts)
+      if (!resolvable) name,
+  ];
+  return l10n.variabilityLineParts(
+        [for (final (text, _, _) in parts) text].join(', '),
+        gps,
+      ) +
+      (unresolved.isEmpty
+          ? ''
+          : l10n.variabilityLinePartsUnresolved(unresolved.join(', ')));
 }
 
 /// One corner's variability, folded to its name and first line.

@@ -96,6 +96,60 @@ void main() {
       expect(variabilityLines(l10n, const CornerVariability(), ''), isEmpty);
     });
 
+    test('the line where the corner starts, at its apex and where it ends', () {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      expect(
+        variabilityLines(
+          l10n,
+          CornerVariability(
+            entryLineOffset: summary(5, 0, 2.4),
+            lineOffset: summary(5, 0, 0.5),
+            exitLineOffset: summary(5, 0, 1.6),
+            typicalGpsAccuracyMeters: 0.8,
+          ),
+          '',
+        ),
+        [
+          'Line spread: entry 2.4 m, apex 0.5 m, exit 1.6 m'
+              ' · GPS accuracy about 0.80 m · apex: not distinguishable '
+              'from GPS error',
+        ],
+      );
+      // A part with too few laps is left out; all within GPS error.
+      expect(
+        variabilityLines(
+          l10n,
+          CornerVariability(
+            entryLineOffset: summary(4, 0, 0.3),
+            exitLineOffset: summary(2, 0, 3),
+          ),
+          '',
+        ),
+        [
+          'Line spread: entry 0.3 m · GPS accuracy not recorded'
+              ' · entry: not distinguishable from GPS error',
+        ],
+      );
+      expect(
+        variabilityLines(
+          lookupAppLocalizations(const Locale('pl')),
+          CornerVariability(
+            entryLineOffset: summary(5, 0, 2.4),
+            lineOffset: summary(5, 0, 1.5),
+            lineSpreadResolvable: true,
+            exitLineOffset: summary(5, 0, 0.4),
+            typicalGpsAccuracyMeters: 0.8,
+          ),
+          '',
+        ),
+        [
+          'Rozrzut toru jazdy: na wejściu 2.4 m, na wierzchołku 1.5 m, '
+              'na wyjściu 0.4 m · dokładność GPS około 0.80 m'
+              ' · wyjście: nie do odróżnienia od błędu GPS',
+        ],
+      );
+    });
+
     test('in Polish', () {
       final l10n = lookupAppLocalizations(const Locale('pl'));
       expect(
