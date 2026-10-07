@@ -2526,20 +2526,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get variabilityPickup => 'Punkt ponownego dodania gazu';
 
   @override
-  String variabilityLine(String spread, String accuracy) {
-    return 'Tor jazdy: rozrzut $spread m · $accuracy';
-  }
-
-  @override
   String variabilityGpsAccuracy(String meters) {
     return 'dokładność GPS około $meters m';
   }
 
   @override
   String get variabilityGpsUnknown => 'dokładność GPS nie jest zapisana';
-
-  @override
-  String get variabilityLineUnresolved => ' · nie do odróżnienia od błędu GPS';
 
   @override
   String get calculateAgain => 'Oblicz ponownie';
@@ -6683,4 +6675,38 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get notebookNotSaved =>
       'Nie udało się zapisać ostatniej zmiany: notatnik przekracza to, co mieści biblioteka.';
+
+  @override
+  String variabilityLineParts(String parts, String accuracy) {
+    return 'Rozrzut toru jazdy: $parts · $accuracy';
+  }
+
+  @override
+  String variabilityLineEntry(String spread) {
+    return 'na wejściu $spread m';
+  }
+
+  @override
+  String variabilityLineApex(String spread) {
+    return 'na wierzchołku $spread m';
+  }
+
+  @override
+  String variabilityLineExit(String spread) {
+    return 'na wyjściu $spread m';
+  }
+
+  @override
+  String get variabilityLineEntryName => 'wejście';
+
+  @override
+  String get variabilityLineApexName => 'wierzchołek';
+
+  @override
+  String get variabilityLineExitName => 'wyjście';
+
+  @override
+  String variabilityLinePartsUnresolved(String parts) {
+    return ' · $parts: nie do odróżnienia od błędu GPS';
+  }
 }

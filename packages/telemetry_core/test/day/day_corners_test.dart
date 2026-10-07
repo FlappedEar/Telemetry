@@ -162,6 +162,14 @@ void main() {
       expect(variability.minimumSpeed.count, 3);
       expect(variability.brakingPointMeasured.count, 3);
       expect(variability.brakingPointInferred.count, 0);
+      // The line where the corner starts, at its apex and where it ends.
+      expect(variability.lineOffset.count, 3);
+      expect(variability.entryLineOffset.count, 3);
+      expect(variability.exitLineOffset.count, 3);
+      for (final (_, metrics) in corner.laps) {
+        expect(metrics.observation.entryLineOffsetMeters!.abs(), lessThan(5));
+        expect(metrics.observation.exitLineOffsetMeters!.abs(), lessThan(5));
+      }
       expect(result.segments[1].variability, isNull, reason: 'a straight');
     });
   });

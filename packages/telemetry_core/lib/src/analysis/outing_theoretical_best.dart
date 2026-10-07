@@ -192,6 +192,36 @@ CornerLapMetrics measureCornerLap(
     }
     observation.gpsAccuracyMeters = session.valueAt('accuracy', time);
   }
+  // And where the corner starts and ends (FET-225). A corner starting or
+  // ending at the timing gate is measured where the lap starts or ends: a
+  // lap's trace begins after the gate, so no time has progress 0. A
+  // boundary further than a metre off the axis is no data.
+  double? offsetAt(double progress) {
+    const gateTolerance = 1.0;
+    if (!progress.isFinite ||
+        progress < -gateTolerance ||
+        progress > axis.lengthMeters + gateTolerance) {
+      return null;
+    }
+    final time = progress <= 0.0
+        ? lapStart
+        : progress >= axis.lengthMeters
+        ? lapEnd
+        : timeAtProgress(trace, progress);
+    if (time == null) return null;
+    final latitude = session.valueAt('latitude', time);
+    final longitude = session.valueAt('longitude', time);
+    if (latitude == null || longitude == null) return null;
+    return lateralOffsetMeters(
+      axis,
+      progress.clamp(0.0, axis.lengthMeters),
+      projectCoordinate(GeoCoordinate(latitude, longitude), axis.origin),
+    );
+  }
+
+  observation
+    ..entryLineOffsetMeters = offsetAt(start)
+    ..exitLineOffsetMeters = offsetAt(end);
   return CornerLapMetrics(
     lapReference: lapReference,
     speeds: speeds,

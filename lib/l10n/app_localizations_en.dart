@@ -2467,21 +2467,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get variabilityPickup => 'Throttle pickup';
 
   @override
-  String variabilityLine(String spread, String accuracy) {
-    return 'Line: spread $spread m · $accuracy';
-  }
-
-  @override
   String variabilityGpsAccuracy(String meters) {
     return 'GPS accuracy about $meters m';
   }
 
   @override
   String get variabilityGpsUnknown => 'GPS accuracy not recorded';
-
-  @override
-  String get variabilityLineUnresolved =>
-      ' · not distinguishable from GPS error';
 
   @override
   String get calculateAgain => 'Calculate again';
@@ -6545,4 +6536,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notebookNotSaved =>
       'The last change could not be saved: the notebook is past what the library can hold.';
+
+  @override
+  String variabilityLineParts(String parts, String accuracy) {
+    return 'Line spread: $parts · $accuracy';
+  }
+
+  @override
+  String variabilityLineEntry(String spread) {
+    return 'entry $spread m';
+  }
+
+  @override
+  String variabilityLineApex(String spread) {
+    return 'apex $spread m';
+  }
+
+  @override
+  String variabilityLineExit(String spread) {
+    return 'exit $spread m';
+  }
+
+  @override
+  String get variabilityLineEntryName => 'entry';
+
+  @override
+  String get variabilityLineApexName => 'apex';
+
+  @override
+  String get variabilityLineExitName => 'exit';
+
+  @override
+  String variabilityLinePartsUnresolved(String parts) {
+    return ' · $parts: not distinguishable from GPS error';
+  }
 }

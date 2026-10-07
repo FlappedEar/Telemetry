@@ -578,10 +578,8 @@
   "variabilityMinimum": "Prędkość minimalna",
   "variabilityExit": "Prędkość na wyjściu",
   "variabilityPickup": "Punkt ponownego dodania gazu",
-  "variabilityLine": "Tor jazdy: rozrzut {spread} m · {accuracy}",
   "variabilityGpsAccuracy": "dokładność GPS około {meters} m",
   "variabilityGpsUnknown": "dokładność GPS nie jest zapisana",
-  "variabilityLineUnresolved": " · nie do odróżnienia od błędu GPS",
   "calculateAgain": "Oblicz ponownie",
   "retryRecordings": "Ponów odczyt zapisów",
   "retryRecordingsLooking": "Otwieranie…",
@@ -1570,5 +1568,13 @@
   "libraryImportNotebooks": "Notatniki torów uzupełnione notatkami z pliku: {count}.",
   "libraryImportNotebookCut": "Część notatek z pliku nie zmieściła się w notatniku i została pominięta.",
   "notebookFull": "Notatnik mieści najwyżej {count} rzeczy do wypróbowania. Usuń którąś, aby dodać kolejną.",
-  "notebookNotSaved": "Nie udało się zapisać ostatniej zmiany: notatnik przekracza to, co mieści biblioteka."
+  "notebookNotSaved": "Nie udało się zapisać ostatniej zmiany: notatnik przekracza to, co mieści biblioteka.",
+  "variabilityLineParts": "Rozrzut toru jazdy: {parts} · {accuracy}",
+  "variabilityLineEntry": "na wejściu {spread} m",
+  "variabilityLineApex": "na wierzchołku {spread} m",
+  "variabilityLineExit": "na wyjściu {spread} m",
+  "variabilityLineEntryName": "wejście",
+  "variabilityLineApexName": "wierzchołek",
+  "variabilityLineExitName": "wyjście",
+  "variabilityLinePartsUnresolved": " · {parts}: nie do odróżnienia od błędu GPS"
 }
