@@ -111,10 +111,7 @@ SegmentReview computeSegmentReview(
       unavailable: 'This lap has no gate-anchored GPS trace to build a track axis from.',
     );
   }
-  final origin = GeoCoordinate(
-    (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2.0,
-    (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2.0,
-  );
+  final origin = geoMidpoint(gate.endpointA, gate.endpointB);
   final axis = buildProgressAxis(trace, origin, gate, cancelled: cancelled);
   final features = axis.valid
       ? computeTrackFeatures(axis, segmentReviewSmoothingMeters)

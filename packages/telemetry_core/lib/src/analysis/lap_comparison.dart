@@ -185,10 +185,7 @@ final class LapComparison {
       }
     }
     if (gate != null && trace != null) {
-      final origin = GeoCoordinate(
-        (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2.0,
-        (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2.0,
-      );
+      final origin = geoMidpoint(gate.endpointA, gate.endpointB);
       axis = buildProgressAxis(trace, origin, gate, cancelled: cancelled);
     }
     if (axis.valid) {

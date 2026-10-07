@@ -182,7 +182,7 @@ CornerLapMetrics measureCornerLap(
   final time = timeAtProgress(trace, at);
   if (time != null) {
     final latitude = session.valueAt('latitude', time);
-    final longitude = session.valueAt('longitude', time);
+    final longitude = session.valueAt('longitude', time, InterpolationMode.longitude);
     if (latitude != null && longitude != null) {
       observation.lineOffsetMeters = lateralOffsetMeters(
         axis,
@@ -278,10 +278,7 @@ OutingTheoreticalBest calculateOutingTheoreticalBest(
     if (gate == null || trace == null) {
       throw const _Failure('Could not build a shared track axis from the canonical run.');
     }
-    final origin = GeoCoordinate(
-      (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2.0,
-      (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2.0,
-    );
+    final origin = geoMidpoint(gate.endpointA, gate.endpointB);
     final axis = buildProgressAxis(trace, origin, gate, cancelled: cancelled);
     if (!axis.valid) {
       throw const _Failure(

@@ -102,7 +102,7 @@ WeatherRequest? weatherRequest(TelemetrySession session) {
   GeoCoordinate? fix;
   for (var index = 0; index < latitude.values.length; ++index) {
     final time = latitude.timestamps[index];
-    final lon = session.valueAt('longitude', time);
+    final lon = session.valueAt('longitude', time, InterpolationMode.longitude);
     if (lon == null) continue;
     final candidate = GeoCoordinate(latitude.values[index].toDouble(), westPositive ? -lon : lon);
     // A receiver without a fix reports 0, 0.

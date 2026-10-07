@@ -180,11 +180,11 @@ TimingGateParseResult parseTimingGate(String line, bool centreDirection, Coordin
     final centre = endpointA;
     endpointA = GeoCoordinate(
       centre.latitudeDegrees - deltaLat,
-      centre.longitudeDegrees - deltaLon,
+      wrapLongitudeDegrees(centre.longitudeDegrees - deltaLon),
     );
     endpointB = GeoCoordinate(
       centre.latitudeDegrees + deltaLat,
-      centre.longitudeDegrees + deltaLon,
+      wrapLongitudeDegrees(centre.longitudeDegrees + deltaLon),
     );
     if (!isValidCoordinate(endpointA) || !isValidCoordinate(endpointB)) {
       return const TimingGateParseResult.error('invalid converted RaceChrono gate endpoints');

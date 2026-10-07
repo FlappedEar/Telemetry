@@ -443,8 +443,8 @@ final class _RczSession {
         type: TimingGateType.start,
         sourceName: 'Start',
         sourceDescription: _string(trap['name']),
-        endpointA: GeoCoordinate(lat - deltaLat, lon - deltaLon),
-        endpointB: GeoCoordinate(lat + deltaLat, lon + deltaLon),
+        endpointA: GeoCoordinate(lat - deltaLat, wrapLongitudeDegrees(lon - deltaLon)),
+        endpointB: GeoCoordinate(lat + deltaLat, wrapLongitudeDegrees(lon + deltaLon)),
       );
       if (!isValidCoordinate(gate.endpointB)) _fail('Invalid timing gate endpoint.');
       gates.add(gate);
