@@ -151,13 +151,14 @@ class _GgEnvelopeCardState extends State<GgEnvelopeCard> {
     super.dispose();
   }
 
-  // Starts again when the laps or a run's G channels are not the ones the
-  // shown result (or the one on its way) was worked out from.
+  // Starts again when the laps, their sessions' names or a run's G
+  // channels are not the ones the shown result (or the one on its way) was
+  // worked out from: a renamed session is named anew.
   void _update() {
     final runIds = {for (final row in widget.laps) row.runId};
     final sessions = {for (final id in runIds) id: widget.sessionOf(id)};
     final key = <Object?>[
-      for (final row in widget.laps) row.reference,
+      for (final row in widget.laps) ...[row.reference, row.runName],
       for (final MapEntry(key: id, value: session) in sessions.entries) ...[
         id,
         session?.channel('longitudinalAcceleration'),
@@ -172,7 +173,7 @@ class _GgEnvelopeCardState extends State<GgEnvelopeCard> {
   void _start(Map<String, TelemetrySession?> sessions) {
     _task?.cancel();
     final generation = ++_generation;
-    _result = null;
+    // The result shown stays until the new one arrives.
     _error = '';
     final BackgroundTask<DayGgEnvelope> task;
     try {
@@ -184,6 +185,7 @@ class _GgEnvelopeCardState extends State<GgEnvelopeCard> {
         },
       ));
     } on Object catch (failure) {
+      _result = null;
       _error = '$failure';
       return;
     }
@@ -205,6 +207,7 @@ class _GgEnvelopeCardState extends State<GgEnvelopeCard> {
         }
         setState(() {
           _task = null;
+          _result = null;
           _error = '$failure';
         });
       },
@@ -258,6 +261,15 @@ class GgEnvelopeView extends StatelessWidget {
             const SizedBox(height: 4),
             Text(l10n.ggEnvelopeIntro, style: small),
             const SizedBox(height: 8),
+            // Calculated again for changed laps: the earlier result stays
+            // until the new one arrives.
+            if (loading && envelope != null && error.isEmpty) ...[
+              LinearProgressIndicator(
+                key: const ValueKey('ggEnvelopeRecalculating'),
+                semanticsLabel: l10n.ggEnvelopeCalculating,
+              ),
+              const SizedBox(height: 8),
+            ],
             ..._body(context),
           ],
         ),
@@ -284,7 +296,7 @@ class GgEnvelopeView extends StatelessWidget {
           ),
       ];
     }
-    if (loading || envelope == null) {
+    if (envelope == null) {
       return [Text(l10n.ggEnvelopeCalculating)];
     }
     final notes = [
@@ -402,6 +414,17 @@ class GgEnvelopeView extends StatelessWidget {
       ],
       const SizedBox(height: 8),
       for (final note in notes) Text(note, style: small),
+      for (final session in valid)
+        if (session.excludedOutliers > 0)
+          Text(
+            l10n.ggEnvelopeOutliers(
+              l10n.session(session.runName),
+              session.excludedOutliers,
+              '${fixed(ggPlausibleLimitG, 0)}\u00a0g',
+            ),
+            key: ValueKey('ggEnvelopeOutliers ${session.runId}'),
+            style: small,
+          ),
       for (final source in _sources(l10n, valid)) Text(source, style: small),
       Text(l10n.ggEnvelopeMissingNote(ggEnvelopeMinimumSamples), style: small),
       Text(l10n.ggEnvelopeNote(margin), style: small),
@@ -608,6 +631,21 @@ class GgEnvelopePainter extends CustomPainter {
   /// The outer ring in g (see [ggScale]).
   double get scaleG => ggScale(best);
 
+  /// Where [value] g in [direction] is drawn on a diagram around [centre]
+  /// whose outer ring, [radius] from it, is [scaleG]: accelerating up,
+  /// turning left on the left, as on the comparison's G-G.
+  @visibleForTesting
+  static Offset project(
+    Offset centre,
+    double radius,
+    double scaleG,
+    GgDirection direction,
+    double value,
+  ) => Offset(
+    centre.dx - math.sin(direction.angle) * value / scaleG * radius,
+    centre.dy - math.cos(direction.angle) * value / scaleG * radius,
+  );
+
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
@@ -616,10 +654,8 @@ class GgEnvelopePainter extends CustomPainter {
     final radius = side / 2 - 16;
     if (radius <= 0) return;
     final scale = scaleG;
-    Offset at(GgDirection direction, double value) => Offset(
-      centre.dx - math.sin(direction.angle) * value / scale * radius,
-      centre.dy - math.cos(direction.angle) * value / scale * radius,
-    );
+    Offset at(GgDirection direction, double value) =>
+        project(centre, radius, scale, direction, value);
     final grid = Paint()
       ..color = gridColor
       ..style = PaintingStyle.stroke

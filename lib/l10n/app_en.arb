@@ -8533,7 +8533,7 @@
   "@variabilityLinePartsUnresolved": {"description": "Appended when the line spread at some parts of the corner is no larger than the GPS accuracy.", "placeholders": {"parts": {"type": "String", "example": "entry, apex"}}},
   "ggEnvelopeTitle": "G-G envelope",
   "@ggEnvelopeTitle": {"description": "Heading of the day card with each session's G-G envelope."},
-  "ggEnvelopeIntro": "How much combined grip each session used in each direction: the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.",
+  "ggEnvelopeIntro": "How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.",
   "@ggEnvelopeIntro": {"description": "G-G envelope card: what the envelope is."},
   "ggEnvelopeCalculating": "Calculating the G-G envelope…",
   "@ggEnvelopeCalculating": {"description": "G-G envelope card while it is calculated."},
@@ -8584,5 +8584,7 @@
   "ggEnvelopeNote": "Observed accelerations, not a share of available grip. Unused means at least {margin} below the day's best. Rings every 0.5 g; the dashed line is the best of the day, the thick line the latest session.",
   "@ggEnvelopeNote": {"description": "Under the G-G envelope diagram.", "placeholders": {"margin": {"type": "String"}}},
   "ggEnvelopeSemantics": "G-G envelope of each session against the best of the day",
-  "@ggEnvelopeSemantics": {"description": "Screen reader label of the G-G envelope diagram."}
+  "@ggEnvelopeSemantics": {"description": "Screen reader label of the G-G envelope diagram."},
+  "ggEnvelopeOutliers": "{session}: {count, plural, =1{1 sample} other{{count} samples}} beyond {limit} left out as implausible",
+  "@ggEnvelopeOutliers": {"description": "G-G envelope: samples of a session left out because they are beyond the plausible limit for a road car.", "placeholders": {"session": {"type": "String"}, "count": {"type": "int"}, "limit": {"type": "String"}}}
 }

@@ -6595,7 +6595,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ggEnvelopeIntro =>
-      'How much combined grip each session used in each direction: the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.';
+      'How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.';
 
   @override
   String get ggEnvelopeCalculating => 'Calculating the G-G envelope…';
@@ -6700,4 +6700,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ggEnvelopeSemantics =>
       'G-G envelope of each session against the best of the day';
+
+  @override
+  String ggEnvelopeOutliers(String session, int count, String limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count samples',
+      one: '1 sample',
+    );
+    return '$session: $_temp0 beyond $limit left out as implausible';
+  }
 }

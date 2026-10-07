@@ -44,8 +44,8 @@ const double ggEnvelopeUnusedMarginG = 0.1;
 const String ggEnvelopeTooFewSamples = 'tooFewSamples';
 
 /// The eight directions of a G-G diagram, 45° each, anticlockwise from
-/// accelerating as the driver feels them (left is the recording's positive
-/// lateral G).
+/// accelerating: [left] is turning left (the recording's positive lateral
+/// G, toward the inside of a left turn), [right] turning right.
 enum GgDirection {
   accelerating,
   acceleratingLeft,

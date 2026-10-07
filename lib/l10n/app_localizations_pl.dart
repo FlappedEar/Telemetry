@@ -6735,7 +6735,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get ggEnvelopeIntro =>
-      'Ile łącznego przeciążenia każda sesja wykorzystała w każdym kierunku: 95. percentyl łącznego przeciążenia na jej sklasyfikowanych okrążeniach, więc pojedynczy skok go nie wyznacza. Okrążenia wyjazdowe, zjazdowe i wykluczone są pominięte.';
+      'Jak mocno każda sesja obciążała samochód w każdym kierunku (łączne przeciążenie): 95. percentyl łącznego przeciążenia na jej sklasyfikowanych okrążeniach, więc pojedynczy skok go nie wyznacza. Okrążenia wyjazdowe, zjazdowe i wykluczone są pominięte.';
 
   @override
   String get ggEnvelopeCalculating => 'Obliczanie obwiedni G–G…';
@@ -6841,4 +6841,17 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get ggEnvelopeSemantics =>
       'Obwiednia G–G każdej sesji na tle najlepszej obwiedni dnia';
+
+  @override
+  String ggEnvelopeOutliers(String session, int count, String limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count próbki',
+      many: '$count próbek',
+      few: '$count próbki',
+      one: '1 próbkę',
+    );
+    return '$session: $_temp0 powyżej $limit pominięto jako nieprawdopodobne';
+  }
 }

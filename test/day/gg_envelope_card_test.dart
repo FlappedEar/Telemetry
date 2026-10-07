@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -28,6 +29,7 @@ TelemetrySession _session(
   int perDirection = 100,
   String longitudinal = 'longacc-calc',
   String lateral = 'latacc-calc',
+  List<(double, double)> extra = const [],
 }) {
   final pairs = <(double, double)>[
     for (final direction in GgDirection.values)
@@ -40,6 +42,7 @@ TelemetrySession _session(
             magnitude * math.sin(direction.angle),
           );
         }(),
+    ...extra,
   ];
   final times = Float64List.fromList([
     for (var i = 0; i < pairs.length; ++i) i / 10,
@@ -123,7 +126,71 @@ Future<void> _finish(WidgetTester tester) async {
 String _text(WidgetTester tester, String key) =>
     tester.widget<Text>(find.byKey(ValueKey(key))).data!;
 
+/// A background task finished, or stopped, by the test.
+final class _ManualTask implements BackgroundTask<DayGgEnvelope> {
+  final completer = Completer<DayGgEnvelope>();
+  bool cancelled = false;
+
+  @override
+  Future<DayGgEnvelope> get result => completer.future;
+
+  @override
+  void cancel() => cancelled = true;
+}
+
 void main() {
+  test('the diagram puts accelerating up and turning left on the left', () {
+    const centre = Offset(100, 100);
+    Offset at(GgDirection direction) =>
+        GgEnvelopePainter.project(centre, 50, 1.0, direction, 0.5);
+    expect(at(GgDirection.accelerating).dy, lessThan(centre.dy));
+    expect(at(GgDirection.accelerating).dx, closeTo(centre.dx, 1e-9));
+    expect(at(GgDirection.braking).dy, greaterThan(centre.dy));
+    expect(at(GgDirection.left).dx, lessThan(centre.dx));
+    expect(at(GgDirection.left).dy, closeTo(centre.dy, 1e-9));
+    expect(at(GgDirection.right).dx, greaterThan(centre.dx));
+    expect(at(GgDirection.brakingLeft).dx, lessThan(centre.dx));
+    expect(at(GgDirection.brakingLeft).dy, greaterThan(centre.dy));
+    // 0.5 g of a 1 g outer ring: half the radius.
+    expect((at(GgDirection.braking) - centre).distance, closeTo(25, 1e-9));
+    // A recording's positive lateral G is turning left.
+    expect(ggDirectionOf(0, 0.8), GgDirection.left);
+  });
+
+  testWidgets('says how many samples were beyond the plausible limit', (
+    tester,
+  ) async {
+    final day = dayGgEnvelope(
+      [_lap('1', 1000)],
+      {
+        '1': _session(1.0, extra: [(-5.0, 0.0)]),
+      },
+    );
+    await _pumpView(tester, GgEnvelopeView(envelope: day));
+    expect(
+      _text(tester, 'ggEnvelopeOutliers 1'),
+      'Session 1: 1 sample beyond 4\u00a0g left out as implausible',
+    );
+    addTearDown(() => Intl.defaultLocale = null);
+    await _pumpView(
+      tester,
+      GgEnvelopeView(envelope: day),
+      locale: const Locale('pl'),
+    );
+    expect(
+      _text(tester, 'ggEnvelopeOutliers 1'),
+      'Sesja 1: 1 próbkę powyżej 4\u00a0g pominięto jako nieprawdopodobne',
+    );
+    // None lost: no line.
+    await _pumpView(tester, GgEnvelopeView(envelope: _day()));
+    expect(
+      find.byWidgetPredicate(
+        (widget) => '${widget.key}'.contains('ggEnvelopeOutliers'),
+      ),
+      findsNothing,
+    );
+  });
+
   testWidgets('shows each direction, the day\'s best and what is unused', (
     tester,
   ) async {
@@ -350,11 +417,129 @@ void main() {
           home: Scaffold(body: ListView(children: [card(eligible.sublist(1))])),
         ),
       );
-      expect(find.text('Calculating the G-G envelope…'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('ggEnvelopeRecalculating')),
+        findsOneWidget,
+      );
       await _finish(tester);
       expect(inputs, hasLength(2));
+      expect(
+        find.byKey(const ValueKey('ggEnvelopeRecalculating')),
+        findsNothing,
+      );
       expect(inputs.last.laps, eligible.sublist(1));
       expect(find.byKey(const ValueKey('ggEnvelopeTable')), findsOneWidget);
+    });
+
+    testWidgets('a stale result is ignored, replaced and closed work stops', (
+      tester,
+    ) async {
+      final outcome = importDay();
+      final eligible = dayEligibleLaps(outcome.analysis!);
+      final tasks = <_ManualTask>[];
+      final inputs = <GgEnvelopeInput>[];
+      BackgroundTask<DayGgEnvelope> runner(GgEnvelopeInput input) {
+        inputs.add(input);
+        return tasks.last;
+      }
+
+      Widget card(List<DayLapRow> laps) => GgEnvelopeCard(
+        laps: laps,
+        sessionOf: sessionsOf(outcome),
+        runner: runner,
+      );
+      DayGgEnvelope compute(GgEnvelopeInput input) =>
+          dayGgEnvelope(input.laps, input.sessions);
+      tasks.add(_ManualTask());
+      await _pumpView(tester, card(eligible));
+      expect(find.text('Calculating the G-G envelope…'), findsOneWidget);
+      // Fewer laps before the first result: the first task is stopped.
+      tasks.add(_ManualTask());
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: Scaffold(body: ListView(children: [card(eligible.sublist(1))])),
+        ),
+      );
+      expect(tasks[0].cancelled, isTrue);
+      expect(tasks[1].cancelled, isFalse);
+      // The stopped task's result arrives anyway: it is not shown.
+      tasks[0].completer.complete(compute(inputs[0]));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('ggEnvelopeTable')), findsNothing);
+      expect(find.text('Calculating the G-G envelope…'), findsOneWidget);
+      tasks[1].completer.complete(compute(inputs[1]));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('ggEnvelopeTable')), findsOneWidget);
+      // Worked out again: the result stays, with a progress bar.
+      tasks.add(_ManualTask());
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: Scaffold(body: ListView(children: [card(eligible)])),
+        ),
+      );
+      expect(find.byKey(const ValueKey('ggEnvelopeTable')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('ggEnvelopeRecalculating')),
+        findsOneWidget,
+      );
+      // Closed while working: the work is stopped.
+      await tester.pumpWidget(const SizedBox());
+      expect(tasks[2].cancelled, isTrue);
+    });
+
+    testWidgets('a renamed session is named anew', (tester) async {
+      final outcome = importDay();
+      final eligible = dayEligibleLaps(outcome.analysis!);
+      Widget card(List<DayLapRow> laps) =>
+          GgEnvelopeCard(laps: laps, sessionOf: sessionsOf(outcome));
+      await _pumpView(tester, card(eligible));
+      await _finish(tester);
+      expect(find.text('Session 1'), findsOneWidget);
+      final firstRun = eligible.first.runId;
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                card([
+                  for (final row in eligible)
+                    row.runId == firstRun
+                        ? row.copyWith(runName: 'Warm-up')
+                        : row,
+                ]),
+              ],
+            ),
+          ),
+        ),
+      );
+      await _finish(tester);
+      expect(find.text('Warm-up'), findsOneWidget);
+      expect(find.text('Session 1'), findsNothing);
+    });
+
+    test('the envelope is worked out in its own isolate', () async {
+      debugRunInIsolate = true;
+      addTearDown(() => debugRunInIsolate = false);
+      final outcome = importDay();
+      final input = (
+        laps: dayEligibleLaps(outcome.analysis!),
+        sessions: {
+          for (final named in outcome.runs)
+            named.run.id: ggEnvelopeSession(named.run.telemetry),
+        },
+      );
+      final inIsolate = await defaultGgEnvelopeRunner(input).result;
+      final here = dayGgEnvelope(input.laps, input.sessions);
+      expect(inIsolate.error, isEmpty);
+      expect(inIsolate.sessions, hasLength(here.sessions.length));
+      for (var i = 0; i < here.sessions.length; ++i) {
+        for (final direction in GgDirection.values) {
+          expect(
+            inIsolate.sessions[i].valueG(direction),
+            here.sessions[i].valueG(direction),
+          );
+        }
+      }
     });
 
     testWidgets('a failure says why and can be calculated again', (

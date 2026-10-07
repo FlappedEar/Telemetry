@@ -9688,7 +9688,7 @@ abstract class AppLocalizations {
   /// G-G envelope card: what the envelope is.
   ///
   /// In en, this message translates to:
-  /// **'How much combined grip each session used in each direction: the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.'**
+  /// **'How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.'**
   String get ggEnvelopeIntro;
 
   /// G-G envelope card while it is calculated.
@@ -9845,6 +9845,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'G-G envelope of each session against the best of the day'**
   String get ggEnvelopeSemantics;
+
+  /// G-G envelope: samples of a session left out because they are beyond the plausible limit for a road car.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {count, plural, =1{1 sample} other{{count} samples}} beyond {limit} left out as implausible'**
+  String ggEnvelopeOutliers(String session, int count, String limit);
 }
 
 class _AppLocalizationsDelegate

@@ -1583,7 +1583,7 @@
   "variabilityLineExitName": "wyjście",
   "variabilityLinePartsUnresolved": " · {parts}: nie do odróżnienia od błędu GPS",
   "ggEnvelopeTitle": "Obwiednia G–G",
-  "ggEnvelopeIntro": "Ile łącznego przeciążenia każda sesja wykorzystała w każdym kierunku: 95. percentyl łącznego przeciążenia na jej sklasyfikowanych okrążeniach, więc pojedynczy skok go nie wyznacza. Okrążenia wyjazdowe, zjazdowe i wykluczone są pominięte.",
+  "ggEnvelopeIntro": "Jak mocno każda sesja obciążała samochód w każdym kierunku (łączne przeciążenie): 95. percentyl łącznego przeciążenia na jej sklasyfikowanych okrążeniach, więc pojedynczy skok go nie wyznacza. Okrążenia wyjazdowe, zjazdowe i wykluczone są pominięte.",
   "ggEnvelopeCalculating": "Obliczanie obwiedni G–G…",
   "ggEnvelopeFailed": "Nie udało się obliczyć obwiedni G–G: {error}",
   "ggEnvelopeNone": "Żadna sesja nie ma dość danych o przeciążeniach, by wyznaczyć obwiednię.",
@@ -1608,5 +1608,6 @@
   "ggEnvelopeTooFewSamples": "Za mało danych: mniej niż {count} próbek w każdym kierunku",
   "ggEnvelopeMissingNote": "— oznacza mniej niż {count} próbek w tym kierunku.",
   "ggEnvelopeNote": "Zaobserwowane przyspieszenia nie określają procentu wykorzystania dostępnej przyczepności. Niewykorzystana oznacza co najmniej {margin} poniżej najlepszej obwiedni dnia. Okręgi co 0.5 g; linia przerywana to najlepsza obwiednia dnia, gruba linia to ostatnia sesja.",
-  "ggEnvelopeSemantics": "Obwiednia G–G każdej sesji na tle najlepszej obwiedni dnia"
+  "ggEnvelopeSemantics": "Obwiednia G–G każdej sesji na tle najlepszej obwiedni dnia",
+  "ggEnvelopeOutliers": "{session}: {count, plural, =1{1 próbkę} few{{count} próbki} many{{count} próbek} other{{count} próbki}} powyżej {limit} pominięto jako nieprawdopodobne"
 }

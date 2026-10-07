@@ -346,7 +346,11 @@ void main() {
       for (final (index, speed) in [(0, 17.0), (1, 19.0)]) {
         final envelope = day.sessions[index];
         expect(envelope.valid, isTrue);
-        final left = envelope.valueG(GgDirection.left) ?? envelope.valueG(GgDirection.right)!;
+        // The rectangle is driven counter-clockwise: every corner turns
+        // left (positive lateral G), none right.
+        final left = envelope.valueG(GgDirection.left)!;
+        expect(envelope.valueG(GgDirection.right), isNull);
+        expect(envelope.sectors[GgDirection.right.index].sampleCount, 0);
         expect(left, lessThanOrEqualTo(speed * speed / 30 / standardGravity + 1e-3));
         expect(left, greaterThan(0.8));
       }
