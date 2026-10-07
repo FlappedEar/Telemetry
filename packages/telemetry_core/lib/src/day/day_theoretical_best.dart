@@ -23,6 +23,7 @@ import '../telemetry_session.dart';
 import 'day_analysis.dart';
 import 'day_corners.dart';
 import 'day_grip.dart';
+import 'day_lap_styles.dart';
 import 'day_laps.dart';
 import 'day_phase_reference.dart';
 import 'day_ranking.dart';
@@ -94,6 +95,7 @@ final class DayTheoreticalBest {
     this.realistic,
     this.grip,
     this.bestPhases,
+    this.lapStyles,
   }) : laps = List.unmodifiable(laps),
        corners = List.unmodifiable(corners),
        runSegments = List.unmodifiable(runSegments),
@@ -154,6 +156,10 @@ final class DayTheoreticalBest {
   /// without a result.
   final PhaseReference? bestPhases;
 
+  /// The group's ranked laps by driving style (FET-223); null without a
+  /// result.
+  final DayLapStyles? lapStyles;
+
   /// This result with [runs] as its [remeasuredRuns].
   DayTheoreticalBest withRemeasuredRuns(Map<String, List<Map<String, Object?>>> runs) =>
       DayTheoreticalBest(
@@ -173,6 +179,7 @@ final class DayTheoreticalBest {
         realistic: realistic,
         grip: grip,
         bestPhases: bestPhases,
+        lapStyles: lapStyles,
       );
 
   /// The length of the shared axis the segments are edited on.
@@ -547,6 +554,15 @@ DayTheoreticalBest dayTheoreticalBest(
   final sessions = {for (final MapEntry(:key, :value) in runs.entries) key: value.session};
   // The same ranked laps, through each corner's parts.
   final bestPhases = dayPhaseReference(computed, corners, sessions, cancelled: cancelled);
+  // Each ranked lap against the day's typical, corner by corner.
+  final lapStyles = dayLapStyles(
+    computed,
+    corners,
+    rows,
+    {for (final MapEntry(:key, :value) in runs.entries) key: value.session},
+    timedLapCount: ranking.runs.fold<int>(0, (total, run) => total + run.lapCount),
+    cancelled: cancelled,
+  );
   return DayTheoreticalBest(
     groupId: id,
     state: DayTheoreticalBestState.ready,
@@ -576,6 +592,7 @@ DayTheoreticalBest dayTheoreticalBest(
     realistic: realistic,
     grip: grip,
     bestPhases: bestPhases,
+    lapStyles: lapStyles,
   );
 }
 

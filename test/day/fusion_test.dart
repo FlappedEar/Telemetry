@@ -1066,7 +1066,8 @@ void main() {
       fusionRunner: held.call,
     );
     final before = _rows(controller);
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -1150,7 +1151,8 @@ void main() {
       analysis: alone.analysis!,
       fusions: {primary.id: fusion},
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -1207,7 +1209,8 @@ void main() {
       analysis: both.analysis!,
       fusions: {primary.id: fusion},
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -1380,7 +1383,8 @@ void main() {
         return day;
       }))!;
       DayResultsController? replaced;
-      await tester.binding.setSurfaceSize(const Size(400, 8000));
+      // Tall enough for the whole day page, the lap styles card included.
+      await tester.binding.setSurfaceSize(const Size(400, 9000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         TelemetryApp(

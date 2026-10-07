@@ -11614,6 +11614,370 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 corner is left out of a figure that rested on under half of its braking laps.} other{{count} corners are left out of a figure that rested on under half of their braking laps.}}'**
   String brakingTechniqueDayMinority(int count);
+
+  /// Title of the day page card that groups the ranked laps by how they were driven (FET-223).
+  ///
+  /// In en, this message translates to:
+  /// **'Lap styles'**
+  String get lapStylesHeading;
+
+  /// A label beside the lap styles card's title: the styles are inferred from corner figures, not measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred'**
+  String get lapStylesInferredBadge;
+
+  /// One line under the lap styles card's title while the card is closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranked laps grouped by how they were braked and driven on the throttle, and the best lap of each group.'**
+  String get lapStylesSummary;
+
+  /// Opens the lap styles card.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get lapStylesShow;
+
+  /// Closes the lap styles card.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get lapStylesHide;
+
+  /// Plain explanation under the lap styles card's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Each ranked lap is compared with the day\'s typical at every corner: where braking started, where the throttle came back and how fast the corner was taken. A group says how its laps sat against the day\'s other laps, not why they were quick: nothing here shows that a style made a lap faster. Typical is the median of the day\'s laps and needs at least {count} laps.'**
+  String lapStylesIntro(int count);
+
+  /// Shown while the theoretical best (which carries the lap styles) is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Working out the lap styles…'**
+  String get lapStylesWorking;
+
+  /// The lap styles come with the theoretical best; shown when it has no result.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known until the day\'s laps are timed through its segments.'**
+  String get lapStylesUnavailable;
+
+  /// Why the laps are not grouped: too few ranked laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap styles need at least {count} ranked laps.'**
+  String lapStylesTooFewLaps(int count);
+
+  /// Why the laps are not grouped: too few corners with a typical braking or throttle point.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer than {count} corners have a braking or throttle point on enough laps to compare, so the laps are not grouped.'**
+  String lapStylesTooFewCorners(int count);
+
+  /// How many of the group's timed laps are grouped, and at how many corners they were compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps grouped: {grouped} of {timed} timed (out laps, in laps, excluded laps and laps with issues are left out). Corners compared: {corners}.'**
+  String lapStylesBasis(int grouped, int timed, int corners);
+
+  /// A caution under the lap styles card: thin data and the day's progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to look at, not as a result.'**
+  String get lapStylesFewLaps;
+
+  /// Which style group the day's best lap is in.
+  ///
+  /// In en, this message translates to:
+  /// **'The day\'s best lap, {lap} ({time}), is in the “{style}” group.'**
+  String lapStylesBestLine(String lap, String time, String style);
+
+  /// Name of a lap style: braking earlier and picking the throttle up later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Conservative'**
+  String get lapStyleConservative;
+
+  /// Name of a lap style: braking later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Late braking'**
+  String get lapStyleLateBraking;
+
+  /// Name of a lap style: picking the throttle up earlier than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Early throttle'**
+  String get lapStyleEarlyThrottle;
+
+  /// Name of a lap style: more than one tendency, or half of conservative.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get lapStyleMixed;
+
+  /// Name of a lap style: close to the day's typical lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical'**
+  String get lapStyleTypical;
+
+  /// Name of a lap style: unlike the day's other laps, or measured in too few corners.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlier'**
+  String get lapStyleOutlier;
+
+  /// Heading above the rules of the lap styles.
+  ///
+  /// In en, this message translates to:
+  /// **'How the groups are made'**
+  String get lapStylesRulesHeading;
+
+  /// The rule of the conservative style.
+  ///
+  /// In en, this message translates to:
+  /// **'Conservative: braking starts earlier and the throttle comes later than typical, each in most corners.'**
+  String get lapStylesRuleConservative;
+
+  /// The rule of the late braking style.
+  ///
+  /// In en, this message translates to:
+  /// **'Late braking: braking starts later than typical in most corners.'**
+  String get lapStylesRuleLateBraking;
+
+  /// The rule of the early throttle style.
+  ///
+  /// In en, this message translates to:
+  /// **'Early throttle: the throttle comes back earlier than typical in most corners.'**
+  String get lapStylesRuleEarlyThrottle;
+
+  /// The rule of the mixed style.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed: late braking together with early throttle; late braking with the throttle mostly later, or early throttle with the braking mostly earlier; or earlier braking or later throttle without the other half of conservative.'**
+  String get lapStylesRuleMixed;
+
+  /// The rule of the typical style.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical: none of the above.'**
+  String get lapStylesRuleTypical;
+
+  /// The rule of the outlier style.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlier: braking or throttle far from typical in most of its corners, or measured in fewer corners than it takes to tell: 3, or half the corners compared on the day when that is more.'**
+  String get lapStylesRuleOutlier;
+
+  /// The thresholds behind the lap styles.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier or later means more than {brake} m for braking and {throttle} m for the throttle (a throttle channel recorded from the car\'s OBD port updates about twice a second); faster or slower means more than {speed}% of the typical speed. “Most” is more than half of the corners measured, and at least {corners}. “Far from typical” is {factor} times those distances. Speeds do not decide a style: they follow the lap\'s pace.'**
+  String lapStylesRuleThresholds(
+    String brake,
+    String throttle,
+    String speed,
+    String factor,
+    int corners,
+  );
+
+  /// A style group's title with the number of laps in it.
+  ///
+  /// In en, this message translates to:
+  /// **'{style} · {count, plural, =1{1 lap} other{{count} laps}}'**
+  String lapStylesGroupTitle(String style, int count);
+
+  /// The quickest lap of a style group.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {lap} · {time}'**
+  String lapStylesGroupBest(String lap, String time);
+
+  /// The group's quickest lap is the day's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'the day\'s best lap'**
+  String get lapStylesGroupIsDayBest;
+
+  /// The group's quickest lap minus the day's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{delta} against the day\'s best lap'**
+  String lapStylesGroupBehind(String delta);
+
+  /// The median lap time of a style group.
+  ///
+  /// In en, this message translates to:
+  /// **'typical lap {time}'**
+  String lapStylesGroupTypical(String time);
+
+  /// A style group has too few laps for a typical time.
+  ///
+  /// In en, this message translates to:
+  /// **'a typical time needs {count} laps'**
+  String lapStylesGroupTypicalNeeds(int count);
+
+  /// How many of a group's laps are among the quicker half of the day's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} in the quicker half of the day\'s laps'**
+  String lapStylesGroupQuickerHalf(int count, int total);
+
+  /// Heading of the comparison of a group's best lap with the day's typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} against the day\'s typical at each corner'**
+  String lapStylesBestAgainst(String lap);
+
+  /// Heading of the list of laps of a style group.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps in this group'**
+  String get lapStylesLapsHeading;
+
+  /// Name of the braking point measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point'**
+  String get lapStylesBrakeName;
+
+  /// Name of the throttle pickup measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup'**
+  String get lapStylesThrottleName;
+
+  /// Name of the minimum speed measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum speed'**
+  String get lapStylesMinimumName;
+
+  /// Name of the exit speed measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit speed'**
+  String get lapStylesExitName;
+
+  /// A measure that has no figure on the lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: not measured on this lap'**
+  String lapStylesNotMeasured(String what);
+
+  /// How often a lap braked earlier or later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point: earlier at {earlier}, later at {later} of {measured} corners; median {median}'**
+  String lapStylesBrakeLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  );
+
+  /// How often a lap picked the throttle up earlier or later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup: earlier at {earlier}, later at {later} of {measured} corners; median {median}'**
+  String lapStylesThrottleLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  );
+
+  /// How often a lap's speed was above or below typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: faster at {faster}, slower at {slower} of {measured} corners; median {median}'**
+  String lapStylesSpeedLine(
+    String what,
+    int faster,
+    int slower,
+    int measured,
+    String median,
+  );
+
+  /// A median distance: earlier than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} m earlier'**
+  String lapStylesMedianMetresEarlier(int count);
+
+  /// A median distance: later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} m later'**
+  String lapStylesMedianMetresLater(int count);
+
+  /// A median speed difference: above typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} faster'**
+  String lapStylesMedianFaster(String value);
+
+  /// A median speed difference: below typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} slower'**
+  String lapStylesMedianSlower(String value);
+
+  /// A median that is zero when rounded.
+  ///
+  /// In en, this message translates to:
+  /// **'no clear difference'**
+  String get lapStylesMedianSame;
+
+  /// Why a lap is an outlier: far from typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlike the day\'s other laps: braking or throttle far from typical in {extreme} of {compared} corners.'**
+  String lapStylesOutlierUnlike(int extreme, int compared);
+
+  /// Why a lap is an outlier: too few corners. The number needed is half the corners compared on the day when that is more than 3.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured in {compared, plural, =1{1 corner} other{{compared} corners}} only; at least {needed} are needed to say how it was driven.'**
+  String lapStylesOutlierFew(int compared, int needed);
+
+  /// Where the braking points of the lap styles come from.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking points are read from the longitudinal acceleration, or from the speed\'s slope when there is none, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.'**
+  String get lapStylesBrakeNote;
+
+  /// Shown when no braking point was measured.
+  ///
+  /// In en, this message translates to:
+  /// **'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.'**
+  String get lapStylesNoBraking;
+
+  /// The braking points rest on a channel whose unit is assumed (g, km/h or mph).
+  ///
+  /// In en, this message translates to:
+  /// **'The acceleration or speed used for the braking points declares no unit; it is read as {units}.'**
+  String lapStylesBrakeUnitAssumed(String units);
+
+  /// A speed channel has no declared unit.
+  ///
+  /// In en, this message translates to:
+  /// **'A speed in this day declares no unit, so its speeds are shown without one.'**
+  String get lapStylesSpeedUnitMissing;
+
+  /// Speeds read in a unit the settings assumed, not one the recording declares.
+  ///
+  /// In en, this message translates to:
+  /// **'The speeds of this day declare no unit; the unit assumed in the settings, {units}, is used.'**
+  String lapStylesSpeedUnitAssumed(String units);
+
+  /// How the typical of a corner is taken, and what the quicker half is.
+  ///
+  /// In en, this message translates to:
+  /// **'The typical at a corner is the median of the grouped laps measured there the same way, at least {count} of them, and it includes the lap being compared, so a lap\'s difference from it is somewhat damped. Laps from a session that recorded a channel or unit another way are not pooled with the others, so a typical can rest on fewer laps than were grouped. The quicker half is the quickest half of the grouped laps, rounded up, with any lap tied with the last of them.'**
+  String lapStylesTypicalNote(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -8247,4 +8247,274 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get lapStylesHeading => 'Style okrążeń';
+
+  @override
+  String get lapStylesInferredBadge => 'Wnioskowane';
+
+  @override
+  String get lapStylesSummary =>
+      'Okrążenia z rankingu pogrupowane według sposobu hamowania i jazdy na gazie oraz najlepsze okrążenie każdej grupy.';
+
+  @override
+  String get lapStylesShow => 'Pokaż';
+
+  @override
+  String get lapStylesHide => 'Ukryj';
+
+  @override
+  String lapStylesIntro(int count) {
+    return 'Każde okrążenie z rankingu jest porównywane z typowym okrążeniem dnia w każdym zakręcie: gdzie zaczęło się hamowanie, gdzie wrócił gaz i jak szybko pokonano zakręt. Grupa mówi, jak jej okrążenia wypadały na tle pozostałych okrążeń dnia, a nie dlaczego były szybkie: nic tu nie pokazuje, że styl uczynił okrążenie szybszym. Typowa wartość to mediana okrążeń dnia i wymaga co najmniej $count okrążeń.';
+  }
+
+  @override
+  String get lapStylesWorking => 'Obliczanie stylów okrążeń…';
+
+  @override
+  String get lapStylesUnavailable =>
+      'Nieznane, dopóki okrążenia dnia nie zostaną zmierzone na odcinkach.';
+
+  @override
+  String lapStylesTooFewLaps(int count) {
+    return 'Style okrążeń wymagają co najmniej $count okrążeń w rankingu.';
+  }
+
+  @override
+  String lapStylesTooFewCorners(int count) {
+    return 'Mniej niż $count zakrętów ma punkt hamowania lub dodania gazu na wystarczającej liczbie okrążeń, aby je porównać, więc okrążenia nie są grupowane.';
+  }
+
+  @override
+  String lapStylesBasis(int grouped, int timed, int corners) {
+    return 'Pogrupowane okrążenia: $grouped z $timed mierzonych (okrążenia wyjazdowe, zjazdowe, wykluczone i z problemami są pominięte). Porównane zakręty: $corners.';
+  }
+
+  @override
+  String get lapStylesFewLaps =>
+      'Na każdą grupę przypada niewiele okrążeń, a okrążenia dnia przyspieszają też w miarę poznawania toru, więc grupy mieszają styl jazdy z postępem. Traktuj je jako wskazówkę, na co zwrócić uwagę, a nie jako wynik.';
+
+  @override
+  String lapStylesBestLine(String lap, String time, String style) {
+    return 'Najlepsze okrążenie dnia, $lap ($time), należy do grupy „$style”.';
+  }
+
+  @override
+  String get lapStyleConservative => 'Wcześniejsze hamowanie, późniejszy gaz';
+
+  @override
+  String get lapStyleLateBraking => 'Późne hamowanie';
+
+  @override
+  String get lapStyleEarlyThrottle => 'Wczesne dodawanie gazu';
+
+  @override
+  String get lapStyleMixed => 'Jazda mieszana';
+
+  @override
+  String get lapStyleTypical => 'Jazda typowa';
+
+  @override
+  String get lapStyleOutlier => 'Okrążenia odstające';
+
+  @override
+  String get lapStylesRulesHeading => 'Jak powstają grupy';
+
+  @override
+  String get lapStylesRuleConservative =>
+      'Wcześniejsze hamowanie, późniejszy gaz: hamowanie zaczyna się wcześniej, a gaz wraca później niż typowo, każde w większości zakrętów.';
+
+  @override
+  String get lapStylesRuleLateBraking =>
+      'Późne hamowanie: hamowanie zaczyna się później niż typowo w większości zakrętów.';
+
+  @override
+  String get lapStylesRuleEarlyThrottle =>
+      'Wczesne dodawanie gazu: gaz wraca wcześniej niż typowo w większości zakrętów.';
+
+  @override
+  String get lapStylesRuleMixed =>
+      'Jazda mieszana: późne hamowanie razem z wczesnym gazem; późne hamowanie z gazem w większości później albo wczesny gaz z hamowaniem w większości wcześniej; albo wcześniejsze hamowanie lub późniejszy gaz bez drugiej połowy jazdy z wcześniejszym hamowaniem i późniejszym gazem.';
+
+  @override
+  String get lapStylesRuleTypical => 'Jazda typowa: żadne z powyższych.';
+
+  @override
+  String get lapStylesRuleOutlier =>
+      'Okrążenia odstające: hamowanie lub gaz daleko od typowych w większości zakrętów albo zmierzone w mniejszej liczbie zakrętów, niż trzeba, by ocenić: 3 albo połowa porównanych w ciągu dnia zakrętów, gdy to więcej.';
+
+  @override
+  String lapStylesRuleThresholds(
+    String brake,
+    String throttle,
+    String speed,
+    String factor,
+    int corners,
+  ) {
+    return 'Wcześniej lub później oznacza więcej niż $brake m dla hamowania i $throttle m dla gazu (kanał gazu zapisany z portu OBD samochodu odświeża się około dwa razy na sekundę); szybciej lub wolniej oznacza więcej niż $speed% typowej prędkości. „Większość” to więcej niż połowa zmierzonych zakrętów i co najmniej $corners. „Daleko od typowego” to $factor razy te odległości. Prędkości nie rozstrzygają o stylu: zależą od tempa okrążenia.';
+  }
+
+  @override
+  String lapStylesGroupTitle(String style, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia',
+      many: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$style · $_temp0';
+  }
+
+  @override
+  String lapStylesGroupBest(String lap, String time) {
+    return 'Najlepsze: $lap · $time';
+  }
+
+  @override
+  String get lapStylesGroupIsDayBest => 'najlepsze okrążenie dnia';
+
+  @override
+  String lapStylesGroupBehind(String delta) {
+    return '$delta względem najlepszego okrążenia dnia';
+  }
+
+  @override
+  String lapStylesGroupTypical(String time) {
+    return 'typowe okrążenie $time';
+  }
+
+  @override
+  String lapStylesGroupTypicalNeeds(int count) {
+    return 'typowy czas wymaga $count okrążeń';
+  }
+
+  @override
+  String lapStylesGroupQuickerHalf(int count, int total) {
+    return '$count z $total w szybszej połowie okrążeń dnia';
+  }
+
+  @override
+  String lapStylesBestAgainst(String lap) {
+    return '$lap na tle typowej wartości dnia w każdym zakręcie';
+  }
+
+  @override
+  String get lapStylesLapsHeading => 'Okrążenia w tej grupie';
+
+  @override
+  String get lapStylesBrakeName => 'Punkt hamowania';
+
+  @override
+  String get lapStylesThrottleName => 'Ponowne dodanie gazu';
+
+  @override
+  String get lapStylesMinimumName => 'Prędkość minimalna';
+
+  @override
+  String get lapStylesExitName => 'Prędkość na wyjściu';
+
+  @override
+  String lapStylesNotMeasured(String what) {
+    return '$what: niezmierzone na tym okrążeniu';
+  }
+
+  @override
+  String lapStylesBrakeLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Punkt hamowania: wcześniej w $earlier, później w $later z $measured zakrętów; mediana: $median';
+  }
+
+  @override
+  String lapStylesThrottleLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Ponowne dodanie gazu: wcześniej w $earlier, później w $later z $measured zakrętów; mediana: $median';
+  }
+
+  @override
+  String lapStylesSpeedLine(
+    String what,
+    int faster,
+    int slower,
+    int measured,
+    String median,
+  ) {
+    return '$what: szybciej w $faster, wolniej w $slower z $measured zakrętów; mediana: $median';
+  }
+
+  @override
+  String lapStylesMedianMetresEarlier(int count) {
+    return '$count m wcześniej';
+  }
+
+  @override
+  String lapStylesMedianMetresLater(int count) {
+    return '$count m później';
+  }
+
+  @override
+  String lapStylesMedianFaster(String value) {
+    return '$value szybciej';
+  }
+
+  @override
+  String lapStylesMedianSlower(String value) {
+    return '$value wolniej';
+  }
+
+  @override
+  String get lapStylesMedianSame => 'bez wyraźnej różnicy';
+
+  @override
+  String lapStylesOutlierUnlike(int extreme, int compared) {
+    return 'Inne niż pozostałe okrążenia dnia: hamowanie lub gaz daleko od typowych w $extreme z $compared zakrętów.';
+  }
+
+  @override
+  String lapStylesOutlierFew(int compared, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      compared,
+      locale: localeName,
+      other: 'w $compared zakrętach',
+      one: 'w 1 zakręcie',
+    );
+    return 'Zmierzone tylko $_temp0; do oceny stylu jazdy potrzeba co najmniej $needed.';
+  }
+
+  @override
+  String get lapStylesBrakeNote =>
+      'Punkty hamowania są odczytywane z przyspieszenia wzdłużnego, a gdy go nie ma, z nachylenia prędkości, nigdy z pedału hamulca: pedał zapisany z portu OBD samochodu odświeża się tylko około dwa razy na sekundę.';
+
+  @override
+  String get lapStylesNoBraking =>
+      'Nie udało się odczytać punktu hamowania: zapis nie ma ani przyspieszenia wzdłużnego, ani prędkości w znanej jednostce, a pedał hamulca nie jest używany do tych stylów.';
+
+  @override
+  String lapStylesBrakeUnitAssumed(String units) {
+    return 'Przyspieszenie lub prędkość użyte do punktów hamowania nie podają jednostki; są odczytywane jako $units.';
+  }
+
+  @override
+  String get lapStylesSpeedUnitMissing =>
+      'Prędkość w tym dniu nie podaje jednostki, więc jej wartości są pokazane bez jednostki.';
+
+  @override
+  String lapStylesSpeedUnitAssumed(String units) {
+    return 'Prędkości z tego dnia nie podają jednostki; użyto jednostki przyjętej w ustawieniach: $units.';
+  }
+
+  @override
+  String lapStylesTypicalNote(int count) {
+    return 'Typowa wartość w zakręcie to mediana pogrupowanych okrążeń zmierzonych tam w ten sam sposób, co najmniej $count, i obejmuje ona porównywane okrążenie, więc różnica okrążenia od niej jest nieco zmniejszona. Okrążenia z sesji, w której kanał lub jednostkę zapisano inaczej, nie są łączone z pozostałymi, więc typowa wartość może opierać się na mniejszej liczbie okrążeń, niż pogrupowano. Szybsza połowa to szybsza połowa pogrupowanych okrążeń, zaokrąglona w górę, razem z okrążeniami o czasie równym ostatniemu z nich.';
+  }
 }
