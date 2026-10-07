@@ -296,6 +296,11 @@ class _VboParse {
     // dropped value moves the clock onto another column and times the rows
     // wrongly: refuse rather than guess (FET-242). A time column first cannot
     // move, so such a file is read, with each short row warned about.
+    // Known limits, by design: a header listing trailing names that rows never
+    // fill is refused although the clock would be safe (that cannot be told
+    // from a split name); and a file with more values than names, or an unnamed
+    // column before the time column, still gets a believable wrong clock
+    // (follow-up FET-271).
     if (shortRows > fullRows && timeIndex > 0) {
       throw const VboParseError(
         'VBO header has more names than its rows have values, so the time column cannot be found with certainty.',

@@ -75,4 +75,16 @@ void main() {
     final session = parseVboFile(write('[column names]\ntime rpm\n[data]\n0.0 1 9\n0.1 2 9\n'));
     expect(session.channels['rpm']!.values, [1, 2]);
   });
+
+  test('a tie of short and full rows with time not first is read', () {
+    final session = parseVboFile(
+      write('[column names]\nrpm time brake\n[data]\n1000 0.0 0\n2000 0.1\n'),
+    );
+    expect(session.channels['rpm']!.timestamps, [0.0, closeTo(0.1, 1e-9)]);
+  });
+
+  test('a single short row with time not first is refused', () {
+    final path = write('[column names]\nrpm time brake\n[data]\n1000 0.0\n');
+    expect(() => parseVboFile(path), refusedAsMismatch());
+  });
 }
