@@ -54,7 +54,8 @@ void main() {
     );
     final first = outcome.runs.first.run.id;
     final documents = FakeDocuments(location: '${directory.path}/d.fetproject');
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough that the session list is built below the grip card.
+    await tester.binding.setSurfaceSize(const Size(1200, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -370,7 +371,8 @@ void main() {
     );
     final first = outcome.runs.first.run.id;
     final documents = FakeDocuments(location: '${directory.path}/d.fetproject');
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough that the session list is built below the grip card.
+    await tester.binding.setSurfaceSize(const Size(1200, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -875,8 +877,8 @@ void main() {
       detailsTile(first),
       300,
       // The day page is long at this size: each corner's row also says
-      // what kind of corner it is (FET-220).
-      maxScrolls: 80,
+      // what kind of corner it is (FET-220), and the grip card adds more.
+      maxScrolls: 100,
       scrollable: find
           .descendant(
             of: find.byKey(const ValueKey('dayResultsSummary')),

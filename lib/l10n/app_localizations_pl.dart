@@ -7253,4 +7253,299 @@ class AppLocalizationsPl extends AppLocalizations {
   ) {
     return 'Hamowanie na $braked z $laps okrążeń ($how). Nie wiadomo, czy hamowanie jest mocne: $reason.';
   }
+
+  @override
+  String get gripHeading => 'Przyczepność i balans';
+
+  @override
+  String get gripInferredBadge => 'Wnioskowane';
+
+  @override
+  String gripIntro(int count) {
+    return 'Wnioskowane z zapisanych przyspieszeń, prędkości i, jeśli nagranie ją ma, prędkości odchylenia (yaw) samochodu na okrążeniach w rankingu. Nie są zapisywane ani kąt skrętu kierownicy, ani dane opon czy kół, więc te liczby mówią, jak mocno samochód pracował, a nie ile przyczepności zostało. Typowa wartość to mediana okrążeń (co najmniej $count); szczyt to najwyższa wartość spośród okrążeń.';
+  }
+
+  @override
+  String get gripWorking => 'Obliczanie przyczepności i balansu…';
+
+  @override
+  String get gripUnavailable =>
+      'Nieznane, dopóki okrążenia dnia nie zostaną zmierzone w segmentach.';
+
+  @override
+  String get gripBySession => 'Według sesji, przy porównywalnej prędkości';
+
+  @override
+  String gripSessionLaps(String session, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia w rankingu',
+      many: '$count okrążeń w rankingu',
+      few: '$count okrążenia w rankingu',
+      one: '1 okrążenie w rankingu',
+    );
+    return '$session · $_temp0';
+  }
+
+  @override
+  String get gripSpeedColumn => 'Prędkość';
+
+  @override
+  String get gripCornering => 'W zakręcie';
+
+  @override
+  String get gripBraking => 'Hamowanie';
+
+  @override
+  String get gripAccelerating => 'Przyspieszanie';
+
+  @override
+  String get gripExit => 'Przyspieszenie na wyjściu';
+
+  @override
+  String get gripBalance => 'Balans';
+
+  @override
+  String gripBandBelow(String speed) {
+    return 'poniżej $speed';
+  }
+
+  @override
+  String gripBandBetween(String low, String high) {
+    return '$low–$high';
+  }
+
+  @override
+  String gripBandAbove(String speed) {
+    return '$speed i więcej';
+  }
+
+  @override
+  String gripPeak(String value) {
+    return 'szczyt $value';
+  }
+
+  @override
+  String get gripTableNote =>
+      'Każda komórka: typowa z najwyższych wartości okrążeń w tym zakresie prędkości oraz najwyższa wartość spośród okrążeń.';
+
+  @override
+  String gripUnitNote(String what, String unit) {
+    return '$what: jednostka $unit.';
+  }
+
+  @override
+  String gripAssumedNote(String what) {
+    return '$what: nagranie nie podaje jednostki; przyjęto g.';
+  }
+
+  @override
+  String gripFromSpeedNote(String what) {
+    return '$what: ze zmiany prędkości (brak zapisanego przyspieszenia wzdłużnego), w g.';
+  }
+
+  @override
+  String gripFromSpeedAssumedNote(String what) {
+    return '$what: ze zmiany prędkości, w g; prędkość nie ma podanej jednostki, więc przyjęto km/h.';
+  }
+
+  @override
+  String gripAnd(String first, String second) {
+    return '$first i $second';
+  }
+
+  @override
+  String gripNotKnownLine(String what, String reason) {
+    return '$what: nieznane: $reason.';
+  }
+
+  @override
+  String gripTypicalNeedsLaps(int count) {
+    return 'Typowe wartości wymagają co najmniej $count okrążeń zmierzonych tak samo; gdy jest ich mniej, pokazano tylko szczyt.';
+  }
+
+  @override
+  String gripLeftOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pominięto $count okrążenia zmierzone inaczej.',
+      many: 'Pominięto $count okrążeń zmierzonych inaczej.',
+      few: 'Pominięto $count okrążenia zmierzone inaczej.',
+      one: 'Pominięto 1 okrążenie zmierzone inaczej.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripByCorner => 'Według zakrętu';
+
+  @override
+  String gripCornerSummary(String what, String value) {
+    return '$what $value';
+  }
+
+  @override
+  String gripTypicalPeak(String typical, String peak, String lap) {
+    return 'typowo $typical · szczyt $peak ($lap)';
+  }
+
+  @override
+  String gripPeakOnly(String peak, String lap, int count) {
+    return 'szczyt $peak ($lap); typowa wymaga $count okrążeń';
+  }
+
+  @override
+  String gripBalanceTypical(String ratio) {
+    return 'typowo $ratio (prędkość odchylenia ÷ to, czego wymaga zakręt)';
+  }
+
+  @override
+  String gripLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'z $count okrążeń',
+      one: 'z 1 okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gripAssumedUnit(String value) {
+    return '$value (przyjęto g)';
+  }
+
+  @override
+  String get gripMeaningHeading => 'Co oznaczają liczby';
+
+  @override
+  String get gripMeaningCornering =>
+      'W zakręcie: najwyższe przyspieszenie boczne, jakie osiągnęło każde okrążenie, w zakręcie lub w zakresie prędkości.';
+
+  @override
+  String get gripMeaningBraking =>
+      'Hamowanie: najwyższe opóźnienie od punktu hamowania do najwolniejszego miejsca zakrętu (według sesji: gdziekolwiek w zakresie prędkości).';
+
+  @override
+  String get gripMeaningExit =>
+      'Przyspieszenie na wyjściu: średnie przyspieszenie od najwolniejszego miejsca do końca zakrętu; poniżej zera samochód wciąż zwalniał.';
+
+  @override
+  String gripMeaningBalance(String g, String speed) {
+    return 'Balans: prędkość odchylenia samochodu podzielona przez prędkość odchylenia, której wymagają siła w zakręcie i prędkość, od $g g i $speed m/s. W ustalonym zakręcie wynosi około 1 niezależnie od tego, czy samochód jest pod-, czy nadsterowny: rozróżnienie wymaga kąta skrętu kierownicy, który nie jest zapisywany. Powyżej 1 samochód obracał się szybciej, niż zakrzywiał się tor (kąt znoszenia rósł); poniżej 1 wolniej. Próbki, w których odchylenie jest przeciwne do kierunku zakrętu, są pomijane. Wymaga kanału prędkości odchylenia samego samochodu i jest wnioskowany.';
+  }
+
+  @override
+  String gripReasonTooFewLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'mniej niż $count okrążenia',
+      many: 'mniej niż $count okrążeń',
+      few: 'mniej niż $count okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripReasonTooFewSamples =>
+      'na żadnym okrążeniu nie ma dość próbek';
+
+  @override
+  String get gripReasonNoLateral => 'nagranie nie ma przyspieszenia bocznego';
+
+  @override
+  String get gripReasonNoSpeed => 'nagranie nie ma prędkości';
+
+  @override
+  String get gripReasonUnsupportedUnit =>
+      'aplikacja nie odczytuje jednostki tego kanału';
+
+  @override
+  String get gripReasonSpeedUnit => 'jednostka prędkości to nie km/h ani mph';
+
+  @override
+  String get gripReasonNoYaw => 'nagranie nie ma kanału prędkości odchylenia';
+
+  @override
+  String get gripReasonDeviceAxes =>
+      'żyroskop w nagraniu mierzy osie samego rejestratora, a nie odchylenie samochodu';
+
+  @override
+  String get gripReasonYawUnit =>
+      'jednostka prędkości odchylenia nie jest zapisana lub nieznana';
+
+  @override
+  String get gripReasonNotTimed => 'okrążenia nie są zmierzone w tym zakręcie';
+
+  @override
+  String get gripReasonNoMinimum =>
+      'nie znaleziono najwolniejszego miejsca w zakręcie';
+
+  @override
+  String get gripReasonNoRecording => 'nagranie nie jest wczytane';
+
+  @override
+  String get gripReasonOther => 'niedostępne';
+
+  @override
+  String get gripSummary =>
+      'Jak mocno samochód pracował w zakrętach, przy hamowaniu i przyspieszaniu, według sesji i zakrętu.';
+
+  @override
+  String get gripShow => 'Pokaż';
+
+  @override
+  String get gripHide => 'Ukryj';
+
+  @override
+  String gripFromSpeedValue(String value) {
+    return '$value z prędkości';
+  }
+
+  @override
+  String gripFromSpeedValueAssumed(String value) {
+    return '$value z prędkości (przyjęto km/h)';
+  }
+
+  @override
+  String gripBalanceUnitsAssumed(String text) {
+    return '$text; jednostki przyjęte';
+  }
+
+  @override
+  String gripBandSpeedAssumed(String band) {
+    return '$band (przyjęto km/h)';
+  }
+
+  @override
+  String gripCornerSummaryPeak(String what, String value) {
+    return '$what szczyt $value';
+  }
+
+  @override
+  String gripNoValueLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia w rankingu nie mają wartości',
+      many: '$count okrążeń w rankingu nie ma wartości',
+      few: '$count okrążenia w rankingu nie mają wartości',
+      one: '1 okrążenie w rankingu nie ma wartości',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripReasonNoBraking => 'brak hamowania na żadnym okrążeniu';
+
+  @override
+  String get gripReasonNoAcceleration =>
+      'brak przyspieszania na żadnym okrążeniu';
+
+  @override
+  String get gripReasonAllZero =>
+      'kanał zawiera same zera (wypełniacz, a nie pomiar)';
 }

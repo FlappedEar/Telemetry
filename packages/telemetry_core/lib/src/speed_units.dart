@@ -12,6 +12,7 @@
 // with none. A speed with no unit left (nothing declared, nothing assumed)
 // is read as km/h where a physical scale is needed, as Overlays reads it
 // ([speedInMetresPerSecond]); the screens show it without a unit.
+import 'channel_units.dart';
 import 'telemetry_session.dart';
 
 /// "km/h" or "mph" for a speed unit as recordings write it (`kmh`, `km/h`,
@@ -39,18 +40,8 @@ bool isSessionSpeedChannel(TelemetrySession session, String name) =>
 /// `velocity kmh` (RaceChrono writes units there, which the parser keeps as
 /// header metadata). "km/h" and "mph" however written, any other unit as
 /// written. Empty when it declares none.
-String declaredSpeedUnit(TelemetrySession session, String name) {
-  final own = _declared(session.channels[name]?.unit ?? '');
-  if (own.isNotEmpty) return own;
-  for (final MapEntry(:key, :value) in session.metadata.entries) {
-    if (!key.startsWith('header.')) continue;
-    final words = value.trim().split(RegExp(r'\s+'));
-    if (words.length == 2 && words.first.toLowerCase() == name.toLowerCase()) {
-      return _declared(words.last);
-    }
-  }
-  return '';
-}
+String declaredSpeedUnit(TelemetrySession session, String name) =>
+    _declared(declaredChannelUnit(session, name));
 
 // "km/h" or "mph" for those units however written; another unit (say
 // "m/s") as written, never dropped.

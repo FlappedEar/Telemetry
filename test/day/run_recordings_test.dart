@@ -737,7 +737,8 @@ void main() {
       analysis: both.analysis!,
       alternatives: both.alternatives,
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough that the long overview builds down to the recordings.
+    await tester.binding.setSurfaceSize(const Size(400, 11000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),

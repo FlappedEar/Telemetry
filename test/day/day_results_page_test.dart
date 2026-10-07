@@ -785,8 +785,9 @@ void main() {
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    // Tall enough to build the whole page, corner types included (FET-220).
-    await tester.binding.setSurfaceSize(const Size(1200, 8000));
+    // Tall enough to build the whole page, corner types (FET-220) and the
+    // grip card included.
+    await tester.binding.setSurfaceSize(const Size(1200, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(

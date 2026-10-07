@@ -586,6 +586,12 @@ void main() {
     await tester.pumpAndSettle();
     await scrollIn(tester, summary, find.text('G-G envelope'));
     await shot(tester, 'gg-envelope');
+    await scrollIn(tester, summary, find.text('Grip and balance'));
+    // Closed at first: opened for the shot.
+    await tester.tap(find.byKey(const ValueKey('gripToggle')));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Grip and balance'));
+    await shot(tester, 'grip-and-balance');
     await scrollIn(tester, summary, find.text('Best lap of each session'));
     await shot(tester, 'sessions-and-circuits');
 
