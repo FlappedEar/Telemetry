@@ -379,7 +379,9 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     ].join(', ');
     final source = switch ((day.source, day.unitAssumed)) {
       (brakingTechniqueFromSpeed, true) =>
-        l10n.brakingTechniqueDayFromSpeedAssumed,
+        l10n.brakingTechniqueDayFromSpeedAssumed(
+          day.assumedUnit.isEmpty ? 'km/h' : day.assumedUnit,
+        ),
       (brakingTechniqueFromSpeed, false) => l10n.brakingTechniqueDayFromSpeed,
       (_, true) => l10n.brakingTechniqueDayFromGAssumed,
       _ => l10n.brakingTechniqueDayFromG,
@@ -392,6 +394,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
           l10n.brakingTechniqueDaySummary(day.cornersBraked, source, figures),
           if (day.otherSourceCorners > 0)
             l10n.brakingTechniqueDayOtherSource(day.otherSourceCorners),
+          if (day.minorityCorners > 0)
+            l10n.brakingTechniqueDayMinority(day.minorityCorners),
         ].join(' '),
         key: const ValueKey('brakingTechniqueDay'),
       ),

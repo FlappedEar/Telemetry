@@ -9135,8 +9135,8 @@
   "@brakingTechniqueDayThrottle": {"description": "Day page: typical brake-to-throttle time, the value with its unit.", "placeholders": {"value": {"type": "String"}}},
   "brakingTechniqueDayNote": "Tap a corner above for its braking lap by lap.",
   "@brakingTechniqueDayNote": {"description": "Day page: where the per-corner braking technique is."},
-  "brakingTechniqueFromSpeedAssumed": "From speed ({rate} Hz, no unit recorded: read as km/h), its change smoothed over a 0.5 s window, on this day's ranked laps: {why}. Not comparable with figures from a G channel.",
-  "@brakingTechniqueFromSpeedAssumed": {"description": "Braking technique: deceleration from a speed channel that declares no unit, read as km/h.", "placeholders": {"rate": {"type": "String"}, "why": {"type": "String"}}},
+  "brakingTechniqueFromSpeedAssumed": "From speed ({rate} Hz, no unit recorded: read as {unit}), its change smoothed over a 0.5 s window, on this day's ranked laps: {why}. Not comparable with figures from a G channel.",
+  "@brakingTechniqueFromSpeedAssumed": {"description": "Braking technique: deceleration from a speed channel that declares no unit, read as km/h.", "placeholders": {"rate": {"type": "String"}, "unit": {"type": "String"}, "why": {"type": "String"}}},
   "brakingTechniqueAtLeast": "at least {value}",
   "@brakingTechniqueAtLeast": {"description": "Braking technique: a hit or release from speed as fast as its smoothing can show; the real one may be quicker.", "placeholders": {"value": {"type": "String"}}},
   "brakingTechniqueAbout": "about {value}",
@@ -9159,8 +9159,14 @@
   "@brakingTechniqueReasonBrakeResampled": {"description": "Why the brake pedal's ramps are not read: a RaceChrono VBO OBD column (name ending -obd)."},
   "brakingTechniqueDayFromGAssumed": "from longitudinal G (no unit recorded: read as g)",
   "@brakingTechniqueDayFromGAssumed": {"description": "Day page: the source of the braking figures when the G channel declares no unit."},
-  "brakingTechniqueDayFromSpeedAssumed": "from speed (no unit recorded: read as km/h)",
-  "@brakingTechniqueDayFromSpeedAssumed": {"description": "Day page: the source of the braking figures when the speed declares no unit."},
+  "brakingTechniqueDayFromSpeedAssumed": "from speed (no unit recorded: read as {unit})",
+  "@brakingTechniqueDayFromSpeedAssumed": {"description": "Day page: the source of the braking figures when the speed declares no unit.", "placeholders": {"unit": {"type": "String"}}},
   "brakingTechniqueDayOtherSource": "{count, plural, =1{1 corner measured another way (G channel or speed, or another unit) is left out.} other{{count} corners measured another way (G channel or speed, or another unit) are left out.}}",
-  "@brakingTechniqueDayOtherSource": {"description": "Day page: corners whose braking comes from another source are never pooled.", "placeholders": {"count": {"type": "int"}}}
+  "@brakingTechniqueDayOtherSource": {"description": "Day page: corners whose braking comes from another source are never pooled.", "placeholders": {"count": {"type": "int"}}},
+  "brakingTechniqueSubsetBraked": "From {laps} of {braking} braking laps; the others braked again before the throttle or coasted.",
+  "@brakingTechniqueSubsetBraked": {"description": "Braking technique: a typical resting on a few of the braking laps, the others having braked again or coasted.", "placeholders": {"laps": {"type": "int"}, "braking": {"type": "int"}}},
+  "brakingTechniqueSubsetOther": "From {laps} of {braking} braking laps; the others have none: {reason}.",
+  "@brakingTechniqueSubsetOther": {"description": "Braking technique: a typical resting on a few of the braking laps, with the others' most common reason.", "placeholders": {"laps": {"type": "int"}, "braking": {"type": "int"}, "reason": {"type": "String"}}},
+  "brakingTechniqueDayMinority": "{count, plural, =1{1 corner is left out of a figure that rested on under half of its braking laps.} other{{count} corners are left out of a figure that rested on under half of their braking laps.}}",
+  "@brakingTechniqueDayMinority": {"description": "Day page: corners whose figure rested on a minority of their braking laps are left out.", "placeholders": {"count": {"type": "int"}}}
 }

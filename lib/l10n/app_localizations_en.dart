@@ -7959,8 +7959,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap a corner above for its braking lap by lap.';
 
   @override
-  String brakingTechniqueFromSpeedAssumed(String rate, String why) {
-    return 'From speed ($rate Hz, no unit recorded: read as km/h), its change smoothed over a 0.5 s window, on this day\'s ranked laps: $why. Not comparable with figures from a G channel.';
+  String brakingTechniqueFromSpeedAssumed(
+    String rate,
+    String unit,
+    String why,
+  ) {
+    return 'From speed ($rate Hz, no unit recorded: read as $unit), its change smoothed over a 0.5 s window, on this day\'s ranked laps: $why. Not comparable with figures from a G channel.';
   }
 
   @override
@@ -8010,8 +8014,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'from longitudinal G (no unit recorded: read as g)';
 
   @override
-  String get brakingTechniqueDayFromSpeedAssumed =>
-      'from speed (no unit recorded: read as km/h)';
+  String brakingTechniqueDayFromSpeedAssumed(String unit) {
+    return 'from speed (no unit recorded: read as $unit)';
+  }
 
   @override
   String brakingTechniqueDayOtherSource(int count) {
@@ -8021,6 +8026,28 @@ class AppLocalizationsEn extends AppLocalizations {
       other:
           '$count corners measured another way (G channel or speed, or another unit) are left out.',
       one: '1 corner measured another way (G channel or speed, or another unit) is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueSubsetBraked(int laps, int braking) {
+    return 'From $laps of $braking braking laps; the others braked again before the throttle or coasted.';
+  }
+
+  @override
+  String brakingTechniqueSubsetOther(int laps, int braking, String reason) {
+    return 'From $laps of $braking braking laps; the others have none: $reason.';
+  }
+
+  @override
+  String brakingTechniqueDayMinority(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count corners are left out of a figure that rested on under half of their braking laps.',
+      one: '1 corner is left out of a figure that rested on under half of its braking laps.',
     );
     return '$_temp0';
   }

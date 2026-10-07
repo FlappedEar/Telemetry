@@ -37,6 +37,19 @@ double Function(double) _braking({
   return 0.0;
 };
 
+/// A deceleration drawn with straight lines through [points] (seconds after
+/// [start], g), 0 before the first and after the last.
+double Function(double) _pieces(List<(double, double)> points, {double start = 10.0}) => (t) {
+  final x = t - start;
+  if (x <= points.first.$1 || x >= points.last.$1) return 0.0;
+  for (var i = 1; i < points.length; ++i) {
+    final (x0, y0) = points[i - 1];
+    final (x1, y1) = points[i];
+    if (x <= x1) return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  }
+  return 0.0;
+};
+
 TelemetryChannel _channel(
   String name,
   double Function(double) value, {
@@ -438,6 +451,103 @@ void main() {
     });
   });
 
+  group('a lift between two pushes on the pedal', () {
+    // A first push to 0.45 g, a lift to 0.28 g (above the ramp floor of a
+    // quarter of the peak), then the real hit to 0.65 g in 0.4 s.
+    final lift = _pieces([(0, 0), (1, 0.45), (1.4, 0.28), (1.8, 0.65), (2.8, 0.65), (3.8, 0.0)]);
+    final liftedFall = _pieces([
+      (0, 0),
+      (0.4, 0.65),
+      (1.4, 0.65),
+      (1.8, 0.28),
+      (2.4, 0.45),
+      (3.4, 0.0),
+    ]);
+
+    test('the hit starts at the lift, not before the first push', () {
+      final lap = _measure(_session(deceleration: lift, gStep: 0.02));
+      // (0.85 x 0.65 - 0.28) over the time from the dip: about 0.925 g/s.
+      expect(lap.hitGPerSecond, closeTo(0.925, 0.1));
+    });
+
+    test('the release ends at the lift after the fall', () {
+      final lap = _measure(_session(deceleration: liftedFall, gStep: 0.02));
+      // From 0.85 x 0.65 down to the dip at 0.28 g over about 0.3 s.
+      expect(lap.releaseGPerSecond, closeTo(0.925, 0.12));
+    });
+
+    test('a shallow wobble in the rise does not cut the hit short', () {
+      final wobble = _pieces([(0, 0), (0.5, 0.25), (0.6, 0.23), (1.0, 0.65), (2.0, 0.65), (3, 0)]);
+      final plain = _pieces([(0, 0), (0.5, 0.25), (1.0, 0.65), (2.0, 0.65), (3, 0)]);
+      final a = _measure(_session(deceleration: wobble, gStep: 0.02));
+      final b = _measure(_session(deceleration: plain, gStep: 0.02));
+      expect(a.hitGPerSecond, closeTo(b.hitGPerSecond!, 0.15 * b.hitGPerSecond!));
+    });
+  });
+
+  group('the speed unit', () {
+    // The same driving in km/h as a speed channel with the unit written
+    // elsewhere: a VBO header line, or nothing at all.
+    TelemetrySession speedIn(String unit, {Map<String, String> metadata = const {}}) {
+      final kmh = _speed(_braking());
+      final factor = unit == 'mph' ? 1.609344 : 1.0;
+      return TelemetrySession(
+        duration: 30,
+        startTime: 0,
+        metadata: metadata,
+        channels: {
+          'velocity': TelemetryChannel(
+            name: 'velocity',
+            unit: '',
+            timestamps: kmh.timestamps,
+            values: Float32List.fromList([for (final v in kmh.values) v / factor]),
+          ),
+        },
+        aliases: const {'speed': 'velocity'},
+        warnings: const [],
+        timingGates: const [],
+        sampleCount: 751,
+      );
+    }
+
+    final reference = _measure(_speedOnly(_braking()));
+
+    test('a header-only "velocity mph" gives the label and the scale together', () {
+      final lap = _measure(speedIn('mph', metadata: const {'header.0': 'velocity mph'}));
+      expect(lap.declaredUnit, 'mph');
+      expect(lap.unitAssumed, isFalse);
+      expect(lap.peakG, closeTo(reference.peakG!, 0.01));
+      expect(lap.zoneMeters, closeTo(reference.zoneMeters!, 0.5));
+    });
+
+    test('an undeclared speed is assumed in the unit the user set, whatever it is', () {
+      final undeclared = speedIn('mph');
+      final mph = _measure(withEffectiveSpeedUnits(undeclared, assumed: 'mph'));
+      expect(mph.unitAssumed, isTrue);
+      expect(mph.declaredUnit, isEmpty);
+      expect(mph.assumedUnit, 'mph');
+      expect(mph.peakG, closeTo(reference.peakG!, 0.01));
+      expect(mph.zoneMeters, closeTo(reference.zoneMeters!, 0.5));
+      final none = _measure(speedIn('km/h'));
+      expect(none.unitAssumed, isTrue);
+      expect(none.assumedUnit, 'km/h');
+      expect(none.peakG, closeTo(reference.peakG!, 0.01));
+    });
+
+    test('a declared unit is never overridden by the setting', () {
+      final declared = speedIn('mph', metadata: const {'header.0': 'velocity mph'});
+      final lap = _measure(withEffectiveSpeedUnits(declared, assumed: 'km/h'));
+      expect(lap.declaredUnit, 'mph');
+      expect(lap.unitAssumed, isFalse);
+      expect(lap.assumedUnit, isEmpty);
+      expect(lap.peakG, closeTo(reference.peakG!, 0.01));
+      // An RCZ speed carries its own unit: the setting does not touch it.
+      final rcz = _measure(withEffectiveSpeedUnits(_speedOnly(_braking()), assumed: 'mph'));
+      expect(rcz.declaredUnit, 'km/h');
+      expect(rcz.unitAssumed, isFalse);
+    });
+  });
+
   group('hit and release from speed', () {
     // The speed's slope is smoothed over ±0.25 s: a ramp quicker than that
     // reads as fast as the smoothing allows, so it is only a lower bound.
@@ -821,6 +931,52 @@ void main() {
       expect(result.trailSeconds.reason, brakingTechniqueNoLateral);
       expect(result.lap('b'), isNotNull);
       expect(result.lap('z'), isNull);
+    });
+
+    test('a typical resting on a few braking laps says so, and why', () {
+      // Two brakings in one segment: the first one's throttle never comes
+      // before the second braking.
+      double twice(double t) => _braking()(t) + _braking(start: 14)(t);
+      BrakingTechniqueLap kept() => _measure(_session(throttle: (t) => t < 13.0 ? 0.0 : 50.0));
+      BrakingTechniqueLap dropped() =>
+          _measure(_session(deceleration: twice, throttle: (t) => t < 17.0 ? 0.0 : 50.0), to: 18);
+      final few = summarizeBrakingTechnique([
+        for (var i = 0; i < 5; ++i) (i, kept()),
+        for (var i = 5; i < 16; ++i) (i, dropped()),
+      ]);
+      expect(few.lapsBraking, 16);
+      expect(few.brakeToThrottle.median, isNotNull);
+      expect(few.brakeToThrottle.laps, 5);
+      expect(few.brakeToThrottle.brakingLaps, 16);
+      expect(few.brakeToThrottle.droppedReason, brakingTechniqueBrakingAgain);
+      expect(few.brakeToThrottle.partial, isTrue);
+      expect(few.brakeToThrottle.minority, isTrue);
+      // The figures every braking lap has are whole.
+      expect(few.peak.laps, 16);
+      expect(few.peak.partial, isFalse);
+      expect(few.peak.droppedReason, isEmpty);
+
+      // Three quarters of the laps are still shown with the count, not as a minority.
+      final most = summarizeBrakingTechnique([
+        for (var i = 0; i < 9; ++i) (i, kept()),
+        for (var i = 9; i < 16; ++i) (i, dropped()),
+      ]);
+      expect(most.brakeToThrottle.partial, isTrue);
+      expect(most.brakeToThrottle.minority, isFalse);
+      final nearly = summarizeBrakingTechnique([
+        for (var i = 0; i < 13; ++i) (i, kept()),
+        for (var i = 13; i < 16; ++i) (i, dropped()),
+      ]);
+      expect(nearly.brakeToThrottle.partial, isFalse);
+
+      // The day leaves a corner resting on a minority out, and counts it.
+      final whole = summarizeBrakingTechnique([for (var i = 0; i < 5; ++i) (i, kept())]);
+      final day = summarizeBrakingTechniqueDay([whole, whole, few]);
+      expect(day.brakeToThrottleCorners, 2);
+      expect(day.minorityCorners, 1);
+      expect(day.brakeToThrottle, closeTo(whole.brakeToThrottle.median!, 1e-9));
+      // Its other figures, kept on every lap, still count.
+      expect(day.hitCorners, 3);
     });
 
     test('the day pools corners of one source', () {

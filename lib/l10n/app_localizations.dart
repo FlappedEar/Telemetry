@@ -11510,8 +11510,8 @@ abstract class AppLocalizations {
   /// Braking technique: deceleration from a speed channel that declares no unit, read as km/h.
   ///
   /// In en, this message translates to:
-  /// **'From speed ({rate} Hz, no unit recorded: read as km/h), its change smoothed over a 0.5 s window, on this day\'s ranked laps: {why}. Not comparable with figures from a G channel.'**
-  String brakingTechniqueFromSpeedAssumed(String rate, String why);
+  /// **'From speed ({rate} Hz, no unit recorded: read as {unit}), its change smoothed over a 0.5 s window, on this day\'s ranked laps: {why}. Not comparable with figures from a G channel.'**
+  String brakingTechniqueFromSpeedAssumed(String rate, String unit, String why);
 
   /// Braking technique: a hit or release from speed as fast as its smoothing can show; the real one may be quicker.
   ///
@@ -11582,14 +11582,32 @@ abstract class AppLocalizations {
   /// Day page: the source of the braking figures when the speed declares no unit.
   ///
   /// In en, this message translates to:
-  /// **'from speed (no unit recorded: read as km/h)'**
-  String get brakingTechniqueDayFromSpeedAssumed;
+  /// **'from speed (no unit recorded: read as {unit})'**
+  String brakingTechniqueDayFromSpeedAssumed(String unit);
 
   /// Day page: corners whose braking comes from another source are never pooled.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 corner measured another way (G channel or speed, or another unit) is left out.} other{{count} corners measured another way (G channel or speed, or another unit) are left out.}}'**
   String brakingTechniqueDayOtherSource(int count);
+
+  /// Braking technique: a typical resting on a few of the braking laps, the others having braked again or coasted.
+  ///
+  /// In en, this message translates to:
+  /// **'From {laps} of {braking} braking laps; the others braked again before the throttle or coasted.'**
+  String brakingTechniqueSubsetBraked(int laps, int braking);
+
+  /// Braking technique: a typical resting on a few of the braking laps, with the others' most common reason.
+  ///
+  /// In en, this message translates to:
+  /// **'From {laps} of {braking} braking laps; the others have none: {reason}.'**
+  String brakingTechniqueSubsetOther(int laps, int braking, String reason);
+
+  /// Day page: corners whose figure rested on a minority of their braking laps are left out.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 corner is left out of a figure that rested on under half of its braking laps.} other{{count} corners are left out of a figure that rested on under half of their braking laps.}}'**
+  String brakingTechniqueDayMinority(int count);
 }
 
 class _AppLocalizationsDelegate

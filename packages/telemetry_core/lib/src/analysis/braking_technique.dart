@@ -53,6 +53,12 @@ const double brakingTechniqueMinimumPeakG = 0.40;
 const double brakingTechniquePeakShare = 0.85;
 const double brakingTechniqueRampFloorShare = 0.25;
 
+/// A dip before the rise (or after the fall) ends the ramp's search for its
+/// start when it is at least this deep: [brakingTechniqueRampDipShare] of the
+/// peak, at least [brakingTechniqueMinimumRampDipG] (above G noise).
+const double brakingTechniqueRampDipShare = 0.10;
+const double brakingTechniqueMinimumRampDipG = 0.03;
+
 /// Samples a hit or a release must span, its ends included: fewer, and it
 /// happened between two samples, too quick for the channel to show.
 const int brakingTechniqueMinimumRampSamples = 3;
@@ -554,8 +560,13 @@ final class BrakingTechniqueLap {
   /// As the recording declares it; empty when undeclared ([unitAssumed]).
   String declaredUnit = '';
 
-  /// No unit declared: a G channel read as g, a speed read as km/h.
+  /// No unit declared: a G channel read as g, a speed read as km/h (or as
+  /// the unit the user assumes for unlabelled speeds, [assumedUnit]).
   bool unitAssumed = false;
+
+  /// The unit an undeclared speed was read in ("km/h" or "mph"), when
+  /// [unitAssumed] and the deceleration comes from speed; else empty.
+  String assumedUnit = '';
 
   /// The deceleration channel's update rate.
   double? rateHz;
@@ -809,37 +820,71 @@ _Ramps _ramps(_Series s, _Episode episode, double off, double minimumPeak, {doub
     ++up;
   }
   final upTime = _cross(s, up - 1, up, level);
-  // The last sample below the floor before the rise (the sample before the
-  // episode is below [off], so at most there).
-  var low = up - 1;
-  while (s.values[low] >= floor) {
+  // The hit starts at the last moment below the floor before the rise, or
+  // at the last dip of at least [dip] before it when the signal stays above
+  // the floor there (a lift between two brakings): walking back, the lowest
+  // sample so far is the start once the signal climbs [dip] above it.
+  final dip = math.max(brakingTechniqueMinimumRampDipG, brakingTechniqueRampDipShare * peak);
+  var low = up - 1, lowest = up - 1;
+  while (low > 0 && s.values[low] >= floor) {
+    if (s.values[low] < s.values[lowest]) {
+      lowest = low;
+    } else if (s.values[low] > s.values[lowest] + dip) {
+      break;
+    }
     --low;
   }
-  final lowTime = _cross(s, low, low + 1, floor);
-  final hitSamples = up - low + 1;
+  final double lowTime, lowValue;
+  final int lowIndex;
+  if (s.values[low] < floor) {
+    lowIndex = low;
+    lowTime = _cross(s, low, low + 1, floor);
+    lowValue = floor;
+  } else {
+    lowIndex = lowest;
+    lowTime = s.times[lowest];
+    lowValue = s.values[lowest];
+  }
+  final hitSamples = up - lowIndex + 1;
   var down = episode.last;
   while (s.values[down] < level) {
     --down;
   }
   final downTime = _cross(s, down, down + 1, level);
-  var high = down + 1;
-  while (s.values[high] >= floor) {
+  var high = down + 1, lastLow = down + 1;
+  while (high < s.values.length - 1 && s.values[high] >= floor) {
+    if (s.values[high] < s.values[lastLow]) {
+      lastLow = high;
+    } else if (s.values[high] > s.values[lastLow] + dip) {
+      break;
+    }
     ++high;
   }
-  final highTime = _cross(s, high - 1, high, floor);
-  final releaseSamples = high - down + 1;
+  final double highTime, highValue;
+  final int highIndex;
+  if (s.values[high] < floor) {
+    highIndex = high;
+    highTime = _cross(s, high - 1, high, floor);
+    highValue = floor;
+  } else {
+    highIndex = lastLow;
+    highTime = s.times[lastLow];
+    highValue = s.values[lastLow];
+  }
+  final releaseSamples = highIndex - down + 1;
   final hitSeconds = upTime - lowTime, releaseSeconds = highTime - downTime;
   final hitOk = hitSamples >= brakingTechniqueMinimumRampSamples && hitSeconds > 0;
   final releaseOk = releaseSamples >= brakingTechniqueMinimumRampSamples && releaseSeconds > 0;
-  final hit = hitOk ? (level - floor) / hitSeconds : null;
-  final release = releaseOk ? (level - floor) / releaseSeconds : null;
-  final limit = fastest == null ? null : (level - floor) / fastest;
+  final hit = hitOk ? (level - lowValue) / hitSeconds : null;
+  final release = releaseOk ? (level - highValue) / releaseSeconds : null;
+  final hitLimit = fastest == null ? null : (level - lowValue) / fastest;
+  final releaseLimit = fastest == null ? null : (level - highValue) / fastest;
   return (
     hit: hit,
-    hitAtLeast: hit != null && limit != null && hit >= limit,
+    hitAtLeast: hit != null && hitLimit != null && hit >= hitLimit,
     hitReason: hitOk ? '' : brakingTechniqueTooQuick,
     release: release,
-    releaseAtLeast: release != null && limit != null && release >= limit,
+    releaseAtLeast: release != null && releaseLimit != null && release >= releaseLimit,
     releaseReason: releaseOk ? '' : brakingTechniqueTooQuick,
   );
 }
@@ -863,9 +908,17 @@ BrakingTechniqueLap measureBrakingTechnique(
 
   // The speed, for distances and, without a G channel, the deceleration.
   final speed = session.channels[session.aliases['speed'] ?? ''];
+  // One unit for the label and the scale: what the file declares, else what
+  // the analysed session carries (an assumed unit), else km/h.
+  final speedDeclared = speed == null ? '' : fileDeclaredSpeedUnit(session, speed.name);
+  final speedUnit = speedDeclared.isNotEmpty
+      ? speedDeclared
+      : speed == null
+      ? ''
+      : speed.unit.trim();
   final speedFactor = speed == null || speed.timestamps.length != speed.values.length
       ? null
-      : metresPerSecondPerSpeedUnit(speed.unit);
+      : metresPerSecondPerSpeedUnit(speedUnit);
 
   // The deceleration: a G channel with data, else the speed.
   final gName = session.aliases['longitudinalAcceleration'] ?? '';
@@ -896,12 +949,12 @@ BrakingTechniqueLap measureBrakingTechnique(
       result.unavailableReason = brakingTechniqueNoDeceleration;
       return result;
     }
-    final unit = declaredChannelUnit(session, speed.name).trim();
     result
       ..source = brakingTechniqueFromSpeed
       ..channel = speed.name
-      ..declaredUnit = unit
-      ..unitAssumed = unit.isEmpty
+      ..declaredUnit = speedDeclared
+      ..unitAssumed = speedDeclared.isEmpty
+      ..assumedUnit = (speedDeclared.isEmpty ? (speedUnit.isEmpty ? 'km/h' : speedUnit) : '')
       ..rateHz = channelUpdateRateHz(speed);
     if (speedFactor == null) {
       result.unavailableReason = brakingTechniqueSpeedUnitUnknown;
@@ -1244,10 +1297,28 @@ final class BrakingTechniqueTypical {
     this.laps = 0,
     this.reason = '',
     this.atLeast = false,
+    this.brakingLaps = 0,
+    this.droppedReason = '',
   });
 
+  /// The laps that braked, which [laps] of them have a value for.
+  final int brakingLaps;
+
+  /// The most common reason of the braking laps without a value.
+  final String droppedReason;
+
+  /// The typical rests on fewer than three quarters of the braking laps: it
+  /// is shown with how many ([brakingLaps]) and why the others have none.
+  bool get partial => median != null && laps * 4 < brakingLaps * 3;
+
+  /// The typical rests on fewer than half of the braking laps: the laps
+  /// that kept a value may not be the corner's usual ones, so the day's
+  /// summary leaves the corner out.
+  bool get minority => median != null && laps * 2 < brakingLaps;
+
   /// Some lap's value is only a lower bound (from speed, as fast as its
-  /// smoothed slope shows), so the median is one too.
+  /// smoothed slope shows), so the median is one too, and so is the
+  /// interquartile range [spread].
   final bool atLeast;
 
   /// Median and interquartile range.
@@ -1328,6 +1399,16 @@ final class BrakingTechnique {
 
   bool _any(bool Function(BrakingTechniqueLap) test) => laps.any((entry) => test(entry.$2));
 
+  /// The unit an undeclared speed was read in ("km/h" or "mph") when
+  /// [source] is speed and [unitAssumed]; else empty.
+  String get assumedUnit {
+    if (source != brakingTechniqueFromSpeed || !unitAssumed) return '';
+    for (final (_, lap) in laps) {
+      if (lap.source == source && lap.assumedUnit.isNotEmpty) return lap.assumedUnit;
+    }
+    return 'km/h';
+  }
+
   /// Some lap read an undeclared unit as assumed: lateral G as g, the
   /// throttle or brake as %, or a 0–1 pedal scale as 0–100 %.
   bool get lateralUnitAssumed => _any((lap) => lap.lateralUnitAssumed);
@@ -1400,6 +1481,13 @@ BrakingTechnique summarizeBrakingTechnique(List<(Object?, BrakingTechniqueLap)> 
         spread: summary.interquartileRange,
         laps: values.length,
         atLeast: atLeast != null && braking.any((lap) => read(lap) != null && atLeast(lap)),
+        brakingLaps: braking.length,
+        droppedReason: values.length == braking.length
+            ? ''
+            : _mostCommon([
+                for (final lap in braking)
+                  if (read(lap) == null) why(lap),
+              ]),
       );
     }
     return BrakingTechniqueTypical(
@@ -1467,6 +1555,7 @@ final class BrakingTechniqueDay {
     this.cornersBraked = 0,
     this.source = '',
     this.unitAssumed = false,
+    this.assumedUnit = '',
     this.hit,
     this.release,
     this.trailSeconds,
@@ -1476,6 +1565,7 @@ final class BrakingTechniqueDay {
     this.trailCorners = 0,
     this.brakeToThrottleCorners = 0,
     this.otherSourceCorners = 0,
+    this.minorityCorners = 0,
     this.hitAtLeast = false,
     this.releaseAtLeast = false,
   });
@@ -1487,10 +1577,18 @@ final class BrakingTechniqueDay {
   /// or another unit), left out.
   final int otherSourceCorners;
 
+  /// Corners left out of some figure because it rested on under half of
+  /// their braking laps.
+  final int minorityCorners;
+
   /// Corners considered, and those with a typical braking zone.
   final int corners, cornersBraked;
   final String source;
   final bool unitAssumed;
+
+  /// The unit an undeclared speed was read in, when [unitAssumed] and the
+  /// source is speed.
+  final String assumedUnit;
   final double? hit, release, trailSeconds, brakeToThrottle;
   final int hitCorners, releaseCorners, trailCorners, brakeToThrottleCorners;
 
@@ -1514,8 +1612,20 @@ BrakingTechniqueDay summarizeBrakingTechniqueDay(List<BrakingTechnique> corners)
     for (final corner in braked)
       if (key(corner) == chosen) corner,
   ];
+  // A corner whose figure rests on under half of its braking laps is left
+  // out of that figure ([BrakingTechniqueDay.minorityCorners] counts them).
+  final minority = <BrakingTechnique>{};
   (double?, int) median(BrakingTechniqueTypical Function(BrakingTechnique) read) {
-    final values = [for (final corner in group) ?read(corner).median];
+    final values = <double>[];
+    for (final corner in group) {
+      final typical = read(corner);
+      if (typical.median == null) continue;
+      if (typical.minority) {
+        minority.add(corner);
+      } else {
+        values.add(typical.median!);
+      }
+    }
     final summary = summarizeConsistency(values, minimumSamples: 1);
     return (summary.median, values.length);
   }
@@ -1529,6 +1639,9 @@ BrakingTechniqueDay summarizeBrakingTechniqueDay(List<BrakingTechnique> corners)
     cornersBraked: group.length,
     source: group.first.source,
     unitAssumed: group.any((corner) => corner.unitAssumed),
+    assumedUnit: group
+        .map((corner) => corner.assumedUnit)
+        .firstWhere((u) => u.isNotEmpty, orElse: () => ''),
     hit: hit.$1,
     hitCorners: hit.$2,
     release: release.$1,
@@ -1538,9 +1651,25 @@ BrakingTechniqueDay summarizeBrakingTechniqueDay(List<BrakingTechnique> corners)
     brakeToThrottle: throttle.$1,
     brakeToThrottleCorners: throttle.$2,
     otherSourceCorners: braked.length - group.length,
-    hitAtLeast: group.any((corner) => corner.hit.median != null && corner.hit.atLeast),
-    releaseAtLeast: group.any((corner) => corner.release.median != null && corner.release.atLeast),
+    minorityCorners: minority.length,
+    hitAtLeast: group.any(
+      (corner) => corner.hit.median != null && !corner.hit.minority && corner.hit.atLeast,
+    ),
+    releaseAtLeast: group.any(
+      (corner) =>
+          corner.release.median != null && !corner.release.minority && corner.release.atLeast,
+    ),
   );
+}
+
+// The most common non-empty reason, or empty.
+String _mostCommon(List<String> reasons) {
+  final counts = <String, int>{};
+  for (final reason in reasons) {
+    if (reason.isNotEmpty) counts[reason] = (counts[reason] ?? 0) + 1;
+  }
+  if (counts.isEmpty) return '';
+  return counts.entries.reduce((a, b) => b.value > a.value ? b : a).key;
 }
 
 // Why a value is missing: the most common reason of the laps without one,

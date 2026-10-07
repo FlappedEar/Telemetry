@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/day/corner_details.dart';
 import 'package:telemetry/day/theoretical_best_card.dart';
 import 'package:telemetry/format.dart';
+import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -341,6 +342,91 @@ void main() {
       expect(rowText(tester, 'brakingTechniqueTrail'), endsWith(trail));
       expect(rowText(tester, 'brakingTechniquePeak'), endsWith(peak));
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a typical resting on a few braking laps says how many and why', (
+    tester,
+  ) async {
+    BrakingTechniqueLap dropped() => _lap(0.7)
+      ..brakeToThrottleSeconds = null
+      ..brakeToThrottleReason = brakingTechniqueBrakingAgain;
+    final technique = summarizeBrakingTechnique([
+      for (var i = 0; i < 5; ++i) (i == 1 ? _b : i, _lap(0.7)),
+      for (var i = 5; i < 16; ++i) (i, dropped()),
+    ]);
+    expect(technique.brakeToThrottle.partial, isTrue);
+    for (final (locale, line) in [
+      (
+        'en',
+        'From 5 of 16 braking laps; the others braked again before the '
+            'throttle or coasted.',
+      ),
+      (
+        'pl',
+        'Z 5 z 16 okrążeń z hamowaniem; w pozostałych hamowanie zaczęło się '
+            'ponownie przed gazem albo samochód toczył się bez gazu.',
+      ),
+    ]) {
+      await show(
+        tester,
+        Locale(locale),
+        Scaffold(
+          body: SingleChildScrollView(
+            child: BrakingTechniqueSection(technique: technique, lap: _b),
+          ),
+        ),
+      );
+      expect(rowText(tester, 'brakingTechniqueThrottle'), contains(line));
+      // The figures every braking lap has carry no such line.
+      expect(rowText(tester, 'brakingTechniqueHit'), isNot(contains(line)));
+      expect(
+        rowText(tester, 'brakingTechniqueHit'),
+        isNot(contains('5 of 16')),
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a speed read in the unit the user assumed says which', (
+    tester,
+  ) async {
+    BrakingTechniqueLap fromSpeed() => _lap(0.7)
+      ..source = brakingTechniqueFromSpeed
+      ..channel = 'velocity'
+      ..declaredUnit = ''
+      ..unitAssumed = true
+      ..assumedUnit = 'mph';
+    final technique = summarizeBrakingTechnique([
+      (_a, fromSpeed()),
+      (_b, fromSpeed()),
+      (_c, fromSpeed()),
+    ]);
+    expect(technique.assumedUnit, 'mph');
+    await show(
+      tester,
+      const Locale('en'),
+      Scaffold(
+        body: SingleChildScrollView(
+          child: BrakingTechniqueSection(technique: technique, lap: _b),
+        ),
+      ),
+    );
+    expect(
+      rowText(tester, 'brakingTechniqueSource'),
+      contains('no unit recorded: read as mph'),
+    );
+    final en = lookupAppLocalizations(const Locale('en'));
+    final pl = lookupAppLocalizations(const Locale('pl'));
+    expect(en.brakingTechniqueDayFromSpeedAssumed('mph'), contains('mph'));
+    expect(pl.brakingTechniqueDayFromSpeedAssumed('mph'), contains('mph'));
+    expect(
+      en.brakingTechniqueDayMinority(2),
+      '2 corners are left out of a figure that rested on under half of '
+      'their braking laps.',
+    );
+    expect(pl.brakingTechniqueDayMinority(2), contains('2 zakręty'));
+    expect(pl.brakingTechniqueDayMinority(5), contains('5 zakrętów'));
     expect(tester.takeException(), isNull);
   });
 

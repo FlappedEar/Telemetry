@@ -38,7 +38,9 @@ DayTheoreticalBest _theoreticalBest(String folder, String extension) {
 
 String _value(BrakingTechniqueTypical typical, int digits, String unit) => typical.median == null
     ? 'not known (${typical.reason})'
-    : '${typical.median!.toStringAsFixed(digits)} $unit (${typical.laps} laps)';
+    : '${typical.median!.toStringAsFixed(digits)} $unit (${typical.laps} laps'
+          '${typical.partial ? ' of ${typical.brakingLaps} braking, others: ${typical.droppedReason}' : ''}'
+          '${typical.minority ? ', MINORITY' : ''})';
 
 String _rate(double? hz) => hz == null ? '—' : '${hz.toStringAsFixed(1)} Hz';
 
@@ -75,7 +77,8 @@ void _report(String label, DayTheoreticalBest result) {
   print(
     'Day: unit ${result.corners.first.brakingTechnique.declaredUnit} '
     '${day.unitAssumed ? '(assumed)' : ''}, ${day.cornersBraked} of ${day.corners} corners braked, hit ${day.hit}, '
-    'release ${day.release}, trail ${day.trailSeconds}, brake to throttle ${day.brakeToThrottle}',
+    'release ${day.release}, trail ${day.trailSeconds}, brake to throttle ${day.brakeToThrottle} '
+    '(${day.minorityCorners} corners left out as a minority)',
   );
 }
 
@@ -92,6 +95,20 @@ void main() {
         if (corner.brakingTechnique.unavailableReason.isEmpty) corner.brakingTechnique,
     ];
     expect(braked, isNotEmpty);
+    // A figure resting on part of the braking laps says why the rest has none,
+    // and the day leaves the corners resting on a minority out.
+    for (final technique in braked) {
+      for (final typical in [technique.hit, technique.brakeToThrottle, technique.release]) {
+        if (typical.partial) expect(typical.droppedReason, isNotEmpty);
+      }
+    }
+    final day = summarizeBrakingTechniqueDay([for (final technique in braked) technique]);
+    expect(
+      day.minorityCorners,
+      braked
+          .where((t) => t.hit.minority || t.release.minority || t.brakeToThrottle.minority)
+          .length,
+    );
     for (final technique in braked) {
       expect(technique.source, brakingTechniqueFromG);
       // RaceChrono declares longacc-calc's unit, g, in the VBO header.

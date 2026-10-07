@@ -7992,11 +7992,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get brakingTechniquePeakMiddle =>
-      'Zwykle w środku (2/3) hamowania, wg czasu.';
+      'Zwykle w środkowej trzeciej części hamowania, wg czasu.';
 
   @override
   String get brakingTechniquePeakLate =>
-      'Zwykle na końcu (3/3) hamowania, wg czasu.';
+      'Zwykle w ostatniej trzeciej części hamowania, wg czasu.';
 
   @override
   String get brakingTechniqueTrailNote =>
@@ -8142,8 +8142,12 @@ class AppLocalizationsPl extends AppLocalizations {
       'Stuknij zakręt powyżej, aby zobaczyć hamowanie okrążenie po okrążeniu.';
 
   @override
-  String brakingTechniqueFromSpeedAssumed(String rate, String why) {
-    return 'Z prędkości ($rate Hz, bez zapisanej jednostki: odczytane jako km/h), jej zmiana wygładzona w oknie 0.5 s, na sklasyfikowanych okrążeniach tego dnia: $why. Nieporównywalne z wartościami z kanału G.';
+  String brakingTechniqueFromSpeedAssumed(
+    String rate,
+    String unit,
+    String why,
+  ) {
+    return 'Z prędkości ($rate Hz, bez zapisanej jednostki: odczytane jako $unit), jej zmiana wygładzona w oknie 0.5 s, na sklasyfikowanych okrążeniach tego dnia: $why. Nieporównywalne z wartościami z kanału G.';
   }
 
   @override
@@ -8193,8 +8197,9 @@ class AppLocalizationsPl extends AppLocalizations {
       'z przyspieszenia wzdłużnego (bez zapisanej jednostki: odczytane jako g)';
 
   @override
-  String get brakingTechniqueDayFromSpeedAssumed =>
-      'z prędkości (bez zapisanej jednostki: odczytane jako km/h)';
+  String brakingTechniqueDayFromSpeedAssumed(String unit) {
+    return 'z prędkości (bez zapisanej jednostki: odczytane jako $unit)';
+  }
 
   @override
   String brakingTechniqueDayOtherSource(int count) {
@@ -8208,6 +8213,32 @@ class AppLocalizationsPl extends AppLocalizations {
       few:
           'Pominięto $count zakręty zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
       one: 'Pominięto 1 zakręt zmierzony inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueSubsetBraked(int laps, int braking) {
+    return 'Z $laps z $braking okrążeń z hamowaniem; w pozostałych hamowanie zaczęło się ponownie przed gazem albo samochód toczył się bez gazu.';
+  }
+
+  @override
+  String brakingTechniqueSubsetOther(int laps, int braking, String reason) {
+    return 'Z $laps z $braking okrążeń z hamowaniem; pozostałe nie mają wartości: $reason.';
+  }
+
+  @override
+  String brakingTechniqueDayMinority(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto $count zakrętu w wartości opartej na mniej niż połowie jego okrążeń z hamowaniem.',
+      many:
+          'Pominięto $count zakrętów w wartości opartej na mniej niż połowie ich okrążeń z hamowaniem.',
+      few:
+          'Pominięto $count zakręty w wartości opartej na mniej niż połowie ich okrążeń z hamowaniem.',
+      one: 'Pominięto 1 zakręt w wartości opartej na mniej niż połowie jego okrążeń z hamowaniem.',
     );
     return '$_temp0';
   }
