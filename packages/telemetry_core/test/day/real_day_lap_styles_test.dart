@@ -62,7 +62,7 @@ void main() {
     for (final input in day.inputs) {
       for (final sample in input.corners) {
         if (sample.brakeBeforeEntryMeters == null) continue;
-        expect(sample.brakeSource, startsWith(brakingMethodInferred), reason: '$input');
+        expect(sample.brakeSource, startsWith(brakingTechniqueFromG), reason: '$input');
       }
     }
 

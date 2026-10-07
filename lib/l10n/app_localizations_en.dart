@@ -8294,15 +8294,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lapStylesBrakeNote =>
-      'Braking points are read from the longitudinal acceleration, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.';
+      'Braking points are read from the longitudinal acceleration, or from the speed\'s slope when there is none, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.';
 
   @override
   String get lapStylesNoBraking =>
-      'No braking point could be read: the recording has no longitudinal acceleration in g, and the brake pedal is not used for these styles.';
+      'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.';
 
   @override
   String get lapStylesBrakeUnitAssumed =>
-      'The longitudinal acceleration declares no unit and is read as g.';
+      'The acceleration or speed used for the braking points declares no unit and is read as g or km/h.';
 
   @override
   String get lapStylesSpeedUnitMissing =>

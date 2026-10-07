@@ -1952,8 +1952,8 @@
   "lapStylesMedianSame": "w okolicach typowej",
   "lapStylesOutlierUnlike": "Inne niż pozostałe okrążenia dnia: hamowanie lub gaz daleko od typowych w {extreme} z {compared} zakrętów.",
   "lapStylesOutlierFew": "Zmierzone tylko w {compared} zakrętach; do oceny stylu jazdy potrzeba co najmniej {needed}.",
-  "lapStylesBrakeNote": "Punkty hamowania są odczytywane z przyspieszenia wzdłużnego, nigdy z pedału hamulca: pedał zapisany z portu OBD samochodu odświeża się tylko około dwa razy na sekundę.",
-  "lapStylesNoBraking": "Nie udało się odczytać punktu hamowania: zapis nie ma przyspieszenia wzdłużnego w g, a pedał hamulca nie jest używany do tych stylów.",
-  "lapStylesBrakeUnitAssumed": "Przyspieszenie wzdłużne nie podaje jednostki i jest odczytywane jako g.",
+  "lapStylesBrakeNote": "Punkty hamowania są odczytywane z przyspieszenia wzdłużnego, a gdy go nie ma, z nachylenia prędkości, nigdy z pedału hamulca: pedał zapisany z portu OBD samochodu odświeża się tylko około dwa razy na sekundę.",
+  "lapStylesNoBraking": "Nie udało się odczytać punktu hamowania: zapis nie ma ani przyspieszenia wzdłużnego, ani prędkości w znanej jednostce, a pedał hamulca nie jest używany do tych stylów.",
+  "lapStylesBrakeUnitAssumed": "Przyspieszenie lub prędkość użyte do punktów hamowania nie podają jednostki i są odczytywane jako g lub km/h.",
   "lapStylesSpeedUnitMissing": "Prędkość w tym dniu nie podaje jednostki, więc jej wartości są pokazane bez jednostki."
 }

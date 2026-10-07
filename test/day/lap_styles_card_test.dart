@@ -230,7 +230,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('lapStylesGroup lateBraking')));
     await tester.pumpAndSettle();
     expect(find.textContaining('median 6.0\u00a0mph faster'), findsNWidgets(2));
-    expect(find.textContaining('km/h'), findsNothing);
+    expect(find.textContaining('\u00a0km/h'), findsNothing);
   });
 
   testWidgets(
@@ -247,7 +247,7 @@ void main() {
       expect(find.textContaining('never from the brake pedal'), findsOneWidget);
       expect(
         find.text(
-          'The longitudinal acceleration declares no unit and is read as g.',
+          'The acceleration or speed used for the braking points declares no unit and is read as g or km/h.',
         ),
         findsOneWidget,
       );

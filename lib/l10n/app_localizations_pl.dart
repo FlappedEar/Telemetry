@@ -8487,15 +8487,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lapStylesBrakeNote =>
-      'Punkty hamowania są odczytywane z przyspieszenia wzdłużnego, nigdy z pedału hamulca: pedał zapisany z portu OBD samochodu odświeża się tylko około dwa razy na sekundę.';
+      'Punkty hamowania są odczytywane z przyspieszenia wzdłużnego, a gdy go nie ma, z nachylenia prędkości, nigdy z pedału hamulca: pedał zapisany z portu OBD samochodu odświeża się tylko około dwa razy na sekundę.';
 
   @override
   String get lapStylesNoBraking =>
-      'Nie udało się odczytać punktu hamowania: zapis nie ma przyspieszenia wzdłużnego w g, a pedał hamulca nie jest używany do tych stylów.';
+      'Nie udało się odczytać punktu hamowania: zapis nie ma ani przyspieszenia wzdłużnego, ani prędkości w znanej jednostce, a pedał hamulca nie jest używany do tych stylów.';
 
   @override
   String get lapStylesBrakeUnitAssumed =>
-      'Przyspieszenie wzdłużne nie podaje jednostki i jest odczytywane jako g.';
+      'Przyspieszenie lub prędkość użyte do punktów hamowania nie podają jednostki i są odczytywane jako g lub km/h.';
 
   @override
   String get lapStylesSpeedUnitMissing =>

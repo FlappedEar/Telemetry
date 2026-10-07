@@ -2,21 +2,21 @@
 // group, each compared corner by corner with the day's typical lap
 // (lap_styles.dart), from what the corner analysis already measures.
 //
-// Where braking started is read from the longitudinal deceleration, never
-// from the brake pedal: an OBD pedal updates about twice a second, so its
-// onset is coarse, and the corner analysis may still use it for its own
-// figures. The corner's braking is measured again here on the same laps with
-// the pedal set aside ([computeBrakingMetrics] then falls back to the
-// recorded longitudinal acceleration, as the braking source judges it). A
-// recording without a usable longitudinal acceleration gives no braking
-// point, and says so. Throttle pickup, minimum and exit speed are the corner
-// analysis's own, in the units it read them in.
+// Where braking started is the braking technique's own reading of the
+// longitudinal deceleration (braking_technique.dart): the recorded G, else
+// the speed's slope, with its own unit rules; never the brake pedal, which an
+// OBD recording updates only about twice a second. Its onset time is placed
+// on the lap's shared axis to give metres before the corner's entry. A
+// recording with neither a usable G nor a speed gives no braking point, and
+// says so. Throttle pickup, minimum and exit speed are the corner analysis's
+// own, in the units it read them in.
 //
 // Only the group's ranked laps are given here: out and in laps, laps the
 // user excluded and laps with issues are not grouped.
-import '../analysis/braking_metrics.dart';
+import '../analysis/braking_technique.dart';
 import '../analysis/lap_styles.dart';
 import '../analysis/outing_theoretical_best.dart';
+import '../analysis/track_progress.dart';
 import '../operation.dart';
 import '../telemetry_session.dart';
 import 'day_corners.dart';
@@ -68,23 +68,6 @@ final class DayLapStyles {
   DayLapRow rowOf(LapStyleResult result) => result.lap as DayLapRow;
 }
 
-TelemetrySession _withoutBrakePedal(TelemetrySession session) {
-  if (!session.aliases.containsKey('brake')) return session;
-  return TelemetrySession(
-    duration: session.duration,
-    startTime: session.startTime,
-    metadata: session.metadata,
-    channels: session.channels,
-    aliases: {
-      for (final MapEntry(:key, :value) in session.aliases.entries)
-        if (key != 'brake') key: value,
-    },
-    warnings: session.warnings,
-    timingGates: session.timingGates,
-    sampleCount: session.sampleCount,
-  );
-}
-
 /// The lap styles of [rows] (the group's ranked laps) at [corners] of
 /// [computed]. [sessions] are the runs' recordings by run id.
 /// [timedLapCount] is how many timed laps the group has, ranked or not.
@@ -96,14 +79,6 @@ DayLapStyles dayLapStyles(
   int? timedLapCount,
   CancellationCheck? cancelled,
 }) {
-  final withoutPedal = <String, TelemetrySession>{};
-  TelemetrySession? deceleration(String runId) {
-    final session = sessions[runId];
-    return session == null
-        ? null
-        : withoutPedal.putIfAbsent(runId, () => _withoutBrakePedal(session));
-  }
-
   var brakeFigures = 0, throttleFigures = 0;
   var brakeUnitAssumed = false, speedUnitMissing = false;
   final brakeReasons = <String>{};
@@ -119,27 +94,21 @@ DayLapStyles dayLapStyles(
       double? brake;
       var brakeSource = '';
       final trace = corner.traces[row.reference];
-      final session = deceleration(row.runId);
-      if (trace != null && session != null) {
-        final braking = computeBrakingMetrics(
-          computed.axisLengthMeters,
-          computed.approved,
-          corner.segmentId,
-          trace,
-          session,
-          row.start,
-          row.end,
-        );
-        if (braking.valid && braking.distanceBeforeEntryMeters != null) {
-          brake = braking.distanceBeforeEntryMeters;
-          brakeSource = '${braking.method}|${braking.channel}';
+      BrakingTechniqueLap? technique;
+      for (final (reference, lap) in corner.brakingTechnique.laps) {
+        if (reference == row.reference) technique = lap;
+      }
+      final onset = technique?.onsetTime;
+      if (technique != null && onset != null && trace != null && !crossesGate) {
+        final progress = progressAtTime(trace, onset);
+        if (progress != null) {
+          brake = corner.startProgressMeters - progress;
+          brakeSource = '${technique.source}|${technique.channel}';
           ++brakeFigures;
-          if (session.channels[braking.channel]?.unit.trim().isEmpty ?? false) {
-            brakeUnitAssumed = true;
-          }
-        } else if (braking.unavailableReason.isNotEmpty) {
-          brakeReasons.add(braking.unavailableReason);
+          if (technique.unitAssumed) brakeUnitAssumed = true;
         }
+      } else if (technique != null && technique.unavailableReason.isNotEmpty) {
+        brakeReasons.add(technique.unavailableReason);
       }
       double? pickup;
       final progress = metrics.exit.pickup.progressMeters;

@@ -11946,19 +11946,19 @@ abstract class AppLocalizations {
   /// Where the braking points of the lap styles come from.
   ///
   /// In en, this message translates to:
-  /// **'Braking points are read from the longitudinal acceleration, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.'**
+  /// **'Braking points are read from the longitudinal acceleration, or from the speed\'s slope when there is none, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.'**
   String get lapStylesBrakeNote;
 
   /// Shown when no braking point was measured.
   ///
   /// In en, this message translates to:
-  /// **'No braking point could be read: the recording has no longitudinal acceleration in g, and the brake pedal is not used for these styles.'**
+  /// **'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.'**
   String get lapStylesNoBraking;
 
   /// The braking points rest on an acceleration with an assumed unit.
   ///
   /// In en, this message translates to:
-  /// **'The longitudinal acceleration declares no unit and is read as g.'**
+  /// **'The acceleration or speed used for the braking points declares no unit and is read as g or km/h.'**
   String get lapStylesBrakeUnitAssumed;
 
   /// A speed channel has no declared unit.

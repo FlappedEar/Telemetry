@@ -70,7 +70,7 @@ void main() {
       final starts = <double>[];
       for (final input in styles.inputs) {
         final sample = input.corners.firstWhere((sample) => sample.cornerId == corner.segmentId);
-        expect(sample.brakeSource, startsWith(brakingMethodInferred));
+        expect(sample.brakeSource, startsWith(brakingTechniqueFromG));
         expect(sample.brakeSource, endsWith('longacc'));
         starts.add(sample.brakeBeforeEntryMeters!);
       }
@@ -112,12 +112,19 @@ void main() {
     });
   });
 
-  test('without pedal channels there is no braking point, and the reason is given', () {
+  test('without pedal or G channels the braking point comes from the speed', () {
     final styles = _day(pedals: false).lapStyles!;
-    expect(styles.brakeCornerFigures, 0);
+    // Deceleration from the speed's slope, as the braking technique reads it;
+    // no pedal exists to be read, and no throttle either.
+    expect(styles.brakeCornerFigures, greaterThan(0));
+    for (final input in styles.inputs) {
+      for (final sample in input.corners) {
+        if (sample.brakeBeforeEntryMeters == null) continue;
+        expect(sample.brakeSource, startsWith(brakingTechniqueFromSpeed));
+      }
+    }
     expect(styles.throttleCornerFigures, 0);
-    expect(styles.brakeUnavailableReason, isNotEmpty);
-    expect(styles.available, isFalse);
+    expect(styles.available, isFalse, reason: 'too few corners with a typical');
   });
 
   test('a day without a result has no styles', () {
