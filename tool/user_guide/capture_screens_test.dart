@@ -848,6 +848,9 @@ void main() {
       find.byKey(const ValueKey('skill paceConsistency')),
     );
     await shot(tester, 'profile-skills');
+    // One day only: the day-by-day figures say a trend needs more days.
+    await scrollIn(tester, page, find.byKey(const ValueKey('profileTrends')));
+    await shot(tester, 'profile-trends');
 
     // The track's notebook, with a few example notes.
     final track = library.profile!.tracks.first;

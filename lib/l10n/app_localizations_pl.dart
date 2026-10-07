@@ -6858,4 +6858,134 @@ class AppLocalizationsPl extends AppLocalizations {
     );
     return '$session: $_temp0 powyżej $limit pominięto jako nieprawdopodobne';
   }
+
+  @override
+  String get profileTrends => 'Dzień po dniu';
+
+  @override
+  String get profileTrendsIntro =>
+      'Każdy tor w każdym samochodzie osobno: wartości zależą od obu, więc dzień porównuje się tylko z dniami na tym samym torze w tym samym samochodzie. Przy rozrzucie punktu hamowania, prędkości minimalnej poniżej najlepszej, czasie od odjęcia gazu do hamowania i rozrzucie czasów okrążeń mniej znaczy lepiej. Każda z tych wartości to mediana z zakrętów zmierzonych danego dnia, więc dni mogą się różnić zakrętami, z których pochodzi. Prędkość minimalna jest liczona względem Twojej najlepszej w każdym zakręcie tego toru, więc nowa najlepsza zmienia też wartości wcześniejszych dni.';
+
+  @override
+  String get profileTrendsWetDry =>
+      'Nie zapisuje się, czy tor był mokry, czy suchy. Pokazana pogoda pochodzi z modelu pogody dla okolicy w czasie każdej sesji, a nie z nawierzchni toru, więc dni nie są dzielone na mokre i suche.';
+
+  @override
+  String profileTrendsGroup(String track, String direction, String car) {
+    return '$track · $direction · $car';
+  }
+
+  @override
+  String profileTrendsTooFew(int days, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dnia z datą',
+      many: '$days dni z datą',
+      few: '$days dni z datą',
+      one: '1 dzień z datą',
+      zero: 'Brak dni z datą',
+    );
+    return '$_temp0 na tym torze w tym samochodzie: trend wymaga co najmniej $minimum dni.';
+  }
+
+  @override
+  String profileTrendsShowingLast(int shown, int total) {
+    return 'Ostatnie $shown z $total dni na tym torze.';
+  }
+
+  @override
+  String profileTrendsBestLap(String time) {
+    return 'Najlepsze okrążenie $time';
+  }
+
+  @override
+  String get profileTrendsPersonalBest =>
+      'nowy rekord tego toru w tym samochodzie';
+
+  @override
+  String profileTrendsTypicalLap(String time) {
+    return 'Typowe okrążenie $time';
+  }
+
+  @override
+  String get profileTrendsNoLapTimes =>
+      'Brak zapisanego czasu okrążenia dla tego dnia.';
+
+  @override
+  String get profileTrendsNotMeasured =>
+      'Brak wartości zakrętów i okrążeń dla tego dnia: dodano go, zanim biblioteka mierzyła sesje, albo jego sesje nie miały sklasyfikowanych okrążeń ani zakrętów do zmierzenia.';
+
+  @override
+  String profileTrendsWeather(String weather) {
+    return 'Model pogody: $weather';
+  }
+
+  @override
+  String get profileTrendsNoWeather => 'Brak zapisanej pogody dla tego dnia.';
+
+  @override
+  String get profileTrendsChanges => 'Od pierwszego do ostatniego dnia';
+
+  @override
+  String profileTrendsMeasure(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'bestLap': 'Najlepsze okrążenie',
+      'typicalLap': 'Typowe okrążenie',
+      'brakePointConsistency': 'Rozrzut punktu hamowania',
+      'minimumSpeedControl': 'Prędkość minimalna poniżej najlepszej',
+      'liftTiming': 'Od odjęcia gazu do hamowania',
+      'paceConsistency': 'Rozrzut czasów okrążeń',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String profileTrendsChange(
+    String measure,
+    String first,
+    String firstDate,
+    String last,
+    String lastDate,
+    int days,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dnia',
+      many: '$days dniach',
+      few: '$days dniach',
+      one: '1 dniu',
+    );
+    return '$measure: $first ($firstDate) → $last ($lastDate), zmierzone w $_temp0';
+  }
+
+  @override
+  String profileTrendsRain(String amount) {
+    return 'do $amount mm opadu w sesji';
+  }
+
+  @override
+  String profileTrendsFigureTooFew(String measure, int measured, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: 'w $measured dnia z datą',
+      many: 'w $measured dniach z datą',
+      few: 'w $measured dniach z datą',
+      one: 'w 1 dniu z datą',
+      zero: 'w żadnym dniu z datą',
+    );
+    return '$measure: zmierzone $_temp0; trend wymaga wartości z co najmniej $minimum dni.';
+  }
+
+  @override
+  String get profileTrendsUndated =>
+      'Dni bez daty są na końcu listy i nie wchodzą do trendu ani do rekordu.';
+
+  @override
+  String profileTrendsWeatherSome(int sessions, int total) {
+    return '($sessions z $total sesji)';
+  }
 }

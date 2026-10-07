@@ -351,6 +351,26 @@ last.
 - `cornerBefore`: by the same rule, one corner on the visits before a day in
   its car: visits, how many measured it and lost time there, the last loss and
   whether it is fixed.
+- `profileTrends` (FET-235): per track and car (values depend on both, so
+  days compare only within one), every visit oldest first with its
+  `TrackVisit` lap times, whether its best lap beat every earlier day's there
+  (`personalBest`; the first day never is, nor an undated one), four measures as their skills
+  measure them (`trendMeasures`: braking-point spread, minimum speed below
+  the best ever at the corner in that car over every day kept, off the
+  throttle to braking, lap time spread; sessions weighed by ranked laps, a
+  measure not measured is absent) and the weather kept for its sessions (the
+  model's conditions, each once, the most rain of one session, and how many
+  of the day's sessions have weather). Each measure is the median over the
+  corners a session measured, so days may differ in the corners behind it.
+  Undated days are listed last and are never a new best nor part of a trend.
+  From `trendMinimumDays` (3) dated days that measured it, `changes` gives
+  each figure (`trendFigures`: best lap, typical lap and the measures) on its
+  first and last such day, with both days; `measuredDays` counts the dated
+  days behind each figure, so the page can say why one has no change. A tie
+  with the best so far is not a new best. Wet or dry is not
+  inferred: the stored weather is the weather model's for the area, not the
+  track surface, and nothing new is stored. Stored stats have no coasting
+  share of the lap; `liftSeconds` (lift and coast before braking) stands in.
 - `skillLevels`: the 12 skills of `skillCatalogue`, each level 1–5 = 5 − bands
   exceeded, over the last 3 days that measured it; confidence from its ranked
   laps (low below 5, medium below 15, high from 15); trend against the 3 days before.

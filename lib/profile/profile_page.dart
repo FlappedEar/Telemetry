@@ -7,6 +7,7 @@ import '../format.dart';
 import '../l10n.dart';
 import '../ui/readable_list.dart';
 import 'profile_library.dart';
+import 'profile_trends_card.dart';
 import 'skill_levels_card.dart';
 
 /// A distance in kilometres: "71.8 km".
@@ -23,7 +24,8 @@ String profileDuration(double seconds) {
 }
 
 /// The driver across every day: totals, skills, each car's mileage, each
-/// track's records and progress, and the corners that keep costing time.
+/// track's records and progress, each track's days one by one, and the
+/// corners that keep costing time.
 /// Everything is worked out by the profile (`telemetry_core`); this page
 /// only shows it.
 class ProfilePage extends StatelessWidget {
@@ -73,6 +75,8 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 12),
             _Tracks(profile: profile),
             const SizedBox(height: 12),
+            ProfileTrendsCard(profile: profile),
+            const SizedBox(height: 12),
             _Repeated(profile: profile),
           ],
         );
@@ -82,7 +86,7 @@ class ProfilePage extends StatelessWidget {
 }
 
 /// A date, or "Undated".
-String _date(BuildContext context, ProfileDay day) {
+String profileDayDate(BuildContext context, ProfileDay day) {
   final start = day.startMilliseconds;
   return start == null
       ? context.l10n.profileUndated
@@ -91,7 +95,7 @@ String _date(BuildContext context, ProfileDay day) {
 
 /// When a record was set: its date, and its session when known.
 String _when(BuildContext context, ProfileTime time) {
-  final date = _date(context, time.day);
+  final date = profileDayDate(context, time.day);
   final session = time.day.sessions
       .where((session) => session.runId == time.runId)
       .firstOrNull;
