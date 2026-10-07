@@ -224,6 +224,7 @@ Future<void> _pump(
   String coachError = '',
   DayChannelSummaries? channels,
   Locale? locale,
+  VoidCallback? onChanges,
 }) => tester.pumpWidget(
   TelemetryApp(
     locale: locale,
@@ -239,6 +240,7 @@ Future<void> _pump(
           coachLoading: coachLoading,
           coachError: coachError,
           channels: channels,
+          onChanges: onChanges,
         ),
       ),
     ),
@@ -630,5 +632,32 @@ void main() {
       'Auto, ostatnie okrążenia | Temperatury: potrzeba 3 sklasyfikowanych '
       'okrążeń\nMocne przyspieszenie: potrzeba 4 sklasyfikowanych okrążeń',
     );
+  });
+
+  testWidgets('every segment against the session before, one tap away', (
+    tester,
+  ) async {
+    var opened = 0;
+    await _pump(tester, onChanges: () => opened++);
+    final button = find.byKey(const ValueKey('sessionSummaryChanges'));
+    expect(
+      find.descendant(of: button, matching: find.byType(Text)),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<Text>(
+            find.descendant(of: button, matching: find.byType(Text)),
+          )
+          .data,
+      'All 2 segments against Session 1',
+    );
+    await tester.tap(button);
+    expect(opened, 1);
+    // Nothing to compare yet: no button.
+    await _pump(tester, runId: '1', onChanges: () => opened++);
+    expect(find.byKey(const ValueKey('sessionSummaryChanges')), findsNothing);
+    await _pump(tester, state: null, onChanges: () => opened++);
+    expect(find.byKey(const ValueKey('sessionSummaryChanges')), findsNothing);
   });
 }

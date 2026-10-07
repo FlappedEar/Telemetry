@@ -120,6 +120,33 @@ void main() {
     ],
   );
 
+  test('every segment compared with the session before, with its spread (FET-236)', () {
+    final summary = summarizeSession('3', progression: progression, sections: sections)!;
+    // Corner 4 has no typical time in session 2: not compared.
+    expect([for (final change in summary.changes) change.segmentId], ['c1', 's2', 'c3']);
+    final corner1 = summary.changes.first;
+    expect(corner1.seconds, 9.6);
+    expect(corner1.referenceSeconds, 9.8);
+    final c1 = summarizeConsistency([9.5, 9.6, 9.7]).interquartileRange!;
+    final c1Before = summarizeConsistency([9.6, 9.8, 10.0]).interquartileRange!;
+    expect(corner1.spreadSeconds, closeTo(c1, 1e-12));
+    expect(corner1.referenceSpreadSeconds, closeTo(c1Before, 1e-12));
+    expect(corner1.spreadDeltaSeconds, closeTo(c1 - c1Before, 1e-12));
+    expect(summary.biggestGain!.segmentId, 'c1');
+    expect(summary.quicker.first.segmentId, summary.biggestGain!.segmentId);
+    expect(summary.slower.first.segmentId, summary.biggestLoss!.segmentId);
+    expect(
+      summary.quicker.length + summary.slower.length + summary.same.length,
+      summary.changes.length,
+    );
+    // The gap left is against the quickest time, without spreads.
+    expect(summary.biggestGap!.spreadDeltaSeconds, isNull);
+    // Corner 4 untimed before: no change, so no spread either.
+    expect(summary.changes.where((change) => change.segmentId == 'c4'), isEmpty);
+    // The first session compares nothing.
+    expect(summarizeSession('1', progression: progression, sections: sections)!.changes, isEmpty);
+  });
+
   test('a new best, the gain and loss since the session before, and the gap left', () {
     final summary = summarizeSession('3', progression: progression, sections: sections)!;
     expect(summary.runName, '3');
@@ -409,5 +436,29 @@ void main() {
     )!;
     expect(summary.segmentsTimed, 1);
     expect(summary.biggestGap, isNull);
+  });
+
+  test('a change of exactly the threshold counts, just under it is the same (FET-236)', () {
+    SessionSegmentChange change(String id, double seconds) => SessionSegmentChange(
+      segmentId: id,
+      name: id,
+      type: 'corner',
+      seconds: seconds,
+      referenceSeconds: 10,
+    );
+    final summary = SessionSummary(
+      runId: '2',
+      runName: 'Session 2',
+      earlierSessions: 1,
+      changes: [
+        change('quicker', 10 - sessionSummaryChangeSeconds),
+        change('slower', 10 + sessionSummaryChangeSeconds),
+        change('same', 10.049),
+        change('most', 9.5),
+      ],
+    );
+    expect([for (final c in summary.quicker) c.segmentId], ['most', 'quicker']);
+    expect([for (final c in summary.slower) c.segmentId], ['slower']);
+    expect([for (final c in summary.same) c.segmentId], ['same']);
   });
 }

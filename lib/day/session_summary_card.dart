@@ -29,10 +29,15 @@ class SessionSummaryCard extends StatelessWidget {
     required this.channels,
     this.ownGoals,
     this.onBriefing,
+    this.onChanges,
   });
 
   /// Opens the briefing for the next session; null shows no button.
   final VoidCallback? onBriefing;
+
+  /// Opens every segment's change since the session before (FET-236); null
+  /// shows no button.
+  final VoidCallback? onChanges;
 
   /// The driver's own goals set after the session before ([session] names
   /// it), and their checks on this one ([checkSessionGoals], FET-218): null
@@ -253,6 +258,24 @@ class SessionSummaryCard extends StatelessWidget {
               key: const ValueKey('sessionSummaryAgainst'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        if (previous != null &&
+            summary.segmentsCompared > 0 &&
+            !pending &&
+            onChanges != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const ValueKey('sessionSummaryChanges'),
+              onPressed: onChanges,
+              icon: const Icon(Icons.swap_vert),
+              label: Text(
+                l10n.changesButton(
+                  summary.segmentsCompared,
+                  l10n.session(previous),
+                ),
               ),
             ),
           ),

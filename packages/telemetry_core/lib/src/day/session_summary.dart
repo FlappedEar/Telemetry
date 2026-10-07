@@ -26,6 +26,8 @@ final class SessionSegmentChange {
     required this.type,
     required this.seconds,
     required this.referenceSeconds,
+    this.spreadSeconds,
+    this.referenceSpreadSeconds,
   });
 
   final String segmentId;
@@ -38,6 +40,17 @@ final class SessionSegmentChange {
   /// What it is compared with: the session before's typical time, or for
   /// the biggest gap left the quickest typical time of any session there.
   final double referenceSeconds;
+
+  /// The interquartile range of the session's times through the segment,
+  /// and of the session before's (FET-236); null for the biggest gap left.
+  final double? spreadSeconds, referenceSpreadSeconds;
+
+  /// [spreadSeconds] − [referenceSpreadSeconds]: negative is steadier; null
+  /// when either is missing.
+  double? get spreadDeltaSeconds {
+    final now = spreadSeconds, before = referenceSpreadSeconds;
+    return now == null || before == null ? null : now - before;
+  }
 
   /// [seconds] − [referenceSeconds]: negative is quicker.
   double get deltaSeconds => seconds - referenceSeconds;
@@ -82,11 +95,13 @@ final class SessionSummary {
     this.biggestGain,
     this.biggestLoss,
     this.biggestGap,
+    List<SessionSegmentChange> changes = const [],
     List<SessionTemperature> temperatures = const [],
     this.temperatureReason = '',
     this.carWatch,
     this.goal,
-  }) : temperatures = List.unmodifiable(temperatures);
+  }) : temperatures = List.unmodifiable(temperatures),
+       changes = List.unmodifiable(changes);
 
   final String runId;
   final String runName;
@@ -132,6 +147,32 @@ final class SessionSummary {
   /// or more; null when it has no typical time anywhere ([segmentsTimed]
   /// 0) or is within that of the quickest everywhere.
   final SessionSegmentChange? biggestGap;
+
+  /// Every segment with a typical time in both sessions, against the
+  /// session before, in track order (FET-236, idea 2 of FET-217);
+  /// [biggestGain] and [biggestLoss] are among them.
+  final List<SessionSegmentChange> changes;
+
+  /// [changes] quicker by [sessionSummaryChangeSeconds] or more, most first
+  /// (the first is [biggestGain]).
+  List<SessionSegmentChange> get quicker => [
+    for (final change in changes)
+      if (change.deltaSeconds <= -sessionSummaryChangeSeconds) change,
+  ]..sort((a, b) => a.deltaSeconds.compareTo(b.deltaSeconds));
+
+  /// [changes] slower by [sessionSummaryChangeSeconds] or more, most first
+  /// (the first is [biggestLoss]).
+  List<SessionSegmentChange> get slower => [
+    for (final change in changes)
+      if (change.deltaSeconds >= sessionSummaryChangeSeconds) change,
+  ]..sort((a, b) => b.deltaSeconds.compareTo(a.deltaSeconds));
+
+  /// [changes] within [sessionSummaryChangeSeconds] of the session before,
+  /// in track order.
+  List<SessionSegmentChange> get same => [
+    for (final change in changes)
+      if (change.deltaSeconds.abs() < sessionSummaryChangeSeconds) change,
+  ];
 
   /// Each recorded temperature's maximum, in the day's channel order.
   final List<SessionTemperature> temperatures;
@@ -204,6 +245,7 @@ SessionSummary? summarizeSession(
 
   var compared = 0, typical = 0;
   SessionSegmentChange? gain, loss, gap;
+  final changes = <SessionSegmentChange>[];
   if (sections != null) {
     final now = sections.sessions.indexWhere((session) => session.runId == runId);
     final previousId = previous?.runId;
@@ -214,13 +256,16 @@ SessionSummary? summarizeSession(
       for (final row in sections.segments) {
         final cell = row.cells[now].summary;
         if (!cell.available) continue;
-        SessionSegmentChange against(double reference) => SessionSegmentChange(
-          segmentId: row.segmentId,
-          name: row.name,
-          type: row.type,
-          seconds: cell.median!,
-          referenceSeconds: reference,
-        );
+        SessionSegmentChange against(double reference, [ConsistencySummary? earlier]) =>
+            SessionSegmentChange(
+              segmentId: row.segmentId,
+              name: row.name,
+              type: row.type,
+              seconds: cell.median!,
+              referenceSeconds: reference,
+              spreadSeconds: earlier == null ? null : cell.interquartileRange,
+              referenceSpreadSeconds: earlier?.interquartileRange,
+            );
         typical++;
         final fastest = row.fastestTypical;
         if (fastest != null) {
@@ -234,7 +279,8 @@ SessionSummary? summarizeSession(
         final earlier = row.cells[before].summary;
         if (!earlier.available) continue;
         compared++;
-        final change = against(earlier.median!);
+        final change = against(earlier.median!, earlier);
+        changes.add(change);
         if (change.deltaSeconds <= -sessionSummaryChangeSeconds &&
             (gain == null || change.deltaSeconds < gain.deltaSeconds)) {
           gain = change;
@@ -302,6 +348,7 @@ SessionSummary? summarizeSession(
     biggestGain: gain,
     biggestLoss: loss,
     biggestGap: gap,
+    changes: changes,
     temperatures: temperatures,
     temperatureReason: temperatureReason,
     carWatch: watch,

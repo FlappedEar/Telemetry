@@ -6428,4 +6428,59 @@ class AppLocalizationsPl extends AppLocalizations {
   String briefingNoRankedLap(String session) {
     return '$session nie ma sklasyfikowanego okrążenia na pokazanym torze.';
   }
+
+  @override
+  String changesButton(int count, String session) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Odcinki ($count) w porównaniu z: $session',
+      one: '1 odcinek w porównaniu z: $session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String changesTitle(String session) {
+    return 'Zmiany od: $session';
+  }
+
+  @override
+  String changesIntro(String session, String threshold) {
+    return 'Typowy (mediana) czas każdego odcinka w porównaniu z: $session, z rozrzutem środkowej połowy czasów. Zmiany poniżej $threshold s nie są liczone. Obserwacje z Twoich okrążeń, nie przyczyny.';
+  }
+
+  @override
+  String get changesQuicker => 'Szybciej';
+
+  @override
+  String get changesSlower => 'Wolniej';
+
+  @override
+  String changesNoneQuicker(String threshold) {
+    return 'Żaden odcinek nie jest szybszy o $threshold s lub więcej.';
+  }
+
+  @override
+  String changesNoneSlower(String threshold) {
+    return 'Żaden odcinek nie jest wolniejszy o $threshold s lub więcej.';
+  }
+
+  @override
+  String changesSame(String threshold, String session) {
+    return 'W granicach $threshold s względem: $session';
+  }
+
+  @override
+  String changesTypical(String now, String session, String before) {
+    return 'Typowo $now ($session: $before)';
+  }
+
+  @override
+  String changesSpread(String now, String session, String before) {
+    return 'Rozrzut $now s ($session: $before s)';
+  }
+
+  @override
+  String get changesTitleNone => 'Zmiany na odcinkach';
 }

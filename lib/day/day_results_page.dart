@@ -42,6 +42,7 @@ import 'report_share.dart';
 import 'session_details_dialog.dart';
 import 'session_removal.dart';
 import 'briefing_card.dart';
+import 'session_changes.dart';
 import 'session_summary_card.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart';
@@ -2240,6 +2241,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       channels: channels,
       ownGoals: _goalSummary(),
       onBriefing: _openBriefing,
+      onChanges: _openChanges,
     );
   }
 
@@ -2283,6 +2285,54 @@ class _DayResultsPageState extends State<DayResultsPage> {
               ),
             ),
           ),
+        ),
+      ),
+    ),
+  );
+
+  /// Every segment's change since the session before ([SessionChanges]),
+  /// following the day while it is open.
+  void _openChanges() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => saveShortcuts(
+        _saveFromShortcut,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            final result = _controller.theoreticalBest;
+            final ready = result?.state == DayTheoreticalBestState.ready;
+            final summary = summarizeSession(
+              _controller.latestRunId,
+              progression: _controller.progression,
+              sections: ready ? _sections() : null,
+            );
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(switch (summary?.previousRunName) {
+                  final String previous => context.l10n.changesTitle(
+                    context.l10n.session(previous),
+                  ),
+                  null => context.l10n.changesTitleNone,
+                }),
+              ),
+              body: LayoutBuilder(
+                builder: (context, constraints) => ListView(
+                  key: const ValueKey('sessionChangesPage'),
+                  padding: constraints.maxWidth > readableWidth
+                      ? readablePadding(constraints.maxWidth)
+                      : const EdgeInsets.all(16),
+                  children: [
+                    SessionChanges(
+                      session: _controller.latestRunName,
+                      summary: summary,
+                      pending: result == null,
+                      ready: ready,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     ),

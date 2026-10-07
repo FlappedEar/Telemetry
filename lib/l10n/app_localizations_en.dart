@@ -6289,4 +6289,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String briefingNoRankedLap(String session) {
     return '$session has no ranked lap on the circuit shown.';
   }
+
+  @override
+  String changesButton(int count, String session) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'All $count segments against $session',
+      one: '1 segment against $session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String changesTitle(String session) {
+    return 'Since $session';
+  }
+
+  @override
+  String changesIntro(String session, String threshold) {
+    return 'Each segment\'s typical (median) time against $session, with the spread of the middle half of its times. Changes under $threshold s are not counted. Observed from your laps, not causes.';
+  }
+
+  @override
+  String get changesQuicker => 'Quicker';
+
+  @override
+  String get changesSlower => 'Slower';
+
+  @override
+  String changesNoneQuicker(String threshold) {
+    return 'No segment quicker by $threshold s or more.';
+  }
+
+  @override
+  String changesNoneSlower(String threshold) {
+    return 'No segment slower by $threshold s or more.';
+  }
+
+  @override
+  String changesSame(String threshold, String session) {
+    return 'Within $threshold s of $session';
+  }
+
+  @override
+  String changesTypical(String now, String session, String before) {
+    return 'Typical $now ($session: $before)';
+  }
+
+  @override
+  String changesSpread(String now, String session, String before) {
+    return 'Spread $now s ($session: $before s)';
+  }
+
+  @override
+  String get changesTitleNone => 'Segment changes';
 }
