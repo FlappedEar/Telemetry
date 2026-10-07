@@ -2,9 +2,13 @@
 // recordings (different rates, clock offsets and drift, losses with and
 // without RCZ gap markers, missing values) fused channels keep strictly
 // increasing timestamps, fillGaps keeps every finite primary sample,
-// preferAlternative every finite alternative sample, every fused value is a
-// real recorded sample, nothing reads across a declared gap, and the order
-// of the alternatives and of the channels does not change the result.
+// preferAlternative every finite alternative sample, the other source's
+// samples appear only outside the preferred source's coverage, every fused
+// value is a real recorded sample, nothing reads across a declared gap, and
+// the order of alternatives whose channel keys are disjoint, and of the
+// channels, does not change the result. With two alternatives that share a
+// ruled key the result does depend on their order; FET-208 fixes that and is
+// not merged here, so that case is not asserted.
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -323,6 +327,44 @@ void main() {
     expect(merged, greaterThan(_cases ~/ 4));
   });
 
+  test('fillGaps and preferAlternative add the other source only outside the preferred '
+      'source\'s coverage', () {
+    final random = math.Random(_seed + 4);
+    var merged = 0, added = 0;
+    for (var index = 0; index < _cases; ++index) {
+      final c = _FusionCase(random, 'seed ${_seed + 4} case $index');
+      final speed = c.fuse().channels.firstWhere((fused) => fused.key == 'speed');
+      if (speed.rule != 'fillGaps' && speed.rule != 'preferAlternative') continue;
+      ++merged;
+      final fillGaps = speed.rule == 'fillGaps';
+      final preferredTimes = fillGaps ? c.primarySpeed.times : c.alternativeTimes;
+      final preferredValues = fillGaps ? c.primarySpeed.values : c.alternativeSpeed.values;
+      // The preferred source's coverage: its runs of finite samples, a step
+      // longer than its gap threshold ending a run (`_finiteSpans`).
+      final preferredGap = fillGaps
+          ? telemetryGapThreshold(c.primary.channel('speed')!)
+          : telemetryGapThreshold(c.alternative.channel('speed')!) *
+                (1.0 + c.clock.driftPpm * 1e-6);
+      final preferredAt = preferredTimes.toSet();
+      final channel = speed.channel;
+      for (var i = 0; i < channel.sampleCount; ++i) {
+        final time = channel.timestamps[i];
+        if (!channel.values[i].isFinite || preferredAt.contains(time)) continue;
+        // A sample the preferred source did not record: the other source's.
+        expect(
+          _covered(preferredTimes, preferredValues, preferredGap, time),
+          isFalse,
+          reason:
+              '${c.description}: the other source\'s sample at $time is inside the '
+              'preferred source\'s coverage',
+        );
+        ++added;
+      }
+    }
+    expect(merged, greaterThan(_cases ~/ 4));
+    expect(added, greaterThan(100));
+  });
+
   test('no fused reading bridges a declared gap', () {
     final random = math.Random(_seed + 2);
     var checkedPairs = 0, readings = 0;
@@ -424,7 +466,12 @@ void main() {
     expect(readings, greaterThan(1000));
   });
 
-  test('the order of alternatives and of channels does not change the fusion', () {
+  // Only alternatives with disjoint channel keys: for two that share a ruled
+  // key fuseChannels depends on their order, which FET-208 fixes (not merged
+  // here). Then the property holds by construction, so it guards the
+  // channel and alias bookkeeping rather than the merge.
+  test('the order of alternatives with disjoint channel keys, and of channels, does not '
+      'change the fusion', () {
     final random = math.Random(_seed + 3);
     for (var index = 0; index < _cases ~/ 3; ++index) {
       final c = _FusionCase(random, 'seed ${_seed + 3} case $index');

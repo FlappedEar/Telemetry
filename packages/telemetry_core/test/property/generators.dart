@@ -72,6 +72,9 @@ const double _metersPerDegree = 6371000.0 * math.pi / 180.0;
 /// `support/circuits.dart`, two to five laps driven at 12–45 m/s (constant or
 /// varying within the lap), resampled at 4–25 Hz, with GPS error up to
 /// 1.5 m and, unless [clean], timing jitter, dropouts and invalid fixes.
+/// Half the recordings that are not clean also stop or crawl (at 1–6% of
+/// the speed, about 0.1–2.7 m/s) one to three times for 3–30 s, while the
+/// GPS error keeps wandering: the fixes of a car standing still.
 LapCase generateLapCase(math.Random random, String label, {bool? clean}) {
   final isClean = clean ?? random.nextDouble() < 0.4;
   final driven = 2 + random.nextInt(4);
@@ -127,6 +130,17 @@ LapCase generateLapCase(math.Random random, String label, {bool? clean}) {
   final jitter = isClean ? 0.0 : uniform(random, 0.0, 0.2);
   final dropouts = isClean ? 0 : random.nextInt(4);
   final invalidFixes = isClean ? 0 : random.nextInt(6);
+  final baseEnd = base.channel('latitude')!.timestamps.last;
+  final stops = isClean || random.nextBool()
+      ? const <(double, double, double)>[]
+      : [
+          for (var stop = 0, count = 1 + random.nextInt(3); stop < count; ++stop)
+            (
+              uniform(random, 0.0, baseEnd),
+              uniform(random, 3.0, 30.0),
+              random.nextBool() ? 0.0 : uniform(random, 0.01, 0.06),
+            ),
+        ];
   final session = resampleGps(
     random,
     base,
@@ -136,6 +150,7 @@ LapCase generateLapCase(math.Random random, String label, {bool? clean}) {
     jitterFraction: jitter,
     dropouts: dropouts,
     invalidFixes: invalidFixes,
+    stops: stops,
   );
   final slowest = circle
       ? speeds.reduce(math.min)
@@ -144,7 +159,8 @@ LapCase generateLapCase(math.Random random, String label, {bool? clean}) {
     label:
         '$label: $describe laps=$laps speeds=${[for (final s in speeds) s.toStringAsFixed(1)]} '
         'rate=$rate noise=${noise.toStringAsFixed(2)} white=${white.toStringAsFixed(2)} jitter=${jitter.toStringAsFixed(2)} '
-        'dropouts=$dropouts invalid=$invalidFixes',
+        'dropouts=$dropouts invalid=$invalidFixes'
+        '${stops.isEmpty ? '' : ' stops=${[for (final (at, seconds, share) in stops) '${at.toStringAsFixed(1)}+${seconds.toStringAsFixed(1)}s@${share.toStringAsFixed(2)}']}'}',
     session: session,
     laps: laps,
     clean: isClean,
@@ -170,8 +186,12 @@ double _stepError(List<double> speeds, int next) {
 /// [jitterFraction] of the interval, with GPS error per axis: a smoothly
 /// drifting offset of [noiseMeters] RMS plus [whiteMeters] of independent
 /// noise per fix, [dropouts] stretches of 0.5–8 s with no fix and
-/// [invalidFixes] single fixes whose latitude is NaN. The speed channel is
-/// read at the same times. Gates and aliases are kept.
+/// [invalidFixes] single fixes whose latitude is NaN. Each of [stops]
+/// (base time, seconds, share of the speed) holds the car at [base]'s
+/// position from that time for that many seconds, moving on at that share
+/// of its speed (0: standing still); the recording is that much longer, and
+/// the GPS error goes on drifting meanwhile. The speed channel is read at
+/// the same times, scaled during a stop. Gates and aliases are kept.
 TelemetrySession resampleGps(
   math.Random random,
   TelemetrySession base, {
@@ -181,12 +201,34 @@ TelemetrySession resampleGps(
   double jitterFraction = 0.0,
   int dropouts = 0,
   int invalidFixes = 0,
+  List<(double, double, double)> stops = const [],
 }) {
   final latitude = base.channel('latitude')!;
   final longitude = base.channel('longitude')!;
   final speed = base.channel('speed');
   final baseTimes = latitude.timestamps;
-  final end = baseTimes.last;
+  // The stops in base time order, each starting after the last one ends,
+  // with the recording time each starts at.
+  final held = <(double, double, double, double)>[];
+  var delay = 0.0;
+  for (final (at, seconds, share) in [...stops]..sort((a, b) => a.$1.compareTo(b.$1))) {
+    if (held.isNotEmpty && at <= held.last.$1 + held.last.$2 * held.last.$3) continue;
+    held.add((at, seconds, share, at + delay));
+    delay += seconds * (1.0 - share);
+  }
+  // The base time shown at recording time [time], and the share of the
+  // base speed then.
+  (double, double) baseAt(double time) {
+    var offset = 0.0;
+    for (final (at, seconds, share, starts) in held) {
+      if (time < starts) break;
+      if (time < starts + seconds) return (at + share * (time - starts), share);
+      offset += seconds * (1.0 - share);
+    }
+    return (time - offset, 1.0);
+  }
+
+  final end = baseTimes.last + delay;
   final step = 1.0 / rate;
   final holes = [
     for (var index = 0; index < dropouts; ++index)
@@ -238,12 +280,14 @@ TelemetrySession resampleGps(
   for (var index = 0; index < times.length; ++index) {
     final time = times[index];
     final north = drift(northWaves, time), east = drift(eastWaves, time);
+    final (baseTime, share) = baseAt(time);
     latitudeValues[index] =
-        interpolate(latitude, time) + (north + gaussian(random, whiteMeters)) / _metersPerDegree;
+        interpolate(latitude, baseTime) +
+        (north + gaussian(random, whiteMeters)) / _metersPerDegree;
     longitudeValues[index] =
-        interpolate(longitude, time) +
+        interpolate(longitude, baseTime) +
         (east + gaussian(random, whiteMeters)) / (_metersPerDegree * cosLatitude);
-    speeds[index] = speed == null ? double.nan : interpolate(speed, time);
+    speeds[index] = speed == null ? double.nan : share * interpolate(speed, baseTime);
   }
   for (var count = 0; count < invalidFixes && times.isNotEmpty; ++count) {
     latitudeValues[random.nextInt(times.length)] = double.nan;

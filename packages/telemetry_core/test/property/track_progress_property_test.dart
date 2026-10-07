@@ -17,6 +17,11 @@ const _cases = 200;
 /// (`_backwardToleranceMeters` in track_progress.dart).
 const _backwardTolerance = 3.0;
 
+/// How far behind the last progress the first fix of a segment after a gap
+/// may be and stay on the same lap, at most a quarter of the axis
+/// (`_segmentStartBackwardMeters` in track_progress.dart, FET-249).
+const _segmentStartBackward = 30.0;
+
 /// The fastest speed the generator drives (45 m/s, up to 30 % more within
 /// a rectangle lap).
 const _fastest = 45.0 * 1.3;
@@ -88,11 +93,11 @@ void main() {
                 reason: '$reason t=${sample.telemetryTime}',
               );
             } else if (lastProgress != null) {
-              // A segment after a gap starts at most the jitter allowance
+              // A segment after a gap starts at most the restart allowance
               // behind: progress is unwrapped within the lap.
               expect(
                 sample.progressMeters,
-                greaterThanOrEqualTo(lastProgress - _backwardTolerance),
+                greaterThanOrEqualTo(lastProgress - math.min(_segmentStartBackward, length / 4)),
                 reason: '$reason t=${sample.telemetryTime}',
               );
             }
