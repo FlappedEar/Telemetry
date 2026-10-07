@@ -285,7 +285,7 @@ class _VboParse {
         metadata['firstTimestampMilliseconds'] = milliseconds.toString();
       }
     }
-    final aliases = resolveAliases(sortedChannelNames(channels.keys));
+    final aliases = resolveAliases(sortedChannelNames(channels.keys), channels: channels);
     preferAcceleratorPedalForThrottle(aliases, channels);
     throwIfCancelled(cancelled);
     return TelemetrySession(

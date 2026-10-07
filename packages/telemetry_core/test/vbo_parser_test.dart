@@ -182,6 +182,71 @@ void main() {
     expect(emptyPedal.aliases['throttle'], 'throttle');
   });
 
+  test('passes over a mostly empty channel for one with data (FET-207)', () {
+    // `gps_speed` sorts before `velocity` and is 95 % NaN.
+    final rows = [for (var i = 0; i < 20; ++i) '$i ${i == 0 ? '30' : 'x'} ${30 + i}'].join('\n');
+    final sparse = parse('[column names]\ntime gps_speed velocity\n[data]\n$rows\n');
+    expect(sparse.aliases['speed'], 'velocity');
+    expect(sparse.channels.keys, containsAll(['gps_speed', 'velocity']));
+    // Both full: the first by name still wins, as before.
+    final full = parse('[column names]\ntime gps_speed velocity\n[data]\n0 30 31\n1 32 33\n');
+    expect(full.aliases['speed'], 'gps_speed');
+    // Covering half the time is still enough to keep the first.
+    final half = parse(
+      '[column names]\ntime gps_speed velocity\n[data]\n0 30 31\n0.5 x 33\n1 32 31\n1.5 x 33\n',
+    );
+    expect(half.aliases['speed'], 'gps_speed');
+    // A slower channel that covers the whole recording is not passed over
+    // for a faster one: GPS speed every fifth row, OBD speed in every row.
+    final rates = [
+      for (var i = 0; i < 50; ++i) '${i / 10} ${i % 5 == 0 ? '${30 + i}' : 'x'} ${31 + i}',
+    ].join('\n');
+    final slower = parse('[column names]\ntime gps_speed obd_speed\n[data]\n$rates\n');
+    expect(slower.aliases['speed'], 'gps_speed');
+    // A constant column (placeholder zeros) never displaces one that varies,
+    // even logged four times as often.
+    final placeholders = [
+      for (var i = 0; i < 100; ++i) '${i / 100} ${i % 4 == 0 ? '${(i % 8) / 10}' : 'x'} 0',
+    ].join('\n');
+    final zeros = parse('[column names]\ntime latacc-calc lateral_g\n[data]\n$placeholders\n');
+    expect(zeros.aliases['lateralAcceleration'], 'latacc-calc');
+    // A varying column replaces a constant one that sorts first, even when
+    // it covers less of the run.
+    final constantFirst = [
+      for (var i = 0; i < 100; ++i) '${i / 10} 0 ${i < 40 ? '${(i % 5) / 10}' : 'x'}',
+    ].join('\n');
+    final varying = parse('[column names]\ntime g_x lateral_accel\n[data]\n$constantFirst\n');
+    expect(varying.aliases['lateralAcceleration'], 'lateral_accel');
+    // The calculated acceleration gives way only when it is mostly empty.
+    final accelerationRows = [for (var i = 0; i < 20; ++i) '$i ${i == 0 ? '0.5' : 'x'} 0.25']
+        .join('\n');
+    final calculated = parse(
+      '[column names]\ntime latacc-calc lateral_g\n[data]\n$accelerationRows\n',
+    );
+    expect(calculated.aliases['lateralAcceleration'], 'lateral_g');
+  });
+
+  test('a pedal with one valid sample does not replace the throttle (FET-207)', () {
+    final rows = [for (var i = 0; i < 20; ++i) '$i ${10 + i} ${i == 0 ? '20' : 'x'}'].join('\n');
+    final sparse = parse('[column names]\ntime throttle accelerator_pedal\n[data]\n$rows\n');
+    expect(sparse.aliases['throttle'], 'throttle');
+    // A pedal logged slower than the throttle but throughout still wins.
+    final slowPedal = [
+      for (var i = 0; i < 40; ++i) '${i / 10} ${10 + i} ${i % 4 == 0 ? '${20 + i}' : 'x'}',
+    ].join('\n');
+    final slower = parse('[column names]\ntime throttle accelerator_pos\n[data]\n$slowPedal\n');
+    expect(slower.aliases['throttle'], 'accelerator_pos');
+    // Even polled below 1 Hz (every 20th row at 10 Hz) for the whole run.
+    final pollPedal = [
+      for (var i = 0; i < 200; ++i)
+        '${i / 10} ${10 + i % 7} ${i % 20 == 0 ? '${20 + i % 3}' : 'x'}',
+    ].join('\n');
+    final polled = parse('[column names]\ntime throttle accelerator_pos\n[data]\n$pollPedal\n');
+    expect(polled.aliases['throttle'], 'accelerator_pos');
+    final pedalOnly = parse('[column names]\ntime accelerator_pedal\n[data]\n0 20\n1 x\n');
+    expect(pedalOnly.aliases['throttle'], 'accelerator_pedal');
+  });
+
   test('never exposes NaN through valueAt and never bridges a missing sample', () {
     final session = parse('[column names]\ntime speed\n[data]\n0 10\n1 x\n2 30\n');
     expect(session.valueAt('speed', 0.5), isNull);
