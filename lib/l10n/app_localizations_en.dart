@@ -2963,6 +2963,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get drivingScaleUnknown => 'pedal scale unknown';
+
+  @override
+  String drivingScaleUnknownChannel(String channel) {
+    return 'the scale of $channel (0–1 or %) is not known';
+  }
+
+  @override
   String get drivingNoBrakeChannel => 'no brake channel';
 
   @override
@@ -3214,6 +3222,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cornerDetailsReasonUnitNotRecorded => 'channel unit not recorded';
 
   @override
+  String get cornerDetailsReasonScaleUnknown =>
+      'pedal scale (0–1 or %) not known';
+
+  @override
+  String get cornerDetailsReasonScaleInferred => 'pedal read as 0–1';
+
+  @override
   String get cornerDetailsReasonNoSpeedChannel => 'no speed channel';
 
   @override
@@ -3281,6 +3296,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cornerDetailsFromDecelerationBrakeUnused =>
       'Inferred from deceleration: the brake channel does not show the braking';
+
+  @override
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown =>
+      'Inferred from deceleration: the brake channel\'s scale (0–1 or %) is not known';
 
   @override
   String get cornerDetailsReasonBrakeChannelNotUsed =>

@@ -17,6 +17,7 @@ import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentT
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'corner_speeds.dart' show approvedSegmentById;
+import 'pedal_scale.dart';
 import 'sector_timing.dart';
 import 'track_progress.dart';
 import 'track_segment_review.dart';
@@ -38,6 +39,14 @@ const String exitSpeedChannelMissing = 'speedChannelMissing';
 const String exitFollowsGap = 'followsGap';
 const String exitTruncated = 'truncatedAtWindowEnd';
 const String exitUnitUndeclared = 'channelUnitUndeclared';
+
+/// The throttle declares no unit, stays within 0..1 and nothing shows
+/// whether that is a fraction or a few percent (FET-205).
+const String exitScaleUnknown = 'channelScaleUnknown';
+
+/// The throttle declares no unit and is read as a 0..1 fraction, as the
+/// hard accelerations show (FET-205): thresholds are divided by 100.
+const String exitScaleInferred = 'channelScaleInferred';
 const String exitMixedProvenance = 'mixedProvenance';
 
 const double _boundaryEpsilon = 1e-6;
@@ -268,6 +277,14 @@ ExitMetrics computeExitMetrics(
     final channel = session.channels[pickup.channel]!;
     pickup.unit = channel.unit;
     final declared = channel.unit.trim().isNotEmpty;
+    final scale = hasThrottle ? throttleScale(session) : PedalScale.percent;
+    if (scale == PedalScale.fraction) {
+      pickup.threshold = ExitThreshold(
+        options.throttle.on / 100.0,
+        options.throttle.off / 100.0,
+        '',
+      );
+    }
     final fromTime = timeAtProgress(lapTrace, start);
     // A segment ending at the gate ends at the lap's timed end; the
     // projection never reaches it exactly.
@@ -277,6 +294,8 @@ ExitMetrics computeExitMetrics(
     if (declared &&
         channel.unit.trim().toLowerCase() != pickup.threshold.unit.trim().toLowerCase()) {
       pickup.unavailableReason = exitUnitMismatch;
+    } else if (scale == PedalScale.unknown) {
+      pickup.unavailableReason = exitScaleUnknown;
     } else if (fromTime == null || toTime == null || !(toTime > fromTime)) {
       pickup.unavailableReason = exitIncompleteCoverage;
     } else {
@@ -294,7 +313,11 @@ ExitMetrics computeExitMetrics(
         pickup
           ..telemetryTime = rise.time
           ..progressMeters = progressAtTime(lapTrace, rise.time!)
-          ..limitations = [...rise.limitations, if (!declared) exitUnitUndeclared];
+          ..limitations = [
+            ...rise.limitations,
+            if (!declared) exitUnitUndeclared,
+            if (scale == PedalScale.fraction) exitScaleInferred,
+          ];
         if (pickup.progressMeters == null) pickup.unavailableReason = exitIncompleteCoverage;
       }
     }

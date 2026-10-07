@@ -235,6 +235,29 @@ void main() {
     expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
   });
 
+  test('a throttle whose scale is not known gives no coasting advice', () {
+    // FET-205: the coast above, on a throttle with no unit recorded 0..1
+    // and no longitudinal G to tell its scale by (0.15 could as well be a
+    // dead % throttle's noise). Its scale is unknown, so the coach does not
+    // read it: no coasting, and no pedals but the brake.
+    TelemetrySession? coached;
+    void fraction(String runId, TelemetrySession session) {
+      if (runId != 'run2') return;
+      coached = session;
+      final values = editableValues(session, 'throttle');
+      for (var i = 0; i < values.length; ++i) {
+        values[i] /= 100;
+      }
+      editableValues(session, 'longacc').fillRange(0, values.length, 0.0);
+      _edit(session, 'throttle', 0, (d) => d >= 20 && d < 60);
+      _edit(session, 'brake', 0, (d) => d >= 20 && d < 60);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: fraction);
+    expect(throttleScale(coached!), PedalScale.unknown);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+  });
+
   // The latest session's first lap brakes 20 m early and its third about
   // 25 m late into the first corner (and, with [second], the second).
   void Function(String, TelemetrySession) spread({bool second = false}) => (runId, session) {

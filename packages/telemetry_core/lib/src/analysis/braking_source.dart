@@ -8,6 +8,7 @@
 // of one session (corner braking, driving states, the coach) uses the same
 // source.
 import '../telemetry_session.dart';
+import 'pedal_scale.dart';
 
 /// Fewer finite samples than this and a channel tells nothing.
 const int brakingSourceMinimumSamples = 20;
@@ -21,8 +22,10 @@ const double brakingSourceUsableG = 0.30;
 const double brakingSourceHardG = 0.45;
 const double brakingSourceHardSeconds = 0.5;
 
-/// A brake in % (or with no declared unit) is pressed from this value.
+/// A brake in % (or with no declared unit) is pressed from this value; a
+/// brake read as a 0..1 fraction from [brakingSourcePressedFraction].
 const double brakingSourcePressedPercent = 10.0;
+const double brakingSourcePressedFraction = 0.10;
 
 /// The brake may be pressed this long before the deceleration builds.
 const double brakingSourceLeadSeconds = 0.5;
@@ -41,6 +44,7 @@ final class BrakingSourceQuality {
     required this.decelerationUsable,
     required this.hardBrakings,
     required this.hardBrakingsWithBrake,
+    this.brakeScale = PedalScale.percent,
   });
 
   /// The `brake` alias's channel, or empty when there is none.
@@ -64,6 +68,11 @@ final class BrakingSourceQuality {
   /// shows (0 and 0 when the brake was not judged against them).
   final int hardBrakings;
   final int hardBrakingsWithBrake;
+
+  /// How the brake's values are read (FET-205): a brake with no unit that
+  /// stays within 0..1 is a fraction when the hard brakings show it pressed
+  /// at that scale, otherwise its scale is unknown and it is not usable.
+  final PedalScale brakeScale;
 
   bool get hasBrake => brakeName.isNotEmpty;
   bool get hasDeceleration => decelerationName.isNotEmpty;
@@ -122,37 +131,45 @@ BrakingSourceQuality _assess(TelemetrySession session) {
   final brakeUnit = brake?.unit.trim() ?? '';
   final brakeHasData = brake != null && _finiteCount(brake) >= brakingSourceMinimumSamples;
 
+  final runs = decelerationUsable
+      ? longitudinalRuns(
+          deceleration!,
+          -1.0,
+          brakingSourceHardG,
+          brakingSourceUsableG,
+          brakingSourceHardSeconds,
+        )
+      : const <(double, double)>[];
+  final judged = brakeWellFormed && brakeHasData && (brakeUnit.isEmpty || brakeUnit == '%');
+  final ambiguous = judged && pedalScaleAmbiguous(brake);
+  final scale = !ambiguous
+      ? PedalScale.percent
+      : !decelerationUsable
+      ? PedalScale.unknown
+      : judgedPedalScale(
+          brake,
+          runs,
+          longitudinalRuns(
+            deceleration!,
+            1.0,
+            throttleScalePeakG,
+            throttleScaleHoldG,
+            throttleScaleSeconds,
+          ),
+          brakingSourcePressedFraction,
+        );
+  final pressedOn = scale == PedalScale.fraction
+      ? brakingSourcePressedFraction
+      : brakingSourcePressedPercent;
   var hard = 0, withBrake = 0;
-  if (brakeWellFormed &&
-      brakeHasData &&
-      (brakeUnit.isEmpty || brakeUnit == '%') &&
-      decelerationUsable) {
-    final times = deceleration!.timestamps, values = deceleration.values;
-    final gap = telemetryGapThreshold(deceleration);
-    var index = 0;
-    while (index < values.length) {
-      if (!(values[index] <= -brakingSourceHardG)) {
-        ++index;
-        continue;
-      }
-      // Hard g is beyond usable g, so the run holds at least this sample.
-      final start = times[index];
-      var end = index + 1;
-      while (end < values.length &&
-          values[end] <= -brakingSourceUsableG &&
-          !(gap > 0.0 && times[end] - times[end - 1] > gap)) {
-        ++end;
-      }
-      final finish = times[end - 1];
-      index = end;
-      if (finish - start < brakingSourceHardSeconds) continue;
-      ++hard;
-      if (_pressedBetween(brake, start - brakingSourceLeadSeconds, finish)) ++withBrake;
-    }
+  if (judged) {
+    hard = runs.length;
+    withBrake = runs.where((run) => pedalPressedIn(brake, run, pressedOn)).length;
   }
 
   final brakeUsable =
       brake != null &&
+      scale != PedalScale.unknown &&
       (!brakeWellFormed ||
           (brakeHasData &&
               (hard < brakingSourceMinimumHardBrakings ||
@@ -164,13 +181,6 @@ BrakingSourceQuality _assess(TelemetrySession session) {
     decelerationUsable: decelerationUsable,
     hardBrakings: hard,
     hardBrakingsWithBrake: withBrake,
+    brakeScale: scale,
   );
-}
-
-bool _pressedBetween(TelemetryChannel brake, double from, double to) {
-  final times = brake.timestamps;
-  for (var index = lowerBound(times, from); index < times.length && times[index] <= to; ++index) {
-    if (brake.values[index] >= brakingSourcePressedPercent) return true;
-  }
-  return false;
 }
