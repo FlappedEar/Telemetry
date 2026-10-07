@@ -590,9 +590,9 @@ void main() {
   );
 
   test('queued alignments do not start once the day closes', () async {
-    final slots = DayResultsController.fusionSlots;
-    DayResultsController.fusionSlots = 1;
-    addTearDown(() => DayResultsController.fusionSlots = slots);
+    final slots = FusionJobs.defaultSlots;
+    FusionJobs.defaultSlots = 1;
+    addTearDown(() => FusionJobs.defaultSlots = slots);
     final (vbo, rcz) = writeFusionPair(directory.path, satellites: true);
     final other = Directory('${directory.path}/other')..createSync();
     final (vbo2, rcz2) = writeFusionPair(

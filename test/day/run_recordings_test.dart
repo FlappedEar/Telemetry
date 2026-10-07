@@ -343,9 +343,9 @@ void main() {
   });
 
   test('clock checks and primary changes wait for a free slot', () async {
-    final previous = DayResultsController.fusionSlots;
-    DayResultsController.fusionSlots = 1;
-    addTearDown(() => DayResultsController.fusionSlots = previous);
+    final previous = FusionJobs.defaultSlots;
+    FusionJobs.defaultSlots = 1;
+    addTearDown(() => FusionJobs.defaultSlots = previous);
     final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
     final (vbo2, rcz2) = writeFusionPair(
       directory.path,
@@ -475,9 +475,9 @@ void main() {
   test(
     'closing the day while a primary change waits for a slot stops it',
     () async {
-      final previous = DayResultsController.fusionSlots;
-      DayResultsController.fusionSlots = 1;
-      addTearDown(() => DayResultsController.fusionSlots = previous);
+      final previous = FusionJobs.defaultSlots;
+      FusionJobs.defaultSlots = 1;
+      addTearDown(() => FusionJobs.defaultSlots = previous);
       final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
       final (vbo2, rcz2) = writeFusionPair(
         directory.path,
@@ -560,9 +560,9 @@ void main() {
 
     Future<(DayResultsController, String, String, List<Completer<void>>)>
     held() async {
-      final previous = DayResultsController.fusionSlots;
-      DayResultsController.fusionSlots = 1;
-      addTearDown(() => DayResultsController.fusionSlots = previous);
+      final previous = FusionJobs.defaultSlots;
+      FusionJobs.defaultSlots = 1;
+      addTearDown(() => FusionJobs.defaultSlots = previous);
       final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
       final (vbo2, rcz2) = writeFusionPair(
         directory.path,
