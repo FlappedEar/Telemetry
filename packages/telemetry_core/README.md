@@ -125,7 +125,10 @@ a background isolate.
   falls within a segment; `timeAtProgress`, `progressAtTime` and
   `computeDeltaSeries` read time and the delta between two laps by distance,
   only where both laps are covered, and `computeTimedDeltaSeries` measures
-  each lap from its timed start, as the comparison does (FET-192).
+  each lap from its timed start, as the comparison does (FET-192). The
+  projection's tuned constants, the evidence for each and their measured
+  margins are in [docs/projection-constants.md](../../docs/projection-constants.md)
+  (FET-215).
   `TelemetrySession.sampledSegments` gives a channel's actual samples, split
   at gaps and reduced to bucket extremes.
 - `proposeTrackSegments` splits a progress axis into alternating corner and

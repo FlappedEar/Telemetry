@@ -191,6 +191,12 @@ Future<void> main(List<String> arguments) async {
         env: {'FLAPPEDEAR_REAL_RCZ': rcz},
       ),
     _Check(
+      'projection constants on the day',
+      _core,
+      'test/analysis/real_day_projection_test.dart',
+      env: {'FLAPPEDEAR_REAL_DAY': dayPath},
+    ),
+    _Check(
       'coach on the day',
       _core,
       'test/day/real_day_coach_test.dart',
