@@ -191,6 +191,11 @@ a background isolate.
   are timed over the same metres and the parts add up to the corner's time.
   `DayCorner.phaseTimes` and `DayCornerComparison.phaseDeltas` give a lap's
   parts against the group's best lap.
+- Where a session's laps vary (FlappedEar Telemetry only, FET-224):
+  `segmentSpreadBand` puts a segment's spread in one session (its
+  interquartile range from the section progression) in one of five fixed
+  bands, `segmentSpreadBandsSeconds` (0.10, 0.25, 0.50 and 1.00 s), so a
+  colour means the same spread on every day.
 - The Corner Analyzer of two compared laps (Overlays
   `AnalysisControllerCornerAnalyzer.cpp`, `d4d1039`): `CornerAnalyzer` on a
   comparison's shared axis lists the segments both laps share

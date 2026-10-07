@@ -566,6 +566,8 @@ void main() {
     await shot(tester, 'time-losses');
     await scrollIn(tester, summary, find.text('Consistency'));
     await shot(tester, 'consistency');
+    await scrollIn(tester, summary, find.text('Where the laps vary'));
+    await shot(tester, 'segment-spread');
     await scrollIn(tester, summary, find.text('Progression'));
     await shot(tester, 'progression');
     await scrollIn(tester, summary, find.text('Best lap of each session'));

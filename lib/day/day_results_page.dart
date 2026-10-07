@@ -180,6 +180,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
   LapPath? _mapPath;
   (Offset, Offset)? _mapGate;
 
+  // The session "Where the laps vary" shows; null for the latest.
+  String? _spreadRunId;
+
   // Writes waiting changes for recovery when the app goes to the background
   // or is closed, where the operating system may end it without warning.
   late final AppLifecycleListener _lifecycle = AppLifecycleListener(
@@ -1816,6 +1819,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
           laps: _controller.lapConsistency,
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
+          sections: _controller.theoreticalBestLoading ? null : _sections(),
+          spreadRunId: _spreadRunId,
+          onSpreadRun: (runId) => setState(() => _spreadRunId = runId),
+          path: path,
+          gate: _mapGate,
         ),
         const SizedBox(height: 12),
         ProgressionCard(

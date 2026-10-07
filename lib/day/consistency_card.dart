@@ -3,6 +3,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import 'segment_spread_map.dart';
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 
 /// "1:31.234 · spread 0.412 s", or "Needs at least 3 laps" when there are
@@ -32,6 +33,11 @@ class ConsistencyCard extends StatelessWidget {
     required this.laps,
     required this.result,
     this.loading = false,
+    this.sections,
+    this.spreadRunId,
+    this.onSpreadRun,
+    this.path,
+    this.gate,
   });
 
   /// The lap times' consistency.
@@ -41,6 +47,16 @@ class ConsistencyCard extends StatelessWidget {
   /// while it is calculated for the first time.
   final DayTheoreticalBest? result;
   final bool loading;
+
+  /// Each session's segment times, for where the laps vary; with [path]
+  /// (the best lap's trace) and [gate] the map draws on.
+  final SectionProgression? sections;
+
+  /// The session where the laps vary is shown for, kept by the page.
+  final String? spreadRunId;
+  final ValueChanged<String>? onSpreadRun;
+  final LapPath? path;
+  final (Offset, Offset)? gate;
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +141,21 @@ class ConsistencyCard extends StatelessWidget {
                   segment.consistency,
                   ValueKey('sectorConsistency ${segment.segmentId}'),
                 ),
+            if (!loading &&
+                result != null &&
+                result.state == DayTheoreticalBestState.ready &&
+                sections != null &&
+                sections!.sessions.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              SegmentSpreadMap(
+                result: result,
+                sections: sections!,
+                selectedRunId: spreadRunId,
+                onSelectRun: onSpreadRun,
+                path: path,
+                gate: gate,
+              ),
+            ],
           ],
         ),
       ),
