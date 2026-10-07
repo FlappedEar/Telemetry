@@ -149,6 +149,15 @@ const _minimumHeadingMovementMeters = 0.5;
 const _standingSeconds = 0.5;
 const _standingMetersPerSecond = 1.0;
 
+/// While locked, a part of the match's own branch at least the windowed
+/// separation along the axis from the match, and nearly as near the fix as
+/// the match (within this ratio of its distance), is still compared as a
+/// runner-up (FET-257). The fix's distance from the axis then barely grows
+/// along it: the fix is near the centre of a corner, about as near the whole
+/// corner, and where it lies along it is not known. Off a straight, 10 m
+/// along is never closer than 0.93 of the way within the 20 m proximity.
+const _flatBranchRatio = 0.95;
+
 double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
 
 /// Where a closed path (last point == first) crosses the gate segment
@@ -243,6 +252,10 @@ final class _Candidate {
   int index = -1;
   double progressMeters = 0.0;
   double distance = double.infinity;
+
+  /// Where along segment [index] the match lies, 0 at its start and 1 at
+  /// its end.
+  double fraction = 0.0;
 }
 
 /// Best match within [count] axis segments from [startIndex], wrapping around
@@ -275,10 +288,99 @@ _Candidate _bestCandidateInRange(
     if (distance < best.distance) {
       best.index = index;
       best.distance = distance;
+      best.fraction = fraction;
       best.progressMeters = _progressAtSegment(axis, index, fraction);
     }
   }
   return best;
+}
+
+/// The runner-up of a locked fix: the best match within [count] axis
+/// segments from [startIndex] (the search window) that lies on another part
+/// of the track than [best] (FET-257). The part of the window around [best]
+/// that would itself make the fix ambiguous (within [ambiguityRatio] of its
+/// distance) and runs the same way as it, unbroken along the axis, is the
+/// same branch: a fix a few metres off a straight is nearly as close to the
+/// line 10 m further on, and comparing the line with itself refused it
+/// (finding 1). Another branch is beyond a stretch of the window that is
+/// clearly further from the fix (a hairpin's apex, the loop between the two
+/// passes of a crossing) or that runs the other way (a hairpin's other
+/// leg). A part of the branch that is nearly as near the fix as [best]
+/// ([_flatBranchRatio]) still counts: the fix is near the centre of a
+/// corner. As before, nothing within [minimumSeparation] points of [best]
+/// counts.
+_Candidate _runnerUpOnAnotherPart(
+  ProgressAxis axis,
+  MetricPoint point,
+  int startIndex,
+  int count,
+  _Candidate best,
+  int minimumSeparation,
+  double ambiguityRatio,
+) {
+  final n = axis.points.length;
+  final bounded = math.min(count, n);
+  int indexAt(int step) => ((startIndex + step) % n + n) % n;
+  final distances = List<double>.filled(bounded, double.infinity);
+  final fractions = List<double>.filled(bounded, 0.0);
+  var bestStep = -1;
+  for (var step = 0; step < bounded; ++step) {
+    final index = indexAt(step);
+    final (fraction, distance) = _projectOntoSegment(
+      point,
+      axis.points[index],
+      axis.points[(index + 1) % n],
+    );
+    distances[step] = distance;
+    fractions[step] = fraction;
+    if (bestStep < 0 && index == best.index) bestStep = step;
+  }
+  final runnerUp = _Candidate();
+  if (bestStep < 0) return runnerUp;
+  final (bx, by) = _axisTangent(axis, best.index);
+  // Whether the segment at [step] belongs to the same branch as [best]:
+  // near enough to make the fix ambiguous, and running the same way.
+  bool sameBranch(int step) {
+    if (!(best.distance > distances[step] * ambiguityRatio)) return false;
+    final (tx, ty) = _axisTangent(axis, indexAt(step));
+    return tx * bx + ty * by >= 0.0;
+  }
+
+  // The branch of [best] within the window, as steps from it; a window that
+  // covers the whole loop wraps.
+  final wraps = bounded == n;
+  var behind = 0, ahead = 0;
+  while (behind + ahead + 1 < bounded) {
+    final step = bestStep - behind - 1;
+    if (step < 0 && !wraps) break;
+    if (!sameBranch((step % bounded + bounded) % bounded)) break;
+    ++behind;
+  }
+  while (behind + ahead + 1 < bounded) {
+    final step = bestStep + ahead + 1;
+    if (step >= bounded && !wraps) break;
+    if (!sameBranch(step % bounded)) break;
+    ++ahead;
+  }
+  for (var step = 0; step < bounded; ++step) {
+    var offset = step - bestStep;
+    if (wraps) offset = ((offset % bounded) + bounded) % bounded;
+    final onBranch = wraps
+        ? offset <= ahead || bounded - offset <= behind
+        : offset >= -behind && offset <= ahead;
+    if (onBranch && !(best.distance > distances[step] * _flatBranchRatio)) continue;
+    final index = indexAt(step);
+    var separation = (index - best.index).abs();
+    separation = math.min(separation, n - separation);
+    if (separation < minimumSeparation) continue;
+    if (distances[step] < runnerUp.distance) {
+      runnerUp.index = index;
+      runnerUp.distance = distances[step];
+      runnerUp.fraction = fractions[step];
+      runnerUp.progressMeters = _progressAtSegment(axis, index, fractions[step]);
+    }
+  }
+  return runnerUp;
 }
 
 /// Distance from [point] to the nearest axis segment within [separation]
@@ -610,14 +712,21 @@ ProjectedSample projectSample(
   final best = _bestCandidateInRange(axis, localPoint, startIndex, count);
   // Lost lock; the caller ends the segment.
   if (best.index < 0 || best.distance > lockProximityMeters) return invalid;
+  // A fix whose nearest point lies beyond the window's forward end matched
+  // only the end of the window, not where it is (FET-257, finding 3): it is
+  // refused, and the next fix is a cold start on the whole axis.
+  if (count < n && best.index == ((startIndex + count - 1) % n + n) % n && best.fraction >= 1.0) {
+    return invalid;
+  }
   final minimumSeparation = math.max(3, _lround(windowedSeparationMeters / axis.spacingMeters));
-  final second = _bestCandidateInRange(
+  final second = _runnerUpOnAnotherPart(
     axis,
     localPoint,
     startIndex,
     count,
-    excludeIndex: best.index,
-    minimumSeparation: minimumSeparation,
+    best,
+    minimumSeparation,
+    ambiguityRatio,
   );
   if (second.index >= 0 && best.distance > second.distance * ambiguityRatio) return invalid;
   if (!_headingAgrees(axis, best.index, movementDirection, minimumHeadingCosine)) return invalid;

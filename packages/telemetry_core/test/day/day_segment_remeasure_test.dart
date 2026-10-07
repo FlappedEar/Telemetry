@@ -1,8 +1,9 @@
 // Measuring the day's kept segments again on a new best lap they cannot time
 // (FET-170, day/day_segment_remeasure.dart). Session 1 gives the day its
 // automatic segments, which are kept; Session 2's laps are faster and run
-// off Session 1's line on the left straight, so the kept segments cannot
-// time them there.
+// 25 m off Session 1's line on the left straight, beyond the projection's
+// 20 m proximity, so the kept segments cannot time them there (12 m was
+// enough before FET-257 kept laps a few metres off the line).
 import 'dart:math' as math;
 
 import 'package:telemetry_core/telemetry_core.dart';
@@ -37,7 +38,7 @@ void main() {
     'run2',
     rectangleSession(
       [(_) => 33, (_) => 33.5, (_) => 33],
-      westShifts: [_offLine(12), _offLine(12), _offLine(12)],
+      westShifts: [_offLine(25), _offLine(25), _offLine(25)],
     ),
   );
   final outing = {

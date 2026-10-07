@@ -177,15 +177,23 @@ void main() {
   );
 
   group('corners that cannot time a new best lap (FET-170)', () {
-    // Session 2's laps are faster; its best lap runs 12 m off the others'
-    // line in the middle of the left straight, eased in and out.
+    // Session 2's laps are faster and run 22.25 m off Session 1's line in
+    // the middle of the left straight, eased in and out: beyond the
+    // projection's 20 m proximity, which since FET-257 is what stops the
+    // kept corners timing a lap (before, its best lap alone ran 12 m off).
+    // All its laps do, as one lap more than 12 m off its recording's other
+    // laps is off the route, and at 28 m off the two sessions'
+    // routes no longer match. The day's route id is seeded from the run
+    // that sorts first by content hash; this recording sorts after
+    // Session 1's (22.25 m does, 22 and 25 m do not), so the day keeps
+    // Session 1's group and its kept corners.
     double offLine(double distance) {
       const from = 385.0, to = 465.0, ease = 25.0;
       if (distance <= from || distance >= to) return 0.0;
       final edge = math.min(distance - from, to - distance);
-      if (edge >= ease) return 12.0;
+      if (edge >= ease) return 22.25;
       final x = edge / ease;
-      return 12.0 * x * x * (3 - 2 * x);
+      return 22.25 * x * x * (3 - 2 * x);
     }
 
     late String a, b;
@@ -197,7 +205,7 @@ void main() {
       File(b).writeAsStringSync(
         rectangleVbo(
           [(_) => 33, (_) => 33.5, (_) => 33],
-          westShifts: [(_) => 0, offLine, (_) => 0],
+          westShifts: [offLine, offLine, offLine],
         ),
       );
     });

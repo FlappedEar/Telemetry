@@ -211,7 +211,8 @@ void main() {
       }
     });
 
-    test('without GPS error an apex cut of 4.5 m holds; 6 m drops fixes but never jumps', () {
+    test('without GPS error an apex cut of 4.5 m holds; 6 m holds in a 15 m hairpin and '
+        'drops a fix in a 10 m one but never jumps', () {
       for (final radius in [7.5, 10.0, 15.0]) {
         final track = _parallelStraights(2 * radius);
         final axis = track.axis();
@@ -219,7 +220,9 @@ void main() {
         if (radius > 7.5) {
           final outcome = measureProjection(axis, track, cutting(track, radius, 6.0, noise: 0.0));
           print('Hairpin of $radius m, apex cut 6 m: $outcome');
-          expect(outcome.tracks(_error), isFalse, reason: '$outcome');
+          // Before FET-257 both dropped fixes (18 and 2): the runner-up was
+          // the same leg 10 m on.
+          expect(outcome.tracks(_error), radius == 15.0, reason: '$outcome');
           expect(outcome.maximumError, lessThan(_error), reason: '$outcome');
         }
       }
@@ -229,18 +232,20 @@ void main() {
   group('margins of the constants', () {
     final axis = _oval.axis();
 
-    test('locked, a lap holds 7 m off the line; from 8.5 m the 10 m runner-up '
-        'exclusion and the 0.7 ratio drop fixes long before the 20 m proximity', () {
+    test('locked, a lap holds up to the 20 m proximity off the line', () {
+      // Before FET-257 the 0.7 ratio, comparing the line with itself 10 m
+      // on, dropped about a quarter of the fixes from 8.5 m off (finding 1).
       for (final side in [-1.0, 1.0]) {
-        _expectFollows(axis, _oval, driveTrack(_oval, lateral: (_) => side * 7.0));
+        for (final offset in [7.0, 8.5, 12.0, 19.5]) {
+          _expectFollows(axis, _oval, driveTrack(_oval, lateral: (_) => side * offset));
+        }
         final outcome = measureProjection(
           axis,
           _oval,
-          driveTrack(_oval, lateral: (_) => side * 8.5),
+          driveTrack(_oval, lateral: (_) => side * 20.5),
         );
-        print('Oval, 8.5 m off the line: $outcome');
-        expect(outcome.projected, lessThan(outcome.fixes * 0.9), reason: '$outcome');
-        expect(outcome.maximumError, lessThan(_error), reason: '$outcome');
+        print('Oval, 20.5 m off the line: $outcome');
+        expect(outcome.projected, 0, reason: '$outcome');
       }
     });
 
