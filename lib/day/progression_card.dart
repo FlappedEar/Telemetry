@@ -33,7 +33,7 @@ class ProgressionCard extends StatefulWidget {
     super.key,
     required this.progression,
     required this.result,
-    this.evolution,
+    required this.evolution,
     this.loading = false,
     this.onOpenLap,
     this.weatherOf,
@@ -41,9 +41,8 @@ class ProgressionCard extends StatefulWidget {
 
   final DayProgression progression;
 
-  /// Every lap of each session of [progression], in order; null while the
-  /// day has none to show.
-  final DayEvolution? evolution;
+  /// Every lap of each session of [progression], in order.
+  final DayEvolution evolution;
 
   /// The theoretical best, which times every segment; null while it is
   /// calculated for the first time.

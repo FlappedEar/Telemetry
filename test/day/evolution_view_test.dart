@@ -118,10 +118,10 @@ void main() {
       tester.widget<Text>(find.byKey(ValueKey(key))).data!;
 
   test('the time since the first lap reads m:ss', () {
-    expect(sinceFirstLapText(0), '0:00');
-    expect(sinceFirstLapText(151.4), '2:31');
-    expect(sinceFirstLapText(59.6), '1:00');
-    expect(sinceFirstLapText(double.nan), '—');
+    expect(displayClock(0), '0:00');
+    expect(displayClock(151.4), '2:31');
+    expect(displayClock(59.6), '1:00');
+    expect(displayClock(double.nan), '—');
   });
 
   testWidgets('shows every lap of each session by lap number', (tester) async {
@@ -145,27 +145,40 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('evolutionCell 2 1')),
-        matching: find.text('not counted'),
+        matching: find.text('not ranked'),
       ),
       findsOneWidget,
     );
+    // With its reason below the table, as the lap list says it.
     expect(
-      textOf(tester, 'evolutionPace 1'),
-      'At its pace from LAP 2, after 1 lap',
+      textOf(tester, 'evolutionNotRanked 2 1'),
+      'LAP 1 · Excluded: Yellow flag',
     );
     expect(
+      textOf(tester, 'evolutionPace 1'),
+      "First lap in the session's middle half or quicker: LAP 2, after 1 lap",
+    );
+    // Session 1 kept getting quicker: lap 4 (91 s) is below its lower
+    // quartile (92 s).
+    expect(
+      textOf(tester, 'evolutionQuickerLater 1'),
+      'Later laps kept getting quicker: LAP 4 was 4.000\u00a0s quicker than '
+      'LAP 2, quicker than the whole middle half.',
+    );
+    expect(find.byKey(const ValueKey('evolutionQuickerLater 2')), findsNothing);
+    expect(
       textOf(tester, 'evolutionPace 2'),
-      'At its pace from LAP 3, after 2 laps',
+      "First lap in the session's middle half or quicker: LAP 3, after 2 laps",
     );
     expect(
       find.text(
-        '1 lap before it is not counted, so whether it was slower is not known',
+        '1 lap before it is not ranked, so whether it was slower is not known',
       ),
       findsOneWidget,
     );
     expect(
       textOf(tester, 'evolutionPace 3'),
-      'Its pace needs at least 3 ranked laps',
+      "The session's middle half needs at least 3 ranked laps",
     );
     expect(
       textOf(tester, 'evolutionSameLaps 2'),
@@ -177,7 +190,7 @@ void main() {
     );
     expect(find.byKey(const ValueKey('evolutionSameLaps 1')), findsNothing);
     // The air temperature where the weather is kept, with its source.
-    expect(textOf(tester, 'evolutionAir 1'), 'Air: 21 °C');
+    expect(textOf(tester, 'evolutionAir 1'), 'Air (modelled): 21 °C');
     expect(find.byKey(const ValueKey('evolutionAir 2')), findsNothing);
     expect(
       find.byKey(const ValueKey('evolutionWeatherCredit')),
@@ -200,19 +213,23 @@ void main() {
     expect(find.text('OKR. 5'), findsWidgets);
     expect(
       textOf(tester, 'evolutionPace 1'),
-      'W tempie od OKR. 2, po 1 okrążeniu',
+      'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. 2, po 1 okrążeniu',
     );
     expect(
       textOf(tester, 'evolutionSameLaps 2'),
       'Względem Sesja 1 na tych samych okrążeniach: typowa różnica −1.000 s z 4 okrążeń',
     );
-    expect(textOf(tester, 'evolutionAir 1'), 'Powietrze: 21 °C');
+    expect(textOf(tester, 'evolutionAir 1'), 'Powietrze (model): 21 °C');
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('evolutionCell 2 1')),
-        matching: find.text('nie liczone'),
+        matching: find.text('niesklasyfikowane'),
       ),
       findsOneWidget,
+    );
+    expect(
+      textOf(tester, 'evolutionNotRanked 2 1'),
+      'OKR. 1 · Wykluczone: Yellow flag',
     );
     expect(
       textOf(tester, 'evolutionCaveat'),
@@ -231,5 +248,44 @@ void main() {
       ),
     );
     expect(find.text('No session has timed laps.'), findsOneWidget);
+  });
+
+  testWidgets('hides the chart when no lap is ranked, keeping the table', (
+    tester,
+  ) async {
+    final rows = _session('9', [90, 91, 92]);
+    final configurations = {'9': _track};
+    final ranking = rankDayLaps(
+      rows,
+      _track.compatibilityGroupId,
+      configurations,
+      exclusions: {
+        for (final row in rows)
+          if (row.type == LapSectionType.lap) row.reference: 'Wet',
+      },
+    );
+    final progression = summarizeDayProgression(rows, ranking, [
+      const ProgressionRunInfo(id: '9', name: 'Session 9'),
+    ], configurations);
+    final evolution = summarizeDayEvolution(rows, ranking, progression);
+    await tester.binding.setSurfaceSize(const Size(412, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ListView(children: [EvolutionView(evolution: evolution)]),
+        ),
+      ),
+    );
+    expect(find.byKey(const ValueKey('evolutionChart')), findsNothing);
+    expect(find.byKey(const ValueKey('evolutionTable')), findsOneWidget);
+    expect(find.text('not ranked'), findsNWidgets(3));
+    expect(
+      textOf(tester, 'evolutionPace 9'),
+      "The session's middle half needs at least 3 ranked laps",
+    );
+    expect(textOf(tester, 'evolutionNotRanked 9 3'), 'LAP 3 · Excluded: Wet');
   });
 }

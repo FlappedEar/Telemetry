@@ -6994,7 +6994,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get evolutionIntro =>
-      'Mierzone okrążenia każdej sesji po kolei, liczone od początku jej pierwszego mierzonego okrążenia (zapis może zacząć się w parku maszyn, więc okrążenie wyjazdowe nie jest liczone). Bledsze linie to wcześniejsze sesje. Wybierz okrążenie, aby je otworzyć.';
+      'Mierzone okrążenia każdej sesji po kolei, liczone od początku jej pierwszego mierzonego okrążenia (zapis może zacząć się w parku maszyn, więc okrążenie wyjazdowe nie jest liczone). Każda linia ma podpis sesji i własny znacznik; bledsze linie to wcześniejsze sesje. Wybierz okrążenie, aby je otworzyć.';
 
   @override
   String get evolutionChartLabel =>
@@ -7011,11 +7011,11 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get evolutionNotCounted => 'nie liczone';
+  String get evolutionNotRanked => 'niesklasyfikowane';
 
   @override
   String evolutionPaceExplained(int count) {
-    return 'Okrążenie jest w tempie sesji, gdy nie jest wolniejsze niż wolniejsza granica środkowej połowy sklasyfikowanych okrążeń sesji; potrzeba co najmniej $count sklasyfikowanych okrążeń. Szare okrążenia były przed osiągnięciem tempa sesji.';
+    return 'Środkowa połowa sesji to środkowe 50% czasów jej sklasyfikowanych okrążeń; potrzeba co najmniej $count sklasyfikowanych okrążeń. Szare okrążenia były przed pierwszym okrążeniem w środkowej połowie lub szybszym.';
   }
 
   @override
@@ -7023,9 +7023,12 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       before,
       locale: localeName,
-      other: 'W tempie od OKR. $number, po $before okrążeniach',
-      one: 'W tempie od OKR. $number, po 1 okrążeniu',
-      zero: 'W tempie od OKR. $number, pierwszego mierzonego okrążenia',
+      other:
+          'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. $number, po $before okrążeniach',
+      one:
+          'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. $number, po 1 okrążeniu',
+      zero:
+          'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. $number, pierwsze mierzone okrążenie',
     );
     return '$_temp0';
   }
@@ -7036,10 +7039,10 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count okrążeń przed nim nie jest liczonych, więc nie wiadomo, czy były wolniejsze',
+          '$count okrążeń przed tym okrążeniem nie jest sklasyfikowanych, więc nie wiadomo, czy były wolniejsze',
       few:
-          '$count okrążenia przed nim nie są liczone, więc nie wiadomo, czy były wolniejsze',
-      one: '1 okrążenie przed nim nie jest liczone, więc nie wiadomo, czy było wolniejsze',
+          '$count okrążenia przed tym okrążeniem nie są sklasyfikowane, więc nie wiadomo, czy były wolniejsze',
+      one: '1 okrążenie przed tym okrążeniem nie jest sklasyfikowane, więc nie wiadomo, czy było wolniejsze',
     );
     return '$_temp0';
   }
@@ -7050,8 +7053,8 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Do wyznaczenia tempa potrzeba co najmniej $count sklasyfikowanych okrążeń',
-      one: 'Do wyznaczenia tempa potrzeba co najmniej 1 sklasyfikowanego okrążenia',
+          'Do wyznaczenia środkowej połowy sesji potrzeba co najmniej $count sklasyfikowanych okrążeń',
+      one: 'Do wyznaczenia środkowej połowy sesji potrzeba co najmniej 1 sklasyfikowanego okrążenia',
     );
     return '$_temp0';
   }
@@ -7068,7 +7071,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String evolutionAir(String temperature) {
-    return 'Powietrze: $temperature';
+    return 'Powietrze (model): $temperature';
   }
 
   @override
@@ -7077,4 +7080,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get evolutionNoLaps => 'Żadna sesja nie ma mierzonych okrążeń.';
+
+  @override
+  String evolutionQuickerLater(int number, String gain, int first) {
+    return 'Kolejne okrążenia były coraz szybsze: OKR. $number było o $gain szybsze niż OKR. $first, szybsze niż cała środkowa połowa.';
+  }
 }

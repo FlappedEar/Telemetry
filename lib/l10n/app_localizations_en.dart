@@ -6843,7 +6843,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get evolutionIntro =>
-      'Each session\'s timed laps in order, from the start of its first timed lap (a recording can begin in the paddock, so the out lap is not counted). Fainter lines are earlier sessions. Tap a lap to open it.';
+      'Each session\'s timed laps in order, from the start of its first timed lap (a recording can begin in the paddock, so the out lap is not counted). Each line is labelled with its session and has its own marker; fainter lines are earlier sessions. Tap a lap to open it.';
 
   @override
   String get evolutionChartLabel =>
@@ -6860,11 +6860,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get evolutionNotCounted => 'not counted';
+  String get evolutionNotRanked => 'not ranked';
 
   @override
   String evolutionPaceExplained(int count) {
-    return 'A lap is at the session\'s pace when it is no slower than the slow edge of the middle half of the session\'s ranked laps; it takes at least $count ranked laps. Grey laps came before the session reached its pace.';
+    return 'A session\'s middle half is the middle 50% of its ranked lap times; it takes at least $count ranked laps. Grey laps came before the first lap in the middle half or quicker.';
   }
 
   @override
@@ -6872,9 +6872,12 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       before,
       locale: localeName,
-      other: 'At its pace from LAP $number, after $before laps',
-      one: 'At its pace from LAP $number, after 1 lap',
-      zero: 'At its pace from LAP $number, its first timed lap',
+      other:
+          'First lap in the session\'s middle half or quicker: LAP $number, after $before laps',
+      one:
+          'First lap in the session\'s middle half or quicker: LAP $number, after 1 lap',
+      zero:
+          'First lap in the session\'s middle half or quicker: LAP $number, its first timed lap',
     );
     return '$_temp0';
   }
@@ -6885,8 +6888,8 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count laps before it are not counted, so whether they were slower is not known',
-      one: '1 lap before it is not counted, so whether it was slower is not known',
+          '$count laps before it are not ranked, so whether they were slower is not known',
+      one: '1 lap before it is not ranked, so whether it was slower is not known',
     );
     return '$_temp0';
   }
@@ -6896,8 +6899,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Its pace needs at least $count ranked laps',
-      one: 'Its pace needs at least 1 ranked lap',
+      other: 'The session\'s middle half needs at least $count ranked laps',
+      one: 'The session\'s middle half needs at least 1 ranked lap',
     );
     return '$_temp0';
   }
@@ -6914,7 +6917,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String evolutionAir(String temperature) {
-    return 'Air: $temperature';
+    return 'Air (modelled): $temperature';
   }
 
   @override
@@ -6923,4 +6926,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get evolutionNoLaps => 'No session has timed laps.';
+
+  @override
+  String evolutionQuickerLater(int number, String gain, int first) {
+    return 'Later laps kept getting quicker: LAP $number was $gain quicker than LAP $first, quicker than the whole middle half.';
+  }
 }

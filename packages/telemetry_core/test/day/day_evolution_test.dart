@@ -14,27 +14,35 @@ const _otherTrack = TrackConfiguration(
   gateRevision: _gates,
 );
 
-DayLapRow _section(String run, LapSectionType type, int number, double start, double duration) =>
-    DayLapRow(
-      runId: run,
-      runName: 'Session $run',
-      type: type,
-      lapNumber: number,
-      start: start,
-      end: start + duration,
-      sourceRevision: _revision,
-      referenceEligible: true,
-    );
+DayLapRow _section(
+  String run,
+  LapSectionType type,
+  int number,
+  double start,
+  double duration, {
+  int? clock,
+}) => DayLapRow(
+  runId: run,
+  runName: 'Session $run',
+  type: type,
+  lapNumber: number,
+  start: start,
+  end: start + duration,
+  sourceRevision: _revision,
+  timestampMilliseconds: clock,
+  referenceEligible: true,
+);
 
 /// An out lap from [start] lasting [outLap], then timed laps back to back.
-List<DayLapRow> _session(String run, double start, double outLap, List<double> laps) {
-  final rows = [_section(run, LapSectionType.outLap, 0, start, outLap)];
+List<DayLapRow> _session(String run, double start, double outLap, List<double> laps, {int? clock}) {
+  int? at(double time) => clock == null ? null : clock + (time * 1000).round();
+  final rows = [_section(run, LapSectionType.outLap, 0, start, outLap, clock: at(start))];
   var time = start + outLap;
   for (var i = 0; i < laps.length; ++i) {
-    rows.add(_section(run, LapSectionType.lap, i + 1, time, laps[i]));
+    rows.add(_section(run, LapSectionType.lap, i + 1, time, laps[i], clock: at(time)));
     time += laps[i];
   }
-  rows.add(_section(run, LapSectionType.inLap, 0, time, 120));
+  rows.add(_section(run, LapSectionType.inLap, 0, time, 120, clock: at(time)));
   return rows;
 }
 
@@ -80,6 +88,7 @@ void main() {
     final lap = second.laps.first;
     expect(lap.eligible, isFalse);
     expect(lap.issues, [LapIssue.userExclusion]);
+    expect(lap.userReason, 'Yellow flag');
     expect(lap.atPace, isFalse);
     // 98 s is excluded: the scale runs from 90 to 100.
     expect(evolution.minimumSeconds, 90);
@@ -152,5 +161,75 @@ void main() {
     expect([for (final session in result.sessions) session.runId], ['1', '5']);
     expect(result.sessions.last.laps, isEmpty);
     expect(result.sessions.last.sameLapsCount, 0);
+  });
+
+  test('follows the progression\'s recording order, not the order of import', () {
+    // Run b was imported second but recorded first.
+    final rows = [
+      ..._session('a', 0, 60, [95, 94, 93], clock: 7200000),
+      ..._session('b', 0, 60, [97, 96, 95], clock: 1000),
+    ];
+    final configurations = {'a': _track, 'b': _track};
+    final ranking = rankDayLaps(rows, groupId, configurations);
+    final progression = summarizeDayProgression(rows, ranking, [
+      for (final id in ['a', 'b']) ProgressionRunInfo(id: id, name: 'Session $id'),
+    ], configurations);
+    final result = summarizeDayEvolution(rows, ranking, progression);
+    expect([for (final session in result.sessions) session.runId], ['b', 'a']);
+    expect(result.sessions.last.previousRunId, 'b');
+    expect(result.sessions.last.sameLapsDeltaSeconds, -2);
+  });
+
+  test('an excluded lap before the middle half is never measured, even when quickest', () {
+    // Lap 1 (85 s) would have been the quickest; it is excluded.
+    final rows = _session('x', 0, 60, [85, 99, 95, 94, 96]);
+    final configurations = {'x': _track};
+    final excluded = rows.firstWhere((row) => row.lapNumber == 1 && row.type == LapSectionType.lap);
+    final ranking = rankDayLaps(
+      rows,
+      groupId,
+      configurations,
+      exclusions: {excluded.reference: 'Spin'},
+    );
+    final progression = summarizeDayProgression(rows, ranking, [
+      const ProgressionRunInfo(id: 'x', name: 'Session x'),
+    ], configurations);
+    final session = summarizeDayEvolution(rows, ranking, progression).sessions.single;
+    // 94 95 96 99: the upper quartile is 96.75; lap 2 (99 s) is slower.
+    expect(session.paceLapNumber, 3);
+    expect(session.lapsBeforePace, 2);
+    expect(session.notCountedBeforePace, 1);
+    expect(session.laps.first.atPace, isFalse);
+    expect(session.laps.first.userReason, 'Spin');
+    expect(session.typicalSeconds, 95.5);
+  });
+
+  test('says when laps kept getting quicker after the first in the middle half', () {
+    // A steadily improving session: 100, 98, 96, 94, 92, 90.
+    final rows = _session('s', 0, 60, [100, 98, 96, 94, 92, 90]);
+    final configurations = {'s': _track};
+    final ranking = rankDayLaps(rows, groupId, configurations);
+    final progression = summarizeDayProgression(rows, ranking, [
+      const ProgressionRunInfo(id: 's', name: 'Session s'),
+    ], configurations);
+    final session = summarizeDayEvolution(rows, ranking, progression).sessions.single;
+    // Upper quartile 97.5: lap 3 is the first in the middle half or quicker;
+    // lap 6 (90 s) is below the lower quartile (92.5).
+    expect(session.paceLimitSeconds, 97.5);
+    expect(session.paceLapNumber, 3);
+    expect(session.lapsBeforePace, 2);
+    expect(session.quickerLaterLap!.lapNumber, 6);
+    // A flat session after its first laps has none.
+    final flat = _session('f', 0, 60, [100, 95, 95, 95, 95]);
+    final flatRanking = rankDayLaps(flat, groupId, {'f': _track});
+    final flatProgression = summarizeDayProgression(
+      flat,
+      flatRanking,
+      [const ProgressionRunInfo(id: 'f', name: 'Session f')],
+      {'f': _track},
+    );
+    final steady = summarizeDayEvolution(flat, flatRanking, flatProgression).sessions.single;
+    expect(steady.paceLapNumber, 2);
+    expect(steady.quickerLaterLap, isNull);
   });
 }

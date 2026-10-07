@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -6,24 +8,106 @@ import '../l10n.dart';
 import 'touch.dart';
 import 'weather_text.dart';
 
-/// "2:31" from 151 seconds: when a lap began after the session's first
-/// timed lap.
-String sinceFirstLapText(double seconds) {
-  if (!seconds.isFinite || seconds < 0) return '—';
-  final whole = seconds.round();
-  return '${whole ~/ 60}:${(whole % 60).toString().padLeft(2, '0')}';
-}
-
-/// A session's line colour: fainter for earlier sessions.
+/// A session's line colour: fainter for earlier sessions. The marker
+/// ([EvolutionMarker]) and the label at the line's end tell sessions apart;
+/// the colour only hints at their order.
 Color evolutionColor(ColorScheme scheme, int index, int count) => Color.lerp(
   scheme.outlineVariant,
   scheme.primary,
   count <= 1 ? 1.0 : 0.25 + 0.75 * index / (count - 1),
 )!;
 
+/// A session's marker shape on the By lap chart, by its place in the list.
+enum EvolutionMarker {
+  circle,
+  square,
+  triangle,
+  diamond,
+  cross,
+  plus;
+
+  static EvolutionMarker of(int index) => values[index % values.length];
+
+  /// Draws the marker centred on [centre], [radius] across half its width.
+  void paint(Canvas canvas, Offset centre, double radius, Color color) {
+    final fill = Paint()..color = color;
+    final stroke = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    switch (this) {
+      case EvolutionMarker.circle:
+        canvas.drawCircle(centre, radius, fill);
+      case EvolutionMarker.square:
+        canvas.drawRect(
+          Rect.fromCenter(
+            center: centre,
+            width: radius * 1.8,
+            height: radius * 1.8,
+          ),
+          fill,
+        );
+      case EvolutionMarker.triangle:
+        canvas.drawPath(
+          Path()
+            ..moveTo(centre.dx, centre.dy - radius * 1.2)
+            ..lineTo(centre.dx + radius * 1.1, centre.dy + radius * 0.9)
+            ..lineTo(centre.dx - radius * 1.1, centre.dy + radius * 0.9)
+            ..close(),
+          fill,
+        );
+      case EvolutionMarker.diamond:
+        canvas.drawPath(
+          Path()
+            ..moveTo(centre.dx, centre.dy - radius * 1.3)
+            ..lineTo(centre.dx + radius * 1.1, centre.dy)
+            ..lineTo(centre.dx, centre.dy + radius * 1.3)
+            ..lineTo(centre.dx - radius * 1.1, centre.dy)
+            ..close(),
+          fill,
+        );
+      case EvolutionMarker.cross:
+        canvas.drawLine(
+          centre + Offset(-radius, -radius),
+          centre + Offset(radius, radius),
+          stroke,
+        );
+        canvas.drawLine(
+          centre + Offset(-radius, radius),
+          centre + Offset(radius, -radius),
+          stroke,
+        );
+      case EvolutionMarker.plus:
+        canvas.drawLine(
+          centre + Offset(-radius * 1.2, 0),
+          centre + Offset(radius * 1.2, 0),
+          stroke,
+        );
+        canvas.drawLine(
+          centre + Offset(0, -radius * 1.2),
+          centre + Offset(0, radius * 1.2),
+          stroke,
+        );
+    }
+  }
+}
+
+/// Why a lap is not ranked, as the day's lap list says it: "Excluded:
+/// yellow flag", "Not ranked: Incomplete GPS".
+String evolutionNotRankedText(AppLocalizations l10n, EvolutionLap lap) {
+  if (lap.issues.contains(LapIssue.userExclusion)) {
+    return lap.userReason.isEmpty
+        ? l10n.lapExcludedNoReason
+        : l10n.lapExcluded(lap.userReason);
+  }
+  return lap.issues.isEmpty
+      ? l10n.lapNotRanked(l10n.lapIssue(LapIssue.ineligibleLap))
+      : l10n.lapNotRanked(l10n.lapIssue(lap.issues.first));
+}
+
 /// The progression's By lap view (FET-227): every timed lap of each session
-/// in order on a chart and in a table, when each session reached its own
-/// pace, and each session against the one before at the same laps.
+/// in order on a chart and in a table, the first lap in each session's
+/// middle half, and each session against the one before at the same laps.
 class EvolutionView extends StatelessWidget {
   const EvolutionView({
     super.key,
@@ -32,7 +116,7 @@ class EvolutionView extends StatelessWidget {
     this.weatherOf,
   });
 
-  final DayEvolution? evolution;
+  final DayEvolution evolution;
   final void Function(DayLapRow lap)? onOpenLap;
 
   /// A session's weather by run id, or null.
@@ -43,7 +127,7 @@ class EvolutionView extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final evolution = this.evolution;
-    if (evolution == null || !evolution.hasLaps) {
+    if (!evolution.hasLaps) {
       return Text(l10n.evolutionNoLaps, key: const ValueKey('evolutionNone'));
     }
     final sessions = evolution.sessions;
@@ -55,8 +139,7 @@ class EvolutionView extends StatelessWidget {
     var weatherShown = false;
     final small = theme.textTheme.bodySmall;
     final details = <Widget>[];
-    for (var i = 0; i < sessions.length; ++i) {
-      final session = sessions[i];
+    for (final session in sessions) {
       final weather = weatherOf?.call(session.runId);
       final air = weather == null
           ? null
@@ -70,7 +153,7 @@ class EvolutionView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${i + 1}. ${l10n.session(session.runName)}',
+                l10n.session(session.runName),
                 style: theme.textTheme.titleSmall,
               ),
               if (air != null)
@@ -96,6 +179,16 @@ class EvolutionView extends StatelessWidget {
                   key: ValueKey('evolutionSameLaps ${session.runId}'),
                   style: small,
                 ),
+              for (final lap in session.laps)
+                if (!lap.eligible)
+                  Text(
+                    '${l10n.evolutionLap(lap.lapNumber)} · '
+                    '${evolutionNotRankedText(l10n, lap)}',
+                    key: ValueKey(
+                      'evolutionNotRanked ${session.runId} ${lap.lapNumber}',
+                    ),
+                    style: small,
+                  ),
             ],
           ),
         ),
@@ -151,6 +244,7 @@ class EvolutionView extends StatelessWidget {
         ),
       ];
     }
+    final first = session.laps.firstWhere((lap) => lap.lapNumber == pace);
     return [
       Text(
         l10n.evolutionPaceFrom(pace, session.lapsBeforePace),
@@ -162,12 +256,22 @@ class EvolutionView extends StatelessWidget {
           l10n.evolutionPaceNotCounted(session.notCountedBeforePace),
           style: style,
         ),
+      if (session.quickerLaterLap case final later?)
+        Text(
+          l10n.evolutionQuickerLater(
+            later.lapNumber,
+            displayTime(first.seconds - later.seconds),
+            pace,
+          ),
+          key: ValueKey('evolutionQuickerLater ${session.runId}'),
+          style: style,
+        ),
     ];
   }
 }
 
-/// Lap time by lap number, one line per session; a lap that is not counted
-/// breaks its line.
+/// Lap time by lap number, one line per session, each with its own marker
+/// and its name at its last lap; a lap that is not ranked breaks its line.
 class _Chart extends StatelessWidget {
   const _Chart({
     required this.evolution,
@@ -186,8 +290,10 @@ class _Chart extends StatelessWidget {
     final l10n = context.l10n;
     final label = theme.textTheme.labelSmall?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
+      color: theme.colorScheme.onSurfaceVariant,
     );
     final sessions = evolution.sessions;
+    final laps = evolution.maximumLapNumber;
     return Semantics(
       label: l10n.evolutionChartLabel,
       child: ExcludeSemantics(
@@ -195,44 +301,28 @@ class _Chart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              height: 160,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(displayTime(high), style: label),
-                      Text(displayTime(low), style: label),
-                    ],
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: CustomPaint(
-                      key: const ValueKey('evolutionChart'),
-                      painter: _EvolutionPainter(
-                        evolution: evolution,
-                        colors: colors,
-                        low: low,
-                        high: high,
-                        grid: theme.colorScheme.outlineVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              children: [
-                const Spacer(),
-                Text(l10n.evolutionLap(1), style: label),
-                const Spacer(flex: 8),
-                Text(
-                  l10n.evolutionLap(evolution.maximumLapNumber),
-                  style: label,
+              height: 200,
+              width: double.infinity,
+              child: CustomPaint(
+                key: const ValueKey('evolutionChart'),
+                painter: _EvolutionPainter(
+                  evolution: evolution,
+                  colors: colors,
+                  low: low,
+                  high: high,
+                  grid: theme.colorScheme.outlineVariant,
+                  labelStyle: label ?? const TextStyle(fontSize: 11),
+                  slowest: displayTime(high),
+                  quickest: displayTime(low),
+                  firstLap: l10n.evolutionLap(1),
+                  lastLap: laps > 1 ? l10n.evolutionLap(laps) : null,
+                  names: [
+                    for (final session in sessions)
+                      l10n.session(session.runName),
+                  ],
+                  textScaler: MediaQuery.textScalerOf(context),
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 4),
             Wrap(
@@ -243,12 +333,14 @@ class _Chart extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: colors[i],
-                          shape: BoxShape.circle,
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CustomPaint(
+                          painter: _MarkerPainter(
+                            EvolutionMarker.of(i),
+                            colors[i],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -267,47 +359,120 @@ class _Chart extends StatelessWidget {
   }
 }
 
+class _MarkerPainter extends CustomPainter {
+  const _MarkerPainter(this.marker, this.color);
+
+  final EvolutionMarker marker;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) => marker.paint(
+    canvas,
+    size.center(Offset.zero),
+    size.shortestSide / 3,
+    color,
+  );
+
+  @override
+  bool shouldRepaint(_MarkerPainter old) =>
+      old.marker != marker || old.color != color;
+}
+
 class _EvolutionPainter extends CustomPainter {
-  const _EvolutionPainter({
+  _EvolutionPainter({
     required this.evolution,
     required this.colors,
     required this.low,
     required this.high,
     required this.grid,
+    required this.labelStyle,
+    required this.slowest,
+    required this.quickest,
+    required this.firstLap,
+    required this.lastLap,
+    required this.names,
+    required this.textScaler,
   });
 
   final DayEvolution evolution;
   final List<Color> colors;
   final double low, high;
   final Color grid;
+  final TextStyle labelStyle;
+  final String slowest, quickest, firstLap;
+  final String? lastLap;
+  final List<String> names;
+  final TextScaler textScaler;
 
-  static const _pad = 6.0;
+  static const _pad = 6.0, _gap = 6.0, _nameWidth = 84.0;
+
+  TextPainter _text(String text, TextStyle style, [double? maxWidth]) =>
+      TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler,
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: maxWidth ?? double.infinity);
 
   @override
   void paint(Canvas canvas, Size size) {
+    final top = _text(slowest, labelStyle),
+        bottom = _text(quickest, labelStyle);
+    final first = _text(firstLap, labelStyle);
+    final last = lastLap == null ? null : _text(lastLap!, labelStyle);
+    final gutter = math.max(top.width, bottom.width) + _gap;
+    final sessions = evolution.sessions;
+    final nameWidth = math.min(_nameWidth, size.width / 4);
+    final labels = [
+      for (var i = 0; i < sessions.length; ++i)
+        _text(names[i], labelStyle.copyWith(color: colors[i]), nameWidth),
+    ];
+    final labelWidth = labels.fold(0.0, (w, label) => math.max(w, label.width));
+    // The plot: left of the session names, above the lap numbers.
+    final left = gutter + _pad;
+    final right = math.max(left + 1, size.width - labelWidth - _gap - _pad);
+    final plotTop = _pad;
+    final plotBottom = math.max(plotTop + 1, size.height - first.height - _gap);
     final laps = evolution.maximumLapNumber;
     double x(int lap) => laps <= 1
-        ? size.width / 2
-        : _pad + (size.width - 2 * _pad) * (lap - 1) / (laps - 1);
+        ? (left + right) / 2
+        : left + (right - left) * (lap - 1) / (laps - 1);
     // Slower laps higher up.
     double y(double seconds) => high <= low
-        ? size.height / 2
-        : _pad +
-              (size.height - 2 * _pad) *
+        ? (plotTop + plotBottom) / 2
+        : plotTop +
+              (plotBottom - plotTop) *
                   ((high - seconds) / (high - low)).clamp(0.0, 1.0);
+
     final gridPaint = Paint()
       ..color = grid
       ..strokeWidth = 1;
-    canvas.drawLine(Offset(0, y(high)), Offset(size.width, y(high)), gridPaint);
-    canvas.drawLine(Offset(0, y(low)), Offset(size.width, y(low)), gridPaint);
-    final sessions = evolution.sessions;
+    canvas.drawLine(Offset(left, y(high)), Offset(right, y(high)), gridPaint);
+    canvas.drawLine(Offset(left, y(low)), Offset(right, y(low)), gridPaint);
+    top.paint(
+      canvas,
+      Offset(gutter - _gap - top.width, y(high) - top.height / 2),
+    );
+    bottom.paint(
+      canvas,
+      Offset(gutter - _gap - bottom.width, y(low) - bottom.height / 2),
+    );
+    // Lap numbers centred under their lap.
+    final axis = plotBottom + _gap;
+    first.paint(canvas, Offset(x(1) - first.width / 2, axis));
+    if (last != null) {
+      last.paint(canvas, Offset(x(laps) - last.width / 2, axis));
+    }
+
+    final placed = <Rect>[];
     for (var i = 0; i < sessions.length; ++i) {
       final line = Paint()
         ..color = colors[i]
         ..strokeWidth = 2
         ..style = PaintingStyle.stroke;
-      final dot = Paint()..color = colors[i];
-      Offset? previous;
+      final marker = EvolutionMarker.of(i);
+      Offset? previous, end;
       for (final lap in sessions[i].laps) {
         if (!lap.eligible) {
           previous = null;
@@ -315,9 +480,36 @@ class _EvolutionPainter extends CustomPainter {
         }
         final point = Offset(x(lap.lapNumber), y(lap.seconds));
         if (previous != null) canvas.drawLine(previous, point, line);
-        canvas.drawCircle(point, 3, dot);
         previous = point;
+        end = point;
       }
+      for (final lap in sessions[i].laps) {
+        if (lap.eligible) {
+          marker.paint(
+            canvas,
+            Offset(x(lap.lapNumber), y(lap.seconds)),
+            4,
+            colors[i],
+          );
+        }
+      }
+      if (end == null) continue;
+      // The session's name at its last lap, moved down past names already
+      // placed so none covers another.
+      final label = labels[i];
+      var rect = Rect.fromLTWH(
+        end.dx + _gap,
+        end.dy - label.height / 2,
+        label.width,
+        label.height,
+      );
+      for (var tries = 0; tries < sessions.length; ++tries) {
+        final overlap = placed.where((other) => other.overlaps(rect));
+        if (overlap.isEmpty) break;
+        rect = rect.translate(0, overlap.first.bottom - rect.top + 1);
+      }
+      placed.add(rect);
+      label.paint(canvas, rect.topLeft);
     }
   }
 
@@ -327,9 +519,16 @@ class _EvolutionPainter extends CustomPainter {
       old.low != low ||
       old.high != high ||
       old.grid != grid ||
-      !_sameColors(old.colors, colors);
+      old.labelStyle != labelStyle ||
+      old.slowest != slowest ||
+      old.quickest != quickest ||
+      old.firstLap != firstLap ||
+      old.lastLap != lastLap ||
+      old.textScaler != textScaler ||
+      !_same(old.colors, colors) ||
+      !_same(old.names, names);
 
-  static bool _sameColors(List<Color> a, List<Color> b) {
+  static bool _same<T>(List<T> a, List<T> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; ++i) {
       if (a[i] != b[i]) return false;
@@ -378,17 +577,16 @@ class _Table extends StatelessWidget {
             first: Row(
               children: [
                 const SizedBox(width: 6),
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: colors[i],
-                    shape: BoxShape.circle,
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CustomPaint(
+                    painter: _MarkerPainter(EvolutionMarker.of(i), colors[i]),
                   ),
                 ),
                 Expanded(
                   child: TableCellText(
-                    '${i + 1}. ${l10n.session(sessions[i].runName)}',
+                    l10n.session(sessions[i].runName),
                     style: label,
                     alignment: Alignment.centerLeft,
                     maxLines: 2,
@@ -427,7 +625,7 @@ class _Table extends StatelessWidget {
       );
     }
     final pace = session.paceLapNumber;
-    // Before the session reached its pace: grey.
+    // Before the first lap in the session's middle half: grey.
     final early = pace != null && number < pace;
     final colour = !lap.eligible || early ? scheme.outline : null;
     final shown = lap;
@@ -453,9 +651,9 @@ class _Table extends StatelessWidget {
               Text(
                 lap.eligible
                     ? l10n.evolutionSinceFirstLap(
-                        sinceFirstLapText(lap.secondsSinceFirstLap),
+                        displayClock(lap.secondsSinceFirstLap),
                       )
-                    : l10n.evolutionNotCounted,
+                    : l10n.evolutionNotRanked,
                 style: small?.copyWith(color: colour),
               ),
             ],

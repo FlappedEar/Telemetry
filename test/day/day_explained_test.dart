@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:telemetry/day/consistency_card.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/day/progression_card.dart';
 import 'package:telemetry/day/time_losses_card.dart';
 import 'package:telemetry/format.dart';
@@ -407,13 +408,58 @@ void main() {
     await tester.scrollUntilVisible(pace, 100, scrollable: page);
     expect(
       tester.widget<Text>(pace).data,
-      startsWith('At its pace from LAP ${first.paceLapNumber}'),
+      startsWith(
+        "First lap in the session's middle half or quicker: "
+        'LAP ${first.paceLapNumber}',
+      ),
     );
-    await tester.ensureVisible(cell);
+
+    // A lap opens on its own page, the same run and lap.
+    Future<void> openAndCheck(Finder cell, DayLapRow expected) async {
+      await tester.scrollUntilVisible(cell, 100, scrollable: page);
+      await tester.ensureVisible(cell);
+      await tester.pumpAndSettle();
+      await tester.tap(cell);
+      await tester.pumpAndSettle();
+      final opened = tester.widget<LapPage>(find.byType(LapPage)).row;
+      expect(opened.runId, expected.runId);
+      expect(opened.lapNumber, expected.lapNumber);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+    }
+
+    final second = evolution.sessions.last.laps.last;
+    await openAndCheck(
+      find.byKey(
+        ValueKey(
+          'evolutionCell ${evolution.sessions.last.runId} ${second.lapNumber}',
+        ),
+      ),
+      second.row,
+    );
+
+    // Excluding the lap turns its cell to "not ranked", with the reason.
+    expect(controller.exclude(lap.row, 'Traffic'), isTrue);
     await tester.pumpAndSettle();
-    await tester.tap(cell);
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('dayResultsSummary')), findsNothing);
+    await tester.scrollUntilVisible(cell, -100, scrollable: page);
+    expect(
+      find.descendant(of: cell, matching: find.text('not ranked')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: cell, matching: find.text(displayTime(lap.seconds))),
+      findsNothing,
+    );
+    final reason = find.byKey(
+      ValueKey('evolutionNotRanked ${first.runId} ${lap.lapNumber}'),
+    );
+    await tester.scrollUntilVisible(reason, 100, scrollable: page);
+    expect(
+      tester.widget<Text>(reason).data,
+      'LAP ${lap.lapNumber} · Excluded: Traffic',
+    );
+    // An excluded lap opens too.
+    await openAndCheck(cell, lap.row);
   });
 
   testWidgets('cards say what is missing', (tester) async {
@@ -439,6 +485,7 @@ void main() {
                   groupId: null,
                   state: DayRankingState.selectionRequired,
                 ),
+                evolution: DayEvolution(groupId: null),
                 result: null,
               ),
             ],

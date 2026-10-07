@@ -22,6 +22,14 @@ String displayTime(double seconds) {
   return formatLapTime(milliseconds / 1000, 3) ?? '—';
 }
 
+/// A span of whole minutes and seconds, "2:31" from 151 seconds, such as
+/// when a lap began after the first; "—" when it is not finite or negative.
+String displayClock(double seconds) {
+  if (!seconds.isFinite || seconds < 0) return '—';
+  final whole = seconds.round();
+  return '${whole ~/ 60}:${(whole % 60).toString().padLeft(2, '0')}';
+}
+
 /// A signed difference in seconds: "+0.412 s", "−1.340 s", "—".
 String displayDelta(double seconds) {
   if (!seconds.isFinite) return '—';

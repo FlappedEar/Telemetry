@@ -1,6 +1,7 @@
 // How lap times move through each session of a group (FET-227): every timed
-// lap by its number and the time since the session's first timed lap began, how many laps it
-// took to reach the session's own pace, and each session against the one
+// lap by its number and the time since the session's first timed lap began,
+// the first lap in the session's middle half of lap times or quicker (and
+// whether later laps kept getting quicker), and each session against the one
 // listed before it at the same lap numbers. Laps are the ranking's: a lap
 // the ranking leaves out is listed with its reasons but never measured.
 //
@@ -23,6 +24,7 @@ final class EvolutionLap {
     required this.secondsSinceFirstLap,
     required this.eligible,
     List<LapIssue> issues = const [],
+    this.userReason = '',
     this.atPace = false,
   }) : issues = List.unmodifiable(issues);
 
@@ -38,6 +40,9 @@ final class EvolutionLap {
 
   /// Why the ranking leaves it out; empty when [eligible].
   final List<LapIssue> issues;
+
+  /// The reason the user gave when they excluded the lap.
+  final String userReason;
 
   /// Eligible and no slower than the session's [SessionEvolution.paceLimitSeconds].
   final bool atPace;
@@ -56,6 +61,7 @@ final class SessionEvolution {
     this.paceLapNumber,
     this.lapsBeforePace = 0,
     this.notCountedBeforePace = 0,
+    this.quickerLaterLap,
     this.previousRunId,
     this.previousRunName,
     this.sameLapsCount = 0,
@@ -72,11 +78,12 @@ final class SessionEvolution {
   final double? typicalSeconds;
 
   /// The slow edge of the middle half of its eligible laps (the upper
-  /// quartile): a lap this quick or quicker is at the session's pace. Null
-  /// below [minimumConsistencySamples] eligible laps.
+  /// quartile). Null below [minimumConsistencySamples] eligible laps.
   final double? paceLimitSeconds;
 
-  /// The first eligible lap at the session's pace.
+  /// The first eligible lap in the middle half of the session's laps or
+  /// quicker (no slower than [paceLimitSeconds]). Not the session's full
+  /// pace when later laps kept getting quicker ([quickerLaterLap]).
   final int? paceLapNumber;
 
   /// Timed laps before [paceLapNumber], those not measured included.
@@ -85,6 +92,11 @@ final class SessionEvolution {
   /// Of [lapsBeforePace], the laps the ranking leaves out: whether they were
   /// slower is not known.
   final int notCountedBeforePace;
+
+  /// The quickest eligible lap after [paceLapNumber], when it is quicker than
+  /// the whole middle half of the session's laps (below the lower
+  /// quartile): the session kept getting quicker after that lap.
+  final EvolutionLap? quickerLaterLap;
 
   /// The session listed before it, if any.
   final String? previousRunId, previousRunName;
@@ -131,12 +143,6 @@ final class DayEvolution {
   bool get hasLaps => sessions.any((session) => session.laps.isNotEmpty);
 }
 
-double _median(List<double> values) {
-  final sorted = [...values]..sort();
-  final middle = sorted.length ~/ 2;
-  return sorted.length.isOdd ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
-
 /// The evolution of [progression]'s sessions over the day's [rows], with
 /// [ranking] (the same group) deciding which laps are measured.
 DayEvolution summarizeDayEvolution(
@@ -152,7 +158,7 @@ DayEvolution summarizeDayEvolution(
   final listed = {for (final run in progression.runs) run.runId};
   final laps = <String, List<DayLapRow>>{};
   for (final row in rows) {
-    if (!listed.contains(row.runId) || !row.start.isFinite || !row.end.isFinite) continue;
+    if (!listed.contains(row.runId)) continue;
     if (row.type == LapSectionType.lap) (laps[row.runId] ??= []).add(row);
   }
   final eligible = {for (final row in ranking.eligibleLaps) row.reference};
@@ -160,15 +166,14 @@ DayEvolution summarizeDayEvolution(
   double? minimum, maximum;
   SessionEvolution? previous;
   for (final run in progression.runs) {
-    final issues = {for (final lap in run.excludedLaps) lap.row.reference: lap.issues};
+    final excluded = {for (final lap in run.excludedLaps) lap.row.reference: lap};
     final timed = (laps[run.runId] ?? <DayLapRow>[])
       ..sort((a, b) => a.start != b.start ? a.start.compareTo(b.start) : a.end.compareTo(b.end));
-    final times = [
-      for (final row in timed)
-        if (eligible.contains(row.reference)) row.durationSeconds,
-    ];
-    final summary = summarizeConsistency(times);
-    final limit = summary.available ? summary.q3 : null;
+    // The ranking's quartiles of the run's eligible laps.
+    final distribution = run.eligibleLapCount >= minimumConsistencySamples
+        ? run.distribution
+        : null;
+    final limit = distribution?.q3;
     final firstLap = timed.isEmpty ? 0.0 : timed.first.start;
     final evolutionLaps = <EvolutionLap>[];
     int? paceLap;
@@ -194,10 +199,24 @@ DayEvolution summarizeDayEvolution(
           row: row,
           secondsSinceFirstLap: row.start - firstLap,
           eligible: measured,
-          issues: measured ? const [] : (issues[row.reference] ?? const []),
+          issues: measured ? const [] : (excluded[row.reference]?.issues ?? const []),
+          userReason: measured ? '' : (excluded[row.reference]?.userReason ?? ''),
           atPace: atPace,
         ),
       );
+    }
+    EvolutionLap? quicker;
+    if (paceLap != null && distribution != null) {
+      var after = false;
+      for (final lap in evolutionLaps) {
+        if (after &&
+            lap.eligible &&
+            lap.seconds < distribution.q1 &&
+            (quicker == null || lap.seconds < quicker.seconds)) {
+          quicker = lap;
+        }
+        if (lap.lapNumber == paceLap && lap.eligible) after = true;
+      }
     }
     var pairs = 0;
     double? sameLaps;
@@ -211,16 +230,17 @@ DayEvolution summarizeDayEvolution(
           if (lap.eligible && earlier[lap.lapNumber] != null) lap.seconds - earlier[lap.lapNumber]!,
       ];
       pairs = differences.length;
-      if (pairs >= minimumConsistencySamples) sameLaps = _median(differences);
+      sameLaps = summarizeConsistency(differences).median;
     }
     final session = SessionEvolution(
       run: run,
       laps: evolutionLaps,
-      typicalSeconds: summary.available ? summary.median : null,
+      typicalSeconds: distribution?.median,
       paceLimitSeconds: limit,
       paceLapNumber: paceLap,
       lapsBeforePace: paceLap == null ? 0 : before,
       notCountedBeforePace: paceLap == null ? 0 : notCounted,
+      quickerLaterLap: quicker,
       previousRunId: previous?.runId,
       previousRunName: previous?.runName,
       sameLapsCount: pairs,
