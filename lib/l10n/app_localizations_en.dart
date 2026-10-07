@@ -7097,4 +7097,239 @@ class AppLocalizationsEn extends AppLocalizations {
   ) {
     return 'Brakes on $braked of $laps laps ($how). Heavy or not is not known: $reason.';
   }
+
+  @override
+  String get gripHeading => 'Grip and balance';
+
+  @override
+  String get gripInferredBadge => 'Inferred';
+
+  @override
+  String gripIntro(int count) {
+    return 'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ($count at least); peak is the highest lap.';
+  }
+
+  @override
+  String get gripWorking => 'Working out the grip and balance…';
+
+  @override
+  String get gripUnavailable =>
+      'Not known until the day\'s laps are timed through its segments.';
+
+  @override
+  String get gripBySession => 'By session, at comparable speed';
+
+  @override
+  String gripSessionLaps(String session, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ranked laps',
+      one: '1 ranked lap',
+    );
+    return '$session · $_temp0';
+  }
+
+  @override
+  String get gripSpeedColumn => 'Speed';
+
+  @override
+  String get gripCornering => 'Cornering';
+
+  @override
+  String get gripBraking => 'Braking';
+
+  @override
+  String get gripAccelerating => 'Accelerating';
+
+  @override
+  String get gripExit => 'Exit acceleration';
+
+  @override
+  String get gripBalance => 'Balance';
+
+  @override
+  String gripBandBelow(String speed) {
+    return 'below $speed';
+  }
+
+  @override
+  String gripBandBetween(String low, String high) {
+    return '$low–$high';
+  }
+
+  @override
+  String gripBandAbove(String speed) {
+    return '$speed and above';
+  }
+
+  @override
+  String gripPeak(String value) {
+    return 'peak $value';
+  }
+
+  @override
+  String get gripTableNote =>
+      'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s.';
+
+  @override
+  String gripUnitNote(String what, String unit) {
+    return '$what: in $unit.';
+  }
+
+  @override
+  String gripAssumedNote(String what) {
+    return '$what: the recording does not declare a unit; g is assumed.';
+  }
+
+  @override
+  String gripFromSpeedNote(String what) {
+    return '$what: from the change in speed (no longitudinal acceleration recorded), in g.';
+  }
+
+  @override
+  String gripFromSpeedAssumedNote(String what) {
+    return '$what: from the change in speed, in g; the speed has no declared unit, so km/h is assumed.';
+  }
+
+  @override
+  String gripAnd(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String gripNotKnownLine(String what, String reason) {
+    return '$what: not known: $reason.';
+  }
+
+  @override
+  String gripTypicalNeedsLaps(int count) {
+    return 'Typical values need at least $count laps measured the same way; where there are fewer only the peak is shown.';
+  }
+
+  @override
+  String gripLeftOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps measured differently are left out.',
+      one: '1 lap measured differently is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripByCorner => 'By corner';
+
+  @override
+  String gripCornerSummary(String what, String value) {
+    return '$what $value';
+  }
+
+  @override
+  String gripTypicalPeak(String typical, String peak, String lap) {
+    return 'typical $typical · peak $peak ($lap)';
+  }
+
+  @override
+  String gripPeakOnly(String peak, String lap, int count) {
+    return 'peak $peak ($lap); typical needs $count laps';
+  }
+
+  @override
+  String gripBalanceTypical(String ratio) {
+    return 'typical $ratio (yaw rate ÷ what the cornering needs)';
+  }
+
+  @override
+  String gripLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'from $count laps',
+      one: 'from 1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gripAssumedUnit(String value) {
+    return '$value (unit assumed)';
+  }
+
+  @override
+  String get gripMeaningHeading => 'What the numbers mean';
+
+  @override
+  String get gripMeaningCornering =>
+      'Cornering: the highest sideways acceleration each lap reached, through the corner or in the speed band.';
+
+  @override
+  String get gripMeaningBraking =>
+      'Braking: the highest deceleration from the braking point to the slowest point of the corner (by session: anywhere in the speed band).';
+
+  @override
+  String get gripMeaningExit =>
+      'Exit acceleration: the mean acceleration from the slowest point to the end of the corner; below zero the car was still slowing.';
+
+  @override
+  String gripMeaningBalance(String g, String speed) {
+    return 'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from $g g and $speed m/s. About 1: it turned as its path curved; above 1 it rotated more (oversteer-like), below 1 less (understeer-like). It needs the car\'s own yaw-rate channel and is inferred: no steering is recorded.';
+  }
+
+  @override
+  String gripReasonTooFewLaps(int count) {
+    return 'fewer than $count laps';
+  }
+
+  @override
+  String get gripReasonTooFewSamples => 'too few samples on every lap';
+
+  @override
+  String get gripReasonNoLateral => 'the recording has no lateral acceleration';
+
+  @override
+  String get gripReasonNoSpeed => 'the recording has no speed';
+
+  @override
+  String get gripReasonUnsupportedUnit => 'its unit is not one the app reads';
+
+  @override
+  String get gripReasonSpeedUnit => 'the speed\'s unit is not km/h or mph';
+
+  @override
+  String get gripReasonNoYaw => 'the recording has no yaw-rate channel';
+
+  @override
+  String get gripReasonDeviceAxes =>
+      'the recording\'s gyro measures the logger\'s own axes, not the car\'s yaw';
+
+  @override
+  String get gripReasonYawUnit =>
+      'the yaw rate\'s unit is not recorded or not known';
+
+  @override
+  String get gripReasonNotTimed => 'the laps are not timed through this corner';
+
+  @override
+  String get gripReasonNoMinimum => 'no slowest point found in the corner';
+
+  @override
+  String get gripReasonNone => 'none on any lap';
+
+  @override
+  String get gripReasonNoRecording => 'the recording is not loaded';
+
+  @override
+  String get gripReasonOther => 'not available';
+
+  @override
+  String get gripSummary =>
+      'How hard the car was worked cornering, braking and accelerating, per session and per corner.';
+
+  @override
+  String get gripShow => 'Show';
+
+  @override
+  String get gripHide => 'Hide';
 }

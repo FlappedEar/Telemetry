@@ -21,6 +21,7 @@ import '../operation.dart';
 import '../telemetry_session.dart';
 import 'day_analysis.dart';
 import 'day_corners.dart';
+import 'day_grip.dart';
 import 'day_laps.dart';
 import 'day_ranking.dart';
 
@@ -89,6 +90,7 @@ final class DayTheoreticalBest {
     List<SegmentReviewItem> proposalReview = const [],
     Map<String, List<Map<String, Object?>>> remeasuredRuns = const {},
     this.realistic,
+    this.grip,
   }) : laps = List.unmodifiable(laps),
        corners = List.unmodifiable(corners),
        runSegments = List.unmodifiable(runSegments),
@@ -140,6 +142,10 @@ final class DayTheoreticalBest {
   /// ([computeRealisticTheoreticalBest]); null without a result.
   final RealisticTheoreticalBest? realistic;
 
+  /// The grip and balance proxies of the group's ranked laps and of
+  /// [corners] (FET-229), all inferred; null without a result.
+  final DayGripProxies? grip;
+
   /// This result with [runs] as its [remeasuredRuns].
   DayTheoreticalBest withRemeasuredRuns(Map<String, List<Map<String, Object?>>> runs) =>
       DayTheoreticalBest(
@@ -157,6 +163,7 @@ final class DayTheoreticalBest {
         proposalReview: proposalReview,
         remeasuredRuns: runs,
         realistic: realistic,
+        grip: grip,
       );
 
   /// The length of the shared axis the segments are edited on.
@@ -508,6 +515,26 @@ DayTheoreticalBest dayTheoreticalBest(
           );
         }(),
   ], cancelled: cancelled);
+  final corners = dayCorners(
+    computed,
+    rows,
+    best,
+    sessions: {for (final MapEntry(:key, :value) in runs.entries) key: value.session},
+  );
+  // Inferred from the recordings of the same ranked laps, in this job.
+  final grip = dayGripProxies(
+    rows,
+    corners,
+    (runId) => runs[runId]?.session,
+    (lap, index) {
+      final sectors = timed[lap.reference]?.times.sectors;
+      if (sectors == null || index < 0 || index >= sectors.length) return null;
+      final start = sectors[index].startTime, end = sectors[index].endTime;
+      return start == null || end == null || end <= start ? null : (start, end);
+    },
+    bestLap: best?.reference,
+    cancelled: cancelled,
+  );
   return DayTheoreticalBest(
     groupId: id,
     state: DayTheoreticalBestState.ready,
@@ -519,12 +546,7 @@ DayTheoreticalBest dayTheoreticalBest(
     laps: [for (final row in rows) ?timed[row.reference]],
     bestLap: best,
     automaticSegments: automatic,
-    corners: dayCorners(
-      computed,
-      rows,
-      best,
-      sessions: {for (final MapEntry(:key, :value) in runs.entries) key: value.session},
-    ),
+    corners: corners,
     segmentRunId: canonical.runId,
     runSegments: [
       for (final value in (stored[canonical.runId] as List?) ?? const [])
@@ -540,6 +562,7 @@ DayTheoreticalBest dayTheoreticalBest(
             review.axis.lengthMeters,
           ),
     realistic: realistic,
+    grip: grip,
   );
 }
 
