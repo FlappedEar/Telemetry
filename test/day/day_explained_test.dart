@@ -352,6 +352,68 @@ void main() {
     expect(find.byKey(const ValueKey('sectionTable')), findsOneWidget);
     expect(find.textContaining('rozrzut '), findsWidgets);
     expect(find.textContaining('spread '), findsNothing);
+
+    await tester.ensureVisible(find.text('Według okrążeń'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Według okrążeń'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('evolutionTable')), findsOneWidget);
+    expect(find.text('OKR. 1'), findsWidgets);
+  });
+
+  testWidgets('shows every lap of each session from the day page', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    final analysis = outcome.analysis!;
+    final controller = DayResultsController(
+      runs: outcome.runs,
+      analysis: analysis,
+    );
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      TelemetryApp(home: DayResultsPage.controller(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    final evolution = dayEvolution(analysis, controller.progression);
+    expect(evolution.sessions, hasLength(2));
+    final page = find
+        .descendant(
+          of: find.byKey(const ValueKey('dayResultsSummary')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final view = find.byKey(const ValueKey('progressionView'));
+    await tester.scrollUntilVisible(view, 300, scrollable: page);
+    await tester.ensureVisible(find.text('By lap'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('By lap'));
+    await tester.pumpAndSettle();
+    final first = evolution.sessions.first;
+    final lap = first.laps.firstWhere((lap) => lap.eligible);
+    final cell = find.byKey(
+      ValueKey('evolutionCell ${first.runId} ${lap.lapNumber}'),
+    );
+    await tester.scrollUntilVisible(cell, 100, scrollable: page);
+    expect(
+      find.descendant(of: cell, matching: find.text(displayTime(lap.seconds))),
+      findsOneWidget,
+    );
+    // Session 1 has four laps, so it has a pace; session 2 has two.
+    expect(first.paceLapNumber, isNotNull);
+    expect(evolution.sessions.last.paceLapNumber, isNull);
+    final pace = find.byKey(ValueKey('evolutionPace ${first.runId}'));
+    await tester.scrollUntilVisible(pace, 100, scrollable: page);
+    expect(
+      tester.widget<Text>(pace).data,
+      startsWith('At its pace from LAP ${first.paceLapNumber}'),
+    );
+    await tester.ensureVisible(cell);
+    await tester.pumpAndSettle();
+    await tester.tap(cell);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dayResultsSummary')), findsNothing);
   });
 
   testWidgets('cards say what is missing', (tester) async {

@@ -573,6 +573,17 @@ void main() {
     await shot(tester, 'segment-spread');
     await scrollIn(tester, summary, find.text('Progression'));
     await shot(tester, 'progression');
+    // Every lap of each session by lap number, then back to By session.
+    Finder progressionView(String label) => find.descendant(
+      of: find.byKey(const ValueKey('progressionView')),
+      matching: find.text(label),
+    );
+    await tester.tap(progressionView('By lap'));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Progression'));
+    await shot(tester, 'progression-by-lap');
+    await tester.tap(progressionView('By session'));
+    await tester.pumpAndSettle();
     await scrollIn(tester, summary, find.text('G-G envelope'));
     await shot(tester, 'gg-envelope');
     await scrollIn(tester, summary, find.text('Best lap of each session'));

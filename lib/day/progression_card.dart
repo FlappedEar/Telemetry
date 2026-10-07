@@ -8,6 +8,7 @@ import '../format.dart';
 import '../l10n.dart';
 import 'setup_text.dart';
 import 'theoretical_best_card.dart' show TheoreticalBestText;
+import 'evolution_view.dart';
 import 'touch.dart';
 import 'weather_text.dart';
 
@@ -21,19 +22,28 @@ String recordingClockText(AppLocalizations l10n, int milliseconds) {
   );
 }
 
+/// The progression card's views.
+enum ProgressionView { sessions, segments, laps }
+
 /// How the day went: each session's best and typical lap in recording
-/// order, and each segment's typical time per session.
+/// order, each segment's typical time per session, and every lap of each
+/// session in order.
 class ProgressionCard extends StatefulWidget {
   const ProgressionCard({
     super.key,
     required this.progression,
     required this.result,
+    this.evolution,
     this.loading = false,
     this.onOpenLap,
     this.weatherOf,
   });
 
   final DayProgression progression;
+
+  /// Every lap of each session of [progression], in order; null while the
+  /// day has none to show.
+  final DayEvolution? evolution;
 
   /// The theoretical best, which times every segment; null while it is
   /// calculated for the first time.
@@ -50,8 +60,8 @@ class ProgressionCard extends StatefulWidget {
 
 class _ProgressionCardState extends State<ProgressionCard> {
   // Kept for the page: the list rebuilds the card when it scrolls back.
-  late bool _bySection =
-      readPageState(context, 'progressionBySection') ?? false;
+  late ProgressionView _view =
+      readPageState(context, 'progressionView') ?? ProgressionView.sessions;
 
   @override
   Widget build(BuildContext context) {
@@ -65,27 +75,41 @@ class _ProgressionCardState extends State<ProgressionCard> {
           children: [
             Text(l10n.progressionTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
-            SegmentedButton<bool>(
+            SegmentedButton<ProgressionView>(
               key: const ValueKey('progressionView'),
               showSelectedIcon: false,
               segments: [
                 ButtonSegment(
-                  value: false,
+                  value: ProgressionView.sessions,
                   label: Text(l10n.progressionBySession),
                 ),
                 ButtonSegment(
-                  value: true,
+                  value: ProgressionView.segments,
                   label: Text(l10n.progressionBySegment),
                 ),
+                ButtonSegment(
+                  value: ProgressionView.laps,
+                  label: Text(l10n.progressionByLap),
+                ),
               ],
-              selected: {_bySection},
+              selected: {_view},
               onSelectionChanged: (selection) => setState(() {
-                _bySection = selection.single;
-                writePageState(context, 'progressionBySection', _bySection);
+                _view = selection.single;
+                writePageState(context, 'progressionView', _view);
               }),
             ),
             const SizedBox(height: 8),
-            if (_bySection) ..._sections(context) else ..._sessions(context),
+            ...switch (_view) {
+              ProgressionView.sessions => _sessions(context),
+              ProgressionView.segments => _sections(context),
+              ProgressionView.laps => [
+                EvolutionView(
+                  evolution: widget.evolution,
+                  onOpenLap: widget.onOpenLap,
+                  weatherOf: widget.weatherOf,
+                ),
+              ],
+            },
           ],
         ),
       ),

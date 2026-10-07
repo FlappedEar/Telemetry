@@ -1848,6 +1848,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         const SizedBox(height: 12),
         ProgressionCard(
           progression: _controller.progression,
+          evolution: _evolution(),
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
           onOpenLap: _open,
@@ -2277,6 +2278,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
       onBriefing: _openBriefing,
       onChanges: _openChanges,
     );
+  }
+
+  // Every lap of each session for the progression, worked out again only
+  // when the day's analysis or the progression changes.
+  (DayAnalysis, DayProgression, DayEvolution)? _evolutionCache;
+
+  /// Every lap of each session in the progression's order (FET-227).
+  DayEvolution _evolution() {
+    final analysis = _controller.analysis;
+    final progression = _controller.progression;
+    var cached = _evolutionCache;
+    if (cached == null ||
+        !identical(cached.$1, analysis) ||
+        !identical(cached.$2, progression)) {
+      cached = _evolutionCache = (
+        analysis,
+        progression,
+        dayEvolution(analysis, progression),
+      );
+    }
+    return cached.$3;
   }
 
   /// The theoretical best's section progression in the progression's

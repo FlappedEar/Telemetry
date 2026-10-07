@@ -19,7 +19,20 @@
 <ul>
   <li><strong>By session</strong>: each session in order with its start time, best lap, laps ranked, typical lap, the best lap against the session before (for example <em>Best −0.412 s against Session 1</em>), and a bar of its lap times (range, middle half, median). Tap a session to open its best lap.</li>
   <li><strong>By segment</strong>: a table of each segment's typical time per session, the quickest highlighted. Tap a cell to see its laps.</li>
+  <li><strong>By lap</strong>: every timed lap of each session in order, on a chart and in a table.</li>
 </ul>
+<h3 id="by-lap">By lap</h3>
+<figure>
+  <img src="assets/screens/progression-by-lap.png" alt="Progression card, By lap: a chart of lap time by lap number with one line per session, earlier sessions fainter, and a table of each session's laps by lap number with the time since its first lap" width="1280" height="800" loading="lazy">
+</figure>
+<p>How lap times move through each session and from one session to the next. The chart has one line per session, lap time by lap number, with slower laps higher and earlier sessions fainter. The table has a row per session and a column per lap number, so a column is the same point of every session. Each cell shows the lap time and when the lap began after the start of the session's first timed lap, such as <em>+2:31</em>. The clock starts at the first timed lap, not the recording: a recording can start in the paddock long before the out lap. Out and in laps are not timed laps and are not shown. A lap left out of the ranking (off the route, excluded by you, incomplete GPS) is shown as <em>not counted</em>, breaks its session's line and is never measured. Tap a lap to open it.</p>
+<p>Below the table, for each session:</p>
+<ul>
+  <li><strong>Air</strong>: the modelled air temperature, when the session's <a href="day.html#weather">weather</a> is kept.</li>
+  <li><strong>At its pace from LAP n</strong>, after how many laps. A lap is at the session's pace when it is no slower than the slow edge of the middle half of the session's ranked laps (the upper quartile), so it takes at least three ranked laps. Laps before it are grey in the table. If some of those laps are not counted, it says so: whether they were slower is not known.</li>
+  <li><strong>Against the session before at the same laps</strong>: the typical (median) difference between its laps and the previous session's laps with the same number, where both are ranked, for example <em>Against Session 4 at the same laps: −10.214 s typical difference over 4 laps</em>. A negative difference means it was quicker. It needs at least three such laps, otherwise it says how many there are.</li>
+</ul>
+<p>These are observations, not causes. The tyres warming up, the track rubbering in or drying, the weather and you learning the track all change together through a session and through the day, and this cannot tell them apart. The track temperature is not recorded, and the air temperature comes from a weather model for the area, not from the track. The <a href="#car">Car</a> card says how a temperature the car recorded moved with lap time, and flags it when the temperature just follows the order of the day.</p>
 <p>Each session's <a href="day.html#weather">weather</a>, conditions, setup changes, setup and notes are shown when it has them, the setup on one line such as <em>Setup: Cold 2.1 / 2.1 / 2 / 2 bar · Tyres Pirelli SC2 · Fuel 8.5 l</em> in the unit it was entered in. Enter them in <a href="day.html#details">Session details</a>; conditions, setup changes and notes can also come from FlappedEar Overlays.</p>
 
 <h2 id="gg-envelope">G-G envelope</h2>

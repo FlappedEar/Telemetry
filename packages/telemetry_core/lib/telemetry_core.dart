@@ -67,6 +67,7 @@ export 'package:fetproject/fetproject.dart'
     show FetprojectError, InterruptedSave, completeInterruptedSave;
 
 export 'src/day/day_laps.dart';
+export 'src/day/day_evolution.dart';
 export 'src/day/day_progression.dart';
 export 'src/day/day_ranking.dart';
 export 'src/day/lap_path.dart';
