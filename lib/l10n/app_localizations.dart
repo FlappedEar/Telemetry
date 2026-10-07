@@ -776,6 +776,36 @@ abstract class AppLocalizations {
   /// **'Best lap trace with {segment} highlighted'**
   String coachWhyMap(String segment);
 
+  /// Screen-reader label of the coach card's map when no item is selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with today\'s corners numbered'**
+  String get coachCornerMap;
+
+  /// Screen-reader label of the coach card's map: the corner of the item selected is highlighted.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with today\'s corners numbered, {segment} highlighted'**
+  String coachCornerMapSelected(String segment);
+
+  /// Under the coach card's map when there is no item.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners are numbered as the coach names them.'**
+  String get coachCornerMapNote;
+
+  /// Under the coach card's map: tapping an item highlights its corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners are numbered as the coach names them. Tap an item to show its corner.'**
+  String get coachCornerMapNoteSelect;
+
+  /// Screen-reader hint of a coach item: what tapping it does.
+  ///
+  /// In en, this message translates to:
+  /// **'show its corner on the map'**
+  String get coachShowOnMap;
+
   /// Link to Apple Maps' legal notices, shown on the Apple Maps background.
   ///
   /// In en, this message translates to:

@@ -447,6 +447,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get coachCornerMap => 'Best lap trace with today\'s corners numbered';
+
+  @override
+  String coachCornerMapSelected(String segment) {
+    return 'Best lap trace with today\'s corners numbered, $segment highlighted';
+  }
+
+  @override
+  String get coachCornerMapNote =>
+      'Corners are numbered as the coach names them.';
+
+  @override
+  String get coachCornerMapNoteSelect =>
+      'Corners are numbered as the coach names them. Tap an item to show its corner.';
+
+  @override
+  String get coachShowOnMap => 'show its corner on the map';
+
+  @override
   String get appleMapLegal => 'Legal';
 
   @override

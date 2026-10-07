@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:io';
+import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +15,7 @@ import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/l10n/app_localizations.dart';
 import 'package:telemetry/main.dart';
+import 'package:telemetry/ui/theme.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
@@ -70,12 +72,17 @@ void main() {
     String? measuredName,
     bool lift = false,
     bool braking = false,
+    bool twoCorners = false,
   }) {
     final laps = [for (final sectors in result.laps) sectors.lap];
     final segment = result.segments.firstWhere(
       (s) => s.type == 'corner',
       orElse: () => result.segments.first,
     );
+    // With [twoCorners], the improvement to keep is at the day's last corner.
+    final keepSegment = twoCorners
+        ? result.segments.lastWhere((s) => s.type == 'corner')
+        : segment;
     final earlier = laps.where((lap) => lap.runId != runId).toList();
     final latest = laps.lastWhere((lap) => lap.runId == runId);
     CoachFinding finding(
@@ -85,8 +92,8 @@ void main() {
       List<DayLapRow> references,
     ) => CoachFinding(
       kind: kind,
-      segmentId: segment.segmentId,
-      segmentName: segment.name,
+      segmentId: kind.corrective ? segment.segmentId : keepSegment.segmentId,
+      segmentName: kind.corrective ? segment.name : keepSegment.name,
       confidence: 0.78,
       // A change also seen on laps of an earlier session.
       affectedLaps: kind.corrective
@@ -169,6 +176,7 @@ void main() {
     String? measuredName,
     bool lift = false,
     bool braking = false,
+    bool twoCorners = false,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -189,6 +197,7 @@ void main() {
                     measuredName: measuredName,
                     lift: lift,
                     braking: braking,
+                    twoCorners: twoCorners,
                   )
                 : job(),
           ),
@@ -333,6 +342,14 @@ void main() {
     expect(find.text("This session's laps"), findsOneWidget);
     expect(find.text('Earlier laps showing it today'), findsOneWidget);
     expect(find.byKey(const ValueKey('coachMap')), findsOneWidget);
+    // Every corner is numbered there too, this item's highlighted on top.
+    final whyMap = tester.widget<TrackMap>(
+      find.byKey(const ValueKey('coachMap')),
+    );
+    final page = tester.widget<CoachItemPage>(find.byType(CoachItemPage));
+    expect(whyMap.labels, hasLength(page.result.corners.length));
+    expect(whyMap.labels.last.emphasized, isTrue);
+    expect(whyMap.labels.last.text, page.finding.segmentName.split(' ').last);
     await tester.scrollUntilVisible(
       find.textContaining('not a probability'),
       200,
@@ -340,6 +357,122 @@ void main() {
     );
     expect(find.textContaining('not a probability'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the map numbers the day\'s corners as the coach names them '
+      'and highlights the selected item\'s corner', (tester) async {
+    final controller = await show(tester, twoCorners: true);
+    final result = controller.theoreticalBest!;
+    final [focus, keep] = [
+      for (final item in controller.coach!.plan) item.finding,
+    ];
+    expect(focus.segmentId, isNot(keep.segmentId));
+    String number(String id) => result.corners
+        .firstWhere((c) => c.segmentId == id)
+        .name
+        .split(' ')
+        .last;
+    TrackMap map() =>
+        tester.widget<TrackMap>(find.byKey(const ValueKey('coachCornerMap')));
+    // Every corner of the day has its number, as the card names it.
+    expect(result.corners.length, greaterThan(1));
+    expect(map().labels.map((label) => label.text).toSet(), {
+      for (final corner in result.corners) corner.name.split(' ').last,
+    });
+    // The main focus's corner is selected to start with: highlighted, on top.
+    expect(map().labels.last.text, number(focus.segmentId));
+    expect(map().labels.last.emphasized, isTrue);
+    expect(map().labels.where((label) => label.emphasized), hasLength(1));
+    expect(map().semanticLabel, contains(focus.segmentName));
+    expect(
+      find.text(
+        'Corners are numbered as the coach names them. '
+        'Tap an item to show its corner.',
+      ),
+      findsOneWidget,
+    );
+    // Only the selected corner's fixes take the highlight.
+    final path = tester
+        .widget<NextSessionCard>(find.byType(NextSessionCard))
+        .path!;
+    final best = result.bestLap!;
+    PathPoint fixIn(String segmentId) => path.segments
+        .expand((segment) => segment)
+        .firstWhere(
+          (point) =>
+              result.segmentAtTime(best, point.telemetryTime) ==
+              result.segments.indexWhere((s) => s.segmentId == segmentId),
+        );
+    final highlight = FetColors.of(tester.element(find.byType(NextSessionCard)))
+        .dayBest;
+    expect(map().pointColor!(fixIn(focus.segmentId)), highlight);
+    expect(map().pointColor!(fixIn(keep.segmentId)), isNot(highlight));
+    // Each number sits on a fix of its own corner.
+    final fixes = path.segments.expand((segment) => segment).toList();
+    for (final corner in result.corners) {
+      final label = map().labels.singleWhere(
+        (label) => label.text == corner.name.split(' ').last,
+      );
+      final at = fixes.firstWhere(
+        (point) =>
+            point.eastMeters == label.east && point.northMeters == label.north,
+      );
+      expect(result.segmentAtTime(best, at.telemetryTime), corner.segmentIndex);
+    }
+    // Tapping the other item shows its corner instead.
+    await reveal(tester, find.byKey(const ValueKey('coachItemSelect 1')));
+    await tester.tap(find.byKey(const ValueKey('coachAction 1')));
+    await tester.pumpAndSettle();
+    expect(map().labels.last.text, number(keep.segmentId));
+    expect(map().labels.last.emphasized, isTrue);
+    expect(map().semanticLabel, contains(keep.segmentName));
+    expect(map().pointColor!(fixIn(keep.segmentId)), highlight);
+    expect(map().pointColor!(fixIn(focus.segmentId)), isNot(highlight));
+    // The map is scrolled into view to show it.
+    expect(
+      tester.getRect(find.byKey(const ValueKey('coachCornerMap'))).top,
+      greaterThanOrEqualTo(0),
+    );
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('coachItemSelect 1')))
+          .flagsCollection
+          .isSelected,
+      Tristate.isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the shared report\'s coach has no map', (tester) async {
+    final controller = await show(tester);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: NextSessionCard(
+              coach: controller.coach,
+              result: controller.theoreticalBest,
+              session: controller.latestRunName,
+              lapLabel: controller.lapLabel,
+              printable: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('coachItem 0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('coachCornerMap')), findsNothing);
+    expect(find.byKey(const ValueKey('coachItemSelect 0')), findsNothing);
+  });
+
+  test('a corner\'s number on the map is the one the coach names', () {
+    final l10n = lookupAppLocalizations(const Locale('en'));
+    expect(coachCornerNumber(l10n, 'Corner 10'), '10');
+    expect(coachCornerNumber(l10n, 'Corners 3–4'), '3–4');
+    expect(coachCornerNumber(l10n, 'Corner 3 (2)'), '3 (2)');
+    expect(coachCornerNumber(l10n, 'Hairpin'), 'Hairpin');
   });
 
   testWidgets('the session before\'s main focus is checked again', (
