@@ -249,6 +249,8 @@ void main() {
       expect(technique.trailSeconds.median, isNotNull);
       // The pedal is recorded at 10 Hz: its application and release are read.
       expect(technique.brakeRateHz, closeTo(10, 0.01));
+      expect(technique.pedalApplication.median, isNotNull);
+      expect(technique.pedalRelease.median, isNotNull);
     });
 
     test('leaves out laps the ranking does not rank', () {
@@ -259,6 +261,23 @@ void main() {
       // The recording's start before the gate and its end after the last
       // lap are not laps of the ranking.
       expect(technique.laps.length, ranked.length);
+    });
+
+    test('leaves out a lap the user excluded from the ranking', () {
+      final runs = [
+        _run('run1', rectangleSession([...laps, _lap(255, 12)])),
+      ];
+      final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
+      final all = dayTheoreticalBest(analyzeDay(runs), outing, random: Random(1));
+      final every = all.corners[1].brakingTechnique;
+      expect(every.laps.length, 4);
+      final excluded = every.laps[1].$1! as DayLapReference;
+      final analysis = analyzeDay(runs, exclusions: {excluded: 'Traffic'});
+      final ranked = dayTheoreticalBest(analysis, outing, random: Random(1));
+      final technique = ranked.corners[1].brakingTechnique;
+      expect(technique.lap(excluded), isNull);
+      expect(technique.laps.length, 3);
+      expect(technique.lapsBraking, 3);
     });
 
     test('says why each lap is not known without a G channel or lateral G', () {

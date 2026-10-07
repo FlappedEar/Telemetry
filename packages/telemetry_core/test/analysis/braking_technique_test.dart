@@ -93,7 +93,10 @@ TelemetrySession _session({
   double Function(double)? lateral,
   double lateralStep = 0.1,
   double Function(double)? throttle,
+  String lateralUnit = 'g',
+  String throttleUnit = '%',
   TelemetryChannel? brake,
+  Map<String, String> metadata = const {},
 }) {
   final decel = deceleration ?? _braking();
   final channels = <String, TelemetryChannel>{
@@ -105,21 +108,22 @@ TelemetrySession _session({
       recorded: gRecorded,
     ),
     if (speed) 'velocity': _speed(decel),
-    if (lateral != null) 'latacc': _channel('latacc', lateral, unit: 'g', step: lateralStep),
-    if (throttle != null) 'throttle': _channel('throttle', throttle, unit: '%'),
-    'brake': ?brake,
+    if (lateral != null)
+      'latacc': _channel('latacc', lateral, unit: lateralUnit, step: lateralStep),
+    if (throttle != null) 'throttle': _channel('throttle', throttle, unit: throttleUnit),
   };
+  if (brake != null) channels[brake.name] = brake;
   return TelemetrySession(
     duration: 30,
     startTime: 0,
-    metadata: const {},
+    metadata: metadata,
     channels: channels,
     aliases: {
       'longitudinalAcceleration': 'longacc',
       if (speed) 'speed': 'velocity',
       if (lateral != null) 'lateralAcceleration': 'latacc',
       if (throttle != null) 'throttle': 'throttle',
-      if (brake != null) 'brake': 'brake',
+      if (brake != null) 'brake': brake.name,
     },
     warnings: const [],
     timingGates: const [],
@@ -148,6 +152,7 @@ TelemetryChannel _obdBrake(
   double phase = 0.13,
   bool held = false,
   double step = 0.1,
+  String name = 'brake',
 }) {
   double value(double t) {
     final k = ((t - phase) / period).floor();
@@ -156,8 +161,24 @@ TelemetryChannel _obdBrake(
     return pedal(t0) + (pedal(t1) - pedal(t0)) * (t - t0) / period;
   }
 
-  return _channel('brake', value, unit: '%', step: step);
+  return _channel(name, value, unit: '%', step: step);
 }
+
+/// [signal] updated every [period] s from [phase] and drawn with straight
+/// lines at 10 Hz, written with three decimals (as a VBO writes it).
+TelemetryChannel _lines(double Function(double) signal, double period, double phase) {
+  double value(double t) {
+    final k = ((t - phase) / period).floor();
+    final t0 = phase + k * period, t1 = t0 + period;
+    final y = signal(t0) + (signal(t1) - signal(t0)) * (t - t0) / period;
+    return (y * 1000).roundToDouble() / 1000;
+  }
+
+  return _channel('x', value, to: 120);
+}
+
+// A G-like signal that never holds still.
+double _gLike(double t) => 0.6 * math.sin(t * 0.9) + 0.3 * math.sin(t * 2.3);
 
 // A pedal pressed with the deceleration's shape, 0 to 80 %, every 6 s (at
 // 4, 10, 16, 22 and 28 s), so its rate can be told.
@@ -201,7 +222,11 @@ void main() {
       expect(lap.peakTime, closeTo(10.5, 1e-6));
       expect(lap.zoneMeters, greaterThan(0));
       expect(lap.peakAfterOnsetMeters, lessThan(lap.zoneMeters!));
-      expect(lap.peakFraction, closeTo(lap.peakAfterOnsetMeters! / lap.zoneMeters!, 1e-9));
+      // By time, always.
+      expect(
+        lap.peakFraction,
+        closeTo((lap.peakTime! - lap.onsetTime!) / (lap.endTime! - lap.onsetTime!), 1e-9),
+      );
       // Distance from the recorded speed: onset at about 40 m/s.
       expect(lap.zoneMeters, closeTo(70, 10));
     });
@@ -288,6 +313,32 @@ void main() {
       expect(below.hitGPerSecond, greaterThan(2.05));
     });
 
+    test('a coast or light lift before braking is not part of the hit', () {
+      // Lifting off to [lift] g for a second, then a 0.3 s rise to 1 g (and
+      // back down the same way): the hit and release start from a quarter
+      // of the peak, so a lift below it does not slow them.
+      double Function(double) braking(double lift) => (t) {
+        if (t < 9) return 0;
+        if (t < 10) return lift;
+        final x = t - 10;
+        if (x < 0.3) return lift + (1 - lift) * x / 0.3;
+        if (x < 1.3) return 1;
+        if (x < 1.6) return 1 - (1 - lift) * (x - 1.3) / 0.3;
+        if (x < 2.6) return lift;
+        return 0;
+      };
+      for (final lift in [0.0, 0.16, 0.2, 0.24]) {
+        final lap = _measure(_session(deceleration: braking(lift), gStep: 0.01));
+        final slope = (1 - lift) / 0.3;
+        expect(lap.hitGPerSecond, closeTo(slope, slope * 0.02), reason: 'lift $lift');
+        expect(lap.releaseGPerSecond, closeTo(slope, slope * 0.02), reason: 'lift $lift');
+      }
+      // A lift above a quarter of the peak but below 0.30 g is part of the
+      // ramp: the hit starts where the lift does.
+      final above = _measure(_session(deceleration: braking(0.26), gStep: 0.01));
+      expect(above.hitGPerSecond, lessThan(1.0));
+    });
+
     test('a hit or release needs a sample between its ends', () {
       // Peak reached in one sample interval (0.1 s): too quick for 10 Hz.
       final quick = _measure(_session(deceleration: _braking(rise: 0.1, fall: 0.1)));
@@ -358,6 +409,57 @@ void main() {
     });
   });
 
+  group('brake to throttle', () {
+    // Two brakings in one segment: at 10 s and again at 14 s.
+    double twice(double t) => _braking()(t) + _braking(start: 14)(t);
+
+    test('stops at the next braking when the throttle comes after it', () {
+      final lap = _measure(
+        _session(deceleration: twice, throttle: (t) => t < 17.0 ? 0.0 : 50.0),
+        to: 18,
+      );
+      expect(lap.brakeToThrottleSeconds, isNull);
+      expect(lap.brakeToThrottleReason, brakingTechniqueBrakingAgain);
+    });
+
+    test('a pickup between the two brakings is timed', () {
+      final lap = _measure(
+        _session(deceleration: twice, throttle: (t) => t < 13.0 || t > 13.8 ? 0.0 : 50.0),
+        to: 18,
+      );
+      expect(lap.brakeToThrottleSeconds, closeTo(13.0 - lap.endTime!, 0.11));
+    });
+
+    test('a throttle without a declared unit is read as % and says so', () {
+      final lap = _measure(_session(throttle: (t) => t < 13.0 ? 0.0 : 50.0, throttleUnit: ''));
+      expect(lap.brakeToThrottleSeconds, isNotNull);
+      expect(lap.throttleUnitAssumed, isTrue);
+      expect(lap.throttleCoarse, isFalse);
+    });
+  });
+
+  group('hit and release from speed', () {
+    // The speed's slope is smoothed over ±0.25 s: a ramp quicker than that
+    // reads as fast as the smoothing allows, so it is only a lower bound.
+    test('a quick ramp from speed reads "at least"', () {
+      final quick = _measure(_speedOnly(_braking(rise: 0.15, fall: 0.3)));
+      expect(quick.hitAtLeast, isTrue);
+      expect(quick.releaseAtLeast, isTrue);
+      final slow = _measure(_speedOnly(_braking(rise: 1.0, fall: 1.5)));
+      expect(slow.hitAtLeast, isFalse);
+      expect(slow.releaseAtLeast, isFalse);
+      // From G, never.
+      final g = _measure(_session(deceleration: _braking(rise: 0.15, fall: 0.3), gStep: 0.01));
+      expect(g.hitAtLeast, isFalse);
+      final typical = summarizeBrakingTechnique([
+        ('a', quick),
+        ('b', _measure(_speedOnly(_braking(rise: 1.0, fall: 1.5)))),
+        ('c', slow),
+      ]);
+      expect(typical.hit.atLeast, isTrue);
+    });
+  });
+
   group('the brake pedal', () {
     test('a 2 Hz OBD pedal drawn with lines at 10 Hz is refused for ramps', () {
       final lap = _measure(_session(brake: _obdBrake(_smoothPedal)));
@@ -391,20 +493,70 @@ void main() {
       expect(sampled.pedalReason, brakingTechniqueBrakeTooSlow);
     });
 
+    test('an OBD column of a VBO is never read for a ramp, whatever its rate', () {
+      final lap = _measure(_session(brake: _channel('brake_pos-obd', _smoothPedal, unit: '%')));
+      expect(lap.brakeRateHz, closeTo(10, 0.01));
+      expect(lap.pedalReason, brakingTechniqueBrakeResampled);
+      expect(lap.pedalApplicationPerSecond, isNull);
+    });
+
+    test('a pedal without a declared unit is read as % and says so', () {
+      final lap = _measure(_session(brake: _channel('brake', _smoothPedal)));
+      expect(lap.pedalApplicationPerSecond, isNotNull);
+      expect(lap.brakeUnitAssumed, isTrue);
+    });
+
     test('a 10 Hz pedal gives its application and release', () {
       final lap = _measure(_session(brake: _channel('brake', _smoothPedal, unit: '%')));
       expect(lap.brakeRateHz, closeTo(10, 0.01));
       expect(lap.pedalReason, isEmpty);
-      // From 5 % (pressed from 10 %, let off below 5 %) to 85 % of 80 %, on
+      // From a quarter of the peak (20 %) to 85 % of 80 %, on
       // 80 sin²(πx/3): symmetric, so the same rate both ways.
       double at(double level) => 3 / math.pi * math.asin(math.sqrt(level / 80));
-      final expected = (0.85 * 80 - 5) / (at(0.85 * 80) - at(5));
+      final expected = (0.85 * 80 - 20) / (at(0.85 * 80) - at(20));
+      expect(lap.pedalApplicationPerSecond, isNotNull);
       expect(lap.pedalApplicationPerSecond, closeTo(expected, expected * 0.03));
       expect(lap.pedalReleasePerSecond, closeTo(expected, expected * 0.03));
     });
   });
 
   group('channel update rates', () {
+    test('lines drawn between updates every 0.15 to 0.35 s are slow, whatever their phase', () {
+      for (final period in [0.15, 0.2, 0.25, 0.3, 0.35]) {
+        for (final phase in [0.0, 0.03, 0.05, 0.13]) {
+          final rate = channelUpdateRateHz(_lines(_smoothPedal, period, phase))!;
+          expect(rate, lessThan(brakingTechniqueMinimumRateHz), reason: '$period s at $phase s');
+          expect(rate, closeTo(1 / period, 0.25 / period), reason: '$period s at $phase s');
+        }
+      }
+    });
+
+    test('a smooth G updated twice a second and drawn with lines is 2 Hz', () {
+      for (final phase in [0.0, 0.03, 0.05, 0.13]) {
+        expect(channelUpdateRateHz(_lines(_gLike, 0.5, phase)), closeTo(2, 0.15));
+      }
+    });
+
+    test('a 2 Hz pedal with noise added at 10 Hz is still 2 Hz', () {
+      final random = math.Random(4);
+      final noisy = _lines(_smoothPedal, 0.48, 0.13);
+      final values = Float32List.fromList([
+        for (final v in noisy.values) v + (random.nextDouble() - 0.5) * 0.2,
+      ]);
+      final channel = TelemetryChannel(name: 'x', timestamps: noisy.timestamps, values: values);
+      expect(channelUpdateRateHz(channel), closeTo(2.08, 0.15));
+    });
+
+    test('a smooth G recorded at 10 Hz is 10 Hz', () {
+      final random = math.Random(5);
+      final g = _channel(
+        'g',
+        (t) => ((_gLike(t) + (random.nextDouble() - 0.5) * 0.004) * 1000).roundToDouble() / 1000,
+        to: 120,
+      );
+      expect(channelUpdateRateHz(g), closeTo(10, 0.01));
+    });
+
     test('a varying 10 Hz channel is 10 Hz', () {
       final random = math.Random(3);
       final noisy = _channel('g', (t) => math.sin(t * 3) + random.nextDouble() * 0.01);
@@ -487,6 +639,25 @@ void main() {
       expect(metric.unitAssumed, isFalse);
       expect(undeclared.unitAssumed, isTrue);
       expect(undeclared.peakG, closeTo(1.0, 1e-6));
+    });
+
+    test('a unit declared in the VBO header counts as declared', () {
+      final lap = _measure(
+        _session(
+          gUnit: '',
+          lateral: (t) => t < 11.0 ? 0.0 : 0.5,
+          lateralUnit: '',
+          metadata: const {'header.3': 'longacc g', 'header.4': 'latacc g'},
+        ),
+      );
+      expect(lap.declaredUnit, 'g');
+      expect(lap.unitAssumed, isFalse);
+      expect(lap.lateralUnitAssumed, isFalse);
+      final undeclared = _measure(
+        _session(gUnit: '', lateral: (t) => t < 11.0 ? 0.0 : 0.5, lateralUnit: ''),
+      );
+      expect(undeclared.unitAssumed, isTrue);
+      expect(undeclared.lateralUnitAssumed, isTrue);
     });
 
     test('a G channel in another unit is not read', () {
@@ -656,12 +827,26 @@ void main() {
       final corner = summarizeBrakingTechnique([
         for (final key in ['a', 'b', 'c']) (key, lap(0.5)),
       ]);
-      final day = summarizeBrakingTechniqueDay([corner, corner, const BrakingTechnique()]);
-      expect(day.corners, 3);
+      final fromSpeed = summarizeBrakingTechnique([
+        for (final key in ['a', 'b', 'c']) (key, _measure(_speedOnly(_braking()))),
+      ]);
+      expect(fromSpeed.unavailableReason, isEmpty);
+      expect(fromSpeed.source, brakingTechniqueFromSpeed);
+      final day = summarizeBrakingTechniqueDay([
+        corner,
+        corner,
+        fromSpeed,
+        const BrakingTechnique(),
+      ]);
+      expect(day.corners, 4);
       expect(day.cornersBraked, 2);
+      expect(day.source, brakingTechniqueFromG);
+      // The corner from speed is left out, and counted.
+      expect(day.otherSourceCorners, 1);
       expect(day.hit, closeTo(2.0, 1e-3));
       expect(day.hitCorners, 2);
       expect(day.available, isTrue);
+      expect(day.unitAssumed, isFalse);
       expect(summarizeBrakingTechniqueDay(const []).available, isFalse);
     });
   });

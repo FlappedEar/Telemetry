@@ -21,16 +21,17 @@ import 'dart:typed_data';
 
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
+import '../channel_units.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_source.dart';
 import 'consistency.dart';
-import 'exit_metrics.dart' show measuredThrottlePickup;
+import 'exit_metrics.dart' show exitScaleInferred, exitUnitUndeclared, measuredThrottlePickup;
 import 'gg_pairs.dart' show standardGravity;
 import 'pedal_scale.dart';
 import 'track_progress.dart';
 
-const String brakingTechniqueAlgorithm = 'braking-technique-v1';
+const String brakingTechniqueAlgorithm = 'braking-technique-v2';
 
 /// Braking starts where the deceleration rises through
 /// [brakingTechniqueOffG] on its way to [brakingTechniqueOnG] and ends where
@@ -45,9 +46,12 @@ const double brakingTechniqueMinimumSeconds = 0.3;
 /// Hit and release are read only from braking that peaks at least this hard.
 const double brakingTechniqueMinimumPeakG = 0.40;
 
-/// The hit runs from braking onset to this share of the peak, the release
-/// from the last moment at this share of the peak to the end of braking.
+/// The hit runs from the last moment below [brakingTechniqueRampFloorShare]
+/// of the peak (at least [brakingTechniqueOffG]) to this share of the peak;
+/// the release from the last moment at this share back to that floor. A
+/// coast or a light lift before the braking is not part of the hit.
 const double brakingTechniquePeakShare = 0.85;
+const double brakingTechniqueRampFloorShare = 0.25;
 
 /// Samples a hit or a release must span, its ends included: fewer, and it
 /// happened between two samples, too quick for the channel to show.
@@ -70,6 +74,10 @@ const double brakingTechniqueSpeedSlopeHalfWindowSeconds = 0.25;
 /// Seconds of recording read beyond the corner's window, so a braking that
 /// starts at its edge is seen whole.
 const double brakingTechniqueSearchPadSeconds = 3.0;
+
+/// A throttle pickup later than this after braking ends is not this
+/// corner's: a coast through a further corner of the segment.
+const double brakingTechniqueMaximumBrakeToThrottleSeconds = 4.0;
 
 /// A brake pedal (in %) is pressed from this value.
 const double brakingTechniquePedalPressedPercent = 10.0;
@@ -129,6 +137,14 @@ const String brakingTechniqueBrakeTooSlow = 'brakeChannelTooSlow';
 const String brakingTechniqueBrakeNotUsed = 'brakeChannelNotUsed';
 const String brakingTechniqueBrakeScaleUnknown = 'brakeScaleUnknown';
 const String brakingTechniqueTooFewLaps = 'tooFewLaps';
+const String brakingTechniqueBrakingAgain = 'brakingAgainBeforeThrottle';
+const String brakingTechniqueCoasting = 'noThrottleSoonAfterBraking';
+const String brakingTechniqueBrakeResampled = 'brakeChannelResampled';
+
+/// Whether [name] is an OBD channel as RaceChrono's VBO export writes it
+/// (`brake_pos-obd`, `accelerator_pos-obd`): resampled to the rows from an
+/// update rate the file does not tell, so never read for a ramp.
+bool brakingTechniqueResampledObd(String name) => name.toLowerCase().endsWith('-obd');
 
 /// Why the G channel was not used and the deceleration comes from speed.
 const String brakingTechniqueGMissing = 'noGChannel';
@@ -137,10 +153,13 @@ const String brakingTechniqueGPlaceholder = 'gChannelEmpty';
 /// How often [channel]'s values really change, in Hz, or null when that
 /// cannot be told (fewer than two samples). The slowest of: its median
 /// sample interval; the median time between value changes (a held value);
-/// and, when its moving values mostly lie on straight lines
+/// when its moving values mostly lie on straight lines
 /// ([brakingTechniqueInterpolatedShare]), the time between the corners of
-/// those lines (a slower signal interpolated at the row rate, as
-/// RaceChrono's VBO export writes OBD channels).
+/// those lines; and the longest period whose lines, bending only at updates
+/// that may fall anywhere between the samples, fit the moving values (a
+/// slower signal interpolated at the row rate, as RaceChrono's VBO export
+/// writes OBD channels). Updates every 1.4 to 12 sample intervals are found;
+/// a rate between about 7 Hz and the row rate may read as the row rate.
 double? channelUpdateRateHz(TelemetryChannel channel) {
   final cached = _rates[channel];
   if (cached != null) return cached.isNaN ? null : cached;
@@ -192,6 +211,7 @@ double? _updateRate(TelemetryChannel channel) {
   // samples bends both triples around it); a longer run of bends is a
   // signal that bends at every sample.
   final tolerance = 1.5 * _writtenResolution(values);
+  final moveThreshold = math.max(4 * tolerance, brakingTechniqueMovingShare * range);
   var moving = 0, straight = 0;
   final bends = <double>[];
   // Samples between consecutive corners within one moving stretch.
@@ -219,7 +239,7 @@ double? _updateRate(TelemetryChannel channel) {
       continue;
     }
     final a = values[i - 1], b = values[i], c = values[i + 1];
-    if ((c - a).abs() < math.max(4 * tolerance, brakingTechniqueMovingShare * range)) {
+    if ((c - a).abs() < moveThreshold) {
       endRun(stretchEnds: true);
       continue;
     }
@@ -260,7 +280,223 @@ double? _updateRate(TelemetryChannel channel) {
       interval = math.max(interval, base * mean);
     }
   }
+  // Lines drawn between updates that do not fall on the samples, whatever
+  // their phase: looked for only while the channel still seems fast enough
+  // for a ramp (the fit is the costly part).
+  if (1.0 / interval >= brakingTechniqueMinimumRateHz) {
+    final knots = _knotPeriod(times, values, base, joined, moveThreshold, tolerance, range);
+    if (knots != null) interval = math.max(interval, knots);
+  }
   return 1.0 / interval;
+}
+
+/// The longest update period, in seconds, that [values]' moving stretches
+/// look drawn with: straight lines between updates every period, wherever
+/// those updates fall between the samples. For each candidate period
+/// (1.4 to 12 sample intervals) and each of [_knotPhases] phases, the
+/// stretches are fitted by least squares with lines that bend only at the
+/// updates. A slower signal drawn with lines fits at its own phase and
+/// misses by its corners half a period off; a signal moving at the sample
+/// rate fits about equally badly at every phase. Null when none fits so.
+double? _knotPeriod(
+  Float64List times,
+  Float32List values,
+  double base,
+  bool Function(int) joined,
+  double moveThreshold,
+  double tolerance,
+  double range,
+) {
+  // Moving stretches, each with the samples either side of it: a step
+  // moves when it is at least half of [moveThreshold] at 10 Hz rows, in
+  // proportion at other row rates.
+  final step = math.max(2 * tolerance, moveThreshold / 2 * math.min(1.0, base / 0.1));
+  final stretches = <(int, int)>[];
+  var total = 0;
+  int? begin;
+  void close(int end) {
+    if (begin != null && end - begin! + 1 >= _knotMinimumStretch && total < _knotMaximumSamples) {
+      stretches.add((begin!, end));
+      total += end - begin! + 1;
+    }
+    begin = null;
+  }
+
+  for (var i = 1; i + 1 < values.length; ++i) {
+    final moving =
+        joined(i) &&
+        joined(i + 1) &&
+        math.max((values[i + 1] - values[i]).abs(), (values[i] - values[i - 1]).abs()) >= step;
+    if (moving) {
+      begin ??= i - 1;
+    } else if (begin != null) {
+      close(i);
+    }
+  }
+  if (begin != null) close(values.length - 1);
+  if (total < _knotMinimumSamples) return null;
+
+  // What rounding to the written resolution leaves over, as an RMS.
+  final floor = math.max(tolerance / 1.5 * 0.3, 1e-6 * range);
+  // The noise on the moving stretches, from the median fourth difference
+  // (white noise of deviation σ gives differences of deviation σ√70); a
+  // smooth signal has next to none.
+  final fourth = <double>[];
+  for (final (a, b) in stretches) {
+    for (var i = a; i + 4 <= b; ++i) {
+      fourth.add(
+        (values[i] - 4 * values[i + 1] + 6 * values[i + 2] - 4 * values[i + 3] + values[i + 4])
+            .abs(),
+      );
+    }
+  }
+  fourth.sort();
+  final noise = fourth.isEmpty ? 0.0 : fourth[fourth.length ~/ 2] / (0.6745 * math.sqrt(70));
+  double? found;
+  var tightest = double.infinity;
+  for (final multiple in _knotPeriods) {
+    final period = base * multiple;
+    var best = double.infinity, worst = 0.0, bestPhase = 0.0;
+    var counted = 0;
+    // The RMS left over per degree of freedom at [phase], or null.
+    double? leftOver(double phase) {
+      var squares = 0.0;
+      var samples = 0, free = 0;
+      for (final (a, b) in stretches) {
+        if (times[b] - times[a] < 2 * period) continue;
+        final fit = _fitKnots(times, values, a, b, period, phase);
+        squares += fit.squares;
+        samples += b - a + 1;
+        free += b - a + 1 - fit.knots.length;
+      }
+      if (samples == 0 || free <= 0) return null;
+      counted = samples;
+      return math.sqrt(squares / free);
+    }
+
+    for (var j = 0; j < _knotPhases; ++j) {
+      final phase = period * j / _knotPhases;
+      final rms = leftOver(phase);
+      if (rms == null) break;
+      if (rms < best) {
+        best = rms;
+        bestPhase = phase;
+      }
+      worst = math.max(worst, rms);
+    }
+    // The best phase, refined between its neighbours.
+    var spacing = period / _knotPhases;
+    for (var level = 0; level < 4 && best.isFinite; ++level) {
+      spacing /= 4;
+      final centre = bestPhase;
+      for (final shift in [-3, -2, -1, 1, 2, 3]) {
+        final phase = centre + shift * spacing;
+        final rms = leftOver(phase);
+        if (rms != null && rms < best) {
+          best = rms;
+          bestPhase = phase;
+        }
+      }
+    }
+    if (counted < _knotMinimumSamples || !best.isFinite) continue;
+    // A slower signal's own period fits as well as any shorter one; a
+    // smooth signal fits worse the fewer the knots.
+    // Lines between updates fit to within the written resolution, or, on
+    // a noisy signal, to within its noise and as well as any shorter
+    // period. A whole number of samples per period puts every knot at the
+    // same place between the samples, which can flatter a smooth signal, so
+    // only the first way counts then.
+    final whole = (multiple - multiple.roundToDouble()).abs() < 0.01;
+    final fits =
+        (best <= 3 * floor && best <= noise) ||
+        (!whole && best <= 1.5 * tightest && best <= _knotNoiseShare * noise);
+    tightest = math.min(tightest, best);
+    if (!fits) continue;
+    if (worst < _knotPhaseContrast * best || worst < 3 * floor) continue;
+    // Lines between updates bend at most updates: count the knots, at the
+    // best phase, whose bend stands out from what is left over.
+    var knots = 0, bent = 0;
+    for (final (a, b) in stretches) {
+      if (times[b] - times[a] < 2 * period) continue;
+      final fit = _fitKnots(times, values, a, b, period, bestPhase);
+      final y = fit.knots;
+      final first = ((times[a] - bestPhase) / period).floor();
+      for (var k = 1; k + 1 < y.length; ++k) {
+        // Knots at least half a period inside the stretch.
+        final at = bestPhase + (first + k) * period;
+        if (at < times[a] + period / 2 || at > times[b] - period / 2) continue;
+        ++knots;
+        final bend = (y[k + 1] - 2 * y[k] + y[k - 1]).abs();
+        if (bend >= math.max(worst, 3 * math.max(best, floor))) ++bent;
+      }
+    }
+    if (knots > 0 && bent >= _knotBentShare * knots) found = period;
+  }
+  return found;
+}
+
+const int _knotPhases = 10;
+const int _knotMinimumStretch = 8;
+const int _knotMinimumSamples = 60;
+const int _knotMaximumSamples = 1500;
+const double _knotPhaseContrast = 4.0;
+const double _knotBentShare = 0.5;
+const double _knotNoiseShare = 1.0;
+final List<double> _knotPeriods = [
+  for (var m = 14; m <= 40; ++m) m / 10,
+  for (var m = 21; m <= 60; ++m) m / 5,
+];
+
+// Least squares of samples [a]..[b] by lines bending at knots every
+// [period] from [phase]: their values at the knots, and the sum of squares
+// left over.
+({List<double> knots, double squares}) _fitKnots(
+  Float64List times,
+  Float32List values,
+  int a,
+  int b,
+  double period,
+  double phase,
+) {
+  final first = ((times[a] - phase) / period).floor();
+  final count = ((times[b] - phase) / period).floor() - first + 2;
+  final diagonal = List<double>.filled(count, 1e-9);
+  final upper = List<double>.filled(count, 0.0);
+  final right = List<double>.filled(count, 0.0);
+  final offset = values[a].toDouble();
+  for (var i = a; i <= b; ++i) {
+    final x = (times[i] - phase) / period - first;
+    final k = math.min(x.floor(), count - 2);
+    final w = x - k, v = values[i] - offset;
+    diagonal[k] += (1 - w) * (1 - w);
+    diagonal[k + 1] += w * w;
+    upper[k] += (1 - w) * w;
+    right[k] += (1 - w) * v;
+    right[k + 1] += w * v;
+  }
+  // Thomas algorithm for the symmetric tridiagonal system.
+  final c = List<double>.filled(count, 0.0), d = List<double>.filled(count, 0.0);
+  c[0] = upper[0] / diagonal[0];
+  d[0] = right[0] / diagonal[0];
+  for (var k = 1; k < count; ++k) {
+    final m = diagonal[k] - upper[k - 1] * c[k - 1];
+    c[k] = upper[k] / m;
+    d[k] = (right[k] - upper[k - 1] * d[k - 1]) / m;
+  }
+  final y = List<double>.filled(count, 0.0);
+  y[count - 1] = d[count - 1];
+  for (var k = count - 2; k >= 0; --k) {
+    y[k] = d[k] - c[k] * y[k + 1];
+  }
+  var squares = 0.0;
+  for (var i = a; i <= b; ++i) {
+    final x = (times[i] - phase) / period - first;
+    final k = math.min(x.floor(), count - 2);
+    final w = x - k;
+    final r = values[i] - offset - ((1 - w) * y[k] + w * y[k + 1]);
+    squares += r * r;
+  }
+  return (knots: y, squares: squares);
 }
 
 // The step [values] are written in: 1, 0.1, … 0.000001 when every value
@@ -284,7 +520,12 @@ double _writtenResolution(Float32List values) {
 
 /// Whether [channel] has no data: no finite value, or every finite value the
 /// same (RaceChrono writes zero placeholders for channels it did not log).
-bool brakingTechniquePlaceholder(TelemetryChannel channel) {
+bool brakingTechniquePlaceholder(TelemetryChannel channel) =>
+    _placeholders[channel] ??= _placeholder(channel);
+
+final _placeholders = Expando<bool>('placeholder channel');
+
+bool _placeholder(TelemetryChannel channel) {
   double? first;
   for (final value in channel.values) {
     if (!value.isFinite) continue;
@@ -332,17 +573,21 @@ final class BrakingTechniqueLap {
   /// From the recorded speed; null without one in a known unit.
   double? zoneMeters, peakAfterOnsetMeters;
 
-  /// How far through the braking zone the peak falls, 0 to 1: by distance,
-  /// or by time without a speed.
+  /// How far through the braking zone the peak falls, 0 to 1, by time
+  /// (always: a distance needs a speed some laps may not have).
   double? peakFraction;
 
-  /// G per second from onset to [brakingTechniquePeakShare] of the peak.
+  /// G per second up to [brakingTechniquePeakShare] of the peak (see
+  /// [brakingTechniqueRampFloorShare]). [hitAtLeast]: from speed, as fast as
+  /// its smoothed slope can show, so the real hit may be quicker.
   double? hitGPerSecond;
+  bool hitAtLeast = false;
   String hitReason = '';
 
   /// G per second from the last moment at [brakingTechniquePeakShare] of the
-  /// peak to the end of braking.
+  /// peak back to the ramp floor; [releaseAtLeast] as [hitAtLeast].
   double? releaseGPerSecond;
+  bool releaseAtLeast = false;
   String releaseReason = '';
 
   /// Braking while the lateral G is at least
@@ -352,6 +597,9 @@ final class BrakingTechniqueLap {
   String lateralChannel = '';
   double? lateralRateHz;
 
+  /// The lateral G declares no unit and is read as g.
+  bool lateralUnitAssumed = false;
+
   /// From the end of braking to the measured throttle pickup; negative when
   /// the throttle comes before the deceleration falls below
   /// [brakingTechniqueOffG].
@@ -360,6 +608,16 @@ final class BrakingTechniqueLap {
   String throttleChannel = '';
   double? throttleRateHz;
 
+  /// The throttle declares no unit (read as %), or its 0–1 scale was
+  /// inferred and read as 0–100 %.
+  bool throttleUnitAssumed = false, throttleScaleInferred = false;
+
+  /// The throttle is a resampled OBD column or slower than about 10 Hz: the
+  /// pickup is placed only to its update interval.
+  bool get throttleCoarse =>
+      brakingTechniqueResampledObd(throttleChannel) ||
+      !(throttleRateHz != null && throttleRateHz! >= brakingTechniqueMinimumRateHz);
+
   /// The brake pedal: its update rate and, only from
   /// [brakingTechniqueMinimumRateHz], how fast it is pressed and let off,
   /// in % per second.
@@ -367,6 +625,9 @@ final class BrakingTechniqueLap {
   double? brakeRateHz;
   double? pedalApplicationPerSecond, pedalReleasePerSecond;
   String pedalReason = '';
+
+  /// The brake declares no unit (read as %), or its 0–1 scale was inferred.
+  bool brakeUnitAssumed = false, brakeScaleInferred = false;
 
   /// The corner crosses start/finish, or its approach reaches before the
   /// lap's start: the recording beyond the lap was read.
@@ -515,41 +776,70 @@ _Episode? _firstEpisode(
   return null;
 }
 
-typedef _Ramps = ({double? hit, String hitReason, double? release, String releaseReason});
+typedef _Ramps = ({
+  double? hit,
+  bool hitAtLeast,
+  String hitReason,
+  double? release,
+  bool releaseAtLeast,
+  String releaseReason,
+});
 
-// How fast [episode] rises from [off] to [share] of its peak and falls from
-// there back to [off], in units per second.
-_Ramps _ramps(_Series s, _Episode episode, double off, double minimumPeak) {
+// How fast [episode] rises to [brakingTechniquePeakShare] of its peak from
+// the last moment below its floor ([brakingTechniqueRampFloorShare] of the
+// peak, at least [off]), and falls from there back to the floor, in units
+// per second. A rate of at least [fastest] is as fast as the series can
+// show (from speed, its smoothed slope), so it is marked "at least".
+_Ramps _ramps(_Series s, _Episode episode, double off, double minimumPeak, {double? fastest}) {
   final peak = s.values[episode.peak];
   if (peak < minimumPeak) {
     return (
       hit: null,
+      hitAtLeast: false,
       hitReason: brakingTechniqueTooLight,
       release: null,
+      releaseAtLeast: false,
       releaseReason: brakingTechniqueTooLight,
     );
   }
   final level = brakingTechniquePeakShare * peak;
+  final floor = math.max(off, brakingTechniqueRampFloorShare * peak);
   var up = episode.first;
   while (s.values[up] < level) {
     ++up;
   }
   final upTime = _cross(s, up - 1, up, level);
-  // Samples from the last one below [off] to the first at the level.
-  final hitSamples = up - episode.first + 2;
+  // The last sample below the floor before the rise (the sample before the
+  // episode is below [off], so at most there).
+  var low = up - 1;
+  while (s.values[low] >= floor) {
+    --low;
+  }
+  final lowTime = _cross(s, low, low + 1, floor);
+  final hitSamples = up - low + 1;
   var down = episode.last;
   while (s.values[down] < level) {
     --down;
   }
   final downTime = _cross(s, down, down + 1, level);
-  final releaseSamples = episode.last - down + 2;
-  final hitSeconds = upTime - episode.onset, releaseSeconds = episode.end - downTime;
+  var high = down + 1;
+  while (s.values[high] >= floor) {
+    ++high;
+  }
+  final highTime = _cross(s, high - 1, high, floor);
+  final releaseSamples = high - down + 1;
+  final hitSeconds = upTime - lowTime, releaseSeconds = highTime - downTime;
   final hitOk = hitSamples >= brakingTechniqueMinimumRampSamples && hitSeconds > 0;
   final releaseOk = releaseSamples >= brakingTechniqueMinimumRampSamples && releaseSeconds > 0;
+  final hit = hitOk ? (level - floor) / hitSeconds : null;
+  final release = releaseOk ? (level - floor) / releaseSeconds : null;
+  final limit = fastest == null ? null : (level - floor) / fastest;
   return (
-    hit: hitOk ? (level - off) / hitSeconds : null,
+    hit: hit,
+    hitAtLeast: hit != null && limit != null && hit >= limit,
     hitReason: hitOk ? '' : brakingTechniqueTooQuick,
-    release: releaseOk ? (level - off) / releaseSeconds : null,
+    release: release,
+    releaseAtLeast: release != null && limit != null && release >= limit,
     releaseReason: releaseOk ? '' : brakingTechniqueTooQuick,
   );
 }
@@ -586,12 +876,13 @@ BrakingTechniqueLap measureBrakingTechnique(
   } else if (brakingTechniquePlaceholder(g)) {
     result.gChannelReason = brakingTechniqueGPlaceholder;
   } else {
-    final factor = _gPer(g.unit);
+    final unit = declaredChannelUnit(session, gName).trim();
+    final factor = _gPer(unit);
     result
       ..source = brakingTechniqueFromG
       ..channel = gName
-      ..declaredUnit = g.unit.trim()
-      ..unitAssumed = g.unit.trim().isEmpty
+      ..declaredUnit = unit
+      ..unitAssumed = unit.isEmpty
       ..rateHz = channelUpdateRateHz(g);
     if (factor == null) {
       result.unavailableReason = brakingTechniqueUnitNotSupported;
@@ -605,11 +896,12 @@ BrakingTechniqueLap measureBrakingTechnique(
       result.unavailableReason = brakingTechniqueNoDeceleration;
       return result;
     }
+    final unit = declaredChannelUnit(session, speed.name).trim();
     result
       ..source = brakingTechniqueFromSpeed
       ..channel = speed.name
-      ..declaredUnit = speed.unit.trim()
-      ..unitAssumed = speed.unit.trim().isEmpty
+      ..declaredUnit = unit
+      ..unitAssumed = unit.isEmpty
       ..rateHz = channelUpdateRateHz(speed);
     if (speedFactor == null) {
       result.unavailableReason = brakingTechniqueSpeedUnitUnknown;
@@ -677,21 +969,64 @@ BrakingTechniqueLap measureBrakingTechnique(
   result
     ..zoneMeters = metres(onset, end)
     ..peakAfterOnsetMeters = metres(onset, result.peakTime!);
-  result.peakFraction = result.zoneMeters != null && result.zoneMeters! > 0
-      ? result.peakAfterOnsetMeters! / result.zoneMeters!
-      : (result.peakTime! - onset) / (end - onset);
+  result.peakFraction = (result.peakTime! - onset) / (end - onset);
 
-  final ramps = _ramps(series, episode, brakingTechniqueOffG, brakingTechniqueMinimumPeakG);
+  final ramps = _ramps(
+    series,
+    episode,
+    brakingTechniqueOffG,
+    brakingTechniqueMinimumPeakG,
+    // The speed's slope spreads a step over its window.
+    fastest: result.source == brakingTechniqueFromSpeed
+        ? 2 * brakingTechniqueSpeedSlopeHalfWindowSeconds
+        : null,
+  );
   result
     ..hitGPerSecond = ramps.hit
+    ..hitAtLeast = ramps.hitAtLeast
     ..hitReason = ramps.hitReason
     ..releaseGPerSecond = ramps.release
+    ..releaseAtLeast = ramps.releaseAtLeast
     ..releaseReason = ramps.releaseReason;
 
   _trail(session, result, timeline, metres);
-  _brakeToThrottle(session, result, windowEnd);
+  // The throttle is looked for until braking starts again (a segment
+  // holding two corners), or the corner's end.
+  double? again;
+  for (var k = episode.last + 1; k < series.times.length; ++k) {
+    if (series.values[k] >= brakingTechniqueOnG && series.values[k - 1] < brakingTechniqueOnG) {
+      again = _cross(series, k - 1, k, brakingTechniqueOnG);
+      break;
+    }
+  }
+  final pressed = _nextPress(session, end, windowEnd + brakingTechniqueSearchPadSeconds);
+  if (pressed != null && (again == null || pressed < again)) again = pressed;
+  _brakeToThrottle(session, result, windowEnd, again);
   _pedal(session, result);
   return result;
+}
+
+// The next time the brake pedal is pressed again after [after]: let off
+// below half of [brakingTechniquePedalPressedPercent], then pressed past it.
+// A pedal of any rate marks on and off; null without a usable pedal.
+double? _nextPress(TelemetrySession session, double after, double until) {
+  final quality = brakingSourceQuality(session);
+  if (!quality.hasBrake || !quality.brakeUsable) return null;
+  final brake = session.channels[quality.brakeName]!;
+  if (brakingTechniquePlaceholder(brake)) return null;
+  final scale = quality.brakeScale == PedalScale.fraction ? 100.0 : 1.0;
+  final times = brake.timestamps, values = brake.values;
+  var released = false;
+  for (var i = lowerBound(times, after); i < times.length && times[i] <= until; ++i) {
+    final value = values[i] * scale;
+    if (!value.isFinite) continue;
+    if (value < brakingTechniquePedalPressedPercent / 2) {
+      released = true;
+    } else if (released && value >= brakingTechniquePedalPressedPercent) {
+      return times[i];
+    }
+  }
+  return null;
 }
 
 void _trail(
@@ -706,10 +1041,12 @@ void _trail(
     result.trailReason = brakingTechniqueNoLateral;
     return;
   }
+  final unit = declaredChannelUnit(session, name).trim();
   result
     ..lateralChannel = name
-    ..lateralRateHz = channelUpdateRateHz(lateral);
-  final factor = _gPer(lateral.unit);
+    ..lateralRateHz = channelUpdateRateHz(lateral)
+    ..lateralUnitAssumed = unit.isEmpty;
+  final factor = _gPer(unit);
   if (brakingTechniquePlaceholder(lateral)) {
     result.trailReason = brakingTechniqueLateralPlaceholder;
     return;
@@ -744,8 +1081,14 @@ void _trail(
 
 // From the end of braking to the measured throttle's first sustained pickup
 // after the peak (a blip of throttle on a downshift early in the braking is
-// not a pickup), searched up to the corner's end.
-void _brakeToThrottle(TelemetrySession session, BrakingTechniqueLap result, double windowEnd) {
+// not a pickup), searched up to the corner's end, and never past [again],
+// where braking starts again.
+void _brakeToThrottle(
+  TelemetrySession session,
+  BrakingTechniqueLap result,
+  double windowEnd,
+  double? again,
+) {
   final name = session.aliases['throttle'] ?? '';
   final throttle = session.channels[name];
   if (throttle == null || brakingTechniquePlaceholder(throttle)) {
@@ -755,16 +1098,26 @@ void _brakeToThrottle(TelemetrySession session, BrakingTechniqueLap result, doub
   result
     ..throttleChannel = name
     ..throttleRateHz = channelUpdateRateHz(throttle);
+  final searchEnd = math.max(windowEnd, result.endTime!);
   final pickup = measuredThrottlePickup(
     session,
     result.peakTime!,
-    math.max(windowEnd, result.endTime!),
+    again == null ? searchEnd : math.min(searchEnd, again),
   );
+  result
+    ..throttleUnitAssumed = pickup.limitations.contains(exitUnitUndeclared)
+    ..throttleScaleInferred = pickup.limitations.contains(exitScaleInferred);
   final time = pickup.telemetryTime;
   if (time == null) {
-    result.brakeToThrottleReason = pickup.unavailableReason.isEmpty
+    result.brakeToThrottleReason = again != null && again < searchEnd
+        ? brakingTechniqueBrakingAgain
+        : pickup.unavailableReason.isEmpty
         ? brakingTechniqueNoPickup
         : pickup.unavailableReason;
+    return;
+  }
+  if (time - result.endTime! > brakingTechniqueMaximumBrakeToThrottleSeconds) {
+    result.brakeToThrottleReason = brakingTechniqueCoasting;
     return;
   }
   result.brakeToThrottleSeconds = time - result.endTime!;
@@ -781,9 +1134,14 @@ void _pedal(TelemetrySession session, BrakingTechniqueLap result) {
     ..brakeChannel = quality.brakeName
     ..brakeRateHz = channelUpdateRateHz(brake);
   // A pedal slower than about 10 Hz shows when braking happens, not how the
-  // pedal moves.
+  // pedal moves. An OBD column of a VBO is resampled to the rows from an
+  // update rate the file does not tell: never read for a ramp.
   if (!(result.brakeRateHz != null && result.brakeRateHz! >= brakingTechniqueMinimumRateHz)) {
     result.pedalReason = brakingTechniqueBrakeTooSlow;
+    return;
+  }
+  if (brakingTechniqueResampledObd(quality.brakeName)) {
+    result.pedalReason = brakingTechniqueBrakeResampled;
     return;
   }
   if (brakingTechniquePlaceholder(brake) || !quality.brakeUsable) {
@@ -792,11 +1150,14 @@ void _pedal(TelemetrySession session, BrakingTechniqueLap result) {
         : brakingTechniqueBrakeNotUsed;
     return;
   }
-  final unit = brake.unit.trim();
+  final unit = declaredChannelUnit(session, quality.brakeName).trim();
   if (unit.isNotEmpty && unit != '%') {
     result.pedalReason = brakingTechniqueUnitNotSupported;
     return;
   }
+  result
+    ..brakeUnitAssumed = unit.isEmpty
+    ..brakeScaleInferred = quality.brakeScale == PedalScale.fraction;
   final scale = quality.brakeScale == PedalScale.fraction ? 100.0 : 1.0;
   final series = _channelSeries(
     brake,
@@ -877,7 +1238,17 @@ void _pedal(TelemetrySession session, BrakingTechniqueLap result) {
 
 /// One figure's typical value over the laps, or why there is none.
 final class BrakingTechniqueTypical {
-  const BrakingTechniqueTypical({this.median, this.spread, this.laps = 0, this.reason = ''});
+  const BrakingTechniqueTypical({
+    this.median,
+    this.spread,
+    this.laps = 0,
+    this.reason = '',
+    this.atLeast = false,
+  });
+
+  /// Some lap's value is only a lower bound (from speed, as fast as its
+  /// smoothed slope shows), so the median is one too.
+  final bool atLeast;
 
   /// Median and interquartile range.
   final double? median, spread;
@@ -954,6 +1325,22 @@ final class BrakingTechnique {
 
   /// The lateral G's rate on the laps (the slowest), or null.
   double? get lateralRateHz => _slowest([for (final (_, lap) in laps) lap.lateralRateHz]);
+
+  bool _any(bool Function(BrakingTechniqueLap) test) => laps.any((entry) => test(entry.$2));
+
+  /// Some lap read an undeclared unit as assumed: lateral G as g, the
+  /// throttle or brake as %, or a 0–1 pedal scale as 0–100 %.
+  bool get lateralUnitAssumed => _any((lap) => lap.lateralUnitAssumed);
+  bool get throttleUnitAssumed => _any((lap) => lap.throttleUnitAssumed);
+  bool get throttleScaleInferred => _any((lap) => lap.throttleScaleInferred);
+  bool get brakeUnitAssumed => _any((lap) => lap.brakeUnitAssumed);
+  bool get brakeScaleInferred => _any((lap) => lap.brakeScaleInferred);
+
+  /// Some lap's throttle places its pickup only to its update interval.
+  bool get throttleCoarse => _any((lap) => lap.throttleChannel.isNotEmpty && lap.throttleCoarse);
+
+  /// Whether the brake is a resampled OBD column.
+  bool get brakeResampled => _any((lap) => brakingTechniqueResampledObd(lap.brakeChannel));
 }
 
 double? _slowest(List<double?> rates) {
@@ -1002,8 +1389,9 @@ BrakingTechnique summarizeBrakingTechnique(List<(Object?, BrakingTechniqueLap)> 
   // corner's own reason.
   BrakingTechniqueTypical typical(
     double? Function(BrakingTechniqueLap) read,
-    String Function(BrakingTechniqueLap) why,
-  ) {
+    String Function(BrakingTechniqueLap) why, {
+    bool Function(BrakingTechniqueLap)? atLeast,
+  }) {
     final values = [for (final lap in braking) ?read(lap)];
     final summary = summarizeConsistency(values, minimumSamples: brakingTechniqueMinimumLaps);
     if (summary.available) {
@@ -1011,6 +1399,7 @@ BrakingTechnique summarizeBrakingTechnique(List<(Object?, BrakingTechniqueLap)> 
         median: summary.median,
         spread: summary.interquartileRange,
         laps: values.length,
+        atLeast: atLeast != null && braking.any((lap) => read(lap) != null && atLeast(lap)),
       );
     }
     return BrakingTechniqueTypical(
@@ -1043,10 +1432,18 @@ BrakingTechnique summarizeBrakingTechnique(List<(Object?, BrakingTechniqueLap)> 
     lapsBraking: braking.length,
     otherSourceLaps: other,
     unavailableReason: reason,
-    hit: typical((lap) => lap.hitGPerSecond, (lap) => lap.hitReason),
+    hit: typical(
+      (lap) => lap.hitGPerSecond,
+      (lap) => lap.hitReason,
+      atLeast: (lap) => lap.hitAtLeast,
+    ),
     peak: typical((lap) => lap.peakG, (lap) => brakingTechniqueNotCovered),
     peakFraction: typical((lap) => lap.peakFraction, (lap) => brakingTechniqueNotCovered),
-    release: typical((lap) => lap.releaseGPerSecond, (lap) => lap.releaseReason),
+    release: typical(
+      (lap) => lap.releaseGPerSecond,
+      (lap) => lap.releaseReason,
+      atLeast: (lap) => lap.releaseAtLeast,
+    ),
     trailSeconds: typical((lap) => lap.trailSeconds, (lap) => lap.trailReason),
     trailMeters: typical(
       (lap) => lap.trailMeters,
@@ -1078,7 +1475,17 @@ final class BrakingTechniqueDay {
     this.releaseCorners = 0,
     this.trailCorners = 0,
     this.brakeToThrottleCorners = 0,
+    this.otherSourceCorners = 0,
+    this.hitAtLeast = false,
+    this.releaseAtLeast = false,
   });
+
+  /// Some corner's typical value is only a lower bound.
+  final bool hitAtLeast, releaseAtLeast;
+
+  /// Corners with a typical braking zone measured another way (G or speed,
+  /// or another unit), left out.
+  final int otherSourceCorners;
 
   /// Corners considered, and those with a typical braking zone.
   final int corners, cornersBraked;
@@ -1121,7 +1528,7 @@ BrakingTechniqueDay summarizeBrakingTechniqueDay(List<BrakingTechnique> corners)
     corners: corners.length,
     cornersBraked: group.length,
     source: group.first.source,
-    unitAssumed: group.first.unitAssumed,
+    unitAssumed: group.any((corner) => corner.unitAssumed),
     hit: hit.$1,
     hitCorners: hit.$2,
     release: release.$1,
@@ -1130,6 +1537,9 @@ BrakingTechniqueDay summarizeBrakingTechniqueDay(List<BrakingTechnique> corners)
     trailCorners: trail.$2,
     brakeToThrottle: throttle.$1,
     brakeToThrottleCorners: throttle.$2,
+    otherSourceCorners: braked.length - group.length,
+    hitAtLeast: group.any((corner) => corner.hit.median != null && corner.hit.atLeast),
+    releaseAtLeast: group.any((corner) => corner.release.median != null && corner.release.atLeast),
   );
 }
 

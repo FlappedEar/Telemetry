@@ -53,7 +53,7 @@ void _report(String label, DayTheoreticalBest result) {
       '${technique.unavailableReason.isEmpty ? '' : ' (${technique.unavailableReason})'}',
     );
     print(
-      '  hit ${_value(technique.hit, 2, 'g/s')}; peak ${_value(technique.peak, 2, 'g')} '
+      '  hit ${technique.hit.atLeast ? 'at least ' : ''}${_value(technique.hit, 2, 'g/s')}; peak ${_value(technique.peak, 2, 'g')} '
       'at ${_value(technique.peakFraction, 2, 'of zone')}',
     );
     print(
@@ -61,7 +61,7 @@ void _report(String label, DayTheoreticalBest result) {
       '(lateral ${_rate(technique.lateralRateHz)})',
     );
     print(
-      '  release ${_value(technique.release, 2, 'g/s')}; brake to throttle '
+      '  release ${technique.release.atLeast ? 'at least ' : ''}${_value(technique.release, 2, 'g/s')}; brake to throttle '
       '${_value(technique.brakeToThrottle, 2, 's')} (throttle ${_rate(technique.throttleRateHz)})',
     );
     print(
@@ -73,7 +73,8 @@ void _report(String label, DayTheoreticalBest result) {
     for (final corner in result.corners) corner.brakingTechnique,
   ]);
   print(
-    'Day: ${day.cornersBraked} of ${day.corners} corners braked, hit ${day.hit}, '
+    'Day: unit ${result.corners.first.brakingTechnique.declaredUnit} '
+    '${day.unitAssumed ? '(assumed)' : ''}, ${day.cornersBraked} of ${day.corners} corners braked, hit ${day.hit}, '
     'release ${day.release}, trail ${day.trailSeconds}, brake to throttle ${day.brakeToThrottle}',
   );
 }
@@ -93,13 +94,17 @@ void main() {
     expect(braked, isNotEmpty);
     for (final technique in braked) {
       expect(technique.source, brakingTechniqueFromG);
-      expect(technique.unitAssumed, isTrue); // longacc-calc declares no unit
+      // RaceChrono declares longacc-calc's unit, g, in the VBO header.
+      expect(technique.declaredUnit, 'g');
+      expect(technique.unitAssumed, isFalse);
+      expect(technique.lateralUnitAssumed, isFalse);
       // The brake is OBD, written at 10 Hz but changing about twice a second.
       expect(technique.brakeRateHz, lessThan(4));
       expect(technique.pedalApplication.median, isNull);
       for (final (_, lap) in technique.laps) {
         if (lap.measured) expect(lap.pedalReason, brakingTechniqueBrakeTooSlow);
       }
+      _saneBrakeToThrottle(technique);
     }
   }, skip: skip);
 
@@ -116,6 +121,18 @@ void main() {
       expect(technique.source, brakingTechniqueFromSpeed);
       expect(technique.brakeRateHz, lessThan(4));
       expect(technique.pedalApplication.median, isNull);
+      _saneBrakeToThrottle(technique);
     }
   }, skip: skip);
+}
+
+// Brake to throttle never runs across another braking: a few seconds at
+// most, lap by lap and typically.
+void _saneBrakeToThrottle(BrakingTechnique technique) {
+  final typical = technique.brakeToThrottle.median;
+  if (typical != null) expect(typical, inInclusiveRange(-1.0, 3.0));
+  for (final (_, lap) in technique.laps) {
+    final seconds = lap.brakeToThrottleSeconds;
+    if (seconds != null) expect(seconds, inInclusiveRange(-2.0, 5.0));
+  }
 }
