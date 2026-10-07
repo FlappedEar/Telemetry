@@ -9984,6 +9984,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'({sessions} of {total} sessions)'**
   String profileTrendsWeatherSome(int sessions, int total);
+
+  /// Progression card: view of every timed lap of each session in order (FET-227).
+  ///
+  /// In en, this message translates to:
+  /// **'By lap'**
+  String get progressionByLap;
+
+  /// Progression card, By lap view: what the chart and the table show.
+  ///
+  /// In en, this message translates to:
+  /// **'Each session\'s timed laps in order, from the start of its first timed lap (a recording can begin in the paddock, so the out lap is not counted). Each line is labelled with its session and has its own marker; fainter lines are earlier sessions. Tap a lap to open it.'**
+  String get evolutionIntro;
+
+  /// Progression card, By lap view: what a screen reader says for the chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap time by lap number, one line per session'**
+  String get evolutionChartLabel;
+
+  /// Progression card, By lap view: a column header, a lap's number within its session.
+  ///
+  /// In en, this message translates to:
+  /// **'LAP {number}'**
+  String evolutionLap(int number);
+
+  /// Progression card, By lap view: under a lap time, when the lap began after the start of the session's first timed lap, as m:ss.
+  ///
+  /// In en, this message translates to:
+  /// **'+{time}'**
+  String evolutionSinceFirstLap(String time);
+
+  /// Progression card, By lap view: under a lap the ranking leaves out (excluded, off the route, incomplete GPS); the reason is listed below the table.
+  ///
+  /// In en, this message translates to:
+  /// **'not ranked'**
+  String get evolutionNotRanked;
+
+  /// Progression card, By lap view: how the first lap in the middle half is decided and what grey laps are.
+  ///
+  /// In en, this message translates to:
+  /// **'A session\'s middle half is the middle 50% of its ranked lap times; it takes at least {count} ranked laps. Grey laps came before the first lap in the middle half or quicker.'**
+  String evolutionPaceExplained(int count);
+
+  /// Progression card, By lap view: the first ranked lap no slower than the session's upper quartile, and how many timed laps came before it.
+  ///
+  /// In en, this message translates to:
+  /// **'{before, plural, =0{First lap in the session\'s middle half or quicker: LAP {number}, its first timed lap} =1{First lap in the session\'s middle half or quicker: LAP {number}, after 1 lap} other{First lap in the session\'s middle half or quicker: LAP {number}, after {before} laps}}'**
+  String evolutionPaceFrom(int number, int before);
+
+  /// Progression card, By lap view: laps before the first lap in the middle half that the ranking leaves out.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap before it is not ranked, so whether it was slower is not known} other{{count} laps before it are not ranked, so whether they were slower is not known}}'**
+  String evolutionPaceNotCounted(int count);
+
+  /// Progression card, By lap view: too few ranked laps for the session's middle half.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The session\'s middle half needs at least 1 ranked lap} other{The session\'s middle half needs at least {count} ranked laps}}'**
+  String evolutionPaceNeedsLaps(int count);
+
+  /// Progression card, By lap view: the median of this session's lap minus the session before's lap at the same lap number. Positive means this session was slower.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {session} at the same laps: {delta} typical difference over {count} laps'**
+  String evolutionSameLaps(String session, String delta, int count);
+
+  /// Progression card, By lap view: too few lap numbers with a ranked lap in both sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {session} at the same laps: {count} of the {minimum} laps needed'**
+  String evolutionSameLapsTooFew(String session, int count, int minimum);
+
+  /// Progression card, By lap view: the session's air temperature from the weather model, such as 21 °C.
+  ///
+  /// In en, this message translates to:
+  /// **'Air (modelled): {temperature}'**
+  String evolutionAir(String temperature);
+
+  /// Progression card, By lap view: what the comparison can and cannot tell.
+  ///
+  /// In en, this message translates to:
+  /// **'These are observations, not causes: the tyres, the track and your own learning all change through a session and through the day, and this cannot tell them apart. The track temperature is not recorded.'**
+  String get evolutionCaveat;
+
+  /// Progression card, By lap view: nothing to show.
+  ///
+  /// In en, this message translates to:
+  /// **'No session has timed laps.'**
+  String get evolutionNoLaps;
+
+  /// Progression card, By lap view: the quickest ranked lap after the first lap in the session's middle half, shown only when it is quicker than that lap by more than the session's spread (interquartile range).
+  ///
+  /// In en, this message translates to:
+  /// **'Its quickest lap came later: LAP {number}, {gain} quicker than LAP {first}.'**
+  String evolutionQuickerLater(int number, String gain, int first);
 }
 
 class _AppLocalizationsDelegate

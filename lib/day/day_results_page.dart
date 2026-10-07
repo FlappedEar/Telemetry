@@ -1848,6 +1848,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
         const SizedBox(height: 12),
         ProgressionCard(
           progression: _controller.progression,
+          evolution: _evolution(),
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
           onOpenLap: _open,
@@ -2279,6 +2280,27 @@ class _DayResultsPageState extends State<DayResultsPage> {
     );
   }
 
+  // Every lap of each session for the progression, worked out again only
+  // when the day's analysis or the progression changes.
+  (DayAnalysis, DayProgression, DayEvolution)? _evolutionCache;
+
+  /// Every lap of each session in the progression's order (FET-227).
+  DayEvolution _evolution() {
+    final analysis = _controller.analysis;
+    final progression = _controller.progression;
+    var cached = _evolutionCache;
+    if (cached == null ||
+        !identical(cached.$1, analysis) ||
+        !identical(cached.$2, progression)) {
+      cached = _evolutionCache = (
+        analysis,
+        progression,
+        dayEvolution(analysis, progression),
+      );
+    }
+    return cached.$3;
+  }
+
   /// The theoretical best's section progression in the progression's
   /// order, worked out again only when either changes.
   SectionProgression? _sections() {
@@ -2697,14 +2719,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       else if (bestOfRun)
         l10n.bestOfSession(l10n.session(row.runName)),
       if (timed && issues.isNotEmpty)
-        issues.contains(LapIssue.userExclusion)
-            ? switch (_controller.exclusionReason(row)) {
-                final reason? when reason.isNotEmpty => l10n.lapExcluded(
-                  reason,
-                ),
-                _ => l10n.lapExcludedNoReason,
-              }
-            : l10n.lapNotRanked(l10n.lapIssue(issues.first)),
+        l10n.lapNotRankedText(issues, _controller.exclusionReason(row)),
       if (!timed)
         row.type == LapSectionType.unknown
             ? l10n.noStartFinishPass

@@ -6837,4 +6837,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String profileTrendsWeatherSome(int sessions, int total) {
     return '($sessions of $total sessions)';
   }
+
+  @override
+  String get progressionByLap => 'By lap';
+
+  @override
+  String get evolutionIntro =>
+      'Each session\'s timed laps in order, from the start of its first timed lap (a recording can begin in the paddock, so the out lap is not counted). Each line is labelled with its session and has its own marker; fainter lines are earlier sessions. Tap a lap to open it.';
+
+  @override
+  String get evolutionChartLabel =>
+      'Lap time by lap number, one line per session';
+
+  @override
+  String evolutionLap(int number) {
+    return 'LAP $number';
+  }
+
+  @override
+  String evolutionSinceFirstLap(String time) {
+    return '+$time';
+  }
+
+  @override
+  String get evolutionNotRanked => 'not ranked';
+
+  @override
+  String evolutionPaceExplained(int count) {
+    return 'A session\'s middle half is the middle 50% of its ranked lap times; it takes at least $count ranked laps. Grey laps came before the first lap in the middle half or quicker.';
+  }
+
+  @override
+  String evolutionPaceFrom(int number, int before) {
+    String _temp0 = intl.Intl.pluralLogic(
+      before,
+      locale: localeName,
+      other:
+          'First lap in the session\'s middle half or quicker: LAP $number, after $before laps',
+      one:
+          'First lap in the session\'s middle half or quicker: LAP $number, after 1 lap',
+      zero:
+          'First lap in the session\'s middle half or quicker: LAP $number, its first timed lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionPaceNotCounted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count laps before it are not ranked, so whether they were slower is not known',
+      one: '1 lap before it is not ranked, so whether it was slower is not known',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionPaceNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The session\'s middle half needs at least $count ranked laps',
+      one: 'The session\'s middle half needs at least 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionSameLaps(String session, String delta, int count) {
+    return 'Against $session at the same laps: $delta typical difference over $count laps';
+  }
+
+  @override
+  String evolutionSameLapsTooFew(String session, int count, int minimum) {
+    return 'Against $session at the same laps: $count of the $minimum laps needed';
+  }
+
+  @override
+  String evolutionAir(String temperature) {
+    return 'Air (modelled): $temperature';
+  }
+
+  @override
+  String get evolutionCaveat =>
+      'These are observations, not causes: the tyres, the track and your own learning all change through a session and through the day, and this cannot tell them apart. The track temperature is not recorded.';
+
+  @override
+  String get evolutionNoLaps => 'No session has timed laps.';
+
+  @override
+  String evolutionQuickerLater(int number, String gain, int first) {
+    return 'Its quickest lap came later: LAP $number, $gain quicker than LAP $first.';
+  }
 }

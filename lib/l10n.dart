@@ -116,6 +116,20 @@ extension LapIssueText on AppLocalizations {
     LapIssue.differentRecordedRoute => lapIssueDifferentRoute,
     LapIssue.implausibleLap => lapIssueImplausibleLap,
   };
+
+  /// Why a timed lap is not ranked, as the day's lap list says it:
+  /// "Excluded: yellow flag", "Excluded", "Not ranked: Incomplete GPS".
+  /// [userReason] is the reason given when the lap was excluded.
+  String lapNotRankedText(List<LapIssue> issues, String? userReason) {
+    if (issues.contains(LapIssue.userExclusion)) {
+      return userReason == null || userReason.isEmpty
+          ? lapExcludedNoReason
+          : lapExcluded(userReason);
+    }
+    return lapNotRanked(
+      lapIssue(issues.isEmpty ? LapIssue.ineligibleLap : issues.first),
+    );
+  }
 }
 
 extension DayNoteText on AppLocalizations {

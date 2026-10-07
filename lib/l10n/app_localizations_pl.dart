@@ -6988,4 +6988,101 @@ class AppLocalizationsPl extends AppLocalizations {
   String profileTrendsWeatherSome(int sessions, int total) {
     return '($sessions z $total sesji)';
   }
+
+  @override
+  String get progressionByLap => 'Według okrążeń';
+
+  @override
+  String get evolutionIntro =>
+      'Mierzone okrążenia każdej sesji po kolei, liczone od początku jej pierwszego mierzonego okrążenia (zapis może zacząć się w parku maszyn, więc okrążenie wyjazdowe nie jest liczone). Każda linia ma podpis sesji i własny znacznik; bledsze linie to wcześniejsze sesje. Wybierz okrążenie, aby je otworzyć.';
+
+  @override
+  String get evolutionChartLabel =>
+      'Czas okrążenia według numeru okrążenia, jedna linia na sesję';
+
+  @override
+  String evolutionLap(int number) {
+    return 'OKR. $number';
+  }
+
+  @override
+  String evolutionSinceFirstLap(String time) {
+    return '+$time';
+  }
+
+  @override
+  String get evolutionNotRanked => 'niesklasyfikowane';
+
+  @override
+  String evolutionPaceExplained(int count) {
+    return 'Środkowa połowa sesji to środkowe 50% czasów jej sklasyfikowanych okrążeń; potrzeba co najmniej $count sklasyfikowanych okrążeń. Szare okrążenia były przed pierwszym okrążeniem w środkowej połowie lub szybszym.';
+  }
+
+  @override
+  String evolutionPaceFrom(int number, int before) {
+    String _temp0 = intl.Intl.pluralLogic(
+      before,
+      locale: localeName,
+      other:
+          'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. $number, po $before okrążeniach',
+      one:
+          'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. $number, po 1 okrążeniu',
+      zero:
+          'Pierwsze okrążenie w środkowej połowie sesji lub szybsze: OKR. $number, pierwsze mierzone okrążenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionPaceNotCounted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count okrążeń przed tym okrążeniem nie jest sklasyfikowanych, więc nie wiadomo, czy były wolniejsze',
+      few:
+          '$count okrążenia przed tym okrążeniem nie są sklasyfikowane, więc nie wiadomo, czy były wolniejsze',
+      one: '1 okrążenie przed tym okrążeniem nie jest sklasyfikowane, więc nie wiadomo, czy było wolniejsze',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionPaceNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Do wyznaczenia środkowej połowy sesji potrzeba co najmniej $count sklasyfikowanych okrążeń',
+      one: 'Do wyznaczenia środkowej połowy sesji potrzeba co najmniej 1 sklasyfikowanego okrążenia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionSameLaps(String session, String delta, int count) {
+    return 'Względem $session na tych samych okrążeniach: typowa różnica $delta z $count okrążeń';
+  }
+
+  @override
+  String evolutionSameLapsTooFew(String session, int count, int minimum) {
+    return 'Względem $session na tych samych okrążeniach: $count z $minimum potrzebnych okrążeń';
+  }
+
+  @override
+  String evolutionAir(String temperature) {
+    return 'Powietrze (model): $temperature';
+  }
+
+  @override
+  String get evolutionCaveat =>
+      'To obserwacje, nie przyczyny: opony, tor i Twoja znajomość toru zmieniają się razem w trakcie sesji i całego dnia, a ta analiza nie potrafi ich rozdzielić. Temperatura nawierzchni toru nie jest rejestrowana.';
+
+  @override
+  String get evolutionNoLaps => 'Żadna sesja nie ma mierzonych okrążeń.';
+
+  @override
+  String evolutionQuickerLater(int number, String gain, int first) {
+    return 'Najszybsze okrążenie przyszło później: OKR. $number, o $gain szybsze niż OKR. $first.';
+  }
 }

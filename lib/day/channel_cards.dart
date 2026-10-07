@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../channel_names.dart';
+import '../format.dart';
 import '../l10n.dart';
 import 'touch.dart';
 import 'theoretical_best_card.dart' show CalculateAgainButton;
@@ -90,11 +91,6 @@ String channelSummaryText(
           : '');
 }
 
-String _clockText(double seconds) {
-  final whole = seconds.round();
-  return '${whole ~/ 60}:${(whole % 60).toString().padLeft(2, '0')}';
-}
-
 String _sectionText(AppLocalizations l10n, DayLapRow? row) =>
     switch (row?.type) {
       LapSectionType.outLap => l10n.channelOutLap,
@@ -110,7 +106,7 @@ String coolingText(AppLocalizations l10n, RunChannel channel) {
     for (final cooling in channel.cooling)
       l10n.channelCoolingDrop(
             channelValueText(cooling.interval.drop, channel.unit),
-            _clockText(cooling.interval.seconds),
+            displayClock(cooling.interval.seconds),
           ) +
           (cooling.section == null
               ? ''
