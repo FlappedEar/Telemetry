@@ -16,6 +16,7 @@ import 'compatibility.dart';
 import 'day_analysis.dart';
 import 'day_fusion.dart';
 import 'day_laps.dart';
+import 'day_theoretical_best.dart' show otherEligibleLapTraces;
 import 'run_metadata.dart';
 import 'session_weather.dart';
 import 'track_inference.dart';
@@ -551,6 +552,9 @@ void _approveAutomaticSegments(
       lapNumber: best.lapNumber,
       startTime: best.start,
       endTime: best.end,
+      otherLaps: otherEligibleLapTraces(analysis.ranking!, best, {
+        for (final other in runs) other.run.id: (other.run.telemetry, other.run.laps),
+      }),
       random: random,
     );
     if (segments != null) json['trackSegments'] = segments;
