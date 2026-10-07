@@ -198,6 +198,18 @@ void main() {
     final against = referenceChannelUnits(declaredMph, undeclared, 'speed', assumed: 'km/h');
     expect(against.comparable, isFalse);
 
+    // Any channel's unit as the recording declares it, its [header] line
+    // included, as declaredChannelUnit reads it.
+    final pedals = rectangleSession([_lap(30)], pedals: true);
+    final throttle = referenceChannelUnits(
+      _as(pedals, header: ['throttle %']),
+      _as(pedals),
+      'throttle',
+    );
+    expect(throttle.today.unit, '%');
+    expect(throttle.reference.unit, '');
+    expect(throttle.comparable, isFalse);
+
     final missing = referenceChannelUnits(declaredKmh, undeclared, 'throttle');
     expect(missing.today.recorded, isFalse);
     expect(missing.comparable, isFalse);

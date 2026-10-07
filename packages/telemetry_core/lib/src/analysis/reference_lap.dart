@@ -12,6 +12,7 @@ import 'dart:typed_data';
 
 import '../day/compatibility.dart';
 import '../day/track_inference.dart';
+import '../channel_units.dart';
 import '../geometry.dart';
 import '../laps/lap_detection.dart';
 import '../laps/lap_session.dart';
@@ -589,7 +590,8 @@ ReferenceUnit _unitOf(TelemetrySession session, String channel, String assumed) 
   final found = session.channels[name];
   if (found == null) return const ReferenceUnit();
   if (!isSessionSpeedChannel(session, name)) {
-    return ReferenceUnit(recorded: true, unit: found.unit.trim());
+    // As declared: the channel's own unit, else the VBO [header] line.
+    return ReferenceUnit(recorded: true, unit: declaredChannelUnit(session, name));
   }
   final declared = declaredSpeedUnit(session, name);
   if (declared.isNotEmpty) return ReferenceUnit(recorded: true, unit: declared, speed: true);
