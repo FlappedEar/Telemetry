@@ -9,6 +9,7 @@
 // Totals mix everything.
 import 'dart:math';
 
+import '../day/session_weather.dart' show WeatherCondition;
 import 'driver_profile.dart';
 
 /// Days in date order: dated days by start, then undated ones as added.
@@ -879,3 +880,196 @@ SkillLevel _skillLevel(
 }
 
 double? _higher(double? a, double? b) => a == null ? b : (b == null || a >= b ? a : b);
+
+// ---------------------------------------------------------------------------
+// Day by day (FET-235)
+
+/// The fewest days a trend is read from: one day is a single figure and two
+/// are a comparison, so a change across days is given from three on.
+const trendMinimumDays = 3;
+
+/// The measures followed day by day, as their skills measure them
+/// ([skillCatalogue]): braking-point spread, minimum speed below the best
+/// ever at each corner, off the throttle to braking (lift and coast) and lap
+/// time spread. Lower is better for each.
+const trendMeasures = [
+  'brakePointConsistency',
+  'minimumSpeedControl',
+  'liftTiming',
+  'paceConsistency',
+];
+
+/// The weather kept for one day's sessions: the weather model's for the
+/// area around the track at the session's time, not a measurement at the
+/// track, so it does not say whether the track was wet or dry.
+final class TrendWeather {
+  const TrendWeather({this.conditions = const [], this.precipitationMm, this.sessions = 0});
+
+  /// The conditions of the day's sessions, each once, in session order;
+  /// conditions this version does not know are left out.
+  final List<WeatherCondition> conditions;
+
+  /// The most rain the model gave over the hours of one session, mm.
+  final double? precipitationMm;
+
+  /// Sessions with any weather kept.
+  final int sessions;
+}
+
+/// One day at a track in a car, with its measures.
+final class TrendDay {
+  const TrendDay({
+    required this.visit,
+    required this.personalBest,
+    this.measures = const {},
+    this.weather = const TrendWeather(),
+  });
+
+  /// The day's lap times: best, typical and spread, as [trackProgress] has
+  /// them.
+  final TrackVisit visit;
+
+  ProfileDay get day => visit.day;
+
+  /// Its best lap is faster than every earlier day's here in this car.
+  final bool personalBest;
+
+  /// Per measure of [trendMeasures] the day measured: its sessions' values
+  /// weighted by their ranked laps, in the skill's unit. A measure the day
+  /// did not measure is absent, never 0.
+  final Map<String, double> measures;
+  final TrendWeather weather;
+}
+
+/// A measure on the first and the last day that measured it.
+final class TrendChange {
+  const TrendChange({
+    required this.measure,
+    required this.first,
+    required this.last,
+    required this.days,
+  });
+
+  /// A [trendMeasures] id, or `bestLap` or `typicalLap` (seconds).
+  final String measure;
+  final double first;
+  final double last;
+
+  /// Days that measured it.
+  final int days;
+
+  /// [last] − [first]: negative is lower, which is better for every measure.
+  double get change => last - first;
+}
+
+/// Every day at one track in one car, oldest first.
+final class TrackTrend {
+  const TrackTrend({required this.track, required this.carId, required this.days});
+
+  final ProfileTrack track;
+  final String carId;
+  final List<TrendDay> days;
+
+  /// Enough days for a trend ([trendMinimumDays]).
+  bool get enoughDays => days.length >= trendMinimumDays;
+
+  /// Each measure, best lap and typical lap from its first day to its last,
+  /// when at least [trendMinimumDays] days measured it.
+  List<TrendChange> get changes {
+    TrendChange? of(String measure, double? Function(TrendDay day) value) {
+      final values = [for (final day in days) ?value(day)];
+      return values.length < trendMinimumDays
+          ? null
+          : TrendChange(
+              measure: measure,
+              first: values.first,
+              last: values.last,
+              days: values.length,
+            );
+    }
+
+    return [
+      ?of('bestLap', (day) => day.visit.bestLapSeconds),
+      ?of('typicalLap', (day) => day.visit.typicalLapSeconds),
+      for (final measure in trendMeasures) ?of(measure, (day) => day.measures[measure]),
+    ];
+  }
+}
+
+/// Per track and car driven there, every day with its lap times, the
+/// [trendMeasures] it measured and the weather kept for it, oldest first;
+/// the track and car driven most recently first. Values depend on the track
+/// and the car, so days compare only within one [TrackTrend]. Nothing is
+/// re-read from recordings: it is what the profile keeps per session.
+/// Minimum speed is against the best ever at each corner in that car over
+/// every day kept, as [skillLevels] measures it, so a new best there changes
+/// the earlier days' figures too.
+List<TrackTrend> profileTrends(DriverProfile profile) {
+  final result = <TrackTrend>[];
+  for (final track in profile.tracks) {
+    final cars = <String>{
+      for (final day in profile.days)
+        if (day.trackId == track.id) day.carId,
+    };
+    for (final carId in cars) {
+      final visits = trackProgress(profile, track.id, carId: carId);
+      final bestEver = _bestEver(visits.map((visit) => visit.day));
+      double? fastest;
+      final days = <TrendDay>[];
+      for (final visit in visits) {
+        final best = visit.bestLapSeconds;
+        final personalBest = best != null && fastest != null && best < fastest;
+        if (best != null && (fastest == null || best < fastest)) fastest = best;
+        days.add(
+          TrendDay(
+            visit: visit,
+            personalBest: personalBest,
+            measures: _trendMeasures(visit.day, bestEver),
+            weather: _trendWeather(visit.day),
+          ),
+        );
+      }
+      result.add(TrackTrend(track: track, carId: carId, days: days));
+    }
+  }
+  // The latest dated day; undated days sort last, as days do.
+  int last(TrackTrend trend) =>
+      trend.days.map((day) => day.day.startMilliseconds ?? -1).fold(-1, max);
+  // Stable: tracks with undated days only keep the profile's order.
+  final order = {for (final (i, trend) in result.indexed) trend: i};
+  result.sort((a, b) {
+    final byDate = last(b).compareTo(last(a));
+    return byDate != 0 ? byDate : order[a]!.compareTo(order[b]!);
+  });
+  return result;
+}
+
+Map<String, double> _trendMeasures(ProfileDay day, Map<String, _CornerBest> bestEver) {
+  _CornerBest? best(String cornerId) => bestEver[_cornerKey(day, cornerId) ?? ''];
+  final result = <String, double>{};
+  for (final measure in trendMeasures) {
+    final value = _weighted([
+      for (final session in _onTrack(day))
+        if (session.stats case final stats?)
+          if (_skillMeasure(measure, stats, best) case (final value, final laps))
+            (value, max(1, laps)),
+    ]);
+    if (value != null) result[measure] = value;
+  }
+  return result;
+}
+
+TrendWeather _trendWeather(ProfileDay day) {
+  final conditions = <WeatherCondition>[];
+  double? rain;
+  var sessions = 0;
+  for (final session in day.sessions) {
+    final weather = session.weather;
+    if (weather == null) continue;
+    sessions++;
+    final condition = weather.condition;
+    if (condition != null && !conditions.contains(condition)) conditions.add(condition);
+    rain = _higher(rain, weather.precipitationMm);
+  }
+  return TrendWeather(conditions: conditions, precipitationMm: rain, sessions: sessions);
+}

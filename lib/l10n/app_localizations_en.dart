@@ -6711,4 +6711,102 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$session: $_temp0 beyond $limit left out as implausible';
   }
+
+  @override
+  String get profileTrends => 'Day by day';
+
+  @override
+  String get profileTrendsIntro =>
+      'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.';
+
+  @override
+  String get profileTrendsWetDry =>
+      'Wet or dry track is not recorded. The weather shown is the weather model\'s for the area at each session\'s time, not the track surface, so days are not split into wet and dry.';
+
+  @override
+  String profileTrendsGroup(String track, String direction, String car) {
+    return '$track · $direction · $car';
+  }
+
+  @override
+  String profileTrendsTooFew(int days, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0 here in this car: a trend needs at least $minimum days.';
+  }
+
+  @override
+  String profileTrendsShowingLast(int shown, int total) {
+    return 'The last $shown of $total days here.';
+  }
+
+  @override
+  String profileTrendsBestLap(String time) {
+    return 'Best lap $time';
+  }
+
+  @override
+  String get profileTrendsPersonalBest => 'new best here in this car';
+
+  @override
+  String profileTrendsTypicalLap(String time) {
+    return 'Typical lap $time';
+  }
+
+  @override
+  String get profileTrendsNoLapTimes => 'No lap time kept for this day.';
+
+  @override
+  String get profileTrendsNotMeasured =>
+      'No corner or lap figures for this day: it was added before the library measured sessions, or its sessions had no ranked laps or corners to measure.';
+
+  @override
+  String profileTrendsWeather(String weather) {
+    return 'Weather model: $weather';
+  }
+
+  @override
+  String get profileTrendsNoWeather => 'No weather kept for this day.';
+
+  @override
+  String get profileTrendsChanges => 'First day to last';
+
+  @override
+  String profileTrendsMeasure(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'bestLap': 'Best lap',
+      'typicalLap': 'Typical lap',
+      'brakePointConsistency': 'Braking-point spread',
+      'minimumSpeedControl': 'Minimum speed below your best',
+      'liftTiming': 'Off the throttle to braking',
+      'paceConsistency': 'Lap time spread',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String profileTrendsChange(
+    String measure,
+    String first,
+    String last,
+    int days,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$measure: $first → $last over $_temp0';
+  }
+
+  @override
+  String profileTrendsRain(String amount) {
+    return 'up to $amount mm of rain in a session';
+  }
 }

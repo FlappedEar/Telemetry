@@ -1609,5 +1609,22 @@
   "ggEnvelopeMissingNote": "— oznacza mniej niż {count} próbek w tym kierunku.",
   "ggEnvelopeNote": "Zaobserwowane przyspieszenia nie określają procentu wykorzystania dostępnej przyczepności. Niewykorzystana oznacza co najmniej {margin} poniżej najlepszej obwiedni dnia. Okręgi co 0.5 g; linia przerywana to najlepsza obwiednia dnia, gruba linia to ostatnia sesja.",
   "ggEnvelopeSemantics": "Obwiednia G–G każdej sesji na tle najlepszej obwiedni dnia",
-  "ggEnvelopeOutliers": "{session}: {count, plural, =1{1 próbkę} few{{count} próbki} many{{count} próbek} other{{count} próbki}} powyżej {limit} pominięto jako nieprawdopodobne"
+  "ggEnvelopeOutliers": "{session}: {count, plural, =1{1 próbkę} few{{count} próbki} many{{count} próbek} other{{count} próbki}} powyżej {limit} pominięto jako nieprawdopodobne",
+  "profileTrends": "Dzień po dniu",
+  "profileTrendsIntro": "Każdy tor w każdym samochodzie osobno: wartości zależą od obu, więc dzień porównuje się tylko z dniami na tym samym torze w tym samym samochodzie. Przy rozrzucie punktu hamowania, prędkości minimalnej poniżej najlepszej, czasie od odjęcia gazu do hamowania i rozrzucie czasów okrążeń mniej znaczy lepiej. Prędkość minimalna jest liczona względem Twojej najlepszej w każdym zakręcie tego toru, więc nowa najlepsza zmienia też wartości wcześniejszych dni.",
+  "profileTrendsWetDry": "Nie zapisuje się, czy tor był mokry, czy suchy. Pokazana pogoda pochodzi z modelu pogody dla okolicy w czasie każdej sesji, a nie z nawierzchni toru, więc dni nie są dzielone na mokre i suche.",
+  "profileTrendsGroup": "{track} · {direction} · {car}",
+  "profileTrendsTooFew": "{days, plural, =1{1 dzień} few{{days} dni} many{{days} dni} other{{days} dnia}} na tym torze w tym samochodzie: trend wymaga co najmniej {minimum} dni.",
+  "profileTrendsShowingLast": "Ostatnie {shown} z {total} dni na tym torze.",
+  "profileTrendsBestLap": "Najlepsze okrążenie {time}",
+  "profileTrendsPersonalBest": "nowy rekord tego toru w tym samochodzie",
+  "profileTrendsTypicalLap": "Typowe okrążenie {time}",
+  "profileTrendsNoLapTimes": "Brak zapisanego czasu okrążenia dla tego dnia.",
+  "profileTrendsNotMeasured": "Brak wartości zakrętów i okrążeń dla tego dnia: dodano go, zanim biblioteka mierzyła sesje, albo jego sesje nie miały sklasyfikowanych okrążeń ani zakrętów do zmierzenia.",
+  "profileTrendsWeather": "Model pogody: {weather}",
+  "profileTrendsNoWeather": "Brak zapisanej pogody dla tego dnia.",
+  "profileTrendsChanges": "Od pierwszego do ostatniego dnia",
+  "profileTrendsMeasure": "{id, select, bestLap{Najlepsze okrążenie} typicalLap{Typowe okrążenie} brakePointConsistency{Rozrzut punktu hamowania} minimumSpeedControl{Prędkość minimalna poniżej najlepszej} liftTiming{Od odjęcia gazu do hamowania} paceConsistency{Rozrzut czasów okrążeń} other{{id}}}",
+  "profileTrendsChange": "{measure}: {first} → {last} w ciągu {days, plural, =1{1 dnia} few{{days} dni} many{{days} dni} other{{days} dnia}}",
+  "profileTrendsRain": "do {amount} mm opadu w sesji"
 }

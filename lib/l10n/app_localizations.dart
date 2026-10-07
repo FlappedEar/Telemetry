@@ -9851,6 +9851,113 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{session}: {count, plural, =1{1 sample} other{{count} samples}} beyond {limit} left out as implausible'**
   String ggEnvelopeOutliers(String session, int count, String limit);
+
+  /// Heading of the profile's day-by-day figures per track and car.
+  ///
+  /// In en, this message translates to:
+  /// **'Day by day'**
+  String get profileTrends;
+
+  /// Explains the day-by-day figures on the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.'**
+  String get profileTrendsIntro;
+
+  /// Says that a wet or dry track is not recorded, and what the weather shown is.
+  ///
+  /// In en, this message translates to:
+  /// **'Wet or dry track is not recorded. The weather shown is the weather model\'s for the area at each session\'s time, not the track surface, so days are not split into wet and dry.'**
+  String get profileTrendsWetDry;
+
+  /// One track in one car in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'{track} · {direction} · {car}'**
+  String profileTrendsGroup(String track, String direction, String car);
+
+  /// Too few days at a track in a car for a trend.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}} here in this car: a trend needs at least {minimum} days.'**
+  String profileTrendsTooFew(int days, int minimum);
+
+  /// Only the latest days at a track in a car are listed.
+  ///
+  /// In en, this message translates to:
+  /// **'The last {shown} of {total} days here.'**
+  String profileTrendsShowingLast(int shown, int total);
+
+  /// A day's best lap in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap {time}'**
+  String profileTrendsBestLap(String time);
+
+  /// A day's best lap was faster than every earlier day's at the track in the car.
+  ///
+  /// In en, this message translates to:
+  /// **'new best here in this car'**
+  String get profileTrendsPersonalBest;
+
+  /// A day's typical (median) lap in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical lap {time}'**
+  String profileTrendsTypicalLap(String time);
+
+  /// A day without a best or typical lap in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap time kept for this day.'**
+  String get profileTrendsNoLapTimes;
+
+  /// A day with none of the day-by-day measures.
+  ///
+  /// In en, this message translates to:
+  /// **'No corner or lap figures for this day: it was added before the library measured sessions, or its sessions had no ranked laps or corners to measure.'**
+  String get profileTrendsNotMeasured;
+
+  /// The weather kept for a day's sessions, from the weather model.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather model: {weather}'**
+  String profileTrendsWeather(String weather);
+
+  /// A day without weather in the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'No weather kept for this day.'**
+  String get profileTrendsNoWeather;
+
+  /// Heading of each measure on its first and last day at a track in a car.
+  ///
+  /// In en, this message translates to:
+  /// **'First day to last'**
+  String get profileTrendsChanges;
+
+  /// A measure followed day by day.
+  ///
+  /// In en, this message translates to:
+  /// **'{id, select, bestLap{Best lap} typicalLap{Typical lap} brakePointConsistency{Braking-point spread} minimumSpeedControl{Minimum speed below your best} liftTiming{Off the throttle to braking} paceConsistency{Lap time spread} other{{id}}}'**
+  String profileTrendsMeasure(String id);
+
+  /// A measure on its first and last day at a track in a car, and the days that measured it.
+  ///
+  /// In en, this message translates to:
+  /// **'{measure}: {first} → {last} over {days, plural, =1{1 day} other{{days} days}}'**
+  String profileTrendsChange(
+    String measure,
+    String first,
+    String last,
+    int days,
+  );
+
+  /// The most rain the weather model gave over one of a day's sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {amount} mm of rain in a session'**
+  String profileTrendsRain(String amount);
 }
 
 class _AppLocalizationsDelegate
