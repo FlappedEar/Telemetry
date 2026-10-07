@@ -2719,14 +2719,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       else if (bestOfRun)
         l10n.bestOfSession(l10n.session(row.runName)),
       if (timed && issues.isNotEmpty)
-        issues.contains(LapIssue.userExclusion)
-            ? switch (_controller.exclusionReason(row)) {
-                final reason? when reason.isNotEmpty => l10n.lapExcluded(
-                  reason,
-                ),
-                _ => l10n.lapExcludedNoReason,
-              }
-            : l10n.lapNotRanked(l10n.lapIssue(issues.first)),
+        l10n.lapNotRankedText(issues, _controller.exclusionReason(row)),
       if (!timed)
         row.type == LapSectionType.unknown
             ? l10n.noStartFinishPass

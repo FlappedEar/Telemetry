@@ -158,12 +158,11 @@ void main() {
       textOf(tester, 'evolutionPace 1'),
       "First lap in the session's middle half or quicker: LAP 2, after 1 lap",
     );
-    // Session 1 kept getting quicker: lap 4 (91 s) is below its lower
-    // quartile (92 s).
+    // Session 1's quickest lap came after lap 2: lap 4 (91 s) is 4 s
+    // quicker, more than the session's spread (95 - 92 s).
     expect(
       textOf(tester, 'evolutionQuickerLater 1'),
-      'Later laps kept getting quicker: LAP 4 was 4.000\u00a0s quicker than '
-      'LAP 2, quicker than the whole middle half.',
+      'Its quickest lap came later: LAP 4, 4.000\u00a0s quicker than LAP 2.',
     );
     expect(find.byKey(const ValueKey('evolutionQuickerLater 2')), findsNothing);
     expect(
@@ -220,6 +219,11 @@ void main() {
       'Względem Sesja 1 na tych samych okrążeniach: typowa różnica −1.000 s z 4 okrążeń',
     );
     expect(textOf(tester, 'evolutionAir 1'), 'Powietrze (model): 21 °C');
+    expect(
+      textOf(tester, 'evolutionQuickerLater 1'),
+      'Najszybsze okrążenie przyszło później: OKR. 4, o 4.000\u00a0s szybsze '
+      'niż OKR. 2.',
+    );
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('evolutionCell 2 1')),
@@ -287,5 +291,76 @@ void main() {
       "The session's middle half needs at least 3 ranked laps",
     );
     expect(textOf(tester, 'evolutionNotRanked 9 3'), 'LAP 3 · Excluded: Wet');
+  });
+
+  test('places session names clear of each other and inside the chart', () {
+    // Six names wanted at the same spot near the bottom of the plot.
+    final placed = <Rect>[];
+    for (var i = 0; i < 6; ++i) {
+      placed.add(
+        placeEvolutionLabel(
+          const Rect.fromLTWH(200, 170, 60, 14),
+          placed,
+          top: 0,
+          bottom: 180,
+        ),
+      );
+    }
+    for (final (i, rect) in placed.indexed) {
+      expect(rect.top, greaterThanOrEqualTo(0));
+      expect(rect.bottom, lessThanOrEqualTo(180));
+      for (final other in placed.skip(i + 1)) {
+        expect(rect.overlaps(other), isFalse);
+      }
+    }
+    // The first stays where it fits; the next goes up, not off the chart.
+    expect(placed[0].top, 166);
+    expect(placed[1].bottom, lessThan(placed[0].top));
+    // With room below, a name moves down past the one it would cover.
+    final below = placeEvolutionLabel(
+      const Rect.fromLTWH(0, 10, 60, 14),
+      [const Rect.fromLTWH(0, 8, 60, 14)],
+      top: 0,
+      bottom: 180,
+    );
+    expect(below.top, 23);
+  });
+
+  testWidgets('six sessions ending together fit a 320 px wide phone', (
+    tester,
+  ) async {
+    final rows = [
+      for (var s = 1; s <= 6; ++s)
+        ..._session('$s', [100.0 - s, 96, 95.0 + s / 100]),
+    ];
+    final configurations = {for (var s = 1; s <= 6; ++s) '$s': _track};
+    final ranking = rankDayLaps(
+      rows,
+      _track.compatibilityGroupId,
+      configurations,
+    );
+    final progression = summarizeDayProgression(rows, ranking, [
+      for (var s = 1; s <= 6; ++s)
+        ProgressionRunInfo(id: '$s', name: 'Session $s'),
+    ], configurations);
+    final evolution = summarizeDayEvolution(rows, ranking, progression);
+    await tester.binding.setSurfaceSize(const Size(320, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ListView(children: [EvolutionView(evolution: evolution)]),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const ValueKey('evolutionChart')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('evolutionChart'))).width,
+      lessThanOrEqualTo(320),
+    );
+    expect(find.byKey(const ValueKey('evolutionTable')), findsOneWidget);
   });
 }

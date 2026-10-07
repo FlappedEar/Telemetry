@@ -92,19 +92,6 @@ enum EvolutionMarker {
   }
 }
 
-/// Why a lap is not ranked, as the day's lap list says it: "Excluded:
-/// yellow flag", "Not ranked: Incomplete GPS".
-String evolutionNotRankedText(AppLocalizations l10n, EvolutionLap lap) {
-  if (lap.issues.contains(LapIssue.userExclusion)) {
-    return lap.userReason.isEmpty
-        ? l10n.lapExcludedNoReason
-        : l10n.lapExcluded(lap.userReason);
-  }
-  return lap.issues.isEmpty
-      ? l10n.lapNotRanked(l10n.lapIssue(LapIssue.ineligibleLap))
-      : l10n.lapNotRanked(l10n.lapIssue(lap.issues.first));
-}
-
 /// The progression's By lap view (FET-227): every timed lap of each session
 /// in order on a chart and in a table, the first lap in each session's
 /// middle half, and each session against the one before at the same laps.
@@ -183,7 +170,7 @@ class EvolutionView extends StatelessWidget {
                 if (!lap.eligible)
                   Text(
                     '${l10n.evolutionLap(lap.lapNumber)} · '
-                    '${evolutionNotRankedText(l10n, lap)}',
+                    '${l10n.lapNotRankedText(lap.issues, lap.userReason)}',
                     key: ValueKey(
                       'evolutionNotRanked ${session.runId} ${lap.lapNumber}',
                     ),
@@ -494,20 +481,20 @@ class _EvolutionPainter extends CustomPainter {
         }
       }
       if (end == null) continue;
-      // The session's name at its last lap, moved down past names already
-      // placed so none covers another.
+      // The session's name at its last lap, clear of the names already
+      // placed and inside the chart.
       final label = labels[i];
-      var rect = Rect.fromLTWH(
-        end.dx + _gap,
-        end.dy - label.height / 2,
-        label.width,
-        label.height,
+      final rect = placeEvolutionLabel(
+        Rect.fromLTWH(
+          end.dx + _gap,
+          end.dy - label.height / 2,
+          label.width,
+          label.height,
+        ),
+        placed,
+        top: 0,
+        bottom: plotBottom,
       );
-      for (var tries = 0; tries < sessions.length; ++tries) {
-        final overlap = placed.where((other) => other.overlaps(rect));
-        if (overlap.isEmpty) break;
-        rect = rect.translate(0, overlap.first.bottom - rect.top + 1);
-      }
       placed.add(rect);
       label.paint(canvas, rect.topLeft);
     }
@@ -535,6 +522,40 @@ class _EvolutionPainter extends CustomPainter {
     }
     return true;
   }
+}
+
+/// Where a session's name goes: at [wanted], moved down past the names
+/// already [placed] it would cover, or up when there is no room below
+/// [bottom]; never above [top]. Names may still touch when the chart is too
+/// short for all of them.
+Rect placeEvolutionLabel(
+  Rect wanted,
+  List<Rect> placed, {
+  required double top,
+  required double bottom,
+}) {
+  Rect shift(Rect rect, bool down) {
+    for (var tries = 0; tries <= placed.length; ++tries) {
+      final overlap = placed.where((other) => other.overlaps(rect));
+      if (overlap.isEmpty) break;
+      final other = overlap.first;
+      rect = rect.translate(
+        0,
+        down ? other.bottom - rect.top + 1 : other.top - rect.bottom - 1,
+      );
+    }
+    return rect;
+  }
+
+  var rect = wanted;
+  if (rect.bottom > bottom) rect = rect.translate(0, bottom - rect.bottom);
+  if (rect.top < top) rect = rect.translate(0, top - rect.top);
+  final below = shift(rect, true);
+  if (below.bottom <= bottom) return below;
+  final above = shift(rect, false);
+  if (above.top >= top) return above;
+  // No room either way: keep it inside the chart.
+  return below.translate(0, bottom - below.bottom);
 }
 
 /// Sessions by lap number: the session names stay while the laps scroll

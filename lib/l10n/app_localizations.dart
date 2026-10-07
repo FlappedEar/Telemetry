@@ -10075,10 +10075,10 @@ abstract class AppLocalizations {
   /// **'No session has timed laps.'**
   String get evolutionNoLaps;
 
-  /// Progression card, By lap view: a later ranked lap below the session's lower quartile, so the first lap in the middle half was not the session's full pace.
+  /// Progression card, By lap view: the quickest ranked lap after the first lap in the session's middle half, shown only when it is quicker than that lap by more than the session's spread (interquartile range).
   ///
   /// In en, this message translates to:
-  /// **'Later laps kept getting quicker: LAP {number} was {gain} quicker than LAP {first}, quicker than the whole middle half.'**
+  /// **'Its quickest lap came later: LAP {number}, {gain} quicker than LAP {first}.'**
   String evolutionQuickerLater(int number, String gain, int first);
 }
 

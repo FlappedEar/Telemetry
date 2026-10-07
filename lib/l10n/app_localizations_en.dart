@@ -6929,6 +6929,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String evolutionQuickerLater(int number, String gain, int first) {
-    return 'Later laps kept getting quicker: LAP $number was $gain quicker than LAP $first, quicker than the whole middle half.';
+    return 'Its quickest lap came later: LAP $number, $gain quicker than LAP $first.';
   }
 }

@@ -204,7 +204,7 @@ void main() {
     expect(session.typicalSeconds, 95.5);
   });
 
-  test('says when laps kept getting quicker after the first in the middle half', () {
+  test('names a clearly quicker lap after the first in the middle half', () {
     // A steadily improving session: 100, 98, 96, 94, 92, 90.
     final rows = _session('s', 0, 60, [100, 98, 96, 94, 92, 90]);
     final configurations = {'s': _track};
@@ -214,7 +214,7 @@ void main() {
     ], configurations);
     final session = summarizeDayEvolution(rows, ranking, progression).sessions.single;
     // Upper quartile 97.5: lap 3 is the first in the middle half or quicker;
-    // lap 6 (90 s) is below the lower quartile (92.5).
+    // lap 6 (90 s) is 6 s quicker, more than the spread (97.5 - 92.5).
     expect(session.paceLimitSeconds, 97.5);
     expect(session.paceLapNumber, 3);
     expect(session.lapsBeforePace, 2);
@@ -231,5 +231,18 @@ void main() {
     final steady = summarizeDayEvolution(flat, flatRanking, flatProgression).sessions.single;
     expect(steady.paceLapNumber, 2);
     expect(steady.quickerLaterLap, isNull);
+  });
+
+  test('names no quicker lap in a flat session with sub-second jitter', () {
+    final rows = _session('j', 0, 60, [100, 95.0, 95.3, 94.9, 95.2, 95.1]);
+    final configurations = {'j': _track};
+    final ranking = rankDayLaps(rows, groupId, configurations);
+    final progression = summarizeDayProgression(rows, ranking, [
+      const ProgressionRunInfo(id: 'j', name: 'Session j'),
+    ], configurations);
+    final session = summarizeDayEvolution(rows, ranking, progression).sessions.single;
+    // Spread 95.275 - 95.025 = 0.25 s; lap 4 is only 0.1 s quicker than lap 2.
+    expect(session.paceLapNumber, 2);
+    expect(session.quickerLaterLap, isNull);
   });
 }

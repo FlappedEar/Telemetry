@@ -8661,6 +8661,6 @@
   "@evolutionCaveat": {"description": "Progression card, By lap view: what the comparison can and cannot tell."},
   "evolutionNoLaps": "No session has timed laps.",
   "@evolutionNoLaps": {"description": "Progression card, By lap view: nothing to show."},
-  "evolutionQuickerLater": "Later laps kept getting quicker: LAP {number} was {gain} quicker than LAP {first}, quicker than the whole middle half.",
-  "@evolutionQuickerLater": {"description": "Progression card, By lap view: a later ranked lap below the session's lower quartile, so the first lap in the middle half was not the session's full pace.", "placeholders": {"number": {"type": "int"}, "gain": {"type": "String"}, "first": {"type": "int"}}}
+  "evolutionQuickerLater": "Its quickest lap came later: LAP {number}, {gain} quicker than LAP {first}.",
+  "@evolutionQuickerLater": {"description": "Progression card, By lap view: the quickest ranked lap after the first lap in the session's middle half, shown only when it is quicker than that lap by more than the session's spread (interquartile range).", "placeholders": {"number": {"type": "int"}, "gain": {"type": "String"}, "first": {"type": "int"}}}
 }

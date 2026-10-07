@@ -7083,6 +7083,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String evolutionQuickerLater(int number, String gain, int first) {
-    return 'Kolejne okrążenia były coraz szybsze: OKR. $number było o $gain szybsze niż OKR. $first, szybsze niż cała środkowa połowa.';
+    return 'Najszybsze okrążenie przyszło później: OKR. $number, o $gain szybsze niż OKR. $first.';
   }
 }

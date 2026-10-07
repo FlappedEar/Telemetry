@@ -1,7 +1,7 @@
 // How lap times move through each session of a group (FET-227): every timed
 // lap by its number and the time since the session's first timed lap began,
-// the first lap in the session's middle half of lap times or quicker (and
-// whether later laps kept getting quicker), and each session against the one
+// the first lap in the session's middle half of lap times or quicker (and a
+// clearly quicker lap after it, if any), and each session against the one
 // listed before it at the same lap numbers. Laps are the ranking's: a lap
 // the ranking leaves out is listed with its reasons but never measured.
 //
@@ -83,7 +83,7 @@ final class SessionEvolution {
 
   /// The first eligible lap in the middle half of the session's laps or
   /// quicker (no slower than [paceLimitSeconds]). Not the session's full
-  /// pace when later laps kept getting quicker ([quickerLaterLap]).
+  /// pace when a later lap was clearly quicker ([quickerLaterLap]).
   final int? paceLapNumber;
 
   /// Timed laps before [paceLapNumber], those not measured included.
@@ -94,8 +94,8 @@ final class SessionEvolution {
   final int notCountedBeforePace;
 
   /// The quickest eligible lap after [paceLapNumber], when it is quicker than
-  /// the whole middle half of the session's laps (below the lower
-  /// quartile): the session kept getting quicker after that lap.
+  /// that lap by more than the session's spread (the interquartile range of
+  /// its eligible laps). Only that lap is claimed, not a trend.
   final EvolutionLap? quickerLaterLap;
 
   /// The session listed before it, if any.
@@ -207,16 +207,16 @@ DayEvolution summarizeDayEvolution(
     }
     EvolutionLap? quicker;
     if (paceLap != null && distribution != null) {
-      var after = false;
+      EvolutionLap? first;
       for (final lap in evolutionLaps) {
-        if (after &&
-            lap.eligible &&
-            lap.seconds < distribution.q1 &&
-            (quicker == null || lap.seconds < quicker.seconds)) {
+        if (first != null && lap.eligible && (quicker == null || lap.seconds < quicker.seconds)) {
           quicker = lap;
         }
-        if (lap.lapNumber == paceLap && lap.eligible) after = true;
+        if (lap.lapNumber == paceLap && lap.eligible) first = lap;
       }
+      // Only beyond the session's spread: lap-to-lap noise is not news.
+      final spread = distribution.q3 - distribution.q1;
+      if (quicker != null && !(first!.seconds - quicker.seconds > spread)) quicker = null;
     }
     var pairs = 0;
     double? sameLaps;

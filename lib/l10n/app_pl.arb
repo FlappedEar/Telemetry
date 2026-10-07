@@ -1646,5 +1646,5 @@
   "evolutionAir": "Powietrze (model): {temperature}",
   "evolutionCaveat": "To obserwacje, nie przyczyny: opony, tor i Twoja znajomość toru zmieniają się razem w trakcie sesji i całego dnia, a ta analiza nie potrafi ich rozdzielić. Temperatura nawierzchni toru nie jest rejestrowana.",
   "evolutionNoLaps": "Żadna sesja nie ma mierzonych okrążeń.",
-  "evolutionQuickerLater": "Kolejne okrążenia były coraz szybsze: OKR. {number} było o {gain} szybsze niż OKR. {first}, szybsze niż cała środkowa połowa."
+  "evolutionQuickerLater": "Najszybsze okrążenie przyszło później: OKR. {number}, o {gain} szybsze niż OKR. {first}."
 }
