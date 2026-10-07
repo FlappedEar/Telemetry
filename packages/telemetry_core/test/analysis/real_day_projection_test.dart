@@ -14,9 +14,10 @@ import '../support/projection_probe.dart';
 
 /// Figures docs/projection-constants.md quotes (finding 1), held within a
 /// tight band: the lap projections split into more than one segment, and the
-/// fixes left unprojected.
-const _splitLaps = 89;
-const _unprojected = 2078;
+/// fixes left unprojected. Before FET-257 fixed finding 1 they were 89 and
+/// 2,078.
+const _splitLaps = 46;
+const _unprojected = 982;
 
 void main() {
   final folder = Platform.environment['FLAPPEDEAR_REAL_DAY'] ?? '';
@@ -173,12 +174,13 @@ void main() {
       // projection that moves them must update the page too.
       expect(splitLaps, inInclusiveRange(_splitLaps - 2, _splitLaps + 2));
       expect(unprojected, inInclusiveRange(_unprojected - 20, _unprojected + 20));
-      // Not asserted, because the reference day exceeds them (FET-215
-      // findings in docs/projection-constants.md): 1% of fixes are more
-      // than 12 m off the reference lap's line, and from about 8 m off the
-      // 0.7 ratio with its 10 m runner-up exclusion rejects
-      // fixes while locked, so most lap projections lose a few fixes; and
-      // one off-track excursion goes beyond the 20 m proximity.
+      // Not asserted, because the reference day exceeds it (FET-215
+      // findings in docs/projection-constants.md): one off-track
+      // excursion goes beyond the 20 m proximity. 1% of fixes are more
+      // than 12 m off the reference lap's line; since FET-257 most keep
+      // their place while locked (finding 1), apart from those well inside
+      // a bend, near another part of the track, or before a fix close to
+      // the line confirms the lock.
     },
     skip: skip,
     timeout: const Timeout(Duration(minutes: 10)),

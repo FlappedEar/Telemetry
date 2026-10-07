@@ -1,8 +1,9 @@
 // Measuring the day's kept segments again on a new best lap they cannot time
 // (FET-170, day/day_segment_remeasure.dart). Session 1 gives the day its
 // automatic segments, which are kept; Session 2's laps are faster and run
-// off Session 1's line on the left straight, so the kept segments cannot
-// time them there.
+// 25 m off Session 1's line on the left straight, beyond the projection's
+// 20 m proximity, so the kept segments cannot time them there (12 m was
+// enough before FET-257 kept laps a few metres off the line).
 import 'dart:math' as math;
 
 import 'package:telemetry_core/telemetry_core.dart';
@@ -37,7 +38,7 @@ void main() {
     'run2',
     rectangleSession(
       [(_) => 33, (_) => 33.5, (_) => 33],
-      westShifts: [_offLine(12), _offLine(12), _offLine(12)],
+      westShifts: [_offLine(25), _offLine(25), _offLine(25)],
     ),
   );
   final outing = {
@@ -180,6 +181,46 @@ void main() {
       remeasureDaySegments(day, outing, before, documentRuns: edits.applyTo(const [])),
       isNull,
     );
+  });
+
+  test('a best lap 12 m off the line on the straight is timed by the kept segments, at the '
+      'times it has on the line', () {
+    // Since FET-257 the projection keeps a fix 12 m off a straight with no
+    // other part of the track near it, so the kept segments time such a lap
+    // and nothing is measured again.
+    DayRunInput faster(String id, double meters) => _run(
+      id,
+      rectangleSession(
+        [(_) => 33, (_) => 33.5, (_) => 33],
+        westShifts: [_offLine(meters), _offLine(meters), _offLine(meters)],
+      ),
+    );
+    final off = faster('run3', 12.0), on = faster('run4', 0.0);
+    final runs = {
+      for (final run in [first, off, on]) run.runId: OutingRun(run.session, run.laps),
+    };
+    List<double?> bestLapSectors(DayRunInput run) {
+      final day = analyzeDay([first, run]);
+      expect(day.groups.where((group) => group.resolved), hasLength(1));
+      expect(day.ranking!.bestOfDay!.runId, run.runId);
+      final edits = kept();
+      final result = dayTheoreticalBest(day, runs, documentRuns: edits.applyTo(const []));
+      expect(result.state, DayTheoreticalBestState.ready);
+      expect(result.segmentRunId, 'run1');
+      expect(bestLapHasUntimedSegment(result), isFalse);
+      expect(
+        remeasureDaySegments(day, runs, result, documentRuns: edits.applyTo(const [])),
+        isNull,
+      );
+      final best = result.laps.singleWhere((lap) => lap.bestOfDay);
+      return [for (final sector in best.times.sectors) sector.seconds];
+    }
+
+    final offLine = bestLapSectors(off), onLine = bestLapSectors(on);
+    expect(offLine, hasLength(onLine.length));
+    for (var i = 0; i < onLine.length; ++i) {
+      expect(offLine[i], closeTo(onLine[i]!, 0.02), reason: 'segment $i');
+    }
   });
 
   test('does nothing while the best lap is timed', () {

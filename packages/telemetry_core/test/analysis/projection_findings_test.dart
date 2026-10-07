@@ -1,9 +1,10 @@
 // The figures docs/projection-constants.md quotes for finding 2 and
 // finding 3 (FET-215), pinned at their current values on synthetic shapes.
 // These tests document current behaviour, limits included: they do not say
-// the behaviour is right. Finding 2 is fixed (FET-256): its figures are what
-// is left after the fix, the before-the-fix figures are the truth tests'
-// (cold_start_branch_test.dart), which fail without it. A change to the
+// the behaviour is right. Finding 2 is fixed (FET-256) and finding 3
+// (FET-257): their figures are what is left after the fix, the
+// before-the-fix figures are the truth tests' (cold_start_branch_test.dart,
+// locked_off_line_test.dart), which fail without it. A change to the
 // projection that moves a figure fails here; update the constant below and
 // the page together. Each figure the page quotes has one constant.
 import 'dart:math' as math;
@@ -26,7 +27,9 @@ final _figureEightWorstError = <double, double>{90.0: 1.19, 30.0: 1.16, 10.0: 1.
 
 // Finding 2, parallel straights driven in opposite directions: a lap 0.5 m
 // beyond separation / 1.7 off its line toward the other straight, by
-// separation: the fixes projected (of all) and the worst error.
+// separation: the fixes projected (of all) and the worst error. The fixes
+// nearer the other straight than 0.7 of the way are refused, as before
+// FET-257: from the axis alone they could be on either.
 final _parallelProjected = <double, (int, int)>{
   15.0: (137, 186),
   20.0: (144, 193),
@@ -40,9 +43,14 @@ final _parallelWorstError = <double, double>{15.0: 0.73, 20.0: 0.77, 30.0: 0.75}
 final _hairpinWorstError = <double, double>{3.0: 5.67, 5.0: 6.2};
 final _hairpinReacquiredBehind = <double, double>{3.0: 0.59, 5.0: 1.02};
 
-// Finding 3: at 45 m/s with 3.4 s between fixes (153 m, beyond the 150 m
-// window) the lap stays one segment, with this worst error.
-const _beyondWindowWorstError = 15.4;
+// Finding 3 (fixed by FET-257): at 45 m/s with 3.4 s between fixes (153 m,
+// beyond the 150 m window) every fix beyond the window is refused, and the
+// next one is found again from scratch: this many segments and fixes
+// projected (of all), and the worst error. Before the fix the lap stayed one
+// segment of 17 fixes, 15.4 m out.
+const _beyondWindowSegments = 9;
+const _beyondWindowProjected = (9, 17);
+const _beyondWindowWorstError = 0.18;
 
 // The minimumHeadingCosine row: GPS error of ±0.5 m uncorrelated from fix to
 // fix, on the oval at a steady speed (m/s), five seeds: fixes dropped, all
@@ -189,12 +197,12 @@ void main() {
     });
   });
 
-  test('finding 3: a fix just beyond the 150 m forward window is placed at its end', () {
+  test('finding 3 (fixed by FET-257): a fix just beyond the 150 m forward window is refused', () {
     final lap = driveTrack(_oval, interval: 3.4, speed: (_) => 45.0);
     final outcome = measureProjection(_oval.axis(), _oval, lap);
     print('45 m/s, 3.4 s between fixes: $outcome');
-    expect(outcome.segments, 1);
-    expect(outcome.projected, outcome.fixes);
+    expect(outcome.segments, _beyondWindowSegments);
+    expect((outcome.projected, outcome.fixes), _beyondWindowProjected);
     expect(outcome.maximumError, closeTo(_beyondWindowWorstError, 0.05));
   });
 
