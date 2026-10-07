@@ -245,15 +245,18 @@ final class ProjectionProbe {
       '(${(largestWindowShare * 100).toStringAsFixed(0)}% of the forward window)';
 }
 
-/// The rule of [projectSample] that refused a fix.
+/// The rule of [projectSample] or [projectLapTrace] that refused a fix.
 enum Refusal {
   coldStartProximity('beyond 20 m on a cold start'),
   coldStartAmbiguity('ambiguous on a cold start'),
+  coldStartOtherLeg('nearer the other leg on a cold start'),
   coldStartHeading('heading on a cold start'),
   lockedProximity('beyond 20 m while locked'),
   lockedAmbiguity('ambiguous while locked'),
   lockedHeading('heading while locked'),
-  backward('more than 3 m back');
+  backward('more than 3 m back'),
+  tooFarAhead('out of reach of the lap'),
+  dropped('dropped with a run on another branch');
 
   const Refusal(this.label);
 
@@ -286,10 +289,42 @@ bool _headingAgrees(ProgressAxis axis, int index, (double, double) movement) {
   return (mx * tx + my * ty) / (moved * tangent) >= 0.0;
 }
 
+/// The unit direction of axis segment [index], (0, 0) when degenerate.
+(double, double) _tangent(ProgressAxis axis, int index) {
+  final n = axis.points.length;
+  final a = axis.points[index], b = axis.points[(index + 1) % n];
+  final tx = b.eastMeters - a.eastMeters, ty = b.northMeters - a.northMeters;
+  final length = math.sqrt(tx * tx + ty * ty);
+  return length > 1e-6 ? (tx / length, ty / length) : (0.0, 0.0);
+}
+
+/// Distance from [point] to the nearest segment within the cold-start
+/// separation of [index] that runs the other way (a hairpin's other leg),
+/// leaving out legs the [movement] fits worse than the match (FET-256).
+double _otherLeg(ProgressAxis axis, MetricPoint point, int index, (double, double) movement) {
+  final n = axis.points.length;
+  final separation = math.max(4, (30.0 / axis.spacingMeters).round());
+  final (tx, ty) = _tangent(axis, index);
+  if (tx == 0 && ty == 0) return double.infinity;
+  final (mx, my) = movement;
+  final fit = mx * tx + my * ty;
+  var nearest = double.infinity;
+  for (var offset = 1 - separation; offset < separation; ++offset) {
+    final other = ((index + offset) % n + n) % n;
+    final (ox, oy) = _tangent(axis, other);
+    if (ox * tx + oy * ty >= 0.0 || mx * ox + my * oy < fit) continue;
+    nearest = math.min(nearest, _onSegment(axis, other, point).$2);
+  }
+  return nearest;
+}
+
 /// Counts, rule by rule, the fixes [projectLapTrace] refuses: it replays the
 /// lap fix by fix through the real [projectSample], as [projectLapTrace]
 /// does, and names the rule that refused each fix by applying the rules of
-/// [projectSample] in its order. [disagreements] counts fixes where that
+/// [projectSample] in its order, then the rules [projectLapTrace] adds
+/// (FET-256): how far from the lap's last projected fix, or from the gate, a
+/// segment may start, and dropping a run of segments on another branch. It
+/// keeps the direction of travel as [projectLapTrace] does. [disagreements] counts fixes where that
 /// reading and [projectSample] differ; it should stay 0, so the breakdown
 /// cannot drift from the code silently.
 final class RefusalTally {
@@ -306,17 +341,56 @@ final class RefusalTally {
 
   int get refused => counts.values.fold(0, (sum, count) => sum + count);
 
-  /// Replays the fixes of [session] in [startTime]..[endTime] onto [axis].
-  void replay(ProgressAxis axis, TelemetrySession session, double startTime, double endTime) {
+  /// Replays the fixes of [session] in [startTime]..[endTime] onto [axis],
+  /// and returns the segments kept, each as the (time, progress) of its
+  /// fixes, to be compared with [projectLapTrace].
+  List<List<(double, double)>> replay(
+    ProgressAxis axis,
+    TelemetrySession session,
+    double startTime,
+    double endTime,
+  ) {
+    final length = axis.lengthMeters;
+    final allowance = math.min(30.0, length / 4);
+    double reach(double seconds) => seconds * 100.0 + 30.0;
+    // The segments kept so far, as (time, progress) of each fix.
+    final segments = <List<(double, double)>>[];
+    var current = <(double, double)>[];
+    var fastest = 0.0;
+    // The projected fixes of the last second, (time, progress).
+    final recentProgress = <(double, double)>[];
+    void endSegment() {
+      if (current.isNotEmpty) segments.add(current);
+      current = [];
+    }
+
+    // The last fix before the lap within 5 s, for the first fix's movement.
+    MetricPoint? previous;
+    double? previousTime;
+    final latitude = session.channel('latitude')!;
+    final before = latitude.timestamps.lastIndexWhere((time) => time < startTime);
+    if (before >= 0 && startTime - latitude.timestamps[before] <= 5.0) {
+      final time = latitude.timestamps[before];
+      final longitude = session.valueAt('longitude', time);
+      final coordinate = GeoCoordinate(latitude.values[before], longitude ?? double.nan);
+      if (longitude != null && isValidCoordinate(coordinate)) {
+        previous = projectCoordinate(coordinate, axis.origin);
+        previousTime = time;
+      }
+    }
     for (final segment in session.sampledSegments('latitude', startTime, endTime, 4000)) {
       var context = ProjectionContext();
-      MetricPoint? previous;
-      double? previousTime;
+      endSegment();
+      // The movement is kept across a raw gap of up to 5 s.
+      if (previousTime != null && segment.first.time - previousTime > 5.0) {
+        previous = previousTime = null;
+      }
       for (final sample in segment) {
         final longitude = session.valueAt('longitude', sample.time);
         final coordinate = GeoCoordinate(sample.value, longitude ?? double.nan);
         if (longitude == null || !isValidCoordinate(coordinate)) {
           context = ProjectionContext();
+          endSegment();
           previous = previousTime = null;
           continue;
         }
@@ -328,27 +402,108 @@ final class RefusalTally {
             local.eastMeters - previous.eastMeters,
             local.northMeters - previous.northMeters,
           );
-          speed =
-              math.sqrt(movement.$1 * movement.$1 + movement.$2 * movement.$2) /
-              (sample.time - previousTime);
+          final moved = math.sqrt(movement.$1 * movement.$1 + movement.$2 * movement.$2);
+          speed = moved / (sample.time - previousTime);
+          // A cold start takes no direction from less than 0.5 m while the
+          // lap stands: its last projected fix at most 0.5 s old, and less
+          // than 1 m/s of progress over at least 0.5 s before it.
+          if (!context.hasLock && moved < 0.5 && recentProgress.isNotEmpty) {
+            final (lastTime, lastProgress) = recentProgress.last;
+            if (sample.time - lastTime <= 0.5) {
+              for (final (at, progress) in recentProgress.reversed) {
+                if (lastTime - at < 0.5) continue;
+                if (lastProgress - progress < lastTime - at) movement = (0.0, 0.0);
+                break;
+              }
+            }
+          }
         }
+        // A refused fix still keeps the direction of travel (FET-256).
         previous = local;
         previousTime = sample.time;
         final (refusal, progress) = _rule(axis, local, sample.time, speed, movement, context);
         final projected = projectSample(axis, local, sample.time, speed, movement, context);
         if (projected.valid != (refusal == null)) ++disagreements;
-        if (projected.valid) {
-          ++accepted;
+        if (!projected.valid) {
+          if (refusal != null) {
+            counts[refusal] = counts[refusal]! + 1;
+            if (refusal == Refusal.lockedAmbiguity) lockedAmbiguityProgress.add(progress);
+          }
+          context = ProjectionContext();
+          endSegment();
           continue;
         }
-        if (refusal != null) {
-          counts[refusal] = counts[refusal]! + 1;
-          if (refusal == Refusal.lockedAmbiguity) lockedAmbiguityProgress.add(progress);
+        // The unwrapping of projectLapTrace, and where the lap could be.
+        final time = sample.time;
+        var unwrapped = projected.progressMeters;
+        final lastFix = current.isNotEmpty
+            ? current.last
+            : segments.isNotEmpty
+            ? segments.last.last
+            : null;
+        var outOfReach = false;
+        if (lastFix == null) {
+          if (unwrapped > length / 2 && time - startTime <= 5.0) unwrapped -= length;
+        } else if (current.isEmpty) {
+          final (lastTime, last) = lastFix;
+          unwrapped += ((last - allowance - unwrapped) / length).ceilToDouble() * length;
+          final ownSpeed = (fastest * 1.5).clamp(40.0, 100.0);
+          // A short run of the latest segments is dropped when the fix lies
+          // behind where it started and within reach of the lock before it,
+          // or, out of the run's reach, where that lock could have driven at
+          // the lap's own speed.
+          bool dropRun({required bool behind}) {
+            for (var k = segments.length - 1; k >= 0; --k) {
+              final first = segments[k].first.$2;
+              if (last - first >= length / 4) return false;
+              final (anchorTime, anchor) = k == 0 ? (startTime, 0.0) : segments[k - 1].last;
+              final from =
+                  unwrapped + ((anchor - allowance - unwrapped) / length).ceilToDouble() * length;
+              if (behind
+                  ? from < first - allowance && from - anchor <= reach(time - anchorTime)
+                  : from - anchor <= (time - anchorTime) * ownSpeed + 30.0) {
+                for (final run in segments.sublist(k)) {
+                  counts[Refusal.dropped] = counts[Refusal.dropped]! + run.length;
+                }
+                segments.removeRange(k, segments.length);
+                unwrapped = from;
+                return true;
+              }
+            }
+            return false;
+          }
+
+          final ahead = unwrapped - last;
+          var dropped = ahead > (time - lastTime) * ownSpeed + 30.0 && dropRun(behind: true);
+          if (!dropped && ahead > reach(time - lastTime)) dropped = dropRun(behind: false);
+          outOfReach = !dropped && unwrapped - last > reach(time - lastTime);
+        } else {
+          final last = lastFix.$2;
+          unwrapped += ((last - 3.0 - unwrapped) / length).ceilToDouble() * length;
+          unwrapped = math.max(unwrapped, last);
         }
-        context = ProjectionContext();
-        previous = previousTime = null;
+        if (outOfReach) {
+          counts[Refusal.tooFarAhead] = counts[Refusal.tooFarAhead]! + 1;
+          context = ProjectionContext();
+          continue;
+        }
+        current.add((time, unwrapped));
+        recentProgress
+          ..removeWhere((fix) => time - fix.$1 > 1.0)
+          ..add((time, unwrapped));
+        // The lap's own speed over at least a second of a segment.
+        for (var j = current.length - 2; j >= 0; --j) {
+          final span = time - current[j].$1;
+          if (span >= 1.0) {
+            fastest = math.max(fastest, (unwrapped - current[j].$2) / span);
+            break;
+          }
+        }
       }
     }
+    endSegment();
+    accepted += segments.fold(0, (sum, segment) => sum + segment.length);
+    return segments;
   }
 
   /// The rule that refuses [point], or null, and the progress of its best
@@ -374,6 +529,9 @@ final class RefusalTally {
       );
       if (second.$1 >= 0 && distance > second.$3 * 0.7) {
         return (Refusal.coldStartAmbiguity, progress);
+      }
+      if (distance > _otherLeg(axis, point, index, movement) * 0.7) {
+        return (Refusal.coldStartOtherLeg, progress);
       }
       if (!_headingAgrees(axis, index, movement)) return (Refusal.coldStartHeading, progress);
       return (null, progress);

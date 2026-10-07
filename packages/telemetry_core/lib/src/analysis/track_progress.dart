@@ -123,6 +123,32 @@ const _maximumGapSeconds = 5.0;
 /// as one backward.
 const _segmentStartBackwardMeters = 30.0;
 
+/// Faster than any car on a track day (360 km/h). A segment that starts after
+/// a gap in a lap may lie at most this speed times the time since the lap's
+/// last projected fix, plus [_segmentStartBackwardMeters], ahead of that fix
+/// (FET-256): a cold start that matched another branch of the track (the
+/// other diagonal of a crossing, the other leg of a hairpin, a parallel
+/// straight) lands a long way off along the axis, and the lap could not have
+/// driven there in the time.
+const _maximumPlausibleSpeedMetersPerSecond = 100.0;
+
+/// When a segment's first fix lies further ahead of the lap's last projected
+/// fix than the lap's own speed (its fastest progress over a second) times
+/// this margin, at least [_ownSpeedFloorMetersPerSecond], could have taken it,
+/// it is read as lying behind the latest segments instead, which are dropped
+/// if the fix fits the lock before them (FET-256).
+const _ownSpeedMargin = 1.5;
+const _ownSpeedFloorMetersPerSecond = 40.0;
+
+/// A cold start takes no direction of travel from a movement shorter than
+/// this while the lap stands: its projected progress advanced less than
+/// [_standingMetersPerSecond] over the [_standingSeconds] before its last
+/// projected fix, and that fix is at most [_standingSeconds] old. It is GPS
+/// jitter (FET-256); a car crawling through a hairpin keeps its heading.
+const _minimumHeadingMovementMeters = 0.5;
+const _standingSeconds = 0.5;
+const _standingMetersPerSecond = 1.0;
+
 double _cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
 
 /// Where a closed path (last point == first) crosses the gate segment
@@ -253,6 +279,39 @@ _Candidate _bestCandidateInRange(
     }
   }
   return best;
+}
+
+/// Distance from [point] to the nearest axis segment within [separation]
+/// points of [index] (either way) whose direction is more than 90° from the
+/// direction at [index]: the other leg of a tight hairpin (FET-256). When the
+/// car's [movementDirection] fits the direction at [index] better than a
+/// leg's, that leg is no alternative. Infinity when there is none.
+double _nearestOtherLeg(
+  ProgressAxis axis,
+  MetricPoint point,
+  int index,
+  int separation,
+  (double, double) movementDirection,
+) {
+  final n = axis.points.length;
+  final (tx, ty) = _axisTangent(axis, index);
+  var nearest = double.infinity;
+  if (tx == 0 && ty == 0) return nearest;
+  final (mx, my) = movementDirection;
+  final fit = mx * tx + my * ty; // 0 without a movement: every leg counts
+  for (var offset = -separation + 1; offset < separation; ++offset) {
+    final other = ((index + offset) % n + n) % n;
+    final (ox, oy) = _axisTangent(axis, other);
+    if (ox * tx + oy * ty >= 0.0) continue;
+    if (mx * ox + my * oy < fit) continue;
+    final (_, distance) = _projectOntoSegment(
+      point,
+      axis.points[other],
+      axis.points[(other + 1) % n],
+    );
+    nearest = math.min(nearest, distance);
+  }
+  return nearest;
 }
 
 /// The axis point nearest [progressMeters] along the axis (taken modulo its
@@ -517,6 +576,20 @@ ProjectedSample projectSample(
       minimumSeparation: minimumSeparation,
     );
     if (second.index >= 0 && best.distance > second.distance * ambiguityRatio) return invalid;
+    // The separation keeps the same branch out of the comparison, but in a
+    // hairpin tighter than about 10 m radius the other leg is nearer than
+    // that along the axis, so it was never compared and a fix midway between
+    // the legs locked on to either (FET-256). A part of the axis running the
+    // other way from the match is another branch, however near, unless the
+    // direction of travel rules it out.
+    final otherLeg = _nearestOtherLeg(
+      axis,
+      localPoint,
+      best.index,
+      minimumSeparation,
+      movementDirection,
+    );
+    if (best.distance > otherLeg * ambiguityRatio) return invalid;
     if (!_headingAgrees(axis, best.index, movementDirection, minimumHeadingCosine)) {
       return invalid;
     }
@@ -570,6 +643,15 @@ ProjectedSample projectSample(
 /// negative value, and fixes past the finish continue beyond the axis length.
 /// A fix projecting slightly behind the previous one in its segment is held at
 /// the previous progress, so progress never falls within a segment.
+///
+/// A segment after a gap must start where the lap could have driven since its
+/// last projected fix (FET-256); a fix that does not matched another branch of
+/// the track and is refused. When a fix instead fits the lap's earlier lock
+/// (the gate at [startTime] before the first segment) and lies behind where a
+/// short run of the latest segments started, or out of the run's reach where
+/// the earlier lock could have driven at the lap's own speed, those segments
+/// matched another branch and are dropped, rather than the rest of the lap
+/// being moved on by a lap or refused.
 List<ProgressSegment> projectLapTrace(
   ProgressAxis axis,
   TelemetrySession session,
@@ -580,24 +662,94 @@ List<ProgressSegment> projectLapTrace(
   final result = <ProgressSegment>[];
   if (!axis.valid) return result;
   final latitudeSegments = session.sampledSegments('latitude', startTime, endTime, 4000);
+  final length = axis.lengthMeters;
+  // How far behind the last progress a segment's first fix may lie and still
+  // be on the same lap (FET-249).
+  final allowance = math.min(_segmentStartBackwardMeters, length / 4);
 
   var current = ProgressSegment();
   var context = ProjectionContext();
-  MetricPoint? previousLocal;
-  double? previousTime;
+  // The last fix, projected or not, for the direction of travel; seeded with
+  // the last fix before the lap, so the lap's first fix has one too.
+  var (previousLocal, previousTime) = _fixBefore(session, startTime, axis.origin);
+  // The lap's projected fixes of the last second, (time, progress), to tell
+  // whether it stands.
+  final recentProgress = <(double, double)>[];
   double? lastProgress; // unwrapped; kept across segments of this lap
-  void flush() {
+  double? lastProgressTime; // when the fix at [lastProgress] was taken
+  // The lap's own speed: its fastest progress over a second within a
+  // segment, and where in [current] that second starts.
+  var fastest = 0.0;
+  var secondAgo = 0;
+
+  // Ends the current segment; the next fix is a cold start. Unless the lap
+  // has to forget it, the next fix's movement is still measured from the
+  // last fix, so the cold start has a direction of travel to check
+  // (FET-256): after a fix the projection refused, and across a raw GPS gap
+  // of up to [_maximumGapSeconds]. Overlays forgets it, so a cold start could
+  // lock on to a hairpin's other leg or a parallel straight driven the other
+  // way.
+  void flush({bool keepMovement = false}) {
     if (current.samples.isNotEmpty) {
       result.add(current);
       current = ProgressSegment();
     }
     context = ProjectionContext();
-    previousLocal = null;
-    previousTime = null;
+    secondAgo = 0;
+    if (!keepMovement) {
+      previousLocal = null;
+      previousTime = null;
+    }
+  }
+
+  // How far ahead of a fix [seconds] earlier the lap could be: at
+  // [_maximumPlausibleSpeedMetersPerSecond], or at its own speed with a margin.
+  double reach(double seconds) =>
+      seconds * _maximumPlausibleSpeedMetersPerSecond + _segmentStartBackwardMeters;
+  double ownReach(double seconds) =>
+      seconds *
+          (fastest * _ownSpeedMargin).clamp(
+            _ownSpeedFloorMetersPerSecond,
+            _maximumPlausibleSpeedMetersPerSecond,
+          ) +
+      _segmentStartBackwardMeters;
+
+  // The latest segments a segment's first fix at [progress] (any lap of it)
+  // and [time] shows to be on another branch: the index in [result] of the
+  // first of them and the fix's progress from the lock before it, or null.
+  // The run must cover less than a quarter of the axis (a long run is more
+  // likely right than one fix), and the fix must either lie behind where
+  // the run started and within reach of the lock before it ([behind]), or,
+  // out of the run's reach, be where the lock before it could have driven at
+  // the lap's own speed (otherwise).
+  (int, double)? conflictingRun(double progress, double time, {required bool behind}) {
+    final last = lastProgress!;
+    for (var k = result.length - 1; k >= 0; --k) {
+      final first = result[k].samples.first.progressMeters;
+      if (last - first >= length / 4) return null;
+      // The lap's last progress and its time when segment k began: the
+      // gate at [startTime] for the first. A lap timed from another line
+      // than the axis gate makes this lock off by that line's distance from
+      // the gate, which matters only for dropping the lap's first segment.
+      final (anchor, anchorTime) = k == 0
+          ? (0.0, startTime)
+          : (result[k - 1].samples.last.progressMeters, result[k - 1].samples.last.telemetryTime);
+      final from = progress + ((anchor - allowance - progress) / length).ceilToDouble() * length;
+      if (behind
+          ? from < first - allowance && from - anchor <= reach(time - anchorTime)
+          : from - anchor <= ownReach(time - anchorTime)) {
+        return (k, from);
+      }
+    }
+    return null;
   }
 
   for (final segment in latitudeSegments) {
-    flush(); // a raw GPS gap between sampled segments is never bridged
+    // A raw GPS gap between sampled segments is never bridged, but up to
+    // [_maximumGapSeconds] the movement across it still gives the direction
+    // of travel.
+    final since = previousTime;
+    flush(keepMovement: since != null && segment.first.time - since <= _maximumGapSeconds);
     for (final sample in segment) {
       throwIfCancelled(cancelled);
       final time = sample.time;
@@ -616,14 +768,22 @@ List<ProgressSegment> projectLapTrace(
           local.eastMeters - lastLocal.eastMeters,
           local.northMeters - lastLocal.northMeters,
         );
-        speed = hypot(movement.$1, movement.$2) / (time - lastTime);
+        final moved = hypot(movement.$1, movement.$2);
+        speed = moved / (time - lastTime);
+        // A cold start takes no direction from the GPS jitter of a standing
+        // car.
+        if (!context.hasLock &&
+            moved < _minimumHeadingMovementMeters &&
+            _standing(recentProgress, time)) {
+          movement = (0.0, 0.0);
+        }
       }
       previousLocal = local;
       previousTime = time;
 
       final projected = projectSample(axis, local, time, speed, movement, context);
       if (!projected.valid) {
-        flush();
+        flush(keepMovement: true);
         continue;
       }
 
@@ -635,36 +795,112 @@ List<ProgressSegment> projectLapTrace(
       var progress = projected.progressMeters;
       final last = lastProgress;
       if (last == null) {
-        if (progress > axis.lengthMeters / 2 && time - startTime <= _maximumGapSeconds) {
-          progress -= axis.lengthMeters;
+        if (progress > length / 2 && time - startTime <= _maximumGapSeconds) {
+          progress -= length;
         }
-      } else {
+        // No bound here: the lap may be timed from another line than the
+        // axis gate, so where it starts on the axis is not known. A first
+        // segment on another branch is dropped by the later fixes instead.
+      } else if (current.samples.isEmpty) {
         // A segment after a gap continues from the last progress too, but its
         // first fix, found again from scratch, may be a little more behind
-        // than the jitter tolerance (FET-249): up to
-        // [_segmentStartBackwardMeters] is the same lap, not one lap on.
-        final backward = current.samples.isEmpty
-            ? math.min(_segmentStartBackwardMeters, axis.lengthMeters / 4)
-            : _backwardToleranceMeters;
-        progress +=
-            ((last - backward - progress) / axis.lengthMeters).ceilToDouble() * axis.lengthMeters;
-      }
-      // A fix projecting up to the backward tolerance behind the last one in
-      // this segment (GPS jitter, often while stopped) is held at the last
-      // progress, so progress never falls within a segment and the segment
-      // still covers the fix's time. A segment after a gap may start a little
-      // behind the last one.
-      if (current.samples.isNotEmpty) {
-        progress = math.max(progress, current.samples.last.progressMeters);
+        // than the jitter tolerance (FET-249): up to the allowance is the
+        // same lap, not one lap on.
+        progress += ((last - allowance - progress) / length).ceilToDouble() * length;
+        // A segment's first fix is a cold start, found on the whole axis
+        // (FET-256). Further ahead than the lap could have driven since, at
+        // its own speed, it may instead lie behind the latest segments: if
+        // it fits the lock before them, they matched another branch, and
+        // they are dropped rather than this fix and every later one moved on
+        // by a lap. Otherwise, further ahead than any car could have driven,
+        // it matched another branch itself and is refused, leaving a gap.
+        final ahead = progress - last, since = time - lastProgressTime!;
+        var run = ahead > ownReach(since) ? conflictingRun(progress, time, behind: true) : null;
+        // The mirror case: a cold start after a long gap matched another
+        // branch behind the car but within reach, and the right fixes after
+        // it are out of its reach. When the lock before that run could have
+        // reached this fix at the lap's own speed, the run is dropped.
+        if (run == null && ahead > reach(since)) {
+          run = conflictingRun(progress, time, behind: false);
+        }
+        if (run != null) {
+          final (k, behind) = run;
+          result.removeRange(k, result.length);
+          progress = behind;
+        } else if (ahead > reach(since)) {
+          flush(keepMovement: true);
+          continue;
+        }
+      } else {
+        progress += ((last - _backwardToleranceMeters - progress) / length).ceilToDouble() * length;
+        // A fix projecting up to the backward tolerance behind the last one
+        // in this segment (GPS jitter, often while stopped) is held at the
+        // last progress, so progress never falls within a segment and the
+        // segment still covers the fix's time.
+        progress = math.max(progress, last);
       }
       lastProgress = progress;
+      lastProgressTime = time;
       current.samples.add(
         ProjectedSample(projected.telemetryTime, progressMeters: progress, valid: true),
       );
+      recentProgress
+        ..removeWhere((fix) => time - fix.$1 > 1.0)
+        ..add((time, progress));
+      // The lap's own speed, over at least a second of this segment.
+      final samples = current.samples;
+      while (secondAgo + 1 < samples.length && time - samples[secondAgo + 1].telemetryTime >= 1.0) {
+        ++secondAgo;
+      }
+      final span = time - samples[secondAgo].telemetryTime;
+      if (span >= 1.0) {
+        fastest = math.max(fastest, (progress - samples[secondAgo].progressMeters) / span);
+      }
     }
   }
   if (current.samples.isNotEmpty) result.add(current);
   return result;
+}
+
+/// Whether the lap stands at [time]: its last projected fix, from
+/// [recentProgress] ((time, progress), in time order), is at most
+/// [_standingSeconds] old, and its progress advanced less than
+/// [_standingMetersPerSecond] over at least [_standingSeconds] before it.
+bool _standing(List<(double, double)> recentProgress, double time) {
+  if (recentProgress.isEmpty) return false;
+  final (lastTime, lastProgress) = recentProgress.last;
+  if (time - lastTime > _standingSeconds) return false;
+  for (final (at, progress) in recentProgress.reversed) {
+    final span = lastTime - at;
+    if (span >= _standingSeconds) return lastProgress - progress < span * _standingMetersPerSecond;
+  }
+  return false;
+}
+
+/// The last fix of [session] before [time], in metres around [origin], and its
+/// time; (null, null) when it is more than [_maximumGapSeconds] before [time]
+/// or has no valid coordinate, as the lap would forget the movement then.
+(MetricPoint?, double?) _fixBefore(TelemetrySession session, double time, GeoCoordinate origin) {
+  final latitude = session.channel('latitude');
+  if (latitude == null || latitude.timestamps.length != latitude.values.length) {
+    return (null, null);
+  }
+  final timestamps = latitude.timestamps;
+  var low = 0, high = timestamps.length;
+  while (low < high) {
+    final middle = low + ((high - low) >> 1);
+    if (timestamps[middle] < time) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+  if (low == 0 || !(time - timestamps[low - 1] <= _maximumGapSeconds)) return (null, null);
+  final before = timestamps[low - 1];
+  final longitude = session.valueAt('longitude', before);
+  final coordinate = GeoCoordinate(latitude.values[low - 1], longitude ?? double.nan);
+  if (longitude == null || !isValidCoordinate(coordinate)) return (null, null);
+  return (projectCoordinate(coordinate, origin), before);
 }
 
 /// Index of the first sample whose [key] is not less than [value].

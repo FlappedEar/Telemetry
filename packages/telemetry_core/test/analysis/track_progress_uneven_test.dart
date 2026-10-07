@@ -98,20 +98,41 @@ void main() {
   });
 
   test('a fix found again a little behind after a gap stays on the same lap', () {
-    final session = _session(15.0, (t) {
+    // The car stands for most of a 5.2 s gap: longer than the direction of
+    // travel is kept across a gap, so the fix found again is a cold start
+    // with no heading.
+    final session = _session(20.0, (t) {
       if (t < 6.0) return 30.0 * t; // up to 177 m
-      if (t < 6.6) return null; // a GPS gap of 0.6 s
-      return 30.0 * 6.0 - 8.0 + 30.0 * (t - 6.6); // found again 8 m behind
+      if (t < 11.2) return null; // a GPS gap of 5.2 s
+      return 30.0 * 6.0 - 8.0 + 30.0 * (t - 11.2); // found again 8 m behind
     });
     final laps = deriveSourceLapSession(session);
     expect(laps.status, isNot(LapSessionStatus.available)); // no full lap
     final axis = _unevenAxis();
-    final trace = projectLapTrace(axis, session, 0.0, 15.0);
+    final trace = projectLapTrace(axis, session, 0.0, 20.0);
     expect(trace, hasLength(2));
     final restart = trace[1].samples.first.progressMeters;
     // 5 m behind the last fix before the gap (177 m), on the same lap.
     expect(trace[0].samples.last.progressMeters, closeTo(177.0, 1.0));
     expect(restart, closeTo(172.0, 1.0));
+    expect(trace[1].samples.last.progressMeters, lessThan(axis.lengthMeters));
+  });
+
+  test('after a short gap the direction of travel refuses a fix found again behind', () {
+    // Across a gap of 0.6 s the movement still gives the direction of travel
+    // (FET-256): the fix found again 8 m behind moved backwards and is
+    // refused; the next ones, moving forward, continue the same lap.
+    final session = _session(15.0, (t) {
+      if (t < 6.0) return 30.0 * t; // up to 177 m
+      if (t < 6.6) return null; // a GPS gap of 0.6 s
+      return 30.0 * 6.0 - 8.0 + 30.0 * (t - 6.6); // found again 8 m behind
+    });
+    final axis = _unevenAxis();
+    final trace = projectLapTrace(axis, session, 0.0, 15.0);
+    expect(trace, hasLength(2));
+    expect(trace[0].samples.last.progressMeters, closeTo(177.0, 1.0));
+    expect(trace[1].samples.first.telemetryTime, greaterThan(6.6));
+    expect(trace[1].samples.first.progressMeters, closeTo(175.0, 1.0));
     expect(trace[1].samples.last.progressMeters, lessThan(axis.lengthMeters));
   });
 }
