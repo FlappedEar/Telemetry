@@ -22,6 +22,7 @@ import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../units.dart' show hideUnrankedLapsSetting;
 import 'background_task.dart';
+import 'best_phases_card.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -1838,6 +1839,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
           _focusAreas(path, wide, null),
         const SizedBox(height: 12),
         _theoreticalBest(path, wide),
+        const SizedBox(height: 12),
+        BestPhasesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          sections: _controller.theoreticalBestLoading ? null : _sections(),
+        ),
         const SizedBox(height: 12),
         TimeLossesCard(
           result: _controller.theoreticalBest,

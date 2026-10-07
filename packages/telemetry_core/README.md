@@ -229,7 +229,20 @@ a background isolate.
   (`realisticNoJoin`, `realisticNoSpeed`, `realisticIncompleteCoverage`).
   `DayTheoreticalBest.realistic` holds it. `repeatableTheoreticalBest` adds
   each segment's quickest typical time in one session
-  (`SectionProgressionRow.fastestTypical`).
+  (`SectionProgressionRow.fastestTypical`). Its chain search and meeting
+  rule are `quickestJoinedChain`, `segmentsMeet` and `speedsJoin`.
+- The best phases of the day (FlappedEar Telemetry only, FET-226):
+  `dayPhaseReference` cuts the lap into pieces, a split corner's entry,
+  middle and exit (FET-221) and every other segment whole (a corner not
+  split keeps `PhasePiece.splitReason`), times the group's ranked laps
+  through each, and `computePhaseReference` takes each piece's fastest lap
+  (the first wins a tie). It is the raw theoretical best at a finer grain,
+  never slower. Each join between two laps is judged by the realistic
+  best's rule (`PhaseJoin`: joins, apart, or unknown without a speed in a
+  known unit), and `joinedSeconds` is the quickest combination of pieces
+  that joins everywhere (never slower than the realistic best's segments).
+  Times are seconds; speeds are compared only in m/s.
+  `DayTheoreticalBest.bestPhases` holds it.
 - Where a session's laps vary (FlappedEar Telemetry only, FET-224):
   `segmentSpreadBand` puts a segment's spread in one session (its
   interquartile range from the section progression) in one of five fixed

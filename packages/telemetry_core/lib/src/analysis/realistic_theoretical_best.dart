@@ -150,86 +150,17 @@ RealisticTheoreticalBest computeRealisticTheoreticalBest(
     return RealisticTheoreticalBest(unavailableReason: realisticNoSpeed);
   }
 
-  // Where segment i ends and the next (for the last, the first) starts, from
-  // the approved segments: the same on every lap.
-  double? bound(int i, String key) => switch (segments[i][key]) {
-    final num value when value.isFinite => value.toDouble(),
-    _ => null,
-  };
-  bool near(double? a, double? b) =>
-      a != null && b != null && (a - b).abs() <= realisticJoinGapMeters;
-  final meets = [
-    for (var i = 0; i + 1 < count; ++i)
-      near(bound(i, 'endProgressMeters'), bound(i + 1, 'startProgressMeters')),
-  ];
-  // The last segment runs across the gate into the first: one more join.
-  final lastStart = bound(count - 1, 'startProgressMeters');
-  final lastEnd = bound(count - 1, 'endProgressMeters');
-  final closes =
-      count > 1 &&
-      lastStart != null &&
-      lastEnd != null &&
-      lastEnd < lastStart &&
-      near(lastEnd, bound(0, 'startProgressMeters'));
-
-  // Whether lap j leaving segment i joins lap k entering the next.
-  bool joins(int j, int k, int i) {
-    if (j == k) return true;
-    final out = population[j].exitSpeeds[i];
-    final into = population[k].entrySpeeds[(i + 1) % count];
-    return out != null && into != null && (out - into).abs() <= realisticJoinMetresPerSecond;
-  }
-
-  // The quickest chain with segment 0 from [first] (any lap when null): its
-  // total and the lap of each segment.
-  (double, List<int>)? chain(int? first) {
-    final best = [for (final _ in population) List<double?>.filled(count, null)];
-    final from = [for (final _ in population) List<int>.filled(count, -1)];
-    for (var k = 0; k < population.length; ++k) {
-      if (first == null || first == k) best[k][0] = seconds[k][0];
-    }
-    for (var i = 1; i < count; ++i) {
-      for (var k = 0; k < population.length; ++k) {
-        final time = seconds[k][i];
-        if (time == null) continue;
-        double? quickest;
-        var source = -1;
-        for (var j = 0; j < population.length; ++j) {
-          final before = best[j][i - 1];
-          if (before == null || (meets[i - 1] && !joins(j, k, i - 1))) continue;
-          if (quickest == null || before < quickest) {
-            quickest = before;
-            source = j;
-          }
-        }
-        if (quickest != null) {
-          best[k][i] = quickest + time;
-          from[k][i] = source;
-        }
-      }
-    }
-    var last = -1;
-    for (var k = 0; k < population.length; ++k) {
-      final total = best[k][count - 1];
-      if (total == null || (closes && first != null && !joins(k, first, count - 1))) continue;
-      if (last < 0 || total < best[last][count - 1]!) last = k;
-    }
-    if (last < 0) return null;
-    final chosen = List<int>.filled(count, -1);
-    for (var i = count - 1, k = last; i >= 0; k = from[k][i], --i) {
-      chosen[i] = k;
-    }
-    return (best[last][count - 1]!, chosen);
-  }
-
-  (double, List<int>)? quickest;
-  for (final first in closes ? [for (var k = 0; k < population.length; ++k) k] : [null]) {
-    throwIfCancelled(cancelled);
-    final found = chain(first);
-    if (found != null && (quickest == null || found.$1 < quickest.$1)) quickest = found;
-  }
+  final (:meets, :closes) = segmentsMeet(segments);
+  final quickest = quickestJoinedChain(
+    seconds: seconds,
+    entrySpeeds: [for (final lap in population) lap.entrySpeeds],
+    exitSpeeds: [for (final lap in population) lap.exitSpeeds],
+    meets: meets,
+    closes: closes,
+    cancelled: cancelled,
+  );
   if (quickest == null) return RealisticTheoreticalBest(unavailableReason: realisticNoJoin);
-  final (total, chosen) = quickest;
+  final (total: total, laps: chosen) = quickest;
   double? joinAt(int i) {
     // The join into segment i from the one before it (for the first, the
     // last when the lap closes there).
@@ -252,6 +183,113 @@ RealisticTheoreticalBest computeRealisticTheoreticalBest(
         ),
     ],
   );
+}
+
+/// Whether speeds [out] (leaving one stretch) and [into] (entering the next),
+/// both in m/s, join: both known and at most [realisticJoinMetresPerSecond]
+/// apart.
+bool speedsJoin(double? out, double? into) =>
+    out != null && into != null && (out - into).abs() <= realisticJoinMetresPerSecond;
+
+/// Where consecutive [segments] (approved, in order) meet: [meets] has one
+/// entry per pair (segment i ends within [realisticJoinGapMeters] of where
+/// i + 1 starts), and [closes] says the last runs across the gate and ends
+/// where the first starts. The same on every lap.
+({List<bool> meets, bool closes}) segmentsMeet(List<Map<String, Object?>> segments) {
+  final count = segments.length;
+  double? bound(int i, String key) => switch (segments[i][key]) {
+    final num value when value.isFinite => value.toDouble(),
+    _ => null,
+  };
+  bool near(double? a, double? b) =>
+      a != null && b != null && (a - b).abs() <= realisticJoinGapMeters;
+  final meets = [
+    for (var i = 0; i + 1 < count; ++i)
+      near(bound(i, 'endProgressMeters'), bound(i + 1, 'startProgressMeters')),
+  ];
+  if (count < 2) return (meets: meets, closes: false);
+  final lastStart = bound(count - 1, 'startProgressMeters');
+  final lastEnd = bound(count - 1, 'endProgressMeters');
+  final closes =
+      lastStart != null &&
+      lastEnd != null &&
+      lastEnd < lastStart &&
+      near(lastEnd, bound(0, 'startProgressMeters'));
+  return (meets: meets, closes: closes);
+}
+
+/// The quickest chain through consecutive stretches, each taken from one
+/// lap, in which wherever two different laps meet ([meets] between stretch
+/// i and i + 1; with [closes], also from the last to the first) they
+/// [speedsJoin]. [seconds], [entrySpeeds] and [exitSpeeds] are by lap, then
+/// by stretch (m/s; null where not timed or not recorded). Returns the
+/// total and the lap of each stretch, or null when no chain joins.
+({double total, List<int> laps})? quickestJoinedChain({
+  required List<List<double?>> seconds,
+  required List<List<double?>> entrySpeeds,
+  required List<List<double?>> exitSpeeds,
+  required List<bool> meets,
+  required bool closes,
+  CancellationCheck? cancelled,
+}) {
+  final laps = seconds.length;
+  if (laps == 0) return null;
+  final count = seconds.first.length;
+  if (count == 0) return null;
+
+  // Whether lap j leaving stretch i joins lap k entering the next.
+  bool joins(int j, int k, int i) =>
+      j == k || speedsJoin(exitSpeeds[j][i], entrySpeeds[k][(i + 1) % count]);
+
+  // The quickest chain with stretch 0 from [first] (any lap when null): its
+  // total and the lap of each stretch.
+  (double, List<int>)? chain(int? first) {
+    final best = [for (var k = 0; k < laps; ++k) List<double?>.filled(count, null)];
+    final from = [for (var k = 0; k < laps; ++k) List<int>.filled(count, -1)];
+    for (var k = 0; k < laps; ++k) {
+      if (first == null || first == k) best[k][0] = seconds[k][0];
+    }
+    for (var i = 1; i < count; ++i) {
+      for (var k = 0; k < laps; ++k) {
+        final time = seconds[k][i];
+        if (time == null) continue;
+        double? quickest;
+        var source = -1;
+        for (var j = 0; j < laps; ++j) {
+          final before = best[j][i - 1];
+          if (before == null || (meets[i - 1] && !joins(j, k, i - 1))) continue;
+          if (quickest == null || before < quickest) {
+            quickest = before;
+            source = j;
+          }
+        }
+        if (quickest != null) {
+          best[k][i] = quickest + time;
+          from[k][i] = source;
+        }
+      }
+    }
+    var last = -1;
+    for (var k = 0; k < laps; ++k) {
+      final total = best[k][count - 1];
+      if (total == null || (closes && first != null && !joins(k, first, count - 1))) continue;
+      if (last < 0 || total < best[last][count - 1]!) last = k;
+    }
+    if (last < 0) return null;
+    final chosen = List<int>.filled(count, -1);
+    for (var i = count - 1, k = last; i >= 0; k = from[k][i], --i) {
+      chosen[i] = k;
+    }
+    return (best[last][count - 1]!, chosen);
+  }
+
+  (double, List<int>)? quickest;
+  for (final first in closes ? [for (var k = 0; k < laps; ++k) k] : [null]) {
+    throwIfCancelled(cancelled);
+    final found = chain(first);
+    if (found != null && (quickest == null || found.$1 < quickest.$1)) quickest = found;
+  }
+  return quickest == null ? null : (total: quickest.$1, laps: quickest.$2);
 }
 
 SectorTime? _sector(RealisticLapInput lap, String id) {

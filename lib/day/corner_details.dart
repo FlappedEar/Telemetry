@@ -72,8 +72,8 @@ String cornerReasonText(AppLocalizations l10n, String reason) =>
       _ => l10n.cornerDetailsReasonNotAvailable,
     };
 
-// Why a corner is not split, or a lap not timed through its parts.
-String _phaseReason(AppLocalizations l10n, String reason) =>
+/// Why a corner is not split, or a lap not timed through its parts.
+String cornerPhaseReasonText(AppLocalizations l10n, String reason) =>
     reason == cornerPhaseMultipleApexes
     ? l10n.cornerPhasesMoreThanOneTightPart
     : cornerReasonText(l10n, reason);
@@ -448,7 +448,10 @@ class CornerDetails extends StatelessWidget {
           if (comparison.bestLap != null && !comparison.bestLapPhases.valid)
             Text(
               l10n.cornerPhasesBestNotTimed(
-                _phaseReason(l10n, comparison.bestLapPhases.unavailableReason),
+                cornerPhaseReasonText(
+                  l10n,
+                  comparison.bestLapPhases.unavailableReason,
+                ),
               ),
               key: const ValueKey('cornerPhasesBestReason'),
               style: theme.textTheme.bodySmall,
@@ -464,7 +467,10 @@ class CornerDetails extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Text(
               l10n.cornerPhasesUnavailable(
-                _phaseReason(l10n, comparison.phases.unavailableReason),
+                cornerPhaseReasonText(
+                  l10n,
+                  comparison.phases.unavailableReason,
+                ),
               ),
             ),
           ),

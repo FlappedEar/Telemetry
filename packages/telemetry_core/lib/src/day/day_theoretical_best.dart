@@ -10,6 +10,7 @@ import 'dart:math' as math;
 import '../analysis/automatic_segments.dart';
 import '../analysis/outing_results.dart';
 import '../analysis/outing_theoretical_best.dart';
+import '../analysis/phase_reference.dart';
 import '../analysis/realistic_theoretical_best.dart';
 import '../analysis/sector_timing.dart';
 import '../analysis/time_loss.dart';
@@ -23,6 +24,7 @@ import 'day_analysis.dart';
 import 'day_corners.dart';
 import 'day_grip.dart';
 import 'day_laps.dart';
+import 'day_phase_reference.dart';
 import 'day_ranking.dart';
 
 /// Whether a group's theoretical best was calculated.
@@ -91,6 +93,7 @@ final class DayTheoreticalBest {
     Map<String, List<Map<String, Object?>>> remeasuredRuns = const {},
     this.realistic,
     this.grip,
+    this.bestPhases,
   }) : laps = List.unmodifiable(laps),
        corners = List.unmodifiable(corners),
        runSegments = List.unmodifiable(runSegments),
@@ -146,6 +149,11 @@ final class DayTheoreticalBest {
   /// [corners] (FET-229), all inferred; null without a result.
   final DayGripProxies? grip;
 
+  /// The best entry, middle and exit of every corner and the fastest time
+  /// of every other segment, from the group's ranked laps (FET-226); null
+  /// without a result.
+  final PhaseReference? bestPhases;
+
   /// This result with [runs] as its [remeasuredRuns].
   DayTheoreticalBest withRemeasuredRuns(Map<String, List<Map<String, Object?>>> runs) =>
       DayTheoreticalBest(
@@ -164,6 +172,7 @@ final class DayTheoreticalBest {
         remeasuredRuns: runs,
         realistic: realistic,
         grip: grip,
+        bestPhases: bestPhases,
       );
 
   /// The length of the shared axis the segments are edited on.
@@ -535,6 +544,9 @@ DayTheoreticalBest dayTheoreticalBest(
     bestLap: best?.reference,
     cancelled: cancelled,
   );
+  final sessions = {for (final MapEntry(:key, :value) in runs.entries) key: value.session};
+  // The same ranked laps, through each corner's parts.
+  final bestPhases = dayPhaseReference(computed, corners, sessions, cancelled: cancelled);
   return DayTheoreticalBest(
     groupId: id,
     state: DayTheoreticalBestState.ready,
@@ -563,6 +575,7 @@ DayTheoreticalBest dayTheoreticalBest(
           ),
     realistic: realistic,
     grip: grip,
+    bestPhases: bestPhases,
   );
 }
 

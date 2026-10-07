@@ -54,6 +54,30 @@
 </ul>
 <p>Typical is the median and spread the middle half of the laps (interquartile range). Each figure needs at least 3 laps; with fewer the line says <em>too few laps</em>, and a figure no lap measured is left out. A corner with none says <em>Not measured on these laps.</em> These are observations of what changed, not their causes.</p>
 
+<h2 id="best-phases">Best phases</h2>
+<figure>
+  <img src="assets/screens/best-phases.png" alt="Best phases card: best phases 1:46.060, the best lap 1:49.898 losing 3.838 s, then best phases next to the theoretical bests: fastest segments 1:47.905, best phases that join 1:46.802 from 8 laps, segments that join 1:48.581, best typical 1:50.711, and the lines where two laps meet at speeds more than 2 km/h apart" width="1280" height="800" loading="lazy">
+</figure>
+<p>Under the theoretical best, <strong>Best phases</strong> builds a target from the day's best corner parts: the best entry of one lap, the best middle of another, the best exit of a third. It is closed at first; its one line gives the total. Tap <strong>Show</strong> to open it.</p>
+<ul>
+  <li>Each corner is split where it is tightest into <strong>entry</strong>, <strong>middle</strong> and <strong>exit</strong>, the same split as in the <a href="corners.html#details">corner details</a>, so every lap is timed over the same metres. Each part comes from the ranked lap that was fastest through it.</li>
+  <li>A straight comes whole from the lap fastest through it, and so does a corner that is not split. That corner says why, for example <em>Not split: more than one tight part</em> for a run of corners such as Corners 2–3, or <em>Not split: crosses the start/finish line</em> for Corners 9–16 on the Jastrząb day.</li>
+  <li>Laps that are not ranked are left out.</li>
+</ul>
+<p>At the top, <strong>Best phases</strong> is the parts added up; next to it is the chosen lap's time over the same segments and what it loses. <strong>Against the theoretical bests</strong> puts it beside the three totals of the Theoretical best card:</p>
+<ul>
+  <li><strong>Fastest segments</strong> is the same idea a whole segment at a time. Best phases cuts each corner into three, so it is never slower: a corner's three parts can come from three laps, where the theoretical best takes the whole corner from one.</li>
+  <li><strong>Best phases that join</strong> applies the rule of <a href="#card">segments that join</a> to the parts: wherever a part from one lap meets a part from another, at the lines inside a corner as well as between segments, the speeds must differ by at most 2 km/h. It is never slower than <strong>Segments that join</strong>, the same rule a whole segment at a time.</li>
+  <li><strong>Best typical</strong> is a different idea: what you did through each segment as a rule, not once. It is not split into parts.</li>
+</ul>
+<p><strong>Where laps meet</strong> counts the lines where two laps meet and lists those where the speeds differ by more than 2 km/h, for example <em>Straight 3 → Corner 4 · Entry: 2.8 km/h apart</em>. There the best phases is not a lap the car drove. Lines where a lap's speed is not known are counted apart. As for segments that join, matching speeds are needed for two laps to join, but do not prove that they could: two laps can take different lines at the same speed.</p>
+<figure>
+  <img src="assets/screens/best-phases-parts.png" alt="Part by part: the best lap chosen, each segment with its loss, and each corner's entry, middle and exit with the best time, the lap that set it and the best lap's own time" width="1280" height="800" loading="lazy">
+</figure>
+<p><strong>Part by part</strong> lists the segments in lap order for the lap chosen in the menu (the best lap first). Each segment shows what that lap loses there; a split corner shows the same for its entry, middle and exit. Each line gives the best time and the lap that set it, and the chosen lap's own time, or <em>this lap set it</em>. A part whose lap does not join the part before says so in red, with the speed difference. A loss is never shown as zero when the lap has no time there: it reads —.</p>
+<p>Best phases is made of parts of different laps, not one recording, so it is compared part by part here. It is not offered as a <a href="compare.html#reference">reference lap</a>: a Δ trace against it would join traces the car never drove.</p>
+<p>On the Jastrząb day pictured, the best phases add up to 1:46.060 from 9 laps and the best phases that join to 1:46.802 from 8 laps, against fastest segments of 1:47.905, segments that join of 1:48.581, a best typical of 1:50.711 and a best lap of 1:49.898. At 9 of the 19 lines where two laps meet, the speeds differ by more than 2 km/h.</p>
+
 <h2 id="time-losses">Time losses</h2>
 <figure>
   <img src="assets/screens/time-losses.png" alt="Time losses card ranking the largest losses to the best lap" width="1280" height="800" loading="lazy">
