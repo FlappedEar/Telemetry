@@ -519,7 +519,12 @@ DayTheoreticalBest dayTheoreticalBest(
     laps: [for (final row in rows) ?timed[row.reference]],
     bestLap: best,
     automaticSegments: automatic,
-    corners: dayCorners(computed, rows, best),
+    corners: dayCorners(
+      computed,
+      rows,
+      best,
+      sessions: {for (final MapEntry(:key, :value) in runs.entries) key: value.session},
+    ),
     segmentRunId: canonical.runId,
     runSegments: [
       for (final value in (stored[canonical.runId] as List?) ?? const [])

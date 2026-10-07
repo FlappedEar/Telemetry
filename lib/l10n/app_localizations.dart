@@ -10141,7 +10141,7 @@ abstract class AppLocalizations {
   /// **'Complex'**
   String get cornerShapeComplex;
 
-  /// Corner class: braking typically takes 40 km/h or more off.
+  /// Corner class: the speed typically drops by 40 km/h or more from where braking starts to the lowest point.
   ///
   /// In en, this message translates to:
   /// **'Heavy braking'**
@@ -10186,13 +10186,13 @@ abstract class AppLocalizations {
   /// Corner details: explains a single apex.
   ///
   /// In en, this message translates to:
-  /// **'One tightest part, about the same radius before and after it.'**
+  /// **'One tightest part, not late in the corner; the corner neither tightens to the end nor opens from the start.'**
   String get cornerShapeNoteSingle;
 
   /// Corner details: explains a late apex.
   ///
   /// In en, this message translates to:
-  /// **'One tightest part, late in the corner.'**
+  /// **'One tightest part, late in the corner, which opens again after it.'**
   String get cornerShapeNoteLate;
 
   /// Corner details: explains a decreasing radius. ratio is a number such as 1.4.
@@ -10216,13 +10216,13 @@ abstract class AppLocalizations {
   /// Corner details: explains a complex with several tight parts.
   ///
   /// In en, this message translates to:
-  /// **'{count} tight parts, measured as one corner: not split into single corners.'**
+  /// **'{count} tight parts in this segment, classed together as one corner.'**
   String cornerShapeNoteComplex(int count);
 
   /// Corner details: explains a complex that changes direction.
   ///
   /// In en, this message translates to:
-  /// **'Turns one way, then the other: several corners measured as one, not split into single corners.'**
+  /// **'Turns one way, then the other: more than one corner in this segment, classed together.'**
   String get cornerShapeNoteDirection;
 
   /// Corner details: braking was read from the brake channel.
@@ -10237,22 +10237,16 @@ abstract class AppLocalizations {
   /// **'inferred from deceleration'**
   String get cornerClassFromDeceleration;
 
-  /// Corner details: explains braking or heavy braking. shed is the speed braking takes off with its unit, peak the peak deceleration in g, how where braking was read.
+  /// Corner details: explains braking or heavy braking. shed is the speed lost from where braking starts to the lowest point, with its unit; how is where braking was read.
   ///
   /// In en, this message translates to:
-  /// **'Typically takes {shed} off under braking (peak {peak} g). Brakes on {braked} of {laps} laps ({how}).'**
-  String cornerApproachNoteShed(
-    String shed,
-    String peak,
-    String how,
-    int braked,
-    int laps,
-  );
+  /// **'Typically {shed} slower at the lowest point than where braking starts. Brakes on {braked} of {laps} laps ({how}).'**
+  String cornerApproachNoteShed(String shed, String how, int braked, int laps);
 
-  /// Corner details: braking whose deceleration is not known on enough laps.
+  /// Corner details: braking whose speed loss is not known on enough laps.
   ///
   /// In en, this message translates to:
-  /// **'Brakes on {braked} of {laps} laps ({how}). The speed braking takes off is not measured on three laps, so it is not split into heavy or not.'**
+  /// **'Brakes on {braked} of {laps} laps ({how}). The speed from where braking starts to the lowest point is not known on at least three laps, so heavy or not is not known.'**
   String cornerApproachNoteNoShed(String how, int braked, int laps);
 
   /// Corner details: explains a lift or flat.
@@ -10278,12 +10272,6 @@ abstract class AppLocalizations {
   /// **'Typical minimum speed {speed} over {laps} laps.'**
   String cornerSpeedNote(String speed, int laps);
 
-  /// Corner details: explains the speed class when the laps' units differ.
-  ///
-  /// In en, this message translates to:
-  /// **'Typical minimum speed over {laps} laps; their speed units differ, so it is not shown.'**
-  String cornerSpeedNoteUnitsDiffer(int laps);
-
   /// Corner details: a corner class that could not be given, and why.
   ///
   /// In en, this message translates to:
@@ -10305,8 +10293,26 @@ abstract class AppLocalizations {
   /// Corner details: how the corner classes are worked out.
   ///
   /// In en, this message translates to:
-  /// **'The shape comes from the track\'s curvature on the line of the lap the track axis is built from; braking and speed are typical (median) values of this day\'s laps here. The limits are the same on every track: heavy braking takes at least 40 km/h off; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. Corner complexes are not split into single corners.'**
+  /// **'The shape comes from the track\'s curvature on the line of the lap the track axis is built from, over the part of the segment that turns; braking and speed are typical (median) values of this day\'s laps here, from the speed channel. The limits are the same on every track: heavy braking is at least 40 km/h slower at the lowest point than where braking starts; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. A segment holding several corners is classed as a whole.'**
   String get cornerClassNote;
+
+  /// Corner class: braked on most laps, but whether the braking is heavy is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking (heavy not known)'**
+  String get cornerApproachBrakingHeavyUnknown;
+
+  /// Corner details: laps whose speeds are in another unit are not pooled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap recorded in another speed unit is left out of the speeds.} other{{count} laps recorded in another speed unit are left out of the speeds.}}'**
+  String cornerClassOtherUnits(int count);
+
+  /// Corner details: unit shown with speeds that were recorded without a unit and read as km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'km/h (assumed)'**
+  String get cornerClassAssumedKmh;
 }
 
 class _AppLocalizationsDelegate

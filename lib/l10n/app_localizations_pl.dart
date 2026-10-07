@@ -7139,11 +7139,11 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerShapeNoteSingle =>
-      'Jedna najciaśniejsza część, z podobnym promieniem przed nią i za nią.';
+      'Jedna najciaśniejsza część, nie późno w zakręcie; zakręt nie zacieśnia się do końca ani nie otwiera od początku.';
 
   @override
   String get cornerShapeNoteLate =>
-      'Jedna najciaśniejsza część, późno w zakręcie.';
+      'Jedna najciaśniejsza część, późno w zakręcie, który potem znów się otwiera.';
 
   @override
   String cornerShapeNoteDecreasing(String ratio) {
@@ -7161,12 +7161,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String cornerShapeNoteComplex(int count) {
-    return 'Ciasne części: $count, mierzone jako jeden zakręt, bez podziału na pojedyncze zakręty.';
+    return 'Ciasne części w tym odcinku: $count, klasyfikowane razem jako jeden zakręt.';
   }
 
   @override
   String get cornerShapeNoteDirection =>
-      'Skręca w jedną stronę, potem w drugą: kilka zakrętów mierzonych jako jeden, bez podziału na pojedyncze zakręty.';
+      'Skręca w jedną stronę, potem w drugą: więcej niż jeden zakręt w tym odcinku, klasyfikowane razem.';
 
   @override
   String get cornerClassFromBrakePedal => 'pedał hamulca';
@@ -7175,19 +7175,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get cornerClassFromDeceleration => 'wywnioskowane z opóźnienia';
 
   @override
-  String cornerApproachNoteShed(
-    String shed,
-    String peak,
-    String how,
-    int braked,
-    int laps,
-  ) {
-    return 'Hamowanie zwykle odbiera $shed (szczyt $peak g). Hamowanie na $braked z $laps okrążeń ($how).';
+  String cornerApproachNoteShed(String shed, String how, int braked, int laps) {
+    return 'W najwolniejszym miejscu zwykle o $shed wolniej niż tam, gdzie zaczyna się hamowanie. Hamowanie na $braked z $laps okrążeń ($how).';
   }
 
   @override
   String cornerApproachNoteNoShed(String how, int braked, int laps) {
-    return 'Hamowanie na $braked z $laps okrążeń ($how). Prędkość odebrana hamowaniem nie jest zmierzona na trzech okrążeniach, więc nie wiadomo, czy hamowanie jest mocne.';
+    return 'Hamowanie na $braked z $laps okrążeń ($how). Spadek prędkości od początku hamowania do najwolniejszego miejsca nie jest znany na co najmniej trzech okrążeniach, więc nie wiadomo, czy hamowanie jest mocne.';
   }
 
   @override
@@ -7211,11 +7205,6 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String cornerSpeedNoteUnitsDiffer(int laps) {
-    return 'Typowa prędkość minimalna z $laps okrążeń; ich jednostki prędkości się różnią, więc nie jest pokazana.';
-  }
-
-  @override
   String cornerClassUnavailable(String reason) {
     return 'Nieznane: $reason';
   }
@@ -7229,5 +7218,25 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get cornerClassNote =>
-      'Kształt wynika z krzywizny toru na linii okrążenia, z którego zbudowano oś toru; hamowanie i prędkość to typowe (mediana) wartości okrążeń tego dnia w tym miejscu. Progi są takie same na każdym torze: mocne hamowanie odbiera co najmniej 40 km/h; odjęcie gazu to utrata co najmniej 5 % prędkości z początku zakrętu bez hamowania, mniej to pełny gaz; wolny zakręt to poniżej 80 km/h, szybki od 130 km/h. Kombinacje zakrętów nie są dzielone na pojedyncze zakręty.';
+      'Kształt wynika z krzywizny toru na linii okrążenia, z którego zbudowano oś toru, w tej części odcinka, która skręca; hamowanie i prędkość to typowe (mediana) wartości okrążeń tego dnia w tym miejscu, z kanału prędkości. Progi są takie same na każdym torze: mocne hamowanie to co najmniej 40 km/h mniej w najwolniejszym miejscu niż tam, gdzie zaczyna się hamowanie; odjęcie gazu to utrata co najmniej 5 % prędkości z początku zakrętu bez hamowania, mniej to pełny gaz; wolny zakręt to poniżej 80 km/h, szybki od 130 km/h. Odcinek z kilkoma zakrętami jest klasyfikowany jako całość.';
+
+  @override
+  String get cornerApproachBrakingHeavyUnknown => 'Hamowanie (siła nieznana)';
+
+  @override
+  String cornerClassOtherUnits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto prędkości $count okrążenia zapisanego w innej jednostce.',
+      many: 'Pominięto prędkości $count okrążeń zapisanych w innej jednostce.',
+      few: 'Pominięto prędkości $count okrążeń zapisanych w innej jednostce.',
+      one: 'Pominięto prędkości 1 okrążenia zapisanego w innej jednostce.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerClassAssumedKmh => 'km/h (przyjęte)';
 }

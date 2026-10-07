@@ -6985,10 +6985,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cornerShapeNoteSingle =>
-      'One tightest part, about the same radius before and after it.';
+      'One tightest part, not late in the corner; the corner neither tightens to the end nor opens from the start.';
 
   @override
-  String get cornerShapeNoteLate => 'One tightest part, late in the corner.';
+  String get cornerShapeNoteLate =>
+      'One tightest part, late in the corner, which opens again after it.';
 
   @override
   String cornerShapeNoteDecreasing(String ratio) {
@@ -7006,12 +7007,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cornerShapeNoteComplex(int count) {
-    return '$count tight parts, measured as one corner: not split into single corners.';
+    return '$count tight parts in this segment, classed together as one corner.';
   }
 
   @override
   String get cornerShapeNoteDirection =>
-      'Turns one way, then the other: several corners measured as one, not split into single corners.';
+      'Turns one way, then the other: more than one corner in this segment, classed together.';
 
   @override
   String get cornerClassFromBrakePedal => 'brake pedal';
@@ -7020,19 +7021,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cornerClassFromDeceleration => 'inferred from deceleration';
 
   @override
-  String cornerApproachNoteShed(
-    String shed,
-    String peak,
-    String how,
-    int braked,
-    int laps,
-  ) {
-    return 'Typically takes $shed off under braking (peak $peak g). Brakes on $braked of $laps laps ($how).';
+  String cornerApproachNoteShed(String shed, String how, int braked, int laps) {
+    return 'Typically $shed slower at the lowest point than where braking starts. Brakes on $braked of $laps laps ($how).';
   }
 
   @override
   String cornerApproachNoteNoShed(String how, int braked, int laps) {
-    return 'Brakes on $braked of $laps laps ($how). The speed braking takes off is not measured on three laps, so it is not split into heavy or not.';
+    return 'Brakes on $braked of $laps laps ($how). The speed from where braking starts to the lowest point is not known on at least three laps, so heavy or not is not known.';
   }
 
   @override
@@ -7056,11 +7051,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String cornerSpeedNoteUnitsDiffer(int laps) {
-    return 'Typical minimum speed over $laps laps; their speed units differ, so it is not shown.';
-  }
-
-  @override
   String cornerClassUnavailable(String reason) {
     return 'Not known: $reason';
   }
@@ -7074,5 +7064,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cornerClassNote =>
-      'The shape comes from the track\'s curvature on the line of the lap the track axis is built from; braking and speed are typical (median) values of this day\'s laps here. The limits are the same on every track: heavy braking takes at least 40 km/h off; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. Corner complexes are not split into single corners.';
+      'The shape comes from the track\'s curvature on the line of the lap the track axis is built from, over the part of the segment that turns; braking and speed are typical (median) values of this day\'s laps here, from the speed channel. The limits are the same on every track: heavy braking is at least 40 km/h slower at the lowest point than where braking starts; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. A segment holding several corners is classed as a whole.';
+
+  @override
+  String get cornerApproachBrakingHeavyUnknown => 'Braking (heavy not known)';
+
+  @override
+  String cornerClassOtherUnits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count laps recorded in another speed unit are left out of the speeds.',
+      one: '1 lap recorded in another speed unit is left out of the speeds.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerClassAssumedKmh => 'km/h (assumed)';
 }

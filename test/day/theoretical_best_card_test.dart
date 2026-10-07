@@ -536,11 +536,12 @@ void main() {
       );
       final corner = result.corners.firstWhere((c) => c.name == 'Corner 2');
       final driving = corner.classification.driving;
-      // The VBO has a brake but no longitudinal G: braking, not split into
-      // heavy or not.
-      expect(driving.approach, CornerApproach.braking);
-      expect(driving.typicalSpeedShedMetresPerSecond, isNull);
+      // From 30 m/s where braking starts to about 18 m/s: over 40 km/h,
+      // read from the speed channel.
+      expect(driving.approach, CornerApproach.heavyBraking);
       expect(driving.speedBand, CornerSpeedBand.slow);
+      // The VBO declares no speed unit and none is assumed in settings.
+      expect(driving.speedUnit, '');
       expect(corner.classification.shape.shape, CornerShape.doubleApex);
       final flat = result.corners.firstWhere((c) => c.name == 'Corner 1');
       expect(flat.classification.driving.approach, CornerApproach.flat);
@@ -560,6 +561,17 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      Future<void> openCorner() async {
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('lossRow Corner 2')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('lossRow Corner 2')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
+        await tester.pumpAndSettle();
+      }
+
       String text(String key) =>
           tester.widget<Text>(find.byKey(ValueKey(key))).data!;
       String rowText(String key) => tester
@@ -576,7 +588,7 @@ void main() {
       await showCard(const Locale('en'));
       expect(
         text('cornerClassSummary Corner 2'),
-        'Braking · Slow corner · Double apex',
+        'Heavy braking · Slow corner · Double apex',
       );
       expect(
         text('cornerClassSummary Corner 1'),
@@ -587,40 +599,31 @@ void main() {
         findsNothing,
       );
 
-      // In the corner's details, with what each comes from.
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('lossRow Corner 2')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('lossRow Corner 2')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
-      await tester.pumpAndSettle();
+      // In the corner's details, with what each comes from; unlabelled
+      // speeds say they are read as km/h.
+      await openCorner();
       expect(text('cornerClassTitle'), 'Corner type');
+      String kmh(double? metresPerSecond) =>
+          (driving.inSpeedUnit(metresPerSecond)!).toStringAsFixed(0);
       expect(
         rowText('cornerClassApproach'),
-        'Braking · from this day\'s laps | Braking | Brakes on 3 of 3 laps '
-        '(brake pedal). The speed braking takes off is not measured on three '
-        'laps, so it is not split into heavy or not.',
+        'Braking · from this day\'s laps | Heavy braking | Typically '
+        '${kmh(driving.typicalSpeedShedMetresPerSecond)} km/h (assumed) '
+        'slower at the lowest point than where braking starts. Brakes on 3 '
+        'of 3 laps (brake pedal).',
       );
-      // No unit is recorded or assumed: the speed is shown without one.
-      final minimum = driving
-          .inSpeedUnit(driving.typicalMinimumSpeedMetresPerSecond)!
-          .toStringAsFixed(0);
       expect(
         rowText('cornerClassSpeed'),
         'Speed · from this day\'s laps | Slow corner | Typical minimum speed '
-        '$minimum over 3 laps.',
+        '${kmh(driving.typicalMinimumSpeedMetresPerSecond)} km/h '
+        '(assumed) over 3 laps.',
       );
       expect(
         rowText('cornerClassShape'),
         'Shape · from the track | Double apex | Two separate tight parts, '
         'measured as one corner.',
       );
-      expect(
-        find.textContaining('not split into single corners'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('classed as a whole'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // In Polish (the app's navigator would keep the sheet open).
@@ -629,22 +632,15 @@ void main() {
       await showCard(const Locale('pl'));
       expect(
         text('cornerClassSummary Corner 2'),
-        'Hamowanie · Wolny zakręt · Podwójny wierzchołek',
+        'Mocne hamowanie · Wolny zakręt · Podwójny wierzchołek',
       );
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('lossRow Corner 2')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('lossRow Corner 2')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
-      await tester.pumpAndSettle();
+      await openCorner();
       expect(text('cornerClassTitle'), 'Rodzaj zakrętu');
       expect(
         rowText('cornerClassApproach'),
         allOf(
+          contains('km/h (przyjęte)'),
           contains('Hamowanie na 3 z 3 okrążeń (pedał hamulca).'),
-          contains('nie wiadomo, czy hamowanie jest mocne'),
         ),
       );
       expect(rowText('cornerClassShape'), contains('Podwójny wierzchołek'));
@@ -652,6 +648,69 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('braking whose heaviness is not known says so', (tester) async {
+    CornerLapMetrics lap(String unit) => CornerLapMetrics(
+      lapReference: null,
+      speeds: CornerSpeeds(
+        unit: unit,
+        entry: CornerSpeedValue(value: 100),
+        minimum: CornerSpeedValue(value: 60),
+      ),
+      braking: BrakingMetrics()
+        ..valid = true
+        ..method = brakingMethodMeasured
+        ..brakingPointMeters = 10,
+      exit: ExitMetrics(),
+      observation: CornerLapObservation(),
+    );
+    // Braking on every lap, but no speed where it started; two laps in
+    // another unit.
+    final classification = CornerClassification(
+      driving: classifyCornerDriving([
+        for (final unit in ['km/h', 'km/h', 'km/h', 'mph', 'mph'])
+          (metrics: lap(unit), speedAtBraking: null),
+      ]),
+    );
+    for (final (locale, summary, otherUnits) in [
+      (
+        'en',
+        'Braking (heavy not known) · Slow corner',
+        '2 laps recorded in another speed unit are left out of the speeds.',
+      ),
+      (
+        'pl',
+        'Hamowanie (siła nieznana) · Wolny zakręt',
+        'Pominięto prędkości 2 okrążeń zapisanych w innej jednostce.',
+      ),
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          key: UniqueKey(),
+          locale: Locale(locale),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CornerClassSection(classification: classification),
+            ),
+          ),
+        ),
+      );
+      final l10n = lookupAppLocalizations(Locale(locale));
+      expect(cornerClassSummary(l10n, classification), summary);
+      expect(find.textContaining(otherUnits), findsOneWidget);
+      expect(
+        find.textContaining(
+          locale == 'en'
+              ? 'is not known on at least three laps'
+              : 'na co najmniej trzech okrążeniach',
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('a corner class that is not known says why', (tester) async {
     final outcome = importDay();

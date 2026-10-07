@@ -177,7 +177,10 @@ void main() {
       // Brakes from 30 m/s to about 18 m/s on every lap: over 40 km/h off.
       final braking = corner.classification;
       expect(braking.driving.approach, CornerApproach.heavyBraking);
-      expect(braking.driving.typicalSpeedShedMetresPerSecond, greaterThan(40 / 3.6));
+      // From 30 m/s where braking starts to the typical lowest 18 m/s, read
+      // from each lap's speed channel.
+      expect(braking.driving.typicalSpeedShedMetresPerSecond, closeTo(12, 0.5));
+      expect(braking.driving.shedLaps, 3);
       expect((braking.driving.brakingLaps, braking.driving.lapsMeasured), (3, 3));
       expect(braking.driving.brakingMethod, brakingMethodMeasured);
       expect(braking.driving.speedBand, CornerSpeedBand.slow);

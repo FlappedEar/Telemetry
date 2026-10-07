@@ -6,10 +6,14 @@
 //
 // The shape is the line of the lap the shared axis was built from (the
 // canonical run's fastest lap), so it is the same for every lap of the day.
-// Long corner complexes are not split into single corners (FET-115): a
+// It is measured over the part of the segment that turns, so where exactly
+// the segment's bounds sit on the straights around it does not change it.
+// Long corner complexes are not divided into single corners (FET-115): a
 // segment with several tight parts is a double apex or a complex, as it is.
+//
 // The driving classes are typical values (medians) over the day's laps,
-// never one lap's, and need at least three laps.
+// never one lap's, and need at least three laps. Speeds come from the
+// recorded speed channel; speeds in different units are never pooled.
 import 'dart:math' as math;
 
 import '../speed_units.dart';
@@ -17,11 +21,11 @@ import 'braking_metrics.dart' show brakingNoneDetected;
 import 'braking_onset.dart' show brakingMethodMeasured;
 import 'consistency.dart';
 import 'corner_phases.dart';
-import 'gg_pairs.dart' show gPerAccelerationUnit, standardGravity;
 import 'outing_theoretical_best.dart' show CornerLapMetrics;
 import 'track_progress.dart';
+import 'track_segment_proposals.dart' show SegmentProposalOptions;
 
-const String cornerClassAlgorithm = 'corner-class-v1';
+const String cornerClassAlgorithm = 'corner-class-v2';
 
 /// Fewer laps than this give no driving class (typical needs three).
 const int cornerClassMinimumLaps = minimumConsistencySamples;
@@ -30,9 +34,11 @@ const int cornerClassMinimumLaps = minimumConsistencySamples;
 /// the laps measured the same way.
 const double cornerClassBrakingLapShare = 0.5;
 
-/// Braking that typically takes at least this much speed off is heavy
-/// braking (40 km/h). The speed taken off is the braking's mean deceleration
-/// times its duration ([BrakingMetrics]), so it needs a longitudinal G.
+/// Braking is heavy when the speed typically drops by at least this much
+/// (40 km/h) from where braking starts to the lowest speed in the corner,
+/// both read from the speed channel. All braking up to the lowest point
+/// counts, so a segment holding two corners is not read from its first
+/// braking only.
 const double cornerClassHeavyBrakingMetresPerSecond = 40 / 3.6;
 
 /// Without braking, a typical loss from the corner's entry speed to its
@@ -46,17 +52,29 @@ const double cornerClassSlowBelowMetresPerSecond = 80 / 3.6;
 /// between is medium.
 const double cornerClassFastFromMetresPerSecond = 130 / 3.6;
 
+/// The turning part of a segment: from the first to the last point whose
+/// curvature the corner's way reaches the segment proposals' corner
+/// threshold (1/250 per metre), or half the segment's peak when that is
+/// gentler. The shape is measured over this part only.
+const double cornerClassTurningCurvaturePerMeter =
+    SegmentProposalOptions.defaultCornerCurvaturePerMeter;
+
 /// Turning the other way at least this fraction of the corner's peak
 /// curvature makes the segment a complex that changes direction.
 const double cornerClassReversalRatio = 0.6;
 
-/// The mean curvature of one half of the corner at least this many times the
-/// other half's makes it a decreasing (second half tighter) or increasing
-/// (first half tighter) radius.
+/// The mean curvature of one half of the turning part at least this many
+/// times the other half's is a change of radius.
 const double cornerClassRadiusChangeRatio = 1.3;
 
-/// A single tightest part whose middle lies at least this fraction of the
-/// way through the corner is a late apex.
+/// A change of radius is a decreasing radius only when the tightest part
+/// reaches into the last this fraction of the turning part (it tightens to
+/// the end), an increasing radius only when it starts in the first this
+/// fraction (it opens from the start).
+const double cornerClassRadiusEndFraction = 0.2;
+
+/// Otherwise, a single tightest part whose middle lies at least this
+/// fraction of the way through the turning part is a late apex.
 const double cornerClassLateApexFraction = 0.6;
 
 /// Tight parts ([proposeCornerGeometryPhases]' apex regions) from this many
@@ -69,23 +87,26 @@ const String cornerClassSpeedUnitUnknown = 'speedUnitUnknown';
 
 /// The corner's shape.
 enum CornerShape {
-  /// One tightest part, about the same radius before and after it.
+  /// One tightest part, not late, neither tightening to the end nor opening
+  /// from the start.
   singleApex,
 
-  /// One tightest part, late in the corner.
+  /// One tightest part, late in the corner, which opens again after it.
   lateApex,
 
-  /// Tightens: the second half turns harder than the first.
+  /// Tightens to the end: the second half turns harder than the first and
+  /// the tightest part runs into the end.
   decreasingRadius,
 
-  /// Opens: the first half turns harder than the second.
+  /// Opens from the start: the first half turns harder than the second and
+  /// the tightest part starts at the beginning.
   increasingRadius,
 
   /// Two separate tightest parts turning the same way.
   doubleApex,
 
   /// Three or more tight parts, or a change of direction: several corners
-  /// in one segment (not split, FET-115).
+  /// in one segment, classed as a whole (FET-115).
   complex,
 }
 
@@ -94,6 +115,51 @@ enum CornerApproach { heavyBraking, braking, lift, flat }
 
 /// How fast the corner is, by its typical minimum speed.
 enum CornerSpeedBand { slow, medium, fast }
+
+/// The shape from measured curvature figures, by these rules in order:
+/// 1. turning the other way at least [cornerClassReversalRatio] of the peak
+///    ([reversalRatio]), or [cornerClassComplexApexCount] tight parts or
+///    more: complex;
+/// 2. two tight parts: double apex;
+/// 3. [radiusRatio] (second half over first) at least
+///    [cornerClassRadiusChangeRatio] and the tightest part ending in the
+///    last [cornerClassRadiusEndFraction]: decreasing radius;
+/// 4. [radiusRatio] at most its inverse and the tightest part starting in
+///    the first [cornerClassRadiusEndFraction]: increasing radius;
+/// 5. the tightest part's middle from [cornerClassLateApexFraction]: late
+///    apex;
+/// 6. otherwise single apex.
+/// Fractions are of the turning part. Null without a tight part.
+CornerShape? cornerShapeFor({
+  required int tightParts,
+  double reversalRatio = 0,
+  double? radiusRatio,
+  double? apexFraction,
+  double? apexStartFraction,
+  double? apexEndFraction,
+}) {
+  if (reversalRatio >= cornerClassReversalRatio || tightParts >= cornerClassComplexApexCount) {
+    return CornerShape.complex;
+  }
+  if (tightParts == 2) return CornerShape.doubleApex;
+  if (tightParts != 1) return null;
+  if (radiusRatio != null &&
+      radiusRatio >= cornerClassRadiusChangeRatio &&
+      apexEndFraction != null &&
+      apexEndFraction >= 1 - cornerClassRadiusEndFraction) {
+    return CornerShape.decreasingRadius;
+  }
+  if (radiusRatio != null &&
+      radiusRatio <= 1 / cornerClassRadiusChangeRatio &&
+      apexStartFraction != null &&
+      apexStartFraction <= cornerClassRadiusEndFraction) {
+    return CornerShape.increasingRadius;
+  }
+  if (apexFraction != null && apexFraction >= cornerClassLateApexFraction) {
+    return CornerShape.lateApex;
+  }
+  return CornerShape.singleApex;
+}
 
 /// The corner's shape from the track's curvature, or why there is none.
 final class CornerShapeClass {
@@ -117,14 +183,18 @@ final class CornerShapeClass {
   /// Turns the other way as hard as [cornerClassReversalRatio] of its peak.
   final bool changesDirection;
 
-  /// How far through the corner (0 to 1) the single tightest part's middle
-  /// lies; null with more than one.
+  /// How far through the turning part (0 to 1) the single tightest part's
+  /// middle lies; null with more than one.
   final double? apexFraction;
 
-  /// Mean curvature of the second half over the first; null with more than
-  /// one tightest part.
+  /// Mean curvature of the turning part's second half over its first; null
+  /// with more than one tightest part.
   final double? radiusRatio;
 }
+
+/// One lap's figures in a corner, with its recorded speed where braking
+/// started (in the unit of [metrics]' speeds), when it braked.
+typedef CornerClassLap = ({CornerLapMetrics metrics, double? speedAtBraking});
 
 /// How the corner was driven on the day's laps, or why that is not known.
 final class CornerDrivingClass {
@@ -135,8 +205,7 @@ final class CornerDrivingClass {
     this.brakingLaps = 0,
     this.brakingMethod = '',
     this.typicalSpeedShedMetresPerSecond,
-    this.typicalPeakDecelerationG,
-    this.decelerationLaps = 0,
+    this.shedLaps = 0,
     this.typicalSpeedLossFraction,
     this.typicalSpeedLossMetresPerSecond,
     this.speedBand,
@@ -144,6 +213,7 @@ final class CornerDrivingClass {
     this.typicalMinimumSpeedMetresPerSecond,
     this.speedLaps = 0,
     this.speedUnit,
+    this.otherUnitLaps = 0,
   });
 
   final CornerApproach? approach;
@@ -158,15 +228,19 @@ final class CornerDrivingClass {
   /// `measuredBrake` or `inferredDeceleration`.
   final String brakingMethod;
 
-  /// The speed braking took off and the peak deceleration, typically, over
-  /// the braking laps with a deceleration ([decelerationLaps]); null below
-  /// three, when braking is not split into heavy or not.
-  final double? typicalSpeedShedMetresPerSecond, typicalPeakDecelerationG;
-  final int decelerationLaps;
+  /// From where braking starts to the lowest speed in the corner, typically,
+  /// over [shedLaps] braking laps; null below three, when braking is not
+  /// told heavy or not.
+  final double? typicalSpeedShedMetresPerSecond;
+  final int shedLaps;
 
-  /// From the corner's entry speed to its minimum, typically, as a fraction
-  /// of the entry speed and (in a known unit) as a speed; set for a lift or
-  /// flat.
+  /// Braking, but whether it is heavy is not known.
+  bool get heavyUnknown =>
+      approach == CornerApproach.braking && typicalSpeedShedMetresPerSecond == null;
+
+  /// From the corner's entry speed to its minimum on the laps without
+  /// braking, typically, as a fraction of the entry speed and as a speed;
+  /// set for a lift or flat.
   final double? typicalSpeedLossFraction, typicalSpeedLossMetresPerSecond;
 
   final CornerSpeedBand? speedBand;
@@ -176,9 +250,12 @@ final class CornerDrivingClass {
   final double? typicalMinimumSpeedMetresPerSecond;
   final int speedLaps;
 
-  /// The unit every lap's speeds here are recorded in; null when they
-  /// differ, so no typical speed is shown in either.
+  /// The unit of the laps whose speeds are used (as recorded, empty when
+  /// unlabelled, read as km/h); null when none has a speed.
   final String? speedUnit;
+
+  /// Laps with speeds in another unit, left out of every speed figure.
+  final int otherUnitLaps;
 
   /// [metresPerSecond] in [speedUnit], or null.
   double? inSpeedUnit(double? metresPerSecond) {
@@ -224,60 +301,88 @@ CornerShapeClass classifyCornerShape(
       sign * features.samples[index].curvaturePerMeter,
   ];
   final peak = turning.fold(0.0, math.max);
-  final against = -turning.fold(0.0, math.min);
   final parts = phases.apexCandidatesMeters.length;
-  final changesDirection = against >= cornerClassReversalRatio * peak;
-  if (changesDirection || parts >= cornerClassComplexApexCount) {
+  final reversal = peak > 0 ? -turning.fold(0.0, math.min) / peak : 0.0;
+  if (parts != 1) {
+    final shape = cornerShapeFor(tightParts: parts, reversalRatio: reversal);
     return CornerShapeClass(
-      shape: CornerShape.complex,
+      shape: shape,
+      unavailableReason: shape == null ? cornerPhaseInsufficientGeometry : '',
       tightParts: parts,
-      changesDirection: changesDirection,
+      changesDirection: reversal >= cornerClassReversalRatio,
     );
   }
-  if (parts == 2) return const CornerShapeClass(shape: CornerShape.doubleApex, tightParts: 2);
-  if (parts != 1) {
-    return CornerShapeClass(unavailableReason: cornerPhaseInsufficientGeometry, tightParts: parts);
-  }
 
-  // Mean turning of each half, by sample count (the samples are evenly
-  // spaced); turning the other way counts as none.
+  // The turning part, and the tightest part inside it, as indices into
+  // [turning]; both on the same evenly spaced samples.
+  final threshold = math.min(cornerClassTurningCurvaturePerMeter, peak / 2);
+  final first = turning.indexWhere((value) => value >= threshold);
+  final last = turning.lastIndexWhere((value) => value >= threshold);
+  final spacing = axis.spacingMeters;
+  final start = corner.start.progressMeters;
+  int along(Object? progress) =>
+      ((((progress as double) - start) % axis.lengthMeters) / spacing).round();
+  final regionStart = along(phases.apex.evidence['regionStartMeters']);
+  final regionEnd = along(phases.apex.evidence['regionEndMeters']);
+  final span = last - first;
+  if (first < 0 || span < 2) {
+    return const CornerShapeClass(unavailableReason: cornerPhaseInsufficientGeometry);
+  }
+  double fraction(num index) => ((index - first) / span).clamp(0.0, 1.0);
+
+  // Mean turning of each half of the turning part; turning the other way
+  // counts as none.
   double mean(Iterable<double> values) =>
       values.fold(0.0, (sum, value) => sum + math.max(0.0, value)) / values.length;
-  final half = turning.length ~/ 2;
-  final first = mean(turning.take(half));
-  final second = mean(turning.skip(turning.length - half));
-  final ratio = first > 0 ? second / first : null;
-  final start = corner.start.progressMeters;
-  final along = (phases.apexCandidatesMeters.first - start) % axis.lengthMeters;
-  final fraction = (along / corner.lengthMeters).clamp(0.0, 1.0);
-  final shape = ratio == null || ratio >= cornerClassRadiusChangeRatio
-      ? CornerShape.decreasingRadius
-      : ratio <= 1 / cornerClassRadiusChangeRatio
-      ? CornerShape.increasingRadius
-      : fraction >= cornerClassLateApexFraction
-      ? CornerShape.lateApex
-      : CornerShape.singleApex;
-  return CornerShapeClass(shape: shape, tightParts: 1, apexFraction: fraction, radiusRatio: ratio);
+  final part = turning.sublist(first, last + 1);
+  final half = part.length ~/ 2;
+  final firstHalf = mean(part.take(half));
+  final secondHalf = mean(part.skip(part.length - half));
+  final ratio = firstHalf > 0 ? secondHalf / firstHalf : null;
+  final apexFraction = fraction((regionStart + regionEnd) / 2);
+  return CornerShapeClass(
+    shape: cornerShapeFor(
+      tightParts: 1,
+      reversalRatio: reversal,
+      radiusRatio: ratio ?? double.infinity,
+      apexFraction: apexFraction,
+      apexStartFraction: fraction(regionStart),
+      apexEndFraction: fraction(regionEnd),
+    ),
+    tightParts: 1,
+    changesDirection: reversal >= cornerClassReversalRatio,
+    apexFraction: apexFraction,
+    radiusRatio: ratio,
+  );
 }
 
-/// How a corner was driven over [laps] (each lap's Corner Analyzer figures
-/// there). Braking measured from a brake pedal and braking inferred from
-/// deceleration are never pooled: the method most laps used decides.
-CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
-  final units = [
-    for (final lap in laps)
-      if (lap.speeds.entry.value != null || _minimum(lap) != null) lap.speeds.unit,
-  ];
-  final unit = units.isEmpty || units.any((other) => !sameSpeedUnit(other, units.first))
+/// How a corner was driven over [laps]. Braking measured from a brake pedal
+/// and braking inferred from deceleration are never pooled: the method most
+/// laps used decides. Speeds come only from the laps in the unit most laps
+/// were recorded in.
+CornerDrivingClass classifyCornerDriving(List<CornerClassLap> laps) {
+  // The speed unit: the largest group of laps recorded in one unit (the
+  // first one met on a tie).
+  final groups = <String, int>{};
+  for (final (:metrics, speedAtBraking: _) in laps) {
+    if (metrics.speeds.entry.value == null && _minimum(metrics) == null) continue;
+    final unit = metrics.speeds.unit;
+    final key = groups.keys.firstWhere((other) => sameSpeedUnit(other, unit), orElse: () => unit);
+    groups[key] = (groups[key] ?? 0) + 1;
+  }
+  final unit = groups.isEmpty
       ? null
-      : units.first;
-  // How fast: the typical minimum speed, every lap in its own unit.
+      : groups.entries.reduce((a, b) => b.value > a.value ? b : a).key;
+  final otherUnitLaps = unit == null ? 0 : groups.values.fold(0, (a, b) => a + b) - groups[unit]!;
+  final factor = unit == null ? null : metresPerSecondPerSpeedUnit(unit);
+  bool inUnit(CornerLapMetrics lap) => unit != null && sameSpeedUnit(lap.speeds.unit, unit);
+  double? metresPerSecond(double? value) => value == null || factor == null ? null : value * factor;
+
+  // How fast: the typical minimum speed.
   final minimums = [
-    for (final lap in laps) ?speedInMetresPerSecond(_minimum(lap), lap.speeds.unit),
+    for (final (:metrics, speedAtBraking: _) in laps)
+      if (inUnit(metrics)) ?metresPerSecond(_minimum(metrics)),
   ];
-  final unknownUnit = laps.any(
-    (lap) => _minimum(lap) != null && metresPerSecondPerSpeedUnit(lap.speeds.unit) == null,
-  );
   final typicalMinimum = summarizeConsistency(minimums);
   final speedBand = !typicalMinimum.available
       ? null
@@ -288,11 +393,11 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
       : CornerSpeedBand.fast;
   final speedReason = speedBand != null
       ? ''
-      : unknownUnit && minimums.length < cornerClassMinimumLaps
+      : unit != null && factor == null
       ? cornerClassSpeedUnitUnknown
       : _commonReason([
-          for (final lap in laps)
-            if (_minimum(lap) == null) lap.speeds.minimum.unavailableReason,
+          for (final (:metrics, speedAtBraking: _) in laps)
+            if (_minimum(metrics) == null) metrics.speeds.minimum.unavailableReason,
         ], minimums.length);
 
   CornerDrivingClass result({
@@ -302,8 +407,7 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
     int braked = 0,
     String method = '',
     double? shed,
-    double? peakG,
-    int decelerationLaps = 0,
+    int shedLaps = 0,
     double? loss,
     double? lossSpeed,
   }) => CornerDrivingClass(
@@ -313,8 +417,7 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
     brakingLaps: braked,
     brakingMethod: method,
     typicalSpeedShedMetresPerSecond: shed,
-    typicalPeakDecelerationG: peakG,
-    decelerationLaps: decelerationLaps,
+    shedLaps: shedLaps,
     typicalSpeedLossFraction: loss,
     typicalSpeedLossMetresPerSecond: lossSpeed,
     speedBand: speedBand,
@@ -322,6 +425,7 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
     typicalMinimumSpeedMetresPerSecond: speedBand == null ? null : typicalMinimum.median,
     speedLaps: minimums.length,
     speedUnit: unit,
+    otherUnitLaps: otherUnitLaps,
   );
 
   // Braking or not: laps where braking was looked for and found, or found
@@ -331,13 +435,13 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
       lap.braking.method.isNotEmpty &&
       (lap.braking.brakingPointMeters != null ||
           lap.braking.unavailableReason == brakingNoneDetected);
-  final byMethod = <String, List<CornerLapMetrics>>{};
-  for (final lap in laps.where(measuredBraking)) {
-    (byMethod[lap.braking.method] ??= []).add(lap);
+  final byMethod = <String, List<CornerClassLap>>{};
+  for (final lap in laps) {
+    if (measuredBraking(lap.metrics)) (byMethod[lap.metrics.braking.method] ??= []).add(lap);
   }
   if (byMethod.isEmpty) {
     return result(
-      reason: _commonReason([for (final lap in laps) lap.braking.unavailableReason], 0),
+      reason: _commonReason([for (final lap in laps) lap.metrics.braking.unavailableReason], 0),
     );
   }
   // The method most laps used; a tie goes to the brake pedal.
@@ -352,24 +456,18 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
   }
   final braking = [
     for (final lap in measured)
-      if (lap.braking.brakingPointMeters != null) lap,
+      if (lap.metrics.braking.brakingPointMeters != null) lap,
   ];
   if (braking.length >= cornerClassBrakingLapShare * measured.length) {
-    // Each braking lap's deceleration in g, read in the channel's unit.
-    final decelerations = [
-      for (final lap in braking)
-        if (gPerAccelerationUnit(lap.braking.decelerationUnit) case final factor?)
-          if ((
-                lap.braking.peakDeceleration,
-                lap.braking.meanDeceleration,
-                lap.braking.brakingSeconds,
-              )
-              case (final peak?, final mean?, final seconds?))
-            (peak: peak * factor, shed: mean * factor * standardGravity * seconds),
+    // Where braking started to the lowest speed, from the speed channel.
+    final sheds = [
+      for (final (:metrics, :speedAtBraking) in braking)
+        if (inUnit(metrics))
+          if ((speedAtBraking, _minimum(metrics)) case (final from?, final lowest?))
+            ?metresPerSecond(math.max(0.0, from - lowest)),
     ];
-    final shed = summarizeConsistency([for (final lap in decelerations) lap.shed]);
-    final peak = summarizeConsistency([for (final lap in decelerations) lap.peak]);
-    final typicalShed = shed.available ? math.max(0.0, shed.median!) : null;
+    final shed = summarizeConsistency(sheds);
+    final typicalShed = shed.available ? shed.median : null;
     return result(
       approach: typicalShed != null && typicalShed >= cornerClassHeavyBrakingMetresPerSecond
           ? CornerApproach.heavyBraking
@@ -378,32 +476,35 @@ CornerDrivingClass classifyCornerDriving(List<CornerLapMetrics> laps) {
       braked: braking.length,
       method: method,
       shed: typicalShed,
-      peakG: peak.available ? peak.median : null,
-      decelerationLaps: decelerations.length,
+      shedLaps: sheds.length,
     );
   }
-  // No braking on most laps: a lift or flat, by the speed lost into the
-  // corner (both speeds of one lap, so in one unit).
-  final losses = [
+  // No braking on most laps: a lift or flat, by the speed those laps lost
+  // into the corner.
+  final coasting = [
     for (final lap in measured)
-      if ((lap.speeds.entry.value, _minimum(lap)) case (final entry?, final minimum?)
-          when entry > 0)
-        (
-          fraction: (entry - minimum) / entry,
-          speed: speedInMetresPerSecond(entry - minimum, lap.speeds.unit),
-        ),
+      if (lap.metrics.braking.brakingPointMeters == null) lap.metrics,
+  ];
+  final losses = [
+    for (final lap in coasting)
+      if (inUnit(lap))
+        if ((lap.speeds.entry.value, _minimum(lap)) case (final entry?, final minimum?)
+            when entry > 0)
+          (fraction: (entry - minimum) / entry, speed: metresPerSecond(entry - minimum)),
   ];
   final typicalLoss = summarizeConsistency([for (final lap in losses) lap.fraction]);
   final typicalLossSpeed = summarizeConsistency([for (final lap in losses) ?lap.speed]);
   if (!typicalLoss.available) {
     return result(
-      reason: _commonReason([
-        for (final lap in measured)
-          if (lap.speeds.entry.value == null)
-            lap.speeds.entry.unavailableReason
-          else if (_minimum(lap) == null)
-            lap.speeds.minimum.unavailableReason,
-      ], losses.length),
+      reason: unit != null && factor == null
+          ? cornerClassSpeedUnitUnknown
+          : _commonReason([
+              for (final lap in coasting)
+                if (lap.speeds.entry.value == null)
+                  lap.speeds.entry.unavailableReason
+                else if (_minimum(lap) == null)
+                  lap.speeds.minimum.unavailableReason,
+            ], losses.length),
       measured: measured.length,
       braked: braking.length,
       method: method,
@@ -425,7 +526,7 @@ CornerClassification classifyCorner(
   ProgressAxis axis,
   TrackFeatures features,
   Map<String, Object?> segment,
-  List<CornerLapMetrics> laps,
+  List<CornerClassLap> laps,
 ) => CornerClassification(
   shape: classifyCornerShape(axis, features, segment),
   driving: classifyCornerDriving(laps),

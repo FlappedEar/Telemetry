@@ -517,11 +517,16 @@ String cornerShapeText(AppLocalizations l10n, CornerShape shape) =>
       CornerShape.complex => l10n.cornerShapeComplex,
     };
 
-/// [approach] in the app's language.
-String cornerApproachText(AppLocalizations l10n, CornerApproach approach) =>
-    switch (approach) {
+/// [driving]'s approach in the app's language (braking whose heaviness is
+/// not known says so), or null when it is not known.
+String? cornerApproachText(AppLocalizations l10n, CornerDrivingClass driving) =>
+    switch (driving.approach) {
+      null => null,
       CornerApproach.heavyBraking => l10n.cornerApproachHeavyBraking,
-      CornerApproach.braking => l10n.cornerApproachBraking,
+      CornerApproach.braking =>
+        driving.heavyUnknown
+            ? l10n.cornerApproachBrakingHeavyUnknown
+            : l10n.cornerApproachBraking,
       CornerApproach.lift => l10n.cornerApproachLift,
       CornerApproach.flat => l10n.cornerApproachFlat,
     };
@@ -541,8 +546,7 @@ String? cornerClassSummary(
   CornerClassification classification,
 ) {
   final parts = [
-    if (classification.driving.approach case final approach?)
-      cornerApproachText(l10n, approach),
+    ?cornerApproachText(l10n, classification.driving),
     if (classification.driving.speedBand case final band?)
       cornerSpeedBandText(l10n, band),
     if (classification.shape.shape case final shape?)
@@ -565,9 +569,13 @@ class CornerClassSection extends StatelessWidget {
     final l10n = context.l10n;
     final shape = classification.shape;
     final driving = classification.driving;
-    final unit = driving.speedUnit == null
+    // Unlabelled speeds are read as km/h, and say so.
+    final label = driving.speedUnit == null
         ? ''
         : speedUnitOf(context, driving.speedUnit!).trim();
+    final unit = label.isEmpty && driving.speedUnit != null
+        ? l10n.cornerClassAssumedKmh
+        : label;
     // A typical speed in the laps' unit, with the unit when one is known.
     String speed(double? metresPerSecond) {
       final value = switch (driving.inSpeedUnit(metresPerSecond)) {
@@ -626,24 +634,19 @@ class CornerClassSection extends StatelessWidget {
     final notBraking = driving.lapsMeasured - driving.brakingLaps;
     final approachNote = switch (driving.approach) {
       null => unavailable(driving.approachUnavailableReason),
-      CornerApproach.heavyBraking || CornerApproach.braking => switch ((
-        speed(driving.typicalSpeedShedMetresPerSecond),
-        driving.typicalPeakDecelerationG,
-      )) {
-        (final shed, final peak?) when shed.isNotEmpty =>
-          l10n.cornerApproachNoteShed(
-            shed,
-            fixed(peak, 2),
-            how,
-            driving.brakingLaps,
-            driving.lapsMeasured,
-          ),
-        _ => l10n.cornerApproachNoteNoShed(
-          how,
-          driving.brakingLaps,
-          driving.lapsMeasured,
-        ),
-      },
+      CornerApproach.heavyBraking || CornerApproach.braking =>
+        speed(driving.typicalSpeedShedMetresPerSecond).isEmpty
+            ? l10n.cornerApproachNoteNoShed(
+                how,
+                driving.brakingLaps,
+                driving.lapsMeasured,
+              )
+            : l10n.cornerApproachNoteShed(
+                speed(driving.typicalSpeedShedMetresPerSecond),
+                how,
+                driving.brakingLaps,
+                driving.lapsMeasured,
+              ),
       CornerApproach.lift || CornerApproach.flat =>
         speed(driving.typicalSpeedLossMetresPerSecond).isEmpty
             ? l10n.cornerApproachNoteNoBrakingNoSpeed(
@@ -658,14 +661,16 @@ class CornerClassSection extends StatelessWidget {
                 driving.lapsMeasured,
               ),
     };
-    final speedNote = driving.speedBand == null
-        ? unavailable(driving.speedBandUnavailableReason)
-        : driving.speedUnit == null
-        ? l10n.cornerSpeedNoteUnitsDiffer(driving.speedLaps)
-        : l10n.cornerSpeedNote(
-            speed(driving.typicalMinimumSpeedMetresPerSecond),
-            driving.speedLaps,
-          );
+    final speedNote = [
+      driving.speedBand == null
+          ? unavailable(driving.speedBandUnavailableReason)
+          : l10n.cornerSpeedNote(
+              speed(driving.typicalMinimumSpeedMetresPerSecond),
+              driving.speedLaps,
+            ),
+      if (driving.otherUnitLaps > 0)
+        l10n.cornerClassOtherUnits(driving.otherUnitLaps),
+    ].join(' ');
 
     return Column(
       key: const ValueKey('cornerClass'),
@@ -679,10 +684,7 @@ class CornerClassSection extends StatelessWidget {
         item(
           'cornerClassApproach',
           l10n.cornerClassApproach,
-          switch (driving.approach) {
-            final approach? => cornerApproachText(l10n, approach),
-            null => null,
-          },
+          cornerApproachText(l10n, driving),
           approachNote,
         ),
         item(
