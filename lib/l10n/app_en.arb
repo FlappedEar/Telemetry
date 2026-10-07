@@ -8418,5 +8418,21 @@
   "changesSpread": "Spread {now} s ({session}: {before} s)",
   "@changesSpread": {"description": "A segment's interquartile range now and in the session before.", "placeholders": {"now": {"type": "String"}, "session": {"type": "String"}, "before": {"type": "String"}}},
   "changesTitleNone": "Segment changes",
-  "@changesTitleNone": {"description": "Title of the page of segment changes when there is no session before to compare with."}
+  "@changesTitleNone": {"description": "Title of the page of segment changes when there is no session before to compare with."},
+  "cornerPhasesTitle": "Where the time came from",
+  "@cornerPhasesTitle": {"description": "Corner details: heading over the corner split into entry, middle and exit (FET-221)."},
+  "cornerPhaseEntry": "Entry",
+  "@cornerPhaseEntry": {"description": "Corner details: from the corner's start to where it is tightest."},
+  "cornerPhaseMiddle": "Middle",
+  "@cornerPhaseMiddle": {"description": "Corner details: through the corner's tightest part."},
+  "cornerPhaseExit": "Exit",
+  "@cornerPhaseExit": {"description": "Corner details: from the end of the tightest part to the corner's end."},
+  "cornerPhasesNote": "Entry runs to where the corner is tightest, the middle through that part, and the exit to the corner's end. The split comes from the track's shape, so both laps are timed over the same metres, and the three add up to the corner's time.",
+  "@cornerPhasesNote": {"description": "Corner details: how the corner is split."},
+  "cornerPhasesUnavailable": "Not split: {reason}",
+  "@cornerPhasesUnavailable": {"description": "Corner details: the corner could not be split into entry, middle and exit.", "placeholders": {"reason": {"type": "String"}}},
+  "cornerPhasesMoreThanOneTightPart": "more than one tight part",
+  "@cornerPhasesMoreThanOneTightPart": {"description": "Corner details: why a corner (a double apex or a complex) is not split into entry, middle and exit."},
+  "cornerPhasesBestNotTimed": "Best lap not timed through the parts: {reason}",
+  "@cornerPhasesBestNotTimed": {"description": "Corner details: the best lap could not be timed through the corner's parts.", "placeholders": {"reason": {"type": "String"}}}
 }

@@ -8,9 +8,13 @@
 // methods.
 import '../speed_units.dart';
 import '../analysis/braking_metrics.dart';
+import '../analysis/corner_phase_times.dart';
+import '../analysis/corner_phases.dart' show cornerPhaseInvalidInput;
 import '../analysis/corner_speeds.dart';
 import '../analysis/exit_metrics.dart';
 import '../analysis/outing_theoretical_best.dart';
+import '../analysis/track_progress.dart';
+import '../analysis/track_segment_review.dart';
 import 'day_laps.dart';
 
 /// One value of one lap.
@@ -32,6 +36,8 @@ final class DayCornerComparison {
     this.highestExitSpeed,
     this.latestBrakingPoint,
     this.earliestPickup,
+    this.phases = const CornerPhaseTimes(),
+    this.bestLapPhases = const CornerPhaseTimes(),
   });
 
   final DayLapRow lap;
@@ -59,6 +65,21 @@ final class DayCornerComparison {
   /// The pickup nearest the segment's entry, as metres after it, of the laps
   /// measured by the same method and channel.
   final DayCornerValue? earliestPickup;
+
+  /// This lap's and the best lap's time through the corner's entry, middle
+  /// and exit (FET-221), over the same metres.
+  final CornerPhaseTimes phases, bestLapPhases;
+
+  /// This lap minus the best lap through each part; null when either is not
+  /// timed there.
+  ({double entry, double mid, double exit})? get phaseDeltas =>
+      phases.valid && bestLapPhases.valid && bestLap != null
+      ? (
+          entry: phases.entry! - bestLapPhases.entry!,
+          mid: phases.mid! - bestLapPhases.mid!,
+          exit: phases.exit! - bestLapPhases.exit!,
+        )
+      : null;
 }
 
 /// One corner segment of the group with every timed lap's figures.
@@ -71,6 +92,8 @@ final class DayCorner {
     required this.endProgressMeters,
     required List<(DayLapRow, CornerLapMetrics)> laps,
     this.bestLap,
+    this.phaseSplit = const CornerPhaseSplit(unavailableReason: cornerPhaseInvalidInput),
+    this.traces = const {},
   }) : laps = List.unmodifiable(laps);
 
   /// The segment's position among the approved segments.
@@ -85,6 +108,20 @@ final class DayCorner {
 
   /// The group's best lap.
   final DayLapRow? bestLap;
+
+  /// The corner split into entry, middle and exit (FET-221).
+  final CornerPhaseSplit phaseSplit;
+
+  /// Each lap's projection onto the shared axis, to time [phaseSplit] on.
+  final Map<DayLapReference, List<ProgressSegment>> traces;
+
+  /// [reference]'s time through each part of [phaseSplit].
+  CornerPhaseTimes phaseTimes(DayLapReference reference) {
+    if (!phaseSplit.valid) return CornerPhaseTimes(unavailableReason: phaseSplit.unavailableReason);
+    final trace = traces[reference];
+    if (trace == null) return const CornerPhaseTimes(unavailableReason: cornerPhaseTimesNotTimed);
+    return cornerPhaseTimes(phaseSplit, trace);
+  }
 
   /// [reference]'s figures here, or null.
   CornerLapMetrics? metrics(DayLapReference reference) {
@@ -183,6 +220,8 @@ final class DayCorner {
       highestExitSpeed: highest((speeds) => speeds.exit.value),
       latestBrakingPoint: latest,
       earliestPickup: earliest,
+      phases: phaseTimes(reference),
+      bestLapPhases: best == null ? const CornerPhaseTimes() : phaseTimes(bestLap!.reference),
     );
   }
 }
@@ -196,6 +235,15 @@ List<DayCorner> dayCorners(
 ) {
   final result = <DayCorner>[];
   final segments = computed.approved.segments;
+  // Corner geometry on the shared axis, as the corner metrics read it.
+  final features = computeTrackFeatures(computed.axis, segmentReviewSmoothingMeters);
+  final wanted = {for (final row in rows) row.reference};
+  final traces = <DayLapReference, List<ProgressSegment>>{
+    for (var i = 0; i < computed.population.length && i < computed.traces.length; i++)
+      if (computed.population[i].times.lapReference case final DayLapReference reference
+          when wanted.contains(reference))
+        reference: computed.traces[i],
+  };
   for (var index = 0; index < segments.length; ++index) {
     final segment = segments[index];
     final id = segment['id'];
@@ -215,6 +263,8 @@ List<DayCorner> dayCorners(
             if (byReference[row.reference] case final lap?) (row, lap),
         ],
         bestLap: bestLap,
+        phaseSplit: cornerPhaseSplit(computed.axis, features, segment),
+        traces: traces,
       ),
     );
   }

@@ -12,6 +12,7 @@ export 'src/analysis/comparison_driving.dart';
 export 'src/analysis/consistency.dart';
 export 'src/analysis/corner_analyzer.dart';
 export 'src/analysis/corner_phases.dart';
+export 'src/analysis/corner_phase_times.dart';
 export 'src/analysis/corner_speeds.dart';
 export 'src/analysis/day_report.dart';
 export 'src/analysis/driving_states.dart';

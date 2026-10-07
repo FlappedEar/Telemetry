@@ -619,6 +619,25 @@ void main() {
     // Beside the rail: the page's own top edge closes the details.
     await tester.tapAt(const Offset(120, 4));
     await tester.pumpAndSettle();
+    // Where the corner's time came from, on another lap against the best:
+    // Session 6's lap 3, then back to the best lap.
+    Future<void> chooseLap(String name) async {
+      final row = find.byKey(ValueKey('sectorRow $name'));
+      await scrollIn(tester, summary, row);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+    }
+
+    await chooseLap('Session 6 · LAP 3');
+    await scrollIn(tester, summary, corner, delta: -300);
+    await tester.tap(corner.first);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('cornerPhasesTitle')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'corner-phases');
+    await tester.tapAt(const Offset(120, 4));
+    await tester.pumpAndSettle();
+    await chooseLap('Session 5 · LAP 2');
 
     // The segment editor.
     await toTop(tester, find.text('Edit segments'));
