@@ -147,6 +147,13 @@ void main() {
     }
   });
 
+  test('a boundary off the track is no data', () {
+    for (final observation in measure(-20, length + 20)) {
+      expect(observation.entryLineOffsetMeters, isNull);
+      expect(observation.exitLineOffsetMeters, isNull);
+    }
+  });
+
   test('a corner across start/finish has both ends on every lap', () {
     for (final observation in measure(length * 0.85, length * 0.15)) {
       expect(observation.entryLineOffsetMeters?.isFinite, isTrue);
