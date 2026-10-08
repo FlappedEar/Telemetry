@@ -299,6 +299,12 @@ Map<String, Object?> dayDocument({
       alternativeWritten = true;
     }
     sources['telemetry'] = telemetry;
+    // A refusal naming a recording the run no longer holds is dropped, so
+    // the file stays valid.
+    if (json['fusionDeclined'] case final declined?
+        when !telemetry.any((value) => _object(value)?['id'] == declined)) {
+      json.remove('fusionDeclined');
+    }
     if (fusion?.decision case final decision? when alternativeWritten && pending == null) {
       json['fusion'] = decision;
       json.remove('fusionDeclined');
@@ -307,7 +313,7 @@ Map<String, Object?> dayDocument({
       // recording kept beside the session, so a VBO session's RCZ is not
       // fused again when the day opens (FET-142).
       json.remove('fusion');
-      if (fusion!.declined) {
+      if (fusion!.declined && alternativeWritten) {
         json['fusionDeclined'] = fusion.alternative!.sourceId;
       } else {
         json.remove('fusionDeclined');

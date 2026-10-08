@@ -289,6 +289,20 @@ bool _validConfiguration(Map<String, Object?> run) {
       _jsonEquals(config['sourceFingerprint'], primaryFingerprint(run));
 }
 
+/// A refused combination (`fusionDeclined`, FET-142): the id of a recording
+/// of this run other than its primary.
+bool _validFusionDeclined(Map<String, Object?> run) {
+  if (!run.containsKey('fusionDeclined')) return true;
+  final declined = run['fusionDeclined'];
+  if (!_isText(declined, maximumIdCharacters) ||
+      declined == run['primaryTelemetrySourceId']) {
+    return false;
+  }
+  final telemetry = _object(run['sources'])?['telemetry'];
+  return telemetry is List &&
+      telemetry.any((value) => _object(value)?['id'] == declined);
+}
+
 bool _validFusion(Map<String, Object?> run) {
   if (!run.containsKey('fusion')) return true;
   final fusion = _object(run['fusion']);
@@ -596,6 +610,9 @@ String? _validateEvent(Map<String, Object?> project) {
     }
     if (!_validFusion(run)) {
       return "Source fusion decision is malformed or not bound to this run's recordings.";
+    }
+    if (!_validFusionDeclined(run)) {
+      return "Refused source combination is malformed or not bound to this run's recordings.";
     }
     if (sources.containsKey('video') &&
         (!_validReference(sources['video']) ||
