@@ -8073,7 +8073,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String brakingTechniqueFromSpeed(String rate, String why) {
-    return 'Na podstawie prędkości ($rate Hz); jej zmiana jest wygładzana w oknie 0,5 s. Dane z klasyfikowanych okrążeń tego dnia: $why. Wartości nie są bezpośrednio porównywalne z wyznaczonymi z kanału przeciążenia.';
+    return 'Na podstawie prędkości ($rate Hz); jej zmiana jest wygładzana w oknie 0.5 s. Dane z klasyfikowanych okrążeń tego dnia: $why. Wartości nie są bezpośrednio porównywalne z wyznaczonymi z kanału przeciążenia.';
   }
 
   @override
@@ -8149,7 +8149,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get brakingTechniqueTrailNote =>
-      'Hamowanie utrzymywane przy przeciążeniu bocznym co najmniej 0,3 g. Wyznaczone pośrednio, ponieważ zapis nie zawiera kąta skrętu kierownicy.';
+      'Hamowanie utrzymywane przy przeciążeniu bocznym co najmniej 0.3 g. Wyznaczone pośrednio, ponieważ zapis nie zawiera kąta skrętu kierownicy.';
 
   @override
   String brakingTechniqueThrottleNote(String rate, String error) {
@@ -8189,7 +8189,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get brakingTechniqueNote =>
-      'Początek i koniec hamowania są wyznaczane względem opóźnienia 0,15 g, po wcześniejszym wykryciu hamowania od 0,30 g. Tempo narastania mierzy wzrost opóźnienia do 85% wartości maksymalnej, licząc od ostatniej chwili poniżej 25% maksimum (ale nie mniej niż 0,15 g). Dzięki temu toczenie lub lekkie odjęcie gazu przed właściwym hamowaniem nie zawyża wyniku. Tempo odpuszczania jest liczone analogicznie podczas spadku od 85% maksimum. Obie metryki wymagają maksymalnego opóźnienia co najmniej 0,40 g i kanału o częstotliwości około 10 Hz lub większej. Przy wyznaczaniu z prędkości wartości szybsze, niż pozwala wykazać wygładzanie 0,5 s, są oznaczane jako „co najmniej”. Wartość typowa to mediana z co najmniej trzech okrążeń.';
+      'Początek i koniec hamowania są wyznaczane względem opóźnienia 0.15 g, po wcześniejszym wykryciu hamowania od 0.30 g. Tempo narastania mierzy wzrost opóźnienia do 85% wartości maksymalnej, licząc od ostatniej chwili poniżej 25% maksimum (ale nie mniej niż 0.15 g). Dzięki temu toczenie lub lekkie odjęcie gazu przed właściwym hamowaniem nie zawyża wyniku. Tempo odpuszczania jest liczone analogicznie podczas spadku od 85% maksimum. Obie metryki wymagają maksymalnego opóźnienia co najmniej 0.40 g i kanału o częstotliwości około 10 Hz lub większej. Przy wyznaczaniu z prędkości wartości szybsze, niż pozwala wykazać wygładzanie 0.5 s, są oznaczane jako „co najmniej”. Wartość typowa to mediana z co najmniej trzech okrążeń.';
 
   @override
   String brakingTechniqueReasonTooSlow(String rate) {
@@ -8222,7 +8222,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get brakingTechniqueReasonTooLight =>
-      'maksymalne opóźnienie poniżej 0,40 g';
+      'maksymalne opóźnienie poniżej 0.40 g';
 
   @override
   String get brakingTechniqueReasonTooQuick =>
@@ -8296,7 +8296,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String unit,
     String why,
   ) {
-    return 'Na podstawie prędkości ($rate Hz, bez zapisanej jednostki — przyjęto $unit); jej zmiana jest wygładzana w oknie 0,5 s. Dane z klasyfikowanych okrążeń tego dnia: $why. Wartości nie są bezpośrednio porównywalne z wyznaczonymi z kanału przeciążenia.';
+    return 'Na podstawie prędkości ($rate Hz, bez zapisanej jednostki — przyjęto $unit); jej zmiana jest wygładzana w oknie 0.5 s. Dane z klasyfikowanych okrążeń tego dnia: $why. Wartości nie są bezpośrednio porównywalne z wyznaczonymi z kanału przeciążenia.';
   }
 
   @override

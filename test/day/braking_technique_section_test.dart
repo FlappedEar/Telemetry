@@ -284,7 +284,7 @@ void main() {
       );
       expect(
         rowText(tester, 'brakingTechniqueSource'),
-        contains('jej zmiana jest wygładzana w oknie 0,5 s'),
+        contains('jej zmiana jest wygładzana w oknie 0.5 s'),
       );
       expect(find.text('Braking technique'), findsNothing);
       expect(tester.takeException(), isNull);
