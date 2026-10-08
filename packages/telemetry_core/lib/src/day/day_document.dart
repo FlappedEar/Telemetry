@@ -1102,8 +1102,9 @@ Map<String, DocumentAlternative> _openAlternatives(
         source = candidate;
         if (chosen) break;
       }
-      if (decision == null && ((rcz && format == RecordingFormat.vbo) || declined == id))
+      if (decision == null && ((rcz && format == RecordingFormat.vbo) || declined == id)) {
         kept ??= candidate;
+      }
     }
     final automatic = source != null;
     source ??= kept;
