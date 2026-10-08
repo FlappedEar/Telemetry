@@ -6285,7 +6285,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String from,
     String to,
   ) {
-    return 'Strong acceleration $percent% lower from lap $fromLap to lap $toLap ($from → $to)';
+    return 'Peak acceleration down $percent%: $to on lap $toLap, against $from on lap $fromLap, the highest before it';
   }
 
   @override
@@ -6299,10 +6299,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get summaryCarSettledTemperatures => 'No temperature still rising';
+  String summaryCarSettledTemperatures(String fromLap, String toLap) {
+    return 'Temperatures over laps $fromLap–$toLap: none still rising';
+  }
 
   @override
-  String get summaryCarSettledAcceleration => 'Strong acceleration held';
+  String summaryCarAccelerationHeld(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Peak acceleration held: $to on lap $toLap, against $from on lap $fromLap, the highest before it ($percent% lower)';
+  }
+
+  @override
+  String summaryCarAccelerationUp(
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Peak acceleration held: $to on lap $toLap, not below $from on lap $fromLap, the highest before it';
+  }
 
   @override
   String summaryCarTemperaturesNeedLaps(int count) {
@@ -6320,8 +6340,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Strong acceleration: needs $count ranked laps',
-      one: 'Strong acceleration: needs 1 ranked lap',
+      other: 'Peak acceleration: needs $count ranked laps',
+      one: 'Peak acceleration: needs 1 ranked lap',
     );
     return '$_temp0';
   }
@@ -6339,7 +6359,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryCarAccelerationMissing =>
-      'Strong acceleration: not read on the last ranked lap';
+      'Peak acceleration: not read on the last ranked lap';
 
   @override
   String get summaryCarFallNote => 'Traffic and a different line lower it too.';
@@ -6350,9 +6370,8 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Strong acceleration: read on $count of $ranked ranked laps, needs $needed',
-      one:
-          'Strong acceleration: read on 1 of $ranked ranked laps, needs $needed',
+          'Peak acceleration: read on $count of $ranked ranked laps, needs $needed',
+      one: 'Peak acceleration: read on 1 of $ranked ranked laps, needs $needed',
     );
     return '$_temp0';
   }

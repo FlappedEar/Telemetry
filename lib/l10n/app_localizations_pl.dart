@@ -6415,7 +6415,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String from,
     String to,
   ) {
-    return 'Mocne przyspieszenie niższe o $percent% od okrążenia $fromLap do $toLap ($from → $to)';
+    return 'Maksymalne przyspieszenie niższe o $percent%: $to na okrążeniu $toLap, wobec $from na okrążeniu $fromLap (najwyższe wcześniej)';
   }
 
   @override
@@ -6429,11 +6429,30 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get summaryCarSettledTemperatures =>
-      'Żadna temperatura nie rośnie na końcu';
+  String summaryCarSettledTemperatures(String fromLap, String toLap) {
+    return 'Temperatury na okrążeniach $fromLap–$toLap: żadna nie rośnie';
+  }
 
   @override
-  String get summaryCarSettledAcceleration => 'Mocne przyspieszenie bez spadku';
+  String summaryCarAccelerationHeld(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Maksymalne przyspieszenie bez spadku: $to na okrążeniu $toLap, wobec $from na okrążeniu $fromLap (najwyższe wcześniej, różnica $percent%)';
+  }
+
+  @override
+  String summaryCarAccelerationUp(
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Maksymalne przyspieszenie bez spadku: $to na okrążeniu $toLap, nie mniej niż $from na okrążeniu $fromLap (najwyższe wcześniej)';
+  }
 
   @override
   String summaryCarTemperaturesNeedLaps(int count) {
@@ -6453,10 +6472,13 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
-      many: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
-      few: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
-      one: 'Mocne przyspieszenie: potrzeba 1 sklasyfikowanego okrążenia',
+      other:
+          'Maksymalne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      many:
+          'Maksymalne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      few:
+          'Maksymalne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      one: 'Maksymalne przyspieszenie: potrzeba 1 sklasyfikowanego okrążenia',
     );
     return '$_temp0';
   }
@@ -6479,7 +6501,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get summaryCarAccelerationMissing =>
-      'Mocne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu';
+      'Maksymalne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu';
 
   @override
   String get summaryCarFallNote =>
@@ -6491,13 +6513,13 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
       many:
-          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
       few:
-          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
       one:
-          'Mocne przyspieszenie: odczyt na 1 z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na 1 z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
     );
     return '$_temp0';
   }

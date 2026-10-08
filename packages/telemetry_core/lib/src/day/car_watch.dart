@@ -92,6 +92,25 @@ final class CarWatchFall {
   double get fall => (from - to) / from;
 }
 
+/// Strong acceleration on the last ranked lap ([toLap], [to] g) against the
+/// session's highest on an earlier ranked lap ([fromLap], [from] g), whether
+/// or not it fell far enough to be noted.
+final class CarWatchPeak {
+  const CarWatchPeak({
+    required this.fromLap,
+    required this.toLap,
+    required this.from,
+    required this.to,
+  });
+
+  final int fromLap, toLap;
+  final double from, to;
+
+  /// How much lower [to] is than [from], as a share of [from]; negative when
+  /// the last lap is higher.
+  double get lower => (from - to) / from;
+}
+
 /// One session's car observations.
 final class CarWatch {
   CarWatch({
@@ -100,8 +119,11 @@ final class CarWatch {
     required this.temperatures,
     required this.acceleration,
     this.accelerationLaps = 0,
+    this.temperatureFromLap,
+    this.temperatureToLap,
     List<CarWatchRise> rises = const [],
     this.fall,
+    this.peak,
   }) : rises = List.unmodifiable(rises);
 
   final String runId;
@@ -126,7 +148,16 @@ final class CarWatch {
   /// Temperatures still rising at the end, largest rise (in °C) first.
   final List<CarWatchRise> rises;
 
+  /// The first and last ranked lap the temperatures were read over (lap
+  /// numbers as the day shows them); set when [temperatures] is
+  /// [CarWatchStatus.read].
+  final int? temperatureFromLap, temperatureToLap;
+
   final CarWatchFall? fall;
+
+  /// The last ranked lap's strong acceleration against the highest earlier
+  /// one; set when [acceleration] is [CarWatchStatus.read].
+  final CarWatchPeak? peak;
 
   /// Whether the session's laps recorded either.
   bool get recorded =>
@@ -185,6 +216,7 @@ CarWatch? carWatch(RunChannelSummaries run) {
   ];
   final rises = <CarWatchRise>[];
   CarWatchStatus temperatures;
+  int? temperatureFromLap, temperatureToLap;
   if (recordedChannels.isEmpty) {
     temperatures = CarWatchStatus.notRecorded;
   } else if (ranked.length < carWatchLaps) {
@@ -192,6 +224,8 @@ CarWatch? carWatch(RunChannelSummaries run) {
   } else {
     temperatures = CarWatchStatus.missingOnLap;
     final last = ranked.sublist(ranked.length - carWatchLaps);
+    temperatureFromLap = lapAt(last.first);
+    temperatureToLap = lapAt(last.last);
     for (final channel in recordedChannels) {
       final values = [for (final section in last) maximumAt(channel, section)];
       if (values.contains(null)) continue;
@@ -216,6 +250,7 @@ CarWatch? carWatch(RunChannelSummaries run) {
       if (strongAt(section) case final g?) (section: section, g: g),
   ];
   CarWatchFall? fall;
+  CarWatchPeak? peak;
   final CarWatchStatus acceleration;
   if (accelerated.isEmpty) {
     acceleration = CarWatchStatus.notRecorded;
@@ -232,6 +267,12 @@ CarWatch? carWatch(RunChannelSummaries run) {
     for (final lap in accelerated.take(accelerated.length - 1)) {
       if (lap.g > highest.g) highest = lap;
     }
+    peak = CarWatchPeak(
+      fromLap: lapAt(highest.section),
+      toLap: lapAt(last.section),
+      from: highest.g,
+      to: last.g,
+    );
     if ((highest.g - last.g) / highest.g >= carWatchAccelerationFall) {
       CarWatchRise? alongside;
       for (final channel in recordedChannels) {
@@ -258,7 +299,10 @@ CarWatch? carWatch(RunChannelSummaries run) {
     temperatures: temperatures,
     acceleration: acceleration,
     accelerationLaps: accelerated.length,
+    temperatureFromLap: temperatures == CarWatchStatus.read ? temperatureFromLap : null,
+    temperatureToLap: temperatures == CarWatchStatus.read ? temperatureToLap : null,
     rises: rises,
     fall: fall,
+    peak: peak,
   );
 }

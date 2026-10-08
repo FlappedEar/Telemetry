@@ -90,6 +90,7 @@ void main() {
     final rise = watch.rises.single;
     expect(rise.channel, 'oil');
     expect((rise.fromLap, rise.toLap, rise.from, rise.to), (2, 4, 104.0, 121.0));
+    expect((watch.temperatureFromLap, watch.temperatureToLap), (2, 4));
     expect(rise.rise, 17);
   });
 
@@ -210,6 +211,12 @@ void main() {
       CarWatchStatus.needsLaps,
     );
     expect(carWatch(_run(strongG: [0.300, 0.300, 0.300, 0.286]))!.fall, isNull);
+    // Not noted, but the laps and values compared are still given.
+    final held = carWatch(_run(strongG: [0.300, 0.290, 0.300, 0.286]))!.peak!;
+    expect((held.fromLap, held.toLap, held.from, held.to), (1, 4, 0.300, 0.286));
+    expect(held.lower, closeTo(0.0467, 1e-4));
+    expect(carWatch(_run(strongG: [0.300, 0.300, 0.300, 0.310]))!.peak!.lower, lessThan(0));
+    expect(carWatch(_run(strongG: [0.30, 0.30, 0.20]))!.peak, isNull);
     final fall = carWatch(_run(strongG: [0.300, 0.300, 0.300, 0.285]))!.fall!;
     expect(fall.alongside, isNull);
     expect(fall.fromLap, 1);
