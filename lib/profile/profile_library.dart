@@ -383,10 +383,16 @@ class ProfileLibrary extends ChangeNotifier {
   /// The name of a new track of [analysis]: the circuit its route starts
   /// on, numbered when the profile has a track of that name already (another
   /// layout there); else [defaultTrackName].
-  String _newTrackName(DriverProfile profile, DayAnalysis analysis) {
-    final circuit = circuitDirectory.find(
-      routeStart(analysis, analysis.chosenGroup?.runIds ?? const []),
-    );
+  String _newTrackName(DriverProfile profile, DayAnalysis analysis) =>
+      _trackNameAt(
+        profile,
+        routeStart(analysis, analysis.chosenGroup?.runIds ?? const []),
+      );
+
+  /// The name of a new track whose route starts at [start] (see
+  /// [_newTrackName]).
+  String _trackNameAt(DriverProfile profile, GeoCoordinate? start) {
+    final circuit = circuitDirectory.find(start);
     if (circuit == null) return defaultTrackName(profile.tracks.length + 1);
     final taken = {for (final track in profile.tracks) track.name};
     var name = circuit.name;
@@ -425,6 +431,192 @@ class ProfileLibrary extends ChangeNotifier {
         weather: weather,
         setups: setups,
       );
+
+  /// Every day of the profile measured again from its saved file and
+  /// recordings (FET-196), as opening it would, one day at a time and off
+  /// the UI thread: for a change to how sessions are measured. Levels need
+  /// none of this: they are worked out from the measurements when read.
+  /// Each day keeps its car, name and weather, and its track while its
+  /// route matches it. Speeds without a unit are read as
+  /// [assumedSpeedUnit]. [measuringAllProgress] counts the days as they are
+  /// done; [stopMeasuringAll] stops after the day being measured. Returns how
+  /// many days were measured and how many could not be (their file or a
+  /// recording missing or unreadable: they keep what they had); null while
+  /// a call is still running or without a profile.
+  Future<({int measured, int failed})?> measureAllAgain({
+    String assumedSpeedUnit = '',
+  }) async {
+    if (!_loaded) await load();
+    final folder = _folder, profile = _profile;
+    if (folder == null || profile == null || _measuringAll != null) {
+      return null;
+    }
+    final days = [...profile.days];
+    _stopMeasuringAll = false;
+    _measuringAll = (done: 0, total: days.length);
+    notifyListeners();
+    var measured = 0, failed = 0;
+    try {
+      for (final (index, day) in days.indexed) {
+        if (_stopMeasuringAll) break;
+        if (await _measureAgain(folder, day, assumedSpeedUnit)) {
+          ++measured;
+        } else {
+          ++failed;
+        }
+        _measuringAll = (done: index + 1, total: days.length);
+        notifyListeners();
+      }
+    } finally {
+      _measuringAll = null;
+      notifyListeners();
+    }
+    return (measured: measured, failed: failed);
+  }
+
+  ({int done, int total})? _measuringAll;
+  bool _stopMeasuringAll = false;
+
+  /// While [measureAllAgain] runs, the days done and the total; else null.
+  ({int done, int total})? get measuringAllProgress => _measuringAll;
+
+  /// Whether [measureAllAgain] is running.
+  bool get measuringAll => _measuringAll != null;
+
+  /// Stops [measureAllAgain] once the day being measured is done.
+  void stopMeasuringAll() => _stopMeasuringAll = true;
+
+  /// [day] measured again from its file in [folder]; whether it was.
+  Future<bool> _measureAgain(
+    String folder,
+    ProfileDay day,
+    String assumed,
+  ) async {
+    final eventId = day.eventId;
+    // A day page recording the day meanwhile wins, as a newer recording.
+    final generation = (_recordings[eventId] ?? 0) + 1;
+    _recordings[eventId] = generation;
+    final measured = Completer<void>();
+    _measuring.add(measured.future);
+    try {
+      final ({ProfileDayInput input, GeoCoordinate? start})? result;
+      try {
+        result = await background(
+          _measureAgainJob(
+            path: p.join(folder, day.file),
+            eventId: eventId,
+            file: day.file,
+            assumedSpeedUnit: assumed,
+          ),
+        );
+      } on Object catch (error) {
+        debugPrint('Day $eventId not measured again: $error');
+        return false;
+      }
+      if (result == null) return false;
+      // A day deleted meanwhile is not brought back; one recorded by its
+      // page meanwhile is newer.
+      if (_recordings[eventId] != generation || _deleted.contains(eventId)) {
+        return true;
+      }
+      final newer = _weather[eventId];
+      final input = newer == null
+          ? result.input
+          : result.input.withWeather(newer);
+      _change(
+        (profile) => profile.day(eventId) == null
+            ? profile
+            : _withPendingReference(
+                addDayToProfile(
+                  profile,
+                  input.withTrackName(_trackNameAt(profile, result!.start)),
+                  defaultCarName: defaultCarName,
+                  defaultTrackName: defaultTrackName(profile.tracks.length + 1),
+                ),
+                eventId,
+              ),
+      );
+      return true;
+    } finally {
+      _measuring.remove(measured.future);
+      measured.complete();
+    }
+  }
+
+  // Takes only what it is given, so it can be sent to another isolate: the
+  // day as opening it reads it, its theoretical best as the day page works
+  // it out (from the recordings themselves), what each session measured
+  // (with each run's alternative recording fused, as the day page records
+  // it) and where its route starts, for a new track's name. Null when the
+  // file holds another day, or a recording or alternative recording is
+  // missing or unreadable: measuring without it would drop what it gave.
+  static ({ProfileDayInput input, GeoCoordinate? start})? Function()
+  _measureAgainJob({
+    required String path,
+    required String eventId,
+    required String file,
+    required String assumedSpeedUnit,
+  }) => () {
+    final opened = openDay(path);
+    final analysis = opened.analysis;
+    if (analysis == null ||
+        opened.eventId != eventId ||
+        opened.missing.isNotEmpty) {
+      return null;
+    }
+    final fusions = fuseOpenedDay(opened);
+    if (fusions.values.any(
+      (fusion) => fusion.state == RunFusionState.unavailable,
+    )) {
+      return null;
+    }
+    final runs = [
+      for (final named in opened.runs)
+        (
+          run: TelemetryRunProposal(
+            id: named.run.id,
+            sourceId: named.run.sourceId,
+            sourcePath: named.run.sourcePath,
+            format: named.run.format,
+            contentSha256: named.run.contentSha256,
+            telemetry: withEffectiveSpeedUnits(
+              named.run.telemetry,
+              assumed: assumedSpeedUnit,
+            ),
+            laps: named.run.laps,
+          ),
+          name: named.name,
+        ),
+    ];
+    final event = opened.document['event'];
+    final documentRuns = event is Map<String, Object?> && event['runs'] is List
+        ? event['runs'] as List<Object?>
+        : const <Object?>[];
+    return (
+      input: ProfileDayInput.fromAnalysis(
+        eventId: eventId,
+        file: file,
+        name: opened.name,
+        analysis: analysis,
+        recordings: {
+          for (final named in runs)
+            named.run.id: switch (fusions[named.run.id]?.session) {
+              final fused? => withEffectiveSpeedUnits(
+                fused,
+                assumed: assumedSpeedUnit,
+              ),
+              null => named.run.telemetry,
+            },
+        },
+        theoreticalBest: dayTheoreticalBest(
+          analysis,
+          outingRuns(runs),
+          documentRuns: documentRuns,
+        ),
+      ),
+      start: routeStart(analysis, analysis.chosenGroup?.runIds ?? const []),
+    );
+  };
 
   /// Day [eventId]'s sessions with [weather] (by run id), as it arrives
   /// after the day was recorded: only the weather is swapped, nothing is

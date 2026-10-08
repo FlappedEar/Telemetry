@@ -620,6 +620,23 @@ final class ProfileDayInput {
   /// such as for a day found in the days folder, the profile's are kept.
   final bool setupsGiven;
 
+  /// This day with [trackName] as the name of a new track.
+  ProfileDayInput withTrackName(String? trackName) => ProfileDayInput(
+    eventId: eventId,
+    file: file,
+    name: name,
+    sessions: sessions,
+    startMilliseconds: startMilliseconds,
+    bestLapSeconds: bestLapSeconds,
+    route: route,
+    trackName: trackName,
+    theoreticalBestSeconds: theoreticalBestSeconds,
+    cornerSpans: cornerSpans,
+    measuredCorners: measuredCorners,
+    sourceRevisions: sourceRevisions,
+    setupsGiven: setupsGiven,
+  );
+
   /// This day with [weather] (by run id) as its sessions' weather, such as
   /// newer weather that arrived while the day was being measured. Weather
   /// of another recording than a session's, as far as known, is left out.

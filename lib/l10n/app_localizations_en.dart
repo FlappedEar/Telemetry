@@ -5830,6 +5830,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionSetupReplace => 'Replace';
 
   @override
+  String get libraryMeasureAgain => 'Recalculate all days';
+
+  @override
+  String get libraryStopMeasuring => 'Stop';
+
+  @override
+  String libraryMeasuring(int done, int total) {
+    return 'Recalculating the days: $done of $total…';
+  }
+
+  @override
+  String libraryMeasured(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days recalculated.',
+      one: '1 day recalculated.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryMeasureFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.',
+      one: '1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String trackDialogCircuit(String name) {
     return 'Circuit: $name';
   }

@@ -8595,6 +8595,36 @@ abstract class AppLocalizations {
   /// **'Replace'**
   String get sessionSetupReplace;
 
+  /// Library menu: reads every saved day from its recordings again and updates what the profile measured, for example after the app measures something new.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculate all days'**
+  String get libraryMeasureAgain;
+
+  /// Library toolbar while the days are recalculated: stops after the day being measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get libraryStopMeasuring;
+
+  /// Shown while the library recalculates its days.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculating the days: {done} of {total}…'**
+  String libraryMeasuring(int done, int total);
+
+  /// After recalculating the days: how many were.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day recalculated.} other{{count} days recalculated.}}'**
+  String libraryMeasured(int count);
+
+  /// After recalculating the days: days whose file or recordings could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.}}'**
+  String libraryMeasureFailed(int count);
+
   /// The circuit the route starts on, from the circuit list or named by the user.
   ///
   /// In en, this message translates to:

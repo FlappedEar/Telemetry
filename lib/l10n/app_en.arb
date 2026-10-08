@@ -8179,6 +8179,29 @@
   "@sessionSetupReplace": {
     "description": "Button: replaces the setup fields with the previous session's setup."
   },
+  "libraryMeasureAgain": "Recalculate all days",
+  "@libraryMeasureAgain": {
+    "description": "Library menu: reads every saved day from its recordings again and updates what the profile measured, for example after the app measures something new."
+  },
+  "libraryStopMeasuring": "Stop",
+  "@libraryStopMeasuring": {
+    "description": "Library toolbar while the days are recalculated: stops after the day being measured."
+  },
+  "libraryMeasuring": "Recalculating the days: {done} of {total}…",
+  "@libraryMeasuring": {
+    "description": "Shown while the library recalculates its days.",
+    "placeholders": {"done": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "libraryMeasured": "{count, plural, =1{1 day recalculated.} other{{count} days recalculated.}}",
+  "@libraryMeasured": {
+    "description": "After recalculating the days: how many were.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "libraryMeasureFailed": "{count, plural, =1{1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.}}",
+  "@libraryMeasureFailed": {
+    "description": "After recalculating the days: days whose file or recordings could not be read.",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "trackDialogCircuit": "Circuit: {name}",
   "@trackDialogCircuit": {"description": "The circuit the route starts on, from the circuit list or named by the user.", "placeholders": {"name": {"type": "String", "example": "Autodrom Jastrząb"}}},
   "trackDialogCircuitUnknown": "This place is not in the circuit list.",

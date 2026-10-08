@@ -128,6 +128,123 @@ void main() {
       },
     );
 
+    test('measures every day again from its file, keeping its car', () async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31, 29],
+        'b.vbo': [29, 32, 30],
+      });
+      final shelf = library();
+      final path = (await shelf.dayPath('e1'))!;
+      Directory(p.dirname(path)).createSync(recursive: true);
+      File(path).writeAsStringSync(
+        jsonEncode(
+          dayDocument(
+            eventId: 'e1',
+            name: 'Saved day',
+            runs: outcome.runs,
+            analysis: outcome.analysis!,
+            projectPath: path,
+          ),
+        ),
+      );
+      // Recorded without measurements, as a day saved by an older version.
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Saved day',
+        analysis: outcome.analysis!,
+      );
+      final car = shelf.addCar('Civic')!;
+      shelf.setDayCar('e1', car);
+      // A day whose file is gone keeps what it had.
+      await shelf.recordDay(
+        eventId: 'e2',
+        path: (await shelf.dayPath('e2'))!,
+        name: 'Gone',
+        analysis: outcome.analysis!,
+      );
+      expect(shelf.profile!.day('e1')!.sessions.first.stats, isNull);
+      // The driver's setup of a session is not a measurement: it stays.
+      final firstRun = shelf.profile!.day('e1')!.sessions.first.runId;
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Saved day',
+        analysis: outcome.analysis!,
+        setups: {
+          firstRun: ProfileSetup.of({'version': 1, 'tyres': 'Test tyre'}),
+        },
+      );
+      final setupBefore = shelf.profile!.day('e1')!.sessions.first.setup;
+      expect(setupBefore, isNotNull);
+      final steps = <({int done, int total})?>[];
+      void step() => steps.add(shelf.measuringAllProgress);
+      shelf.addListener(step);
+      final running = shelf.measureAllAgain();
+      // One run at a time.
+      expect(await shelf.measureAllAgain(), isNull);
+      final result = await running;
+      shelf.removeListener(step);
+      await shelf.flush();
+      expect(result, (measured: 1, failed: 1));
+      expect(steps.first, (done: 0, total: 2));
+      expect(steps, contains((done: 2, total: 2)));
+      expect(steps.last, isNull);
+      expect(shelf.measuringAll, isFalse);
+      final day = shelf.profile!.day('e1')!;
+      expect(day.carId, car);
+      expect(day.name, 'Saved day');
+      expect(day.sessions.first.setup?.json, setupBefore?.json);
+      expect(day.sessions.first.stats!.distanceMeters, greaterThan(0));
+      expect(day.sessions.first.stats!.corners, isNotEmpty);
+      expect(day.theoreticalBestSeconds, isNotNull);
+      expect(shelf.profile!.day('e2')!.sessions.first.stats, isNull);
+      final read = decodeDriverProfile(
+        File(p.join(profileFolder(), profileFileName)).readAsStringSync(),
+      );
+      expect(read.day('e1')!.sessions.first.stats!.corners, isNotEmpty);
+
+      // A recording gone: measuring without it would drop its session, so
+      // the day keeps what it had.
+      final before = shelf.profile!.day('e1')!;
+      File(outcome.runs.last.run.sourcePath).deleteSync();
+      expect(await shelf.measureAllAgain(), (measured: 0, failed: 2));
+      await shelf.flush();
+      final kept = shelf.profile!.day('e1')!;
+      expect(kept.sessions.length, before.sessions.length);
+      expect(
+        kept.sessions.last.stats!.distanceMeters,
+        before.sessions.last.stats!.distanceMeters,
+      );
+    });
+
+    test('stops measuring all days after the day being measured', () async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      for (final id in ['e1', 'e2']) {
+        await shelf.recordDay(
+          eventId: id,
+          path: (await shelf.dayPath(id))!,
+          name: id,
+          analysis: outcome.analysis!,
+        );
+      }
+      void stop() {
+        if ((shelf.measuringAllProgress?.done ?? 0) >= 1) {
+          shelf.stopMeasuringAll();
+        }
+      }
+
+      shelf.addListener(stop);
+      // Neither file is there; the first is tried, then it stops.
+      expect(await shelf.measureAllAgain(), (measured: 0, failed: 1));
+      shelf.removeListener(stop);
+      expect(await shelf.measureAllAgain(), (measured: 0, failed: 2));
+    });
+
     test(
       'deletes a day with the recording copies only it uses (FET-241)',
       () async {
@@ -1036,6 +1153,41 @@ void main() {
   });
 
   group('LibraryPage', () {
+    testWidgets('measures all days again from the menu and says how it went', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      await (() async {
+        // Its file is not there: it cannot be measured.
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: (await shelf.dayPath('e1'))!,
+          name: 'Test day',
+          analysis: outcome.analysis!,
+        );
+      })();
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: shelf, open: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Recalculate all days'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('0 days recalculated.'), findsOneWidget);
+      expect(
+        find.textContaining('1 day could not be recalculated'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('libraryWorking')), findsNothing);
+    });
+
     testWidgets('lists days by car and track, renames and opens them', (
       tester,
     ) async {
