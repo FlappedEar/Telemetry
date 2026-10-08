@@ -6431,7 +6431,7 @@ abstract class AppLocalizations {
   /// **'Its {format} is kept beside it and not combined'**
   String recordingsKeptApart(String format);
 
-  /// Like recordingsKeptApart, for a VBO session whose RCZ the user refused: the day's file cannot store that choice, so the RCZ is lined up and combined again automatically when the day is opened again.
+  /// Like recordingsKeptApart, for a VBO session whose RCZ was kept beside it without a refusal (after Make primary): the RCZ is lined up and combined again automatically when the day is opened again.
   ///
   /// In en, this message translates to:
   /// **'Its {format} is kept beside it and not combined until the day is opened again'**
@@ -6536,12 +6536,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refusing keeps the {alternative} beside the session without combining it; its analysis then uses the {primary} only.'**
   String clockRefuseNote(String primary, String alternative);
-
-  /// Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.
-  ///
-  /// In en, this message translates to:
-  /// **'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the {alternative} is lined up and combined again.'**
-  String clockReopenNote(String alternative);
 
   /// Under a session: its clock check failed; nothing changed.
   ///

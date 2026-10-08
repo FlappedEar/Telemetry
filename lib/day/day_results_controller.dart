@@ -1008,7 +1008,7 @@ final class DayResultsController extends ChangeNotifier {
         : null;
     _recordingsProblems.remove(runId);
     _nextRecordingGeneration(runId);
-    if (fusion!.state == RunFusionState.primaryOnly) {
+    if (fusion!.state == RunFusionState.primaryOnly && fusion.declined) {
       notifyListeners();
       return;
     }
@@ -1017,6 +1017,7 @@ final class DayResultsController extends ChangeNotifier {
       primary: named.run,
       alternative: alternative,
       alignment: check?.alignment ?? fusion.alignment,
+      declined: true,
     );
     _recordingsChanged();
   }

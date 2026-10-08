@@ -133,7 +133,7 @@ class SessionFusion extends StatelessWidget {
     final theme = Theme.of(context);
     if (fusion.state == RunFusionState.primaryOnly) {
       return Text(
-        _combinedWhenReopened(primary, alternative)
+        !fusion.declined && _combinedWhenReopened(primary, alternative)
             ? l10n.recordingsKeptApartUntilReopened(alternative)
             : l10n.recordingsKeptApart(alternative),
         key: ValueKey('fusionKeptApart $runId'),
@@ -223,9 +223,8 @@ class SessionFusion extends StatelessWidget {
   }
 }
 
-/// Whether the day's file cannot keep a VBO session's RCZ apart: it is
-/// lined up and combined again when the day is opened (FET-51), as the file
-/// has no place for a refusal.
+/// Whether a VBO session's RCZ that the user did not refuse is lined up and
+/// combined again when the day is opened (FET-51).
 bool _combinedWhenReopened(String primary, String alternative) =>
     primary == RecordingFormat.vbo.name.toUpperCase() &&
     alternative == RecordingFormat.rcz.name.toUpperCase();
@@ -278,7 +277,6 @@ class _ClockReview extends StatelessWidget {
             ? l10n.clockNoDeclared
             : l10n.clockDeclared(_offset(alignment.declaredOffset!)),
     ];
-    final reopened = _combinedWhenReopened(primary, alternative);
     return Padding(
       key: ValueKey('clockReview $runId'),
       padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -292,12 +290,6 @@ class _ClockReview extends StatelessWidget {
             l10n.clockRefuseNote(primary, alternative),
             style: theme.textTheme.bodySmall,
           ),
-          if (reopened)
-            Text(
-              l10n.clockReopenNote(alternative),
-              key: ValueKey('clockReopenNote $runId'),
-              style: theme.textTheme.bodySmall,
-            ),
           const SizedBox(height: 4),
           Wrap(
             spacing: 8,

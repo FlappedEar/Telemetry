@@ -4324,11 +4324,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String clockReopenNote(String alternative) {
-    return 'This session reads its VBO and keeps its RCZ, and the day\'s file cannot keep a refusal for such a session: when the day is opened again, the $alternative is lined up and combined again.';
-  }
-
-  @override
   String get recordingsClockFailed =>
       'The clocks could not be compared. Try again.';
 
