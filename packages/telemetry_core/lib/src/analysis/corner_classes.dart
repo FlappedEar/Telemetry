@@ -8,8 +8,10 @@
 // canonical run's fastest lap), so it is the same for every lap of the day.
 // It is measured over the part of the segment that turns, so where exactly
 // the segment's bounds sit on the straights around it does not change it.
-// Long corner complexes are not divided into single corners (FET-115): a
-// segment with several tight parts is a double apex or a complex, as it is.
+// The automatic proposals divide corner chains into single corners (FET-115);
+// a segment that still holds several tight parts (a day saved by an earlier
+// version, or corners the driver merged) is a double apex or a complex, as it
+// is.
 //
 // The driving classes are typical values (medians) over the day's laps,
 // never one lap's, and need at least three laps. Speeds come from the

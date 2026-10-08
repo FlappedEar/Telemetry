@@ -113,6 +113,36 @@ void main() {
       expect(result.proposals[3].end.progressMeters, 100.0);
     });
 
+    test('a chain is divided into single corners when asked (FET-115)', () {
+      // S-bend, then two corners joined by a 5 m straight.
+      final (axis, features) = _axis(
+        _runs([(50, 0), (15, 0.03), (15, -0.03), (50, 0), (15, 0.03), (5, 0), (15, 0.03), (50, 0)]),
+      );
+      final result = proposeTrackSegments(
+        axis,
+        features,
+        const [],
+        const SegmentProposalOptions(splitCornerChains: true),
+      );
+      expect(
+        [for (final p in result.proposals) p.name],
+        ['Corner 1', 'Corner 2', 'Straight 1', 'Corner 3', 'Corner 4', 'Straight 2'],
+      );
+      expect([for (final p in result.proposals) p.chainedCorners], [1, 1, 0, 1, 1, 0]);
+      expect(result.proposals[0].turnRadians, closeTo(0.9, 1e-12));
+      expect(result.proposals[1].turnRadians, closeTo(-0.9, 1e-12));
+      // The short straight stays with the corner before it.
+      expect(result.proposals[3].lengthMeters, 40.0);
+      expect(result.proposals[3].turnRadians, closeTo(0.9, 1e-12));
+      expect(result.proposals[4].start.uncertaintyReasons, [proposalUncertainConnectedCorners]);
+      expect(result.proposals[3].end.uncertaintyReasons, [proposalUncertainConnectedCorners]);
+      // Boundaries against a proposed straight stay certain.
+      expect(result.proposals[0].start.certain, isTrue);
+      expect(result.proposals[2].start.certain, isTrue);
+      // The pieces tile the lap as before.
+      expect(result.proposals[1].end.progressMeters, result.proposals[2].start.progressMeters);
+    });
+
     test('a short straight makes both of its boundaries uncertain', () {
       // A 30 m straight: proposed, but under the 40 m of a certain one.
       final (axis, features) = _axis(_runs([(60, 0), (20, 0.03), (15, 0), (20, 0.03)]));

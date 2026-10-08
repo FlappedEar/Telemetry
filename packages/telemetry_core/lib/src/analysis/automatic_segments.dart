@@ -11,7 +11,7 @@
 // ([lineConsensus]); Overlays adopts them unchecked.
 import 'dart:math' as math;
 
-import 'package:fetproject/fetproject.dart' show makeTrackSegment;
+import 'package:fetproject/fetproject.dart' show makeTrackSegment, trackSegmentTypeName;
 
 import '../geometry.dart';
 import '../laps/lap_session.dart';
@@ -239,12 +239,77 @@ String _unresolvedProposalText(String reason) => switch (reason) {
 /// trace around the start gate's midpoint, features use
 /// [segmentReviewSmoothingMeters], and the lap's coverage gaps mark uncertain
 /// boundaries.
+///
+/// Corner chains are divided into single corners ([splitCornerChains],
+/// FET-115). A day whose approved segments ([approved]) still have the chains
+/// of earlier versions gets the proposals that match more of them, so they
+/// stay comparable.
 SegmentReview computeSegmentReview(
   TelemetrySession session,
   LapSession laps, {
   required int lapNumber,
   required double startTime,
   required double endTime,
+  bool splitCornerChains = true,
+  List<Map<String, Object?>> approved = const [],
+  CancellationCheck? cancelled,
+}) {
+  final review = _computeSegmentReview(
+    session,
+    laps,
+    lapNumber: lapNumber,
+    startTime: startTime,
+    endTime: endTime,
+    splitCornerChains: splitCornerChains,
+    cancelled: cancelled,
+  );
+  final tooMany = review.proposals.unresolvedReason == 'tooManySegments';
+  if (!splitCornerChains || (approved.isEmpty && !tooMany)) return review;
+  final chained = _computeSegmentReview(
+    session,
+    laps,
+    lapNumber: lapNumber,
+    startTime: startTime,
+    endTime: endTime,
+    splitCornerChains: false,
+    cancelled: cancelled,
+  );
+  // A circuit that splits into more than the most segments keeps its chains.
+  if (tooMany) return chained;
+  final split = _matches(review, approved), kept = _matches(chained, approved);
+  if (kept != split) return kept > split ? chained : review;
+  return chained.proposals.proposals.length == approved.length &&
+          review.proposals.proposals.length != approved.length
+      ? chained
+      : review;
+}
+
+/// How many of [approved] are one of [review]'s proposals (same type, bounds
+/// within 5 m: the segments may have been measured on another lap).
+int _matches(SegmentReview review, List<Map<String, Object?>> approved) {
+  var count = 0;
+  for (final segment in approved) {
+    final start = segment['startProgressMeters'], end = segment['endProgressMeters'];
+    if (start is! num || end is! num) continue;
+    for (final proposal in review.proposals.proposals) {
+      if (trackSegmentTypeName(proposal.type) == segment['type'] &&
+          (proposal.start.progressMeters - start).abs() <= 5.0 &&
+          (proposal.end.progressMeters - end).abs() <= 5.0) {
+        ++count;
+        break;
+      }
+    }
+  }
+  return count;
+}
+
+SegmentReview _computeSegmentReview(
+  TelemetrySession session,
+  LapSession laps, {
+  required int lapNumber,
+  required double startTime,
+  required double endTime,
+  required bool splitCornerChains,
   CancellationCheck? cancelled,
 }) {
   final gate = laps.selectedStartGate;
@@ -274,7 +339,12 @@ SegmentReview computeSegmentReview(
   throwIfCancelled(cancelled);
   final lapTrace = projectLapTrace(axis, session, startTime, endTime, cancelled: cancelled);
   final gaps = coverageGaps(lapTrace, axis.lengthMeters);
-  final proposals = proposeTrackSegments(axis, features, gaps);
+  final proposals = proposeTrackSegments(
+    axis,
+    features,
+    gaps,
+    SegmentProposalOptions(splitCornerChains: splitCornerChains),
+  );
   if (!proposals.valid) {
     return SegmentReview(
       axis: axis,

@@ -79,7 +79,25 @@ DayTheoreticalBest? remeasureDaySegments(
   }
   final sourceRun = runs[result.segmentRunId];
   if (source == null || sourceRun == null) return null;
+  final approved = [
+    for (final segment in result.runSegments)
+      if (segment['trackConfigurationReference'] == groupId) segment,
+  ];
   final review = computeSegmentReview(
+    sourceRun.session,
+    sourceRun.laps,
+    lapNumber: source.lapNumber,
+    startTime: source.start,
+    endTime: source.end,
+    approved: approved,
+    cancelled: cancelled,
+  );
+  if (review.error.isNotEmpty || review.unavailable.isNotEmpty) return null;
+  final proposals = review.proposals.proposals;
+  if (proposals.isEmpty || proposals.length != approved.length) return null;
+  // The segments are measured again as single corners (FET-115): a day saved
+  // with corner chains keeps them, as renamed chains cannot carry their names.
+  final single = computeSegmentReview(
     sourceRun.session,
     sourceRun.laps,
     lapNumber: source.lapNumber,
@@ -87,13 +105,7 @@ DayTheoreticalBest? remeasureDaySegments(
     endTime: source.end,
     cancelled: cancelled,
   );
-  if (review.error.isNotEmpty || review.unavailable.isNotEmpty) return null;
-  final proposals = review.proposals.proposals;
-  final approved = [
-    for (final segment in result.runSegments)
-      if (segment['trackConfigurationReference'] == groupId) segment,
-  ];
-  if (proposals.isEmpty || proposals.length != approved.length) return null;
+  if (single.proposals.proposals.length != proposals.length) return null;
   final byStart = [
     ...approved,
   ]..sort((a, b) => _number(a['startProgressMeters']).compareTo(_number(b['startProgressMeters'])));

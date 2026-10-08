@@ -58,6 +58,7 @@ void main() {
         lapNumber: lap.number,
         startTime: lap.startTelemetryTime,
         endTime: lap.endTelemetryTime,
+        splitCornerChains: false, // Overlays' proposals, chains kept
       );
       final length = review.axis.lengthMeters;
       _close(length, entry['lengthMeters']);
