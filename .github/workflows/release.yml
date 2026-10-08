@@ -1,7 +1,7 @@
 name: Release
 
 # Publishes a GitHub Release with the Android APK, the macOS app and the
-# Windows app.
+# Windows app (a zip and an NSIS installer).
 #
 # Start it either way:
 # - push a tag such as v0.1.0 on main, or
@@ -228,6 +228,23 @@ jobs:
           mkdir -p dist "stage/$name"
           cp -r "$release"/. "stage/$name/"
           (cd stage && 7z a -tzip -bd "../dist/$name.zip" "$name" >/dev/null)
+      # The same files as an installer (windows/installer/installer.nsi):
+      # per-user, no administrator rights, Start menu entry and uninstaller.
+      - name: Build the installer (NSIS)
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          makensis=$(command -v makensis || true)
+          [ -n "$makensis" ] || makensis="/c/Program Files (x86)/NSIS/makensis.exe"
+          if [ ! -x "$makensis" ]; then
+            choco install nsis -y --no-progress
+            makensis="/c/Program Files (x86)/NSIS/makensis.exe"
+          fi
+          # -D (not /D): Git Bash would rewrite a leading slash as a path.
+          "$makensis" -V2 -DVERSION="$VERSION" \
+            -DSOURCE_DIR="$(cygpath -w "$PWD/build/windows/x64/runner/Release")" \
+            -DOUTFILE="$(cygpath -w "$PWD/dist/FlappedEar-Telemetry-$VERSION-windows-setup.exe")" \
+            windows/installer/installer.nsi
           ls -l dist
       - uses: actions/upload-artifact@v4
         with:

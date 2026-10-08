@@ -6,7 +6,8 @@
 <ul>
   <li><code>FlappedEar-Telemetry-&lt;version&gt;-android.apk</code>: aplikację na Androida.</li>
   <li><code>FlappedEar-Telemetry-&lt;version&gt;-macos.zip</code>: aplikację na Maca.</li>
-  <li><code>FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>: aplikację na Windows.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-windows-setup.exe</code>: instalator aplikacji na Windows.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>: aplikację na Windows bez instalatora.</li>
   <li><code>SHA256SUMS.txt</code>: sumy kontrolne powyższych plików.</li>
 </ul>
 
@@ -40,10 +41,17 @@ flutter run -d macos</code></pre>
 <p>Wersja na iOS jest obecnie budowana i testowana tylko w symulatorze, dopóki projekt nie będzie miał konta Apple Developer. Nie można jej jeszcze zainstalować na fizycznym iPhonie ani iPadzie.</p>
 
 <h2 id="windows">Windows</h2>
-<p>Aplikacja wymaga 64-bitowego Windows 10 lub 11.</p>
+<p>Aplikacja wymaga 64-bitowego Windows 10 lub 11. Instalator i archiwum ZIP nie są jeszcze podpisane, dlatego przy pierwszym uruchomieniu Windows SmartScreen może wyświetlić komunikat <strong>System Windows ochronił ten komputer</strong>: kliknij <strong>Więcej informacji</strong>, a następnie <strong>Uruchom mimo to</strong>.</p>
+<h3 id="windows-installer">Z instalatora</h3>
+<ol class="steps">
+  <li>Pobierz plik <code>-windows-setup.exe</code> z najnowszego wydania i uruchom go. Instalator działa tylko dla Twojego konta i nie wymaga uprawnień administratora; instaluje się w <code>%LOCALAPPDATA%\Programs\FlappedEar Telemetry</code>. Jeśli aplikacja jest uruchomiona, najpierw ją zamknij.</li>
+  <li>Zakończ instalację i uruchom <strong>FlappedEar Telemetry</strong> z menu Start.</li>
+  <li>Nowsze wydanie: uruchom jego instalator. Zastąpi stare pliki i zachowa zapisane dni. Aby usunąć aplikację, użyj <strong>Ustawienia &gt; Aplikacje</strong>; zapisane dni nie zostaną wtedy usunięte.</li>
+</ol>
+<h3 id="windows-zip">Z archiwum ZIP</h3>
 <ol class="steps">
   <li>Pobierz plik <code>-windows.zip</code> z najnowszego wydania. Kliknij go prawym przyciskiem myszy, wybierz <strong>Wyodrębnij wszystko</strong> i wskaż folder, który zachowasz, na przykład <code>Dokumenty</code>. Nie uruchamiaj aplikacji bezpośrednio z archiwum ZIP.</li>
-  <li>Otwórz wyodrębniony folder i uruchom <code>telemetry.exe</code>. Wersja na Windows nie jest jeszcze podpisana, dlatego przy pierwszym uruchomieniu Windows SmartScreen może wyświetlić komunikat <strong>System Windows ochronił ten komputer</strong>: kliknij <strong>Więcej informacji</strong>, a następnie <strong>Uruchom mimo to</strong>.</li>
+  <li>Otwórz wyodrębniony folder i uruchom <code>telemetry.exe</code>.</li>
   <li>Nowsze wydanie to nowy folder: wyodrębnij je w ten sam sposób i uruchom nowy plik <code>telemetry.exe</code>. Zapisane dni pozostaną na miejscu. Stary folder możesz usunąć.</li>
 </ol>
 <p>Aby uruchomić najnowszy kod bez gotowego wydania, zainstaluj Flutter 3.47.6 i wykonaj <code>flutter run -d windows</code> w lokalnej kopii repozytorium.</p>
@@ -53,10 +61,10 @@ flutter run -d macos</code></pre>
 <ul>
   <li><strong>Android:</strong> wybierz <strong>Pobierz i zainstaluj</strong>. Przy pierwszej aktualizacji Android poprosi o zezwolenie FlappedEar Telemetry na instalowanie aplikacji. Włącz je w otwartych ustawieniach, wróć do aplikacji i wybierz <strong>Dalej</strong> (jeśli aplikacja została uruchomiona ponownie, otwórz <strong>Ustawienia</strong> i wybierz <strong>Sprawdź aktualizacje</strong>). Aplikacja pobierze APK, zweryfikuje go przy użyciu <code>SHA256SUMS.txt</code> z wydania i otworzy instalator Androida. Potwierdź aktualizację. Zapisane dni pozostają bez zmian.</li>
   <li><strong>Mac:</strong> wybierz <strong>Pobierz</strong> i wskaż miejsce zapisania pliku ZIP (domyślnie proponowany jest folder Pobrane). Aplikacja zweryfikuje plik przy użyciu <code>SHA256SUMS.txt</code> i pokaże go w Finderze. Otwórz archiwum i przenieś <strong>FlappedEar Telemetry</strong> do folderu <strong>Programy</strong>, zastępując starą wersję. macOS może ponownie zablokować pierwsze uruchomienie nowej kopii; zezwól na nie zgodnie z instrukcją w sekcji <a href="#mac">macOS</a>.</li>
-  <li><strong>Windows:</strong> aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie. Pobierz tam plik <code>-windows.zip</code> i wyodrębnij go zgodnie z opisem w sekcji <a href="#windows">Windows</a>.</li>
+  <li><strong>Windows:</strong> aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie. Pobierz tam plik <code>-windows-setup.exe</code> lub archiwum ZIP i zainstaluj je zgodnie z opisem w sekcji <a href="#windows">Windows</a>.</li>
   <li><strong>iPhone i iPad:</strong> wydania nie zawierają jeszcze plików dla tych systemów, dlatego aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie.</li>
 </ul>
-<p>Plik pobrany przez samą aplikację (Android i Mac), którego suma kontrolna nie zgadza się z wydaniem, jest usuwany i nigdy nie zostaje zainstalowany. Plik pobrany w przeglądarce, na przykład archiwum ZIP dla Windows, porównaj samodzielnie z wierszem w <code>SHA256SUMS.txt</code>: w PowerShellu użyj <code>Get-FileHash FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>.</p>
+<p>Plik pobrany przez samą aplikację (Android i Mac), którego suma kontrolna nie zgadza się z wydaniem, jest usuwany i nigdy nie zostaje zainstalowany. Plik pobrany w przeglądarce, na przykład instalator lub archiwum ZIP dla Windows, porównaj samodzielnie z wierszem w <code>SHA256SUMS.txt</code>: w PowerShellu użyj <code>Get-FileHash FlappedEar-Telemetry-&lt;version&gt;-windows-setup.exe</code>.</p>
 
 <h2 id="maps">Tła map</h2>
 <p>Mapy uliczne (OpenStreetMap) działają w każdej wersji. Zdjęcia satelitarne (MapTiler) są dostępne tylko w kompilacjach zawierających klucz MapTiler; oficjalne wydania i kompilacje Androida z CI go mają, natomiast lokalnie zbudowana wersja na Maca lub Windows – nie. Na iPhonie, iPadzie i Macu przycisk warstw oferuje również Apple Maps, które nie wymagają klucza; na innych platformach ta opcja nie jest dostępna. Przy pierwszym wyświetleniu danego toru tło mapy wymaga połączenia z internetem. Zobacz <a href="lap.html#background">Tło mapy</a>.</p>
