@@ -27,13 +27,13 @@
 <p>Na telefonie nie można wybrać całego folderu; zaznacz konkretne pliki albo udostępnij je bezpośrednio z RaceChrono. Zobacz <a href="phone.html">Telefony i tablety</a>.</p>
 
 <h2 id="where">Dokąd trafiają sesje</h2>
-<p>Nie musisz ręcznie wskazywać dnia. Aplikacja szuka dnia zawierającego nagrania z tej samej daty i edytowanego w ciągu ostatnich 24 godzin, w następującej kolejności:</p>
+<p>Nie musisz ręcznie wskazywać dnia. Aplikacja szuka dnia zawierającego zapisy z tej samej daty i edytowanego w ciągu ostatnich 24 godzin, w następującej kolejności:</p>
 <ul>
   <li>dzień z niezapisanymi zmianami zachowanymi do przywrócenia;</li>
   <li>jeśli takiego nie ma – zapisany dzień, z którego właśnie wróciłeś na ekran <strong>Start</strong>, o ile był zapisany w ciągu ostatnich 24 godzin;</li>
   <li>jeśli nadal go nie ma – dzień zapisany w bibliotece (a na telefonie lub tablecie wewnątrz aplikacji) w ciągu ostatnich 24 godzin, zaczynając od najnowszego. Aplikacja sprawdza maksymalnie trzy takie dni. Dzień z inną datą, który otworzyłeś i zmieniłeś między sesjami, np. wcześniejsza wizyta na tym samym torze, jest pomijany.</li>
 </ul>
-<p>Nowa sesja zostaje dodana do znalezionego dnia, a dzień otwiera się automatycznie. Jeśli był już zapisany, zapis zostaje od razu zaktualizowany. Gdy pasującego dnia nie ma, pliki tworzą nowy dzień. Import folderu zawsze tworzy nowy dzień.</p>
+<p>Nowa sesja zostaje dodana do znalezionego dnia, a dzień otwiera się automatycznie. Jeśli był już zapisany, aplikacja od razu zapisuje jego aktualną wersję. Gdy pasującego dnia nie ma, pliki tworzą nowy dzień. Import folderu zawsze tworzy nowy dzień.</p>
 <p>Jeśli inny dzień ma zachowane niezapisane zmiany, nowy dzień nie otwiera się automatycznie, ponieważ zastąpiłoby to jego kopię awaryjną. Nowe pliki są wtedy importowane do osobnego dnia widocznego na ekranie <strong>Start</strong> z przyciskiem <strong>Otwórz dzień</strong>. Najpierw możesz więc przywrócić lub odrzucić wcześniejszą pracę.</p>
 <p>Na torze najprościej po każdej sesji użyć <strong>Importuj sesje…</strong> i wskazać tylko nowy plik – stanie się kolejną sesją bieżącego dnia. Tak samo działa udostępnienie pliku z RaceChrono na telefonie (zobacz <a href="phone.html#share">Udostępnianie z RaceChrono</a>) oraz <strong>Dodaj zapisy telemetrii</strong> w otwartym dniu (zobacz <a href="day.html#add">Dodawanie sesji</a>).</p>
 
@@ -49,7 +49,7 @@
     <ul>
       <li><strong>Importuj jako nową sesję</strong>: utwórz osobną sesję z tego pliku.</li>
       <li><strong>Pomiń ten plik</strong>: nie importuj go.</li>
-      <li><strong>Ta sama sesja co …</strong>: potraktuj plik jako drugie źródło tej samej sesji, np. RCZ odpowiadający VBO. Okrążenia pochodzą z pliku, do którego przypisujesz drugie źródło; drugi plik jest przechowywany jako nagranie alternatywne i łączony zgodnie z <a href="day.html#combined">VBO i RCZ jednej sesji</a>. Możesz również odwrócić typowy kierunek i przypisać VBO do RCZ – wtedy to RCZ pozostaje źródłem okrążeń. Sesja może mieć jedno dodatkowe źródło.</li>
+      <li><strong>Ta sama sesja co …</strong>: potraktuj plik jako drugie źródło tej samej sesji, np. RCZ odpowiadający VBO. Okrążenia pochodzą z pliku, do którego przypisujesz drugie źródło; drugi plik jest przechowywany jako zapis alternatywny i łączony zgodnie z <a href="day.html#combined">VBO i RCZ jednej sesji</a>. Możesz również odwrócić typowy kierunek i przypisać VBO do RCZ – wtedy to RCZ pozostaje źródłem okrążeń. Sesja może mieć jedno dodatkowe źródło.</li>
     </ul>
   </li>
   <li><em>Możliwe, że to ta sama sesja co …: ślady GPS się zgadzają.</em> oznacza, że dwa eksporty mają pasujące ślady GPS. To podpowiedź, a nie automatyczne zatwierdzenie.</li>
@@ -58,7 +58,7 @@
   <li>Zamknięcie przeglądu przyciskiem ✕ niczego nie importuje i kończy operację komunikatem <em>Import anulowano. Nic nie zaimportowano.</em></li>
 </ul>
 <p>W ten sposób możesz przejrzeć również pojedynczy plik. Pliki udostępnione bezpośrednio z RaceChrono na telefonie są natomiast dodawane od razu, bez ekranu przeglądu; zobacz <a href="phone.html#share">Udostępnianie z RaceChrono</a>.</p>
-<div class="note"><p>Format pliku dnia nie przechowuje stanu „dwa źródła są właśnie dopasowywane”, a podczas zwykłego otwierania dnia aplikacja automatycznie łączy tylko RCZ do sesji opartej na VBO. Jeśli więc ręcznie utworzysz inną parę, np. RCZ jako źródło podstawowe z odpowiadającym VBO albo dwa VBO, i spróbujesz zapisać dzień w trakcie dopasowywania, zapis zaczeka na zakończenie procesu i dopiero potem utrwali sposób połączenia. W tym czasie nie można opuścić dnia: <em>Poczekaj, aż zapisy zostaną dopasowane, a dzień zapisany.</em> Jeśli dopasowanie się nie powiedzie, pliki nie są łączone. VBO do sesji opartej na RCZ pozostaje obok niej jako niepołączone źródło (<a href="day.html#combined">Sprawdź zegar</a> pozwala spróbować ponownie); inne nietypowe pary pozostają w pliku dnia, ale nie są pokazywane ani używane.</p></div>
+<div class="note"><p>Format pliku dnia nie przechowuje stanu „dwa źródła są właśnie dopasowywane”, a podczas zwykłego otwierania dnia aplikacja automatycznie łączy tylko RCZ do sesji opartej na VBO. Jeśli więc ręcznie utworzysz inną parę, np. RCZ jako źródło podstawowe z odpowiadającym VBO albo dwa VBO, i spróbujesz zapisać dzień w trakcie dopasowywania, zapisywanie zaczeka na zakończenie procesu i dopiero potem utrwali sposób połączenia. W tym czasie nie można opuścić dnia: <em>Poczekaj, aż zapisy zostaną dopasowane, a dzień zapisany.</em> Jeśli dopasowanie się nie powiedzie, pliki nie są łączone. VBO do sesji opartej na RCZ pozostaje obok niej jako niepołączone źródło (<a href="day.html#combined">Sprawdź zegar</a> pozwala spróbować ponownie); inne nietypowe pary pozostają w pliku dnia, ale nie są pokazywane ani używane.</p></div>
 
 <h2 id="progress">W trakcie importu</h2>
 <p>Podczas dodawania sesji do ostatnio edytowanego dnia albo otwierania dnia aplikacja pokazuje <em>Otwieranie dnia…</em>. Przy nowym dniu najpierw pojawia się <em>Wyszukiwanie zapisów telemetrii…</em>, a potem <em>Przygotowywanie zapisu X z N…</em> wraz z paskiem postępu. <strong>Anuluj</strong> natychmiast zatrzymuje operację i niczego nie importuje. Nie można uruchomić drugiego importu, dopóki pierwszy trwa.</p>
@@ -70,7 +70,7 @@
   <img src="assets/screens/import-done.png" alt="Start po powrocie z dnia z sześcioma sesjami: nazwa dnia, Zapisano w bibliotece, Otwórz dzień oraz każda sesja z okrążeniami i najlepszym czasem" width="1280" height="800" loading="lazy">
 </figure>
 <ul>
-  <li><strong>Sesja N</strong>, numerowana w kolejności nagrania.</li>
+  <li><strong>Sesja N</strong>, numerowana według czasu rozpoczęcia zapisu.</li>
   <li>Liczba okrążeń, np. <em>7 okrążeń</em>, albo powód ich braku, np. <em>Brak okrążeń: zapis nie ma linii startu/mety.</em></li>
   <li>Po prawej <strong>Najlepsze</strong> sklasyfikowane okrążenie sesji. Sesja zawierająca najlepsze okrążenie dnia jest wyróżniona fioletem. Sesja z innej konfiguracji toru pokazuje własne najszybsze okrążenie.</li>
 </ul>
@@ -83,10 +83,10 @@
 <h2 id="laps-found">Jak wyszukiwane są okrążenia</h2>
 <p>Okrążenia są wyznaczane na podstawie linii startu/mety zapisanej w pliku telemetrycznym (np. linii toru z RaceChrono) oraz śladu GPS:</p>
 <ul>
-  <li><strong>OUT</strong>: od początku nagrania do pierwszego przecięcia linii.</li>
+  <li><strong>OUT</strong>: od początku zapisu do pierwszego przecięcia linii.</li>
   <li><strong>LAP n</strong>: między kolejnymi przecięciami linii.</li>
-  <li><strong>IN</strong>: od ostatniego przecięcia do końca nagrania.</li>
-  <li><strong>UNKNOWN</strong>: całe nagranie, jeśli linia nie została przecięta ani razu.</li>
+  <li><strong>IN</strong>: od ostatniego przecięcia do końca zapisu.</li>
+  <li><strong>UNKNOWN</strong>: cały zapis, jeśli linia nie została przecięta ani razu.</li>
 </ul>
 <p>Przecięcie jest liczone tylko wtedy, gdy ślad GPS rzeczywiście przechodzi przez linię – lub jej przedłużenie do 5 m poza każdym końcem – z jednej strony na drugą i z prędkością odpowiadającą jeździe. Samo zbliżenie się do linii i odjazd po tej samej stronie nie jest liczone jako przecięcie.</p>
 <p>Linii startu/mety nie można ustawić ręcznie w Telemetry. Jeśli sesja nie ma okrążeń, zobacz <a href="troubleshooting.html#no-laps">Brak okrążeń</a>.</p>
