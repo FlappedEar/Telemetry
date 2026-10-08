@@ -479,21 +479,25 @@ void main() {
       BestPhasesCard(result: _built()),
       locale: const Locale('pl'),
     );
-    expect(find.text('Najlepsze fazy'), findsWidgets);
-    expect(find.text('Najlepsze fazy, które się łączą'), findsOneWidget);
-    expect(find.text('Gdzie spotykają się okrążenia'), findsOneWidget);
+    expect(find.text('Optymalne fazy zakrętów'), findsWidgets);
+    expect(find.text('Realistyczne optimum faz'), findsOneWidget);
+    expect(find.text('Ciągłość między fazami'), findsOneWidget);
     expect(
       _text(tester, find.byKey(const ValueKey('bestPhasesPiece 2'))),
-      'Środek|Najlepiej 1.300 s, Sesja 2 · OKR. 2 · to okrążenie 1.500 s|'
-      'Nie łączy się z poprzednią częścią: różnica 2.9\u00a0km/h|+0.200\u00a0s',
+      'Środek|Najlepiej: 1.300 s · Sesja 2 · OKR. 2 · To okrążenie: 1.500 s|'
+      'Brak ciągłości z poprzednią fazą: różnica prędkości 2.9\u00a0km/h|'
+      '+0.200\u00a0s',
     );
     expect(
       find.text('Nie podzielono: więcej niż jedna najciaśniejsza część'),
       findsOneWidget,
     );
-    expect(find.text('Część po części'), findsOneWidget);
-    expect(find.textContaining('Części nie muszą się łączyć'), findsOneWidget);
-    expect(find.text('Traci'), findsOneWidget);
+    expect(find.text('Faza po fazie'), findsOneWidget);
+    expect(
+      find.textContaining('Nie wszystkie przejścia między fazami muszą być'),
+      findsOneWidget,
+    );
+    expect(find.text('Strata'), findsOneWidget);
     expect(find.textContaining('Best'), findsNothing);
   });
 }
