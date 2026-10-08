@@ -26,11 +26,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:telemetry/app/app_navigation.dart';
 import 'package:telemetry/channel_names.dart';
-import 'package:telemetry/day/channel_sources.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/reference_lap.dart';
 import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
+import 'package:telemetry/day/next_session_card.dart';
 import 'package:telemetry/day/track_map.dart';
 import 'package:telemetry/import/day_import_controller.dart';
 import 'package:telemetry/import/day_import_page.dart';
@@ -38,12 +40,15 @@ import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry/profile/profile_page.dart';
+import 'package:telemetry/profile/track_notebook_page.dart';
 import 'package:telemetry/settings_dialog.dart';
 import 'package:telemetry/units.dart';
 import 'package:telemetry/day/recovery_store.dart';
 import 'package:telemetry_core/telemetry_core.dart'
     show
         DayRecovery,
+        NotebookItem,
+        TrackNotebook,
         ImportChoices,
         clearDayRecovery,
         readDayRecovery,
@@ -494,6 +499,9 @@ void main() {
     // The coach's card and its first item's measured values.
     await tester.tap(find.byKey(const ValueKey('place-coach')));
     await tester.pumpAndSettle();
+    await shot(tester, 'session-summary');
+    await tester.ensureVisible(find.byType(NextSessionCard));
+    await tester.pumpAndSettle();
     await shot(tester, 'next-session');
     final why = find.byKey(const ValueKey('coachWhy 0'));
     if (why.evaluate().isNotEmpty) {
@@ -504,6 +512,37 @@ void main() {
       await shot(tester, 'coach-why');
       await back(tester);
     }
+    // A goal of the driver's own for the next session: the coach's main
+    // focus, as Add a goal suggests it.
+    final addGoal = find.byKey(const ValueKey('ownGoalsAdd'));
+    if (addGoal.evaluate().isNotEmpty) {
+      await tester.ensureVisible(addGoal);
+      await tester.pumpAndSettle();
+      await tester.tap(addGoal);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('ownGoalSave')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('ownGoals')));
+      await tester.pumpAndSettle();
+      await shot(tester, 'own-goals');
+    }
+    // Before you go out: the briefing from the session summary, with the
+    // goal just set.
+    final briefing = find.byKey(const ValueKey('sessionSummaryBriefing'));
+    await scrollIn(tester, list('dayResultsCoach'), briefing, delta: -300);
+    await tester.pumpAndSettle();
+    await tester.tap(briefing);
+    await tester.pumpAndSettle();
+    await shot(tester, 'briefing');
+    await back(tester);
+    // Every segment since the session before, from the session summary.
+    final changes = find.byKey(const ValueKey('sessionSummaryChanges'));
+    await scrollIn(tester, list('dayResultsCoach'), changes, delta: -300);
+    await tester.pumpAndSettle();
+    await tester.tap(changes);
+    await tester.pumpAndSettle();
+    await shot(tester, 'session-changes');
+    await back(tester);
     // The observations, on the Overview.
     await tester.tap(find.byKey(const ValueKey('place-day')));
     await tester.pumpAndSettle();
@@ -527,12 +566,53 @@ void main() {
     await tester.pumpAndSettle();
     await toTop(tester, find.text('Lap to lap in each corner'));
     await shot(tester, 'corner-variability');
+    // The best phases of the day (FET-226): closed at first, opened for the
+    // shots.
+    final bestPhases = find.byKey(const ValueKey('bestPhasesToggle'));
+    await scrollIn(tester, summary, bestPhases);
+    await tester.tap(bestPhases);
+    await tester.pumpAndSettle();
+    await toTop(tester, bestPhases);
+    await shot(tester, 'best-phases');
+    await scrollIn(tester, summary, find.text('Part by part'));
+    await shot(tester, 'best-phases-parts');
     await scrollIn(tester, summary, find.text('Time losses'));
     await shot(tester, 'time-losses');
     await scrollIn(tester, summary, find.text('Consistency'));
     await shot(tester, 'consistency');
+    await scrollIn(tester, summary, find.text('Where the laps vary'));
+    await shot(tester, 'segment-spread');
     await scrollIn(tester, summary, find.text('Progression'));
     await shot(tester, 'progression');
+    // Every lap of each session by lap number, then back to By session.
+    Finder progressionView(String label) => find.descendant(
+      of: find.byKey(const ValueKey('progressionView')),
+      matching: find.text(label),
+    );
+    await tester.tap(progressionView('By lap'));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Progression'));
+    await shot(tester, 'progression-by-lap');
+    await tester.tap(progressionView('By session'));
+    await tester.pumpAndSettle();
+    await scrollIn(tester, summary, find.text('G-G envelope'));
+    await shot(tester, 'gg-envelope');
+    await scrollIn(tester, summary, find.text('Grip and balance'));
+    // Closed at first: opened for the shot.
+    await tester.tap(find.byKey(const ValueKey('gripToggle')));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Grip and balance'));
+    await shot(tester, 'grip-and-balance');
+    // The lap styles (FET-223): closed at first, opened with the group of
+    // the day's best lap.
+    await scrollIn(tester, summary, find.text('Lap styles'));
+    await tester.tap(find.byKey(const ValueKey('lapStylesToggle')));
+    await tester.pumpAndSettle();
+    // The group of the day's best lap, opened.
+    await tester.tap(find.byKey(const ValueKey('lapStylesGroup typical')));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Lap styles'));
+    await shot(tester, 'lap-styles');
     await scrollIn(tester, summary, find.text('Best lap of each session'));
     await shot(tester, 'sessions-and-circuits');
 
@@ -548,6 +628,25 @@ void main() {
     await scrollIn(tester, summary, find.text('Session details'), delta: -300);
     await tester.tap(find.byIcon(Icons.edit_note).first);
     await tester.pumpAndSettle();
+    // Sample setup values to show the table filled in; cancelled below, so
+    // nothing is kept.
+    for (final (row, values) in [
+      ('cold', ['2.1', '2.1', '2.0', '2.0']),
+      ('hot', ['2.4', '2.4', '2.3', '2.3']),
+    ]) {
+      for (final (index, wheel) in ['fl', 'fr', 'rl', 'rr'].indexed) {
+        await tester.enterText(
+          find.byKey(ValueKey('sessionSetup $row $wheel')),
+          values[index],
+        );
+      }
+    }
+    await tester.enterText(
+      find.byKey(const ValueKey('sessionSetupTyre')),
+      'Semi-slick',
+    );
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await shot(tester, 'session-details-dialog');
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -562,9 +661,36 @@ void main() {
     await tester.tap(corner.first);
     await tester.pumpAndSettle();
     await shot(tester, 'corner-details');
+    // What kind of corner it is (FET-220), further down the same sheet.
+    await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'corner-type');
+    // How it is braked into (FET-219), under the corner type.
+    await tester.ensureVisible(find.byKey(const ValueKey('brakingTechnique')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'braking-technique');
     // Beside the rail: the page's own top edge closes the details.
     await tester.tapAt(const Offset(120, 4));
     await tester.pumpAndSettle();
+    // Where the corner's time came from, on another lap against the best:
+    // Session 6's lap 3, then back to the best lap.
+    Future<void> chooseLap(String name) async {
+      final row = find.byKey(ValueKey('sectorRow $name'));
+      await scrollIn(tester, summary, row);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+    }
+
+    await chooseLap('Session 6 · LAP 3');
+    await scrollIn(tester, summary, corner, delta: -300);
+    await tester.tap(corner.first);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('cornerPhasesTitle')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'corner-phases');
+    await tester.tapAt(const Offset(120, 4));
+    await tester.pumpAndSettle();
+    await chooseLap('Session 5 · LAP 2');
 
     // The segment editor.
     await toTop(tester, find.text('Edit segments'));
@@ -651,7 +777,7 @@ void main() {
       ('brake_pos-obd', 'Brake'),
       ('rpm-obd', 'RPM'),
     ]) {
-      if (!dayRecordedChannels.contains(channel)) continue;
+      if (!openDayContext.recordedChannels.contains(channel)) continue;
       setChannelName(channel, name);
       setChannelListed(channel, true);
     }
@@ -697,6 +823,80 @@ void main() {
     await shot(tester, 'driving-states');
     await scrollIn(tester, page, find.byType(ComparisonCoastingPanel));
     await shot(tester, 'compare-coasting');
+    debugDisableShadows = true;
+  });
+
+  testWidgets('reference lap, wide', (tester) async {
+    debugDisableShadows = false;
+    await size(tester, _desktop, 1.5);
+    // The reference: the best lap's session as a file under a plain name;
+    // today: the day's other sessions.
+    final whole = importDay();
+    final best = whole.analysis!.ranking!.bestOfDay!;
+    final source = whole.runs
+        .firstWhere((named) => named.run.id == best.runId)
+        .run
+        .sourcePath;
+    String stemOf(String path) =>
+        path.substring(0, path.lastIndexOf('.')).toLowerCase();
+    final stem = stemOf(source);
+    final reference = File(
+      recordings.firstWhere(
+        (path) => stemOf(path) == stem && path.toLowerCase().endsWith('.vbo'),
+      ),
+    ).copySync('${directory.path}/reference.vbo').path;
+    final today = runDayImport((
+      paths: [
+        for (final path in recordings)
+          if (stemOf(path) != stem) path,
+      ],
+      includeSubfolders: false,
+    ));
+    // The day kept in a profile, as a saved day is: the reference is
+    // remembered there.
+    final profileFolder = '${directory.path}/ReferenceProfile';
+    final controller = DayResultsController(
+      runs: today.runs,
+      analysis: today.analysis!,
+      name: 'Jastrząb',
+    );
+    final dayFile = profileDayPath(profileFolder, controller.eventId);
+    Directory('$profileFolder/Days').createSync(recursive: true);
+    await tester.runAsync(() => controller.save(dayFile));
+    final library = _library(profileFolder);
+    addTearDown(library.dispose);
+    await tester.runAsync(library.load);
+    await tester.pumpWidget(
+      app(
+        DayResultsPage.controller(
+          controller: controller,
+          pickers: _Pickers([reference]),
+          library: library,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daySection-compare')));
+    await tester.pumpAndSettle();
+    final load = find.byKey(const ValueKey('referenceLoadFile'));
+    await tester.ensureVisible(load);
+    await tester.pumpAndSettle();
+    await tester.tap(load);
+    // The reference is read and timed on the test's thread, on the next
+    // frame.
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('referenceLabel')), findsOneWidget);
+    // Remembered in the profile before the picture is taken.
+    await until(
+      tester,
+      () => referenceLapOf(controller).keepState == ReferenceKeep.saved,
+    );
+    await tester.pumpAndSettle();
+    await toTop(tester, find.byKey(const ValueKey('referenceSection')));
+    await shot(tester, 'reference-lap');
+    await tester.tap(find.byKey(const ValueKey('referenceCompare')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'reference-compare');
     debugDisableShadows = true;
   });
 
@@ -768,6 +968,43 @@ void main() {
       find.byKey(const ValueKey('skill paceConsistency')),
     );
     await shot(tester, 'profile-skills');
+    // One day only: the day-by-day figures say a trend needs more days.
+    await scrollIn(tester, page, find.byKey(const ValueKey('profileTrends')));
+    await shot(tester, 'profile-trends');
+
+    // The track's notebook, with a few example notes.
+    final track = library.profile!.tracks.first;
+    final corners = track.corners;
+    // Off the fake clock, as the profile's writes are.
+    await tester.runAsync(() async {
+      library.setTrackNotebook(
+        track.id,
+        TrackNotebook(
+          notes: 'Grippy when dry. Bumpy braking into the first corner.',
+          cornerNotes: {
+            if (corners.isNotEmpty)
+              corners.first.id: 'Brake at the 100 m board',
+          },
+          toTry: [
+            NotebookItem(id: 'a', text: 'Third gear through the chicane'),
+            NotebookItem(id: 'b', text: 'Later turn-in, earlier throttle'),
+            NotebookItem(id: 'c', text: 'Use all the kerb on exit', done: true),
+          ],
+        ),
+      );
+      await library.flush();
+    });
+    // Opened over the profile: the app keeps one navigator.
+    unawaited(
+      Navigator.of(tester.element(find.byType(ProfilePage))).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              TrackNotebookPage(library: library, trackId: track.id),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await shot(tester, 'track-notebook');
     debugDisableShadows = true;
   });
 

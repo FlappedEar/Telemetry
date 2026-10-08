@@ -1,7 +1,7 @@
 <!-- title: Importing sessions | nav: Importing sessions -->
 <h1 id="import">Importing sessions</h1>
 <p class="lead">The app opens on <strong>Home</strong>. Give it each session's recording as you drive, or a whole day at once, and it prepares the sessions, laps and analysis on its own.</p>
-<p id="places"><strong>Home</strong>, <strong>Library</strong>, <strong>Day</strong>, <strong>Coach</strong> and <strong>Profile</strong> are on every screen: in the bar at the bottom on a phone held upright, in the rail at the side on a phone held sideways or a wider screen. <strong>Day</strong> shows the day open now and <strong>Coach</strong> its <a href="day.html#next">Next session</a> card: what to try in your next run. Both are greyed out until a day is open. <strong>Profile</strong> adds up every day in your library; see <a href="profile.html">Your profile and skills</a>. Going to <strong>Home</strong> or <strong>Library</strong> leaves the day as it is, and <strong>Day</strong> or <strong>Coach</strong> takes you straight back to it.</p>
+<p id="places"><strong>Home</strong>, <strong>Library</strong>, <strong>Day</strong>, <strong>Coach</strong> and <strong>Profile</strong> are on every screen: in the bar at the bottom on a phone held upright, in the rail at the side on a phone held sideways or a wider screen. <strong>Day</strong> shows the day open now and <strong>Coach</strong> its <a href="day.html#summary">session summary</a> and <a href="day.html#next">Next session</a> card: how the last session went and what to try in your next run. Both are greyed out until a day is open. <strong>Profile</strong> adds up every day in your library; see <a href="profile.html">Your profile and skills</a>. Going to <strong>Home</strong> or <strong>Library</strong> leaves the day as it is, and <strong>Day</strong> or <strong>Coach</strong> takes you straight back to it.</p>
 
 <figure>
   <img src="assets/screens/import-empty.png" alt="Home on a desktop: the logo and FlappedEar Telemetry, the Home, Library, Day, Coach and Profile rail, and a panel with Import sessions, Choose a folder, Open a saved day and Include subfolders" width="1280" height="800" loading="lazy">
@@ -44,7 +44,7 @@
   <figcaption>The review of recordings added to a day, with what the automatic import would do already chosen. The files were renamed for this picture.</figcaption>
 </figure>
 <ul>
-  <li>Each file shows its length (minutes:seconds) and its complete laps. A duplicate says which file has the same content, and a file that could not be read says why; neither can be imported.</li>
+  <li>Each file shows its length (minutes:seconds) and its complete laps. A duplicate says which file has the same content, and a file that could not be read says why; neither can be imported. A VBO file needs a time column (<code>time</code>, <code>timestamp</code> or <code>utc_time</code>): without one its samples have no time, so it is not read rather than timed by guesswork.</li>
   <li>Choose for each file:
     <ul>
       <li><strong>Import as a new session</strong>: the file becomes a session of its own.</li>
@@ -88,6 +88,7 @@
   <li><strong>IN</strong>: from the last crossing to the end of the recording.</li>
   <li><strong>UNKNOWN</strong>: the whole recording, when the line was never crossed.</li>
 </ul>
+<p>A crossing counts only when the GPS trace really goes over the line (or over its continuation up to 5 m beyond either end), from one side to the other, at driving speed. Coming close to the line and leaving on the same side, for example stopping just before it or crossing it and turning back, is not a crossing.</p>
 <p>The start/finish line cannot be placed by hand. If a session has no laps, see <a href="troubleshooting.html#no-laps">No laps</a>.</p>
 
 <h2 id="restore">Restoring unsaved work</h2>

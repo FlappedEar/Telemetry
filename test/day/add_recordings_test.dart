@@ -5,13 +5,13 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/diagnostics/app_diagnostics.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/day_import_page.dart';
 import 'package:telemetry/import/import_runner.dart';
 import 'package:telemetry/main.dart';
-import 'package:telemetry/units.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../../packages/telemetry_core/test/rcz/rcz_fixture.dart';
@@ -177,16 +177,30 @@ void main() {
   );
 
   group('corners that cannot time a new best lap (FET-170)', () {
-    // Session 2's laps are faster; its best lap runs 12 m off the others'
-    // line in the middle of the left straight, eased in and out.
-    double offLine(double distance) {
+    // Session 2's laps are faster and all run 22–25 m off Session 1's
+    // line in the middle of the left straight, eased in and out: beyond the
+    // projection's 20 m proximity, so Session 1's kept corners cannot time
+    // them there. Since FET-257 a lap 12 m off a straight is timed
+    // (day_segment_remeasure_test.dart); one lap of a recording more than
+    // 12 m off its other laps is off the route, and at about 28 m the two
+    // sessions' routes no longer match, so all of its laps run that far off.
+    //
+    // The day's route id is seeded from the run whose content hash sorts
+    // first (FET-259): when the addition sorts first, the day's route id
+    // changes and the corners kept under the old one are not found. That is
+    // not what these tests are about, so the shift is the first of 22–25 m
+    // (in steps of 1 cm) whose recording sorts after Session 1's, whatever
+    // the bytes hash to.
+    double offLine(double distance, double shift) {
       const from = 385.0, to = 465.0, ease = 25.0;
       if (distance <= from || distance >= to) return 0.0;
       final edge = math.min(distance - from, to - distance);
-      if (edge >= ease) return 12.0;
+      if (edge >= ease) return shift;
       final x = edge / ease;
-      return 12.0 * x * x * (3 - 2 * x);
+      return shift * x * x * (3 - 2 * x);
     }
+
+    String digest(String path) => contentSha256(path, File(path).lengthSync());
 
     late String a, b;
     setUp(() {
@@ -194,12 +208,21 @@ void main() {
       File(a)
           .writeAsStringSync(rectangleVbo([(_) => 30, (_) => 30.5, (_) => 30]));
       b = '${directory.path}/b.vbo';
-      File(b).writeAsStringSync(
-        rectangleVbo(
-          [(_) => 33, (_) => 33.5, (_) => 33],
-          westShifts: [(_) => 0, offLine, (_) => 0],
-        ),
-      );
+      var sortsAfter = false;
+      for (var centimetres = 2200; centimetres <= 2500; ++centimetres) {
+        final shift = centimetres / 100;
+        File(b).writeAsStringSync(
+          rectangleVbo(
+            [(_) => 33, (_) => 33.5, (_) => 33],
+            westShifts: List.filled(3, (distance) => offLine(distance, shift)),
+          ),
+        );
+        if (digest(b).compareTo(digest(a)) > 0) {
+          sortsAfter = true;
+          break;
+        }
+      }
+      expect(sortsAfter, isTrue, reason: 'no shift sorts after Session 1');
     });
 
     /// Session 1 alone, its automatic corners shown.
@@ -522,11 +545,11 @@ void main() {
       appender: _SyncAppender(),
     );
     addTearDown(controller.dispose);
-    expect(declaredSpeedUnits, hasLength(1));
+    expect(openDayContext.speedUnits, hasLength(1));
     await controller.addRecordings([
       write('b.vbo', [29, 33]),
     ]);
-    expect(declaredSpeedUnits, hasLength(2));
+    expect(openDayContext.speedUnits, hasLength(2));
   });
 
   test('a session added while the day is being saved is not lost', () async {
@@ -841,8 +864,11 @@ void main() {
         });
         await tester.pumpAndSettle();
         expect(find.text('Session 2 added to the day.'), findsOneWidget);
-        expect(card.hitTestable(), findsOneWidget);
-        final top = tester.getTopLeft(card).dy;
+        // The coach from the top: the session summary, then its card.
+        expect(card, findsOneWidget);
+        final summaryCard = find.byKey(const ValueKey('sessionSummary'));
+        expect(summaryCard.hitTestable(), findsOneWidget);
+        final top = tester.getTopLeft(summaryCard).dy;
         expect(top, inInclusiveRange(0, size.height - 100));
         // The diagnostics page shows how long it took, for the phone.
         expect(

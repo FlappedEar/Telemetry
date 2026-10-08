@@ -22,6 +22,8 @@ import 'package:fetproject/fetproject.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import 'departures.dart';
+
 var _maximumDifference = 0.0;
 
 void main() {
@@ -127,7 +129,8 @@ void main() {
     final rows = <DayLapRow>[];
     final runFiles = (choices['files'] as List).cast<Map<String, Object?>>();
     for (var i = 0; i < runFiles.length; ++i) {
-      final session = parseVboFile(pathOf(runFiles[i]['file'] as String));
+      final path = pathOf(runFiles[i]['file'] as String);
+      final session = refusedByTelemetry(path) ? _timedAsOverlays(path) : parseVboFile(path);
       rows.addAll(
         dayLapRows(
           session,
@@ -293,6 +296,25 @@ TrackConfiguration _configuration(Object? value) {
       _ => null,
     },
     gateRevision: map['gateRevision'] as String?,
+  );
+}
+
+/// A VBO Telemetry refuses for having no time column (FET-203), timed as
+/// Overlays times it, one row a second, so this day keeps Overlays' runs.
+TelemetrySession _timedAsOverlays(String path) {
+  final lines = File(path).readAsLinesSync();
+  final columns = lines.indexOf('[column names]');
+  final data = lines.indexOf('[data]');
+  return VboParser.parse(
+    [
+      for (var index = 0; index < lines.length; ++index)
+        if (index == columns + 1)
+          'time ${lines[index]}'
+        else if (index > data && lines[index].trim().isNotEmpty)
+          '${index - data - 1} ${lines[index]}'
+        else
+          lines[index],
+    ].join('\n'),
   );
 }
 

@@ -79,7 +79,8 @@ origin `LapTiming` uses for lap traces), and writes the axis length, spacing and
 every 50th point, track features with 15 m smoothing (every 50th), every timed
 lap's projection (segment sizes, first and last sample, every 25th sample, time
 at 0, 100 and 500 m, progress at four times), the delta series of the first lap
-against the fastest at 5 m steps (counts, ends, every 50th point), and three
+against the fastest at 5 m steps (counts, ends, every 50th point) and the same
+from each lap's timed start (`timedDelta`), and three
 `sampledSegments` calls (every 10th point). It compiles six files from a
 read-only Overlay checkout against Qt 6.8 Core, like `cpp_reference_dump`.
 
@@ -93,8 +94,11 @@ dart test test/parity/progress_parity_test.dart
 ```
 
 The committed `test/parity/progress_reference.json` was generated from
-FlappedEar/Overlay `d4d1039` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Files
-without lap traces are left out. Regenerate it when Overlays changes this code;
+FlappedEar/Overlay `3b8b6cd` (PR #195, KAN-152) with Qt 6.8.3. Its only change
+from the `d4d1039` reference is the new `timedDelta` of each file (the delta
+from each lap's timed start, FET-192): the corpus laps start where their gate
+crosses the axis, so gate anchoring and unwrapping leave the axes and
+projections as they were. Files without lap traces are left out. Regenerate it when Overlays changes this code;
 never edit the JSON by hand.
 
 ## cpp_segments_dump
@@ -636,9 +640,12 @@ output. Run the test against it with `FET_COMPARISON_REFERENCE=<json>` and
 of values compared, the mismatches and the largest difference.
 
 The committed `test/parity/comparison_reference.json` was generated from
-FlappedEar/Overlay `3fa38da` with Qt 6.8.3 and g++ 13.3 on Ubuntu 24.04. Its
-only change from the `d4d1039` reference is Overlays' KAN-157 gap rule: on
-the hand-made gpsGap run the track point at 4 s, inside the gap, is no longer placed.
+FlappedEar/Overlay `3b8b6cd` (PR #195, KAN-152) with Qt 6.8.3. Its changes
+from the `d4d1039` reference are Overlays' KAN-157 gap rule (on the hand-made
+gpsGap run the track point at 4 s, inside the gap, is no longer placed) and
+the KAN-152 timed delta: the Δ time series and the Δ time map layer measure
+each lap from its timed start, so they start at 0 and end at the lap-time
+difference; nothing else changed.
 Never edit the JSON by hand.
 
 ## cpp_corner_analyzer_dump

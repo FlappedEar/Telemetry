@@ -123,6 +123,40 @@ void main() {
     expect(metrics.stamp.calculationAlgorithm, exitMetricsAlgorithm);
   });
 
+  test('a throttle with no unit in 0..1 is read as a fraction only when the G shows it', () {
+    // FET-205: hard accelerations at 5, 10 and 35 s with the throttle at
+    // 0.8, hard brakings at 15, 17.5 and 21 s with it released; the
+    // corner's pickup is the % profile divided by 100.
+    bool accelerating(int k) =>
+        (k >= 100 && k < 140) || (k >= 200 && k < 240) || (k >= 700 && k < 740);
+    bool braking(int k) => (k >= 300 && k < 320) || (k >= 350 && k < 370) || (k >= 420 && k < 440);
+    double throttle(int k) => accelerating(k) ? 0.8 : _throttleFrom(540)(k) / 100.0;
+    final withG = _session({
+      'throttle': _channel('throttle_pos', '', throttle),
+      'longitudinalAcceleration': _channel(
+        'longacc',
+        'g',
+        (k) => accelerating(k) ? 0.3 : (braking(k) ? -0.8 : 0.0),
+      ),
+    });
+    expect(throttleScale(withG), PedalScale.fraction);
+    final read = _exit(_cornerAndStraight(), withG, lapEnd: 50.0).pickup;
+    expect(read.method, pickupMethodMeasured);
+    expect(read.telemetryTime, closeTo(26.9875, 1e-3));
+    expect(read.threshold.on, closeTo(0.20, 1e-12));
+    expect(read.limitations, containsAll([exitUnitUndeclared, exitScaleInferred]));
+
+    // Without the G nothing shows the scale: unknown, never a guess.
+    final alone = _throttle(throttle, '');
+    expect(throttleScale(alone), PedalScale.unknown);
+    final unknown = _exit(_cornerAndStraight(), alone, lapEnd: 50.0).pickup;
+    expect(unknown.telemetryTime, isNull);
+    expect(unknown.unavailableReason, exitScaleUnknown);
+
+    // A throttle with values beyond 1 is read in % as before.
+    expect(throttleScale(_throttle(_throttleFrom(540), '')), PedalScale.percent);
+  });
+
   test('an acceleration-based pickup is labelled inferred', () {
     final approved = _cornerAndStraight();
     final metrics = _exit(

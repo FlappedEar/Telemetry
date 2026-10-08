@@ -14,6 +14,8 @@ import 'package:fetproject/fetproject.dart' as fet;
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import 'departures.dart';
+
 void main() {
   final local = Platform.environment['FET_FINGERPRINT_REFERENCE'];
   final referencePath = local ?? 'test/parity/fingerprint_reference.json';
@@ -51,6 +53,10 @@ void main() {
         session = loadRecording(path);
       } on Exception catch (caught) {
         error = caught;
+      }
+      if (refusedByTelemetry(path)) {
+        expect(session, isNull, reason: '$path: Telemetry refuses it');
+        continue;
       }
       if (expected == null) {
         expect(session, isNull, reason: '$path: Overlays refuses it (${entry['error']})');

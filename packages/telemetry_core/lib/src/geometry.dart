@@ -53,11 +53,36 @@ bool isValidCoordinate(GeoCoordinate coordinate) =>
     coordinate.latitudeDegrees.abs() <= 90.0 &&
     coordinate.longitudeDegrees.abs() <= 180.0;
 
+/// [degrees] of longitude in -180 to 180 (FET-213): unchanged when already
+/// there, otherwise moved by whole turns, so a step across the
+/// antimeridian (179.999 to -179.999) is 0.002°, not 360°.
+double wrapLongitudeDegrees(double degrees) {
+  if (degrees >= -180.0 && degrees <= 180.0) return degrees;
+  return (degrees + 180.0) % 360.0 - 180.0;
+}
+
+/// The point halfway between [a] and [b], the short way round in longitude
+/// (FET-213). The same as averaging their degrees when they are less than
+/// 180° of longitude apart.
+GeoCoordinate geoMidpoint(GeoCoordinate a, GeoCoordinate b) {
+  final latitude = (a.latitudeDegrees + b.latitudeDegrees) / 2.0;
+  final difference = b.longitudeDegrees - a.longitudeDegrees;
+  if (difference.abs() <= 180.0) {
+    return GeoCoordinate(latitude, (a.longitudeDegrees + b.longitudeDegrees) / 2.0);
+  }
+  return GeoCoordinate(
+    latitude,
+    wrapLongitudeDegrees(a.longitudeDegrees + wrapLongitudeDegrees(difference) / 2.0),
+  );
+}
+
 /// Equirectangular projection of [coordinate] around [origin], in metres.
-/// Accurate enough over the size of a circuit.
+/// Accurate enough over the size of a circuit. The longitude difference is
+/// taken the short way round, so a circuit across ±180° projects like any
+/// other (FET-213; Overlays subtracts it directly, departure KAN-235).
 MetricPoint projectCoordinate(GeoCoordinate coordinate, GeoCoordinate origin) {
   return MetricPoint(
-    (coordinate.longitudeDegrees - origin.longitudeDegrees) *
+    wrapLongitudeDegrees(coordinate.longitudeDegrees - origin.longitudeDegrees) *
         radiansPerDegree *
         earthRadiusMeters *
         math.cos(origin.latitudeDegrees * radiansPerDegree),
@@ -66,13 +91,15 @@ MetricPoint projectCoordinate(GeoCoordinate coordinate, GeoCoordinate origin) {
 }
 
 /// The inverse of [projectCoordinate]: [east] and [north] metres around
-/// [origin] back in degrees.
+/// [origin] back in degrees, longitude in -180 to 180.
 GeoCoordinate unprojectCoordinate(double east, double north, GeoCoordinate origin) => GeoCoordinate(
   origin.latitudeDegrees + north / earthRadiusMeters / radiansPerDegree,
-  origin.longitudeDegrees +
-      east /
-          (earthRadiusMeters * math.cos(origin.latitudeDegrees * radiansPerDegree)) /
-          radiansPerDegree,
+  wrapLongitudeDegrees(
+    origin.longitudeDegrees +
+        east /
+            (earthRadiusMeters * math.cos(origin.latitudeDegrees * radiansPerDegree)) /
+            radiansPerDegree,
+  ),
 );
 
 /// Euclidean length of (x, y), without intermediate overflow or underflow.

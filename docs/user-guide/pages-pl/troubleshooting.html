@@ -1,0 +1,53 @@
+<!-- title: Rozwiązywanie problemów | nav: Rozwiązywanie problemów -->
+<h1 id="troubleshooting">Rozwiązywanie problemów</h1>
+
+<h2 id="no-laps">Sesja nie ma okrążeń</h2>
+<p>Komunikat pod sesją na ekranie <strong>Start</strong> mówi, dlaczego:</p>
+<table>
+  <tr><th>Komunikat</th><th>Co zrobić</th></tr>
+  <tr><td>Brak okrążeń: zapis nie ma linii startu/mety.</td><td>W RaceChrono ustaw linię startu/mety toru, a potem wyeksportuj ponownie.</td></tr>
+  <tr><td>Brak okrążeń: zapis ma więcej niż jedną linię startu/mety.</td><td>Zostaw w RaceChrono jedną linię startu/mety na torze i wyeksportuj ponownie.</td></tr>
+  <tr><td>Brak okrążeń: linia startu/mety jest nieprawidłowa.</td><td>Sprawdź położenie linii w RaceChrono.</td></tr>
+  <tr><td>Brak okrążeń: zapis nie ma użytecznego sygnału GPS.</td><td>Zapis nie ma pozycji GPS, których aplikacja mogłaby użyć, więc żadna linia startu/mety nie pozwoli zmierzyć okrążeń. Ten komunikat jest pokazywany przed każdym komunikatem o linii. Sprawdź, czy rejestrator miał podczas sesji sygnał GPS. Na ekranie Dzień notatka brzmi <em>Ten zapis nie ma pozycji GPS; nie da się zmierzyć okrążeń.</em></td></tr>
+  <tr><td>Brak pełnych okrążeń: linię startu/mety przecięto zbyt mało razy.</td><td>Okrążenie wymaga co najmniej dwóch przejazdów przez linię.</td></tr>
+</table>
+
+<h2 id="not-ranked">Okrążenia nie ma w klasyfikacji</h2>
+<p>Otwórz listę okrążeń i przeczytaj uwagę pod okrążeniem. Zobacz <a href="laps.html#not-ranked">Dlaczego okrążenie nie jest sklasyfikowane</a>. Sesję na złym torze lub w złym kierunku można poprawić w sekcji <a href="day.html#circuits">Tory</a>.</p>
+
+<h2 id="nothing-imported">Nic nie zostało zaimportowane</h2>
+<ul>
+  <li><em>Nie znaleziono zapisów VBO ani RCZ</em>: sprawdź folder; zaznacz <strong>Uwzględnij podfoldery</strong>, jeśli pliki są w podfolderach.</li>
+  <li><em>importuj najwyżej 64 naraz</em>: wybierz mniej plików albo mniejszy folder.</li>
+  <li><em>Niektórych plików nie zaimportowano: zapis może mieć najwyżej 128 MB, a jeden import najwyżej 256 MB.</em> albo <em>Wybierz najwyżej 64 zapisy naraz.</em> (Android): wybierz mniej lub mniejsze pliki albo udostępnij sesje dnia w kilku turach.</li>
+  <li><em>Najpierw dokończ bieżący import</em>: poczekaj na trwający import albo dotknij <strong>Anuluj</strong>.</li>
+  <li><em>Otwierany jest inny dzień. Spróbuj ponownie, gdy się otworzy.</em>: zapis udostępniony z RaceChrono otworzył dzisiejszy dzień, gdy wybierałeś plik. Zamknij go, a potem otwórz dzień ponownie.</li>
+</ul>
+
+<h2 id="missing">Zapisany dzień pokazuje sesje, których nie dało się otworzyć</h2>
+<p>Zapisy zostały przeniesione, zmieniono ich nazwę albo zawartość. Użyj <a href="saving.html#find">Znajdź zapisy w folderze</a> albo <strong>Ponów odczyt zapisów</strong>, gdy wrócą tam, gdzie były.</p>
+
+<h2 id="no-map">Mapa jest pusta lub szara</h2>
+<ul>
+  <li>Tła uliczne, satelitarne i Apple Maps wymagają połączenia z siecią, gdy tor jest pokazywany po raz pierwszy. Ślad jest rysowany także bez nich. Gdy tło uliczne lub satelitarne nie może się wczytać, mapa w lewym dolnym rogu pokazuje <em>Tło mapy wymaga połączenia z internetem; ślad jest rysowany bez niego.</em> Uwaga zostaje, dopóki brakuje jakiejkolwiek części tła, i znika po jego wczytaniu (przesuń lub otwórz mapę ponownie, gdy wróci sygnał). Apple Maps nie pokazują takiej uwagi.</li>
+  <li><em>Brak zapisu GPS dla tego odcinka.</em> oznacza, że okrążenie nie ma pozycji.</li>
+</ul>
+
+<h2 id="no-signal">Na torze bez sygnału</h2>
+<p>Import lub udostępnianie sesji, wyniki, Trener, zapisywanie i Biblioteka działają bez połączenia z siecią. Tylko trzy rzeczy go potrzebują: tła map (ślad jest nadal rysowany, zobacz <a href="#no-map">Mapa jest pusta lub szara</a>), <a href="day.html#weather">pogoda</a> (pobierana ponownie sama, gdy dodasz następną sesję lub otworzysz dzień) oraz sprawdzanie nowej wersji (sprawdzanie przy uruchomieniu nic nie mówi, gdy nie może połączyć się z GitHubem).</p>
+
+<h2 id="chart">Wykres pokazuje „Brak danych w tym zakresie” lub „Niedostępne”</h2>
+<p>Kanał nie został zapisany w tej części okrążenia albo wcale. Aplikacja nigdy nie wypełnia luki ani nie podstawia innego kanału.</p>
+
+<h2 id="speed-unit">Prędkości nie mają jednostki</h2>
+<p>Prędkości mają jednostkę zadeklarowaną w zapisie (RaceChrono zapisuje w swoich plikach km/h). Gdy zapis jej nie podaje, otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮) i wybierz <strong>Jednostka dla prędkości bez oznaczenia</strong>: <strong>km/h</strong> albo <strong>mph</strong>. To tylko nazywa jednostkę zapisów, które żadnej nie deklarują; zadeklarowana jednostka nigdy nie jest zastępowana i żadna wartość nie jest przeliczana. Prędkość dodana z VBO sesji zachowuje jednostkę, którą deklaruje to VBO. Dzień, którego zapisy mają różne jednostki, pokazuje prędkości bez jednostki. Analiza (trener, Analizator zakrętów, drogi hamowania) odczytuje każdą prędkość w tej samej jednostce, którą pokazują ekrany, i wybrana jednostka dotyczy również jej. Dwa okrążenia, których prędkości są w różnych jednostkach, nie mają w Analizatorze zakrętów różnicy prędkości: aplikacja informuje, że zmierzono je inaczej.</p>
+
+<h2 id="update">Android nie chce zaktualizować aplikacji</h2>
+<p>Zobacz uwagę w sekcji <a href="install.html#android">Instalacja</a>. Nie odinstalowuj, dopóki Twoje dni nie są zapisane w innym miejscu.</p>
+
+<h2 id="went-wrong">„Coś poszło nie tak” lub „Nie udało się wyświetlić tej części”</h2>
+<p>Aplikacja napotkała nieoczekiwany błąd. U dołu ekranu pojawia się <em>Coś poszło nie tak. Szczegóły są w Diagnostyce.</em> (jeden raz dla kilku błędów blisko siebie); część strony, której nie dało się narysować, zamiast tego pokazuje <em>Nie udało się wyświetlić tej części.</em> Reszta aplikacji działa dalej, a błąd nie zmienia Twojego dnia. Plik, którego nie dało się odczytać, jest wymieniony jako błąd w imporcie, a pozostałe pliki nadal są importowane.</p>
+<p>Otwórz <strong>Diagnostyka</strong> z menu <strong>Więcej</strong> ekranu <strong>Start</strong> lub strony dnia. W sekcji <strong>Błędy</strong> wymienia, co poszło nie tak od uruchomienia aplikacji, od najnowszego, a błąd, który się powtarza, raz, wraz z liczbą wystąpień; <strong>Kopiuj błędy</strong> kopiuje je z ich szczegółami technicznymi do zgłoszenia problemu. Lista jest przechowywana tylko, gdy aplikacja działa. Wymienia też sytuacje, gdy niezapisanych zmian nie dało się zachować na wypadek awarii, na przykład z powodu pełnej pamięci urządzenia: zapisz wtedy dzień.</p>
+
+<h2 id="report">Zgłaszanie problemu</h2>
+<p>Zanotuj, co zrobiłeś, czego oczekiwałeś i co się stało, dodaj zrzut ekranu oraz podaj używaną wersję (wersję wydania albo commit z nazwy artefaktu CI). Jeśli Diagnostyka wymienia błędy, dodaj je przez <strong>Kopiuj błędy</strong>.</p>

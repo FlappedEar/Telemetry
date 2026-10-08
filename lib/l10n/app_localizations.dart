@@ -776,6 +776,36 @@ abstract class AppLocalizations {
   /// **'Best lap trace with {segment} highlighted'**
   String coachWhyMap(String segment);
 
+  /// Screen-reader label of the coach card's map when no item is selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with today\'s corners numbered'**
+  String get coachCornerMap;
+
+  /// Screen-reader label of the coach card's map: the corner of the item selected is highlighted.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap trace with today\'s corners numbered, {segment} highlighted'**
+  String coachCornerMapSelected(String segment);
+
+  /// Under the coach card's map when there is no item.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners are numbered as the coach names them.'**
+  String get coachCornerMapNote;
+
+  /// Under the coach card's map: tapping an item highlights its corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners are numbered as the coach names them. Tap an item to show its corner.'**
+  String get coachCornerMapNoteSelect;
+
+  /// Screen-reader hint of a coach item: what tapping it does.
+  ///
+  /// In en, this message translates to:
+  /// **'show its corner on the map'**
+  String get coachShowOnMap;
+
   /// Link to Apple Maps' legal notices, shown on the Apple Maps background.
   ///
   /// In en, this message translates to:
@@ -1316,6 +1346,12 @@ abstract class AppLocalizations {
   /// **'Lap leaves the route the other laps took (off track, a detour or the pit lane)'**
   String get lapIssueDifferentRoute;
 
+  /// Why a lap is not ranked: its time, GPS path length or average speed cannot be a lap of the circuit (for example a fake crossing of the line).
+  ///
+  /// In en, this message translates to:
+  /// **'Lap time or length is not plausible for this circuit'**
+  String get lapIssueImplausibleLap;
+
   /// In a card built on the theoretical best when its calculation failed; the error and Calculate again are on the Theoretical best card.
   ///
   /// In en, this message translates to:
@@ -1507,6 +1543,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No run in this group has an approved segment review yet. Approve segments for at least one run first.'**
   String get tbNoApprovedRun;
+
+  /// Why there is no theoretical best: the best lap's GPS line disagrees with the session's other laps (FET-214).
+  ///
+  /// In en, this message translates to:
+  /// **'The best lap\'s GPS line is far from most of the other laps somewhere, so no segments were made automatically. Exclude the laps whose line is wrong from the ranking.'**
+  String get tbBestLapOffLine;
 
   /// Why there is no theoretical best.
   ///
@@ -2074,10 +2116,10 @@ abstract class AppLocalizations {
   /// **'Conditions: {conditions}'**
   String progressionConditions(String conditions);
 
-  /// The setup changes the driver noted for a session.
+  /// The setup changes the driver noted for a session (free text).
   ///
   /// In en, this message translates to:
-  /// **'Setup: {setup}'**
+  /// **'Setup changes: {setup}'**
   String progressionSetup(String setup);
 
   /// The driver's notes for a session.
@@ -3596,12 +3638,6 @@ abstract class AppLocalizations {
   /// **'Throttle pickup'**
   String get variabilityPickup;
 
-  /// How far apart the laps' lines are at the apex.
-  ///
-  /// In en, this message translates to:
-  /// **'Line: spread {spread} m · {accuracy}'**
-  String variabilityLine(String spread, String accuracy);
-
   /// The recording's typical GPS accuracy.
   ///
   /// In en, this message translates to:
@@ -3613,12 +3649,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GPS accuracy not recorded'**
   String get variabilityGpsUnknown;
-
-  /// Appended when the line spread is no larger than the GPS accuracy.
-  ///
-  /// In en, this message translates to:
-  /// **' · not distinguishable from GPS error'**
-  String get variabilityLineUnresolved;
 
   /// Button: run the theoretical best calculation again after it failed or had nothing to use.
   ///
@@ -3656,10 +3686,10 @@ abstract class AppLocalizations {
   /// **'Session details'**
   String get sessionDetailsHeading;
 
-  /// Shown under a session that has no conditions, setup changes or notes.
+  /// Shown under a session that has no conditions, setup, setup changes or notes.
   ///
   /// In en, this message translates to:
-  /// **'No conditions, setup changes or notes'**
+  /// **'No conditions, setup, setup changes or notes'**
   String get sessionDetailsNone;
 
   /// Title of the dialog that edits a session's name, conditions, setup changes and notes.
@@ -4430,6 +4460,18 @@ abstract class AppLocalizations {
   /// **'{channel} is in an unexpected unit'**
   String drivingUnexpectedUnitChannel(String channel);
 
+  /// Why a pedal state is unknown: the pedal channel has no unit, stays within 0..1, and nothing shows whether it is a 0..1 fraction or a few percent.
+  ///
+  /// In en, this message translates to:
+  /// **'pedal scale unknown'**
+  String get drivingScaleUnknown;
+
+  /// A pedal channel with no unit whose values stay within 0..1, and nothing shows whether that is a fraction or a few percent.
+  ///
+  /// In en, this message translates to:
+  /// **'the scale of {channel} (0–1 or %) is not known'**
+  String drivingScaleUnknownChannel(String channel);
+
   /// A lap without a brake pedal channel.
   ///
   /// In en, this message translates to:
@@ -4823,6 +4865,18 @@ abstract class AppLocalizations {
   /// **'channel unit not recorded'**
   String get cornerDetailsReasonUnitNotRecorded;
 
+  /// Why a corner figure is missing, lower case: the pedal channel has no unit, stays within 0..1, and nothing shows its scale.
+  ///
+  /// In en, this message translates to:
+  /// **'pedal scale (0–1 or %) not known'**
+  String get cornerDetailsReasonScaleUnknown;
+
+  /// A note on a corner figure, lower case: the pedal channel has no unit and was read as a 0..1 fraction, as the longitudinal G shows.
+  ///
+  /// In en, this message translates to:
+  /// **'pedal read as 0–1'**
+  String get cornerDetailsReasonScaleInferred;
+
   /// Why a corner figure is missing, lower case: no speed channel.
   ///
   /// In en, this message translates to:
@@ -4942,6 +4996,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Inferred from deceleration'**
   String get cornerDetailsFromDeceleration;
+
+  /// How a lap's braking point was found: from the deceleration, because the session's brake channel has no data or is not pressed in most hard brakings.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from deceleration: the brake channel does not show the braking'**
+  String get cornerDetailsFromDecelerationBrakeUnused;
+
+  /// How a lap's braking point was found: from the deceleration, because the brake channel has no unit, stays within 0..1, and nothing shows its scale.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from deceleration: the brake channel\'s scale (0–1 or %) is not known'**
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown;
+
+  /// Why a corner figure is inferred, lower case: the session's brake channel has no data or is not pressed in most hard brakings.
+  ///
+  /// In en, this message translates to:
+  /// **'the brake channel does not show the braking'**
+  String get cornerDetailsReasonBrakeChannelNotUsed;
 
   /// How a lap's braking point was found: from the recorded brake channel.
   ///
@@ -6843,6 +6915,12 @@ abstract class AppLocalizations {
   /// **'VBO contains no valid timestamped data rows.'**
   String get coreVboNoValidRows;
 
+  /// A VBO recording has no column holding the time of each row, so it is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.'**
+  String get coreVboNoTimeColumn;
+
   /// A VBO recording is too large to read.
   ///
   /// In en, this message translates to:
@@ -7941,6 +8019,108 @@ abstract class AppLocalizations {
   /// **'Each visit\'s weather is that of the session that set its best lap, or, when that session has none, of its first session with weather.'**
   String get lastTimeHereWeatherNote;
 
+  /// Last time here card: heading of the setup entered for a session of the previous visit and of today.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get lastTimeHereSetup;
+
+  /// Last time here card: the previous visit's setup as entered. session is a label such as 'Session 2, best lap'; setup is a setup line such as 'Cold 2.1 / 2.1 / 2 / 2 bar · Tyres Pirelli SC2 · Fuel 8.5 l'.
+  ///
+  /// In en, this message translates to:
+  /// **'Then ({session}): {setup}'**
+  String lastTimeHereSetupThen(String session, String setup);
+
+  /// Last time here card: today's setup as entered. session is a label such as 'Session 2, best lap'; setup is a setup line.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): {setup}'**
+  String lastTimeHereSetupToday(String session, String setup);
+
+  /// Last time here card: the session that set the best lap has no setup entered, so this session, the first with a setup, is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}; the best-lap session had none'**
+  String lastTimeHereSetupBestHadNone(String session);
+
+  /// Last time here card: no session matches the day's best lap, so the first session with a setup is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}, first with a setup'**
+  String lastTimeHereSetupFirstSession(String session);
+
+  /// Last time here card: no session of the previous visit has a setup in the library, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'Then: — no setup entered for that day, or the day was added before the library kept setups.'**
+  String get lastTimeHereSetupThenNone;
+
+  /// Last time here card: today has no setup in the library and no session to name.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: — no setup entered.'**
+  String get lastTimeHereSetupTodayNoSessions;
+
+  /// Last time here card: the previous visit's session has a setup that cannot be shown. session is a label such as 'Session 2, best lap'; reason is one of the lastTimeHereSetupReason texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Then ({session}): — {reason}'**
+  String lastTimeHereSetupThenMissing(String session, String reason);
+
+  /// Last time here card: today's session has no setup in the library to show, and why. session is a label such as 'Session 2, best lap'; reason is one of the lastTimeHereSetupReason texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Today ({session}): — {reason}'**
+  String lastTimeHereSetupTodayMissing(String session, String reason);
+
+  /// Last time here card: reason, no setup was entered for the session.
+  ///
+  /// In en, this message translates to:
+  /// **'no setup entered'**
+  String get lastTimeHereSetupReasonNone;
+
+  /// Last time here card: reason, the setup was stored with a setup version this app does not know (usually a newer app), so it cannot show it.
+  ///
+  /// In en, this message translates to:
+  /// **'set up in another version of the app'**
+  String get lastTimeHereSetupReasonNewer;
+
+  /// Last time here card: reason, the setup holds only values this version cannot read.
+  ///
+  /// In en, this message translates to:
+  /// **'not readable by this version'**
+  String get lastTimeHereSetupReasonUnreadable;
+
+  /// Last time here card: reason, the setup was entered on the day page but the day is not saved yet.
+  ///
+  /// In en, this message translates to:
+  /// **'entered on this page; it reaches the library when the day is saved'**
+  String get lastTimeHereSetupReasonUnsaved;
+
+  /// Last time here card: reason, the day was saved with this setup but the library has not recorded it yet.
+  ///
+  /// In en, this message translates to:
+  /// **'saved with the day; not in the library yet'**
+  String get lastTimeHereSetupReasonPending;
+
+  /// Last time here card: today's pressures minus the previous visit's, wheel by wheel, in the unit both were entered in. difference is a line such as 'Cold +0.1 / 0 / −0.1 / — bar'; — is a wheel without a pressure on one of the visits.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference (today − then): {difference}'**
+  String lastTimeHereSetupDifference(String difference);
+
+  /// Last time here card: the two visits' pressures were entered in different units (bar and psi); they are never converted.
+  ///
+  /// In en, this message translates to:
+  /// **'Different pressure units, not compared.'**
+  String get lastTimeHereSetupUnits;
+
+  /// Last time here card: which session's setup stands for each visit, and that the difference is no judgement.
+  ///
+  /// In en, this message translates to:
+  /// **'Each visit\'s setup is that of the session that set its best lap, or, when that session has none, of its first session with a setup. Shown as entered; a higher or lower pressure is not better or worse.'**
+  String get lastTimeHereSetupNote;
+
   /// Settings heading for checking GitHub for a newer version of the app.
   ///
   /// In en, this message translates to:
@@ -8181,6 +8361,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 recording was not found on this device and is not in the file.} other{{count} recordings were not found on this device and are not in the file.}}'**
   String libraryExportMissing(int count);
 
+  /// After an export: reference recordings the file could not include.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 reference recording was not found in the profile and is not in the file.} other{{count} reference recordings were not found in the profile and are not in the file.}}'**
+  String libraryExportReferencesMissing(int count);
+
   /// Export failed, for example because the disk is full.
   ///
   /// In en, this message translates to:
@@ -8223,34 +8409,220 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 day was copied, but the library could not be saved. It is listed again, in your last car, when the app next starts.} other{{count} days were copied, but the library could not be saved. They are listed again, in your last car, when the app next starts.}}'**
   String libraryImportNotSaved(int count);
 
+  /// Heading of the structured setup (tyre pressures, tyres, fuel) in the session details dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get sessionSetupHeading;
+
+  /// Label next to the choice of the unit the tyre pressures are entered in.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyre pressures'**
+  String get sessionSetupPressures;
+
+  /// The pressure unit bar, as a choice and after numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'bar'**
+  String get pressureUnitBar;
+
+  /// The pressure unit psi (pounds per square inch), as a choice and after numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'psi'**
+  String get pressureUnitPsi;
+
+  /// Column heading, short: the front left wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'FL'**
+  String get setupWheelFl;
+
+  /// Column heading, short: the front right wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'FR'**
+  String get setupWheelFr;
+
+  /// Column heading, short: the rear left wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'RL'**
+  String get setupWheelRl;
+
+  /// Column heading, short: the rear right wheel.
+  ///
+  /// In en, this message translates to:
+  /// **'RR'**
+  String get setupWheelRr;
+
+  /// Spoken name of the front left wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'front left'**
+  String get setupWheelFlName;
+
+  /// Spoken name of the front right wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'front right'**
+  String get setupWheelFrName;
+
+  /// Spoken name of the rear left wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'rear left'**
+  String get setupWheelRlName;
+
+  /// Spoken name of the rear right wheel's pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'rear right'**
+  String get setupWheelRrName;
+
+  /// Row label: tyre pressures set cold, before the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Cold'**
+  String get sessionSetupCold;
+
+  /// Row label: tyre pressures measured hot, after the session.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot'**
+  String get sessionSetupHot;
+
+  /// Spoken name of one tyre pressure field.
+  ///
+  /// In en, this message translates to:
+  /// **'{row}, {wheel}'**
+  String sessionSetupPressureField(String row, String wheel);
+
+  /// Shown under the tyre pressures when one is out of range for the chosen unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Pressures in {unit} are from {min} to {max}, with at most two decimals.'**
+  String sessionSetupPressureRange(String unit, String min, String max);
+
+  /// Explains that the tyre pressures are stored in the unit chosen and never converted.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept as entered: switching the unit does not convert the numbers.'**
+  String get sessionSetupKeptAsEntered;
+
+  /// Text field label: the tyre's name or compound.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres'**
+  String get sessionSetupTyre;
+
+  /// Example tyre in the empty text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Pirelli SC2'**
+  String get sessionSetupTyreHint;
+
+  /// Number field label: the fuel in the tank at the start of the session, in litres.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel at start (l)'**
+  String get sessionSetupFuel;
+
+  /// Shown under the fuel field when the number cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'0–200 l, at most two decimals'**
+  String get sessionSetupFuelRange;
+
+  /// Button: fills the setup fields from the previous session's setup; nothing is saved until Save.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as {session}'**
+  String sessionSetupSameAs(String session);
+
+  /// Shown instead of the setup fields when the setup was stored in a format this version does not edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved by a newer version of the app: shown as it is and not changed here.'**
+  String get sessionSetupReadOnly;
+
+  /// Part of a session's setup line: the cold tyre pressures FL / FR / RL / RR and their unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cold {pressures} {unit}'**
+  String setupCold(String pressures, String unit);
+
+  /// Part of a session's setup line: the hot tyre pressures FL / FR / RL / RR and their unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot {pressures} {unit}'**
+  String setupHot(String pressures, String unit);
+
+  /// Part of a session's setup line: the tyre's name or compound.
+  ///
+  /// In en, this message translates to:
+  /// **'Tyres {tyre}'**
+  String setupTyres(String tyre);
+
+  /// Part of a session's setup line: the fuel at the start in litres.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel {litres} l'**
+  String setupFuel(String litres);
+
+  /// A session's structured setup on one line, in the session list and the progression.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup: {setup}'**
+  String sessionSetupLine(String setup);
+
+  /// Title of the question asked before the previous session's setup replaces values already in the fields.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace the setup?'**
+  String get sessionSetupReplaceTitle;
+
+  /// Explains what replacing the setup with the previous session's does.
+  ///
+  /// In en, this message translates to:
+  /// **'The setup fields will hold {session}\'s setup instead of what is in them now. Nothing is saved until Save.'**
+  String sessionSetupReplaceBody(String session);
+
+  /// Button: replaces the setup fields with the previous session's setup.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get sessionSetupReplace;
+
   /// Library menu: reads every saved day from its recordings again and updates what the profile measured, for example after the app measures something new.
   ///
   /// In en, this message translates to:
-  /// **'Measure all days again'**
+  /// **'Recalculate all days'**
   String get libraryMeasureAgain;
 
-  /// Library toolbar while the days are measured again: stops after the day being measured.
+  /// Library toolbar while the days are recalculated: stops after the day being measured.
   ///
   /// In en, this message translates to:
   /// **'Stop'**
   String get libraryStopMeasuring;
 
-  /// Shown while the library measures its days again.
+  /// Shown while the library recalculates its days.
   ///
   /// In en, this message translates to:
-  /// **'Measuring the days again: {done} of {total}…'**
+  /// **'Recalculating the days: {done} of {total}…'**
   String libraryMeasuring(int done, int total);
 
-  /// After measuring the days again: how many were.
+  /// After recalculating the days: how many were.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 day measured again.} other{{count} days measured again.}}'**
+  /// **'{count, plural, =1{1 day recalculated.} other{{count} days recalculated.}}'**
   String libraryMeasured(int count);
 
-  /// After measuring the days again: days whose file or recordings could not be read.
+  /// After recalculating the days: days whose file or recordings could not be read.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 day could not be measured: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be measured: a file or recording is missing or unreadable. They keep what was measured before.}}'**
+  /// **'{count, plural, =1{1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.}}'**
   String libraryMeasureFailed(int count);
 
   /// The circuit the route starts on, from the circuit list or named by the user.
@@ -8348,6 +8720,3414 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Forget this name'**
   String get settingsCircuitsForget;
+
+  /// Heading of the session summary on the Coach place.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} in 30 seconds'**
+  String summaryTitle(String session);
+
+  /// Under the session summary heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed from your laps, not causes. Typical is the median of at least 3 laps.'**
+  String get summaryIntro;
+
+  /// Session summary when the latest session has no laps in the shown group.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no timed laps on the circuit shown.'**
+  String summaryNotShown(String session);
+
+  /// Session summary row label.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap'**
+  String get summaryBestLap;
+
+  /// Best lap row when it beats every earlier session; delta is against the earlier best.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · new best of the day ({delta})'**
+  String summaryBestNew(String time, String delta);
+
+  /// Best lap row when an earlier session was quicker.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · {delta} on the best of {session}'**
+  String summaryBestBehind(String time, String delta, String session);
+
+  /// Best lap row for the day's first session.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · first session of the day'**
+  String summaryBestFirst(String time);
+
+  /// Best lap row without an eligible lap.
+  ///
+  /// In en, this message translates to:
+  /// **'No ranked lap'**
+  String get summaryNoBest;
+
+  /// Session summary row label: interquartile range of lap times.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap-time spread'**
+  String get summarySpread;
+
+  /// Lap-time spread without a previous session to compare.
+  ///
+  /// In en, this message translates to:
+  /// **'{spread} s'**
+  String summarySpreadValue(String spread);
+
+  /// Lap-time spread with the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'{spread} s ({session}: {previous} s)'**
+  String summarySpreadThen(String spread, String session, String previous);
+
+  /// Session summary row label: segment whose typical time fell the most since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest gain'**
+  String get summaryGain;
+
+  /// Session summary row label: segment whose typical time rose the most since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest loss'**
+  String get summaryLoss;
+
+  /// A segment and its typical-time change.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment} {delta}'**
+  String summaryChange(String segment, String delta);
+
+  /// No segment's typical time changed by the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'None by {seconds} s or more'**
+  String summaryNoChange(String seconds);
+
+  /// Gain/loss rows for the day's first session.
+  ///
+  /// In en, this message translates to:
+  /// **'First session: nothing to compare with'**
+  String get summaryFirstSession;
+
+  /// No segment has a typical time in both sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs 3 laps through a segment in both sessions'**
+  String get summaryNotCompared;
+
+  /// Footnote under gain and loss.
+  ///
+  /// In en, this message translates to:
+  /// **'Gains and losses: typical segment times against {session}.'**
+  String summaryAgainst(String session);
+
+  /// Session summary row label: segment where the typical time is furthest from the quickest typical time of any session.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest gap left'**
+  String get summaryGap;
+
+  /// Biggest gap row value.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment} {delta} to the quickest typical time there'**
+  String summaryGapValue(String segment, String delta);
+
+  /// Session summary row label: highest recorded temperatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Car, hottest'**
+  String get summaryCar;
+
+  /// One temperature's maximum.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} {value}'**
+  String summaryTemperature(String channel, String value);
+
+  /// One temperature's maximum with the previous session's.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} {value} ({session}: {previous})'**
+  String summaryTemperatureThen(
+    String channel,
+    String value,
+    String session,
+    String previous,
+  );
+
+  /// Session summary row label: the coach's main focus from the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus from {session}'**
+  String summaryGoal(String session);
+
+  /// A summary value still being calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get summaryWorking;
+
+  /// Best lap row when earlier sessions exist but none has a ranked lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · no earlier session has a ranked lap'**
+  String summaryBestNoEarlier(String time);
+
+  /// Best lap row when it ties the earlier best.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · equals the best of {session}'**
+  String summaryBestEqual(String time, String session);
+
+  /// Gain/loss rows when no earlier session has a ranked lap.
+  ///
+  /// In en, this message translates to:
+  /// **'No earlier session has a ranked lap'**
+  String get summaryNoEarlierRanked;
+
+  /// Session summary row label when segment lines cannot be shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments'**
+  String get summarySegments;
+
+  /// Segment lines without a theoretical best result.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available without a theoretical best'**
+  String get summarySegmentsUnavailable;
+
+  /// Goal row label while the coach works or when no focus was given.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus from the session before'**
+  String get summaryGoalBefore;
+
+  /// Goal row when the coach gave no main focus after the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'No change to work on was given'**
+  String get summaryNoFocus;
+
+  /// Goal row when the coach failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach could not run'**
+  String get summaryCoachFailed;
+
+  /// Biggest gap row when the session is within the threshold of the quickest typical time in every segment it was timed in.
+  ///
+  /// In en, this message translates to:
+  /// **'Within {seconds} s of the quickest typical time wherever timed'**
+  String summaryGapNone(String seconds);
+
+  /// Biggest gap row when the session has no typical time through any segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs 3 laps through a segment'**
+  String get summaryGapNeedsLaps;
+
+  /// Biggest gap row when only this session has timed segments.
+  ///
+  /// In en, this message translates to:
+  /// **'No other session to compare with'**
+  String get summaryOnlySession;
+
+  /// Button in a session's details dialog that removes the session from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove session'**
+  String get removeSession;
+
+  /// Day page menu item that chooses a session to remove from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove a session…'**
+  String get removeSessionMenu;
+
+  /// Title of the dialog choosing the session to remove from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove which session?'**
+  String get removeSessionChoose;
+
+  /// Title of the dialog confirming that a session leaves the day. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {session}?'**
+  String removeSessionTitle(String session);
+
+  /// Body of the dialog confirming that a session leaves the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Its laps leave the day: the best lap, the theoretical best, the coach and your profile are worked out again without them. The recording file itself is not deleted.'**
+  String get removeSessionBody;
+
+  /// Button that confirms removing a session from the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeSessionConfirm;
+
+  /// Said when the user tries to remove the day's only session.
+  ///
+  /// In en, this message translates to:
+  /// **'A day keeps at least one session. To remove the whole day, delete it in the Library.'**
+  String get removeSessionLast;
+
+  /// Said when a session cannot be removed while recordings are being added or checked.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the day has finished saving or working on its recordings, then try again.'**
+  String get removeSessionBusy;
+
+  /// Said when the save before removing a session failed or was cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The day could not be saved, so the session was not removed.'**
+  String get removeSessionNotSaved;
+
+  /// Said when the day changed while a session was being removed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day changed meanwhile, so the session was not removed. Try again.'**
+  String get removeSessionChangedMeanwhile;
+
+  /// Said when removing a session failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The session was not removed: {error}'**
+  String removeSessionFailed(String error);
+
+  /// Said after a session was removed from the day. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} removed from the day.'**
+  String sessionRemoved(String session);
+
+  /// Action on the message after removing a session that puts it back.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get sessionRemovedUndo;
+
+  /// Said after Undo put a removed session back. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} is back in the day.'**
+  String sessionRestored(String session);
+
+  /// Said when Undo cannot put a removed session back because the day changed since.
+  ///
+  /// In en, this message translates to:
+  /// **'The day changed since, so the session cannot be put back.'**
+  String get sessionRestoreRefused;
+
+  /// Tooltip of the menu on a day in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Day actions'**
+  String get libraryDayActions;
+
+  /// Menu item on a day in the library that deletes the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete day'**
+  String get libraryDeleteDay;
+
+  /// Title of the dialog confirming that a day is deleted. day is the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {day}?'**
+  String libraryDeleteDayTitle(String day);
+
+  /// Body of the dialog confirming that a day is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The day and its session leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.} other{The day and its {count} sessions leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.}}'**
+  String libraryDeleteDayBody(int count);
+
+  /// Button that confirms deleting a day.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get libraryDeleteConfirm;
+
+  /// Said after a day was deleted from the library. day is the day's name.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} deleted.'**
+  String libraryDayDeleted(String day);
+
+  /// Said when deleting a day failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The day was not deleted: {error}'**
+  String libraryDayDeleteFailed(String error);
+
+  /// Added to the dialog confirming that a session leaves the day when the day's corners (segments) were measured on that session.
+  ///
+  /// In en, this message translates to:
+  /// **'If the day\'s corners were measured on this session, they are measured again on the best lap left, and names you gave them are lost.'**
+  String get removeSessionCorners;
+
+  /// Said when removing a session would leave only sessions whose recordings cannot be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'None of the other sessions\' recordings can be opened, so the day would have nothing to show. The session was not removed.'**
+  String get removeSessionNothingLeft;
+
+  /// Said when a day cannot be deleted from the library because it is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the day first, then delete it.'**
+  String get libraryDeleteDayOpen;
+
+  /// Heading of the driver's own goals on the Next session card.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals for the next session'**
+  String get ownGoalsTitle;
+
+  /// Under the goals heading when goals are set.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked against this session once the next one is added.'**
+  String get ownGoalsIntro;
+
+  /// Under the goals heading when none are set.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up to {count} changes to work on, each at one corner. The next session is checked against this one.'**
+  String ownGoalsNone(int count);
+
+  /// Goals stored under another version, or in a form this app would not write itself.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored in a form this version of the app does not edit, so they are not changed here.'**
+  String get ownGoalsReadOnly;
+
+  /// Why no goal can be added: the day has no corners yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals need the day\'s corners.'**
+  String get ownGoalsNeedCorners;
+
+  /// Button and dialog title for adding a goal.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a goal'**
+  String get ownGoalsAdd;
+
+  /// Tooltip of a goal's remove button.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove goal'**
+  String get ownGoalsRemove;
+
+  /// Corner field of the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner'**
+  String get ownGoalsCorner;
+
+  /// Change field of the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Change to work on'**
+  String get ownGoalsChange;
+
+  /// The picked change at the picked corner is already a goal.
+  ///
+  /// In en, this message translates to:
+  /// **'This goal is already set.'**
+  String get ownGoalsTaken;
+
+  /// Confirms the add-goal dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get ownGoalsSave;
+
+  /// Session summary row label for one of the driver's own goals; goal is 'Corner 3 · Reduce coasting'.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal: {goal}'**
+  String summaryOwnGoal(String goal);
+
+  /// Shown when the goals the driver changed could not be stored.
+  ///
+  /// In en, this message translates to:
+  /// **'The goals could not be saved.'**
+  String get ownGoalsNotSaved;
+
+  /// Why no goal can be added: the session has no lap in the group compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals need laps of {session} among the compared laps.'**
+  String ownGoalsNeedLaps(String session);
+
+  /// Own goal row when the session the goal was set after, or this one, has no lap in the group compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: needs laps of {session} and this session among the compared laps'**
+  String summaryOwnGoalNoLaps(String session);
+
+  /// Own goal row when the goal was set while another group of compared laps was shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not measured: set on other compared laps'**
+  String get summaryOwnGoalOtherGroup;
+
+  /// Why no goal can be added: the goals already set were set while another group of compared laps was shown.
+  ///
+  /// In en, this message translates to:
+  /// **'These goals were set on other compared laps. Remove them to set new ones.'**
+  String get ownGoalsOtherGroup;
+
+  /// Button beside the session summary's title, and the title of the page it opens: a briefing read at the car before the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you go out'**
+  String get briefingTitle;
+
+  /// Under the briefing heading: the session the briefing comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'From {session}'**
+  String briefingFrom(String session);
+
+  /// Briefing line: the driver's own goals for the next session.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals'**
+  String get briefingGoals;
+
+  /// Briefing goals line when the driver set no goals.
+  ///
+  /// In en, this message translates to:
+  /// **'None set: add them under Your goals for the next session'**
+  String get briefingNoGoals;
+
+  /// Briefing line: the segment with the biggest gap to the quickest typical time.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest chance'**
+  String get briefingChance;
+
+  /// Session summary row: what the car did over the session's timed laps (FET-228): a temperature still rising, strong acceleration falling. Observations, not a diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Car, last laps'**
+  String get summaryCarWatch;
+
+  /// A temperature's lap maximum still rising over the session's last 3 timed laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} still rising: {from} → {to} (laps {fromLap}–{toLap})'**
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  );
+
+  /// Strong acceleration (90th percentile of positive longitudinal G) on the last timed lap below the session's highest.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration {percent}% lower from lap {fromLap} to lap {toLap} ({from} → {to})'**
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  );
+
+  /// The fall in strong acceleration with the temperature that rose most over the same laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{fall}; meanwhile {channel} {from} → {to}'**
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  );
+
+  /// Car, last laps when nothing was noted and only temperatures could be read.
+  ///
+  /// In en, this message translates to:
+  /// **'No temperature still rising'**
+  String get summaryCarSettledTemperatures;
+
+  /// Car, last laps when nothing was noted and only strong acceleration could be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration held'**
+  String get summaryCarSettledAcceleration;
+
+  /// Car, last laps: too few ranked laps to read a temperature's rise.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Temperatures: needs 1 ranked lap} other{Temperatures: needs {count} ranked laps}}'**
+  String summaryCarTemperaturesNeedLaps(int count);
+
+  /// Car, last laps: too few ranked laps with strong acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Strong acceleration: needs 1 ranked lap} other{Strong acceleration: needs {count} ranked laps}}'**
+  String summaryCarAccelerationNeedsLaps(int count);
+
+  /// Car, last laps: every temperature is missing on one of the laps its rise is read over.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Temperatures: missing on the last ranked lap} other{Temperatures: missing on one of the last {count} ranked laps}}'**
+  String summaryCarTemperaturesMissing(int count);
+
+  /// Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples).
+  ///
+  /// In en, this message translates to:
+  /// **'Strong acceleration: not read on the last ranked lap'**
+  String get summaryCarAccelerationMissing;
+
+  /// Under a fall in strong acceleration: it is an observation, not a diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic and a different line lower it too.'**
+  String get summaryCarFallNote;
+
+  /// Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}'**
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed);
+
+  /// Trackside: the latest session's last ranked lap time, in large digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Last ranked lap'**
+  String get briefingLastLap;
+
+  /// Trackside: the best lap of the day on the circuit shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Best of the day'**
+  String get briefingDayBest;
+
+  /// Trackside: the last lap minus the best of the day (positive is slower).
+  ///
+  /// In en, this message translates to:
+  /// **'To the best'**
+  String get briefingDelta;
+
+  /// Trackside: the hottest temperatures and what the car did over the last laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get briefingCar;
+
+  /// Before you go out, when the latest session has laps on the shown circuit but none ranked.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no ranked lap on the circuit shown.'**
+  String briefingNoRankedLap(String session);
+
+  /// Session summary button opening every segment's change since the session before (FET-236).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 segment against {session}} other{All {count} segments against {session}}}'**
+  String changesButton(int count, String session);
+
+  /// Title of the page of every segment's change since the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Since {session}'**
+  String changesTitle(String session);
+
+  /// Intro of the page of segment changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment\'s typical (median) time against {session}, with the spread of the middle half of its times. Changes under {threshold} s are not counted. Observed from your laps, not causes.'**
+  String changesIntro(String session, String threshold);
+
+  /// Heading: segments whose typical time fell.
+  ///
+  /// In en, this message translates to:
+  /// **'Quicker'**
+  String get changesQuicker;
+
+  /// Heading: segments whose typical time rose.
+  ///
+  /// In en, this message translates to:
+  /// **'Slower'**
+  String get changesSlower;
+
+  /// No segment got quicker by the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'No segment quicker by {threshold} s or more.'**
+  String changesNoneQuicker(String threshold);
+
+  /// No segment got slower by the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'No segment slower by {threshold} s or more.'**
+  String changesNoneSlower(String threshold);
+
+  /// Heading over the compared segments that changed by less than the threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Within {threshold} s of {session}'**
+  String changesSame(String threshold, String session);
+
+  /// A segment's typical time now and in the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical {now} ({session}: {before})'**
+  String changesTypical(String now, String session, String before);
+
+  /// A segment's interquartile range now and in the session before.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread {now} s ({session}: {before} s)'**
+  String changesSpread(String now, String session, String before);
+
+  /// Title of the page of segment changes when there is no session before to compare with.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment changes'**
+  String get changesTitleNone;
+
+  /// Corner details: heading over the corner split into entry, middle and exit (FET-221).
+  ///
+  /// In en, this message translates to:
+  /// **'Where the time came from'**
+  String get cornerPhasesTitle;
+
+  /// Corner details: from the corner's start to where it is tightest.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry'**
+  String get cornerPhaseEntry;
+
+  /// Corner details: through the corner's tightest part.
+  ///
+  /// In en, this message translates to:
+  /// **'Middle'**
+  String get cornerPhaseMiddle;
+
+  /// Corner details: from the end of the tightest part to the corner's end.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get cornerPhaseExit;
+
+  /// Corner details: how the corner is split.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry runs to where the corner is tightest, the middle through that part, and the exit to the corner\'s end. The split comes from the track\'s shape, so both laps are timed over the same metres, and the three add up to the corner\'s time.'**
+  String get cornerPhasesNote;
+
+  /// Corner details: the corner could not be split into entry, middle and exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Not split: {reason}'**
+  String cornerPhasesUnavailable(String reason);
+
+  /// Corner details: why a corner (a double apex or a complex) is not split into entry, middle and exit.
+  ///
+  /// In en, this message translates to:
+  /// **'more than one tight part'**
+  String get cornerPhasesMoreThanOneTightPart;
+
+  /// Corner details: the best lap could not be timed through the corner's parts.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap not timed through the parts: {reason}'**
+  String cornerPhasesBestNotTimed(String reason);
+
+  /// Consistency card: heading of the map of each segment's spread in one session (FET-224).
+  ///
+  /// In en, this message translates to:
+  /// **'Where the laps vary'**
+  String get spreadMapHeading;
+
+  /// Consistency card: under the heading of the spread map.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green: repeatable; red: where the laps differ most.'**
+  String get spreadMapIntro;
+
+  /// Spread map's accessibility label. session is a label such as 'Session 2'.
+  ///
+  /// In en, this message translates to:
+  /// **'Map of the best lap coloured by each segment\'s spread in {session}'**
+  String spreadMapLabel(String session);
+
+  /// Spread map legend: the lowest band.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {value} s'**
+  String spreadBandAtMost(String value);
+
+  /// Spread map legend: a middle band.
+  ///
+  /// In en, this message translates to:
+  /// **'{from}–{to} s'**
+  String spreadBandBetween(String from, String to);
+
+  /// Spread map legend: the highest band.
+  ///
+  /// In en, this message translates to:
+  /// **'Over {value} s'**
+  String spreadBandAbove(String value);
+
+  /// Spread map legend: the best lap's trace outside every segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a segment'**
+  String get spreadOutsideSegments;
+
+  /// Theoretical best card: heading over the raw, realistic and repeatable theoretical bests (FET-222).
+  ///
+  /// In en, this message translates to:
+  /// **'Three ways to add it up'**
+  String get tbThreeTitle;
+
+  /// The raw theoretical best: each segment's fastest time.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest segments'**
+  String get tbRawLabel;
+
+  /// Note under the raw theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment\'s fastest time from any lap.'**
+  String get tbRawNote;
+
+  /// The realistic theoretical best: the fastest segments whose speeds match where two laps meet.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments that join'**
+  String get tbRealisticLabel;
+
+  /// Note under the realistic theoretical best. tolerance is a number such as '2'.
+  ///
+  /// In en, this message translates to:
+  /// **'An estimate: the fastest segments whose speeds differ by at most {tolerance} km/h wherever two laps meet, as the car cannot change speed at a line. Made of {count, plural, =1{1 lap} other{{count} laps}}.'**
+  String tbRealisticNote(String tolerance, int count);
+
+  /// Realistic theoretical best when no lap has speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: no lap records speed in a known unit, so no two laps can be joined.'**
+  String get tbRealisticNoSpeed;
+
+  /// Realistic theoretical best when a segment is not timed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: a segment has no time on any lap.'**
+  String get tbRealisticIncomplete;
+
+  /// The repeatable theoretical best: each segment's quickest typical time in one session.
+  ///
+  /// In en, this message translates to:
+  /// **'Best typical'**
+  String get tbRepeatableLabel;
+
+  /// Note under the repeatable theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Each segment\'s quickest typical (median) time in one session: what you did there as a rule, not once.'**
+  String get tbRepeatableNote;
+
+  /// Repeatable theoretical best when a segment has no session with enough laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: needs at least {count, plural, =1{1 lap} other{{count} laps}} through each segment in one session.'**
+  String tbRepeatableNeedsLaps(int count);
+
+  /// Realistic theoretical best when segments are timed but no chain of laps joins.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.'**
+  String get tbRealisticNoJoin;
+
+  /// Name of the track notebook (FET-231): menu item, button tooltip and page title without a track.
+  ///
+  /// In en, this message translates to:
+  /// **'Track notebook'**
+  String get notebookTitle;
+
+  /// Track notebook page title. track is the track's name in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Notebook: {track}'**
+  String notebookTitleOf(String track);
+
+  /// Under the track notebook's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept with the track in your library, so every visit to it shows the same notebook. Saved as you type.'**
+  String get notebookIntro;
+
+  /// Track notebook: heading of the list of things to try.
+  ///
+  /// In en, this message translates to:
+  /// **'To try'**
+  String get notebookToTry;
+
+  /// Track notebook: the list of things to try is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to try yet.'**
+  String get notebookNothingToTry;
+
+  /// Track notebook: hint of the field that adds a thing to try.
+  ///
+  /// In en, this message translates to:
+  /// **'Something to try next time'**
+  String get notebookAddHint;
+
+  /// Track notebook: tooltip of the button that adds a thing to try.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get notebookAdd;
+
+  /// Track notebook: tooltip of the button that removes a thing to try.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get notebookRemove;
+
+  /// Track notebook: heading over the things to try that are ticked off.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get notebookDone;
+
+  /// Track notebook: heading of the track's general notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notebookNotes;
+
+  /// Track notebook: hint of the general notes field.
+  ///
+  /// In en, this message translates to:
+  /// **'Grip, kerbs, markers, hazards, setup…'**
+  String get notebookNotesHint;
+
+  /// Track notebook: heading of the notes per corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Corners'**
+  String get notebookCorners;
+
+  /// Track notebook: the track has no corners in the library yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The track\'s corners appear here once a day on it has been measured.'**
+  String get notebookNoCorners;
+
+  /// Track notebook: the track was not found.
+  ///
+  /// In en, this message translates to:
+  /// **'This track is no longer in your library.'**
+  String get notebookNoTrack;
+
+  /// After a profile import: how many tracks' notebooks took notes from the imported file (FET-231).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The notebook of 1 track took notes from the file.} other{The notebooks of {count} tracks took notes from the file.}}'**
+  String libraryImportNotebooks(int count);
+
+  /// After a profile import: some imported notebook text or things to try were past the notebook's limits.
+  ///
+  /// In en, this message translates to:
+  /// **'Some notebook notes from the file did not fit and were left out.'**
+  String get libraryImportNotebookCut;
+
+  /// After a profile import: reference laps of the imported days that could not be kept.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The reference lap of 1 day was left out: its recording did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.} other{The reference laps of {count} days were left out: their recordings did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.}}'**
+  String libraryImportReferencesNotKept(int count);
+
+  /// After a profile import: reference recordings the file does not hold.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 reference recording was not in the file: that reference will say it was not found.} other{{count} reference recordings were not in the file: those references will say they were not found.}}'**
+  String libraryImportReferencesMissing(int count);
+
+  /// Track notebook: shown instead of the add field when the list of things to try is full.
+  ///
+  /// In en, this message translates to:
+  /// **'The notebook holds at most {count} things to try. Remove some to add more.'**
+  String notebookFull(int count);
+
+  /// Track notebook: a change could not be kept in the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The last change could not be saved: the notebook is past what the library can hold.'**
+  String get notebookNotSaved;
+
+  /// How far apart the laps' lines are where the corner starts, at its apex and where it ends (FET-225). {parts} joins variabilityLineEntry, variabilityLineApex and variabilityLineExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Line spread: {parts} · {accuracy}'**
+  String variabilityLineParts(String parts, String accuracy);
+
+  /// Line spread where the corner starts.
+  ///
+  /// In en, this message translates to:
+  /// **'entry {spread} m'**
+  String variabilityLineEntry(String spread);
+
+  /// Line spread at the corner's apex (or its middle).
+  ///
+  /// In en, this message translates to:
+  /// **'apex {spread} m'**
+  String variabilityLineApex(String spread);
+
+  /// Line spread where the corner ends.
+  ///
+  /// In en, this message translates to:
+  /// **'exit {spread} m'**
+  String variabilityLineExit(String spread);
+
+  /// Where the corner starts, in a list of the parts whose line spread is within GPS error.
+  ///
+  /// In en, this message translates to:
+  /// **'entry'**
+  String get variabilityLineEntryName;
+
+  /// The corner's apex, in a list of the parts whose line spread is within GPS error.
+  ///
+  /// In en, this message translates to:
+  /// **'apex'**
+  String get variabilityLineApexName;
+
+  /// Where the corner ends, in a list of the parts whose line spread is within GPS error.
+  ///
+  /// In en, this message translates to:
+  /// **'exit'**
+  String get variabilityLineExitName;
+
+  /// Appended when the line spread at some parts of the corner is no larger than the GPS accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **' · {parts}: not distinguishable from GPS error'**
+  String variabilityLinePartsUnresolved(String parts);
+
+  /// Heading of the day card with each session's G-G envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'G-G envelope'**
+  String get ggEnvelopeTitle;
+
+  /// G-G envelope card: what the envelope is.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.'**
+  String get ggEnvelopeIntro;
+
+  /// G-G envelope card while it is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating the G-G envelope…'**
+  String get ggEnvelopeCalculating;
+
+  /// G-G envelope card when its calculation failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The G-G envelope could not be calculated: {error}'**
+  String ggEnvelopeFailed(String error);
+
+  /// G-G envelope card when no session has an envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'No session has enough G data for an envelope.'**
+  String get ggEnvelopeNone;
+
+  /// G-G envelope table: heading of the direction column.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction'**
+  String get ggEnvelopeDirection;
+
+  /// G-G envelope: the day's best envelope (table heading and legend).
+  ///
+  /// In en, this message translates to:
+  /// **'Day\'s best'**
+  String get ggEnvelopeBestOfDay;
+
+  /// G-G envelope table: heading of the latest session's column.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}, latest'**
+  String ggEnvelopeLatest(String session);
+
+  /// G-G envelope table: the day's best in a direction and the session it comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} · {session}'**
+  String ggEnvelopeBestValue(String value, String session);
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating'**
+  String get ggDirectionAccelerating;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating + turning left'**
+  String get ggDirectionAcceleratingLeft;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning left'**
+  String get ggDirectionLeft;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking + turning left'**
+  String get ggDirectionBrakingLeft;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get ggDirectionBraking;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking + turning right'**
+  String get ggDirectionBrakingRight;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning right'**
+  String get ggDirectionRight;
+
+  /// G-G envelope direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating + turning right'**
+  String get ggDirectionAcceleratingRight;
+
+  /// G-G envelope: the directions in which the latest session stays short of the day's best.
+  ///
+  /// In en, this message translates to:
+  /// **'Unused envelope in {session}: {directions}.'**
+  String ggEnvelopeUnused(String session, String directions);
+
+  /// G-G envelope: one unused direction, the latest session's value against the day's best and the session it comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'{direction} {latest} against {best} ({session})'**
+  String ggEnvelopeUnusedItem(
+    String direction,
+    String latest,
+    String best,
+    String session,
+  );
+
+  /// G-G envelope: the latest session leaves no direction unused.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} came within {margin} of the day\'s best in every direction it has a value for.'**
+  String ggEnvelopeAllUsed(String session, String margin);
+
+  /// G-G envelope with a single session.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one session has an envelope, so there is nothing to compare it with yet.'**
+  String get ggEnvelopeOneSession;
+
+  /// G-G envelope: the latest session has no envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} has no envelope, so nothing is compared.'**
+  String ggEnvelopeLatestNone(String session);
+
+  /// G-G envelope: why a session has no envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {reason}'**
+  String ggEnvelopeSessionUnavailable(String session, String reason);
+
+  /// G-G envelope: why a session has no envelope.
+  ///
+  /// In en, this message translates to:
+  /// **'Too little data: fewer than {count} samples in every direction'**
+  String ggEnvelopeTooFewSamples(int count);
+
+  /// G-G envelope: what a dash in the table means.
+  ///
+  /// In en, this message translates to:
+  /// **'— means fewer than {count} samples in that direction.'**
+  String ggEnvelopeMissingNote(int count);
+
+  /// Under the G-G envelope diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed accelerations, not a share of available grip. Unused means at least {margin} below the day\'s best. Rings every 0.5 g; the dashed line is the best of the day, the thick line the latest session.'**
+  String ggEnvelopeNote(String margin);
+
+  /// Screen reader label of the G-G envelope diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'G-G envelope of each session against the best of the day'**
+  String get ggEnvelopeSemantics;
+
+  /// G-G envelope: samples of a session left out because they are beyond the plausible limit for a road car.
+  ///
+  /// In en, this message translates to:
+  /// **'{session}: {count, plural, =1{1 sample} other{{count} samples}} beyond {limit} left out as implausible'**
+  String ggEnvelopeOutliers(String session, int count, String limit);
+
+  /// Heading of the profile's day-by-day figures per track and car.
+  ///
+  /// In en, this message translates to:
+  /// **'Day by day'**
+  String get profileTrends;
+
+  /// Explains the day-by-day figures on the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Each of those is the median over the corners the day measured, so days may differ in the corners behind it. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.'**
+  String get profileTrendsIntro;
+
+  /// Says that a wet or dry track is not recorded, and what the weather shown is.
+  ///
+  /// In en, this message translates to:
+  /// **'Wet or dry track is not recorded. The weather shown is the weather model\'s for the area at each session\'s time, not the track surface, so days are not split into wet and dry.'**
+  String get profileTrendsWetDry;
+
+  /// One track in one car in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'{track} · {direction} · {car}'**
+  String profileTrendsGroup(String track, String direction, String car);
+
+  /// Too few dated days at a track in a car for a trend.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{No dated day} =1{1 dated day} other{{days} dated days}} here in this car: a trend needs at least {minimum} days.'**
+  String profileTrendsTooFew(int days, int minimum);
+
+  /// Only the latest days at a track in a car are listed.
+  ///
+  /// In en, this message translates to:
+  /// **'The last {shown} of {total} days here.'**
+  String profileTrendsShowingLast(int shown, int total);
+
+  /// A day's best lap in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Best lap {time}'**
+  String profileTrendsBestLap(String time);
+
+  /// A day's best lap was faster than every earlier day's at the track in the car.
+  ///
+  /// In en, this message translates to:
+  /// **'new best here in this car'**
+  String get profileTrendsPersonalBest;
+
+  /// A day's typical (median) lap in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical lap {time}'**
+  String profileTrendsTypicalLap(String time);
+
+  /// A day without a best or typical lap in the day-by-day figures.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap time kept for this day.'**
+  String get profileTrendsNoLapTimes;
+
+  /// A day with none of the day-by-day measures.
+  ///
+  /// In en, this message translates to:
+  /// **'No corner or lap figures for this day: it was added before the library measured sessions, or its sessions had no ranked laps or corners to measure.'**
+  String get profileTrendsNotMeasured;
+
+  /// The weather kept for a day's sessions, from the weather model.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather model: {weather}'**
+  String profileTrendsWeather(String weather);
+
+  /// A day without weather in the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'No weather kept for this day.'**
+  String get profileTrendsNoWeather;
+
+  /// Heading of each measure on its first and last day at a track in a car.
+  ///
+  /// In en, this message translates to:
+  /// **'First day to last'**
+  String get profileTrendsChanges;
+
+  /// A measure followed day by day.
+  ///
+  /// In en, this message translates to:
+  /// **'{id, select, bestLap{Best lap} typicalLap{Typical lap} brakePointConsistency{Braking-point spread} minimumSpeedControl{Minimum speed below your best} liftTiming{Off the throttle to braking} paceConsistency{Lap time spread} other{{id}}}'**
+  String profileTrendsMeasure(String id);
+
+  /// A figure on its first and last measured day at a track in a car, with their dates, and the days that measured it.
+  ///
+  /// In en, this message translates to:
+  /// **'{measure}: {first} ({firstDate}) → {last} ({lastDate}), across {days, plural, =1{1 measured day} other{{days} measured days}}'**
+  String profileTrendsChange(
+    String measure,
+    String first,
+    String firstDate,
+    String last,
+    String lastDate,
+    int days,
+  );
+
+  /// The most rain the weather model gave over one of a day's sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {amount} mm of rain in a session'**
+  String profileTrendsRain(String amount);
+
+  /// A figure measured on too few days at a track in a car for its first-to-last change.
+  ///
+  /// In en, this message translates to:
+  /// **'{measure}: measured on {measured, plural, =0{no dated day} =1{1 dated day} other{{measured} dated days}}; a trend needs a figure on at least {minimum} days.'**
+  String profileTrendsFigureTooFew(String measure, int measured, int minimum);
+
+  /// Says undated days are not part of the day-by-day trend.
+  ///
+  /// In en, this message translates to:
+  /// **'Undated days are listed last and are not part of a trend or a new best.'**
+  String get profileTrendsUndated;
+
+  /// Weather was kept for only some of a day's sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'({sessions} of {total} sessions)'**
+  String profileTrendsWeatherSome(int sessions, int total);
+
+  /// Progression card: view of every timed lap of each session in order (FET-227).
+  ///
+  /// In en, this message translates to:
+  /// **'By lap'**
+  String get progressionByLap;
+
+  /// Progression card, By lap view: what the chart and the table show.
+  ///
+  /// In en, this message translates to:
+  /// **'Each session\'s timed laps in order, from the start of its first timed lap (a recording can begin in the paddock, so the out lap is not counted). Each line is labelled with its session and has its own marker; fainter lines are earlier sessions. Tap a lap to open it.'**
+  String get evolutionIntro;
+
+  /// Progression card, By lap view: what a screen reader says for the chart.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap time by lap number, one line per session'**
+  String get evolutionChartLabel;
+
+  /// Progression card, By lap view: a column header, a lap's number within its session.
+  ///
+  /// In en, this message translates to:
+  /// **'LAP {number}'**
+  String evolutionLap(int number);
+
+  /// Progression card, By lap view: under a lap time, when the lap began after the start of the session's first timed lap, as m:ss.
+  ///
+  /// In en, this message translates to:
+  /// **'+{time}'**
+  String evolutionSinceFirstLap(String time);
+
+  /// Progression card, By lap view: under a lap the ranking leaves out (excluded, off the route, incomplete GPS); the reason is listed below the table.
+  ///
+  /// In en, this message translates to:
+  /// **'not ranked'**
+  String get evolutionNotRanked;
+
+  /// Progression card, By lap view: how the first lap in the middle half is decided and what grey laps are.
+  ///
+  /// In en, this message translates to:
+  /// **'A session\'s middle half is the middle 50% of its ranked lap times; it takes at least {count} ranked laps. Grey laps came before the first lap in the middle half or quicker.'**
+  String evolutionPaceExplained(int count);
+
+  /// Progression card, By lap view: the first ranked lap no slower than the session's upper quartile, and how many timed laps came before it.
+  ///
+  /// In en, this message translates to:
+  /// **'{before, plural, =0{First lap in the session\'s middle half or quicker: LAP {number}, its first timed lap} =1{First lap in the session\'s middle half or quicker: LAP {number}, after 1 lap} other{First lap in the session\'s middle half or quicker: LAP {number}, after {before} laps}}'**
+  String evolutionPaceFrom(int number, int before);
+
+  /// Progression card, By lap view: laps before the first lap in the middle half that the ranking leaves out.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap before it is not ranked, so whether it was slower is not known} other{{count} laps before it are not ranked, so whether they were slower is not known}}'**
+  String evolutionPaceNotCounted(int count);
+
+  /// Progression card, By lap view: too few ranked laps for the session's middle half.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The session\'s middle half needs at least 1 ranked lap} other{The session\'s middle half needs at least {count} ranked laps}}'**
+  String evolutionPaceNeedsLaps(int count);
+
+  /// Progression card, By lap view: the median of this session's lap minus the session before's lap at the same lap number. Positive means this session was slower.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {session} at the same laps: {delta} typical difference over {count} laps'**
+  String evolutionSameLaps(String session, String delta, int count);
+
+  /// Progression card, By lap view: too few lap numbers with a ranked lap in both sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Against {session} at the same laps: {count} of the {minimum} laps needed'**
+  String evolutionSameLapsTooFew(String session, int count, int minimum);
+
+  /// Progression card, By lap view: the session's air temperature from the weather model, such as 21 °C.
+  ///
+  /// In en, this message translates to:
+  /// **'Air (modelled): {temperature}'**
+  String evolutionAir(String temperature);
+
+  /// Progression card, By lap view: what the comparison can and cannot tell.
+  ///
+  /// In en, this message translates to:
+  /// **'These are observations, not causes: the tyres, the track and your own learning all change through a session and through the day, and this cannot tell them apart. The track temperature is not recorded.'**
+  String get evolutionCaveat;
+
+  /// Progression card, By lap view: nothing to show.
+  ///
+  /// In en, this message translates to:
+  /// **'No session has timed laps.'**
+  String get evolutionNoLaps;
+
+  /// Progression card, By lap view: the quickest ranked lap after the first lap in the session's middle half, shown only when it is quicker than that lap by more than the session's spread (interquartile range).
+  ///
+  /// In en, this message translates to:
+  /// **'Its quickest lap came later: LAP {number}, {gain} quicker than LAP {first}.'**
+  String evolutionQuickerLater(int number, String gain, int first);
+
+  /// Corner details: heading of the corner's classes (FET-220).
+  ///
+  /// In en, this message translates to:
+  /// **'Corner type'**
+  String get cornerClassTitle;
+
+  /// Corner details: the corner's shape, read from the track's curvature.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape · from the track'**
+  String get cornerClassShape;
+
+  /// Corner details: braking, lift or flat, typical of the day's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking · from this day\'s laps'**
+  String get cornerClassApproach;
+
+  /// Corner details: slow, medium-speed or fast, from the typical minimum speed of the day's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed · from this day\'s laps'**
+  String get cornerClassSpeed;
+
+  /// Corner shape: one tightest part, about the same radius before and after it.
+  ///
+  /// In en, this message translates to:
+  /// **'Single apex'**
+  String get cornerShapeSingleApex;
+
+  /// Corner shape: one tightest part, late in the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Late apex'**
+  String get cornerShapeLateApex;
+
+  /// Corner shape: the corner tightens.
+  ///
+  /// In en, this message translates to:
+  /// **'Decreasing radius'**
+  String get cornerShapeDecreasingRadius;
+
+  /// Corner shape: the corner opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Increasing radius'**
+  String get cornerShapeIncreasingRadius;
+
+  /// Corner shape: two separate tight parts.
+  ///
+  /// In en, this message translates to:
+  /// **'Double apex'**
+  String get cornerShapeDoubleApex;
+
+  /// Corner shape: several corners in one segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Complex'**
+  String get cornerShapeComplex;
+
+  /// Corner class: the speed typically drops by 40 km/h or more from where braking starts to the lowest point.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy braking'**
+  String get cornerApproachHeavyBraking;
+
+  /// Corner class: braked on most laps, less than heavy braking or not measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get cornerApproachBraking;
+
+  /// Corner class: no braking, but speed lost into the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'Lift'**
+  String get cornerApproachLift;
+
+  /// Corner class: no braking and almost no speed lost (flat out).
+  ///
+  /// In en, this message translates to:
+  /// **'Flat'**
+  String get cornerApproachFlat;
+
+  /// Corner class: typical minimum speed below 80 km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow corner'**
+  String get cornerSpeedSlow;
+
+  /// Corner class: typical minimum speed from 80 to 130 km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium-speed corner'**
+  String get cornerSpeedMedium;
+
+  /// Corner class: typical minimum speed from 130 km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast corner'**
+  String get cornerSpeedFast;
+
+  /// Corner details: explains a single apex.
+  ///
+  /// In en, this message translates to:
+  /// **'One tightest part, not late in the corner; the corner neither tightens to the end nor opens from the start.'**
+  String get cornerShapeNoteSingle;
+
+  /// Corner details: explains a late apex.
+  ///
+  /// In en, this message translates to:
+  /// **'One tightest part, late in the corner, which opens again after it.'**
+  String get cornerShapeNoteLate;
+
+  /// Corner details: explains a decreasing radius. ratio is a number such as 1.4.
+  ///
+  /// In en, this message translates to:
+  /// **'Tightens: its second half turns {ratio}× as hard as its first.'**
+  String cornerShapeNoteDecreasing(String ratio);
+
+  /// Corner details: explains an increasing radius. ratio is a number such as 1.9.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens: its first half turns {ratio}× as hard as its second.'**
+  String cornerShapeNoteIncreasing(String ratio);
+
+  /// Corner details: explains a double apex.
+  ///
+  /// In en, this message translates to:
+  /// **'Two separate tight parts, measured as one corner.'**
+  String get cornerShapeNoteDouble;
+
+  /// Corner details: explains a complex with several tight parts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tight parts in this segment, classed together as one corner.'**
+  String cornerShapeNoteComplex(int count);
+
+  /// Corner details: explains a complex that changes direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns one way, then the other: more than one corner in this segment, classed together.'**
+  String get cornerShapeNoteDirection;
+
+  /// Corner details: braking was read from the brake channel.
+  ///
+  /// In en, this message translates to:
+  /// **'brake pedal'**
+  String get cornerClassFromBrakePedal;
+
+  /// Corner details: braking was worked out from the longitudinal G.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred from deceleration'**
+  String get cornerClassFromDeceleration;
+
+  /// Corner details: explains braking or heavy braking. shed is the speed lost from where braking starts to the lowest point, with its unit; how is where braking was read.
+  ///
+  /// In en, this message translates to:
+  /// **'Typically {shed} slower at the lowest point than where braking starts. Brakes on {braked} of {laps} laps ({how}).'**
+  String cornerApproachNoteShed(String shed, String how, int braked, int laps);
+
+  /// Corner details: braking whose speed loss is not known on enough laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Brakes on {braked} of {laps} laps ({how}). The speed from where braking starts to the lowest point is not known on at least three laps, so heavy or not is not known.'**
+  String cornerApproachNoteNoShed(String how, int braked, int laps);
+
+  /// Corner details: explains a lift or flat.
+  ///
+  /// In en, this message translates to:
+  /// **'No braking on {none} of {laps} laps ({how}). Typically {loss} slower at the lowest point than at the corner\'s start.'**
+  String cornerApproachNoteNoBraking(
+    String loss,
+    String how,
+    int none,
+    int laps,
+  );
+
+  /// Corner details: explains a lift or flat when the speeds' units differ.
+  ///
+  /// In en, this message translates to:
+  /// **'No braking on {none} of {laps} laps ({how}).'**
+  String cornerApproachNoteNoBrakingNoSpeed(String how, int none, int laps);
+
+  /// Corner details: explains the speed class.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical minimum speed {speed} over {laps} laps.'**
+  String cornerSpeedNote(String speed, int laps);
+
+  /// Corner details: a corner class that could not be given, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known: {reason}'**
+  String cornerClassUnavailable(String reason);
+
+  /// Why a corner class is not given.
+  ///
+  /// In en, this message translates to:
+  /// **'fewer than three laps measured here'**
+  String get cornerClassReasonTooFewLaps;
+
+  /// Why a corner class is not given.
+  ///
+  /// In en, this message translates to:
+  /// **'speed unit not known'**
+  String get cornerClassReasonSpeedUnit;
+
+  /// Corner details: how the corner classes are worked out.
+  ///
+  /// In en, this message translates to:
+  /// **'The shape comes from the track\'s curvature on the line of the lap the track axis is built from, over the part of the segment that turns; braking and speed are typical (median) values of this day\'s laps here, from the speed channel. The limits are the same on every track: heavy braking is at least 40 km/h slower at the lowest point than where braking starts; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. A segment holding several corners is classed as a whole.'**
+  String get cornerClassNote;
+
+  /// Corner class: braked on most laps, but whether the braking is heavy is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking (heavy not known)'**
+  String get cornerApproachBrakingHeavyUnknown;
+
+  /// Corner details: laps whose speeds are in another unit are not pooled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap recorded in another speed unit is left out of the speeds.} other{{count} laps recorded in another speed unit are left out of the speeds.}}'**
+  String cornerClassOtherUnits(int count);
+
+  /// Corner details: unit shown with speeds that were recorded without a unit and read as km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'km/h (assumed)'**
+  String get cornerClassAssumedKmh;
+
+  /// Why lift or flat is not given: most laps did not brake, but fewer than three laps without braking were measured.
+  ///
+  /// In en, this message translates to:
+  /// **'fewer than three laps without braking'**
+  String get cornerClassReasonTooFewLapsWithoutBraking;
+
+  /// Corner details: braking whose heaviness cannot be told, and why (such as the speed unit not being known).
+  ///
+  /// In en, this message translates to:
+  /// **'Brakes on {braked} of {laps} laps ({how}). Heavy or not is not known: {reason}.'**
+  String cornerApproachNoteNoShedReason(
+    String how,
+    int braked,
+    int laps,
+    String reason,
+  );
+
+  /// Title of the day page card with grip and balance proxies (FET-229).
+  ///
+  /// In en, this message translates to:
+  /// **'Grip and balance'**
+  String get gripHeading;
+
+  /// A label beside the grip and balance card's title: every value there is inferred, not measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred'**
+  String get gripInferredBadge;
+
+  /// Plain explanation under the grip and balance card's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ({count} at least); peak is the highest lap\'s value.'**
+  String gripIntro(int count);
+
+  /// Shown while the theoretical best (which carries the grip proxies) is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Working out the grip and balance…'**
+  String get gripWorking;
+
+  /// The grip proxies come with the theoretical best; shown when it has no result.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known until the day\'s laps are timed through its segments.'**
+  String get gripUnavailable;
+
+  /// Heading of the per-session part: each session's values in speed bands.
+  ///
+  /// In en, this message translates to:
+  /// **'By session, at comparable speed'**
+  String get gripBySession;
+
+  /// A session in the grip card's session picker, with its ranked lap count.
+  ///
+  /// In en, this message translates to:
+  /// **'{session} · {count, plural, =1{1 ranked lap} other{{count} ranked laps}}'**
+  String gripSessionLaps(String session, int count);
+
+  /// Column heading: the speed band.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get gripSpeedColumn;
+
+  /// Column/row label: lateral (sideways) acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Cornering'**
+  String get gripCornering;
+
+  /// Column/row label: deceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking'**
+  String get gripBraking;
+
+  /// Column label: forward acceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerating'**
+  String get gripAccelerating;
+
+  /// Row label: mean acceleration from the slowest point to the corner's end.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit acceleration'**
+  String get gripExit;
+
+  /// Row label: yaw rate against what the cornering needs.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get gripBalance;
+
+  /// A speed band with no lower edge.
+  ///
+  /// In en, this message translates to:
+  /// **'below {speed}'**
+  String gripBandBelow(String speed);
+
+  /// A speed band between two edges.
+  ///
+  /// In en, this message translates to:
+  /// **'{low}–{high}'**
+  String gripBandBetween(String low, String high);
+
+  /// A speed band with no upper edge.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed} and above'**
+  String gripBandAbove(String speed);
+
+  /// The highest lap's value, under a typical value.
+  ///
+  /// In en, this message translates to:
+  /// **'peak {value}'**
+  String gripPeak(String value);
+
+  /// Under the per-session table.
+  ///
+  /// In en, this message translates to:
+  /// **'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s value.'**
+  String get gripTableNote;
+
+  /// The unit of a column, as the recording declares it.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: in {unit}.'**
+  String gripUnitNote(String what, String unit);
+
+  /// An acceleration channel without a declared unit is read as g, and the card says so.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: the recording does not declare a unit; g is assumed.'**
+  String gripAssumedNote(String what);
+
+  /// Braking and accelerating derived from speed.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: from the change in speed (no longitudinal acceleration recorded), in g.'**
+  String gripFromSpeedNote(String what);
+
+  /// Braking and accelerating derived from a speed without a declared unit.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: from the change in speed, in g; the speed has no declared unit, so km/h is assumed.'**
+  String gripFromSpeedAssumedNote(String what);
+
+  /// Joins two column names in a note.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String gripAnd(String first, String second);
+
+  /// A value that is not known, with why.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: not known: {reason}.'**
+  String gripNotKnownLine(String what, String reason);
+
+  /// Shown when some typical value is missing for too few laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical values need at least {count} laps measured the same way; where there are fewer only the peak is shown.'**
+  String gripTypicalNeedsLaps(int count);
+
+  /// Laps whose value comes from another channel, unit or method are not pooled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap measured differently is left out.} other{{count} laps measured differently are left out.}}'**
+  String gripLeftOut(int count);
+
+  /// Heading of the per-corner part.
+  ///
+  /// In en, this message translates to:
+  /// **'By corner'**
+  String get gripByCorner;
+
+  /// One figure in a corner's one-line summary.
+  ///
+  /// In en, this message translates to:
+  /// **'{what} {value}'**
+  String gripCornerSummary(String what, String value);
+
+  /// A corner figure: the typical value, the highest and the lap it is from.
+  ///
+  /// In en, this message translates to:
+  /// **'typical {typical} · peak {peak} ({lap})'**
+  String gripTypicalPeak(String typical, String peak, String lap);
+
+  /// A corner figure from too few laps for a typical value.
+  ///
+  /// In en, this message translates to:
+  /// **'peak {peak} ({lap}); typical needs {count} laps'**
+  String gripPeakOnly(String peak, String lap, int count);
+
+  /// A typical balance ratio.
+  ///
+  /// In en, this message translates to:
+  /// **'typical {ratio} (yaw rate ÷ what the cornering needs)'**
+  String gripBalanceTypical(String ratio);
+
+  /// How many laps a figure is taken from.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{from 1 lap} other{from {count} laps}}'**
+  String gripLapCount(int count);
+
+  /// A value whose unit is assumed, not declared by the recording.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} (g assumed)'**
+  String gripAssumedUnit(String value);
+
+  /// Heading of the explanations at the card's end.
+  ///
+  /// In en, this message translates to:
+  /// **'What the numbers mean'**
+  String get gripMeaningHeading;
+
+  /// Explains the cornering figure.
+  ///
+  /// In en, this message translates to:
+  /// **'Cornering: the highest sideways acceleration each lap reached, through the corner or in the speed band.'**
+  String get gripMeaningCornering;
+
+  /// Explains the braking figure.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking: the highest deceleration from the braking point to the slowest point of the corner (by session: anywhere in the speed band).'**
+  String get gripMeaningBraking;
+
+  /// Explains the exit acceleration (traction) figure.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit acceleration: the mean acceleration from the slowest point to the end of the corner; below zero the car was still slowing.'**
+  String get gripMeaningExit;
+
+  /// Explains the balance figure.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from {g} g and {speed} m/s. In steady cornering it is about 1 whether the car understeers or oversteers: telling those apart needs the steering angle, which is not recorded. Above 1 the car rotated faster than its path curved (its slip angle growing); below 1, slower. Samples whose yaw rate turns against the cornering are left out. It needs the car\'s own yaw-rate channel and is inferred.'**
+  String gripMeaningBalance(String g, String speed);
+
+  /// Why: too few laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{fewer than {count} laps}}'**
+  String gripReasonTooFewLaps(int count);
+
+  /// Why: too few samples.
+  ///
+  /// In en, this message translates to:
+  /// **'not enough samples on any lap'**
+  String get gripReasonTooFewSamples;
+
+  /// Why: no lateral acceleration channel.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording has no lateral acceleration'**
+  String get gripReasonNoLateral;
+
+  /// Why: no speed channel.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording has no speed'**
+  String get gripReasonNoSpeed;
+
+  /// Why: an acceleration unit that is not g or m/s².
+  ///
+  /// In en, this message translates to:
+  /// **'its unit is not one the app reads'**
+  String get gripReasonUnsupportedUnit;
+
+  /// Why: speed bands need km/h or mph.
+  ///
+  /// In en, this message translates to:
+  /// **'the speed\'s unit is not km/h or mph'**
+  String get gripReasonSpeedUnit;
+
+  /// Why: no yaw-rate channel.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording has no yaw-rate channel'**
+  String get gripReasonNoYaw;
+
+  /// Why: only a device gyro (phone axes), which is not the car's yaw unless mounted level.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording\'s gyro measures the logger\'s own axes, not the car\'s yaw'**
+  String get gripReasonDeviceAxes;
+
+  /// Why: a yaw-rate channel without a known unit.
+  ///
+  /// In en, this message translates to:
+  /// **'the yaw rate\'s unit is not recorded or not known'**
+  String get gripReasonYawUnit;
+
+  /// Why: no sector times for the corner.
+  ///
+  /// In en, this message translates to:
+  /// **'the laps are not timed through this corner'**
+  String get gripReasonNotTimed;
+
+  /// Why: the corner's minimum speed is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'no slowest point found in the corner'**
+  String get gripReasonNoMinimum;
+
+  /// Why: the session's recording is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'the recording is not loaded'**
+  String get gripReasonNoRecording;
+
+  /// Why: any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'not available'**
+  String get gripReasonOther;
+
+  /// One line under the grip and balance card's title while the card is closed.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard the car was worked cornering, braking and accelerating, per session and per corner.'**
+  String get gripSummary;
+
+  /// Opens the grip and balance card.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get gripShow;
+
+  /// Closes the grip and balance card.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get gripHide;
+
+  /// A value derived from the speed's change (no longitudinal acceleration channel).
+  ///
+  /// In en, this message translates to:
+  /// **'{value} from speed'**
+  String gripFromSpeedValue(String value);
+
+  /// A value derived from a speed that declares no unit; km/h is assumed for it.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} from speed (km/h assumed)'**
+  String gripFromSpeedValueAssumed(String value);
+
+  /// A balance worked out from a lateral acceleration or speed whose unit is assumed (g or km/h).
+  ///
+  /// In en, this message translates to:
+  /// **'{text}; units assumed'**
+  String gripBalanceUnitsAssumed(String text);
+
+  /// A speed band of a speed that declares no unit: its edges are km/h, assumed.
+  ///
+  /// In en, this message translates to:
+  /// **'{band} (km/h assumed)'**
+  String gripBandSpeedAssumed(String band);
+
+  /// One figure in a corner's summary when there are too few laps for a typical value: the highest lap's value.
+  ///
+  /// In en, this message translates to:
+  /// **'{what} peak {value}'**
+  String gripCornerSummaryPeak(String what, String value);
+
+  /// How many ranked laps timed through the corner gave no value (too few samples, not timed, …).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 ranked lap has no value} other{{count} ranked laps have no value}}'**
+  String gripNoValueLaps(int count);
+
+  /// Why: no deceleration at all.
+  ///
+  /// In en, this message translates to:
+  /// **'no braking on any lap'**
+  String get gripReasonNoBraking;
+
+  /// Why: no forward acceleration at all.
+  ///
+  /// In en, this message translates to:
+  /// **'no acceleration on any lap'**
+  String get gripReasonNoAcceleration;
+
+  /// Why: an acceleration channel of zeros only.
+  ///
+  /// In en, this message translates to:
+  /// **'the channel holds only zeros (a placeholder, not a measurement)'**
+  String get gripReasonAllZero;
+
+  /// Heading of the reference lap part of the Compare section (FET-175): a lap from outside the day to compare with.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference lap'**
+  String get referenceTitle;
+
+  /// Explains the reference lap under its heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved in the day file. Your driver profile remembers it for this day: a recording file is copied into the profile, a lap of an earlier day is remembered by that day.'**
+  String get referenceIntro;
+
+  /// Button: choose a VBO or RCZ file to take the reference lap from.
+  ///
+  /// In en, this message translates to:
+  /// **'Load a recording'**
+  String get referenceLoadFile;
+
+  /// Button: choose one of the profile's earlier days to take the reference lap from.
+  ///
+  /// In en, this message translates to:
+  /// **'From an earlier day'**
+  String get referenceLoadDay;
+
+  /// Why a reference cannot be loaded yet.
+  ///
+  /// In en, this message translates to:
+  /// **'A reference is timed on the line of today\'s best lap, so the day needs a ranked lap first.'**
+  String get referenceNeedsLap;
+
+  /// Shown while a reference is read and timed.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing {source} on today\'s start/finish line…'**
+  String referenceLoading(String source);
+
+  /// The reference lap's name everywhere it is shown. source is a file name or a day's name with its session.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference: {source}, lap {lap}, {time}'**
+  String referenceLabel(String source, int lap, String time);
+
+  /// The source of a reference from an earlier day: the day's name and the session.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} · {session}'**
+  String referenceDaySession(String day, String session);
+
+  /// Why a reference was refused: its GPS is far from today's line.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: this recording is from another track. Its GPS comes no closer than {distance} to today\'s start/finish line.'**
+  String referenceRefusedWrongTrack(String distance);
+
+  /// Why a reference was refused: no GPS.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: the recording has no usable GPS position, so it cannot be timed on today\'s line.'**
+  String get referenceRefusedNoGps;
+
+  /// Why a reference was refused: no timed lap on today's line.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: the recording comes near today\'s start/finish line, but no complete lap of it crosses the line.'**
+  String get referenceRefusedNoLap;
+
+  /// Why a reference was refused: today's line is not valid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: today\'s start/finish line is not valid.'**
+  String get referenceRefusedGate;
+
+  /// A reference file or day could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference could not be read: {reason}'**
+  String referenceFailed(String reason);
+
+  /// Reason a profile day gave no reference: its recordings are missing.
+  ///
+  /// In en, this message translates to:
+  /// **'None of that day\'s recordings were found.'**
+  String get referenceDayNoRecordings;
+
+  /// Button: open the comparison of today's best lap with the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with today\'s best'**
+  String get referenceCompare;
+
+  /// Button: choose which lap of the reference recording is the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose its lap'**
+  String get referenceChooseLap;
+
+  /// Button: drop the reference lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear reference'**
+  String get referenceClear;
+
+  /// Under the reference lap: the day is not kept in the driver profile (or there is no profile), so the reference is not remembered.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept while this day is open; not remembered, because this day is not kept in your driver profile.'**
+  String get referenceNotSaved;
+
+  /// Under the reference lap: it is kept in the driver profile and comes back when the day is opened again (a lap of an earlier day).
+  ///
+  /// In en, this message translates to:
+  /// **'Remembered for this day in your driver profile.'**
+  String get referenceSaved;
+
+  /// Under the reference lap: it is kept in the driver profile with a copy of the recording file.
+  ///
+  /// In en, this message translates to:
+  /// **'Remembered for this day in your driver profile, with a copy of the recording.'**
+  String get referenceSavedCopy;
+
+  /// Under the reference lap while it is written to the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving to your driver profile…'**
+  String get referenceSaving;
+
+  /// Under the reference lap: it could not be kept in the driver profile. reason is one of the referenceKeep… texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Not remembered: {reason} It stays while this day is open.'**
+  String referenceKeepFailed(String reason);
+
+  /// After clearing the reference: the driver profile could not be written.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference could not be removed from your driver profile, so it comes back when this day is opened again.'**
+  String get referenceForgetFailed;
+
+  /// Button: write the reference to the driver profile again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get referenceKeepRetry;
+
+  /// Why a reference was not kept: the profile's limit of reference recording copies.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile already keeps {count} reference recordings. Clear the reference of another day first.'**
+  String referenceKeepTooManyFiles(int count);
+
+  /// Why a reference was not kept: the profile's limit of room for reference recordings.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference recordings would take more than {megabytes} MiB in your profile.'**
+  String referenceKeepTooMuch(int megabytes);
+
+  /// Why a reference was not kept: the recording file is too large.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is larger than {megabytes} MiB, the most a reference can be.'**
+  String referenceKeepFileTooLarge(int megabytes);
+
+  /// Why a reference was not kept: the recording file is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is empty.'**
+  String get referenceKeepFileEmpty;
+
+  /// Why a reference was not kept: not a VBO or RCZ file.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a VBO or RCZ recording can be remembered.'**
+  String get referenceKeepFileType;
+
+  /// Why a reference was not kept: the file could not be read or copied.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording could not be copied into your profile.'**
+  String get referenceKeepUnreadable;
+
+  /// Why a reference was not kept: the profile file could not be written or the day is not in it.
+  ///
+  /// In en, this message translates to:
+  /// **'Your driver profile could not be written.'**
+  String get referenceKeepNotWritten;
+
+  /// Why a reference was not kept: any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Your driver profile could not keep it.'**
+  String get referenceKeepOther;
+
+  /// A remembered reference whose recording copy is not in the driver profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording kept for this reference was not found in your driver profile. Clear the reference or load the recording again.'**
+  String get referenceFileMissing;
+
+  /// A remembered reference whose recording copy has another size than when it was saved.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording kept for this reference is not the file that was saved (it changed). Clear the reference or load the recording again.'**
+  String get referenceFileChanged;
+
+  /// A remembered reference taken from a day that was deleted from the profile.
+  ///
+  /// In en, this message translates to:
+  /// **'The day this reference was taken from is no longer in your driver profile. Clear the reference or choose another day.'**
+  String get referenceDayMissing;
+
+  /// Title of the list of the profile's days.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an earlier day'**
+  String get referencePickDay;
+
+  /// The list of days is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile has no other day yet.'**
+  String get referenceNoDays;
+
+  /// Title of the list of the reference recording's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the reference lap'**
+  String get referencePickLap;
+
+  /// One lap in the list of the reference recording's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{source}, lap {lap}'**
+  String referenceLapOption(String source, int lap);
+
+  /// Title of the page comparing a lap with the reference lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Against the reference'**
+  String get referenceCompareTitle;
+
+  /// Short name of the reference lap next to a chart value, where lap A is 'A'.
+  ///
+  /// In en, this message translates to:
+  /// **'Ref'**
+  String get referenceShort;
+
+  /// How to read the differences against the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Δ is A − reference: positive when A is behind.'**
+  String get referenceDeltaExplained;
+
+  /// Note under the Δ time chart against the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'+ = A behind the reference'**
+  String get referenceDeltaNote;
+
+  /// Note on the comparison page.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference is not part of this day: it is not ranked and not saved in the day file.'**
+  String get referenceKeptApart;
+
+  /// Comparison page after the reference was cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'No reference lap is chosen.'**
+  String get referenceGone;
+
+  /// Under a chart: each side's unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Units: A {a} · reference {b}'**
+  String referenceUnits(String a, String b);
+
+  /// A unit the recording does not declare, taken from the setting for unlabelled speeds.
+  ///
+  /// In en, this message translates to:
+  /// **'{unit} (assumed)'**
+  String referenceUnitAssumed(String unit);
+
+  /// A side whose channel has no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'no unit'**
+  String get referenceUnitNone;
+
+  /// Note when today's lap and the reference record a channel in different units.
+  ///
+  /// In en, this message translates to:
+  /// **'Different units: shown apart, never subtracted.'**
+  String get referenceUnitsApart;
+
+  /// Title of a chart that shows only one side, when the units differ.
+  ///
+  /// In en, this message translates to:
+  /// **'{channel} · {lap}'**
+  String referenceChartOf(String channel, String lap);
+
+  /// Heading of the per-segment times against the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments against the reference'**
+  String get referenceSegmentsTitle;
+
+  /// The reference cannot be timed per segment.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s lap has no segments to time yet: approve them in the segment review, or wait for the theoretical best.'**
+  String get referenceSegmentsNone;
+
+  /// Note when the segments come from the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments of the theoretical best; their boundaries can shift by a few metres on these laps.'**
+  String get referenceSegmentsBorrowed;
+
+  /// Column heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment'**
+  String get referenceColumnSegment;
+
+  /// A segment without a time on one of the laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{segment}: not timed on one of the laps ({reason})'**
+  String referenceSegmentNotTimed(String segment, String reason);
+
+  /// Why a reference was refused: its laps go round today's route in the opposite direction.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: its laps go round today\'s track the other way.'**
+  String get referenceRefusedDirection;
+
+  /// Why a reference was refused: its laps cross today's line but follow another route.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used: its laps cross today\'s start/finish line but follow another layout of the track.'**
+  String get referenceRefusedLayout;
+
+  /// Why a reference from an earlier day was refused: all of its laps on today's route were excluded on that day.
+  ///
+  /// In en, this message translates to:
+  /// **'Every one of its laps on today\'s track was excluded on its own day. Choose one with Choose its lap to use it anyway.'**
+  String get referenceRefusedExcluded;
+
+  /// In the reference lap picker: this lap was excluded on its own day, with the reason given there.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded on its day: {reason}'**
+  String referenceLapExcluded(String reason);
+
+  /// In the reference lap picker: this lap was excluded on its own day, without a reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded on its day'**
+  String get referenceLapExcludedNoReason;
+
+  /// Snack bar when several files were picked as a reference.
+  ///
+  /// In en, this message translates to:
+  /// **'A reference is one recording: only {name} is used.'**
+  String referenceOnlyFirstFile(String name);
+
+  /// The reference was timed on a start/finish line that is no longer today's line (another group or best lap).
+  ///
+  /// In en, this message translates to:
+  /// **'Timed on another start/finish line: today\'s line has changed since. Load it again to compare.'**
+  String get referenceStale;
+
+  /// Button: read and time the reference again on today's line.
+  ///
+  /// In en, this message translates to:
+  /// **'Load again'**
+  String get referenceReload;
+
+  /// On the reference comparison: lap A's session has another start/finish line than the one the reference was timed on.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap A was timed on another start/finish line than the reference, so there is no lap Δ. Choose another lap A.'**
+  String get referenceLapAOtherLine;
+
+  /// On the reference comparison: the reference lap's position covers too little of lap A's line for a lap delta.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap Δ: the reference lap follows only {percent} % of lap A\'s line.'**
+  String referenceLowCoverage(int percent);
+
+  /// Today's best lap has no route shape (too short, open or self-crossing), so reference laps were timed on the line without the route check.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s lap has no route to check against, so the reference\'s route and direction were not checked: only today\'s start/finish line.'**
+  String get referenceRouteUnchecked;
+
+  /// Day page: heading of the card with each corner's best entry, middle and exit of the day (FET-226), and the name of its total.
+  ///
+  /// In en, this message translates to:
+  /// **'Best phases'**
+  String get bpHeading;
+
+  /// Best phases card, closed or before it is worked out: what it holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Each corner\'s best entry, middle and exit of the day, as a target.'**
+  String get bpSummary;
+
+  /// Best phases card, closed: what it holds and its total.
+  ///
+  /// In en, this message translates to:
+  /// **'Each corner\'s best entry, middle and exit of the day, as a target: {time}.'**
+  String bpSummaryTime(String time);
+
+  /// Best phases card: shown while the theoretical best's background job runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Worked out with the theoretical best…'**
+  String get bpWorking;
+
+  /// Best phases card: why there is nothing to show (the theoretical best's reason).
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: {reason}'**
+  String bpUnavailable(String reason);
+
+  /// Best phases card: how it is put together.
+  ///
+  /// In en, this message translates to:
+  /// **'Each corner is split where it is tightest into entry, middle and exit, and each part comes from the ranked lap fastest through it. Straights, and corners that are not split, come whole from the lap fastest through them. Laps that are not ranked are left out.'**
+  String get bpIntro;
+
+  /// Best phases card: a piece has no time, so no total is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'No total: a part has no time on any ranked lap.'**
+  String get bpIncomplete;
+
+  /// Best phases card headline: the chosen lap's time minus the best phases.
+  ///
+  /// In en, this message translates to:
+  /// **'Loses'**
+  String get bpLoses;
+
+  /// Best phases card: heading over the best phases next to the theoretical best card's three totals.
+  ///
+  /// In en, this message translates to:
+  /// **'Against the theoretical bests'**
+  String get bpBestsTitle;
+
+  /// Best phases card: what the best phases total is, and how many laps it comes from.
+  ///
+  /// In en, this message translates to:
+  /// **'Each part\'s fastest time, from {count, plural, =1{1 lap} other{{count} laps}}. The parts need not join.'**
+  String bpTotalNote(int count);
+
+  /// Best phases card: how the theoretical best (fastest segments) relates to the best phases.
+  ///
+  /// In en, this message translates to:
+  /// **'The same idea a whole segment at a time.'**
+  String get bpRawNote;
+
+  /// Best phases card: the quickest parts whose speeds match wherever two laps meet.
+  ///
+  /// In en, this message translates to:
+  /// **'Best phases that join'**
+  String get bpJoinedLabel;
+
+  /// Best phases card: what best phases that join is.
+  ///
+  /// In en, this message translates to:
+  /// **'An estimate: the fastest parts whose speeds differ by at most {tolerance} wherever two laps meet, at the lines inside each corner too. Made of {count, plural, =1{1 lap} other{{count} laps}}.'**
+  String bpJoinedNote(String tolerance, int count);
+
+  /// Best phases card: no combination of parts joins.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown: every part has a time, but no laps join at the speed the car had at every line between them.'**
+  String get bpJoinedNoJoin;
+
+  /// Best phases card: how segments that join relates to best phases that join.
+  ///
+  /// In en, this message translates to:
+  /// **'The same rule a whole segment at a time.'**
+  String get bpRealisticNote;
+
+  /// Best phases card: how the best typical relates to the best phases.
+  ///
+  /// In en, this message translates to:
+  /// **'A different idea: each segment\'s quickest typical (median) time in one session, what you did as a rule, not once. It is not split into parts.'**
+  String get bpTypicalNote;
+
+  /// Best phases card: heading over where parts from two different laps meet.
+  ///
+  /// In en, this message translates to:
+  /// **'Where laps meet'**
+  String get bpJoinsTitle;
+
+  /// Best phases card: all parts from the same lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Every part comes from one lap: there is nothing to join.'**
+  String get bpJoinsNone;
+
+  /// Best phases card: every join between two laps is within the tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'At all {count, plural, =1{1 line} other{{count} lines}} where two laps meet, their speeds differ by at most {tolerance}.'**
+  String bpJoinsAll(int count, String tolerance);
+
+  /// Best phases card: how many joins between two laps exceed the tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'At {apart} of {count, plural, =1{1 line} other{{count} lines}} where two laps meet, their speeds differ by more than {tolerance}: there the best phases is not a lap the car drove.'**
+  String bpJoinsApart(int apart, int count, String tolerance);
+
+  /// Best phases card: one line where two laps meet and their speeds differ too much.
+  ///
+  /// In en, this message translates to:
+  /// **'{where}: {difference} apart'**
+  String bpJoinApart(String where, String difference);
+
+  /// Best phases card: joins whose speed is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more line} other{{count} more lines}} could not be checked: a lap has no speed in a known unit there.'**
+  String bpJoinsUnknown(int count);
+
+  /// Best phases card: what the join rule can and cannot tell.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching speeds are needed for two laps to join, not proof that they do: two laps can be on different lines at the same speed.'**
+  String get bpJoinsNote;
+
+  /// Best phases card: heading over each segment's parts against the chosen lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Part by part'**
+  String get bpByPart;
+
+  /// Best phases card: a part's fastest time and the lap that set it.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {time} s, {lap}'**
+  String bpBest(String time, String lap);
+
+  /// Best phases card: no lap has a time through this part.
+  ///
+  /// In en, this message translates to:
+  /// **'No lap is timed here'**
+  String get bpNoTime;
+
+  /// Best phases card: the chosen lap's own time through a part.
+  ///
+  /// In en, this message translates to:
+  /// **'this lap {time} s'**
+  String bpLapTime(String time);
+
+  /// Best phases card: the chosen lap is the one that set the part's best.
+  ///
+  /// In en, this message translates to:
+  /// **'this lap set it'**
+  String get bpLapSetIt;
+
+  /// Best phases card: the chosen lap has no time through this part.
+  ///
+  /// In en, this message translates to:
+  /// **'this lap is not timed here'**
+  String get bpLapNotTimed;
+
+  /// Best phases card: this part's lap and the one before it differ in speed by more than the tolerance.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not join the part before: {difference} apart'**
+  String bpDoesNotJoin(String difference);
+
+  /// Best phases card: a segment taken whole, not split into parts.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole'**
+  String get bpWhole;
+
+  /// Best phases card: why it is not a reference lap with a delta trace.
+  ///
+  /// In en, this message translates to:
+  /// **'The best phases is made of parts of different laps, not one recording, so it is compared part by part here and is not offered as a reference lap.'**
+  String get bpPiecesNote;
+
+  /// Best phases card: shown only when the best phases total is not above the theoretical best.
+  ///
+  /// In en, this message translates to:
+  /// **'Best phases is never slower: a corner\'s three parts may come from three laps.'**
+  String get bpRawNever;
+
+  /// Best phases card: shown only when best phases that join is not above segments that join.
+  ///
+  /// In en, this message translates to:
+  /// **'Never slower than segments that join.'**
+  String get bpJoinedNever;
+
+  /// Best phases card: a lap's speed declares no unit, so differences rest on reading it as km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'Speeds without a unit are read as km/h.'**
+  String get bpSpeedAssumed;
+
+  /// Corner details: heading of the braking technique section (FET-219).
+  ///
+  /// In en, this message translates to:
+  /// **'Braking technique'**
+  String get brakingTechniqueTitle;
+
+  /// Braking technique: where the deceleration comes from, with the channel's update rate.
+  ///
+  /// In en, this message translates to:
+  /// **'From the longitudinal G channel ({rate} Hz) on this day\'s ranked laps.'**
+  String brakingTechniqueFromG(String rate);
+
+  /// Braking technique: the G channel declares no unit and is read as g.
+  ///
+  /// In en, this message translates to:
+  /// **'From the longitudinal G channel ({rate} Hz, no unit recorded: read as g) on this day\'s ranked laps.'**
+  String brakingTechniqueFromGAssumed(String rate);
+
+  /// Braking technique: deceleration worked out from the speed channel, and why no G channel was used.
+  ///
+  /// In en, this message translates to:
+  /// **'From speed ({rate} Hz), its change smoothed over a 0.5 s window, on this day\'s ranked laps: {why}. Not comparable with figures from a G channel.'**
+  String brakingTechniqueFromSpeed(String rate, String why);
+
+  /// Why the deceleration comes from speed: the recording has no longitudinal G.
+  ///
+  /// In en, this message translates to:
+  /// **'no longitudinal G channel'**
+  String get brakingTechniqueNoGChannel;
+
+  /// Why the deceleration comes from speed: the G channel is all zero placeholders.
+  ///
+  /// In en, this message translates to:
+  /// **'the longitudinal G channel holds no data'**
+  String get brakingTechniqueGChannelEmpty;
+
+  /// Braking technique: how fast deceleration builds at the start of braking, in g per second.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial hit'**
+  String get brakingTechniqueHit;
+
+  /// Braking technique: the highest deceleration in the braking zone, in g.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak deceleration'**
+  String get brakingTechniquePeak;
+
+  /// Braking technique: how long and far braking goes on while lateral G is at least 0.3 g; inferred, there is no steering channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail braking · inferred'**
+  String get brakingTechniqueTrail;
+
+  /// Braking technique: how fast deceleration falls off into the apex, in g per second.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get brakingTechniqueRelease;
+
+  /// Braking technique: time from the end of braking to the throttle pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Brake to throttle'**
+  String get brakingTechniqueBrakeToThrottle;
+
+  /// Braking technique: how fast the brake pedal itself is pressed and let off, in % per second.
+  ///
+  /// In en, this message translates to:
+  /// **'Brake pedal: application and release'**
+  String get brakingTechniquePedal;
+
+  /// Braking technique: this lap's value.
+  ///
+  /// In en, this message translates to:
+  /// **'This lap: {value}'**
+  String brakingTechniqueThisLap(String value);
+
+  /// Braking technique: this lap's value is not known, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'This lap: not known, {reason}'**
+  String brakingTechniqueThisLapUnknown(String reason);
+
+  /// Braking technique: the median over the ranked laps measured.
+  ///
+  /// In en, this message translates to:
+  /// **'{laps, plural, =1{typical {value} (1 lap)} other{typical {value} ({laps} laps)}}'**
+  String brakingTechniqueTypical(String value, int laps);
+
+  /// Braking technique: no typical value, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'typical: not known, {reason}'**
+  String brakingTechniqueTypicalUnknown(String reason);
+
+  /// Braking technique: when this lap's peak deceleration comes in its braking, by time; the values are seconds with one decimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak {after} s into {zone} s of braking.'**
+  String brakingTechniquePeakWhere(String after, String zone);
+
+  /// Braking technique: where the peak typically falls, by distance (or time without a speed).
+  ///
+  /// In en, this message translates to:
+  /// **'Typically in the first third of the braking, by time.'**
+  String get brakingTechniquePeakEarly;
+
+  /// Braking technique: where the peak typically falls.
+  ///
+  /// In en, this message translates to:
+  /// **'Typically in the middle third of the braking, by time.'**
+  String get brakingTechniquePeakMiddle;
+
+  /// Braking technique: where the peak typically falls.
+  ///
+  /// In en, this message translates to:
+  /// **'Typically in the last third of the braking, by time.'**
+  String get brakingTechniquePeakLate;
+
+  /// Braking technique: what trail braking is read from.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking while the lateral G is at least 0.3 g. Inferred: there is no steering channel.'**
+  String get brakingTechniqueTrailNote;
+
+  /// Braking technique: brake-to-throttle time and how precise the throttle channel lets it be.
+  ///
+  /// In en, this message translates to:
+  /// **'From the end of braking to the throttle pickup, looked for until braking starts again and at most 4 s. The throttle is recorded at {rate} Hz, so the pickup is placed to about {error} s.'**
+  String brakingTechniqueThrottleNote(String rate, String error);
+
+  /// Braking technique: the brake pedal updates slower than about 10 Hz (an OBD pedal), so no pedal ramp or release is read from it.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known: brake channel too slow ({rate} Hz). It shows when braking happens, not how the pedal moves, so the hit and release above come from the deceleration.'**
+  String brakingTechniquePedalSlow(String rate);
+
+  /// Braking technique: the whole section is not known, and why.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known: {reason}'**
+  String brakingTechniqueUnavailable(String reason);
+
+  /// Braking technique: how many measured laps braked here.
+  ///
+  /// In en, this message translates to:
+  /// **'Brakes on {braked} of {laps} laps.'**
+  String brakingTechniqueBrakingLaps(int braked, int laps);
+
+  /// Braking technique: laps measured from a different source are never pooled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lap measured another way (G channel or speed, or another unit) is left out.} other{{count} laps measured another way (G channel or speed, or another unit) are left out.}}'**
+  String brakingTechniqueOtherSource(int count);
+
+  /// Braking technique: how the figures are read and the thresholds.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count, and a dip of at least a tenth of the peak just before the rise starts the hit there; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.'**
+  String get brakingTechniqueNote;
+
+  /// Why a braking figure is not known: the channel it would come from updates slower than about 10 Hz.
+  ///
+  /// In en, this message translates to:
+  /// **'channel too slow ({rate} Hz)'**
+  String brakingTechniqueReasonTooSlow(String rate);
+
+  /// Why the brake pedal's ramp and release are not known.
+  ///
+  /// In en, this message translates to:
+  /// **'brake channel too slow ({rate} Hz)'**
+  String brakingTechniqueReasonBrakeTooSlow(String rate);
+
+  /// Why trail braking is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'lateral G channel too slow ({rate} Hz)'**
+  String brakingTechniqueReasonLateralTooSlow(String rate);
+
+  /// Why braking technique is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'no longitudinal G or speed recorded'**
+  String get brakingTechniqueReasonNoDeceleration;
+
+  /// Why braking technique is not known: the lap (or most laps) did not brake into this corner.
+  ///
+  /// In en, this message translates to:
+  /// **'no braking here'**
+  String get brakingTechniqueReasonNoBraking;
+
+  /// Why a braking figure is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'a gap in the recording'**
+  String get brakingTechniqueReasonGap;
+
+  /// Why a braking figure is not known: the recording ends before braking does.
+  ///
+  /// In en, this message translates to:
+  /// **'braking runs past the recording'**
+  String get brakingTechniqueReasonTruncated;
+
+  /// Why the hit and release are not known.
+  ///
+  /// In en, this message translates to:
+  /// **'braking peaks below 0.40 g'**
+  String get brakingTechniqueReasonTooLight;
+
+  /// Why the hit or release is not known: it happened between two samples.
+  ///
+  /// In en, this message translates to:
+  /// **'too quick for the sample rate'**
+  String get brakingTechniqueReasonTooQuick;
+
+  /// Why trail braking is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'no lateral G channel'**
+  String get brakingTechniqueReasonNoLateral;
+
+  /// Why trail braking is not known: placeholder zeros.
+  ///
+  /// In en, this message translates to:
+  /// **'the lateral G channel holds no data'**
+  String get brakingTechniqueReasonLateralEmpty;
+
+  /// Why brake-to-throttle time is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'no throttle channel'**
+  String get brakingTechniqueReasonNoThrottle;
+
+  /// Why the brake pedal's ramp and release are not known.
+  ///
+  /// In en, this message translates to:
+  /// **'no brake pedal channel'**
+  String get brakingTechniqueReasonNoBrake;
+
+  /// Day page: heading of the day's braking technique summary (FET-219).
+  ///
+  /// In en, this message translates to:
+  /// **'Braking technique'**
+  String get brakingTechniqueDayTitle;
+
+  /// Day page: the day's braking technique, the median of each corner's typical value.
+  ///
+  /// In en, this message translates to:
+  /// **'{corners, plural, =1{Typical over 1 corner} other{Typical over {corners} corners}}, {source}: {figures}.'**
+  String brakingTechniqueDaySummary(int corners, String source, String figures);
+
+  /// Day page: the braking figures come from the G channel.
+  ///
+  /// In en, this message translates to:
+  /// **'from longitudinal G'**
+  String get brakingTechniqueDayFromG;
+
+  /// Day page: the braking figures come from the speed channel.
+  ///
+  /// In en, this message translates to:
+  /// **'from speed'**
+  String get brakingTechniqueDayFromSpeed;
+
+  /// Day page: typical initial hit, the value with its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'initial hit {value}'**
+  String brakingTechniqueDayHit(String value);
+
+  /// Day page: typical release, the value with its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'release {value}'**
+  String brakingTechniqueDayRelease(String value);
+
+  /// Day page: typical trail braking time, the value with its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'trail braking {value} (inferred)'**
+  String brakingTechniqueDayTrail(String value);
+
+  /// Day page: typical brake-to-throttle time, the value with its unit.
+  ///
+  /// In en, this message translates to:
+  /// **'brake to throttle {value}'**
+  String brakingTechniqueDayThrottle(String value);
+
+  /// Day page: where the per-corner braking technique is.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a corner above for its braking lap by lap.'**
+  String get brakingTechniqueDayNote;
+
+  /// Braking technique: deceleration from a speed channel that declares no unit, read as km/h.
+  ///
+  /// In en, this message translates to:
+  /// **'From speed ({rate} Hz, no unit recorded: read as {unit}), its change smoothed over a 0.5 s window, on this day\'s ranked laps: {why}. Not comparable with figures from a G channel.'**
+  String brakingTechniqueFromSpeedAssumed(String rate, String unit, String why);
+
+  /// Braking technique: a hit or release from speed as fast as its smoothing can show; the real one may be quicker.
+  ///
+  /// In en, this message translates to:
+  /// **'at least {value}'**
+  String brakingTechniqueAtLeast(String value);
+
+  /// Braking technique: brake-to-throttle time from a throttle slower than about 10 Hz, to 0.1 s.
+  ///
+  /// In en, this message translates to:
+  /// **'about {value}'**
+  String brakingTechniqueAbout(String value);
+
+  /// Braking technique: the lateral G declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The lateral G has no unit recorded: read as g.'**
+  String get brakingTechniqueLateralAssumed;
+
+  /// Braking technique: the throttle declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The throttle has no unit recorded: read as %.'**
+  String get brakingTechniqueThrottleAssumed;
+
+  /// Braking technique: the throttle's 0 to 1 scale was inferred from its values.
+  ///
+  /// In en, this message translates to:
+  /// **'The throttle is recorded from 0 to 1: read as 0 to 100 %.'**
+  String get brakingTechniqueThrottleScaleInferred;
+
+  /// Braking technique: the brake pedal declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The brake has no unit recorded: read as %.'**
+  String get brakingTechniqueBrakeAssumed;
+
+  /// Braking technique: the brake's 0 to 1 scale was inferred from its values.
+  ///
+  /// In en, this message translates to:
+  /// **'The brake is recorded from 0 to 1: read as 0 to 100 %.'**
+  String get brakingTechniqueBrakeScaleInferred;
+
+  /// Why brake-to-throttle time is not known: braking starts again (a segment of two corners) before any throttle pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'braking again before the throttle'**
+  String get brakingTechniqueReasonBrakingAgain;
+
+  /// Why brake-to-throttle time is not known: the pickup comes more than 4 s after braking, past this corner.
+  ///
+  /// In en, this message translates to:
+  /// **'no throttle within 4 s of braking'**
+  String get brakingTechniqueReasonCoasting;
+
+  /// Why the brake pedal's ramps are not read: a RaceChrono VBO OBD column (name ending -obd).
+  ///
+  /// In en, this message translates to:
+  /// **'the brake is an OBD channel resampled to the recording\'s rows, its own rate not known'**
+  String get brakingTechniqueReasonBrakeResampled;
+
+  /// Day page: the source of the braking figures when the G channel declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'from longitudinal G (no unit recorded: read as g)'**
+  String get brakingTechniqueDayFromGAssumed;
+
+  /// Day page: the source of the braking figures when the speed declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'from speed (no unit recorded: read as {unit})'**
+  String brakingTechniqueDayFromSpeedAssumed(String unit);
+
+  /// Day page: corners whose braking comes from another source are never pooled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 corner measured another way (G channel or speed, or another unit) is left out.} other{{count} corners measured another way (G channel or speed, or another unit) are left out.}}'**
+  String brakingTechniqueDayOtherSource(int count);
+
+  /// Braking technique: distances come from a speed that declares no unit.
+  ///
+  /// In en, this message translates to:
+  /// **'The speed has no unit recorded: distances read in {unit}.'**
+  String brakingTechniqueSpeedAssumed(String unit);
+
+  /// Braking technique: a typical resting on a few of the braking laps, the others having braked again or coasted.
+  ///
+  /// In en, this message translates to:
+  /// **'From {laps} of {braking} braking laps; the others braked again before the throttle or coasted.'**
+  String brakingTechniqueSubsetBraked(int laps, int braking);
+
+  /// Braking technique: a typical resting on a few of the braking laps, with the others' most common reason.
+  ///
+  /// In en, this message translates to:
+  /// **'From {laps} of {braking} braking laps; the others have none: {reason}.'**
+  String brakingTechniqueSubsetOther(int laps, int braking, String reason);
+
+  /// Day page: corners whose figure rested on a minority of their braking laps are left out.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 corner is left out of a figure that rested on under half of its braking laps.} other{{count} corners are left out of a figure that rested on under half of their braking laps.}}'**
+  String brakingTechniqueDayMinority(int count);
+
+  /// Title of the day page card that groups the ranked laps by how they were driven (FET-223).
+  ///
+  /// In en, this message translates to:
+  /// **'Lap styles'**
+  String get lapStylesHeading;
+
+  /// A label beside the lap styles card's title: the styles are inferred from corner figures, not measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Inferred'**
+  String get lapStylesInferredBadge;
+
+  /// One line under the lap styles card's title while the card is closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranked laps grouped by how they were braked and driven on the throttle, and the best lap of each group.'**
+  String get lapStylesSummary;
+
+  /// Opens the lap styles card.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get lapStylesShow;
+
+  /// Closes the lap styles card.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get lapStylesHide;
+
+  /// Plain explanation under the lap styles card's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Each ranked lap is compared with the day\'s typical at every corner: where braking started, where the throttle came back and how fast the corner was taken. A group says how its laps sat against the day\'s other laps, not why they were quick: nothing here shows that a style made a lap faster. Typical is the median of the day\'s laps and needs at least {count} laps.'**
+  String lapStylesIntro(int count);
+
+  /// Shown while the theoretical best (which carries the lap styles) is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Working out the lap styles…'**
+  String get lapStylesWorking;
+
+  /// The lap styles come with the theoretical best; shown when it has no result.
+  ///
+  /// In en, this message translates to:
+  /// **'Not known until the day\'s laps are timed through its segments.'**
+  String get lapStylesUnavailable;
+
+  /// Why the laps are not grouped: too few ranked laps.
+  ///
+  /// In en, this message translates to:
+  /// **'Lap styles need at least {count} ranked laps.'**
+  String lapStylesTooFewLaps(int count);
+
+  /// Why the laps are not grouped: too few corners with a typical braking or throttle point.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer than {count} corners have a braking or throttle point on enough laps to compare, so the laps are not grouped.'**
+  String lapStylesTooFewCorners(int count);
+
+  /// How many of the group's timed laps are grouped, and at how many corners they were compared.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps grouped: {grouped} of {timed} timed (out laps, in laps, excluded laps and laps with issues are left out). Corners compared: {corners}.'**
+  String lapStylesBasis(int grouped, int timed, int corners);
+
+  /// A caution under the lap styles card: thin data and the day's progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to look at, not as a result.'**
+  String get lapStylesFewLaps;
+
+  /// Which style group the day's best lap is in.
+  ///
+  /// In en, this message translates to:
+  /// **'The day\'s best lap, {lap} ({time}), is in the “{style}” group.'**
+  String lapStylesBestLine(String lap, String time, String style);
+
+  /// Name of a lap style: braking earlier and picking the throttle up later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Conservative'**
+  String get lapStyleConservative;
+
+  /// Name of a lap style: braking later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Late braking'**
+  String get lapStyleLateBraking;
+
+  /// Name of a lap style: picking the throttle up earlier than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Early throttle'**
+  String get lapStyleEarlyThrottle;
+
+  /// Name of a lap style: more than one tendency, or half of conservative.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get lapStyleMixed;
+
+  /// Name of a lap style: close to the day's typical lap.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical'**
+  String get lapStyleTypical;
+
+  /// Name of a lap style: unlike the day's other laps, or measured in too few corners.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlier'**
+  String get lapStyleOutlier;
+
+  /// Heading above the rules of the lap styles.
+  ///
+  /// In en, this message translates to:
+  /// **'How the groups are made'**
+  String get lapStylesRulesHeading;
+
+  /// The rule of the conservative style.
+  ///
+  /// In en, this message translates to:
+  /// **'Conservative: braking starts earlier and the throttle comes later than typical, each in most corners.'**
+  String get lapStylesRuleConservative;
+
+  /// The rule of the late braking style.
+  ///
+  /// In en, this message translates to:
+  /// **'Late braking: braking starts later than typical in most corners.'**
+  String get lapStylesRuleLateBraking;
+
+  /// The rule of the early throttle style.
+  ///
+  /// In en, this message translates to:
+  /// **'Early throttle: the throttle comes back earlier than typical in most corners.'**
+  String get lapStylesRuleEarlyThrottle;
+
+  /// The rule of the mixed style.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed: late braking together with early throttle; late braking with the throttle mostly later, or early throttle with the braking mostly earlier; or earlier braking or later throttle without the other half of conservative.'**
+  String get lapStylesRuleMixed;
+
+  /// The rule of the typical style.
+  ///
+  /// In en, this message translates to:
+  /// **'Typical: none of the above.'**
+  String get lapStylesRuleTypical;
+
+  /// The rule of the outlier style.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlier: braking or throttle far from typical in most of its corners, or measured in fewer corners than it takes to tell: 3, or half the corners compared on the day when that is more.'**
+  String get lapStylesRuleOutlier;
+
+  /// The thresholds behind the lap styles.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier or later means more than {brake} m for braking and {throttle} m for the throttle (a throttle channel recorded from the car\'s OBD port updates about twice a second); faster or slower means more than {speed}% of the typical speed. “Most” is more than half of the corners measured, and at least {corners}. “Far from typical” is {factor} times those distances. Speeds do not decide a style: they follow the lap\'s pace.'**
+  String lapStylesRuleThresholds(
+    String brake,
+    String throttle,
+    String speed,
+    String factor,
+    int corners,
+  );
+
+  /// A style group's title with the number of laps in it.
+  ///
+  /// In en, this message translates to:
+  /// **'{style} · {count, plural, =1{1 lap} other{{count} laps}}'**
+  String lapStylesGroupTitle(String style, int count);
+
+  /// The quickest lap of a style group.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {lap} · {time}'**
+  String lapStylesGroupBest(String lap, String time);
+
+  /// The group's quickest lap is the day's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'the day\'s best lap'**
+  String get lapStylesGroupIsDayBest;
+
+  /// The group's quickest lap minus the day's best lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{delta} against the day\'s best lap'**
+  String lapStylesGroupBehind(String delta);
+
+  /// The median lap time of a style group.
+  ///
+  /// In en, this message translates to:
+  /// **'typical lap {time}'**
+  String lapStylesGroupTypical(String time);
+
+  /// A style group has too few laps for a typical time.
+  ///
+  /// In en, this message translates to:
+  /// **'a typical time needs {count} laps'**
+  String lapStylesGroupTypicalNeeds(int count);
+
+  /// How many of a group's laps are among the quicker half of the day's laps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} in the quicker half of the day\'s laps'**
+  String lapStylesGroupQuickerHalf(int count, int total);
+
+  /// Heading of the comparison of a group's best lap with the day's typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{lap} against the day\'s typical at each corner'**
+  String lapStylesBestAgainst(String lap);
+
+  /// Heading of the list of laps of a style group.
+  ///
+  /// In en, this message translates to:
+  /// **'Laps in this group'**
+  String get lapStylesLapsHeading;
+
+  /// Name of the braking point measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point'**
+  String get lapStylesBrakeName;
+
+  /// Name of the throttle pickup measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup'**
+  String get lapStylesThrottleName;
+
+  /// Name of the minimum speed measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum speed'**
+  String get lapStylesMinimumName;
+
+  /// Name of the exit speed measure.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit speed'**
+  String get lapStylesExitName;
+
+  /// A measure that has no figure on the lap.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: not measured on this lap'**
+  String lapStylesNotMeasured(String what);
+
+  /// How often a lap braked earlier or later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking point: earlier at {earlier}, later at {later} of {measured} corners; median {median}'**
+  String lapStylesBrakeLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  );
+
+  /// How often a lap picked the throttle up earlier or later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Throttle pickup: earlier at {earlier}, later at {later} of {measured} corners; median {median}'**
+  String lapStylesThrottleLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  );
+
+  /// How often a lap's speed was above or below typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{what}: faster at {faster}, slower at {slower} of {measured} corners; median {median}'**
+  String lapStylesSpeedLine(
+    String what,
+    int faster,
+    int slower,
+    int measured,
+    String median,
+  );
+
+  /// A median distance: earlier than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} m earlier'**
+  String lapStylesMedianMetresEarlier(int count);
+
+  /// A median distance: later than typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} m later'**
+  String lapStylesMedianMetresLater(int count);
+
+  /// A median speed difference: above typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} faster'**
+  String lapStylesMedianFaster(String value);
+
+  /// A median speed difference: below typical.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} slower'**
+  String lapStylesMedianSlower(String value);
+
+  /// A median that is zero when rounded.
+  ///
+  /// In en, this message translates to:
+  /// **'no clear difference'**
+  String get lapStylesMedianSame;
+
+  /// Why a lap is an outlier: far from typical.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlike the day\'s other laps: braking or throttle far from typical in {extreme} of {compared} corners.'**
+  String lapStylesOutlierUnlike(int extreme, int compared);
+
+  /// Why a lap is an outlier: too few corners. The number needed is half the corners compared on the day when that is more than 3.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured in {compared, plural, =1{1 corner} other{{compared} corners}} only; at least {needed} are needed to say how it was driven.'**
+  String lapStylesOutlierFew(int compared, int needed);
+
+  /// Where the braking points of the lap styles come from.
+  ///
+  /// In en, this message translates to:
+  /// **'Braking points are read from the longitudinal acceleration, or from the speed\'s slope when there is none, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.'**
+  String get lapStylesBrakeNote;
+
+  /// Shown when no braking point was measured.
+  ///
+  /// In en, this message translates to:
+  /// **'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.'**
+  String get lapStylesNoBraking;
+
+  /// The braking points rest on a channel whose unit is assumed (g, km/h or mph).
+  ///
+  /// In en, this message translates to:
+  /// **'The acceleration or speed used for the braking points declares no unit; it is read as {units}.'**
+  String lapStylesBrakeUnitAssumed(String units);
+
+  /// A speed channel has no declared unit.
+  ///
+  /// In en, this message translates to:
+  /// **'A speed in this day declares no unit, so its speeds are shown without one.'**
+  String get lapStylesSpeedUnitMissing;
+
+  /// Speeds read in a unit the settings assumed, not one the recording declares.
+  ///
+  /// In en, this message translates to:
+  /// **'The speeds of this day declare no unit; the unit assumed in the settings, {units}, is used.'**
+  String lapStylesSpeedUnitAssumed(String units);
+
+  /// How the typical of a corner is taken, and what the quicker half is.
+  ///
+  /// In en, this message translates to:
+  /// **'The typical at a corner is the median of the grouped laps measured there the same way, at least {count} of them, and it includes the lap being compared, so a lap\'s difference from it is somewhat damped. Laps from a session that recorded a channel or unit another way are not pooled with the others, so a typical can rest on fewer laps than were grouped. The quicker half is the quickest half of the grouped laps, rounded up, with any lap tied with the last of them.'**
+  String lapStylesTypicalNote(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -25,6 +25,11 @@ final class LapDetectionOptions {
     this.minimumGateLengthMeters = 1.0,
     this.maximumGateLengthMeters = 200.0,
     this.maximumAcceptedPasses = 100000,
+    this.minimumLapSeconds = 3.0,
+    this.maximumLapSeconds = 3600.0,
+    this.minimumLapDistanceMeters = 200.0,
+    this.maximumAverageSpeedMetersPerSecond = 100.0,
+    this.minimumLapDistanceRatio = 0.8,
   });
 
   /// A pass starts when the car's path comes this close to the gate.
@@ -47,6 +52,28 @@ final class LapDetectionOptions {
   final double maximumGateLengthMeters;
   final int maximumAcceptedPasses;
 
+  /// A lap shorter than this is not plausible (FET-199). A floor only: with
+  /// [minimumLapDistanceMeters] and [maximumAverageSpeedMetersPerSecond] no
+  /// lap can be shorter than 2 s anyway, and the share of the session's
+  /// median path ([minimumLapDistanceRatio]) is what catches a fake lap
+  /// among real ones.
+  final double minimumLapSeconds;
+
+  /// A lap longer than this is not plausible: a stop, not a lap.
+  final double maximumLapSeconds;
+
+  /// A lap whose GPS path is shorter than this is not plausible.
+  final double minimumLapDistanceMeters;
+
+  /// A lap whose path length over its time is faster than this is not
+  /// plausible (100 m/s is 360 km/h on average).
+  final double maximumAverageSpeedMetersPerSecond;
+
+  /// A lap whose path is shorter than this share of the session's median lap
+  /// path is not plausible: it cut the circuit short, so it is not a lap of
+  /// it (a fake crossing, the pit lane beside the line).
+  final double minimumLapDistanceRatio;
+
   /// Throws [ArgumentError] for values outside the supported ranges.
   void validate() {
     final values = [
@@ -59,6 +86,11 @@ final class LapDetectionOptions {
       maximumClusterSeconds,
       minimumGateLengthMeters,
       maximumGateLengthMeters,
+      minimumLapSeconds,
+      maximumLapSeconds,
+      minimumLapDistanceMeters,
+      maximumAverageSpeedMetersPerSecond,
+      minimumLapDistanceRatio,
     ];
     if (values.any((value) => !value.isFinite || value < 0.0) ||
         innerCorridorMeters > 50.0 ||
@@ -71,7 +103,10 @@ final class LapDetectionOptions {
         maximumGateLengthMeters > 1000.0 ||
         maximumGateLengthMeters < minimumGateLengthMeters ||
         maximumAcceptedPasses <= 0 ||
-        maximumAcceptedPasses > 100000) {
+        maximumAcceptedPasses > 100000 ||
+        maximumLapSeconds <= minimumLapSeconds ||
+        maximumAverageSpeedMetersPerSecond <= 0.0 ||
+        minimumLapDistanceRatio >= 1.0) {
       throw ArgumentError('Invalid lap-detection options.');
     }
   }
@@ -86,7 +121,14 @@ final class LapDetectionDiagnostics {
   int rejectedParallelClusters = 0;
   int rejectedLongClusters = 0;
   int rejectedOppositeDirectionClusters = 0;
+
+  /// Passes that came near the gate but did not cross its line (FET-198).
+  int rejectedNotCrossingClusters = 0;
   int invalidLapDurations = 0;
+
+  /// Laps kept visible but not ranked because their time or length is not
+  /// plausible (FET-199).
+  int implausibleLaps = 0;
 }
 
 /// One accepted crossing of the start gate.
@@ -114,7 +156,15 @@ final class GatePass {
 }
 
 /// Why a measured lap cannot be ranked or used as a spatial reference.
-enum LapReferenceIssue { none, gpsGap, invalidGps }
+enum LapReferenceIssue {
+  none,
+  gpsGap,
+  invalidGps,
+
+  /// Its time, path length or average speed cannot be a lap of the circuit
+  /// (FET-199): see [LapDetectionOptions].
+  implausibleLap,
+}
 
 /// A gate-to-gate interval.
 final class TimedLap {
@@ -126,6 +176,7 @@ final class TimedLap {
     this.deltaToBestSeconds = 0.0,
     this.referenceIssue = LapReferenceIssue.none,
     this.userExclusionReason = '',
+    this.distanceMeters,
   });
 
   final int number;
@@ -140,6 +191,10 @@ final class TimedLap {
   final LapReferenceIssue referenceIssue;
   final String userExclusionReason;
 
+  /// Length of the lap's GPS path, from the fix at or before its start to the
+  /// first at or after its end; null when its GPS is not complete.
+  final double? distanceMeters;
+
   /// Whether the lap takes part in ranking, statistics and references.
   bool get referenceEligible =>
       referenceIssue == LapReferenceIssue.none && userExclusionReason.isEmpty;
@@ -152,6 +207,7 @@ final class TimedLap {
     deltaToBestSeconds: deltaToBestSeconds ?? this.deltaToBestSeconds,
     referenceIssue: referenceIssue,
     userExclusionReason: userExclusionReason ?? this.userExclusionReason,
+    distanceMeters: distanceMeters,
   );
 }
 

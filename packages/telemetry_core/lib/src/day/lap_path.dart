@@ -70,7 +70,7 @@ LapPath lapPath(
     final time = times[index];
     final lon = longitude.timestamps.length > index && longitude.timestamps[index] == time
         ? longitude.values[index].toDouble()
-        : session.valueAt('longitude', time);
+        : session.valueAt('longitude', time, InterpolationMode.longitude);
     final coordinate = GeoCoordinate(
       latitude.values[index].toDouble(),
       westPositive ? -(lon ?? double.nan) : lon ?? double.nan,

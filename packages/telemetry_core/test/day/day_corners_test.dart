@@ -76,6 +76,15 @@ void main() {
       expect(result.corners[0].laps.first.$2.braking.unavailableReason, brakingNoneDetected);
     });
 
+    test('a corner whose tightest part cannot be told is not split, and says why '
+        '(FET-221)', () {
+      // The rectangle's corners turn in steps: more than one tight part.
+      expect(corner.phaseSplit.unavailableReason, cornerPhaseMultipleApexes);
+      final comparison = corner.compare(row(1).reference)!;
+      expect(comparison.phases.unavailableReason, cornerPhaseMultipleApexes);
+      expect(comparison.phaseDeltas, isNull);
+    });
+
     test('compares a lap with the best lap and the best of the group', () {
       expect(corner.bestLap!.lapNumber, 2);
       final comparison = corner.compare(row(1).reference)!;
@@ -153,7 +162,40 @@ void main() {
       expect(variability.minimumSpeed.count, 3);
       expect(variability.brakingPointMeasured.count, 3);
       expect(variability.brakingPointInferred.count, 0);
+      // The line where the corner starts, at its apex and where it ends.
+      expect(variability.lineOffset.count, 3);
+      expect(variability.entryLineOffset.count, 3);
+      expect(variability.exitLineOffset.count, 3);
+      for (final (_, metrics) in corner.laps) {
+        expect(metrics.observation.entryLineOffsetMeters!.abs(), lessThan(5));
+        expect(metrics.observation.exitLineOffsetMeters!.abs(), lessThan(5));
+      }
       expect(result.segments[1].variability, isNull, reason: 'a straight');
+    });
+
+    test('classifies each corner from its shape and the laps (FET-220)', () {
+      // Brakes from 30 m/s to about 18 m/s on every lap: over 40 km/h off.
+      final braking = corner.classification;
+      expect(braking.driving.approach, CornerApproach.heavyBraking);
+      // From 30 m/s where braking starts to the typical lowest 18 m/s, read
+      // from each lap's speed channel.
+      expect(braking.driving.typicalSpeedShedMetresPerSecond, closeTo(12, 0.5));
+      expect(braking.driving.shedLaps, 3);
+      expect((braking.driving.brakingLaps, braking.driving.lapsMeasured), (3, 3));
+      expect(braking.driving.brakingMethod, brakingMethodMeasured);
+      expect(braking.driving.speedBand, CornerSpeedBand.slow);
+      expect(braking.driving.typicalMinimumSpeedMetresPerSecond, closeTo(18, 0.5));
+      // The same steps that leave it unsplit (FET-221) make it two tight parts.
+      expect(braking.shape.shape, CornerShape.doubleApex);
+      // The others are taken at a steady 30 m/s (108 km/h): flat and medium,
+      // even though no lowest speed can be located in them.
+      for (final index in [0, 2, 3]) {
+        final other = result.corners[index].classification;
+        expect(other.driving.approach, CornerApproach.flat);
+        expect(other.driving.typicalSpeedLossFraction, closeTo(0, 1e-6));
+        expect(other.driving.speedBand, CornerSpeedBand.medium);
+        expect(other.shape.shape, CornerShape.singleApex);
+      }
     });
   });
 
@@ -171,5 +213,83 @@ void main() {
     expect(comparison.latestBrakingPoint, isNull);
     expect(comparison.earliestPickup, isNull);
     expect(comparison.highestMinimumSpeed!.lap.lapNumber, 2);
+    // No class from braking that cannot be measured; the speeds still give
+    // the band (FET-220).
+    expect(corner.classification.driving.approach, isNull);
+    expect(corner.classification.driving.approachUnavailableReason, brakingNoChannel);
+    expect(corner.classification.driving.speedBand, CornerSpeedBand.slow);
+  });
+
+  group('braking technique (FET-219)', () {
+    // Harder braking than the others: from 30 to 12 m/s over 76 m, linear
+    // in distance, so the deceleration starts at about 0.72 g and eases off.
+    final laps = [_lap(250, 12), _lap(260, 12.5), _lap(240, 11.5)];
+    DayTheoreticalBest day({bool pedals = true, bool lateral = true}) {
+      final runs = [_run('run1', rectangleSession(laps, pedals: pedals, lateral: lateral))];
+      final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
+      return dayTheoreticalBest(analyzeDay(runs), outing, random: Random(1));
+    }
+
+    final result = day();
+    final technique = result.corners[1].brakingTechnique;
+
+    test('is measured on every ranked lap from the G channel, and typically', () {
+      expect(technique.unavailableReason, isEmpty);
+      expect(technique.source, brakingTechniqueFromG);
+      expect(technique.laps.length, 3);
+      expect(technique.lapsBraking, 3);
+      for (final (_, lap) in technique.laps) {
+        expect(lap.peakG, closeTo(0.73, 0.1)); // 0.66 to 0.81 g, lap by lap
+        expect(lap.onsetTime, isNotNull);
+      }
+      expect(technique.peak.median, closeTo(0.72, 0.05));
+      expect(technique.peak.laps, 3);
+      // Trail braking: the speed falls to the corner's entry, where lateral
+      // G starts, so there is little or none; it is still measured.
+      expect(technique.trailSeconds.median, isNotNull);
+      // The pedal is recorded at 10 Hz: its application and release are read.
+      expect(technique.brakeRateHz, closeTo(10, 0.01));
+      expect(technique.pedalApplication.median, isNotNull);
+      expect(technique.pedalRelease.median, isNotNull);
+    });
+
+    test('leaves out laps the ranking does not rank', () {
+      final ranked = {for (final lap in result.laps) lap.lap.reference};
+      for (final (reference, _) in technique.laps) {
+        expect(ranked, contains(reference));
+      }
+      // The recording's start before the gate and its end after the last
+      // lap are not laps of the ranking.
+      expect(technique.laps.length, ranked.length);
+    });
+
+    test('leaves out a lap the user excluded from the ranking', () {
+      final runs = [
+        _run('run1', rectangleSession([...laps, _lap(255, 12)])),
+      ];
+      final outing = {for (final run in runs) run.runId: OutingRun(run.session, run.laps)};
+      final all = dayTheoreticalBest(analyzeDay(runs), outing, random: Random(1));
+      final every = all.corners[1].brakingTechnique;
+      expect(every.laps.length, 4);
+      final excluded = every.laps[1].$1! as DayLapReference;
+      final analysis = analyzeDay(runs, exclusions: {excluded: 'Traffic'});
+      final ranked = dayTheoreticalBest(analysis, outing, random: Random(1));
+      final technique = ranked.corners[1].brakingTechnique;
+      expect(technique.lap(excluded), isNull);
+      expect(technique.laps.length, 3);
+      expect(technique.lapsBraking, 3);
+    });
+
+    test('says why each lap is not known without a G channel or lateral G', () {
+      final noLateral = day(lateral: false).corners[1].brakingTechnique;
+      expect(noLateral.trailSeconds.median, isNull);
+      expect(noLateral.trailSeconds.reason, brakingTechniqueNoLateral);
+      // Without pedals there is no G channel: from the speed, and no
+      // brake-to-throttle time.
+      final fromSpeed = day(pedals: false).corners[1].brakingTechnique;
+      expect(fromSpeed.source, brakingTechniqueFromSpeed);
+      expect(fromSpeed.gChannelReason, brakingTechniqueGMissing);
+      expect(fromSpeed.brakeToThrottle.reason, brakingTechniqueNoThrottle);
+    });
   });
 }

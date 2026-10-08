@@ -343,9 +343,6 @@ void main() {
   });
 
   test('clock checks and primary changes wait for a free slot', () async {
-    final previous = DayResultsController.fusionSlots;
-    DayResultsController.fusionSlots = 1;
-    addTearDown(() => DayResultsController.fusionSlots = previous);
     final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
     final (vbo2, rcz2) = writeFusionPair(
       directory.path,
@@ -363,6 +360,7 @@ void main() {
       runs: day.runs,
       analysis: day.analysis!,
       alternatives: day.alternatives,
+      fusionSlots: 1,
       fusionRunner: (job) {
         final gate = Completer<void>();
         if (hold) {
@@ -475,9 +473,6 @@ void main() {
   test(
     'closing the day while a primary change waits for a slot stops it',
     () async {
-      final previous = DayResultsController.fusionSlots;
-      DayResultsController.fusionSlots = 1;
-      addTearDown(() => DayResultsController.fusionSlots = previous);
       final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
       final (vbo2, rcz2) = writeFusionPair(
         directory.path,
@@ -493,6 +488,7 @@ void main() {
         runs: day.runs,
         analysis: day.analysis!,
         alternatives: day.alternatives,
+        fusionSlots: 1,
         fusionRunner: (job) =>
             _GatedTask(hold ? Completer<void>().future : Future.value(), job),
       );
@@ -560,9 +556,6 @@ void main() {
 
     Future<(DayResultsController, String, String, List<Completer<void>>)>
     held() async {
-      final previous = DayResultsController.fusionSlots;
-      DayResultsController.fusionSlots = 1;
-      addTearDown(() => DayResultsController.fusionSlots = previous);
       final (vbo1, rcz1) = writeFusionPair(directory.path, name: 'first');
       final (vbo2, rcz2) = writeFusionPair(
         directory.path,
@@ -579,6 +572,7 @@ void main() {
         runs: day.runs,
         analysis: day.analysis!,
         alternatives: day.alternatives,
+        fusionSlots: 1,
         fusionRunner: (job) {
           final gate = Completer<void>();
           hold ? gates.add(gate) : gate.complete();
@@ -702,7 +696,8 @@ void main() {
         return _GatedTask(gate.future, job);
       },
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -737,7 +732,8 @@ void main() {
       analysis: both.analysis!,
       alternatives: both.alternatives,
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough that the long overview builds down to the recordings.
+    await tester.binding.setSurfaceSize(const Size(400, 11000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -809,7 +805,8 @@ void main() {
       alternatives: both.alternatives,
       appender: _HangingAppender(),
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),

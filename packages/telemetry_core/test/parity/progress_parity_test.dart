@@ -110,6 +110,22 @@ void main() {
           computeDeltaSeries(projected.first, projected[laps.fastestLapIndex!], 5.0),
           delta,
         );
+        final first = laps.timedLaps.first, fastest = laps.timedLaps[laps.fastestLapIndex!];
+        _expectDelta(
+          computeTimedDeltaSeries(
+            projected.first,
+            projected[laps.fastestLapIndex!],
+            5.0,
+            DeltaTiming(
+              lapStartA: first.startTelemetryTime,
+              lapEndA: first.endTelemetryTime,
+              lapStartB: fastest.startTelemetryTime,
+              lapEndB: fastest.endTelemetryTime,
+              lengthMeters: axis.lengthMeters,
+            ),
+          ),
+          entry['timedDelta'] as Map<String, dynamic>,
+        );
       }
     });
   }

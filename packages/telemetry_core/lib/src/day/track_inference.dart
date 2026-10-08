@@ -115,6 +115,13 @@ RouteShape? _shape(LapTrace trace, GeoCoordinate origin, bool westPositive) {
   );
 }
 
+/// [trace]'s route: the lap resampled as [RouteShape] around [origin], its
+/// east metres mirrored when the recording's longitudes are west-positive
+/// (as [inferTrack] does); null for a lap too short, too long, open or
+/// self-cancelling to have one.
+RouteShape? lapRouteShape(LapTrace trace, GeoCoordinate origin, {bool westPositive = false}) =>
+    _shape(trace, origin, westPositive);
+
 /// Whether two routes are the same circuit: same direction, length within
 /// 5 %, and, for some starting offset, every point within 25 m of the other
 /// route's path with an RMS of at most 10 m. Never rotated, mirrored or
@@ -280,11 +287,10 @@ TrackInference inferTrack(
   );
   final gate = laps.selectedStartGate;
   if (gate == null || laps.lapTraces.length < 2) return notEnough;
+  final midpoint = geoMidpoint(gate.endpointA, gate.endpointB);
   final origin = GeoCoordinate(
-    (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2,
-    (longitudeIsWestPositive ? -1 : 1) *
-        (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) /
-        2,
+    midpoint.latitudeDegrees,
+    (longitudeIsWestPositive ? -1 : 1) * midpoint.longitudeDegrees,
   );
   final candidates = <RouteShape>[];
   final stride = math.max(

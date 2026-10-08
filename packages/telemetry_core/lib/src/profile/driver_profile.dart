@@ -14,6 +14,7 @@ import '../day/day_document.dart';
 import '../day/day_laps.dart';
 import '../day/day_ranking.dart';
 import '../day/day_theoretical_best.dart';
+import '../day/run_setup.dart';
 import '../day/session_weather.dart';
 import '../day/track_inference.dart';
 import '../geometry.dart';
@@ -21,7 +22,9 @@ import '../speed_units.dart';
 import '../telemetry_session.dart';
 
 part 'profile_merge.dart';
+part 'profile_reference.dart';
 part 'session_stats.dart';
+part 'track_notebook.dart';
 
 /// The `format` of a driver profile.
 const driverProfileFormat = 'flappedear-driver-profile';
@@ -81,9 +84,11 @@ final class ProfileTrack {
     required this.name,
     required this.route,
     List<TrackCorner> corners = const [],
+    TrackNotebook? notebook,
     Map<String, Object?> unknown = const {},
     Map<String, Object?> unknownRoute = const {},
-  }) : corners = List.unmodifiable(corners),
+  }) : notebook = notebook ?? TrackNotebook(),
+       corners = List.unmodifiable(corners),
        unknown = Map.unmodifiable(unknown),
        unknownRoute = Map.unmodifiable(unknownRoute);
 
@@ -95,19 +100,24 @@ final class ProfileTrack {
 
   /// Its corners, the same on every visit, in the order first found.
   final List<TrackCorner> corners;
+
+  /// What the driver wrote down about the track ([setProfileTrackNotebook]).
+  final TrackNotebook notebook;
   final Map<String, Object?> unknown;
 
   /// `route` keys this version does not know.
   final Map<String, Object?> unknownRoute;
 
-  ProfileTrack copyWith({String? name, List<TrackCorner>? corners}) => ProfileTrack(
-    id: id,
-    name: name ?? this.name,
-    route: route,
-    corners: corners ?? this.corners,
-    unknown: unknown,
-    unknownRoute: unknownRoute,
-  );
+  ProfileTrack copyWith({String? name, List<TrackCorner>? corners, TrackNotebook? notebook}) =>
+      ProfileTrack(
+        id: id,
+        name: name ?? this.name,
+        route: route,
+        corners: corners ?? this.corners,
+        notebook: notebook ?? this.notebook,
+        unknown: unknown,
+        unknownRoute: unknownRoute,
+      );
 }
 
 /// The weather during a session, as the profile keeps it: a few values of
@@ -203,6 +213,46 @@ double? _weatherValue(Object? value, String key) {
   return number >= low && number <= high ? number : null;
 }
 
+/// A session's setup as the profile keeps it (FET-188): the run's `setup`
+/// object of the day document as it was saved, read as [RunSetup] reads it.
+/// Numbers stay in the unit they were entered in and are never converted.
+/// It is the driver's own statement about the run, so unlike weather it
+/// has no source revision: it changes only when the day is saved.
+final class ProfileSetup {
+  ProfileSetup._(Map<String, Object?> json)
+    : json = Map.unmodifiable(json),
+      setup = RunSetup.fromJson(json);
+
+  /// [value], a run's stored `setup` ([runSetupKey]), as the profile keeps
+  /// it: every key as stored, those this version does not know included,
+  /// also when nothing in it can be read (only a `version`, say), so it
+  /// survives a re-save. Null when it is not an object. A value the
+  /// profile could not write back (nested too deeply) keeps only what
+  /// [RunSetup] reads.
+  static ProfileSetup? of(Object? value) {
+    if (value is! Map<String, Object?>) return null;
+    try {
+      return ProfileSetup._({
+        for (final MapEntry(:key, :value) in value.entries) key: _bounded(value),
+      });
+    } on ProfileFormatError {
+      final known = RunSetup.fromJson(value);
+      return known.isEmpty ? null : ProfileSetup._(known.toJson());
+    }
+  }
+
+  /// [setup] as a run stores it ([RunSetup.toJson]); null when nothing is
+  /// entered.
+  static ProfileSetup? ofSetup(RunSetup setup) => setup.isEmpty ? null : of(setup.toJson());
+
+  /// The object as stored, keys this version does not know included.
+  final Map<String, Object?> json;
+
+  /// What this version reads of it: a value that is missing, of the wrong
+  /// type or out of range reads as not entered.
+  final RunSetup setup;
+}
+
 /// One session of a day, as its last analysis found it.
 final class ProfileSession {
   ProfileSession({
@@ -213,6 +263,7 @@ final class ProfileSession {
     this.bestLapSeconds,
     this.stats,
     this.weather,
+    this.setup,
     Map<String, Object?> unknown = const {},
   }) : unknown = Map.unmodifiable(unknown);
 
@@ -237,20 +288,30 @@ final class ProfileSession {
   /// lookup off, no time or position, or added before the profile kept
   /// weather).
   final ProfileWeather? weather;
+
+  /// The setup the driver entered for it, as the day was last saved; null
+  /// when none was entered (or the day was added before the profile kept
+  /// setups).
+  final ProfileSetup? setup;
   final Map<String, Object?> unknown;
 
   ProfileSession _withStats(SessionStats? stats) => _with(stats, weather);
 
-  ProfileSession _with(SessionStats? stats, ProfileWeather? weather) => ProfileSession(
-    runId: runId,
-    name: name,
-    startMilliseconds: startMilliseconds,
-    lapCount: lapCount,
-    bestLapSeconds: bestLapSeconds,
-    stats: stats,
-    weather: weather,
-    unknown: unknown,
-  );
+  ProfileSession _with(SessionStats? stats, ProfileWeather? weather) =>
+      _withSetup(setup, stats: stats, weather: weather);
+
+  ProfileSession _withSetup(ProfileSetup? setup, {SessionStats? stats, ProfileWeather? weather}) =>
+      ProfileSession(
+        runId: runId,
+        name: name,
+        startMilliseconds: startMilliseconds,
+        lapCount: lapCount,
+        bestLapSeconds: bestLapSeconds,
+        stats: stats,
+        weather: weather,
+        setup: setup,
+        unknown: unknown,
+      );
 }
 
 /// A day kept in the profile.
@@ -265,6 +326,7 @@ final class ProfileDay {
     List<ProfileSession> sessions = const [],
     this.bestLapSeconds,
     this.theoreticalBestSeconds,
+    this.reference,
     Map<String, Object?> unknown = const {},
   }) : sessions = List.unmodifiable(sessions),
        unknown = Map.unmodifiable(unknown);
@@ -290,19 +352,39 @@ final class ProfileDay {
 
   /// The theoretical best of the day's track: its best segments added up.
   final double? theoreticalBestSeconds;
+
+  /// The reference lap chosen for this day (FET-276), kept in the profile
+  /// so it comes back when the day is opened again; null when none is kept.
+  /// A `reference` this version cannot read is not here: it stays in
+  /// [unknown] and is written back as it was.
+  final ProfileReference? reference;
   final Map<String, Object?> unknown;
 
-  ProfileDay copyWith({String? carId}) => ProfileDay(
+  ProfileDay copyWith({String? carId}) => _copy(carId: carId);
+
+  ProfileDay _copy({
+    String? carId,
+    List<ProfileSession>? sessions,
+    ProfileReference? reference,
+    bool replaceReference = false,
+  }) => ProfileDay(
     eventId: eventId,
     file: file,
     name: name,
     carId: carId ?? this.carId,
     trackId: trackId,
     startMilliseconds: startMilliseconds,
-    sessions: sessions,
+    sessions: sessions ?? this.sessions,
     bestLapSeconds: bestLapSeconds,
     theoreticalBestSeconds: theoreticalBestSeconds,
-    unknown: unknown,
+    reference: replaceReference ? reference : this.reference,
+    // A reference set or cleared replaces what could not be read as well.
+    unknown: replaceReference
+        ? {
+            for (final MapEntry(:key, :value) in unknown.entries)
+              if (key != _referenceKey) key: value,
+          }
+        : unknown,
   );
 }
 
@@ -388,6 +470,7 @@ final class ProfileDayInput {
     List<DayCornerSpan> cornerSpans = const [],
     this.measuredCorners = false,
     Map<String, String> sourceRevisions = const {},
+    this.setupsGiven = false,
   }) : sessions = List.unmodifiable(sessions),
        cornerSpans = List.unmodifiable(cornerSpans),
        sourceRevisions = Map.unmodifiable(sourceRevisions);
@@ -402,7 +485,10 @@ final class ProfileDayInput {
   /// theoretical best and its corners. Without them, adding the day keeps
   /// what the profile measured before. With [weather] (by run id), each
   /// session's weather; a session without it keeps what the profile had,
-  /// while that is the weather of the same recording.
+  /// while that is the weather of the same recording. With [setups] (by
+  /// run id; the setups of the day as saved), each session's setup, which
+  /// replaces what the profile had: a session missing from it or given null
+  /// has none. Without it, each session keeps the setup the profile had.
   factory ProfileDayInput.fromAnalysis({
     required String eventId,
     required String file,
@@ -412,6 +498,7 @@ final class ProfileDayInput {
     Map<String, TelemetrySession?>? recordings,
     DayTheoreticalBest? theoreticalBest,
     Map<String, ProfileWeather?>? weather,
+    Map<String, ProfileSetup?>? setups,
   }) {
     // Only the chosen group's: the day's route and track are its.
     if (theoreticalBest != null && theoreticalBest.groupId != analysis.chosenGroupId) {
@@ -456,6 +543,7 @@ final class ProfileDayInput {
           bestLapSeconds: _finite(best[runId]),
           stats: measured[runId],
           weather: weather?[runId],
+          setup: setups?[runId],
         ),
     ];
     RouteShape? route;
@@ -495,6 +583,7 @@ final class ProfileDayInput {
           theoreticalBest.state != DayTheoreticalBestState.error &&
           (ready == null || canonical != null),
       sourceRevisions: revisions,
+      setupsGiven: setups != null,
     );
   }
 
@@ -526,6 +615,11 @@ final class ProfileDayInput {
   /// another recording is dropped.
   final Map<String, String> sourceRevisions;
 
+  /// Whether [sessions] carry the day's setups as saved: when true, each
+  /// session's setup (null included) replaces the profile's; when false,
+  /// such as for a day found in the days folder, the profile's are kept.
+  final bool setupsGiven;
+
   /// This day with [trackName] as the name of a new track.
   ProfileDayInput withTrackName(String? trackName) => ProfileDayInput(
     eventId: eventId,
@@ -540,6 +634,7 @@ final class ProfileDayInput {
     cornerSpans: cornerSpans,
     measuredCorners: measuredCorners,
     sourceRevisions: sourceRevisions,
+    setupsGiven: setupsGiven,
   );
 
   /// This day with [weather] (by run id) as its sessions' weather, such as
@@ -567,6 +662,7 @@ final class ProfileDayInput {
     cornerSpans: cornerSpans,
     measuredCorners: measuredCorners,
     sourceRevisions: sourceRevisions,
+    setupsGiven: setupsGiven,
   );
 }
 
@@ -682,6 +778,13 @@ DriverProfile addDayToProfile(
               weather.sourceRevision == day.sourceRevisions[session.runId])
         session.runId: weather,
   };
+  // The setup is the driver's statement about the session, saved with the
+  // day: given, it replaces the profile's (null clears it); not given, the
+  // profile's is kept, whatever the recording.
+  final setupBefore = {
+    for (final session in existing?.sessions ?? const <ProfileSession>[])
+      session.runId: session.setup,
+  };
   var sessions = [
     for (final session in day.sessions)
       if (session.weather == null && weatherBefore[session.runId] != null)
@@ -689,6 +792,16 @@ DriverProfile addDayToProfile(
       else
         session,
   ];
+  if (!day.setupsGiven) {
+    sessions = [
+      for (final session in sessions)
+        session._withSetup(
+          setupBefore[session.runId],
+          stats: session.stats,
+          weather: session.weather,
+        ),
+    ];
+  }
   sessions = [
     for (final session in sessions)
       switch (session.stats) {
@@ -735,6 +848,9 @@ DriverProfile addDayToProfile(
     theoreticalBestSeconds: day.measuredCorners
         ? day.theoreticalBestSeconds
         : day.theoreticalBestSeconds ?? (sameTrack ? existing.theoreticalBestSeconds : null),
+    // The day's reference lap is the driver's choice, not an analysis: it
+    // stays when the day is added again.
+    reference: existing?.reference,
     unknown: existing?.unknown ?? const {},
   );
   // What reading would refuse is refused here, so a profile is never
@@ -756,6 +872,19 @@ DriverProfile addDayToProfile(
     lastCarId: existing == null ? carId : profile.lastCarId,
   );
 }
+
+/// [profile] without day [eventId]: its sessions and their numbers leave
+/// every total and record (FET-241). Cars and tracks stay. The same
+/// [profile] when it has no such day.
+DriverProfile removeProfileDay(DriverProfile profile, String eventId) =>
+    profile.day(eventId) == null
+    ? profile
+    : profile._copy(
+        days: [
+          for (final day in profile.days)
+            if (day.eventId != eventId) day,
+        ],
+      );
 
 /// [profile] with a new car named [name]; the car is the last element of
 /// the result's [DriverProfile.cars].
@@ -825,18 +954,43 @@ DriverProfile setProfileSessionWeather(
         session,
   ];
   if (!changed) return profile;
-  final entry = ProfileDay(
-    eventId: day.eventId,
-    file: day.file,
-    name: day.name,
-    carId: day.carId,
-    trackId: day.trackId,
-    startMilliseconds: day.startMilliseconds,
-    sessions: sessions,
-    bestLapSeconds: day.bestLapSeconds,
-    theoreticalBestSeconds: day.theoreticalBestSeconds,
-    unknown: day.unknown,
+  final entry = day._copy(sessions: sessions);
+  _verified(_encodeDay(entry), _day);
+  return profile._copy(
+    days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
   );
+}
+
+/// [profile] with the setups of day [eventId]'s sessions replaced by
+/// [setups] (by run id; the day's setups as saved, so a session missing
+/// from it or given null has none), without measuring the day again.
+/// Unchanged when the day is not in the profile or nothing changes. Throws
+/// [ProfileFormatError] for what [decodeDriverProfile] would refuse.
+DriverProfile setProfileSessionSetups(
+  DriverProfile profile,
+  String eventId,
+  Map<String, ProfileSetup?> setups,
+) {
+  final day = profile.day(eventId);
+  if (day == null) return profile;
+  String? encoded(ProfileSetup? setup) => setup == null ? null : jsonEncode(setup.json);
+  var changed = false;
+  final sessions = [
+    for (final session in day.sessions)
+      if (encoded(setups[session.runId]) == encoded(session.setup))
+        session
+      else
+        () {
+          changed = true;
+          return session._withSetup(
+            setups[session.runId],
+            stats: session.stats,
+            weather: session.weather,
+          );
+        }(),
+  ];
+  if (!changed) return profile;
+  final entry = day._copy(sessions: sessions);
   _verified(_encodeDay(entry), _day);
   return profile._copy(
     days: [for (final other in profile.days) other.eventId == eventId ? entry : other],
@@ -913,6 +1067,7 @@ Map<String, Object?> _encodeTrack(ProfileTrack track) => {
   'route': {...track.unknownRoute, ..._encodeRoute(track.route)},
   if (track.corners.isNotEmpty)
     'corners': [for (final corner in track.corners) _encodeTrackCorner(corner)],
+  if (!track.notebook.isEmpty) 'notebook': _encodeNotebook(track.notebook),
 };
 
 Map<String, Object?> _encodeDay(ProfileDay day) => {
@@ -925,6 +1080,7 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
   'startMilliseconds': day.startMilliseconds,
   'bestLapSeconds': day.bestLapSeconds,
   if (day.theoreticalBestSeconds != null) 'theoreticalBestSeconds': day.theoreticalBestSeconds,
+  if (day.reference case final reference?) _referenceKey: _encodeReference(reference),
   'sessions': [
     for (final session in day.sessions)
       {
@@ -936,6 +1092,7 @@ Map<String, Object?> _encodeDay(ProfileDay day) => {
         'bestLapSeconds': session.bestLapSeconds,
         if (session.stats case final stats?) 'stats': _encodeStats(stats),
         if (session.weather case final weather?) 'weather': _encodeWeather(weather),
+        if (session.setup case final setup?) 'setup': setup.json,
       },
   ],
 };
@@ -1049,7 +1206,8 @@ ProfileTrack _track(Object? value) {
     name: _string(json['name'], 'track name', allowEmpty: false),
     route: _route(json['route']),
     corners: corners,
-    unknown: _without(json, const ['id', 'name', 'route', 'corners']),
+    notebook: json['notebook'] == null ? null : _notebook(json['notebook']),
+    unknown: _without(json, const ['id', 'name', 'route', 'corners', 'notebook']),
     unknownRoute: _without(_map(json['route'], 'route'), const [
       'origin',
       'lengthMeters',
@@ -1104,8 +1262,12 @@ ProfileDay _day(Object? value) {
   if ({for (final session in sessions) session.runId}.length != sessions.length) {
     throw const ProfileFormatError('A day has the same session twice.');
   }
+  final eventId = _string(json['eventId'], 'day event id', allowEmpty: false);
+  // Read leniently, as a setup is: a reference this version cannot read is
+  // never a reason to refuse the profile, and is kept as it is.
+  final reference = _reference(json[_referenceKey], eventId);
   return ProfileDay(
-    eventId: _string(json['eventId'], 'day event id', allowEmpty: false),
+    eventId: eventId,
     file: _checkFile(_string(json['file'], 'day file', allowEmpty: false)),
     name: _string(json['name'], 'day name'),
     carId: _string(json['carId'], 'day car', allowEmpty: false),
@@ -1117,7 +1279,8 @@ ProfileDay _day(Object? value) {
       'day theoretical best',
     ),
     sessions: sessions,
-    unknown: _without(json, const [
+    reference: reference,
+    unknown: _without(json, [
       'eventId',
       'file',
       'name',
@@ -1127,6 +1290,7 @@ ProfileDay _day(Object? value) {
       'bestLapSeconds',
       'theoreticalBestSeconds',
       'sessions',
+      if (reference != null) _referenceKey,
     ]),
   );
 }
@@ -1137,6 +1301,9 @@ ProfileSession _session(Object? value) {
   if (laps is! int || laps < 0) {
     throw const ProfileFormatError('A session has an invalid lap count.');
   }
+  // Read leniently, as a day document's setup is: never a reason to refuse
+  // the profile.
+  final setup = ProfileSetup.of(json['setup']);
   return ProfileSession(
     runId: _string(json['runId'], 'session run id', allowEmpty: false),
     name: _string(json['name'], 'session name'),
@@ -1145,7 +1312,9 @@ ProfileSession _session(Object? value) {
     bestLapSeconds: _optionalSeconds(json['bestLapSeconds'], 'session best lap'),
     stats: json['stats'] == null ? null : _stats(json['stats']),
     weather: json['weather'] == null ? null : _weather(json['weather']),
-    unknown: _without(json, const [
+    setup: setup,
+    // A setup that is not an object reads as none and is kept as it is.
+    unknown: _without(json, [
       'runId',
       'name',
       'startMilliseconds',
@@ -1153,6 +1322,7 @@ ProfileSession _session(Object? value) {
       'bestLapSeconds',
       'stats',
       'weather',
+      if (setup != null || json['setup'] is Map) 'setup',
     ]),
   );
 }

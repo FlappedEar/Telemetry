@@ -16,11 +16,13 @@ import '../import/day_import_page.dart'
     show PlatformRecordingPickers, RecordingPickers, isDesktopPlatform;
 import '../import/import_review_page.dart';
 import '../l10n.dart';
+import '../profile/track_notebook_page.dart';
 import '../profile/last_time_here_card.dart';
 import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../units.dart' show hideUnrankedLapsSetting;
 import 'background_task.dart';
+import 'best_phases_card.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -30,16 +32,27 @@ import 'day_report_page.dart';
 import 'document_pickers.dart';
 import 'focus_areas_card.dart';
 import 'fusion_panel.dart';
+import 'gg_envelope_card.dart';
+import 'grip_proxies_card.dart';
+import 'lap_styles_card.dart';
 import 'next_session_card.dart';
 import '../profile/skill_levels_card.dart';
 import 'lap_page.dart';
 import 'save_shortcuts.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
+import 'profile_reference_store.dart';
+import 'reference_lap.dart';
+import 'reference_lap_page.dart';
 import 'reveal.dart';
 import 'segment_editor_page.dart';
 import 'report_share.dart';
 import 'session_details_dialog.dart';
+import 'session_removal.dart';
+import 'briefing_card.dart';
+import 'session_changes.dart';
+import 'session_summary_card.dart';
+import 'setup_text.dart';
 import 'theoretical_best_card.dart';
 import 'time_losses_card.dart';
 import '../ui/readable_list.dart';
@@ -157,6 +170,48 @@ void markAdditionReported(DayResultsController day) {
 
 class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
+
+  // The day's reference lap (FET-175), kept apart from the day itself and
+  // with it while its pages come and go; disposed with the day. Its choice
+  // is kept in the driver profile when the day is (FET-276).
+  ReferenceLapHolder get _reference {
+    final controller = _controller;
+    return referenceLapOf(
+      controller,
+      dayId: controller.eventId,
+      store: switch (widget.library) {
+        final library? => ProfileReferenceStore(
+          library,
+          // Closed over the day, not this page: the holder outlives it.
+          keepsDay: () {
+            final path = controller.documentPath;
+            return library.available && (path == null || library.holds(path));
+          },
+        ),
+        null => const UnsavedReferenceStore(),
+      },
+    );
+  }
+
+  /// Reads the reference kept for the day, once today's line is known (the
+  /// day is analysed after the page opens).
+  void _restoreReference() {
+    final reference = _reference;
+    if (reference.restoreTried || reference.state != ReferenceState.none) {
+      return;
+    }
+    if (referenceLine(_controller) case final line?) {
+      unawaited(reference.restore(line));
+    }
+  }
+
+  /// A reference chosen before the day was listed in the profile that it
+  /// had no room for when it was: said on the reference's keep state.
+  void _referenceDropped() {
+    final dropped = widget.library?.referenceDropped(_controller.eventId);
+    if (dropped != null) _reference.keepDropped(dropped.problem);
+  }
+
   bool _relinking = false;
 
   // The tab shown under the title: on a phone Overview, Laps, Compare or
@@ -174,6 +229,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
   DayLapReference? _mapReference;
   LapPath? _mapPath;
   (Offset, Offset)? _mapGate;
+
+  // The session "Where the laps vary" shows; null for the latest.
+  String? _spreadRunId;
 
   // Writes waiting changes for recovery when the app goes to the background
   // or is closed, where the operating system may end it without warning.
@@ -216,20 +274,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _controller.addListener(_libraryChanged);
     _controller.weather.addListener(_weatherChanged);
     _startLibrary();
+    _controller.addListener(_restoreReference);
+    widget.library?.addListener(_referenceDropped);
+    // The reference kept for the day in the driver profile.
+    _restoreReference();
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
     if (_controller.lastAddition != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _reportAddition());
+    }
+    if (sessionRemovals[_controller] != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reportRemoval());
     }
     _lifecycle;
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_measuredThenSave);
     ++_retryGeneration;
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _controller.removeListener(_libraryChanged);
+    _controller.removeListener(_restoreReference);
+    widget.library?.removeListener(_referenceDropped);
     _controller.weather.removeListener(_weatherChanged);
     _autosave?.cancel();
     _lifecycle.dispose();
@@ -297,7 +365,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
   final _coachScroll = ScrollController();
 
   /// The day opens on what to do in the next session: the coach, from the
-  /// top, where its Next session card is.
+  /// top, where the session summary leads into the Next session card.
   void _revealCoach() {
     _coach.value = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -494,6 +562,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               printable: true,
+              goals: _ownGoals(_controller.latestRunId),
             ),
         ],
       );
@@ -712,6 +781,17 @@ class _DayResultsPageState extends State<DayResultsPage> {
         },
         theoreticalBest: best,
         weather: weather,
+        // The setups as saved: an edit not saved yet is not the driver's
+        // statement about the run until the day is saved. A restored day
+        // not saved since gives none, so the profile keeps its own.
+        setups: controller.setupsSaved
+            ? {
+                for (final named in controller.runs)
+                  named.run.id: ProfileSetup.of(
+                    controller.savedRunSetup(named.run.id),
+                  ),
+              }
+            : null,
       ),
     );
   }
@@ -1023,6 +1103,256 @@ class _DayResultsPageState extends State<DayResultsPage> {
     }
   }
 
+  /// Takes session [runId] out of the day once the driver confirms
+  /// (FET-241): the day is saved, the session is removed from its document
+  /// ([removeRunFromDayDocument]), the day without it is opened and only
+  /// then written, and shown in place of this one, so its laps, theoretical
+  /// best, coach and profile are worked out again. The recording file
+  /// stays. The day opened again offers Undo.
+  Future<void> _removeSession(String runId) async {
+    final l10n = context.l10n;
+    final name = [
+      for (final named in _controller.runs)
+        if (named.run.id == runId) named.name,
+      for (final recording in _controller.missing)
+        if (recording.runId == runId) recording.name,
+    ].firstOrNull;
+    if (name == null) return;
+    if (_controller.runs.length + _controller.missing.length < 2) {
+      _tell(l10n.removeSessionLast);
+      return;
+    }
+    if (_busyForRemoval) {
+      _tell(l10n.removeSessionBusy);
+      return;
+    }
+    final label = l10n.session(name);
+    // Said whenever it may be so: the corners' session is known once the
+    // theoretical best is ready.
+    final best = _controller.theoreticalBest;
+    final corners =
+        best == null ||
+        _controller.theoreticalBestLoading ||
+        best.segmentRunId.isEmpty ||
+        best.segmentRunId == runId;
+    if (!await confirmSessionRemoval(context, label, corners: corners) ||
+        !mounted) {
+      return;
+    }
+    if (_busyForRemoval) {
+      _tell(l10n.removeSessionBusy);
+      return;
+    }
+    setState(() => _relinking = true);
+    try {
+      _autosave?.cancel();
+      if (_controller.dirty) await _save(quiet: true);
+      if (!mounted) return;
+      final path = _controller.documentPath;
+      if (path == null || _controller.dirty) {
+        _tell(l10n.removeSessionNotSaved);
+        return;
+      }
+      final sessions = _controller.runs.length;
+      final saves = _controller.saveCount;
+      final removal = await runInBackground(removeSessionJob, (
+        path: path,
+        runId: runId,
+      )).result;
+      if (!mounted) return;
+      if (_changedSince(sessions, saves)) {
+        _tell(l10n.removeSessionChangedMeanwhile);
+        return;
+      }
+      if (removal.day.analysis == null) {
+        _tell(l10n.removeSessionNothingLeft);
+        return;
+      }
+      if (!_onTop) {
+        _tell(l10n.removeSessionChangedMeanwhile);
+        return;
+      }
+      await _controller.writer(path, removal.after);
+      if (!mounted) return;
+      _replaceWith(
+        removal.day,
+        undo: SessionRemoval(
+          path: path,
+          before: removal.before,
+          label: label,
+          saves: removal.heldSegments ? 1 : 0,
+        ),
+      );
+    } on Object catch (error) {
+      if (mounted) _tell(l10n.removeSessionFailed('$error'));
+    } finally {
+      if (mounted) setState(() => _relinking = false);
+    }
+  }
+
+  /// Whether work under way keeps sessions from being removed or put back.
+  bool get _busyForRemoval =>
+      !_controller.fusionsIdle ||
+      _controller.adding ||
+      _controller.saving ||
+      _controller.recordingsBusy ||
+      _controller.savingWaitsForRecordings ||
+      _relinking ||
+      _preparingReview;
+
+  /// Whether the day changed, or is being saved, since it had [sessions]
+  /// sessions and [saves] saves.
+  bool _changedSince(int sessions, int saves) =>
+      !_controller.fusionsIdle ||
+      _controller.dirty ||
+      _controller.saving ||
+      _controller.adding ||
+      _controller.recordingsBusy ||
+      _controller.savingWaitsForRecordings ||
+      _controller.saveCount != saves ||
+      _controller.runs.length != sessions;
+
+  /// Whether the day page is the page shown: a day opened again replaces
+  /// this route, so nothing opened over the day may be.
+  bool get _onTop => ModalRoute.of(context)?.isCurrent ?? true;
+
+  /// Puts back the session [removal] took out, while the day has not
+  /// changed since it opened without it.
+  Future<void> _undoRemoval(SessionRemoval removal) async {
+    if (!mounted) return;
+    final l10n = context.l10n;
+    // The save measuring the corners again may still run: waited for.
+    while (_controller.saving && mounted) {
+      final saved = Completer<void>();
+      void done() {
+        if (!_controller.saving && !saved.isCompleted) saved.complete();
+      }
+
+      _controller.addListener(done);
+      try {
+        await saved.future;
+      } finally {
+        _controller.removeListener(done);
+      }
+    }
+    if (!mounted) return;
+    bool refused() =>
+        _busyForRemoval ||
+        _controller.dirty ||
+        _controller.saveCount > removal.saves ||
+        _controller.documentPath != removal.path ||
+        !_onTop;
+    if (refused()) {
+      _tell(l10n.sessionRestoreRefused);
+      return;
+    }
+    setState(() => _relinking = true);
+    try {
+      final sessions = _controller.runs.length;
+      final saves = _controller.saveCount;
+      final restored = await runInBackground(restoreSessionJob, (
+        path: removal.path,
+        before: removal.before,
+      )).result;
+      if (!mounted) return;
+      if (_changedSince(sessions, saves) ||
+          restored.day.analysis == null ||
+          !_onTop) {
+        _tell(l10n.sessionRestoreRefused);
+        return;
+      }
+      await _controller.writer(removal.path, restored.document);
+      if (!mounted) return;
+      _tell(l10n.sessionRestored(removal.label));
+      _replaceWith(restored.day);
+    } on Object catch (error) {
+      if (mounted) _tell(l10n.dayReopenFailed('$error'));
+    } finally {
+      if (mounted) setState(() => _relinking = false);
+    }
+  }
+
+  /// Shows [day], just written, in place of this page; with [undo], it
+  /// offers to put that session back.
+  void _replaceWith(OpenedDay day, {SessionRemoval? undo}) {
+    final controller = DayResultsController.opened(
+      day,
+      writer: _controller.writer,
+      recovery: widget.recovery,
+      appender: _controller.appender,
+    );
+    if (undo != null) sessionRemovals[controller] = undo;
+    final replace = widget.replace;
+    if (replace != null) {
+      replace(controller);
+      Navigator.of(context).pop();
+      return;
+    }
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => DayResultsPage.controller(
+            controller: controller,
+            documents: widget.documents,
+            pickers: widget.pickers,
+            recovery: widget.recovery,
+            library: widget.library,
+            reportSharer: widget.reportSharer,
+            coach: widget.coach,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Whether the day saves once its theoretical best is measured: the
+  /// session removed held the corners, which are measured again on the
+  /// best lap left and approved by that save.
+  bool _saveWhenMeasured = false;
+
+  /// The save [_saveWhenMeasured] waits for, once the theoretical best is
+  /// there (its automatic segments are then the ones the save approves).
+  void _measuredThenSave() {
+    if (!_saveWhenMeasured || !mounted) return;
+    if (_controller.theoreticalBestLoading) return;
+    if (_controller.theoreticalBest == null) {
+      unawaited(_controller.requestTheoreticalBest());
+      return;
+    }
+    _saveWhenMeasured = false;
+    _controller.removeListener(_measuredThenSave);
+    unawaited(_save(quiet: true));
+  }
+
+  /// Says the session removed before this day opened, with Undo. When the
+  /// session held the day's corners, the day is saved once its corners are
+  /// measured again on the best lap left.
+  void _reportRemoval() {
+    final removal = sessionRemovals[_controller];
+    if (removal == null || !mounted) return;
+    sessionRemovals[_controller] = null;
+    if (removal.saves > 0) {
+      _saveWhenMeasured = true;
+      _controller.addListener(_measuredThenSave);
+      _measuredThenSave();
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          // Gone by itself, not left over pages opened over the day.
+          persist: false,
+          duration: const Duration(seconds: 8),
+          content: Text(context.l10n.sessionRemoved(removal.label)),
+          action: SnackBarAction(
+            key: const ValueKey('sessionRemovedUndo'),
+            label: context.l10n.sessionRemovedUndo,
+            onPressed: () => unawaited(_undoRemoval(removal)),
+          ),
+        ),
+      );
+  }
+
   /// Two panes and a side rail from this width; below it the overview, the
   /// laps, Compare and Report are tabs of their own.
   static const _twoPaneWidth = AppFrame.wideWidth;
@@ -1222,6 +1552,37 @@ class _DayResultsPageState extends State<DayResultsPage> {
                     !_preparingReview,
                 onTap: _addAndReview,
                 child: Text(context.l10n.addAndReviewRecordings),
+              ),
+              // The notebook of the day's track, for a day in the library.
+              if (widget.library case final library?
+                  when library.holds(_controller.documentPath ?? ''))
+                if (library.profile?.day(_controller.eventId)?.trackId
+                    case final trackId?)
+                  PopupMenuItem(
+                    key: const ValueKey('trackNotebookMenuItem'),
+                    height: kMinInteractiveDimension,
+                    onTap: () => Navigator.of(this.context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => TrackNotebookPage(
+                          library: library,
+                          trackId: trackId,
+                        ),
+                      ),
+                    ),
+                    child: Text(context.l10n.notebookTitle),
+                  ),
+              PopupMenuItem(
+                key: const ValueKey('removeSessionMenu'),
+                height: kMinInteractiveDimension,
+                enabled: !_busyForRemoval,
+                onTap: () async {
+                  final runId = await chooseSessionToRemove(
+                    this.context,
+                    _controller,
+                  );
+                  if (runId != null && mounted) await _removeSession(runId);
+                },
+                child: Text(context.l10n.removeSessionMenu),
               ),
               PopupMenuItem(
                 key: const ValueKey('renameDay'),
@@ -1518,6 +1879,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
         const SizedBox(height: 12),
         _theoreticalBest(path, wide),
         const SizedBox(height: 12),
+        BestPhasesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          sections: _controller.theoreticalBestLoading ? null : _sections(),
+        ),
+        const SizedBox(height: 12),
         TimeLossesCard(
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
@@ -1532,14 +1899,36 @@ class _DayResultsPageState extends State<DayResultsPage> {
           laps: _controller.lapConsistency,
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
+          sections: _controller.theoreticalBestLoading ? null : _sections(),
+          spreadRunId: _spreadRunId,
+          onSpreadRun: (runId) => setState(() => _spreadRunId = runId),
+          path: path,
+          gate: _mapGate,
         ),
         const SizedBox(height: 12),
         ProgressionCard(
           progression: _controller.progression,
+          evolution: _evolution(),
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
           onOpenLap: _open,
           weatherOf: _controller.weather.of,
+        ),
+        const SizedBox(height: 12),
+        GgEnvelopeCard(
+          laps: dayEligibleLaps(analysis),
+          sessionOf: _controller.session,
+        ),
+        const SizedBox(height: 12),
+        GripProxiesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+        ),
+        const SizedBox(height: 12),
+        LapStylesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          onOpenLap: _open,
         ),
         // Only for a day kept in the library: a copy saved elsewhere
         // shares its event id.
@@ -1550,6 +1939,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             eventId: _controller.eventId,
             weatherStateOf: _controller.weather.stateOf,
             weatherChanges: _controller.weather,
+            setupUnsavedOf: _controller.runSetupWaitsForSave,
           ),
       ],
       const SizedBox(height: 12),
@@ -1615,6 +2005,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
             builder: (_) => SessionDetailsDialog(
               controller: _controller,
               runId: named.run.id,
+              onRemove: () => _removeSession(named.run.id),
             ),
           ),
         ),
@@ -1753,6 +2144,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
     return TheoreticalBestCard(
       result: result,
       loading: _controller.theoreticalBestLoading,
+      sections: _controller.theoreticalBestLoading ? null : _sections(),
       path: path,
       gate: _mapGate,
       wide: wide,
@@ -1839,18 +2231,18 @@ class _DayResultsPageState extends State<DayResultsPage> {
     );
   }
 
-  // A session's conditions, setup changes and notes on one line each, and
-  // its weather.
+  // A session's conditions, setup changes, setup and notes on one line
+  // each, and its weather.
   String _detailsText(String runId) {
     final l10n = context.l10n;
     final details = _controller.runMetadata(runId);
+    String? line(String label, String text) =>
+        text.trim().isEmpty ? null : '$label: ${text.trim()}';
     final lines = [
-      for (final (label, text) in [
-        (l10n.sessionDetailsConditions, details.conditions),
-        (l10n.sessionDetailsSetup, details.setupChanges),
-        (l10n.sessionDetailsNotes, details.notes),
-      ])
-        if (text.trim().isNotEmpty) '$label: ${text.trim()}',
+      ?line(l10n.sessionDetailsConditions, details.conditions),
+      ?line(l10n.sessionDetailsSetup, details.setupChanges),
+      ?setupLine(l10n, details.setup),
+      ?line(l10n.sessionDetailsNotes, details.notes),
     ];
     final weather = switch (_controller.weather.of(runId)) {
       final shown? => weatherShortText(l10n, shown),
@@ -1889,9 +2281,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
         children: [
           if (best == null)
             Text(_noBestReason(_controller.analysis, _controller.ranking))
-          else
+          else ...[
+            _sessionSummary(),
+            const SizedBox(height: 12),
             NextSessionCard(
-              key: _coachKey,
               coach: _controller.coach,
               result: _controller.theoreticalBest,
               session: _controller.latestRunName,
@@ -1904,7 +2297,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
               speedsConverted: _controller.coachSpeedsConverted,
               withoutTheoreticalBest: _controller.coachWithoutTheoreticalBest,
               onRetry: _controller.retryCoach,
+              goals: _ownGoals(_controller.latestRunId),
+              goalsOtherGroup: _goalsOtherGroup(),
+              onGoalsChanged: _setOwnGoals,
             ),
+          ],
           // Below what to try next: the driver's skills across days, from
           // the profile.
           if (widget.library case final library?)
@@ -1914,6 +2311,302 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ),
         ],
       ),
+    );
+  }
+
+  // The theoretical best's section progression for the session summary,
+  // worked out again only when the result or the progression changes.
+  (DayTheoreticalBest?, DayProgression, SectionProgression?)? _summarySections;
+
+  /// The latest session in a few lines, above the coach's plan. Its car
+  /// line needs the channel summaries, which are asked for here while Coach
+  /// is shown, as on the overview.
+  Widget _sessionSummary() {
+    final channels = _controller.channelSummaries;
+    // Only while Coach is shown: the Coach list is built behind the day's
+    // tabs too, and the summaries read every recording.
+    if (_coach.value &&
+        channels == null &&
+        !_controller.channelSummariesLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.requestChannelSummaries();
+      });
+    }
+    final result = _controller.theoreticalBest;
+    final progression = _controller.progression;
+    return SessionSummaryCard(
+      key: _coachKey,
+      runId: _controller.latestRunId,
+      session: _controller.latestRunName,
+      progression: progression,
+      sectionsState: result?.state,
+      sections: _sections(),
+      coach: _controller.coach,
+      coachLoading: _controller.coachLoading,
+      coachError: _controller.coachError,
+      channels: channels,
+      ownGoals: _goalSummary(),
+      onBriefing: _openBriefing,
+      onChanges: _openChanges,
+    );
+  }
+
+  // Every lap of each session for the progression, worked out again only
+  // when the day's analysis or the progression changes.
+  (DayAnalysis, DayProgression, DayEvolution)? _evolutionCache;
+
+  /// Every lap of each session in the progression's order (FET-227).
+  DayEvolution _evolution() {
+    final analysis = _controller.analysis;
+    final progression = _controller.progression;
+    var cached = _evolutionCache;
+    if (cached == null ||
+        !identical(cached.$1, analysis) ||
+        !identical(cached.$2, progression)) {
+      cached = _evolutionCache = (
+        analysis,
+        progression,
+        dayEvolution(analysis, progression),
+      );
+    }
+    return cached.$3;
+  }
+
+  /// The theoretical best's section progression in the progression's
+  /// order, worked out again only when either changes.
+  SectionProgression? _sections() {
+    final result = _controller.theoreticalBest;
+    final progression = _controller.progression;
+    var cached = _summarySections;
+    if (cached == null ||
+        !identical(cached.$1, result) ||
+        !identical(cached.$2, progression)) {
+      cached = _summarySections = (
+        result,
+        progression,
+        result?.sectionProgression([
+          for (final run in progression.runs) run.run,
+        ]),
+      );
+    }
+    return cached.$3;
+  }
+
+  /// Before the next session, on a page of its own in large text, read at
+  /// the car: it follows the day as it changes.
+  void _openBriefing() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => saveShortcuts(
+        _saveFromShortcut,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => Scaffold(
+            appBar: AppBar(title: Text(context.l10n.briefingTitle)),
+            body: LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                key: const ValueKey('briefingPage'),
+                padding: constraints.maxWidth > readableWidth
+                    ? readablePadding(constraints.maxWidth)
+                    : const EdgeInsets.all(16),
+                children: [_briefing()],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  /// Every segment's change since the session before ([SessionChanges]),
+  /// following the day while it is open.
+  void _openChanges() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => saveShortcuts(
+        _saveFromShortcut,
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            final result = _controller.theoreticalBest;
+            final ready = result?.state == DayTheoreticalBestState.ready;
+            final summary = summarizeSession(
+              _controller.latestRunId,
+              progression: _controller.progression,
+              sections: ready ? _sections() : null,
+            );
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(switch (summary?.previousRunName) {
+                  final String previous => context.l10n.changesTitle(
+                    context.l10n.session(previous),
+                  ),
+                  null => context.l10n.changesTitleNone,
+                }),
+              ),
+              body: LayoutBuilder(
+                builder: (context, constraints) => ListView(
+                  key: const ValueKey('sessionChangesPage'),
+                  padding: constraints.maxWidth > readableWidth
+                      ? readablePadding(constraints.maxWidth)
+                      : const EdgeInsets.all(16),
+                  children: [
+                    SessionChanges(
+                      session: _controller.latestRunName,
+                      summary: summary,
+                      pending: result == null,
+                      ready: ready,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ),
+  );
+
+  /// Before the next session in a few lines ([BriefingCard]).
+  Widget _briefing() {
+    final result = _controller.theoreticalBest;
+    final analysis = _controller.analysis;
+    // The latest session's last ranked lap on the circuit shown.
+    final last = _controller
+        .comparisonCandidates()
+        .where((row) => row.runId == _controller.latestRunId)
+        .fold<DayLapRow?>(
+          null,
+          (latest, row) =>
+              latest == null || row.start > latest.start ? row : latest,
+        );
+    return BriefingCard(
+      runId: _controller.latestRunId,
+      session: _controller.latestRunName,
+      progression: _controller.progression,
+      sectionsState: result?.state,
+      sections: _sections(),
+      coach: _controller.coach,
+      coachLoading: _controller.coachLoading,
+      coachError: _controller.coachError,
+      speedsConverted: _controller.coachSpeedsConverted,
+      goals: _ownGoals(_controller.latestRunId),
+      channels: _controller.channelSummaries,
+      lastLap: last,
+      lastLapOnCircuit:
+          analysis.chosenGroupId != null &&
+          analysis
+                  .configurations[_controller.latestRunId]
+                  ?.compatibilityGroupId ==
+              analysis.chosenGroupId,
+      // The best of the circuit shown, whichever laps the session has.
+      bestLap: analysis.ranking?.bestOfDay,
+    );
+  }
+
+  /// The driver's goals set after [runId] for the session after it.
+  RunGoals _ownGoals(String runId) =>
+      _controller.runMetadata(runId).goals ?? RunGoals();
+
+  /// Saves the driver's goals for the session after the latest (FET-218),
+  /// with the compared laps their corners are on: the day then has unsaved
+  /// changes.
+  void _setOwnGoals(RunGoals goals) {
+    final runId = _controller.latestRunId;
+    final stored = _ownGoals(runId);
+    final problem = _controller.updateRunMetadata(
+      runId,
+      _controller
+          .runMetadata(runId)
+          .withGoals(
+            RunGoals(
+              goals: goals.goals,
+              // Goals already set keep the compared laps they were set on.
+              groupId: stored.isEmpty || stored.groupId.isEmpty
+                  ? _controller.theoreticalBest?.groupId ?? ''
+                  : stored.groupId,
+            ),
+          ),
+    );
+    if (problem != null) _tell(context.l10n.ownGoalsNotSaved);
+  }
+
+  /// Whether the latest session's goals were set on other compared laps
+  /// than those shown: no goal is added to them then.
+  bool _goalsOtherGroup() {
+    final stored = _ownGoals(_controller.latestRunId);
+    final group = _controller.theoreticalBest?.groupId ?? '';
+    return !stored.isEmpty &&
+        stored.groupId.isNotEmpty &&
+        group.isNotEmpty &&
+        stored.groupId != group;
+  }
+
+  /// The session recorded before the latest, in the order [latestRunId]
+  /// picks the latest by (recording clock, else the order added): the one
+  /// whose goals the latest is checked on; empty when there is none. A
+  /// session without laps counts too.
+  String _sessionBeforeLatest() {
+    final runs = _controller.runs;
+    final latest = _controller.latestRunId;
+    final at = runs.indexWhere((named) => named.run.id == latest);
+    if (at < 0) return '';
+    final start = recordingTimestamp(runs[at].run.telemetry);
+    if (start == null) return at == 0 ? '' : runs[at - 1].run.id;
+    var previous = '';
+    int? previousStart;
+    for (var i = 0; i < runs.length; ++i) {
+      if (i == at) continue;
+      final other = recordingTimestamp(runs[i].run.telemetry);
+      // Recorded before it, or at the same time and added before it.
+      if (other == null || other > start || (other == start && i > at)) {
+        continue;
+      }
+      if (previousStart == null || other >= previousStart) {
+        previous = runs[i].run.id;
+        previousStart = other;
+      }
+    }
+    return previous;
+  }
+
+  /// The goals set after the session before the latest, and their checks
+  /// once the coach has measured the latest against that session; null
+  /// checks while they cannot be made (see [SessionSummaryCard]).
+  ({
+    RunGoals goals,
+    String session,
+    List<SessionGoalCheck>? checks,
+    bool noLaps,
+  })?
+  _goalSummary() {
+    final before = _sessionBeforeLatest();
+    if (before.isEmpty) return null;
+    final goals = _ownGoals(before);
+    if (goals.isEmpty) return null;
+    final session = _controller.runMetadata(before).name;
+    final coach = _controller.coach;
+    if (coach == null ||
+        _controller.coachLoading ||
+        coach.runId != _controller.latestRunId) {
+      return (goals: goals, session: session, checks: null, noLaps: false);
+    }
+    // Without segments the card says why, as for the focus.
+    if (coach.reason == CoachReason.noSegments) {
+      return (goals: goals, session: session, checks: null, noLaps: false);
+    }
+    // Both sessions need laps among the compared laps.
+    if (coach.previousRunId != before ||
+        coach.reason == CoachReason.noLapInGroup) {
+      return (goals: goals, session: session, checks: null, noLaps: true);
+    }
+    return (
+      goals: goals,
+      session: session,
+      checks: checkSessionGoals(
+        goals,
+        coach,
+        groupId: _controller.theoreticalBest?.groupId ?? '',
+      ),
+      noLaps: false,
     );
   }
 
@@ -2008,8 +2701,30 @@ class _DayResultsPageState extends State<DayResultsPage> {
             ),
           ),
       ],
+      const SizedBox(height: 24),
+      ReferenceLapSection(
+        controller: _controller,
+        holder: _reference,
+        pickers: widget.pickers,
+        library: widget.library,
+        onCompare: _compareWithReference,
+      ),
     ];
   }
+
+  /// Opens today's lap [a] against the reference lap (FET-175).
+  Future<void> _compareWithReference(DayLapRow a) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => saveShortcuts(
+        _saveFromShortcut,
+        ReferenceComparisonPage(
+          controller: _controller,
+          holder: _reference,
+          a: a,
+        ),
+      ),
+    ),
+  );
 
   List<Widget> _lapList(BuildContext context) {
     final theme = Theme.of(context);
@@ -2097,14 +2812,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       else if (bestOfRun)
         l10n.bestOfSession(l10n.session(row.runName)),
       if (timed && issues.isNotEmpty)
-        issues.contains(LapIssue.userExclusion)
-            ? switch (_controller.exclusionReason(row)) {
-                final reason? when reason.isNotEmpty => l10n.lapExcluded(
-                  reason,
-                ),
-                _ => l10n.lapExcludedNoReason,
-              }
-            : l10n.lapNotRanked(l10n.lapIssue(issues.first)),
+        l10n.lapNotRankedText(issues, _controller.exclusionReason(row)),
       if (!timed)
         row.type == LapSectionType.unknown
             ? l10n.noStartFinishPass

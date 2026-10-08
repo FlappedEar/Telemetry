@@ -132,6 +132,9 @@ List<LapIssue> dayLapIssues(
     userExcluded: userExclusionReason.isNotEmpty,
   );
   if (row.offRoute) issues.add(LapIssue.differentRecordedRoute);
+  if (row.shortForGroup && !issues.contains(LapIssue.implausibleLap)) {
+    issues.add(LapIssue.implausibleLap);
+  }
   if (staleSource) issues.add(LapIssue.staleSource);
   if (row.type != LapSectionType.lap) {
     issues.add(LapIssue.notTimedLap);

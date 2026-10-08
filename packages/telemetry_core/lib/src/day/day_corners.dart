@@ -7,10 +7,17 @@
 // (ComparisonSegmentPanel): never across different channels, units or
 // methods.
 import '../speed_units.dart';
+import '../telemetry_session.dart';
 import '../analysis/braking_metrics.dart';
+import '../analysis/braking_technique.dart';
+import '../analysis/corner_classes.dart';
+import '../analysis/corner_phase_times.dart';
+import '../analysis/corner_phases.dart' show cornerPhaseInvalidInput;
 import '../analysis/corner_speeds.dart';
 import '../analysis/exit_metrics.dart';
 import '../analysis/outing_theoretical_best.dart';
+import '../analysis/track_progress.dart';
+import '../analysis/track_segment_review.dart';
 import 'day_laps.dart';
 
 /// One value of one lap.
@@ -32,6 +39,8 @@ final class DayCornerComparison {
     this.highestExitSpeed,
     this.latestBrakingPoint,
     this.earliestPickup,
+    this.phases = const CornerPhaseTimes(),
+    this.bestLapPhases = const CornerPhaseTimes(),
   });
 
   final DayLapRow lap;
@@ -59,6 +68,21 @@ final class DayCornerComparison {
   /// The pickup nearest the segment's entry, as metres after it, of the laps
   /// measured by the same method and channel.
   final DayCornerValue? earliestPickup;
+
+  /// This lap's and the best lap's time through the corner's entry, middle
+  /// and exit (FET-221), over the same metres.
+  final CornerPhaseTimes phases, bestLapPhases;
+
+  /// This lap minus the best lap through each part; null when either is not
+  /// timed there.
+  ({double entry, double mid, double exit})? get phaseDeltas =>
+      phases.valid && bestLapPhases.valid && bestLap != null
+      ? (
+          entry: phases.entry! - bestLapPhases.entry!,
+          mid: phases.mid! - bestLapPhases.mid!,
+          exit: phases.exit! - bestLapPhases.exit!,
+        )
+      : null;
 }
 
 /// One corner segment of the group with every timed lap's figures.
@@ -71,6 +95,10 @@ final class DayCorner {
     required this.endProgressMeters,
     required List<(DayLapRow, CornerLapMetrics)> laps,
     this.bestLap,
+    this.phaseSplit = const CornerPhaseSplit(unavailableReason: cornerPhaseInvalidInput),
+    this.traces = const {},
+    this.classification = const CornerClassification(),
+    this.brakingTechnique = const BrakingTechnique(),
   }) : laps = List.unmodifiable(laps);
 
   /// The segment's position among the approved segments.
@@ -85,6 +113,29 @@ final class DayCorner {
 
   /// The group's best lap.
   final DayLapRow? bestLap;
+
+  /// The corner split into entry, middle and exit (FET-221).
+  final CornerPhaseSplit phaseSplit;
+
+  /// Each lap's projection onto the shared axis, to time [phaseSplit] on.
+  final Map<DayLapReference, List<ProgressSegment>> traces;
+
+  /// What kind of corner it is (FET-220): its shape from the track, and its
+  /// braking and speed from every lap of the group timed here.
+  final CornerClassification classification;
+
+  /// How the corner was braked into (FET-219): each lap's hit, peak, trail
+  /// braking, release and brake-to-throttle time, keyed by lap reference,
+  /// and their typical values over the group's laps.
+  final BrakingTechnique brakingTechnique;
+
+  /// [reference]'s time through each part of [phaseSplit].
+  CornerPhaseTimes phaseTimes(DayLapReference reference) {
+    if (!phaseSplit.valid) return CornerPhaseTimes(unavailableReason: phaseSplit.unavailableReason);
+    final trace = traces[reference];
+    if (trace == null) return const CornerPhaseTimes(unavailableReason: cornerPhaseTimesNotTimed);
+    return cornerPhaseTimes(phaseSplit, trace);
+  }
 
   /// [reference]'s figures here, or null.
   CornerLapMetrics? metrics(DayLapReference reference) {
@@ -183,19 +234,67 @@ final class DayCorner {
       highestExitSpeed: highest((speeds) => speeds.exit.value),
       latestBrakingPoint: latest,
       earliestPickup: earliest,
+      phases: phaseTimes(reference),
+      bestLapPhases: best == null ? const CornerPhaseTimes() : phaseTimes(bestLap!.reference),
     );
   }
 }
 
 /// The corner segments of [computed] with every lap of [rows] timed there,
-/// in approved order.
+/// in approved order. [sessions] (by run id, as [computed] measured them)
+/// give each lap's speed where braking started, for the corner classes.
 List<DayCorner> dayCorners(
   OutingTheoreticalBest computed,
   List<DayLapRow> rows,
-  DayLapRow? bestLap,
-) {
+  DayLapRow? bestLap, {
+  Map<String, TelemetrySession> sessions = const {},
+}) {
   final result = <DayCorner>[];
   final segments = computed.approved.segments;
+  // Corner geometry on the shared axis, as the corner metrics read it.
+  final features = computeTrackFeatures(computed.axis, segmentReviewSmoothingMeters);
+  final wanted = {for (final row in rows) row.reference};
+  final traces = <DayLapReference, List<ProgressSegment>>{
+    for (var i = 0; i < computed.population.length && i < computed.traces.length; i++)
+      if (computed.population[i].times.lapReference case final DayLapReference reference
+          when wanted.contains(reference))
+        reference: computed.traces[i],
+  };
+  final sessionOf = <Object?, TelemetrySession>{
+    for (var i = 0; i < computed.population.length && i < computed.runIds.length; i++)
+      computed.population[i].times.lapReference: ?sessions[computed.runIds[i]],
+  };
+  // The recorded speed where [lap] started braking, from the channel its
+  // corner speeds were read from (so in their unit).
+  double? speedAtBraking(CornerLapMetrics lap) {
+    final time = lap.braking.brakingPointTime;
+    final channel = lap.speeds.channel;
+    if (time == null || channel.isEmpty) return null;
+    final found = sessionOf[lap.lapReference]?.channels[channel];
+    return found == null ? null : telemetryValueAt(found, time);
+  }
+
+  // How [row] braked into [segment], from its recording past the lap's
+  // bounds where the corner needs it.
+  BrakingTechniqueLap brakingOf(DayLapRow row, Map<String, Object?> segment) {
+    final session = sessionOf[row.reference];
+    final trace = traces[row.reference];
+    final window = trace == null
+        ? null
+        : brakingTechniqueWindow(
+            computed.axisLengthMeters,
+            segments,
+            segment,
+            trace,
+            row.start,
+            row.end,
+          );
+    if (session == null || window == null) {
+      return BrakingTechniqueLap()..unavailableReason = brakingTechniqueNotCovered;
+    }
+    return measureBrakingTechnique(session, window.start, window.end, beyondLap: window.beyondLap);
+  }
+
   for (var index = 0; index < segments.length; ++index) {
     final segment = segments[index];
     final id = segment['id'];
@@ -215,6 +314,19 @@ List<DayCorner> dayCorners(
             if (byReference[row.reference] case final lap?) (row, lap),
         ],
         bestLap: bestLap,
+        phaseSplit: cornerPhaseSplit(computed.axis, features, segment),
+        traces: traces,
+        classification: classifyCorner(computed.axis, features, segment, [
+          for (final row in rows)
+            if (byReference[row.reference] case final lap?)
+              (metrics: lap, speedAtBraking: speedAtBraking(lap)),
+        ]),
+        // The laps timed here, all ranked ([rows] are the group's eligible
+        // laps).
+        brakingTechnique: summarizeBrakingTechnique([
+          for (final row in rows)
+            if (byReference.containsKey(row.reference)) (row.reference, brakingOf(row, segment)),
+        ]),
       ),
     );
   }

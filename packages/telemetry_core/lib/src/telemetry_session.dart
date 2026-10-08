@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'geometry.dart' show wrapLongitudeDegrees;
 import 'selection.dart';
 import 'timing_gate.dart';
 
@@ -14,21 +15,85 @@ enum InterpolationMode {
 
   /// Straight line between two finite neighbours.
   linear,
+
+  /// [linear] for a longitude in degrees, the short way round: across
+  /// ±180° (179.9999 to -179.9999) it stays near 180°, not near 0°
+  /// (FET-213). The same as [linear] for neighbours under 180° apart.
+  longitude,
+}
+
+// Lists made read-only for channels: channels built on them share them
+// without a copy, and their checks and median interval hold for good.
+final _owned = Expando<bool>('owned channel list');
+final _checked = Expando<bool>('checked timestamps');
+
+// Channels on one clock share its timestamps, so the median is found once
+// per clock. Adopted timestamps never change.
+final _medians = Expando<double>('median interval');
+
+/// [timestamps] as a read-only view a [TelemetryChannel] keeps without a
+/// copy. The caller hands the list over: it must never change it
+/// afterwards. Channels on one clock (a VBO's columns, an RCZ device's
+/// channels) share one adopted list. Internal to this package (not
+/// exported), so no caller outside it can keep writing to a channel's data.
+Float64List adoptChannelTimestamps(Float64List timestamps) {
+  if (_owned[timestamps] == true) return timestamps;
+  final view = timestamps.asUnmodifiableView();
+  _owned[view] = true;
+  return view;
+}
+
+/// [values] as a read-only view a [TelemetryChannel] keeps without a copy;
+/// handed over as with [adoptChannelTimestamps].
+Float32List adoptChannelValues(Float32List values) {
+  if (_owned[values] == true) return values;
+  final view = values.asUnmodifiableView();
+  _owned[view] = true;
+  return view;
 }
 
 /// One recorded quantity: strictly increasing times in seconds and float32
 /// values, where NaN means no data.
+///
+/// Immutable and validated (FET-202): [timestamps] and [values] are read-only
+/// views, equally long, with finite, strictly increasing timestamps; anything
+/// else throws [ArgumentError]. The lists passed in are copied, so changing
+/// them later cannot change the channel, unless they came from
+/// [adoptChannelTimestamps] or [adoptChannelValues] inside this package,
+/// whose caller hands them over.
 final class TelemetryChannel {
-  TelemetryChannel({
-    required this.name,
-    this.unit = '',
-    required this.timestamps,
-    required this.values,
-  }) : baseIntervalSeconds = _medianInterval(timestamps);
+  factory TelemetryChannel({
+    required String name,
+    String unit = '',
+    required Float64List timestamps,
+    required Float32List values,
+  }) {
+    final frozenTimestamps = _owned[timestamps] == true
+        ? timestamps
+        : adoptChannelTimestamps(Float64List.fromList(timestamps));
+    final frozenValues = _owned[values] == true
+        ? values
+        : adoptChannelValues(Float32List.fromList(values));
+    if (frozenTimestamps.length != frozenValues.length) {
+      throw ArgumentError(
+        'Channel "$name" has ${frozenTimestamps.length} timestamps and '
+        '${frozenValues.length} values.',
+      );
+    }
+    _checkTimestamps(name, frozenTimestamps);
+    return TelemetryChannel._(name, unit, frozenTimestamps, frozenValues);
+  }
+
+  TelemetryChannel._(this.name, this.unit, this.timestamps, this.values)
+    : baseIntervalSeconds = _medianInterval(timestamps);
 
   final String name;
   final String unit;
+
+  /// Read-only.
   final Float64List timestamps;
+
+  /// Read-only.
   final Float32List values;
 
   /// The median positive interval between samples, or 0 with fewer than two.
@@ -36,13 +101,28 @@ final class TelemetryChannel {
 
   int get sampleCount => timestamps.length;
 
-  // Channels on one clock share its timestamps (a VBO's columns, an RCZ
-  // device's channels), so the median is found once per clock. Timestamps
-  // never change once a channel is built.
-  static final _medians = Expando<double>('median interval');
+  static void _checkTimestamps(String name, Float64List timestamps) {
+    if (_checked[timestamps] == true) return;
+    var previous = double.negativeInfinity;
+    for (var index = 0; index < timestamps.length; ++index) {
+      final time = timestamps[index];
+      if (!time.isFinite || time <= previous) {
+        throw ArgumentError(
+          'Channel "$name" timestamp $index ($time) must be finite and after the one before.',
+        );
+      }
+      previous = time;
+    }
+    _checked[timestamps] = true;
+  }
 
-  static double _medianInterval(Float64List timestamps) =>
-      _medians[timestamps] ??= _computeMedianInterval(timestamps);
+  /// The median positive interval of [timestamps], as [baseIntervalSeconds]
+  /// would be for a channel on them.
+  static double medianIntervalOf(Float64List timestamps) => _medianInterval(timestamps);
+
+  static double _medianInterval(Float64List timestamps) => _owned[timestamps] == true
+      ? _medians[timestamps] ??= _computeMedianInterval(timestamps)
+      : _computeMedianInterval(timestamps);
 
   static double _computeMedianInterval(Float64List timestamps) {
     final intervals = Float64List(timestamps.length > 1 ? timestamps.length - 1 : 0);
@@ -106,6 +186,7 @@ double? telemetryValueAt(
           ? finiteAt(previous)
           : finiteAt(next);
     case InterpolationMode.linear:
+    case InterpolationMode.longitude:
       final span = timestamps[next] - timestamps[previous];
       final before = finiteAt(previous);
       final after = finiteAt(next);
@@ -113,7 +194,12 @@ double? telemetryValueAt(
         return null;
       }
       final ratio = (time - timestamps[previous]) / span;
-      final value = before + (after - before) * ratio;
+      final difference = after - before;
+      if (mode == InterpolationMode.longitude && difference.abs() > 180.0) {
+        final value = wrapLongitudeDegrees(before + wrapLongitudeDegrees(difference) * ratio);
+        return value.isFinite ? value : null;
+      }
+      final value = before + difference * ratio;
       return value.isFinite ? value : null;
   }
 }

@@ -12,6 +12,7 @@
 // with none. A speed with no unit left (nothing declared, nothing assumed)
 // is read as km/h where a physical scale is needed, as Overlays reads it
 // ([speedInMetresPerSecond]); the screens show it without a unit.
+import 'channel_units.dart';
 import 'telemetry_session.dart';
 
 /// "km/h" or "mph" for a speed unit as recordings write it (`kmh`, `km/h`,
@@ -39,18 +40,8 @@ bool isSessionSpeedChannel(TelemetrySession session, String name) =>
 /// `velocity kmh` (RaceChrono writes units there, which the parser keeps as
 /// header metadata). "km/h" and "mph" however written, any other unit as
 /// written. Empty when it declares none.
-String declaredSpeedUnit(TelemetrySession session, String name) {
-  final own = _declared(session.channels[name]?.unit ?? '');
-  if (own.isNotEmpty) return own;
-  for (final MapEntry(:key, :value) in session.metadata.entries) {
-    if (!key.startsWith('header.')) continue;
-    final words = value.trim().split(RegExp(r'\s+'));
-    if (words.length == 2 && words.first.toLowerCase() == name.toLowerCase()) {
-      return _declared(words.last);
-    }
-  }
-  return '';
-}
+String declaredSpeedUnit(TelemetrySession session, String name) =>
+    _declared(declaredChannelUnit(session, name));
 
 // "km/h" or "mph" for those units however written; another unit (say
 // "m/s") as written, never dropped.
@@ -58,6 +49,19 @@ String _declared(String unit) {
   final known = normalizedSpeedUnit(unit);
   return known.isNotEmpty ? known : unit.trim();
 }
+
+/// The metadata key [withEffectiveSpeedUnits] sets for a speed channel it
+/// gave an assumed unit (`speedUnitAssumed.<channel>` holds the unit), so
+/// that analysis can tell a unit the file declares from one the user assumed.
+const String assumedSpeedUnitKeyPrefix = 'speedUnitAssumed.';
+
+/// The speed unit the recording itself declares for channel [name] of
+/// [session]: empty when it declares none, even when [withEffectiveSpeedUnits]
+/// gave the channel an assumed one.
+String fileDeclaredSpeedUnit(TelemetrySession session, String name) =>
+    session.metadata.containsKey('$assumedSpeedUnitKeyPrefix$name')
+    ? ''
+    : declaredSpeedUnit(session, name);
 
 /// The unit analysis reads channel [name] of [session] in: for a speed,
 /// the unit the recording declares, else [assumed] (the unit the user
@@ -77,9 +81,13 @@ String effectiveChannelUnit(TelemetrySession session, String name, {String assum
 /// shared, never copied or converted.
 TelemetrySession withEffectiveSpeedUnits(TelemetrySession session, {String assumed = ''}) {
   Map<String, TelemetryChannel>? changed;
+  Map<String, String>? marked;
   for (final MapEntry(key: name, value: channel) in session.channels.entries) {
     if (!isSessionSpeedChannel(session, name)) continue;
     final unit = effectiveChannelUnit(session, name, assumed: assumed);
+    if (unit.isNotEmpty && declaredSpeedUnit(session, name).isEmpty) {
+      (marked ??= Map.of(session.metadata))['$assumedSpeedUnitKeyPrefix$name'] = unit;
+    }
     if (unit == channel.unit) continue;
     (changed ??= Map.of(session.channels))[name] = TelemetryChannel(
       name: channel.name,
@@ -92,7 +100,7 @@ TelemetrySession withEffectiveSpeedUnits(TelemetrySession session, {String assum
   return TelemetrySession(
     duration: session.duration,
     startTime: session.startTime,
-    metadata: session.metadata,
+    metadata: marked ?? session.metadata,
     channels: changed,
     aliases: session.aliases,
     warnings: session.warnings,

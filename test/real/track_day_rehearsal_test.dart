@@ -45,6 +45,81 @@ void main() {
         while (controller.coachLoading) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
         }
+        await controller.requestChannelSummaries();
+      }
+
+      // The driver's own goals set after the session before (FET-218),
+      // checked on this one.
+      var measuredGoals = 0;
+      String ownGoals() {
+        final coach = controller.coach;
+        if (coach == null || coach.previousRunId.isEmpty) return '';
+        final goals = controller.runMetadata(coach.previousRunId).goals;
+        if (goals == null) return '';
+        final checks = checkSessionGoals(
+          goals,
+          coach,
+          groupId: controller.theoreticalBest!.groupId,
+        );
+        expect(checks, hasLength(goals.goals.length));
+        measuredGoals += checks
+            .where((c) => c.outcome != CoachGoalOutcome.notMeasured)
+            .length;
+        return '\n  own goals: ${[for (final c in checks) '${c.goal.segmentName} ${c.goal.kind.name} at ${c.measuredName}: ${c.before?.value.toStringAsFixed(1)} (${c.before?.laps}) -> ${c.now?.value.toStringAsFixed(1)} (${c.now?.laps}) ${c.outcome.name}'].join('; ')}';
+      }
+
+      // The Coach place's session summary (FET-233), from the same results.
+      String summary() {
+        final result = controller.theoreticalBest;
+        final s = summarizeSession(
+          controller.latestRunId,
+          progression: controller.progression,
+          sections: result?.sectionProgression([
+            for (final run in controller.progression.runs) run.run,
+          ]),
+          coach: controller.coach,
+          channels: controller.channelSummaries,
+        );
+        if (s == null) return '  summary: not in the group shown';
+        String change(SessionSegmentChange? c) =>
+            c == null ? '-' : '${c.name} ${c.deltaSeconds.toStringAsFixed(3)}';
+        return '  summary: best ${s.bestLap?.durationSeconds.toStringAsFixed(3)}'
+            '${s.newBest ? ' (new best)' : ''} delta ${s.bestDeltaSeconds?.toStringAsFixed(3)}'
+            ', spread ${s.lapSpread?.toStringAsFixed(3)} (before ${s.previousLapSpread?.toStringAsFixed(3)})'
+            ', ${s.segmentsCompared} compared, gain ${change(s.biggestGain)}'
+            ', loss ${change(s.biggestLoss)}, gap ${change(s.biggestGap)}'
+            ', car ${[for (final t in s.temperatures) '${t.channel} ${t.maximum.toStringAsFixed(0)}/${t.previousMaximum?.toStringAsFixed(0)}'].join(' ')}'
+            ', goal ${s.goal?.outcome.name}'
+            '${ownGoals()}';
+      }
+
+      // The driver takes the coach's changes as their goals for the next
+      // session, as Add a goal suggests them.
+      void setGoals() {
+        final coach = controller.coach;
+        final corners =
+            controller.theoreticalBest?.corners ?? const <DayCorner>[];
+        if (coach == null) return;
+        final goals = [
+          for (final item in coach.plan)
+            if (item.finding.kind.corrective)
+              for (final corner in corners)
+                if (corner.segmentId == item.finding.segmentId)
+                  SessionGoal(
+                    kind: item.finding.kind,
+                    segmentName: corner.name,
+                    startProgressMeters: corner.startProgressMeters,
+                    endProgressMeters: corner.endProgressMeters,
+                  ),
+        ];
+        final runId = controller.latestRunId;
+        expect(
+          controller.updateRunMetadata(
+            runId,
+            controller.runMetadata(runId).withGoals(RunGoals(goals: goals)),
+          ),
+          isNull,
+        );
       }
 
       String mb(int bytes) => '${(bytes / 1048576).toStringAsFixed(0)} MB';
@@ -64,6 +139,7 @@ void main() {
                 '${[for (final e in item.finding.evidence) '${e.metric} ${e.observed.toStringAsFixed(1)} vs ${e.reference.toStringAsFixed(1)} ${e.unit}'].join('; ')}\n'
                 '    laps ${[for (final lap in item.finding.affectedLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}'
                 '${item.finding.kind.corrective ? ' against' : ', from'} ${[for (final lap in item.finding.evidence.first.referenceLaps) '${lap.displayName} ${lap.durationSeconds.toStringAsFixed(1)}'].join(', ')}',
+          summary(),
         ];
         // ignore: avoid_print
         print(lines.join('\n'));
@@ -73,6 +149,7 @@ void main() {
       clock.reset();
       await coached();
       report('Session 1', opened, clock.elapsed);
+      setGoals();
       for (final path in files.skip(1)) {
         clock.reset();
         final addition = await controller.addRecordings([path]);
@@ -82,6 +159,7 @@ void main() {
         clock.reset();
         await coached();
         report(addition.added.join(', '), add, clock.elapsed);
+        setGoals();
         expect(controller.coach, isNotNull);
         expect(controller.coach!.runId, controller.latestRunId);
         // The day's corners time its best lap, measured again on it when
@@ -98,6 +176,9 @@ void main() {
           lessThanOrEqualTo(best.bestLapSeconds! + 1e-6),
         );
       }
+      // The driver's goals (the coach's changes) were measured on the
+      // sessions after them (FET-218).
+      expect(measuredGoals, greaterThan(0));
       controller.dispose();
     },
     skip: skip,

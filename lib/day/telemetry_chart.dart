@@ -8,7 +8,7 @@ import '../channel_names.dart';
 import '../format.dart';
 import '../l10n.dart';
 import '../units.dart';
-import 'channel_sources.dart';
+import 'day_context.dart';
 import 'touch.dart';
 
 /// The colour of the Δ time line (one line, not an A/B pair): neutral, so it
@@ -108,6 +108,7 @@ class TelemetryChart extends StatelessWidget {
     this.onPick,
     this.choiceLabel,
     this.height = 120,
+    this.unitsAsRecorded = false,
   });
 
   /// The channel shown, as recorded (the Δ time chart: its name in the
@@ -135,7 +136,7 @@ class TelemetryChart extends StatelessWidget {
 
   /// The format of the other recording the channel came from ("RCZ"), said
   /// under the title; empty when it is the session's own. When null, the
-  /// open day says ([dayChannelSources]).
+  /// open day says ([DayContext.channelSources] of [openDayContext]).
   final String? source;
 
   /// The values are seconds of difference, shown with [displayDelta].
@@ -153,6 +154,15 @@ class TelemetryChart extends StatelessWidget {
   /// The name listed for a choice; [channelMenuLabel] when null.
   final String Function(String channel)? choiceLabel;
   final double height;
+
+  /// Each line's unit is shown as its series carries it, never the open
+  /// day's unit for a channel of that name: for a recording from outside
+  /// the day (a reference lap, FET-175).
+  final bool unitsAsRecorded;
+
+  String _unit(BuildContext context, ChartLine line) => unitsAsRecorded
+      ? line.series.unit
+      : displayUnitOf(context, title, line.series.unit);
 
   double _fraction(double value) =>
       end > start ? (value - start) / (end - start) : 0;
@@ -235,7 +245,7 @@ class TelemetryChart extends StatelessWidget {
               '${line.series.reason.isEmpty ? l10n.chartNoDataInRange : chartReasonText(l10n, line.series.reason)}',
     ];
     final braking = lines.any((line) => line.series.brakingUp);
-    final from = source ?? dayChannelSources[title] ?? '';
+    final from = source ?? openDayContext.channelSources[title] ?? '';
     final provenance = from.isEmpty ? '' : l10n.channelFromSource(from);
     final name = channelNameOf(context, title);
     final recordedAs = name == title ? '' : l10n.chartRecordedAs(title);
@@ -299,7 +309,7 @@ class TelemetryChart extends StatelessWidget {
                         for (final line in lines)
                           Text(
                             '${line.label.isEmpty ? '' : '${line.label} '}'
-                            '${inside ? _value(line, fraction, displayUnitOf(context, title, line.series.unit)) : '–'}',
+                            '${inside ? _value(line, fraction, _unit(context, line)) : '–'}',
                             key: ValueKey('chartValue $title ${line.label}'),
                             style: theme.textTheme.titleSmall?.copyWith(
                               color: line.color == deltaLineColor
@@ -356,11 +366,11 @@ class TelemetryChart extends StatelessWidget {
                         line.label.isEmpty ? '' : '${line.label}: ',
                         _summaryValue(
                           _spokenLow(line.series),
-                          displayUnitOf(context, title, line.series.unit),
+                          _unit(context, line),
                         ),
                         _summaryValue(
                           _spokenHigh(line.series),
-                          displayUnitOf(context, title, line.series.unit),
+                          _unit(context, line),
                         ),
                       ),
                   ].join(', '),
@@ -395,11 +405,7 @@ class TelemetryChart extends StatelessWidget {
                                         ),
                                       )
                                   ? ''
-                                  : displayUnitOf(
-                                      context,
-                                      title,
-                                      shown.first.series.unit,
-                                    ),
+                                  : _unit(context, shown.first),
                             ),
                           ),
                         ),
@@ -797,13 +803,13 @@ class ChartWindowControls extends StatelessWidget {
 
 /// [channel] as a chart menu lists it: its names ([channelLabelOf]) and,
 /// when it came from another recording, " · from RCZ" ([sources], or the
-/// open day's [dayChannelSources] when null).
+/// open day's [DayContext.channelSources] when null).
 String channelMenuLabel(
   BuildContext context,
   String channel, [
   Map<String, String>? sources,
 ]) {
-  final source = (sources ?? dayChannelSources)[channel] ?? '';
+  final source = (sources ?? openDayContext.channelSources)[channel] ?? '';
   final name = channelLabelOf(context, channel);
   return source.isEmpty
       ? name
@@ -830,7 +836,7 @@ class AddChannelButton extends StatelessWidget {
   final ValueChanged<String> onAdd;
 
   /// The channels that came from another recording, with its format
-  /// ("RCZ"); when null, the open day's ([dayChannelSources]).
+  /// ("RCZ"); when null, the open day's ([DayContext.channelSources]).
   final Map<String, String>? sources;
 
   /// The name listed for a channel; [channelMenuLabel] with [sources] when

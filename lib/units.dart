@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import 'channel_names.dart';
+import 'day/day_context.dart';
 import 'ui/theme.dart';
 
 /// The unit assumed for speeds whose recordings do not declare one. A unit a
@@ -69,38 +70,10 @@ final ValueNotifier<DateTime?> lastUpdateCheck = ValueNotifier(null);
 /// When the circuit list was last fetched; null before the first time.
 final ValueNotifier<DateTime?> lastCircuitCheck = ValueNotifier(null);
 
-/// The speed unit each of the open day's recordings declares ("km/h",
-/// "mph", or empty when it declares none). Set when a day opens.
-List<String> declaredSpeedUnits = const [];
-
 /// The speed unit [session] declares for its speed channel (see
 /// [declaredSpeedUnit]).
 String sessionSpeedUnit(TelemetrySession session) =>
     declaredSpeedUnit(session, session.aliases['speed'] ?? 'speed');
-
-/// The speed units the open day's recordings declare per speed channel,
-/// keyed by lower-case channel name: one entry per recording that has the
-/// channel. Set when a day opens.
-Map<String, List<String>> declaredChannelSpeedUnits = const {};
-
-/// Sets [declaredSpeedUnits] and [declaredChannelSpeedUnits] for a day of
-/// [sessions]; an empty list when no day is open.
-void declareDaySpeedUnits(Iterable<TelemetrySession> sessions) {
-  final byChannel = <String, List<String>>{};
-  final day = <String>[];
-  for (final session in sessions) {
-    day.add(sessionSpeedUnit(session));
-    final alias = session.aliases['speed'];
-    for (final name in session.channels.keys) {
-      if (!isSpeedChannel(name) && name != alias) continue;
-      byChannel
-          .putIfAbsent(name.toLowerCase(), () => [])
-          .add(declaredSpeedUnit(session, name));
-    }
-  }
-  declaredSpeedUnits = List.unmodifiable(day);
-  declaredChannelSpeedUnits = Map.unmodifiable(byChannel);
-}
 
 /// The unit of the open day's speeds: each recording's declared unit, with
 /// [assumed] standing in for the recordings that declare none. Empty when
@@ -126,7 +99,7 @@ String speedUnitLabel([String recorded = '']) {
     final normalized = normalizedSpeedUnit(own);
     return normalized.isEmpty ? own : normalized;
   }
-  return daySpeedUnit(declaredSpeedUnits, speedUnitSetting.value.unit);
+  return daySpeedUnit(openDayContext.speedUnits, speedUnitSetting.value.unit);
 }
 
 /// The unit shown for channel [name] recorded with [unit]: a speed channel
@@ -135,7 +108,7 @@ String speedUnitLabel([String recorded = '']) {
 /// declare none (see [daySpeedUnit]); every other channel its recorded unit.
 String displayUnit(String name, String unit) {
   if (!isSpeedChannel(name)) return unit;
-  final declared = declaredChannelSpeedUnits[name.toLowerCase()];
+  final declared = openDayContext.channelSpeedUnits[name.toLowerCase()];
   if (unit.trim().isNotEmpty || declared == null) return speedUnitLabel(unit);
   return daySpeedUnit(declared, speedUnitSetting.value.unit);
 }
@@ -264,7 +237,8 @@ Future<void> loadSettings() async {
 }
 
 /// Rebuilds what shows a speed unit when [speedUnitSetting] changes; put
-/// above the app's navigator.
+/// above the app's navigator. (A day's own units are read as it builds:
+/// [openDayContext] changes while pages close, when nothing may rebuild.)
 class SpeedUnitScope
     extends InheritedNotifier<ValueNotifier<SpeedUnitSetting>> {
   SpeedUnitScope({super.key, required super.child})

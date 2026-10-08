@@ -10,15 +10,23 @@ import 'dart:math' as math;
 import '../analysis/automatic_segments.dart';
 import '../analysis/outing_results.dart';
 import '../analysis/outing_theoretical_best.dart';
+import '../analysis/phase_reference.dart';
+import '../analysis/realistic_theoretical_best.dart';
 import '../analysis/sector_timing.dart';
 import '../analysis/time_loss.dart';
 import '../analysis/track_progress.dart';
 import '../analysis/track_segment_review.dart';
 import '../intake/import_plan.dart';
+import '../laps/lap_session.dart';
 import '../operation.dart';
+import '../telemetry_session.dart';
 import 'day_analysis.dart';
 import 'day_corners.dart';
+import 'day_grip.dart';
+import 'day_lap_styles.dart';
 import 'day_laps.dart';
+import 'day_phase_reference.dart';
+import 'day_ranking.dart';
 
 /// Whether a group's theoretical best was calculated.
 enum DayTheoreticalBestState {
@@ -84,6 +92,10 @@ final class DayTheoreticalBest {
     List<Map<String, Object?>> runSegments = const [],
     List<SegmentReviewItem> proposalReview = const [],
     Map<String, List<Map<String, Object?>>> remeasuredRuns = const {},
+    this.realistic,
+    this.grip,
+    this.bestPhases,
+    this.lapStyles,
   }) : laps = List.unmodifiable(laps),
        corners = List.unmodifiable(corners),
        runSegments = List.unmodifiable(runSegments),
@@ -131,6 +143,23 @@ final class DayTheoreticalBest {
   /// which the day keeps as approved. Empty otherwise.
   final Map<String, List<Map<String, Object?>>> remeasuredRuns;
 
+  /// The fastest combination of segments that join at the speed the car had
+  /// ([computeRealisticTheoreticalBest]); null without a result.
+  final RealisticTheoreticalBest? realistic;
+
+  /// The grip and balance proxies of the group's ranked laps and of
+  /// [corners] (FET-229), all inferred; null without a result.
+  final DayGripProxies? grip;
+
+  /// The best entry, middle and exit of every corner and the fastest time
+  /// of every other segment, from the group's ranked laps (FET-226); null
+  /// without a result.
+  final PhaseReference? bestPhases;
+
+  /// The group's ranked laps by driving style (FET-223); null without a
+  /// result.
+  final DayLapStyles? lapStyles;
+
   /// This result with [runs] as its [remeasuredRuns].
   DayTheoreticalBest withRemeasuredRuns(Map<String, List<Map<String, Object?>>> runs) =>
       DayTheoreticalBest(
@@ -147,6 +176,10 @@ final class DayTheoreticalBest {
         runSegments: runSegments,
         proposalReview: proposalReview,
         remeasuredRuns: runs,
+        realistic: realistic,
+        grip: grip,
+        bestPhases: bestPhases,
+        lapStyles: lapStyles,
       );
 
   /// The length of the shared axis the segments are edited on.
@@ -261,8 +294,14 @@ final class DayTheoreticalBest {
   }
 
   /// The approved segment (index in [segments]) at [progressMeters] on the
-  /// shared axis, or null in a gap between segments.
+  /// shared axis, or null in a gap between segments. A lap's fixes just
+  /// before the line or past the finish lie below 0 or above the axis length
+  /// (FET-192); they are taken around the loop.
   int? segmentAt(double progressMeters) {
+    final length = axisLengthMeters;
+    if (length > 0 && (progressMeters < 0 || progressMeters > length)) {
+      progressMeters %= length;
+    }
     final rows = segments;
     for (var i = 0; i < rows.length; ++i) {
       final start = rows[i].startProgressMeters, end = rows[i].endProgressMeters;
@@ -288,6 +327,45 @@ Map<String, OutingRun> outingRuns(List<NamedRun> runs) => {
 };
 
 Map<String, Object?>? _object(Object? value) => value is Map<String, Object?> ? value : null;
+
+/// The lap traces of [ranking]'s eligible laps other than [best], from
+/// [runs] (each run's recording and laps): what the best lap's line is
+/// checked against before its segments are adopted (FET-214). Excluded laps
+/// and laps the ranking leaves out are not used. A run whose GPS longitude
+/// convention differs from the best lap's run (a west-positive VBO against
+/// an RCZ) has its traces mirrored east to west, so all are in the best
+/// lap's frame.
+List<LapTrace> otherEligibleLapTraces(
+  DayRanking ranking,
+  DayLapRow best,
+  Map<String, (TelemetrySession, LapSession)> runs,
+) {
+  bool westPositive(String runId) =>
+      runs[runId]?.$1.metadata['gpsLongitudeConvention'] == 'west-positive';
+  final bestWestPositive = westPositive(best.runId);
+  final traces = <LapTrace>[];
+  for (final row in ranking.eligibleLaps) {
+    if (row.runId == best.runId && row.lapNumber == best.lapNumber) continue;
+    for (final trace in runs[row.runId]?.$2.lapTraces ?? const <LapTrace>[]) {
+      if (trace.lapNumber != row.lapNumber) continue;
+      traces.add(
+        westPositive(row.runId) == bestWestPositive
+            ? trace
+            : LapTrace(
+                lapNumber: trace.lapNumber,
+                startTelemetryTime: trace.startTelemetryTime,
+                durationSeconds: trace.durationSeconds,
+                points: [
+                  for (final point in trace.points)
+                    LapTracePoint(point.telemetryTime, -point.eastMeters, point.northMeters),
+                ],
+              ),
+      );
+      break;
+    }
+  }
+  return traces;
+}
 
 /// The theoretical best of [groupId] (by default the group shown) in
 /// [analysis], with [runs]' recordings. [documentRuns] are the day
@@ -331,6 +409,7 @@ DayTheoreticalBest dayTheoreticalBest(
         run['id'] as String: run['trackSegments'],
   };
   var automatic = false;
+  var lineDisagrees = false;
   final best = ranking.bestOfDay;
   // The best lap's proposals: approved for the calculation when the group
   // has no segments yet, and otherwise compared with the approved ones.
@@ -347,7 +426,16 @@ DayTheoreticalBest dayTheoreticalBest(
     );
     if (group.id.startsWith('compatibility-v1:') &&
         !groupHasApprovedSegments(documentRuns, group.id)) {
-      final segments = approveAllProposals(stored[best.runId], review, group.id, random: random);
+      lineDisagrees = lineConsensus(
+        review.axis,
+        otherEligibleLapTraces(ranking, best, {
+          for (final entry in runs.entries) entry.key: (entry.value.session, entry.value.laps),
+        }),
+        cancelled: cancelled,
+      ).disagrees;
+      final segments = lineDisagrees
+          ? null
+          : approveAllProposals(stored[best.runId], review, group.id, random: random);
       if (segments != null) {
         stored[best.runId] = segments;
         automatic = true;
@@ -360,6 +448,7 @@ DayTheoreticalBest dayTheoreticalBest(
     group.id,
   );
   if (canonical == null) {
+    if (lineDisagrees) return unavailable(automaticSegmentsLineDisagreement);
     return unavailable(
       'No run in this group has an approved segment review yet. '
       'Approve segments for at least one run first.',
@@ -416,6 +505,64 @@ DayTheoreticalBest dayTheoreticalBest(
       bestOfDay: reference == best?.reference,
     );
   }
+  throwIfCancelled(cancelled);
+  // Each timed lap's speed at each segment's start and end, for the
+  // realistic best.
+  final segmentIds = [for (final segment in computed.approved.segments) segment['id']];
+  final realistic = computeRealisticTheoreticalBest(computed.approved, [
+    for (var k = 0; k < computed.population.length; ++k)
+      if (runs[computed.runIds[k]]?.session case final session?)
+        () {
+          SectorTime? sector(Object? id) {
+            for (final candidate in computed.population[k].times.sectors) {
+              if (candidate.segmentId == id) return candidate;
+            }
+            return null;
+          }
+
+          return RealisticLapInput(
+            times: computed.population[k].times,
+            entrySpeeds: [
+              for (final id in segmentIds) speedMetresPerSecondAt(session, sector(id)?.startTime),
+            ],
+            exitSpeeds: [
+              for (final id in segmentIds) speedMetresPerSecondAt(session, sector(id)?.endTime),
+            ],
+          );
+        }(),
+  ], cancelled: cancelled);
+  final corners = dayCorners(
+    computed,
+    rows,
+    best,
+    sessions: {for (final MapEntry(:key, :value) in runs.entries) key: value.session},
+  );
+  // Inferred from the recordings of the same ranked laps, in this job.
+  final grip = dayGripProxies(
+    rows,
+    corners,
+    (runId) => runs[runId]?.session,
+    (lap, index) {
+      final sectors = timed[lap.reference]?.times.sectors;
+      if (sectors == null || index < 0 || index >= sectors.length) return null;
+      final start = sectors[index].startTime, end = sectors[index].endTime;
+      return start == null || end == null || end <= start ? null : (start, end);
+    },
+    bestLap: best?.reference,
+    cancelled: cancelled,
+  );
+  final sessions = {for (final MapEntry(:key, :value) in runs.entries) key: value.session};
+  // The same ranked laps, through each corner's parts.
+  final bestPhases = dayPhaseReference(computed, corners, sessions, cancelled: cancelled);
+  // Each ranked lap against the day's typical, corner by corner.
+  final lapStyles = dayLapStyles(
+    computed,
+    corners,
+    rows,
+    {for (final MapEntry(:key, :value) in runs.entries) key: value.session},
+    timedLapCount: ranking.runs.fold<int>(0, (total, run) => total + run.lapCount),
+    cancelled: cancelled,
+  );
   return DayTheoreticalBest(
     groupId: id,
     state: DayTheoreticalBestState.ready,
@@ -427,7 +574,7 @@ DayTheoreticalBest dayTheoreticalBest(
     laps: [for (final row in rows) ?timed[row.reference]],
     bestLap: best,
     automaticSegments: automatic,
-    corners: dayCorners(computed, rows, best),
+    corners: corners,
     segmentRunId: canonical.runId,
     runSegments: [
       for (final value in (stored[canonical.runId] as List?) ?? const [])
@@ -442,6 +589,10 @@ DayTheoreticalBest dayTheoreticalBest(
             canonical.approved,
             review.axis.lengthMeters,
           ),
+    realistic: realistic,
+    grip: grip,
+    bestPhases: bestPhases,
+    lapStyles: lapStyles,
   );
 }
 

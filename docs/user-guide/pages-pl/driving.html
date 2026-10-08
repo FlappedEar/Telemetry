@@ -1,0 +1,31 @@
+<!-- title: G-G, stany jazdy i jazda bez gazu i hamulca | nav: G-G i jazda bez gazu -->
+<h1 id="driving">G-G, stany jazdy i jazda bez gazu i hamulca</h1>
+<p class="lead">Trzy karty pod Analizatorem zakrętów na stronie porównania. Każda obejmuje całe okrążenie albo tylko fragment, do którego przybliżyłeś wykresy (<em>Wybrany odcinek · 420 m</em>).</p>
+
+<h2 id="gg">G-G</h2>
+<figure>
+  <img src="assets/screens/gg.png" alt="Diagram G-G okrążeń A i B z kręgami co 0.5 g oraz tabela maksymalnych przeciążeń: poprzecznego, hamowania, przyspieszania i łącznego" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li>Każda kropka to jeden moment okrążenia: lewo/prawo to przeciążenie poprzeczne, w górę to przyspieszanie, w dół to hamowanie.</li>
+  <li>Kręgi są co 0.5 g. Kółko oznacza maksima każdego okrążenia.</li>
+  <li>Tabela podaje <strong>Maks. przeciążenie poprzeczne</strong>, <strong>Maks. hamowanie</strong>, <strong>Maks. przyspieszenie</strong>, <strong>Maks. łączne przeciążenie</strong> oraz liczbę próbek.</li>
+  <li>Pod nią widać, jakich kanałów użyto i czy zostały zmierzone, czy obliczone z GPS przez rejestrator.</li>
+  <li>Gdy żadne z okrążeń nie ma kanałów G, panel zamiast diagramu mówi, dlaczego.</li>
+</ul>
+<p>To zaobserwowane przyspieszenia, a nie procent dostępnej przyczepności.</p>
+
+<h2 id="states">Stany jazdy</h2>
+<figure>
+  <img src="assets/screens/driving-states.png" alt="Paski stanów jazdy dla okrążeń A i B oraz tabela hamowania, hamowania w zakręcie, jazdy w zakręcie, przyspieszania i jazdy bez gazu i hamulca" width="1280" height="800" loading="lazy">
+</figure>
+<p>Kolorowe paski pokazują, gdzie każde okrążenie było w stanie hamowania, hamowania w zakręcie, jazdy w zakręcie, przyspieszania albo jazdy bez gazu i hamulca. Dotknij paska, aby przesunąć tam kursor. Tabela podaje czas każdego stanu i jego udział w okrążeniu oraz to, czy został zmierzony, obliczony z GPS, czy wyznaczony pośrednio.</p>
+<p>Pedał zapisany bez jednostki, którego wartości mieszczą się między 0 a 1, może być ułamkiem 0–1 albo ledwo wciśniętym pedałem w %. Jest odczytywany jako ułamek tylko wtedy, gdy potwierdza to przeciążenie wzdłużne: wciśnięty przy co najmniej połowie mocnych hamowań (lub przyspieszeń) i zwolniony przy co najmniej połowie mocnych przyspieszeń (lub hamowań). Potrzeba co najmniej trzech takich zdarzeń każdego rodzaju. W przeciwnym razie hamulec ustępuje miejsca opóźnieniu, gdy da się go użyć (oznaczone jako <em>wyznaczone pośrednio</em>), a każdy inny taki pedał pokazuje <em>nieznana skala pedału</em> zamiast braku hamowania lub gazu; trener też go nie używa.</p>
+<p>Stany nakładają się: jeździe w zakręcie może towarzyszyć hamowanie, przyspieszanie albo jazda bez gazu i hamulca. Dłuższe hamowanie w zakręcie nie jest automatycznie lepsze ani bezpieczniejsze.</p>
+
+<h2 id="coasting">Jazda bez gazu i hamulca</h2>
+<figure>
+  <img src="assets/screens/compare-coasting.png" alt="Karta jazdy bez gazu i hamulca dla okrążeń A i B, z paskiem i znacznikiem dla każdego epizodu jazdy bez gazu i hamulca" width="1280" height="800" loading="lazy">
+</figure>
+<p>Dla każdego okrążenia: łączny czas i dystans jazdy bez gazu i hamulca, sposób pomiaru, pasek wzdłuż toru oraz znacznik dla każdego epizodu, np. <em>640 m · 1.2 s</em>. Dotknij znacznika, aby przesunąć tam kursor.</p>
+<p>Jazda bez gazu i hamulca jest mierzona z pedałów hamulca i gazu, gdy oba zostały zapisane. Bez nich jest wyznaczana pośrednio z przeciążenia wzdłużnego, a karta o tym informuje. Gdy kanał hamulca nie pokazuje hamowania (zobacz <a href="corners.html#table">Analizator zakrętów</a>), hamowanie jest brane z przeciążenia wzdłużnego zamiast z hamulca, a karta pokazuje jazdę bez gazu i hamulca jako wyznaczoną pośrednio. Jazdę bez gazu i hamulca pojedynczego okrążenia znajdziesz też na jego <a href="lap.html#coasting">stronie okrążenia</a>.</p>

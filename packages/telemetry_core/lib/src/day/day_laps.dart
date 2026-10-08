@@ -78,6 +78,8 @@ final class DayLapRow {
     this.referenceIssue = LapReferenceIssue.none,
     this.bestOfRun = false,
     this.offRoute = false,
+    this.distanceMeters,
+    this.shortForGroup = false,
   });
 
   final String runId;
@@ -109,6 +111,20 @@ final class DayLapRow {
   /// or the pit lane). Set by track inference.
   final bool offRoute;
 
+  /// Length of the lap's GPS path; null when its GPS is not complete.
+  final double? distanceMeters;
+
+  /// The lap's path is much shorter than the typical lap of its circuit
+  /// group, across the day's sessions (FET-199). Set by the day's grouping.
+  final bool shortForGroup;
+
+  /// Whether the day's grouping marked the row ([offRoute], [shortForGroup]).
+  bool get groupMarked => offRoute || shortForGroup;
+
+  /// The row without the day's grouping marks, ready to be grouped again.
+  DayLapRow withoutGroupMarks() =>
+      groupMarked ? copyWith(offRoute: false, shortForGroup: false) : this;
+
   double get durationSeconds => end - start;
 
   DayLapReference get reference => DayLapReference(
@@ -123,21 +139,24 @@ final class DayLapRow {
   String get displayName =>
       type == LapSectionType.lap ? '$runName · LAP $lapNumber' : '$runName · ${type.label}';
 
-  DayLapRow copyWith({String? runName, int? sourceOrder, bool? offRoute}) => DayLapRow(
-    runId: runId,
-    runName: runName ?? this.runName,
-    type: type,
-    lapNumber: lapNumber,
-    start: start,
-    end: end,
-    sourceRevision: sourceRevision,
-    timestampMilliseconds: timestampMilliseconds,
-    sourceOrder: sourceOrder ?? this.sourceOrder,
-    referenceEligible: referenceEligible,
-    referenceIssue: referenceIssue,
-    bestOfRun: bestOfRun,
-    offRoute: offRoute ?? this.offRoute,
-  );
+  DayLapRow copyWith({String? runName, int? sourceOrder, bool? offRoute, bool? shortForGroup}) =>
+      DayLapRow(
+        runId: runId,
+        runName: runName ?? this.runName,
+        type: type,
+        lapNumber: lapNumber,
+        start: start,
+        end: end,
+        sourceRevision: sourceRevision,
+        timestampMilliseconds: timestampMilliseconds,
+        sourceOrder: sourceOrder ?? this.sourceOrder,
+        referenceEligible: referenceEligible,
+        referenceIssue: referenceIssue,
+        bestOfRun: bestOfRun,
+        offRoute: offRoute ?? this.offRoute,
+        distanceMeters: distanceMeters,
+        shortForGroup: shortForGroup ?? this.shortForGroup,
+      );
 }
 
 const int _maximumSafeMilliseconds = 8640000000000000;
@@ -190,6 +209,7 @@ List<DayLapRow> dayLapRows(
         referenceEligible: lap?.referenceEligible ?? false,
         referenceIssue: lap?.referenceIssue ?? LapReferenceIssue.none,
         bestOfRun: lap != null && lap.referenceEligible && lap.number == fastestNumber,
+        distanceMeters: lap?.distanceMeters,
       ),
     );
   }

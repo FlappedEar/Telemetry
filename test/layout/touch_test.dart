@@ -209,7 +209,13 @@ void main() {
           Future<void> open(Finder target) async {
             tester.state<ScrollableState>(summary).position.jumpTo(0);
             await tester.pumpAndSettle();
-            await tester.scrollUntilVisible(target, 300, scrollable: summary);
+            // The Overview is long on a small phone with large text.
+            await tester.scrollUntilVisible(
+              target,
+              300,
+              scrollable: summary,
+              maxScrolls: 100,
+            );
             await tester.ensureVisible(target);
             await tester.pumpAndSettle();
             await tester.tap(target);
@@ -260,10 +266,12 @@ void main() {
           // A circuit's dialog.
           tester.state<ScrollableState>(summary).position.jumpTo(0);
           await tester.pumpAndSettle();
+          // The overview is long on a small phone with large text.
           await tester.scrollUntilVisible(
             find.text('Circuits'),
             300,
             scrollable: summary,
+            maxScrolls: 100,
           );
           // The circuit's edit button, which may be just past the heading.
           for (

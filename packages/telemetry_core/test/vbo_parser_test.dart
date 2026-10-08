@@ -49,6 +49,62 @@ void main() {
     expect(guarded.warnings.length, greaterThanOrEqualTo(6));
   });
 
+  test('reads midnight by an explicit rollover rule (FET-211)', () {
+    List<double> times(String rows) =>
+        parse('[column names]\ntime speed\n[data]\n$rows').channels['speed']!.timestamps;
+    // A dropout from 22:50 to 01:10 crosses midnight.
+    final dropout = parse(
+      '[column names]\ntime speed\n[data]\n225000 1\n225001 2\n011000 3\n011001 4',
+    );
+    expect(dropout.channels['speed']!.timestamps, _near([0.0, 1.0, 8400.0, 8401.0]));
+    expect(dropout.warnings.where((w) => w.contains('midnight rollover')), hasLength(1));
+    // Up to three hours across midnight; more is not a rollover.
+    expect(times('210000 1\n235959 2\n000000 3'), _near([0.0, 10799.0, 10800.0]));
+    expect(times('205959 1\n000000 2'), _near([0.0]));
+    expect(times('210000 1\n000000 2'), _near([0.0, 10800.0]));
+    // One bad early-morning row among evening rows is no rollover: the next
+    // row is back on the evening, so that row is dropped.
+    final badRow = parse(
+      '[column names]\ntime speed\n[data]\n213000 1\n213001 2\n001500 3\n213002 4\n213003 5',
+    );
+    expect(badRow.channels['speed']!.timestamps, _near([0.0, 1.0, 2.0, 3.0]));
+    expect(badRow.channels['speed']!.values, [1.0, 2.0, 4.0, 5.0]);
+    expect(badRow.warnings.any((w) => w.contains('Row 3: not a midnight rollover')), isTrue);
+    // The same after a skipped duplicate of the bad row.
+    expect(times('213000 1\n213001 2\n001500 3\n001500 4\n213002 5'), _near([0.0, 1.0, 2.0]));
+    // A real midnight followed by a long dropout stays a rollover.
+    expect(
+      times('235900 1\n235959 2\n000100 3\n130000 4\n130001 5'),
+      _near([0.0, 59.0, 120.0, 46860.0, 46861.0]),
+    );
+    // Limit: a stale repeat of the last evening row right after a real
+    // midnight reads as back on the evening; one row is lost, the midnight
+    // is found again on the next row.
+    expect(times('235959 1\n000001 2\n235959 3\n000002 4'), _near([0.0, 3.0]));
+    // Limits: two bad rows in a row confirm each other, and a bad last row
+    // cannot be told from a midnight.
+    expect(
+      times('213000 1\n213001 2\n001500 3\n001501 4\n213002 5'),
+      _near([0.0, 1.0, 9900.0, 9901.0, 86402.0]),
+    );
+    expect(times('213000 1\n213001 2\n001500 3'), _near([0.0, 1.0, 9900.0]));
+    // A recording through two midnights.
+    expect(
+      times('235959 1\n000001 2\n120000 3\n235959 4\n000001 5'),
+      _near([0.0, 2.0, 43201.0, 86400.0, 86402.0]),
+    );
+    // A clock reset in the afternoon: the rows after it go backward.
+    final reset = parse(
+      '[column names]\ntime speed\n[data]\n140000 1\n140001 2\n000005 3\n000006 4',
+    );
+    expect(reset.channels['speed']!.values, [1.0, 2.0]);
+    expect(reset.warnings.any((w) => w.contains('midnight rollover')), isFalse);
+    // A step back of a millisecond, or an hour (daylight saving), is no
+    // rollover either.
+    expect(times('120000.000 1\n115959.999 2\n120000.100 3'), _near([0.0, 0.1]));
+    expect(times('023000 1\n013000 2\n023001 3'), _near([0.0, 1.0]));
+  });
+
   group('rejects derived times outside the 64-bit microsecond range', () {
     final boundary = 9223372036854775808.0 / 1000000.0;
     final rows = {
@@ -180,6 +236,71 @@ void main() {
       '[column names]\ntime throttle accelerator_pedal\n[data]\n0 10 x\n1 11 y\n',
     );
     expect(emptyPedal.aliases['throttle'], 'throttle');
+  });
+
+  test('passes over a mostly empty channel for one with data (FET-207)', () {
+    // `gps_speed` sorts before `velocity` and is 95 % NaN.
+    final rows = [for (var i = 0; i < 20; ++i) '$i ${i == 0 ? '30' : 'x'} ${30 + i}'].join('\n');
+    final sparse = parse('[column names]\ntime gps_speed velocity\n[data]\n$rows\n');
+    expect(sparse.aliases['speed'], 'velocity');
+    expect(sparse.channels.keys, containsAll(['gps_speed', 'velocity']));
+    // Both full: the first by name still wins, as before.
+    final full = parse('[column names]\ntime gps_speed velocity\n[data]\n0 30 31\n1 32 33\n');
+    expect(full.aliases['speed'], 'gps_speed');
+    // Covering half the time is still enough to keep the first.
+    final half = parse(
+      '[column names]\ntime gps_speed velocity\n[data]\n0 30 31\n0.5 x 33\n1 32 31\n1.5 x 33\n',
+    );
+    expect(half.aliases['speed'], 'gps_speed');
+    // A slower channel that covers the whole recording is not passed over
+    // for a faster one: GPS speed every fifth row, OBD speed in every row.
+    final rates = [
+      for (var i = 0; i < 50; ++i) '${i / 10} ${i % 5 == 0 ? '${30 + i}' : 'x'} ${31 + i}',
+    ].join('\n');
+    final slower = parse('[column names]\ntime gps_speed obd_speed\n[data]\n$rates\n');
+    expect(slower.aliases['speed'], 'gps_speed');
+    // A constant column (placeholder zeros) never displaces one that varies,
+    // even logged four times as often.
+    final placeholders = [
+      for (var i = 0; i < 100; ++i) '${i / 100} ${i % 4 == 0 ? '${(i % 8) / 10}' : 'x'} 0',
+    ].join('\n');
+    final zeros = parse('[column names]\ntime latacc-calc lateral_g\n[data]\n$placeholders\n');
+    expect(zeros.aliases['lateralAcceleration'], 'latacc-calc');
+    // A varying column replaces a constant one that sorts first, even when
+    // it covers less of the run.
+    final constantFirst = [
+      for (var i = 0; i < 100; ++i) '${i / 10} 0 ${i < 40 ? '${(i % 5) / 10}' : 'x'}',
+    ].join('\n');
+    final varying = parse('[column names]\ntime g_x lateral_accel\n[data]\n$constantFirst\n');
+    expect(varying.aliases['lateralAcceleration'], 'lateral_accel');
+    // The calculated acceleration gives way only when it is mostly empty.
+    final accelerationRows = [for (var i = 0; i < 20; ++i) '$i ${i == 0 ? '0.5' : 'x'} 0.25']
+        .join('\n');
+    final calculated = parse(
+      '[column names]\ntime latacc-calc lateral_g\n[data]\n$accelerationRows\n',
+    );
+    expect(calculated.aliases['lateralAcceleration'], 'lateral_g');
+  });
+
+  test('a pedal with one valid sample does not replace the throttle (FET-207)', () {
+    final rows = [for (var i = 0; i < 20; ++i) '$i ${10 + i} ${i == 0 ? '20' : 'x'}'].join('\n');
+    final sparse = parse('[column names]\ntime throttle accelerator_pedal\n[data]\n$rows\n');
+    expect(sparse.aliases['throttle'], 'throttle');
+    // A pedal logged slower than the throttle but throughout still wins.
+    final slowPedal = [
+      for (var i = 0; i < 40; ++i) '${i / 10} ${10 + i} ${i % 4 == 0 ? '${20 + i}' : 'x'}',
+    ].join('\n');
+    final slower = parse('[column names]\ntime throttle accelerator_pos\n[data]\n$slowPedal\n');
+    expect(slower.aliases['throttle'], 'accelerator_pos');
+    // Even polled below 1 Hz (every 20th row at 10 Hz) for the whole run.
+    final pollPedal = [
+      for (var i = 0; i < 200; ++i)
+        '${i / 10} ${10 + i % 7} ${i % 20 == 0 ? '${20 + i % 3}' : 'x'}',
+    ].join('\n');
+    final polled = parse('[column names]\ntime throttle accelerator_pos\n[data]\n$pollPedal\n');
+    expect(polled.aliases['throttle'], 'accelerator_pos');
+    final pedalOnly = parse('[column names]\ntime accelerator_pedal\n[data]\n0 20\n1 x\n');
+    expect(pedalOnly.aliases['throttle'], 'accelerator_pedal');
   });
 
   test('never exposes NaN through valueAt and never bridges a missing sample', () {

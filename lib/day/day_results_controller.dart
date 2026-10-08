@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:math' show max, min;
 
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -11,15 +10,25 @@ import '../diagnostics/app_errors.dart';
 import '../import/import_runner.dart';
 import '../units.dart';
 import 'background_task.dart';
-import 'channel_sources.dart';
+import 'day_context.dart';
 import 'coach_job.dart';
 import 'day_weather.dart';
+import 'fusion_jobs.dart';
 import 'recovery_store.dart';
+import 'reference_lap.dart' show disposeReferenceLapOf;
 import 'recovery_writes.dart';
 import 'save_journal.dart';
 import 'segment_remeasure.dart';
 
 export 'coach_job.dart' show CoachJob, CoachRunner, defaultCoachRunner;
+export 'fusion_jobs.dart'
+    show
+        FusionJob,
+        FusionJobs,
+        FusionRunner,
+        FusionTask,
+        defaultFusionRunner,
+        isolateFusionRunner;
 
 /// Saves a document. Replaced by a fake in widget tests.
 typedef DocumentWriter = Future<void> Function(
@@ -66,17 +75,6 @@ Future<DayChannelSummaries> defaultChannelSummariesRunner(
     ? Future.microtask(job)
     : Isolate.run(job);
 
-/// Aligns and fuses a run's alternative recording, or fuses it again with
-/// a changed rule; stops at [cancelled] with [OperationCancelled].
-typedef FusionJob = RunFusion? Function(CancellationCheck cancelled);
-
-/// A running [FusionJob]. [result] completes with [OperationCancelled]
-/// after [cancel].
-abstract interface class FusionTask {
-  Future<RunFusion?> get result;
-  void cancel();
-}
-
 /// The reason of a run's fusion when aligning its new recording failed
 /// (the job stopped with an error): the recording stays saved, and the day
 /// opened again tries once more, as it fuses a VBO session's RCZ by itself.
@@ -109,104 +107,6 @@ enum RecordingsProblem {
   unsaved,
 }
 
-/// Starts a [FusionJob]. Replaced in widget tests, which run it on the
-/// test's own thread.
-typedef FusionRunner = FusionTask Function(FusionJob job);
-
-/// In a background isolate, stopped at once when cancelled; directly under
-/// `flutter test`, stopped at its next cancellation check.
-FusionTask defaultFusionRunner(FusionJob job) =>
-    !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
-    ? _InlineFusionTask(job)
-    : isolateFusionRunner(job);
-
-/// Runs [job] in its own isolate, killed when cancelled.
-FusionTask isolateFusionRunner(FusionJob job) => _IsolateFusionTask(job);
-
-final class _InlineFusionTask implements FusionTask {
-  _InlineFusionTask(FusionJob job) {
-    result = Future.microtask(() => job(() => _cancelled));
-  }
-
-  bool _cancelled = false;
-
-  @override
-  late final Future<RunFusion?> result;
-
-  @override
-  void cancel() => _cancelled = true;
-}
-
-/// What a fusion isolate sends back.
-final class _FusionResult {
-  const _FusionResult(this.fusion);
-  final RunFusion? fusion;
-}
-
-final class _IsolateFusionTask implements FusionTask {
-  _IsolateFusionTask(FusionJob job) {
-    _port.listen((message) {
-      switch (message) {
-        case _FusionResult(:final fusion):
-          _finish(() => _done.complete(fusion));
-        case [Object? error, Object? stack]:
-          _finish(
-            () => _done.completeError(
-              error ?? 'Not combined.',
-              stack is String ? StackTrace.fromString(stack) : null,
-            ),
-          );
-        default:
-          _finish(
-            () => _done.completeError(
-              StateError('The alignment stopped unexpectedly.'),
-            ),
-          );
-      }
-    });
-    Isolate.spawn(
-      _entry,
-      (_port.sendPort, job),
-      onError: _port.sendPort,
-      onExit: _port.sendPort,
-      debugName: 'fusion',
-    ).then(
-      (isolate) {
-        _isolate = isolate;
-        if (_cancelled) isolate.kill(priority: Isolate.immediate);
-      },
-      onError: (Object error, StackTrace stack) =>
-          _finish(() => _done.completeError(error, stack)),
-    );
-  }
-
-  final _port = ReceivePort();
-  final _done = Completer<RunFusion?>();
-  Isolate? _isolate;
-  bool _cancelled = false;
-
-  @override
-  Future<RunFusion?> get result => _done.future;
-
-  @override
-  void cancel() {
-    _cancelled = true;
-    _isolate?.kill(priority: Isolate.immediate);
-    _finish(() => _done.completeError(const OperationCancelled()));
-  }
-
-  void _finish(void Function() complete) {
-    if (_done.isCompleted) return;
-    _port.close();
-    complete();
-  }
-
-  static void _entry((SendPort, FusionJob) message) {
-    final (port, job) = message;
-    Isolate.exit(port, _FusionResult(job(() => false)));
-  }
-}
-
 /// The results of one imported day and the user's choices on them: the group
 /// shown and the laps excluded. Re-ranking keeps rows and routes, so it runs
 /// on the interface thread.
@@ -229,6 +129,7 @@ final class DayResultsController extends ChangeNotifier {
     SegmentReviewRunner? segmentReviewRunner,
     ChannelSummariesRunner? channelSummariesRunner,
     FusionRunner? fusionRunner,
+    int? fusionSlots,
     DayAppender? appender,
     ImportPreparer? preparer,
     bool changed = false,
@@ -246,7 +147,10 @@ final class DayResultsController extends ChangeNotifier {
            ),
        _documentAlternatives = {...documentAlternatives},
        _fusions = {...fusions},
-       _fusionRunner = fusionRunner ?? defaultFusionRunner,
+       _jobs = FusionJobs(
+         fusionRunner ?? defaultFusionRunner,
+         slots: fusionSlots,
+       ),
        _coachJob = LatestCoachJob(coachRunner ?? defaultCoachRunner),
        _segmentReviewRunner = segmentReviewRunner ?? defaultSegmentReviewRunner,
        _appender = appender ?? const IsolateDayAppender(),
@@ -265,11 +169,10 @@ final class DayResultsController extends ChangeNotifier {
        _document = openedDocument,
        _documentBase = documentBase ?? openedFrom ?? '',
        _writer = writer ?? saveDayWithJournal,
+       _setupsSaved = !recovered,
        _dirty = recovered || changed {
-    declareDaySpeedUnits([for (final run in runs) run.run.telemetry]);
-    _declaredSpeedUnits = declaredSpeedUnits;
     speedUnitSetting.addListener(_speedUnitAssumed);
-    _declareChannelSources();
+    _dayContext.open(_buildDayContext());
     // A restored day is what its snapshot holds: written again only when it
     // changes, so a day restored and not taken leaves the snapshot as it was.
     if (!recovered) _scheduleRecovery();
@@ -294,11 +197,13 @@ final class DayResultsController extends ChangeNotifier {
     DayAppender? appender,
     ImportPreparer? preparer,
     FusionRunner? fusionRunner,
+    int? fusionSlots,
     DayWeather? weather,
   }) : this(
          appender: appender,
          preparer: preparer,
          fusionRunner: fusionRunner,
+         fusionSlots: fusionSlots,
          weather: weather,
          runs: day.runs,
          analysis: day.analysis!,
@@ -324,10 +229,14 @@ final class DayResultsController extends ChangeNotifier {
     DayAppender? appender,
     ImportPreparer? preparer,
     FusionRunner? fusionRunner,
+    int? fusionSlots,
+    DayWeather? weather,
   }) : this(
          appender: appender,
          preparer: preparer,
          fusionRunner: fusionRunner,
+         fusionSlots: fusionSlots,
+         weather: weather,
          runs: day.runs,
          analysis: day.analysis!,
          eventId: day.eventId,
@@ -352,8 +261,10 @@ final class DayResultsController extends ChangeNotifier {
 
   // Each run's alternative recording (the RCZ of its VBO) and its fusion.
   final Map<String, RunFusion> _fusions;
-  final FusionRunner _fusionRunner;
-  final Map<String, int> _fusionGenerations = {};
+
+  // The background work on the runs' recordings: each run's generation,
+  // the slots it waits for and the work running for each run.
+  final FusionJobs _jobs;
   // Runs being fused again after a rule changed, with that change's
   // generation.
   final Map<String, int> _fusionUpdating = {};
@@ -433,18 +344,7 @@ final class DayResultsController extends ChangeNotifier {
     waiter?.complete();
   }
 
-  // The background work running for each run, stopped when the day closes
-  // or a newer request for the run supersedes it.
-  final Map<String, FusionTask> _fusionTasks = {};
-  final List<Future<void> Function()> _fusionQueue = [];
-  int _fusionsRunning = 0;
   Completer<void>? _fusionsSettled;
-
-  /// How many runs are aligned at once: each isolate holds both recordings.
-  @visibleForTesting
-  static int fusionSlots = kIsWeb
-      ? 1
-      : max(1, min(3, Platform.numberOfProcessors - 1));
 
   /// [runId]'s alternative recording and what fusing it did; null when the
   /// run has none, or while it is still being aligned ([fusionPending]).
@@ -462,6 +362,10 @@ final class DayResultsController extends ChangeNotifier {
     if (_fusionsIdle) return Future.value();
     return (_fusionsSettled ??= Completer<void>()).future;
   }
+
+  /// Whether no alternative recording is being aligned, fused or saved
+  /// after: nothing of the day's own writes its document by itself.
+  bool get fusionsIdle => _fusionsIdle;
 
   bool get _fusionsIdle =>
       _fusionPending.isEmpty &&
@@ -522,25 +426,17 @@ final class DayResultsController extends ChangeNotifier {
       channel: channelSource(runId, channel),
   };
 
-  // This day's [dayChannelSources] and [dayRecordedChannels], cleared when
-  // it closes unless another day has declared its own since.
-  Map<String, String> _declaredChannelSources = const {};
-  List<String> _declaredRecordedChannels = const [];
+  // This day's hold on [openDayContext]: what it tells the rest of the app
+  // about its recordings, cleared when it closes unless another day has
+  // opened since.
+  final _dayContext = DayContextOwner();
 
-  void _declareChannelSources() {
-    final sources = <String, String>{};
-    final recorded = <String>{};
-    for (final named in _runs) {
-      sources.addAll(channelSources(named.run.id));
-      recorded
-        ..addAll(named.run.telemetry.channelNames())
-        ..addAll(sources.keys);
-    }
-    dayChannelSources = _declaredChannelSources = Map.unmodifiable(sources);
-    dayRecordedChannels = _declaredRecordedChannels = List.unmodifiable(
-      recorded.toList()..sort(),
-    );
-  }
+  DayContext _buildDayContext() => DayContext.of(
+    [for (final named in _runs) named.run.telemetry],
+    channelSources: {
+      for (final named in _runs) ...channelSources(named.run.id),
+    },
+  );
 
   // [runs] with each fused session in place of its recording: what the
   // analysis that reads channels uses. Laps stay the primary's own.
@@ -654,19 +550,6 @@ final class DayResultsController extends ChangeNotifier {
     return _documentAlternatives[runId]?.decision;
   }
 
-  /// Runs [job] for [runId] in the background; a newer request for the run
-  /// stops it.
-  Future<RunFusion?> _runFusionTask(String runId, FusionJob job) async {
-    _fusionTasks.remove(runId)?.cancel();
-    final task = _fusionRunner(job);
-    _fusionTasks[runId] = task;
-    try {
-      return await task.result;
-    } finally {
-      if (identical(_fusionTasks[runId], task)) _fusionTasks.remove(runId);
-    }
-  }
-
   /// Aligns and fuses [runId]'s alternative recording in the background:
   /// [recording] already read (an import or an addition), or the document's
   /// [reference] to it. The result is applied only while it is still the
@@ -683,7 +566,7 @@ final class DayResultsController extends ChangeNotifier {
     if (named == null || _disposed) return;
     final generation = _nextRecordingGeneration(runId);
     // What ran for the run before is superseded.
-    _fusionTasks.remove(runId)?.cancel();
+    _jobs.cancelFusion(runId);
     if (recording != null) _pendingRecordings[runId] = recording;
     if (reference != null && reference.path.isEmpty) {
       // Nothing to read: known at once, and nothing changes.
@@ -702,13 +585,13 @@ final class DayResultsController extends ChangeNotifier {
     _fusionPending[runId] = recording?.format ?? reference?.format;
     final primary = named.run;
     final decision = recording == null ? null : _decisionOf(runId);
-    _fusionQueue.add(() async {
+    _jobs.enqueue(() async {
       // Not started once the day closed or a newer request superseded it.
-      if (_disposed || _fusionGenerations[runId] != generation) return;
+      if (_disposed || !_jobs.current(runId, generation)) return;
       final clock = Stopwatch()..start();
       RunFusion? result;
       try {
-        result = await _runFusionTask(
+        result = await _jobs.runFusion(
           runId,
           _resolveJob(primary, recording, reference, decision),
         );
@@ -727,20 +610,6 @@ final class DayResultsController extends ChangeNotifier {
         elapsed: clock.elapsed,
       );
     });
-    _runFusions();
-  }
-
-  void _runFusions() {
-    while (_fusionsRunning < fusionSlots && _fusionQueue.isNotEmpty) {
-      final job = _fusionQueue.removeAt(0);
-      ++_fusionsRunning;
-      unawaited(
-        job().whenComplete(() {
-          --_fusionsRunning;
-          _runFusions();
-        }),
-      );
-    }
   }
 
   void _fusionDone(
@@ -754,7 +623,7 @@ final class DayResultsController extends ChangeNotifier {
   }) {
     // A result for a run that was asked again, or whose day closed, is not
     // used.
-    if (_disposed || _fusionGenerations[runId] != generation) return;
+    if (_disposed || !_jobs.current(runId, generation)) return;
     _fusionPending.remove(runId);
     _alignmentEnded();
     // Without a result (the job failed, or the run's recording is not the
@@ -921,7 +790,7 @@ final class DayResultsController extends ChangeNotifier {
     notifyListeners();
     RunFusion? result;
     try {
-      result = await _runFusionTask(
+      result = await _jobs.runFusion(
         runId,
         _fusionJob(fusion, named.run, key, rule),
       );
@@ -935,7 +804,7 @@ final class DayResultsController extends ChangeNotifier {
       if (_fusionUpdating[runId] == generation) _fusionUpdating.remove(runId);
     }
     if (_disposed) return;
-    if (_fusionGenerations[runId] != generation) {
+    if (!_jobs.current(runId, generation)) {
       notifyListeners();
       _settleFusions();
       return;
@@ -962,14 +831,9 @@ final class DayResultsController extends ChangeNotifier {
   // Runs whose primary recording is being changed, with that change's
   // generation, and the background work reading the new one.
   final Map<String, int> _primaryChanging = {};
-  final Map<String, BackgroundTask<PreparedPrimary>> _primaryTasks = {};
 
   // Why the last check or primary change of a run failed, until the next.
   final Map<String, RecordingsProblem> _recordingsProblems = {};
-
-  // Work waiting for a slot of [fusionSlots] ([_inSlot]); failed with
-  // [OperationCancelled] when the day closes.
-  final Set<Completer<Object?>> _slotWaiters = {};
 
   /// Whether [runId]'s clocks are being compared ([checkClock]).
   bool clockChecking(String runId) => _clocksChecking.containsKey(runId);
@@ -1004,8 +868,7 @@ final class DayResultsController extends ChangeNotifier {
     _nextRecordingGeneration(runId);
     _clocksChecking.remove(runId);
     _primaryChanging.remove(runId);
-    _fusionTasks.remove(runId)?.cancel();
-    _primaryTasks.remove(runId)?.cancel();
+    _jobs.stop(runId);
     notifyListeners();
     _settleFusions();
   }
@@ -1029,24 +892,7 @@ final class DayResultsController extends ChangeNotifier {
   /// waiting for the user no longer applies.
   int _nextRecordingGeneration(String runId) {
     _clockChecks.remove(runId);
-    return _fusionGenerations[runId] = (_fusionGenerations[runId] ?? 0) + 1;
-  }
-
-  /// Runs [work] once one of the [fusionSlots] is free, as the background
-  /// alignments run.
-  Future<T> _inSlot<T>(Future<T> Function() work) {
-    final done = Completer<Object?>();
-    _slotWaiters.add(done);
-    _fusionQueue.add(() async {
-      if (!_slotWaiters.remove(done)) return;
-      try {
-        done.complete(await work());
-      } on Object catch (error, stack) {
-        done.completeError(error, stack);
-      }
-    });
-    _runFusions();
-    return done.future.then((value) => value as T);
+    return _jobs.nextGeneration(runId);
   }
 
   static FusionJob _clockJob(
@@ -1075,11 +921,11 @@ final class DayResultsController extends ChangeNotifier {
     RunFusion? result;
     var failed = false;
     try {
-      result = await _inSlot(() async {
-        if (_disposed || _fusionGenerations[runId] != generation) {
+      result = await _jobs.inSlot(() async {
+        if (_disposed || !_jobs.current(runId, generation)) {
           throw const OperationCancelled();
         }
-        return _runFusionTask(
+        return _jobs.runFusion(
           runId,
           _clockJob(named.run, alternative, _decisionOf(runId)),
         );
@@ -1095,7 +941,7 @@ final class DayResultsController extends ChangeNotifier {
     }
     if (_disposed) return;
     final current =
-        _fusionGenerations[runId] == generation &&
+        _jobs.current(runId, generation) &&
         identical(_fusions[runId], fusion) &&
         identical(_named(runId), named);
     if (current && result != null) {
@@ -1166,7 +1012,7 @@ final class DayResultsController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    _fusionTasks.remove(runId)?.cancel();
+    _jobs.cancelFusion(runId);
     _fusions[runId] = RunFusion.primaryOnly(
       primary: named.run,
       alternative: alternative,
@@ -1220,33 +1066,24 @@ final class DayResultsController extends ChangeNotifier {
     }
     final revision = _revision;
     final generation = _nextRecordingGeneration(runId);
-    _fusionTasks.remove(runId)?.cancel();
+    _jobs.cancelFusion(runId);
     _recordingsProblems.remove(runId);
     _primaryChanging[runId] = generation;
     notifyListeners();
     final primary = runFromRecording(named.run, alternative);
     PreparedPrimary? prepared;
     try {
-      prepared = await _inSlot(() async {
-        if (_disposed || _fusionGenerations[runId] != generation) {
+      prepared = await _jobs.inSlot(() async {
+        if (_disposed || !_jobs.current(runId, generation)) {
           throw const OperationCancelled();
         }
         final otherRows = _analysis.rows
             .where((row) => row.runId != runId)
             .length;
-        final task = runInBackground(_primaryJob, (
-          primary,
-          named.name,
-          otherRows,
-        ));
-        _primaryTasks[runId] = task;
-        try {
-          return await task.result;
-        } finally {
-          if (identical(_primaryTasks[runId], task)) {
-            _primaryTasks.remove(runId);
-          }
-        }
+        return _jobs.runBackground(
+          runId,
+          runInBackground(_primaryJob, (primary, named.name, otherRows)),
+        );
       });
     } on OperationCancelled {
       // Superseded, or the day closed.
@@ -1259,7 +1096,7 @@ final class DayResultsController extends ChangeNotifier {
     if (_disposed) return;
     final part = prepared?.part;
     if (prepared == null ||
-        _fusionGenerations[runId] != generation ||
+        !_jobs.current(runId, generation) ||
         !identical(_named(runId), named) ||
         !identical(_fusions[runId], fusion)) {
       notifyListeners();
@@ -1317,13 +1154,6 @@ final class DayResultsController extends ChangeNotifier {
       _groupId = _analysis.chosenGroupId;
     }
     _channelRuns = _recordingRuns = null;
-    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
-      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
-      _declaredSpeedUnits = declaredSpeedUnits;
-    }
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      _declareChannelSources();
-    }
     _explainedFor = null;
     _additionClock = null;
     _resetTheoreticalBest();
@@ -1336,9 +1166,7 @@ final class DayResultsController extends ChangeNotifier {
     _channelRuns = _recordingRuns = null;
     _comparisons.clear();
     _resetChannelSummaries();
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      _declareChannelSources();
-    }
+    _dayContext.update(_buildDayContext());
   }
 
   /// Where background calculation times go.
@@ -1367,6 +1195,10 @@ final class DayResultsController extends ChangeNotifier {
   /// stay in the document when it is saved.
   final List<MissingRecording> missing;
   final DocumentWriter _writer;
+
+  /// What saves the day's document: for a document the page writes itself,
+  /// such as the day without a session it removed.
+  DocumentWriter get writer => _writer;
   String _name;
   String? _documentPath;
   Map<String, Object?>? _document;
@@ -1402,10 +1234,6 @@ final class DayResultsController extends ChangeNotifier {
   bool _theoreticalBestLoading = false;
   int _theoreticalBestGeneration = 0;
   bool _disposed = false;
-
-  // This day's [declaredSpeedUnits], cleared when it closes unless another
-  // day has opened since.
-  late List<String> _declaredSpeedUnits;
 
   /// How long changes wait before the unsaved day is written for recovery.
   static const recoveryDelay = Duration(milliseconds: 500);
@@ -1511,6 +1339,7 @@ final class DayResultsController extends ChangeNotifier {
       if (_recoveryWrites.waiting) await flushRecovery();
       await _writer(path, document);
       _document = document;
+      _setupsSaved = true;
       // The details saved are in the document now; later edits stay.
       for (final MapEntry(:key, :value) in metadataNow.entries) {
         if (_metadataEdits[key] == value) _metadataEdits.remove(key);
@@ -1868,6 +1697,10 @@ final class DayResultsController extends ChangeNotifier {
         for (final recording in missing) recording.runId,
       },
       runCount: _runs.length + missing.length,
+      sessionNames: {
+        for (final named in _runs) named.name,
+        for (final recording in missing) recording.name,
+      },
       rowCount: _analysis.rows.length,
       sameDayAs: sameDayAs,
       // The recordings the user made the same run as one of the sessions.
@@ -1896,6 +1729,7 @@ final class DayResultsController extends ChangeNotifier {
           paths: request.paths,
           runIds: request.runIds,
           runCount: request.runCount,
+          sessionNames: request.sessionNames,
           rowCount: request.rowCount,
           sameDayAs: request.sameDayAs,
           alternatives: {
@@ -1966,13 +1800,7 @@ final class DayResultsController extends ChangeNotifier {
     // What reads channels includes the new sessions.
     _channelRuns = _recordingRuns = null;
     // The new session's speed unit counts as much as the others'.
-    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
-      declareDaySpeedUnits([for (final run in _runs) run.run.telemetry]);
-      _declaredSpeedUnits = declaredSpeedUnits;
-    }
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      _declareChannelSources();
-    }
+    _dayContext.update(_buildDayContext());
     if (!_groupChosen) _groupId = _analysis.chosenGroupId;
     _dirty = true;
     _revision++;
@@ -2254,6 +2082,18 @@ final class DayResultsController extends ChangeNotifier {
     return built;
   }
 
+  /// The segments [row] is measured on against a lap from outside the day
+  /// (a reference lap, FET-175): its run's approved segments, else the
+  /// theoretical best's when [row] is in its group. Reads the day only.
+  ComparisonSegmentation segmentationFor(DayLapRow row) =>
+      dayComparisonSegmentation(
+        _analysis,
+        row,
+        row,
+        documentRuns: _documentRuns,
+        theoreticalBest: _theoreticalBestLoading ? null : _theoreticalBest,
+      );
+
   String _runName(String runId) {
     for (final row in _analysis.rows) {
       if (row.runId == runId) return row.runName;
@@ -2390,8 +2230,8 @@ final class DayResultsController extends ChangeNotifier {
   // The user's unsaved edits of sessions' details, by run id.
   final Map<String, RunMetadata> _metadataEdits = {};
 
-  /// [runId]'s name, notes, conditions and setup changes as the user sees
-  /// them, unsaved edits included.
+  /// [runId]'s name, notes, conditions, setup changes and setup as the user
+  /// sees them, unsaved edits included.
   RunMetadata runMetadata(String runId) {
     final edited = _metadataEdits[runId];
     if (edited != null) return edited;
@@ -2404,15 +2244,69 @@ final class DayResultsController extends ChangeNotifier {
           notes: stored.notes,
           conditions: stored.conditions,
           setupChanges: stored.setupChanges,
+          setup: stored.setup,
+          goals: stored.goals,
         );
       }
     }
     return RunMetadata(name: named?.name ?? '');
   }
 
-  /// Edits [runId]'s name, notes, conditions and setup changes, as
-  /// FlappedEar Overlays edits them ([applyRunMetadata]): the day then has
-  /// unsaved changes. Returns why not ([runMetadataProblem]), or null.
+  /// Whether [savedRunSetup] is the day's file as saved: false for a day
+  /// restored from its recovery snapshot until it is saved, as the
+  /// snapshot holds unsaved changes.
+  bool get setupsSaved => _setupsSaved;
+  bool _setupsSaved;
+
+  /// [runId]'s setup as the day was last saved or opened: the run's stored
+  /// `setup` object as it is, keys this version does not know included;
+  /// null when the run stores none. Before [setupsSaved], the recovery
+  /// snapshot's. The driver profile keeps this one ([ProfileSetup]), never
+  /// an unsaved edit.
+  Map<String, Object?>? savedRunSetup(String runId) =>
+      _storedSetup(_savedRuns, runId);
+
+  /// Whether [runId] has a setup entered that is not saved yet: it holds
+  /// something entered, and the next save would write a `setup` other than
+  /// the one stored, or the day was restored and not saved since.
+  bool runSetupWaitsForSave(String runId) {
+    final current = _storedSetup(_metadataRuns, runId);
+    if (current == null || RunSetup.fromJson(current).isEmpty) return false;
+    if (!_setupsSaved) return true;
+    return _metadataEdits.containsKey(runId) &&
+        !_sameJson(current, savedRunSetup(runId));
+  }
+
+  static Map<String, Object?>? _storedSetup(List<Object?> runs, String runId) {
+    for (final value in runs) {
+      if (value case final Map<String, Object?> run when run['id'] == runId) {
+        return switch (run[runSetupKey]) {
+          final Map<String, Object?> setup => setup,
+          _ => null,
+        };
+      }
+    }
+    return null;
+  }
+
+  static bool _sameJson(Object? a, Object? b) => switch ((a, b)) {
+    (final Map<String, Object?> x, final Map<String, Object?> y) =>
+      x.length == y.length &&
+          x.entries.every(
+            (entry) =>
+                y.containsKey(entry.key) &&
+                _sameJson(entry.value, y[entry.key]),
+          ),
+    (final List<Object?> x, final List<Object?> y) =>
+      x.length == y.length &&
+          [for (var i = 0; i < x.length; ++i) i]
+              .every((i) => _sameJson(x[i], y[i])),
+    _ => a == b,
+  };
+
+  /// Edits [runId]'s name, notes, conditions, setup changes and setup, as
+  /// FlappedEar Overlays edits the texts ([applyRunMetadata]): the day then
+  /// has unsaved changes. Returns why not ([runMetadataProblem]), or null.
   String? updateRunMetadata(String runId, RunMetadata metadata) {
     final named = _named(runId);
     if (named == null) return 'The session is not in this day.';
@@ -2427,7 +2321,9 @@ final class DayResultsController extends ChangeNotifier {
         'setupChanges': current.setupChanges,
       }.entries)
         if (value.isNotEmpty) key: value,
+      if (!current.setup.isEmpty) runSetupKey: current.setup.toJson(),
     };
+    if (current.goals case final goals?) applyRunGoals(run, goals);
     if (!applyRunMetadata(run, metadata)) return null;
     final name = metadata.name.trim();
     _metadataEdits[runId] = RunMetadata(
@@ -2435,6 +2331,9 @@ final class DayResultsController extends ChangeNotifier {
       notes: metadata.notes,
       conditions: metadata.conditions,
       setupChanges: metadata.setupChanges,
+      setup: metadata.setup,
+      // Goals not passed stay as they were (FET-218).
+      goals: metadata.goals ?? current.goals,
     );
     if (name != named.name) {
       _runs[_runs.indexOf(named)] = (run: named.run, name: name);
@@ -3232,36 +3131,19 @@ final class DayResultsController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    // The reference lap (FET-175) is kept apart from the day, but not
+    // beyond it.
+    disposeReferenceLapOf(this);
     _coachJob.cancel();
     speedUnitSetting.removeListener(_speedUnitAssumed);
     weather.dispose();
     // Alignments not started are dropped; running ones are stopped.
-    _fusionQueue.clear();
-    for (final waiter in _slotWaiters) {
-      waiter.completeError(const OperationCancelled());
-    }
-    _slotWaiters.clear();
-    for (final task in _fusionTasks.values) {
-      task.cancel();
-    }
-    _fusionTasks.clear();
-    for (final task in _primaryTasks.values) {
-      task.cancel();
-    }
-    _primaryTasks.clear();
+    _jobs.dispose();
     final settled = _fusionsSettled;
     _fusionsSettled = null;
     settled?.complete();
     _alignmentEnded();
-    if (identical(declaredSpeedUnits, _declaredSpeedUnits)) {
-      declareDaySpeedUnits(const []);
-    }
-    if (identical(dayChannelSources, _declaredChannelSources)) {
-      dayChannelSources = const {};
-    }
-    if (identical(dayRecordedChannels, _declaredRecordedChannels)) {
-      dayRecordedChannels = const [];
-    }
+    _dayContext.close();
     _appendJob?.cancel();
     _previewJob?.cancel();
     // Changes made just before leaving the day are still written; best

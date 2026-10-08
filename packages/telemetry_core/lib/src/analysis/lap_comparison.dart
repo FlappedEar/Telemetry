@@ -185,10 +185,7 @@ final class LapComparison {
       }
     }
     if (gate != null && trace != null) {
-      final origin = GeoCoordinate(
-        (gate.endpointA.latitudeDegrees + gate.endpointB.latitudeDegrees) / 2.0,
-        (gate.endpointA.longitudeDegrees + gate.endpointB.longitudeDegrees) / 2.0,
-      );
+      final origin = geoMidpoint(gate.endpointA, gate.endpointB);
       axis = buildProgressAxis(trace, origin, gate, cancelled: cancelled);
     }
     if (axis.valid) {
@@ -209,6 +206,15 @@ final class LapComparison {
     ];
     _geometry = geometry;
   }
+
+  /// Both laps' timed starts and ends on the shared axis (KAN-152).
+  DeltaTiming get _deltaTiming => DeltaTiming(
+    lapStartA: a.start,
+    lapEndA: a.end,
+    lapStartB: b.start,
+    lapEndB: b.end,
+    lengthMeters: axis.lengthMeters,
+  );
 
   /// The shared axis, from lap A's trace and start gate.
   ProgressAxis get axis {
@@ -302,10 +308,11 @@ final class LapComparison {
     if (!startProgress.isFinite || !endProgress.isFinite || endProgress <= startProgress) {
       return const ChartSeries.failed(chartReasonInvalidRange);
     }
-    final series = computeDeltaSeries(
+    final series = computeTimedDeltaSeries(
       trace(0),
       trace(1),
       (endProgress - startProgress) / maximumPoints,
+      _deltaTiming,
       cancelled: cancelled,
     );
     final segments = <List<ChartPoint>>[];
@@ -516,10 +523,11 @@ final class LapComparison {
     if (spec.id == 'delta') {
       // The pair's delta at each position, drawn where the chosen lap was.
       values = [
-        for (final run in computeDeltaSeries(
+        for (final run in computeTimedDeltaSeries(
           trace(0),
           trace(1),
           length / mapLayerPoints,
+          _deltaTiming,
           cancelled: cancelled,
         ))
           [for (final point in run) (progress: point.progressMeters, value: point.deltaSeconds)],

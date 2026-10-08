@@ -1,0 +1,96 @@
+<!-- title: Porównanie okrążeń | nav: Porównanie okrążeń -->
+<h1 id="compare">Porównanie okrążeń</h1>
+<p class="lead">Dwa okrążenia w tym samym miejscu toru. Okrążenie A jest bursztynowe, okrążenie B niebieskie, a Δ to A − B: wartość dodatnia oznacza, że A jest wolniejsze.</p>
+
+<figure>
+  <img src="assets/screens/compare-wide.png" alt="Porównanie okrążeń: plakietki okrążeń A i B, różnica czasu okrążenia, dwie linie na mapie oraz wykresy Δ czasu, prędkości i gazu według pozycji na torze" width="1280" height="800" loading="lazy">
+</figure>
+
+<h2 id="open">Otwieranie porównania</h2>
+<figure class="phone">
+  <img src="assets/screens/phone-compare.png" alt="Sekcja Porównaj na telefonie: przycisk Porównaj dwa okrążenia, najlepsze okrążenie każdej sesji z czasami A i B oraz różnicą do najlepszego okrążenia dnia i początek części Okrążenie odniesienia" width="412" height="915" loading="lazy">
+  <figcaption>Sekcja Porównaj na ekranie wielkości Pixela.</figcaption>
+</figure>
+<ul>
+  <li>Karta <strong>Porównaj</strong> pod nazwą dnia: <strong>Porównaj dwa okrążenia</strong> albo wybierz propozycję pod nagłówkiem <strong>Względem najlepszego okrążenia dnia</strong>, która zestawia najlepsze okrążenie każdej sesji (A, bursztynowe) z najlepszym okrążeniem dnia (B, niebieskie), a różnicę pokazuje po prawej.</li>
+  <li><strong>Porównaj dwa okrążenia</strong> nad listą okrążeń: wybierz okrążenie A, potem okrążenie B. <strong>Propozycja: najszybsze</strong> wybiera najlepsze okrążenie grupy.</li>
+  <li><strong>Porównaj z…</strong> przy okrążeniu: to okrążenie jest A; wybierz B.</li>
+  <li>Z analizy (strata czasu, zakręt, obszar do poprawy): porównanie otwiera się powiększone na ten odcinek, a najpierw widać <a href="corners.html">Analizator zakrętów</a>.</li>
+  <li><strong>Ostatnie porównanie</strong> nad listą okrążeń: dwa okrążenia porównywane ostatnio, z tym samym powiększeniem i tymi samymi wykresami. Porównanie jest zapisywane razem z dniem, więc wraca po ponownym otwarciu dnia, także gdy ustawiono je w FlappedEar Overlays. Nie jest proponowane, gdy któreś z okrążeń się zmieniło lub nie jest już sklasyfikowane. Ponieważ porównanie jest zapisywane z dniem, otwarcie innej pary, powiększenie lub zmiana wykresów zostawia dzień z niezapisanymi zmianami.</li>
+</ul>
+<p>Porównywać można tylko sklasyfikowane okrążenia z tej samej grupy.</p>
+
+<h2 id="header">Wybór A i B</h2>
+<ul>
+  <li>Stuknij plakietkę <strong>A</strong> lub <strong>B</strong>, aby wybrać inne okrążenie. Pod czasem każdego okrążenia widać <a href="day.html#weather">pogodę</a> jego sesji, na przykład <em>18 °C, pochmurno, bez deszczu, wiatr SW 12 km/h</em>, jeśli aplikacja ją ma.</li>
+  <li><strong>Zamień A i B</strong>.</li>
+  <li><strong>B: najlepsze okrążenie – Sesja N</strong> (najlepsze okrążenie sesji A) i <strong>B: najlepsze okrążenie dnia</strong>. Jeśli A jest już tym okrążeniem, użyte zostanie następne najszybsze.</li>
+  <li><strong>Różnica czasu okrążenia</strong> to różnica czasów okrążeń.</li>
+</ul>
+
+<h2 id="map">Mapa porównania</h2>
+<p>Obie linie są narysowane na tym samym tle ulic, satelity lub Apple Maps co inne mapy, a w miejscu kursora widać kropkę dla każdego okrążenia. Powiększaj gestem szczypania lub przewijaniem, przesuwaj przeciąganiem (na telefonie lub tablecie dwoma palcami), a przyciskiem warstw zmieniaj tło. Menu nad mapą koloruje linię według:</p>
+<ul>
+  <li><strong>Tor jazdy: A / B</strong> (domyślnie): bursztynowy i niebieski.</li>
+  <li><strong>Prędkość</strong>, <strong>Δ czasu (A−B)</strong>, <strong>Przeciążenie poprzeczne</strong>, <strong>Przeciążenie wzdłużne</strong>, <strong>Gaz</strong>, <strong>Hamulec (zmierzony)</strong> oraz każdej zapisanej temperatury.</li>
+</ul>
+<p>Gdy wybrano kolorowanie, <strong>A</strong> / <strong>B</strong> obok menu wskazuje, linia którego okrążenia jest kolorowana. Jeśli kanał nie został zapisany, menu pokazuje <em>nie zapisano</em>; nic nie jest zmyślane.</p>
+<figure>
+  <img src="assets/screens/compare-delta-map.png" alt="Mapa porównania pokolorowana według Δ czasu: bursztynowo tam, gdzie A jest z przodu, i niebiesko tam, gdzie z przodu jest B" width="1280" height="800" loading="lazy">
+  <figcaption>Kolorowanie według Δ czasu: bursztynowo tam, gdzie A jest z przodu, niebiesko tam, gdzie z przodu jest B.</figcaption>
+</figure>
+
+<h2 id="charts">Kanały według pozycji na torze</h2>
+<p>Wykresy ustawiają oba okrążenia w tym samym miejscu toru, w metrach od linii startu/mety.</p>
+<ul>
+  <li>Pierwszy wykres to <strong>Δ czasu (A − B)</strong>: rosnąca wartość oznacza, że A w tym miejscu traci czas. Każde okrążenie jest mierzone od własnego startu, więc gdy oba okrążenia są zapisane do linii, Δ czasu wynosi 0 na linii startu/mety, a na mecie jest równa <strong>różnicy czasu okrążenia</strong>.</li>
+  <li>Dalej prędkość, gaz i hamulec, jeśli oba okrążenia je zapisały. Dodawaj, usuwaj lub zamieniaj kanały, stukając nazwę wykresu, tak jak na <a href="lap.html#charts">stronie okrążenia</a> (do czterech). Kanał, który pochodzi z RCZ z dowolnej sesji dnia, ma opis <em>z RCZ</em>.</li>
+  <li>Stuknij wykres lub przeciągnij po nim w bok, aby przesunąć kursor; na mapie przesuwają się obie kropki. Przy myszy lub gładziku kursor podąża za wskaźnikiem.</li>
+  <li>Wykres kierunku jazdy to jedna ciągła linia przez północ; wartość przy kursorze to zapisany kierunek od 0 do 360, a czytnik ekranu podaje kierunek od miejsca początku do miejsca końca albo od 0 do 360, gdy okrążenie obraca się dookoła (zobacz <a href="lap.html#charts">stronę okrążenia</a>).</li>
+  <li>Z czytnikiem ekranu (TalkBack lub VoiceOver) każdy wykres podaje najniższą i najwyższą wartość każdego okrążenia na pokazanym fragmencie.</li>
+  <li>Powiększ wokół kursora, aby obejrzeć jeden zakręt; mapa wyróżnia pokazany fragment.</li>
+  <li><strong>Otwórz okrążenie A w tym miejscu</strong> / <strong>Otwórz okrążenie B w tym miejscu</strong> otwierają to okrążenie w tym samym miejscu.</li>
+</ul>
+
+<h2 id="panels">Pod wykresami</h2>
+<ul>
+  <li><a href="corners.html">Analizator zakrętów</a>: zakręt po zakręcie, A na tle B.</li>
+  <li><a href="driving.html#gg">G–G</a>, <a href="driving.html#states">Stany jazdy</a> i <a href="driving.html#coasting">Jazda bez gazu i hamulca</a> dla całego okrążenia lub dla powiększonego fragmentu.</li>
+</ul>
+<h2 id="reference">Okrążenie odniesienia</h2>
+<p>Okrążenie odniesienia pochodzi spoza dnia: to zapis kolegi lub instruktora albo jeden z Twoich wcześniejszych dni. Twoje okrążenia są z nim porównywane jak z okrążeniem B, ale pozostaje ono poza dniem: nie jest sklasyfikowane, nie wchodzi do teoretycznego czasu okrążenia, progresji ani trenera i nie jest zapisywane w pliku dnia. Zamiast tego zapamiętuje je Twój <a href="profile.html">profil kierowcy</a>: po ponownym otwarciu dnia odniesienie wraca, z tym samym okrążeniem (zobacz <a href="#reference-remembered">Zapamiętane dla dnia</a>).</p>
+<figure>
+  <img src="assets/screens/reference-lap.png" alt="Część Okrążenie odniesienia w sekcji Porównaj: odniesienie o nazwie Odniesienie: reference.vbo, okrążenie 2, 1:49.898, z przyciskami Porównaj z najlepszym dzisiejszym okrążeniem, Wybierz okrążenie, Wczytaj zapis i Usuń odniesienie" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li>Na końcu karty <strong>Porównaj</strong> przycisk <strong>Wczytaj zapis</strong> otwiera ten sam wybór plików co dodawanie sesji: wybierz jeden plik VBO lub RaceChrono RCZ (jeśli wybierzesz kilka, użyty zostanie tylko pierwszy, o czym aplikacja informuje). <strong>Z wcześniejszego dnia</strong> pokazuje pozostałe dni Twojego <a href="profile.html">profilu</a>; ich zapisy muszą nadal leżeć tam, gdzie dzień je znalazł.</li>
+  <li>Odniesienie jest mierzone na dzisiejszej linii startu/mety (linii najlepszego okrążenia dnia), tym samym sposobem pomiaru czasu co Twoje okrążenia, niezależnie od linii w zapisie. VBO i RCZ podają długość geograficzną w przeciwnych konwencjach; odniesienie jest przekształcane do dzisiejszej, zanim zostanie zmierzone, więc RCZ działa z dniem z VBO i odwrotnie. Odniesieniem jest jego najszybsze pełne okrążenie; <strong>Wybierz okrążenie</strong> pozwala wybrać inne, a dla wcześniejszego dnia pokazuje okrążenia wszystkich jego sesji. Okrążenie wykluczone tamtego dnia ma opis <em>Wykluczone tamtego dnia</em> wraz z powodem i nigdy nie jest uznawane za najszybsze, ale nadal możesz je wybrać; gdy wszystkie okrążenia były wykluczone, aplikacja o tym informuje, a <strong>Wybierz okrążenie</strong> pokazuje je z oznaczeniem.</li>
+  <li>Wszędzie nazywa się je tak samo: <em>Odniesienie: reference.vbo, okrążenie 2, 1:49.898</em>, a dla wcześniejszego dnia jego nazwą i sesją, na przykład <em>Odniesienie: Dzień 2026-08-29 · Sesja 5, okrążenie 2, 1:49.898</em>.</li>
+  <li>Zapis z innego toru nie jest używany, a aplikacja podaje powód: jego GPS nigdy nie zbliża się do dzisiejszej linii startu/mety na mniej niż 500 m. Jego okrążenia muszą też prowadzić trasą dzisiejszego najlepszego okrążenia w tę samą stronę: okrążenia przejechane w przeciwnym kierunku lub po innej konfiguracji toru, która przecina tę samą linię, są odrzucane z takim powodem. Gdy dzisiejsze okrążenie nie ma trasy do sprawdzenia (jest za krótkie lub przecina samo siebie), aplikacja informuje, że sprawdzono tylko linię startu/mety. Zapis w pobliżu linii, który nigdy nie kończy okrążenia przez nią, zapis bez GPS i plik, którego nie da się odczytać, są również odrzucane z podaniem powodu.</li>
+  <li>Odniesienie jest mierzone na linii widocznej w chwili wczytania. Gdy dzisiejsza linia się zmieni (pokażesz inną grupę albo najlepsze okrążenie dnia przejdzie na inną linię), pojawia się informacja, że zmierzono je na innej linii startu/mety, i nic nie jest porównywane, dopóki nie stukniesz <strong>Wczytaj ponownie</strong>.</li>
+  <li><strong>Usuń odniesienie</strong> porzuca je, a profil o nim zapomina: nie wróci po ponownym otwarciu dnia.</li>
+</ul>
+
+<h3 id="reference-remembered">Zapamiętane dla dnia</h3>
+<ul>
+  <li>Wybrane odniesienie jest przechowywane w Twoim profilu kierowcy, tylko dla tego dnia, i wraca po ponownym otwarciu dnia. Pod odniesieniem widać <em>Zapamiętane dla tego dnia w Twoim profilu kierowcy</em>. Dzień, którego nie ma w profilu (dzień zapisany jako plik gdzie indziej), pokazuje zamiast tego <em>nie zapamiętano</em>: jego odniesienie istnieje, dopóki dzień jest otwarty.</li>
+  <li>W przypadku zapisu (pliku kolegi lub instruktora) aplikacja kopiuje plik do Twojego profilu i zapamiętuje kopię, więc odniesienie działa nadal, gdy oryginał zostanie przeniesiony lub usunięty. Widać tylko nazwę pliku; miejsce, w którym leżał na Twoim komputerze, nigdy nie jest zapisywane. Kopia jest przechowywana raz, bez względu na to, ile dni z niej korzysta, i podróżuje razem z profilem, gdy go wyeksportujesz i zaimportujesz na innym urządzeniu. Zapisu większego niż 128 MiB (około 134 MB) ani pliku RCZ lub VBO, na który nie ma miejsca w profilu, nie można zapamiętać: profil przechowuje najwyżej 32 zapisy odniesienia (razem 512 MiB), a aplikacja informuje o tym pod odniesieniem, z przyciskiem <strong>Spróbuj ponownie</strong>. Odniesienie nadal działa, dopóki dzień jest otwarty.</li>
+  <li>Dla okrążenia z wcześniejszego dnia profil zapamiętuje ten dzień i okrążenie. Działa to, dopóki ten dzień jest w Twoim profilu; jeśli go usuniesz, odniesienie informuje, że dnia nie ma już w profilu, a Ty możesz je usunąć lub wybrać inne.</li>
+  <li>Jeśli kopii zapisu brakuje w profilu, dzień nadal się otwiera, a odniesienie informuje, że nie zostało znalezione. Usuń je lub wczytaj zapis ponownie.</li>
+  <li>Jeśli nie można zapisać profilu (na przykład dysk jest pełny), aplikacja informuje, że odniesienie nie jest zapamiętane; zostaje, dopóki dzień jest otwarty.</li>
+  <li>Usunięcie dnia usuwa także jego odniesienie oraz kopię jego zapisu, chyba że korzysta z niej odniesienie lub zapis innego dnia. Odniesienie nie jest częścią dnia: nie ma go w pliku dnia, jego klasyfikacji, teoretycznym czasie okrążenia, progresji ani u trenera.</li>
+</ul>
+
+<h3 id="reference-compare">Względem odniesienia</h3>
+<figure>
+  <img src="assets/screens/reference-compare.png" alt="Względem odniesienia: okrążenie A i okrążenie odniesienia, różnica czasu okrążenia oraz każdy dzisiejszy odcinek zmierzony na obu okrążeniach wraz z różnicą" width="1280" height="800" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Porównaj z najlepszym dzisiejszym okrążeniem</strong> zestawia najlepsze okrążenie dnia (A, bursztynowe) z odniesieniem (niebieskie). Stuknij plakietkę A, aby wybrać inne dzisiejsze okrążenie.</li>
+  <li>Δ to A − odniesienie: wartość dodatnia oznacza, że A jest wolniejsze. <strong>Różnica czasu okrążenia</strong> to różnica czasów okrążeń. Nie jest pokazywana, gdy okrążenie odniesienia pokrywa mniej niż 97 % linii okrążenia A albo gdy okrążenie A zmierzono na innej linii startu/mety niż odniesienie.</li>
+  <li><strong>Odcinki względem odniesienia</strong> mierzy dzisiejsze odcinki na obu okrążeniach: A, odniesienie (<strong>Odn.</strong>) i Δ. Odcinki to zatwierdzone odcinki Twojego dnia albo odcinki teoretycznego czasu okrążenia, dopóki dzień nie ma własnych. Odcinek, którego jedno z okrążeń nie obejmuje, ma opis <em>nie zmierzono na jednym z okrążeń</em> wraz z powodem, nigdy zero.</li>
+  <li><strong>Kanały według pozycji na torze</strong>: Δ czasu, potem prędkość, gaz i hamulec, według pozycji na dzisiejszym okrążeniu, tak jak przy porównaniu dwóch okrążeń.</li>
+  <li>Każdy wykres podaje jednostkę każdego okrążenia. Jednostka, której zapis nie deklaruje, to ta, którą ustawienie jednostki prędkości przyjmuje dla prędkości bez oznaczenia (zobacz <a href="troubleshooting.html#speed-unit">Prędkości bez jednostki</a>), i ma opis <em>(przyjęta)</em>. Gdy oba okrążenia mają różne jednostki (km/h i mph) albo żadne nie deklaruje jednostki prędkości i żadna nie jest przyjęta (dwa rejestratory mogą zapisywać w różnych jednostkach), są rysowane jako dwa wykresy, każdy we własnej jednostce, i nigdy nie są odejmowane.</li>
+</ul>
+
+<p class="note">Wszystko na tej stronie to zaobserwowana różnica między dwoma okrążeniami, a nie polecenie.</p>

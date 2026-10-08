@@ -717,7 +717,8 @@ void main() {
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough that the long overview builds down to the circuits.
+    await tester.binding.setSurfaceSize(const Size(1200, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(
@@ -784,7 +785,9 @@ void main() {
       'a.vbo': [30, 28, 31],
       'b.vbo': [29, 32],
     });
-    await tester.binding.setSurfaceSize(const Size(1200, 6000));
+    // Tall enough to build the whole page, corner types (FET-220) and the
+    // grip card included.
+    await tester.binding.setSurfaceSize(const Size(1200, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(

@@ -151,6 +151,28 @@ void main() {
       bool coachReady() =>
           find.byKey(const ValueKey('coachReason')).evaluate().isNotEmpty;
 
+      // The session summary (FET-233) heads the Coach place, so on a phone
+      // the Next session card is further down the list: scrolled to, as
+      // the driver would.
+      Future<void> untilCoached(int session) async {
+        final list = find.byKey(const ValueKey('dayResultsCoach'));
+        bool summarized() =>
+            find.text('Session $session in 30 seconds').evaluate().isNotEmpty;
+        for (var i = 0; i < 3000 && !(coached(session) && coachReady()); ++i) {
+          if (summarized() && list.evaluate().isNotEmpty) {
+            await tester.drag(list, const Offset(0, -200));
+          }
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+        await until(
+          () => coached(session) && coachReady(),
+          'Session $session coached on the Next session card',
+        );
+      }
+
       await start();
       final clock = Stopwatch()..start();
       for (var i = 0; i < vbos.length; ++i) {
@@ -171,14 +193,14 @@ void main() {
         shares.controller.add([share(vbos[i])]);
         // The first session opens the day; each later one moves the day
         // to its Next session card.
-        await until(
-          () => session == 1
-              ? find.text('Best lap of the day').evaluate().isNotEmpty
-              : coached(session) && coachReady(),
-          session == 1
-              ? 'Session 1 opened as the day'
-              : 'Session $session coached on the Next session card',
-        );
+        if (session == 1) {
+          await until(
+            () => find.text('Best lap of the day').evaluate().isNotEmpty,
+            'Session 1 opened as the day',
+          );
+        } else {
+          await untilCoached(session);
+        }
         final shown = clock.elapsed;
         await until(() => savedRuns() == session, 'Session $session saved');
         expect(days(), hasLength(1), reason: 'one day in the library');

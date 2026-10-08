@@ -164,6 +164,19 @@ void main() {
         analysis: outcome.analysis!,
       );
       expect(shelf.profile!.day('e1')!.sessions.first.stats, isNull);
+      // The driver's setup of a session is not a measurement: it stays.
+      final firstRun = shelf.profile!.day('e1')!.sessions.first.runId;
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Saved day',
+        analysis: outcome.analysis!,
+        setups: {
+          firstRun: ProfileSetup.of({'version': 1, 'tyres': 'Test tyre'}),
+        },
+      );
+      final setupBefore = shelf.profile!.day('e1')!.sessions.first.setup;
+      expect(setupBefore, isNotNull);
       final steps = <({int done, int total})?>[];
       void step() => steps.add(shelf.measuringAllProgress);
       shelf.addListener(step);
@@ -181,6 +194,7 @@ void main() {
       final day = shelf.profile!.day('e1')!;
       expect(day.carId, car);
       expect(day.name, 'Saved day');
+      expect(day.sessions.first.setup?.json, setupBefore?.json);
       expect(day.sessions.first.stats!.distanceMeters, greaterThan(0));
       expect(day.sessions.first.stats!.corners, isNotEmpty);
       expect(day.theoreticalBestSeconds, isNotNull);
@@ -230,6 +244,64 @@ void main() {
       shelf.removeListener(stop);
       expect(await shelf.measureAllAgain(), (measured: 0, failed: 2));
     });
+
+    test(
+      'deletes a day with the recording copies only it uses (FET-241)',
+      () async {
+        // A copy the profile holds, and a recording of the driver's own.
+        final copy = p.join(profileFolder(), 'Recordings', 'a.vbo');
+        File(copy)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(circuitVbo([30, 28, 31]));
+        final own = p.join(directory.path, 'b.vbo');
+        File(own).writeAsStringSync(circuitVbo([29, 32]));
+        final outcome = runDayImport((
+          paths: [copy, own],
+          includeSubfolders: false,
+        ));
+        final shelf = library();
+        final path = (await shelf.dayPath('e1'))!;
+        File(path).writeAsStringSync(
+          jsonEncode(
+            dayDocument(
+              eventId: 'e1',
+              name: 'Day',
+              runs: outcome.runs,
+              analysis: outcome.analysis!,
+              projectPath: path,
+            ),
+          ),
+        );
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        expect(shelf.profile!.day('e1'), isNotNull);
+
+        final deleted = (await shelf.deleteDay('e1'))!;
+        await shelf.flush();
+        expect(deleted.recordings, 1);
+        expect(File(copy).existsSync(), isFalse);
+        expect(File(own).existsSync(), isTrue);
+        expect(File(path).existsSync(), isFalse);
+        expect(shelf.profile!.day('e1'), isNull);
+
+        // A page that still held the day does not list it again.
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Day',
+          analysis: outcome.analysis!,
+        );
+        expect(shelf.profile!.day('e1'), isNull);
+        // Nor does the app started again.
+        final again = library();
+        await again.load();
+        expect(again.profile!.day('e1'), isNull);
+      },
+    );
 
     test(
       'records a day saved in the profile and writes a profile that reads back',
@@ -373,6 +445,65 @@ void main() {
         );
         expect(other.profile!.day('e1')!.sessions.single.weather, isNull);
       });
+    });
+
+    test('setups go to a listed day at once and are held when measuring '
+        'fails', () async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final run = outcome.runs.single.run;
+      var fail = true;
+      final shelf = ProfileLibrary(
+        store: FolderProfileStore(profileFolder()),
+        defaultCarName: 'My car',
+        defaultTrackName: (number) => 'Track $number',
+        background: <R>(FutureOr<R> Function() job) async {
+          final result = await job();
+          if (result is ProfileDayInput && fail) {
+            throw StateError('not measured');
+          }
+          return result;
+        },
+      );
+      final path = (await shelf.dayPath('e1'))!;
+      await shelf.load();
+      final setup = ProfileSetup.of({
+        'version': runSetupVersion,
+        'pressureUnit': 'bar',
+        'coldPressure': {'fl': 2.1},
+      });
+      // Not in the profile yet, and the measure fails: held, not lost.
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Day',
+        analysis: outcome.analysis!,
+        setups: {run.id: setup},
+      );
+      expect(shelf.profile!.day('e1'), isNull);
+      expect(shelf.givenSetups('e1')![run.id]!.json, setup!.json);
+      // Recorded without setups (a restored day): the held ones apply.
+      fail = false;
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Day',
+        analysis: outcome.analysis!,
+      );
+      await shelf.flush();
+      expect(shelf.profile!.day('e1')!.sessions.single.setup!.json, setup.json);
+      // Listed now: a save's setups reach it even when its measure fails.
+      fail = true;
+      await shelf.recordDay(
+        eventId: 'e1',
+        path: path,
+        name: 'Day',
+        analysis: outcome.analysis!,
+        setups: {run.id: null},
+      );
+      await shelf.flush();
+      expect(shelf.profile!.day('e1')!.sessions.single.setup, isNull);
     });
 
     test('ignores a day saved elsewhere', () async {
@@ -837,6 +968,166 @@ void main() {
       await shelf.flush();
     });
 
+    testWidgets('a session setup reaches the library when the day is saved', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      await shelf.load();
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        writer: writer,
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      final runId = controller.runs.first.run.id;
+      ProfileSession session() => shelf.profile!.days.single.sessions
+          .singleWhere((session) => session.runId == runId);
+      expect(session().setup, isNull);
+      expect(controller.runSetupWaitsForSave(runId), isFalse);
+
+      final setup = RunSetup(
+        pressureUnit: PressureUnit.bar,
+        cold: const WheelPressures(fl: 2.1, fr: 2.1),
+        tyre: 'Pirelli SC2',
+      );
+      expect(
+        controller.updateRunMetadata(
+          runId,
+          RunMetadata(name: controller.runs.first.name, setup: setup),
+        ),
+        isNull,
+      );
+      await tester.pump();
+      // Entered, not saved: the library still has none, and the page knows.
+      expect(controller.runSetupWaitsForSave(runId), isTrue);
+      expect(controller.savedRunSetup(runId), isNull);
+      expect(session().setup, isNull);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(controller.dirty, isFalse);
+      expect(controller.runSetupWaitsForSave(runId), isFalse);
+      expect(session().setup!.setup, setup);
+      expect(session().setup!.json, controller.savedRunSetup(runId));
+      // Cleared and saved: cleared in the library too.
+      expect(
+        controller.updateRunMetadata(
+          runId,
+          RunMetadata(name: controller.runs.first.name),
+        ),
+        isNull,
+      );
+      await tester.pump();
+      expect(
+        controller.runSetupWaitsForSave(runId),
+        isFalse,
+        reason: 'nothing entered waits for the save',
+      );
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(controller.dirty, isFalse);
+      expect(session().setup, isNull);
+    });
+
+    testWidgets('a restored day keeps the library\'s setups until saved', (
+      tester,
+    ) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+      });
+      final shelf = library();
+      late String path;
+      late String eventId;
+      late String name;
+      await tester.runAsync(() async {
+        final first = DayResultsController(
+          runs: outcome.runs,
+          analysis: outcome.analysis!,
+          writer: writer,
+        );
+        eventId = first.eventId;
+        name = first.name;
+        path = (await shelf.dayPath(eventId))!;
+        await first.save(path);
+        first.dispose();
+      });
+      final runId = outcome.runs.single.run.id;
+      const kept = {
+        'version': runSetupVersion,
+        'pressureUnit': 'psi',
+        'coldPressure': {'fl': 30},
+      };
+      await shelf.recordDay(
+        eventId: eventId,
+        path: path,
+        name: name,
+        analysis: outcome.analysis!,
+        setups: {runId: ProfileSetup.of(kept)},
+      );
+      await shelf.flush();
+      // The recovery snapshot holds a setup the file does not.
+      final snapshot =
+          jsonDecode(File(path).readAsStringSync()) as Map<String, Object?>;
+      final run =
+          ((snapshot['event']! as Map<String, Object?>)['runs']! as List).single
+              as Map<String, Object?>;
+      run[runSetupKey] = {
+        'version': runSetupVersion,
+        'pressureUnit': 'bar',
+        'coldPressure': {'fl': 2.1},
+      };
+      final controller = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        eventId: eventId,
+        name: name,
+        openedFrom: path,
+        openedDocument: snapshot,
+        recovered: true,
+        writer: writer,
+      );
+      expect(controller.setupsSaved, isFalse);
+      expect(controller.runSetupWaitsForSave(runId), isTrue);
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: DayResultsPage.controller(
+            controller: controller,
+            documents: FakeDocuments(),
+            library: shelf,
+          ),
+        ),
+      );
+      await tester.pump();
+      await shelf.flush();
+      // Recorded on opening, without the snapshot's setup.
+      ProfileSetup? setup() => shelf.profile!.days.single.sessions.single.setup;
+      expect(setup()!.json, kept);
+      // Saved by itself: the restored setup is the day's now.
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(controller.dirty, isFalse);
+      expect(controller.setupsSaved, isTrue);
+      expect(controller.runSetupWaitsForSave(runId), isFalse);
+      expect(setup()!.setup.pressureUnit, PressureUnit.bar);
+    });
+
     testWidgets('without a library a new day waits for Save, as before', (
       tester,
     ) async {
@@ -887,11 +1178,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Measure all days again'));
+      await tester.tap(find.text('Recalculate all days'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('0 days measured again.'), findsOneWidget);
+      expect(find.textContaining('0 days recalculated.'), findsOneWidget);
       expect(
-        find.textContaining('1 day could not be measured'),
+        find.textContaining('1 day could not be recalculated'),
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('libraryWorking')), findsNothing);
@@ -936,7 +1227,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Jastrząb'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Change car'));
+      await tester.tap(find.byTooltip('Day actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Change car'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('libraryNewCar')));
       await tester.pumpAndSettle();
@@ -956,6 +1249,64 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('libraryDay-e1')));
       expect(opened, [p.join(profileFolder(), 'Days', 'e1.fetproject')]);
       await shelf.flush();
+    });
+
+    testWidgets('deletes a day once confirmed (FET-241)', (tester) async {
+      final outcome = importDay({
+        'a.vbo': [30, 28, 31],
+        'b.vbo': [29, 32],
+      });
+      final shelf = library();
+      late String path;
+      await (() async {
+        path = (await shelf.dayPath('e1'))!;
+        File(path).writeAsStringSync('{}');
+        await shelf.recordDay(
+          eventId: 'e1',
+          path: path,
+          name: 'Test day',
+          analysis: outcome.analysis!,
+        );
+      })();
+      final closed = <String>[];
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(
+            library: shelf,
+            open: (_) {},
+            closeDay: (eventId) async {
+              closed.add(eventId);
+              return true;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Cancelled: nothing changes.
+      await tester.tap(find.byTooltip('Day actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete day'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete Test day?'), findsOneWidget);
+      expect(find.textContaining('its 2 sessions'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('libraryDay-e1')), findsOneWidget);
+      expect(closed, isEmpty);
+
+      await tester.tap(find.byTooltip('Day actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete day'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryDeleteDayConfirm')));
+      await tester.pumpAndSettle();
+      await shelf.flush();
+      expect(closed, ['e1']);
+      expect(find.byKey(const ValueKey('libraryDay-e1')), findsNothing);
+      expect(find.text('Test day deleted.'), findsOneWidget);
+      expect(shelf.profile!.day('e1'), isNull);
+      expect(File(path).existsSync(), isFalse);
     });
 
     testWidgets('says the library cannot be used once it is read', (
@@ -1067,6 +1418,17 @@ void main() {
       // Coach shows the skills across days under what to try next.
       await tester.tap(find.byKey(const ValueKey('place-coach')));
       await settle();
+      // Below the coach's card and its map.
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('skillLevels')),
+        300,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const ValueKey('dayResultsCoach')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.byKey(const ValueKey('skillLevels')), findsOneWidget);
 
       // Profile from the day: the day leaves first, then the library it
@@ -1289,6 +1651,51 @@ void main() {
         {for (final day in reopened.profile!.days) day.eventId},
         {'h1', 'e1'},
       );
+    });
+
+    test('keeps notebook edits made while a bundle is read', () async {
+      final here = await withDay(profileFolder());
+      here.setTrackNotebook(
+        here.profile!.tracks.single.id,
+        TrackNotebook(notes: 'Theirs'),
+      );
+      final bundle = p.join(directory.path, 'driver.feprofile');
+      await here.exportBundle(bundle);
+      // The same day on this device, with its own notebook.
+      final elsewhere = p.join(directory.path, 'Other');
+      final gate = Completer<void>();
+      final reading = Completer<void>();
+      final there = await withDay(
+        elsewhere,
+        background: <R>(FutureOr<R> Function() job) async {
+          final result = await job();
+          if (result is ProfileBundleImport) {
+            reading.complete();
+            await gate.future;
+          }
+          return result;
+        },
+      );
+      final track = there.profile!.tracks.single.id;
+      there.setTrackNotebook(
+        track,
+        TrackNotebook(
+          notes: 'Old',
+          toTry: [NotebookItem(id: 'i1', text: 'Gone soon')],
+        ),
+      );
+      final imported = there.importBundle(bundle);
+      await reading.future;
+      // Meanwhile the notebook is edited on this device.
+      there.setTrackNotebook(track, TrackNotebook(notes: 'New'));
+      gate.complete();
+      final read = (await imported)!;
+      expect(read.added, isEmpty);
+      expect(read.notebooks, [track]);
+      final notebook = there.profile!.track(track)!.notebook;
+      expect(notebook.notes, 'New\n\nTheirs');
+      expect(notebook.toTry, isEmpty);
+      await there.flush();
     });
 
     test('says when the imported days could not be written', () async {

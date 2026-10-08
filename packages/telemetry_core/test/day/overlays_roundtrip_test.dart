@@ -4,8 +4,8 @@
 // see tool/README.md.
 //
 // Telemetry → Overlays → Telemetry: a day Telemetry saved (edited segments,
-// an exclusion, the group shown, notes and conditions already present and
-// unknown keys in open objects) is opened and saved by Overlays and opened
+// an exclusion, the group shown, notes and conditions already present, a
+// session's structured setup and unknown keys in open objects) is opened and saved by Overlays and opened
 // again by Telemetry: nothing is lost and the analysis is the same.
 //
 // Overlays → Telemetry → Overlays: a day Overlays built and saved (segments
@@ -51,6 +51,32 @@ Object? _run(List<String> arguments) {
 }
 
 Map<String, Object?> _object(Object? value) => value! as Map<String, Object?>;
+
+/// A session's setup as Telemetry stores it, with keys it does not know.
+const setupFixture = {
+  'version': 'session-setup-v1',
+  'pressureUnit': 'psi',
+  'coldPressure': {'fl': 30, 'fr': 30.5, 'rl': 28, 'rr': 28.25, 'futureWheel': 'kept'},
+  'hotPressure': {'fl': 34.5, 'rr': 32},
+  'tyre': 'Pirelli Diablo Supercorsa SC2',
+  'fuelStartLitres': 8.5,
+  'futureSetup': {'kept': true},
+};
+
+/// A session's goals for the next one as Telemetry stores them, with a key
+/// it does not know.
+const goalsFixture = {
+  'version': 'session-goals-v1',
+  'goals': [
+    {
+      'kind': 'excessiveCoasting',
+      'segment': 'Corner 3',
+      'startProgressMeters': 812.5,
+      'endProgressMeters': 905.0,
+    },
+  ],
+  'futureGoals': {'kept': true},
+};
 
 /// Keys Overlays adds to a document Telemetry saved: its own defaults for
 /// settings Telemetry does not have. Everything else must match.
@@ -152,6 +178,11 @@ void main() {
       firstRun['notes'] = 'Dry line from lap 2';
       firstRun['conditions'] = 'Overcast, 14 °C';
       firstRun['futureRunField'] = {'kept': true};
+      // Telemetry's structured setup (FET-188), with keys of a later version
+      // in it and in a wheel object: Overlays keeps it without reading it.
+      firstRun[runSetupKey] = setupFixture;
+      // And the driver's goals for the next session (FET-218).
+      firstRun[runGoalsKey] = goalsFixture;
       final source = _object((_object(firstRun['sources'])['telemetry']! as List).first);
       source['futureSourceField'] = [1, 2, 3];
       _object(source['reference'])['futureReferenceField'] = 'kept';
@@ -219,6 +250,12 @@ void main() {
       // Telemetry opens it again: the same day and analysis.
       final again = openDay(path);
       expect(again.missing, isEmpty);
+      final againFirst = _object((_object(again.document['event'])['runs']! as List).first);
+      expect(againFirst[runSetupKey], setupFixture);
+      expect(RunMetadata.fromRun(againFirst).setup, RunSetup.fromJson(setupFixture));
+      expect(RunSetup.fromJson(setupFixture).pressureUnit, PressureUnit.psi);
+      expect(againFirst[runGoalsKey], goalsFixture);
+      expect(RunMetadata.fromRun(againFirst).goals!.goals.single.kind, CoachKind.excessiveCoasting);
       expect(jsonDifferences(telemetryView(again), afterOverlays, tolerance: 1e-9), isEmpty);
       final next = dayDocument(
         eventId: again.eventId,

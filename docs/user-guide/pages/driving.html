@@ -20,6 +20,7 @@
   <img src="assets/screens/driving-states.png" alt="Driving states strips for laps A and B, and a table of braking, braking while cornering, cornering, accelerating and coasting" width="1280" height="800" loading="lazy">
 </figure>
 <p>Coloured strips show where each lap was braking, braking while cornering, cornering, accelerating or coasting. Tap a strip to move the cursor there. The table gives each state's time and share of the lap, and whether it was measured, calculated from GPS or inferred.</p>
+<p>A pedal recorded with no unit whose values stay between 0 and 1 could be a 0–1 fraction or a pedal hardly pressed in %. It is read as a fraction only when the longitudinal G shows it: pressed in at least half of the hard brakings (or accelerations) and released in at least half of the hard accelerations (or brakings). Three or more of each are needed. Otherwise a brake gives way to the deceleration when that is usable (marked <em>inferred</em>), and any other such pedal shows <em>pedal scale unknown</em> instead of no braking or throttle; the coach does not use it either.</p>
 <p>States overlap: cornering can come with braking, accelerating or coasting. Longer braking while cornering is not automatically better or safer.</p>
 
 <h2 id="coasting">Coasting</h2>
@@ -27,4 +28,4 @@
   <img src="assets/screens/compare-coasting.png" alt="Coasting card for laps A and B with a strip and a chip for each coasting episode" width="1280" height="800" loading="lazy">
 </figure>
 <p>For each lap: total coasting time and distance, how it was measured, a strip along the track, and a chip for each episode such as <em>640 m · 1.2 s</em>. Tap a chip to move the cursor there.</p>
-<p>Coasting is measured from the brake and accelerator pedals when both were recorded. Without them it is inferred from longitudinal G, and the card says so. A single lap's coasting is also on its <a href="lap.html#coasting">lap page</a>.</p>
+<p>Coasting is measured from the brake and accelerator pedals when both were recorded. Without them it is inferred from longitudinal G, and the card says so. When the brake channel does not show the braking (see <a href="corners.html#table">Corner Analyzer</a>), braking is taken from longitudinal G instead of the brake, and the card shows the coasting as inferred. A single lap's coasting is also on its <a href="lap.html#coasting">lap page</a>.</p>

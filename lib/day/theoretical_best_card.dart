@@ -77,6 +77,7 @@ extension TheoreticalBestText on AppLocalizations {
     'No run in this group has an approved segment review yet. '
         'Approve segments for at least one run first.' =>
       tbNoApprovedRun,
+    automaticSegmentsLineDisagreement => tbBestLapOffLine,
     'No approved segments to measure sectors against.' => tbNoApprovedSegments,
     'At least one sector has no fully covered time on any eligible lap, so '
         'no total is shown.' =>
@@ -104,6 +105,7 @@ class TheoreticalBestCard extends StatefulWidget {
     this.onEditSegments,
     this.onAnalyze,
     this.onRetry,
+    this.sections,
   });
 
   /// Calculates again after a failure or with nothing to use, as Overlays'
@@ -120,6 +122,10 @@ class TheoreticalBestCard extends StatefulWidget {
   /// Null while it is calculated for the first time.
   final DayTheoreticalBest? result;
   final bool loading;
+
+  /// Each session's segment times, for the best typical lap; null while
+  /// they are worked out.
+  final SectionProgression? sections;
 
   /// The best lap's trace, for the loss map.
   final LapPath? path;
@@ -244,6 +250,7 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     return [
       const SizedBox(height: 8),
       _Headline(result: result),
+
       if (result.message.isNotEmpty) ...[
         const SizedBox(height: 4),
         Text(l10n.tbMessage(result.message)),
@@ -258,6 +265,8 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
             : ' ${l10n.tbSegmentsCorrected}'}',
         style: theme.textTheme.bodySmall,
       ),
+      const SizedBox(height: 12),
+      _ThreeBests(result: result, sections: widget.sections),
       if (widget.onEditSegments != null)
         Align(
           alignment: Alignment.centerLeft,
@@ -326,7 +335,71 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
         selected: lap?.lap.reference,
         onSelect: _choose,
       ),
+      ..._brakingTechnique(context, result),
       ..._variability(context, result),
+    ];
+  }
+
+  // The day's braking technique over its corners (FET-219): the median of
+  // each corner's typical value, from one source; nothing when no corner
+  // has one.
+  List<Widget> _brakingTechnique(
+    BuildContext context,
+    DayTheoreticalBest result,
+  ) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final day = summarizeBrakingTechniqueDay([
+      for (final corner in result.corners) corner.brakingTechnique,
+    ]);
+    if (!day.available) return const [];
+    String bounded(String text, bool lower) =>
+        lower ? l10n.brakingTechniqueAtLeast(text) : text;
+    // A throttle slower than about 10 Hz places the pickup only to 0.1 s.
+    final coarse = result.corners.any(
+      (corner) => corner.brakingTechnique.throttleCoarse,
+    );
+    final figures = [
+      if (day.hit case final hit?)
+        l10n.brakingTechniqueDayHit(
+          bounded('${fixed(hit, 2)}\u00a0g/s', day.hitAtLeast),
+        ),
+      if (day.release case final release?)
+        l10n.brakingTechniqueDayRelease(
+          bounded('${fixed(release, 2)}\u00a0g/s', day.releaseAtLeast),
+        ),
+      if (day.trailSeconds case final trail?)
+        l10n.brakingTechniqueDayTrail('${fixed(trail, 2)}\u00a0s'),
+      if (day.brakeToThrottle case final throttle?)
+        l10n.brakingTechniqueDayThrottle(
+          coarse
+              ? l10n.brakingTechniqueAbout('${fixed(throttle, 1)}\u00a0s')
+              : '${fixed(throttle, 2)}\u00a0s',
+        ),
+    ].join(', ');
+    final source = switch ((day.source, day.unitAssumed)) {
+      (brakingTechniqueFromSpeed, true) =>
+        l10n.brakingTechniqueDayFromSpeedAssumed(
+          day.assumedUnit.isEmpty ? 'km/h' : day.assumedUnit,
+        ),
+      (brakingTechniqueFromSpeed, false) => l10n.brakingTechniqueDayFromSpeed,
+      (_, true) => l10n.brakingTechniqueDayFromGAssumed,
+      _ => l10n.brakingTechniqueDayFromG,
+    };
+    return [
+      const SizedBox(height: 16),
+      Text(l10n.brakingTechniqueDayTitle, style: theme.textTheme.titleSmall),
+      Text(
+        [
+          l10n.brakingTechniqueDaySummary(day.cornersBraked, source, figures),
+          if (day.otherSourceCorners > 0)
+            l10n.brakingTechniqueDayOtherSource(day.otherSourceCorners),
+          if (day.minorityCorners > 0)
+            l10n.brakingTechniqueDayMinority(day.minorityCorners),
+        ].join(' '),
+        key: const ValueKey('brakingTechniqueDay'),
+      ),
+      Text(l10n.brakingTechniqueDayNote, style: theme.textTheme.bodySmall),
     ];
   }
 
@@ -417,6 +490,9 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
     final comparison = corner?.compare(lap.lap.reference);
     speedUnitOf(context); // The summary's speeds follow the setting.
     final summary = comparison == null ? null : cornerSummary(l10n, comparison);
+    final kind = corner == null
+        ? null
+        : cornerClassSummary(l10n, corner.classification);
     final loss = Text(
       lap.lossSeconds[index] == null
           ? '—'
@@ -463,6 +539,13 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                   Text(
                     summary,
                     key: ValueKey('cornerSummary ${corner!.name}'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                // What kind of corner it is (FET-220), the same on every lap.
+                if (kind != null)
+                  Text(
+                    kind,
+                    key: ValueKey('cornerClassSummary ${corner!.name}'),
                     style: theme.textTheme.bodySmall,
                   ),
               ],
@@ -588,8 +671,6 @@ List<String> variabilityLines(
     );
   }
 
-  final line = variability.lineOffset;
-  final accuracy = variability.typicalGpsAccuracyMeters;
   return [
     ?spread(
       l10n.variabilityBraking,
@@ -614,19 +695,54 @@ List<String> variabilityLines(
       variability.pickupInferred,
       l10n.variabilityInferred,
     ),
-    if (line.available)
-      l10n.variabilityLine(
-            fixed(line.interquartileRange!, 1),
-            accuracy == null
-                ? l10n.variabilityGpsUnknown
-                : l10n.variabilityGpsAccuracy(
-                    fixed(accuracy, accuracy < 1 ? 2 : 1),
-                  ),
-          ) +
-          (variability.lineSpreadResolvable
-              ? ''
-              : l10n.variabilityLineUnresolved),
+    ?_lineText(l10n, variability),
   ];
+}
+
+// The line's spread where the corner starts, at its apex and where it ends
+// (FET-225), each part only when enough laps have it. Which parts cannot be
+// told from GPS error is said only when the GPS accuracy is known.
+String? _lineText(AppLocalizations l10n, CornerVariability variability) {
+  final accuracy = variability.typicalGpsAccuracyMeters;
+  final gps = accuracy == null
+      ? l10n.variabilityGpsUnknown
+      : l10n.variabilityGpsAccuracy(fixed(accuracy, accuracy < 1 ? 2 : 1));
+  final apex = variability.lineOffset;
+  final entry = variability.entryLineOffset;
+  final exit = variability.exitLineOffset;
+  final parts = [
+    if (entry.available)
+      (
+        l10n.variabilityLineEntry(fixed(entry.interquartileRange!, 1)),
+        l10n.variabilityLineEntryName,
+        variability.entryLineResolvable,
+      ),
+    if (apex.available)
+      (
+        l10n.variabilityLineApex(fixed(apex.interquartileRange!, 1)),
+        l10n.variabilityLineApexName,
+        variability.lineSpreadResolvable,
+      ),
+    if (exit.available)
+      (
+        l10n.variabilityLineExit(fixed(exit.interquartileRange!, 1)),
+        l10n.variabilityLineExitName,
+        variability.exitLineResolvable,
+      ),
+  ];
+  if (parts.isEmpty) return null;
+  final unresolved = [
+    if (accuracy != null)
+      for (final (_, name, resolvable) in parts)
+        if (!resolvable) name,
+  ];
+  return l10n.variabilityLineParts(
+        [for (final (text, _, _) in parts) text].join(', '),
+        gps,
+      ) +
+      (unresolved.isEmpty
+          ? ''
+          : l10n.variabilityLinePartsUnresolved(unresolved.join(', ')));
 }
 
 /// One corner's variability, folded to its name and first line.
@@ -718,6 +834,95 @@ class _Headline extends StatelessWidget {
           available == null ? '—' : '${available.toStringAsFixed(3)}\u00a0s',
           const ValueKey('availableTime'),
           FetColors.of(context).gain,
+        ),
+      ],
+    );
+  }
+}
+
+/// The theoretical best three ways (FET-222): the fastest segments from any
+/// lap, the fastest that join at the speed the car had, and each segment's
+/// best typical time.
+class _ThreeBests extends StatelessWidget {
+  const _ThreeBests({required this.result, this.sections});
+
+  final DayTheoreticalBest result;
+  final SectionProgression? sections;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final raw = result.theoreticalBestSeconds;
+    final realistic = result.realistic;
+    final sections = this.sections;
+    final repeatable = sections == null
+        ? null
+        : repeatableTheoreticalBest(sections);
+    Widget row(String label, String note, String value, Key key) => Padding(
+      key: key,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                Text(note, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            value,
+            key: ValueKey('${(key as ValueKey<String>).value} value'),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+    return Column(
+      key: const ValueKey('threeBests'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.tbThreeTitle, style: theme.textTheme.titleSmall),
+        row(
+          l10n.tbRawLabel,
+          l10n.tbRawNote,
+          raw == null ? '—' : displayTime(raw),
+          const ValueKey('rawBest'),
+        ),
+        row(
+          l10n.tbRealisticLabel,
+          switch (realistic) {
+            final best? when best.valid => l10n.tbRealisticNote(
+              fixed(realisticJoinMetresPerSecond * 3.6, 0),
+              best.lapCount,
+            ),
+            RealisticTheoreticalBest(unavailableReason: realisticNoSpeed) =>
+              l10n.tbRealisticNoSpeed,
+            RealisticTheoreticalBest(unavailableReason: realisticNoJoin) =>
+              l10n.tbRealisticNoJoin,
+            _ => l10n.tbRealisticIncomplete,
+          },
+          realistic?.totalSeconds == null
+              ? '—'
+              : displayTime(realistic!.totalSeconds!),
+          const ValueKey('realisticBest'),
+        ),
+        row(
+          l10n.tbRepeatableLabel,
+          sections == null
+              ? l10n.consistencyMeasuring
+              : repeatable == null
+              ? l10n.tbRepeatableNeedsLaps(minimumConsistencySamples)
+              : l10n.tbRepeatableNote,
+          repeatable == null ? '—' : displayTime(repeatable),
+          const ValueKey('repeatableBest'),
         ),
       ],
     );

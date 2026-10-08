@@ -260,7 +260,8 @@ List<String> importPlanNotes(
 }
 
 /// Recordings to add to a day that already has [runIds] (its runs and its
-/// missing runs, [runCount] in all) and [rowCount] lap sections. With
+/// missing runs, [runCount] in all, named [sessionNames]) and [rowCount]
+/// lap sections. With
 /// [sameDayAs] (a recording start of the day, milliseconds since the
 /// epoch), recordings are added only when every new one started on that
 /// local calendar date. [alternatives] maps a recording's run id to the
@@ -275,6 +276,7 @@ typedef DayAppendRequest = ({
   List<String> paths,
   Set<String> runIds,
   int runCount,
+  Set<String> sessionNames,
   int rowCount,
   int? sameDayAs,
   Map<String, String> alternatives,
@@ -394,7 +396,11 @@ DayAppendOutcome runDayAppend(
       })) {
     return DayAppendOutcome(notes: notes, otherDay: true);
   }
-  final runs = nameRunsInRecordingOrder(added, existingRuns: request.runCount);
+  final runs = nameRunsInRecordingOrder(
+    added,
+    existingRuns: request.runCount,
+    takenNames: request.sessionNames,
+  );
   final part = analyzeDayRuns(
     [
       for (final named in runs)

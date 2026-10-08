@@ -348,7 +348,9 @@ void main() {
               target,
               200,
               scrollable: summary,
-              maxScrolls: 200,
+              // The day page is long at large text, and every card added to
+              // it (lap styles, FET-223) needs more scrolls to get past.
+              maxScrolls: 300,
             );
             await tester.ensureVisible(target);
             await tester.pumpAndSettle();

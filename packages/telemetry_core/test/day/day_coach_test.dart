@@ -43,7 +43,7 @@ void _edit(
   int? lap,
 }) {
   final speed = session.channels['velocity']!.values;
-  final values = session.channels[channel]!.values;
+  final values = editableValues(session, channel);
   var distance = -20.0;
   for (var i = 0; i < speed.length; ++i) {
     if (distance >= 0 &&
@@ -232,6 +232,29 @@ void main() {
     }
 
     final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: light);
+    expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
+  });
+
+  test('a throttle whose scale is not known gives no coasting advice', () {
+    // FET-205: the coast above, on a throttle with no unit recorded 0..1
+    // and no longitudinal G to tell its scale by (0.15 could as well be a
+    // dead % throttle's noise). Its scale is unknown, so the coach does not
+    // read it: no coasting, and no pedals but the brake.
+    TelemetrySession? coached;
+    void fraction(String runId, TelemetrySession session) {
+      if (runId != 'run2') return;
+      coached = session;
+      final values = editableValues(session, 'throttle');
+      for (var i = 0; i < values.length; ++i) {
+        values[i] /= 100;
+      }
+      editableValues(session, 'longacc').fillRange(0, values.length, 0.0);
+      _edit(session, 'throttle', 0, (d) => d >= 20 && d < 60);
+      _edit(session, 'brake', 0, (d) => d >= 20 && d < 60);
+    }
+
+    final coach = _coach([20, 20.5], [17, 17.2, 17.1], edit: fraction);
+    expect(throttleScale(coached!), PedalScale.unknown);
     expect(coach.findings.where((f) => f.kind == CoachKind.excessiveCoasting), isEmpty);
   });
 
@@ -457,6 +480,53 @@ void main() {
       final goal = _coach(before, [19, 19.5, 19.2, 3]).goal!;
       expect(goal.nowLaps, 3);
       expect(goal.outcome, CoachGoalOutcome.better);
+    });
+
+    test('every corner\'s measures are kept for the driver\'s own goals', () {
+      final coach = _coach(before, [19, 19.5, 19.2, 3]);
+      expect(coach.previousRunId, 'run1');
+      expect(coach.speedUnit, isNotEmpty);
+      final focus = coach.goal!;
+      final corner = coach.goalValues.singleWhere((c) => c.name == focus.measuredName);
+      final minimum = (
+        corner.before[CoachKind.lowMinimumSpeed]!,
+        corner.now[CoachKind.lowMinimumSpeed]!,
+      );
+      // As the main focus measured it, the much slower lap left out.
+      expect(minimum.$1.value, closeTo(focus.before!, 1e-9));
+      expect(minimum.$2.value, closeTo(focus.now!, 1e-9));
+      expect((minimum.$1.laps, minimum.$2.laps), (4, 3));
+
+      final checks = checkSessionGoals(
+        RunGoals(
+          goals: [
+            SessionGoal(
+              kind: CoachKind.lowMinimumSpeed,
+              segmentName: 'Turn 1 as it was',
+              startProgressMeters: corner.startProgressMeters + 5,
+              endProgressMeters: corner.endProgressMeters + 5,
+            ),
+            const SessionGoal(
+              kind: CoachKind.excessiveCoasting,
+              segmentName: 'Off the track',
+              startProgressMeters: 90000,
+              endProgressMeters: 90100,
+            ),
+          ],
+        ),
+        coach,
+      );
+      expect(checks.first.outcome, CoachGoalOutcome.better);
+      expect(checks.first.measuredName, corner.name);
+      expect(checks.first.metric, CoachMetric.minimumSpeed);
+      expect(checks.last.outcome, CoachGoalOutcome.notMeasured);
+      expect(checks.last.measuredName, isEmpty);
+    });
+
+    test('the first session has no session before for goals', () {
+      final coach = _coach(before, [19, 19.5, 19.2], runId: 'run1');
+      expect(coach.previousRunId, isEmpty);
+      expect(coach.goalValues, isEmpty);
     });
 
     test('better or worse by a clear step, in each kind\'s direction', () {

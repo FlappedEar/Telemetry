@@ -34,7 +34,7 @@ List<LapTrace> buildLapTraces(
 
   void appendInterpolated(List<LapTracePoint> points, double time) {
     final latitudeValue = session.valueAt('latitude', time);
-    final longitudeValue = session.valueAt('longitude', time);
+    final longitudeValue = session.valueAt('longitude', time, InterpolationMode.longitude);
     if (latitudeValue == null || longitudeValue == null) return;
     final coordinate = GeoCoordinate(latitudeValue, longitudeValue);
     if (!isValidCoordinate(coordinate)) return;

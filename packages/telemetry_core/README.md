@@ -117,14 +117,20 @@ a background isolate.
   owns the file.
 
 - `buildProgressAxis` turns one reference-eligible lap trace into a ~2 m,
-  gate-anchored distance axis for its track (progress 0 at the start gate);
-  `computeTrackFeatures` gives smoothed heading and signed curvature along it.
-  `projectLapTrace` places a lap's GPS fixes on the axis with a bounded,
-  heading-checked local search, ending a segment at every gap or lost lock
-  instead of guessing; `timeAtProgress`, `progressAtTime` and
+  gate-anchored distance axis for its track (progress 0 where the lap crosses
+  the start gate); `computeTrackFeatures` gives smoothed heading and signed
+  curvature along it. `projectLapTrace` places a lap's GPS fixes on the axis
+  with a bounded, heading-checked local search, ending a segment at every gap
+  or lost lock instead of guessing, unwrapped at the gate so progress never
+  falls within a segment; `timeAtProgress`, `progressAtTime` and
   `computeDeltaSeries` read time and the delta between two laps by distance,
-  only where both laps are covered. `TelemetrySession.sampledSegments` gives a
-  channel's actual samples, split at gaps and reduced to bucket extremes.
+  only where both laps are covered, and `computeTimedDeltaSeries` measures
+  each lap from its timed start, as the comparison does (FET-192). The
+  projection's tuned constants, the evidence for each and their measured
+  margins are in [docs/projection-constants.md](../../docs/projection-constants.md)
+  (FET-215).
+  `TelemetrySession.sampledSegments` gives a channel's actual samples, split
+  at gaps and reduced to bucket extremes.
 - `proposeTrackSegments` splits a progress axis into alternating corner and
   straight proposals from its smoothed curvature (kinks fold into the straight,
   corners with no 20 m straight between them form one chain, short straights
@@ -169,6 +175,14 @@ a background isolate.
   and `publishTheoreticalBest` gives what Overlays' theoretical-best dialog
   shows (best lap, theoretical best, time available, segments by loss, the
   map), with each corner's repeatability (`summarizeCornerVariability`).
+- The line where each corner starts and ends (FlappedEar Telemetry only,
+  FET-225): `measureCornerLap` also gives each lap's sideways offset from the
+  reference lap's line at the corner's start and end
+  (`CornerLapObservation.entryLineOffsetMeters`, `exitLineOffsetMeters`), and
+  `summarizeCornerVariability` their spreads (`CornerVariability.entryLineOffset`,
+  `exitLineOffset`), each read against the same typical GPS accuracy as the
+  apex's line (`entryLineResolvable`, `exitLineResolvable`). The Overlays
+  fields are unchanged.
 - The Corner Analyzer (Overlays `d4d1039`): `proposeCornerGeometryPhases`
   (entry, apex and exit from curvature), `computeCornerSpeeds` (entry, apex,
   minimum and exit speed), `detectBrakingOnsets` and `computeBrakingMetrics`
@@ -179,6 +193,93 @@ a background isolate.
   functions, which never compare values measured differently.
   `calculateOutingTheoreticalBest` measures them for every lap and corner
   (`cornerMetrics`).
+- Where a corner's time came from (FlappedEar Telemetry only, FET-221):
+  `cornerPhaseSplit` splits an approved corner at the start and end of its
+  tightest part (the apex region of `proposeCornerGeometryPhases`) into entry,
+  middle and exit, or gives the geometry's reason (more than one tight part,
+  across the gate); `cornerPhaseTimes` times each part on one lap's projected
+  trace, never bridging a gap. The boundaries are track geometry, so two laps
+  are timed over the same metres and the parts add up to the corner's time.
+  `DayCorner.phaseTimes` and `DayCornerComparison.phaseDeltas` give a lap's
+  parts against the group's best lap.
+- What kind of corner each corner is (FlappedEar Telemetry only, FET-220):
+  `classifyCornerShape` reads the shape from the axis's curvature over the
+  part of the segment that turns, so padding the bounds onto the straights
+  does not change it (single apex, late apex, decreasing or increasing
+  radius, double apex, complex, by the ordered rules of `cornerShapeFor`;
+  a segment holding several corners is classed as a whole, FET-115), and
+  `classifyCornerDriving` the approach (heavy braking, braking, lift, flat)
+  and speed band (slow, medium, fast) from the typical (median) figures of
+  at least three laps: heavy braking from the speed channel, where braking
+  starts to the corner's lowest speed. A brake pedal is never pooled with
+  inferred braking, nor speeds in different units. Every class comes from
+  fixed `cornerClass*` thresholds, the same on every track; a class that
+  cannot be told says why. `dayCorners` puts both on each
+  `DayCorner.classification`.
+- How each corner is braked into (FlappedEar Telemetry only, FET-219):
+  `measureBrakingTechnique` reads one lap's braking zone from the
+  longitudinal deceleration (the G channel when it has data, otherwise the
+  speed's least-squares slope over ±0.25 s, labelled "from speed"): the
+  initial hit (g/s up to 85 % of the peak from the last moment below a
+  quarter of the peak, at least 0.15 g, so a coast before braking is not
+  counted), the peak and where it falls in the zone by time, trail braking
+  (braking while lateral G is at least 0.3 g, inferred: there is no
+  steering channel), the release (g/s from the last 85 % of the peak back
+  to that floor) and the time from the end of braking to the measured
+  throttle pickup, searched until braking starts again (deceleration
+  through 0.30 g or the pedal pressed again) and for at most 4 s. From
+  speed, a ramp as quick as the slope's window shows is flagged "at least".
+  Units come from `declaredChannelUnit`; an undeclared one is read as g,
+  km/h or % and flagged. `channelUpdateRateHz` measures how often a channel
+  really changes: held values, corners of straight lines, and a least-squares
+  fit of lines bending every candidate period at any phase (periods of 1.4
+  to 12 samples), so OBD pedals that RaceChrono's VBO export draws with
+  straight lines at 10 Hz read about 2 Hz. No ramp or release is read from
+  a channel below 9.5 Hz, and never from a VBO `*-obd` column, so the brake
+  pedal's own application and release are read only from a native 10 Hz
+  pedal. `brakingTechniqueWindow` places the search on a lap, also for a
+  corner across start/finish. `summarizeBrakingTechnique` gives the typical
+  (median) values over at least three ranked laps, never pooling a G channel
+  with speed or different units, and `summarizeBrakingTechniqueDay` the
+  day's over its corners, counting corners measured another way.
+  `dayCorners` puts it on each `DayCorner.brakingTechnique`. Every
+  threshold is a fixed `brakingTechnique*` constant; a figure that cannot
+  be measured says why.
+- A theoretical best whose segments join (FlappedEar Telemetry only,
+  FET-222): `computeRealisticTheoreticalBest` picks the fastest combination
+  of laps' sector times (dynamic programming over the approved segments) in
+  which, wherever segments from two laps meet, the speed leaving one and
+  entering the next differ by at most `realisticJoinMetresPerSecond` (2 km/h,
+  compared in m/s); one lap always continues, segments that do not meet join
+  freely, and the lap's start is not joined to its end unless the last
+  segment runs across the gate into the first (then that join is checked
+  too, by fixing the first segment's lap). It is an estimate: matching
+  speeds is necessary, not sufficient. Without a chain it says why
+  (`realisticNoJoin`, `realisticNoSpeed`, `realisticIncompleteCoverage`).
+  `DayTheoreticalBest.realistic` holds it. `repeatableTheoreticalBest` adds
+  each segment's quickest typical time in one session
+  (`SectionProgressionRow.fastestTypical`). Its chain search and meeting
+  rule are `quickestJoinedChain`, `segmentsMeet` and `speedsJoin`.
+- The best phases of the day (FlappedEar Telemetry only, FET-226):
+  `dayPhaseReference` cuts the lap into pieces, a split corner's entry,
+  middle and exit (FET-221) and every other segment whole (a corner not
+  split keeps `PhasePiece.splitReason`), times the group's ranked laps
+  through each, and `computePhaseReference` takes each piece's fastest lap
+  (the first wins a tie). It is the raw theoretical best at a finer grain;
+  a corner is split only when every lap timed through it is timed through
+  its parts, so it is then never slower (the app compares the totals before
+  saying so). Each join between two laps is judged by the realistic
+  best's rule (`PhaseJoin`: joins, apart, or unknown without a speed in a
+  known unit), and `joinedSeconds` is the quickest combination of pieces
+  that joins everywhere (never slower than the realistic best's segments, on the same condition).
+  Times are seconds; speeds are compared only in m/s, a speed without a
+  unit read as km/h (`PhaseReference.speedUnitAssumed`).
+  `DayTheoreticalBest.bestPhases` holds it.
+- Where a session's laps vary (FlappedEar Telemetry only, FET-224):
+  `segmentSpreadBand` puts a segment's spread in one session (its
+  interquartile range from the section progression) in one of five fixed
+  bands, `segmentSpreadBandsSeconds` (0.10, 0.25, 0.50 and 1.00 s), so a
+  colour means the same spread on every day.
 - The Corner Analyzer of two compared laps (Overlays
   `AnalysisControllerCornerAnalyzer.cpp`, `d4d1039`): `CornerAnalyzer` on a
   comparison's shared axis lists the segments both laps share
@@ -220,6 +321,27 @@ a background isolate.
   `compareLoss` and `sectionProgression` do it for a group of a day;
   `progressionRunInfo` reads the notes, conditions and setup changes a
   document records for a run.
+- Session summary (FlappedEar Telemetry only, FET-233): `summarizeSession`
+  puts one run of a day's progression in a few lines from results the day
+  already computed: its best lap against every other run's best, its lap
+  spread against the nearest earlier run with a ranked lap, its biggest
+  segment gain and loss since that run and its biggest gap to the quickest
+  typical time (medians, by `sessionSummaryChangeSeconds` or more), its
+  temperature maxima (the earlier run's only in the same unit), what the
+  car did over its last laps (`carWatch`) and the coach's goal check.
+- Car over the last laps (FlappedEar Telemetry only, FET-228): `carWatch`
+  reads a run's channel summaries over its ranked laps (timed, reference
+  eligible and not off-route or short; out, in and excluded laps left out):
+  each temperature whose lap maximum rose `carWatchRiseCelsius` (8 °C; × 1.8
+  for a declared °F, undeclared read as °C) or more over the last
+  `carWatchLaps` (3) ranked laps without dropping on the last one, and
+  strong acceleration on the last ranked lap `carWatchAccelerationFall` (5%)
+  or more below the run's highest, with at least `carWatchAccelerationLaps`
+  (4) such laps, together with the temperature that rose most over the same
+  laps (`carWatchAlongsideCelsius`, 2 °C, or more). `CarWatchStatus` says
+  for each part whether it was read and why not. Observations, not a
+  diagnosis. A rule for a session starting hotter than earlier ones is not
+  built yet.
 - Channel summaries, temperature associations, focus areas and the day
   report (Overlays `ChannelSummary`, `TemperatureAssociation`,
   `OutingChannelSummaries`, `FocusAreas`, `DayReport`, `OutingDayReport` and

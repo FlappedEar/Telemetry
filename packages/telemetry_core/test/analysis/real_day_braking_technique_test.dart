@@ -1,0 +1,155 @@
+// Braking technique on a real day (FET-219), from its VBO files (10 Hz
+// longitudinal G, OBD pedals drawn with straight lines at 10 Hz) and from its
+// RaceChrono RCZ files (no G channel: deceleration from speed; OBD pedals at
+// their own rate). Set FLAPPEDEAR_REAL_DAY to a folder of one day's
+// recordings, each session as both; nothing from them is written anywhere.
+import 'dart:io';
+import 'dart:math';
+
+import 'package:telemetry_core/telemetry_core.dart';
+import 'package:test/test.dart';
+
+DayTheoreticalBest _theoreticalBest(String folder, String extension) {
+  final files =
+      Directory(folder)
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.toLowerCase().endsWith(extension))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
+  expect(files.length, greaterThanOrEqualTo(2));
+  final runs = [
+    for (final (index, file) in files.indexed)
+      () {
+        final session = withEffectiveSpeedUnits(loadRecording(file.path));
+        return DayRunInput(
+          runId: 'run${index + 1}',
+          name: 'Session ${index + 1}',
+          contentSha256: '${index + 1}'.padLeft(64, '0'),
+          session: session,
+          laps: deriveSourceLapSession(session),
+        );
+      }(),
+  ];
+  return dayTheoreticalBest(analyzeDay(runs), {
+    for (final run in runs) run.runId: OutingRun(run.session, run.laps),
+  }, random: Random(1));
+}
+
+String _value(BrakingTechniqueTypical typical, int digits, String unit) => typical.median == null
+    ? 'not known (${typical.reason})'
+    : '${typical.median!.toStringAsFixed(digits)} $unit (${typical.laps} laps'
+          '${typical.partial ? ' of ${typical.brakingLaps} braking, others: ${typical.droppedReason}' : ''}'
+          '${typical.minority ? ', MINORITY' : ''})';
+
+String _rate(double? hz) => hz == null ? '—' : '${hz.toStringAsFixed(1)} Hz';
+
+void _report(String label, DayTheoreticalBest result) {
+  print('== $label: ${result.corners.length} corners');
+  for (final corner in result.corners) {
+    final technique = corner.brakingTechnique;
+    print(
+      '${corner.name}: ${technique.source.isEmpty ? '—' : technique.source} '
+      '${_rate(technique.rateHz)}, braking on ${technique.lapsBraking} of '
+      '${technique.lapsMeasured} laps'
+      '${technique.unavailableReason.isEmpty ? '' : ' (${technique.unavailableReason})'}',
+    );
+    print(
+      '  hit ${technique.hit.atLeast ? 'at least ' : ''}${_value(technique.hit, 2, 'g/s')}; peak ${_value(technique.peak, 2, 'g')} '
+      'at ${_value(technique.peakFraction, 2, 'of zone')}',
+    );
+    print(
+      '  trail ${_value(technique.trailSeconds, 2, 's')}, ${_value(technique.trailMeters, 0, 'm')} '
+      '(lateral ${_rate(technique.lateralRateHz)})',
+    );
+    print(
+      '  release ${technique.release.atLeast ? 'at least ' : ''}${_value(technique.release, 2, 'g/s')}; brake to throttle '
+      '${_value(technique.brakeToThrottle, 2, 's')} (throttle ${_rate(technique.throttleRateHz)})',
+    );
+    print(
+      '  pedal: brake ${_rate(technique.brakeRateHz)}, '
+      '${technique.laps.isEmpty ? '' : technique.laps.first.$2.pedalReason}',
+    );
+  }
+  final day = summarizeBrakingTechniqueDay([
+    for (final corner in result.corners) corner.brakingTechnique,
+  ]);
+  print(
+    'Day: unit ${result.corners.first.brakingTechnique.declaredUnit} '
+    '${day.unitAssumed ? '(assumed)' : ''}, ${day.cornersBraked} of ${day.corners} corners braked, hit ${day.hit}, '
+    'release ${day.release}, trail ${day.trailSeconds}, brake to throttle ${day.brakeToThrottle} '
+    '(${day.minorityCorners} corners left out as a minority)',
+  );
+}
+
+void main() {
+  final folder = Platform.environment['FLAPPEDEAR_REAL_DAY'] ?? '';
+  final skip = folder.isEmpty ? 'FLAPPEDEAR_REAL_DAY is not set' : null;
+
+  test('the VBO day: from longitudinal G, the OBD brake refused for ramps', () {
+    final result = _theoreticalBest(folder, '.vbo');
+    expect(result.state, DayTheoreticalBestState.ready, reason: result.message);
+    _report('VBO', result);
+    final braked = [
+      for (final corner in result.corners)
+        if (corner.brakingTechnique.unavailableReason.isEmpty) corner.brakingTechnique,
+    ];
+    expect(braked, isNotEmpty);
+    // A figure resting on part of the braking laps says why the rest has none,
+    // and the day leaves the corners resting on a minority out.
+    for (final technique in braked) {
+      for (final typical in [technique.hit, technique.brakeToThrottle, technique.release]) {
+        if (typical.partial) expect(typical.droppedReason, isNotEmpty);
+      }
+    }
+    final day = summarizeBrakingTechniqueDay([for (final technique in braked) technique]);
+    expect(
+      day.minorityCorners,
+      braked
+          .where((t) => t.hit.minority || t.release.minority || t.brakeToThrottle.minority)
+          .length,
+    );
+    for (final technique in braked) {
+      expect(technique.source, brakingTechniqueFromG);
+      // RaceChrono declares longacc-calc's unit, g, in the VBO header.
+      expect(technique.declaredUnit, 'g');
+      expect(technique.unitAssumed, isFalse);
+      expect(technique.lateralUnitAssumed, isFalse);
+      // The brake is OBD, written at 10 Hz but changing about twice a second.
+      expect(technique.brakeRateHz, lessThan(4));
+      expect(technique.pedalApplication.median, isNull);
+      for (final (_, lap) in technique.laps) {
+        if (lap.measured) expect(lap.pedalReason, brakingTechniqueBrakeTooSlow);
+      }
+      _saneBrakeToThrottle(technique);
+    }
+  }, skip: skip);
+
+  test('the RCZ day: from speed, the OBD brake refused for ramps', () {
+    final result = _theoreticalBest(folder, '.rcz');
+    expect(result.state, DayTheoreticalBestState.ready, reason: result.message);
+    _report('RCZ', result);
+    final braked = [
+      for (final corner in result.corners)
+        if (corner.brakingTechnique.unavailableReason.isEmpty) corner.brakingTechnique,
+    ];
+    expect(braked, isNotEmpty);
+    for (final technique in braked) {
+      expect(technique.source, brakingTechniqueFromSpeed);
+      expect(technique.brakeRateHz, lessThan(4));
+      expect(technique.pedalApplication.median, isNull);
+      _saneBrakeToThrottle(technique);
+    }
+  }, skip: skip);
+}
+
+// Brake to throttle never runs across another braking: a few seconds at
+// most, lap by lap and typically.
+void _saneBrakeToThrottle(BrakingTechnique technique) {
+  final typical = technique.brakeToThrottle.median;
+  if (typical != null) expect(typical, inInclusiveRange(-1.0, 3.0));
+  for (final (_, lap) in technique.laps) {
+    final seconds = lap.brakeToThrottleSeconds;
+    if (seconds != null) expect(seconds, inInclusiveRange(-2.0, 5.0));
+  }
+}

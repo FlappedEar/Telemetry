@@ -15,6 +15,8 @@ import 'dart:io';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import 'departures.dart';
+
 void main() {
   final reference =
       jsonDecode(File('test/parity/cpp_reference.json').readAsStringSync()) as Map<String, dynamic>;
@@ -34,6 +36,10 @@ void main() {
       final path = File('test/parity/corpus/$name').existsSync()
           ? 'test/parity/corpus/$name'
           : 'test/fixtures/$name';
+      if (refusedByTelemetry(name)) {
+        expect(() => parseVboFile(path), throwsA(isA<VboParseError>()));
+        return;
+      }
       final error = entry['error'] as Map<String, dynamic>?;
       if (error != null) {
         expect(

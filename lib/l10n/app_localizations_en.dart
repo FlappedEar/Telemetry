@@ -447,6 +447,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get coachCornerMap => 'Best lap trace with today\'s corners numbered';
+
+  @override
+  String coachCornerMapSelected(String segment) {
+    return 'Best lap trace with today\'s corners numbered, $segment highlighted';
+  }
+
+  @override
+  String get coachCornerMapNote =>
+      'Corners are numbered as the coach names them.';
+
+  @override
+  String get coachCornerMapNoteSelect =>
+      'Corners are numbered as the coach names them. Tap an item to show its corner.';
+
+  @override
+  String get coachShowOnMap => 'show its corner on the map';
+
+  @override
   String get appleMapLegal => 'Legal';
 
   @override
@@ -802,6 +821,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lap leaves the route the other laps took (off track, a detour or the pit lane)';
 
   @override
+  String get lapIssueImplausibleLap =>
+      'Lap time or length is not plausible for this circuit';
+
+  @override
   String get tbFailedElsewhere =>
       'Not available: the theoretical best could not be calculated.';
 
@@ -938,6 +961,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tbNoApprovedRun =>
       'No run in this group has an approved segment review yet. Approve segments for at least one run first.';
+
+  @override
+  String get tbBestLapOffLine =>
+      'The best lap\'s GPS line is far from most of the other laps somewhere, so no segments were made automatically. Exclude the laps whose line is wrong from the ranking.';
 
   @override
   String get tbNoApprovedSegments =>
@@ -1403,7 +1430,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String progressionSetup(String setup) {
-    return 'Setup: $setup';
+    return 'Setup changes: $setup';
   }
 
   @override
@@ -2463,21 +2490,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get variabilityPickup => 'Throttle pickup';
 
   @override
-  String variabilityLine(String spread, String accuracy) {
-    return 'Line: spread $spread m · $accuracy';
-  }
-
-  @override
   String variabilityGpsAccuracy(String meters) {
     return 'GPS accuracy about $meters m';
   }
 
   @override
   String get variabilityGpsUnknown => 'GPS accuracy not recorded';
-
-  @override
-  String get variabilityLineUnresolved =>
-      ' · not distinguishable from GPS error';
 
   @override
   String get calculateAgain => 'Calculate again';
@@ -2500,7 +2518,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailsHeading => 'Session details';
 
   @override
-  String get sessionDetailsNone => 'No conditions, setup changes or notes';
+  String get sessionDetailsNone =>
+      'No conditions, setup, setup changes or notes';
 
   @override
   String sessionDetailsTitle(String session) {
@@ -2958,6 +2977,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get drivingScaleUnknown => 'pedal scale unknown';
+
+  @override
+  String drivingScaleUnknownChannel(String channel) {
+    return 'the scale of $channel (0–1 or %) is not known';
+  }
+
+  @override
   String get drivingNoBrakeChannel => 'no brake channel';
 
   @override
@@ -3209,6 +3236,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cornerDetailsReasonUnitNotRecorded => 'channel unit not recorded';
 
   @override
+  String get cornerDetailsReasonScaleUnknown =>
+      'pedal scale (0–1 or %) not known';
+
+  @override
+  String get cornerDetailsReasonScaleInferred => 'pedal read as 0–1';
+
+  @override
   String get cornerDetailsReasonNoSpeedChannel => 'no speed channel';
 
   @override
@@ -3272,6 +3306,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cornerDetailsFromDeceleration => 'Inferred from deceleration';
+
+  @override
+  String get cornerDetailsFromDecelerationBrakeUnused =>
+      'Inferred from deceleration: the brake channel does not show the braking';
+
+  @override
+  String get cornerDetailsFromDecelerationBrakeScaleUnknown =>
+      'Inferred from deceleration: the brake channel\'s scale (0–1 or %) is not known';
+
+  @override
+  String get cornerDetailsReasonBrakeChannelNotUsed =>
+      'the brake channel does not show the braking';
 
   @override
   String get cornerDetailsFromBrakeChannel => 'From the brake channel';
@@ -4542,6 +4588,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'VBO contains no valid timestamped data rows.';
 
   @override
+  String get coreVboNoTimeColumn =>
+      'VBO has no time column (time, timestamp or utc_time), so its samples cannot be timed.';
+
+  @override
   String get coreVboFileSize =>
       'VBO exceeds the supported 128 MiB file size limit.';
 
@@ -5363,6 +5413,78 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each visit\'s weather is that of the session that set its best lap, or, when that session has none, of its first session with weather.';
 
   @override
+  String get lastTimeHereSetup => 'Setup';
+
+  @override
+  String lastTimeHereSetupThen(String session, String setup) {
+    return 'Then ($session): $setup';
+  }
+
+  @override
+  String lastTimeHereSetupToday(String session, String setup) {
+    return 'Today ($session): $setup';
+  }
+
+  @override
+  String lastTimeHereSetupBestHadNone(String session) {
+    return '$session; the best-lap session had none';
+  }
+
+  @override
+  String lastTimeHereSetupFirstSession(String session) {
+    return '$session, first with a setup';
+  }
+
+  @override
+  String get lastTimeHereSetupThenNone =>
+      'Then: — no setup entered for that day, or the day was added before the library kept setups.';
+
+  @override
+  String get lastTimeHereSetupTodayNoSessions => 'Today: — no setup entered.';
+
+  @override
+  String lastTimeHereSetupThenMissing(String session, String reason) {
+    return 'Then ($session): — $reason';
+  }
+
+  @override
+  String lastTimeHereSetupTodayMissing(String session, String reason) {
+    return 'Today ($session): — $reason';
+  }
+
+  @override
+  String get lastTimeHereSetupReasonNone => 'no setup entered';
+
+  @override
+  String get lastTimeHereSetupReasonNewer =>
+      'set up in another version of the app';
+
+  @override
+  String get lastTimeHereSetupReasonUnreadable =>
+      'not readable by this version';
+
+  @override
+  String get lastTimeHereSetupReasonUnsaved =>
+      'entered on this page; it reaches the library when the day is saved';
+
+  @override
+  String get lastTimeHereSetupReasonPending =>
+      'saved with the day; not in the library yet';
+
+  @override
+  String lastTimeHereSetupDifference(String difference) {
+    return 'Difference (today − then): $difference';
+  }
+
+  @override
+  String get lastTimeHereSetupUnits =>
+      'Different pressure units, not compared.';
+
+  @override
+  String get lastTimeHereSetupNote =>
+      'Each visit\'s setup is that of the session that set its best lap, or, when that session has none, of its first session with a setup. Shown as entered; a higher or lower pressure is not better or worse.';
+
+  @override
   String get settingsUpdatesHeading => 'Updates';
 
   @override
@@ -5525,6 +5647,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String libraryExportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count reference recordings were not found in the profile and are not in the file.',
+      one: '1 reference recording was not found in the profile and is not in the file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get libraryExportFailed => 'The profile could not be exported.';
 
   @override
@@ -5583,14 +5717,127 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get libraryMeasureAgain => 'Measure all days again';
+  String get sessionSetupHeading => 'Setup';
+
+  @override
+  String get sessionSetupPressures => 'Tyre pressures';
+
+  @override
+  String get pressureUnitBar => 'bar';
+
+  @override
+  String get pressureUnitPsi => 'psi';
+
+  @override
+  String get setupWheelFl => 'FL';
+
+  @override
+  String get setupWheelFr => 'FR';
+
+  @override
+  String get setupWheelRl => 'RL';
+
+  @override
+  String get setupWheelRr => 'RR';
+
+  @override
+  String get setupWheelFlName => 'front left';
+
+  @override
+  String get setupWheelFrName => 'front right';
+
+  @override
+  String get setupWheelRlName => 'rear left';
+
+  @override
+  String get setupWheelRrName => 'rear right';
+
+  @override
+  String get sessionSetupCold => 'Cold';
+
+  @override
+  String get sessionSetupHot => 'Hot';
+
+  @override
+  String sessionSetupPressureField(String row, String wheel) {
+    return '$row, $wheel';
+  }
+
+  @override
+  String sessionSetupPressureRange(String unit, String min, String max) {
+    return 'Pressures in $unit are from $min to $max, with at most two decimals.';
+  }
+
+  @override
+  String get sessionSetupKeptAsEntered =>
+      'Kept as entered: switching the unit does not convert the numbers.';
+
+  @override
+  String get sessionSetupTyre => 'Tyres';
+
+  @override
+  String get sessionSetupTyreHint => 'Pirelli SC2';
+
+  @override
+  String get sessionSetupFuel => 'Fuel at start (l)';
+
+  @override
+  String get sessionSetupFuelRange => '0–200 l, at most two decimals';
+
+  @override
+  String sessionSetupSameAs(String session) {
+    return 'Same as $session';
+  }
+
+  @override
+  String get sessionSetupReadOnly =>
+      'Saved by a newer version of the app: shown as it is and not changed here.';
+
+  @override
+  String setupCold(String pressures, String unit) {
+    return 'Cold $pressures $unit';
+  }
+
+  @override
+  String setupHot(String pressures, String unit) {
+    return 'Hot $pressures $unit';
+  }
+
+  @override
+  String setupTyres(String tyre) {
+    return 'Tyres $tyre';
+  }
+
+  @override
+  String setupFuel(String litres) {
+    return 'Fuel $litres l';
+  }
+
+  @override
+  String sessionSetupLine(String setup) {
+    return 'Setup: $setup';
+  }
+
+  @override
+  String get sessionSetupReplaceTitle => 'Replace the setup?';
+
+  @override
+  String sessionSetupReplaceBody(String session) {
+    return 'The setup fields will hold $session\'s setup instead of what is in them now. Nothing is saved until Save.';
+  }
+
+  @override
+  String get sessionSetupReplace => 'Replace';
+
+  @override
+  String get libraryMeasureAgain => 'Recalculate all days';
 
   @override
   String get libraryStopMeasuring => 'Stop';
 
   @override
   String libraryMeasuring(int done, int total) {
-    return 'Measuring the days again: $done of $total…';
+    return 'Recalculating the days: $done of $total…';
   }
 
   @override
@@ -5598,8 +5845,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count days measured again.',
-      one: '1 day measured again.',
+      other: '$count days recalculated.',
+      one: '1 day recalculated.',
     );
     return '$_temp0';
   }
@@ -5610,8 +5857,8 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count days could not be measured: a file or recording is missing or unreadable. They keep what was measured before.',
-      one: '1 day could not be measured: its file or one of its recordings is missing or unreadable. It keeps what was measured before.',
+          '$count days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.',
+      one: '1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.',
     );
     return '$_temp0';
   }
@@ -5673,4 +5920,2547 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCircuitsForget => 'Forget this name';
+
+  @override
+  String summaryTitle(String session) {
+    return '$session in 30 seconds';
+  }
+
+  @override
+  String get summaryIntro =>
+      'Observed from your laps, not causes. Typical is the median of at least 3 laps.';
+
+  @override
+  String summaryNotShown(String session) {
+    return '$session has no timed laps on the circuit shown.';
+  }
+
+  @override
+  String get summaryBestLap => 'Best lap';
+
+  @override
+  String summaryBestNew(String time, String delta) {
+    return '$time · new best of the day ($delta)';
+  }
+
+  @override
+  String summaryBestBehind(String time, String delta, String session) {
+    return '$time · $delta on the best of $session';
+  }
+
+  @override
+  String summaryBestFirst(String time) {
+    return '$time · first session of the day';
+  }
+
+  @override
+  String get summaryNoBest => 'No ranked lap';
+
+  @override
+  String get summarySpread => 'Lap-time spread';
+
+  @override
+  String summarySpreadValue(String spread) {
+    return '$spread s';
+  }
+
+  @override
+  String summarySpreadThen(String spread, String session, String previous) {
+    return '$spread s ($session: $previous s)';
+  }
+
+  @override
+  String get summaryGain => 'Biggest gain';
+
+  @override
+  String get summaryLoss => 'Biggest loss';
+
+  @override
+  String summaryChange(String segment, String delta) {
+    return '$segment $delta';
+  }
+
+  @override
+  String summaryNoChange(String seconds) {
+    return 'None by $seconds s or more';
+  }
+
+  @override
+  String get summaryFirstSession => 'First session: nothing to compare with';
+
+  @override
+  String get summaryNotCompared =>
+      'Needs 3 laps through a segment in both sessions';
+
+  @override
+  String summaryAgainst(String session) {
+    return 'Gains and losses: typical segment times against $session.';
+  }
+
+  @override
+  String get summaryGap => 'Biggest gap left';
+
+  @override
+  String summaryGapValue(String segment, String delta) {
+    return '$segment $delta to the quickest typical time there';
+  }
+
+  @override
+  String get summaryCar => 'Car, hottest';
+
+  @override
+  String summaryTemperature(String channel, String value) {
+    return '$channel $value';
+  }
+
+  @override
+  String summaryTemperatureThen(
+    String channel,
+    String value,
+    String session,
+    String previous,
+  ) {
+    return '$channel $value ($session: $previous)';
+  }
+
+  @override
+  String summaryGoal(String session) {
+    return 'Focus from $session';
+  }
+
+  @override
+  String get summaryWorking => 'Working…';
+
+  @override
+  String summaryBestNoEarlier(String time) {
+    return '$time · no earlier session has a ranked lap';
+  }
+
+  @override
+  String summaryBestEqual(String time, String session) {
+    return '$time · equals the best of $session';
+  }
+
+  @override
+  String get summaryNoEarlierRanked => 'No earlier session has a ranked lap';
+
+  @override
+  String get summarySegments => 'Segments';
+
+  @override
+  String get summarySegmentsUnavailable =>
+      'Not available without a theoretical best';
+
+  @override
+  String get summaryGoalBefore => 'Focus from the session before';
+
+  @override
+  String get summaryNoFocus => 'No change to work on was given';
+
+  @override
+  String get summaryCoachFailed => 'The coach could not run';
+
+  @override
+  String summaryGapNone(String seconds) {
+    return 'Within $seconds s of the quickest typical time wherever timed';
+  }
+
+  @override
+  String get summaryGapNeedsLaps => 'Needs 3 laps through a segment';
+
+  @override
+  String get summaryOnlySession => 'No other session to compare with';
+
+  @override
+  String get removeSession => 'Remove session';
+
+  @override
+  String get removeSessionMenu => 'Remove a session…';
+
+  @override
+  String get removeSessionChoose => 'Remove which session?';
+
+  @override
+  String removeSessionTitle(String session) {
+    return 'Remove $session?';
+  }
+
+  @override
+  String get removeSessionBody =>
+      'Its laps leave the day: the best lap, the theoretical best, the coach and your profile are worked out again without them. The recording file itself is not deleted.';
+
+  @override
+  String get removeSessionConfirm => 'Remove';
+
+  @override
+  String get removeSessionLast =>
+      'A day keeps at least one session. To remove the whole day, delete it in the Library.';
+
+  @override
+  String get removeSessionBusy =>
+      'Wait until the day has finished saving or working on its recordings, then try again.';
+
+  @override
+  String get removeSessionNotSaved =>
+      'The day could not be saved, so the session was not removed.';
+
+  @override
+  String get removeSessionChangedMeanwhile =>
+      'The day changed meanwhile, so the session was not removed. Try again.';
+
+  @override
+  String removeSessionFailed(String error) {
+    return 'The session was not removed: $error';
+  }
+
+  @override
+  String sessionRemoved(String session) {
+    return '$session removed from the day.';
+  }
+
+  @override
+  String get sessionRemovedUndo => 'Undo';
+
+  @override
+  String sessionRestored(String session) {
+    return '$session is back in the day.';
+  }
+
+  @override
+  String get sessionRestoreRefused =>
+      'The day changed since, so the session cannot be put back.';
+
+  @override
+  String get libraryDayActions => 'Day actions';
+
+  @override
+  String get libraryDeleteDay => 'Delete day';
+
+  @override
+  String libraryDeleteDayTitle(String day) {
+    return 'Delete $day?';
+  }
+
+  @override
+  String libraryDeleteDayBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The day and its $count sessions leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.',
+      one: 'The day and its session leave your profile, and its saved file is deleted. Recording copies the app made for it are deleted too; your own recording files stay where they are. This cannot be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryDeleteConfirm => 'Delete';
+
+  @override
+  String libraryDayDeleted(String day) {
+    return '$day deleted.';
+  }
+
+  @override
+  String libraryDayDeleteFailed(String error) {
+    return 'The day was not deleted: $error';
+  }
+
+  @override
+  String get removeSessionCorners =>
+      'If the day\'s corners were measured on this session, they are measured again on the best lap left, and names you gave them are lost.';
+
+  @override
+  String get removeSessionNothingLeft =>
+      'None of the other sessions\' recordings can be opened, so the day would have nothing to show. The session was not removed.';
+
+  @override
+  String get libraryDeleteDayOpen => 'Close the day first, then delete it.';
+
+  @override
+  String get ownGoalsTitle => 'Your goals for the next session';
+
+  @override
+  String get ownGoalsIntro =>
+      'Checked against this session once the next one is added.';
+
+  @override
+  String ownGoalsNone(int count) {
+    return 'Set up to $count changes to work on, each at one corner. The next session is checked against this one.';
+  }
+
+  @override
+  String get ownGoalsReadOnly =>
+      'Stored in a form this version of the app does not edit, so they are not changed here.';
+
+  @override
+  String get ownGoalsNeedCorners => 'Goals need the day\'s corners.';
+
+  @override
+  String get ownGoalsAdd => 'Add a goal';
+
+  @override
+  String get ownGoalsRemove => 'Remove goal';
+
+  @override
+  String get ownGoalsCorner => 'Corner';
+
+  @override
+  String get ownGoalsChange => 'Change to work on';
+
+  @override
+  String get ownGoalsTaken => 'This goal is already set.';
+
+  @override
+  String get ownGoalsSave => 'Add';
+
+  @override
+  String summaryOwnGoal(String goal) {
+    return 'Your goal: $goal';
+  }
+
+  @override
+  String get ownGoalsNotSaved => 'The goals could not be saved.';
+
+  @override
+  String ownGoalsNeedLaps(String session) {
+    return 'Goals need laps of $session among the compared laps.';
+  }
+
+  @override
+  String summaryOwnGoalNoLaps(String session) {
+    return 'Not measured: needs laps of $session and this session among the compared laps';
+  }
+
+  @override
+  String get summaryOwnGoalOtherGroup =>
+      'Not measured: set on other compared laps';
+
+  @override
+  String get ownGoalsOtherGroup =>
+      'These goals were set on other compared laps. Remove them to set new ones.';
+
+  @override
+  String get briefingTitle => 'Before you go out';
+
+  @override
+  String briefingFrom(String session) {
+    return 'From $session';
+  }
+
+  @override
+  String get briefingGoals => 'Your goals';
+
+  @override
+  String get briefingNoGoals =>
+      'None set: add them under Your goals for the next session';
+
+  @override
+  String get briefingChance => 'Biggest chance';
+
+  @override
+  String get summaryCarWatch => 'Car, last laps';
+
+  @override
+  String summaryCarRise(
+    String channel,
+    String from,
+    String to,
+    String fromLap,
+    String toLap,
+  ) {
+    return '$channel still rising: $from → $to (laps $fromLap–$toLap)';
+  }
+
+  @override
+  String summaryCarFall(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Strong acceleration $percent% lower from lap $fromLap to lap $toLap ($from → $to)';
+  }
+
+  @override
+  String summaryCarFallWith(
+    String fall,
+    String channel,
+    String from,
+    String to,
+  ) {
+    return '$fall; meanwhile $channel $from → $to';
+  }
+
+  @override
+  String get summaryCarSettledTemperatures => 'No temperature still rising';
+
+  @override
+  String get summaryCarSettledAcceleration => 'Strong acceleration held';
+
+  @override
+  String summaryCarTemperaturesNeedLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Temperatures: needs $count ranked laps',
+      one: 'Temperatures: needs 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarAccelerationNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Strong acceleration: needs $count ranked laps',
+      one: 'Strong acceleration: needs 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryCarTemperaturesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Temperatures: missing on one of the last $count ranked laps',
+      one: 'Temperatures: missing on the last ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryCarAccelerationMissing =>
+      'Strong acceleration: not read on the last ranked lap';
+
+  @override
+  String get summaryCarFallNote => 'Traffic and a different line lower it too.';
+
+  @override
+  String summaryCarAccelerationOnLaps(int count, int ranked, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Strong acceleration: read on $count of $ranked ranked laps, needs $needed',
+      one:
+          'Strong acceleration: read on 1 of $ranked ranked laps, needs $needed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get briefingLastLap => 'Last ranked lap';
+
+  @override
+  String get briefingDayBest => 'Best of the day';
+
+  @override
+  String get briefingDelta => 'To the best';
+
+  @override
+  String get briefingCar => 'Car';
+
+  @override
+  String briefingNoRankedLap(String session) {
+    return '$session has no ranked lap on the circuit shown.';
+  }
+
+  @override
+  String changesButton(int count, String session) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'All $count segments against $session',
+      one: '1 segment against $session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String changesTitle(String session) {
+    return 'Since $session';
+  }
+
+  @override
+  String changesIntro(String session, String threshold) {
+    return 'Each segment\'s typical (median) time against $session, with the spread of the middle half of its times. Changes under $threshold s are not counted. Observed from your laps, not causes.';
+  }
+
+  @override
+  String get changesQuicker => 'Quicker';
+
+  @override
+  String get changesSlower => 'Slower';
+
+  @override
+  String changesNoneQuicker(String threshold) {
+    return 'No segment quicker by $threshold s or more.';
+  }
+
+  @override
+  String changesNoneSlower(String threshold) {
+    return 'No segment slower by $threshold s or more.';
+  }
+
+  @override
+  String changesSame(String threshold, String session) {
+    return 'Within $threshold s of $session';
+  }
+
+  @override
+  String changesTypical(String now, String session, String before) {
+    return 'Typical $now ($session: $before)';
+  }
+
+  @override
+  String changesSpread(String now, String session, String before) {
+    return 'Spread $now s ($session: $before s)';
+  }
+
+  @override
+  String get changesTitleNone => 'Segment changes';
+
+  @override
+  String get cornerPhasesTitle => 'Where the time came from';
+
+  @override
+  String get cornerPhaseEntry => 'Entry';
+
+  @override
+  String get cornerPhaseMiddle => 'Middle';
+
+  @override
+  String get cornerPhaseExit => 'Exit';
+
+  @override
+  String get cornerPhasesNote =>
+      'Entry runs to where the corner is tightest, the middle through that part, and the exit to the corner\'s end. The split comes from the track\'s shape, so both laps are timed over the same metres, and the three add up to the corner\'s time.';
+
+  @override
+  String cornerPhasesUnavailable(String reason) {
+    return 'Not split: $reason';
+  }
+
+  @override
+  String get cornerPhasesMoreThanOneTightPart => 'more than one tight part';
+
+  @override
+  String cornerPhasesBestNotTimed(String reason) {
+    return 'Best lap not timed through the parts: $reason';
+  }
+
+  @override
+  String get spreadMapHeading => 'Where the laps vary';
+
+  @override
+  String get spreadMapIntro =>
+      'Each segment of the best lap coloured by its spread in the session: the width of the middle half of its times there. Green: repeatable; red: where the laps differ most.';
+
+  @override
+  String spreadMapLabel(String session) {
+    return 'Map of the best lap coloured by each segment\'s spread in $session';
+  }
+
+  @override
+  String spreadBandAtMost(String value) {
+    return 'Up to $value s';
+  }
+
+  @override
+  String spreadBandBetween(String from, String to) {
+    return '$from–$to s';
+  }
+
+  @override
+  String spreadBandAbove(String value) {
+    return 'Over $value s';
+  }
+
+  @override
+  String get spreadOutsideSegments => 'Not in a segment';
+
+  @override
+  String get tbThreeTitle => 'Three ways to add it up';
+
+  @override
+  String get tbRawLabel => 'Fastest segments';
+
+  @override
+  String get tbRawNote => 'Each segment\'s fastest time from any lap.';
+
+  @override
+  String get tbRealisticLabel => 'Segments that join';
+
+  @override
+  String tbRealisticNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'An estimate: the fastest segments whose speeds differ by at most $tolerance km/h wherever two laps meet, as the car cannot change speed at a line. Made of $_temp0.';
+  }
+
+  @override
+  String get tbRealisticNoSpeed =>
+      'Not shown: no lap records speed in a known unit, so no two laps can be joined.';
+
+  @override
+  String get tbRealisticIncomplete =>
+      'Not shown: a segment has no time on any lap.';
+
+  @override
+  String get tbRepeatableLabel => 'Best typical';
+
+  @override
+  String get tbRepeatableNote =>
+      'Each segment\'s quickest typical (median) time in one session: what you did there as a rule, not once.';
+
+  @override
+  String tbRepeatableNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Not shown: needs at least $_temp0 through each segment in one session.';
+  }
+
+  @override
+  String get tbRealisticNoJoin =>
+      'Not shown: every segment has a time, but no laps join at the speed the car had at every line between them.';
+
+  @override
+  String get notebookTitle => 'Track notebook';
+
+  @override
+  String notebookTitleOf(String track) {
+    return 'Notebook: $track';
+  }
+
+  @override
+  String get notebookIntro =>
+      'Kept with the track in your library, so every visit to it shows the same notebook. Saved as you type.';
+
+  @override
+  String get notebookToTry => 'To try';
+
+  @override
+  String get notebookNothingToTry => 'Nothing to try yet.';
+
+  @override
+  String get notebookAddHint => 'Something to try next time';
+
+  @override
+  String get notebookAdd => 'Add';
+
+  @override
+  String get notebookRemove => 'Remove';
+
+  @override
+  String get notebookDone => 'Done';
+
+  @override
+  String get notebookNotes => 'Notes';
+
+  @override
+  String get notebookNotesHint => 'Grip, kerbs, markers, hazards, setup…';
+
+  @override
+  String get notebookCorners => 'Corners';
+
+  @override
+  String get notebookNoCorners =>
+      'The track\'s corners appear here once a day on it has been measured.';
+
+  @override
+  String get notebookNoTrack => 'This track is no longer in your library.';
+
+  @override
+  String libraryImportNotebooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The notebooks of $count tracks took notes from the file.',
+      one: 'The notebook of 1 track took notes from the file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryImportNotebookCut =>
+      'Some notebook notes from the file did not fit and were left out.';
+
+  @override
+  String libraryImportReferencesNotKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The reference laps of $count days were left out: their recordings did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.',
+      one: 'The reference lap of 1 day was left out: its recording did not fit the profile\'s limit for reference recordings, or another file with the same name was already here.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count reference recordings were not in the file: those references will say they were not found.',
+      one: '1 reference recording was not in the file: that reference will say it was not found.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notebookFull(int count) {
+    return 'The notebook holds at most $count things to try. Remove some to add more.';
+  }
+
+  @override
+  String get notebookNotSaved =>
+      'The last change could not be saved: the notebook is past what the library can hold.';
+
+  @override
+  String variabilityLineParts(String parts, String accuracy) {
+    return 'Line spread: $parts · $accuracy';
+  }
+
+  @override
+  String variabilityLineEntry(String spread) {
+    return 'entry $spread m';
+  }
+
+  @override
+  String variabilityLineApex(String spread) {
+    return 'apex $spread m';
+  }
+
+  @override
+  String variabilityLineExit(String spread) {
+    return 'exit $spread m';
+  }
+
+  @override
+  String get variabilityLineEntryName => 'entry';
+
+  @override
+  String get variabilityLineApexName => 'apex';
+
+  @override
+  String get variabilityLineExitName => 'exit';
+
+  @override
+  String variabilityLinePartsUnresolved(String parts) {
+    return ' · $parts: not distinguishable from GPS error';
+  }
+
+  @override
+  String get ggEnvelopeTitle => 'G-G envelope';
+
+  @override
+  String get ggEnvelopeIntro =>
+      'How hard each session worked the car in each direction (combined G): the 95th percentile of combined G over its ranked laps, so one spike does not set it. Out laps, in laps and excluded laps are left out.';
+
+  @override
+  String get ggEnvelopeCalculating => 'Calculating the G-G envelope…';
+
+  @override
+  String ggEnvelopeFailed(String error) {
+    return 'The G-G envelope could not be calculated: $error';
+  }
+
+  @override
+  String get ggEnvelopeNone => 'No session has enough G data for an envelope.';
+
+  @override
+  String get ggEnvelopeDirection => 'Direction';
+
+  @override
+  String get ggEnvelopeBestOfDay => 'Day\'s best';
+
+  @override
+  String ggEnvelopeLatest(String session) {
+    return '$session, latest';
+  }
+
+  @override
+  String ggEnvelopeBestValue(String value, String session) {
+    return '$value · $session';
+  }
+
+  @override
+  String get ggDirectionAccelerating => 'Accelerating';
+
+  @override
+  String get ggDirectionAcceleratingLeft => 'Accelerating + turning left';
+
+  @override
+  String get ggDirectionLeft => 'Turning left';
+
+  @override
+  String get ggDirectionBrakingLeft => 'Braking + turning left';
+
+  @override
+  String get ggDirectionBraking => 'Braking';
+
+  @override
+  String get ggDirectionBrakingRight => 'Braking + turning right';
+
+  @override
+  String get ggDirectionRight => 'Turning right';
+
+  @override
+  String get ggDirectionAcceleratingRight => 'Accelerating + turning right';
+
+  @override
+  String ggEnvelopeUnused(String session, String directions) {
+    return 'Unused envelope in $session: $directions.';
+  }
+
+  @override
+  String ggEnvelopeUnusedItem(
+    String direction,
+    String latest,
+    String best,
+    String session,
+  ) {
+    return '$direction $latest against $best ($session)';
+  }
+
+  @override
+  String ggEnvelopeAllUsed(String session, String margin) {
+    return '$session came within $margin of the day\'s best in every direction it has a value for.';
+  }
+
+  @override
+  String get ggEnvelopeOneSession =>
+      'Only one session has an envelope, so there is nothing to compare it with yet.';
+
+  @override
+  String ggEnvelopeLatestNone(String session) {
+    return '$session has no envelope, so nothing is compared.';
+  }
+
+  @override
+  String ggEnvelopeSessionUnavailable(String session, String reason) {
+    return '$session: $reason';
+  }
+
+  @override
+  String ggEnvelopeTooFewSamples(int count) {
+    return 'Too little data: fewer than $count samples in every direction';
+  }
+
+  @override
+  String ggEnvelopeMissingNote(int count) {
+    return '— means fewer than $count samples in that direction.';
+  }
+
+  @override
+  String ggEnvelopeNote(String margin) {
+    return 'Observed accelerations, not a share of available grip. Unused means at least $margin below the day\'s best. Rings every 0.5 g; the dashed line is the best of the day, the thick line the latest session.';
+  }
+
+  @override
+  String get ggEnvelopeSemantics =>
+      'G-G envelope of each session against the best of the day';
+
+  @override
+  String ggEnvelopeOutliers(String session, int count, String limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count samples',
+      one: '1 sample',
+    );
+    return '$session: $_temp0 beyond $limit left out as implausible';
+  }
+
+  @override
+  String get profileTrends => 'Day by day';
+
+  @override
+  String get profileTrendsIntro =>
+      'Each track in each car on its own: the figures depend on both, so a day compares only with days at the same track in the same car. For braking-point spread, minimum speed below your best, off the throttle to braking and lap time spread, lower is better. Each of those is the median over the corners the day measured, so days may differ in the corners behind it. Minimum speed is against your best ever at each corner there, so a new best there changes the earlier days\' figures too.';
+
+  @override
+  String get profileTrendsWetDry =>
+      'Wet or dry track is not recorded. The weather shown is the weather model\'s for the area at each session\'s time, not the track surface, so days are not split into wet and dry.';
+
+  @override
+  String profileTrendsGroup(String track, String direction, String car) {
+    return '$track · $direction · $car';
+  }
+
+  @override
+  String profileTrendsTooFew(int days, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dated days',
+      one: '1 dated day',
+      zero: 'No dated day',
+    );
+    return '$_temp0 here in this car: a trend needs at least $minimum days.';
+  }
+
+  @override
+  String profileTrendsShowingLast(int shown, int total) {
+    return 'The last $shown of $total days here.';
+  }
+
+  @override
+  String profileTrendsBestLap(String time) {
+    return 'Best lap $time';
+  }
+
+  @override
+  String get profileTrendsPersonalBest => 'new best here in this car';
+
+  @override
+  String profileTrendsTypicalLap(String time) {
+    return 'Typical lap $time';
+  }
+
+  @override
+  String get profileTrendsNoLapTimes => 'No lap time kept for this day.';
+
+  @override
+  String get profileTrendsNotMeasured =>
+      'No corner or lap figures for this day: it was added before the library measured sessions, or its sessions had no ranked laps or corners to measure.';
+
+  @override
+  String profileTrendsWeather(String weather) {
+    return 'Weather model: $weather';
+  }
+
+  @override
+  String get profileTrendsNoWeather => 'No weather kept for this day.';
+
+  @override
+  String get profileTrendsChanges => 'First day to last';
+
+  @override
+  String profileTrendsMeasure(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'bestLap': 'Best lap',
+      'typicalLap': 'Typical lap',
+      'brakePointConsistency': 'Braking-point spread',
+      'minimumSpeedControl': 'Minimum speed below your best',
+      'liftTiming': 'Off the throttle to braking',
+      'paceConsistency': 'Lap time spread',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String profileTrendsChange(
+    String measure,
+    String first,
+    String firstDate,
+    String last,
+    String lastDate,
+    int days,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days measured days',
+      one: '1 measured day',
+    );
+    return '$measure: $first ($firstDate) → $last ($lastDate), across $_temp0';
+  }
+
+  @override
+  String profileTrendsRain(String amount) {
+    return 'up to $amount mm of rain in a session';
+  }
+
+  @override
+  String profileTrendsFigureTooFew(String measure, int measured, int minimum) {
+    String _temp0 = intl.Intl.pluralLogic(
+      measured,
+      locale: localeName,
+      other: '$measured dated days',
+      one: '1 dated day',
+      zero: 'no dated day',
+    );
+    return '$measure: measured on $_temp0; a trend needs a figure on at least $minimum days.';
+  }
+
+  @override
+  String get profileTrendsUndated =>
+      'Undated days are listed last and are not part of a trend or a new best.';
+
+  @override
+  String profileTrendsWeatherSome(int sessions, int total) {
+    return '($sessions of $total sessions)';
+  }
+
+  @override
+  String get progressionByLap => 'By lap';
+
+  @override
+  String get evolutionIntro =>
+      'Each session\'s timed laps in order, from the start of its first timed lap (a recording can begin in the paddock, so the out lap is not counted). Each line is labelled with its session and has its own marker; fainter lines are earlier sessions. Tap a lap to open it.';
+
+  @override
+  String get evolutionChartLabel =>
+      'Lap time by lap number, one line per session';
+
+  @override
+  String evolutionLap(int number) {
+    return 'LAP $number';
+  }
+
+  @override
+  String evolutionSinceFirstLap(String time) {
+    return '+$time';
+  }
+
+  @override
+  String get evolutionNotRanked => 'not ranked';
+
+  @override
+  String evolutionPaceExplained(int count) {
+    return 'A session\'s middle half is the middle 50% of its ranked lap times; it takes at least $count ranked laps. Grey laps came before the first lap in the middle half or quicker.';
+  }
+
+  @override
+  String evolutionPaceFrom(int number, int before) {
+    String _temp0 = intl.Intl.pluralLogic(
+      before,
+      locale: localeName,
+      other:
+          'First lap in the session\'s middle half or quicker: LAP $number, after $before laps',
+      one:
+          'First lap in the session\'s middle half or quicker: LAP $number, after 1 lap',
+      zero:
+          'First lap in the session\'s middle half or quicker: LAP $number, its first timed lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionPaceNotCounted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count laps before it are not ranked, so whether they were slower is not known',
+      one: '1 lap before it is not ranked, so whether it was slower is not known',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionPaceNeedsLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The session\'s middle half needs at least $count ranked laps',
+      one: 'The session\'s middle half needs at least 1 ranked lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String evolutionSameLaps(String session, String delta, int count) {
+    return 'Against $session at the same laps: $delta typical difference over $count laps';
+  }
+
+  @override
+  String evolutionSameLapsTooFew(String session, int count, int minimum) {
+    return 'Against $session at the same laps: $count of the $minimum laps needed';
+  }
+
+  @override
+  String evolutionAir(String temperature) {
+    return 'Air (modelled): $temperature';
+  }
+
+  @override
+  String get evolutionCaveat =>
+      'These are observations, not causes: the tyres, the track and your own learning all change through a session and through the day, and this cannot tell them apart. The track temperature is not recorded.';
+
+  @override
+  String get evolutionNoLaps => 'No session has timed laps.';
+
+  @override
+  String evolutionQuickerLater(int number, String gain, int first) {
+    return 'Its quickest lap came later: LAP $number, $gain quicker than LAP $first.';
+  }
+
+  @override
+  String get cornerClassTitle => 'Corner type';
+
+  @override
+  String get cornerClassShape => 'Shape · from the track';
+
+  @override
+  String get cornerClassApproach => 'Braking · from this day\'s laps';
+
+  @override
+  String get cornerClassSpeed => 'Speed · from this day\'s laps';
+
+  @override
+  String get cornerShapeSingleApex => 'Single apex';
+
+  @override
+  String get cornerShapeLateApex => 'Late apex';
+
+  @override
+  String get cornerShapeDecreasingRadius => 'Decreasing radius';
+
+  @override
+  String get cornerShapeIncreasingRadius => 'Increasing radius';
+
+  @override
+  String get cornerShapeDoubleApex => 'Double apex';
+
+  @override
+  String get cornerShapeComplex => 'Complex';
+
+  @override
+  String get cornerApproachHeavyBraking => 'Heavy braking';
+
+  @override
+  String get cornerApproachBraking => 'Braking';
+
+  @override
+  String get cornerApproachLift => 'Lift';
+
+  @override
+  String get cornerApproachFlat => 'Flat';
+
+  @override
+  String get cornerSpeedSlow => 'Slow corner';
+
+  @override
+  String get cornerSpeedMedium => 'Medium-speed corner';
+
+  @override
+  String get cornerSpeedFast => 'Fast corner';
+
+  @override
+  String get cornerShapeNoteSingle =>
+      'One tightest part, not late in the corner; the corner neither tightens to the end nor opens from the start.';
+
+  @override
+  String get cornerShapeNoteLate =>
+      'One tightest part, late in the corner, which opens again after it.';
+
+  @override
+  String cornerShapeNoteDecreasing(String ratio) {
+    return 'Tightens: its second half turns $ratio× as hard as its first.';
+  }
+
+  @override
+  String cornerShapeNoteIncreasing(String ratio) {
+    return 'Opens: its first half turns $ratio× as hard as its second.';
+  }
+
+  @override
+  String get cornerShapeNoteDouble =>
+      'Two separate tight parts, measured as one corner.';
+
+  @override
+  String cornerShapeNoteComplex(int count) {
+    return '$count tight parts in this segment, classed together as one corner.';
+  }
+
+  @override
+  String get cornerShapeNoteDirection =>
+      'Turns one way, then the other: more than one corner in this segment, classed together.';
+
+  @override
+  String get cornerClassFromBrakePedal => 'brake pedal';
+
+  @override
+  String get cornerClassFromDeceleration => 'inferred from deceleration';
+
+  @override
+  String cornerApproachNoteShed(String shed, String how, int braked, int laps) {
+    return 'Typically $shed slower at the lowest point than where braking starts. Brakes on $braked of $laps laps ($how).';
+  }
+
+  @override
+  String cornerApproachNoteNoShed(String how, int braked, int laps) {
+    return 'Brakes on $braked of $laps laps ($how). The speed from where braking starts to the lowest point is not known on at least three laps, so heavy or not is not known.';
+  }
+
+  @override
+  String cornerApproachNoteNoBraking(
+    String loss,
+    String how,
+    int none,
+    int laps,
+  ) {
+    return 'No braking on $none of $laps laps ($how). Typically $loss slower at the lowest point than at the corner\'s start.';
+  }
+
+  @override
+  String cornerApproachNoteNoBrakingNoSpeed(String how, int none, int laps) {
+    return 'No braking on $none of $laps laps ($how).';
+  }
+
+  @override
+  String cornerSpeedNote(String speed, int laps) {
+    return 'Typical minimum speed $speed over $laps laps.';
+  }
+
+  @override
+  String cornerClassUnavailable(String reason) {
+    return 'Not known: $reason';
+  }
+
+  @override
+  String get cornerClassReasonTooFewLaps =>
+      'fewer than three laps measured here';
+
+  @override
+  String get cornerClassReasonSpeedUnit => 'speed unit not known';
+
+  @override
+  String get cornerClassNote =>
+      'The shape comes from the track\'s curvature on the line of the lap the track axis is built from, over the part of the segment that turns; braking and speed are typical (median) values of this day\'s laps here, from the speed channel. The limits are the same on every track: heavy braking is at least 40 km/h slower at the lowest point than where braking starts; a lift loses at least 5 % of the speed at the corner\'s start without braking, less is flat; slow is below 80 km/h, fast from 130 km/h. A segment holding several corners is classed as a whole.';
+
+  @override
+  String get cornerApproachBrakingHeavyUnknown => 'Braking (heavy not known)';
+
+  @override
+  String cornerClassOtherUnits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count laps recorded in another speed unit are left out of the speeds.',
+      one: '1 lap recorded in another speed unit is left out of the speeds.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cornerClassAssumedKmh => 'km/h (assumed)';
+
+  @override
+  String get cornerClassReasonTooFewLapsWithoutBraking =>
+      'fewer than three laps without braking';
+
+  @override
+  String cornerApproachNoteNoShedReason(
+    String how,
+    int braked,
+    int laps,
+    String reason,
+  ) {
+    return 'Brakes on $braked of $laps laps ($how). Heavy or not is not known: $reason.';
+  }
+
+  @override
+  String get gripHeading => 'Grip and balance';
+
+  @override
+  String get gripInferredBadge => 'Inferred';
+
+  @override
+  String gripIntro(int count) {
+    return 'Inferred from the recorded acceleration, speed and, when the recording has one, the car\'s yaw rate on the ranked laps. No steering, tyre or wheel data is recorded, so these say how hard the car was worked, not how much grip was left. Typical is the median of the laps ($count at least); peak is the highest lap\'s value.';
+  }
+
+  @override
+  String get gripWorking => 'Working out the grip and balance…';
+
+  @override
+  String get gripUnavailable =>
+      'Not known until the day\'s laps are timed through its segments.';
+
+  @override
+  String get gripBySession => 'By session, at comparable speed';
+
+  @override
+  String gripSessionLaps(String session, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ranked laps',
+      one: '1 ranked lap',
+    );
+    return '$session · $_temp0';
+  }
+
+  @override
+  String get gripSpeedColumn => 'Speed';
+
+  @override
+  String get gripCornering => 'Cornering';
+
+  @override
+  String get gripBraking => 'Braking';
+
+  @override
+  String get gripAccelerating => 'Accelerating';
+
+  @override
+  String get gripExit => 'Exit acceleration';
+
+  @override
+  String get gripBalance => 'Balance';
+
+  @override
+  String gripBandBelow(String speed) {
+    return 'below $speed';
+  }
+
+  @override
+  String gripBandBetween(String low, String high) {
+    return '$low–$high';
+  }
+
+  @override
+  String gripBandAbove(String speed) {
+    return '$speed and above';
+  }
+
+  @override
+  String gripPeak(String value) {
+    return 'peak $value';
+  }
+
+  @override
+  String get gripTableNote =>
+      'Each cell: the typical of the laps\' highest values in that speed band, and the highest lap\'s value.';
+
+  @override
+  String gripUnitNote(String what, String unit) {
+    return '$what: in $unit.';
+  }
+
+  @override
+  String gripAssumedNote(String what) {
+    return '$what: the recording does not declare a unit; g is assumed.';
+  }
+
+  @override
+  String gripFromSpeedNote(String what) {
+    return '$what: from the change in speed (no longitudinal acceleration recorded), in g.';
+  }
+
+  @override
+  String gripFromSpeedAssumedNote(String what) {
+    return '$what: from the change in speed, in g; the speed has no declared unit, so km/h is assumed.';
+  }
+
+  @override
+  String gripAnd(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String gripNotKnownLine(String what, String reason) {
+    return '$what: not known: $reason.';
+  }
+
+  @override
+  String gripTypicalNeedsLaps(int count) {
+    return 'Typical values need at least $count laps measured the same way; where there are fewer only the peak is shown.';
+  }
+
+  @override
+  String gripLeftOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps measured differently are left out.',
+      one: '1 lap measured differently is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripByCorner => 'By corner';
+
+  @override
+  String gripCornerSummary(String what, String value) {
+    return '$what $value';
+  }
+
+  @override
+  String gripTypicalPeak(String typical, String peak, String lap) {
+    return 'typical $typical · peak $peak ($lap)';
+  }
+
+  @override
+  String gripPeakOnly(String peak, String lap, int count) {
+    return 'peak $peak ($lap); typical needs $count laps';
+  }
+
+  @override
+  String gripBalanceTypical(String ratio) {
+    return 'typical $ratio (yaw rate ÷ what the cornering needs)';
+  }
+
+  @override
+  String gripLapCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'from $count laps',
+      one: 'from 1 lap',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gripAssumedUnit(String value) {
+    return '$value (g assumed)';
+  }
+
+  @override
+  String get gripMeaningHeading => 'What the numbers mean';
+
+  @override
+  String get gripMeaningCornering =>
+      'Cornering: the highest sideways acceleration each lap reached, through the corner or in the speed band.';
+
+  @override
+  String get gripMeaningBraking =>
+      'Braking: the highest deceleration from the braking point to the slowest point of the corner (by session: anywhere in the speed band).';
+
+  @override
+  String get gripMeaningExit =>
+      'Exit acceleration: the mean acceleration from the slowest point to the end of the corner; below zero the car was still slowing.';
+
+  @override
+  String gripMeaningBalance(String g, String speed) {
+    return 'Balance: the car\'s yaw rate divided by the yaw rate its cornering force and speed need, from $g g and $speed m/s. In steady cornering it is about 1 whether the car understeers or oversteers: telling those apart needs the steering angle, which is not recorded. Above 1 the car rotated faster than its path curved (its slip angle growing); below 1, slower. Samples whose yaw rate turns against the cornering are left out. It needs the car\'s own yaw-rate channel and is inferred.';
+  }
+
+  @override
+  String gripReasonTooFewLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'fewer than $count laps',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripReasonTooFewSamples => 'not enough samples on any lap';
+
+  @override
+  String get gripReasonNoLateral => 'the recording has no lateral acceleration';
+
+  @override
+  String get gripReasonNoSpeed => 'the recording has no speed';
+
+  @override
+  String get gripReasonUnsupportedUnit => 'its unit is not one the app reads';
+
+  @override
+  String get gripReasonSpeedUnit => 'the speed\'s unit is not km/h or mph';
+
+  @override
+  String get gripReasonNoYaw => 'the recording has no yaw-rate channel';
+
+  @override
+  String get gripReasonDeviceAxes =>
+      'the recording\'s gyro measures the logger\'s own axes, not the car\'s yaw';
+
+  @override
+  String get gripReasonYawUnit =>
+      'the yaw rate\'s unit is not recorded or not known';
+
+  @override
+  String get gripReasonNotTimed => 'the laps are not timed through this corner';
+
+  @override
+  String get gripReasonNoMinimum => 'no slowest point found in the corner';
+
+  @override
+  String get gripReasonNoRecording => 'the recording is not loaded';
+
+  @override
+  String get gripReasonOther => 'not available';
+
+  @override
+  String get gripSummary =>
+      'How hard the car was worked cornering, braking and accelerating, per session and per corner.';
+
+  @override
+  String get gripShow => 'Show';
+
+  @override
+  String get gripHide => 'Hide';
+
+  @override
+  String gripFromSpeedValue(String value) {
+    return '$value from speed';
+  }
+
+  @override
+  String gripFromSpeedValueAssumed(String value) {
+    return '$value from speed (km/h assumed)';
+  }
+
+  @override
+  String gripBalanceUnitsAssumed(String text) {
+    return '$text; units assumed';
+  }
+
+  @override
+  String gripBandSpeedAssumed(String band) {
+    return '$band (km/h assumed)';
+  }
+
+  @override
+  String gripCornerSummaryPeak(String what, String value) {
+    return '$what peak $value';
+  }
+
+  @override
+  String gripNoValueLaps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ranked laps have no value',
+      one: '1 ranked lap has no value',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gripReasonNoBraking => 'no braking on any lap';
+
+  @override
+  String get gripReasonNoAcceleration => 'no acceleration on any lap';
+
+  @override
+  String get gripReasonAllZero =>
+      'the channel holds only zeros (a placeholder, not a measurement)';
+
+  @override
+  String get referenceTitle => 'Reference lap';
+
+  @override
+  String get referenceIntro =>
+      'Compare your laps with a lap from outside this day: a friend\'s or an instructor\'s recording, or a lap from one of your earlier days. It is timed on today\'s start/finish line and kept apart from the day: it is not ranked, not in the theoretical best, progression or coach, and not saved in the day file. Your driver profile remembers it for this day: a recording file is copied into the profile, a lap of an earlier day is remembered by that day.';
+
+  @override
+  String get referenceLoadFile => 'Load a recording';
+
+  @override
+  String get referenceLoadDay => 'From an earlier day';
+
+  @override
+  String get referenceNeedsLap =>
+      'A reference is timed on the line of today\'s best lap, so the day needs a ranked lap first.';
+
+  @override
+  String referenceLoading(String source) {
+    return 'Timing $source on today\'s start/finish line…';
+  }
+
+  @override
+  String referenceLabel(String source, int lap, String time) {
+    return 'Reference: $source, lap $lap, $time';
+  }
+
+  @override
+  String referenceDaySession(String day, String session) {
+    return '$day · $session';
+  }
+
+  @override
+  String referenceRefusedWrongTrack(String distance) {
+    return 'Not used: this recording is from another track. Its GPS comes no closer than $distance to today\'s start/finish line.';
+  }
+
+  @override
+  String get referenceRefusedNoGps =>
+      'Not used: the recording has no usable GPS position, so it cannot be timed on today\'s line.';
+
+  @override
+  String get referenceRefusedNoLap =>
+      'Not used: the recording comes near today\'s start/finish line, but no complete lap of it crosses the line.';
+
+  @override
+  String get referenceRefusedGate =>
+      'Not used: today\'s start/finish line is not valid.';
+
+  @override
+  String referenceFailed(String reason) {
+    return 'The reference could not be read: $reason';
+  }
+
+  @override
+  String get referenceDayNoRecordings =>
+      'None of that day\'s recordings were found.';
+
+  @override
+  String get referenceCompare => 'Compare with today\'s best';
+
+  @override
+  String get referenceChooseLap => 'Choose its lap';
+
+  @override
+  String get referenceClear => 'Clear reference';
+
+  @override
+  String get referenceNotSaved =>
+      'Kept while this day is open; not remembered, because this day is not kept in your driver profile.';
+
+  @override
+  String get referenceSaved =>
+      'Remembered for this day in your driver profile.';
+
+  @override
+  String get referenceSavedCopy =>
+      'Remembered for this day in your driver profile, with a copy of the recording.';
+
+  @override
+  String get referenceSaving => 'Saving to your driver profile…';
+
+  @override
+  String referenceKeepFailed(String reason) {
+    return 'Not remembered: $reason It stays while this day is open.';
+  }
+
+  @override
+  String get referenceForgetFailed =>
+      'The reference could not be removed from your driver profile, so it comes back when this day is opened again.';
+
+  @override
+  String get referenceKeepRetry => 'Try again';
+
+  @override
+  String referenceKeepTooManyFiles(int count) {
+    return 'Your profile already keeps $count reference recordings. Clear the reference of another day first.';
+  }
+
+  @override
+  String referenceKeepTooMuch(int megabytes) {
+    return 'The reference recordings would take more than $megabytes MiB in your profile.';
+  }
+
+  @override
+  String referenceKeepFileTooLarge(int megabytes) {
+    return 'The recording is larger than $megabytes MiB, the most a reference can be.';
+  }
+
+  @override
+  String get referenceKeepFileEmpty => 'The recording is empty.';
+
+  @override
+  String get referenceKeepFileType =>
+      'Only a VBO or RCZ recording can be remembered.';
+
+  @override
+  String get referenceKeepUnreadable =>
+      'The recording could not be copied into your profile.';
+
+  @override
+  String get referenceKeepNotWritten =>
+      'Your driver profile could not be written.';
+
+  @override
+  String get referenceKeepOther => 'Your driver profile could not keep it.';
+
+  @override
+  String get referenceFileMissing =>
+      'The recording kept for this reference was not found in your driver profile. Clear the reference or load the recording again.';
+
+  @override
+  String get referenceFileChanged =>
+      'The recording kept for this reference is not the file that was saved (it changed). Clear the reference or load the recording again.';
+
+  @override
+  String get referenceDayMissing =>
+      'The day this reference was taken from is no longer in your driver profile. Clear the reference or choose another day.';
+
+  @override
+  String get referencePickDay => 'Choose an earlier day';
+
+  @override
+  String get referenceNoDays => 'Your profile has no other day yet.';
+
+  @override
+  String get referencePickLap => 'Choose the reference lap';
+
+  @override
+  String referenceLapOption(String source, int lap) {
+    return '$source, lap $lap';
+  }
+
+  @override
+  String get referenceCompareTitle => 'Against the reference';
+
+  @override
+  String get referenceShort => 'Ref';
+
+  @override
+  String get referenceDeltaExplained =>
+      'Δ is A − reference: positive when A is behind.';
+
+  @override
+  String get referenceDeltaNote => '+ = A behind the reference';
+
+  @override
+  String get referenceKeptApart =>
+      'The reference is not part of this day: it is not ranked and not saved in the day file.';
+
+  @override
+  String get referenceGone => 'No reference lap is chosen.';
+
+  @override
+  String referenceUnits(String a, String b) {
+    return 'Units: A $a · reference $b';
+  }
+
+  @override
+  String referenceUnitAssumed(String unit) {
+    return '$unit (assumed)';
+  }
+
+  @override
+  String get referenceUnitNone => 'no unit';
+
+  @override
+  String get referenceUnitsApart =>
+      'Different units: shown apart, never subtracted.';
+
+  @override
+  String referenceChartOf(String channel, String lap) {
+    return '$channel · $lap';
+  }
+
+  @override
+  String get referenceSegmentsTitle => 'Segments against the reference';
+
+  @override
+  String get referenceSegmentsNone =>
+      'Today\'s lap has no segments to time yet: approve them in the segment review, or wait for the theoretical best.';
+
+  @override
+  String get referenceSegmentsBorrowed =>
+      'Segments of the theoretical best; their boundaries can shift by a few metres on these laps.';
+
+  @override
+  String get referenceColumnSegment => 'Segment';
+
+  @override
+  String referenceSegmentNotTimed(String segment, String reason) {
+    return '$segment: not timed on one of the laps ($reason)';
+  }
+
+  @override
+  String get referenceRefusedDirection =>
+      'Not used: its laps go round today\'s track the other way.';
+
+  @override
+  String get referenceRefusedLayout =>
+      'Not used: its laps cross today\'s start/finish line but follow another layout of the track.';
+
+  @override
+  String get referenceRefusedExcluded =>
+      'Every one of its laps on today\'s track was excluded on its own day. Choose one with Choose its lap to use it anyway.';
+
+  @override
+  String referenceLapExcluded(String reason) {
+    return 'Excluded on its day: $reason';
+  }
+
+  @override
+  String get referenceLapExcludedNoReason => 'Excluded on its day';
+
+  @override
+  String referenceOnlyFirstFile(String name) {
+    return 'A reference is one recording: only $name is used.';
+  }
+
+  @override
+  String get referenceStale =>
+      'Timed on another start/finish line: today\'s line has changed since. Load it again to compare.';
+
+  @override
+  String get referenceReload => 'Load again';
+
+  @override
+  String get referenceLapAOtherLine =>
+      'Lap A was timed on another start/finish line than the reference, so there is no lap Δ. Choose another lap A.';
+
+  @override
+  String referenceLowCoverage(int percent) {
+    return 'No lap Δ: the reference lap follows only $percent % of lap A\'s line.';
+  }
+
+  @override
+  String get referenceRouteUnchecked =>
+      'Today\'s lap has no route to check against, so the reference\'s route and direction were not checked: only today\'s start/finish line.';
+
+  @override
+  String get bpHeading => 'Best phases';
+
+  @override
+  String get bpSummary =>
+      'Each corner\'s best entry, middle and exit of the day, as a target.';
+
+  @override
+  String bpSummaryTime(String time) {
+    return 'Each corner\'s best entry, middle and exit of the day, as a target: $time.';
+  }
+
+  @override
+  String get bpWorking => 'Worked out with the theoretical best…';
+
+  @override
+  String bpUnavailable(String reason) {
+    return 'Not shown: $reason';
+  }
+
+  @override
+  String get bpIntro =>
+      'Each corner is split where it is tightest into entry, middle and exit, and each part comes from the ranked lap fastest through it. Straights, and corners that are not split, come whole from the lap fastest through them. Laps that are not ranked are left out.';
+
+  @override
+  String get bpIncomplete => 'No total: a part has no time on any ranked lap.';
+
+  @override
+  String get bpLoses => 'Loses';
+
+  @override
+  String get bpBestsTitle => 'Against the theoretical bests';
+
+  @override
+  String bpTotalNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'Each part\'s fastest time, from $_temp0. The parts need not join.';
+  }
+
+  @override
+  String get bpRawNote => 'The same idea a whole segment at a time.';
+
+  @override
+  String get bpJoinedLabel => 'Best phases that join';
+
+  @override
+  String bpJoinedNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return 'An estimate: the fastest parts whose speeds differ by at most $tolerance wherever two laps meet, at the lines inside each corner too. Made of $_temp0.';
+  }
+
+  @override
+  String get bpJoinedNoJoin =>
+      'Not shown: every part has a time, but no laps join at the speed the car had at every line between them.';
+
+  @override
+  String get bpRealisticNote => 'The same rule a whole segment at a time.';
+
+  @override
+  String get bpTypicalNote =>
+      'A different idea: each segment\'s quickest typical (median) time in one session, what you did as a rule, not once. It is not split into parts.';
+
+  @override
+  String get bpJoinsTitle => 'Where laps meet';
+
+  @override
+  String get bpJoinsNone =>
+      'Every part comes from one lap: there is nothing to join.';
+
+  @override
+  String bpJoinsAll(int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines',
+      one: '1 line',
+    );
+    return 'At all $_temp0 where two laps meet, their speeds differ by at most $tolerance.';
+  }
+
+  @override
+  String bpJoinsApart(int apart, int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines',
+      one: '1 line',
+    );
+    return 'At $apart of $_temp0 where two laps meet, their speeds differ by more than $tolerance: there the best phases is not a lap the car drove.';
+  }
+
+  @override
+  String bpJoinApart(String where, String difference) {
+    return '$where: $difference apart';
+  }
+
+  @override
+  String bpJoinsUnknown(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more lines',
+      one: '1 more line',
+    );
+    return '$_temp0 could not be checked: a lap has no speed in a known unit there.';
+  }
+
+  @override
+  String get bpJoinsNote =>
+      'Matching speeds are needed for two laps to join, not proof that they do: two laps can be on different lines at the same speed.';
+
+  @override
+  String get bpByPart => 'Part by part';
+
+  @override
+  String bpBest(String time, String lap) {
+    return 'Best $time s, $lap';
+  }
+
+  @override
+  String get bpNoTime => 'No lap is timed here';
+
+  @override
+  String bpLapTime(String time) {
+    return 'this lap $time s';
+  }
+
+  @override
+  String get bpLapSetIt => 'this lap set it';
+
+  @override
+  String get bpLapNotTimed => 'this lap is not timed here';
+
+  @override
+  String bpDoesNotJoin(String difference) {
+    return 'Does not join the part before: $difference apart';
+  }
+
+  @override
+  String get bpWhole => 'Whole';
+
+  @override
+  String get bpPiecesNote =>
+      'The best phases is made of parts of different laps, not one recording, so it is compared part by part here and is not offered as a reference lap.';
+
+  @override
+  String get bpRawNever =>
+      'Best phases is never slower: a corner\'s three parts may come from three laps.';
+
+  @override
+  String get bpJoinedNever => 'Never slower than segments that join.';
+
+  @override
+  String get bpSpeedAssumed => 'Speeds without a unit are read as km/h.';
+
+  @override
+  String get brakingTechniqueTitle => 'Braking technique';
+
+  @override
+  String brakingTechniqueFromG(String rate) {
+    return 'From the longitudinal G channel ($rate Hz) on this day\'s ranked laps.';
+  }
+
+  @override
+  String brakingTechniqueFromGAssumed(String rate) {
+    return 'From the longitudinal G channel ($rate Hz, no unit recorded: read as g) on this day\'s ranked laps.';
+  }
+
+  @override
+  String brakingTechniqueFromSpeed(String rate, String why) {
+    return 'From speed ($rate Hz), its change smoothed over a 0.5 s window, on this day\'s ranked laps: $why. Not comparable with figures from a G channel.';
+  }
+
+  @override
+  String get brakingTechniqueNoGChannel => 'no longitudinal G channel';
+
+  @override
+  String get brakingTechniqueGChannelEmpty =>
+      'the longitudinal G channel holds no data';
+
+  @override
+  String get brakingTechniqueHit => 'Initial hit';
+
+  @override
+  String get brakingTechniquePeak => 'Peak deceleration';
+
+  @override
+  String get brakingTechniqueTrail => 'Trail braking · inferred';
+
+  @override
+  String get brakingTechniqueRelease => 'Release';
+
+  @override
+  String get brakingTechniqueBrakeToThrottle => 'Brake to throttle';
+
+  @override
+  String get brakingTechniquePedal => 'Brake pedal: application and release';
+
+  @override
+  String brakingTechniqueThisLap(String value) {
+    return 'This lap: $value';
+  }
+
+  @override
+  String brakingTechniqueThisLapUnknown(String reason) {
+    return 'This lap: not known, $reason';
+  }
+
+  @override
+  String brakingTechniqueTypical(String value, int laps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: 'typical $value ($laps laps)',
+      one: 'typical $value (1 lap)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueTypicalUnknown(String reason) {
+    return 'typical: not known, $reason';
+  }
+
+  @override
+  String brakingTechniquePeakWhere(String after, String zone) {
+    return 'Peak $after s into $zone s of braking.';
+  }
+
+  @override
+  String get brakingTechniquePeakEarly =>
+      'Typically in the first third of the braking, by time.';
+
+  @override
+  String get brakingTechniquePeakMiddle =>
+      'Typically in the middle third of the braking, by time.';
+
+  @override
+  String get brakingTechniquePeakLate =>
+      'Typically in the last third of the braking, by time.';
+
+  @override
+  String get brakingTechniqueTrailNote =>
+      'Braking while the lateral G is at least 0.3 g. Inferred: there is no steering channel.';
+
+  @override
+  String brakingTechniqueThrottleNote(String rate, String error) {
+    return 'From the end of braking to the throttle pickup, looked for until braking starts again and at most 4 s. The throttle is recorded at $rate Hz, so the pickup is placed to about $error s.';
+  }
+
+  @override
+  String brakingTechniquePedalSlow(String rate) {
+    return 'Not known: brake channel too slow ($rate Hz). It shows when braking happens, not how the pedal moves, so the hit and release above come from the deceleration.';
+  }
+
+  @override
+  String brakingTechniqueUnavailable(String reason) {
+    return 'Not known: $reason';
+  }
+
+  @override
+  String brakingTechniqueBrakingLaps(int braked, int laps) {
+    return 'Brakes on $braked of $laps laps.';
+  }
+
+  @override
+  String brakingTechniqueOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count laps measured another way (G channel or speed, or another unit) are left out.',
+      one: '1 lap measured another way (G channel or speed, or another unit) is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brakingTechniqueNote =>
+      'Braking starts and ends where the deceleration passes 0.15 g (found from 0.30 g). The initial hit is how fast it rises to 85 % of its peak from the last moment below a quarter of the peak (at least 0.15 g), so a coast or a light lift before braking does not count, and a dip of at least a tenth of the peak just before the rise starts the hit there; the release is how fast it falls from 85 % back to that level. Both need a peak of at least 0.40 g and are not read from a channel slower than about 10 Hz. From speed, a ramp quicker than its 0.5 s smoothing can show reads \"at least\". Typical is the median of at least three laps.';
+
+  @override
+  String brakingTechniqueReasonTooSlow(String rate) {
+    return 'channel too slow ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonBrakeTooSlow(String rate) {
+    return 'brake channel too slow ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonLateralTooSlow(String rate) {
+    return 'lateral G channel too slow ($rate Hz)';
+  }
+
+  @override
+  String get brakingTechniqueReasonNoDeceleration =>
+      'no longitudinal G or speed recorded';
+
+  @override
+  String get brakingTechniqueReasonNoBraking => 'no braking here';
+
+  @override
+  String get brakingTechniqueReasonGap => 'a gap in the recording';
+
+  @override
+  String get brakingTechniqueReasonTruncated =>
+      'braking runs past the recording';
+
+  @override
+  String get brakingTechniqueReasonTooLight => 'braking peaks below 0.40 g';
+
+  @override
+  String get brakingTechniqueReasonTooQuick => 'too quick for the sample rate';
+
+  @override
+  String get brakingTechniqueReasonNoLateral => 'no lateral G channel';
+
+  @override
+  String get brakingTechniqueReasonLateralEmpty =>
+      'the lateral G channel holds no data';
+
+  @override
+  String get brakingTechniqueReasonNoThrottle => 'no throttle channel';
+
+  @override
+  String get brakingTechniqueReasonNoBrake => 'no brake pedal channel';
+
+  @override
+  String get brakingTechniqueDayTitle => 'Braking technique';
+
+  @override
+  String brakingTechniqueDaySummary(
+    int corners,
+    String source,
+    String figures,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      corners,
+      locale: localeName,
+      other: 'Typical over $corners corners',
+      one: 'Typical over 1 corner',
+    );
+    return '$_temp0, $source: $figures.';
+  }
+
+  @override
+  String get brakingTechniqueDayFromG => 'from longitudinal G';
+
+  @override
+  String get brakingTechniqueDayFromSpeed => 'from speed';
+
+  @override
+  String brakingTechniqueDayHit(String value) {
+    return 'initial hit $value';
+  }
+
+  @override
+  String brakingTechniqueDayRelease(String value) {
+    return 'release $value';
+  }
+
+  @override
+  String brakingTechniqueDayTrail(String value) {
+    return 'trail braking $value (inferred)';
+  }
+
+  @override
+  String brakingTechniqueDayThrottle(String value) {
+    return 'brake to throttle $value';
+  }
+
+  @override
+  String get brakingTechniqueDayNote =>
+      'Tap a corner above for its braking lap by lap.';
+
+  @override
+  String brakingTechniqueFromSpeedAssumed(
+    String rate,
+    String unit,
+    String why,
+  ) {
+    return 'From speed ($rate Hz, no unit recorded: read as $unit), its change smoothed over a 0.5 s window, on this day\'s ranked laps: $why. Not comparable with figures from a G channel.';
+  }
+
+  @override
+  String brakingTechniqueAtLeast(String value) {
+    return 'at least $value';
+  }
+
+  @override
+  String brakingTechniqueAbout(String value) {
+    return 'about $value';
+  }
+
+  @override
+  String get brakingTechniqueLateralAssumed =>
+      'The lateral G has no unit recorded: read as g.';
+
+  @override
+  String get brakingTechniqueThrottleAssumed =>
+      'The throttle has no unit recorded: read as %.';
+
+  @override
+  String get brakingTechniqueThrottleScaleInferred =>
+      'The throttle is recorded from 0 to 1: read as 0 to 100 %.';
+
+  @override
+  String get brakingTechniqueBrakeAssumed =>
+      'The brake has no unit recorded: read as %.';
+
+  @override
+  String get brakingTechniqueBrakeScaleInferred =>
+      'The brake is recorded from 0 to 1: read as 0 to 100 %.';
+
+  @override
+  String get brakingTechniqueReasonBrakingAgain =>
+      'braking again before the throttle';
+
+  @override
+  String get brakingTechniqueReasonCoasting =>
+      'no throttle within 4 s of braking';
+
+  @override
+  String get brakingTechniqueReasonBrakeResampled =>
+      'the brake is an OBD channel resampled to the recording\'s rows, its own rate not known';
+
+  @override
+  String get brakingTechniqueDayFromGAssumed =>
+      'from longitudinal G (no unit recorded: read as g)';
+
+  @override
+  String brakingTechniqueDayFromSpeedAssumed(String unit) {
+    return 'from speed (no unit recorded: read as $unit)';
+  }
+
+  @override
+  String brakingTechniqueDayOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count corners measured another way (G channel or speed, or another unit) are left out.',
+      one: '1 corner measured another way (G channel or speed, or another unit) is left out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueSpeedAssumed(String unit) {
+    return 'The speed has no unit recorded: distances read in $unit.';
+  }
+
+  @override
+  String brakingTechniqueSubsetBraked(int laps, int braking) {
+    return 'From $laps of $braking braking laps; the others braked again before the throttle or coasted.';
+  }
+
+  @override
+  String brakingTechniqueSubsetOther(int laps, int braking, String reason) {
+    return 'From $laps of $braking braking laps; the others have none: $reason.';
+  }
+
+  @override
+  String brakingTechniqueDayMinority(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count corners are left out of a figure that rested on under half of their braking laps.',
+      one: '1 corner is left out of a figure that rested on under half of its braking laps.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lapStylesHeading => 'Lap styles';
+
+  @override
+  String get lapStylesInferredBadge => 'Inferred';
+
+  @override
+  String get lapStylesSummary =>
+      'Ranked laps grouped by how they were braked and driven on the throttle, and the best lap of each group.';
+
+  @override
+  String get lapStylesShow => 'Show';
+
+  @override
+  String get lapStylesHide => 'Hide';
+
+  @override
+  String lapStylesIntro(int count) {
+    return 'Each ranked lap is compared with the day\'s typical at every corner: where braking started, where the throttle came back and how fast the corner was taken. A group says how its laps sat against the day\'s other laps, not why they were quick: nothing here shows that a style made a lap faster. Typical is the median of the day\'s laps and needs at least $count laps.';
+  }
+
+  @override
+  String get lapStylesWorking => 'Working out the lap styles…';
+
+  @override
+  String get lapStylesUnavailable =>
+      'Not known until the day\'s laps are timed through its segments.';
+
+  @override
+  String lapStylesTooFewLaps(int count) {
+    return 'Lap styles need at least $count ranked laps.';
+  }
+
+  @override
+  String lapStylesTooFewCorners(int count) {
+    return 'Fewer than $count corners have a braking or throttle point on enough laps to compare, so the laps are not grouped.';
+  }
+
+  @override
+  String lapStylesBasis(int grouped, int timed, int corners) {
+    return 'Laps grouped: $grouped of $timed timed (out laps, in laps, excluded laps and laps with issues are left out). Corners compared: $corners.';
+  }
+
+  @override
+  String get lapStylesFewLaps =>
+      'Few laps rest on each group, and a day\'s laps also quicken as the driver learns the track, so the groups mix driving style with progress. Read them as a pointer to what to look at, not as a result.';
+
+  @override
+  String lapStylesBestLine(String lap, String time, String style) {
+    return 'The day\'s best lap, $lap ($time), is in the “$style” group.';
+  }
+
+  @override
+  String get lapStyleConservative => 'Conservative';
+
+  @override
+  String get lapStyleLateBraking => 'Late braking';
+
+  @override
+  String get lapStyleEarlyThrottle => 'Early throttle';
+
+  @override
+  String get lapStyleMixed => 'Mixed';
+
+  @override
+  String get lapStyleTypical => 'Typical';
+
+  @override
+  String get lapStyleOutlier => 'Outlier';
+
+  @override
+  String get lapStylesRulesHeading => 'How the groups are made';
+
+  @override
+  String get lapStylesRuleConservative =>
+      'Conservative: braking starts earlier and the throttle comes later than typical, each in most corners.';
+
+  @override
+  String get lapStylesRuleLateBraking =>
+      'Late braking: braking starts later than typical in most corners.';
+
+  @override
+  String get lapStylesRuleEarlyThrottle =>
+      'Early throttle: the throttle comes back earlier than typical in most corners.';
+
+  @override
+  String get lapStylesRuleMixed =>
+      'Mixed: late braking together with early throttle; late braking with the throttle mostly later, or early throttle with the braking mostly earlier; or earlier braking or later throttle without the other half of conservative.';
+
+  @override
+  String get lapStylesRuleTypical => 'Typical: none of the above.';
+
+  @override
+  String get lapStylesRuleOutlier =>
+      'Outlier: braking or throttle far from typical in most of its corners, or measured in fewer corners than it takes to tell: 3, or half the corners compared on the day when that is more.';
+
+  @override
+  String lapStylesRuleThresholds(
+    String brake,
+    String throttle,
+    String speed,
+    String factor,
+    int corners,
+  ) {
+    return 'Earlier or later means more than $brake m for braking and $throttle m for the throttle (a throttle channel recorded from the car\'s OBD port updates about twice a second); faster or slower means more than $speed% of the typical speed. “Most” is more than half of the corners measured, and at least $corners. “Far from typical” is $factor times those distances. Speeds do not decide a style: they follow the lap\'s pace.';
+  }
+
+  @override
+  String lapStylesGroupTitle(String style, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laps',
+      one: '1 lap',
+    );
+    return '$style · $_temp0';
+  }
+
+  @override
+  String lapStylesGroupBest(String lap, String time) {
+    return 'Best: $lap · $time';
+  }
+
+  @override
+  String get lapStylesGroupIsDayBest => 'the day\'s best lap';
+
+  @override
+  String lapStylesGroupBehind(String delta) {
+    return '$delta against the day\'s best lap';
+  }
+
+  @override
+  String lapStylesGroupTypical(String time) {
+    return 'typical lap $time';
+  }
+
+  @override
+  String lapStylesGroupTypicalNeeds(int count) {
+    return 'a typical time needs $count laps';
+  }
+
+  @override
+  String lapStylesGroupQuickerHalf(int count, int total) {
+    return '$count of $total in the quicker half of the day\'s laps';
+  }
+
+  @override
+  String lapStylesBestAgainst(String lap) {
+    return '$lap against the day\'s typical at each corner';
+  }
+
+  @override
+  String get lapStylesLapsHeading => 'Laps in this group';
+
+  @override
+  String get lapStylesBrakeName => 'Braking point';
+
+  @override
+  String get lapStylesThrottleName => 'Throttle pickup';
+
+  @override
+  String get lapStylesMinimumName => 'Minimum speed';
+
+  @override
+  String get lapStylesExitName => 'Exit speed';
+
+  @override
+  String lapStylesNotMeasured(String what) {
+    return '$what: not measured on this lap';
+  }
+
+  @override
+  String lapStylesBrakeLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Braking point: earlier at $earlier, later at $later of $measured corners; median $median';
+  }
+
+  @override
+  String lapStylesThrottleLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Throttle pickup: earlier at $earlier, later at $later of $measured corners; median $median';
+  }
+
+  @override
+  String lapStylesSpeedLine(
+    String what,
+    int faster,
+    int slower,
+    int measured,
+    String median,
+  ) {
+    return '$what: faster at $faster, slower at $slower of $measured corners; median $median';
+  }
+
+  @override
+  String lapStylesMedianMetresEarlier(int count) {
+    return '$count m earlier';
+  }
+
+  @override
+  String lapStylesMedianMetresLater(int count) {
+    return '$count m later';
+  }
+
+  @override
+  String lapStylesMedianFaster(String value) {
+    return '$value faster';
+  }
+
+  @override
+  String lapStylesMedianSlower(String value) {
+    return '$value slower';
+  }
+
+  @override
+  String get lapStylesMedianSame => 'no clear difference';
+
+  @override
+  String lapStylesOutlierUnlike(int extreme, int compared) {
+    return 'Unlike the day\'s other laps: braking or throttle far from typical in $extreme of $compared corners.';
+  }
+
+  @override
+  String lapStylesOutlierFew(int compared, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      compared,
+      locale: localeName,
+      other: '$compared corners',
+      one: '1 corner',
+    );
+    return 'Measured in $_temp0 only; at least $needed are needed to say how it was driven.';
+  }
+
+  @override
+  String get lapStylesBrakeNote =>
+      'Braking points are read from the longitudinal acceleration, or from the speed\'s slope when there is none, never from the brake pedal: a pedal recorded from the car\'s OBD port updates only about twice a second.';
+
+  @override
+  String get lapStylesNoBraking =>
+      'No braking point could be read: the recording has neither a longitudinal acceleration nor a speed in a known unit, and the brake pedal is not used for these styles.';
+
+  @override
+  String lapStylesBrakeUnitAssumed(String units) {
+    return 'The acceleration or speed used for the braking points declares no unit; it is read as $units.';
+  }
+
+  @override
+  String get lapStylesSpeedUnitMissing =>
+      'A speed in this day declares no unit, so its speeds are shown without one.';
+
+  @override
+  String lapStylesSpeedUnitAssumed(String units) {
+    return 'The speeds of this day declare no unit; the unit assumed in the settings, $units, is used.';
+  }
+
+  @override
+  String lapStylesTypicalNote(int count) {
+    return 'The typical at a corner is the median of the grouped laps measured there the same way, at least $count of them, and it includes the lap being compared, so a lap\'s difference from it is somewhat damped. Laps from a session that recorded a channel or unit another way are not pooled with the others, so a typical can rest on fewer laps than were grouped. The quicker half is the quickest half of the grouped laps, rounded up, with any lap tied with the last of them.';
+  }
 }

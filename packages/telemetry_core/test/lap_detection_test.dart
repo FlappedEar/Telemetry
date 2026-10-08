@@ -74,6 +74,159 @@ void main() {
     expect(directional.diagnostics.rejectedOppositeDirectionClusters, 1);
   });
 
+  test('takes the direction most passes cross in, not the first one (FET-206)', () {
+    // One pass west to east (a pit or reverse manoeuvre), then four laps
+    // crossing east to west.
+    final session = gpsSession(
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20],
+      [
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _north,
+      ],
+      [
+        _west,
+        _west,
+        _east,
+        _east,
+        _east,
+        _west,
+        _west,
+        _east,
+        _east,
+        _west,
+        _west,
+        _east,
+        _east,
+        _west,
+        _west,
+        _east,
+        _east,
+        _west,
+        _west,
+        _west,
+      ],
+    );
+    final detected = detectLaps(session, _startGate);
+    expect(detected.status, LapSessionStatus.available);
+    expect(detected.acceptedPasses.map((pass) => pass.direction).toSet(), hasLength(1));
+    expect(detected.acceptedPasses.map((pass) => pass.telemetryTime), [
+      closeTo(4.5, 0.001),
+      closeTo(8.5, 0.001),
+      closeTo(13.5, 0.001),
+      closeTo(17.5, 0.001),
+    ]);
+    expect(detected.diagnostics.rejectedOppositeDirectionClusters, 1);
+    expect(detected.timedLaps.map((lap) => lap.durationSeconds), [
+      closeTo(4.0, 0.001),
+      closeTo(5.0, 0.001),
+      closeTo(4.0, 0.001),
+    ]);
+
+    // With as many passes each way, the faster ones decide: two slow passes
+    // west to east (out of the pits and back), then two laps east to west.
+    final slowFirst = gpsSession(
+      [0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+      [
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _mid,
+        _mid,
+        _north,
+        _north,
+        _mid,
+        _mid,
+        _north,
+      ],
+      [
+        _west,
+        _west,
+        _east,
+        _east,
+        _west,
+        _west,
+        _east,
+        _east,
+        _east,
+        _west,
+        _west,
+        _east,
+        _east,
+        _west,
+        _west,
+      ],
+    );
+    final faster = detectLaps(slowFirst, _startGate);
+    expect(faster.acceptedPasses.map((pass) => pass.telemetryTime), [
+      closeTo(10.5, 0.001),
+      closeTo(14.5, 0.001),
+    ]);
+    expect(faster.diagnostics.rejectedOppositeDirectionClusters, 2);
+    expect(faster.timedLaps.single.durationSeconds, closeTo(4.0, 0.001));
+
+    // As many passes each way at the same speed: the first direction stays.
+    final tie = gpsSession([0, 1, 2, 3, 4, 5], [_north, _mid, _mid, _north, _mid, _mid], [
+      _west,
+      _west,
+      _east,
+      _east,
+      _east,
+      _west,
+    ]);
+    final tied = detectLaps(tie, _startGate);
+    expect(tied.acceptedPasses, hasLength(1));
+    expect(tied.acceptedPasses.single.telemetryTime, closeTo(1.5, 0.001));
+    expect(tied.diagnostics.rejectedOppositeDirectionClusters, 1);
+  });
+
+  test('detects passes under the same GPS gap rule that judges laps (FET-212)', () {
+    // A crossing over a 2 s step: within the latitude's 1 Hz cadence (gap
+    // 3 s), beyond the longitude's own 2 Hz one (gap 1.5 s). Synthetic: the
+    // two thresholds differ only when the channels run on different clocks,
+    // which real VBO and RCZ recordings do not; the rule is defensive.
+    final crossing = gpsSession([0, 1, 3, 4], [_north, _mid, _mid, _north], [
+      _east,
+      _east,
+      _west,
+      _west,
+    ]);
+    expect(detectLaps(crossing, _startGate).acceptedPasses, hasLength(1));
+    final denseLongitude = gpsSession(
+      [0, 1, 3, 4],
+      [_north, _mid, _mid, _north],
+      [_east, _east, _west, _west, for (var i = 0; i < 8; ++i) _west],
+      longitudeTimes: [0, 1, 3, 4, for (var i = 1; i <= 8; ++i) 4 + i / 2],
+    );
+    final latitude = denseLongitude.channels['latitude']!;
+    final longitude = denseLongitude.channels['longitude']!;
+    expect(gpsGapThreshold(latitude, longitude), closeTo(1.5, 1e-9));
+    expect(gpsGapThreshold(longitude, latitude), closeTo(1.5, 1e-9));
+    expect(detectLaps(denseLongitude, _startGate).acceptedPasses, isEmpty);
+  });
+
   test('finalizes a pass when the recording ends inside the corridor', () {
     final session = gpsSession([0, 1, 2], [_mid, _mid, _mid], [_east, _east, 21.0]);
     final result = detectLaps(session, _startGate);

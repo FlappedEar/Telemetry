@@ -33,6 +33,8 @@ import '../analysis/braking_onset.dart'
         brakingFollowsGap,
         brakingInterruptedByGap,
         brakingTruncatedAtWindowEnd;
+import '../analysis/braking_source.dart' show brakingSourceQuality;
+import '../analysis/pedal_scale.dart' show PedalScale, throttleScale;
 import '../analysis/coasting_analysis.dart';
 import '../analysis/gg_pairs.dart' show buildGgPairs, ggMagnitude;
 import '../analysis/corner_speeds.dart' show CornerSpeeds;
@@ -419,9 +421,30 @@ final class DayCoach {
     this.speedsConverted = false,
     List<DayLapRow> slowLaps = const [],
     this.goal,
+    this.previousRunId = '',
+    this.speedUnit = 'km/h',
+    this.perMetrePerSecond = 3.6,
+    List<CoachCornerGoalValues> goalValues = const [],
   }) : findings = List.unmodifiable(findings),
        plan = List.unmodifiable(plan),
-       slowLaps = List.unmodifiable(slowLaps);
+       slowLaps = List.unmodifiable(slowLaps),
+       goalValues = List.unmodifiable(goalValues);
+
+  /// The session before the one coached, among the group's laps; empty when
+  /// there is none. The driver's own goals for the session coached are
+  /// stored on it ([RunGoals]).
+  final String previousRunId;
+
+  /// The unit [goalValues]' minimum speeds are in, and how many of it make
+  /// one metre per second (see [coachGoalOutcome]).
+  final String speedUnit;
+  final double perMetrePerSecond;
+
+  /// Every corner's goal measures in the session coached and in
+  /// [previousRunId], slow laps left out; empty when there is no session
+  /// before. What the driver's own goals are checked against
+  /// ([checkSessionGoals]).
+  final List<CoachCornerGoalValues> goalValues;
 
   /// The session coached; empty when none could be.
   final String runId;
@@ -480,6 +503,34 @@ final class DayCoach {
     CoachReason.notInSession =>
       'Patterns seen earlier today do not repeat on most of this session\'s laps.',
   };
+}
+
+/// A goal's measure across one session's laps at a corner: the median of
+/// the lap values (the braking range, the share of laps picking up early)
+/// and how many laps had it.
+typedef CoachGoalValue = ({double value, int laps});
+
+/// One corner's goal measures, by the kind of change a goal asks for: in
+/// the session coached ([now]) and the session before ([before]). A kind
+/// is missing where fewer than two laps (three for the braking range) have
+/// the measure.
+final class CoachCornerGoalValues {
+  CoachCornerGoalValues({
+    required this.segmentId,
+    required this.name,
+    required this.startProgressMeters,
+    required this.endProgressMeters,
+    Map<CoachKind, CoachGoalValue> before = const {},
+    Map<CoachKind, CoachGoalValue> now = const {},
+  }) : before = Map.unmodifiable(before),
+       now = Map.unmodifiable(now);
+
+  final String segmentId;
+  final String name;
+
+  /// The corner on the lap's shared axis, metres.
+  final double startProgressMeters, endProgressMeters;
+  final Map<CoachKind, CoachGoalValue> before, now;
 }
 
 /// One lap through one corner, as the rules read it.
@@ -595,15 +646,16 @@ double _median(Iterable<double> values) {
   return sorted.length.isOdd ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-/// [channel]'s full travel: its values are a fraction (0..1) or a
-/// percentage.
-double _throttleScale(TelemetryChannel channel) {
-  var peak = 0.0;
-  for (final value in channel.values) {
-    if (value.isFinite && value > peak) peak = value;
-  }
-  return channel.unit.trim() == '%' || peak > 1.5 ? 100.0 : 1.0;
-}
+/// The full travel of [session]'s [alias] pedal (`throttle` or `brake`):
+/// 1 for a 0..1 fraction, 100 for a percentage; null when its scale is
+/// unknown (no unit, within 0..1, and the G does not show which, FET-205):
+/// such a pedal tells nothing.
+double? _pedalTravel(TelemetrySession session, String alias) =>
+    switch (alias == 'brake' ? brakingSourceQuality(session).brakeScale : throttleScale(session)) {
+      PedalScale.percent => 100.0,
+      PedalScale.fraction => 1.0,
+      PedalScale.unknown => null,
+    };
 
 /// Whether the car coasts from [fromTime] to [toTime]: the throttle
 /// released (8 % or less, as [_liftProgress] reads a release) and the
@@ -613,8 +665,9 @@ double _throttleScale(TelemetryChannel channel) {
 bool _coastingThroughout(TelemetrySession session, double fromTime, double toTime) {
   bool below(String alias, double fraction) {
     final channel = session.channels[session.aliases[alias] ?? ''];
-    if (channel == null || channel.sampleCount < 2) return false;
-    final limit = fraction * _throttleScale(channel);
+    final travel = _pedalTravel(session, alias);
+    if (channel == null || channel.sampleCount < 2 || travel == null) return false;
+    final limit = fraction * travel;
     final times = channel.timestamps, values = channel.values;
     var previous = fromTime;
     var count = 0;
@@ -631,8 +684,9 @@ bool _coastingThroughout(TelemetrySession session, double fromTime, double toTim
 
   // A throttle never pressed (unplugged, logging zeros) shows no lift.
   final throttle = session.channels[session.aliases['throttle'] ?? ''];
-  if (throttle == null) return false;
-  final pressed = 0.20 * _throttleScale(throttle);
+  final travel = _pedalTravel(session, 'throttle');
+  if (throttle == null || travel == null) return false;
+  final pressed = 0.20 * travel;
   if (!throttle.values.any((v) => v.isFinite && v >= pressed)) return false;
   return below('throttle', 0.08) && below('brake', 0.10);
 }
@@ -648,9 +702,10 @@ bool _coastingThroughout(TelemetrySession session, double fromTime, double toTim
   double to,
 ) {
   final channel = session.channels[session.aliases['throttle'] ?? ''];
-  if (channel == null || channel.sampleCount < 2) return null;
+  final travel = _pedalTravel(session, 'throttle');
+  if (channel == null || channel.sampleCount < 2 || travel == null) return null;
   final times = channel.timestamps, values = channel.values;
-  final off = coachThrottleOff * _throttleScale(channel);
+  final off = coachThrottleOff * travel;
   var best = (seconds: 0.0, meters: 0.0);
   double? since;
   void close(double end) {
@@ -688,9 +743,9 @@ double? _liftProgress(
   double toTime,
 ) {
   final channel = session.channels[session.aliases['throttle'] ?? ''];
-  if (channel == null || channel.sampleCount < 2) return null;
+  final scale = _pedalTravel(session, 'throttle');
+  if (channel == null || channel.sampleCount < 2 || scale == null) return null;
   final times = channel.timestamps, values = channel.values;
-  final scale = _throttleScale(channel);
   final high = 0.20 * scale, low = 0.08 * scale;
   double? result;
   var established = false;
@@ -746,15 +801,19 @@ double? _liftProgress(
 ) {
   final channel = session.channels[session.aliases['throttle'] ?? ''];
   final brake = session.channels[session.aliases['brake'] ?? ''];
-  if (channel == null || channel.sampleCount < 2 || brake == null || brake.sampleCount < 2) {
+  final scale = _pedalTravel(session, 'throttle');
+  final brakeTravel = _pedalTravel(session, 'brake');
+  if (channel == null ||
+      channel.sampleCount < 2 ||
+      brake == null ||
+      brake.sampleCount < 2 ||
+      scale == null ||
+      brakeTravel == null) {
     return null;
   }
   final times = channel.timestamps, values = channel.values;
-  final scale = _throttleScale(channel);
   final high = 0.20 * scale, low = 0.08 * scale;
-  // The throttle's scale heuristic suits the brake: a measured braking
-  // (needed for the window) has the brake in % (see brakingUnitMismatch).
-  final braking = 0.10 * _throttleScale(brake);
+  final braking = 0.10 * brakeTravel;
   // The slowest the car has been since [fromTime] or the last reset.
   var slowest = double.infinity;
   double? rising, pickedUp, releasedAt;
@@ -896,9 +955,21 @@ DayCoach dayCoach(
 }) {
   final passages = <String, List<_Passage>>{};
   final coach = _dayCoach(result, sessions, runId: runId, passages: passages, cancelled: cancelled);
-  if (coach.reason == CoachReason.noSegments || before == null) return coach;
-  final goal = _goalCheck(result, before, sessions, runId, passages, cancelled);
-  if (goal == null) return coach;
+  if (coach.reason == CoachReason.noSegments) return coach;
+  final goal = before == null
+      ? null
+      : _goalCheck(result, before, sessions, runId, passages, cancelled);
+  final laps = [for (final sectors in result.laps) sectors.lap];
+  final runs = <String>[];
+  for (final lap in laps) {
+    if (!runs.contains(lap.runId)) runs.add(lap.runId);
+  }
+  final at = runs.indexOf(runId);
+  final previous = at >= 1 ? runs[at - 1] : '';
+  final shown = _shownSpeed(result.corners);
+  final values = previous.isEmpty
+      ? const <CoachCornerGoalValues>[]
+      : _cornerGoalValues(result, laps, passages, previous, runId, shown);
   return DayCoach(
     runId: coach.runId,
     findings: coach.findings,
@@ -907,7 +978,54 @@ DayCoach dayCoach(
     speedsConverted: coach.speedsConverted,
     slowLaps: coach.slowLaps,
     goal: goal,
+    previousRunId: previous,
+    speedUnit: shown.unit,
+    perMetrePerSecond: shown.perMetrePerSecond,
+    goalValues: values,
   );
+}
+
+/// The kinds of change a driver can set as a goal: every corrective kind.
+const coachGoalKinds = [
+  CoachKind.earlyLift,
+  CoachKind.excessiveCoasting,
+  CoachKind.lowMinimumSpeed,
+  CoachKind.lateThrottle,
+  CoachKind.earlyThrottle,
+  CoachKind.inconsistentBraking,
+];
+
+/// Each corner's goal measures for [previous] and [coached], from
+/// [passages], slow laps left out, as the main focus is measured.
+List<CoachCornerGoalValues> _cornerGoalValues(
+  DayTheoreticalBest result,
+  List<DayLapRow> laps,
+  Map<String, List<_Passage>> passages,
+  String previous,
+  String coached,
+  _ShownSpeed shown,
+) {
+  final slow = {for (final lap in _slowLaps(laps)) lap.reference};
+  return [
+    for (final corner in result.corners)
+      () {
+        List<_Passage> of(String runId) => [
+          for (final p in passages[corner.segmentId] ?? const <_Passage>[])
+            if (p.lap.runId == runId && !slow.contains(p.lap.reference)) p,
+        ];
+        Map<CoachKind, CoachGoalValue> measure(List<_Passage> list) => {
+          for (final kind in coachGoalKinds) kind: ?_goalValue(kind, list, shown),
+        };
+        return CoachCornerGoalValues(
+          segmentId: corner.segmentId,
+          name: corner.name,
+          startProgressMeters: corner.startProgressMeters,
+          endProgressMeters: corner.endProgressMeters,
+          before: measure(of(previous)),
+          now: measure(of(coached)),
+        );
+      }(),
+  ];
 }
 
 /// One lap through one corner as the coach reads it, for a driver profile:
@@ -1068,9 +1186,14 @@ DayCoach _dayCoach(
               !rise.limitations.contains(exitFollowsGap)
           ? rise.progressMeters
           : null;
+      // A brake that does not show the braking (FET-204), or a pedal whose
+      // scale is unknown (FET-205), is no pedal.
       if (lap.runId == coached &&
-          (session.channels.containsKey(session.aliases['throttle'] ?? '') ||
-              session.channels.containsKey(session.aliases['brake'] ?? ''))) {
+          ((session.channels.containsKey(session.aliases['throttle'] ?? '') &&
+                  throttleScale(session) != PedalScale.unknown) ||
+              (session.channels.containsKey(session.aliases['brake'] ?? '') &&
+                  !brakingSourceQuality(session).brakeRejected &&
+                  brakingSourceQuality(session).brakeScale != PedalScale.unknown))) {
         pedals = true;
       }
       double? lift, liftSeconds;
@@ -1364,7 +1487,7 @@ CoachGoalOutcome coachGoalOutcome(
 /// The goal's measure across [passages] (a session's laps at the goal's
 /// segment): the median of the lap values, or the braking range; null
 /// when fewer than two laps (three for the braking range) have it.
-({double value, int laps})? _goalValue(CoachKind kind, List<_Passage> passages, _ShownSpeed shown) {
+CoachGoalValue? _goalValue(CoachKind kind, List<_Passage> passages, _ShownSpeed shown) {
   double? read(_Passage p) => switch (kind) {
     CoachKind.earlyLift => p.lift,
     CoachKind.excessiveCoasting => p.coastSeconds,

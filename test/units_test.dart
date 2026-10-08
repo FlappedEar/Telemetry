@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/import/import_runner.dart';
@@ -30,7 +31,7 @@ void main() {
   setUp(() {
     directory = Directory.systemTemp.createTempSync('units');
     speedUnitSetting.value = SpeedUnitSetting.automatic;
-    declareDaySpeedUnits(const []);
+    debugSetOpenDayContext(DayContext.none);
   });
   tearDown(() => deleteTemporaryDirectory(directory));
 
@@ -46,7 +47,7 @@ void main() {
   });
 
   test('a declared unit is never overridden by the setting', () {
-    declaredSpeedUnits = const ['km/h'];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['km/h']));
     for (final setting in SpeedUnitSetting.values) {
       speedUnitSetting.value = setting;
       expect(speedUnitLabel(), 'km/h', reason: '$setting');
@@ -59,7 +60,7 @@ void main() {
   });
 
   test('the setting is assumed only for unlabelled speeds', () {
-    declaredSpeedUnits = const [''];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['']));
     expect(speedUnitLabel(), '');
     speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
     expect(speedUnitLabel(), 'mph');
@@ -72,14 +73,14 @@ void main() {
 
   test('a day mixing units shows none rather than a wrong one', () {
     // km/h declared, one recording unlabelled.
-    declaredSpeedUnits = const ['km/h', ''];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['km/h', '']));
     expect(speedUnitLabel(), '');
     speedUnitSetting.value = SpeedUnitSetting.milesPerHour;
     expect(speedUnitLabel(), '');
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
     expect(speedUnitLabel(), 'km/h');
     // Recordings declaring different units.
-    declaredSpeedUnits = const ['km/h', 'mph'];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['km/h', 'mph']));
     for (final setting in SpeedUnitSetting.values) {
       speedUnitSetting.value = setting;
       expect(speedUnitLabel(), '', reason: '$setting');
@@ -96,7 +97,7 @@ void main() {
         '[data]\n0.00 52.0 21.0 50.0 31.0 50.0\n0.10 52.0001 21.0 51.0 32.0 51.0\n',
       );
     final session = parseVboFile(file.path);
-    declareDaySpeedUnits([session]);
+    debugSetOpenDayContext(DayContext.of([session]));
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
     expect(displayUnit('velocity', ''), 'km/h');
     expect(displayUnit('velocity-obd', ''), 'mph');
@@ -124,7 +125,7 @@ void main() {
       runs: outcome.runs,
       analysis: outcome.analysis!,
     );
-    expect(declaredSpeedUnits, ['km/h']);
+    expect(openDayContext.speedUnits, ['km/h']);
     expect(speedUnitLabel(), 'km/h');
     expect(displayUnit('velocity', ''), 'km/h');
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
@@ -142,21 +143,25 @@ void main() {
     expect(find.textContaining('mph'), findsNothing);
     // Closing the day forgets its units.
     await tester.pumpWidget(const SizedBox());
-    expect(declaredSpeedUnits, isEmpty);
+    expect(openDayContext.speedUnits, isEmpty);
   });
 
   // Arek's second audit, finding 1: the analysis reads speeds in the unit
   // the screens show, not in a unit of its own.
   test('a day with speeds in a unit the app does not name labels none', () {
     // m/s against km/h: neither unit stands for the other.
-    declaredChannelSpeedUnits = const {
-      'speed': ['m/s', 'km/h'],
-    };
-    declaredSpeedUnits = const ['m/s', 'km/h'];
+    debugSetOpenDayContext(
+      const DayContext(
+        channelSpeedUnits: {
+          'speed': ['m/s', 'km/h'],
+        },
+        speedUnits: ['m/s', 'km/h'],
+      ),
+    );
     speedUnitSetting.value = SpeedUnitSetting.kilometresPerHour;
     expect(displayUnit('speed', ''), '');
     expect(speedUnitLabel(), '');
-    declaredSpeedUnits = const ['m/s'];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['m/s']));
     expect(speedUnitLabel(), 'm/s');
   });
 
@@ -246,7 +251,7 @@ void main() {
   testWidgets('choosing mph keeps a day recorded in km/h in km/h', (
     tester,
   ) async {
-    declaredSpeedUnits = const ['km/h'];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['km/h']));
     await pumpApp(tester);
     expect(find.text('speed km/h'), findsOneWidget);
     await tester.tap(find.byTooltip('Settings'));
@@ -261,7 +266,7 @@ void main() {
   });
 
   testWidgets('the settings dialog labels unlabelled speeds', (tester) async {
-    declaredSpeedUnits = const [''];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['']));
     await pumpApp(tester);
     expect(find.text('speed '), findsOneWidget);
     await tester.tap(find.byTooltip('Settings'));
@@ -315,7 +320,7 @@ void main() {
     tester.view.physicalSize = const Size(740, 360);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    declaredSpeedUnits = const ['km/h', ''];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['km/h', '']));
     await pumpApp(tester);
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
@@ -334,7 +339,7 @@ void main() {
   testWidgets('the settings dialog counts recordings without a unit', (
     tester,
   ) async {
-    declaredSpeedUnits = const ['km/h', ''];
+    debugSetOpenDayContext(const DayContext(speedUnits: ['km/h', '']));
     await pumpApp(tester);
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
@@ -349,7 +354,9 @@ void main() {
 
   testWidgets('the settings dialog speaks Polish', (tester) async {
     addTearDown(() => Intl.defaultLocale = null);
-    declaredSpeedUnits = const ['km/h', 'mph', '', ''];
+    debugSetOpenDayContext(
+      const DayContext(speedUnits: ['km/h', 'mph', '', '']),
+    );
     await pumpApp(tester, locale: const Locale('pl'));
     await tester.tap(find.byTooltip('Ustawienia'));
     await tester.pumpAndSettle();

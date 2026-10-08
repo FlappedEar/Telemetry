@@ -61,6 +61,7 @@ String provenanceLabel(AppLocalizations l10n, DrivingStateTrack track) =>
       drivingStateInferred => l10n.drivingInferred,
       _ => switch (track.unresolvedReason) {
         'unitMismatch' => l10n.drivingUnexpectedUnit,
+        'scaleUnknown' => l10n.drivingScaleUnknown,
         'inferenceDisabled' => l10n.drivingNotRecorded,
         'pedalStateUnknown' => l10n.drivingPedalsUnknown,
         'noSpeedChannel' => l10n.drivingNoSpeed,
@@ -81,10 +82,15 @@ String pedalSourceText(
   ) => switch (track.provenance) {
     drivingStateMeasured => measured,
     drivingStateInferred => inferred,
-    _ =>
-      track.unresolvedReason == 'unitMismatch'
-          ? l10n.drivingUnexpectedUnitChannel(channelDisplayName(track.channel))
-          : none,
+    _ => switch (track.unresolvedReason) {
+      'unitMismatch' => l10n.drivingUnexpectedUnitChannel(
+        channelDisplayName(track.channel),
+      ),
+      'scaleUnknown' => l10n.drivingScaleUnknownChannel(
+        channelDisplayName(track.channel),
+      ),
+      _ => none,
+    },
   };
   final braking = pedal(
     states.braking,
@@ -299,8 +305,8 @@ class _ComparisonGgPanelState
       final pairs = slot < laps.length ? laps[slot].pairs : null;
       if (pairs == null) continue;
       final calculated =
-          pairs.longitudinalChannel.toLowerCase().endsWith('-calc') ||
-          pairs.lateralChannel.toLowerCase().endsWith('-calc');
+          ggChannelCalculated(pairs.longitudinalChannel) ||
+          ggChannelCalculated(pairs.lateralChannel);
       sources.add(
         '${l10n.drivingGgSource(_lapNames[slot], pairs.longitudinalChannel, pairs.lateralChannel, calculated ? l10n.drivingGgCalculated : l10n.drivingMeasured)}'
         '${pairs.unitsDeclared ? '' : ', ${l10n.channelUnitsNotDeclared}'}',
@@ -1096,7 +1102,7 @@ class _ComparisonCoastingPanelState
                                 'coastingEpisode ${_lapNames[slot]} $index',
                               ),
                               label: Text(
-                                '${episode.startProgressMeters!.round()}\u00a0m · '
+                                '${math.max(0.0, episode.startProgressMeters!).round()}\u00a0m · '
                                 '${episode.seconds.toStringAsFixed(1)}\u00a0s',
                               ),
                               onPressed: () => window.cursor.value =

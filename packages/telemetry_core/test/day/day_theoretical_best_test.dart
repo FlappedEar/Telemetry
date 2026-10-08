@@ -60,6 +60,37 @@ void main() {
       expect(result.segments.map((s) => s.sourceLapReference).toSet().length, greaterThan(1));
     });
 
+    test('joins segments only at the speed the car had', () {
+      final realistic = result.realistic!;
+      expect(realistic.valid, isTrue);
+      expect(realistic.segments.map((s) => s.segmentId), result.segments.map((s) => s.segmentId));
+      // Between the raw best and the best lap's own segments, which always
+      // join.
+      expect(realistic.totalSeconds, greaterThanOrEqualTo(result.theoreticalBestSeconds! - 1e-9));
+      expect(realistic.totalSeconds, lessThanOrEqualTo(result.bestLapSeconds! + 1e-9));
+      // Each time is the named lap's own time through that segment, and
+      // every join between two laps is within the tolerance at the speeds
+      // the recordings give.
+      for (final (i, segment) in realistic.segments.indexed) {
+        final lap = result.laps.firstWhere((lap) => lap.lap.reference == segment.lapReference);
+        expect(segment.seconds, lap.times.sectors[i].seconds);
+        if (i == 0 || realistic.segments[i - 1].lapReference == segment.lapReference) continue;
+        final before = result.laps.firstWhere(
+          (lap) => lap.lap.reference == realistic.segments[i - 1].lapReference,
+        );
+        final out = speedMetresPerSecondAt(
+          outing[before.lap.runId]!.session,
+          before.times.sectors[i - 1].endTime,
+        );
+        final into = speedMetresPerSecondAt(
+          outing[lap.lap.runId]!.session,
+          lap.times.sectors[i].startTime,
+        );
+        expect((out! - into!).abs(), lessThanOrEqualTo(realisticJoinMetresPerSecond));
+        expect(segment.joinMetresPerSecond, closeTo((out - into).abs(), 1e-9));
+      }
+    });
+
     test('maps a lap between its time and the shared axis', () {
       final lap = result.laps.first.lap;
       final time = result.timeAt(lap, 300)!;
@@ -129,6 +160,40 @@ void main() {
       expect(all.keys, [shown.id]);
       expect(all[shown.id]!.theoreticalBestSeconds, result.theoreticalBestSeconds);
     });
+  });
+
+  test('the speed rule keeps a lap that cannot join out of the realistic best', () {
+    // A and B differ by 0.3 m/s and lose time inside different segments, so
+    // they join; C is 1 m/s quicker everywhere but one segment, too fast to
+    // join either. The raw best takes C's segments, the realistic best
+    // mixes A and B.
+    final session = rectangleSession([
+      _lap(30, 150, 280, 20),
+      _lap(30.3, 570, 700, 22),
+      _lap(31, 400, 450, 18),
+    ]);
+    final runs = [_run('run1', session)];
+    final result = dayTheoreticalBest(analyzeDay(runs), {
+      for (final run in runs) run.runId: OutingRun(run.session, run.laps),
+    }, random: Random(1));
+    final realistic = result.realistic!;
+    expect(realistic.valid, isTrue);
+    expect(realistic.totalSeconds, greaterThan(result.theoreticalBestSeconds! + 0.3));
+    expect(realistic.totalSeconds, lessThan(result.bestLapSeconds! - 0.3));
+    final laps = {for (final s in realistic.segments) s.lapReference};
+    expect(laps, hasLength(2));
+    // The lap the raw best takes most segments from is not one of them.
+    final raw = [for (final s in result.segments) s.sourceLapReference];
+    final most = raw.reduce(
+      (a, b) => raw.where((r) => r == a).length >= raw.where((r) => r == b).length ? a : b,
+    );
+    expect(laps, isNot(contains(most)));
+    // Every join between the two is within the tolerance.
+    for (final segment in realistic.segments) {
+      if (segment.joinMetresPerSecond case final join?) {
+        expect(join, lessThanOrEqualTo(realisticJoinMetresPerSecond));
+      }
+    }
   });
 
   test('uses the document\'s segments, from the first run by id', () {
