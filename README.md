@@ -202,6 +202,11 @@ the APK's signing key") and warns when it had to make a new one. APKs built
 before 2026-10-03 were each signed with a different key and do not update;
 uninstall such a build once before installing a newer one.
 
+If the cache is lost anyway, the key is restored from the repository secret
+`ANDROID_DEBUG_KEYSTORE_BASE64` by `ci.yml`, `release.yml` and `signing-key.yml`
+(the pinned certificate is still checked). How to create that backup once:
+[docs/android-signing-key-backup.md](docs/android-signing-key-backup.md).
+
 ### Measuring a day on the phone
 
 **Diagnostics**, in the **More** menu of **Import a day** and of the day page,

@@ -88,10 +88,19 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: android-debug-keystore-v1
-      - name: Stop if the signing key is missing
+      # The backup copy in the repository secret (docs/android-signing-key-backup.md),
+      # used when the cache is gone. The check below still pins the certificate.
+      - name: Restore the key from the repository secret
+        id: secret
         if: steps.key.outputs.cache-hit != 'true'
+        uses: ./.github/actions/signing-key-from-secret
+        with:
+          expected-sha256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+          keystore-base64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+      - name: Stop if the signing key is missing
+        if: steps.key.outputs.cache-hit != 'true' && steps.secret.outputs.restored != 'true'
         run: |
-          echo "::error::The signing key (cache android-debug-keystore-v1) was not restored. Run CI on main, then release again."
+          echo "::error::The signing key (cache android-debug-keystore-v1, secret ANDROID_DEBUG_KEYSTORE_BASE64) was not restored. Back it up as docs/android-signing-key-backup.md says, then release again."
           exit 1
       - run: echo "ANDROID_USER_HOME=$HOME/.android" >> "$GITHUB_ENV"
       - name: Build the APK (release)

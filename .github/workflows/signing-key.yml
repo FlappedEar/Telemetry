@@ -21,16 +21,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
       - name: Restore the signing key
         id: key
         uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
           key: android-debug-keystore-v1
-      - name: Stop if the key is gone
+      # The backup: the same key, base64 in a repository secret (see
+      # docs/android-signing-key-backup.md). Used only when the cache is gone,
+      # and saved back to the cache once it passes the check below.
+      - name: Restore the key from the repository secret
+        id: secret
         if: steps.key.outputs.cache-hit != 'true'
+        uses: ./.github/actions/signing-key-from-secret
+        with:
+          expected-sha256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+          keystore-base64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+      - name: Stop if the key is gone
+        if: steps.key.outputs.cache-hit != 'true' && steps.secret.outputs.restored != 'true'
         run: |
-          echo "::error::The signing key cache android-debug-keystore-v1 is gone. Do not merge to main until the owner decides how to sign APKs: a new key means installed apps cannot update."
+          echo "::error::The signing key cache android-debug-keystore-v1 is gone and the secret ANDROID_DEBUG_KEYSTORE_BASE64 is not set. Do not merge to main until the owner decides how to sign APKs: a new key means installed apps cannot update."
           exit 1
       - name: Check it is the release key
         env:
@@ -44,3 +57,9 @@ jobs:
             echo "::error::The cached key is $actual, not the release key $RELEASE_CERT_SHA256."
             exit 1
           }
+      - name: Put the restored key back in the cache
+        if: steps.secret.outputs.restored == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
