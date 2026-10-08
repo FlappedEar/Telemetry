@@ -7953,6 +7953,11 @@
   "@libraryExportFailed": {
     "description": "Export failed, for example because the disk is full."
   },
+  "libraryExportFailedBecause": "The profile could not be exported: {reason}",
+  "@libraryExportFailedBecause": {
+    "description": "Export failed; the reason is the system's own message, for example a folder the app may not write to.",
+    "placeholders": {"reason": {"type": "String"}}
+  },
   "libraryImported": "{count, plural, =0{The file has no days that are not here already.} =1{1 day added.} other{{count} days added.}}",
   "@libraryImported": {
     "description": "After an import: how many days were added.",

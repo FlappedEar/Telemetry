@@ -1744,6 +1744,57 @@ void main() {
       expect(reopened.profile!.cars.single.name, 'Clio');
     });
 
+    testWidgets('an export that fails says why', (tester) async {
+      final here = await tester.runAsync(() => withDay(profileFolder()));
+      // A folder that is not there: the system refuses the file.
+      final saved = p.join(directory.path, 'Nowhere', 'driver.feprofile');
+      final pickers = _FakeBundlePickers(
+        location: saved,
+        work: p.join(directory.path, 'work.feprofile'),
+      );
+      await tester.pumpWidget(
+        TelemetryApp(
+          home: LibraryPage(library: here!, open: (_) {}, pickers: pickers),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('libraryExport')));
+      await _untilSnackBar(tester);
+      expect(
+        find.textContaining('The profile could not be exported: '),
+        findsOneWidget,
+      );
+      expect(File(saved).existsSync(), isFalse);
+    });
+
+    testWidgets(
+      'a failed export before any byte is written keeps the old file',
+      (tester) async {
+        final here = await tester.runAsync(() => withDay(profileFolder()));
+        final saved = p.join(directory.path, 'old.feprofile');
+        File(saved).writeAsStringSync('old');
+        File(p.join(directory.path, 'blocker')).writeAsStringSync('');
+        // The work file is under a file: it cannot be written.
+        final pickers = _FakeBundlePickers(
+          location: saved,
+          work: p.join(directory.path, 'blocker', 'work.feprofile'),
+        );
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: LibraryPage(library: here!, open: (_) {}, pickers: pickers),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(PopupMenuButton<VoidCallback>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('libraryExport')));
+        await _untilSnackBar(tester);
+        expect(File(saved).readAsStringSync(), 'old');
+      },
+    );
+
     testWidgets('exports from the menu and imports on another device', (
       tester,
     ) async {

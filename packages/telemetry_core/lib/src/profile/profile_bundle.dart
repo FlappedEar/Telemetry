@@ -110,7 +110,9 @@ Future<ProfileBundleExport> writeProfileBundle(
         final reference = source['reference'];
         if (reference is! Map<String, Object?>) continue;
         final file = fet.SourceReference.fromJson(reference).resolve(path);
-        if (file.isEmpty) {
+        // A recording the sandbox (macOS) or the disk will not let this app
+        // read is missing too, not a reason to write no bundle at all.
+        if (file.isEmpty || !_isReadable(file)) {
           final digest = source['contentSha256'];
           missingRecordings.add(digest is String ? digest : jsonEncode(reference));
           continue;
@@ -152,7 +154,7 @@ Future<ProfileBundleExport> writeProfileBundle(
         final name = reference.fileName;
         // A copy that is not there, or is not the size the profile says, is
         // missing: the day travels without it, and the count says so.
-        if (copy == null || !_isWhole(copy, reference.bytes)) {
+        if (copy == null || !_isWhole(copy, reference.bytes) || !_isReadable(copy)) {
           missingReferences.add(name);
         } else if (!names.contains(name)) {
           await encoder.addFile(File(copy), '$profileRecordingsFolderName/$name');
@@ -500,6 +502,15 @@ Future<ProfileBundleImport> readProfileBundle(
     );
   } finally {
     input.closeSync();
+  }
+}
+
+bool _isReadable(String path) {
+  try {
+    File(path).openSync().closeSync();
+    return true;
+  } on FileSystemException {
+    return false;
   }
 }
 

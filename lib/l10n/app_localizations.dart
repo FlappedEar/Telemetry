@@ -8373,6 +8373,12 @@ abstract class AppLocalizations {
   /// **'The profile could not be exported.'**
   String get libraryExportFailed;
 
+  /// Export failed; the reason is the system's own message, for example a folder the app may not write to.
+  ///
+  /// In en, this message translates to:
+  /// **'The profile could not be exported: {reason}'**
+  String libraryExportFailedBecause(String reason);
+
   /// After an import: how many days were added.
   ///
   /// In en, this message translates to:

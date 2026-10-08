@@ -225,6 +225,29 @@ void main() {
       expect(openDay(p.join(b, 'Days', 'e1.fetproject')).missing, hasLength(1));
     });
 
+    test(
+      'a recording this app may not read is missing, not a failed export',
+      () async {
+        final a = p.join(root(), 'A');
+        final imported = p.join(a, 'in');
+        final profile = await saveDay(DriverProfile.empty(Random(1)), a, imported, 'e1', [
+          [30, 28, 31],
+        ]);
+        // The macOS sandbox shows a file outside the app's folders but will
+        // not open it.
+        Process.runSync('chmod', ['000', p.join(imported, 'e1-0.vbo')]);
+        addTearDown(() => Process.runSync('chmod', ['644', p.join(imported, 'e1-0.vbo')]));
+        final bundle = p.join(root(), 'a$profileBundleExtension');
+        final export = await writeProfileBundle(profile, a, bundle);
+        expect(export.days, 1);
+        expect(export.recordingsMissing, 1);
+        expect(File(bundle).existsSync(), isTrue);
+      },
+      skip: Platform.isWindows || Process.runSync('id', ['-u']).stdout.toString().trim() == '0'
+          ? 'Needs a user the file mode applies to.'
+          : false,
+    );
+
     test('a day already in the folder is not written over', () async {
       final a = p.join(root(), 'A');
       final profile = await saveDay(DriverProfile.empty(Random(1)), a, p.join(a, 'in'), 'e1', [
