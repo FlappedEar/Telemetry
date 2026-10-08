@@ -5662,6 +5662,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryExportFailed => 'The profile could not be exported.';
 
   @override
+  String libraryExportFailedBecause(String reason) {
+    return 'The profile could not be exported: $reason';
+  }
+
+  @override
   String libraryImported(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

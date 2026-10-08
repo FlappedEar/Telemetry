@@ -1368,6 +1368,7 @@
   "libraryExportMissing": "{count, plural, =1{Nie znaleziono 1 zapisu na tym urządzeniu, więc nie ma go w pliku.} few{{count} zapisy nie zostały znalezione na tym urządzeniu, więc nie ma ich w pliku.} other{{count} zapisów nie zostało znalezionych na tym urządzeniu, więc nie ma ich w pliku.}}",
   "libraryExportReferencesMissing": "{count, plural, =1{Nie znaleziono 1 zapisu odniesienia w profilu, więc nie ma go w pliku.} few{{count} zapisy odniesienia nie zostały znalezione w profilu, więc nie ma ich w pliku.} other{{count} zapisów odniesienia nie zostało znalezionych w profilu, więc nie ma ich w pliku.}}",
   "libraryExportFailed": "Nie udało się wyeksportować profilu.",
+  "libraryExportFailedBecause": "Nie udało się wyeksportować profilu: {reason}",
   "libraryImported": "{count, plural, =0{W pliku nie ma dni, których tu jeszcze nie ma.} =1{Dodano 1 dzień.} other{Dodano {count} dni.}}",
   "libraryImportNotAdded": "{count, plural, =1{Nie dodano 1 dnia: brak go w pliku albo biblioteka jest pełna.} other{Nie dodano {count} dni: brak ich w pliku albo biblioteka jest pełna.}}",
   "libraryImportFailed": "Nie można zaimportować tego pliku. To nie jest profil wyeksportowany z tej aplikacji, pochodzi z nowszej wersji albo jest uszkodzony.",

@@ -95,8 +95,25 @@ class _LibraryPageState extends State<LibraryPage> {
       final export = await widget.library.exportBundle(work);
       if (export == null) throw StateError('No profile to export.');
       if (location != null) {
-        copying = true;
-        await File(work).copy(location);
+        // Streamed into the file the user chose: a sandboxed app may write
+        // that file, but not the temporary one a copy call makes beside it.
+        final sink = File(location).openWrite();
+        try {
+          await sink.addStream(
+            File(work).openRead().map((chunk) {
+              copying = true;
+              return chunk;
+            }),
+          );
+        } on Object {
+          try {
+            await sink.close();
+          } on Object {
+            // The first error is the one to tell.
+          }
+          rethrow;
+        }
+        await sink.close();
         copying = false;
         try {
           await File(work).delete();
@@ -132,10 +149,30 @@ class _LibraryPageState extends State<LibraryPage> {
           // Never written.
         }
       }
-      messenger.showSnackBar(SnackBar(content: Text(l10n.libraryExportFailed)));
+      final reason = _exportReason(error);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            reason.isEmpty
+                ? l10n.libraryExportFailed
+                : l10n.libraryExportFailedBecause(reason),
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _working = null);
     }
+  }
+
+  /// What went wrong, as the system words it; empty when there is nothing
+  /// readable to say.
+  static String _exportReason(Object error) {
+    final text = switch (error) {
+      FileSystemException(:final osError?) => osError.message,
+      FileSystemException(:final message) => message,
+      _ => '',
+    }.trim();
+    return text.length > 120 ? '${text.substring(0, 120)}…' : text;
   }
 
   Future<void> _import() async {
