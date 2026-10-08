@@ -56,7 +56,7 @@ flutter run -d macos</code></pre>
   <li><strong>Windows:</strong> the app only says that a newer version exists; <strong>What's new</strong> opens the release on GitHub. Download the <code>-windows.zip</code> there and extract it as described in <a href="#windows">Windows</a>.</li>
   <li><strong>iPhone and iPad:</strong> the releases have no download for these yet, so the app only says that a newer version exists; <strong>What's new</strong> opens the release on GitHub.</li>
 </ul>
-<p>A download that does not match the release's checksum is deleted and never installed.</p>
+<p>A download the app fetched itself (Android and Mac) that does not match the release's checksum is deleted and never installed. For a file you download in a browser, such as the Windows zip, compare its checksum with the line in <code>SHA256SUMS.txt</code> yourself: in PowerShell, <code>Get-FileHash FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>.</p>
 
 <h2 id="maps">Map backgrounds</h2>
 <p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the releases and the Android builds from CI have one, a Mac or Windows build you run yourself does not. On iPhone, iPad and Mac the layers button also offers Apple Maps, which needs no key; other platforms do not have it. Maps need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>

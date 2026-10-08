@@ -56,7 +56,7 @@ flutter run -d macos</code></pre>
   <li><strong>Windows:</strong> aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie. Pobierz tam plik <code>-windows.zip</code> i wyodrębnij go zgodnie z opisem w sekcji <a href="#windows">Windows</a>.</li>
   <li><strong>iPhone i iPad:</strong> wydania nie zawierają jeszcze plików dla tych systemów, dlatego aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie.</li>
 </ul>
-<p>Plik, którego suma kontrolna nie zgadza się z wydaniem, jest usuwany i nigdy nie zostaje zainstalowany.</p>
+<p>Plik pobrany przez samą aplikację (Android i Mac), którego suma kontrolna nie zgadza się z wydaniem, jest usuwany i nigdy nie zostaje zainstalowany. Plik pobrany w przeglądarce, na przykład archiwum ZIP dla Windows, porównaj samodzielnie z wierszem w <code>SHA256SUMS.txt</code>: w PowerShellu użyj <code>Get-FileHash FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>.</p>
 
 <h2 id="maps">Tła map</h2>
 <p>Mapy uliczne (OpenStreetMap) działają w każdej wersji. Zdjęcia satelitarne (MapTiler) są dostępne tylko w kompilacjach zawierających klucz MapTiler; oficjalne wydania i kompilacje Androida z CI go mają, natomiast lokalnie zbudowana wersja na Maca lub Windows – nie. Na iPhonie, iPadzie i Macu przycisk warstw oferuje również Apple Maps, które nie wymagają klucza; na innych platformach ta opcja nie jest dostępna. Przy pierwszym wyświetleniu danego toru tło mapy wymaga połączenia z internetem. Zobacz <a href="lap.html#background">Tło mapy</a>.</p>
