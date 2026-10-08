@@ -1,0 +1,61 @@
+name: Export the Android signing key
+
+# One-time backup of the APK signing key (cache android-debug-keystore-v1)
+# into the repository secret ANDROID_DEBUG_KEYSTORE_BASE64. A workflow cannot
+# write a secret with its own token, so this makes the key available to the
+# owner once: the key is base64-encoded, encrypted with the passphrase in the
+# secret SIGNING_KEY_EXPORT_PASSPHRASE and attached to the run for one day.
+# The owner decrypts it on their own computer and pastes it into the secret.
+# Neither the key nor the passphrase is ever printed. Steps:
+# docs/android-signing-key-backup.md.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export the signing key (encrypted)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restore the signing key
+        id: key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+      - name: Stop if the key is gone
+        if: steps.key.outputs.cache-hit != 'true'
+        run: |
+          echo "::error::The signing key cache android-debug-keystore-v1 is gone, so there is nothing to export."
+          exit 1
+      - name: Check it is the release key
+        env:
+          RELEASE_CERT_SHA256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+        run: |
+          actual=$(keytool -list -v -keystore ~/.android/debug.keystore \
+            -storepass android -alias androiddebugkey \
+            | sed -n 's/^.*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
+          echo "Cached key SHA-256: $actual"
+          [ "$actual" = "$RELEASE_CERT_SHA256" ] || {
+            echo "::error::The cached key is $actual, not the release key $RELEASE_CERT_SHA256."
+            exit 1
+          }
+      - name: Encrypt the key
+        shell: bash
+        env:
+          PASSPHRASE: ${{ secrets.SIGNING_KEY_EXPORT_PASSPHRASE }}
+        run: |
+          [ -n "$PASSPHRASE" ] || { echo "::error::Create the secret SIGNING_KEY_EXPORT_PASSPHRASE first."; exit 1; }
+          mkdir export
+          base64 -w0 ~/.android/debug.keystore \
+            | openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -pass env:PASSPHRASE \
+              -out export/debug.keystore.base64.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signing-key-encrypted
+          path: export/debug.keystore.base64.enc
+          if-no-files-found: error
+          retention-days: 1
