@@ -258,7 +258,7 @@ void main() {
             .widget<Text>(find.byKey(const ValueKey('brakingTechniqueDay')))
             .data,
         startsWith(
-          'Typowo w 1 zakręcie, z prędkości (bez zapisanej jednostki: '
+          'Typowa wartość z 1 zakrętu, z prędkości (bez zapisanej jednostki: '
           'odczytane jako km/h): narastanie $hitPl',
         ),
       );
@@ -272,17 +272,19 @@ void main() {
       expect(
         rowText(tester, 'brakingTechniqueHit'),
         allOf(
-          startsWith('Narastanie hamowania | To okrążenie: '),
+          startsWith('Tempo narastania hamowania | To okrążenie: '),
           endsWith('typowo $hitPl (3 okrążenia)'),
         ),
       );
       expect(
         rowText(tester, 'brakingTechniqueTrail'),
-        contains('To okrążenie: nieznane, brak kanału przeciążenia bocznego'),
+        contains(
+          'To okrążenie: brak danych (brak kanału przeciążenia bocznego)',
+        ),
       );
       expect(
         rowText(tester, 'brakingTechniqueSource'),
-        contains('jej zmiana wygładzona w oknie 0.5 s'),
+        contains('jej zmiana jest wygładzana w oknie 0.5 s'),
       );
       expect(find.text('Braking technique'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -313,19 +315,22 @@ void main() {
       ),
       (
         'pl',
-        'Z kanału przyspieszenia wzdłużnego (10.0 Hz), na sklasyfikowanych '
-            'okrążeniach tego dnia. Hamowanie na 3 z 3 okrążeń.',
-        'Pedał hamulca: wciskanie i puszczanie | Nieznane: kanał hamulca jest '
-            'zbyt wolny (2.1 Hz). Pokazuje, kiedy trwa hamowanie, ale nie jak '
-            'porusza się pedał, dlatego narastanie i odpuszczanie powyżej '
-            'pochodzą z opóźnienia.',
-        'Narastanie hamowania | To okrążenie: 0.80\u00a0g/s · typowo '
+        'Na podstawie kanału przyspieszenia wzdłużnego (10.0 Hz) z '
+            'klasyfikowanych okrążeń tego dnia. Hamowanie wystąpiło na 3 z 3 '
+            'okrążeń.',
+        'Praca pedałem hamulca | Brak wiarygodnej wartości: kanał hamulca ma '
+            'zbyt niską częstotliwość (2.1 Hz). Pozwala określić, kiedy '
+            'hamowanie trwa, ale nie tempo ruchu pedału, dlatego wartości '
+            'narastania i odpuszczania wyżej są wyznaczane z opóźnienia '
+            'samochodu.',
+        'Tempo narastania hamowania | To okrążenie: 0.80\u00a0g/s · typowo '
             '0.70\u00a0g/s (3 okrążenia)',
-        'Od hamulca do gazu | To okrążenie: około 0.8\u00a0s · typowo około '
+        'Przejście z hamulca na gaz | To okrążenie: około 0.8\u00a0s · typowo około '
             '0.8\u00a0s (3 okrążenia)',
-        'Przeciążenie boczne nie ma zapisanej jednostki: odczytane jako g.',
-        'Szczyt 0.5 s od początku hamowania trwającego 2.0 s. Zwykle na '
-            'początku (1/3) hamowania, wg czasu.',
+        'Kanał przeciążenia bocznego nie ma zapisanej jednostki — przyjęto g.',
+        'Maksymalne opóźnienie po 0.5 s od początku hamowania; cała strefa '
+            'hamowania trwa 2.0 s. Maksymalne opóźnienie zwykle pojawia się w '
+            'pierwszej 1/3 czasu hamowania.',
       ),
     ]) {
       await show(
@@ -366,8 +371,9 @@ void main() {
       ),
       (
         'pl',
-        'Z 5 z 16 okrążeń z hamowaniem; w pozostałych hamowanie zaczęło się '
-            'ponownie przed gazem albo samochód toczył się bez gazu.',
+        'Wartość dostępna dla 5 z 16 okrążeń z hamowaniem; na pozostałych '
+            'wystąpiło kolejne hamowanie przed dodaniem gazu albo samochód '
+            'pozostał bez gazu.',
       ),
     ]) {
       await show(
@@ -433,7 +439,7 @@ void main() {
     expect(
       rowText(tester, 'brakingTechniqueTrail'),
       contains(
-        'Prędkość nie ma zapisanej jednostki: odległości odczytane w mph.',
+        'Prędkość nie ma zapisanej jednostki — odległości są wyznaczane przy założeniu mph.',
       ),
     );
     expect(tester.takeException(), isNull);
@@ -502,8 +508,9 @@ void main() {
       ),
       (
         'pl',
-        'To okrążenie: nieznane, hamulec to kanał OBD przepróbkowany do '
-            'wierszy zapisu, jego własna częstotliwość nie jest znana',
+        'To okrążenie: brak danych (kanał hamulca z OBD został przeliczony do '
+            'częstotliwości zapisu; jego rzeczywista częstotliwość próbkowania '
+            'jest nieznana)',
       ),
     ]) {
       await show(
@@ -535,12 +542,12 @@ void main() {
       (
         summarizeBrakingTechnique([(_a, none), (_b, none), (_c, none)]),
         'Not known: no braking here',
-        'Nieznane: brak hamowania w tym miejscu',
+        'Brak danych: brak hamowania w tym miejscu',
       ),
       (
         summarizeBrakingTechnique([(_a, slow), (_b, slow), (_c, slow)]),
         'Not known: channel too slow (4.0 Hz)',
-        'Nieznane: kanał zbyt wolny (4.0 Hz)',
+        'Brak danych: kanał zbyt wolny (4.0 Hz)',
       ),
     ];
     for (final (technique, english, polish) in cases) {
