@@ -9,7 +9,9 @@ import 'package:fetproject/fetproject.dart'
 import 'track_progress.dart';
 
 /// Corners with no proposed straight between them form one corner chain.
-/// Stored review decisions are keyed by this tag.
+/// Stored review decisions are keyed by this tag (and match proposals by exact
+/// bounds, so dividing chains, [SegmentProposalOptions.splitCornerChains],
+/// needs no new tag).
 const trackSegmentProposalAlgorithm = 'track-segment-proposal-v2';
 
 /// Uncertainty reasons of a proposal boundary. A boundary with no reason is
@@ -47,6 +49,7 @@ final class SegmentProposalOptions {
     this.minimumCornerTurnRadians = 0.35,
     this.connectedStraightMeters = 20.0,
     this.certainStraightMeters = 40.0,
+    this.splitCornerChains = false,
   });
 
   /// |curvature| at or above this is turning.
@@ -64,6 +67,13 @@ final class SegmentProposalOptions {
 
   /// Shorter straights get uncertain boundaries.
   final double certainStraightMeters;
+
+  /// Whether a chain of corners with no proposed straight between them is
+  /// divided into its single corners, one per turning run (FET-115). The
+  /// stretch between two runs joins the corner before it, and the boundary
+  /// between them is uncertain ([proposalUncertainConnectedCorners]). Off,
+  /// the chain is one proposal, as in FlappedEar Overlays.
+  final bool splitCornerChains;
 }
 
 /// One end of a proposal.
@@ -318,6 +328,15 @@ TrackSegmentProposals proposeTrackSegments(
         _Piece(_Run(piece.run.label, piece.run.first, piece.run.count), piece.start._copy()),
       );
       chained.add(straightPiece ? 0 : 1);
+      continue;
+    }
+    if (options.splitCornerChains && !straightPiece) {
+      // The next corner of the chain stands on its own; the stretch before
+      // it stays with the corner it follows.
+      final start = piece.start._copy();
+      _addReason(start.uncertaintyReasons, proposalUncertainConnectedCorners);
+      kept.add(_Piece(_Run(piece.run.label, piece.run.first, piece.run.count), start));
+      chained.add(1);
       continue;
     }
     // Extend the current chain (its label stays non-zero: it is a corner).

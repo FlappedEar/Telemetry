@@ -61,16 +61,19 @@ void main() {
     // The grouping on the owner's day at the thresholds in lap_styles.dart
     // (5 m, 10 m): a change here means a threshold or a rule moved, and the
     // user guide's screenshot and the owner's decisions need another look.
-    expect(styles.cornerCount, 6);
-    expect(styles.cornersNeeded, 3);
+    // Corner complexes are divided into single corners (FET-115): 15 corners
+    // with a typical instead of 6, and one late-braking lap (the best lap of
+    // the day) where two of the longer-chain laps were before.
+    expect(styles.cornerCount, 15);
+    expect(styles.cornersNeeded, 8);
     expect(
       {for (final group in styles.groups) group.style: group.laps.length},
-      {LapStyle.lateBraking: 2, LapStyle.typical: 21},
+      {LapStyle.lateBraking: 1, LapStyle.typical: 22},
     );
-    expect(styles.best!.style, LapStyle.typical);
+    expect(styles.best!.style, LapStyle.lateBraking);
     expect(
       styles.group(LapStyle.lateBraking)!.laps.map((lap) => day.rowOf(lap).runName),
-      unorderedEquals(['Session 1', 'Session 4']),
+      unorderedEquals(['Session 5']),
     );
 
     // Braking came from the deceleration, never the pedal.
