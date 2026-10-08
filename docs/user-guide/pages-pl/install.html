@@ -1,12 +1,13 @@
 <!-- title: Instalacja | nav: Instalacja -->
 <h1 id="install">Instalacja</h1>
-<p class="lead">Aplikacja nie jest jeszcze dostępna w sklepach z aplikacjami. Wersje na Androida i macOS możesz pobrać z GitHub Releases projektu.</p>
+<p class="lead">Aplikacja nie jest jeszcze dostępna w sklepach z aplikacjami. Wersje na Androida, macOS i Windows możesz pobrać z GitHub Releases projektu.</p>
 
 <p>Każde wydanie na <a href="https://github.com/FlappedEar/Telemetry/releases">stronie Releases</a> zawiera w sekcji <strong>Assets</strong>:</p>
 <ul>
   <li><code>FlappedEar-Telemetry-&lt;version&gt;-android.apk</code>: aplikację na Androida.</li>
   <li><code>FlappedEar-Telemetry-&lt;version&gt;-macos.zip</code>: aplikację na Maca.</li>
-  <li><code>SHA256SUMS.txt</code>: sumy kontrolne obu plików.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>: aplikację na Windows.</li>
+  <li><code>SHA256SUMS.txt</code>: sumy kontrolne powyższych plików.</li>
 </ul>
 
 <h2 id="android">Android (Pixel)</h2>
@@ -39,19 +40,26 @@ flutter run -d macos</code></pre>
 <p>Wersja na iOS jest obecnie budowana i testowana tylko w symulatorze, dopóki projekt nie będzie miał konta Apple Developer. Nie można jej jeszcze zainstalować na fizycznym iPhonie ani iPadzie.</p>
 
 <h2 id="windows">Windows</h2>
-<p>Aplikacja wymaga 64-bitowego Windows 10 lub 11. Projekt można zbudować dla Windows, ale gotowy plik instalacyjny nie jest jeszcze publikowany.</p>
+<p>Aplikacja wymaga 64-bitowego Windows 10 lub 11.</p>
+<ol class="steps">
+  <li>Pobierz plik <code>-windows.zip</code> z najnowszego wydania. Kliknij go prawym przyciskiem myszy, wybierz <strong>Wyodrębnij wszystko</strong> i wskaż folder, który zachowasz, na przykład <code>Dokumenty</code>. Nie uruchamiaj aplikacji bezpośrednio z archiwum ZIP.</li>
+  <li>Otwórz wyodrębniony folder i uruchom <code>telemetry.exe</code>. Wersja na Windows nie jest jeszcze podpisana, dlatego przy pierwszym uruchomieniu Windows SmartScreen może wyświetlić komunikat <strong>System Windows ochronił ten komputer</strong>: kliknij <strong>Więcej informacji</strong>, a następnie <strong>Uruchom mimo to</strong>.</li>
+  <li>Nowsze wydanie to nowy folder: wyodrębnij je w ten sam sposób i uruchom nowy plik <code>telemetry.exe</code>. Zapisane dni pozostaną na miejscu. Stary folder możesz usunąć.</li>
+</ol>
+<p>Aby uruchomić najnowszy kod bez gotowego wydania, zainstaluj Flutter 3.47.6 i wykonaj <code>flutter run -d windows</code> w lokalnej kopii repozytorium.</p>
 
 <h2 id="updates">Aktualizacje</h2>
 <p>Przy uruchomieniu aplikacja, najwyżej raz dziennie, sprawdza w GitHubie, czy dostępne jest nowsze wydanie, oraz pobiera aktualną <a href="day.html#circuit-names">listę torów</a>. Jeśli pojawi się nowa wersja, zobaczysz komunikat; wybierz <strong>Szczegóły</strong>. Aby sprawdzić ręcznie, wybierz <strong>Sprawdź aktualizacje</strong> z menu ⋮ na ekranie <strong>Start</strong> albo otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮). <strong>Aktualizacje</strong> to pierwsza sekcja i pokazuje zainstalowaną wersję. Wyłączenie <strong>Sprawdzaj przy uruchomieniu, czy jest nowa wersja</strong> zatrzymuje automatyczne sprawdzanie; lista torów również pozostanie wtedy bez zmian, dopóki nie wybierzesz <strong>Zaktualizuj listę torów</strong>. Do GitHuba wysyłane są wyłącznie zapytania dotyczące wydań, plików wydań i listy torów; Twoje nagrania telemetryczne i ustawienia nie są wysyłane. Bez połączenia z internetem albo po przekroczeniu limitu zapytań GitHuba automatyczne sprawdzanie po prostu nic nie wyświetli i spróbuje ponownie przy kolejnym uruchomieniu.</p>
 <ul>
   <li><strong>Android:</strong> wybierz <strong>Pobierz i zainstaluj</strong>. Przy pierwszej aktualizacji Android poprosi o zezwolenie FlappedEar Telemetry na instalowanie aplikacji. Włącz je w otwartych ustawieniach, wróć do aplikacji i wybierz <strong>Dalej</strong> (jeśli aplikacja została uruchomiona ponownie, otwórz <strong>Ustawienia</strong> i wybierz <strong>Sprawdź aktualizacje</strong>). Aplikacja pobierze APK, zweryfikuje go przy użyciu <code>SHA256SUMS.txt</code> z wydania i otworzy instalator Androida. Potwierdź aktualizację. Zapisane dni pozostają bez zmian.</li>
   <li><strong>Mac:</strong> wybierz <strong>Pobierz</strong> i wskaż miejsce zapisania pliku ZIP (domyślnie proponowany jest folder Pobrane). Aplikacja zweryfikuje plik przy użyciu <code>SHA256SUMS.txt</code> i pokaże go w Finderze. Otwórz archiwum i przenieś <strong>FlappedEar Telemetry</strong> do folderu <strong>Programy</strong>, zastępując starą wersję. macOS może ponownie zablokować pierwsze uruchomienie nowej kopii; zezwól na nie zgodnie z instrukcją w sekcji <a href="#mac">macOS</a>.</li>
-  <li><strong>iPhone, iPad i Windows:</strong> wydania nie zawierają jeszcze plików dla tych systemów, dlatego aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie.</li>
+  <li><strong>Windows:</strong> aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie. Pobierz tam plik <code>-windows.zip</code> i wyodrębnij go zgodnie z opisem w sekcji <a href="#windows">Windows</a>.</li>
+  <li><strong>iPhone i iPad:</strong> wydania nie zawierają jeszcze plików dla tych systemów, dlatego aplikacja jedynie informuje o dostępności nowszej wersji; <strong>Co nowego</strong> otwiera stronę wydania w GitHubie.</li>
 </ul>
 <p>Plik, którego suma kontrolna nie zgadza się z wydaniem, jest usuwany i nigdy nie zostaje zainstalowany.</p>
 
 <h2 id="maps">Tła map</h2>
-<p>Mapy uliczne (OpenStreetMap) działają w każdej wersji. Zdjęcia satelitarne (MapTiler) są dostępne tylko w kompilacjach zawierających klucz MapTiler; oficjalne wydania i kompilacje Androida z CI go mają, natomiast lokalnie zbudowana wersja na Maca – nie. Na iPhonie, iPadzie i Macu przycisk warstw oferuje również Apple Maps, które nie wymagają klucza; na innych platformach ta opcja nie jest dostępna. Przy pierwszym wyświetleniu danego toru tło mapy wymaga połączenia z internetem. Zobacz <a href="lap.html#background">Tło mapy</a>.</p>
+<p>Mapy uliczne (OpenStreetMap) działają w każdej wersji. Zdjęcia satelitarne (MapTiler) są dostępne tylko w kompilacjach zawierających klucz MapTiler; oficjalne wydania i kompilacje Androida z CI go mają, natomiast lokalnie zbudowana wersja na Maca lub Windows – nie. Na iPhonie, iPadzie i Macu przycisk warstw oferuje również Apple Maps, które nie wymagają klucza; na innych platformach ta opcja nie jest dostępna. Przy pierwszym wyświetleniu danego toru tło mapy wymaga połączenia z internetem. Zobacz <a href="lap.html#background">Tło mapy</a>.</p>
 
 <h2 id="licences">Licencje</h2>
 <p>FlappedEar Telemetry jest darmowy, a jego kod źródłowy jest udostępniany na licencji Apache License 2.0. Aby zobaczyć licencje aplikacji i używanego przez nią oprogramowania, a także informacje o źródłach map (OpenStreetMap i MapTiler) i pogody (Open-Meteo.com), otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮) i wybierz <strong>Licencje open source</strong>.</p>
