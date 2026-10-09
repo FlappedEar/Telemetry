@@ -218,6 +218,8 @@ extension CoreText on AppLocalizations {
         coreVboNoTimeColumn,
       'VBO header has more names than its rows have values, so the time column cannot be found with certainty.' =>
         coreVboHeaderRowMismatch,
+      'VBO rows have more values than its header has names, so the time column cannot be found with certainty.' =>
+        coreVboRowHeaderMismatch,
       'VBO exceeds the supported 128 MiB file size limit.' => coreVboFileSize,
       'VBO text exceeds the supported complexity limit.' => coreVboComplexity,
       'VBO has more values (rows x columns) than the supported 40 million.' =>

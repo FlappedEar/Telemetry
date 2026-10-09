@@ -6921,6 +6921,12 @@ abstract class AppLocalizations {
   /// **'VBO header has more names than its rows have values, so the time column cannot be found with certainty.'**
   String get coreVboHeaderRowMismatch;
 
+  /// A VBO recording has more values in most rows than the header has column names, so the time column may be misread and the file is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'VBO rows have more values than its header has names, so the time column cannot be found with certainty.'**
+  String get coreVboRowHeaderMismatch;
+
   /// A VBO recording is too large to read.
   ///
   /// In en, this message translates to:

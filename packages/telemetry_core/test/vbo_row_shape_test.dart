@@ -1,6 +1,7 @@
-// Truth tests for rows that do not fit the header (FET-242): a header with
-// more names than any row has values cannot be matched to the values, so the
-// file is refused rather than read with the wrong column as its clock.
+// Truth tests for rows that do not fit the header (FET-242, FET-271): a header
+// with more names than most rows have values, or rows with more values than
+// names, cannot be matched to the values, so the file is refused rather than
+// read with the wrong column as its clock.
 import 'dart:io';
 
 import 'package:telemetry_core/telemetry_core.dart';
@@ -71,9 +72,51 @@ void main() {
     expect(session.warnings, isEmpty);
   });
 
-  test('rows with extra values still read', () {
-    final session = parseVboFile(write('[column names]\ntime rpm\n[data]\n0.0 1 9\n0.1 2 9\n'));
+  Matcher refusedAsExtra() => throwsA(
+    isA<VboParseError>().having(
+      (error) => error.message,
+      'message',
+      contains('more values than its header has names'),
+    ),
+  );
+
+  test('a few rows with extra values among normal ones still read, and warn', () {
+    final session = parseVboFile(
+      write('[column names]\ntime rpm\n[data]\n0.0 1\n0.1 2 9\n0.2 3\n'),
+    );
+    expect(session.channels['rpm']!.values, [1, 2, 3]);
+    expect(session.warnings.where((warning) => warning.contains('extra')), hasLength(1));
+  });
+
+  test('header "time lat" with rows "1 0.0 5" is refused, not timed by the counter (FET-271)', () {
+    // An unnamed counter column stands before the real time; its values
+    // 1, 2, 3 would otherwise time the file at one sample a second.
+    final path = write('[column names]\ntime lat\n[data]\n1 0.0 5\n2 0.1 6\n3 0.2 7\n');
+    expect(() => parseVboFile(path), refusedAsExtra());
+  });
+
+  test('most rows with extra values are refused when the time column is first too', () {
+    final path = write('[column names]\ntime rpm\n[data]\n0.0 1 9\n0.1 2 9\n');
+    expect(() => parseVboFile(path), refusedAsExtra());
+  });
+
+  test('trailing separators leave empty extra fields, which are not extra values', () {
+    final session = parseVboFile(
+      write('[column names]\ntime,rpm\n[data]\n0.0,1,,\n0.1,2,,\n0.2,3,,\n'),
+    );
+    expect(session.channels['rpm']!.values, [1, 2, 3]);
+  });
+
+  test('a tie of rows with extra values and normal rows is read', () {
+    final session = parseVboFile(write('[column names]\ntime rpm\n[data]\n0.0 1 9\n0.1 2\n'));
     expect(session.channels['rpm']!.values, [1, 2]);
+  });
+
+  test('extra values in rows skipped for their time do not count', () {
+    final session = parseVboFile(
+      write('[column names]\ntime rpm\n[data]\n0.0 1\nbad 2 9\nbad 3 9\n0.1 4\n'),
+    );
+    expect(session.channels['rpm']!.values, [1, 4]);
   });
 
   test('full rows skipped for their time do not outvote the short rows read', () {

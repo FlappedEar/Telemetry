@@ -4694,6 +4694,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Plik VBO ma w nagłówku więcej nazw niż wiersze mają wartości, więc nie da się mieć pewności, która kolumna jest czasem.';
 
   @override
+  String get coreVboRowHeaderMismatch =>
+      'Plik VBO ma w wierszach więcej wartości niż nazw w nagłówku, więc nie da się mieć pewności, która kolumna jest czasem.';
+
+  @override
   String get coreVboFileSize =>
       'Plik VBO przekracza obsługiwany limit rozmiaru 128 MiB.';
 

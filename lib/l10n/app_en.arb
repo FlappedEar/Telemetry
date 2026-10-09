@@ -6745,6 +6745,10 @@
   "@coreVboHeaderRowMismatch": {
     "description": "A VBO recording has more column names than most rows have values and its time column is not first, so the time column may be misread and the file is refused."
   },
+  "coreVboRowHeaderMismatch": "VBO rows have more values than its header has names, so the time column cannot be found with certainty.",
+  "@coreVboRowHeaderMismatch": {
+    "description": "A VBO recording has more values in most rows than the header has column names, so the time column may be misread and the file is refused."
+  },
   "coreVboFileSize": "VBO exceeds the supported 128 MiB file size limit.",
   "@coreVboFileSize": {
     "description": "A VBO recording is too large to read."

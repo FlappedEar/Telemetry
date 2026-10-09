@@ -95,6 +95,14 @@ final List<_Row> _rows = [
     ),
     (l) => l.coreVboHeaderRowMismatch,
   ),
+  (
+    _vboParser,
+    "'VBO rows have more values than its header has names, so the time column cannot be found with certainty.'",
+    _vbo(
+      'VBO rows have more values than its header has names, so the time column cannot be found with certainty.',
+    ),
+    (l) => l.coreVboRowHeaderMismatch,
+  ),
   for (final (path, text, polish) in <(String, String, _Text)>[
     (
       _vboFile,
