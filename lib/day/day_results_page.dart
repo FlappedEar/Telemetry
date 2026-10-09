@@ -757,9 +757,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }) {
     final path = controller.documentPath;
     if (library == null || path == null || !library.holds(path)) return;
-    final best = controller.theoreticalBestLoading
-        ? null
-        : controller.theoreticalBest;
+    // What the file holds, not the live state, which can be edits ahead of
+    // it while a save runs (audit F09).
+    final saved = controller.savedDay;
+    if (saved == null) return;
+    final best = controller.savedTheoreticalBest;
     if (!force &&
         controller.saveCount == _recordedSaves &&
         (best == null || identical(best, _recordedBest))) {
@@ -773,12 +775,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
       library.recordDay(
         eventId: controller.eventId,
         path: path,
-        name: controller.name,
-        analysis: controller.analysis,
-        recordings: {
-          for (final named in controller.runs)
-            named.run.id: controller.session(named.run.id),
-        },
+        name: saved.name,
+        analysis: saved.analysis,
+        recordings: saved.recordings,
         theoreticalBest: best,
         weather: weather,
         // The setups as saved: an edit not saved yet is not the driver's
@@ -786,10 +785,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
         // not saved since gives none, so the profile keeps its own.
         setups: controller.setupsSaved
             ? {
-                for (final named in controller.runs)
-                  named.run.id: ProfileSetup.of(
-                    controller.savedRunSetup(named.run.id),
-                  ),
+                for (final id in saved.recordings.keys)
+                  id: ProfileSetup.of(controller.savedRunSetup(id)),
               }
             : null,
       ),

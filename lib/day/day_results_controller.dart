@@ -18,6 +18,7 @@ import 'recovery_store.dart';
 import 'reference_lap.dart' show disposeReferenceLapOf;
 import 'recovery_writes.dart';
 import 'save_journal.dart';
+import 'saved_day.dart';
 import 'segment_remeasure.dart';
 
 export 'coach_job.dart' show CoachJob, CoachRunner, defaultCoachRunner;
@@ -173,6 +174,9 @@ final class DayResultsController extends ChangeNotifier {
        _dirty = recovered || changed {
     speedUnitSetting.addListener(_speedUnitAssumed);
     _dayContext.open(_buildDayContext());
+    // A day opened as its file holds it is what the file holds, before any
+    // edit or background result changes it.
+    if (_documentPath != null && !dirty) _saved.opened(_snapshot());
     // A restored day is what its snapshot holds: written again only when it
     // changes, so a day restored and not taken leaves the snapshot as it was.
     if (!recovered) _scheduleRecovery();
@@ -1332,6 +1336,7 @@ final class DayResultsController extends ChangeNotifier {
       final revision = _revision;
       final metadataNow = {..._metadataEdits};
       final document = _documentAt(path, metadataNow);
+      final taken = _snapshot();
       // Changes still waiting for the recovery snapshot are written to it
       // first: where the file is written in place (the macOS sandbox), the
       // app ending partway would cut it, and the snapshot then still holds
@@ -1339,6 +1344,7 @@ final class DayResultsController extends ChangeNotifier {
       if (_recoveryWrites.waiting) await flushRecovery();
       await _writer(path, document);
       _document = document;
+      _saved.saved(taken);
       _setupsSaved = true;
       // The details saved are in the document now; later edits stay.
       for (final MapEntry(:key, :value) in metadataNow.entries) {
@@ -1351,7 +1357,16 @@ final class DayResultsController extends ChangeNotifier {
       _segmentEdits.clear();
       // Automatic segments were approved by the save with their own ids:
       // edits start from the saved ones.
-      if (_theoreticalBest?.automaticSegments ?? false) _resetTheoreticalBest();
+      final approved = _theoreticalBest?.automaticSegments ?? false;
+      if (approved) _resetTheoreticalBest();
+      // Saving approved those segments, which the decisions key reads. The
+      // saved day stands under the key it has now only when nothing else
+      // changed meanwhile; otherwise the key the document was taken under
+      // stays, and no live result matches it.
+      _saved.afterSave(
+        key: _revision == revision ? decisionsKey : null,
+        dropBest: approved,
+      );
       if (_revision == revision && !pairingPending) {
         _dirty = false;
         _recoveryWrites
@@ -2352,6 +2367,43 @@ final class DayResultsController extends ChangeNotifier {
     _explainedFor = null;
     _detailsChanged();
     return null;
+  }
+
+  final _saved = SavedDayTracker();
+
+  /// The day as the file holds it: as the last successful save wrote it, or
+  /// as opened. Null for a day with changes the file does not hold and no
+  /// save since (a restored one), and for one never saved. The driver
+  /// profile records this, not the live state, which can be ahead of the
+  /// file.
+  SavedDay? get savedDay => _saved.day;
+
+  /// The theoretical best for [savedDay], if it was worked out under the
+  /// decisions the saved day stands under (see [SavedDayTracker.bestFor]).
+  DayTheoreticalBest? get savedTheoreticalBest => _saved.bestFor(
+    _theoreticalBest,
+    _theoreticalKey,
+    loading: _theoreticalBestLoading,
+  );
+
+  SavedDay _snapshot() {
+    final key = decisionsKey;
+    final best = _theoreticalBest;
+    return SavedDay(
+      revision: _revision,
+      name: _name,
+      analysis: _analysis,
+      recordings: {
+        for (final named in _runs) named.run.id: session(named.run.id),
+      },
+      decisionsKey: key,
+      theoreticalBest:
+          !_theoreticalBestLoading &&
+              best != null &&
+              listEquals(_theoreticalKey, key)
+          ? best
+          : null,
+    );
   }
 
   /// Renames the day (the document's event name, which Overlays shows too).
