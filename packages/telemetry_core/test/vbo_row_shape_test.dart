@@ -112,6 +112,23 @@ void main() {
     expect(session.channels['rpm']!.values, [1, 2]);
   });
 
+  test('a row dropped as a false midnight rollover is no evidence of the shape (FET-271)', () {
+    // Kept: 213000 (normal) and 213002 (extra); the early-morning row between
+    // them is dropped as no rollover, so the extra rows are a tie, not a majority.
+    final session = parseVboFile(
+      write('[column names]\ntime rpm\n[data]\n213000 1\n001500 2 9\n213002 3 9\n'),
+    );
+    expect(session.channels['rpm']!.values, [1, 3]);
+  });
+
+  test('a short row dropped as a false midnight rollover does not count either', () {
+    // Kept: 213000 (full) and 213002 (full); the dropped row is short.
+    final session = parseVboFile(
+      write('[column names]\nrpm time brake\n[data]\n1 213000 0\n2 001500\n3 213002 0\n'),
+    );
+    expect(session.channels['rpm']!.values, [1, 3]);
+  });
+
   test('extra values in rows skipped for their time do not count', () {
     final session = parseVboFile(
       write('[column names]\ntime rpm\n[data]\n0.0 1\nbad 2 9\nbad 3 9\n0.1 4\n'),

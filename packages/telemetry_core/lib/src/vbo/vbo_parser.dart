@@ -184,7 +184,8 @@ class _VboParse {
     // the time before the rollover), the "rollover" was one bad row, which
     // is dropped and the day offset restored. Two bad rows in a row confirm
     // each other; a bad last row cannot be told from a real midnight.
-    ({int row, double absolute, double? clock, double offset})? unconfirmedRollover;
+    ({int row, double absolute, double? clock, double offset, bool short, bool extra})?
+    unconfirmedRollover;
 
     // Fields are read in place: no string per value.
     final row = RowBounds(names.length);
@@ -219,12 +220,20 @@ class _VboParse {
           parsedTime.seconds - beforeRollover <= vboMaximumRolloverGapSeconds) {
         unconfirmedRollover = null;
         --accepted;
+        // The dropped row is no evidence of the file's shape either.
+        if (rollover.short) {
+          --shortRows;
+        } else {
+          --fullRows;
+        }
+        if (rollover.extra) --extraRows;
         previousAbsoluteTime = rollover.absolute;
         previousClockTime = rollover.clock;
         clockDayOffset = rollover.offset;
         warn('Row ${rollover.row}: not a midnight rollover after all; row skipped.');
       }
-      ({int row, double absolute, double? clock, double offset})? rolledOver;
+      ({int row, double absolute, double? clock, double offset, bool short, bool extra})?
+      rolledOver;
       if (parsedTime.format == TimestampFormat.clock) {
         if (previousClockTime != null &&
             previousAbsoluteTime != null &&
@@ -236,6 +245,8 @@ class _VboParse {
             absolute: previousAbsoluteTime,
             clock: previousClockTime,
             offset: clockDayOffset,
+            short: cellCount < names.length,
+            extra: row.hasExtraValue,
           );
           clockDayOffset = checkedTime(clockDayOffset + 24.0 * 3600.0);
           warn('Row $rowNumber: midnight rollover detected.');
