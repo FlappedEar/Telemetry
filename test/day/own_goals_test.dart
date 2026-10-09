@@ -905,7 +905,7 @@ void main() {
       );
       expect(
         line(tester, 'briefingCar'),
-        'Car | Not recorded | Strong acceleration: needs 4 ranked laps',
+        'Car | Not recorded | Peak acceleration: needs 4 ranked laps',
       );
       // The day records temperatures, this session does not.
       await card(

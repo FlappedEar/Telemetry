@@ -339,7 +339,10 @@ a background isolate.
   or more below the run's highest, with at least `carWatchAccelerationLaps`
   (4) such laps, together with the temperature that rose most over the same
   laps (`carWatchAlongsideCelsius`, 2 °C, or more). `CarWatchStatus` says
-  for each part whether it was read and why not. Observations, not a
+  for each part whether it was read and why not. When read,
+  `temperatureFromLap`/`temperatureToLap` and `peak` (the last ranked lap's
+  strong acceleration against the highest earlier one, noted or not) give the
+  laps and values the lines name. Observations, not a
   diagnosis. A rule for a session starting hotter than earlier ones is not
   built yet.
 - Channel summaries, temperature associations, focus areas and the day

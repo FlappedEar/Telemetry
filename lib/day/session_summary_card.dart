@@ -427,7 +427,12 @@ List<String> carWatchLines(BuildContext context, CarWatch watch) {
       CarWatchStatus.read when watch.rises.isNotEmpty => [
         for (final item in watch.rises) rise(item),
       ],
-      CarWatchStatus.read => [l10n.summaryCarSettledTemperatures],
+      CarWatchStatus.read => [
+        l10n.summaryCarSettledTemperatures(
+          '${watch.temperatureFromLap}',
+          '${watch.temperatureToLap}',
+        ),
+      ],
       CarWatchStatus.needsLaps => [
         l10n.summaryCarTemperaturesNeedLaps(carWatchLaps),
       ],
@@ -442,8 +447,22 @@ List<String> carWatchLines(BuildContext context, CarWatch watch) {
         if (watch.fall case final fall?) ...[
           fallText(fall),
           l10n.summaryCarFallNote,
-        ] else
-          l10n.summaryCarSettledAcceleration,
+        ] else if (watch.peak case final peak?)
+          peak.lower > 0
+              ? l10n.summaryCarAccelerationHeld(
+                  // Cut, not rounded: below 5% it must never read as the 5% fall.
+                  fixed((peak.lower * 1000).floorToDouble() / 10, 1),
+                  '${peak.fromLap}',
+                  '${peak.toLap}',
+                  g(peak.from),
+                  g(peak.to),
+                )
+              : l10n.summaryCarAccelerationUp(
+                  '${peak.fromLap}',
+                  '${peak.toLap}',
+                  g(peak.from),
+                  g(peak.to),
+                ),
       ],
       // Enough ranked laps, too few of them with strong acceleration.
       CarWatchStatus.needsLaps
