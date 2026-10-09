@@ -8661,6 +8661,12 @@ abstract class AppLocalizations {
   /// **'Shown for every day driven here. Kept on this device.'**
   String get circuitNameHelp;
 
+  /// Error under the circuit name field when the name could not be written to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'The name could not be saved on this device. It is used until the app is closed. Try again.'**
+  String get circuitNameNotSaved;
+
   /// Settings heading: the circuit list.
   ///
   /// In en, this message translates to:
@@ -8702,6 +8708,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The circuit list could not be fetched. Check the connection and try again.'**
   String get settingsCircuitsFailed;
+
+  /// Message when a newer circuit list was fetched but could not be written to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'The circuit list was fetched but could not be saved on this device. It is used until the app is closed.'**
+  String get settingsCircuitsNotSaved;
+
+  /// Message when forgetting a circuit name could not be written to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'The change could not be saved on this device. The name comes back when the app is closed.'**
+  String get settingsCircuitsForgetNotSaved;
 
   /// Heading of the circuits the driver named.
   ///

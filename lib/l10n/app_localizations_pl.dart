@@ -6012,6 +6012,10 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pokazywana dla każdego dnia na tym torze. Zapisana na tym urządzeniu.';
 
   @override
+  String get circuitNameNotSaved =>
+      'Nie udało się zapisać nazwy na tym urządzeniu. Obowiązuje do zamknięcia aplikacji. Spróbuj ponownie.';
+
+  @override
   String get settingsCircuitsHeading => 'Tory';
 
   @override
@@ -6035,6 +6039,14 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get settingsCircuitsFailed =>
       'Nie udało się pobrać listy torów. Sprawdź połączenie i spróbuj ponownie.';
+
+  @override
+  String get settingsCircuitsNotSaved =>
+      'Lista torów została pobrana, ale nie udało się jej zapisać na tym urządzeniu. Obowiązuje do zamknięcia aplikacji.';
+
+  @override
+  String get settingsCircuitsForgetNotSaved =>
+      'Nie udało się zapisać zmiany na tym urządzeniu. Nazwa wróci po zamknięciu aplikacji.';
 
   @override
   String get settingsCircuitsMine => 'Twoje nazwy torów';

@@ -26,8 +26,14 @@ const maximumCircuitListCharacters = 4 * 1024 * 1024;
 /// The radius of a circuit the driver adds, in metres.
 const ownCircuitRadiusMeters = 1500.0;
 
-/// The outcome of [CircuitDirectory.refresh].
-enum CircuitRefresh { updated, upToDate, failed }
+/// The outcome of [CircuitDirectory.refresh]. [notSaved]: a newer list was
+/// fetched and is in use now, but could not be kept on this device.
+enum CircuitRefresh { updated, upToDate, failed, notSaved }
+
+/// The outcome of naming or forgetting a circuit. [invalid]: the name cannot
+/// be a circuit's name, nothing changed. [notSaved]: the change is in use
+/// until the app closes, but could not be kept on this device.
+enum CircuitSave { saved, invalid, notSaved }
 
 /// The circuits the app knows: the newest of the shipped and the fetched
 /// list, and the driver's own circuits, kept in the app's support folder.
@@ -59,13 +65,21 @@ class CircuitDirectory extends ChangeNotifier {
   /// Whether a [refresh] is running.
   bool get refreshing => _refreshing != null;
 
+  // Null: nothing is kept on disk here (web, widget tests). A folder that
+  // cannot be found throws, so that a save reports it.
   static Future<Directory?> _supportFolder() async {
     if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return null;
+    return Directory(
+      p.join((await getApplicationSupportDirectory()).path, 'circuits'),
+    );
+  }
+
+  // Reading never fails the caller: without a folder there is nothing to read.
+  Future<Directory?> _readableFolder() async {
     try {
-      return Directory(
-        p.join((await getApplicationSupportDirectory()).path, 'circuits'),
-      );
-    } on Object {
+      return await _folder();
+    } on Object catch (error) {
+      debugPrint('Circuits folder not found: $error');
       return null;
     }
   }
@@ -85,7 +99,7 @@ class CircuitDirectory extends ChangeNotifier {
     } on Object catch (error) {
       debugPrint('Shipped circuit list not read: $error');
     }
-    final folder = await _folder();
+    final folder = await _readableFolder();
     if (folder != null) {
       final fetched = await _read(File(p.join(folder.path, 'list.json')));
       if (fetched != null) {
@@ -159,23 +173,34 @@ class CircuitDirectory extends ChangeNotifier {
     }
     if (fetched.revision <= _list.revision) return CircuitRefresh.upToDate;
     _list = fetched;
-    final folder = await _folder();
-    if (folder != null) {
-      await _write(File(p.join(folder.path, 'list.json')), text);
+    try {
+      final folder = await _folder();
+      if (folder != null &&
+          !await _write(File(p.join(folder.path, 'list.json')), text)) {
+        return CircuitRefresh.notSaved;
+      }
+    } on Object catch (error) {
+      debugPrint('Circuit list not saved: $error');
+      return CircuitRefresh.notSaved;
     }
     return CircuitRefresh.updated;
   }
 
   /// Names the circuit a route starting [at] is on [name]: a new name for
-  /// the circuit found there, or a new circuit of the driver's. False when
-  /// [name] cannot be a circuit's name.
-  Future<bool> nameAt(GeoCoordinate at, String name, {Random? random}) async {
+  /// the circuit found there, or a new circuit of the driver's. Invalid when
+  /// [name] cannot be a circuit's name; [CircuitSave.notSaved] when the name
+  /// is in use but could not be kept on this device.
+  Future<CircuitSave> nameAt(
+    GeoCoordinate at,
+    String name, {
+    Random? random,
+  }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty ||
         trimmed.length > maximumCircuitNameCharacters ||
         trimmed.contains('\u0000') ||
         !isValidCoordinate(at)) {
-      return false;
+      return CircuitSave.invalid;
     }
     await load();
     final found = find(at);
@@ -193,20 +218,20 @@ class CircuitDirectory extends ChangeNotifier {
       circuit,
     ]);
     notifyListeners();
-    await _saveMine();
-    return true;
+    return await _saveMine() ? CircuitSave.saved : CircuitSave.notSaved;
   }
 
   /// Forgets the driver's circuit [id]: a listed circuit gets its listed
-  /// name back.
-  Future<void> remove(String id) async {
-    if (!_mine.any((circuit) => circuit.id == id)) return;
+  /// name back. [CircuitSave.notSaved] when the change could not be kept on
+  /// this device.
+  Future<CircuitSave> remove(String id) async {
+    if (!_mine.any((circuit) => circuit.id == id)) return CircuitSave.saved;
     _mine = List.unmodifiable([
       for (final own in _mine)
         if (own.id != id) own,
     ]);
     notifyListeners();
-    await _saveMine();
+    return await _saveMine() ? CircuitSave.saved : CircuitSave.notSaved;
   }
 
   /// The listed circuit [id] names, or null.
@@ -218,10 +243,10 @@ class CircuitDirectory extends ChangeNotifier {
   }
 
   // One write at a time, each of the circuits as they are when it runs.
-  // Null while none runs.
-  Future<void>? _saving;
+  // Null while none runs. Each completes with whether its file was written.
+  Future<bool>? _saving;
 
-  Future<void> _saveMine() {
+  Future<bool> _saveMine() {
     final previous = _saving;
     final next = previous == null
         ? _writeMine()
@@ -233,26 +258,32 @@ class CircuitDirectory extends ChangeNotifier {
     return next;
   }
 
-  Future<void> _writeMine() async {
-    final folder = await _folder();
-    if (folder != null) {
-      await _write(
+  Future<bool> _writeMine() async {
+    try {
+      final folder = await _folder();
+      if (folder == null) return true;
+      return await _write(
         File(p.join(folder.path, 'mine.json')),
         encodeUserCircuits(_mine),
       );
+    } on Object catch (error) {
+      debugPrint('Circuits not saved: $error');
+      return false;
     }
   }
 
   // Into a temporary file moved over [file]: a write cut short never leaves
-  // half a file.
-  static Future<void> _write(File file, String text) async {
+  // half a file. False when it could not be written.
+  static Future<bool> _write(File file, String text) async {
     try {
       await file.parent.create(recursive: true);
       final temporary = File('${file.path}.tmp');
       await temporary.writeAsString(text, flush: true);
       await temporary.rename(file.path);
+      return true;
     } on Object catch (error) {
       debugPrint('Circuits not saved: $error');
+      return false;
     }
   }
 }
@@ -271,7 +302,9 @@ Future<void> refreshCircuitsOnLaunch({DateTime? now}) async {
       !updateCheckDue(lastCircuitCheck.value, time)) {
     return;
   }
-  if (await directory.refresh() != CircuitRefresh.failed) {
+  // A list that could not be kept is fetched again at the next launch.
+  final outcome = await directory.refresh();
+  if (outcome == CircuitRefresh.updated || outcome == CircuitRefresh.upToDate) {
     lastCircuitCheck.value = time;
   }
 }

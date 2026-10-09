@@ -253,10 +253,21 @@ class _CircuitNameDialogState extends State<CircuitNameDialog> {
     super.dispose();
   }
 
+  // Set when the name is in use but could not be kept on this device; the
+  // dialog stays open so that the driver can try again.
+  bool _notSaved = false;
+
   Future<void> _save() async {
     final navigator = Navigator.of(context);
-    if (await circuitDirectory.nameAt(widget.start, _name.text)) {
-      navigator.pop();
+    final outcome = await circuitDirectory.nameAt(widget.start, _name.text);
+    if (!mounted) return;
+    switch (outcome) {
+      case CircuitSave.saved:
+        navigator.pop();
+      case CircuitSave.invalid:
+        break;
+      case CircuitSave.notSaved:
+        setState(() => _notSaved = true);
     }
   }
 
@@ -280,8 +291,10 @@ class _CircuitNameDialogState extends State<CircuitNameDialog> {
           decoration: InputDecoration(
             helperText: l10n.circuitNameHelp,
             helperMaxLines: 3,
+            errorText: _notSaved ? l10n.circuitNameNotSaved : null,
+            errorMaxLines: 4,
           ),
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) => setState(() => _notSaved = false),
           onSubmitted: (_) => canSave ? _save() : null,
         ),
       ),

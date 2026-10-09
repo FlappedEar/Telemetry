@@ -39,11 +39,12 @@ void main() {
     int shipped = 1,
     Future<String> Function(Uri uri, int maximum)? fetch,
     bool files = true,
+    Future<Directory?> Function()? folder,
   }) => CircuitDirectory(
     bundled: () async => list(shipped, [('a', 'Alpha', 50.0, 20.0)]),
     // Screens keep nothing on disk: a write still running when the test
     // ends would keep the folder open on Windows.
-    folder: () async => files ? directory : null,
+    folder: folder ?? () async => files ? directory : null,
     fetch: fetch ?? (uri, maximum) async => throw const SocketException('no'),
   );
 
@@ -96,24 +97,24 @@ void main() {
 
   test('the driver renames a circuit, adds one and forgets them', () async {
     final circuits = make();
-    expect(await circuits.nameAt(alpha, '  Home track '), isTrue);
+    expect(await circuits.nameAt(alpha, '  Home track '), CircuitSave.saved);
     expect(circuits.find(alpha)?.name, 'Home track');
     expect(circuits.mine.single.id, 'a');
     expect(circuits.listed('a')?.name, 'Alpha');
 
     expect(
       await circuits.nameAt(elsewhere, 'Kart track', random: Random(1)),
-      isTrue,
+      CircuitSave.saved,
     );
     expect(circuits.find(elsewhere)?.name, 'Kart track');
     expect(circuits.mine.last.id, startsWith('my:'));
     expect(circuits.mine.last.radiusMeters, ownCircuitRadiusMeters);
     // Renaming the driver's own circuit keeps it one circuit.
-    expect(await circuits.nameAt(elsewhere, 'Kart'), isTrue);
+    expect(await circuits.nameAt(elsewhere, 'Kart'), CircuitSave.saved);
     expect(circuits.mine.length, 2);
 
-    expect(await circuits.nameAt(alpha, ' '), isFalse);
-    expect(await circuits.nameAt(alpha, 'x' * 129), isFalse);
+    expect(await circuits.nameAt(alpha, ' '), CircuitSave.invalid);
+    expect(await circuits.nameAt(alpha, 'x' * 129), CircuitSave.invalid);
 
     // Kept on this device.
     final next = make();
@@ -132,6 +133,73 @@ void main() {
     final last = make();
     await last.load();
     expect(last.mine, isEmpty);
+  });
+
+  // A folder that cannot be made, because its parent is a file. Unlike
+  // permission bits, this fails for root too.
+  Future<Directory?> Function() blockedFolder() {
+    final blocker = File(p.join(directory.path, 'blocker'))
+      ..writeAsStringSync('a file');
+    return () async => Directory(p.join(blocker.path, 'circuits'));
+  }
+
+  test(
+    'a name that cannot be written is reported, not kept as saved',
+    () async {
+      final circuits = make(folder: blockedFolder());
+      await circuits.load();
+      expect(await circuits.nameAt(alpha, 'Home track'), CircuitSave.notSaved);
+      // Used until the app closes ...
+      expect(circuits.find(alpha)?.name, 'Home track');
+      // ... and a restarted instance agrees with the reported outcome.
+      final next = make(folder: blockedFolder());
+      await next.load();
+      expect(next.find(alpha)?.name, 'Alpha');
+      expect(next.mine, isEmpty);
+      // Invalid names are still told apart from failed writes.
+      expect(await circuits.nameAt(alpha, ' '), CircuitSave.invalid);
+    },
+  );
+
+  test('a folder that cannot be found is a failed save', () async {
+    final circuits = make(
+      folder: () async => throw const FileSystemException('no folder'),
+    );
+    await circuits.load();
+    expect(circuits.find(alpha)?.name, 'Alpha');
+    expect(await circuits.nameAt(alpha, 'Home track'), CircuitSave.notSaved);
+    expect(await circuits.remove('a'), CircuitSave.notSaved);
+  });
+
+  test('forgetting a name that cannot be written is reported', () async {
+    var broken = false;
+    final blocked = blockedFolder();
+    final circuits = make(folder: () async => broken ? blocked() : directory);
+    await circuits.load();
+    expect(await circuits.nameAt(alpha, 'Home track'), CircuitSave.saved);
+    broken = true;
+    expect(await circuits.remove('a'), CircuitSave.notSaved);
+    expect(circuits.find(alpha)?.name, 'Alpha');
+    // The file still holds the name: what a restart would show.
+    final next = make();
+    await next.load();
+    expect(next.find(alpha)?.name, 'Home track');
+    broken = false;
+    expect(await circuits.remove('a'), CircuitSave.saved);
+    expect(await circuits.remove('a'), CircuitSave.saved);
+  });
+
+  test('a fetched list that cannot be written is reported', () async {
+    final circuits = make(
+      folder: blockedFolder(),
+      fetch: (uri, maximum) async => list(2, [('a', 'Alpha ring', 50.0, 20.0)]),
+    );
+    expect(await circuits.refresh(), CircuitRefresh.notSaved);
+    // In use now, though not kept.
+    expect(circuits.find(alpha)?.name, 'Alpha ring');
+    final next = make(folder: blockedFolder());
+    await next.load();
+    expect(next.find(alpha)?.name, 'Alpha');
   });
 
   test('a damaged file of the driver\'s is left alone', () async {
@@ -200,6 +268,25 @@ void main() {
       updateCheckSetting.value = true;
       await refreshCircuitsOnLaunch(now: now.add(const Duration(days: 2)));
       expect(asked, 2);
+    },
+  );
+
+  test(
+    'a list that cannot be kept is fetched again at the next launch',
+    () async {
+      final saved = circuitDirectory;
+      addTearDown(() {
+        circuitDirectory = saved;
+        lastCircuitCheck.value = null;
+      });
+      circuitDirectory = make(
+        folder: blockedFolder(),
+        fetch: (uri, maximum) async =>
+            list(2, [('a', 'Alpha ring', 50.0, 20.0)]),
+      );
+      lastCircuitCheck.value = null;
+      await refreshCircuitsOnLaunch(now: DateTime.utc(2026, 10, 9, 12));
+      expect(lastCircuitCheck.value, isNull);
     },
   );
 
@@ -299,6 +386,120 @@ void main() {
       await tester.pumpAndSettle();
       expect(circuits.find(alpha)?.name, 'Home track');
       expect(find.text('Circuit name'), findsNothing);
+    });
+
+    testWidgets(
+      'the circuit name dialog stays open when the name is not saved',
+      (tester) async {
+        final circuits = circuitDirectory = make(
+          folder: () async => throw const FileSystemException('no folder'),
+        );
+        await tester.runAsync(circuits.load);
+        await tester.pumpWidget(
+          TelemetryApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        const CircuitNameDialog(start: alpha, name: 'Alpha'),
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('circuitNameField')),
+          'Home track',
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(const ValueKey('saveCircuitName')));
+        for (
+          var i = 0;
+          i < 50 &&
+              find.textContaining('could not be saved').evaluate().isEmpty;
+          ++i
+        ) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+        await tester.pumpAndSettle();
+        expect(find.text('Circuit name'), findsOneWidget);
+        expect(
+          find.textContaining('The name could not be saved on this device'),
+          findsOneWidget,
+        );
+        // Typing again clears the message (the field keeps a faded copy).
+        await tester.enterText(
+          find.byKey(const ValueKey('circuitNameField')),
+          'Home',
+        );
+        await tester.pump();
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('circuitNameField')))
+              .decoration!
+              .errorText,
+          isNull,
+        );
+      },
+    );
+
+    testWidgets('settings say when a forgotten name or list is not saved', (
+      tester,
+    ) async {
+      final circuits = circuitDirectory = make(
+        folder: () async => throw const FileSystemException('no folder'),
+        fetch: (uri, maximum) async =>
+            list(2, [('a', 'Alpha ring', 50.0, 20.0)]),
+      );
+      await tester.runAsync(() async {
+        await circuits.nameAt(alpha, 'Home track');
+      });
+      await tester.pumpWidget(
+        const TelemetryApp(home: Scaffold(body: SettingsDialog())),
+      );
+      await tester.pumpAndSettle();
+      final forget = find.descendant(
+        of: find.byKey(const ValueKey('ownCircuit-a')),
+        matching: find.byTooltip('Forget this name'),
+      );
+      await tester.ensureVisible(forget);
+      await tester.pumpAndSettle();
+      await tester.tap(forget);
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'The change could not be saved on this device. The name comes back '
+          'when the app is closed.',
+        ),
+        findsOneWidget,
+      );
+      // The first message leaves before the second can show.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Update the circuit list'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Update the circuit list'));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('fetched but could not be saved'),
+        findsOneWidget,
+      );
     });
   });
 }
