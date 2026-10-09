@@ -246,10 +246,13 @@ class _DayImportPageState extends State<DayImportPage> {
     onStateChange: (state) {
       if (state != AppLifecycleState.resumed) {
         unawaited(_keptDay?.flushRecovery());
-      } else if (_controller.state is! DayImportWorking &&
-          _controller.state is! DayImportFinished) {
-        // The sweep's own grace period protects a running import; this only
-        // spares one that is still being worked on.
+      } else if (mounted &&
+          _controller.state is! DayImportWorking &&
+          _controller.state is! DayImportFinished &&
+          (ModalRoute.of(context)?.isCurrent ?? false)) {
+        // Only while this page is the one shown: a day or an import review
+        // on top of it may hold copies that no saved day names yet. The
+        // sweep's own grace period protects a running import.
         unawaited(widget.library?.reclaimCopies());
       }
     },
