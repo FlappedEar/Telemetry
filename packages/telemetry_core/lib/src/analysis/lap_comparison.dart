@@ -160,7 +160,7 @@ const List<_LayerSpec> _fixedLayers = [
 final class LapComparison {
   LapComparison(this.a, this.b, {this.cancelled});
 
-  /// Lap A (green) and lap B (orange).
+  /// Lap A (amber) and lap B (blue).
   final ComparisonLap a;
   final ComparisonLap b;
 
