@@ -119,6 +119,12 @@ void main() {
     expect(File(copyPath).existsSync(), isTrue);
   });
 
+  test('a day whose file is gone names nothing and does not stop the sweep', () {
+    final copyPath = copy('picked', 'a', 'a.vbo', circuitVbo([30, 28, 31]));
+    expect(sweep(days: [p.join(root, 'Days', 'gone.fetproject')]), 1);
+    expect(File(copyPath).existsSync(), isFalse);
+  });
+
   test('a folder still being filled is not removed, an old empty one is', () {
     final fresh = Directory(p.join(root, 'picked', '${now.millisecondsSinceEpoch}-new'))
       ..createSync(recursive: true);

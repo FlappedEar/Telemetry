@@ -785,7 +785,11 @@ class ProfileLibrary extends ChangeNotifier {
       for (final other in profile.days)
         if (other.eventId != eventId) pathOf(other)!,
       ..._dayFiles(folder),
+      // Days saved elsewhere (on a phone, with Save as) and the open or
+      // restored day may use the same copies.
+      for (final other in await otherDayFolders()) ..._daysIn(other),
     ];
+    final recovered = await recoveredRecordings();
     final owned = [
       p.join(folder, profileRecordingsFolderName),
       ...await ownedRecordingFolders(),
@@ -805,6 +809,7 @@ class ProfileLibrary extends ChangeNotifier {
       // Those waiting for their day (not listed yet) count too.
       for (final name in _pendingKept(except: eventId).keys)
         p.join(folder, profileRecordingsFolderName, name),
+      ...recovered.recordings,
     ];
     // A document outside the profile's days is never deleted from here.
     final DayFilesDeleted deleted;
@@ -812,7 +817,14 @@ class ProfileLibrary extends ChangeNotifier {
     try {
       deleted = held
           ? await background(
-              _deleteJob(path, others, owned, referenceFile, otherReferences),
+              _deleteJob(
+                path,
+                others,
+                owned,
+                referenceFile,
+                otherReferences,
+                !recovered.readable,
+              ),
             )
           : const DayFilesDeleted(recordings: 0, recordingsKept: 0);
     } on Object {
@@ -858,6 +870,7 @@ class ProfileLibrary extends ChangeNotifier {
     List<String> owned,
     String? referenceFile,
     List<String> otherReferences,
+    bool keepRecordings,
   ) =>
       () => deleteDayFiles(
         dayPath: path,
@@ -865,6 +878,7 @@ class ProfileLibrary extends ChangeNotifier {
         ownedFolders: owned,
         referenceFile: referenceFile,
         otherReferenceFiles: otherReferences,
+        keepRecordings: keepRecordings,
       );
 
   /// Keeps [notebook] as track [trackId]'s ([setProfileTrackNotebook]).

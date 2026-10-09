@@ -69,6 +69,10 @@ void main() {
       p.join(root, 'incoming'),
       p.join(root, 'picked'),
     ],
+    ownedRecordingFolders: () async => [
+      p.join(root, 'incoming'),
+      p.join(root, 'picked'),
+    ],
     otherDayFolders: () async => [p.join(root, 'documents', 'Days')],
     recoveredRecordings: () async =>
         (recordings: recovered, readable: readable),
@@ -79,7 +83,7 @@ void main() {
     await library.load();
     for (var i = 0; i < 100 && !(done?.call() ?? false); ++i) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
-      if (done == null && i == 5) break;
+      if (done == null && i == 19) break;
     }
   }
 
@@ -102,6 +106,26 @@ void main() {
     for (final kept in [inProfile, inOther, recovering]) {
       expect(File(kept).existsSync(), isTrue, reason: kept);
     }
+  });
+
+  test('deleting a day keeps the copies another folder\'s day, or the '
+      'recovery snapshot, still uses', () async {
+    final shared = copy('picked', 'a', 'shared.vbo', circuitVbo([30, 28, 31]));
+    final restored = copy('picked', 'b', 'r.vbo', circuitVbo([29, 32, 33]));
+    final alone = copy('picked', 'c', 'x.vbo', circuitVbo([31, 30, 29]));
+    await saveDay(shared, p.join(root, 'Profile', 'Days', 'p.fetproject'));
+    await saveDay(shared, p.join(root, 'documents', 'Days', 'o.fetproject'));
+    await saveDay(restored, p.join(root, 'Profile', 'Days', 'q.fetproject'));
+    await saveDay(alone, p.join(root, 'Profile', 'Days', 'r.fetproject'));
+    final days = library(recovered: {restored});
+    await days.load();
+    final profile = days.profile!;
+    for (final day in profile.days) {
+      await days.deleteDay(day.eventId);
+    }
+    expect(File(shared).existsSync(), isTrue, reason: 'used by another folder');
+    expect(File(restored).existsSync(), isTrue, reason: 'recovery names it');
+    expect(File(alone).existsSync(), isFalse);
   });
 
   test('a recovery snapshot that cannot be read stops the sweep', () async {

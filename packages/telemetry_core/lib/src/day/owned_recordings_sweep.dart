@@ -43,7 +43,7 @@ bool _madeBefore(String folder, DateTime cutoff) {
 /// the recovery snapshot, or an import still running), and that were last
 /// changed more than [grace] before [now]. Only a `.vbo` or `.rcz` file, or
 /// an empty file (what the app makes of a file that is not a recording), is
-/// deleted; a batch folder left empty goes too. A day that cannot be read
+/// deleted; a batch folder left empty goes too. A day file that is there but cannot be read
 /// stops the sweep before anything is deleted: it may use any copy. Files
 /// directly in [folders], links and anything else are left alone.
 ///
@@ -57,6 +57,9 @@ int sweepOwnedRecordingFolders({
 }) {
   final used = <String>{for (final path in keep) _canonical(path)};
   for (final dayPath in dayPaths) {
+    // A day whose file is gone names nothing; one that is there and cannot
+    // be read may name anything.
+    if (!File(dayPath).existsSync()) continue;
     try {
       used.addAll(dayRecordingPaths(readDayDocument(dayPath), dayPath).map(_canonical));
     } on Object {

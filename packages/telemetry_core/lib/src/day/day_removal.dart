@@ -170,7 +170,7 @@ const _recordingExtensions = {'.vbo', '.rcz'};
 /// is that file. When one of the other days cannot be
 /// read, no recording is deleted, as it may use them. An emptied folder a
 /// recording was the only file of is removed too, unless it is one of
-/// [ownedFolders]. A day whose own document cannot be read is deleted
+/// [ownedFolders]. With [keepRecordings] none is deleted. A day whose own document cannot be read is deleted
 /// without its recordings.
 DayFilesDeleted deleteDayFiles({
   required String dayPath,
@@ -178,6 +178,7 @@ DayFilesDeleted deleteDayFiles({
   required Iterable<String> ownedFolders,
   String? referenceFile,
   Iterable<String> otherReferenceFiles = const [],
+  bool keepRecordings = false,
 }) {
   Set<String>? recordingsOf(String path) {
     if (!File(path).existsSync()) return const {};
@@ -200,7 +201,8 @@ DayFilesDeleted deleteDayFiles({
         _canonical(file),
   };
   final used = <String>{for (final file in otherReferenceFiles) _canonical(file)};
-  var unreadable = false;
+  // [keepRecordings]: what else uses them could not be told.
+  var unreadable = keepRecordings;
   if (candidates.isNotEmpty) {
     final self = _canonical(dayPath);
     for (final other in {for (final path in otherDayPaths) _canonical(path)}) {
