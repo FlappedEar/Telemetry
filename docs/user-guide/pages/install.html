@@ -44,9 +44,9 @@ flutter run -d macos</code></pre>
 <p>The app needs Windows 10 or 11 (64-bit). The installer and the zip are not signed yet, so the first time Windows SmartScreen may show <strong>Windows protected your PC</strong>: click <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
 <h3 id="windows-installer">With the installer</h3>
 <ol class="steps">
-  <li>Download the <code>-windows-setup.exe</code> from the newest release and run it. It installs for your user only and needs no administrator rights; it installs into <code>%LOCALAPPDATA%\Programs\FlappedEar Telemetry</code>. Close the app first if it is running.</li>
+  <li>Download the <code>-windows-setup.exe</code> from the newest release and run it. It installs for your user only and needs no administrator rights; it installs into <code>%LOCALAPPDATA%\Programs\FlappedEar Telemetry</code>. The installer always uses that folder: a different one given on its command line (<code>/D=</code>) is ignored. It stops while the app is running (close the app and run the installer again), and it leaves alone an existing folder of that name that it did not create.</li>
   <li>Finish the installer and start <strong>FlappedEar Telemetry</strong> from the Start menu.</li>
-  <li>A newer release: run its installer. It replaces the old files and keeps your saved days. To remove the app, use <strong>Settings &gt; Apps</strong>; that never deletes your saved days.</li>
+  <li>A newer release: run its installer. It replaces the old files and keeps your saved days; if the copy fails, the old version stays. To remove the app, use <strong>Settings &gt; Apps</strong>; that never deletes your saved days.</li>
 </ol>
 <h3 id="windows-zip">With the zip</h3>
 <ol class="steps">

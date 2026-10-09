@@ -44,9 +44,9 @@ flutter run -d macos</code></pre>
 <p>Aplikacja wymaga 64-bitowego Windows 10 lub 11. Instalator i archiwum ZIP nie są jeszcze podpisane, dlatego przy pierwszym uruchomieniu Windows SmartScreen może wyświetlić komunikat <strong>System Windows ochronił ten komputer</strong>: kliknij <strong>Więcej informacji</strong>, a następnie <strong>Uruchom mimo to</strong>.</p>
 <h3 id="windows-installer">Z instalatora</h3>
 <ol class="steps">
-  <li>Pobierz plik <code>-windows-setup.exe</code> z najnowszego wydania i uruchom go. Instalator działa tylko dla Twojego konta i nie wymaga uprawnień administratora; instaluje się w <code>%LOCALAPPDATA%\Programs\FlappedEar Telemetry</code>. Jeśli aplikacja jest uruchomiona, najpierw ją zamknij.</li>
+  <li>Pobierz plik <code>-windows-setup.exe</code> z najnowszego wydania i uruchom go. Instalator działa tylko dla Twojego konta i nie wymaga uprawnień administratora; instaluje się w <code>%LOCALAPPDATA%\Programs\FlappedEar Telemetry</code>. Instalator zawsze używa tego folderu; inny folder podany w wierszu poleceń (<code>/D=</code>) jest ignorowany. Instalator zatrzymuje się, gdy aplikacja jest uruchomiona (zamknij ją i uruchom instalator ponownie), i nie zmienia istniejącego folderu o tej nazwie, którego sam nie utworzył.</li>
   <li>Zakończ instalację i uruchom <strong>FlappedEar Telemetry</strong> z menu Start.</li>
-  <li>Nowsze wydanie: uruchom jego instalator. Zastąpi stare pliki i zachowa zapisane dni. Aby usunąć aplikację, użyj <strong>Ustawienia &gt; Aplikacje</strong>; zapisane dni nie zostaną wtedy usunięte.</li>
+  <li>Nowsze wydanie: uruchom jego instalator. Zastąpi stare pliki i zachowa zapisane dni; jeśli kopiowanie się nie powiedzie, stara wersja pozostanie. Aby usunąć aplikację, użyj <strong>Ustawienia &gt; Aplikacje</strong>; zapisane dni nie zostaną wtedy usunięte.</li>
 </ol>
 <h3 id="windows-zip">Z archiwum ZIP</h3>
 <ol class="steps">
