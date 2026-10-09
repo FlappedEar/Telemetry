@@ -317,7 +317,8 @@ class CircuitSettings extends StatelessWidget {
     final l10n = context.l10n;
     final messenger = ScaffoldMessenger.maybeOf(context);
     final outcome = await circuitDirectory.refresh();
-    if (outcome != CircuitRefresh.failed) {
+    if (outcome == CircuitRefresh.updated ||
+        outcome == CircuitRefresh.upToDate) {
       lastCircuitCheck.value = DateTime.now();
     }
     messenger?.showSnackBar(
@@ -326,9 +327,20 @@ class CircuitSettings extends StatelessWidget {
           CircuitRefresh.updated => l10n.settingsCircuitsUpdated,
           CircuitRefresh.upToDate => l10n.settingsCircuitsUpToDate,
           CircuitRefresh.failed => l10n.settingsCircuitsFailed,
+          CircuitRefresh.notSaved => l10n.settingsCircuitsNotSaved,
         }),
       ),
     );
+  }
+
+  Future<void> _forget(BuildContext context, String id) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (await circuitDirectory.remove(id) == CircuitSave.notSaved) {
+      messenger?.showSnackBar(
+        SnackBar(content: Text(l10n.settingsCircuitsForgetNotSaved)),
+      );
+    }
   }
 
   @override
@@ -367,7 +379,7 @@ class CircuitSettings extends StatelessWidget {
                 trailing: IconButton(
                   tooltip: l10n.settingsCircuitsForget,
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: () => circuits.remove(circuit.id),
+                  onPressed: () => _forget(context, circuit.id),
                 ),
               ),
           ],

@@ -5888,6 +5888,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown for every day driven here. Kept on this device.';
 
   @override
+  String get circuitNameNotSaved =>
+      'The name could not be saved on this device. It is used until the app is closed. Try again.';
+
+  @override
   String get settingsCircuitsHeading => 'Circuits';
 
   @override
@@ -5911,6 +5915,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsCircuitsFailed =>
       'The circuit list could not be fetched. Check the connection and try again.';
+
+  @override
+  String get settingsCircuitsNotSaved =>
+      'The circuit list was fetched but could not be saved on this device. It is used until the app is closed.';
+
+  @override
+  String get settingsCircuitsForgetNotSaved =>
+      'The change could not be saved on this device. The name comes back when the app is closed.';
 
   @override
   String get settingsCircuitsMine => 'Your circuit names';
