@@ -22,6 +22,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'rectangle_vbo.dart';
 import '../support/coach_runner.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 void main() {
   late Directory directory;
@@ -888,10 +889,12 @@ void main() {
     var coached = false;
     final controller = await show(
       tester,
-      theoreticalBestRunner: (job) async => DayTheoreticalBest(
-        groupId: '',
-        state: DayTheoreticalBestState.error,
-        message: 'failed',
+      theoreticalBestRunner: asyncRunner(
+        (job) async => DayTheoreticalBest(
+          groupId: '',
+          state: DayTheoreticalBestState.error,
+          message: 'failed',
+        ),
       ),
       coachRunner: testCoachRunner((job) async {
         coached = true;

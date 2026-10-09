@@ -12,6 +12,7 @@
 import '../geometry.dart';
 import '../laps/lap_session.dart';
 import '../operation.dart';
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'angular_channels.dart';
 import 'channel_summary.dart';
@@ -159,7 +160,7 @@ const List<_LayerSpec> _fixedLayers = [
 final class LapComparison {
   LapComparison(this.a, this.b, {this.cancelled});
 
-  /// Lap A (green) and lap B (orange).
+  /// Lap A (amber) and lap B (blue).
   final ComparisonLap a;
   final ComparisonLap b;
 
@@ -427,7 +428,7 @@ final class LapComparison {
       segments: List.unmodifiable(segments),
       minimum: minimum,
       maximum: maximum,
-      unit: found.unit,
+      unit: effectiveChannelUnit(session, found.name),
       brakingUp: resolved == (session.aliases['longitudinalAcceleration'] ?? ''),
       angular: angular,
     );
@@ -546,7 +547,7 @@ final class LapComparison {
         spec.temperature ? temperatureSummaryPolicy : const ChannelSummaryPolicy(),
       );
       channel = name;
-      unit = session.channels[name]!.unit;
+      unit = effectiveChannelUnit(session, name);
       provenance = name.toLowerCase().endsWith('-calc') ? 'calculated' : 'measured';
     }
     final layer = placeOnMap(session, projection, geometry, values);

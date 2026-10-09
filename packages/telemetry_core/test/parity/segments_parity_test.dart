@@ -202,6 +202,7 @@ void _expectReview(
     lapNumber: lap.number,
     startTime: lap.startTelemetryTime,
     endTime: lap.endTelemetryTime,
+    splitCornerChains: false, // Overlays' proposals, chains kept
   );
   final unavailable = expected['unavailable'];
   if (unavailable == 'noTrace') {

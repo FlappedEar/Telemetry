@@ -422,6 +422,13 @@ DayTheoreticalBest dayTheoreticalBest(
       lapNumber: best.lapNumber,
       startTime: best.start,
       endTime: best.end,
+      approved:
+          canonicalSegmentation(
+            rows.map((row) => row.runId),
+            (runId) => stored[runId],
+            group.id,
+          )?.approved.segments ??
+          const [],
       cancelled: cancelled,
     );
     if (group.id.startsWith('compatibility-v1:') &&

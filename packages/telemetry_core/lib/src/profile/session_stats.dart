@@ -450,7 +450,7 @@ List<CornerStats> _cornerStats(
       if (factor != null && into != null && into.isFinite) entry.add(into * factor);
       final point = metrics.braking.brakingPointMeters;
       if (point != null && point.isFinite) braking.add(point);
-      final g = _gFactor(metrics.braking.decelerationUnit);
+      final g = accelerationGPerUnit(metrics.braking.decelerationUnit);
       final mean = metrics.braking.meanDeceleration;
       // A braking inferred from G alone is another window: never mixed in.
       if (metrics.braking.method == 'measuredBrake' &&
@@ -536,14 +536,6 @@ double? _spread(List<double> values, double maximum) {
   final summary = summarizeConsistency(values);
   return summary.available ? _nonNegative(summary.interquartileRange, maximum) : null;
 }
-
-/// g per unit of an acceleration; null when not known.
-double? _gFactor(String unit) => switch (unit.trim().toLowerCase().replaceAll(' ', '')) {
-  // As the G-G diagram reads it: loggers record g, often unlabelled.
-  '' || 'g' => 1.0,
-  'm/s2' || 'm/s^2' || 'm/s²' => 1 / standardGravity,
-  _ => null,
-};
 
 double _median(List<double> values) {
   final sorted = [...values]..sort();

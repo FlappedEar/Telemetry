@@ -51,17 +51,20 @@ void main() {
       final laps = result.corners.firstWhere((c) => c.segmentId == corner.segmentId).laps;
       if (laps.isEmpty) continue;
       expect(corner.lateral.known, isTrue, reason: '${corner.name}: ${corner.lateral.reason}');
-      expect(corner.braking.known, isTrue, reason: '${corner.name}: ${corner.braking.reason}');
-      expect(corner.traction.known, isTrue, reason: '${corner.name}: ${corner.traction.reason}');
       expect(corner.lateral.typical, isNotNull, reason: corner.name);
-      // Every lap of a corner timed there is read: none is left without a
-      // value ("not timed" or otherwise), and none is measured differently.
+      // Every lap of a corner timed there is read or counted as not measured,
+      // and none is measured differently. A corner taken flat out has no
+      // braking, and one of 26 m too few samples after it for its exit
+      // (single corners, FET-115).
       for (final figure in [corner.lateral, corner.braking, corner.traction]) {
-        expect(figure.unmeasured, 0, reason: corner.name);
         expect(figure.leftOut, 0, reason: corner.name);
-        expect(figure.lapCount, laps.length, reason: corner.name);
+        expect(figure.lapCount + figure.unmeasured, laps.length, reason: corner.name);
       }
+      expect(corner.lateral.unmeasured, 0, reason: corner.name);
     }
+    // Most corners still have braking and exit figures to compare.
+    expect(grip.corners.where((corner) => corner.braking.known).length, greaterThan(10));
+    expect(grip.corners.where((corner) => corner.traction.known).length, greaterThan(10));
     for (final session in grip.sessions) {
       expect(session.bands, isNotEmpty, reason: session.bandsReason);
       expect(session.bands.first.lateral.known, isTrue, reason: session.runName);

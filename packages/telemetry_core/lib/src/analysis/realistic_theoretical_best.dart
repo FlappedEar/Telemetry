@@ -105,7 +105,7 @@ double? speedMetresPerSecondAt(TelemetrySession session, double? time) {
   final channel = session.channel('speed');
   if (channel == null) return null;
   final value = session.valueAt('speed', time);
-  final metres = speedInMetresPerSecond(value, channel.unit);
+  final metres = speedInMetresPerSecond(value, effectiveChannelUnit(session, channel.name));
   return metres != null && metres.isFinite ? metres : null;
 }
 

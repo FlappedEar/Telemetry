@@ -1,7 +1,7 @@
 <!-- title: Importowanie sesji | nav: Importowanie sesji -->
 <h1 id="import">Importowanie sesji</h1>
-<p class="lead">Aplikacja otwiera się na ekranie <strong>Start</strong>. Podaj jej zapis każdej sesji zaraz po przejeździe albo cały dzień naraz, a sama przygotuje sesje, okrążenia i analizę.</p>
-<p id="places"><strong>Start</strong>, <strong>Biblioteka</strong>, <strong>Dzień</strong>, <strong>Trener</strong> i <strong>Profil</strong> są na każdym ekranie: w pasku u dołu na telefonie trzymanym pionowo, w panelu z boku na telefonie trzymanym poziomo lub na szerszym ekranie. <strong>Dzień</strong> pokazuje aktualnie otwarty dzień, a <strong>Trener</strong> jego <a href="day.html#summary">podsumowanie sesji</a> i kartę <a href="day.html#next">Następna sesja</a>: jak poszła ostatnia sesja i co wypróbować w następnym przejeździe. Oba są wyszarzone, dopóki żaden dzień nie jest otwarty. <strong>Profil</strong> podsumowuje wszystkie dni w Twojej bibliotece; zobacz <a href="profile.html">Twój profil i umiejętności</a>. Przejście do <strong>Start</strong> lub <strong>Biblioteka</strong> nie zmienia dnia, a <strong>Dzień</strong> lub <strong>Trener</strong> od razu do niego wraca.</p>
+<p class="lead">Aplikacja otwiera się na ekranie <strong>Start</strong>. Możesz dodawać plik telemetryczny po każdej sesji albo zaimportować cały dzień naraz; aplikacja sama utworzy sesje, wykryje okrążenia i przygotuje analizę.</p>
+<p id="places"><strong>Start</strong>, <strong>Biblioteka</strong>, <strong>Dzień</strong>, <strong>Trener</strong> i <strong>Profil</strong> są dostępne w całej aplikacji: na dolnym pasku w telefonie trzymanym pionowo albo w bocznym panelu na szerszym ekranie. <strong>Dzień</strong> wraca do aktualnie otwartego dnia, a <strong>Trener</strong> pokazuje jego <a href="day.html#summary">podsumowanie sesji</a> i kartę <a href="day.html#next">Następna sesja</a>: jak wypadła ostatnia sesja i co warto sprawdzić podczas następnego wyjazdu. Obie pozycje są wyszarzone, dopóki żaden dzień nie jest otwarty. <strong>Profil</strong> podsumowuje wszystkie dni w bibliotece; zobacz <a href="profile.html">Twój profil i umiejętności</a>. Przejście do <strong>Start</strong> albo <strong>Biblioteki</strong> nie zamyka bieżącego dnia – <strong>Dzień</strong> lub <strong>Trener</strong> od razu do niego wróci.</p>
 
 <figure>
   <img src="assets/screens/import-empty.png" alt="Start na komputerze: logo i FlappedEar Telemetry, panel Start, Biblioteka, Dzień, Trener i Profil oraz panel z przyciskami Importuj sesje, Wybierz folder, Otwórz zapisany dzień i polem Uwzględnij podfoldery" width="1280" height="800" loading="lazy">
@@ -10,92 +10,92 @@
 
 <h2 id="formats">Co można zaimportować</h2>
 <ul>
-  <li>Zapisy <strong>VBO i RCZ</strong>, na przykład eksporty z RaceChrono. Inne pliki są pomijane i wymienione w uwagach do importu.</li>
-  <li>Do <strong>64 zapisów</strong> naraz.</li>
-  <li>Gdy ten sam przejazd wyeksportowano zarówno jako VBO, jak i RCZ, aplikacja używa VBO, a RCZ zachowuje jako jego alternatywne źródło, łącząc oba tak, jak opisano w <a href="day.html#combined">VBO i RCZ jednej sesji</a>. Plik o takiej samej zawartości jak inny jest importowany raz.</li>
+  <li>Pliki telemetryczne <strong>VBO i RCZ</strong>, np. wyeksportowane z RaceChrono. Inne pliki są pomijane i wymieniane w uwagach do importu.</li>
+  <li>Do <strong>64 plików</strong> jednocześnie.</li>
+  <li>Jeśli ten sam przejazd został wyeksportowany zarówno jako VBO, jak i RCZ, aplikacja używa VBO jako podstawowego źródła i zachowuje RCZ jako źródło alternatywne, łącząc dane zgodnie z opisem w <a href="day.html#combined">VBO i RCZ jednej sesji</a>. Identyczna kopia tego samego pliku jest importowana tylko raz.</li>
 </ul>
 
 <h2 id="choose">Wybór zapisów</h2>
 <table>
   <tr><th>Przycisk</th><th>Co robi</th><th>Gdzie</th></tr>
-  <tr><td><strong>Importuj sesje…</strong></td><td>Wybierz jeden lub więcej plików VBO/RCZ: sesję, którą właśnie przejechano, albo kilka. Zobacz <a href="#where">Dokąd trafiają sesje</a>.</td><td>Wszędzie</td></tr>
-  <tr><td><strong>Wybierz folder…</strong></td><td>Zaimportuj wszystkie zapisy z folderu jako nowy dzień. Najpierw zaznacz <strong>Uwzględnij podfoldery</strong> (pole lub jego etykietę), aby szukać także w podfolderach.</td><td>Mac i PC</td></tr>
-  <tr><td>Przeciągnij i upuść</td><td>Upuść pliki lub foldery w dowolnym miejscu okna. Upuszczone pliki są obsługiwane jak <strong>Importuj sesje…</strong>; upuszczony folder rozpoczyna nowy dzień. Podczas przeciągania widać bursztynową ramkę; jest szara, gdy import już trwa.</td><td>Mac i PC</td></tr>
-  <tr><td><strong>Biblioteka</strong> (dolny pasek lub boczny panel)</td><td>Wszystkie zaimportowane dni, według samochodu, roku i toru. Stuknij dzień, aby go otworzyć. Zobacz <a href="saving.html#library">Twoja biblioteka</a>.</td><td>Wszędzie</td></tr>
-  <tr><td><strong>Otwórz zapisany dzień…</strong></td><td>Otwórz plik <code>.fetproject</code>, na przykład zapisany przez Overlays. Zobacz <a href="saving.html#open">Otwieranie dnia</a>.</td><td>Wszędzie</td></tr>
+  <tr><td><strong>Importuj sesje…</strong></td><td>Wybierz jeden lub więcej plików VBO/RCZ – np. właśnie zakończoną sesję albo kilka sesji naraz. Zobacz <a href="#where">Dokąd trafiają sesje</a>.</td><td>Wszędzie</td></tr>
+  <tr><td><strong>Wybierz folder…</strong></td><td>Zaimportuj wszystkie obsługiwane pliki z folderu jako nowy dzień. Włącz <strong>Uwzględnij podfoldery</strong>, jeśli aplikacja ma przeszukać także katalogi podrzędne.</td><td>Mac i PC</td></tr>
+  <tr><td>Przeciągnij i upuść</td><td>Upuść pliki lub folder w dowolnym miejscu okna. Pliki działają jak <strong>Importuj sesje…</strong>, a folder zawsze rozpoczyna nowy dzień. Podczas przeciągania pojawia się bursztynowa ramka; jest szara, jeśli inny import już trwa.</td><td>Mac i PC</td></tr>
+  <tr><td><strong>Biblioteka</strong> (dolny pasek lub boczny panel)</td><td>Pokazuje wszystkie zaimportowane dni pogrupowane według samochodu, roku i toru. Stuknij dzień, aby go otworzyć. Zobacz <a href="saving.html#library">Twoja biblioteka</a>.</td><td>Wszędzie</td></tr>
+  <tr><td><strong>Otwórz zapisany dzień…</strong></td><td>Otwiera plik projektu <code>.fetproject</code>, np. zapisany przez Overlays. Zobacz <a href="saving.html#open">Otwieranie dnia</a>.</td><td>Wszędzie</td></tr>
 </table>
-<p>Na telefonie nie ma wyboru folderu; zaznacz pliki albo udostępnij je z RaceChrono. Zobacz <a href="phone.html">Telefony i tablety</a>.</p>
+<p>Na telefonie nie można wybrać całego folderu; zaznacz konkretne pliki albo udostępnij je bezpośrednio z RaceChrono. Zobacz <a href="phone.html">Telefony i tablety</a>.</p>
 
 <h2 id="where">Dokąd trafiają sesje</h2>
-<p>Nie wybierasz dnia: robi to aplikacja. Wybrane lub upuszczone zapisy trafiają do dnia, który ma zapisy z tej samej daty i był edytowany w ciągu ostatnich 24 godzin:</p>
+<p>Nie musisz ręcznie wskazywać dnia. Aplikacja szuka dnia zawierającego nagrania z tej samej daty i edytowanego w ciągu ostatnich 24 godzin, w następującej kolejności:</p>
 <ul>
-  <li>dnia z niezapisanymi zmianami zachowanymi do przywrócenia;</li>
-  <li>w przeciwnym razie zapisanego dnia, który właśnie opuszczono na ekranie <strong>Start</strong>, jeśli zapisano go w ciągu ostatnich 24 godzin;</li>
-  <li>w przeciwnym razie dnia zapisanego w bibliotece (lub, na telefonie albo tablecie, w aplikacji) w ciągu ostatnich 24 godzin, od najnowszego (aplikacja sprawdza do trzech takich dni). Dzień z inną datą, który otwarto i zmieniono między sesjami, na przykład wcześniejsza wizyta na tym samym torze, jest pomijany.</li>
+  <li>dzień z niezapisanymi zmianami zachowanymi do przywrócenia;</li>
+  <li>jeśli takiego nie ma – zapisany dzień, z którego właśnie wróciłeś na ekran <strong>Start</strong>, o ile był zapisany w ciągu ostatnich 24 godzin;</li>
+  <li>jeśli nadal go nie ma – dzień zapisany w bibliotece (a na telefonie lub tablecie wewnątrz aplikacji) w ciągu ostatnich 24 godzin, zaczynając od najnowszego. Aplikacja sprawdza maksymalnie trzy takie dni. Dzień z inną datą, który otworzyłeś i zmieniłeś między sesjami, np. wcześniejsza wizyta na tym samym torze, jest pomijany.</li>
 </ul>
-<p>Nowe sesje są dodawane do tego dnia, który się otwiera. Zapisany dzień jest zapisywany ponownie razem z nimi. W przeciwnym razie zapisy są importowane jako nowy dzień, który otwiera się sam. Folder jest zawsze importowany jako nowy dzień.</p>
-<p>Żaden dzień nie otwiera się sam, gdy zachowane są niezapisane zmiany innego dnia, bo praca nad nim zastąpiłaby je. Zapisy są wtedy importowane jako nowy dzień, który zostaje na ekranie <strong>Start</strong> z przyciskiem <strong>Otwórz dzień</strong>, więc najpierw możesz przywrócić lub odrzucić tamten dzień.</p>
-<p>Dlatego na torze stuknij <strong>Importuj sesje…</strong> po każdej sesji i wybierz tylko nowy zapis: stanie się kolejną sesją dnia. To samo dzieje się, gdy udostępnisz zapis z RaceChrono na telefonie (zobacz <a href="phone.html#share">Udostępnianie z RaceChrono</a>) albo użyjesz <strong>Dodaj zapisy telemetrii</strong> w otwartym dniu (zobacz <a href="day.html#add">Dodawanie sesji</a>).</p>
+<p>Nowa sesja zostaje dodana do znalezionego dnia, a dzień otwiera się automatycznie. Jeśli był już zapisany, zapis zostaje od razu zaktualizowany. Gdy pasującego dnia nie ma, pliki tworzą nowy dzień. Import folderu zawsze tworzy nowy dzień.</p>
+<p>Jeśli inny dzień ma zachowane niezapisane zmiany, nowy dzień nie otwiera się automatycznie, ponieważ zastąpiłoby to jego kopię awaryjną. Nowe pliki są wtedy importowane do osobnego dnia widocznego na ekranie <strong>Start</strong> z przyciskiem <strong>Otwórz dzień</strong>. Najpierw możesz więc przywrócić lub odrzucić wcześniejszą pracę.</p>
+<p>Na torze najprościej po każdej sesji użyć <strong>Importuj sesje…</strong> i wskazać tylko nowy plik – stanie się kolejną sesją bieżącego dnia. Tak samo działa udostępnienie pliku z RaceChrono na telefonie (zobacz <a href="phone.html#share">Udostępnianie z RaceChrono</a>) oraz <strong>Dodaj zapisy telemetrii</strong> w otwartym dniu (zobacz <a href="day.html#add">Dodawanie sesji</a>).</p>
 
 <h2 id="review">Przeglądanie plików</h2>
-<p>Import jest automatyczny: nic nie prosi o Twoją zgodę. Aby samemu zdecydować, co stanie się z każdym plikiem, otwórz dzień i wybierz <strong>Więcej</strong> (⋮) › <strong>Dodaj i przejrzyj zapisy…</strong> (zobacz <a href="day.html#add-review">Dodawanie z przeglądem</a>). Pliki są odczytywane, a zanim cokolwiek zostanie dodane, <strong>Przejrzyj import</strong> pokazuje listę wszystkich znalezionych plików:</p>
+<p>Zwykły import jest automatyczny. Jeśli chcesz sam zdecydować, co zrobić z każdym plikiem, otwórz dzień i wybierz <strong>Więcej</strong> (⋮) › <strong>Dodaj i przejrzyj zapisy…</strong> (zobacz <a href="day.html#add-review">Dodawanie z przeglądem</a>). Po odczytaniu plików ekran <strong>Przejrzyj import</strong> pokazuje wszystkie znalezione pozycje przed wprowadzeniem jakichkolwiek zmian:</p>
 <figure>
   <img src="assets/screens/import-review.png" alt="Przejrzyj import: każdy zapis z długością i liczbą pełnych okrążeń, wybór taki jak Ta sama sesja co recording-1.vbo lub Importuj jako nową sesję, wskazówka, że ślady GPS się zgadzają, oraz przycisk Importuj z liczbą nowych sesji" width="1280" height="800" loading="lazy">
-  <figcaption>Przegląd zapisów dodawanych do dnia, z wybranym już tym, co zrobiłby import automatyczny. Pliki zmieniły nazwy na potrzeby tego obrazka.</figcaption>
+  <figcaption>Przegląd plików dodawanych do dnia z domyślnymi decyzjami, które podjąłby import automatyczny. Nazwy plików na zrzucie zostały zmienione na potrzeby dokumentacji.</figcaption>
 </figure>
 <ul>
-  <li>Każdy plik pokazuje swoją długość (minuty:sekundy) i pełne okrążenia. Duplikat informuje, który plik ma taką samą zawartość, a plik, którego nie udało się odczytać, podaje powód; żadnego z nich nie można zaimportować. Plik VBO potrzebuje kolumny czasu (<code>time</code>, <code>timestamp</code> lub <code>utc_time</code>): bez niej próbki nie mają czasu, więc plik nie jest czytany, zamiast mierzyć czas na wyczucie.</li>
+  <li>Każdy plik pokazuje czas trwania (minuty:sekundy) i liczbę pełnych okrążeń. Duplikat wskazuje plik o identycznej zawartości, a nieczytelny plik podaje przyczynę błędu; takich pozycji nie można zaimportować. VBO musi zawierać kolumnę czasu (<code>time</code>, <code>timestamp</code> lub <code>utc_time</code>). Bez niej próbki nie mają osi czasu, więc aplikacja odrzuca plik zamiast zgadywać czasy.</li>
   <li>Dla każdego pliku wybierz:
     <ul>
-      <li><strong>Importuj jako nową sesję</strong>: plik staje się osobną sesją.</li>
-      <li><strong>Pomiń ten plik</strong>: nie jest importowany.</li>
-      <li><strong>Ta sama sesja co …</strong>: plik jest innym zapisem sesji, którą importujesz, na przykład RCZ do VBO. Okrążenia sesji pochodzą z pliku, do którego go przypisujesz; ten plik jest przechowywany razem z nim jako zapis alternatywny i łączony z nim tak, jak opisano w <a href="day.html#combined">VBO i RCZ jednej sesji</a>. To zastępuje automatyczne parowanie, także w drugą stronę: przypisz VBO do RCZ, a okrążenia dostarczy RCZ. Sesja ma jeden inny zapis.</li>
+      <li><strong>Importuj jako nową sesję</strong>: utwórz osobną sesję z tego pliku.</li>
+      <li><strong>Pomiń ten plik</strong>: nie importuj go.</li>
+      <li><strong>Ta sama sesja co …</strong>: potraktuj plik jako drugie źródło tej samej sesji, np. RCZ odpowiadający VBO. Okrążenia pochodzą z pliku, do którego przypisujesz drugie źródło; drugi plik jest przechowywany jako nagranie alternatywne i łączony zgodnie z <a href="day.html#combined">VBO i RCZ jednej sesji</a>. Możesz również odwrócić typowy kierunek i przypisać VBO do RCZ – wtedy to RCZ pozostaje źródłem okrążeń. Sesja może mieć jedno dodatkowe źródło.</li>
     </ul>
   </li>
-  <li><em>Możliwe, że to ta sama sesja co …: ślady GPS się zgadzają.</em> oznacza dwa eksporty, których ślady GPS pasują do siebie. To wskazówka, a nie wybór.</li>
-  <li>Wybory zaczynają się tak, jak ustawiłby je import automatyczny, więc <strong>Importuj</strong> bez zmian daje ten sam dzień. Dolny wiersz liczy nowe sesje albo podaje, dlaczego wyborów nie można zaimportować, na przykład <em>Wybierz co najmniej jeden plik do importu.</em></li>
-  <li><strong>Importuj</strong> czyta pliki ponownie i importuje je zgodnie z wyborem. Jeśli zmieniły się od przeglądu (plik zastąpiono albo w folderze są teraz inne pliki), nic nie jest importowane: <em>Zapisy zmieniły się po przeglądzie, więc nic nie zaimportowano. Przejrzyj je ponownie.</em></li>
-  <li>Zamknięcie przeglądu (✕) niczego nie importuje: <em>Import anulowano. Nic nie zaimportowano.</em></li>
+  <li><em>Możliwe, że to ta sama sesja co …: ślady GPS się zgadzają.</em> oznacza, że dwa eksporty mają pasujące ślady GPS. To podpowiedź, a nie automatyczne zatwierdzenie.</li>
+  <li>Początkowe wybory odpowiadają decyzjom importu automatycznego, dlatego kliknięcie <strong>Importuj</strong> bez zmian da ten sam rezultat. Wiersz u dołu pokazuje liczbę nowych sesji albo wyjaśnia, dlaczego obecnego zestawu nie można zaimportować.</li>
+  <li><strong>Importuj</strong> odczytuje pliki ponownie i stosuje wybrane decyzje. Jeśli od czasu przeglądu pliki się zmieniły, nic nie zostaje dodane i pojawia się komunikat <em>Zapisy zmieniły się po przeglądzie, więc nic nie zaimportowano. Przejrzyj je ponownie.</em></li>
+  <li>Zamknięcie przeglądu przyciskiem ✕ niczego nie importuje i kończy operację komunikatem <em>Import anulowano. Nic nie zaimportowano.</em></li>
 </ul>
-<p>Przejrzeć można także pojedynczy plik. Zapisy udostępnione z RaceChrono na telefonie nigdy nie są przeglądane: są dodawane od razu, jak opisano w <a href="phone.html#share">Udostępnianie z RaceChrono</a>.</p>
-<div class="note"><p>Plik dnia nie ma miejsca na informację, że dwa zapisy nadal czekają na połączenie, a przy otwieraniu dnia aplikacja sama łączy tylko RCZ sesji VBO. Dlatego gdy powiążesz inną parę (na przykład RCZ, które dostarcza okrążenia, z jego VBO albo dwa VBO) i zapiszesz dzień, gdy są jeszcze dopasowywane, zapis poczeka na zakończenie dopasowania, a plik zapisze sposób ich połączenia. W międzyczasie nie można opuścić dnia: <em>Poczekaj, aż zapisy zostaną dopasowane, a dzień zapisany.</em> Jeśli dopasowanie się nie powiedzie, nic nie jest łączone, a sesja pokazuje to tak, jak pokaże dzień po ponownym otwarciu: VBO sesji RCZ jest przechowywane obok niego i nie łączone (<a href="day.html#combined">Sprawdź zegar</a> próbuje ponownie); każda inna para zostaje w pliku dnia razem z sesją, ale nie jest pokazywana ani używana.</p></div>
+<p>W ten sposób możesz przejrzeć również pojedynczy plik. Pliki udostępnione bezpośrednio z RaceChrono na telefonie są natomiast dodawane od razu, bez ekranu przeglądu; zobacz <a href="phone.html#share">Udostępnianie z RaceChrono</a>.</p>
+<div class="note"><p>Format pliku dnia nie przechowuje stanu „dwa źródła są właśnie dopasowywane”, a podczas zwykłego otwierania dnia aplikacja automatycznie łączy tylko RCZ do sesji opartej na VBO. Jeśli więc ręcznie utworzysz inną parę, np. RCZ jako źródło podstawowe z odpowiadającym VBO albo dwa VBO, i spróbujesz zapisać dzień w trakcie dopasowywania, zapis zaczeka na zakończenie procesu i dopiero potem utrwali sposób połączenia. W tym czasie nie można opuścić dnia: <em>Poczekaj, aż zapisy zostaną dopasowane, a dzień zapisany.</em> Jeśli dopasowanie się nie powiedzie, pliki nie są łączone. VBO do sesji opartej na RCZ pozostaje obok niej jako niepołączone źródło (<a href="day.html#combined">Sprawdź zegar</a> pozwala spróbować ponownie); inne nietypowe pary pozostają w pliku dnia, ale nie są pokazywane ani używane.</p></div>
 
 <h2 id="progress">W trakcie importu</h2>
-<p>Gdy nowe sesje są dodawane do ostatnio edytowanego dnia albo dzień jest otwierany, strona pokazuje <em>Otwieranie dnia…</em>. Nowy dzień pokazuje <em>Wyszukiwanie zapisów telemetrii…</em>, potem <em>Przygotowywanie zapisu X z N…</em> z paskiem postępu. <strong>Anuluj</strong> zatrzymuje od razu i niczego nie importuje; strona pokazuje wtedy <em>Import anulowano. Nic nie zaimportowano.</em> Nie można rozpocząć drugiego importu, gdy trwa pierwszy.</p>
-<p>Jeśli nic nie udało się zaimportować, panel z czerwonym znakiem podaje powód, na przykład <em>Nie udało się zaimportować żadnego zapisu.</em>, i proponuje ponowny wybór zapisów albo wybór innych. Uwagi pod nim mówią, co było nie tak z każdym plikiem.</p>
+<p>Podczas dodawania sesji do ostatnio edytowanego dnia albo otwierania dnia aplikacja pokazuje <em>Otwieranie dnia…</em>. Przy nowym dniu najpierw pojawia się <em>Wyszukiwanie zapisów telemetrii…</em>, a potem <em>Przygotowywanie zapisu X z N…</em> wraz z paskiem postępu. <strong>Anuluj</strong> natychmiast zatrzymuje operację i niczego nie importuje. Nie można uruchomić drugiego importu, dopóki pierwszy trwa.</p>
+<p>Jeśli nie udało się zaimportować żadnego pliku, czerwony panel pokazuje przyczynę, np. <em>Nie udało się zaimportować żadnego zapisu.</em>, i pozwala ponownie wybrać pliki. Uwagi pod panelem wyjaśniają problem osobno dla każdego z nich.</p>
 
 <h2 id="result">Wynik</h2>
-<p>Po zakończeniu dzień się otwiera: <a href="day.html">wyniki dnia</a>. Jest zapisywany w Twojej <a href="saving.html#library">bibliotece</a> automatycznie. Gdy przejdziesz do ekranu <strong>Start</strong> (lub cofniesz się), u góry widać opuszczony dzień: jego nazwę, miejsce zapisu (<em>Zapisano w bibliotece.</em> albo <em>Zapisany jako …</em> dla dnia otwartego z pliku) lub informację, że jeszcze go nie zapisano (<em>Jeszcze niezapisany; zmiany zachowane z …</em>), <strong>Otwórz dzień</strong>, aby do niego wrócić, <strong>Odrzuć…</strong> dla niezapisanych zmian (zobacz <a href="#restore">Przywracanie niezapisanej pracy</a>) oraz jego sesje:</p>
+<p>Po zakończeniu importu otwierają się <a href="day.html">wyniki dnia</a>, a dzień jest automatycznie przechowywany w Twojej <a href="saving.html#library">bibliotece</a>. Gdy wrócisz do ekranu <strong>Start</strong>, u góry zobaczysz ostatnio otwarty dzień: jego nazwę, informację o miejscu zapisu (<em>Zapisano w bibliotece.</em> albo <em>Zapisany jako …</em> dla dnia otwartego z pliku) lub o niezapisanych zmianach, przycisk <strong>Otwórz dzień</strong>, ewentualnie <strong>Odrzuć…</strong> dla zachowanej niezapisanej pracy (zobacz <a href="#restore">Przywracanie niezapisanej pracy</a>) oraz listę sesji:</p>
 <figure>
   <img src="assets/screens/import-done.png" alt="Start po powrocie z dnia z sześcioma sesjami: nazwa dnia, Zapisano w bibliotece, Otwórz dzień oraz każda sesja z okrążeniami i najlepszym czasem" width="1280" height="800" loading="lazy">
 </figure>
 <ul>
-  <li><strong>Sesja N</strong>, numerowana w kolejności nagrywania sesji.</li>
-  <li>Pod nią liczba okrążeń, na przykład <em>7 okrążeń</em>, albo powód, dla którego ich nie ma, na przykład <em>Brak okrążeń: zapis nie ma linii startu/mety.</em></li>
-  <li>Po prawej <strong>Najlepsze</strong> sklasyfikowane okrążenie sesji, jak w wynikach dnia; sesja z najlepszym okrążeniem dnia jest wyróżniona pogrubionym fioletem. Sesja na innej konfiguracji toru pokazuje swoje najszybsze okrążenie.</li>
+  <li><strong>Sesja N</strong>, numerowana w kolejności nagrania.</li>
+  <li>Liczba okrążeń, np. <em>7 okrążeń</em>, albo powód ich braku, np. <em>Brak okrążeń: zapis nie ma linii startu/mety.</em></li>
+  <li>Po prawej <strong>Najlepsze</strong> sklasyfikowane okrążenie sesji. Sesja zawierająca najlepsze okrążenie dnia jest wyróżniona fioletem. Sesja z innej konfiguracji toru pokazuje własne najszybsze okrążenie.</li>
 </ul>
-<p>Opuszczony dzień jest na liście, dopóki aplikacja pozostaje otwarta. Po zamknięciu aplikacji dzień z niezapisanymi zmianami wygląda tak, jak opisano w <a href="#restore">Przywracanie niezapisanej pracy</a>, a pozostałe dni są w <strong>Biblioteka</strong>.</p>
-<p>Jeśli nowy dzień nie mógł otworzyć się sam, bo inny dzień ma niezapisane zmiany, strona zamiast tego podaje, ile sesji zaimportowano, wymienia je w ten sam sposób i proponuje <strong>Otwórz dzień</strong>.</p>
+<p>Ostatnio otwarty dzień pozostaje na ekranie <strong>Start</strong> do czasu zamknięcia aplikacji. Po ponownym uruchomieniu dzień z niezapisanymi zmianami jest dostępny zgodnie z opisem w <a href="#restore">Przywracanie niezapisanej pracy</a>, a pozostałe dni znajdziesz w <strong>Bibliotece</strong>.</p>
+<p>Jeśli nowy dzień nie mógł otworzyć się automatycznie z powodu niezapisanych zmian innego dnia, ekran <strong>Start</strong> pokazuje zamiast tego liczbę zaimportowanych sesji i przycisk <strong>Otwórz dzień</strong>.</p>
 
 <h3 id="notes">Uwagi do importu</h3>
-<p>Wszystko, co pominięto lub połączono, jest wymienione w <strong>Uwagi do importu</strong>, jedna linia na plik, na przykład plik, który nie jest zapisem, duplikat albo VBO i RCZ tego samego przejazdu. Gdy dzień się otwiera, uwagi pokazują się na dole dnia na kilka sekund (✕ je zamyka); gdy się nie otwiera, są wymienione pod sesjami.</p>
+<p>Wszystkie pominięte, połączone lub nierozpoznane pliki są wymieniane w <strong>Uwagach do importu</strong>, po jednej linii na plik – np. nieobsługiwany typ, duplikat albo VBO i RCZ tego samego przejazdu. Jeśli dzień otworzył się po imporcie, uwagi pojawiają się na kilka sekund u dołu strony i można je zamknąć przyciskiem ✕. Jeśli dzień nie został otwarty, uwagi pozostają pod listą sesji.</p>
 
 <h2 id="laps-found">Jak wyszukiwane są okrążenia</h2>
-<p>Okrążenia wynikają z linii startu/mety zapisanej w zapisie (linii startu toru z RaceChrono) i śladu GPS:</p>
+<p>Okrążenia są wyznaczane na podstawie linii startu/mety zapisanej w pliku telemetrycznym (np. linii toru z RaceChrono) oraz śladu GPS:</p>
 <ul>
-  <li><strong>OUT</strong>: od początku zapisu do pierwszego przecięcia.</li>
-  <li><strong>LAP n</strong>: między dwoma przecięciami.</li>
-  <li><strong>IN</strong>: od ostatniego przecięcia do końca zapisu.</li>
-  <li><strong>UNKNOWN</strong>: cały zapis, gdy linia nigdy nie została przecięta.</li>
+  <li><strong>OUT</strong>: od początku nagrania do pierwszego przecięcia linii.</li>
+  <li><strong>LAP n</strong>: między kolejnymi przecięciami linii.</li>
+  <li><strong>IN</strong>: od ostatniego przecięcia do końca nagrania.</li>
+  <li><strong>UNKNOWN</strong>: całe nagranie, jeśli linia nie została przecięta ani razu.</li>
 </ul>
-<p>Przecięcie liczy się tylko wtedy, gdy ślad GPS naprawdę przechodzi przez linię (lub jej przedłużenie do 5 m za którymkolwiek końcem), z jednej strony na drugą, z prędkością jazdy. Zbliżenie się do linii i odjazd po tej samej stronie, na przykład zatrzymanie tuż przed nią albo przekroczenie jej i zawrócenie, nie jest przecięciem.</p>
-<p>Linii startu/mety nie można ustawić ręcznie. Jeśli sesja nie ma okrążeń, zobacz <a href="troubleshooting.html#no-laps">Brak okrążeń</a>.</p>
+<p>Przecięcie jest liczone tylko wtedy, gdy ślad GPS rzeczywiście przechodzi przez linię – lub jej przedłużenie do 5 m poza każdym końcem – z jednej strony na drugą i z prędkością odpowiadającą jeździe. Samo zbliżenie się do linii i odjazd po tej samej stronie nie jest liczone jako przecięcie.</p>
+<p>Linii startu/mety nie można ustawić ręcznie w Telemetry. Jeśli sesja nie ma okrążeń, zobacz <a href="troubleshooting.html#no-laps">Brak okrążeń</a>.</p>
 
 <h2 id="restore">Przywracanie niezapisanej pracy</h2>
-<p>Gdy pracujesz nad dniem, który nie jest zapisany, aplikacja przechowuje jego kopię. Jeśli aplikacja zamknęła się przed zapisem, ekran <strong>Start</strong> pokazuje <em>&lt;dzień&gt;: niezapisane zmiany z …</em> z dwoma przyciskami:</p>
+<p>Podczas pracy nad niezapisanym dniem aplikacja przechowuje jego kopię awaryjną. Jeśli aplikacja zostanie zamknięta przed właściwym zapisaniem zmian, ekran <strong>Start</strong> pokazuje <em>&lt;dzień&gt;: niezapisane zmiany z …</em> i dwa przyciski:</p>
 <ul>
-  <li><strong>Przywróć</strong> otwiera dzień ponownie wraz z Twoimi zmianami.</li>
-  <li><strong>Odrzuć…</strong> usuwa kopię po potwierdzeniu. Twoje zapisy i zapisane dni nie są ruszane.</li>
+  <li><strong>Przywróć</strong> ponownie otwiera dzień wraz z zachowanymi zmianami.</li>
+  <li><strong>Odrzuć…</strong> usuwa kopię awaryjną po potwierdzeniu. Nie usuwa oryginalnych plików telemetrycznych ani zapisanych dni.</li>
 </ul>
-<p>Kopia jest aktualizowana pół sekundy po każdej zmianie oraz od razu, gdy przełączysz się do innej aplikacji lub zamkniesz tę. Jeśli aplikacja ulegnie awarii lub zostanie zatrzymana w ciągu tej pół sekundy, w kopii może brakować ostatniej zmiany, więc zapisz dzień, aby mieć pewność.</p>
-<p>Przechowywany jest tylko jeden niezapisany dzień: praca nad innym niezapisanym dniem zastępuje kopię. Dzień otwarty z pliku i niezapisany liczy się jako niezapisany: gdy z niego wyjdziesz, jest dniem wymienionym u góry, z przyciskami <strong>Otwórz dzień</strong> (który go przywraca) i <strong>Odrzuć…</strong>.</p>
+<p>Kopia awaryjna jest aktualizowana około pół sekundy po każdej zmianie oraz natychmiast po przełączeniu do innej aplikacji lub zamykaniu Telemetry. Jeśli aplikacja ulegnie awarii dokładnie w tym krótkim oknie, ostatnia zmiana może nie trafić do kopii, dlatego ważne zmiany warto zapisać normalnie.</p>
+<p>Przechowywana jest tylko jedna kopia niezapisanego dnia. Rozpoczęcie pracy nad innym niezapisanym dniem zastępuje poprzednią kopię. Dzień otwarty bezpośrednio z pliku, ale jeszcze niezapisany po zmianach, również liczy się jako niezapisany i po wyjściu pojawia się u góry ekranu <strong>Start</strong> z przyciskami <strong>Otwórz dzień</strong> i <strong>Odrzuć…</strong>.</p>

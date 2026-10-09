@@ -1,13 +1,23 @@
 name: Keep the Android signing key
 
-# The APK signing key lives only in the Actions cache (android-debug-keystore-v1,
-# see ci.yml and release.yml). GitHub removes a cache that nobody has used for
-# seven days; CI would then make a new key, and phones with the app installed
-# would refuse every later APK as an update. Restoring the cache counts as a
-# use, so this restores it every day, whether or not main builds. GitHub
-# turns scheduled workflows off after 60 days without repository activity;
-# turn it back on in the Actions tab if that happens.
+# The release APK is signed with one key (docs/android-signing-key-backup.md).
+# Its only copy in GitHub is the repository secret ANDROID_DEBUG_KEYSTORE_BASE64;
+# release.yml reads it in its signing job and nowhere else. A secret does not
+# expire, but it can be deleted or overwritten, and a release would then fail
+# late. Every day this checks that the secret still holds the key whose
+# certificate is on installed apps (so a wrong key is found before a release),
+# and deletes Actions caches whose key starts with android-debug-keystore (the
+# old key cache android-debug-keystore-v1): pull request builds can restore
+# caches from main, so no key may be cached. The deletion waits for the secret
+# check to pass, so the cache is never the last copy. GitHub turns scheduled
+# workflows off after 60 days without repository activity; turn it back on in
+# the Actions tab if that happens.
 on:
+  # Also when this file changes on main, so a rollout purges the old key cache
+  # at once instead of at the next daily run.
+  push:
+    branches: [main]
+    paths: ['.github/workflows/signing-key.yml']
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
@@ -16,31 +26,38 @@ permissions:
   contents: read
 
 jobs:
-  touch:
-    name: Restore the signing key
+  check:
+    name: Check the signing key backup
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
     steps:
-      - name: Restore the signing key
-        id: key
-        uses: actions/cache/restore@v4
+      - uses: actions/checkout@v4
         with:
-          path: ~/.android/debug.keystore
-          key: android-debug-keystore-v1
-      - name: Stop if the key is gone
-        if: steps.key.outputs.cache-hit != 'true'
+          sparse-checkout: .github
+      - name: Write the key from the secret and check its certificate
+        id: secret
+        uses: ./.github/actions/signing-key-from-secret
+        with:
+          expected-sha256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+          keystore-base64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+      - name: Stop if the secret is missing
+        if: steps.secret.outputs.restored != 'true'
         run: |
-          echo "::error::The signing key cache android-debug-keystore-v1 is gone. Do not merge to main until the owner decides how to sign APKs: a new key means installed apps cannot update."
+          echo "::error::The secret ANDROID_DEBUG_KEYSTORE_BASE64 is not set. Releases cannot sign APKs; do not replace the key (installed apps could not update)."
           exit 1
-      - name: Check it is the release key
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.android/debug.keystore
+      # Only after the secret passed, so the cache is never the last copy.
+      - name: Delete cached copies of the key
         env:
-          RELEASE_CERT_SHA256: 7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
+          GH_TOKEN: ${{ github.token }}
         run: |
-          actual=$(keytool -list -v -keystore ~/.android/debug.keystore \
-            -storepass android -alias androiddebugkey \
-            | sed -n 's/^.*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
-          echo "Cached key SHA-256: $actual"
-          [ "$actual" = "$RELEASE_CERT_SHA256" ] || {
-            echo "::error::The cached key is $actual, not the release key $RELEASE_CERT_SHA256."
-            exit 1
-          }
+          ids=$(gh cache list --repo "$GITHUB_REPOSITORY" --key android-debug-keystore --limit 100 --json id --jq '.[].id')
+          for id in $ids; do
+            gh cache delete "$id" --repo "$GITHUB_REPOSITORY"
+            echo "Deleted cache $id"
+          done

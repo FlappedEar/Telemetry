@@ -10,6 +10,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import '../geometry.dart';
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'channel_summary.dart';
 import 'outing_theoretical_best.dart' show MapPoint;
@@ -349,13 +350,19 @@ List<List<ProgressValue>> channelAlongProgress(
   final result = <List<ProgressValue>>[];
   final found = session.channel(channelOrAlias);
   if (found == null || !axisLengthMeters.isFinite || !(axisLengthMeters > 0.0)) return result;
-  final zeroPlaceholder = zeroIsPlaceholder(found, policy);
+  // The policy in the unit the channel is declared in; a unit it cannot be
+  // read in gives no values.
+  final resolved = policy.forUnit(effectiveChannelUnit(session, found.name));
+  if (resolved == null) return result;
+  final zeroPlaceholder = zeroIsPlaceholder(found, resolved);
   final points = maximumPoints.clamp(2, 4000);
   var current = <ProgressValue>[];
   for (var index = 0; index < points; ++index) {
     final progress = axisLengthMeters * index / (points - 1);
     final time = timeAtProgress(trace, progress);
-    final value = time == null ? null : plausibleChannelValue(found, time, policy, zeroPlaceholder);
+    final value = time == null
+        ? null
+        : plausibleChannelValue(found, time, resolved, zeroPlaceholder);
     if (value == null) {
       if (current.isNotEmpty) {
         result.add(current);

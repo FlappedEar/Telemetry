@@ -5,6 +5,7 @@
 // only when the longitudinal G shows the pedal working at that scale;
 // otherwise the scale is reported unknown, never guessed. Overlays reads
 // such a pedal in % (departure: KAN-228).
+import '../channel_units.dart';
 import '../telemetry_session.dart';
 
 /// How a pedal channel's values are read.
@@ -36,10 +37,11 @@ const double pedalScaleMinimumAgreement = 0.5;
 /// The pedal may be pressed this long before the G builds.
 const double pedalScaleLeadSeconds = 0.5;
 
-/// Whether [channel] declares no unit and stays within 0..1 while moving:
-/// its scale cannot be told from its values.
-bool pedalScaleAmbiguous(TelemetryChannel channel) {
-  if (channel.unit.trim().isNotEmpty) return false;
+/// Whether [channel] declares no unit ([unit] is the unit its recording
+/// declares for it, [declaredChannelUnit]) and stays within 0..1 while
+/// moving: its scale cannot be told from its values.
+bool pedalScaleAmbiguous(TelemetryChannel channel, String unit) {
+  if (unit.trim().isNotEmpty) return false;
   var finite = 0;
   var lowest = double.infinity, highest = double.negativeInfinity;
   for (final value in channel.values) {
@@ -164,11 +166,15 @@ PedalScale throttleScale(TelemetrySession session) =>
     _throttleScales[session] ??= _throttleScale(session);
 
 PedalScale _throttleScale(TelemetrySession session) {
-  final throttle = session.channels[session.aliases['throttle'] ?? ''];
-  if (throttle == null || !pedalScaleAmbiguous(throttle)) return PedalScale.percent;
-  final acceleration = session.channels[session.aliases['longitudinalAcceleration'] ?? ''];
-  final unit = acceleration?.unit.trim().toLowerCase();
-  if (acceleration == null || !(unit!.isEmpty || unit == 'g')) return PedalScale.unknown;
+  final name = session.aliases['throttle'] ?? '';
+  final throttle = session.channels[name];
+  if (throttle == null || !pedalScaleAmbiguous(throttle, declaredChannelUnit(session, name))) {
+    return PedalScale.percent;
+  }
+  // The longitudinal G in g, whichever unit it is declared in.
+  final view = accelerationAliasInG(session, 'longitudinalAcceleration');
+  if (view == null || !view.supported) return PedalScale.unknown;
+  final acceleration = view.channel;
   return judgedPedalScale(
     throttle,
     longitudinalRuns(

@@ -8367,6 +8367,12 @@ abstract class AppLocalizations {
   /// **'The profile could not be exported.'**
   String get libraryExportFailed;
 
+  /// Export failed; the reason is the system's own message, for example a folder the app may not write to.
+  ///
+  /// In en, this message translates to:
+  /// **'The profile could not be exported: {reason}'**
+  String libraryExportFailedBecause(String reason);
+
   /// After an import: how many days were added.
   ///
   /// In en, this message translates to:
@@ -8589,6 +8595,36 @@ abstract class AppLocalizations {
   /// **'Replace'**
   String get sessionSetupReplace;
 
+  /// Library menu: reads every saved day from its recordings again and updates what the profile measured, for example after the app measures something new.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculate all days'**
+  String get libraryMeasureAgain;
+
+  /// Library toolbar while the days are recalculated: stops after the day being measured.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get libraryStopMeasuring;
+
+  /// Shown while the library recalculates its days.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculating the days: {done} of {total}…'**
+  String libraryMeasuring(int done, int total);
+
+  /// After recalculating the days: how many were.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day recalculated.} other{{count} days recalculated.}}'**
+  String libraryMeasured(int count);
+
+  /// After recalculating the days: days whose file or recordings could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.} other{{count} days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.}}'**
+  String libraryMeasureFailed(int count);
+
   /// The circuit the route starts on, from the circuit list or named by the user.
   ///
   /// In en, this message translates to:
@@ -8618,6 +8654,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shown for every day driven here. Kept on this device.'**
   String get circuitNameHelp;
+
+  /// Error under the circuit name field when the name could not be written to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'The name could not be saved on this device. It is used until the app is closed. Try again.'**
+  String get circuitNameNotSaved;
 
   /// Settings heading: the circuit list.
   ///
@@ -8660,6 +8702,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The circuit list could not be fetched. Check the connection and try again.'**
   String get settingsCircuitsFailed;
+
+  /// Message when a newer circuit list was fetched but could not be written to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'The circuit list was fetched but could not be saved on this device. It is used until the app is closed.'**
+  String get settingsCircuitsNotSaved;
+
+  /// Message when forgetting a circuit name could not be written to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'The change could not be saved on this device. The name comes back when the app is closed.'**
+  String get settingsCircuitsForgetNotSaved;
 
   /// Heading of the circuits the driver named.
   ///
@@ -9206,10 +9260,10 @@ abstract class AppLocalizations {
     String toLap,
   );
 
-  /// Strong acceleration (90th percentile of positive longitudinal G) on the last timed lap below the session's highest.
+  /// Peak acceleration (90th percentile of forward G on the lap) on the last timed lap at least 5% below the highest earlier one: both laps and values named.
   ///
   /// In en, this message translates to:
-  /// **'Strong acceleration {percent}% lower from lap {fromLap} to lap {toLap} ({from} → {to})'**
+  /// **'Peak acceleration down {percent}%: {to} on lap {toLap}, against {from} on lap {fromLap}, the highest before it'**
   String summaryCarFall(
     String percent,
     String fromLap,
@@ -9229,17 +9283,34 @@ abstract class AppLocalizations {
     String to,
   );
 
-  /// Car, last laps when nothing was noted and only temperatures could be read.
+  /// Car, last laps: temperatures were read over the last 3 timed laps and none rose 8 °C or more.
   ///
   /// In en, this message translates to:
-  /// **'No temperature still rising'**
-  String get summaryCarSettledTemperatures;
+  /// **'Temperatures over laps {fromLap}–{toLap}: none still rising'**
+  String summaryCarSettledTemperatures(String fromLap, String toLap);
 
-  /// Car, last laps when nothing was noted and only strong acceleration could be read.
+  /// Car, last laps: peak acceleration (90th percentile of forward G) on the last timed lap is less than 5% below the highest earlier one.
   ///
   /// In en, this message translates to:
-  /// **'Strong acceleration held'**
-  String get summaryCarSettledAcceleration;
+  /// **'Peak acceleration held: {to} on lap {toLap}, against {from} on lap {fromLap}, the highest before it ({percent}% lower)'**
+  String summaryCarAccelerationHeld(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  );
+
+  /// Car, last laps: peak acceleration on the last timed lap is at least as high as the highest earlier one.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak acceleration held: {to} on lap {toLap}, not below {from} on lap {fromLap}, the highest before it'**
+  String summaryCarAccelerationUp(
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  );
 
   /// Car, last laps: too few ranked laps to read a temperature's rise.
   ///
@@ -9250,7 +9321,7 @@ abstract class AppLocalizations {
   /// Car, last laps: too few ranked laps with strong acceleration.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Strong acceleration: needs 1 ranked lap} other{Strong acceleration: needs {count} ranked laps}}'**
+  /// **'{count, plural, =1{Peak acceleration: needs 1 ranked lap} other{Peak acceleration: needs {count} ranked laps}}'**
   String summaryCarAccelerationNeedsLaps(int count);
 
   /// Car, last laps: every temperature is missing on one of the laps its rise is read over.
@@ -9262,7 +9333,7 @@ abstract class AppLocalizations {
   /// Car, last laps: the last ranked lap has no strong acceleration (too few forward-G samples).
   ///
   /// In en, this message translates to:
-  /// **'Strong acceleration: not read on the last ranked lap'**
+  /// **'Peak acceleration: not read on the last ranked lap'**
   String get summaryCarAccelerationMissing;
 
   /// Under a fall in strong acceleration: it is an observation, not a diagnosis.
@@ -9274,7 +9345,7 @@ abstract class AppLocalizations {
   /// Car, last laps: enough ranked laps, but too few of them have strong acceleration (too few forward-G samples).
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Strong acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Strong acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}'**
+  /// **'{count, plural, =1{Peak acceleration: read on 1 of {ranked} ranked laps, needs {needed}} other{Peak acceleration: read on {count} of {ranked} ranked laps, needs {needed}}}'**
   String summaryCarAccelerationOnLaps(int count, int ranked, int needed);
 
   /// Trackside: the latest session's last ranked lap time, in large digits.

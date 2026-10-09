@@ -3,6 +3,7 @@
 // AnalysisControllerOuting.cpp, which the lap page's charts draw on a time
 // axis.
 import '../telemetry_session.dart';
+import '../speed_units.dart';
 import 'angular_channels.dart';
 
 /// The channel is not in the recording.
@@ -125,7 +126,7 @@ ChartSeries timeSeries(
     ]),
     minimum: minimum + offset,
     maximum: maximum + offset,
-    unit: session.channels[resolved]?.unit ?? '',
+    unit: effectiveChannelUnit(session, resolved),
     brakingUp: resolved == (session.aliases['longitudinalAcceleration'] ?? ''),
     angular: angular,
   );

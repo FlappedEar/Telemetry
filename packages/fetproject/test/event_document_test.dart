@@ -133,6 +133,26 @@ void main() {
     );
   });
 
+  test(
+    'deeply nested JSON in a small document is a format error, not a crash',
+    () {
+      for (final depth in [40, 10000, 100000, 1000000]) {
+        final bytes = utf8.encode('{"unknown":${'[' * depth}0${']' * depth}}');
+        expect(
+          () => decodeFetproject(bytes),
+          throwsA(
+            isA<FetprojectError>().having(
+              (error) => error.message,
+              'message',
+              'JSON nesting exceeds $maximumJsonDepth levels.',
+            ),
+          ),
+          reason: 'depth $depth',
+        );
+      }
+    },
+  );
+
   group('rejects malformed events', () {
     final cases = <String, Map<String, Object?>>{
       for (final key in ['sources', 'sync', 'videoPath', 'vboPath'])

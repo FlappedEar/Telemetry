@@ -372,7 +372,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('lapStylesGroup outlier')));
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('Zmierzone tylko w 1 zakręcie; do oceny stylu jazdy'),
+      find.textContaining(
+        'Dane dostępne tylko w 1 zakręcie; do oceny stylu jazdy',
+      ),
       findsOneWidget,
     );
   });
@@ -462,11 +464,11 @@ void main() {
       LapStylesCard(result: _result(_styles())),
       locale: const Locale('pl'),
     );
-    expect(find.text('Style okrążeń'), findsOneWidget);
-    expect(find.text('Wnioskowane'), findsOneWidget);
+    expect(find.text('Style jazdy'), findsOneWidget);
+    expect(find.text('Wyznaczone'), findsOneWidget);
     expect(find.text('Ukryj'), findsOneWidget);
     expect(
-      find.textContaining('Pogrupowane okrążenia: 7 z 9 mierzonych'),
+      find.textContaining('Pogrupowano 7 z 9 mierzonych okrążeń'),
       findsOneWidget,
     );
     expect(
@@ -475,7 +477,7 @@ void main() {
     );
     expect(find.textContaining('Najlepsze okrążenie dnia'), findsOneWidget);
     expect(
-      find.textContaining('należy do grupy „Jazda typowa”'),
+      find.textContaining('należy do grupy „Styl typowy”'),
       findsOneWidget,
     );
     expect(find.text('Późne hamowanie · 3 okrążenia'), findsOneWidget);
@@ -492,7 +494,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('km/h szybciej'), findsNWidgets(2));
-    expect(find.textContaining('nigdy z pedału hamulca'), findsOneWidget);
+    expect(
+      find.textContaining('Kanał pedału hamulca nie jest do tego używany'),
+      findsOneWidget,
+    );
     // Decimal point, not comma.
     expect(find.textContaining('6.0\u00a0km/h'), findsNWidgets(2));
     expect(find.textContaining('6,0'), findsNothing);

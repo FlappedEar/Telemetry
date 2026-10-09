@@ -4,6 +4,7 @@
 // per approved segment and for the lap (KAN-92). An observation, not a
 // verdict: coasting is sometimes the right thing to do (a lift to settle the
 // car, traffic), so nothing here calls it a loss.
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'driving_states.dart';
 import 'track_progress.dart';
@@ -116,6 +117,11 @@ CoastingSummary summarizeCoasting(
   }
 
   final speedChannel = session.channels[session.aliases['speed'] ?? ''];
+  // Metres per second in one unit of the speed as recorded; the coasting
+  // states above are unresolved for a unit that is not known.
+  final metresPerUnit =
+      metresPerSecondPerSpeedUnit(effectiveChannelUnit(session, session.aliases['speed'] ?? '')) ??
+      0.0;
   for (final interval in states.coasting.active) {
     final episode = CoastingEpisode(interval.start, interval.end);
     if (lapTrace != null) {
@@ -139,7 +145,7 @@ CoastingSummary summarizeCoasting(
         final double a = values[index], b = values[index + 1];
         if (!a.isFinite || !b.isFinite) continue;
         final seconds = times[index + 1] - times[index];
-        final meters = (a + b) / 2.0 / 3.6 * seconds;
+        final meters = (a + b) / 2.0 * metresPerUnit * seconds;
         episode.meters += meters;
         final segment = segmentAt((times[index] + times[index + 1]) / 2.0);
         if (segment >= 0) {

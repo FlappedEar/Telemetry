@@ -27,7 +27,6 @@ import '../telemetry_session.dart';
 import 'braking_source.dart';
 import 'consistency.dart';
 import 'exit_metrics.dart' show exitScaleInferred, exitUnitUndeclared, measuredThrottlePickup;
-import 'gg_pairs.dart' show standardGravity;
 import 'pedal_scale.dart';
 import 'track_progress.dart';
 
@@ -541,13 +540,6 @@ bool _placeholder(TelemetryChannel channel) {
   return true;
 }
 
-/// G per one [unit] of acceleration ("g" or none, read as g; m/s²), or null.
-double? _gPer(String unit) => switch (unit.trim().toLowerCase().replaceAll(' ', '')) {
-  '' || 'g' => 1.0,
-  'm/s2' || 'm/s^2' || 'm/s²' => 1 / standardGravity,
-  _ => null,
-};
-
 /// One lap's braking into one corner.
 final class BrakingTechniqueLap {
   /// Set when no braking zone was measured.
@@ -942,7 +934,7 @@ BrakingTechniqueLap measureBrakingTechnique(
     result.gChannelReason = brakingTechniqueGPlaceholder;
   } else {
     final unit = declaredChannelUnit(session, gName).trim();
-    final factor = _gPer(unit);
+    final factor = accelerationGPerUnit(unit);
     result
       ..source = brakingTechniqueFromG
       ..channel = gName
@@ -1111,7 +1103,7 @@ void _trail(
     ..lateralChannel = name
     ..lateralRateHz = channelUpdateRateHz(lateral)
     ..lateralUnitAssumed = unit.isEmpty;
-  final factor = _gPer(unit);
+  final factor = accelerationGPerUnit(unit);
   if (brakingTechniquePlaceholder(lateral)) {
     result.trailReason = brakingTechniqueLateralPlaceholder;
     return;

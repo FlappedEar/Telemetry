@@ -293,7 +293,7 @@ yet; it still counts in days, sessions and laps.
 | `rankedLaps`, `medianLapSeconds`, `lapSpreadSeconds` | Ranked laps of the session's group; median; interquartile range (3 laps or more). |
 | `theoreticalBestSeconds` | The session's own fastest segments added up, when every segment was timed on one of its ranked laps. |
 | `otherLayout` | `true` when the session was on another layout than the day's track: it counts in totals only. |
-| `corners[]` | Per track corner, over the session's ranked laps: `segmentId` (from FET-184: the day's theoretical-best segment placed on this corner when the day was added; absent in profiles written before), `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). From FET-165 also: `liftSeconds` (median time from the last lift off the throttle to a measured braking point, 0 when the pedals overlap; the lift is looked for from 150 m before the corner, or the lap's start, and coasting with both pedals off through all of that counts as that long, unless the throttle is never pressed in the session (an unplugged pedal logging zeros); needs throttle and brake), `releaseSpreadMeters` (interquartile range of where a measured braking ends), median and highest `decelerationG` / `bestDecelerationG` (mean deceleration through a measured braking, never one inferred from G alone, g; needs longitudinal G in g, also unlabelled as the G-G diagram reads it, or m/s²), `entrySpeedSpread` (interquartile range of the speed at the corner's start, m/s), `lineSpreadMeters` (interquartile range of the line across the track at the apex; only when the recording states a median GPS accuracy of 0.25 m or better for at least half the laps, half the closest band), `pickupSpreadMeters` (interquartile range of the measured throttle pickup at or after the slow point), `throttleKnownLaps` and `releasedPickups` (laps whose throttle is known from the end of a measured braking to the slow point, and of them those with a pickup released again in between) and `sequenceLossSeconds` (the median time the faster half of the laps through the corner lost in the segment right after it, less the slower half's, at least 0; 4 laps or more). Pedal readings are the coach's (`coachCornerPassages` in `day_coach.dart`); spreads need 3 laps. The app measures a day off the UI thread (`ProfileLibrary.recordDay`). |
+| `corners[]` | Per track corner, over the session's ranked laps: `segmentId` (from FET-184: the day's theoretical-best segment placed on this corner when the day was added; absent in profiles written before), `laps`, median and highest `minimumSpeed` and `exitSpeed` (m/s; absent without a speed unit), `brakingSpreadMeters` (interquartile range of the braking point, 3 laps or more), `lossSeconds` (median time lost there against the group's fastest). From FET-165 also: `liftSeconds` (median time from the last lift off the throttle to a measured braking point, 0 when the pedals overlap; the lift is looked for from 150 m before the corner, or the lap's start, and coasting with both pedals off through all of that counts as that long, unless the throttle is never pressed in the session (an unplugged pedal logging zeros); needs throttle and brake), `releaseSpreadMeters` (interquartile range of where a measured braking ends), median and highest `decelerationG` / `bestDecelerationG` (mean deceleration through a measured braking, never one inferred from G alone, g; needs longitudinal G in g, also unlabelled as the G-G diagram reads it, or m/s²), `entrySpeedSpread` (interquartile range of the speed at the corner's start, m/s), `lineSpreadMeters` (interquartile range of the line across the track at the apex; only when the recording states a median GPS accuracy of 0.25 m or better for at least half the laps, half the closest band), `pickupSpreadMeters` (interquartile range of the measured throttle pickup at or after the slow point), `throttleKnownLaps` and `releasedPickups` (laps whose throttle is known from the end of a measured braking to the slow point, and of them those with a pickup released again in between) and `sequenceLossSeconds` (the median time the faster half of the laps through the corner lost in the segment right after it, less the slower half's, at least 0; 4 laps or more). Pedal readings are the coach's (`coachCornerPassages` in `day_coach.dart`); spreads need 3 laps. The app measures a day off the UI thread (`ProfileLibrary.recordDay`); Library ⋮ › Recalculate all days (`ProfileLibrary.measureAllAgain`, FET-196) measures every day again from its saved file and recordings, one at a time, as opening it would (speeds in their effective unit, theoretical best from the document's segments, each run's alternative recording fused as the day page does), keeping car, name and weather (the track follows the route, as on the page). A day whose file, a recording or an alternative recording cannot be read keeps its measurements: measuring without it would drop its sessions or channels. One run at a time; `stopMeasuringAll` stops after the current day; one profile write per day. Levels need no re-measuring: they are worked out on read. |
 
 A day's `theoreticalBestSeconds` is its track's theoretical best (the chosen
 group's). Days re-added before their theoretical best is worked out, or when it
@@ -559,6 +559,33 @@ unencrypted entries), and must match its CRC-32; each
 day's document must be that day (`event.id`), and each recording the SHA-256
 its day names. Anything else throws `ProfileBundleError`.
 
+**Limits (audit F03/F07, FET-289)**, all checked before anything is unpacked,
+so a bundle past one is refused whole with the folder untouched:
+
+| Limit | Value |
+| --- | --- |
+| Bundle file | 16 GiB (`maximumBundleArchiveBytes`) |
+| Zip directory | `2 + 10000 days + 20000 recordings` entries and 400 bytes for each of them, about 11.4 MiB (`maximumBundleEntries`, `maximumBundleDirectoryBytes`). Both are read from the record at the end of the file (zip64 too) before the directory is read; the package that reads it goes by the directory's size, not its count, so the size is what bounds the list it builds |
+| Days / recordings | 10000 (`maximumProfileDays`) / 20000 (`maximumBundleRecordings`) |
+| One recording | 128 MiB (`maximumBundleRecordingBytes`), the size the importers read, so a recording that travels can be opened again |
+| All entries unpacked | 16 GiB by their declared sizes (`maximumBundleExpandedBytes`); the owner's day of six sessions is about 70 MiB |
+
+`writeProfileBundle` leaves out a recording past 128 MiB (counted in
+`recordingsMissing`), and a day the importer would refuse (a file name that is
+not one plain name, or the same as an earlier day's but for letter case; listed
+in `daysMissing`). It throws `ProfileBundleError` when the recordings would
+pass the limits above. An entry whose size reads as negative (zip64 2^63 or
+more) is refused.
+
+Two days whose file names differ only by letter case (`A` and `a`) would be one
+file on Windows and on a default macOS volume, so the second would replace the
+first. A bundle that would add such a day, to one another or to a day the
+profile has, is refused, on every platform; the event ids are never changed.
+Case is compared with `toLowerCase`, so a volume that also folds other
+characters is not covered. `isProfileDayName` is the rule for a day's file name
+(one plain name that stays in `Days`); `profileDayPath` throws a
+`FormatException` for an id that fails it, such as `../escaped`.
+
 It never replaces: a day the profile has, or whose document already exists in
 `Days/`, is left as it is (`alreadyHere`). The other days are merged by
 `mergeDriverProfile`: a car joins this profile's car with the same id or name
@@ -569,7 +596,7 @@ otherwise, leaving no car or track of its own).
 
 All of it is read and checked first: the documents in memory, the recordings
 unpacked into a `.bundle-import-*` folder beside the index. A reference copy
-(of an added day) must be the size its reference says (and at most 128 MiB) and
+(of an added day) must be the size its reference says (a recording past 128 MiB refuses the bundle, see the limits) and
 hash to the name that is its `sha256`: one that is not, or is damaged in the
 archive, costs the days using it their reference
 (`ProfileBundleImport.referencesNotKept`), never the bundle; the rest is still

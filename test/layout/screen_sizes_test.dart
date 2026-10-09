@@ -20,6 +20,7 @@ import 'package:telemetry/main.dart';
 import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 /// Logical sizes of the devices the app is tested on.
 const sizes = {
@@ -419,7 +420,7 @@ void main() {
           final controller = DayResultsController(
             runs: outcome.runs,
             analysis: outcome.analysis!,
-            theoreticalBestRunner: (job) async => job(),
+            theoreticalBestRunner: asyncRunner((job) async => job()),
           );
           await controller.requestTheoreticalBest();
           final best = outcome.analysis!.ranking!.bestOfDay!;

@@ -546,8 +546,8 @@ void main() {
     expect(
       _text(tester, 'sessionSummaryCarWatch'),
       'Car, last laps | Gearbox still rising: 108 °C → 119 °C '
-      '(laps 3–5)\nStrong acceleration 6% lower from lap 2 to lap 5 '
-      '(0.265 g → 0.250 g); meanwhile Gearbox 104 °C → '
+      '(laps 3–5)\nPeak acceleration down 6%: 0.250 g on lap 5, against '
+      '0.265 g on lap 2, the highest before it; meanwhile Gearbox 104 °C → '
       '119 °C\nTraffic and a different line lower it too.',
     );
   });
@@ -563,21 +563,35 @@ void main() {
       await watch(
         _lastLaps(oil: [110, 112, 113, 113], strongG: [0.25, 0.25, 0.25, 0.25]),
       ),
-      'Car, last laps | No temperature still rising\nStrong acceleration held',
+      'Car, last laps | Temperatures over laps 2–4: none still rising\nPeak '
+      'acceleration held: 0.250 g on lap 4, not below 0.250 g on lap 1, '
+      'the highest before it',
+    );
+    // Just under the 5% fall: both laps and the gap, cut to 4.9%, not 5%.
+    expect(
+      await watch(
+        _lastLaps(
+          oil: [110, 112, 113, 113],
+          strongG: [0.3, 0.29, 0.3, 0.28502],
+        ),
+      ),
+      'Car, last laps | Temperatures over laps 2–4: none still rising\nPeak '
+      'acceleration held: 0.285 g on lap 4, against 0.300 g on lap 1, '
+      'the highest before it (4.9% lower)',
     );
     expect(
       await watch(_lastLaps(oil: [110, 112, 113])),
-      'Car, last laps | No temperature still rising',
+      'Car, last laps | Temperatures over laps 1–3: none still rising',
     );
     // Three ranked laps: enough for temperatures, not for acceleration.
     expect(
       await watch(_lastLaps(oil: [110, 120, 130], strongG: [0.3, 0.3, 0.2])),
       'Car, last laps | Oil still rising: 110 °C → 130 °C (laps '
-      '1–3)\nStrong acceleration: needs 4 ranked laps',
+      '1–3)\nPeak acceleration: needs 4 ranked laps',
     );
     expect(
       await watch(_lastLaps(oil: [110, 130], strongG: [0.3, 0.3])),
-      'Car, last laps | Temperatures: needs 3 ranked laps\nStrong '
+      'Car, last laps | Temperatures: needs 3 ranked laps\nPeak '
       'acceleration: needs 4 ranked laps',
     );
     // Twelve laps, the temperature missing on one of the last three and no
@@ -590,12 +604,12 @@ void main() {
         ),
       ),
       'Car, last laps | Temperatures: missing on one of the last 3 ranked '
-      'laps\nStrong acceleration: not read on the last ranked lap',
+      'laps\nPeak acceleration: not read on the last ranked lap',
     );
     // Six ranked laps, three of them with strong acceleration.
     expect(
       await watch(_lastLaps(strongG: [0.3, null, null, null, 0.3, 0.3])),
-      'Car, last laps | Strong acceleration: read on 3 of 6 ranked laps, '
+      'Car, last laps | Peak acceleration: read on 3 of 6 ranked laps, '
       'needs 4',
     );
     // Nothing recorded on its laps: no line (the hottest line says so).
@@ -617,10 +631,25 @@ void main() {
     expect(
       _text(tester, 'sessionSummaryCarWatch'),
       'Auto, ostatnie okrążenia | Temperatura oleju nadal rośnie: '
-      '126 °C → 136 °C (okrążenia 3–5)\nMocne przyspieszenie niższe '
-      'o 6% od okrążenia 2 do 5 (0.265 g → 0.250 g); w tym czasie '
+      '126 °C → 136 °C (okrążenia 3–5)\nMaksymalne przyspieszenie niższe '
+      'o 6%: 0.250 g na okrążeniu 5, wobec 0.265 g na okrążeniu 2 '
+      '(najwyższe wcześniej); w tym czasie '
       'Temperatura oleju 121 °C → 136 °C\nRuch na torze i inna '
       'linia też je obniżają.',
+    );
+    await _pump(
+      tester,
+      locale: const Locale('pl'),
+      channels: _lastLaps(
+        oil: [110, 112, 113, 113],
+        strongG: [0.3, 0.29, 0.3, 0.28502],
+      ),
+    );
+    expect(
+      _text(tester, 'sessionSummaryCarWatch'),
+      'Auto, ostatnie okrążenia | Temperatury na okrążeniach 2–4: żadna nie '
+      'rośnie\nMaksymalne przyspieszenie bez spadku: 0.285 g na okrążeniu '
+      '4, wobec 0.300 g na okrążeniu 1 (najwyższe wcześniej, różnica 4.9%)',
     );
     await _pump(
       tester,
@@ -630,7 +659,7 @@ void main() {
     expect(
       _text(tester, 'sessionSummaryCarWatch'),
       'Auto, ostatnie okrążenia | Temperatury: potrzeba 3 sklasyfikowanych '
-      'okrążeń\nMocne przyspieszenie: potrzeba 4 sklasyfikowanych okrążeń',
+      'okrążeń\nMaksymalne przyspieszenie: potrzeba 4 sklasyfikowanych okrążeń',
     );
   });
 

@@ -16,6 +16,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'driving_vbo.dart';
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 void main() {
   late Directory directory;
@@ -214,7 +215,7 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async => job(),
+      theoreticalBestRunner: asyncRunner((job) async => job()),
     );
     final row = outcome.analysis!.ranking!.bestOfDay!;
     await tester.binding.setSurfaceSize(const Size(1200, 4000));
@@ -312,7 +313,7 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async => job(),
+      theoreticalBestRunner: asyncRunner((job) async => job()),
     );
     final row = outcome.analysis!.ranking!.bestOfDay!;
     await tester.binding.setSurfaceSize(const Size(1200, 4000));

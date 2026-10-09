@@ -5657,6 +5657,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryExportFailed => 'The profile could not be exported.';
 
   @override
+  String libraryExportFailedBecause(String reason) {
+    return 'The profile could not be exported: $reason';
+  }
+
+  @override
   String libraryImported(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -5825,6 +5830,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionSetupReplace => 'Replace';
 
   @override
+  String get libraryMeasureAgain => 'Recalculate all days';
+
+  @override
+  String get libraryStopMeasuring => 'Stop';
+
+  @override
+  String libraryMeasuring(int done, int total) {
+    return 'Recalculating the days: $done of $total…';
+  }
+
+  @override
+  String libraryMeasured(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days recalculated.',
+      one: '1 day recalculated.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryMeasureFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count days could not be recalculated: a file or recording is missing or unreadable. They keep what was measured before.',
+      one: '1 day could not be recalculated: its file or one of its recordings is missing or unreadable. It keeps what was measured before.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String trackDialogCircuit(String name) {
     return 'Circuit: $name';
   }
@@ -5842,6 +5881,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get circuitNameHelp =>
       'Shown for every day driven here. Kept on this device.';
+
+  @override
+  String get circuitNameNotSaved =>
+      'The name could not be saved on this device. It is used until the app is closed. Try again.';
 
   @override
   String get settingsCircuitsHeading => 'Circuits';
@@ -5867,6 +5910,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsCircuitsFailed =>
       'The circuit list could not be fetched. Check the connection and try again.';
+
+  @override
+  String get settingsCircuitsNotSaved =>
+      'The circuit list was fetched but could not be saved on this device. It is used until the app is closed.';
+
+  @override
+  String get settingsCircuitsForgetNotSaved =>
+      'The change could not be saved on this device. The name comes back when the app is closed.';
 
   @override
   String get settingsCircuitsMine => 'Your circuit names';
@@ -6241,7 +6292,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String from,
     String to,
   ) {
-    return 'Strong acceleration $percent% lower from lap $fromLap to lap $toLap ($from → $to)';
+    return 'Peak acceleration down $percent%: $to on lap $toLap, against $from on lap $fromLap, the highest before it';
   }
 
   @override
@@ -6255,10 +6306,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get summaryCarSettledTemperatures => 'No temperature still rising';
+  String summaryCarSettledTemperatures(String fromLap, String toLap) {
+    return 'Temperatures over laps $fromLap–$toLap: none still rising';
+  }
 
   @override
-  String get summaryCarSettledAcceleration => 'Strong acceleration held';
+  String summaryCarAccelerationHeld(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Peak acceleration held: $to on lap $toLap, against $from on lap $fromLap, the highest before it ($percent% lower)';
+  }
+
+  @override
+  String summaryCarAccelerationUp(
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Peak acceleration held: $to on lap $toLap, not below $from on lap $fromLap, the highest before it';
+  }
 
   @override
   String summaryCarTemperaturesNeedLaps(int count) {
@@ -6276,8 +6347,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Strong acceleration: needs $count ranked laps',
-      one: 'Strong acceleration: needs 1 ranked lap',
+      other: 'Peak acceleration: needs $count ranked laps',
+      one: 'Peak acceleration: needs 1 ranked lap',
     );
     return '$_temp0';
   }
@@ -6295,7 +6366,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get summaryCarAccelerationMissing =>
-      'Strong acceleration: not read on the last ranked lap';
+      'Peak acceleration: not read on the last ranked lap';
 
   @override
   String get summaryCarFallNote => 'Traffic and a different line lower it too.';
@@ -6306,9 +6377,8 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Strong acceleration: read on $count of $ranked ranked laps, needs $needed',
-      one:
-          'Strong acceleration: read on 1 of $ranked ranked laps, needs $needed',
+          'Peak acceleration: read on $count of $ranked ranked laps, needs $needed',
+      one: 'Peak acceleration: read on 1 of $ranked ranked laps, needs $needed',
     );
     return '$_temp0';
   }
