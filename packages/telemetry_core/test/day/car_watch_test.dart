@@ -141,6 +141,50 @@ void main() {
     expect(carWatchCelsiusIn(carWatchRiseCelsius, 'degF'), closeTo(14.4, 1e-9));
   });
 
+  test('a rise is the same rise in °C, °F or K (FET-288)', () {
+    // 10 °C is 18 °F is 10 K; 7 °C is 12.6 °F is 7 K.
+    for (final (unit, rise, noted) in [
+      ('°C', 10.0, true),
+      ('°C', 7.0, false),
+      ('°F', 18.0, true),
+      ('°F', 12.6, false),
+      ('K', 10.0, true),
+      ('K', 7.0, false),
+    ]) {
+      final maxima = {
+        'oil': <double?>[200, 200 + rise / 2, 200 + rise],
+      };
+      expect(
+        carWatch(_run(maxima: maxima, unit: unit))!.rises,
+        hasLength(noted ? 1 : 0),
+        reason: '$unit $rise',
+      );
+    }
+    expect(carWatchCelsiusIn(carWatchRiseCelsius, 'K'), carWatchRiseCelsius);
+    final rise = carWatch(
+      _run(
+        maxima: {
+          'oil': <double?>[200, 209, 218],
+        },
+        unit: '°F',
+      ),
+    )!.rises.single;
+    expect(rise.riseCelsius, closeTo(10, 1e-9));
+  });
+
+  test('a temperature in a unit that is not known is not read as °C', () {
+    final watch = carWatch(
+      _run(
+        maxima: {
+          'oil': <double?>[200, 210, 220],
+        },
+        unit: 'rankine',
+      ),
+    )!;
+    expect(watch.rises, isEmpty);
+    expect(watch.temperatures, CarWatchStatus.notRecorded);
+  });
+
   test('largest rise first', () {
     final watch = carWatch(
       _run(

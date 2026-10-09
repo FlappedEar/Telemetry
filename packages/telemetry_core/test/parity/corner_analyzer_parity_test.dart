@@ -30,6 +30,8 @@ import 'package:fetproject/fetproject.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import 'departures.dart';
+
 var _compared = 0;
 var _mismatched = 0;
 var _maximumDifference = 0.0;
@@ -603,7 +605,8 @@ final class _Check {
 
   void same(String where, Object? actual, Object? expected) {
     ++_compared;
-    if (actual != expected) _fail('$where: $actual, expected $expected');
+    final want = where.endsWith('unit') ? unitAsTelemetryReadsIt(expected, actual) : expected;
+    if (actual != want) _fail('$where: $actual, expected $expected');
   }
 
   void number(String where, double actual, Object? expected) {

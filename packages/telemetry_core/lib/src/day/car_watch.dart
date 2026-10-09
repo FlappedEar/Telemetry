@@ -4,6 +4,8 @@
 // section's maximum and strong acceleration, see day_channel_summaries.dart);
 // nothing is measured differently. They are observations from the
 // recording, not causes or a diagnosis.
+import '../analysis/channel_summary.dart' show channelSummaryUnsupportedUnit;
+import '../channel_units.dart';
 import 'day_channel_summaries.dart';
 import 'day_laps.dart';
 
@@ -63,8 +65,10 @@ final class CarWatchRise {
 
   double get rise => to - from;
 
-  /// [rise] in °C.
-  double get riseCelsius => _fahrenheit(unit) ? rise / 1.8 : rise;
+  /// [rise] in °C: a rise in °F is ×1.8 the same rise in °C, one in K the
+  /// same. (A unit not known never gets here: its temperature has no
+  /// summary, see [channelSummaryUnsupportedUnit].)
+  double get riseCelsius => rise / _degreesPerCelsius(unit);
 }
 
 /// Strong acceleration from the session's highest, on lap [fromLap], to the
@@ -164,11 +168,12 @@ final class CarWatch {
       temperatures != CarWatchStatus.notRecorded || acceleration != CarWatchStatus.notRecorded;
 }
 
-bool _fahrenheit(String unit) => unit.trim().toLowerCase().endsWith('f');
+double _degreesPerCelsius(String unit) =>
+    temperatureUnitOf(unit)?.differenceFromCelsius(1.0) ?? 1.0;
 
-/// [celsius] in [unit] (a declared °F, else °C).
-double carWatchCelsiusIn(double celsius, String unit) =>
-    _fahrenheit(unit) ? celsius * 1.8 : celsius;
+/// A difference of [celsius] degrees Celsius in [unit]'s degrees (a
+/// declared °F ×1.8; °C, K and none unchanged).
+double carWatchCelsiusIn(double celsius, String unit) => celsius * _degreesPerCelsius(unit);
 
 /// What the car did over [run]'s ranked laps; null when its recording could
 /// not be read.
@@ -212,7 +217,10 @@ CarWatch? carWatch(RunChannelSummaries run) {
   // step.
   final recordedChannels = [
     for (final channel in run.channels)
-      if (ranked.any((section) => maximumAt(channel, section) != null)) channel,
+      // A temperature in a unit that is not known has no summary to read.
+      if (temperatureUnitOf(channel.unit) != null &&
+          ranked.any((section) => maximumAt(channel, section) != null))
+        channel,
   ];
   final rises = <CarWatchRise>[];
   CarWatchStatus temperatures;

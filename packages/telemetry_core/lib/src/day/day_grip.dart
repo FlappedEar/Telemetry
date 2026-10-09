@@ -18,7 +18,7 @@
 // it.
 import 'dart:math' as math;
 
-import '../analysis/gg_pairs.dart' show ggPlausibleLimitG, standardGravity;
+import '../analysis/gg_pairs.dart' show ggPlausibleLimitG;
 import '../analysis/track_progress.dart';
 import '../channel_units.dart';
 import '../operation.dart';
@@ -251,16 +251,6 @@ GripFigure aggregateGripLaps(List<GripLapValue> values, {DayLapReference? prefer
   );
 }
 
-// Factor from an acceleration unit to g, or null for one not supported.
-double? _gPerUnit(String unit) {
-  final normalized = unit.trim().toLowerCase().replaceAll(' ', '');
-  if (normalized.isEmpty || normalized == 'g') return 1.0;
-  if (normalized == 'm/s2' || normalized == 'm/s^2' || normalized == 'm/s²') {
-    return 1.0 / standardGravity;
-  }
-  return null;
-}
-
 /// A channel name that is the car's yaw rate.
 final RegExp _yawName = RegExp(r'yaw', caseSensitive: false);
 
@@ -287,12 +277,12 @@ final class GripChannels {
     final speed = session.channel('speed');
     if (speed != null) {
       result.speed = speed;
-      result.speedFactor = metresPerSecondPerSpeedUnit(speed.unit);
+      result.speedFactor = metresPerSecondPerSpeedUnit(result.speedUnit);
     }
     final lateral = session.channel('lateralAcceleration');
     if (lateral == null) {
       result.lateralReason = gripNoLateralChannel;
-    } else if (_gPerUnit(declaredChannelUnit(session, lateral.name)) == null) {
+    } else if (accelerationGPerUnit(declaredChannelUnit(session, lateral.name)) == null) {
       result.lateralReason = gripUnsupportedUnit;
     } else {
       result.lateral = lateral;
@@ -302,7 +292,7 @@ final class GripChannels {
     if (longitudinal != null) {
       // A channel there but in a unit not supported is not replaced by the
       // speed: another channel is never substituted silently.
-      if (_gPerUnit(declaredChannelUnit(session, longitudinal.name)) == null) {
+      if (accelerationGPerUnit(declaredChannelUnit(session, longitudinal.name)) == null) {
         result.longitudinalReason = gripUnsupportedUnit;
       } else {
         result.longitudinal = longitudinal;
@@ -316,7 +306,7 @@ final class GripChannels {
       result.longitudinalSource = GripSource(
         channel: speed.name,
         unit: 'g',
-        unitAssumed: speed.unit.trim().isEmpty,
+        unitAssumed: result.speedUnit.isEmpty,
         fromSpeed: true,
       );
     }
@@ -364,7 +354,11 @@ final class GripChannels {
   double? speedFactor;
 
   /// The speed has no unit, and km/h is assumed (as analysis reads it).
-  bool get speedUnitAssumed => speed != null && speed!.unit.trim().isEmpty;
+  bool get speedUnitAssumed => speed != null && speedUnit.isEmpty;
+
+  /// The unit analysis reads [speed] in (declared, else assumed; empty
+  /// when neither).
+  String get speedUnit => speed == null ? '' : effectiveChannelUnit(session, speed!.name);
 
   TelemetryChannel? lateral;
   GripSource lateralSource = GripSource.none;
@@ -386,7 +380,7 @@ final class GripChannels {
 
   // The plausible limit in [source]'s unit (as the G-G pairs exclude).
   static double _limit(GripSource source) =>
-      source.fromSpeed ? ggPlausibleLimitG : ggPlausibleLimitG / _gPerUnit(source.unit)!;
+      source.fromSpeed ? ggPlausibleLimitG : ggPlausibleLimitG / accelerationGPerUnit(source.unit)!;
 
   /// [channel]'s finite, plausible samples in [windows], in order.
   Iterable<(double, double)> _samples(
@@ -550,7 +544,7 @@ final class GripChannels {
   Iterable<(double ratio, bool sameSign)> _balanceSamples(List<GripWindow> windows) sync* {
     final yaw = this.yaw;
     if (!hasBalance || yaw == null) return;
-    final toG = _gPerUnit(lateralSource.unit)!;
+    final toG = accelerationGPerUnit(lateralSource.unit)!;
     for (final (time, value) in lateralSamples(windows)) {
       final lateralG = value.abs() * toG;
       if (lateralG < gripBalanceMinimumLateralG) continue;
@@ -621,7 +615,7 @@ final class GripChannels {
   /// The edges of the speed bands in the speed's own unit, or null when the
   /// unit has none. A speed without a unit gets km/h's
   /// ([speedUnitAssumed]).
-  List<double>? get bandEdges => switch (normalizedSpeedUnit(speed?.unit ?? '')) {
+  List<double>? get bandEdges => switch (normalizedSpeedUnit(speedUnit)) {
     _ when speed == null => null,
     'km/h' => gripBandEdgesKilometresPerHour,
     'mph' => gripBandEdgesMilesPerHour,
@@ -871,7 +865,7 @@ DayGripProxies dayGripProxies(
           GripBand(
             lower: i == 0 ? null : edges[i - 1],
             upper: i == edges.length ? null : edges[i],
-            speedUnit: normalizedSpeedUnit(reader.speed!.unit),
+            speedUnit: normalizedSpeedUnit(reader.speedUnit),
             speedUnitAssumed: reader.speedUnitAssumed,
             lateral: figure((k) => perLap[k][i].lateral),
             braking: figure((k) => perLap[k][i].braking),

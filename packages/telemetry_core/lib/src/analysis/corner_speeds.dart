@@ -185,7 +185,7 @@ CornerSpeeds computeCornerSpeeds(
     // The corner's two halves lie at opposite ends of a gate-to-gate lap.
     return make(
       channel: channel,
-      unit: speedChannel.unit,
+      unit: effectiveChannelUnit(session, speedChannel.name),
       provenance: 'measured',
       coveredMeters:
           projectedCoverageMeters(lapTrace, start, length, length) +
@@ -241,7 +241,7 @@ CornerSpeeds computeCornerSpeeds(
   }
   return make(
     channel: channel,
-    unit: speedChannel.unit,
+    unit: effectiveChannelUnit(session, speedChannel.name),
     provenance: 'measured',
     coveredMeters: covered,
     entry: entry,

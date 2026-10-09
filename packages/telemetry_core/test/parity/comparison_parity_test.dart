@@ -24,6 +24,8 @@ import 'package:fetproject/fetproject.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import 'departures.dart';
+
 var _compared = 0;
 var _mismatched = 0;
 var _maximumDifference = 0.0;
@@ -371,7 +373,8 @@ final class _Check {
 
   void same(String where, Object? actual, Object? expected) {
     ++_compared;
-    if (!_equal(actual, expected)) _fail('$where: $actual, expected $expected');
+    final want = where.endsWith('unit') ? unitAsTelemetryReadsIt(expected, actual) : expected;
+    if (!_equal(actual, want)) _fail('$where: $actual, expected $expected');
   }
 
   static bool _equal(Object? a, Object? b) {
@@ -514,11 +517,9 @@ final class _Check {
       );
     }
     if (expected['reason'] == '' || expected['reason'] == 'noSamples') {
-      same(
-        '$where source',
-        [actual.channel, actual.unit, actual.provenance],
-        [expected['channel'], expected['unit'], expected['provenance']],
-      );
+      same('$where source channel', actual.channel, expected['channel']);
+      same('$where source unit', actual.unit, expected['unit']);
+      same('$where source provenance', actual.provenance, expected['provenance']);
     }
     if (expected['valid'] != true || !actual.valid) return;
     number('$where minimum', actual.trace.minimum!, expected['minimum']);

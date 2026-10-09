@@ -9,6 +9,7 @@
 // cause.
 import 'dart:math' as math;
 
+import '../channel_units.dart';
 import '../telemetry_session.dart';
 
 const String temperatureAssociationAlgorithm = 'spearman-rank-v1';
@@ -146,13 +147,15 @@ final class LapAcceleration {
 }
 
 /// A lap's strong acceleration: the 90th percentile of its positive
-/// longitudinal G samples (the `longitudinalAcceleration` alias, g or
-/// undeclared units, |G| up to 4). A percentile rather than the peak, so one
+/// longitudinal G samples (the `longitudinalAcceleration` alias, in g or
+/// m/s² or with no unit declared, |G| up to 4). A percentile rather than the peak, so one
 /// noisy sample does not decide it. None with fewer than
 /// [minimumAccelerationSamples] positive samples.
 LapAcceleration lapStrongAcceleration(TelemetrySession session, double startTime, double endTime) {
   final channel = session.aliases['longitudinalAcceleration'] ?? '';
-  final found = session.channels[channel];
+  // In g whichever unit the recording declares (a VBO on its header line).
+  final view = channel.isEmpty ? null : accelerationInG(session, channel);
+  final found = view?.channel;
   if (channel.isEmpty ||
       found == null ||
       found.timestamps.length != found.values.length ||
@@ -161,8 +164,7 @@ LapAcceleration lapStrongAcceleration(TelemetrySession session, double startTime
       endTime <= startTime) {
     return LapAcceleration(channel: channel);
   }
-  final unit = found.unit.trim();
-  if (unit.isNotEmpty && unit.toLowerCase() != 'g') return LapAcceleration(channel: channel);
+  if (!view!.supported) return LapAcceleration(channel: channel);
   final times = found.timestamps;
   final positive = <double>[];
   for (

@@ -134,8 +134,14 @@ void main() {
     // A shorter window with too few positive samples has no value.
     expect(lapStrongAcceleration(session(), 0.0, 3.0).strongG, isNull);
     expect(lapStrongAcceleration(session(), 5.0, 5.0).strongG, isNull);
-    // Units other than g are not rescaled.
-    expect(lapStrongAcceleration(session(unit: 'm/s^2'), 0.0, 10.0).strongG, isNull);
+    // m/s² is read as g (FET-288): 9 m/s² is 0.92 g, within the plausible
+    // range, so the 90th percentile is the 46th of 51 values, 0.46 m/s².
+    expect(
+      lapStrongAcceleration(session(unit: 'm/s^2'), 0.0, 10.0).strongG,
+      closeTo(0.46 / standardGravity, 1e-6),
+    );
+    // A unit that is not an acceleration gives none.
+    expect(lapStrongAcceleration(session(unit: 'km/h'), 0.0, 10.0).strongG, isNull);
     expect(lapStrongAcceleration(session(unit: ' G '), 0.0, 10.0).strongG, isNotNull);
     expect(lapStrongAcceleration(session(alias: false), 0.0, 10.0).channel, isEmpty);
   });

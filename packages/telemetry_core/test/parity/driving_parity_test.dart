@@ -244,20 +244,65 @@ void main() {
       final options = _options[expected['options']]!;
       final start = _double(expected['start']), end = _double(expected['end']);
       final states = classifyDrivingStates(session, start, end, options);
+      if (expected['session'] == 'mph') {
+        // Overlays (d4d1039) reads only km/h speeds and g accelerations here:
+        // an mph speed or an m/s² lateral acceleration is a unit mismatch,
+        // and no cornering or coasting is known. Telemetry reads both
+        // (FET-288), so what the reference cannot say is checked against the
+        // same drive in km/h and g, and the pedals, which do not depend on
+        // either, against the reference.
+        final want = expected['states'] as Map<String, Object?>;
+        check.track('braking', states.braking, want['braking']);
+        check.track('accelerating', states.accelerating, want['accelerating']);
+        final equivalent = _inKmhAndG(session);
+        final same = classifyDrivingStates(equivalent, start, end, options);
+        check.equivalentTrack('cornering', states.cornering, same.cornering);
+        check.equivalentTrack('coasting', states.coasting, same.coasting);
+        final overlap = overlapOf(states.braking.active, states.cornering.active);
+        check.equivalentMeters(
+          'overlapMeters',
+          travelledMeters(session, overlap),
+          travelledMeters(equivalent, overlapOf(same.braking.active, same.cornering.active)),
+        );
+        check.equivalentMeters(
+          'brakingMeters',
+          travelledMeters(session, states.braking.active),
+          travelledMeters(equivalent, same.braking.active),
+        );
+        for (final (lapTrace, approved) in [
+          (_coastingTrace(), _coastingSegments()),
+          (null, null),
+        ]) {
+          check.equivalentCoasting(
+            'coasting ${approved == null ? 'bare' : 'segments'}',
+            summarizeCoasting(
+              session,
+              start,
+              end,
+              lapTrace: lapTrace,
+              approved: approved,
+              options: options,
+            ),
+            summarizeCoasting(
+              equivalent,
+              start,
+              end,
+              lapTrace: lapTrace,
+              approved: approved,
+              options: options,
+            ),
+          );
+        }
+        check.done();
+        return;
+      }
       check.states('states', states, expected['states']);
       final overlap = overlapOf(states.braking.active, states.cornering.active);
       check.intervals('overlap', overlap, expected['overlap']);
-      // Overlays (d4d1039) integrates every speed as km/h; Telemetry reads an
-      // mph speed as mph, so its distances are 1.609344 times Overlays'.
-      final overlays = session.channel('speed')?.unit == 'mph' ? 1.609344 : 1.0;
-      check.number(
-        'overlapMeters',
-        travelledMeters(session, overlap) / overlays,
-        expected['overlapMeters'],
-      );
+      check.number('overlapMeters', travelledMeters(session, overlap), expected['overlapMeters']);
       check.number(
         'brakingMeters',
-        travelledMeters(session, states.braking.active) / overlays,
+        travelledMeters(session, states.braking.active),
         expected['brakingMeters'],
       );
       check.coasting(
@@ -280,6 +325,34 @@ void main() {
       check.done();
     });
   }
+}
+
+/// [session] with its mph speed in km/h and its m/s² accelerations in g:
+/// the same drive, in the units Overlays reads.
+TelemetrySession _inKmhAndG(TelemetrySession session) {
+  TelemetryChannel scaled(TelemetryChannel channel, String unit, double factor) => TelemetryChannel(
+    name: channel.name,
+    unit: unit,
+    timestamps: channel.timestamps,
+    values: Float32List.fromList([for (final value in channel.values) value * factor]),
+  );
+  return TelemetrySession(
+    duration: session.duration,
+    startTime: session.startTime,
+    metadata: session.metadata,
+    channels: {
+      for (final MapEntry(:key, :value) in session.channels.entries)
+        key: switch (value.unit) {
+          'mph' => scaled(value, 'km/h', 1.609344),
+          'm/s2' => scaled(value, 'g', 1 / standardGravity),
+          _ => value,
+        },
+    },
+    aliases: session.aliases,
+    warnings: session.warnings,
+    timingGates: session.timingGates,
+    sampleCount: session.sampleCount,
+  );
 }
 
 ApprovedSegmentation _fixedSegments(double length) => ApprovedSegmentation(
@@ -654,8 +727,10 @@ final class _Check {
         want['reason'],
         want['longitudinalChannel'],
         want['lateralChannel'],
-        want['longitudinalUnit'],
-        want['lateralUnit'],
+        // The unit as the recording declares it, without the spaces round it
+        // (Overlays echoes the channel's unit as written).
+        (want['longitudinalUnit'] as String).trim(),
+        (want['lateralUnit'] as String).trim(),
         want['unitsDeclared'],
         want['sharedClock'],
         want['candidateCount'],
@@ -800,6 +875,56 @@ final class _Check {
     number('$where off', actual.threshold.off, threshold[1]);
     intervals('$where active', actual.active, want['active']);
     intervals('$where known', actual.known, want['known']);
+  }
+
+  // The drive read in mph and m/s² against the same drive in km/h and g
+  // (FET-288): the same states in the same intervals.
+  void equivalentTrack(String where, DrivingStateTrack actual, DrivingStateTrack wanted) {
+    same(
+      '$where fields',
+      [actual.provenance, actual.unresolvedReason, actual.rejectedSpikes, actual.threshold.unit],
+      [wanted.provenance, wanted.unresolvedReason, wanted.rejectedSpikes, wanted.threshold.unit],
+    );
+    for (final (name, got, want) in [
+      ('active', actual.active, wanted.active),
+      ('known', actual.known, wanted.known),
+    ]) {
+      same('$where $name size', got.length, want.length);
+      for (var i = 0; i < min(got.length, want.length); ++i) {
+        number('$where $name $i start', got[i].start, want[i].start);
+        number('$where $name $i end', got[i].end, want[i].end);
+      }
+    }
+  }
+
+  // Metres from float32 samples in two units agree to a part in 10⁵.
+  void equivalentMeters(String where, double actual, double wanted) {
+    ++_compared;
+    if ((actual - wanted).abs() > 1e-5 * max(1.0, wanted.abs())) {
+      _fail('$where: $actual, expected $wanted');
+    }
+  }
+
+  void equivalentCoasting(String where, CoastingSummary actual, CoastingSummary wanted) {
+    same(
+      '$where fields',
+      [actual.valid, actual.provenance, actual.unresolvedReason, actual.episodes.length],
+      [wanted.valid, wanted.provenance, wanted.unresolvedReason, wanted.episodes.length],
+    );
+    number('$where seconds', actual.coastingSeconds, wanted.coastingSeconds);
+    equivalentMeters('$where meters', actual.coastingMeters, wanted.coastingMeters);
+    same(
+      '$where segments',
+      [for (final segment in actual.segments) segment.episodes],
+      [for (final segment in wanted.segments) segment.episodes],
+    );
+    for (var i = 0; i < min(actual.segments.length, wanted.segments.length); ++i) {
+      equivalentMeters(
+        '$where segment $i meters',
+        actual.segments[i].meters,
+        wanted.segments[i].meters,
+      );
+    }
   }
 
   void states(String where, DrivingStateClassification actual, Object? expected) {

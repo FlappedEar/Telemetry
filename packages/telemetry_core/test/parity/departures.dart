@@ -27,3 +27,11 @@ const lapDepartures = {
   // larger (FET-212, KAN-234; test/lap_detection_test.dart).
   'GPS gap rule': 'FET-212',
 };
+
+/// A unit Telemetry reads from the VBO's `[header]` line where Overlays
+/// reports the parsed channel's own unit, empty for a VBO (FET-288): a
+/// recording that declares `velocity kmh` has a speed in "km/h" here, however
+/// the session reaches the analysis. [overlays] is the reference's unit and
+/// [telemetry] ours; the reference counts as met only for that case.
+Object? unitAsTelemetryReadsIt(Object? overlays, Object? telemetry) =>
+    overlays == '' && telemetry == 'km/h' ? telemetry : overlays;

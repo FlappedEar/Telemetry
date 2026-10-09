@@ -176,6 +176,13 @@ apply whatever the app's architecture.
   pooled (`sameSpeedUnit`); a physical scale comes from
   `speedInMetresPerSecond`. Parsed recordings keep units as written, so their
   fingerprints match Overlays.
+- Accelerations and temperatures follow the same rule through
+  `channel_units.dart`: `declaredChannelUnit` recovers the unit (a VBO
+  `[header]` line included), `accelerationInG` and `TemperatureUnit` convert
+  inside the calculation only, and a unit the calculation cannot read gives an
+  explicit reason (`brakingUnitMismatch`, `unsupportedUnit`, `unitMismatch`),
+  never the default unit. Analysis code never reads `TelemetryChannel.unit`
+  for meaning.
 
 **Documents**
 

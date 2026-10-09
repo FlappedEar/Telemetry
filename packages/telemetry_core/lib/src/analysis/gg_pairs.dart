@@ -18,12 +18,12 @@
 // limit for a road car is excluded and counted, never clipped.
 import 'dart:math' as math;
 
+import '../channel_units.dart';
 import '../geometry.dart' show hypot;
 import '../telemetry_session.dart';
 
 const String ggPairsAlgorithm = 'gg-pairs-v1';
 const double ggPlausibleLimitG = 4.0;
-const double standardGravity = 9.80665;
 
 /// Unavailable reasons.
 const String ggMissingLongitudinal = 'missingLongitudinalAcceleration';
@@ -69,16 +69,6 @@ final class GgPairs {
   bool valid = false;
 }
 
-// Factor to g, or null for a unit that cannot be interpreted.
-double? _toGFactor(String unit) {
-  final normalized = unit.trim().toLowerCase().replaceAll(' ', '');
-  if (normalized.isEmpty || normalized == 'g') return 1.0;
-  if (normalized == 'm/s2' || normalized == 'm/s^2' || normalized == 'm/s²') {
-    return 1.0 / standardGravity;
-  }
-  return null;
-}
-
 /// The pairs over [startTime]..[endTime] of the `longitudinalAcceleration`
 /// and `lateralAcceleration` channels of [session].
 GgPairs buildGgPairs(TelemetrySession session, double startTime, double endTime) {
@@ -95,11 +85,12 @@ GgPairs buildGgPairs(TelemetrySession session, double startTime, double endTime)
     result.unavailableReason = ggMissingLateral;
     return result;
   }
-  result.longitudinalUnit = longitudinal.unit;
-  result.lateralUnit = lateral.unit;
-  result.unitsDeclared = longitudinal.unit.trim().isNotEmpty && lateral.unit.trim().isNotEmpty;
-  final longitudinalFactor = _toGFactor(longitudinal.unit);
-  final lateralFactor = _toGFactor(lateral.unit);
+  // The units the recording declares, a VBO's on its header line.
+  result.longitudinalUnit = declaredChannelUnit(session, result.longitudinalChannel);
+  result.lateralUnit = declaredChannelUnit(session, result.lateralChannel);
+  result.unitsDeclared = result.longitudinalUnit.isNotEmpty && result.lateralUnit.isNotEmpty;
+  final longitudinalFactor = accelerationGPerUnit(result.longitudinalUnit);
+  final lateralFactor = accelerationGPerUnit(result.lateralUnit);
   if (longitudinalFactor == null || lateralFactor == null) {
     result.unavailableReason = ggUnsupportedUnit;
     return result;
