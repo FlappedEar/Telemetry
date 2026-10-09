@@ -19,12 +19,58 @@ const double _maxMantissa = 9007199254740992.0;
 const double _int64Min = -9223372036854775808.0;
 const double _int64End = 9223372036854775808.0;
 
+/// The deepest nesting [qtJsonDecode] reads when no [maxDepth] is given:
+/// Qt's own parser refuses more than 1024 levels.
+const int qtJsonMaximumDepth = 1024;
+
+/// A value nested deeper than the limit [qtJsonDecode] was given.
+final class QtJsonDepthException extends FormatException {
+  QtJsonDepthException(this.maxDepth)
+    : super('JSON nesting exceeds $maxDepth levels.');
+
+  /// The deepest nesting that was allowed.
+  final int maxDepth;
+}
+
 /// Parses [text] like `QJsonDocument::fromJson`: every integral number that
 /// fits in int64 becomes an `int`, whether it was written as `1`, `1.0` or
 /// `1e0`.
-Object? qtJsonDecode(String text) => _normalizeParsed(jsonDecode(text));
+///
+/// A value nested more than [maxDepth] levels deep (the top level is level 0)
+/// throws [QtJsonDepthException] before it is walked, so a small text of
+/// thousands of brackets cannot exhaust the stack.
+Object? qtJsonDecode(String text, {int maxDepth = qtJsonMaximumDepth}) {
+  _rejectDeepNesting(text, maxDepth);
+  return _normalizeParsed(jsonDecode(text), 0, maxDepth);
+}
 
-Object? _normalizeParsed(Object? value) {
+/// Throws [QtJsonDepthException] when [text] opens more than `maxDepth + 1`
+/// arrays or objects at once, reading no more than the brackets, so a text of
+/// millions of them is refused before it is parsed into as many objects. A
+/// value one level too deep inside a permitted count is found after parsing.
+void _rejectDeepNesting(String text, int maxDepth) {
+  var open = 0;
+  var inString = false;
+  for (var i = 0; i < text.length; i++) {
+    final unit = text.codeUnitAt(i);
+    if (inString) {
+      if (unit == 0x5c) {
+        i++;
+      } else if (unit == 0x22) {
+        inString = false;
+      }
+    } else if (unit == 0x22) {
+      inString = true;
+    } else if (unit == 0x5b || unit == 0x7b) {
+      if (++open > maxDepth + 1) throw QtJsonDepthException(maxDepth);
+    } else if (unit == 0x5d || unit == 0x7d) {
+      if (open > 0) open--;
+    }
+  }
+}
+
+Object? _normalizeParsed(Object? value, int depth, int maxDepth) {
+  if (depth > maxDepth) throw QtJsonDepthException(maxDepth);
   if (value is double) {
     if (value.isFinite &&
         value == value.truncateToDouble() &&
@@ -34,11 +80,15 @@ Object? _normalizeParsed(Object? value) {
     }
     return value;
   }
-  if (value is List) return [for (final item in value) _normalizeParsed(item)];
+  if (value is List) {
+    return [
+      for (final item in value) _normalizeParsed(item, depth + 1, maxDepth),
+    ];
+  }
   if (value is Map) {
     return {
       for (final entry in value.entries)
-        entry.key as String: _normalizeParsed(entry.value),
+        entry.key as String: _normalizeParsed(entry.value, depth + 1, maxDepth),
     };
   }
   return value;

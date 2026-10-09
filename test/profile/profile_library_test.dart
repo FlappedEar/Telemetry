@@ -22,6 +22,32 @@ import '../day/recovery_test.dart' show FileRecoveryStore;
 import '../support/temp_directory.dart';
 
 void main() {
+  test(
+    'a day id that is not one plain file name has no path in the profile',
+    () {
+      final folder = p.join(p.separator, 'profile');
+      expect(
+        profileDayPath(folder, 'e1'),
+        p.join(folder, 'Days', 'e1.fetproject'),
+      );
+      for (final id in [
+        '../escaped',
+        '..',
+        r'..\escaped',
+        'a/b',
+        '',
+        '.hidden',
+        'CON',
+      ]) {
+        expect(
+          () => profileDayPath(folder, id),
+          throwsFormatException,
+          reason: id,
+        );
+      }
+    },
+  );
+
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('profile'));
   tearDown(() => deleteTemporaryDirectory(directory));
