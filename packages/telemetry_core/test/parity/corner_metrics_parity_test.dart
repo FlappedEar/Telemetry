@@ -23,6 +23,8 @@ import 'package:fetproject/fetproject.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 import 'package:test/test.dart';
 
+import 'departures.dart';
+
 var _maximumDifference = 0.0;
 
 void main() {
@@ -503,7 +505,7 @@ void expectSpeeds(CornerSpeeds speeds, Object? expected, String what) {
       want['name'],
       want['type'],
       want['channel'],
-      want['unit'],
+      unitAsTelemetryReadsIt(want['unit'], speeds.unit),
       want['provenance'],
       want['revision'],
       want['algorithm'],
@@ -602,7 +604,7 @@ void expectExit(ExitMetrics exit, Object? expected, String what) {
       pickup['limitations'],
       want['source'],
       want['speedChannel'],
-      want['speedUnit'],
+      unitAsTelemetryReadsIt(want['speedUnit'], exit.speedUnit),
       want['reason'],
       want['revision'],
       want['algorithm'],
@@ -639,7 +641,9 @@ void _expectDetection(BrakingOnsetDetection detection, Object? expected, String 
       want['method'],
       want['provenance'],
       want['channel'],
-      want['channelUnit'],
+      // The unit as the recording declares it, without the spaces round it
+      // (Overlays echoes the channel's unit as written).
+      (want['channelUnit'] as String).trim(),
       want['thresholdUnit'],
       want['rejectedSpikes'],
       want['gaps'],

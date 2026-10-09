@@ -39,6 +39,7 @@ TelemetrySession _straightRun(
   double Function(double t) temperature, {
   bool Function(double t) gpsPresent = _always,
   TelemetryChannel? speed,
+  String temperatureUnit = 'C',
 }) => TelemetrySession(
   duration: 10,
   startTime: 0,
@@ -47,7 +48,7 @@ TelemetrySession _straightRun(
     'lat': _channel('lat', 'deg', (t) => 50.0, gpsPresent),
     'lon': _channel('lon', 'deg', (t) => 19.0 + t * _metersPerSecond / 71500.0, gpsPresent),
     'velocity': speed ?? _channel('velocity', 'km/h', (t) => 60.0 + t),
-    'oil_temp': _channel('oil_temp', 'C', temperature),
+    'oil_temp': _channel('oil_temp', temperatureUnit, temperature),
   },
   aliases: const {'latitude': 'lat', 'longitude': 'lon', 'speed': 'velocity'},
   warnings: const [],
@@ -148,6 +149,48 @@ void main() {
     expect(
       channelAlongProgress(cold, 'oil_temp', _straightTrace(), 200.0, 11, policy),
       hasLength(1),
+    );
+  });
+
+  test('the temperature limits are the same temperatures in °F and K, and unread in others', () {
+    // 90 °C with a logger placeholder zero at 3 s and a 900 °C spike at 7 s,
+    // as the sensor writes it in each unit (FET-288).
+    for (final (unit, convert, shown) in [
+      ('C', (double c) => c, 90.0),
+      ('°F', (double c) => c * 1.8 + 32, 194.0),
+      ('K', (double c) => c + 273.15, 363.15),
+    ]) {
+      final session = _straightRun((t) {
+        if ((t - 3.0).abs() < 1e-6) return 0.0;
+        if ((t - 7.0).abs() < 1e-6) return convert(900.0);
+        return convert(90.0);
+      }, temperatureUnit: unit);
+      final filtered = channelAlongProgress(
+        session,
+        'oil_temp',
+        _straightTrace(),
+        200.0,
+        201,
+        temperatureSummaryPolicy,
+      );
+      expect(filtered, hasLength(3), reason: unit);
+      for (final segment in filtered) {
+        for (final point in segment) {
+          expect(point.value, closeTo(shown, 1e-3), reason: unit);
+        }
+      }
+    }
+    final unread = _straightRun((t) => 90.0, temperatureUnit: 'rankine');
+    expect(
+      channelAlongProgress(
+        unread,
+        'oil_temp',
+        _straightTrace(),
+        200.0,
+        21,
+        temperatureSummaryPolicy,
+      ),
+      isEmpty,
     );
   });
 

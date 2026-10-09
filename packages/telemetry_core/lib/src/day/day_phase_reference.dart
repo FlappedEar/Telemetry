@@ -104,7 +104,7 @@ PhaseReference dayPhaseReference(
     final trace = k < computed.traces.length ? computed.traces[k] : const <ProgressSegment>[];
     if (session?.channel('speed') case final channel?) {
       // As written; only the spellings of km/h and mph are folded together.
-      final written = channel.unit.trim();
+      final written = effectiveChannelUnit(session!, channel.name);
       final folded = normalizedSpeedUnit(written);
       units.add(folded.isNotEmpty ? folded : written);
     }

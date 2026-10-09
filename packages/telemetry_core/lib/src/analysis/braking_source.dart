@@ -7,6 +7,7 @@
 // The judgement uses fixed thresholds, never a caller's, so every analysis
 // of one session (corner braking, driving states, the coach) uses the same
 // source.
+import '../channel_units.dart';
 import '../telemetry_session.dart';
 import 'pedal_scale.dart';
 
@@ -108,27 +109,31 @@ BrakingSourceQuality _assess(TelemetrySession session) {
   final brakeName = _aliasName(session, 'brake');
   final decelerationName = _aliasName(session, 'longitudinalAcceleration');
   final brake = brakeName.isEmpty ? null : session.channels[brakeName]!;
-  var deceleration = decelerationName.isEmpty ? null : session.channels[decelerationName]!;
+  // The deceleration in g, whichever unit the recording declares it in (a
+  // VBO on its header line); a unit that cannot be read as g is not usable.
+  final decelerationView = decelerationName.isEmpty
+      ? null
+      : accelerationInG(session, decelerationName);
+  var deceleration = decelerationView?.channel;
   if (deceleration != null && deceleration.timestamps.length != deceleration.values.length) {
     deceleration = null;
   }
 
   var decelerationUsable = false;
   if (deceleration != null) {
-    final unit = deceleration.unit.trim().toLowerCase();
     var lowest = double.infinity;
     for (final value in deceleration.values) {
       if (value.isFinite && value < lowest) lowest = value;
     }
     decelerationUsable =
-        (unit.isEmpty || unit == 'g') &&
+        decelerationView!.supported &&
         _finiteCount(deceleration) >= brakingSourceMinimumSamples &&
         -lowest >= brakingSourceUsableG;
   }
 
   // A malformed brake is not judged here: the analyses report it.
   final brakeWellFormed = brake != null && brake.timestamps.length == brake.values.length;
-  final brakeUnit = brake?.unit.trim() ?? '';
+  final brakeUnit = brakeName.isEmpty ? '' : declaredChannelUnit(session, brakeName);
   final brakeHasData = brake != null && _finiteCount(brake) >= brakingSourceMinimumSamples;
 
   final runs = decelerationUsable
@@ -141,7 +146,7 @@ BrakingSourceQuality _assess(TelemetrySession session) {
         )
       : const <(double, double)>[];
   final judged = brakeWellFormed && brakeHasData && (brakeUnit.isEmpty || brakeUnit == '%');
-  final ambiguous = judged && pedalScaleAmbiguous(brake);
+  final ambiguous = judged && pedalScaleAmbiguous(brake, brakeUnit);
   final scale = !ambiguous
       ? PedalScale.percent
       : !decelerationUsable

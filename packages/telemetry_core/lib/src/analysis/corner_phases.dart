@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, validTrackSegment;
 
 import '../telemetry_session.dart';
+import '../speed_units.dart';
 import 'track_progress.dart';
 import 'track_segment_proposals.dart';
 
@@ -278,7 +279,7 @@ CornerPhasePoint locateMinimumSpeed(
     return point;
   }
   point.evidence['channel'] = channelName;
-  point.evidence['unit'] = channel.unit;
+  point.evidence['unit'] = effectiveChannelUnit(session, channelName);
   // One lap is timed gate to gate, so the two halves of a gate-crossing
   // corner lie at opposite ends of the lap and are not one continuous pass.
   if (corner.end.progressMeters < corner.start.progressMeters) {

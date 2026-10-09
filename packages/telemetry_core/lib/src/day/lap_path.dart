@@ -1,5 +1,6 @@
 // The GPS path of a lap section for the track map (FET-23). The map shows
 // the trace only, no tiles (plan decision 13).
+import '../speed_units.dart';
 import '../geometry.dart';
 import '../operation.dart';
 import '../telemetry_session.dart';
@@ -93,7 +94,7 @@ LapPath lapPath(
   return LapPath(
     origin: center ?? const GeoCoordinate(0, 0),
     segments: segments,
-    speedUnit: speedChannel?.unit ?? '',
+    speedUnit: speedChannel == null ? '' : effectiveChannelUnit(session, speedChannel.name),
   );
 }
 

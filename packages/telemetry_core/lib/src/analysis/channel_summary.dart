@@ -13,10 +13,17 @@
 //    (median) value is far from zero: OBD adapters report 0 before a first
 //    response or after a dropout.
 // Units are reported as declared ("" when the recording does not declare
-// them).
+// them), a VBO's from its header line. A temperature's plausible range and
+// its cooling thresholds are defined in °C and read in the unit the channel
+// is declared in (°C, °F or K; none is °C, as OBD temperatures are), so the
+// same temperature gives the same result in any of them. A temperature in a
+// unit that is not known has no summary: it says [channelSummaryUnsupportedUnit]
+// rather than being judged against Celsius limits.
 import 'dart:typed_data';
 
+import '../channel_units.dart';
 import '../selection.dart';
+import '../speed_units.dart';
 import '../telemetry_session.dart';
 
 const String channelSummaryAlgorithm = 'channel-summary-v1';
@@ -27,6 +34,10 @@ const String channelSummaryMissing = 'channelMissing';
 /// The channel has no valid sample in the interval.
 const String channelSummaryNoSamples = 'noValidSamples';
 
+/// The channel is recorded in a unit its policy cannot read (a temperature
+/// that is not °C, °F or K).
+const String channelSummaryUnsupportedUnit = 'unsupportedUnit';
+
 /// What counts as a plausible sample of a channel.
 final class ChannelSummaryPolicy {
   const ChannelSummaryPolicy({
@@ -34,6 +45,8 @@ final class ChannelSummaryPolicy {
     this.maximumPlausible = double.infinity,
     this.zeroIsPlaceholder = false,
     this.placeholderTypicalAbove = 20.0,
+    this.temperature = false,
+    this.medianUnit,
   });
 
   final double minimumPlausible;
@@ -45,13 +58,40 @@ final class ChannelSummaryPolicy {
   /// Zero counts as a placeholder only when the channel's median is above
   /// this.
   final double placeholderTypicalAbove;
+
+  /// The bounds are °C, to be read in the unit the channel is declared in
+  /// ([forUnit]).
+  final bool temperature;
+
+  /// The unit the channel's median is read in before it is compared with
+  /// [placeholderTypicalAbove] (a °C level), so a cold reading is judged the
+  /// same in °F or K; null when the median is already in the unit of that level.
+  final TemperatureUnit? medianUnit;
+
+  /// This policy for a channel declared in [unit]: the same for anything but
+  /// a temperature, whose bounds (and typical level) are converted to the
+  /// channel's unit; null when the unit is not one a temperature is read in.
+  ChannelSummaryPolicy? forUnit(String unit) {
+    if (!temperature) return this;
+    final kind = temperatureUnitOf(unit);
+    if (kind == null) return null;
+    return ChannelSummaryPolicy(
+      minimumPlausible: kind.fromCelsius(minimumPlausible),
+      maximumPlausible: kind.fromCelsius(maximumPlausible),
+      zeroIsPlaceholder: zeroIsPlaceholder,
+      placeholderTypicalAbove: placeholderTypicalAbove,
+      medianUnit: kind,
+    );
+  }
 }
 
-/// Temperatures (°C): -40..250 plausible, exact zeros are placeholders.
+/// Temperatures (defined in °C, read in the channel's unit): -40..250
+/// plausible, exact zeros are placeholders.
 const ChannelSummaryPolicy temperatureSummaryPolicy = ChannelSummaryPolicy(
   minimumPlausible: -40.0,
   maximumPlausible: 250.0,
   zeroIsPlaceholder: true,
+  temperature: true,
 );
 
 /// Heart rate (bpm): 30..230 plausible.
@@ -72,7 +112,9 @@ bool zeroIsPlaceholder(TelemetryChannel channel, ChannelSummaryPolicy policy) {
   }
   if (count == 0) return false;
   // The sorted middle; its sign does not matter once it is made absolute.
-  return selectKth(finite, count, count ~/ 2).abs() > policy.placeholderTypicalAbove;
+  final median = selectKth(finite, count, count ~/ 2);
+  final typical = policy.medianUnit?.toCelsius(median) ?? median;
+  return typical.abs() > policy.placeholderTypicalAbove;
 }
 
 /// A finite sample inside the policy's plausible range that is not a
@@ -144,26 +186,31 @@ ChannelSummary summarizeChannel(
       unavailableReason: channelSummaryMissing,
     );
   }
-  return _summarize(found, startTime, endTime, policy, null);
+  final unit = effectiveChannelUnit(session, name);
+  return _summarize(found, unit, policy.forUnit(unit), startTime, endTime, null);
 }
 
+// [unit] is the unit the recording declares for the channel and [policy]
+// the policy in that unit (null: a unit the policy cannot read).
 // [zeroPlaceholder] is computed from the whole channel when null; callers
 // summarizing one channel many times pass it once.
 ChannelSummary _summarize(
   TelemetryChannel channel,
+  String unit,
+  ChannelSummaryPolicy? policy,
   double startTime,
   double endTime,
-  ChannelSummaryPolicy policy,
   bool? zeroPlaceholder,
 ) {
   ChannelSummary unavailable(String reason, {int excluded = 0}) => ChannelSummary(
     channel: channel.name,
-    unit: channel.unit,
+    unit: unit,
     startTime: startTime,
     endTime: endTime,
     excludedArtifacts: excluded,
     unavailableReason: reason,
   );
+  if (policy == null) return unavailable(channelSummaryUnsupportedUnit);
   if (!startTime.isFinite || !endTime.isFinite || endTime <= startTime) {
     return unavailable(channelSummaryNoSamples);
   }
@@ -211,7 +258,7 @@ ChannelSummary _summarize(
   if (sampleCount == 0) return unavailable(channelSummaryNoSamples, excluded: excluded);
   return ChannelSummary(
     channel: channel.name,
-    unit: channel.unit,
+    unit: unit,
     startTime: startTime,
     endTime: endTime,
     sampleCount: sampleCount,
@@ -231,19 +278,24 @@ ChannelSummary _summarize(
 /// Summarizes one channel of one recording many times: the placeholder
 /// decision is taken once for the whole channel.
 final class ChannelSummarizer {
-  ChannelSummarizer(TelemetrySession session, String channelOrAlias, this.policy)
+  ChannelSummarizer(TelemetrySession session, String channelOrAlias, ChannelSummaryPolicy policy)
     : name = session.aliases[channelOrAlias] ?? channelOrAlias,
-      _channel = _usable(session.channels[session.aliases[channelOrAlias] ?? channelOrAlias]) {
-    final channel = _channel;
-    _placeholder = channel != null && zeroIsPlaceholder(channel, policy);
+      _channel = _usable(session.channels[session.aliases[channelOrAlias] ?? channelOrAlias]),
+      unit = effectiveChannelUnit(session, session.aliases[channelOrAlias] ?? channelOrAlias) {
+    _policy = policy.forUnit(unit);
+    final channel = _channel, resolved = _policy;
+    _placeholder = channel != null && resolved != null && zeroIsPlaceholder(channel, resolved);
   }
 
   static TelemetryChannel? _usable(TelemetryChannel? channel) =>
       channel != null && channel.timestamps.length == channel.values.length ? channel : null;
 
   final String name;
-  final ChannelSummaryPolicy policy;
+
+  /// The unit the recording declares for the channel.
+  final String unit;
   final TelemetryChannel? _channel;
+  late final ChannelSummaryPolicy? _policy;
   late final bool _placeholder;
 
   /// The same as [summarizeChannel] over [startTime]..[endTime].
@@ -257,7 +309,7 @@ final class ChannelSummarizer {
         unavailableReason: channelSummaryMissing,
       );
     }
-    return _summarize(channel, startTime, endTime, policy, _placeholder);
+    return _summarize(channel, unit, _policy, startTime, endTime, _placeholder);
   }
 }
 
@@ -360,6 +412,8 @@ final class CoolingOptions {
     this.smoothingSeconds = 5.0,
   });
 
+  /// In °C; a temperature in another unit is held to the same drop in its
+  /// own degrees (×1.8 in °F).
   final double minimumDrop;
   final double minimumSeconds;
 
@@ -379,9 +433,19 @@ List<CoolingInterval> findCoolingIntervals(
   CoolingOptions options = const CoolingOptions(),
 }) {
   final intervals = <CoolingInterval>[];
-  final channel = session.channels[session.aliases[channelOrAlias] ?? channelOrAlias];
+  final name = session.aliases[channelOrAlias] ?? channelOrAlias;
+  final channel = session.channels[name];
   if (channel == null || channel.timestamps.length != channel.values.length) return intervals;
-  final placeholder = zeroIsPlaceholder(channel, policy);
+  // Plausible range and thresholds in the unit the channel is declared in:
+  // none for a unit that cannot be read.
+  final unit = effectiveChannelUnit(session, name);
+  final resolved = policy.forUnit(unit);
+  if (resolved == null) return intervals;
+  final degrees = policy.temperature ? temperatureUnitOf(unit)!.differenceFromCelsius(1.0) : 1.0;
+  final minimumDrop = options.minimumDrop * degrees;
+  // A rise this large ends a cooling (smaller ones are sensor noise).
+  final noiseRise = 1.0 * degrees;
+  final placeholder = zeroIsPlaceholder(channel, resolved);
   final gapLimit = telemetryGapThreshold(channel);
   // Split into continuously recorded stretches of valid samples: the valid
   // samples in order, and where each stretch starts among them.
@@ -393,7 +457,7 @@ List<CoolingInterval> findCoolingIntervals(
   for (var i = 0; i < channel.timestamps.length; ++i) {
     final time = channel.timestamps[i];
     final double value = channel.values[i];
-    final valid = plausibleSample(value, policy, placeholder);
+    final valid = plausibleSample(value, resolved, placeholder);
     if (!valid || time - previousTime > gapLimit) {
       if (count > starts.last) starts.add(count);
     }
@@ -432,7 +496,7 @@ List<CoolingInterval> findCoolingIntervals(
         startValue: smooth[peak],
         endValue: smooth[trough],
       );
-      if (interval.drop >= options.minimumDrop && interval.seconds >= options.minimumSeconds) {
+      if (interval.drop >= minimumDrop && interval.seconds >= options.minimumSeconds) {
         intervals.add(interval);
       }
     }
@@ -454,7 +518,7 @@ List<CoolingInterval> findCoolingIntervals(
         }
         if (smooth[i] <= smooth[trough] + 1e-9) continue; // a flat bottom does not extend it
         // Rising again: close this cooling when the rise is real, not noise.
-        if (smooth[i] - smooth[trough] >= 1.0) {
+        if (smooth[i] - smooth[trough] >= noiseRise) {
           close();
           falling = false;
           peak = i;

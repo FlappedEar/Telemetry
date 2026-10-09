@@ -63,14 +63,16 @@ String fileDeclaredSpeedUnit(TelemetrySession session, String name) =>
     ? ''
     : declaredSpeedUnit(session, name);
 
-/// The unit analysis reads channel [name] of [session] in: for a speed,
-/// the unit the recording declares, else [assumed] (the unit the user
-/// assumes for unlabelled speeds, "km/h", "mph" or empty); every other
-/// channel its own unit.
+/// The unit analysis reads channel [name] of [session] in, the one place
+/// that says so: for a speed, the unit the recording declares, else
+/// [assumed] (the unit the user assumes for unlabelled speeds, "km/h", "mph"
+/// or empty); every other channel the unit the recording declares for it
+/// ([declaredChannelUnit], a VBO's on its header line), never the parsed
+/// channel's own empty unit. Empty when there is none.
 String effectiveChannelUnit(TelemetrySession session, String name, {String assumed = ''}) {
   final channel = session.channels[name];
   if (channel == null) return '';
-  if (!isSessionSpeedChannel(session, name)) return channel.unit;
+  if (!isSessionSpeedChannel(session, name)) return declaredChannelUnit(session, name);
   final declared = declaredSpeedUnit(session, name);
   if (declared.isNotEmpty) return declared;
   return normalizedSpeedUnit(assumed);

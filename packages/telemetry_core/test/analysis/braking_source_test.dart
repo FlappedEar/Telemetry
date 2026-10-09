@@ -112,13 +112,14 @@ void main() {
 
   test('without a usable deceleration the brake is kept, as there is nothing to judge it by', () {
     // Never pressed, but no deceleration (a short pit-lane run looks the
-    // same), one in another unit, or one that never shows braking.
+    // same), one in a unit that cannot be read as g, or one that never shows
+    // braking.
     for (final session in [
       _session(brake: (_) => 0.0),
       _session(
         brake: (_) => 0.0,
         deceleration: (t) => _deceleration(t) * 9.81,
-        decelerationUnit: 'm/s2',
+        decelerationUnit: 'furlongs/fortnight2',
       ),
       _session(brake: (_) => 0.0, deceleration: (_) => 0.0),
     ]) {

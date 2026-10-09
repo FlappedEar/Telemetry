@@ -12,6 +12,7 @@
 // holds, and a run without one says why.
 import '../analysis/channel_summary.dart';
 import '../analysis/temperature_association.dart';
+import '../channel_units.dart';
 import '../operation.dart';
 import '../telemetry_session.dart';
 import 'day_laps.dart';
@@ -172,7 +173,7 @@ RunChannel _runChannel(
   final end = times.isEmpty ? 0.0 : times.last;
   return RunChannel(
     channel: name,
-    unit: channel.unit,
+    unit: summarizer.unit,
     run: summarizer.summarize(start, session.duration + start),
     sections: [
       for (final row in rows)
@@ -333,6 +334,14 @@ final class TemperatureAssociations {
   }
 }
 
+// [value] in [from] as the same temperature in [to] (both as recordings
+// declare them); unchanged when they are the same or either is not known.
+double _temperatureIn(double value, String from, String to) {
+  final source = temperatureUnitOf(from), target = temperatureUnitOf(to);
+  if (source == null || target == null || source == target) return value;
+  return target.fromCelsius(source.toCelsius(value));
+}
+
 /// How each temperature of [summaries] moves with lap time and strong
 /// acceleration over the [eligible] laps (the compared group's eligible
 /// laps), and with the order of those laps through the day: runs in their
@@ -376,7 +385,9 @@ TemperatureAssociations dayTemperatureAssociations(
           ++lowCoverage;
           continue;
         }
-        final temperature = section.mean!;
+        // Sessions of one day may record the channel in different units:
+        // the day's first unit is the one all are compared in.
+        final temperature = _temperatureIn(section.mean!, channel?.unit ?? '', units[name] ?? '');
         final lapTime = lap.row.end - lap.row.start;
         // Order through the day: runs are in recording order and laps in run
         // order (each run's clock only orders its own laps).

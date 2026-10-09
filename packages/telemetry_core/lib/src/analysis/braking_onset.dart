@@ -5,6 +5,7 @@
 // braking_source.dart).
 import 'dart:math' as math;
 
+import '../channel_units.dart';
 import '../telemetry_session.dart';
 import 'braking_source.dart';
 import 'pedal_scale.dart';
@@ -184,7 +185,7 @@ BrakingOnsetDetection detectBrakingOnsets(
         ? BrakingThreshold(options.measuredBrake.on / 100.0, options.measuredBrake.off / 100.0, '')
         : options.measuredBrake;
     if (quality.brakeScale == PedalScale.unknown) {
-      result.channelUnit = session.channels[brakeName]!.unit;
+      result.channelUnit = declaredChannelUnit(session, brakeName);
       result.unresolvedReason = brakingScaleUnknown;
       return result;
     }
@@ -203,11 +204,28 @@ BrakingOnsetDetection detectBrakingOnsets(
     return result;
   }
 
-  final channel = session.channels[result.channel]!;
-  result.channelUnit = channel.unit;
-  final unitDeclared = channel.unit.trim().isNotEmpty;
-  if (unitDeclared &&
-      channel.unit.trim().toLowerCase() != result.threshold.unit.trim().toLowerCase()) {
+  // The unit the recording declares (a VBO on its header line). A pedal is
+  // read in its own unit; a deceleration in g, whichever unit it is
+  // declared in, so a channel in m/s² reaches the same thresholds as one
+  // in g. A unit that cannot be read is a mismatch, never the default.
+  final TelemetryChannel channel;
+  final String declaredUnit;
+  final bool unitReadable;
+  if (hasBrake) {
+    channel = session.channels[result.channel]!;
+    declaredUnit = declaredChannelUnit(session, result.channel);
+    unitReadable =
+        declaredUnit.isEmpty ||
+        declaredUnit.toLowerCase() == result.threshold.unit.trim().toLowerCase();
+  } else {
+    final view = accelerationInG(session, result.channel)!;
+    channel = view.channel;
+    declaredUnit = view.declaredUnit;
+    unitReadable = view.supported;
+  }
+  result.channelUnit = declaredUnit;
+  final unitDeclared = declaredUnit.isNotEmpty;
+  if (!unitReadable) {
     result.unresolvedReason = brakingUnitMismatch;
     return result;
   }

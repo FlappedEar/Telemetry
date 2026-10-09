@@ -15,6 +15,7 @@ import 'dart:math' as math;
 
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
+import '../channel_units.dart';
 import '../telemetry_session.dart';
 import 'braking_onset.dart';
 import 'corner_speeds.dart' show approvedSegmentById;
@@ -78,8 +79,9 @@ final class BrakingMetrics {
   /// Onset uncertainty, clipped approach.
   final List<String> limitations = [];
 
-  /// Deceleration over the braking episode (positive magnitudes, channel
-  /// unit).
+  /// Deceleration over the braking episode (positive magnitudes) in g;
+  /// [decelerationUnit] is "g" when the recording declares a unit and empty
+  /// when it declares none (read as g).
   String decelerationChannel = '';
   String decelerationUnit = '';
   double? peakDeceleration;
@@ -219,14 +221,21 @@ BrakingMetrics computeBrakingMetrics(
   }
 
   final decelerationName = session.aliases['longitudinalAcceleration'] ?? '';
-  final deceleration = session.channels[decelerationName];
-  if (decelerationName.isEmpty || deceleration == null) {
+  final view = decelerationName.isEmpty ? null : accelerationInG(session, decelerationName);
+  if (view == null) {
     result.decelerationUnavailableReason = brakingDecelerationChannelMissing;
     return result;
   }
+  // Read in g whichever unit the recording declares it in; no unit at all
+  // stays no unit (read as g, and the result says so).
+  final deceleration = view.channel;
   result
     ..decelerationChannel = decelerationName
-    ..decelerationUnit = deceleration.unit;
+    ..decelerationUnit = view.unit;
+  if (!view.supported) {
+    result.decelerationUnavailableReason = brakingUnitMismatch;
+    return result;
+  }
   final times = deceleration.timestamps;
   final values = deceleration.values;
   if (times.length != values.length) {
