@@ -46,6 +46,7 @@ final class ChannelSummaryPolicy {
     this.zeroIsPlaceholder = false,
     this.placeholderTypicalAbove = 20.0,
     this.temperature = false,
+    this.medianUnit,
   });
 
   final double minimumPlausible;
@@ -62,6 +63,11 @@ final class ChannelSummaryPolicy {
   /// ([forUnit]).
   final bool temperature;
 
+  /// The unit the channel's median is read in before it is compared with
+  /// [placeholderTypicalAbove] (a °C level), so a cold reading is judged the
+  /// same in °F or K; null when the median is already in the unit of that level.
+  final TemperatureUnit? medianUnit;
+
   /// This policy for a channel declared in [unit]: the same for anything but
   /// a temperature, whose bounds (and typical level) are converted to the
   /// channel's unit; null when the unit is not one a temperature is read in.
@@ -73,7 +79,8 @@ final class ChannelSummaryPolicy {
       minimumPlausible: kind.fromCelsius(minimumPlausible),
       maximumPlausible: kind.fromCelsius(maximumPlausible),
       zeroIsPlaceholder: zeroIsPlaceholder,
-      placeholderTypicalAbove: kind.fromCelsius(placeholderTypicalAbove),
+      placeholderTypicalAbove: placeholderTypicalAbove,
+      medianUnit: kind,
     );
   }
 }
@@ -105,7 +112,9 @@ bool zeroIsPlaceholder(TelemetryChannel channel, ChannelSummaryPolicy policy) {
   }
   if (count == 0) return false;
   // The sorted middle; its sign does not matter once it is made absolute.
-  return selectKth(finite, count, count ~/ 2).abs() > policy.placeholderTypicalAbove;
+  final median = selectKth(finite, count, count ~/ 2);
+  final typical = policy.medianUnit?.toCelsius(median) ?? median;
+  return typical.abs() > policy.placeholderTypicalAbove;
 }
 
 /// A finite sample inside the policy's plausible range that is not a

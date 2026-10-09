@@ -239,6 +239,21 @@ void main() {
       expect(lapStrongAcceleration(session, 0, _seconds).strongG, isNull);
     });
 
+    test('a cold channel is judged for zero placeholders the same in °C, °F and K', () {
+      // Median -30 °C: a zero is a placeholder in every unit.
+      for (final unit in ['C', '°F', 'K']) {
+        final kind = temperatureUnitOf(unit)!;
+        final channel = TelemetryChannel(
+          name: 'cold',
+          unit: unit,
+          timestamps: Float64List.fromList([0.0, 1.0, 2.0]),
+          values: Float32List.fromList([kind.fromCelsius(-30.0), kind.fromCelsius(-30.0), 0.0]),
+        );
+        final policy = temperatureSummaryPolicy.forUnit(unit)!;
+        expect(zeroIsPlaceholder(channel, policy), isTrue, reason: unit);
+      }
+    });
+
     test('no declared unit is still read as g, and says so', () {
       final session = VboParser.parse(_vbo(declareUnits: false));
       final pairs = buildGgPairs(session, 0, _seconds);
