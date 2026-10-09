@@ -76,6 +76,15 @@ void main() {
     expect(session.channels['rpm']!.values, [1, 2]);
   });
 
+  test('full rows skipped for their time do not outvote the short rows read', () {
+    // Both full rows have an invalid time, so only the two short rows are
+    // kept, and their "time" is the rpm column.
+    final path = write(
+      '[column names]\nspeed time rpm\n[data]\n0.0 10\n0.1 11\n50 bad 1000\n51 bad 2000\n',
+    );
+    expect(() => parseVboFile(path), refusedAsMismatch());
+  });
+
   test('a tie of short and full rows with time not first is read', () {
     final session = parseVboFile(
       write('[column names]\nrpm time brake\n[data]\n1000 0.0 0\n2000 0.1\n'),

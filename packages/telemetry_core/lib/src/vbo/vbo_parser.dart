@@ -194,13 +194,6 @@ class _VboParse {
       row.scan(line, cancelled);
       final cellCount = row.retained;
       final rowNumber = rowIndex + 1;
-      if (row.count > 0) {
-        if (cellCount < names.length) {
-          ++shortRows;
-        } else {
-          ++fullRows;
-        }
-      }
       if (cellCount < names.length) {
         warn('Row $rowNumber: missing ${names.length - cellCount} value(s).');
       }
@@ -284,6 +277,13 @@ class _VboParse {
         rawValues[column][accepted] = normalized.isFinite && normalized.abs() <= _floatMax
             ? normalized
             : double.nan;
+      }
+      // Only rows that were kept count as evidence of the file's shape: a
+      // full row skipped for its time must not outvote the short rows read.
+      if (cellCount < names.length) {
+        ++shortRows;
+      } else {
+        ++fullRows;
       }
       ++accepted;
       unconfirmedRollover = rolledOver;
