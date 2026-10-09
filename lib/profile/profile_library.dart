@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 import '../circuits/circuit_directory.dart';
+import '../day/recovery_store.dart';
 
 /// The name of the driver profile file in the profile folder.
 const profileFileName = 'driver.feprofile';
@@ -75,6 +76,59 @@ Future<List<String>> platformOwnedRecordingFolders() async {
   return const [];
 }
 
+/// The folders Android copies each picked or shared recording into, one
+/// batch folder per copy (`incoming` and `picked` in its files folder, see
+/// MainActivity.copyBatch). Empty elsewhere and in `flutter test`.
+Future<List<String>> platformCopyBatchFolders() async {
+  if (kIsWeb ||
+      !Platform.isAndroid ||
+      Platform.environment.containsKey('FLUTTER_TEST')) {
+    return const [];
+  }
+  try {
+    final files = (await getApplicationSupportDirectory()).path;
+    return [p.join(files, 'incoming'), p.join(files, 'picked')];
+  } on Exception {
+    return const [];
+  }
+}
+
+/// Folders of saved days besides the profile's own `Days`: on phones the
+/// days saved outside the profile live in the documents folder's `Days`.
+Future<List<String>> platformOtherDayFolders() async {
+  if (kIsWeb ||
+      !(Platform.isAndroid || Platform.isIOS) ||
+      Platform.environment.containsKey('FLUTTER_TEST')) {
+    return const [];
+  }
+  // Throws when it cannot be told: callers that delete on the strength of
+  // this list must not take "unknown" for "none".
+  return [p.join((await getApplicationDocumentsDirectory()).path, 'Days')];
+}
+
+/// The recordings the unsaved day kept for recovery names, and whether the
+/// snapshot could be read (false when there is one that cannot be).
+Future<({Set<String> recordings, bool readable})>
+platformRecoveredRecordings() async {
+  const store = PlatformRecoveryStore();
+  try {
+    final snapshot = await store.load();
+    if (snapshot != null) {
+      return (
+        recordings: dayRecordingPaths(snapshot.document, snapshot.basePath),
+        readable: true,
+      );
+    }
+    final file = await store.path();
+    return (
+      recordings: const <String>{},
+      readable: file == null || !File(file).existsSync(),
+    );
+  } on Object {
+    return (recordings: const <String>{}, readable: false);
+  }
+}
+
 /// The day of [eventId]'s file in [folder]'s days. Throws [FormatException]
 /// for an id that is not one plain file name ([isProfileDayName]; `../x` would
 /// leave `Days`).
@@ -101,7 +155,23 @@ class ProfileLibrary extends ChangeNotifier {
     required this.defaultTrackName,
     this.background = Isolate.run,
     this.ownedRecordingFolders = platformOwnedRecordingFolders,
+    this.copyBatchFolders = platformCopyBatchFolders,
+    this.otherDayFolders = platformOtherDayFolders,
+    this.recoveredRecordings = platformRecoveredRecordings,
   });
+
+  /// Folders of per-copy batch folders the app made recordings in
+  /// ([platformCopyBatchFolders]); the unused copies in them are deleted at
+  /// start-up ([sweepOwnedRecordingFolders]).
+  final Future<List<String>> Function() copyBatchFolders;
+
+  /// Folders of saved days besides the profile's ([platformOtherDayFolders]).
+  final Future<List<String>> Function() otherDayFolders;
+
+  /// The recordings of the unsaved day kept for recovery
+  /// ([platformRecoveredRecordings]).
+  final Future<({Set<String> recordings, bool readable})> Function()
+  recoveredRecordings;
 
   /// Folders besides the profile's own `Recordings` where every recording
   /// is a copy the app made ([platformOwnedRecordingFolders]).
@@ -150,7 +220,10 @@ class ProfileLibrary extends ChangeNotifier {
       // Also when there is no profile, so a page waiting for it says so.
       notifyListeners();
     }
-    if (_folder != null) unawaited(_sweepCopies());
+    if (_folder != null) {
+      unawaited(_sweepCopies());
+      unawaited(_sweepOwnedCopies());
+    }
   }
 
   Future<void> _read() async {
@@ -711,6 +784,18 @@ class ProfileLibrary extends ChangeNotifier {
         if (other.eventId != eventId) pathOf(other)!,
       ..._dayFiles(folder),
     ];
+    // Days saved elsewhere may use the same copies; when they cannot be
+    // listed, no copy is deleted.
+    var othersKnown = true;
+    try {
+      for (final other in await otherDayFolders()) {
+        others.addAll(_daysIn(other));
+      }
+    } on Object catch (error) {
+      debugPrint('Days saved elsewhere not listed: $error');
+      othersKnown = false;
+    }
+    final recovered = await recoveredRecordings();
     final owned = [
       p.join(folder, profileRecordingsFolderName),
       ...await ownedRecordingFolders(),
@@ -730,6 +815,7 @@ class ProfileLibrary extends ChangeNotifier {
       // Those waiting for their day (not listed yet) count too.
       for (final name in _pendingKept(except: eventId).keys)
         p.join(folder, profileRecordingsFolderName, name),
+      ...recovered.recordings,
     ];
     // A document outside the profile's days is never deleted from here.
     final DayFilesDeleted deleted;
@@ -737,7 +823,14 @@ class ProfileLibrary extends ChangeNotifier {
     try {
       deleted = held
           ? await background(
-              _deleteJob(path, others, owned, referenceFile, otherReferences),
+              _deleteJob(
+                path,
+                others,
+                owned,
+                referenceFile,
+                otherReferences,
+                !recovered.readable || !othersKnown,
+              ),
             )
           : const DayFilesDeleted(recordings: 0, recordingsKept: 0);
     } on Object {
@@ -756,9 +849,13 @@ class ProfileLibrary extends ChangeNotifier {
     return deleted;
   }
 
-  static List<String> _dayFiles(String folder) {
+  static List<String> _dayFiles(
+    String folder, {
+    String name = profileDaysFolder,
+    bool strict = false,
+  }) {
     try {
-      final days = Directory(p.join(folder, profileDaysFolder));
+      final days = Directory(p.join(folder, name));
       if (!days.existsSync()) return const [];
       return [
         for (final entry in days.listSync())
@@ -766,6 +863,7 @@ class ProfileLibrary extends ChangeNotifier {
             entry.path,
       ];
     } on FileSystemException {
+      if (strict) rethrow;
       return const [];
     }
   }
@@ -780,6 +878,7 @@ class ProfileLibrary extends ChangeNotifier {
     List<String> owned,
     String? referenceFile,
     List<String> otherReferences,
+    bool keepRecordings,
   ) =>
       () => deleteDayFiles(
         dayPath: path,
@@ -787,6 +886,7 @@ class ProfileLibrary extends ChangeNotifier {
         ownedFolders: owned,
         referenceFile: referenceFile,
         otherReferenceFiles: otherReferences,
+        keepRecordings: keepRecordings,
       );
 
   /// Keeps [notebook] as track [trackId]'s ([setProfileTrackNotebook]).
@@ -1110,6 +1210,51 @@ class ProfileLibrary extends ChangeNotifier {
     });
     return true;
   });
+
+  /// Deletes the recording copies Android made that no day keeps, once at
+  /// start-up (audit F11; see [sweepOwnedRecordingFolders]). Waits its turn
+  /// behind the imports. Nothing is deleted when a day or the recovery
+  /// snapshot cannot be read.
+  Future<void> _sweepOwnedCopies() => _bundleWork<bool>(() async {
+    try {
+      final folders = await copyBatchFolders();
+      final folder = _folder, profile = _profile;
+      if (folders.isEmpty || folder == null || profile == null) return true;
+      await flush();
+      final recovered = await recoveredRecordings();
+      if (!recovered.readable) return true;
+      final days = [
+        for (final day in profile.days) pathOf(day)!,
+        ..._dayFiles(folder, strict: true),
+        for (final other in await otherDayFolders()) ..._daysIn(other),
+      ];
+      final deleted = await background(
+        _ownedSweepJob(folders, days, recovered.recordings, DateTime.now()),
+      );
+      if (deleted > 0) {
+        debugPrint('Unused recording copies deleted: $deleted');
+      }
+    } on Object catch (error) {
+      debugPrint('Recording copies not swept: $error');
+    }
+    return true;
+  });
+
+  static int Function() _ownedSweepJob(
+    List<String> folders,
+    List<String> days,
+    Set<String> keep,
+    DateTime now,
+  ) =>
+      () => sweepOwnedRecordingFolders(
+        folders: folders,
+        dayPaths: days,
+        keep: keep,
+        now: now,
+      );
+
+  static List<String> _daysIn(String folder) =>
+      _dayFiles(p.dirname(folder), name: p.basename(folder), strict: true);
 
   // Take only what they are given, so they can be sent to another isolate.
   static ReferenceFileCopy Function() _copyJob(String folder, String source) =>
