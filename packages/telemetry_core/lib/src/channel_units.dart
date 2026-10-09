@@ -31,8 +31,8 @@ String declaredChannelUnit(TelemetrySession session, String name) {
   for (final MapEntry(:key, :value) in session.metadata.entries) {
     if (!key.startsWith('header.')) continue;
     final words = value.trim().split(RegExp(r'\s+'));
-    if (words.length == 2 && words.first.toLowerCase() == name.toLowerCase()) {
-      return words.last.trim();
+    if (words.length >= 2 && words.first.toLowerCase() == name.toLowerCase()) {
+      return words.skip(1).join(' ');
     }
   }
   return '';
@@ -74,8 +74,8 @@ final class AccelerationInG {
   /// The unit [channel]'s samples are in: the declared spelling of g as
   /// written, "g" for a unit converted to it, empty when none is declared
   /// (the samples are read as g all the same).
-  String get unit => !declared
-      ? ''
+  String get unit => !declared || !supported
+      ? declaredUnit
       : accelerationGPerUnit(declaredUnit) == 1.0
       ? declaredUnit
       : 'g';
@@ -158,7 +158,7 @@ enum TemperatureUnit {
 /// "degC", "°F", "F", "degF", "K", in any case and spacing; none at all is
 /// °C, as OBD temperatures are); null for a unit not known.
 TemperatureUnit? temperatureUnitOf(String declared) =>
-    switch (_unitKey(declared).replaceAll('°', '')) {
+    switch (_unitKey(declared).replaceAll('°', '').replaceAll('º', '').replaceAll('deg.', 'deg')) {
       '' || 'c' || 'degc' || 'celsius' => TemperatureUnit.celsius,
       'f' || 'degf' || 'fahrenheit' => TemperatureUnit.fahrenheit,
       'k' || 'kelvin' => TemperatureUnit.kelvin,

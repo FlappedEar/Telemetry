@@ -91,6 +91,39 @@ void _expectSameIntervals(
 }
 
 void main() {
+  group('how a declaration is read (FET-288)', () {
+    TelemetrySession withHeader(String line, {String unit = ''}) => TelemetrySession(
+      duration: 1.0,
+      startTime: 0.0,
+      metadata: {'header.1': line},
+      channels: {
+        'x': TelemetryChannel(
+          name: 'x',
+          unit: unit,
+          timestamps: Float64List.fromList([0.0, 1.0]),
+          values: Float32List.fromList([1.0, 2.0]),
+        ),
+      },
+      aliases: const {},
+      warnings: const [],
+      timingGates: const [],
+      sampleCount: 2,
+    );
+
+    test('a unit of several words is kept whole', () {
+      expect(declaredChannelUnit(withHeader('x deg C'), 'x'), 'deg C');
+      expect(temperatureUnitOf('deg C'), TemperatureUnit.celsius);
+      expect(temperatureUnitOf('º F'), TemperatureUnit.fahrenheit);
+      expect(temperatureUnitOf('deg. F'), TemperatureUnit.fahrenheit);
+    });
+
+    test('an acceleration unit that cannot be read keeps its own spelling', () {
+      final view = accelerationInG(withHeader('x ft/s2'), 'x')!;
+      expect(view.supported, isFalse);
+      expect(view.unit, 'ft/s2');
+    });
+  });
+
   group('F04: acceleration in m/s² is not read as g', () {
     // The same drive: written in g, in m/s² however spelled, with the unit
     // on the header line and on the channel.
