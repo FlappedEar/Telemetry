@@ -60,6 +60,7 @@ void main() {
   ProfileLibrary library({
     Set<String> recovered = const {},
     bool readable = true,
+    bool otherDaysKnown = true,
   }) => ProfileLibrary(
     store: FolderProfileStore(p.join(root, 'Profile')),
     defaultCarName: 'My car',
@@ -73,7 +74,9 @@ void main() {
       p.join(root, 'incoming'),
       p.join(root, 'picked'),
     ],
-    otherDayFolders: () async => [p.join(root, 'documents', 'Days')],
+    otherDayFolders: () async => otherDaysKnown
+        ? [p.join(root, 'documents', 'Days')]
+        : throw const FileSystemException('Documents not available'),
     recoveredRecordings: () async =>
         (recordings: recovered, readable: readable),
   );
@@ -126,6 +129,18 @@ void main() {
     expect(File(shared).existsSync(), isTrue, reason: 'used by another folder');
     expect(File(restored).existsSync(), isTrue, reason: 'recovery names it');
     expect(File(alone).existsSync(), isFalse);
+  });
+
+  test('days saved elsewhere that cannot be listed stop the sweep and keep '
+      'the copies of a deleted day', () async {
+    final unused = copy('incoming', 'a', 'dup.vbo', circuitVbo([30, 28, 31]));
+    final inProfile = copy('picked', 'c', 'p.vbo', circuitVbo([29, 32, 33]));
+    await saveDay(inProfile, p.join(root, 'Profile', 'Days', 'p.fetproject'));
+    final days = library(otherDaysKnown: false);
+    await started(days);
+    expect(File(unused).existsSync(), isTrue);
+    await days.deleteDay(days.profile!.days.single.eventId);
+    expect(File(inProfile).existsSync(), isTrue);
   });
 
   test('a recovery snapshot that cannot be read stops the sweep', () async {

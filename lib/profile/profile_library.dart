@@ -101,11 +101,9 @@ Future<List<String>> platformOtherDayFolders() async {
       Platform.environment.containsKey('FLUTTER_TEST')) {
     return const [];
   }
-  try {
-    return [p.join((await getApplicationDocumentsDirectory()).path, 'Days')];
-  } on Exception {
-    return const [];
-  }
+  // Throws when it cannot be told: callers that delete on the strength of
+  // this list must not take "unknown" for "none".
+  return [p.join((await getApplicationDocumentsDirectory()).path, 'Days')];
 }
 
 /// The recordings the unsaved day kept for recovery names, and whether the
@@ -785,10 +783,18 @@ class ProfileLibrary extends ChangeNotifier {
       for (final other in profile.days)
         if (other.eventId != eventId) pathOf(other)!,
       ..._dayFiles(folder),
-      // Days saved elsewhere (on a phone, with Save as) and the open or
-      // restored day may use the same copies.
-      for (final other in await otherDayFolders()) ..._daysIn(other),
     ];
+    // Days saved elsewhere may use the same copies; when they cannot be
+    // listed, no copy is deleted.
+    var othersKnown = true;
+    try {
+      for (final other in await otherDayFolders()) {
+        others.addAll(_daysIn(other));
+      }
+    } on Object catch (error) {
+      debugPrint('Days saved elsewhere not listed: $error');
+      othersKnown = false;
+    }
     final recovered = await recoveredRecordings();
     final owned = [
       p.join(folder, profileRecordingsFolderName),
@@ -823,7 +829,7 @@ class ProfileLibrary extends ChangeNotifier {
                 owned,
                 referenceFile,
                 otherReferences,
-                !recovered.readable,
+                !recovered.readable || !othersKnown,
               ),
             )
           : const DayFilesDeleted(recordings: 0, recordingsKept: 0);
@@ -846,6 +852,7 @@ class ProfileLibrary extends ChangeNotifier {
   static List<String> _dayFiles(
     String folder, {
     String name = profileDaysFolder,
+    bool strict = false,
   }) {
     try {
       final days = Directory(p.join(folder, name));
@@ -856,6 +863,7 @@ class ProfileLibrary extends ChangeNotifier {
             entry.path,
       ];
     } on FileSystemException {
+      if (strict) rethrow;
       return const [];
     }
   }
@@ -1217,7 +1225,7 @@ class ProfileLibrary extends ChangeNotifier {
       if (!recovered.readable) return true;
       final days = [
         for (final day in profile.days) pathOf(day)!,
-        ..._dayFiles(folder),
+        ..._dayFiles(folder, strict: true),
         for (final other in await otherDayFolders()) ..._daysIn(other),
       ];
       final deleted = await background(
@@ -1246,7 +1254,7 @@ class ProfileLibrary extends ChangeNotifier {
       );
 
   static List<String> _daysIn(String folder) =>
-      _dayFiles(p.dirname(folder), name: p.basename(folder));
+      _dayFiles(p.dirname(folder), name: p.basename(folder), strict: true);
 
   // Take only what they are given, so they can be sent to another isolate.
   static ReferenceFileCopy Function() _copyJob(String folder, String source) =>
