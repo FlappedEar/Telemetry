@@ -711,6 +711,11 @@ final class DayResultsController extends ChangeNotifier {
         }
       }
     }
+    // A saved decision applied to a day as opened changes nothing in the
+    // file, but the recordings the snapshot holds are now the fused ones.
+    if (!_dirty && !_saving && _saved.day?.revision == _revision) {
+      _saved.opened(_snapshot());
+    }
     notifyListeners();
     _settleFusions();
   }
@@ -1357,8 +1362,12 @@ final class DayResultsController extends ChangeNotifier {
       _segmentEdits.clear();
       // Automatic segments were approved by the save with their own ids:
       // edits start from the saved ones.
-      final approved = _theoreticalBest?.automaticSegments ?? false;
-      if (approved) _resetTheoreticalBest();
+      // Judged by the best the document was taken with, not the live one,
+      // which an edit made while the writer ran may have reset.
+      final approved = taken.theoreticalBest?.automaticSegments ?? false;
+      if (_theoreticalBest?.automaticSegments ?? false) {
+        _resetTheoreticalBest();
+      }
       // Saving approved those segments, which the decisions key reads. The
       // saved day stands under the key it has now only when nothing else
       // changed meanwhile; otherwise the key the document was taken under

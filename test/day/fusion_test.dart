@@ -436,6 +436,13 @@ void main() {
       expect(applied.ruleOf('sats'), FusionRule.fillGaps);
       expect(applied.channelOrigins, {'rpm-obd': 'added', 'sats': 'fillGaps'});
       expect(opened.channelSource(runId, 'rpm-obd'), 'RCZ');
+      // The saved day, which the profile measures, holds the fused session
+      // too, not the one shown before the RCZ was read.
+      expect(
+        opened.savedDay!.recordings[runId]!.channels.keys,
+        containsAll(opened.session(runId)!.channels.keys),
+      );
+      expect(opened.savedDay!.recordings[runId]!.channels, contains('rpm-obd'));
       expect(
         opened.dirty,
         isFalse,
