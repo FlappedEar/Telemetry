@@ -114,16 +114,18 @@ Future<ProfileBundleExport> writeProfileBundle(
   // that uses it, and for a day recording of the same content.
   final referenceNames = <String>{};
   final missingReferences = <String>{};
-  // What the recordings written unpack to, against what a bundle may hold.
-  var recordingBytes = 0;
-  void count(String path) {
-    recordingBytes += File(path).lengthSync();
-    if (recordingBytes > maximumBundleExpandedBytes ||
-        written.length + 1 > maximumBundleRecordings) {
-      throw const ProfileBundleError(
-        'The recordings of this profile are more than one bundle can hold.',
-      );
-    }
+  // What every entry written unpacks to, against what a bundle may hold.
+  var entryBytes = 4096;
+  void tooMuch() =>
+      throw const ProfileBundleError('This profile is more than one bundle can hold.');
+  void count(int bytes) {
+    entryBytes += bytes;
+    if (entryBytes > maximumBundleExpandedBytes) tooMuch();
+  }
+
+  void countRecording(String path) {
+    if (written.length + 1 > maximumBundleRecordings) tooMuch();
+    count(File(path).lengthSync());
   }
 
   try {
@@ -178,7 +180,7 @@ Future<ProfileBundleExport> writeProfileBundle(
             for (var copy = 2; names.contains(name); copy++) {
               name = '${p.basenameWithoutExtension(name!)} ($copy)$extension';
             }
-            count(file);
+            countRecording(file);
             await encoder.addFile(File(file), '$profileRecordingsFolderName/$name');
             names.add(name!);
             written[file] = name;
@@ -190,11 +192,10 @@ Future<ProfileBundleExport> writeProfileBundle(
           'relativePath': '../$profileRecordingsFolderName/$name',
         };
       }
+      final encoded = fet.encodeFetproject(document);
+      count(utf8.encode(encoded).length);
       encoder.addArchiveFile(
-        ArchiveFile.string(
-          '$profileDaysFolderName/${day.eventId}.fetproject',
-          fet.encodeFetproject(document),
-        ),
+        ArchiveFile.string('$profileDaysFolderName/${day.eventId}.fetproject', encoded),
       );
       days++;
       if (day.reference case final ProfileReferenceFile reference) {
@@ -205,7 +206,7 @@ Future<ProfileBundleExport> writeProfileBundle(
         if (copy == null || !_isWhole(copy, reference.bytes) || !_isReadable(copy)) {
           missingReferences.add(name);
         } else if (!names.contains(name)) {
-          count(copy);
+          countRecording(copy);
           await encoder.addFile(File(copy), '$profileRecordingsFolderName/$name');
           names.add(name);
           referenceNames.add(name);
@@ -213,7 +214,9 @@ Future<ProfileBundleExport> writeProfileBundle(
         }
       }
     }
-    encoder.addArchiveFile(ArchiveFile.string(profileIndexName, encodeDriverProfile(profile)));
+    final index = encodeDriverProfile(profile);
+    count(utf8.encode(index).length);
+    encoder.addArchiveFile(ArchiveFile.string(profileIndexName, index));
     await encoder.close();
   } on Object {
     try {
@@ -411,19 +414,23 @@ Future<ProfileBundleImport> readProfileBundle(
       final entry = entries['$profileDaysFolderName/${day.eventId}.fetproject'];
       if (!isProfileDayName(day.eventId) || entry == null || entry.size > fet.maximumProjectBytes) {
         missing.add(day.eventId);
-      } else if (File(p.join(days.path, '${day.eventId}.fetproject')).existsSync()) {
+        continue;
+      }
+      // Two days written under names that differ only by letter case would
+      // be one file on Windows or a default macOS volume: neither is
+      // written, whichever volume this is. The event ids are not changed.
+      // Checked before the file is looked for, which on such a volume would
+      // find the other day's.
+      final other = byFileName[_caseFolded(day.eventId)];
+      if (other != null && other != day.eventId) {
+        throw ProfileBundleError(
+          'The days "${day.eventId}" and "$other" differ only by letter case, '
+          'so they cannot be kept as separate files.',
+        );
+      }
+      if (File(p.join(days.path, '${day.eventId}.fetproject')).existsSync()) {
         present.add(day.eventId);
       } else {
-        // Two days written under names that differ only by letter case would
-        // be one file on Windows or a default macOS volume: neither is
-        // written, whichever volume this is. The event ids are not changed.
-        final other = byFileName[_caseFolded(day.eventId)];
-        if (other != null && other != day.eventId) {
-          throw ProfileBundleError(
-            'The days "${day.eventId}" and "$other" differ only by letter case, '
-            'so they cannot be kept as separate files.',
-          );
-        }
         byFileName[_caseFolded(day.eventId)] = day.eventId;
         candidates.add(day.eventId);
       }
