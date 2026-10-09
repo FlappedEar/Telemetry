@@ -248,7 +248,8 @@ class _DayImportPageState extends State<DayImportPage> {
         unawaited(_keptDay?.flushRecovery());
       } else if (_controller.state is! DayImportWorking &&
           _controller.state is! DayImportFinished) {
-        // Copies an import has made but not yet kept are not reclaimed.
+        // The sweep's own grace period protects a running import; this only
+        // spares one that is still being worked on.
         unawaited(widget.library?.reclaimCopies());
       }
     },
