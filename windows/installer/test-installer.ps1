@@ -66,7 +66,7 @@ if (-not (Test-Path (Join-Path $ReleaseDir 'telemetry.exe'))) { throw "$ReleaseD
 
 New-Item -ItemType Directory -Force $work | Out-Null
 try {
-  & (Find-Makensis) -V2 -DVERSION=0.0.0 "-DSOURCE_DIR=$((Resolve-Path $ReleaseDir).Path)" "-DOUTFILE=$setup" (Join-Path $here 'installer.nsi')
+  & (Find-Makensis) -V2 "-DVERSION=0.0.0" "-DSOURCE_DIR=$((Resolve-Path $ReleaseDir).Path)" "-DOUTFILE=$setup" (Join-Path $here 'installer.nsi')
   if ($LASTEXITCODE -ne 0) { throw 'makensis failed.' }
   Reset-Decoy $decoy
   Reset-Decoy $decoy2
