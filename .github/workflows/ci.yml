@@ -83,6 +83,11 @@ jobs:
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
         run: flutter build windows --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      # Runs the real NSIS installer silently on this disposable runner and
+      # checks that sentinel files in other folders survive (audit F02).
+      - name: Test the installer
+        shell: pwsh
+        run: ./windows/installer/test-installer.ps1 -ReleaseDir build/windows/x64/runner/Release
 
   telemetry-core:
     name: telemetry_core (Dart, ${{ matrix.os }})
