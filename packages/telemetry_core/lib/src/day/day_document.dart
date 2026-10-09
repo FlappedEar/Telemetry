@@ -961,6 +961,8 @@ OpenedDay openDayDocument(
         laps: proposal.laps,
         layoutName: manual ? layout as String? : null,
         direction: direction,
+        // The route saved for the run keeps its group's id (FET-259).
+        route: TrackRouteProvenance.fromJson(run['trackInference']),
       ),
     );
   }
