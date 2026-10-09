@@ -4,7 +4,7 @@
 ; There is no folder page, and the NSIS /D= argument is ignored (.onInit puts
 ; the fixed folder back), so a command line cannot point the installer at a
 ; folder of the user's. Directory-wide deletion happens only in a folder that
-; carries the install marker below (or a 0.3.0 install, which has none yet),
+; carries the install marker below (or a 0.3.0 install registered for that folder, which has none yet),
 ; and the uninstaller refuses to run anywhere but in the fixed folder.
 ; An update is staged in "<folder>.new" and swapped in, so a failed copy
 ; leaves the old version in place; it stops while the app is running.
@@ -120,7 +120,11 @@ Section "Install"
     StrCpy $R2 1
   ${ElseIf} ${FileExists} "$INSTDIR\telemetry.exe"
   ${AndIf} ${FileExists} "$INSTDIR\Uninstall.exe"
-    StrCpy $R2 1
+    ; Both file names alone prove nothing: 0.3.0 also registered this folder.
+    ReadRegStr $0 HKCU "${UNINSTALL_KEY}" "InstallLocation"
+    ${If} "$0" == "$INSTDIR"
+      StrCpy $R2 1
+    ${EndIf}
   ${EndIf}
   ; Any other folder with content is not ours to delete or write into.
   ${If} $R2 == 0
@@ -155,8 +159,11 @@ Section "Install"
   FileOpen $0 "$R0\${MARKER}" w
   FileWrite $0 "${APP_NAME} ${VERSION}$\r$\n"
   FileClose $0
+  ClearErrors
   File /r "${SOURCE_DIR}\*.*"
-  ${IfNot} ${FileExists} "$R0\telemetry.exe"
+  ; Errors is also set when the user chose Ignore on a failed file.
+  ${If} ${Errors}
+  ${OrIfNot} ${FileExists} "$R0\telemetry.exe"
     MessageBox MB_OK|MB_ICONSTOP "The files could not be copied. The installed version was not changed." /SD IDOK
     Abort
   ${EndIf}
