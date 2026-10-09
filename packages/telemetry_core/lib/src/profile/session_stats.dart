@@ -305,9 +305,10 @@ List<DayCornerSpan> measureCornerSpans(
   }
   if (!axis.valid || axis.points.isEmpty || axis.spacingMeters <= 0) return const [];
   GeoCoordinate at(double progress) {
-    final count = axis.points.length;
-    final index = ((progress / axis.spacingMeters).round() % count + count) % count;
-    final point = axis.points[index];
+    // By the axis's cumulative distances: the points are not spacingMeters
+    // apart, and the two differ by up to ten points near the end of a lap
+    // (FET-251).
+    final point = axis.points[nearestAxisIndex(axis, progress)];
     final raw = unprojectCoordinate(point.eastMeters, point.northMeters, axis.origin);
     return longitudeIsWestPositive
         ? GeoCoordinate(raw.latitudeDegrees, -raw.longitudeDegrees)

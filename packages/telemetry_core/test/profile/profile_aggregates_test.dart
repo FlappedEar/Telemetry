@@ -712,6 +712,42 @@ void main() {
       expect(again.sessions.single.stats, isNull);
     });
 
+    test('a corner measured at its old position still merges with the re-analysed one', () {
+      // FET-251: corner positions came from progress / spacingMeters, up to 13.9 m
+      // (0.7% of a 2 km lap) off on an RCZ day. Matching is by overlap of at
+      // least half, not by a distance, so a 60 m corner moved that far merges
+      // instead of becoming a duplicate. Stored positions are not migrated.
+      GeoCoordinate at(double fraction) {
+        final point = _route.points[(fraction * _route.points.length).round() % 256];
+        return unprojectCoordinate(point.eastMeters, point.northMeters, _route.origin);
+      }
+
+      ProfileDayInput day(String id, double start, double end) => ProfileDayInput(
+        eventId: id,
+        file: 'Days/$id.fetproject',
+        name: id,
+        route: _route,
+        measuredCorners: true,
+        cornerSpans: [DayCornerSpan(segmentId: 's', name: 's', start: at(start), end: at(end))],
+        sessions: [
+          ProfileSession(
+            runId: 'r',
+            name: 'S',
+            stats: SessionStats(rankedLaps: 3, corners: [CornerStats(cornerId: 's', laps: 3)]),
+          ),
+        ],
+      );
+
+      // A 60 m corner on a 2 km lap is 0.03 of it; the shift is 0.007.
+      final profile = _add(DriverProfile.empty(Random(1)), day('old', 0.30, 0.33));
+      final stored = profile.tracks.single.corners.single;
+      for (final shift in [0.007, -0.007]) {
+        final again = _add(profile, day('new', 0.30 + shift, 0.33 + shift));
+        expect(again.tracks.single.corners, hasLength(1));
+        expect(again.day('new')!.sessions.single.stats!.corners.single.cornerId, stored.id);
+      }
+    });
+
     test('spans are placed by overlap, across the start line too', () {
       GeoCoordinate at(double fraction) {
         final point = _route.points[(fraction * _route.points.length).round() % 256];

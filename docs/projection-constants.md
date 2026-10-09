@@ -322,3 +322,31 @@ Smaller limits at 10 Hz, which drop fixes and misplace none in these tests (at
 40%, 4 of 855 and 3 of 890 fixes are dropped; an apex cut of 6 m drops 18 of
 193 fixes in a 10 m hairpin and holds in a 15 m one (4.5 m holds in both).
 Parallel straights down to 2 m apart keep every fix while locked.
+
+## Progress, axis length and point spacing (FET-251)
+
+`ProgressAxis.lengthMeters` is the raw reference path's length, as in Overlays;
+`cumulative` adds up the straight lines between the resampled points and is
+shorter (VBO axes of the real day 3.6 m, RCZ axes 19.4 m, a 150 m synthetic zigzag
+circle 26 m). Making `lengthMeters` the chord length (with or without
+`spacingMeters`) fails 191 of 497 tests in `test/parity`, so it stays a departure
+to agree with the owner. Converting progress to a point uses the cumulative
+distances (`nearestAxisIndex`) in the driver profile's corner positions: before,
+`progress / spacingMeters` was up to 2 m off on the VBO axes and up to 13.9 m
+(7 points) off on the RCZ axes of the real day. `corner_phases.dart` still takes
+a curvature region's width as point count times mean spacing: using the samples'
+own progress moves the apex progress and tolerance in `corner_analyzer_parity`
+and `corner_metrics_parity` by up to 0.27 m, so it is a departure too
+(`axis_progress_conversion_test.dart`, skipped test).
+
+Profiles already stored keep the corner positions the old conversion gave them;
+they are not migrated. Matching a re-analysed day to a track's corners is by
+overlap (at least half of the shorter span), not by a distance, so a corner
+moved by up to 13.9 m (0.7% of a 2 km lap) still merges instead of becoming a
+duplicate (`profile_aggregates_test.dart`, "measured at its old position"). Only
+a corner shorter than about twice the shift (under ~28 m) could fail to merge.
+
+`corner_classes.dart` (`along()`, FET-220) turns progress into a sample index the
+same way, by dividing by `spacingMeters`, and is left alone for the same reason
+(KAN-244). Changing it leaves `test/parity` green, but no parity fixture
+exercises corner classes, so that is no evidence that it is safe.

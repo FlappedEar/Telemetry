@@ -36,7 +36,16 @@ final class ProgressAxis {
   /// Arc length from `points[0]` to `points[i]`.
   final List<double> cumulative;
 
-  /// Length of the closed reference loop.
+  /// Length of the closed reference loop: the RAW path's length, as Overlays
+  /// has it, not the resampled points' (FET-251). `cumulative.last` plus the
+  /// closing line back to `points[0]` is shorter, by about 4 m on the VBO
+  /// axes of the real day and 19 m on its RCZ axes, and `_progressAtSegment`
+  /// puts the whole difference into the last axis segment (about 21 m of
+  /// progress on a ~2 m stretch at the gate). Using the chord length breaks
+  /// the Overlays parity fixtures (191 of 497 fail in test/parity, in every
+  /// progress-dependent suite), so it is a departure to agree with the owner,
+  /// not made here. Convert progress to a point with [nearestAxisIndex], never
+  /// by dividing by [spacingMeters].
   final double lengthMeters;
 
   /// [lengthMeters] / point count. The points are evenly spaced along the raw
@@ -451,7 +460,8 @@ double _nearestOtherLeg(
 }
 
 /// The axis point nearest [progressMeters] along the axis (taken modulo its
-/// length), by the axis's own cumulative distances (FET-249, KAN-237). Overlays
+/// length), by the axis's own cumulative distances (FET-249, KAN-237; used for
+/// the profile's corner positions, FET-251; corner_phases.dart and corner_classes.dart still divide by the spacing, KAN-244). Overlays
 /// divides by [ProgressAxis.spacingMeters] instead, which is the raw path's
 /// length over the point count, while [ProgressAxis.cumulative] adds up the
 /// straight lines between the resampled points: shorter, by about 4 m on a
@@ -460,8 +470,11 @@ double _nearestOtherLeg(
 /// search window no longer reached it. Projection measures progress by
 /// [ProgressAxis.cumulative], so the centre does too; the two indices differ
 /// by up to 2 points on a VBO lap.
-int _nearestAxisIndex(ProgressAxis axis, double progressMeters) {
+///
+/// An axis without points has no index: the result is 0.
+int nearestAxisIndex(ProgressAxis axis, double progressMeters) {
   final n = axis.points.length;
+  if (n == 0) return 0;
   final cumulative = axis.cumulative;
   final length = axis.lengthMeters;
   if (cumulative.length != n || !(length > 0.0) || !progressMeters.isFinite) {
@@ -741,7 +754,7 @@ ProjectedSample projectSample(
   final backwardWindow = math.min(15.0, forwardWindow * 0.3);
   final forwardCount = math.max(1, _lround(forwardWindow / axis.spacingMeters));
   final backwardCount = math.max(1, _lround(backwardWindow / axis.spacingMeters));
-  final centerIndex = _nearestAxisIndex(axis, context.lastProgressMeters);
+  final centerIndex = nearestAxisIndex(axis, context.lastProgressMeters);
   final startIndex = centerIndex - backwardCount;
   final count = forwardCount + backwardCount + 1;
 
