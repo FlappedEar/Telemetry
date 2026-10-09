@@ -61,8 +61,10 @@ void main() {
     Set<String> recovered = const {},
     bool readable = true,
     bool otherDaysKnown = true,
+    Duration reclaimInterval = const Duration(hours: 1),
   }) => ProfileLibrary(
     store: FolderProfileStore(p.join(root, 'Profile')),
+    reclaimInterval: reclaimInterval,
     defaultCarName: 'My car',
     defaultTrackName: (number) => 'Track $number',
     background: <R>(FutureOr<R> Function() computation) async => computation(),
@@ -147,5 +149,27 @@ void main() {
     final unused = copy('incoming', 'a', 'dup.vbo', circuitVbo([30, 28, 31]));
     await started(library(readable: false));
     expect(File(unused).existsSync(), isTrue);
+  });
+
+  test('a running app reclaims copies made after start-up, at most once '
+      'per interval, and spares what a day names', () async {
+    final throttled = library();
+    await started(throttled);
+    final unused = copy('incoming', 'a', 'dup.vbo', circuitVbo([30, 28, 31]));
+    await throttled.reclaimCopies();
+    expect(File(unused).existsSync(), isTrue, reason: 'within the interval');
+
+    final inDay = copy('picked', 'c', 'p.vbo', circuitVbo([29, 32, 33]));
+    await saveDay(inDay, p.join(root, 'Profile', 'Days', 'p.fetproject'));
+    final young = File(p.join(root, 'picked', 'new-batch', 'n.vbo'))
+      ..createSync(recursive: true);
+    final days = library(reclaimInterval: Duration.zero);
+    await started(days);
+    // The start-up sweep has run; this copy is made after it.
+    final later = copy('incoming', 'z', 'dup2.vbo', circuitVbo([28, 27, 29]));
+    await days.reclaimCopies();
+    expect(File(later).existsSync(), isFalse);
+    expect(File(inDay).existsSync(), isTrue);
+    expect(young.existsSync(), isTrue, reason: 'younger than the grace');
   });
 }

@@ -158,7 +158,12 @@ class ProfileLibrary extends ChangeNotifier {
     this.copyBatchFolders = platformCopyBatchFolders,
     this.otherDayFolders = platformOtherDayFolders,
     this.recoveredRecordings = platformRecoveredRecordings,
+    this.reclaimInterval = const Duration(hours: 1),
   });
+
+  /// The least time between two sweeps of unused recording copies started
+  /// by [reclaimCopies] (the app being brought back to the front).
+  final Duration reclaimInterval;
 
   /// Folders of per-copy batch folders the app made recordings in
   /// ([platformCopyBatchFolders]); the unused copies in them are deleted at
@@ -221,6 +226,7 @@ class ProfileLibrary extends ChangeNotifier {
       notifyListeners();
     }
     if (_folder != null) {
+      _lastReclaim = DateTime.now();
       unawaited(_sweepCopies());
       unawaited(_sweepOwnedCopies());
     }
@@ -1210,6 +1216,30 @@ class ProfileLibrary extends ChangeNotifier {
     });
     return true;
   });
+
+  DateTime? _lastReclaim;
+
+  /// Deletes the unused recording copies again (audit F11 follow-up,
+  /// FET-297), for an app kept running for days: the same sweep as at
+  /// start-up, with the same grace period, so a copy an import may still
+  /// need is left alone. Does nothing before the profile is read, while a
+  /// sweep it started is still waiting, or within [reclaimInterval] of the
+  /// last one.
+  Future<void> reclaimCopies() async {
+    final now = DateTime.now();
+    final last = _lastReclaim;
+    if (!_loaded || _folder == null || _reclaiming) return;
+    if (last != null && now.difference(last) < reclaimInterval) return;
+    _lastReclaim = now;
+    _reclaiming = true;
+    try {
+      await _sweepOwnedCopies();
+    } finally {
+      _reclaiming = false;
+    }
+  }
+
+  bool _reclaiming = false;
 
   /// Deletes the recording copies Android made that no day keeps, once at
   /// start-up (audit F11; see [sweepOwnedRecordingFolders]). Waits its turn

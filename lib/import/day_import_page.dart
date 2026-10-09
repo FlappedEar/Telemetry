@@ -246,6 +246,10 @@ class _DayImportPageState extends State<DayImportPage> {
     onStateChange: (state) {
       if (state != AppLifecycleState.resumed) {
         unawaited(_keptDay?.flushRecovery());
+      } else if (_controller.state is! DayImportWorking &&
+          _controller.state is! DayImportFinished) {
+        // Copies an import has made but not yet kept are not reclaimed.
+        unawaited(widget.library?.reclaimCopies());
       }
     },
   );
