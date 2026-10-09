@@ -48,6 +48,11 @@ final class CoastingSummary {
   /// acceleration, `unknown` when it cannot be told (see [unresolvedReason]).
   String provenance = drivingStateUnknown;
   String unresolvedReason = '';
+
+  /// Why `inferred` stands in for the pedals: `brakeChannelNotUsed` when the
+  /// session's brake does not show the braking, `channelScaleUnknown` when its
+  /// scale is not known, else empty (FET-244).
+  String inferredBecause = '';
   double lapSeconds = 0.0;
 
   /// Time the pedal states and speed were known.
@@ -93,6 +98,7 @@ CoastingSummary summarizeCoasting(
   summary.lapSeconds = endTime - startTime;
   summary.provenance = states.coasting.provenance;
   summary.unresolvedReason = states.coasting.unresolvedReason;
+  summary.inferredBecause = states.coasting.inferredBecause;
   for (final known in states.coasting.known) {
     summary.knownSeconds += known.end - known.start;
     summary.known.add(known);

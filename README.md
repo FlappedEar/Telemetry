@@ -66,7 +66,7 @@ draws the trace over a real map: OpenStreetMap street tiles, or MapTiler
 satellite imagery when the build has a key; the layers button switches
 between them, on every map at once. Tiles already seen stay cached for the
 track. **Save** writes the day as a
-`.fetproject` document FlappedEar Overlays can open (sessions, recordings,
+`.fetproject` document (sessions, recordings,
 circuit names, excluded laps, the group chosen and the last comparison); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
 **Find recordings in a folder**, which finds each recording by its content
@@ -134,8 +134,8 @@ RaceChrono VBO names it in its header (`velocity kmh`), which the parser keeps
 as header metadata. A declared unit is always shown as declared. **Settings**
 (the gear in the toolbar) chooses the **unit for unlabelled speeds** (**None**,
 **km/h** or **mph**), used only for recordings that declare none. Values are
-never converted, so every calculation and the parity with FlappedEar Overlays
-are unchanged. A day whose recordings end up with different units, or with no
+never converted, so every calculation and the parity baseline against FlappedEar
+Overlays are unchanged. A day whose recordings end up with different units, or with no
 unit, shows speeds without one rather than a wrong label.
 
 ## Phones and tablets

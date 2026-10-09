@@ -366,6 +366,43 @@ void main() {
     }
   });
 
+  test('an inferred braking says why when the brake channel does not show it (FET-244)', () {
+    final rejected = DrivingStateClassification();
+    rejected.braking
+      ..provenance = drivingStateInferred
+      ..inferredBecause = brakingBrakeChannelNotUsed;
+    final missing = DrivingStateClassification();
+    missing.braking.provenance = drivingStateInferred;
+    final summary = CoastingSummary()
+      ..provenance = drivingStateInferred
+      ..inferredBecause = brakingBrakeChannelNotUsed;
+    for (final (locale, reason, plain) in [
+      ('en', 'the brake channel does not show the braking', 'inferred'),
+      ('pl', 'kanał hamulca nie pokazuje hamowania', 'wyznaczone pośrednio'),
+    ]) {
+      final l10n = lookupAppLocalizations(Locale(locale));
+      expect(provenanceLabel(l10n, rejected.braking), contains(reason));
+      expect(pedalSourceText(l10n, rejected), contains(reason));
+      expect(coastingProvenanceText(l10n, summary), contains(reason));
+      // A brake whose scale is not known says that instead.
+      final unknownScale = DrivingStateClassification();
+      unknownScale.braking
+        ..provenance = drivingStateInferred
+        ..inferredBecause = brakingScaleUnknown;
+      expect(
+        provenanceLabel(l10n, unknownScale.braking),
+        l10n.cornerDetailsFromDecelerationBrakeScaleUnknown,
+      );
+      expect(
+        provenanceLabel(l10n, unknownScale.braking),
+        isNot(contains(reason)),
+      );
+      // A missing brake channel is not a rejected one.
+      expect(provenanceLabel(l10n, missing.braking), plain);
+      expect(pedalSourceText(l10n, missing), isNot(contains(reason)));
+    }
+  });
+
   test('the G-G scale grows past 1\u00a0g in half steps', () {
     expect(ggScale([null, 0.4]), 1.5);
     expect(ggScale([1.2]), 1.5);

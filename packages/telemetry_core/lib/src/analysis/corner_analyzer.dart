@@ -17,6 +17,7 @@ import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentT
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_metrics.dart';
+import 'braking_onset.dart' show brakingBrakeChannelNotUsed, brakingScaleUnknown;
 import 'channel_summary.dart';
 import 'corner_phases.dart';
 import 'corner_speeds.dart';
@@ -45,6 +46,7 @@ final class AnalyzerValue {
     this.value,
     this.provenance = metricUnavailable,
     this.unavailableReason = '',
+    this.inferredBecause = '',
   });
 
   final double? value;
@@ -55,6 +57,11 @@ final class AnalyzerValue {
 
   /// Why [value] is missing; empty when it is present or no reason is known.
   final String unavailableReason;
+
+  /// Why an inferred value stands in for a measured one: a limitation of the
+  /// braking detection (`brakeChannelNotUsed`, `scaleUnknown`) when the
+  /// session has a brake channel that cannot be used (FET-244); else empty.
+  final String inferredBecause;
 }
 
 /// A row's A − B, or why there is none.
@@ -74,10 +81,16 @@ final class AnalyzerMetric {
   final AnalyzerDelta delta;
 }
 
-AnalyzerValue _value(double? value, String provenance, [String reason = '']) => AnalyzerValue(
+AnalyzerValue _value(
+  double? value,
+  String provenance, [
+  String reason = '',
+  String inferredBecause = '',
+]) => AnalyzerValue(
   value: value,
   provenance: provenance,
   unavailableReason: value == null ? reason : '',
+  inferredBecause: value != null && provenance == metricInferred ? inferredBecause : '',
 );
 
 AnalyzerDelta _delta(double? value, [String reason = '']) =>
@@ -656,6 +669,11 @@ final class CornerAnalyzer {
             value,
             _namedProvenance(lap.provenance, value != null),
             deceleration ? lap.decelerationUnavailableReason : lap.unavailableReason,
+            lap.limitations.contains(brakingBrakeChannelNotUsed)
+                ? brakingBrakeChannelNotUsed
+                : lap.limitations.contains(brakingScaleUnknown)
+                ? brakingScaleUnknown
+                : '',
           );
         }
 

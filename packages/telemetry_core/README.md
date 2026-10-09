@@ -445,8 +445,14 @@ operations take a `CancellationCheck`.
 
 ## Matching FlappedEar Overlays
 
-Both apps must read a file identically: the `.fetproject` fingerprint depends on
-channel names and sample counts. The behaviour follows FlappedEar Overlays'
+The parsers started as a Dart re-implementation of FlappedEar Overlays, and the
+parity tests below pin that baseline. Telemetry and Overlays no longer have to read
+a file identically (owner decision, 8 October 2026), so parity is a regression
+baseline, not a duty, and Telemetry has already departed from it on purpose (a VBO
+without a time column, or whose header and rows do not match, is refused). The
+`.fetproject` fingerprint still depends on channel names and sample counts, so a
+change to what a parser produces changes the fingerprint of days already saved.
+The behaviour follows FlappedEar Overlays'
 `VboParser.cpp`, `LapTiming.cpp`, `RczParser.cpp`, `TelemetryImportPlan.cpp`, `TelemetryFolderScan.cpp`, `TelemetrySource.cpp`, `OutingLaps.cpp`, `TrackInference.cpp` and `OutingLapDerivation.cpp` (VBOOverlay `1a96ae3`), re-implemented in
 Dart. The handover section "VBO" in VBOOverlay summarises the rules.
 

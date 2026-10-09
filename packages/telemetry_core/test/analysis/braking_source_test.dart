@@ -17,6 +17,7 @@ TelemetrySession _session({
   double Function(double t)? deceleration,
   String decelerationUnit = 'g',
   bool Function(double t)? decelerationRecorded,
+  bool speed = false,
 }) {
   TelemetryChannel channel(
     String name,
@@ -45,10 +46,12 @@ TelemetrySession _session({
       if (brake != null) 'brake': channel('brake', brakeUnit, brakeStep, brake),
       if (deceleration != null)
         'longacc': channel('longacc', decelerationUnit, 0.1, deceleration, decelerationRecorded),
+      if (speed) 'speed': channel('speed', 'km/h', 0.1, (_) => 100.0),
     },
     aliases: {
       if (brake != null) 'brake': 'brake',
       if (deceleration != null) 'longitudinalAcceleration': 'longacc',
+      if (speed) 'speed': 'speed',
     },
     warnings: const [],
     timingGates: const [],
@@ -78,6 +81,21 @@ void main() {
     final states = classifyDrivingStates(session, 0, 60);
     expect(states.braking.provenance, drivingStateInferred);
     expect(states.braking.channel, 'longacc');
+    // The reason travels with the track, so every panel can say it (FET-244).
+    expect(states.braking.inferredBecause, brakingBrakeChannelNotUsed);
+  });
+
+  test('the reason a brake was rejected reaches the coasting track and summary (FET-244)', () {
+    final session = _session(brake: (_) => 0.0, deceleration: _deceleration, speed: true);
+    final states = classifyDrivingStates(session, 0, 60);
+    expect(states.coasting.provenance, drivingStateInferred);
+    expect(states.coasting.inferredBecause, brakingBrakeChannelNotUsed);
+    final summary = summarizeCoasting(session, 0, 60);
+    expect(summary.provenance, drivingStateInferred);
+    expect(summary.inferredBecause, brakingBrakeChannelNotUsed);
+    final noBrake = summarizeCoasting(_session(deceleration: _deceleration, speed: true), 0, 60);
+    expect(noBrake.provenance, drivingStateInferred);
+    expect(noBrake.inferredBecause, isEmpty);
   });
 
   test('a brake pressed in only one of six hard brakings gives way to the deceleration', () {
@@ -147,6 +165,16 @@ void main() {
 
   test('without a brake the deceleration is used as before', () {
     final session = _session(deceleration: _deceleration);
+    // No brake channel at all: nothing was rejected, so no reason is given.
+    expect(classifyDrivingStates(session, 0, 60).braking.inferredBecause, isEmpty);
+    expect(
+      classifyDrivingStates(
+        _session(brake: _goodBrake, deceleration: _deceleration),
+        0,
+        60,
+      ).braking.inferredBecause,
+      isEmpty,
+    );
     expect(detectBrakingOnsets(session, 0, 60).method, brakingMethodInferred);
     expect(detectBrakingOnsets(_session(), 0, 60).unresolvedReason, brakingNoChannel);
   });

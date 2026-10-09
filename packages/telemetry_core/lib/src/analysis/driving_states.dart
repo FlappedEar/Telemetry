@@ -18,7 +18,7 @@ import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_source.dart';
 import 'pedal_scale.dart';
-import 'braking_onset.dart' show BrakingThreshold;
+import 'braking_onset.dart' show BrakingThreshold, brakingBrakeChannelNotUsed, brakingScaleUnknown;
 
 const String drivingStatesAlgorithm = 'driving-states-v1';
 
@@ -96,6 +96,12 @@ final class DrivingStateTrack {
   /// (a pedal with no unit within 0..1 whose scale nothing shows, FET-205)
   /// and others.
   String unresolvedReason = '';
+
+  /// Why an inferred state stands in for a pedal that exists:
+  /// `brakeChannelNotUsed` when the session's brake does not show the braking
+  /// (FET-204, FET-244), `channelScaleUnknown` when its scale is not known
+  /// (FET-205); empty when the pedal channel is simply missing, or the state is not inferred.
+  String inferredBecause = '';
   int rejectedSpikes = 0;
 
   /// How a measured pedal's values were read: a pedal with no unit read as
@@ -267,6 +273,11 @@ void _pedalState(
     final quality = brakingSourceQuality(session);
     if (quality.brakeRejected && options.allowInferred) {
       _inferredPedalState(session, inferred, sign, options, start, end, track);
+      if (track.provenance == drivingStateInferred) {
+        track.inferredBecause = quality.brakeScale == PedalScale.unknown
+            ? brakingScaleUnknown
+            : brakingBrakeChannelNotUsed;
+      }
       return;
     }
   }
@@ -458,6 +469,9 @@ DrivingStateClassification classifyDrivingStates(
             result.accelerating.provenance == drivingStateMeasured
         ? drivingStateMeasured
         : drivingStateInferred;
+    if (coasting.provenance == drivingStateInferred) {
+      coasting.inferredBecause = result.braking.inferredBecause;
+    }
     coasting.channel = speedName;
     coasting.unit = speedUnit;
     coasting.threshold = movingThreshold;

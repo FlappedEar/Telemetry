@@ -52,13 +52,27 @@ String ggReasonText(AppLocalizations l10n, String reason) => switch (reason) {
   _ => l10n.drivingNotAvailable,
 };
 
+/// Why an inferred state stands in for a brake that was recorded (FET-244):
+/// its figures are not used, or its scale is not known. Null when the brake
+/// was simply not recorded.
+String? inferredBecauseText(
+  AppLocalizations l10n,
+  String because,
+) => switch (because) {
+  brakingBrakeChannelNotUsed => l10n.cornerDetailsFromDecelerationBrakeUnused,
+  brakingScaleUnknown => l10n.cornerDetailsFromDecelerationBrakeScaleUnknown,
+  _ => null,
+};
+
 /// How a state was obtained, as a short label: "measured", "calculated
 /// from GPS", "inferred" or why it is unknown.
 String provenanceLabel(AppLocalizations l10n, DrivingStateTrack track) =>
     switch (track.provenance) {
       drivingStateMeasured => l10n.drivingMeasured,
       drivingStateCalculated => l10n.drivingCalculatedFromGps,
-      drivingStateInferred => l10n.drivingInferred,
+      drivingStateInferred =>
+        inferredBecauseText(l10n, track.inferredBecause) ??
+            l10n.drivingInferred,
       _ => switch (track.unresolvedReason) {
         'unitMismatch' => l10n.drivingUnexpectedUnit,
         'scaleUnknown' => l10n.drivingScaleUnknown,
@@ -81,7 +95,8 @@ String pedalSourceText(
     String none,
   ) => switch (track.provenance) {
     drivingStateMeasured => measured,
-    drivingStateInferred => inferred,
+    drivingStateInferred =>
+      inferredBecauseText(l10n, track.inferredBecause) ?? inferred,
     _ => switch (track.unresolvedReason) {
       'unitMismatch' => l10n.drivingUnexpectedUnitChannel(
         channelDisplayName(track.channel),
@@ -118,7 +133,9 @@ String pedalSourceText(
 String coastingProvenanceText(AppLocalizations l10n, CoastingSummary summary) =>
     switch (summary.provenance) {
       drivingStateMeasured => l10n.drivingCoastingMeasured,
-      drivingStateInferred => l10n.drivingCoastingInferred,
+      drivingStateInferred =>
+        inferredBecauseText(l10n, summary.inferredBecause) ??
+            l10n.drivingCoastingInferred,
       _ => switch (summary.unresolvedReason) {
         'pedalStateUnknown' => l10n.drivingCoastingNoPedals,
         'noSpeedChannel' => l10n.drivingCoastingNoSpeed,
@@ -859,7 +876,7 @@ class _ComparisonDrivingStatesPanelState
         tag = !known
             ? provenanceLabel(l10n, braking.isKnown ? cornering : braking)
             : inferred
-            ? l10n.drivingInferred
+            ? provenanceLabel(l10n, braking)
             : cornering.provenance == drivingStateCalculated
             ? l10n.drivingBrakeMeasuredLateralGps
             : l10n.drivingMeasured;
