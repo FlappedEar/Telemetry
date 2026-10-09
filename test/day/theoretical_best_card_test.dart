@@ -836,6 +836,30 @@ void main() {
     expect(find.text('Timing every lap on one track axis…'), findsOneWidget);
   });
 
+  testWidgets('says how many saved segments no run uses (FET-267)', (
+    tester,
+  ) async {
+    final result = DayTheoreticalBest(
+      groupId: 'g',
+      state: DayTheoreticalBestState.unavailable,
+      message: 'No eligible laps in this group to calculate a theoretical best from.',
+    );
+    Future<void> show(int unused) => tester.pumpWidget(
+      TelemetryApp(
+        home: Scaffold(
+          body: TheoreticalBestCard(result: result, unusedSegments: unused),
+        ),
+      ),
+    );
+    await show(0);
+    expect(find.byKey(const ValueKey('tbUnusedKept')), findsNothing);
+    await show(3);
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('tbUnusedKept'))).data,
+      english.segmentReviewUnusedKept(3),
+    );
+  });
+
   testWidgets('says when the best lap is off the other laps\' line (FET-214)', (
     tester,
   ) async {

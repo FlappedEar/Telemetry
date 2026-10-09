@@ -2147,6 +2147,7 @@ class _DayResultsPageState extends State<DayResultsPage> {
       wide: wide,
       onAnalyze: _compare,
       onRetry: _controller.retryTheoreticalBest,
+      unusedSegments: _controller.unusedStoredSegments,
       onEditSegments: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => SegmentEditorPage(

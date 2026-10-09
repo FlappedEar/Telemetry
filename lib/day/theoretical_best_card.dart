@@ -105,12 +105,17 @@ class TheoreticalBestCard extends StatefulWidget {
     this.onEditSegments,
     this.onAnalyze,
     this.onRetry,
+    this.unusedSegments = 0,
     this.sections,
   });
 
   /// Calculates again after a failure or with nothing to use, as Overlays'
   /// "Calculate again"; no button when null.
   final VoidCallback? onRetry;
+
+  /// Saved segments no run uses because its route group changed (FET-267);
+  /// said under a message, where the segment review cannot be opened.
+  final int unusedSegments;
 
   /// Opens the segment editor; no button when null.
   final VoidCallback? onEditSegments;
@@ -231,6 +236,17 @@ class _TheoreticalBestCardState extends State<TheoreticalBestCard> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(l10n.tbMessage(result.message)),
               ),
+              if (widget.unusedSegments > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    l10n.segmentReviewUnusedKept(widget.unusedSegments),
+                    key: const ValueKey('tbUnusedKept'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               if (widget.onRetry case final retry?
                   when offersCalculateAgain(result))
                 CalculateAgainButton(retry),

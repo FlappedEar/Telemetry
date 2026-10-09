@@ -156,11 +156,30 @@ class _SegmentReviewPageState extends State<SegmentReviewPage> {
     if (result == null || _controller.theoreticalBestLoading) {
       return waiting(l10n.segmentReviewWaiting);
     }
+    final unused = _controller.unusedStoredSegments;
+    final unusedNote = unused > 0
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(
+              l10n.segmentReviewUnusedKept(unused),
+              key: const ValueKey('reviewUnusedKept'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        : null;
     if (result.state != DayTheoreticalBestState.ready) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        // In the app's language, as on the Theoretical best card.
-        child: Text(l10n.tbMessage(result.message)),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ?unusedNote,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            // In the app's language, as on the Theoretical best card.
+            child: Text(l10n.tbMessage(result.message)),
+          ),
+        ],
       );
     }
     if (review == null) return waiting(l10n.segmentReviewComputing);
@@ -169,6 +188,7 @@ class _SegmentReviewPageState extends State<SegmentReviewPage> {
     // The header scrolls with the proposals, so nothing overflows a short
     // screen or large text.
     final header = <Widget>[
+      ?unusedNote,
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         child: Text(

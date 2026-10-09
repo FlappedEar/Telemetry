@@ -111,6 +111,45 @@ void main() {
   final run1 = rows.where((row) => row.runId == 'run1').toList();
   final run2 = rows.where((row) => row.runId == 'run2').toList();
 
+  test('stored segments no run uses are counted (FET-267)', () {
+    expect(dayUnusedStoredSegments(analysis, documentRuns), 0);
+    expect(dayUnusedStoredSegments(analysis, const []), 0);
+
+    // Saved under a group the run no longer belongs to.
+    final old = 'compatibility-v1:${'b' * 64}';
+    final moved = [
+      for (final segment in segments) {...segment, 'trackConfigurationReference': old},
+    ];
+    expect(
+      dayUnusedStoredSegments(analysis, [
+        {'id': 'run1', 'trackSegments': moved},
+        {'id': 'run2'},
+      ]),
+      segments.length,
+    );
+
+    // Some under the current group, some not: only the others count.
+    expect(
+      dayUnusedStoredSegments(analysis, [
+        {
+          'id': 'run1',
+          'trackSegments': [moved.first, ...segments.skip(1)],
+        },
+      ]),
+      1,
+    );
+
+    // A run the day does not know, and stored segments that are not valid,
+    // add nothing.
+    expect(
+      dayUnusedStoredSegments(analysis, [
+        {'id': 'runX', 'trackSegments': moved},
+        {'id': 'run2', 'trackSegments': 'not segments'},
+      ]),
+      0,
+    );
+  });
+
   test('two laps of one run share its approved segments', () {
     final segmentation = dayComparisonSegmentation(
       analysis,

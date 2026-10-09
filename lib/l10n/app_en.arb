@@ -5963,6 +5963,15 @@
   "@segmentReviewIntro": {
     "description": "Explains that the review is optional and what rejecting does."
   },
+  "segmentReviewUnusedKept": "{count, plural, =1{1 saved segment is not used: its route group changed.} other{{count} saved segments are not used: their route group changed.}}",
+  "@segmentReviewUnusedKept": {
+    "description": "Shown on the segment review when corners saved under an old route group no longer apply.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "segmentReviewSummary": "{count, plural, =1{1 proposal from {lap}} other{{count} proposals from {lap}}}",
   "@segmentReviewSummary": {
     "description": "How many proposals there are and the lap they were made from.",

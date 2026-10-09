@@ -4061,6 +4061,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.';
 
   @override
+  String segmentReviewUnusedKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saved segments are not used: their route group changed.',
+      one: '1 saved segment is not used: its route group changed.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String segmentReviewSummary(int count, String lap) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
