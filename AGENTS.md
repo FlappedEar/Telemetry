@@ -179,7 +179,7 @@ apply whatever the app's architecture.
   `telemetry_core`). Speeds in different units are never subtracted or
   pooled (`sameSpeedUnit`); a physical scale comes from
   `speedInMetresPerSecond`. Parsed recordings keep units as written, so their
-  fingerprints match Overlays.
+  fingerprints do not change.
 - Accelerations and temperatures follow the same rule through
   `channel_units.dart`: `declaredChannelUnit` recovers the unit (a VBO
   `[header]` line included), `accelerationInG` and `TemperatureUnit` convert

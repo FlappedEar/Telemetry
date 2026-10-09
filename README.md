@@ -66,7 +66,7 @@ draws the trace over a real map: OpenStreetMap street tiles, or MapTiler
 satellite imagery when the build has a key; the layers button switches
 between them, on every map at once. Tiles already seen stay cached for the
 track. **Save** writes the day as a
-`.fetproject` document FlappedEar Overlays can open (sessions, recordings,
+`.fetproject` document (sessions, recordings,
 circuit names, excluded laps, the group chosen and the last comparison); **Open a saved day** reads
 it back, and a session whose recording has moved or changed is listed with
 **Find recordings in a folder**, which finds each recording by its content
