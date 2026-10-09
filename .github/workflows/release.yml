@@ -144,7 +144,7 @@ jobs:
             --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-android-unsigned
+          name: build-android-unsigned
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 1
@@ -160,14 +160,17 @@ jobs:
     needs: [version, android, ci-green]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       # Scripts and the key action only; no Flutter, Gradle or pub.
       - uses: actions/checkout@v4
         with:
           sparse-checkout: .github
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: release-android-unsigned
+          name: build-android-unsigned
           path: unsigned
       - name: Write the release key from the secret
         id: secret
@@ -318,8 +321,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: docs/release-notes
+      # Only the release-* artifacts; build-android-unsigned (throwaway key)
+      # must never reach the release.
       - uses: actions/download-artifact@v4
         with:
+          pattern: release-*
           path: dist
           merge-multiple: true
       - name: Create the release, or add to it

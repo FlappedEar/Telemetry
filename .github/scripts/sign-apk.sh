@@ -13,8 +13,9 @@ java_home="${JAVA_HOME_21_X64:-$JAVA_HOME}"
 JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH" "$apksigner" sign \
   --ks "$keystore" --ks-key-alias androiddebugkey \
   --ks-pass pass:android --key-pass pass:android \
+  --v4-signing-enabled false \
   --out "$out" "$in"
-expected=$("$here/keystore-cert.sh" "$keystore")
+expected=$("$here/keystore-cert.sh" "$keystore") || { echo "::error::Cannot read the keystore." >&2; exit 1; }
 actual=$("$here/apk-cert.sh" "$out")
 [ -n "$expected" ] && [ "$expected" = "$actual" ] || {
   echo "::error::The signed APK has certificate '$actual', not the key's $expected." >&2

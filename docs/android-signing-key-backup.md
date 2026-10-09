@@ -20,7 +20,7 @@ Where the key lives and who can use it:
   the pin and deletes the key. It runs only after the job "CI is green on this commit"
   finds a successful `ci.yml` run for the exact commit.
 - `signing-key.yml` runs daily: it fails when the secret is missing or holds another
-  key, and deletes any Actions cache whose key starts with `android-debug-keystore`.
+  key, and deletes Actions caches whose key starts with `android-debug-keystore`, once the secret check has passed.
 - Optional hardening for the owner: move the secret into a GitHub environment
   restricted to `main` and tags, and name that environment in the sign job.
 

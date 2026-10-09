@@ -6,9 +6,10 @@ name: Keep the Android signing key
 # expire, but it can be deleted or overwritten, and a release would then fail
 # late. Every day this checks that the secret still holds the key whose
 # certificate is on installed apps (so a wrong key is found before a release),
-# and deletes any Actions cache that holds a keystore: pull request builds can
-# restore caches from main, so no key may be cached (the old cache
-# android-debug-keystore-v1 is removed here). GitHub turns scheduled
+# and deletes Actions caches whose key starts with android-debug-keystore (the
+# old key cache android-debug-keystore-v1): pull request builds can restore
+# caches from main, so no key may be cached. The deletion waits for the secret
+# check to pass, so the cache is never the last copy. GitHub turns scheduled
 # workflows off after 60 days without repository activity; turn it back on in
 # the Actions tab if that happens.
 on:
