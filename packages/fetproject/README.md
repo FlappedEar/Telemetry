@@ -2,7 +2,9 @@
 
 The shared FlappedEar `.fetproject` document format, as a pure Dart package
 with no Flutter dependency. FlappedEar Overlays reads and writes the same
-format (KAN-170), so everything here must stay byte-compatible with it.
+format (KAN-170), but the two apps no longer have to stay compatible (owner
+decision, 8 October 2026); see the format section of `AGENTS.md`. Parts of this
+README below still describe the Overlays round trips as they were run.
 
 So far the package holds the document's content ids (FET-12). Reading and
 writing documents follows in FET-7.

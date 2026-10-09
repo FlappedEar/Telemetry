@@ -138,18 +138,22 @@ page gets fixed.
 
 ## The shared `.fetproject` format
 
-Both apps read and write one `.fetproject` format, and it stays compatible in both
-directions (KAN-170). A document written by either app must open in the other and
+Telemetry and FlappedEar Overlays no longer have to stay compatible (owner decision,
+8 October 2026). A change to the `.fetproject` format needs no Overlays round trip
+check and no Overlays ticket, but it is still a schema change: **schema changes are
+agreed with the owner first.** Existing Telemetry days must keep opening and must
 survive a re-save without losing anything.
 
-- Keep every field Overlays owns unchanged: `scene.widgets`, `analysis.channels`,
-  and each run's `sync` and `sources.video`.
 - Open objects keep unknown keys. Never add keys to closed objects.
 - Keep `documentState.id`, continue `savedRevision` from the loaded value, and
-  write a new `documentState.saveId` on every save (KAN-183).
-- Schema changes are agreed with the owner first.
+  write a new `documentState.saveId` on every save (KAN-183; the save id is kept
+  even without Overlays as a reader).
+- The fields Overlays used to own (`scene.widgets`, `analysis.channels`, each run's
+  `sync` and `sources.video`) are read and kept as they are; do not change them
+  without the owner's agreement.
 
-The handover section "The shared contract: `.fetproject`" is the detailed reference.
+The handover section "The shared contract: `.fetproject`" describes the format as it
+was shared with Overlays; where it and this section disagree, this section wins.
 
 ## Invariants
 
