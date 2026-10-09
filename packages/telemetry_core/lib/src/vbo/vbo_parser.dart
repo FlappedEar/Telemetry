@@ -173,6 +173,7 @@ class _VboParse {
     var accepted = 0;
     var shortRows = 0;
     var fullRows = 0;
+    var extraRows = 0;
     double? origin;
     var originIsClock = false;
     double? previousAbsoluteTime;
@@ -183,7 +184,8 @@ class _VboParse {
     // the time before the rollover), the "rollover" was one bad row, which
     // is dropped and the day offset restored. Two bad rows in a row confirm
     // each other; a bad last row cannot be told from a real midnight.
-    ({int row, double absolute, double? clock, double offset})? unconfirmedRollover;
+    ({int row, double absolute, double? clock, double offset, bool short, bool extra})?
+    unconfirmedRollover;
 
     // Fields are read in place: no string per value.
     final row = RowBounds(names.length);
@@ -218,12 +220,20 @@ class _VboParse {
           parsedTime.seconds - beforeRollover <= vboMaximumRolloverGapSeconds) {
         unconfirmedRollover = null;
         --accepted;
+        // The dropped row is no evidence of the file's shape either.
+        if (rollover.short) {
+          --shortRows;
+        } else {
+          --fullRows;
+        }
+        if (rollover.extra) --extraRows;
         previousAbsoluteTime = rollover.absolute;
         previousClockTime = rollover.clock;
         clockDayOffset = rollover.offset;
         warn('Row ${rollover.row}: not a midnight rollover after all; row skipped.');
       }
-      ({int row, double absolute, double? clock, double offset})? rolledOver;
+      ({int row, double absolute, double? clock, double offset, bool short, bool extra})?
+      rolledOver;
       if (parsedTime.format == TimestampFormat.clock) {
         if (previousClockTime != null &&
             previousAbsoluteTime != null &&
@@ -235,6 +245,8 @@ class _VboParse {
             absolute: previousAbsoluteTime,
             clock: previousClockTime,
             offset: clockDayOffset,
+            short: cellCount < names.length,
+            extra: row.hasExtraValue,
           );
           clockDayOffset = checkedTime(clockDayOffset + 24.0 * 3600.0);
           warn('Row $rowNumber: midnight rollover detected.');
@@ -285,6 +297,7 @@ class _VboParse {
       } else {
         ++fullRows;
       }
+      if (row.hasExtraValue) ++extraRows;
       ++accepted;
       unconfirmedRollover = rolledOver;
       previousAbsoluteTime = absoluteTime;
@@ -296,14 +309,22 @@ class _VboParse {
     // dropped value moves the clock onto another column and times the rows
     // wrongly: refuse rather than guess (FET-242). A time column first cannot
     // move, so such a file is read, with each short row warned about.
-    // Known limits, by design: a header listing trailing names that rows never
+    // Known limit, by design: a header listing trailing names that rows never
     // fill is refused although the clock would be safe (that cannot be told
-    // from a split name); and a file with more values than names, or an unnamed
-    // column before the time column, still gets a believable wrong clock
-    // (follow-up FET-271).
+    // from a split name).
     if (shortRows > fullRows && timeIndex > 0) {
       throw const VboParseError(
         'VBO header has more names than its rows have values, so the time column cannot be found with certainty.',
+      );
+    }
+    // The mirror image (FET-271): when most rows have more values than the
+    // header has names, an unnamed column may stand before the time column and
+    // be read as the clock (an incrementing counter times the file at 1 Hz).
+    // Refused for any time column position, since a leading value cannot be
+    // told from a trailing one.
+    if (extraRows > accepted - extraRows) {
+      throw const VboParseError(
+        'VBO rows have more values than its header has names, so the time column cannot be found with certainty.',
       );
     }
     if (omittedWarnings > 0) {

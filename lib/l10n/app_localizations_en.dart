@@ -4591,6 +4591,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'VBO header has more names than its rows have values, so the time column cannot be found with certainty.';
 
   @override
+  String get coreVboRowHeaderMismatch =>
+      'VBO rows have more values than its header has names, so the time column cannot be found with certainty.';
+
+  @override
   String get coreVboFileSize =>
       'VBO exceeds the supported 128 MiB file size limit.';
 

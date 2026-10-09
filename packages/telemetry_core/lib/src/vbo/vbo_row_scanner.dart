@@ -111,12 +111,17 @@ final class RowBounds {
   /// Fields in the row, including those beyond the retained columns.
   int count = 0;
 
+  /// Whether a field beyond the retained columns holds anything: trailing
+  /// separators leave empty extra fields, which are harmless (FET-271).
+  bool hasExtraValue = false;
+
   /// Splits [line] as `scanRow([line], retainedColumns, false, cancelled)`
   /// does: the same fields, the same trimming and the same field-length
   /// error.
   void scan(String line, CancellationCheck? cancelled) {
     final capacity = starts.length;
     retained = count = 0;
+    hasExtraValue = false;
     final length = line.length;
     var commaSeparated = false;
     for (var position = 0; position < length; ++position) {
@@ -135,6 +140,8 @@ final class RowBounds {
         starts[count] = start;
         ends[count] = end;
         retained = count + 1;
+      } else if (end > start) {
+        hasExtraValue = true;
       }
       ++count;
     }
