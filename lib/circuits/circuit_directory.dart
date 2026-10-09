@@ -171,8 +171,14 @@ class CircuitDirectory extends ChangeNotifier {
       debugPrint('Circuit list not fetched: $error');
       return CircuitRefresh.failed;
     }
-    if (fetched.revision <= _list.revision) return CircuitRefresh.upToDate;
+    // The list in use is the fetched one that could not be kept on this
+    // device: it is written again instead of being called up to date.
+    final retry = _unsavedList != null && fetched.revision == _list.revision;
+    if (fetched.revision <= _list.revision && !retry) {
+      return CircuitRefresh.upToDate;
+    }
     _list = fetched;
+    _unsavedList = text;
     try {
       final folder = await _folder();
       if (folder != null &&
@@ -183,8 +189,12 @@ class CircuitDirectory extends ChangeNotifier {
       debugPrint('Circuit list not saved: $error');
       return CircuitRefresh.notSaved;
     }
+    _unsavedList = null;
     return CircuitRefresh.updated;
   }
+
+  // The text of the fetched list in use that could not be written, or null.
+  String? _unsavedList;
 
   /// Names the circuit a route starting [at] is on [name]: a new name for
   /// the circuit found there, or a new circuit of the driver's. Invalid when
