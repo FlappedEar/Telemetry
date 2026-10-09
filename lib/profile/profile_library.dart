@@ -75,9 +75,18 @@ Future<List<String>> platformOwnedRecordingFolders() async {
   return const [];
 }
 
-/// The day of [eventId]'s file in [folder]'s days.
-String profileDayPath(String folder, String eventId) =>
-    p.join(folder, profileDaysFolder, '$eventId.fetproject');
+/// The day of [eventId]'s file in [folder]'s days. Throws [FormatException]
+/// for an id that is not one plain file name ([isProfileDayName]; `../x` would
+/// leave `Days`).
+String profileDayPath(String folder, String eventId) {
+  if (!isProfileDayName(eventId)) {
+    throw FormatException(
+      'The day id cannot be a file name in the profile.',
+      eventId,
+    );
+  }
+  return p.join(folder, profileDaysFolder, '$eventId.fetproject');
+}
 
 /// The driver profile the app keeps: loaded once, changed by the day pages
 /// and the library page, and written after each change, one write at a time

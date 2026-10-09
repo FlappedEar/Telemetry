@@ -690,6 +690,356 @@ Future<void> main(List<String> arguments) async {
       expect(File(p.join(root(), 'evil.txt')).existsSync(), isFalse);
     });
   });
+
+  group('days whose file names differ only by letter case', () {
+    /// A bundle of the days [ids]. Ids the exporter would not write together
+    /// (the same but for letter case) are exported with a `~` and renamed
+    /// in the zip, as a bundle from a case-sensitive volume or another
+    /// writer would hold them.
+    Future<String> bundleOf(List<String> ids) async {
+      final a = p.join(root(), 'A');
+      var profile = DriverProfile.empty(Random(1));
+      final seen = <String>{};
+      final exported = [for (final id in ids) seen.add(id.toLowerCase()) ? id : '$id~'];
+      for (final id in exported) {
+        profile = await saveDay(profile, a, p.join(a, 'in'), id, [
+          [30, 28, 31],
+        ]);
+      }
+      final bundle = p.join(root(), 'x${ids.join()}$profileBundleExtension');
+      await writeProfileBundle(profile, a, bundle);
+      if (exported.every((id) => !id.endsWith('~'))) return bundle;
+      final out = Archive();
+      for (final entry in ZipDecoder().decodeBytes(File(bundle).readAsBytesSync())) {
+        final content = entry.name.startsWith('Recordings/')
+            ? entry.content as List<int>
+            : utf8.encode(utf8.decode(entry.content as List<int>).replaceAll('~', ''));
+        out.addFile(ArchiveFile.bytes(entry.name.replaceAll('~', ''), content));
+      }
+      final renamed = p.join(root(), 'renamed${ids.join()}$profileBundleExtension');
+      File(renamed).writeAsBytesSync(ZipEncoder().encodeBytes(out));
+      return renamed;
+    }
+
+    test('the exporter leaves out the second of two such days and says so', () async {
+      final a = p.join(root(), 'A');
+      var profile = DriverProfile.empty(Random(1));
+      for (final id in ['Day', 'day']) {
+        profile = await saveDay(profile, a, p.join(a, 'in'), id, [
+          [30, 28, 31],
+        ]);
+      }
+      final bundle = p.join(root(), 'both$profileBundleExtension');
+      final written = await writeProfileBundle(profile, a, bundle);
+      expect(written.days, 1);
+      expect(written.daysMissing, ['day']);
+    });
+
+    test('are refused together, writing nothing and keeping both ids', () async {
+      final bundle = await bundleOf(['A', 'a']);
+      final b = p.join(root(), 'B');
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, bundle),
+        throwsA(
+          isA<ProfileBundleError>().having((e) => e.message, 'message', contains('letter case')),
+        ),
+      );
+      expect(Directory(b).existsSync(), isFalse);
+    });
+
+    test('a day here whose name differs only by case refuses the bundle too', () async {
+      final b = p.join(root(), 'B');
+      final first = await readProfileBundle(
+        DriverProfile.empty(Random(2)),
+        b,
+        await bundleOf(['A']),
+      );
+      expect(first.added, ['A']);
+      final other = await bundleOf(['a']);
+      await expectLater(
+        readProfileBundle(first.profile, b, other),
+        throwsA(isA<ProfileBundleError>()),
+      );
+      expect(Directory(p.join(b, 'Days')).listSync().map((e) => p.basename(e.path)), [
+        'A.fetproject',
+      ]);
+      // The same id again is the same day, not a collision.
+      final again = await readProfileBundle(first.profile, b, await bundleOf(['A']));
+      expect(again.alreadyHere, ['A']);
+      expect(again.added, isEmpty);
+    });
+
+    test('days that differ by more than case are added', () async {
+      final read = await readProfileBundle(
+        DriverProfile.empty(Random(2)),
+        p.join(root(), 'B'),
+        await bundleOf(['A', 'b']),
+      );
+      expect(read.added..sort(), ['A', 'b']);
+    });
+  });
+
+  group('a bundle past the limits', () {
+    final manifest = '{"format":"$profileBundleFormat","version":1}';
+
+    _Entry stored(String name, List<int> data, {int? size}) => (
+      name: name,
+      data: data,
+      method: 0,
+      size: size ?? data.length,
+      crc: getCrc32(data),
+      flags: 0,
+    );
+
+    /// A bundle of the given entries as a real encoder would write them.
+    Future<String> zipOf(String name, Map<String, List<int>> files) async {
+      final path = p.join(root(), name);
+      final encoder = ZipFileEncoder()..create(path);
+      files.forEach((entry, data) => encoder.addArchiveFile(ArchiveFile.bytes(entry, data)));
+      await encoder.close();
+      return path;
+    }
+
+    Future<void> expectRefused(String bundle, Pattern message) async {
+      final b = p.join(root(), 'B');
+      await expectLater(
+        readProfileBundle(DriverProfile.empty(Random(2)), b, bundle),
+        throwsA(isA<ProfileBundleError>().having((e) => e.message, 'message', contains(message))),
+      );
+      // Nothing written: not the folder, not a staging folder.
+      expect(Directory(b).existsSync(), isFalse);
+    }
+
+    final empty = encodeDriverProfile(DriverProfile.empty(Random(1))).codeUnits;
+
+    test('more recordings than a bundle may hold is refused', () async {
+      final bundle = await zipOf('many.feprofile', {
+        'bundle.json': utf8.encode(manifest),
+        profileIndexName: empty,
+        for (var i = 0; i <= maximumBundleRecordings; i++) 'Recordings/r$i.vbo': const [],
+      });
+      await expectRefused(bundle, 'too many recordings');
+    });
+
+    test('a directory that says it lists more entries than allowed is refused unread', () async {
+      final good = _zip([stored('bundle.json', utf8.encode(manifest))]);
+      final end = good.length - 22;
+      for (final (count, size) in [
+        (0xffff, 100),
+        (10, 0x7fffffff),
+        (10, maximumBundleDirectoryBytes + 1),
+      ]) {
+        final bytes = [...good];
+        final view = ByteData.sublistView(Uint8List.fromList(bytes));
+        view.setUint16(end + 10, count, Endian.little);
+        view.setUint32(end + 12, size, Endian.little);
+        final path = p.join(root(), 'directory.feprofile');
+        File(path).writeAsBytesSync(view.buffer.asUint8List());
+        await expectRefused(path, 'too many files');
+      }
+    });
+
+    test('a zip64 directory with an enormous entry count is refused', () async {
+      final good = _zip([stored('bundle.json', utf8.encode(manifest))]);
+      final end = good.length - 22;
+      final source = ByteData.sublistView(Uint8List.fromList(good));
+      final record = ByteData(56)
+        ..setUint32(0, 0x06064b50, Endian.little)
+        ..setUint64(4, 44, Endian.little)
+        ..setUint16(12, 45, Endian.little)
+        ..setUint16(14, 45, Endian.little)
+        ..setUint64(24, 1 << 40, Endian.little)
+        ..setUint64(32, 1 << 40, Endian.little)
+        ..setUint64(40, source.getUint32(end + 12, Endian.little), Endian.little)
+        ..setUint64(48, source.getUint32(end + 16, Endian.little), Endian.little);
+      final locator = ByteData(20)
+        ..setUint32(0, 0x07064b50, Endian.little)
+        ..setUint64(8, end, Endian.little)
+        ..setUint32(16, 1, Endian.little);
+      final tail = ByteData.sublistView(Uint8List.fromList(good.sublist(end)))
+        ..setUint16(10, 0xffff, Endian.little)
+        ..setUint32(12, 0xffffffff, Endian.little);
+      final path = p.join(root(), 'zip64.feprofile');
+      File(path).writeAsBytesSync([
+        ...good.sublist(0, end),
+        ...record.buffer.asUint8List(),
+        ...locator.buffer.asUint8List(),
+        ...tail.buffer.asUint8List(),
+      ]);
+      await expectRefused(path, 'too many files');
+    });
+
+    test('a zip64 size past 2^63 does not hide what the other entries declare', () async {
+      // One entry whose zip64 extra field makes its size negative, and five
+      // days declaring nearly 4 GB each.
+      final out = BytesBuilder();
+      void u16(int v) => out.add([v & 0xff, (v >> 8) & 0xff]);
+      void u32(int v) => out.add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
+      final central = BytesBuilder();
+      var index = 0;
+      for (final name in [
+        'Days/neg.fetproject',
+        for (var i = 0; i < 5; i++) 'Days/d$i.fetproject',
+      ]) {
+        final negative = index++ == 0;
+        final bytes = utf8.encode(name);
+        final offset = out.length;
+        u32(0x04034b50);
+        for (final v in [20, 0, 0, 0, 0x21]) {
+          u16(v);
+        }
+        u32(0);
+        u32(1);
+        u32(1);
+        u16(bytes.length);
+        u16(0);
+        out
+          ..add(bytes)
+          ..addByte(0);
+        u32Central(BytesBuilder b, int v) =>
+            b.add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
+        void u16Central(int v) => central.add([v & 0xff, (v >> 8) & 0xff]);
+        u32Central(central, 0x02014b50);
+        for (final v in [45, 45, 0, 0, 0, 0x21]) {
+          u16Central(v);
+        }
+        u32Central(central, 0);
+        u32Central(central, 1);
+        u32Central(central, negative ? 0xffffffff : 3900000000);
+        for (final v in [bytes.length, negative ? 12 : 0, 0, 0, 0]) {
+          u16Central(v);
+        }
+        u32Central(central, 0);
+        u32Central(central, offset);
+        central.add(bytes);
+        if (negative) {
+          u16Central(1);
+          u16Central(8);
+          central.add([0, 0, 0, 0, 0, 0, 0, 0x80]);
+        }
+      }
+      final start = out.length;
+      final directory = central.takeBytes();
+      out.add(directory);
+      u32(0x06054b50);
+      for (final v in [0, 0, 6, 6]) {
+        u16(v);
+      }
+      u32(directory.length);
+      u32(start);
+      u16(0);
+      final bundle = p.join(root(), 'negative.feprofile');
+      File(bundle).writeAsBytesSync(out.takeBytes());
+      await expectRefused(bundle, 'cannot be right');
+    });
+
+    test('a long archive comment does not hide the zip64 directory record', () async {
+      final good = _zip([stored('bundle.json', utf8.encode(manifest))]);
+      final end = good.length - 22;
+      final source = ByteData.sublistView(Uint8List.fromList(good));
+      final record = ByteData(56)
+        ..setUint32(0, 0x06064b50, Endian.little)
+        ..setUint64(4, 44, Endian.little)
+        ..setUint64(24, 1 << 40, Endian.little)
+        ..setUint64(32, 1 << 40, Endian.little)
+        ..setUint64(40, source.getUint32(end + 12, Endian.little), Endian.little)
+        ..setUint64(48, source.getUint32(end + 16, Endian.little), Endian.little);
+      final locator = ByteData(20)
+        ..setUint32(0, 0x07064b50, Endian.little)
+        ..setUint64(8, end, Endian.little)
+        ..setUint32(16, 1, Endian.little);
+      // The 32-bit fields stay small: only the zip64 record is enormous.
+      final tail = ByteData.sublistView(Uint8List.fromList(good.sublist(end)));
+      final path = p.join(root(), 'comment.feprofile');
+      File(path).writeAsBytesSync([
+        ...good.sublist(0, end),
+        ...record.buffer.asUint8List(),
+        ...locator.buffer.asUint8List(),
+        ...tail.buffer.asUint8List().sublist(0, 20),
+        0xff,
+        0xff,
+        ...List.filled(0xffff, 0x20),
+      ]);
+      await expectRefused(path, 'too many files');
+    });
+
+    test('entries declaring more together than may be unpacked are refused', () async {
+      // Five days of nearly 4 GB each, declared and never unpacked.
+      final bundle = p.join(root(), 'expands.feprofile');
+      File(bundle).writeAsBytesSync(
+        _zip([
+          stored('bundle.json', utf8.encode(manifest)),
+          stored(profileIndexName, empty),
+          for (var i = 0; i < 5; i++) stored('Days/d$i.fetproject', const [0], size: 3900000000),
+        ]),
+      );
+      await expectRefused(bundle, 'unpacks to more');
+    });
+
+    test('a recording larger than the importers read is refused with its bundle', () async {
+      final bundle = p.join(root(), 'large.feprofile');
+      File(bundle).writeAsBytesSync(
+        _zip([
+          stored('bundle.json', utf8.encode(manifest)),
+          stored(profileIndexName, empty),
+          stored('Recordings/big.vbo', const [0], size: maximumBundleRecordingBytes + 1),
+        ]),
+      );
+      await expectRefused(bundle, 'too large');
+    });
+
+    test('a bundle file larger than may be read is refused', () async {
+      final bundle = File(p.join(root(), 'huge.feprofile'));
+      final file = bundle.openSync(mode: FileMode.write)
+        ..truncateSync(maximumBundleArchiveBytes + 1);
+      file.closeSync();
+      await expectRefused(bundle.path, 'too large');
+    });
+
+    test('a recording past the limit is left out of the bundle, the rest travels', () async {
+      final a = p.join(root(), 'A');
+      final imported = p.join(a, 'in');
+      final profile = await saveDay(DriverProfile.empty(Random(1)), a, imported, 'e1', [
+        [30, 28, 31],
+      ]);
+      // A sparse file one byte past what the importers read.
+      final recording = File(p.join(imported, 'e1-0.vbo')).openSync(mode: FileMode.write)
+        ..truncateSync(maximumBundleRecordingBytes + 1);
+      recording.closeSync();
+      final bundle = p.join(root(), 'a$profileBundleExtension');
+      final written = await writeProfileBundle(profile, a, bundle);
+      expect(written.recordingsMissing, 1);
+      final read = await readProfileBundle(
+        DriverProfile.empty(Random(2)),
+        p.join(root(), 'B'),
+        bundle,
+      );
+      expect(read.added, ['e1']);
+      expect(read.recordings, 0);
+    });
+  });
+
+  test('only a plain file name is a day name', () {
+    for (final id in ['e1', 'A', '0123456789abcdef', 'day 1', 'Ünï']) {
+      expect(isProfileDayName(id), isTrue, reason: id);
+    }
+    for (final id in [
+      '../escaped',
+      '..',
+      '.',
+      '',
+      'a/b',
+      r'a\b',
+      '/abs',
+      'C:evil',
+      '.hidden',
+      'CON',
+      'a*b',
+      'a\u0000b',
+    ]) {
+      expect(isProfileDayName(id), isFalse, reason: id);
+    }
+  });
 }
 
 final class _Collect implements Sink<List<int>> {
