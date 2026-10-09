@@ -6,6 +6,7 @@ import 'package:telemetry/day/comparison_page.dart';
 import 'package:telemetry/day/corner_analyzer_panel.dart';
 import 'package:telemetry/day/corner_details.dart' show cornerReasonText;
 import 'package:telemetry/day/day_results_controller.dart';
+import 'package:telemetry/day/driving_panels.dart' show inferredBecauseText;
 import 'package:telemetry/day/day_results_page.dart';
 import 'package:telemetry/day/lap_page.dart';
 import 'package:telemetry/day/time_losses_card.dart';
@@ -191,6 +192,16 @@ void main() {
         );
       } else {
         expect(shown, '${(corner.startMeters - value.value!).round()}\u00a0m');
+        // An inferred point names why, like the rows below it.
+        if (value.provenance == metricInferred) {
+          expect(
+            find.text(
+              inferredBecauseText(english, value.inferredBecause) ??
+                  english.cornerAnalyzerInferred,
+            ),
+            findsWidgets,
+          );
+        }
       }
     }
 

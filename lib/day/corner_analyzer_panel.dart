@@ -538,6 +538,7 @@ class AnalyzerTable extends StatelessWidget {
           value: value.value == null ? null : entry - value.value!,
           provenance: value.provenance,
           unavailableReason: value.unavailableReason,
+          inferredBecause: value.inferredBecause,
         );
         return AnalyzerMetric(
           a: side(metric.a),
@@ -638,6 +639,7 @@ class AnalyzerTable extends StatelessWidget {
               : value.value! - segment.startMeters,
           provenance: value.provenance,
           unavailableReason: value.unavailableReason,
+          inferredBecause: value.inferredBecause,
         );
         return AnalyzerMetric(
           a: side(metric.a),
