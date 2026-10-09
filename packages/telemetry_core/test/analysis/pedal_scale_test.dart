@@ -96,6 +96,9 @@ void main() {
     final onsets = detectBrakingOnsets(session, 0, 60);
     expect(onsets.method, brakingMethodInferred);
     expect(onsets.candidates, hasLength(6));
+    // The reason carried to the panels is the scale, not "does not show the
+    // braking" (FET-244).
+    expect(classifyDrivingStates(session, 0, 60).braking.inferredBecause, brakingScaleUnknown);
   });
 
   test('a declared unit is never rescaled, and values beyond 1 stay %', () {

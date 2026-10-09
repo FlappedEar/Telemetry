@@ -10,6 +10,7 @@ import '../units.dart';
 import 'comparison_page.dart';
 import 'corner_details.dart' show cornerReasonText, lapAColor, lapBColor;
 import 'day_results_controller.dart';
+import 'driving_panels.dart' show inferredBecauseText;
 import 'telemetry_chart.dart' show ChartWindow;
 import 'theoretical_best_card.dart' show TheoreticalBestText;
 import 'touch.dart';
@@ -726,7 +727,8 @@ class AnalyzerTable extends StatelessWidget {
         key,
         show(value),
         note: side.provenance == metricInferred
-            ? l10n.cornerAnalyzerInferred
+            ? inferredBecauseText(l10n, side.inferredBecause) ??
+                  l10n.cornerAnalyzerInferred
             : '',
       );
     }
