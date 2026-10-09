@@ -83,7 +83,7 @@ ChartSeries timeSeries(
 }) {
   final bounded = maximumPoints.clamp(2, 2000);
   final recorded = session.channel(channelName);
-  final angular = recorded != null && isAngularChannel(recorded);
+  final angular = recorded != null && isAngularChannel(recorded, session);
   final source = angular ? unwrappedAngleSession(recorded) : session;
   final sourceName = angular ? recorded.name : channelName;
   final sampled = source.sampledSegments(sourceName, start, end, bounded);

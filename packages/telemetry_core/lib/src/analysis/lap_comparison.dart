@@ -353,7 +353,7 @@ final class LapComparison {
   double? _angleOffset(int slot, String channel) {
     double? start(int slot) {
       final recorded = lap(slot).session.channel(channel);
-      if (recorded == null || !isAngularChannel(recorded)) return null;
+      if (recorded == null || !isAngularChannel(recorded, lap(slot).session)) return null;
       return firstFiniteValueFrom(unwrappedAngleSession(recorded), recorded.name, lap(slot).start);
     }
 
@@ -391,7 +391,7 @@ final class LapComparison {
     final interpolation = channel.toLowerCase() == 'gear'
         ? InterpolationMode.previous
         : InterpolationMode.linear;
-    final angular = isAngularChannel(found);
+    final angular = isAngularChannel(found, session);
     final source = angular ? unwrappedAngleSession(found) : session;
     final sourceName = angular ? found.name : channel;
     final offset = angular ? _angleOffset(slot, channel) ?? 0.0 : 0.0;
