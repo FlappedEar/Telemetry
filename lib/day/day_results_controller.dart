@@ -2839,6 +2839,10 @@ final class DayResultsController extends ChangeNotifier {
     _coachLoading = false;
     _coachJob.cancel();
     ++_theoreticalBestGeneration;
+    // The review is of the proposals for this best's segments.
+    _segmentReviewLatest.cancel();
+    ++_segmentReviewGeneration;
+    _segmentReviewLoading = false;
   }
 
   // The runs of the document the day was last saved or opened as.

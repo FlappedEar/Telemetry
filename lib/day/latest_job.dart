@@ -72,6 +72,10 @@ final class LatestJob<T> {
       return identical(_task, task) ? value : null;
     } on OperationCancelled {
       return null;
+    } on Object {
+      // A job stopped for a newer one fails with nothing worth showing.
+      if (!identical(_task, task)) return null;
+      rethrow;
     } finally {
       if (identical(_task, task)) _task = null;
     }

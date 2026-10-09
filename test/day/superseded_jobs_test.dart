@@ -59,6 +59,21 @@ final class _HeldTask<T> implements BackgroundTask<T> {
   }
 }
 
+/// A task whose stopping fails it, rather than ending it as cancelled.
+final class _FailsWhenStopped implements BackgroundTask<int> {
+  final _done = Completer<int>();
+
+  void finish(int value) => _done.complete(value);
+
+  @override
+  Future<int> get result => _done.future;
+
+  @override
+  void cancel() {
+    if (!_done.isCompleted) _done.completeError(StateError('stopped'));
+  }
+}
+
 void main() {
   late Directory directory;
   setUp(() => directory = Directory.systemTemp.createTempSync('superseded'));
@@ -94,6 +109,23 @@ void main() {
       expect(held.tasks.single.cancelled, isTrue);
       expect(await running, isNull);
     });
+
+    test(
+      'a job stopped for a newer one throws nothing even if it fails',
+      () async {
+        final tasks = <_FailsWhenStopped>[];
+        final latest = LatestJob<int>((job) {
+          final task = _FailsWhenStopped();
+          tasks.add(task);
+          return task;
+        });
+        final first = latest.run((cancelled) => 1);
+        final second = latest.run((cancelled) => 2);
+        expect(await first, isNull);
+        tasks.last.finish(2);
+        expect(await second, 2);
+      },
+    );
 
     test('a failing job throws what it failed with', () async {
       final latest = LatestJob<int>(
@@ -166,6 +198,38 @@ void main() {
       await again;
       expect(controller.theoreticalBest, isNotNull);
     });
+
+    test(
+      'a segment review is stopped when the best it reviews is reset',
+      () async {
+        final day = importDay();
+        final best = _Held<DayTheoreticalBest>();
+        final review = _Held<DayProposalReview>();
+        final controller = DayResultsController(
+          runs: day.runs,
+          analysis: day.analysis!,
+          theoreticalBestRunner: best.call,
+          segmentReviewRunner: review.call,
+        );
+        addTearDown(controller.dispose);
+        final requested = controller.requestTheoreticalBest();
+        await Future<void>.delayed(Duration.zero);
+        best.tasks.single.finish();
+        await requested;
+        unawaited(controller.requestSegmentReview());
+        await Future<void>.delayed(Duration.zero);
+        expect(review.tasks, hasLength(1));
+        expect(controller.segmentReviewLoading, isTrue);
+
+        // A lap is excluded: the best, and so its review, is for old laps.
+        final row = controller.analysis.rows.firstWhere(
+          (row) => row.reference == controller.ranking!.bestOfDay!.reference,
+        );
+        expect(controller.exclude(row, 'Traffic'), isTrue);
+        expect(review.tasks.single.cancelled, isTrue);
+        expect(controller.segmentReviewLoading, isFalse);
+      },
+    );
 
     test('closing the day stops the calculations running', () async {
       final day = importDay();
