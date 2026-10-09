@@ -44,7 +44,7 @@
   <figcaption>Przegląd plików dodawanych do dnia z domyślnymi decyzjami, które podjąłby import automatyczny. Nazwy plików na zrzucie zostały zmienione na potrzeby dokumentacji.</figcaption>
 </figure>
 <ul>
-  <li>Każdy plik pokazuje czas trwania (minuty:sekundy) i liczbę pełnych okrążeń. Duplikat wskazuje plik o identycznej zawartości, a nieczytelny plik podaje przyczynę błędu; takich pozycji nie można zaimportować. VBO musi zawierać kolumnę czasu (<code>time</code>, <code>timestamp</code> lub <code>utc_time</code>). Bez niej próbki nie mają osi czasu, więc aplikacja odrzuca plik zamiast zgadywać czasy.</li>
+  <li>Każdy plik pokazuje czas trwania (minuty:sekundy) i liczbę pełnych okrążeń. Duplikat wskazuje plik o identycznej zawartości, a nieczytelny plik podaje przyczynę błędu; takich pozycji nie można zaimportować. VBO musi zawierać kolumnę czasu (<code>time</code>, <code>timestamp</code> lub <code>utc_time</code>). Bez niej próbki nie mają osi czasu, więc aplikacja odrzuca plik zamiast zgadywać czasy. To samo dotyczy pliku, w którym nazw kolumn jest więcej niż wartości w większości wierszy, a kolumna czasu nie jest pierwsza (na przykład nazwa ze spacją, jak <code>UTC time</code>, liczy się jako dwie): czas mógłby zostać odczytany z niewłaściwej kolumny, więc aplikacja nie czyta takiego pliku.</li>
   <li>Dla każdego pliku wybierz:
     <ul>
       <li><strong>Importuj jako nową sesję</strong>: utwórz osobną sesję z tego pliku.</li>

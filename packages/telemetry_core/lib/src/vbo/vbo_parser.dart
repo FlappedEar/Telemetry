@@ -171,6 +171,8 @@ class _VboParse {
     final rawValues = [for (final _ in names) Float32List(dataSection.length)];
     final rawTimes = Float64List(dataSection.length);
     var accepted = 0;
+    var shortRows = 0;
+    var fullRows = 0;
     double? origin;
     var originIsClock = false;
     double? previousAbsoluteTime;
@@ -276,10 +278,33 @@ class _VboParse {
             ? normalized
             : double.nan;
       }
+      // Only rows that were kept count as evidence of the file's shape: a
+      // full row skipped for its time must not outvote the short rows read.
+      if (cellCount < names.length) {
+        ++shortRows;
+      } else {
+        ++fullRows;
+      }
       ++accepted;
       unconfirmedRollover = rolledOver;
       previousAbsoluteTime = absoluteTime;
       previousClockTime = parsedTime.format == TimestampFormat.clock ? parsedTime.seconds : null;
+    }
+    // Values are matched to names by position, so a row short of values is
+    // read as missing its trailing ones. When most rows are short and a name
+    // stands before the time column, a name split in two ("UTC time") or a
+    // dropped value moves the clock onto another column and times the rows
+    // wrongly: refuse rather than guess (FET-242). A time column first cannot
+    // move, so such a file is read, with each short row warned about.
+    // Known limits, by design: a header listing trailing names that rows never
+    // fill is refused although the clock would be safe (that cannot be told
+    // from a split name); and a file with more values than names, or an unnamed
+    // column before the time column, still gets a believable wrong clock
+    // (follow-up FET-271).
+    if (shortRows > fullRows && timeIndex > 0) {
+      throw const VboParseError(
+        'VBO header has more names than its rows have values, so the time column cannot be found with certainty.',
+      );
     }
     if (omittedWarnings > 0) {
       warnings.add('… $omittedWarnings additional parser warnings omitted.');
