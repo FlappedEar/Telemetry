@@ -465,6 +465,18 @@ void main() {
     );
   });
 
+  test('bounds a refused source combination (FET-142)', () {
+    bool valid(Object? candidate) =>
+        validateFetproject(withRun((r) => r['fusionDeclined'] = candidate)) ==
+        null;
+    expect(valid('run-a-alternative'), isTrue);
+    expect(valid('run-a-source'), isFalse, reason: 'the primary');
+    expect(valid('run-b-source'), isFalse, reason: "another run's recording");
+    expect(valid('missing'), isFalse);
+    expect(valid(7), isFalse);
+    expect(valid(null), isFalse);
+  });
+
   test('bounds an approved source fusion', () {
     final fusion = {
       'algorithm': 'channel-fusion-v1',

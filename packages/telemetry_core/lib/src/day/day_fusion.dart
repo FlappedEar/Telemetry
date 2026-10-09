@@ -58,15 +58,19 @@ final class RunFusion {
     this.fromDocument = false,
     this.documentChanged = false,
     this.alignment,
+    this.declined = false,
   });
 
   /// [alternative] kept beside [primary] and not fused
   /// ([RunFusionState.primaryOnly]); [alignment] is the clock check the
-  /// user refused, if there was one.
+  /// user refused, if there was one. [declined] marks a combination the user
+  /// refused: saved with the day, so it is not made again when it opens
+  /// (FET-142).
   RunFusion.primaryOnly({
     required TelemetryRunProposal primary,
     required TelemetryRunProposal alternative,
     RecordingAlignment? alignment,
+    bool declined = false,
   }) : this._(
          state: RunFusionState.primaryOnly,
          primarySourceId: primary.sourceId,
@@ -77,6 +81,7 @@ final class RunFusion {
          status: alignment?.status ?? '',
          reason: alignment?.reason ?? '',
          alignment: alignment,
+         declined: declined,
        );
 
   /// The alternative recording the document names, which could not be used
@@ -146,6 +151,9 @@ final class RunFusion {
   /// decision applied from the document.
   final RecordingAlignment? alignment;
 
+  /// Whether the user refused to combine the recordings ([RunFusion.primaryOnly]).
+  final bool declined;
+
   /// This fusion with [documentChanged] set.
   RunFusion withDocumentChanged() => RunFusion._(
     state: state,
@@ -165,6 +173,7 @@ final class RunFusion {
     fromDocument: fromDocument,
     documentChanged: true,
     alignment: alignment,
+    declined: declined,
   );
 
   bool get fused => state == RunFusionState.fused;

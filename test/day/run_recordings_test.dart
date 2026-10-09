@@ -119,6 +119,32 @@ void main() {
     expect(controller.session(runId)!.channels, isNot(contains('rpm-obd')));
   });
 
+  test('a refused combination stays refused when the day is opened again '
+      '(FET-142)', () async {
+    final (controller, runId) = await fusedDay();
+    final path = '${directory.path}/Day.fetproject';
+    controller.refuseClock(runId);
+    await controller.save(path);
+
+    final opened = DayResultsController.opened(openDay(path));
+    addTearDown(opened.dispose);
+    await opened.fusionsSettled;
+    expect(opened.fusion(runId)!.state, RunFusionState.primaryOnly);
+    expect(opened.session(runId)!.channels, isNot(contains('rpm-obd')));
+    expect(opened.dirty, isFalse);
+
+    // Combined later: the refusal is gone for good.
+    await opened.checkClock(runId);
+    opened.acceptClock(runId);
+    expect(opened.fusion(runId)!.fused, isTrue);
+    await opened.save(path);
+    expect(_runJson(path).containsKey('fusionDeclined'), isFalse);
+    final again = DayResultsController.opened(openDay(path));
+    addTearDown(again.dispose);
+    await again.fusionsSettled;
+    expect(again.fusion(runId)!.fused, isTrue);
+  });
+
   test('making the RCZ primary derives the laps again from it and is saved '
       'as Overlays saves it', () async {
     final (controller, runId) = await fusedDay();
@@ -753,15 +779,12 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byKey(ValueKey('clockReopenNote $runId')), findsOneWidget);
+    expect(find.byKey(ValueKey('clockReopenNote $runId')), findsNothing);
     await tester.ensureVisible(find.text('Refuse'));
     await tester.tap(find.text('Refuse'));
     await tester.pumpAndSettle();
     expect(
-      find.text(
-        'Its RCZ is kept beside it and not combined until the day is opened '
-        'again',
-      ),
+      find.text('Its RCZ is kept beside it and not combined'),
       findsOneWidget,
     );
     expect(find.byKey(ValueKey('dontCombine $runId')), findsNothing);

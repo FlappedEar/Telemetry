@@ -1062,7 +1062,6 @@
   "clockAccept": "Akceptuj i połącz",
   "clockRefuse": "Odrzuć",
   "clockRefuseNote": "Odrzucenie zachowuje {alternative} obok sesji bez łączenia; jej analiza korzysta wtedy tylko z {primary}.",
-  "clockReopenNote": "Ta sesja korzysta z VBO i zachowuje RCZ, a plik dnia nie zapamiętuje odrzucenia dla takiej sesji: po ponownym otwarciu dnia {alternative} zostanie znów dopasowany i połączony.",
   "recordingsClockFailed": "Nie udało się porównać zegarów. Spróbuj ponownie.",
   "recordingsPrimaryMissing": "Pliku {format} nie ma już tam, skąd go wczytano. Przywróć go tam, a potem ustaw jako główny.",
   "recordingsPrimaryChanged": "Plik {format} zmienił się od wczytania. Otwórz dzień ponownie, a potem ustaw go jako główny.",

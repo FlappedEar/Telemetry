@@ -6233,7 +6233,7 @@
   },
   "recordingsKeptApartUntilReopened": "Its {format} is kept beside it and not combined until the day is opened again",
   "@recordingsKeptApartUntilReopened": {
-    "description": "Like recordingsKeptApart, for a VBO session whose RCZ the user refused: the day's file cannot store that choice, so the RCZ is lined up and combined again automatically when the day is opened again.",
+    "description": "Like recordingsKeptApart, for a VBO session whose RCZ was kept beside it without a refusal (after Make primary): the RCZ is lined up and combined again automatically when the day is opened again.",
     "placeholders": {
       "format": {
         "type": "String",
@@ -6381,16 +6381,6 @@
         "type": "String",
         "example": "VBO"
       },
-      "alternative": {
-        "type": "String",
-        "example": "RCZ"
-      }
-    }
-  },
-  "clockReopenNote": "This session reads its VBO and keeps its RCZ, and the day's file cannot keep a refusal for such a session: when the day is opened again, the {alternative} is lined up and combined again.",
-  "@clockReopenNote": {
-    "description": "Shown with the Refuse button of a VBO session's clock check: the shared file format has no place for a refusal, so the RCZ is combined again automatically the next time the day is opened.",
-    "placeholders": {
       "alternative": {
         "type": "String",
         "example": "RCZ"

@@ -242,6 +242,7 @@ void main() {
         primary: named.run,
         alternative: checked.alternative!,
         alignment: checked.alignment,
+        declined: true,
       );
       expect(refused.session, isNull, reason: 'the analysis reads the primary only');
       expect(refused.channelOrigins, isEmpty);
@@ -251,14 +252,15 @@ void main() {
       }, previous: opened);
       final run = runJson(document, named.run.id);
       expect(run.containsKey('fusion'), isFalse);
+      expect(run['fusionDeclined'], fusion.alternative!.sourceId);
       expect(run['primaryTelemetrySourceId'], named.run.sourceId);
       expect(((run['sources'] as Map)['telemetry'] as List), hasLength(2), reason: 'the RCZ stays');
       await saveDayDocument(path, document);
-      // The document has no field for a refusal: opened again, the RCZ of the
-      // VBO run is aligned and fused automatically again (FET-51).
+      // A refusal made by the user is saved as `fusionDeclined`, so the RCZ
+      // is not fused again when the day opens (FET-142)...
       final again = openDay(path);
-      expect(again.alternatives[named.run.id]!.automatic, isTrue);
-      expect(fuseOpenedDay(again)[named.run.id]!.fused, isTrue);
+      expect(again.alternatives[named.run.id]!.automatic, isFalse);
+      expect(fuseOpenedDay(again)[named.run.id]!.state, RunFusionState.primaryOnly);
     },
   );
 

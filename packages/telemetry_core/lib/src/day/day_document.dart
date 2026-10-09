@@ -190,7 +190,9 @@ final class ComparisonDecisions {
 /// decision. A run whose alternative could not be aligned or used keeps the
 /// document's decision as it was (no longer bound to its recordings, so not
 /// applied), a run whose alternative the user keeps apart
-/// ([RunFusionState.primaryOnly]) has its decision removed, and a run
+/// ([RunFusionState.primaryOnly]) has its decision removed and that recording
+/// named in `fusionDeclined`, so it is not fused again when the day opens
+/// (FET-142), and a run
 /// without one keeps its sources as they were.
 /// [pendingAlternatives] are alternative recordings not fused yet, by run
 /// id: each is written as a source, so the day opened again aligns it, and
@@ -297,11 +299,25 @@ Map<String, Object?> dayDocument({
       alternativeWritten = true;
     }
     sources['telemetry'] = telemetry;
+    // A refusal naming a recording the run no longer holds is dropped, so
+    // the file stays valid.
+    if (json['fusionDeclined'] case final declined?
+        when !telemetry.any((value) => _object(value)?['id'] == declined)) {
+      json.remove('fusionDeclined');
+    }
     if (fusion?.decision case final decision? when alternativeWritten && pending == null) {
       json['fusion'] = decision;
+      json.remove('fusionDeclined');
     } else if (fusion?.state == RunFusionState.primaryOnly && pending == null) {
-      // Refused, or the primary changed: no fusion, as Overlays removes it.
+      // Refused, or the primary changed: no fusion. A refusal names the
+      // recording kept beside the session, so a VBO session's RCZ is not
+      // fused again when the day opens (FET-142).
       json.remove('fusion');
+      if (fusion!.declined && alternativeWritten) {
+        json['fusionDeclined'] = fusion.alternative!.sourceId;
+      } else {
+        json.remove('fusionDeclined');
+      }
     }
     if (_object(sources['video']) case final video?) {
       sources['video'] = _rebaseVideo(video, previousPath, projectPath);
@@ -1004,6 +1020,7 @@ final class DocumentAlternative {
     this.decision,
     this.relinked = false,
     this.automatic = true,
+    this.declined = false,
   });
 
   final String runId;
@@ -1035,6 +1052,9 @@ final class DocumentAlternative {
   /// opens: the RCZ of a VBO run is (FET-51); the VBO of an RCZ run, as a
   /// run has after "Make primary" (FET-57), is only kept beside it.
   final bool automatic;
+
+  /// The user refused to combine it with the run (`fusionDeclined`).
+  final bool declined;
 
   /// The format its name says, or null.
   RecordingFormat? get format => recordingFormatOf(displayPath);
@@ -1073,6 +1093,7 @@ Map<String, DocumentAlternative> _openAlternatives(
     final vbo = primaryFormat == RecordingFormat.vbo;
     final rcz = primaryFormat == RecordingFormat.rcz;
     final decision = _object(run['fusion']);
+    final declined = decision == null ? run['fusionDeclined'] : null;
     Map<String, Object?>? source;
     Map<String, Object?>? kept;
     for (final value in telemetry) {
@@ -1082,12 +1103,14 @@ Map<String, DocumentAlternative> _openAlternatives(
       if (_object(candidate['reference']) == null) continue;
       final format = recordingFormatOf(displayPath(candidate));
       final chosen = decision != null && decision['alternativeSourceId'] == id;
-      final automatic = decision == null && vbo && format == RecordingFormat.rcz;
+      final automatic = decision == null && declined != id && vbo && format == RecordingFormat.rcz;
       if (chosen || (automatic && source == null)) {
         source = candidate;
         if (chosen) break;
       }
-      if (decision == null && rcz && format == RecordingFormat.vbo) kept ??= candidate;
+      if (decision == null && ((rcz && format == RecordingFormat.vbo) || declined == id)) {
+        kept ??= candidate;
+      }
     }
     final automatic = source != null;
     source ??= kept;
@@ -1105,6 +1128,7 @@ Map<String, DocumentAlternative> _openAlternatives(
       decision: decision,
       relinked: file.isNotEmpty && file != stored,
       automatic: automatic,
+      declined: declined == source['id'],
     );
   }
   return result;
@@ -1171,7 +1195,11 @@ RunFusion resolveDocumentAlternative(
     laps: loaded.laps,
   );
   final fusion = alternative.decision == null && !alternative.automatic
-      ? RunFusion.primaryOnly(primary: primary, alternative: recording)
+      ? RunFusion.primaryOnly(
+          primary: primary,
+          alternative: recording,
+          declined: alternative.declined,
+        )
       : fuseWithDecision(primary, recording, alternative.decision, cancelled: cancelled);
   return changed || alternative.relinked ? fusion.withDocumentChanged() : fusion;
 }

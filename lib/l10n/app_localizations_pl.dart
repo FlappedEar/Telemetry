@@ -4429,11 +4429,6 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String clockReopenNote(String alternative) {
-    return 'Ta sesja korzysta z VBO i zachowuje RCZ, a plik dnia nie zapamiętuje odrzucenia dla takiej sesji: po ponownym otwarciu dnia $alternative zostanie znów dopasowany i połączony.';
-  }
-
-  @override
   String get recordingsClockFailed =>
       'Nie udało się porównać zegarów. Spróbuj ponownie.';
 

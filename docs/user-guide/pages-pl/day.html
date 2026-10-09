@@ -239,10 +239,10 @@
 <p>Potem wybierz:</p>
 <ul>
   <li><strong>Akceptuj i połącz</strong> (tylko gdy zegary są zgrane i nie w trakcie dodawania zapisów) łączy RCZ ze zmierzonym przesunięciem. Twoje wybory dla kanałów, w których oba zapisy się różnią, zostają zachowane.</li>
-  <li><strong>Odrzuć</strong> zachowuje RCZ obok sesji bez łączenia: wykresy i karty sesji używają tylko jej głównego zapisu, a wiersz mówi <em>Plik RCZ jest zachowany obok i nie jest łączony do ponownego otwarcia dnia</em>.</li>
+  <li><strong>Odrzuć</strong> zachowuje RCZ obok sesji bez łączenia: wykresy i karty sesji używają tylko jej głównego zapisu, a wiersz mówi <em>Plik RCZ jest zachowany obok i nie jest łączony</em>.</li>
 </ul>
 <p><strong>Nie łącz</strong>, pod połączoną sesją, odrzuca od razu, bez nowego sprawdzania.</p>
-<div class="note"><p>Dla sesji, której głównym zapisem jest VBO, odrzucenie trwa do ponownego otwarcia dnia. Plik dnia, który czyta także FlappedEar Overlays, zapisuje odrzucony RCZ tak, jak Overlays zapisuje usuniętą fuzję: jako zapis zachowany przy sesji i niepołączony. Nie ma miejsca na zapisanie, że go odrzuciłeś, a aplikacja sama łączy RCZ sesji VBO, więc gdy dzień otwiera się ponownie, dopasowuje ten RCZ i łączy go znowu. Sprawdź zegar ponownie i odrzuć go ponownie, jeśli trzeba. Sesja, której głównym zapisem jest RCZ (zobacz <a href="#primary">Wybór głównego zapisu</a>), zachowuje swoje VBO osobno także po ponownym otwarciu dnia.</p></div>
+<div class="note"><p>Odrzucenie jest zapisywane razem z dniem: po ponownym otwarciu dnia RCZ zostaje obok sesji i nie jest łączony. Jeśli zmienisz zdanie, użyj ponownie <strong>Sprawdź zegar</strong>. Sesja, której głównym zapisem jest RCZ (zobacz <a href="#primary">Wybór głównego zapisu</a>), zachowuje swoje VBO osobno także po ponownym otwarciu dnia.</p></div>
 
 <h4 id="primary">Wybór głównego zapisu</h4>
 <p>Główny zapis sesji daje jej okrążenia, czasy okrążeń i klasyfikację. To VBO, gdy zaimportowano oba. <strong>Ustaw RCZ jako główny</strong> pod sesją ustawia zamiast tego RCZ jako jej główny zapis, tak jak robi to Run details w Overlays (<strong>Ustaw VBO jako główny</strong> przełącza z powrotem):</p>
