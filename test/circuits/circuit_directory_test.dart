@@ -202,6 +202,26 @@ void main() {
     expect(next.find(alpha)?.name, 'Alpha');
   });
 
+  test('a fetched list that was not kept is written again at the next '
+      'refresh, not called up to date', () async {
+    var broken = true;
+    final blocked = blockedFolder();
+    final circuits = make(
+      folder: () async => broken ? blocked() : directory,
+      fetch: (uri, maximum) async => list(2, [('a', 'Alpha ring', 50.0, 20.0)]),
+    );
+    expect(await circuits.refresh(), CircuitRefresh.notSaved);
+    expect(await circuits.refresh(), CircuitRefresh.notSaved);
+    broken = false;
+    expect(await circuits.refresh(), CircuitRefresh.updated);
+    expect(File(p.join(directory.path, 'list.json')).existsSync(), isTrue);
+    // Kept now: the same list is up to date.
+    expect(await circuits.refresh(), CircuitRefresh.upToDate);
+    final next = make();
+    await next.load();
+    expect(next.find(alpha)?.name, 'Alpha ring');
+  });
+
   test('a damaged file of the driver\'s is left alone', () async {
     File(p.join(directory.path, 'mine.json')).writeAsStringSync('{broken');
     File(p.join(directory.path, 'list.json')).writeAsStringSync('{broken');
