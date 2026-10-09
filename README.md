@@ -185,27 +185,18 @@ on every screen at both text sizes (the Diagnostics menu entry too), the
 two-finger and double-tap gestures on the plain and tiled maps of a lap and a
 comparison, chart drags and back.
 
-To install on Android without a store, download the
-`flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
-install `app-release.apk` (allow installs from the browser or file manager).
-Use builds from `main`: they share one signing key kept in the Actions cache,
-so a newer APK installs over the old one and keeps the app's days. GitHub
-removes a cache nobody uses for seven days, so the "Keep the Android signing
-key" workflow (`signing-key.yml`) restores it every day and fails if it is
-gone; GitHub emails that failure to whoever last changed the workflow's
-schedule, and turns scheduled workflows off after 60 days without repository
-activity (turn it back on in the Actions tab). On `main`, CI fails when the
-APK is not signed with the release key (SHA-256 `7315a93d…cc4f`, pinned in
-`ci.yml` and `release.yml`), which also keeps a newly made key out of the
-cache; other branches only warn. The job prints the key's SHA-256 ("Check
-the APK's signing key") and warns when it had to make a new one. APKs built
+To install on Android without a store, download
+`FlappedEar-Telemetry-<version>-android.apk` from the latest
+[release](https://github.com/FlappedEar/Telemetry/releases) and install it (allow
+installs from the browser or file manager). Releases share one signing key, so a
+newer APK installs over the old one and keeps the app's days. Pull request and
+`main` CI builds are signed with a throwaway key per run (the artifact
+`flappedear-telemetry-android-<commit>`): they install, but not over a released
+app. The release key is only a repository secret, used by the release workflow's
+signing job after CI is green on the exact commit; see
+[docs/android-signing-key-backup.md](docs/android-signing-key-backup.md). APKs built
 before 2026-10-03 were each signed with a different key and do not update;
 uninstall such a build once before installing a newer one.
-
-If the cache is lost anyway, the key is restored from the repository secret
-`ANDROID_DEBUG_KEYSTORE_BASE64` by `ci.yml`, `release.yml` and `signing-key.yml`
-(the pinned certificate is still checked). How to create that backup once:
-[docs/android-signing-key-backup.md](docs/android-signing-key-backup.md).
 
 ### Measuring a day on the phone
 

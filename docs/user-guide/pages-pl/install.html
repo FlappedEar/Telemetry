@@ -17,8 +17,8 @@
   <li>Otwórz pobrany plik. Jeśli Android o to poprosi, zezwól na instalowanie aplikacji z tego źródła, a następnie wybierz <strong>Zainstaluj</strong>. Jeśli Play Protect wyświetli ostrzeżenie dotyczące nieznanej aplikacji, wybierz <strong>Zainstaluj mimo to</strong>.</li>
   <li>Uruchom <strong>FlappedEar Telemetry</strong>. Aplikacja otworzy ekran <strong>Start</strong>.</li>
 </ol>
-<div class="tip"><p>Wydania oraz kompilacje z gałęzi <code>main</code> są podpisane tym samym kluczem, dlatego nowszą wersję można zainstalować na poprzedniej bez usuwania zapisanych dni.</p></div>
-<p>Jeśli potrzebujesz wersji nowszej niż ostatnie wydanie, na komputerze zalogowanym do GitHuba otwórz najnowsze zakończone powodzeniem uruchomienie workflow CI dla <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">gałęzi main</a> i pobierz artefakt <code>flappedear-telemetry-android-&lt;commit&gt;</code>. W archiwum ZIP znajduje się plik <code>app-release.apk</code>. Kompilacje z pull requestów służą wyłącznie do testów.</p>
+<div class="tip"><p>Wszystkie wydania są podpisane tym samym kluczem, dlatego nowszą wersję można zainstalować na poprzedniej bez usuwania zapisanych dni.</p></div>
+<p>Kompilacje z <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">gałęzi main</a> i z pull requestów (artefakt <code>flappedear-telemetry-android-&lt;commit&gt;</code> z uruchomienia CI, w archiwum ZIP znajduje się plik <code>app-release.apk</code>) służą wyłącznie do testów. Każda jest podpisana własnym, jednorazowym kluczem, dlatego Android nie zainstaluje jej na wydaniu. Aby zachować zapisane dni, instaluj wyłącznie wydania.</p>
 <div class="note"><p>Jeśli Android odmawia aktualizacji, informując, że aplikacja „nie jest zainstalowana” albo że podpis jest inny, na razie jej nie odinstalowuj. Odinstalowanie usuwa dni przechowywane wewnątrz aplikacji. Najpierw wyeksportuj lub przenieś je w bezpieczne miejsce.</p></div>
 
 <h2 id="mac">macOS</h2>
