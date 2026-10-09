@@ -31,6 +31,24 @@ ApprovedSegmentation dayRunApprovedSegmentation(
   return ApprovedSegmentation(trackConfigurationReference: configuration);
 }
 
+/// How many stored segments the day keeps that no run uses: each is saved
+/// under a route group the run no longer belongs to (FET-267). A group that
+/// merged into another, or split, gets a new id, and the corners kept under
+/// the old one are left in the document, unused, until the driver sets the
+/// corners again.
+int dayUnusedStoredSegments(DayAnalysis analysis, Iterable<Object?> documentRuns) {
+  var unused = 0;
+  for (final value in documentRuns) {
+    final run = _object(value);
+    final id = run?['id'];
+    if (run == null || id is! String) continue;
+    final configuration = analysis.configurations[id]?.compatibilityGroupId;
+    if (configuration == null) continue;
+    unused += approvedSegmentation(run['trackSegments'], configuration).otherConfigurationSegments;
+  }
+  return unused;
+}
+
 /// The segments laps [a] and [b] are compared on. With [theoreticalBest]
 /// (the comparison was opened from it) and both laps in its group, its
 /// segments are used when the laps' own differ.

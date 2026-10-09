@@ -2857,6 +2857,10 @@ final class DayResultsController extends ChangeNotifier {
   // The document's runs with the unsaved segment edits.
   List<Object?> get _documentRuns => _segmentEdits.applyTo(_savedRuns);
 
+  /// Stored corners no run uses because its route group changed (FET-267).
+  int get unusedStoredSegments =>
+      dayUnusedStoredSegments(_analysis, _documentRuns);
+
   /// Whether an edit of the segments can be undone or redone.
   bool get canUndoSegmentEdit => _segmentEdits.canUndo;
   bool get canRedoSegmentEdit => _segmentEdits.canRedo;

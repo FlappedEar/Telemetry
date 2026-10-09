@@ -1000,6 +1000,7 @@
   "segmentReviewUndo": "Cofnij",
   "segmentReviewRedo": "Ponów",
   "segmentReviewIntro": "Odcinki są zatwierdzane automatycznie, więc ten przegląd jest opcjonalny. Odrzucone propozycje nie zostaną uwzględnione po wybraniu „Zatwierdź wszystkie”. Informacja o odrzuceniu jest zapisywana wraz z dniem.",
+  "segmentReviewUnusedKept": "{count, plural, =1{1 zapisany odcinek nie jest używany: jego grupa trasy zmieniła się.} few{{count} zapisane odcinki nie są używane: ich grupa trasy zmieniła się.} many{{count} zapisanych odcinków nie jest używanych: ich grupa trasy zmieniła się.} other{{count} zapisanych odcinków nie jest używanych: ich grupa trasy zmieniła się.}}",
   "segmentReviewSummary": "{count, plural, =1{1 propozycja z {lap}} few{{count} propozycje z {lap}} many{{count} propozycji z {lap}} other{{count} propozycji z {lap}}}",
   "segmentReviewApproveAll": "Zatwierdź wszystkie",
   "segmentReviewRecompute": "Przelicz",

@@ -6149,6 +6149,12 @@ abstract class AppLocalizations {
   /// **'Segments are approved automatically, so this review is optional. A rejected proposal stays out of Approve all and is saved with the day.'**
   String get segmentReviewIntro;
 
+  /// Shown on the segment review when corners saved under an old route group no longer apply.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 saved segment is not used: its route group changed.} other{{count} saved segments are not used: their route group changed.}}'**
+  String segmentReviewUnusedKept(int count);
+
   /// How many proposals there are and the lap they were made from.
   ///
   /// In en, this message translates to:

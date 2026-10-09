@@ -96,6 +96,7 @@ void main() {
         analysis: outcome.analysis!,
       );
       await openReview(tester, controller);
+      expect(find.byKey(const ValueKey('reviewUnusedKept')), findsNothing);
 
       final result = controller.theoreticalBest!;
       final review = controller.segmentReview!;
@@ -392,6 +393,66 @@ void main() {
     await recovered.requestSegmentReview();
     expect(recovered.segmentReviewItems[0].state, SegmentReviewState.rejected);
     controller.dispose();
+    recovered.dispose();
+  });
+
+  testWidgets('segments saved under another route group are reported', (
+    tester,
+  ) async {
+    final outcome = importDay();
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final store = FileRecoveryStore(
+      '${directory.path}/support/day-recovery.json',
+    );
+    late DayResultsController first;
+    late DayResultsController recovered;
+    late int moved;
+    await tester.runAsync(() async {
+      first = DayResultsController(
+        runs: outcome.runs,
+        analysis: outcome.analysis!,
+        recovery: store,
+      );
+      await first.requestTheoreticalBest();
+      expect(
+        first.removeSegment(
+          first.theoreticalBest!.approvedSegment(0)!['id']! as String,
+        ),
+        isEmpty,
+      );
+      expect(first.unusedStoredSegments, 0);
+      await first.flushRecovery();
+      final kept = (await store.load())!;
+
+      // The group the segments were saved under no longer exists: they are
+      // in the document, but no run uses them (FET-267).
+      final old = 'compatibility-v1:${'a' * 64}';
+      moved = 0;
+      for (final run
+          in ((kept.document['event'] as Map<String, Object?>)['runs'] as List)
+              .cast<Map<String, Object?>>()) {
+        for (final segment
+            in ((run['trackSegments'] as List?) ?? const [])
+                .cast<Map<String, Object?>>()) {
+          segment['trackConfigurationReference'] = old;
+          ++moved;
+        }
+      }
+      expect(moved, greaterThan(0));
+      recovered = DayResultsController.recovered(openRecoveredDay(kept), kept);
+      expect(recovered.unusedStoredSegments, moved);
+    });
+    await tester.pumpWidget(
+      TelemetryApp(home: SegmentReviewPage(controller: recovered)),
+    );
+    await tester.runAsync(() async {
+      await recovered.requestTheoreticalBest();
+      await recovered.requestSegmentReview();
+    });
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('reviewUnusedKept')), findsOneWidget);
+    first.dispose();
     recovered.dispose();
   });
 

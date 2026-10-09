@@ -4159,6 +4159,23 @@ class AppLocalizationsPl extends AppLocalizations {
       'Odcinki są zatwierdzane automatycznie, więc ten przegląd jest opcjonalny. Odrzucone propozycje nie zostaną uwzględnione po wybraniu „Zatwierdź wszystkie”. Informacja o odrzuceniu jest zapisywana wraz z dniem.';
 
   @override
+  String segmentReviewUnusedKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count zapisanych odcinków nie jest używanych: ich grupa trasy zmieniła się.',
+      many:
+          '$count zapisanych odcinków nie jest używanych: ich grupa trasy zmieniła się.',
+      few:
+          '$count zapisane odcinki nie są używane: ich grupa trasy zmieniła się.',
+      one:
+          '1 zapisany odcinek nie jest używany: jego grupa trasy zmieniła się.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String segmentReviewSummary(int count, String lap) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
