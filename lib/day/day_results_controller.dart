@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:telemetry_core/telemetry_core.dart';
@@ -14,6 +12,7 @@ import 'day_context.dart';
 import 'coach_job.dart';
 import 'day_weather.dart';
 import 'fusion_jobs.dart';
+import 'latest_job.dart';
 import 'recovery_store.dart';
 import 'reference_lap.dart' show disposeReferenceLapOf;
 import 'recovery_writes.dart';
@@ -37,44 +36,17 @@ typedef DocumentWriter = Future<void> Function(
   Map<String, Object?> document,
 );
 
-/// Runs a theoretical-best calculation. Replaced in widget tests, which run
-/// it on the test's own thread.
-typedef TheoreticalBestRunner = Future<DayTheoreticalBest> Function(
-  DayTheoreticalBest Function() job,
-);
-
-/// In a background isolate, or directly under `flutter test`.
-Future<DayTheoreticalBest> defaultTheoreticalBestRunner(
-  DayTheoreticalBest Function() job,
-) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
-    ? Future.microtask(job)
-    : Isolate.run(job);
+/// Runs a theoretical-best calculation in the background; replaced in
+/// widget tests, which run it on the test's own thread.
+typedef TheoreticalBestRunner = CancellableRunner<DayTheoreticalBest>;
 
 /// Computes the segment proposals the review shows. Replaced in widget
 /// tests like [TheoreticalBestRunner].
-typedef SegmentReviewRunner = Future<DayProposalReview> Function(
-  DayProposalReview Function() job,
-);
+typedef SegmentReviewRunner = CancellableRunner<DayProposalReview>;
 
-/// In a background isolate, or directly under `flutter test`.
-Future<DayProposalReview> defaultSegmentReviewRunner(
-  DayProposalReview Function() job,
-) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
-    ? Future.microtask(job)
-    : Isolate.run(job);
-
-/// Summarizes the day's recorded channels. Replaced in widget tests, which
-/// run it on the test's own thread.
-typedef ChannelSummariesRunner = Future<DayChannelSummaries> Function(
-  DayChannelSummaries Function() job,
-);
-
-/// In a background isolate, or directly under `flutter test`.
-Future<DayChannelSummaries> defaultChannelSummariesRunner(
-  DayChannelSummaries Function() job,
-) => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')
-    ? Future.microtask(job)
-    : Isolate.run(job);
+/// Summarizes the day's recorded channels. Replaced in widget tests like
+/// [TheoreticalBestRunner].
+typedef ChannelSummariesRunner = CancellableRunner<DayChannelSummaries>;
 
 /// The reason of a run's fusion when aligning its new recording failed
 /// (the job stopped with an error): the recording stays saved, and the day
@@ -153,14 +125,18 @@ final class DayResultsController extends ChangeNotifier {
          slots: fusionSlots,
        ),
        _coachJob = LatestCoachJob(coachRunner ?? defaultCoachRunner),
-       _segmentReviewRunner = segmentReviewRunner ?? defaultSegmentReviewRunner,
+       _segmentReviewLatest = LatestJob(
+         segmentReviewRunner ?? backgroundRunner<DayProposalReview>,
+       ),
        _appender = appender ?? const IsolateDayAppender(),
        _preparer = preparer ?? const IsolateImportPreparer(),
        diagnostics = diagnostics ?? appDiagnostics,
-       _channelSummariesRunner =
-           channelSummariesRunner ?? defaultChannelSummariesRunner,
-       _theoreticalBestRunner =
-           theoreticalBestRunner ?? defaultTheoreticalBestRunner,
+       _channelSummariesLatest = LatestJob(
+         channelSummariesRunner ?? backgroundRunner<DayChannelSummaries>,
+       ),
+       _theoreticalBestLatest = LatestJob(
+         theoreticalBestRunner ?? backgroundRunner<DayTheoreticalBest>,
+       ),
        _analysis = analysis,
        _groupId = analysis.chosenGroupId,
        eventId = eventId ?? newEventId(),
@@ -505,6 +481,7 @@ final class DayResultsController extends ChangeNotifier {
     _comparisons.clear();
     // A review on its way was measured in the old unit.
     ++_segmentReviewGeneration;
+    _segmentReviewLatest.cancel();
     _segmentReviewLoading = false;
     _segmentReviewFor = null;
     _resetTheoreticalBest();
@@ -1228,11 +1205,11 @@ final class DayResultsController extends ChangeNotifier {
   /// The user's unsaved corrections to the segments.
   final DaySegmentEdits _segmentEdits = DaySegmentEdits();
 
-  final TheoreticalBestRunner _theoreticalBestRunner;
+  final LatestJob<DayTheoreticalBest> _theoreticalBestLatest;
   // The coach's plan being prepared, stopped when the day it is for
   // changes or the day closes.
   final LatestCoachJob _coachJob;
-  final SegmentReviewRunner _segmentReviewRunner;
+  final LatestJob<DayProposalReview> _segmentReviewLatest;
   DayProposalReview? _segmentReview;
   bool _segmentReviewLoading = false;
   int _segmentReviewGeneration = 0;
@@ -2455,16 +2432,17 @@ final class DayResultsController extends ChangeNotifier {
   // inputs.
   // With [remeasure], segments that cannot time the best lap are measured
   // again on it (remeasureDaySegments).
-  static DayTheoreticalBest Function() _theoreticalBestJob(
+  static CancellableJob<DayTheoreticalBest> _theoreticalBestJob(
     DayAnalysis analysis,
     Map<String, OutingRun> runs,
     List<Object?> documentRuns, {
     bool remeasure = false,
-  }) => () {
+  }) => (cancelled) {
     final result = dayTheoreticalBest(
       analysis,
       runs,
       documentRuns: documentRuns,
+      cancelled: cancelled,
     );
     if (!remeasure) return result;
     return remeasureDaySegments(
@@ -2472,6 +2450,7 @@ final class DayResultsController extends ChangeNotifier {
           runs,
           result,
           documentRuns: documentRuns,
+          cancelled: cancelled,
         ) ??
         result;
   };
@@ -2494,7 +2473,8 @@ final class DayResultsController extends ChangeNotifier {
     DayTheoreticalBest result;
     final clock = Stopwatch()..start();
     try {
-      result = await _theoreticalBestRunner(
+      // A calculation still running for the day as it was is stopped.
+      final done = await _theoreticalBestLatest.run(
         _theoreticalBestJob(
           _analysis,
           outingRuns(_unitRuns),
@@ -2502,6 +2482,8 @@ final class DayResultsController extends ChangeNotifier {
           remeasure: remeasure,
         ),
       );
+      if (done == null) return;
+      result = done;
       diagnostics.recordStep(DiagnosticSteps.theoreticalBest, clock.elapsed);
     } on Object catch (error) {
       result = DayTheoreticalBest(
@@ -2753,12 +2735,13 @@ final class DayResultsController extends ChangeNotifier {
   List<DayLapRow>? _rowsFor;
   Map<DayLapReference, DayLapRow> _rowsByReference = const {};
 
-  final ChannelSummariesRunner _channelSummariesRunner;
+  final LatestJob<DayChannelSummaries> _channelSummariesLatest;
   DayChannelSummaries? _channelSummaries;
   bool _channelSummariesLoading = false;
   int _channelSummariesGeneration = 0;
 
   void _resetChannelSummaries() {
+    _channelSummariesLatest.cancel();
     _channelSummaries = null;
     _channelSummariesLoading = false;
     ++_channelSummariesGeneration;
@@ -2770,11 +2753,11 @@ final class DayResultsController extends ChangeNotifier {
   DayChannelSummaries? get channelSummaries => _channelSummaries;
   bool get channelSummariesLoading => _channelSummariesLoading;
 
-  static DayChannelSummaries Function() _channelSummariesJob(
+  static CancellableJob<DayChannelSummaries> _channelSummariesJob(
     List<DayLapRow> rows,
     Map<String, TelemetrySession?> sessions,
   ) =>
-      () => summarizeDayChannels(rows, sessions);
+      (cancelled) => summarizeDayChannels(rows, sessions, cancelled: cancelled);
 
   /// Summarizes the recorded channels of every run in the background.
   Future<void> requestChannelSummaries() async {
@@ -2785,11 +2768,13 @@ final class DayResultsController extends ChangeNotifier {
     DayChannelSummaries result;
     final clock = Stopwatch()..start();
     try {
-      result = await _channelSummariesRunner(
+      final done = await _channelSummariesLatest.run(
         _channelSummariesJob(_analysis.rows, {
           for (final named in _analysisRuns) named.run.id: named.run.telemetry,
         }),
       );
+      if (done == null) return;
+      result = done;
       diagnostics.recordStep(DiagnosticSteps.channelSummaries, clock.elapsed);
     } on Object catch (error) {
       result = DayChannelSummaries(error: '$error');
@@ -2848,11 +2833,16 @@ final class DayResultsController extends ChangeNotifier {
   void _resetTheoreticalBest() {
     _theoreticalBest = null;
     _theoreticalBestLoading = false;
+    _theoreticalBestLatest.cancel();
     _coach = null;
     _coachError = '';
     _coachLoading = false;
     _coachJob.cancel();
     ++_theoreticalBestGeneration;
+    // The review is of the proposals for this best's segments.
+    _segmentReviewLatest.cancel();
+    ++_segmentReviewGeneration;
+    _segmentReviewLoading = false;
   }
 
   // The runs of the document the day was last saved or opened as.
@@ -3021,7 +3011,11 @@ final class DayResultsController extends ChangeNotifier {
     final run = lap == null ? null : outingRuns(_unitRuns)[lap.runId];
     DayProposalReview review;
     try {
-      review = await _segmentReviewRunner(_segmentReviewJob(result, lap, run));
+      final done = await _segmentReviewLatest.run(
+        _segmentReviewJob(result, lap, run),
+      );
+      if (done == null) return;
+      review = done;
     } on Object catch (error) {
       review = DayProposalReview(
         groupId: result.groupId,
@@ -3039,7 +3033,7 @@ final class DayResultsController extends ChangeNotifier {
 
   // Built outside the controller so the isolate's closure holds only its
   // inputs.
-  static DayProposalReview Function() _segmentReviewJob(
+  static CancellableJob<DayProposalReview> _segmentReviewJob(
     DayTheoreticalBest result,
     DayLapRow? lap,
     OutingRun? run,
@@ -3050,7 +3044,8 @@ final class DayResultsController extends ChangeNotifier {
       state: result.state,
       segmentRunId: result.segmentRunId,
     );
-    return () => dayProposalReview(shell, lap, run);
+    return (cancelled) =>
+        dayProposalReview(shell, lap, run, cancelled: cancelled);
   }
 
   /// Computes the proposals again (Overlays' "Recompute proposals").
@@ -3196,6 +3191,9 @@ final class DayResultsController extends ChangeNotifier {
     // beyond it.
     disposeReferenceLapOf(this);
     _coachJob.cancel();
+    _theoreticalBestLatest.cancel();
+    _channelSummariesLatest.cancel();
+    _segmentReviewLatest.cancel();
     speedUnitSetting.removeListener(_speedUnitAssumed);
     weather.dispose();
     // Alignments not started are dropped; running ones are stopped.

@@ -12,6 +12,7 @@ import 'package:telemetry/main.dart';
 
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 void main() {
   late Directory directory;
@@ -34,10 +35,10 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      channelSummariesRunner: (job) async {
+      channelSummariesRunner: asyncRunner((job) async {
         if (fail) throw const BackgroundTaskFailed('The work stopped.');
         return job();
-      },
+      }),
     );
     await tester.binding.setSurfaceSize(const Size(412, 915));
     addTearDown(() => tester.binding.setSurfaceSize(null));

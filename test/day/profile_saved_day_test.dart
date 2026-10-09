@@ -12,6 +12,7 @@ import 'package:telemetry/main.dart';
 import 'package:telemetry/profile/profile_library.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
+import '../support/inline_runners.dart';
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
 
 final class _Library extends ProfileLibrary {
@@ -117,7 +118,7 @@ void main() {
         runs: day.runs,
         analysis: day.analysis!,
         writer: (path, document) async {},
-        theoreticalBestRunner: (job) async => job(),
+        theoreticalBestRunner: asyncRunner((job) async => job()),
       );
       addTearDown(controller.dispose);
       final path = '${directory.path}/Day.fetproject';
@@ -152,7 +153,7 @@ void main() {
         runs: day.runs,
         analysis: day.analysis!,
         writer: (path, document) => gate.future,
-        theoreticalBestRunner: (job) async => job(),
+        theoreticalBestRunner: asyncRunner((job) async => job()),
       );
       addTearDown(controller.dispose);
       final saving = controller.save('${directory.path}/Day.fetproject');
