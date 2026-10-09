@@ -1,6 +1,7 @@
 name: Release
 
-# Publishes a GitHub Release with the Android APK and the macOS app.
+# Publishes a GitHub Release with the Android APK, the macOS app and the
+# Windows app (a zip and an NSIS installer).
 #
 # Start it either way:
 # - push a tag such as v0.1.0 on main, or
@@ -188,12 +189,76 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  windows:
+    name: Windows app
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-flutter
+      - run: flutter pub get
+      # Not code-signed (no certificate yet): Windows SmartScreen warns on the
+      # first start, which the user guide's Install page explains.
+      - name: Build the app (release)
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD: ${{ needs.version.outputs.build }}
+        run: |
+          [ -n "$MAPTILER_KEY" ] || echo "::warning::MAPTILER_KEY is not set; this app shows street tiles only."
+          flutter build windows --release --build-name="$VERSION" --build-number="$BUILD" \
+            --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      # The Visual C++ runtime goes next to the exe (as Flutter's Windows
+      # guide advises), so the app starts on a PC that never installed it.
+      - name: Zip the app
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          release=build/windows/x64/runner/Release
+          [ -f "$release/telemetry.exe" ] || { echo "::error::$release/telemetry.exe was not built."; exit 1; }
+          for dll in msvcp140.dll vcruntime140.dll vcruntime140_1.dll; do
+            cp "/c/Windows/System32/$dll" "$release/" \
+              || { echo "::error::$dll was not found on the runner."; exit 1; }
+          done
+          name="FlappedEar-Telemetry-$VERSION-windows"
+          mkdir -p dist "stage/$name"
+          cp -r "$release"/. "stage/$name/"
+          (cd stage && 7z a -tzip -bd "../dist/$name.zip" "$name" >/dev/null)
+      # The same files as an installer (windows/installer/installer.nsi):
+      # per-user, no administrator rights, Start menu entry and uninstaller.
+      - name: Build the installer (NSIS)
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          makensis=$(command -v makensis || true)
+          [ -n "$makensis" ] || makensis="/c/Program Files (x86)/NSIS/makensis.exe"
+          if [ ! -x "$makensis" ]; then
+            choco install nsis -y --no-progress
+            makensis="/c/Program Files (x86)/NSIS/makensis.exe"
+          fi
+          # -D (not /D): Git Bash would rewrite a leading slash as a path.
+          "$makensis" -V2 -DVERSION="$VERSION" \
+            -DSOURCE_DIR="$(cygpath -w "$PWD/build/windows/x64/runner/Release")" \
+            -DOUTFILE="$(cygpath -w "$PWD/dist/FlappedEar-Telemetry-$VERSION-windows-setup.exe")" \
+            windows/installer/installer.nsi
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
     name: Publish the release
-    needs: [version, android, macos]
+    needs: [version, android, macos, windows]
     # Android comes first: the release goes out with the APK even when the
-    # Mac build fails. Re-running the failed jobs then adds the Mac zip to the
-    # existing release and refreshes SHA256SUMS.txt.
+    # Mac or Windows build fails. Re-running the failed jobs then adds the
+    # missing zip to the existing release and refreshes SHA256SUMS.txt.
     if: ${{ !cancelled() && needs.android.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -211,10 +276,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
+          MACOS_RESULT: ${{ needs.macos.result }}
+          WINDOWS_RESULT: ${{ needs.windows.result }}
         run: |
-          if [ "${{ needs.macos.result }}" != success ]; then
-            echo "::warning::The macOS build did not succeed; the release has the Android APK only."
-          fi
+          [ "$MACOS_RESULT" = success ] || echo "::warning::The macOS build did not succeed; the release lacks the Mac zip."
+          [ "$WINDOWS_RESULT" = success ] || echo "::warning::The Windows build did not succeed; the release lacks the Windows zip."
           tag="v$VERSION"
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             # A re-run: keep the assets already published that this run did
