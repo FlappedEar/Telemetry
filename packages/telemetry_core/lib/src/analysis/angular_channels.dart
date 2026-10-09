@@ -4,6 +4,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import '../channel_units.dart';
 import '../telemetry_session.dart';
 
 // A compass name with at most a source tag or a degrees unit after it, so
@@ -17,10 +18,14 @@ final RegExp _angularName = RegExp(
 const Set<String> _degreeUnits = {'', 'deg', 'degree', 'degrees', '°'};
 
 /// Whether [channel] is a compass direction in degrees (a heading, course or
-/// bearing), whose values wrap at 360.
-bool isAngularChannel(TelemetryChannel channel) =>
-    _angularName.hasMatch(channel.name.trim()) &&
-    _degreeUnits.contains(channel.unit.trim().toLowerCase());
+/// bearing), whose values wrap at 360. With [session], the unit is the one the
+/// recording declares, a VBO's on its `[header]` line included
+/// ([declaredChannelUnit]); without it, the channel's own unit.
+bool isAngularChannel(TelemetryChannel channel, [TelemetrySession? session]) {
+  if (!_angularName.hasMatch(channel.name.trim())) return false;
+  final unit = session == null ? channel.unit : declaredChannelUnit(session, channel.name);
+  return _degreeUnits.contains(unit.trim().toLowerCase());
+}
 
 /// [value] (degrees) as a compass direction in 0 up to 360.
 double normalizeDegrees(double value) {

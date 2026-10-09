@@ -328,6 +328,21 @@ void main() {
       expect(isAngularChannel(channel('heading', 'deg')), isTrue);
       expect(isAngularChannel(channel('heading', '°')), isTrue);
       expect(isAngularChannel(channel('heading', 'rad')), isFalse);
+
+      // A unit declared only on a VBO header line is the unit (FET-296).
+      TelemetrySession declaring(String line) => TelemetrySession(
+        duration: 0,
+        startTime: 0,
+        metadata: {'header.1': line},
+        channels: const {},
+        aliases: const {},
+        warnings: const [],
+        timingGates: const [],
+        sampleCount: 0,
+      );
+      expect(isAngularChannel(channel('heading'), declaring('heading rad')), isFalse);
+      expect(isAngularChannel(channel('heading'), declaring('heading deg')), isTrue);
+      expect(isAngularChannel(channel('heading'), declaring('speed km/h')), isTrue);
       for (final name in [
         'lean_angle-calc',
         'heart_rate-hrm',
