@@ -13,7 +13,7 @@ java_home="${JAVA_HOME_21_X64:-$JAVA_HOME}"
 JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH" "$apksigner" sign \
   --ks "$keystore" --ks-key-alias androiddebugkey \
   --ks-pass pass:android --key-pass pass:android \
-  --v4-signing-enabled false \
+  --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \
   --out "$out" "$in"
 expected=$("$here/keystore-cert.sh" "$keystore") || { echo "::error::Cannot read the keystore." >&2; exit 1; }
 actual=$("$here/apk-cert.sh" "$out")
@@ -21,4 +21,13 @@ actual=$("$here/apk-cert.sh" "$out")
   echo "::error::The signed APK has certificate '$actual', not the key's $expected." >&2
   exit 1
 }
+# Android 8 (minSdk 26) needs the v2 scheme; v3 is for Android 9 and later.
+verbose=$(JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH" "$apksigner" verify -v "$out" 2>&1) || true
+printf '%s\n' "$verbose" | grep -E '^Verified using v[0-9.]+ scheme'
+for scheme in v2 v3; do
+  printf '%s\n' "$verbose" | grep -Eq "^Verified using $scheme scheme.*: true" || {
+    echo "::error::The signed APK is not verified with the $scheme scheme." >&2
+    exit 1
+  }
+done
 echo "Signed with certificate SHA-256: $actual"

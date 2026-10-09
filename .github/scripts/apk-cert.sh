@@ -9,7 +9,7 @@ apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
 java_home="${JAVA_HOME_21_X64:-$JAVA_HOME}"
 certs=$(JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH" "$apksigner" verify --print-certs "$apk" 2>&1) || true
 cert=$(printf '%s\n' "$certs" \
-  | sed -n -E 's/^(Signer #1|V[0-9]+ Signer):? certificate SHA-256 digest: //p' \
+  | sed -n -E 's/^(Signer #1|V[0-9.]+ Signer):? certificate SHA-256 digest: //p' \
   | head -n 1)
 if [ -z "$cert" ]; then
   printf '%s\n' "$certs" >&2
