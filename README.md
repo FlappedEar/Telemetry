@@ -27,8 +27,8 @@ lateral and longitudinal G, throttle or brake when recorded, or any other
 channel, up to four) are charted on a time axis: drag across a chart to move a
 cursor, shown on the map, and zoom around it. **Compare with…** (on a lap, or
 **Compare two laps** above the lap list) puts two laps of one group side by
-side on a shared track-position axis, as FlappedEar Overlays does: A green, B
-orange, the Δ time (A − B, positive when A is behind) and the channels of both
+side on a shared track-position axis, as FlappedEar Overlays does: A amber, B
+blue, the Δ time (A − B, positive when A is behind) and the channels of both
 laps, braking drawn upward, and both lines on one map over street or satellite
 tiles, with the zoom window highlighted on lap B and a dot per lap at the
 cursor, optionally coloured by
@@ -61,7 +61,7 @@ best (the fastest time of each segment) and the time available; a loss map,
 the best lap's trace with each segment coloured by the time the chosen lap
 loses there to the fastest time, with the segments listed largest loss first;
 and a sector table of every lap by segment, the fastest time of each segment
-highlighted. Tap a lap in the table to show its losses on the map. Each corner in the loss list also shows the lap's minimum speed and braking point against the best lap; tap it for entry, minimum and exit speed, braking point, braking time, peak deceleration and throttle pickup against the best lap and the best of all laps, measured and inferred values labelled. **Edit segments** shows the best lap's map with the segment boundaries and the segments in lap order: tap one to rename it, change its type, move its start or end in metres, split it, merge it with the next one or remove it, with undo and redo, or **Restore automatic**; every change times the laps again. Corrections are saved with the day as its approved segments and are never replaced by automatic ones. **Time losses** ranks the largest losses of each session's best lap (or of every lap) against the best lap, one segment at a time; tap one for both laps' times through that segment and the segment on the map. **Consistency** gives the typical lap and segment time (median) and the spread (interquartile range) over the day and per session, or says that at least three laps are needed. **Progression** lists the sessions in recording order with their best and typical lap and the best against the session before, and each segment's typical time per session; tap a cell for its laps. **Where to look next** picks at most three areas from the measured losses, sector gaps and corner spreads: each shows what was measured apart from a hypothesis to check, never a cause or an instruction; tap one to compare its two laps (A green, B orange) through the segment. **Car** summarizes each session's recorded temperatures (mean, range, coverage, implausible readings left out, continuously recorded cooling) and how each moved with lap time over the compared laps, saying when there are too few laps or the day's progression could explain it; **Driver** shows each session's recorded heart rate and each lap's mean. **Day report** (in the toolbar) presents the day's results as calculated, each leading to its lap, and says exactly why one is missing. Every map
+highlighted. Tap a lap in the table to show its losses on the map. Each corner in the loss list also shows the lap's minimum speed and braking point against the best lap; tap it for entry, minimum and exit speed, braking point, braking time, peak deceleration and throttle pickup against the best lap and the best of all laps, measured and inferred values labelled. **Edit segments** shows the best lap's map with the segment boundaries and the segments in lap order: tap one to rename it, change its type, move its start or end in metres, split it, merge it with the next one or remove it, with undo and redo, or **Restore automatic**; every change times the laps again. Corrections are saved with the day as its approved segments and are never replaced by automatic ones. **Time losses** ranks the largest losses of each session's best lap (or of every lap) against the best lap, one segment at a time; tap one for both laps' times through that segment and the segment on the map. **Consistency** gives the typical lap and segment time (median) and the spread (interquartile range) over the day and per session, or says that at least three laps are needed. **Progression** lists the sessions in recording order with their best and typical lap and the best against the session before, and each segment's typical time per session; tap a cell for its laps. **Where to look next** picks at most three areas from the measured losses, sector gaps and corner spreads: each shows what was measured apart from a hypothesis to check, never a cause or an instruction; tap one to compare its two laps (A amber, B blue) through the segment. **Car** summarizes each session's recorded temperatures (mean, range, coverage, implausible readings left out, continuously recorded cooling) and how each moved with lap time over the compared laps, saying when there are too few laps or the day's progression could explain it; **Driver** shows each session's recorded heart rate and each lap's mean. **Day report** (in the toolbar) presents the day's results as calculated, each leading to its lap, and says exactly why one is missing. Every map
 draws the trace over a real map: OpenStreetMap street tiles, or MapTiler
 satellite imagery when the build has a key; the layers button switches
 between them, on every map at once. Tiles already seen stay cached for the
@@ -185,20 +185,16 @@ on every screen at both text sizes (the Diagnostics menu entry too), the
 two-finger and double-tap gestures on the plain and tiled maps of a lap and a
 comparison, chart drags and back.
 
-To install on Android without a store, download the
-`flappedear-telemetry-android-<commit>` artifact from a CI run, unzip it and
-install `app-release.apk` (allow installs from the browser or file manager).
-Use builds from `main`: they share one signing key kept in the Actions cache,
-so a newer APK installs over the old one and keeps the app's days. GitHub
-removes a cache nobody uses for seven days, so the "Keep the Android signing
-key" workflow (`signing-key.yml`) restores it every day and fails if it is
-gone; GitHub emails that failure to whoever last changed the workflow's
-schedule, and turns scheduled workflows off after 60 days without repository
-activity (turn it back on in the Actions tab). On `main`, CI fails when the
-APK is not signed with the release key (SHA-256 `7315a93d…cc4f`, pinned in
-`ci.yml` and `release.yml`), which also keeps a newly made key out of the
-cache; other branches only warn. The job prints the key's SHA-256 ("Check
-the APK's signing key") and warns when it had to make a new one. APKs built
+To install on Android without a store, download
+`FlappedEar-Telemetry-<version>-android.apk` from the latest
+[release](https://github.com/FlappedEar/Telemetry/releases) and install it (allow
+installs from the browser or file manager). Releases share one signing key, so a
+newer APK installs over the old one and keeps the app's days. Pull request and
+`main` CI builds are signed with a throwaway key per run (the artifact
+`flappedear-telemetry-android-<commit>`): they install, but not over a released
+app. The release key is only a repository secret, used by the release workflow's
+signing job after CI is green on the exact commit; see
+[docs/android-signing-key-backup.md](docs/android-signing-key-backup.md). APKs built
 before 2026-10-03 were each signed with a different key and do not update;
 uninstall such a build once before installing a newer one.
 

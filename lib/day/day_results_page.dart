@@ -22,6 +22,7 @@ import '../profile/profile_library.dart';
 import '../settings_dialog.dart';
 import '../units.dart' show hideUnrankedLapsSetting;
 import 'background_task.dart';
+import 'best_phases_card.dart';
 import 'channel_cards.dart';
 import 'comparison_page.dart';
 import 'consistency_card.dart';
@@ -33,12 +34,14 @@ import 'focus_areas_card.dart';
 import 'fusion_panel.dart';
 import 'gg_envelope_card.dart';
 import 'grip_proxies_card.dart';
+import 'lap_styles_card.dart';
 import 'next_session_card.dart';
 import '../profile/skill_levels_card.dart';
 import 'lap_page.dart';
 import 'save_shortcuts.dart';
 import 'progression_card.dart';
 import 'recovery_store.dart';
+import 'profile_reference_store.dart';
 import 'reference_lap.dart';
 import 'reference_lap_page.dart';
 import 'reveal.dart';
@@ -169,9 +172,46 @@ class _DayResultsPageState extends State<DayResultsPage> {
   late final DayResultsController _controller = widget._create();
 
   // The day's reference lap (FET-175), kept apart from the day itself and
-  // with it while its pages come and go; disposed with the day.
-  ReferenceLapHolder get _reference =>
-      referenceLapOf(_controller, dayId: _controller.eventId);
+  // with it while its pages come and go; disposed with the day. Its choice
+  // is kept in the driver profile when the day is (FET-276).
+  ReferenceLapHolder get _reference {
+    final controller = _controller;
+    return referenceLapOf(
+      controller,
+      dayId: controller.eventId,
+      store: switch (widget.library) {
+        final library? => ProfileReferenceStore(
+          library,
+          // Closed over the day, not this page: the holder outlives it.
+          keepsDay: () {
+            final path = controller.documentPath;
+            return library.available && (path == null || library.holds(path));
+          },
+        ),
+        null => const UnsavedReferenceStore(),
+      },
+    );
+  }
+
+  /// Reads the reference kept for the day, once today's line is known (the
+  /// day is analysed after the page opens).
+  void _restoreReference() {
+    final reference = _reference;
+    if (reference.restoreTried || reference.state != ReferenceState.none) {
+      return;
+    }
+    if (referenceLine(_controller) case final line?) {
+      unawaited(reference.restore(line));
+    }
+  }
+
+  /// A reference chosen before the day was listed in the profile that it
+  /// had no room for when it was: said on the reference's keep state.
+  void _referenceDropped() {
+    final dropped = widget.library?.referenceDropped(_controller.eventId);
+    if (dropped != null) _reference.keepDropped(dropped.problem);
+  }
+
   bool _relinking = false;
 
   // The tab shown under the title: on a phone Overview, Laps, Compare or
@@ -234,12 +274,10 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _controller.addListener(_libraryChanged);
     _controller.weather.addListener(_weatherChanged);
     _startLibrary();
-    // A reference kept for the day, once a storage layer keeps one
-    // (FET-175); nothing is kept yet.
-    if (referenceLine(_controller) case final line?
-        when _reference.state == ReferenceState.none) {
-      unawaited(_reference.restore(line));
-    }
+    _controller.addListener(_restoreReference);
+    widget.library?.addListener(_referenceDropped);
+    // The reference kept for the day in the driver profile.
+    _restoreReference();
     // An addition made before the page opened, such as a shared recording
     // added to today's day, is reported once the page is shown.
     if (_controller.lastAddition != null) {
@@ -258,6 +296,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
     _retryTask?.cancel();
     _controller.removeListener(_reportAddition);
     _controller.removeListener(_libraryChanged);
+    _controller.removeListener(_restoreReference);
+    widget.library?.removeListener(_referenceDropped);
     _controller.weather.removeListener(_weatherChanged);
     _autosave?.cancel();
     _lifecycle.dispose();
@@ -717,9 +757,11 @@ class _DayResultsPageState extends State<DayResultsPage> {
   }) {
     final path = controller.documentPath;
     if (library == null || path == null || !library.holds(path)) return;
-    final best = controller.theoreticalBestLoading
-        ? null
-        : controller.theoreticalBest;
+    // What the file holds, not the live state, which can be edits ahead of
+    // it while a save runs (audit F09).
+    final saved = controller.savedDay;
+    if (saved == null) return;
+    final best = controller.savedTheoreticalBest;
     if (!force &&
         controller.saveCount == _recordedSaves &&
         (best == null || identical(best, _recordedBest))) {
@@ -733,12 +775,9 @@ class _DayResultsPageState extends State<DayResultsPage> {
       library.recordDay(
         eventId: controller.eventId,
         path: path,
-        name: controller.name,
-        analysis: controller.analysis,
-        recordings: {
-          for (final named in controller.runs)
-            named.run.id: controller.session(named.run.id),
-        },
+        name: saved.name,
+        analysis: saved.analysis,
+        recordings: saved.recordings,
         theoreticalBest: best,
         weather: weather,
         // The setups as saved: an edit not saved yet is not the driver's
@@ -746,10 +785,8 @@ class _DayResultsPageState extends State<DayResultsPage> {
         // not saved since gives none, so the profile keeps its own.
         setups: controller.setupsSaved
             ? {
-                for (final named in controller.runs)
-                  named.run.id: ProfileSetup.of(
-                    controller.savedRunSetup(named.run.id),
-                  ),
+                for (final id in saved.recordings.keys)
+                  id: ProfileSetup.of(controller.savedRunSetup(id)),
               }
             : null,
       ),
@@ -1839,6 +1876,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
         const SizedBox(height: 12),
         _theoreticalBest(path, wide),
         const SizedBox(height: 12),
+        BestPhasesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          sections: _controller.theoreticalBestLoading ? null : _sections(),
+        ),
+        const SizedBox(height: 12),
         TimeLossesCard(
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
@@ -1877,6 +1920,12 @@ class _DayResultsPageState extends State<DayResultsPage> {
         GripProxiesCard(
           result: _controller.theoreticalBest,
           loading: _controller.theoreticalBestLoading,
+        ),
+        const SizedBox(height: 12),
+        LapStylesCard(
+          result: _controller.theoreticalBest,
+          loading: _controller.theoreticalBestLoading,
+          onOpenLap: _open,
         ),
         // Only for a day kept in the library: a copy saved elsewhere
         // shares its event id.

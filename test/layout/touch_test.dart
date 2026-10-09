@@ -23,6 +23,7 @@ import '../day/blank_tiles.dart';
 import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 /// The phone and tablet sizes the owner uses at the track.
 const sizes = {
@@ -104,8 +105,8 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async => job(),
-      channelSummariesRunner: (job) async => job(),
+      theoreticalBestRunner: asyncRunner((job) async => job()),
+      channelSummariesRunner: asyncRunner((job) async => job()),
     );
     await controller.requestTheoreticalBest();
     await controller.requestChannelSummaries();

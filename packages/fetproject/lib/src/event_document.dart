@@ -85,7 +85,11 @@ Map<String, Object?> decodeFetproject(List<int> bytes) {
   }
   final Object? decoded;
   try {
-    decoded = qtJsonDecode(utf8.decode(bytes));
+    decoded = qtJsonDecode(utf8.decode(bytes), maxDepth: maximumJsonDepth);
+  } on QtJsonDepthException {
+    throw const FetprojectError(
+      'JSON nesting exceeds $maximumJsonDepth levels.',
+    );
   } on FormatException catch (error) {
     throw FetprojectError('The document is not valid JSON: ${error.message}');
   }

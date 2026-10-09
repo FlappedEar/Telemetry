@@ -1,0 +1,41 @@
+<!-- title: Lista okrążeń | nav: Lista okrążeń -->
+<h1 id="laps">Lista okrążeń</h1>
+<p class="lead">Sklasyfikowane okrążenia ze wszystkich sesji, w kolejności przejazdu. Na telefonie znajdziesz je w zakładce <strong>Okrążenia</strong> pod nazwą dnia.</p>
+
+<figure class="phone">
+  <img src="assets/screens/phone-laps.png" alt="Sekcja Okrążenia na telefonie: Pokaż 14 niesklasyfikowanych okrążeń nad sklasyfikowanymi okrążeniami każdej sesji, z czasami po prawej" width="412" height="915" loading="lazy">
+  <figcaption>Sekcja Okrążenia na ekranie wielkości Pixela.</figcaption>
+</figure>
+
+<h2 id="hidden">Okrążenia niesklasyfikowane</h2>
+<p>Okrążenia wyjazdowe i zjazdowe, fragmenty bez przejazdu przez linię startu/mety, okrążenia wykluczone przez Ciebie oraz okrążenia z problemami są domyślnie ukryte, dzięki czemu lista pokazuje tylko przejazdy uwzględniane w wynikach. Sesja bez sklasyfikowanego okrążenia pojawia się dopiero po pokazaniu takich okrążeń. <strong>Pokaż N niesklasyfikowanych okrążeń</strong> przywraca je na właściwe miejsca między pozostałymi przejazdami; <strong>Ukryj niesklasyfikowane okrążenia</strong> ponownie je chowa. Aplikacja pamięta ten wybór na urządzeniu. Ukrycie okrążeń wpływa tylko na listę — sam dzień, zapisany projekt i nagrania nadal zachowują wszystkie okrążenia. Jeśli żadne okrążenie dnia nie jest sklasyfikowane, lista pokazuje wszystkie.</p>
+
+<h2 id="row">Jak czytać wiersz</h2>
+<ul>
+  <li><strong>Tytuł</strong>: <em>Sesja 3 · OKR. 2</em>, albo <em>· OKR. WYJAZDOWE</em>, <em>· OKR. ZJAZDOWE</em>, <em>· NIEZNANE</em>.</li>
+  <li><strong>Kolor</strong>, zgodny z ekranem pomiaru czasu: fioletowa krawędź i fioletowy czas oznaczają najlepsze okrążenie dnia; zielona krawędź i zielony czas oznaczają najlepsze okrążenie danej sesji.</li>
+  <li><strong>Uwagi pod tytułem</strong>: <em>Najlepsze okrążenie dnia</em>, <em>Najlepsze okrążenie: Sesja N</em>, <em>Wykluczone: &lt;Twój powód&gt;</em>, <em>Niesklasyfikowane: &lt;powód&gt;</em>, <em>Bez pomiaru czasu</em> (okrążenia wyjazdowe i zjazdowe) albo <em>Brak przejazdu przez linię startu/mety</em>.</li>
+  <li><strong>Czas</strong> po prawej. Jest szary, jeśli okrążenie nie jest sklasyfikowane albo nie ma pomiaru czasu. Pod czasem każdego innego sklasyfikowanego okrążenia widać różnicę względem najlepszego okrążenia dnia, np. <em>+0.593 s</em>.</li>
+</ul>
+<p>Dotknij wiersza, aby otworzyć <a href="lap.html">okrążenie</a>.</p>
+
+<h2 id="not-ranked">Dlaczego okrążenie nie jest sklasyfikowane</h2>
+<table>
+  <tr><th>Pokazany powód</th><th>Znaczenie</th></tr>
+  <tr><td>Inna konfiguracja toru, Przeciwny kierunek, Inne bramki pomiaru czasu</td><td>Okrążenie przejechano na innej konfiguracji toru, w przeciwnym kierunku lub z inną linią startu/mety niż w aktualnie wyświetlanej grupie.</td></tr>
+  <tr><td>Konfiguracja toru do potwierdzenia, Kierunek do potwierdzenia, Nieustalone bramki pomiaru czasu</td><td>Aplikacja nie potrafiła ustalić tego automatycznie; ustaw odpowiednie wartości w sekcji <a href="day.html#circuits">Tory</a>.</td></tr>
+  <tr><td>Niepełne dane GPS, Nieprawidłowe dane GPS</td><td>W części okrążenia brakuje użytecznych danych GPS.</td></tr>
+  <tr><td>Okrążenie zjeżdża z trasy pozostałych okrążeń</td><td>Ślad wskazuje np. wyjazd poza tor, objazd albo przejazd aleją serwisową.</td></tr>
+  <tr><td>Czas lub długość okrążenia są niewiarygodne dla tego toru</td><td>Przejazd nie może być wiarygodnym pełnym okrążeniem: trwa krócej niż 3 s lub dłużej niż godzinę, jego ślad GPS ma mniej niż 200 m albo mniej niż 80% typowego okrążenia tej sesji lub innych sesji dnia na tej samej konfiguracji, albo średnia prędkość przekracza 360 km/h. Zwykle oznacza to fałszywe przecięcie linii startu/mety. Okrążenie pozostaje na liście, ale nie jest klasyfikowane i nie może zostać najlepszym okrążeniem.</td></tr>
+  <tr><td>Wykluczone przez użytkownika</td><td>Wykluczyłeś je ręcznie. Zobacz <a href="lap.html#exclude">Wykluczanie okrążenia</a>.</td></tr>
+  <tr><td>To nie jest pełne okrążenie z pomiarem czasu</td><td>Okrążenie wyjazdowe, zjazdowe albo niepełny fragment.</td></tr>
+  <tr><td>Źródło się zmieniło; wczytaj zapis ponownie</td><td>Plik źródłowy zmienił się od chwili zapisania dnia.</td></tr>
+</table>
+
+<h2 id="compare">Porównaj dwa okrążenia</h2>
+<p>Nad listą przycisk <strong>Porównaj dwa okrążenia</strong> prosi najpierw o wybór <strong>Okrążenia A</strong>, a następnie okrążenia, z którym ma zostać porównane. Pierwsza pozycja, <strong>Propozycja: najszybsze</strong>, wskazuje najlepsze okrążenie grupy (albo kolejne najszybsze, jeśli A jest już najlepsze). Zobacz <a href="compare.html">Porównanie okrążeń</a>.</p>
+<figure class="pair">
+  <img src="assets/screens/compare-pick-a.png" alt="Okno Okrążenie A z listą wszystkich sklasyfikowanych okrążeń i ich czasami" width="1280" height="800" loading="lazy">
+  <img src="assets/screens/compare-pick-b.png" alt="Okno Porównaj z, z pozycją Propozycja: najszybsze na górze" width="1280" height="800" loading="lazy">
+</figure>
+<p>Porównywać można wyłącznie sklasyfikowane okrążenia z tej samej grupy.</p>

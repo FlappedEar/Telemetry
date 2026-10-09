@@ -90,6 +90,7 @@ void main() {
     final rise = watch.rises.single;
     expect(rise.channel, 'oil');
     expect((rise.fromLap, rise.toLap, rise.from, rise.to), (2, 4, 104.0, 121.0));
+    expect((watch.temperatureFromLap, watch.temperatureToLap), (2, 4));
     expect(rise.rise, 17);
   });
 
@@ -138,6 +139,50 @@ void main() {
     expect(carWatch(_run(maxima: maxima, unit: '°C'))!.rises, hasLength(1));
     expect(carWatch(_run(maxima: maxima))!.rises, hasLength(1));
     expect(carWatchCelsiusIn(carWatchRiseCelsius, 'degF'), closeTo(14.4, 1e-9));
+  });
+
+  test('a rise is the same rise in °C, °F or K (FET-288)', () {
+    // 10 °C is 18 °F is 10 K; 7 °C is 12.6 °F is 7 K.
+    for (final (unit, rise, noted) in [
+      ('°C', 10.0, true),
+      ('°C', 7.0, false),
+      ('°F', 18.0, true),
+      ('°F', 12.6, false),
+      ('K', 10.0, true),
+      ('K', 7.0, false),
+    ]) {
+      final maxima = {
+        'oil': <double?>[200, 200 + rise / 2, 200 + rise],
+      };
+      expect(
+        carWatch(_run(maxima: maxima, unit: unit))!.rises,
+        hasLength(noted ? 1 : 0),
+        reason: '$unit $rise',
+      );
+    }
+    expect(carWatchCelsiusIn(carWatchRiseCelsius, 'K'), carWatchRiseCelsius);
+    final rise = carWatch(
+      _run(
+        maxima: {
+          'oil': <double?>[200, 209, 218],
+        },
+        unit: '°F',
+      ),
+    )!.rises.single;
+    expect(rise.riseCelsius, closeTo(10, 1e-9));
+  });
+
+  test('a temperature in a unit that is not known is not read as °C', () {
+    final watch = carWatch(
+      _run(
+        maxima: {
+          'oil': <double?>[200, 210, 220],
+        },
+        unit: 'rankine',
+      ),
+    )!;
+    expect(watch.rises, isEmpty);
+    expect(watch.temperatures, CarWatchStatus.notRecorded);
   });
 
   test('largest rise first', () {
@@ -210,6 +255,12 @@ void main() {
       CarWatchStatus.needsLaps,
     );
     expect(carWatch(_run(strongG: [0.300, 0.300, 0.300, 0.286]))!.fall, isNull);
+    // Not noted, but the laps and values compared are still given.
+    final held = carWatch(_run(strongG: [0.300, 0.290, 0.300, 0.286]))!.peak!;
+    expect((held.fromLap, held.toLap, held.from, held.to), (1, 4, 0.300, 0.286));
+    expect(held.lower, closeTo(0.0467, 1e-4));
+    expect(carWatch(_run(strongG: [0.300, 0.300, 0.300, 0.310]))!.peak!.lower, lessThan(0));
+    expect(carWatch(_run(strongG: [0.30, 0.30, 0.20]))!.peak, isNull);
     final fall = carWatch(_run(strongG: [0.300, 0.300, 0.300, 0.285]))!.fall!;
     expect(fall.alongside, isNull);
     expect(fall.fromLap, 1);

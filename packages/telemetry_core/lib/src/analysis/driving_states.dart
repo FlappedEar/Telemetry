@@ -13,6 +13,7 @@
 // braking_source.dart, a departure from Overlays), and are labelled inferred.
 import 'dart:math' as math;
 
+import '../channel_units.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'braking_source.dart';
@@ -270,10 +271,11 @@ void _pedalState(
     }
   }
   if (pedal != null) {
+    final declared = declaredChannelUnit(session, pedalName);
     track.channel = pedalName;
-    track.unit = pedal.unit;
+    track.unit = declared;
     track.threshold = measured;
-    if (!_unitMatches(pedal.unit, [measured.unit])) {
+    if (!_unitMatches(declared, [measured.unit])) {
       track.unresolvedReason = 'unitMismatch';
       return;
     }
@@ -306,19 +308,22 @@ void _inferredPedalState(
   double end,
   DrivingStateTrack track,
 ) {
-  final (name, longitudinal) = _aliasChannel(session, 'longitudinalAcceleration');
-  if (longitudinal == null) {
+  final (name, found) = _aliasChannel(session, 'longitudinalAcceleration');
+  if (found == null) {
     track.unresolvedReason = 'noPedalOrAccelerationChannel';
     return;
   }
+  // Read in g whichever unit the recording declares.
+  final view = accelerationInG(session, name)!;
+  final longitudinal = view.channel;
   if (!options.allowInferred) {
     track.unresolvedReason = 'inferenceDisabled';
     return;
   }
   track.channel = name;
-  track.unit = longitudinal.unit;
+  track.unit = view.declaredUnit;
   track.threshold = inferred;
-  if (!_unitMatches(longitudinal.unit, [inferred.unit])) {
+  if (!view.supported) {
     track.unresolvedReason = 'unitMismatch';
     return;
   }
@@ -390,13 +395,15 @@ DrivingStateClassification classifyDrivingStates(
     result.accelerating,
   );
 
-  final (lateralName, lateral) = _aliasChannel(session, 'lateralAcceleration');
-  if (lateral != null) {
+  final (lateralName, lateralFound) = _aliasChannel(session, 'lateralAcceleration');
+  if (lateralFound != null) {
     final track = result.cornering;
+    final view = accelerationInG(session, lateralName)!;
+    final lateral = view.channel;
     track.channel = lateralName;
-    track.unit = lateral.unit;
+    track.unit = view.declaredUnit;
     track.threshold = options.cornering;
-    if (!_unitMatches(lateral.unit, [options.cornering.unit])) {
+    if (!view.supported) {
       track.unresolvedReason = 'unitMismatch';
     } else {
       track.provenance = lateralName.toLowerCase().endsWith('-calc')
@@ -424,9 +431,13 @@ DrivingStateClassification classifyDrivingStates(
     coasting.unresolvedReason = 'pedalStateUnknown';
   } else if (speed == null) {
     coasting.unresolvedReason = 'noSpeedChannel';
-  } else if (!_unitMatches(speed.unit, const ['km/h', 'kmh'])) {
+  } else if (metresPerSecondPerSpeedUnit(effectiveChannelUnit(session, speedName)) == null) {
     coasting.unresolvedReason = 'unitMismatch';
   } else {
+    // Movement is judged in km/h whichever unit the speed is recorded in
+    // (an unlabelled speed is km/h, see metresPerSecondPerSpeedUnit).
+    final speedUnit = effectiveChannelUnit(session, speedName);
+    final kmhPerUnit = metresPerSecondPerSpeedUnit(speedUnit)! * 3.6;
     final moving = DrivingStateTrack();
     final movingThreshold = BrakingThreshold(
       options.minimumSpeedKmh,
@@ -435,7 +446,7 @@ DrivingStateClassification classifyDrivingStates(
     );
     _classify(
       speed,
-      (value) => value,
+      (value) => value * kmhPerUnit,
       movingThreshold,
       options.minimumDurationSeconds,
       startTime,
@@ -448,7 +459,7 @@ DrivingStateClassification classifyDrivingStates(
         ? drivingStateMeasured
         : drivingStateInferred;
     coasting.channel = speedName;
-    coasting.unit = speed.unit;
+    coasting.unit = speedUnit;
     coasting.threshold = movingThreshold;
     coasting.known.addAll(
       _intersect(
@@ -494,7 +505,8 @@ double intervalSeconds(List<DrivingStateInterval> intervals) {
 double travelledMeters(TelemetrySession session, List<DrivingStateInterval> intervals) {
   final speed = session.channels[session.aliases['speed'] ?? ''];
   if (speed == null || speed.timestamps.length != speed.values.length) return 0.0;
-  final factor = metresPerSecondPerSpeedUnit(speed.unit);
+  final speedName = session.aliases['speed'] ?? '';
+  final factor = metresPerSecondPerSpeedUnit(effectiveChannelUnit(session, speedName));
   if (factor == null) return 0.0;
   final times = speed.timestamps;
   // No distance is integrated across a telemetry gap (Overlays KAN-201).

@@ -310,6 +310,29 @@ void main() {
     expect(_find(result, 'speed')!.comparedSourceId, 'rcz');
   });
 
+  test(
+    'an added VBO acceleration and temperature keep the units their header declares (FET-288)',
+    () {
+      final vbo = TelemetrySession(
+        duration: 0.0,
+        startTime: 0.0,
+        metadata: const {'header.3': 'longacc-calc m/s2', 'header.4': 'oil-obd deg F'},
+        channels: {
+          'longacc-calc': _channel('longacc-calc', '', 0.0, 90.0, 5.0, (c) => 1.0),
+          'oil-obd': _channel('oil-obd', '', 0.0, 90.0, 5.0, (c) => 194.0),
+        },
+        aliases: const {},
+        warnings: const [],
+        timingGates: const [],
+        sampleCount: 0,
+      );
+      final result = fuseChannels(_primary(), 'rcz', _rcz(vbo));
+      expect(_find(result, 'longacc-calc')!.channel.unit, 'm/s2');
+      expect(_find(result, 'oil-obd')!.channel.unit, 'deg F');
+      expect(_find(result, 'oil-obd')!.channel.values, vbo.channels['oil-obd']!.values);
+    },
+  );
+
   test('an added VBO speed keeps the unit its header declares (FET-112)', () {
     // The primary (an RCZ) has no second speed; the VBO's `velocity-calc`
     // declares mph only on its `[header]` line.

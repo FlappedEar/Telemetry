@@ -25,6 +25,7 @@ import 'dart:typed_data';
 
 import '../operation.dart';
 import '../selection.dart';
+import '../channel_units.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'std_math.dart';
@@ -707,8 +708,10 @@ ChannelFusionResult fuseChannels(
           // it on a `[header]` line the primary's session does not carry,
           // FET-112), so it is never read in the unit assumed for unlabelled
           // speeds.
-          final unit = channel.unit.trim().isEmpty && isSessionSpeedChannel(session, name)
-              ? declaredSpeedUnit(session, name)
+          final unit = channel.unit.trim().isEmpty
+              ? (isSessionSpeedChannel(session, name)
+                    ? declaredSpeedUnit(session, name)
+                    : declaredChannelUnit(session, name))
               : channel.unit;
           final fused = FusedChannel(
             key: key,

@@ -18,6 +18,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'day_results_page_test.dart' show FakeDocuments, circuitVbo;
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 void main() {
   late Directory directory;
@@ -210,10 +211,10 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async {
+      theoreticalBestRunner: asyncRunner((job) async {
         if (++calls == 1) throw StateError('Out of memory');
         return job();
-      },
+      }),
     );
     await tester.binding.setSurfaceSize(const Size(412, 4000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -256,7 +257,7 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async {
+      theoreticalBestRunner: asyncRunner((job) async {
         ++calls;
         if (calls == 1) {
           return DayTheoreticalBest(
@@ -266,7 +267,7 @@ void main() {
           );
         }
         return job();
-      },
+      }),
     );
     addTearDown(controller.dispose);
     await controller.requestTheoreticalBest();

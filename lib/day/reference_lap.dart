@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -16,13 +17,20 @@ sealed class ReferenceSource {
 }
 
 /// A recording file: a friend's or an instructor's VBO or RCZ.
+///
+/// A file the user picked is where it is on this computer; one restored
+/// from the driver profile is its copy in the profile, and is named
+/// [label] (the file's own name, which the copy's is not), with
+/// [expectedBytes] its size when the profile copied it.
 final class ReferenceFile extends ReferenceSource {
-  const ReferenceFile(this.path);
+  const ReferenceFile(this.path, {this.label, this.expectedBytes});
 
   final String path;
+  final String? label;
+  final int? expectedBytes;
 
   @override
-  String get name => p.basename(path);
+  String get name => label ?? p.basename(path);
 
   @override
   bool operator ==(Object other) =>
@@ -61,12 +69,12 @@ final class ReferenceProfileDay extends ReferenceSource {
 
 /// The reference a day uses: its source and which of its laps.
 ///
-/// A future store keys the lap by [recordingId] (the run id of an earlier
-/// day's session, or the file's name) and its [lapNumber] on today's line,
-/// never by the recording's position in its source, which shifts when one
-/// of a day's recordings is missing. It must not store absolute user paths
+/// A store keys the lap by [recordingId] (the run id of an earlier day's
+/// session, or the file's name) and its [lapNumber] on today's line, never
+/// by the recording's position in its source, which shifts when one of a
+/// day's recordings is missing. It must not store absolute user paths
 /// either: a [ReferenceFile]'s path is where the file was on this computer,
-/// so a store keeps a copy or a path relative to the profile instead.
+/// so a store keeps a copy instead (the driver profile's does, FET-276).
 final class ReferenceChoice {
   const ReferenceChoice({
     required this.source,
@@ -79,16 +87,19 @@ final class ReferenceChoice {
   final int lapNumber;
 }
 
-/// Keeps a day's reference choice between visits. Where it is kept (the
-/// driver profile, the day file, or nowhere) is the owner's decision still
-/// to make (FET-175); a storage layer implements this and is given to
-/// [ReferenceLapHolder].
+/// Keeps a day's reference choice between visits. The owner chose the
+/// driver profile for it, not the day file (2026-10-07): see
+/// `ProfileReferenceStore`. A storage layer implements this and is given
+/// to [ReferenceLapHolder].
 abstract interface class ReferenceStore {
   /// The choice kept for day [eventId]; null when none.
   Future<ReferenceChoice?> restore(String eventId);
 
-  /// Keeps [choice] for day [eventId]; null forgets it.
-  Future<void> keep(String eventId, ReferenceChoice? choice);
+  /// Keeps [choice] for day [eventId]; null forgets it. True when it is
+  /// kept, false when this store keeps nothing for the day (the reference
+  /// then lives in memory while the day is open). Throws when it could not
+  /// be kept: the holder tells the user.
+  Future<bool> keep(String eventId, ReferenceChoice? choice);
 }
 
 /// Keeps nothing: the reference lives in memory while the day is open.
@@ -99,12 +110,19 @@ final class UnsavedReferenceStore implements ReferenceStore {
   Future<ReferenceChoice?> restore(String eventId) async => null;
 
   @override
-  Future<void> keep(String eventId, ReferenceChoice? choice) async {}
+  Future<bool> keep(String eventId, ReferenceChoice? choice) async => false;
 }
 
 /// Why a profile day gave no recording to time: none of the recordings it
 /// names was found or read.
 const referenceDayHasNoRecordings = 'referenceDayHasNoRecordings';
+
+/// Why a reference restored from the driver profile gave nothing: the copy
+/// of its recording is not in the profile, or is not the file that was
+/// kept; the day it was taken from is not in the profile.
+const referenceFileMissing = 'referenceFileMissing';
+const referenceFileChanged = 'referenceFileChanged';
+const referenceDayMissing = 'referenceDayMissing';
 
 /// What [loadReference] reads: a source, timed on today's line and
 /// checked against today's route ([ReferenceLine], with today's GPS
@@ -134,7 +152,14 @@ ReferenceLoaded loadReference(
 ) {
   final recordings = <ReferenceRecording>[];
   switch (request.source) {
-    case ReferenceFile(:final path):
+    case ReferenceFile(:final path, :final expectedBytes):
+      final file = File(path);
+      if (!file.existsSync()) {
+        return const ReferenceLoaded.failed(referenceFileMissing);
+      }
+      if (expectedBytes != null && file.lengthSync() != expectedBytes) {
+        return const ReferenceLoaded.failed(referenceFileChanged);
+      }
       final plan = prepareTelemetryImport([path], cancelled: cancelled);
       final run = plan.runs.firstOrNull;
       if (run == null) {
@@ -142,12 +167,15 @@ ReferenceLoaded loadReference(
       }
       recordings.add(
         ReferenceRecording(
-          label: p.basename(path),
-          id: p.basename(path),
+          label: request.source.name,
+          id: request.source.name,
           session: run.telemetry,
         ),
       );
     case ReferenceProfileDay(:final path):
+      if (path.isEmpty || !File(path).existsSync()) {
+        return const ReferenceLoaded.failed(referenceDayMissing);
+      }
       final OpenedDay day;
       try {
         day = openDay(path, cancelled: cancelled);
@@ -205,10 +233,31 @@ enum ReferenceState {
   failed,
 }
 
+/// Whether the reference is kept for the day's next visit.
+enum ReferenceKeep {
+  /// Nothing to keep yet.
+  none,
+
+  /// Being written to the store.
+  saving,
+
+  /// Kept: the day's next visit restores it.
+  saved,
+
+  /// The store keeps nothing for this day (it is not in the driver profile,
+  /// or there is no profile): the reference lives while the day is open.
+  unsaved,
+
+  /// The store could not keep it ([ReferenceLapHolder.keepProblem]); the
+  /// reference stays while the day is open.
+  failed,
+}
+
 /// The reference lap of the open day (FET-175), kept apart from the day:
 /// [DayResultsController] never sees it, so it is not ranked, not in the
-/// theoretical best, progression or coach, and not saved with the day. The
-/// day page holds one and gives it to the pages that compare with it.
+/// theoretical best, progression or coach, and not saved in the day file.
+/// The choice itself is kept by [store], in the driver profile (FET-276).
+/// The day page holds one and gives it to the pages that compare with it.
 ///
 /// Reading and timing run in the background; a newer load or [clear]
 /// makes an older result stale, and a stale result is dropped.
@@ -232,8 +281,40 @@ class ReferenceLapHolder extends ChangeNotifier {
   int _generation = 0;
   BackgroundTask<ReferenceLoaded>? _task;
   bool _disposed = false;
+  bool _restoreTried = false;
+  ReferenceKeep _keepState = ReferenceKeep.none;
+  ProfileReferenceProblem? _keepProblem;
+  ReferenceChoice? _lastKept;
+  ReferenceChoice? _failedChoice;
+  bool _failedForget = false;
+  int _keepGeneration = 0;
+
+  /// Whether the lap shown is the recording's fastest because the lap kept
+  /// (or chosen before a reload) is no longer there: the choice kept is
+  /// left as it was until a lap is chosen on purpose.
+  bool _lapFellBack = false;
+
+  /// The lap that was asked for and not found, while [_lapFellBack]: asked
+  /// for again when the source is read again.
+  ({String? recordingId, int? lapNumber}) _wanted = (
+    recordingId: null,
+    lapNumber: null,
+  );
 
   ReferenceState get state => _state;
+
+  /// Whether [restore] was called: it reads what the store kept once.
+  bool get restoreTried => _restoreTried;
+
+  /// Whether the reference is kept for the next visit.
+  ReferenceKeep get keepState => _keepState;
+
+  /// Why the store could not keep it, when [keepState] is failed; null for
+  /// a failure that is none of [ProfileReferenceProblem]'s.
+  ProfileReferenceProblem? get keepProblem => _keepProblem;
+
+  /// Whether what failed was forgetting the reference, not keeping one.
+  bool get keepFailedToForget => _failedForget;
   ReferenceSource? get source => _source;
 
   /// The source's recordings timed on today's line; null until read.
@@ -261,9 +342,15 @@ class ReferenceLapHolder extends ChangeNotifier {
     ReferenceLine line, {
     String? recordingId,
     int? lapNumber,
+    ReferenceChoice? restored,
   }) async {
     _task?.cancel();
     final generation = ++_generation;
+    ++_keepGeneration;
+    _keepState = ReferenceKeep.none;
+    _keepProblem = null;
+    _failedChoice = null;
+    _lapFellBack = false;
     _state = ReferenceState.loading;
     _source = source;
     _timing = null;
@@ -291,19 +378,24 @@ class ReferenceLapHolder extends ChangeNotifier {
         _state = ReferenceState.refused;
       } else {
         _state = ReferenceState.ready;
-        _lap =
-            timing.candidates
-                .where(
-                  (lap) =>
-                      lap.recordingId == recordingId &&
-                      lap.lapNumber == lapNumber,
-                )
-                .firstOrNull ??
-            timing.fastest;
+        final wanted = timing.candidates
+            .where(
+              (lap) =>
+                  lap.recordingId == recordingId && lap.lapNumber == lapNumber,
+            )
+            .firstOrNull;
+        _lap = wanted ?? timing.fastest;
+        _lapFellBack = wanted == null && recordingId != null;
+        _wanted = (recordingId: recordingId, lapNumber: lapNumber);
       }
     }
+    if (restored != null) {
+      // What the store holds already: written back only when changed.
+      _lastKept = restored;
+      _keepState = ReferenceKeep.saved;
+    }
     notifyListeners();
-    _keep();
+    if (restored == null) _keep();
   }
 
   /// Whether the reference was timed on another line than [line] (today's
@@ -320,24 +412,37 @@ class ReferenceLapHolder extends ChangeNotifier {
     final source = _source;
     if (source == null) return;
     final lap = _lap;
+    // The lap kept and not found stays the one asked for, not the fastest
+    // lap shown in its place.
     await load(
       source,
       line,
-      recordingId: lap?.recordingId,
-      lapNumber: lap?.lapNumber,
+      recordingId: _lapFellBack ? _wanted.recordingId : lap?.recordingId,
+      lapNumber: _lapFellBack ? _wanted.lapNumber : lap?.lapNumber,
     );
   }
 
-  /// Reads the choice [store] kept for the day, if any, timed on [line].
+  /// Reads the choice [store] kept for the day, if any, timed on [line]:
+  /// once, so a reference cleared since stays cleared. A source that is
+  /// not found shows as failed with its reason, and stays kept.
   Future<void> restore(ReferenceLine line) async {
+    if (_restoreTried) return;
+    _restoreTried = true;
     final generation = _generation;
-    final choice = await store.restore(dayId);
+    final ReferenceChoice? choice;
+    try {
+      choice = await store.restore(dayId);
+    } on Object catch (error) {
+      debugPrint('Reference not restored: $error');
+      return;
+    }
     if (choice == null || _disposed || generation != _generation) return;
     await load(
       choice.source,
       line,
       recordingId: choice.recordingId,
       lapNumber: choice.lapNumber,
+      restored: choice,
     );
   }
 
@@ -351,6 +456,7 @@ class ReferenceLapHolder extends ChangeNotifier {
     }
     _state = ReferenceState.ready;
     _lap = lap;
+    _lapFellBack = false;
     notifyListeners();
     _keep();
   }
@@ -365,24 +471,88 @@ class ReferenceLapHolder extends ChangeNotifier {
     _timing = null;
     _lap = null;
     _error = '';
+    _lastKept = null;
     notifyListeners();
-    unawaited(store.keep(dayId, null));
+    unawaited(_write(null));
   }
 
+  /// Keeps the lap now chosen. Only a lap is kept: a source that could not
+  /// be read or timed this time (a file moved, today's line changed) does
+  /// not forget the choice kept before it.
   void _keep() {
     final source = _source, lap = _lap;
-    unawaited(
-      store.keep(
-        dayId,
-        source == null || lap == null
-            ? null
-            : ReferenceChoice(
-                source: source,
-                recordingId: lap.recordingId,
-                lapNumber: lap.lapNumber,
-              ),
-      ),
+    if (source == null || lap == null || _lapFellBack) return;
+    final choice = ReferenceChoice(
+      source: source,
+      recordingId: lap.recordingId,
+      lapNumber: lap.lapNumber,
     );
+    if (_lastKept case final kept?
+        when kept.source == choice.source &&
+            kept.recordingId == choice.recordingId &&
+            kept.lapNumber == choice.lapNumber) {
+      return;
+    }
+    unawaited(_write(choice));
+  }
+
+  /// Tells that the choice the store took could not be kept after all
+  /// (it was held for a day not yet in the profile, which had no room for
+  /// it when the day was listed): shown as failed, and [retryKeep] tries
+  /// again.
+  void keepDropped(ProfileReferenceProblem? problem) {
+    final kept = _lastKept;
+    if (_disposed || kept == null || _keepState == ReferenceKeep.saving) {
+      return;
+    }
+    ++_keepGeneration;
+    _keepState = ReferenceKeep.failed;
+    _keepProblem = problem;
+    _failedChoice = kept;
+    _failedForget = false;
+    _lastKept = null;
+    notifyListeners();
+  }
+
+  /// Writes the choice again after it could not be kept.
+  void retryKeep() {
+    if (_keepState != ReferenceKeep.failed) return;
+    unawaited(_write(_failedChoice));
+  }
+
+  Future<void> _write(ReferenceChoice? choice) async {
+    final generation = ++_keepGeneration;
+    if (choice != null) {
+      _keepState = ReferenceKeep.saving;
+      _keepProblem = null;
+      notifyListeners();
+    }
+    ReferenceKeep outcome;
+    ProfileReferenceProblem? problem;
+    try {
+      outcome = await store.keep(dayId, choice)
+          ? ReferenceKeep.saved
+          : ReferenceKeep.unsaved;
+    } on ProfileReferenceError catch (error) {
+      debugPrint('Reference not kept: ${error.message}');
+      outcome = ReferenceKeep.failed;
+      problem = error.problem;
+    } on Object catch (error) {
+      debugPrint('Reference not kept: $error');
+      outcome = ReferenceKeep.failed;
+    }
+    if (_disposed || generation != _keepGeneration) return;
+    _keepState = outcome;
+    _keepProblem = problem;
+    if (outcome == ReferenceKeep.failed) {
+      _failedChoice = choice;
+      _failedForget = choice == null;
+    } else {
+      _failedChoice = null;
+      _failedForget = false;
+      if (choice != null) _lastKept = choice;
+    }
+    notifyListeners();
   }
 
   bool get disposed => _disposed;
@@ -402,10 +572,14 @@ final _holders = Expando<ReferenceLapHolder>('reference laps');
 /// one holder per day, made on first use, kept while the day is kept (a
 /// day the shell keeps open between visits keeps its reference), and
 /// disposed with the day by [disposeReferenceLapOf].
-ReferenceLapHolder referenceLapOf(Object day, {String dayId = ''}) {
+ReferenceLapHolder referenceLapOf(
+  Object day, {
+  String dayId = '',
+  ReferenceStore store = const UnsavedReferenceStore(),
+}) {
   final held = _holders[day];
   if (held != null && !held.disposed) return held;
-  return _holders[day] = ReferenceLapHolder(dayId: dayId);
+  return _holders[day] = ReferenceLapHolder(dayId: dayId, store: store);
 }
 
 /// Disposes [day]'s reference lap, if it has one, and stops a reference

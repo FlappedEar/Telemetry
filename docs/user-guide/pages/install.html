@@ -1,12 +1,14 @@
 <!-- title: Install | nav: Install -->
 <h1 id="install">Install</h1>
-<p class="lead">There is no app store release yet. Android and macOS download from the project's GitHub Releases.</p>
+<p class="lead">There is no app store release yet. Android, macOS and Windows download from the project's GitHub Releases.</p>
 
 <p>Each release on the <a href="https://github.com/FlappedEar/Telemetry/releases">Releases page</a> has, under <strong>Assets</strong>:</p>
 <ul>
   <li><code>FlappedEar-Telemetry-&lt;version&gt;-android.apk</code>: the Android app.</li>
   <li><code>FlappedEar-Telemetry-&lt;version&gt;-macos.zip</code>: the Mac app.</li>
-  <li><code>SHA256SUMS.txt</code>: checksums of both files.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-windows-setup.exe</code>: the Windows installer.</li>
+  <li><code>FlappedEar-Telemetry-&lt;version&gt;-windows.zip</code>: the Windows app without an installer.</li>
+  <li><code>SHA256SUMS.txt</code>: checksums of the files above.</li>
 </ul>
 
 <h2 id="android">Android (Pixel)</h2>
@@ -15,8 +17,8 @@
   <li>Open the downloaded file. Allow installs from that app when Android asks, then tap <strong>Install</strong>. If Play Protect warns about an unknown app, choose <strong>Install anyway</strong>.</li>
   <li>Open <strong>FlappedEar Telemetry</strong>. It starts on <strong>Home</strong>.</li>
 </ol>
-<div class="tip"><p>Releases and the builds from <code>main</code> share one signing key, so a newer one installs over the old one and keeps your saved days.</p></div>
-<p>Builds newer than the last release: on a computer signed in to GitHub, open the newest green run of the CI workflow on <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">branch main</a> and download the artifact <code>flappedear-telemetry-android-&lt;commit&gt;</code>. Inside the zip is <code>app-release.apk</code>. Builds from pull requests are for testing only.</p>
+<div class="tip"><p>Every release is signed with the same key, so a newer release installs over the old one and keeps your saved days.</p></div>
+<p>Builds from <a href="https://github.com/FlappedEar/Telemetry/actions?query=branch%3Amain">branch main</a> and from pull requests (the artifact <code>flappedear-telemetry-android-&lt;commit&gt;</code> of a CI run, with <code>app-release.apk</code> inside the zip) are for testing only. Each one is signed with its own throwaway key, so Android will not install it over a release. To keep your saved days, install releases only.</p>
 <div class="note"><p>If Android refuses an update because the app "is not installed" or the signature differs, do not uninstall yet: uninstalling deletes the days kept in the app. Save them elsewhere first.</p></div>
 
 <h2 id="mac">macOS</h2>
@@ -39,19 +41,33 @@ flutter run -d macos</code></pre>
 <p>The iOS app is built and tested in the simulator only, until there is an Apple developer account. It cannot be installed on a phone yet.</p>
 
 <h2 id="windows">Windows</h2>
-<p>The app needs Windows 10 or 11 (64-bit). It builds for Windows, but there is no download yet.</p>
+<p>The app needs Windows 10 or 11 (64-bit). The installer and the zip are not signed yet, so the first time Windows SmartScreen may show <strong>Windows protected your PC</strong>: click <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
+<h3 id="windows-installer">With the installer</h3>
+<ol class="steps">
+  <li>Download the <code>-windows-setup.exe</code> from the newest release and run it. It installs for your user only and needs no administrator rights; it installs into <code>%LOCALAPPDATA%\Programs\FlappedEar Telemetry</code>. The installer always uses that folder: a different one given on its command line (<code>/D=</code>) is ignored. It stops while the app is running (close the app and run the installer again), and it leaves alone an existing folder of that name that it did not create.</li>
+  <li>Finish the installer and start <strong>FlappedEar Telemetry</strong> from the Start menu.</li>
+  <li>A newer release: run its installer. It replaces the old files and keeps your saved days; if the copy fails, the old version stays. To remove the app, use <strong>Settings &gt; Apps</strong>; that never deletes your saved days.</li>
+</ol>
+<h3 id="windows-zip">With the zip</h3>
+<ol class="steps">
+  <li>Download the <code>-windows.zip</code> from the newest release. Right-click it, choose <strong>Extract All</strong> and pick a folder you keep, such as <code>Documents</code>. Do not run it from inside the zip.</li>
+  <li>Open the extracted folder and start <code>telemetry.exe</code>.</li>
+  <li>A newer release is a new folder: extract it the same way and start the new <code>telemetry.exe</code>. Your saved days stay where you saved them. You can delete the old folder.</li>
+</ol>
+<p>To run the newest code instead, install Flutter 3.47.6 and run <code>flutter run -d windows</code> from a checkout of the repository.</p>
 
 <h2 id="updates">Updates</h2>
 <p>When it starts, the app asks GitHub whether a newer release is out, at most once a day, and fetches the newest <a href="day.html#circuit-names">circuit list</a>. If one is, a message says so; tap <strong>Details</strong>. To check at any time, choose <strong>Check for updates</strong> in the ⋮ menu on <strong>Home</strong>, or open <strong>Settings</strong> (the gear in the toolbar; on the day page on a narrow screen, such as a phone, in the ⋮ menu): <strong>Updates</strong> is its first section and shows the version you have. Turn off <strong>Check for a new version when the app starts</strong> there to stop the check on launch; the circuit list then stays as it is until you choose <strong>Update the circuit list</strong>. Only requests for the releases, their files and the circuit list go to GitHub; none of your recordings or settings are sent. Without a connection, or when GitHub has had too many checks from your network, the check on launch says nothing and tries again next time.</p>
 <ul>
   <li><strong>Android:</strong> tap <strong>Download and install</strong>. The first time, Android asks you to allow FlappedEar Telemetry to install apps: turn it on in the settings that open, go back and tap <strong>Continue</strong> (if the app started again, open <strong>Settings</strong> and tap <strong>Check for updates</strong>). The app then downloads the APK, checks it against the release's <code>SHA256SUMS.txt</code> and opens Android's installer; confirm the update there. Your saved days stay.</li>
   <li><strong>Mac:</strong> tap <strong>Download</strong> and choose where to save the zip (Downloads is suggested). The app checks it against <code>SHA256SUMS.txt</code> and shows it in Finder. Open it and move <strong>FlappedEar Telemetry</strong> to <strong>Applications</strong>, replacing the old one. macOS refuses the first start of the new copy, as after the first install: allow it as described in <a href="#mac">macOS</a>.</li>
-  <li><strong>iPhone, iPad and Windows:</strong> the releases have no download for these yet, so the app only says that a newer version exists; <strong>What's new</strong> opens the release on GitHub.</li>
+  <li><strong>Windows:</strong> the app only says that a newer version exists; <strong>What's new</strong> opens the release on GitHub. Download the <code>-windows-setup.exe</code> or the zip there and install it as described in <a href="#windows">Windows</a>.</li>
+  <li><strong>iPhone and iPad:</strong> the releases have no download for these yet, so the app only says that a newer version exists; <strong>What's new</strong> opens the release on GitHub.</li>
 </ul>
-<p>A download that does not match the release's checksum is deleted and never installed.</p>
+<p>A download the app fetched itself (Android and Mac) that does not match the release's checksum is deleted and never installed. For a file you download in a browser, such as the Windows installer or zip, compare its checksum with the line in <code>SHA256SUMS.txt</code> yourself: in PowerShell, <code>Get-FileHash FlappedEar-Telemetry-&lt;version&gt;-windows-setup.exe</code>.</p>
 
 <h2 id="maps">Map backgrounds</h2>
-<p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the releases and the Android builds from CI have one, a Mac build you run yourself does not. On iPhone, iPad and Mac the layers button also offers Apple Maps, which needs no key; other platforms do not have it. Maps need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>
+<p>Street maps (OpenStreetMap) work in every build. Satellite imagery (MapTiler) is only offered by builds made with a MapTiler key; the releases and the Android builds from CI have one, a Mac or Windows build you run yourself does not. On iPhone, iPad and Mac the layers button also offers Apple Maps, which needs no key; other platforms do not have it. Maps need a network connection the first time a track is shown; see <a href="lap.html#background">Map background</a>.</p>
 
 <h2 id="licences">Licences</h2>
 <p>FlappedEar Telemetry is free and its source code is under the Apache License 2.0. To see the licences of the app and of the software it uses, with the map credits (OpenStreetMap and MapTiler) and the weather credit (Open-Meteo.com), open <strong>Settings</strong> (the gear in the toolbar; on the day page on a narrow screen, such as a phone, in the ⋮ menu) and choose <strong>Open-source licences</strong>.</p>

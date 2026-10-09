@@ -71,7 +71,14 @@ void main() {
   }
 
   Future<void> reveal(WidgetTester tester, Finder target) async {
-    await tester.scrollUntilVisible(target, 200, scrollable: summary());
+    // The day page is long on a phone, more so in Polish with the best
+    // phases card (FET-226): more room than the default 50 scrolls.
+    await tester.scrollUntilVisible(
+      target,
+      200,
+      scrollable: summary(),
+      maxScrolls: 80,
+    );
     await tester.ensureVisible(target);
     await tester.pumpAndSettle();
   }

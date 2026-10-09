@@ -373,6 +373,10 @@ void main() {
     }
     for (final acceleration in (item['accelerations'] as List).cast<Map<String, Object?>>()) {
       final session = _session(acceleration['session'] as Map<String, Object?>);
+      // Overlays gives a strong acceleration only in g or with no unit;
+      // Telemetry also reads m/s² (FET-288, test/analysis/unit_equivalence_test.dart).
+      final gPerUnit = accelerationGPerUnit(session.channels.values.first.unit);
+      if (gPerUnit != null && gPerUnit != 1.0) continue;
       for (final result in (acceleration['results'] as List).cast<Map<String, Object?>>()) {
         final lap = lapStrongAcceleration(session, _double(result['from']), _double(result['to']));
         _deep(

@@ -552,8 +552,8 @@ final class CornerAnalyzer {
     // Speeds are subtracted only in one unit (see [sameSpeedUnit]). Overlays
     // (d4d1039) subtracts these whatever their units.
     final speedChannel = a.session.aliases['speed'] ?? 'speed';
-    final speedUnitA = a.session.channels[speedChannel]?.unit ?? '';
-    final speedUnitB = b.session.channels[b.session.aliases['speed'] ?? 'speed']?.unit ?? '';
+    final speedUnitA = effectiveChannelUnit(a.session, speedChannel);
+    final speedUnitB = effectiveChannelUnit(b.session, b.session.aliases['speed'] ?? 'speed');
     final speedsComparable = sameSpeedUnit(speedUnitA, speedUnitB);
     AnalyzerMetric row(double? valueA, double? valueB) => AnalyzerMetric(
       a: _value(

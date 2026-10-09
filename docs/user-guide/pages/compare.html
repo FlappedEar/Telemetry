@@ -58,7 +58,7 @@
   <li><a href="driving.html#gg">G-G</a>, <a href="driving.html#states">Driving states</a> and <a href="driving.html#coasting">Coasting</a> for the whole lap, or for the stretch you zoomed to.</li>
 </ul>
 <h2 id="reference">Reference lap</h2>
-<p>A reference lap comes from outside the day: a friend's or an instructor's recording, or one of your earlier days. Your laps are compared with it as with lap B, but it stays apart from the day: it is not ranked, not part of the theoretical best, the progression or the coach, and it is not saved with the day. It is kept while the day is open; open the day again and it is gone.</p>
+<p>A reference lap comes from outside the day: a friend's or an instructor's recording, or one of your earlier days. Your laps are compared with it as with lap B, but it stays apart from the day: it is not ranked, not part of the theoretical best, the progression or the coach, and it is not saved in the day's file. Your <a href="profile.html">driver profile</a> remembers it for the day instead: open the day again and the reference is back, with the same lap (see <a href="#reference-remembered">Remembered for the day</a>).</p>
 <figure>
   <img src="assets/screens/reference-lap.png" alt="The Reference lap part of the Compare section: the reference named Reference: reference.vbo, lap 2, 1:49.898, with the buttons Compare with today's best, Choose its lap, Load a recording and Clear reference" width="1280" height="800" loading="lazy">
 </figure>
@@ -68,7 +68,17 @@
   <li>It is named the same way everywhere: <em>Reference: reference.vbo, lap 2, 1:49.898</em>, or for an earlier day its name and session, such as <em>Reference: Day 2026-08-29 · Session 5, lap 2, 1:49.898</em>.</li>
   <li>A recording from another track is not used, and the app says why: its GPS never comes within 500 m of today's start/finish line. Its laps must also follow the route of today's best lap the same way round: laps driven the other way, or round another layout that crosses the same line, are refused with that reason. When today's lap has no route to check against (too short, or crossing itself), the app says that only the start/finish line was checked. A recording near the line that never completes a lap across it, one without GPS, and a file that cannot be read are refused with their reason too.</li>
   <li>The reference is timed on the line shown when it was loaded. When today's line changes (you show another group, or the day's best lap moves to another line), it says it was timed on another start/finish line and compares nothing until you tap <strong>Load again</strong>.</li>
-  <li><strong>Clear reference</strong> drops it.</li>
+  <li><strong>Clear reference</strong> drops it, and the profile forgets it: it does not come back when you open the day again.</li>
+</ul>
+
+<h3 id="reference-remembered">Remembered for the day</h3>
+<ul>
+  <li>The reference you chose is kept in your driver profile, for that day only, and comes back when you open the day again. Under the reference it says <em>Remembered for this day in your driver profile</em>. A day that is not kept in your profile (a day saved as a file somewhere else) says <em>not remembered</em> instead: its reference lives while the day is open.</li>
+  <li>For a recording (a friend's or an instructor's file), the app copies the file into your profile and remembers the copy, so it keeps working when the original is moved or deleted. Only the name of the file is shown; the place it was on your computer is never stored. A copy is kept once, however many days use it, and it travels with the profile when you export it and import it on another device. A recording larger than 128 MiB (about 134 MB), or an RCZ or VBO the profile has no room for, cannot be remembered: the profile keeps at most 32 reference recordings (512 MiB together), and the app says so under the reference, with <strong>Try again</strong>. The reference still works while the day is open.</li>
+  <li>For a lap of an earlier day, the profile remembers that day and the lap. It works while that day is in your profile; if you delete it, the reference says the day is no longer in your profile, and you can clear it or choose another.</li>
+  <li>If the copy of a recording is missing from the profile, the day still opens and the reference says it was not found. Clear it or load the recording again.</li>
+  <li>If the profile cannot be written (the disk is full, say), the app says the reference is not remembered; it stays while the day is open.</li>
+  <li>Deleting a day deletes its reference with it, and the copy of its recording unless another day's reference or recording uses it. The reference is not part of the day: it is not in the day's file and not in its ranking, theoretical best, progression or coach.</li>
 </ul>
 
 <h3 id="reference-compare">Against the reference</h3>

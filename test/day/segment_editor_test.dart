@@ -15,6 +15,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 import 'recovery_test.dart' show FileRecoveryStore;
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 void main() {
   late Directory directory;
@@ -634,11 +635,11 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async {
+      theoreticalBestRunner: asyncRunner((job) async {
         // The first timing at once, the one after the edit held.
         if (++calls > 1) await gate.future;
         return job();
-      },
+      }),
     );
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(

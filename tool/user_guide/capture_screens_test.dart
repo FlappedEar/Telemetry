@@ -29,6 +29,7 @@ import 'package:telemetry/channel_names.dart';
 import 'package:telemetry/day/day_context.dart';
 import 'package:telemetry/day/day_results_controller.dart';
 import 'package:telemetry/day/day_results_page.dart';
+import 'package:telemetry/day/reference_lap.dart';
 import 'package:telemetry/day/day_weather.dart';
 import 'package:telemetry/day/driving_panels.dart';
 import 'package:telemetry/day/next_session_card.dart';
@@ -565,6 +566,16 @@ void main() {
     await tester.pumpAndSettle();
     await toTop(tester, find.text('Lap to lap in each corner'));
     await shot(tester, 'corner-variability');
+    // The best phases of the day (FET-226): closed at first, opened for the
+    // shots.
+    final bestPhases = find.byKey(const ValueKey('bestPhasesToggle'));
+    await scrollIn(tester, summary, bestPhases);
+    await tester.tap(bestPhases);
+    await tester.pumpAndSettle();
+    await toTop(tester, bestPhases);
+    await shot(tester, 'best-phases');
+    await scrollIn(tester, summary, find.text('Part by part'));
+    await shot(tester, 'best-phases-parts');
     await scrollIn(tester, summary, find.text('Time losses'));
     await shot(tester, 'time-losses');
     await scrollIn(tester, summary, find.text('Consistency'));
@@ -592,6 +603,16 @@ void main() {
     await tester.pumpAndSettle();
     await toTop(tester, find.text('Grip and balance'));
     await shot(tester, 'grip-and-balance');
+    // The lap styles (FET-223): closed at first, opened with the group of
+    // the day's best lap.
+    await scrollIn(tester, summary, find.text('Lap styles'));
+    await tester.tap(find.byKey(const ValueKey('lapStylesToggle')));
+    await tester.pumpAndSettle();
+    // The group of the day's best lap, opened.
+    await tester.tap(find.byKey(const ValueKey('lapStylesGroup typical')));
+    await tester.pumpAndSettle();
+    await toTop(tester, find.text('Lap styles'));
+    await shot(tester, 'lap-styles');
     await scrollIn(tester, summary, find.text('Best lap of each session'));
     await shot(tester, 'sessions-and-circuits');
 
@@ -644,6 +665,10 @@ void main() {
     await tester.ensureVisible(find.byKey(const ValueKey('cornerClass')));
     await tester.pumpAndSettle();
     await shot(tester, 'corner-type');
+    // How it is braked into (FET-219), under the corner type.
+    await tester.ensureVisible(find.byKey(const ValueKey('brakingTechnique')));
+    await tester.pumpAndSettle();
+    await shot(tester, 'braking-technique');
     // Beside the rail: the page's own top edge closes the details.
     await tester.tapAt(const Offset(120, 4));
     await tester.pumpAndSettle();
@@ -827,12 +852,26 @@ void main() {
       ],
       includeSubfolders: false,
     ));
+    // The day kept in a profile, as a saved day is: the reference is
+    // remembered there.
+    final profileFolder = '${directory.path}/ReferenceProfile';
+    final controller = DayResultsController(
+      runs: today.runs,
+      analysis: today.analysis!,
+      name: 'Jastrząb',
+    );
+    final dayFile = profileDayPath(profileFolder, controller.eventId);
+    Directory('$profileFolder/Days').createSync(recursive: true);
+    await tester.runAsync(() => controller.save(dayFile));
+    final library = _library(profileFolder);
+    addTearDown(library.dispose);
+    await tester.runAsync(library.load);
     await tester.pumpWidget(
       app(
-        DayResultsPage(
-          runs: today.runs,
-          analysis: today.analysis!,
+        DayResultsPage.controller(
+          controller: controller,
           pickers: _Pickers([reference]),
+          library: library,
         ),
       ),
     );
@@ -847,6 +886,12 @@ void main() {
     // frame.
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('referenceLabel')), findsOneWidget);
+    // Remembered in the profile before the picture is taken.
+    await until(
+      tester,
+      () => referenceLapOf(controller).keepState == ReferenceKeep.saved,
+    );
+    await tester.pumpAndSettle();
     await toTop(tester, find.byKey(const ValueKey('referenceSection')));
     await shot(tester, 'reference-lap');
     await tester.tap(find.byKey(const ValueKey('referenceCompare')));

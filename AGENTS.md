@@ -68,7 +68,10 @@ match what the app on `main` shows.
 
 - A change to anything a user sees or does (a screen, a label, a button, a
   default, a message, a supported format, a workflow) updates the guide pages in
-  the same pull request.
+  the same pull request, in both languages: English in `pages/` and Polish in
+  `pages-pl/` (published under `/pl/`). `build.py` fails when the two differ in
+  pages, anchors, links or images. Polish wording uses the app's glossary and the
+  exact Polish labels from `lib/l10n/app_pl.arb`.
 - When a screen in a screenshot changes visibly, refresh the screenshots with
   `GUIDE_RECORDINGS=../refdata flutter test tool/user_guide/capture_screens_test.dart --update-goldens` and
   look at them before committing. New screens get a capture step there.
@@ -80,7 +83,7 @@ match what the app on `main` shows.
 - The pull request template asks for this; answer it, including "no visible
   change".
 - The independent review fails a pull request that changes what a user sees
-  or does without updating the guide.
+  or does without updating the guide in both languages.
 
 ## Technical documentation and releases
 
@@ -173,6 +176,13 @@ apply whatever the app's architecture.
   pooled (`sameSpeedUnit`); a physical scale comes from
   `speedInMetresPerSecond`. Parsed recordings keep units as written, so their
   fingerprints match Overlays.
+- Accelerations and temperatures follow the same rule through
+  `channel_units.dart`: `declaredChannelUnit` recovers the unit (a VBO
+  `[header]` line included), `accelerationInG` and `TemperatureUnit` convert
+  inside the calculation only, and a unit the calculation cannot read gives an
+  explicit reason (`brakingUnitMismatch`, `unsupportedUnit`, `unitMismatch`),
+  never the default unit. Analysis code never reads `TelemetryChannel.unit`
+  for meaning.
 
 **Documents**
 
@@ -252,4 +262,4 @@ to English (`lib/l10n.dart`).
 - Labels and reasons from `telemetry_core` are English; map them to ARB texts in
   the app instead of showing them (see `TrackDirectionText`).
 - The owner reviews Polish driving and telemetry terms.
-- The user guide stays in English.
+- The user guide is published in English and Polish; see "The user guide".

@@ -1,0 +1,27 @@
+<!-- title: Praca z FlappedEar Overlays | nav: FlappedEar Overlays -->
+<h1 id="overlays">Praca z FlappedEar Overlays</h1>
+<p class="lead">FlappedEar Overlays to aplikacja na macOS do pracy z nagraniami z kamery pokładowej i nakładkami telemetrycznymi. Telemetry służy do analizy danych i działa na wszystkich obsługiwanych platformach, ale nie obsługuje wideo. Obie aplikacje korzystają z tego samego formatu pliku dnia.</p>
+
+<h2 id="shared">Jeden plik dla obu aplikacji</h2>
+<p>Obie aplikacje odczytują i zapisują ten sam format <code>.fetproject</code>. Dzień zapisany w jednej można otworzyć w drugiej razem z:</p>
+<ul>
+  <li>sesjami i plikami telemetrycznymi, z których korzystają,</li>
+  <li>zatwierdzonymi i edytowanymi odcinkami,</li>
+  <li>wykluczonymi okrążeniami i powodami wykluczenia,</li>
+  <li>nazwą dnia oraz nazwą, notatkami, warunkami i zmianami ustawień każdej sesji (edytowanymi w obu aplikacjach),</li>
+  <li>pogodą każdej sesji (Telemetry ją pobiera; Overlays zachowuje ją w pliku bez zmian),</li>
+  <li>ustawieniami każdej sesji: ciśnieniem w oponach, oponami i ilością paliwa (wprowadzanymi w Telemetry; Overlays zachowuje je w pliku bez zmian, ale ich nie wyświetla),</li>
+  <li>podstawowym plikiem telemetrycznym każdej sesji oraz informacją, czy jej VBO i RCZ zostały połączone, czy pozostawione osobno (Overlays pokazuje oba w szczegółach przejazdu),</li>
+  <li>wybraną grupą okrążeń.</li>
+</ul>
+<p>Podczas zapisywania Telemetry pozostawia bez zmian dane należące do Overlays, takie jak wideo, synchronizacja i układy nakładek. Dzięki temu możesz swobodnie przechodzić między obiema aplikacjami.</p>
+
+<h2 id="workflow">Typowy dzień</h2>
+<ol class="steps">
+  <li>Po sesji zaimportuj pliki wyeksportowane z RaceChrono do Telemetry na telefonie i przejrzyj okrążenia między kolejnymi wyjazdami. Dzień zapisze się automatycznie w bibliotece telefonu.</li>
+  <li>W domu zaimportuj te same pliki do Telemetry na Macu. Dzień zapisze się w bibliotece Maca.</li>
+  <li>Wybierz <strong>⋮ › Eksportuj do Overlays…</strong>, a następnie otwórz utworzony plik <code>.fetproject</code> w Overlays, aby dodać nagranie z kamery pokładowej i wyrenderować nakładki.</li>
+</ol>
+<div class="note"><p>Każde urządzenie ma własną bibliotekę; jej synchronizacja między urządzeniami nie jest jeszcze dostępna. Wyeksportowany plik projektu odwołuje się do plików telemetrycznych, dlatego muszą pozostać w miejscu, w którym znajdowały się podczas eksportu. Zobacz <a href="saving.html#find">Znajdź zapisy w folderze</a>.</p></div>
+
+<p>Podręcznik Overlays znajdziesz pod adresem <a href="https://flappedear.github.io/Overlay/">flappedear.github.io/Overlay</a>.</p>

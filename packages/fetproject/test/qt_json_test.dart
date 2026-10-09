@@ -66,4 +66,48 @@ void main() {
   test('an unsupported value is refused', () {
     expect(() => qtCompactJson(DateTime(2026)), throwsArgumentError);
   });
+
+  group('nesting depth', () {
+    String nested(int depth, {String leaf = '0'}) =>
+        '${'[' * depth}$leaf${']' * depth}';
+
+    test('is limited before the value is walked, however deep the text', () {
+      expect(
+        () => qtJsonDecode(nested(1000000), maxDepth: 32),
+        throwsA(isA<QtJsonDepthException>()),
+      );
+      expect(
+        () => qtJsonDecode(nested(100000)),
+        throwsA(isA<QtJsonDepthException>()),
+      );
+    });
+
+    test('allows exactly maxDepth levels and refuses one more', () {
+      expect(qtJsonDecode(nested(32), maxDepth: 32), isA<List>());
+      expect(
+        () => qtJsonDecode(nested(33), maxDepth: 32),
+        throwsA(isA<QtJsonDepthException>()),
+      );
+      // Empty containers: the innermost one is at level 32.
+      expect(qtJsonDecode('${'[' * 33}${']' * 33}', maxDepth: 32), isA<List>());
+      expect(
+        () => qtJsonDecode('${'[' * 34}${']' * 34}', maxDepth: 32),
+        throwsA(isA<QtJsonDepthException>()),
+      );
+    });
+
+    test('brackets inside strings do not count', () {
+      expect(
+        qtJsonDecode('{"a":"${'[' * 500}\\"${'{' * 500}"}', maxDepth: 4),
+        isA<Map>(),
+      );
+    });
+
+    test('numbers are still normalised within the limit', () {
+      expect(qtJsonDecode('[1.0,{"a":2e0,"b":0.5}]', maxDepth: 4), [
+        1,
+        {'a': 2, 'b': 0.5},
+      ]);
+    });
+  });
 }

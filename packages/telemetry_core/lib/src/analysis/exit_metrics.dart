@@ -14,6 +14,7 @@
 // cause is assigned to any difference.
 import 'package:fetproject/fetproject.dart' show TrackSegmentType, trackSegmentTypeName;
 
+import '../channel_units.dart';
 import '../speed_units.dart';
 import '../telemetry_session.dart';
 import 'corner_speeds.dart' show approvedSegmentById;
@@ -212,6 +213,67 @@ _Rise _firstSustainedRise(
   );
 }
 
+/// The measured throttle's first sustained pickup over
+/// [startTime]..[endTime], with [options]' throttle thresholds and scale as
+/// [computeExitMetrics] reads them, but by time alone: FET-219 times the end
+/// of braking to it, also in a corner across start/finish. Its time, or why
+/// there is none; no progress is set.
+ThrottlePickup measuredThrottlePickup(
+  TelemetrySession session,
+  double startTime,
+  double endTime, [
+  ExitMetricsOptions options = const ExitMetricsOptions(),
+]) {
+  final pickup = ThrottlePickup();
+  final name = session.aliases['throttle'] ?? '';
+  final channel = session.channels[name];
+  if (name.isEmpty || channel == null) {
+    pickup.unavailableReason = exitNoChannel;
+    return pickup;
+  }
+  // The unit the recording declares (a VBO on its header line).
+  final declaredUnit = declaredChannelUnit(session, name);
+  pickup
+    ..method = pickupMethodMeasured
+    ..provenance = 'measured'
+    ..channel = name
+    ..unit = declaredUnit
+    ..threshold = options.throttle;
+  final scale = throttleScale(session);
+  if (scale == PedalScale.fraction) {
+    pickup.threshold = ExitThreshold(options.throttle.on / 100.0, options.throttle.off / 100.0, '');
+  }
+  final declared = declaredUnit.isNotEmpty;
+  if (declared && declaredUnit.toLowerCase() != pickup.threshold.unit.trim().toLowerCase()) {
+    pickup.unavailableReason = exitUnitMismatch;
+  } else if (scale == PedalScale.unknown) {
+    pickup.unavailableReason = exitScaleUnknown;
+  } else if (!startTime.isFinite || !endTime.isFinite || !(endTime > startTime)) {
+    pickup.unavailableReason = exitIncompleteCoverage;
+  } else {
+    final rise = _firstSustainedRise(
+      channel,
+      pickup.threshold.on,
+      pickup.threshold.off,
+      options.minimumDurationSeconds,
+      startTime,
+      endTime,
+    );
+    if (rise.time == null) {
+      pickup.unavailableReason = rise.reason;
+    } else {
+      pickup
+        ..telemetryTime = rise.time
+        ..limitations = [
+          ...rise.limitations,
+          if (!declared) exitUnitUndeclared,
+          if (scale == PedalScale.fraction) exitScaleInferred,
+        ];
+    }
+  }
+  return pickup;
+}
+
 double? _speedAtProgress(
   List<ProgressSegment> lap,
   TelemetrySession session,
@@ -274,9 +336,23 @@ ExitMetrics computeExitMetrics(
       ..provenance = hasThrottle ? 'measured' : 'inferred'
       ..channel = hasThrottle ? throttleName : accelerationName
       ..threshold = hasThrottle ? options.throttle : options.acceleration;
-    final channel = session.channels[pickup.channel]!;
-    pickup.unit = channel.unit;
-    final declared = channel.unit.trim().isNotEmpty;
+    // A throttle is read in its own unit, an acceleration in g whichever
+    // unit the recording declares it in.
+    final TelemetryChannel channel;
+    final bool unitReadable;
+    if (hasThrottle) {
+      channel = session.channels[pickup.channel]!;
+      pickup.unit = declaredChannelUnit(session, pickup.channel);
+      unitReadable =
+          pickup.unit.isEmpty ||
+          pickup.unit.toLowerCase() == pickup.threshold.unit.trim().toLowerCase();
+    } else {
+      final view = accelerationInG(session, pickup.channel)!;
+      channel = view.channel;
+      pickup.unit = view.declaredUnit;
+      unitReadable = view.supported;
+    }
+    final declared = pickup.unit.isNotEmpty;
     final scale = hasThrottle ? throttleScale(session) : PedalScale.percent;
     if (scale == PedalScale.fraction) {
       pickup.threshold = ExitThreshold(
@@ -291,8 +367,7 @@ ExitMetrics computeExitMetrics(
     final toTime = end >= length - _boundaryEpsilon && lapEndTime != null
         ? lapEndTime
         : timeAtProgress(lapTrace, end);
-    if (declared &&
-        channel.unit.trim().toLowerCase() != pickup.threshold.unit.trim().toLowerCase()) {
+    if (!unitReadable) {
       pickup.unavailableReason = exitUnitMismatch;
     } else if (scale == PedalScale.unknown) {
       pickup.unavailableReason = exitScaleUnknown;
@@ -343,7 +418,7 @@ ExitMetrics computeExitMetrics(
   if (speedName.isNotEmpty && session.channels.containsKey(speedName)) {
     result
       ..speedChannel = speedName
-      ..speedUnit = session.channels[speedName]!.unit
+      ..speedUnit = effectiveChannelUnit(session, speedName)
       ..exitSpeed = _speedAtProgress(lapTrace, session, speedName, end);
   }
   if (result.intervalEndMeters > length + _boundaryEpsilon) {

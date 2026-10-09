@@ -1,0 +1,52 @@
+<!-- title: Telefony i tablety | nav: Telefony i tablety -->
+<h1 id="phone">Telefony i tablety</h1>
+<p class="lead">Na telefonie aplikacja działa tak samo jak na komputerze, ale układ jest dostosowany do obsługi dotykiem.</p>
+
+<figure class="pair">
+  <img src="assets/screens/phone-results.png" alt="Wyniki dnia na telefonie, z paskami Najlepsze okrążenie dnia i Teoretyczny czas okrążenia oraz zakładkami Przegląd, Okrążenia, Porównaj i Raport" width="412" height="915" loading="lazy">
+  <img src="assets/screens/phone-lap.png" alt="Okrążenie na telefonie: czas okrążenia, przyciski i mapa pokolorowana według prędkości" width="412" height="915" loading="lazy">
+</figure>
+
+<h2 id="import">Import na telefonie</h2>
+<figure class="phone">
+  <img src="assets/screens/phone-import-done.png" alt="Ekran Start na telefonie po powrocie z dnia z sześcioma sesjami" width="412" height="915" loading="lazy">
+</figure>
+<ul>
+  <li><strong>Importuj sesje…</strong> otwiera wybór plików. Wybierz plik z właśnie zakończonej sesji albo wszystkie pliki VBO/RCZ z danego dnia. Aplikacja przypisze je do właściwego dnia zgodnie z zasadami opisanymi w sekcji <a href="import.html#where">Gdzie trafiają sesje</a>. Na telefonie nie można importować całego folderu.</li>
+  <li>Na iPhonie selektor pokazuje wszystkie pliki; te, które nie są obsługiwanymi nagraniami telemetrycznymi, pojawią się w sekcji Uwagi do importu.</li>
+</ul>
+
+<h2 id="share">Udostępnianie z RaceChrono</h2>
+<ol class="steps">
+  <li>W RaceChrono otwórz sesję i wyeksportuj ją jako VBO (i/lub RCZ).</li>
+  <li>Wybierz <strong>Udostępnij</strong>, a następnie <strong>FlappedEar Telemetry</strong>.</li>
+  <li>Aplikacja otworzy się i doda plik do odpowiedniego dnia:
+    <ul>
+      <li>Jeśli jakiś dzień jest już otwarty, nagranie zostanie dodane do niego jako kolejna sesja.</li>
+      <li>W przeciwnym razie, jeśli w ciągu ostatnich 24 godzin pracowałeś nad dniem zawierającym nagrania z tej samej daty (zapisanym lub z zachowanymi niezapisanymi zmianami; zobacz <a href="import.html#where">Gdzie trafiają sesje</a>), aplikacja otworzy ten dzień i doda nową sesję.</li>
+      <li>Jeśli taki dzień nie istnieje, aplikacja zaimportuje plik jako nowy dzień i go otworzy. Gdy inny dzień ma niezapisane zmiany, nowy import pozostaje na ekranie <strong>Start</strong> obok propozycji przywrócenia tamtego dnia, dzięki czemu nic nie zostanie zastąpione. Kolejne pliki udostępnione zaraz po nim zostaną dołączone do tego samego nowego dnia.</li>
+    </ul>
+  </li>
+</ol>
+<p>Plik udostępniony bezpośrednio z RaceChrono jest dodawany od razu, bez ekranu przeglądu. Jeśli chcesz najpierw sprawdzić, co aplikacja zrobi z plikiem, użyj <strong>Dodaj i przejrzyj zapisy…</strong> w otwartym dniu (zobacz <a href="import.html#review">Przeglądanie plików</a>).</p>
+<p>Działa to na Androidzie i iOS, także gdy aplikacja była wcześniej zamknięta. Po dodaniu sesji aplikacja przechodzi do <strong>Trenera</strong>: <a href="day.html#summary">podsumowania sesji</a> i karty <a href="day.html#next">Następna sesja</a>, która podpowiada, na czym skupić się podczas kolejnego wyjazdu.</p>
+
+<h2 id="layout">Układ</h2>
+<ul>
+  <li>Przy szerokości poniżej 600 punktów (telefon pionowo) główne sekcje aplikacji (<strong>Start</strong>, <strong>Biblioteka</strong>, <strong>Dzień</strong>, <strong>Trener</strong>, <strong>Profil</strong>) znajdują się na pasku u dołu. Od 600 punktów (telefon poziomo, tablet) przechodzą do bocznego panelu, który można przewijać, jeśli ekran jest zbyt niski, aby pokazać wszystkie pozycje. Poniżej 900 punktów strona dnia ma zakładki <strong>Przegląd</strong>, <strong>Okrążenia</strong>, <strong>Porównaj</strong> i <strong>Raport</strong>; na szerszym ekranie przegląd i lista okrążeń są widoczne obok siebie, a zakładki to <strong>Przegląd</strong>, <strong>Porównaj</strong> i <strong>Raport</strong>.</li>
+  <li>Strona okrążenia i ekran porównania układają mapę, wykresy i karty w jedną przewijaną kolumnę.</li>
+  <li>Jednym palcem przewijasz stronę, również nad mapą. Mapę powiększasz i przesuwasz dwoma palcami; podwójne dotknięcie przybliża.</li>
+  <li>Dotknij wykresu albo przeciągnij po nim poziomo, aby przesunąć kursor. Ruch w górę lub w dół nad wykresem przewija stronę.</li>
+  <li>Wybrane okrążenie, tryb tabeli i wybrany odcinek Analizatora zakrętów pozostają bez zmian, gdy przewiniesz stronę i później do nich wrócisz.</li>
+</ul>
+
+<h2 id="sunlight">Czytanie w słońcu</h2>
+<p>W jasnym słońcu ciemny interfejs może być trudny do odczytania. Otwórz <strong>Ustawienia</strong> (koło zębate na pasku narzędzi; na stronie dnia na wąskim ekranie, np. telefonu, w menu ⋮) i w sekcji <strong>Wygląd</strong> wybierz <strong>Słoneczny</strong>. Ten tryb używa czarnego tekstu na białym tle, mocniejszych kolorów tekstu i przycisków oraz grubszych linii wykresów. Twoje okrążenie pozostaje bursztynowe, a okrążenie odniesienia niebieskie. Wybierz <strong>Ciemny</strong>, aby wrócić do ciemnego wyglądu; ustawienie jest zapamiętywane.</p>
+<p>Gdy widoczny jest <strong>Trener</strong> albo strona otwarta z Trenera, ekran pozostaje włączony, więc karta Następna sesja nie zniknie, gdy odłożysz telefon. W innych miejscach oraz gdy aplikacja nie jest na pierwszym planie ekran wygasza się normalnie. To ustawienie działa również na komputerze. Wyłącz <strong>Nie wygaszaj ekranu, gdy widoczny jest Trener</strong> w Ustawieniach, jeśli ekran ma wygaszać się także w Trenerze.</p>
+<figure class="pair">
+  <img src="assets/screens/phone-sunlight-coach.png" alt="Trener na telefonie w wyglądzie Słoneczny: karta Następna sesja w czerni na białym tle" width="412" height="915" loading="lazy">
+  <img src="assets/screens/phone-sunlight-lap-charts.png" alt="Wykresy kanałów okrążenia na telefonie w wyglądzie Słoneczny, z grubszymi liniami" width="412" height="915" loading="lazy">
+</figure>
+
+<h2 id="days">Zapisane dni na telefonie</h2>
+<p>Dni są przechowywane w bibliotece wewnątrz aplikacji, zapisują się automatycznie i można je ponownie otworzyć z sekcji <strong>Biblioteka</strong>. Odinstalowanie aplikacji usuwa tę bibliotekę z urządzenia. Zobacz <a href="saving.html">Twoja biblioteka, zapisywanie i otwieranie</a>.</p>

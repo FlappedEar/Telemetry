@@ -5760,14 +5760,35 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Nie znaleziono $count zapisów na tym urządzeniu, więc nie ma ich w pliku.',
+          '$count zapisów nie zostało znalezionych na tym urządzeniu, więc nie ma ich w pliku.',
+      few:
+          '$count zapisy nie zostały znalezione na tym urządzeniu, więc nie ma ich w pliku.',
       one: 'Nie znaleziono 1 zapisu na tym urządzeniu, więc nie ma go w pliku.',
     );
     return '$_temp0';
   }
 
   @override
+  String libraryExportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count zapisów odniesienia nie zostało znalezionych w profilu, więc nie ma ich w pliku.',
+      few:
+          '$count zapisy odniesienia nie zostały znalezione w profilu, więc nie ma ich w pliku.',
+      one: 'Nie znaleziono 1 zapisu odniesienia w profilu, więc nie ma go w pliku.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get libraryExportFailed => 'Nie udało się wyeksportować profilu.';
+
+  @override
+  String libraryExportFailedBecause(String reason) {
+    return 'Nie udało się wyeksportować profilu: $reason';
+  }
 
   @override
   String libraryImported(int count) {
@@ -5938,6 +5959,40 @@ class AppLocalizationsPl extends AppLocalizations {
   String get sessionSetupReplace => 'Zastąp';
 
   @override
+  String get libraryMeasureAgain => 'Przelicz ponownie wszystkie dni';
+
+  @override
+  String get libraryStopMeasuring => 'Zatrzymaj';
+
+  @override
+  String libraryMeasuring(int done, int total) {
+    return 'Ponowne przeliczanie dni: $done z $total…';
+  }
+
+  @override
+  String libraryMeasured(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Przeliczono ponownie $count dni.',
+      one: 'Przeliczono ponownie 1 dzień.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryMeasureFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Nie udało się przeliczyć $count dni: brakuje pliku lub nagrania albo nie da się go odczytać. Zostają poprzednie pomiary.',
+      one: 'Nie udało się przeliczyć 1 dnia: brakuje jego pliku lub jednego z nagrań albo nie da się go odczytać. Zostają poprzednie pomiary.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String trackDialogCircuit(String name) {
     return 'Tor: $name';
   }
@@ -5955,6 +6010,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get circuitNameHelp =>
       'Pokazywana dla każdego dnia na tym torze. Zapisana na tym urządzeniu.';
+
+  @override
+  String get circuitNameNotSaved =>
+      'Nie udało się zapisać nazwy na tym urządzeniu. Obowiązuje do zamknięcia aplikacji. Spróbuj ponownie.';
 
   @override
   String get settingsCircuitsHeading => 'Tory';
@@ -5980,6 +6039,14 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get settingsCircuitsFailed =>
       'Nie udało się pobrać listy torów. Sprawdź połączenie i spróbuj ponownie.';
+
+  @override
+  String get settingsCircuitsNotSaved =>
+      'Lista torów została pobrana, ale nie udało się jej zapisać na tym urządzeniu. Obowiązuje do zamknięcia aplikacji.';
+
+  @override
+  String get settingsCircuitsForgetNotSaved =>
+      'Nie udało się zapisać zmiany na tym urządzeniu. Nazwa wróci po zamknięciu aplikacji.';
 
   @override
   String get settingsCircuitsMine => 'Twoje nazwy torów';
@@ -6360,7 +6427,7 @@ class AppLocalizationsPl extends AppLocalizations {
     String from,
     String to,
   ) {
-    return 'Mocne przyspieszenie niższe o $percent% od okrążenia $fromLap do $toLap ($from → $to)';
+    return 'Maksymalne przyspieszenie niższe o $percent%: $to na okrążeniu $toLap, wobec $from na okrążeniu $fromLap (najwyższe wcześniej)';
   }
 
   @override
@@ -6374,11 +6441,30 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get summaryCarSettledTemperatures =>
-      'Żadna temperatura nie rośnie na końcu';
+  String summaryCarSettledTemperatures(String fromLap, String toLap) {
+    return 'Temperatury na okrążeniach $fromLap–$toLap: żadna nie rośnie';
+  }
 
   @override
-  String get summaryCarSettledAcceleration => 'Mocne przyspieszenie bez spadku';
+  String summaryCarAccelerationHeld(
+    String percent,
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Maksymalne przyspieszenie bez spadku: $to na okrążeniu $toLap, wobec $from na okrążeniu $fromLap (najwyższe wcześniej, różnica $percent%)';
+  }
+
+  @override
+  String summaryCarAccelerationUp(
+    String fromLap,
+    String toLap,
+    String from,
+    String to,
+  ) {
+    return 'Maksymalne przyspieszenie bez spadku: $to na okrążeniu $toLap, nie mniej niż $from na okrążeniu $fromLap (najwyższe wcześniej)';
+  }
 
   @override
   String summaryCarTemperaturesNeedLaps(int count) {
@@ -6398,10 +6484,13 @@ class AppLocalizationsPl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
-      many: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
-      few: 'Mocne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
-      one: 'Mocne przyspieszenie: potrzeba 1 sklasyfikowanego okrążenia',
+      other:
+          'Maksymalne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      many:
+          'Maksymalne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      few:
+          'Maksymalne przyspieszenie: potrzeba $count sklasyfikowanych okrążeń',
+      one: 'Maksymalne przyspieszenie: potrzeba 1 sklasyfikowanego okrążenia',
     );
     return '$_temp0';
   }
@@ -6424,7 +6513,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get summaryCarAccelerationMissing =>
-      'Mocne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu';
+      'Maksymalne przyspieszenie: brak odczytu na ostatnim sklasyfikowanym okrążeniu';
 
   @override
   String get summaryCarFallNote =>
@@ -6436,13 +6525,13 @@ class AppLocalizationsPl extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
       many:
-          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
       few:
-          'Mocne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na $count z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
       one:
-          'Mocne przyspieszenie: odczyt na 1 z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
+          'Maksymalne przyspieszenie: odczyt na 1 z $ranked sklasyfikowanych okrążeń, potrzeba $needed',
     );
     return '$_temp0';
   }
@@ -6690,6 +6779,34 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get libraryImportNotebookCut =>
       'Część notatek z pliku nie zmieściła się w notatniku i została pominięta.';
+
+  @override
+  String libraryImportReferencesNotKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto okrążenia odniesienia $count dni: ich zapisy nie zmieściły się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+      few:
+          'Pominięto okrążenia odniesienia $count dni: ich zapisy nie zmieściły się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+      one: 'Pominięto okrążenie odniesienia 1 dnia: jego zapis nie zmieścił się w limicie zapisów odniesienia w profilu albo był tu już inny plik o tej samej nazwie.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportReferencesMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count zapisów odniesienia nie było w pliku: te odniesienia powiedzą, że nie znaleziono zapisu.',
+      few:
+          '$count zapisy odniesienia nie były w pliku: te odniesienia powiedzą, że nie znaleziono zapisu.',
+      one: '1 zapisu odniesienia nie było w pliku: to odniesienie powie, że nie znaleziono zapisu.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String notebookFull(int count) {
@@ -7554,7 +7671,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceIntro =>
-      'Porównaj swoje okrążenia z okrążeniem spoza tego dnia: z zapisu znajomego lub instruktora albo z jednego z Twoich wcześniejszych dni. Jest mierzone na dzisiejszej linii start/meta i trzymane osobno: nie wchodzi do rankingu, teoretycznego czasu okrążenia, postępów ani porad trenera i nie jest zapisywane z dniem.';
+      'Porównaj swoje okrążenia z okrążeniem spoza tego dnia: z zapisu znajomego lub instruktora albo z jednego z Twoich wcześniejszych dni. Jest mierzone na dzisiejszej linii start/meta i trzymane osobno: nie wchodzi do rankingu, teoretycznego czasu okrążenia, postępów ani porad trenera i nie jest zapisywane w pliku dnia. Twój profil kierowcy zapamiętuje je dla tego dnia: plik zapisu jest kopiowany do profilu, a okrążenie z wcześniejszego dnia jest zapamiętywane przez ten dzień.';
 
   @override
   String get referenceLoadFile => 'Wczytaj zapis';
@@ -7618,7 +7735,76 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceNotSaved =>
-      'Trzymane, dopóki ten dzień jest otwarty; nie jest zapisywane.';
+      'Trzymane, dopóki ten dzień jest otwarty; nie jest zapamiętywane, bo ten dzień nie jest w Twoim profilu kierowcy.';
+
+  @override
+  String get referenceSaved =>
+      'Zapamiętane dla tego dnia w Twoim profilu kierowcy.';
+
+  @override
+  String get referenceSavedCopy =>
+      'Zapamiętane dla tego dnia w Twoim profilu kierowcy, razem z kopią zapisu.';
+
+  @override
+  String get referenceSaving => 'Zapisywanie w Twoim profilu kierowcy…';
+
+  @override
+  String referenceKeepFailed(String reason) {
+    return 'Nie zapamiętano: $reason Odniesienie zostaje, dopóki ten dzień jest otwarty.';
+  }
+
+  @override
+  String get referenceForgetFailed =>
+      'Nie udało się usunąć odniesienia z Twojego profilu kierowcy, więc wróci po ponownym otwarciu tego dnia.';
+
+  @override
+  String get referenceKeepRetry => 'Spróbuj ponownie';
+
+  @override
+  String referenceKeepTooManyFiles(int count) {
+    return 'Twój profil przechowuje już $count zapisów odniesienia. Najpierw usuń odniesienie z innego dnia.';
+  }
+
+  @override
+  String referenceKeepTooMuch(int megabytes) {
+    return 'Zapisy odniesienia zajęłyby w Twoim profilu ponad $megabytes MiB.';
+  }
+
+  @override
+  String referenceKeepFileTooLarge(int megabytes) {
+    return 'Zapis jest większy niż $megabytes MiB, czyli maksimum dla odniesienia.';
+  }
+
+  @override
+  String get referenceKeepFileEmpty => 'Zapis jest pusty.';
+
+  @override
+  String get referenceKeepFileType =>
+      'Można zapamiętać tylko zapis VBO lub RCZ.';
+
+  @override
+  String get referenceKeepUnreadable =>
+      'Nie udało się skopiować zapisu do Twojego profilu.';
+
+  @override
+  String get referenceKeepNotWritten =>
+      'Nie udało się zapisać Twojego profilu kierowcy.';
+
+  @override
+  String get referenceKeepOther =>
+      'Twój profil kierowcy nie mógł tego zachować.';
+
+  @override
+  String get referenceFileMissing =>
+      'Zapis zapamiętany dla tego odniesienia nie został znaleziony w Twoim profilu kierowcy. Usuń odniesienie albo wczytaj zapis ponownie.';
+
+  @override
+  String get referenceFileChanged =>
+      'Zapis zapamiętany dla tego odniesienia nie jest tym plikiem, który zapisano (zmienił się). Usuń odniesienie albo wczytaj zapis ponownie.';
+
+  @override
+  String get referenceDayMissing =>
+      'Dnia, z którego pochodzi to odniesienie, nie ma już w Twoim profilu kierowcy. Usuń odniesienie albo wybierz inny dzień.';
 
   @override
   String get referencePickDay => 'Wybierz wcześniejszy dzień';
@@ -7649,7 +7835,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get referenceKeptApart =>
-      'Odniesienie nie jest częścią tego dnia: nie wchodzi do rankingu i nie jest zapisywane.';
+      'Odniesienie nie jest częścią tego dnia: nie wchodzi do rankingu i nie jest zapisywane w pliku dnia.';
 
   @override
   String get referenceGone => 'Nie wybrano okrążenia odniesienia.';
@@ -7739,4 +7925,785 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get referenceRouteUnchecked =>
       'Dzisiejsze okrążenie nie ma trasy do porównania, więc nie sprawdzono trasy ani kierunku odniesienia: tylko dzisiejszą linię start/meta.';
+
+  @override
+  String get bpHeading => 'Optymalne fazy zakrętów';
+
+  @override
+  String get bpSummary =>
+      'Najszybsze wejście, środek i wyjście z każdego zakrętu w ciągu dnia, złożone w optymalny przejazd.';
+
+  @override
+  String bpSummaryTime(String time) {
+    return 'Najszybsze wejście, środek i wyjście z każdego zakrętu w ciągu dnia, złożone w optymalny przejazd: $time.';
+  }
+
+  @override
+  String get bpWorking =>
+      'Obliczanie wraz z teoretycznie najlepszym okrążeniem…';
+
+  @override
+  String bpUnavailable(String reason) {
+    return 'Niedostępne: $reason';
+  }
+
+  @override
+  String get bpIntro =>
+      'Każdy zakręt jest dzielony na wejście, środek i wyjście wokół jego najciaśniejszego miejsca. Każda faza pochodzi z tego okrążenia w rankingu, na którym została przejechana najszybciej. Proste oraz zakręty, których nie można podzielić na fazy, są brane w całości z najszybszego przejazdu danego odcinka. Okrążenia spoza rankingu są pomijane.';
+
+  @override
+  String get bpIncomplete =>
+      'Nie można obliczyć sumy: dla co najmniej jednej fazy brakuje czasu ze wszystkich okrążeń w rankingu.';
+
+  @override
+  String get bpLoses => 'Strata';
+
+  @override
+  String get bpBestsTitle => 'Porównanie z teoretycznym optimum';
+
+  @override
+  String bpTotalNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Suma najszybszych czasów poszczególnych faz, pochodzących z $_temp0. Nie wszystkie przejścia między fazami muszą być fizycznie możliwe.';
+  }
+
+  @override
+  String get bpRawNote =>
+      'Ta sama metoda, ale z użyciem całych odcinków zamiast faz zakrętów.';
+
+  @override
+  String get bpJoinedLabel => 'Realistyczne optimum faz';
+
+  @override
+  String bpJoinedNote(String tolerance, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążeń',
+      one: '1 okrążenia',
+    );
+    return 'Szacowany czas złożony z najszybszych faz, dla których prędkość na przejściu między dwoma okrążeniami różni się najwyżej o $tolerance. Warunek jest sprawdzany także na granicach faz wewnątrz zakrętów. Złożone z $_temp0.';
+  }
+
+  @override
+  String get bpJoinedNoJoin =>
+      'Niedostępne: wszystkie fazy mają zmierzony czas, ale nie da się ich połączyć z zachowaniem zgodnej prędkości na granicach.';
+
+  @override
+  String get bpRealisticNote =>
+      'Ta sama metoda, ale z użyciem całych odcinków zamiast faz zakrętów.';
+
+  @override
+  String get bpTypicalNote =>
+      'Inna metoda: najszybszy typowy czas każdego odcinka w pojedynczej sesji, liczony jako mediana. Pokazuje to, co zwykle osiągasz w danym miejscu, a nie pojedynczy najlepszy przejazd. Zakręty nie są dzielone na fazy.';
+
+  @override
+  String get bpJoinsTitle => 'Ciągłość między fazami';
+
+  @override
+  String get bpJoinsNone =>
+      'Wszystkie fazy pochodzą z jednego okrążenia — nie ma przejść między różnymi okrążeniami do sprawdzenia.';
+
+  @override
+  String bpJoinsAll(int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'wszystkich $count granicach',
+      one: 'jedynej granicy',
+    );
+    return 'Na $_temp0 między fazami pochodzącymi z różnych okrążeń różnica prędkości nie przekracza $tolerance.';
+  }
+
+  @override
+  String bpJoinsApart(int apart, int count, String tolerance) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count granic',
+      one: '1 granicy',
+    );
+    return 'Na $apart z $_temp0 między fazami pochodzącymi z różnych okrążeń różnica prędkości przekracza $tolerance. W tych miejscach złożone optimum nie odpowiada przejazdowi, który samochód mógłby wykonać w tej postaci.';
+  }
+
+  @override
+  String bpJoinApart(String where, String difference) {
+    return '$where: różnica prędkości $difference';
+  }
+
+  @override
+  String bpJoinsUnknown(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count granic',
+      one: 'Jednej granicy',
+    );
+    return '$_temp0 nie można było sprawdzić, ponieważ na jednym z okrążeń brakuje prędkości w znanej jednostce.';
+  }
+
+  @override
+  String get bpJoinsNote =>
+      'Zgodna prędkość na granicy faz jest warunkiem koniecznym, ale nie gwarantuje, że fazy da się połączyć w rzeczywistym przejeździe — dwa okrążenia mogą mieć tę samą prędkość, ale inną linię jazdy.';
+
+  @override
+  String get bpByPart => 'Faza po fazie';
+
+  @override
+  String bpBest(String time, String lap) {
+    return 'Najlepiej: $time s · $lap';
+  }
+
+  @override
+  String get bpNoTime => 'Brak zmierzonego czasu na tym odcinku';
+
+  @override
+  String bpLapTime(String time) {
+    return 'To okrążenie: $time s';
+  }
+
+  @override
+  String get bpLapSetIt => 'Najlepszy czas tej fazy pochodzi z tego okrążenia';
+
+  @override
+  String get bpLapNotTimed => 'Brak czasu tej fazy na tym okrążeniu';
+
+  @override
+  String bpDoesNotJoin(String difference) {
+    return 'Brak ciągłości z poprzednią fazą: różnica prędkości $difference';
+  }
+
+  @override
+  String get bpWhole => 'Cały odcinek';
+
+  @override
+  String get bpPiecesNote =>
+      'Optymalne fazy pochodzą z różnych okrążeń, więc nie tworzą jednego rzeczywiście zarejestrowanego okrążenia. Z tego powodu są porównywane faza po fazie i nie mogą służyć jako okrążenie odniesienia.';
+
+  @override
+  String get bpRawNever =>
+      'Optimum z faz nigdy nie będzie wolniejsze: wejście, środek i wyjście zakrętu mogą pochodzić z trzech różnych okrążeń.';
+
+  @override
+  String get bpJoinedNever =>
+      'Realistyczne optimum faz nigdy nie będzie wolniejsze od wariantu złożonego z całych, zgodnych odcinków.';
+
+  @override
+  String get bpSpeedAssumed =>
+      'Prędkości bez zapisanej jednostki są interpretowane jako km/h.';
+
+  @override
+  String get brakingTechniqueTitle => 'Technika hamowania';
+
+  @override
+  String brakingTechniqueFromG(String rate) {
+    return 'Na podstawie kanału przyspieszenia wzdłużnego ($rate Hz) z klasyfikowanych okrążeń tego dnia.';
+  }
+
+  @override
+  String brakingTechniqueFromGAssumed(String rate) {
+    return 'Na podstawie kanału przyspieszenia wzdłużnego ($rate Hz, bez zapisanej jednostki — przyjęto g) z klasyfikowanych okrążeń tego dnia.';
+  }
+
+  @override
+  String brakingTechniqueFromSpeed(String rate, String why) {
+    return 'Na podstawie prędkości ($rate Hz); jej zmiana jest wygładzana w oknie 0.5 s. Dane z klasyfikowanych okrążeń tego dnia: $why. Wartości nie są bezpośrednio porównywalne z wyznaczonymi z kanału przeciążenia.';
+  }
+
+  @override
+  String get brakingTechniqueNoGChannel =>
+      'brak kanału przyspieszenia wzdłużnego';
+
+  @override
+  String get brakingTechniqueGChannelEmpty =>
+      'kanał przyspieszenia wzdłużnego nie zawiera danych';
+
+  @override
+  String get brakingTechniqueHit => 'Tempo narastania hamowania';
+
+  @override
+  String get brakingTechniquePeak => 'Maksymalne opóźnienie';
+
+  @override
+  String get brakingTechniqueTrail => 'Trail braking · wyznaczone pośrednio';
+
+  @override
+  String get brakingTechniqueRelease => 'Tempo odpuszczania hamulca';
+
+  @override
+  String get brakingTechniqueBrakeToThrottle => 'Przejście z hamulca na gaz';
+
+  @override
+  String get brakingTechniquePedal => 'Praca pedałem hamulca';
+
+  @override
+  String brakingTechniqueThisLap(String value) {
+    return 'To okrążenie: $value';
+  }
+
+  @override
+  String brakingTechniqueThisLapUnknown(String reason) {
+    return 'To okrążenie: brak danych ($reason)';
+  }
+
+  @override
+  String brakingTechniqueTypical(String value, int laps) {
+    String _temp0 = intl.Intl.pluralLogic(
+      laps,
+      locale: localeName,
+      other: 'typowo $value ($laps okrążenia)',
+      many: 'typowo $value ($laps okrążeń)',
+      few: 'typowo $value ($laps okrążenia)',
+      one: 'typowo $value (1 okrążenie)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueTypicalUnknown(String reason) {
+    return 'typowo: brak danych ($reason)';
+  }
+
+  @override
+  String brakingTechniquePeakWhere(String after, String zone) {
+    return 'Maksymalne opóźnienie po $after s od początku hamowania; cała strefa hamowania trwa $zone s.';
+  }
+
+  @override
+  String get brakingTechniquePeakEarly =>
+      'Maksymalne opóźnienie zwykle pojawia się w pierwszej 1/3 czasu hamowania.';
+
+  @override
+  String get brakingTechniquePeakMiddle =>
+      'Maksymalne opóźnienie zwykle pojawia się w środkowej 1/3 czasu hamowania.';
+
+  @override
+  String get brakingTechniquePeakLate =>
+      'Maksymalne opóźnienie zwykle pojawia się w ostatniej 1/3 czasu hamowania.';
+
+  @override
+  String get brakingTechniqueTrailNote =>
+      'Hamowanie utrzymywane przy przeciążeniu bocznym co najmniej 0.3 g. Wyznaczone pośrednio, ponieważ zapis nie zawiera kąta skrętu kierownicy.';
+
+  @override
+  String brakingTechniqueThrottleNote(String rate, String error) {
+    return 'Czas od końca hamowania do ponownego dodania gazu. Pomiar kończy się przy kolejnym hamowaniu lub po maksymalnie 4 s. Kanał gazu jest zapisywany z częstotliwością $rate Hz, więc moment dodania gazu ma dokładność około $error s.';
+  }
+
+  @override
+  String brakingTechniquePedalSlow(String rate) {
+    return 'Brak wiarygodnej wartości: kanał hamulca ma zbyt niską częstotliwość ($rate Hz). Pozwala określić, kiedy hamowanie trwa, ale nie tempo ruchu pedału, dlatego wartości narastania i odpuszczania wyżej są wyznaczane z opóźnienia samochodu.';
+  }
+
+  @override
+  String brakingTechniqueUnavailable(String reason) {
+    return 'Brak danych: $reason';
+  }
+
+  @override
+  String brakingTechniqueBrakingLaps(int braked, int laps) {
+    return 'Hamowanie wystąpiło na $braked z $laps okrążeń.';
+  }
+
+  @override
+  String brakingTechniqueOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto $count okrążenia zmierzonego inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      many:
+          'Pominięto $count okrążeń zmierzonych inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      few:
+          'Pominięto $count okrążenia zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      one: 'Pominięto 1 okrążenie zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brakingTechniqueNote =>
+      'Początek i koniec hamowania są wyznaczane względem opóźnienia 0.15 g, po wcześniejszym wykryciu hamowania od 0.30 g. Tempo narastania mierzy wzrost opóźnienia do 85% wartości maksymalnej, licząc od ostatniej chwili poniżej 25% maksimum (ale nie mniej niż 0.15 g). Dzięki temu toczenie lub lekkie odjęcie gazu przed właściwym hamowaniem nie zawyża wyniku. Tempo odpuszczania jest liczone analogicznie podczas spadku od 85% maksimum. Obie metryki wymagają maksymalnego opóźnienia co najmniej 0.40 g i kanału o częstotliwości około 10 Hz lub większej. Przy wyznaczaniu z prędkości wartości szybsze, niż pozwala wykazać wygładzanie 0.5 s, są oznaczane jako „co najmniej”. Wartość typowa to mediana z co najmniej trzech okrążeń.';
+
+  @override
+  String brakingTechniqueReasonTooSlow(String rate) {
+    return 'kanał zbyt wolny ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonBrakeTooSlow(String rate) {
+    return 'kanał hamulca zbyt wolny ($rate Hz)';
+  }
+
+  @override
+  String brakingTechniqueReasonLateralTooSlow(String rate) {
+    return 'kanał przeciążenia bocznego zbyt wolny ($rate Hz)';
+  }
+
+  @override
+  String get brakingTechniqueReasonNoDeceleration =>
+      'brak zapisu przyspieszenia wzdłużnego i prędkości';
+
+  @override
+  String get brakingTechniqueReasonNoBraking => 'brak hamowania w tym miejscu';
+
+  @override
+  String get brakingTechniqueReasonGap => 'przerwa w zapisie';
+
+  @override
+  String get brakingTechniqueReasonTruncated =>
+      'hamowanie trwa dłużej niż zapis';
+
+  @override
+  String get brakingTechniqueReasonTooLight =>
+      'maksymalne opóźnienie poniżej 0.40 g';
+
+  @override
+  String get brakingTechniqueReasonTooQuick =>
+      'zmiana zbyt szybka względem częstotliwości próbkowania';
+
+  @override
+  String get brakingTechniqueReasonNoLateral =>
+      'brak kanału przeciążenia bocznego';
+
+  @override
+  String get brakingTechniqueReasonLateralEmpty =>
+      'kanał przeciążenia bocznego nie zawiera danych';
+
+  @override
+  String get brakingTechniqueReasonNoThrottle => 'brak kanału gazu';
+
+  @override
+  String get brakingTechniqueReasonNoBrake => 'brak kanału pedału hamulca';
+
+  @override
+  String get brakingTechniqueDayTitle => 'Technika hamowania';
+
+  @override
+  String brakingTechniqueDaySummary(
+    int corners,
+    String source,
+    String figures,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      corners,
+      locale: localeName,
+      other: 'Typowe wartości z $corners zakrętów',
+      one: 'Typowa wartość z 1 zakrętu',
+    );
+    return '$_temp0, $source: $figures.';
+  }
+
+  @override
+  String get brakingTechniqueDayFromG => 'z przyspieszenia wzdłużnego';
+
+  @override
+  String get brakingTechniqueDayFromSpeed => 'z prędkości';
+
+  @override
+  String brakingTechniqueDayHit(String value) {
+    return 'narastanie $value';
+  }
+
+  @override
+  String brakingTechniqueDayRelease(String value) {
+    return 'odpuszczanie $value';
+  }
+
+  @override
+  String brakingTechniqueDayTrail(String value) {
+    return 'trail braking $value (wyznaczone pośrednio)';
+  }
+
+  @override
+  String brakingTechniqueDayThrottle(String value) {
+    return 'hamulec → gaz $value';
+  }
+
+  @override
+  String get brakingTechniqueDayNote =>
+      'Wybierz zakręt powyżej, aby zobaczyć hamowanie na poszczególnych okrążeniach.';
+
+  @override
+  String brakingTechniqueFromSpeedAssumed(
+    String rate,
+    String unit,
+    String why,
+  ) {
+    return 'Na podstawie prędkości ($rate Hz, bez zapisanej jednostki — przyjęto $unit); jej zmiana jest wygładzana w oknie 0.5 s. Dane z klasyfikowanych okrążeń tego dnia: $why. Wartości nie są bezpośrednio porównywalne z wyznaczonymi z kanału przeciążenia.';
+  }
+
+  @override
+  String brakingTechniqueAtLeast(String value) {
+    return 'co najmniej $value';
+  }
+
+  @override
+  String brakingTechniqueAbout(String value) {
+    return 'około $value';
+  }
+
+  @override
+  String get brakingTechniqueLateralAssumed =>
+      'Kanał przeciążenia bocznego nie ma zapisanej jednostki — przyjęto g.';
+
+  @override
+  String get brakingTechniqueThrottleAssumed =>
+      'Kanał gazu nie ma zapisanej jednostki — przyjęto %.';
+
+  @override
+  String get brakingTechniqueThrottleScaleInferred =>
+      'Kanał gazu ma zakres 0–1 — został przeliczony na 0–100%.';
+
+  @override
+  String get brakingTechniqueBrakeAssumed =>
+      'Kanał hamulca nie ma zapisanej jednostki — przyjęto %.';
+
+  @override
+  String get brakingTechniqueBrakeScaleInferred =>
+      'Kanał hamulca ma zakres 0–1 — został przeliczony na 0–100%.';
+
+  @override
+  String get brakingTechniqueReasonBrakingAgain =>
+      'kolejne hamowanie przed ponownym dodaniem gazu';
+
+  @override
+  String get brakingTechniqueReasonCoasting =>
+      'brak ponownego dodania gazu w ciągu 4 s od końca hamowania';
+
+  @override
+  String get brakingTechniqueReasonBrakeResampled =>
+      'kanał hamulca z OBD został przeliczony do częstotliwości zapisu; jego rzeczywista częstotliwość próbkowania jest nieznana';
+
+  @override
+  String get brakingTechniqueDayFromGAssumed =>
+      'z przyspieszenia wzdłużnego (bez zapisanej jednostki: odczytane jako g)';
+
+  @override
+  String brakingTechniqueDayFromSpeedAssumed(String unit) {
+    return 'z prędkości (bez zapisanej jednostki: odczytane jako $unit)';
+  }
+
+  @override
+  String brakingTechniqueDayOtherSource(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto $count zakrętu zmierzonego inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      many:
+          'Pominięto $count zakrętów zmierzonych inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      few:
+          'Pominięto $count zakręty zmierzone inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+      one: 'Pominięto 1 zakręt zmierzony inaczej (z kanału G lub z prędkości albo w innej jednostce).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brakingTechniqueSpeedAssumed(String unit) {
+    return 'Prędkość nie ma zapisanej jednostki — odległości są wyznaczane przy założeniu $unit.';
+  }
+
+  @override
+  String brakingTechniqueSubsetBraked(int laps, int braking) {
+    return 'Wartość dostępna dla $laps z $braking okrążeń z hamowaniem; na pozostałych wystąpiło kolejne hamowanie przed dodaniem gazu albo samochód pozostał bez gazu.';
+  }
+
+  @override
+  String brakingTechniqueSubsetOther(int laps, int braking, String reason) {
+    return 'Wartość dostępna dla $laps z $braking okrążeń z hamowaniem; dla pozostałych brak wyniku: $reason.';
+  }
+
+  @override
+  String brakingTechniqueDayMinority(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Pominięto $count zakrętu w wartości opartej na mniej niż połowie jego okrążeń z hamowaniem.',
+      many:
+          'Pominięto $count zakrętów w wartości opartej na mniej niż połowie ich okrążeń z hamowaniem.',
+      few:
+          'Pominięto $count zakręty w wartości opartej na mniej niż połowie ich okrążeń z hamowaniem.',
+      one: 'Pominięto 1 zakręt w wartości opartej na mniej niż połowie jego okrążeń z hamowaniem.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lapStylesHeading => 'Style jazdy';
+
+  @override
+  String get lapStylesInferredBadge => 'Wyznaczone';
+
+  @override
+  String get lapStylesSummary =>
+      'Okrążenia z rankingu pogrupowane według sposobu hamowania i operowania gazem, wraz z najlepszym okrążeniem każdej grupy.';
+
+  @override
+  String get lapStylesShow => 'Pokaż';
+
+  @override
+  String get lapStylesHide => 'Ukryj';
+
+  @override
+  String lapStylesIntro(int count) {
+    return 'Każde okrążenie z rankingu jest porównywane z typowym przejazdem dnia w każdym zakręcie: punktem rozpoczęcia hamowania, punktem ponownego dodania gazu oraz prędkością w zakręcie. Grupa opisuje, jak dane okrążenia były przejeżdżane względem pozostałych, ale nie wskazuje przyczyny lepszego czasu — sama przynależność do stylu nie oznacza, że ten styl był szybszy. Wartość typowa jest medianą z okrążeń dnia i wymaga co najmniej $count okrążeń.';
+  }
+
+  @override
+  String get lapStylesWorking => 'Analizowanie stylów jazdy…';
+
+  @override
+  String get lapStylesUnavailable =>
+      'Niedostępne, dopóki okrążenia dnia nie zostaną zmierzone na odcinkach.';
+
+  @override
+  String lapStylesTooFewLaps(int count) {
+    return 'Analiza stylu jazdy wymaga co najmniej $count okrążeń w rankingu.';
+  }
+
+  @override
+  String lapStylesTooFewCorners(int count) {
+    return 'W mniej niż $count zakrętach punkt hamowania lub ponownego dodania gazu jest dostępny na wystarczającej liczbie okrążeń. Za mało danych, aby pogrupować okrążenia według stylu jazdy.';
+  }
+
+  @override
+  String lapStylesBasis(int grouped, int timed, int corners) {
+    return 'Pogrupowano $grouped z $timed mierzonych okrążeń. Pominięto okrążenia wyjazdowe, zjazdowe, wykluczone oraz zawierające problemy z danymi. Porównane zakręty: $corners.';
+  }
+
+  @override
+  String get lapStylesFewLaps =>
+      'W poszczególnych grupach jest mało okrążeń, a wraz z poznawaniem toru tempo w ciągu dnia może rosnąć. Grupy mogą więc mieszać rzeczywisty styl jazdy z efektem nauki toru. Traktuj je jako wskazówkę do analizy, nie jako ocenę skuteczności danego stylu.';
+
+  @override
+  String lapStylesBestLine(String lap, String time, String style) {
+    return 'Najlepsze okrążenie dnia — $lap ($time) — należy do grupy „$style”.';
+  }
+
+  @override
+  String get lapStyleConservative => 'Wcześniejsze hamowanie, późniejszy gaz';
+
+  @override
+  String get lapStyleLateBraking => 'Późne hamowanie';
+
+  @override
+  String get lapStyleEarlyThrottle => 'Wczesny gaz';
+
+  @override
+  String get lapStyleMixed => 'Styl mieszany';
+
+  @override
+  String get lapStyleTypical => 'Styl typowy';
+
+  @override
+  String get lapStyleOutlier => 'Okrążenia nietypowe';
+
+  @override
+  String get lapStylesRulesHeading => 'Zasady klasyfikacji';
+
+  @override
+  String get lapStylesRuleConservative =>
+      'Wcześniejsze hamowanie, późniejszy gaz: w większości zakrętów hamowanie zaczyna się wcześniej, a gaz jest ponownie dodawany później niż typowo.';
+
+  @override
+  String get lapStylesRuleLateBraking =>
+      'Późne hamowanie: w większości zakrętów hamowanie zaczyna się później niż typowo.';
+
+  @override
+  String get lapStylesRuleEarlyThrottle =>
+      'Wczesny gaz: w większości zakrętów gaz jest ponownie dodawany wcześniej niż typowo.';
+
+  @override
+  String get lapStylesRuleMixed =>
+      'Styl mieszany: połączenie późnego hamowania i wczesnego gazu albo niespójny wzorzec między zakrętami — np. późniejsze hamowanie z późniejszym gazem, wczesny gaz z wcześniejszym hamowaniem lub tylko jedna z cech stylu zachowawczego.';
+
+  @override
+  String get lapStylesRuleTypical =>
+      'Styl typowy: żaden z pozostałych wzorców nie dominuje.';
+
+  @override
+  String get lapStylesRuleOutlier =>
+      'Okrążenia nietypowe: punkty hamowania lub dodania gazu wyraźnie odbiegają od typowych w większości zakrętów albo dostępnych jest za mało zmierzonych zakrętów do wiarygodnej klasyfikacji — minimum to 3 lub połowa porównywanych zakrętów, jeśli ta liczba jest większa.';
+
+  @override
+  String lapStylesRuleThresholds(
+    String brake,
+    String throttle,
+    String speed,
+    String factor,
+    int corners,
+  ) {
+    return '„Wcześniej” lub „później” oznacza różnicę większą niż $brake m dla punktu hamowania i $throttle m dla punktu dodania gazu. Kanał gazu z OBD odświeża się około dwa razy na sekundę. „Szybciej” lub „wolniej” oznacza różnicę większą niż $speed% typowej prędkości. „Większość” oznacza ponad połowę zmierzonych zakrętów i co najmniej $corners. „Wyraźnie odbiega” oznacza $factor razy większą różnicę od podanych progów. Sama prędkość nie decyduje o klasyfikacji stylu, ponieważ zależy również od ogólnego tempa okrążenia.';
+  }
+
+  @override
+  String lapStylesGroupTitle(String style, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count okrążenia',
+      many: '$count okrążeń',
+      few: '$count okrążenia',
+      one: '1 okrążenie',
+    );
+    return '$style · $_temp0';
+  }
+
+  @override
+  String lapStylesGroupBest(String lap, String time) {
+    return 'Najlepsze: $lap · $time';
+  }
+
+  @override
+  String get lapStylesGroupIsDayBest => 'najlepsze okrążenie dnia';
+
+  @override
+  String lapStylesGroupBehind(String delta) {
+    return '$delta względem najlepszego okrążenia dnia';
+  }
+
+  @override
+  String lapStylesGroupTypical(String time) {
+    return 'typowy czas: $time';
+  }
+
+  @override
+  String lapStylesGroupTypicalNeeds(int count) {
+    return 'typowy czas wymaga co najmniej $count okrążeń';
+  }
+
+  @override
+  String lapStylesGroupQuickerHalf(int count, int total) {
+    return '$count z $total okrążeń należy do szybszej połowy dnia';
+  }
+
+  @override
+  String lapStylesBestAgainst(String lap) {
+    return '$lap względem typowych wartości dnia w każdym zakręcie';
+  }
+
+  @override
+  String get lapStylesLapsHeading => 'Okrążenia w tej grupie';
+
+  @override
+  String get lapStylesBrakeName => 'Punkt hamowania';
+
+  @override
+  String get lapStylesThrottleName => 'Punkt ponownego dodania gazu';
+
+  @override
+  String get lapStylesMinimumName => 'Prędkość minimalna';
+
+  @override
+  String get lapStylesExitName => 'Prędkość na wyjściu';
+
+  @override
+  String lapStylesNotMeasured(String what) {
+    return '$what: brak pomiaru na tym okrążeniu';
+  }
+
+  @override
+  String lapStylesBrakeLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Punkt hamowania: wcześniej w $earlier, później w $later z $measured zakrętów; mediana: $median';
+  }
+
+  @override
+  String lapStylesThrottleLine(
+    int earlier,
+    int later,
+    int measured,
+    String median,
+  ) {
+    return 'Ponowne dodanie gazu: wcześniej w $earlier, później w $later z $measured zakrętów; mediana: $median';
+  }
+
+  @override
+  String lapStylesSpeedLine(
+    String what,
+    int faster,
+    int slower,
+    int measured,
+    String median,
+  ) {
+    return '$what: szybciej w $faster, wolniej w $slower z $measured zakrętów; mediana: $median';
+  }
+
+  @override
+  String lapStylesMedianMetresEarlier(int count) {
+    return '$count m wcześniej';
+  }
+
+  @override
+  String lapStylesMedianMetresLater(int count) {
+    return '$count m później';
+  }
+
+  @override
+  String lapStylesMedianFaster(String value) {
+    return '$value szybciej';
+  }
+
+  @override
+  String lapStylesMedianSlower(String value) {
+    return '$value wolniej';
+  }
+
+  @override
+  String get lapStylesMedianSame => 'bez istotnej różnicy';
+
+  @override
+  String lapStylesOutlierUnlike(int extreme, int compared) {
+    return 'Okrążenie wyraźnie różni się od pozostałych: punkt hamowania lub dodania gazu mocno odbiega od typowego w $extreme z $compared zakrętów.';
+  }
+
+  @override
+  String lapStylesOutlierFew(int compared, int needed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      compared,
+      locale: localeName,
+      other: 'w $compared zakrętach',
+      one: 'w 1 zakręcie',
+    );
+    return 'Dane dostępne tylko $_temp0; do oceny stylu jazdy potrzeba co najmniej $needed.';
+  }
+
+  @override
+  String get lapStylesBrakeNote =>
+      'Punkty hamowania są wyznaczane z przyspieszenia wzdłużnego, a gdy go brakuje — ze zmian prędkości. Kanał pedału hamulca nie jest do tego używany, ponieważ zapis z OBD odświeża się tylko około dwa razy na sekundę.';
+
+  @override
+  String get lapStylesNoBraking =>
+      'Nie można wyznaczyć punktu hamowania: zapis nie zawiera przyspieszenia wzdłużnego ani prędkości w znanej jednostce. Kanał pedału hamulca nie jest używany do klasyfikacji stylu jazdy.';
+
+  @override
+  String lapStylesBrakeUnitAssumed(String units) {
+    return 'Przyspieszenie lub prędkość użyte do wyznaczenia punktów hamowania nie mają zapisanej jednostki — przyjęto $units.';
+  }
+
+  @override
+  String get lapStylesSpeedUnitMissing =>
+      'Kanał prędkości nie ma zapisanej jednostki, dlatego wartości są wyświetlane bez jednostki.';
+
+  @override
+  String lapStylesSpeedUnitAssumed(String units) {
+    return 'Kanał prędkości nie ma zapisanej jednostki — użyto jednostki ustawionej w aplikacji: $units.';
+  }
+
+  @override
+  String lapStylesTypicalNote(int count) {
+    return 'Typowa wartość dla zakrętu to mediana z co najmniej $count pogrupowanych okrążeń zmierzonych w ten sam sposób. Porównywane okrążenie również wchodzi do tej mediany, dlatego jego różnica względem wartości typowej jest nieznacznie zmniejszona. Okrążenia z sesji, w których dany kanał lub jednostka zostały zapisane inaczej, nie są łączone z pozostałymi, więc wartość typowa może bazować na mniejszej liczbie okrążeń niż cała grupa. „Szybsza połowa” obejmuje szybszą połowę pogrupowanych okrążeń, zaokrągloną w górę, wraz z okrążeniami o czasie równym ostatniemu zakwalifikowanemu.';
+  }
 }

@@ -21,6 +21,7 @@ import 'package:path/path.dart' as p;
 
 import '../day/day_document.dart';
 import 'driver_profile.dart';
+import 'profile_reference_files.dart';
 
 const profileBundleFormat = 'flappedear-profile-bundle';
 const profileBundleVersion = 1;
@@ -34,8 +35,32 @@ const profileIndexName = 'driver.feprofile';
 const profileDaysFolderName = 'Days';
 const profileRecordingsFolderName = 'Recordings';
 
-/// The largest recording a bundle may hold.
-const maximumBundleRecordingBytes = 4 * 1024 * 1024 * 1024;
+/// The largest recording a bundle may hold: the size the importers read at
+/// most (`maximumReferenceFileBytes`), so a recording that travels can be
+/// opened again.
+const maximumBundleRecordingBytes = maximumReferenceFileBytes;
+
+/// The most recordings a bundle may hold (each once, however many days use
+/// it).
+const maximumBundleRecordings = 20000;
+
+/// The most entries a bundle may hold: the manifest, the profile, a document
+/// for every day the profile can list and the recordings.
+const maximumBundleEntries = 2 + maximumProfileDays + maximumBundleRecordings;
+
+/// The largest bundle file, and the most all its entries may unpack to
+/// together (their declared sizes), checked before anything is unpacked.
+/// The owner's day of six sessions is about 70 MiB of recordings, so this
+/// holds well over two hundred such days.
+const maximumBundleArchiveBytes = 16 * 1024 * 1024 * 1024;
+const maximumBundleExpandedBytes = 16 * 1024 * 1024 * 1024;
+
+/// The largest zip directory (the list of entries at the end of the file)
+/// that is read: 400 bytes for every entry [maximumBundleEntries] allows
+/// (a header is 46 bytes, the longest name 266, then the extra fields).
+/// archive's reader parses headers until this many bytes are used, whatever
+/// the count says, so this is what bounds the list it builds.
+const maximumBundleDirectoryBytes = maximumBundleEntries * 400;
 
 const _manifestName = 'bundle.json';
 
@@ -46,6 +71,7 @@ final class ProfileBundleExport {
     this.recordings = 0,
     this.daysMissing = const [],
     this.recordingsMissing = 0,
+    this.referencesMissing = 0,
   });
 
   /// Days written with their documents.
@@ -61,6 +87,11 @@ final class ProfileBundleExport {
   /// Recordings the days use that were not found: their days say so when
   /// opened, as on this device.
   final int recordingsMissing;
+
+  /// Reference recordings (FET-276) of the written days that were not found,
+  /// or not the size the profile says, in the profile's `Recordings` folder: the reference travels and says
+  /// so when the day is opened, as on this device.
+  final int referencesMissing;
 }
 
 /// Writes [profile], kept in [folder], as a bundle at [target]: written
@@ -79,6 +110,24 @@ Future<ProfileBundleExport> writeProfileBundle(
   // Each recording once, by the file it is on this device.
   final written = <String, String>{};
   final names = <String>{};
+  // The reference recordings written, by name; one copy for every day
+  // that uses it, and for a day recording of the same content.
+  final referenceNames = <String>{};
+  final missingReferences = <String>{};
+  // What every entry written unpacks to, against what a bundle may hold.
+  var entryBytes = 4096;
+  void tooMuch() =>
+      throw const ProfileBundleError('This profile is more than one bundle can hold.');
+  void count(int bytes) {
+    entryBytes += bytes;
+    if (entryBytes > maximumBundleExpandedBytes) tooMuch();
+  }
+
+  void countRecording(String path) {
+    if (written.length + 1 > maximumBundleRecordings) tooMuch();
+    count(File(path).lengthSync());
+  }
+
   try {
     encoder.addArchiveFile(
       ArchiveFile.string(
@@ -86,7 +135,16 @@ Future<ProfileBundleExport> writeProfileBundle(
         jsonEncode({'format': profileBundleFormat, 'version': profileBundleVersion}),
       ),
     );
+    // The days written, by the file name a volume that ignores case sees.
+    final dayFileNames = <String>{};
     for (final day in profile.days) {
+      // A day the importers would refuse (a file name that is not one plain
+      // name, or the same as another day's but for letter case) is left out
+      // and listed as missing, so the bundle can be read.
+      if (!isProfileDayName(day.eventId) || !dayFileNames.add(_caseFolded(day.eventId))) {
+        daysMissing.add(day.eventId);
+        continue;
+      }
       final path = p.joinAll([folder, ...day.file.split('/')]);
       final Map<String, Object?> document;
       try {
@@ -99,7 +157,11 @@ Future<ProfileBundleExport> writeProfileBundle(
         final reference = source['reference'];
         if (reference is! Map<String, Object?>) continue;
         final file = fet.SourceReference.fromJson(reference).resolve(path);
-        if (file.isEmpty) {
+        // A recording the sandbox (macOS) or the disk will not let this app
+        // read is missing too, not a reason to write no bundle at all.
+        // A recording larger than the app reads could not be opened where the
+        // bundle goes: it is missing there too.
+        if (file.isEmpty || !_isReadable(file) || _isTooLarge(file)) {
           final digest = source['contentSha256'];
           missingRecordings.add(digest is String ? digest : jsonEncode(reference));
           continue;
@@ -111,12 +173,18 @@ Future<ProfileBundleExport> writeProfileBundle(
           name = digest is String && RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)
               ? '$digest$extension'
               : _safeName(p.basename(file));
-          for (var copy = 2; names.contains(name); copy++) {
-            name = '${p.basenameWithoutExtension(name!)} ($copy)$extension';
+          if (referenceNames.contains(name)) {
+            // A reference recording of this content is in the bundle.
+            written[file] = name;
+          } else {
+            for (var copy = 2; names.contains(name); copy++) {
+              name = '${p.basenameWithoutExtension(name!)} ($copy)$extension';
+            }
+            countRecording(file);
+            await encoder.addFile(File(file), '$profileRecordingsFolderName/$name');
+            names.add(name!);
+            written[file] = name;
           }
-          await encoder.addFile(File(file), '$profileRecordingsFolderName/$name');
-          names.add(name!);
-          written[file] = name;
         }
         source['reference'] = {
           for (final entry in reference.entries)
@@ -124,15 +192,31 @@ Future<ProfileBundleExport> writeProfileBundle(
           'relativePath': '../$profileRecordingsFolderName/$name',
         };
       }
+      final encoded = fet.encodeFetproject(document);
+      count(utf8.encode(encoded).length);
       encoder.addArchiveFile(
-        ArchiveFile.string(
-          '$profileDaysFolderName/${day.eventId}.fetproject',
-          fet.encodeFetproject(document),
-        ),
+        ArchiveFile.string('$profileDaysFolderName/${day.eventId}.fetproject', encoded),
       );
       days++;
+      if (day.reference case final ProfileReferenceFile reference) {
+        final copy = profileReferenceFilePath(folder, reference);
+        final name = reference.fileName;
+        // A copy that is not there, or is not the size the profile says, is
+        // missing: the day travels without it, and the count says so.
+        if (copy == null || !_isWhole(copy, reference.bytes) || !_isReadable(copy)) {
+          missingReferences.add(name);
+        } else if (!names.contains(name)) {
+          countRecording(copy);
+          await encoder.addFile(File(copy), '$profileRecordingsFolderName/$name');
+          names.add(name);
+          referenceNames.add(name);
+          written[copy] = name;
+        }
+      }
     }
-    encoder.addArchiveFile(ArchiveFile.string(profileIndexName, encodeDriverProfile(profile)));
+    final index = encodeDriverProfile(profile);
+    count(utf8.encode(index).length);
+    encoder.addArchiveFile(ArchiveFile.string(profileIndexName, index));
     await encoder.close();
   } on Object {
     try {
@@ -149,6 +233,7 @@ Future<ProfileBundleExport> writeProfileBundle(
     recordings: written.length,
     daysMissing: daysMissing,
     recordingsMissing: missingRecordings.length,
+    referencesMissing: missingReferences.length,
   );
 }
 
@@ -162,6 +247,8 @@ final class ProfileBundleImport {
     this.recordings = 0,
     this.notebooks = const [],
     this.notebookCut = false,
+    this.referencesNotKept = const [],
+    this.referencesMissing = 0,
     this.source,
   });
 
@@ -186,6 +273,17 @@ final class ProfileBundleImport {
 
   /// Whether some of the bundle's notebook text did not fit.
   final bool notebookCut;
+
+  /// Days added without their reference lap (FET-276): its recording would
+  /// pass the profile's limits ([ProfileMerge.referencesNotKept]), or a
+  /// different file of the same name was already in `Recordings`, which is
+  /// never replaced, or the bundle holds the recording damaged or of another
+  /// size than the profile says.
+  final List<String> referencesNotKept;
+
+  /// Reference recordings of the days added that the bundle does not hold:
+  /// the reference stays and says so when the day is opened.
+  final int referencesMissing;
 
   /// The bundle's own profile, to merge again ([mergeDriverProfile]) into
   /// a profile changed while the bundle was read: merging [profile] would
@@ -219,6 +317,12 @@ Future<ProfileBundleImport> readProfileBundle(
 }) async {
   final input = InputFileStream(bundle);
   try {
+    if (input.length > maximumBundleArchiveBytes) {
+      throw const ProfileBundleError('The bundle is too large to read.');
+    }
+    // The number and size of the entries are known from the end of the file
+    // before the list of them is read into memory.
+    _checkDirectoryExtent(bundle, input.length);
     // Only the zip's directory is read here: archive's decoder would
     // unpack some entries (Unix links) whole, before anything is checked.
     final directory = ZipDirectory();
@@ -227,7 +331,15 @@ Future<ProfileBundleImport> readProfileBundle(
     } on Object {
       throw const ProfileBundleError('This file is not a profile bundle.');
     }
+    if (directory.fileHeaders.length > maximumBundleEntries) {
+      throw const ProfileBundleError('The bundle holds too many files.');
+    }
     final entries = <String, ArchiveFile>{};
+    // What the entries declare to unpack to, and how many days and
+    // recordings they are, all before any is unpacked.
+    var expandedBytes = 0;
+    var dayEntries = 0;
+    var recordingEntries = 0;
     for (final header in directory.fileHeaders) {
       final zip = header.file;
       if (zip == null) continue;
@@ -240,6 +352,26 @@ Future<ProfileBundleImport> readProfileBundle(
       }
       if (entries.containsKey(name)) {
         throw ProfileBundleError('The bundle holds $name twice.');
+      }
+      // A zip64 size of 2^63 or more reads as negative.
+      if (zip.uncompressedSize < 0 || zip.compressedSize < 0) {
+        throw ProfileBundleError('$name in the bundle has a size that cannot be right.');
+      }
+      expandedBytes += zip.uncompressedSize;
+      if (expandedBytes > maximumBundleExpandedBytes) {
+        throw const ProfileBundleError('The bundle unpacks to more than the app reads.');
+      }
+      if (name.startsWith('$profileRecordingsFolderName/')) {
+        if (zip.uncompressedSize > maximumBundleRecordingBytes) {
+          throw ProfileBundleError('$name in the bundle is too large for the app to read.');
+        }
+        if (++recordingEntries > maximumBundleRecordings) {
+          throw const ProfileBundleError('The bundle holds too many recordings.');
+        }
+      } else if (name.startsWith('$profileDaysFolderName/')) {
+        if (++dayEntries > maximumProfileDays) {
+          throw const ProfileBundleError('The bundle holds too many days.');
+        }
       }
       entries[name] = ArchiveFile.file(name, zip.uncompressedSize, zip)..crc32 = zip.crc32;
     }
@@ -268,17 +400,38 @@ Future<ProfileBundleImport> readProfileBundle(
     final candidates = <String>{};
     final present = <String>[];
     final missing = <String>[];
+    // The days here and those being added, by the name their file would
+    // have on a volume that does not tell A from a.
+    final byFileName = <String, String>{};
+    for (final day in into.days) {
+      byFileName.putIfAbsent(_caseFolded(day.eventId), () => day.eventId);
+    }
     for (final day in from.days) {
       if (into.day(day.eventId) != null) {
         present.add(day.eventId);
         continue;
       }
       final entry = entries['$profileDaysFolderName/${day.eventId}.fetproject'];
-      if (entry == null || entry.size > fet.maximumProjectBytes) {
+      if (!isProfileDayName(day.eventId) || entry == null || entry.size > fet.maximumProjectBytes) {
         missing.add(day.eventId);
-      } else if (File(p.join(days.path, '${day.eventId}.fetproject')).existsSync()) {
+        continue;
+      }
+      // Two days written under names that differ only by letter case would
+      // be one file on Windows or a default macOS volume: neither is
+      // written, whichever volume this is. The event ids are not changed.
+      // Checked before the file is looked for, which on such a volume would
+      // find the other day's.
+      final other = byFileName[_caseFolded(day.eventId)];
+      if (other != null && other != day.eventId) {
+        throw ProfileBundleError(
+          'The days "${day.eventId}" and "$other" differ only by letter case, '
+          'so they cannot be kept as separate files.',
+        );
+      }
+      if (File(p.join(days.path, '${day.eventId}.fetproject')).existsSync()) {
         present.add(day.eventId);
       } else {
+        byFileName[_caseFolded(day.eventId)] = day.eventId;
         candidates.add(day.eventId);
       }
     }
@@ -311,6 +464,8 @@ Future<ProfileBundleImport> readProfileBundle(
     // Staged files, by the name they take in Recordings.
     final staged = <String, String>{};
     final created = <String>[];
+    var referencesNotPlaced = const <String>{};
+    var referencesAbsent = 0;
     try {
       for (final document in documents.values) {
         for (final source in _telemetrySources(document)) {
@@ -356,6 +511,62 @@ Future<ProfileBundleImport> readProfileBundle(
           }
         }
       }
+      // The reference recordings of the days added (FET-276), by name: each
+      // checked against the hash that names it before it is placed. One a
+      // different file of that name already holds is never replaced; the
+      // days using it come without their reference.
+      final unplaced = <String>{};
+      var referencesMissing = 0;
+      final seen = <String>{};
+      for (final eventId in merge.added) {
+        final reference = merge.profile.day(eventId)?.reference;
+        if (reference is! ProfileReferenceFile || !seen.add(reference.fileName)) continue;
+        final name = reference.fileName;
+        final entry = entries['$profileRecordingsFolderName/$name'];
+        if (entry == null) {
+          referencesMissing++;
+          continue;
+        }
+        // A copy the bundle holds damaged, or larger than a reference may
+        // be, costs the days using it their reference, not the bundle: it is
+        // not unpacked at all when its declared size is wrong.
+        if (entry.size > maximumReferenceFileBytes || entry.size != reference.bytes) {
+          unplaced.add(name);
+          continue;
+        }
+        final stagedAs = staged.entries
+            .where((other) => other.key.toLowerCase() == name)
+            .firstOrNull;
+        if (stagedAs != null) {
+          // A day's recording of this content, already read.
+          if (await _sha256(stagedAs.value) != reference.sha256) unplaced.add(name);
+          continue;
+        }
+        final here = File(p.join(recordings.path, name));
+        if (here.existsSync()) {
+          if (here.lengthSync() != entry.size || await _sha256(here.path) != reference.sha256) {
+            unplaced.add(name);
+          }
+          continue;
+        }
+        staging.createSync(recursive: true);
+        final path = p.join(staging.path, '${staged.length}');
+        try {
+          _extract(entry, path);
+        } on ProfileBundleError {
+          // Its size or CRC-32 is wrong: damaged.
+          unplaced.add(name);
+          continue;
+        }
+        if (await _sha256(path) != reference.sha256) {
+          _delete(path);
+          unplaced.add(name);
+          continue;
+        }
+        staged[name] = path;
+      }
+      referencesNotPlaced = unplaced;
+      referencesAbsent = referencesMissing;
       // Into place: the recordings, then the days that use them.
       if (staged.isNotEmpty) recordings.createSync(recursive: true);
       for (final MapEntry(key: name, value: path) in staged.entries) {
@@ -376,18 +587,115 @@ Future<ProfileBundleImport> readProfileBundle(
     } finally {
       _deleteStaging(folder);
     }
+    // The days whose reference recording could not be placed come without
+    // the reference, and so do they if the profile is merged again.
+    final notPlaced = {
+      for (final eventId in merge.added)
+        if (merge.profile.day(eventId)?.reference case final ProfileReferenceFile file
+            when referencesNotPlaced.contains(file.fileName))
+          eventId,
+    };
     return ProfileBundleImport(
-      profile: merge.profile,
+      profile: removeProfileReferenceFiles(merge.profile, referencesNotPlaced),
       added: merge.added,
       alreadyHere: present,
       notAdded: [...merge.notAdded, ...missing],
       recordings: staged.length,
       notebooks: merge.notebooks,
       notebookCut: merge.notebookCut,
-      source: from,
+      referencesNotKept: [...merge.referencesNotKept, ...notPlaced],
+      referencesMissing: referencesAbsent,
+      source: removeProfileReferenceFiles(from, referencesNotPlaced, only: notPlaced),
     );
   } finally {
     input.closeSync();
+  }
+}
+
+/// [name] as a volume that ignores letter case compares it.
+String _caseFolded(String name) => name.toLowerCase();
+
+const _directoryEndSignature = 0x06054b50;
+const _zip64LocatorSignature = 0x07064b50;
+const _zip64EndSignature = 0x06064b50;
+
+/// Throws [ProfileBundleError] when the zip at [path], [length] bytes, says
+/// its directory lists more entries than a bundle may hold or is larger than
+/// [maximumBundleDirectoryBytes]: read from the record at the end of the
+/// file, so a directory of millions of entries is never read into memory.
+void _checkDirectoryExtent(String path, int length) {
+  const notABundle = ProfileBundleError('This file is not a profile bundle.');
+  final file = File(path).openSync();
+  try {
+    // The end record is 22 bytes and a comment of at most 65535 follows it.
+    // The zip64 locator, 20 bytes, is before it.
+    final tailLength = min(length, 20 + 22 + 0xffff);
+    file.setPositionSync(length - tailLength);
+    final tail = Uint8List(tailLength);
+    final read = file.readIntoSync(tail);
+    final data = ByteData.sublistView(tail, 0, read);
+    // The last end record, as archive's reader finds it.
+    var end = read - 22;
+    while (end >= 0 && data.getUint32(end, Endian.little) != _directoryEndSignature) {
+      end--;
+    }
+    if (end < 0) throw notABundle;
+    var entries = data.getUint16(end + 10, Endian.little);
+    var size = data.getUint32(end + 12, Endian.little);
+    if (end >= 20 && data.getUint32(end - 20, Endian.little) == _zip64LocatorSignature) {
+      // Zip64: the counts are in a record the locator points at.
+      final offset = data.getUint64(end - 20 + 8, Endian.little);
+      if (offset >= 0 && offset + 56 <= length) {
+        file.setPositionSync(offset);
+        final record = Uint8List(56);
+        if (file.readIntoSync(record) == 56) {
+          final view = ByteData.sublistView(record);
+          if (view.getUint32(0, Endian.little) == _zip64EndSignature) {
+            entries = view.getUint64(32, Endian.little);
+            size = view.getUint64(40, Endian.little);
+          }
+        }
+      }
+    }
+    // A count or size past 2^63 reads as negative.
+    if (entries < 0 || size < 0 || entries > maximumBundleEntries) {
+      throw const ProfileBundleError('The bundle holds too many files.');
+    }
+    if (size > maximumBundleDirectoryBytes) {
+      throw const ProfileBundleError('The bundle holds too many files.');
+    }
+  } on ProfileBundleError {
+    rethrow;
+  } on Object {
+    throw notABundle;
+  } finally {
+    file.closeSync();
+  }
+}
+
+bool _isReadable(String path) {
+  try {
+    File(path).openSync().closeSync();
+    return true;
+  } on FileSystemException {
+    return false;
+  }
+}
+
+bool _isTooLarge(String path) {
+  try {
+    return File(path).lengthSync() > maximumBundleRecordingBytes;
+  } on FileSystemException {
+    return false;
+  }
+}
+
+bool _isWhole(String path, int bytes) {
+  try {
+    final file = File(path);
+    return file.existsSync() && file.lengthSync() == bytes;
+  } on FileSystemException {
+    return false;
   }
 }
 
@@ -431,6 +739,13 @@ Iterable<Map<String, Object?>> _telemetrySources(Map<String, Object?> document) 
     yield* telemetry.whereType<Map<String, Object?>>();
   }
 }
+
+/// Whether the day of [eventId] can be kept as the file
+/// `Days/<eventId>.fetproject` in a profile folder: one plain name that
+/// stays in `Days` on every platform (no separator, `..`, leading dot,
+/// reserved device name or character a file system refuses), the names a
+/// bundle may hold for a day.
+bool isProfileDayName(String eventId) => _allowed('$profileDaysFolderName/$eventId.fetproject');
 
 /// Only the bundle's own files, each a plain name in its folder.
 bool _allowed(String name) {

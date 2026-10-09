@@ -17,6 +17,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import 'rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 final english = lookupAppLocalizations(const Locale('en'));
 
@@ -922,10 +923,10 @@ void main() {
     final controller = DayResultsController(
       runs: outcome.runs,
       analysis: outcome.analysis!,
-      theoreticalBestRunner: (job) async {
+      theoreticalBestRunner: asyncRunner((job) async {
         jobs.add(job);
         return job();
-      },
+      }),
     );
     addTearDown(controller.dispose);
     final first = controller.requestTheoreticalBest();

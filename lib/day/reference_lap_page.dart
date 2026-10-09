@@ -71,9 +71,13 @@ String _distanceText(double meters) =>
 /// Why [holder]'s source is not used, in words; empty when it is.
 String referenceProblemText(AppLocalizations l10n, ReferenceLapHolder holder) {
   if (holder.state == ReferenceState.failed) {
-    return holder.error == referenceDayHasNoRecordings
-        ? l10n.referenceDayNoRecordings
-        : l10n.referenceFailed(l10n.coreText(holder.error));
+    return switch (holder.error) {
+      referenceDayHasNoRecordings => l10n.referenceDayNoRecordings,
+      referenceFileMissing => l10n.referenceFileMissing,
+      referenceFileChanged => l10n.referenceFileChanged,
+      referenceDayMissing => l10n.referenceDayMissing,
+      final error => l10n.referenceFailed(l10n.coreText(error)),
+    };
   }
   final timing = holder.timing;
   if (holder.state != ReferenceState.refused || timing == null) return '';
@@ -90,6 +94,46 @@ String referenceProblemText(AppLocalizations l10n, ReferenceLapHolder holder) {
     ReferenceRefusal.none => l10n.referenceRefusedNoLap,
   };
 }
+
+/// Why the profile could not keep the reference, in words.
+String referenceKeepProblemText(
+  AppLocalizations l10n,
+  ProfileReferenceProblem? problem,
+) => switch (problem) {
+  ProfileReferenceProblem.tooManyFiles => l10n.referenceKeepTooManyFiles(
+    maximumReferenceFiles,
+  ),
+  ProfileReferenceProblem.tooMuch => l10n.referenceKeepTooMuch(
+    maximumReferenceBytes ~/ (1024 * 1024),
+  ),
+  ProfileReferenceProblem.fileTooLarge => l10n.referenceKeepFileTooLarge(
+    maximumReferenceFileBytes ~/ (1024 * 1024),
+  ),
+  ProfileReferenceProblem.fileEmpty => l10n.referenceKeepFileEmpty,
+  ProfileReferenceProblem.fileType => l10n.referenceKeepFileType,
+  ProfileReferenceProblem.fileUnreadable => l10n.referenceKeepUnreadable,
+  ProfileReferenceProblem.notWritten => l10n.referenceKeepNotWritten,
+  ProfileReferenceProblem.invalid || null => l10n.referenceKeepOther,
+};
+
+/// Under the reference: whether it is remembered for the day's next visit,
+/// and why not when the profile could not keep it; empty without one.
+String referenceKeepText(AppLocalizations l10n, ReferenceLapHolder holder) =>
+    switch (holder.keepState) {
+      ReferenceKeep.none => '',
+      ReferenceKeep.saving => l10n.referenceSaving,
+      ReferenceKeep.saved =>
+        holder.source is ReferenceFile
+            ? l10n.referenceSavedCopy
+            : l10n.referenceSaved,
+      ReferenceKeep.unsaved => l10n.referenceNotSaved,
+      ReferenceKeep.failed =>
+        holder.keepFailedToForget
+            ? l10n.referenceForgetFailed
+            : l10n.referenceKeepFailed(
+                referenceKeepProblemText(l10n, holder.keepProblem),
+              ),
+    };
 
 /// Asks for one of [library]'s days other than [eventId]; null when none
 /// was chosen.
@@ -282,6 +326,7 @@ class ReferenceLapSection extends StatelessWidget {
       final loading = holder.state == ReferenceState.loading;
       final label = referenceLabel(l10n, holder);
       final problem = referenceProblemText(l10n, holder);
+      final keep = referenceKeepText(l10n, holder);
       final muted = theme.textTheme.bodyMedium?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       );
@@ -350,7 +395,25 @@ class ReferenceLapSection extends StatelessWidget {
                   ),
                 ),
                 title: Text(label, key: const ValueKey('referenceLabel')),
-                subtitle: Text(l10n.referenceNotSaved),
+                subtitle: keep.isEmpty
+                    ? null
+                    : Text(
+                        keep,
+                        key: const ValueKey('referenceKeep'),
+                        style: holder.keepState == ReferenceKeep.failed
+                            ? TextStyle(color: theme.colorScheme.error)
+                            : null,
+                      ),
+              ),
+            ),
+          // A reference cleared or kept that the profile could not write
+          // says so, with the label or without.
+          if (label == null && keep.isNotEmpty)
+            Text(
+              keep,
+              key: const ValueKey('referenceKeep'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
               ),
             ),
           const SizedBox(height: 8),
@@ -398,6 +461,12 @@ class ReferenceLapSection extends StatelessWidget {
                       : () => _loadDay(context, line),
                   icon: const Icon(Icons.history),
                   label: Text(l10n.referenceLoadDay),
+                ),
+              if (holder.keepState == ReferenceKeep.failed)
+                OutlinedButton(
+                  key: const ValueKey('referenceKeepRetry'),
+                  onPressed: holder.retryKeep,
+                  child: Text(l10n.referenceKeepRetry),
                 ),
               if (holder.state != ReferenceState.none)
                 TextButton.icon(

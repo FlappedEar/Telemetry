@@ -226,17 +226,41 @@ void main() {
     });
 
     /// Session 1 alone, its automatic corners shown.
-    Future<DayResultsController> firstSession() async {
+    Future<DayResultsController> firstSession({DocumentWriter? writer}) async {
       final first = runDayImport((paths: [a], includeSubfolders: false));
       final controller = DayResultsController(
         runs: first.runs,
         analysis: first.analysis!,
         appender: _SyncAppender(),
+        writer: writer,
       );
       await controller.requestTheoreticalBest();
       expect(controller.theoreticalBest!.automaticSegments, isTrue);
       return controller;
     }
+
+    test(
+      'a save approves the segments it took, even if an edit resets the best',
+      () async {
+        final gate = Completer<void>();
+        final controller = await firstSession(
+          writer: (path, document) => gate.future,
+        );
+        addTearDown(controller.dispose);
+        final saving = controller.save('${directory.path}/Day.fetproject');
+        // A lap is excluded while the writer waits: the live best goes.
+        final row = controller.analysis.rows.firstWhere(
+          (row) => row.reference == controller.ranking!.bestOfDay!.reference,
+        );
+        expect(controller.exclude(row, 'Traffic'), isTrue);
+        expect(controller.theoreticalBest, isNull);
+        gate.complete();
+        await saving;
+        // The best taken with the save was worked out on the automatic
+        // segments the save approved: the profile waits for another.
+        expect(controller.savedTheoreticalBest, isNull);
+      },
+    );
 
     test('are measured again on it after an addition', () async {
       final controller = await firstSession();

@@ -83,6 +83,11 @@ jobs:
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
         run: flutter build windows --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+      # Runs the real NSIS installer silently on this disposable runner and
+      # checks that sentinel files in other folders survive (audit F02).
+      - name: Test the installer
+        shell: pwsh
+        run: ./windows/installer/test-installer.ps1 -ReleaseDir build/windows/x64/runner/Release
 
   telemetry-core:
     name: telemetry_core (Dart, ${{ matrix.os }})
@@ -210,32 +215,21 @@ jobs:
           java-version: 17
       - uses: ./.github/actions/setup-flutter
       - run: flutter pub get
-      # The release APK is the one to sideload on a phone or tablet. It is
-      # signed with the debug key (android/app/build.gradle.kts). The key is
-      # kept in the Actions cache, so APKs from later main builds install as
-      # updates and keep the app's data; the key never enters the repository.
-      # Caches from main are shared with pull requests; a cache unused for
-      # seven days expires, so signing-key.yml restores it every day.
-      - uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: android-debug-keystore-v1
-      # The Android Gradle plugin reads the debug key from
-      # $ANDROID_USER_HOME/debug.keystore. On the runner that was not
-      # ~/.android, so the cache never had a key to save and every APK was
-      # signed with a new one. Make the key here, where the cache keeps it,
-      # unless the cache restored it.
-      - name: Make the signing key if the cache had none
+      # CI APKs are signed with a throwaway key made for this run (the Android
+      # Gradle plugin reads $ANDROID_USER_HOME/debug.keystore). The release
+      # key never reaches a pull request or main build: release.yml signs the
+      # release APK in its own job (docs/android-signing-key-backup.md), so a
+      # CI APK does not install over a released app. Pull requests run code
+      # from their branch, which could read any key on this runner.
+      - name: Make a throwaway signing key
         run: |
           echo "ANDROID_USER_HOME=$HOME/.android" >> "$GITHUB_ENV"
           mkdir -p ~/.android
-          if [ ! -f ~/.android/debug.keystore ]; then
-            echo "::warning::No cached signing key; making a new one. APKs from this build do not install over earlier ones."
-            keytool -genkeypair -keystore ~/.android/debug.keystore \
-              -storepass android -keypass android -alias androiddebugkey \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
+          rm -f ~/.android/debug.keystore
+          keytool -genkeypair -keystore ~/.android/debug.keystore \
+            -storepass android -keypass android -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
       # MAPTILER_KEY gives the sideloaded app its satellite map tiles (FET-27).
       # The build number (Android versionCode) is the commit count, as in
       # release.yml, so a later build from main or a release installs over an
@@ -251,38 +245,35 @@ jobs:
       - name: Android unit tests
         working-directory: android
         run: ./gradlew --no-daemon :app:testDebugUnitTest
-      # Fails if the APK was signed with any key but the cached one.
+      # Fails if the APK was signed with any key but this run's throwaway key,
+      # or with the release key (it must not be on this runner at all).
       - name: Check the APK's signing key
         run: |
-          expected=$(keytool -list -v -keystore ~/.android/debug.keystore \
-            -storepass android -alias androiddebugkey \
-            | sed -n 's/^.*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
-          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
-          # Newer build tools may need a newer Java than the build's 17.
-          java_home="${JAVA_HOME_21_X64:-$JAVA_HOME}"
-          certs=$(JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH" "$apksigner" verify --print-certs \
-            build/app/outputs/flutter-apk/app-release.apk 2>&1) || true
-          actual=$(printf '%s\n' "$certs" \
-            | sed -n -E 's/^(Signer #1|V[0-9]+ Signer):? certificate SHA-256 digest: //p' \
-            | head -n 1)
+          expected=$(.github/scripts/keystore-cert.sh ~/.android/debug.keystore)
+          actual=$(.github/scripts/apk-cert.sh build/app/outputs/flutter-apk/app-release.apk)
           echo "Signing key SHA-256: $actual"
           [ -n "$expected" ] && [ "$expected" = "$actual" ] || {
-            printf '%s\n' "$certs"
-            echo "::error::The APK is signed with '$actual', not the cached key $expected."
+            echo "::error::The APK is signed with '$actual', not this run's key $expected."
             exit 1
           }
-          # On main the key must be the one installed apps have (release.yml
-          # pins the same certificate). Failing here also stops the cache
-          # from saving a newly made key, so a lost key stays visible instead
-          # of being replaced for good.
           release_cert=7315a93ded2e4bea6878e3e568d1f517913eb313493a6bd2b116431f8969cc4f
-          if [ "$actual" != "$release_cert" ]; then
-            if [ "$GITHUB_REF" = refs/heads/main ]; then
-              echo "::error::The APK is signed with $actual, not the release key $release_cert. Installed apps could not update to it."
-              exit 1
-            fi
-            echo "::warning::This APK is signed with $actual, not the release key; it does not install over the released app."
-          fi
+          [ "$actual" != "$release_cert" ] || {
+            echo "::error::The APK is signed with the release key; CI must never have it."
+            exit 1
+          }
+      # The step release.yml uses to sign (sign-apk.sh), run with a second
+      # throwaway key: re-signing must replace the signature and keep the APK valid.
+      - name: Re-signing test
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/other.keystore" \
+            -storepass android -keypass android -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Other,O=Android,C=US"
+          .github/scripts/sign-apk.sh build/app/outputs/flutter-apk/app-release.apk \
+            "$RUNNER_TEMP/other.keystore" "$RUNNER_TEMP/resigned.apk"
+          first=$(.github/scripts/apk-cert.sh build/app/outputs/flutter-apk/app-release.apk)
+          second=$(.github/scripts/apk-cert.sh "$RUNNER_TEMP/resigned.apk")
+          [ "$first" != "$second" ] || { echo "::error::Re-signing did not change the certificate."; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: flappedear-telemetry-android-${{ github.sha }}

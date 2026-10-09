@@ -6,6 +6,7 @@ import 'package:telemetry_core/telemetry_core.dart';
 
 import '../format.dart';
 import '../l10n.dart';
+import '../units.dart';
 import 'profile_bundle_pickers.dart';
 import 'profile_library.dart';
 import 'track_notebook_page.dart';
@@ -49,6 +50,21 @@ class _LibraryPageState extends State<LibraryPage> {
   void initState() {
     super.initState();
     widget.library.load();
+    widget.library.addListener(_libraryChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.library.removeListener(_libraryChanged);
+    super.dispose();
+  }
+
+  // The bar under the title follows the days being measured again.
+  bool _wasMeasuring = false;
+  void _libraryChanged() {
+    final measuring = widget.library.measuringAll;
+    if (measuring || _wasMeasuring) setState(() {});
+    _wasMeasuring = measuring;
   }
 
   Future<void> _export() async {
@@ -79,8 +95,25 @@ class _LibraryPageState extends State<LibraryPage> {
       final export = await widget.library.exportBundle(work);
       if (export == null) throw StateError('No profile to export.');
       if (location != null) {
-        copying = true;
-        await File(work).copy(location);
+        // Streamed into the file the user chose: a sandboxed app may write
+        // that file, but not the temporary one a copy call makes beside it.
+        final sink = File(location).openWrite();
+        try {
+          await sink.addStream(
+            File(work).openRead().map((chunk) {
+              copying = true;
+              return chunk;
+            }),
+          );
+        } on Object {
+          try {
+            await sink.close();
+          } on Object {
+            // The first error is the one to tell.
+          }
+          rethrow;
+        }
+        await sink.close();
         copying = false;
         try {
           await File(work).delete();
@@ -99,6 +132,8 @@ class _LibraryPageState extends State<LibraryPage> {
                 l10n.libraryExportDaysMissing(export.daysMissing.length),
               if (export.recordingsMissing > 0)
                 l10n.libraryExportMissing(export.recordingsMissing),
+              if (export.referencesMissing > 0)
+                l10n.libraryExportReferencesMissing(export.referencesMissing),
             ].join(' '),
           ),
         ),
@@ -114,10 +149,30 @@ class _LibraryPageState extends State<LibraryPage> {
           // Never written.
         }
       }
-      messenger.showSnackBar(SnackBar(content: Text(l10n.libraryExportFailed)));
+      final reason = _exportReason(error);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            reason.isEmpty
+                ? l10n.libraryExportFailed
+                : l10n.libraryExportFailedBecause(reason),
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _working = null);
     }
+  }
+
+  /// What went wrong, as the system words it; empty when there is nothing
+  /// readable to say.
+  static String _exportReason(Object error) {
+    final text = switch (error) {
+      FileSystemException(:final osError?) => osError.message,
+      FileSystemException(:final message) => message,
+      _ => '',
+    }.trim();
+    return text.length > 120 ? '${text.substring(0, 120)}…' : text;
   }
 
   Future<void> _import() async {
@@ -137,6 +192,10 @@ class _LibraryPageState extends State<LibraryPage> {
         if (read.notebooks.isNotEmpty)
           l10n.libraryImportNotebooks(read.notebooks.length),
         if (read.notebookCut) l10n.libraryImportNotebookCut,
+        if (read.referencesNotKept.isNotEmpty)
+          l10n.libraryImportReferencesNotKept(read.referencesNotKept.length),
+        if (read.referencesMissing > 0)
+          l10n.libraryImportReferencesMissing(read.referencesMissing),
       ].join(' ');
     } on ProfileNotSaved catch (error) {
       message = l10n.libraryImportNotSaved(error.import.added.length);
@@ -150,8 +209,34 @@ class _LibraryPageState extends State<LibraryPage> {
     messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Every day measured again from its recordings (FET-196). It goes on
+  /// when the page is left; the library says how far it is.
+  Future<void> _measureAgain() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await widget.library.measureAllAgain(
+      assumedSpeedUnit: speedUnitSetting.value.unit,
+    );
+    if (result == null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          [
+            l10n.libraryMeasured(result.measured),
+            if (result.failed > 0) l10n.libraryMeasureFailed(result.failed),
+          ].join(' '),
+        ),
+      ),
+    );
+  }
+
   PreferredSizeWidget? _progress() {
-    final working = _working;
+    final measuring = widget.library.measuringAllProgress;
+    final working =
+        _working ??
+        (measuring == null
+            ? null
+            : context.l10n.libraryMeasuring(measuring.done, measuring.total));
     if (working == null) return null;
     return PreferredSize(
       preferredSize: const Size.fromHeight(32),
@@ -286,7 +371,16 @@ class _LibraryPageState extends State<LibraryPage> {
             listenable: widget.library,
             builder: (context, _) {
               final profile = widget.library.profile;
-              final idle = _working == null && widget.library.available;
+              final measuring = widget.library.measuringAll;
+              final idle =
+                  _working == null && !measuring && widget.library.available;
+              if (measuring) {
+                return TextButton(
+                  key: const ValueKey('libraryStopMeasuring'),
+                  onPressed: widget.library.stopMeasuringAll,
+                  child: Text(l10n.libraryStopMeasuring),
+                );
+              }
               return PopupMenuButton<VoidCallback>(
                 key: _menu,
                 enabled: idle,
@@ -307,6 +401,15 @@ class _LibraryPageState extends State<LibraryPage> {
                     child: ListTile(
                       leading: const Icon(Icons.file_open_outlined),
                       title: Text(l10n.libraryImport),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    key: const ValueKey('libraryMeasureAgain'),
+                    value: _measureAgain,
+                    enabled: profile != null && profile.days.isNotEmpty,
+                    child: ListTile(
+                      leading: const Icon(Icons.refresh),
+                      title: Text(l10n.libraryMeasureAgain),
                     ),
                   ),
                 ],

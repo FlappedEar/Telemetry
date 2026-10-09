@@ -20,6 +20,7 @@ import 'package:telemetry/main.dart';
 import '../day/driving_vbo.dart';
 import '../day/rectangle_vbo.dart';
 import '../support/temp_directory.dart';
+import '../support/inline_runners.dart';
 
 /// Logical sizes of the devices the app is tested on.
 const sizes = {
@@ -348,7 +349,9 @@ void main() {
               target,
               200,
               scrollable: summary,
-              maxScrolls: 200,
+              // The day page is long at large text, and every card added to
+              // it (lap styles, FET-223) needs more scrolls to get past.
+              maxScrolls: 300,
             );
             await tester.ensureVisible(target);
             await tester.pumpAndSettle();
@@ -417,7 +420,7 @@ void main() {
           final controller = DayResultsController(
             runs: outcome.runs,
             analysis: outcome.analysis!,
-            theoreticalBestRunner: (job) async => job(),
+            theoreticalBestRunner: asyncRunner((job) async => job()),
           );
           await controller.requestTheoreticalBest();
           final best = outcome.analysis!.ranking!.bestOfDay!;

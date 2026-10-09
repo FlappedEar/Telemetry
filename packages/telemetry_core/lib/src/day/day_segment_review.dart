@@ -146,6 +146,10 @@ DayProposalReview dayProposalReview(
       lapNumber: lap.lapNumber,
       startTime: lap.start,
       endTime: lap.end,
+      approved: [
+        for (final segment in result.runSegments)
+          if (segment['trackConfigurationReference'] == result.groupId) segment,
+      ],
       cancelled: cancelled,
     );
   } on OperationCancelled {

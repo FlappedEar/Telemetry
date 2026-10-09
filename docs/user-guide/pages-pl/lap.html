@@ -1,0 +1,72 @@
+<!-- title: Okrążenie | nav: Okrążenie -->
+<h1 id="lap">Okrążenie</h1>
+<p class="lead">Otwórz dowolne okrążenie z listy, najlepsze okrążenie sesji, pasek Najlepsze okrążenie dnia albo mapę najlepszego okrążenia. Strona pokazuje czas, mapę przejazdu i zapisane kanały telemetryczne.</p>
+
+<figure>
+  <img src="assets/screens/lap-wide.png" alt="Strona okrążenia: bursztynowy pasek z czasem okrążenia i przyciski u góry, mapa pokolorowana prędkością po lewej i wykresy kanałów po prawej" width="1280" height="800" loading="lazy">
+  <figcaption>Najlepsze okrążenie dnia na szerokim ekranie. Mapa pozostaje widoczna, gdy przewijasz wykresy po prawej. Na telefonie lub w niższym oknie te same elementy układają się jeden pod drugim.</figcaption>
+</figure>
+
+<h2 id="summary">Podsumowanie</h2>
+<ul>
+  <li>Bursztynowy pasek z czasem okrążenia, opisany jako <em>Najlepsze okrążenie dnia</em>, <em>Najlepsze okrążenie – Sesja N</em> albo <em>To okrążenie</em>.</li>
+  <li>Dla każdego innego okrążenia z czasem pojawia się niżej niebieski pasek <strong>Najlepsze okrążenie dnia</strong> z czasem odniesienia i różnicą, np. <em>+0.412 s do najlepszego okrążenia dnia</em>. W dniu z kilkoma konfiguracjami toru używane jest najlepsze okrążenie tej samej konfiguracji. Jeśli oba okrążenia można porównać, stuknięcie niebieskiego paska otwiera porównanie: bieżące okrążenie jako A, najlepsze jako B.</li>
+  <li>Czerwona informacja dla każdego powodu, przez który okrążenie nie jest sklasyfikowane.</li>
+  <li><strong>Porównaj z…</strong> oraz <strong>Wyklucz z rankingu…</strong> albo <strong>Przywróć do rankingu</strong>.</li>
+</ul>
+
+<h2 id="exclude">Wykluczanie okrążenia</h2>
+<p>Okrążenie z ruchem na torze, żółtą flagą albo inną sytuacją niereprezentatywną może zaburzyć najlepszy czas, teoretyczny czas i statystyki typowych okrążeń. Wybierz <strong>Wyklucz z rankingu…</strong>, wpisz powód i zatwierdź przyciskiem <strong>Wyklucz</strong> lub klawiszem Enter.</p>
+<figure>
+  <img src="assets/screens/exclude-dialog.png" alt="Okno Wyklucz to okrążenie z polem Powód" width="1280" height="800" loading="lazy">
+</figure>
+<p>Jeśli <a href="laps.html#hidden">okrążenia niesklasyfikowane</a> są ukryte, wykluczone okrążenie znika z listy. Po ich pokazaniu zobaczysz <em>Wykluczone: &lt;powód&gt;</em>. <strong>Przywróć do rankingu</strong> ponownie włącza okrążenie do klasyfikacji. Wykluczenia są zapisywane razem z dniem.</p>
+
+<h2 id="map">Mapa</h2>
+<ul>
+  <li>Ślad jest pokolorowany według prędkości: od fioletowego dla najwolniejszych fragmentów do żółtego dla najszybszych. Pasek pod mapą pokazuje zakres prędkości.</li>
+  <li>Linia startu/mety jest czarna z białą obwódką (biała na mapie bez tła), ze strzałką pokazującą kierunek przejazdu.</li>
+  <li>Biała kropka pokazuje położenie kursora z <a href="#charts">wykresów</a>.</li>
+  <li><strong>Pokaż najlepsze okrążenie (…) na szaro</strong> rysuje najlepsze okrążenie dnia pod bieżącym śladem jako jasną półprzezroczystą linię.</li>
+  <li>Mapę powiększasz gestem szczypania albo przewijaniem, a przesuwasz przeciąganiem. Na telefonie i tablecie mapa używa dwóch palców, żeby pojedynczy palec nadal przewijał stronę. Północ jest zawsze u góry.</li>
+</ul>
+<h3 id="background">Tło mapy</h3>
+<p>Przycisk warstw w prawym górnym rogu mapy zmienia tło wszystkich map w aplikacji do czasu jej zamknięcia:</p>
+<ul>
+  <li><strong>Ulice</strong>: OpenStreetMap.</li>
+  <li><strong>Satelita</strong>: zdjęcia MapTiler, dostępne tylko w kompilacjach z kluczem MapTiler. Jeśli są dostępne, to domyślne tło.</li>
+  <li><strong>Apple Maps</strong>: tylko na iPhonie, iPadzie i Macu. Ślad, linia startu/mety i kursor działają tak samo jak na innych tłach. <strong>Informacje prawne</strong> w lewym górnym rogu otwierają informacje Apple dotyczące map.</li>
+</ul>
+<p>Przy pierwszym pokazaniu danego obszaru tło mapy wymaga połączenia z internetem. Wczytane kafelki mogą zostać zachowane na później; Apple Maps zarządza własną pamięcią podręczną.</p>
+
+<h2 id="charts">Wykresy</h2>
+<p>Pod mapą, a na szerokim ekranie obok niej, sekcja <strong>Kanały</strong> pokazuje wartości telemetryczne wzdłuż okrążenia. Domyślnie są to prędkość, przeciążenie poprzeczne, przeciążenie wzdłużne oraz gaz lub hamulec, jeśli zostały zapisane.</p>
+<figure class="phone">
+  <img src="assets/screens/phone-lap-charts.png" alt="Wykresy kanałów na telefonie z przyciskami powiększenia, suwakiem kursora i wykresem prędkości" width="412" height="915" loading="lazy">
+</figure>
+<ul>
+  <li>Stuknij wykres lub przeciągnij po nim poziomo, aby przesunąć kursor. Przy myszy lub gładziku może on podążać za wskaźnikiem. Wartość w pozycji kursora jest widoczna w prawym górnym rogu każdego wykresu, a odpowiadający jej punkt pojawia się na mapie.</li>
+  <li>Suwak przesuwa kursor po całym okrążeniu.</li>
+  <li><strong>Powiększ wokół kursora</strong>, <strong>Pomniejsz</strong> i <strong>Całe okrążenie</strong> zmieniają widoczny zakres; jego długość jest pokazana po prawej.</li>
+  <li>Przeciążenie wzdłużne jest rysowane tak, aby hamowanie było skierowane do góry.</li>
+  <li>Stuknij nazwę wykresu, aby wybrać inny zapisany kanał. Możesz oznaczyć najczęściej używane kanały gwiazdką i ograniczyć do nich listę (zobacz <a href="#channel-names">Nazwy kanałów</a>). <strong>Dodaj kanał</strong> dodaje kolejny wykres, maksymalnie do czterech; ✕ usuwa wybrany. Ustawienie obowiązuje dla kolejnych okrążeń do czasu zamknięcia aplikacji. Kanał pochodzący z RCZ ma opis <em>z RCZ</em> (zobacz <a href="day.html#combined">VBO i RCZ jednej sesji</a>).</li>
+  <li>Wykresy i listy używają własnych nazw nadanych w <a href="#channel-names">Nazwach kanałów</a>; oryginalna nazwa z pliku pozostaje widoczna niżej jako np. <em>w zapisie: accelerator_pos-obd</em>.</li>
+  <li>Kierunek jazdy jest rysowany jako ciągła linia przechodząca przez północ zamiast skakać między 360° i 0°. Dlatego skala może chwilowo wychodzić poniżej 0 lub ponad 360, ale wartość przy kursorze zawsze odpowiada rzeczywistemu kierunkowi 0–360°. Porównanie okrążeń działa tak samo.</li>
+  <li>Przerwy w danych pozostają przerwami. Aplikacja nie łączy linii przez brakujące próbki i nie wylicza na ich podstawie wartości zakrętów ani porównań. W takim miejscu wykres pokazuje <em>Brak danych w tym zakresie</em> albo konkretny powód niedostępności.</li>
+</ul>
+
+<h2 id="channel-names">Nazwy kanałów</h2>
+<p>Rejestrator może zapisywać nazwy kanałów technicznie, np. <em>accelerator_pos-obd</em>. Aby nadać im czytelniejsze nazwy, otwórz <strong>Ustawienia</strong> i wybierz <strong>Nazwij kanały</strong>. Lista zawiera kanały obecne w otwartym dniu oraz wcześniej nazwane lub oznaczone gwiazdką. Wpisz własną nazwę, np. <em>Gaz</em>; zacznie być używana od razu na wykresach, listach, karcie samochodu i w raporcie dnia. Wyczyść pole albo użyj ✕, aby wrócić do nazwy zapisanej w pliku.</p>
+<figure>
+  <img src="assets/screens/channel-names.png" alt="Strona nazw kanałów: każdy zapisany kanał z polem na nazwę i gwiazdką; accelerator_pos-obd nazwano Gaz i oznaczono gwiazdką" width="1280" height="800" loading="lazy">
+  <figcaption>Kanały OBD nazwane Gaz, Hamulec i Obroty oraz oznaczone gwiazdką dla menu wykresów.</figcaption>
+</figure>
+<p>Nagranie może zawierać dziesiątki kanałów. Oznacz gwiazdką te, których najczęściej używasz: menu wyboru wykresu pokaże wtedy tylko ulubione kanały, których jeszcze nie ma na ekranie, a <strong>Wszystkie kanały…</strong> nadal pozwala wybrać dowolny. <strong>Usuń wszystkie gwiazdki</strong> przywraca pełną listę w menu.</p>
+<p>Nazwy i gwiazdki są ustawieniem lokalnym dla danego urządzenia. Same pliki telemetryczne i zapisane dni zachowują oryginalne nazwy kanałów, dlatego ten sam dzień otwarty w FlappedEar Overlays albo na innym urządzeniu może używać nazw zapisanych przez rejestrator.</p>
+
+<h2 id="coasting">Jazda bez gazu i hamulca</h2>
+<figure>
+  <img src="assets/screens/lap-coasting.png" alt="Karta jazdy bez gazu i hamulca: łączny czas i dystans, sposób pomiaru oraz jazda bez gazu i hamulca według odcinków" width="1280" height="800" loading="lazy">
+</figure>
+<p>Jazda bez gazu i hamulca oznacza fragment przejazdu z prędkością, na którym nie jest wciśnięty ani gaz, ani hamulec. Karta pokazuje łączny czas i dystans, np. <em>4.2 s · 128 m w 9 epizodach (5.1% okrążenia)</em>, informuje, czy wynik pochodzi bezpośrednio z pedałów, czy został wyznaczony pośrednio z przeciążenia wzdłużnego, rozbija go na odcinki i wymienia poszczególne epizody. Wybierz epizod, aby przesunąć tam kursor.</p>
+<p>Sama jazda bez gazu i hamulca nie jest automatycznie błędem. Odjęcie gazu może być świadomym elementem prowadzenia samochodu albo wynikać z ruchu na torze.</p>

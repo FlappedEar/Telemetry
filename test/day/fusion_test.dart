@@ -436,6 +436,13 @@ void main() {
       expect(applied.ruleOf('sats'), FusionRule.fillGaps);
       expect(applied.channelOrigins, {'rpm-obd': 'added', 'sats': 'fillGaps'});
       expect(opened.channelSource(runId, 'rpm-obd'), 'RCZ');
+      // The saved day, which the profile measures, holds the fused session
+      // too, not the one shown before the RCZ was read.
+      expect(
+        opened.savedDay!.recordings[runId]!.channels.keys,
+        containsAll(opened.session(runId)!.channels.keys),
+      );
+      expect(opened.savedDay!.recordings[runId]!.channels, contains('rpm-obd'));
       expect(
         opened.dirty,
         isFalse,
@@ -1066,7 +1073,8 @@ void main() {
       fusionRunner: held.call,
     );
     final before = _rows(controller);
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -1150,7 +1158,8 @@ void main() {
       analysis: alone.analysis!,
       fusions: {primary.id: fusion},
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -1207,7 +1216,8 @@ void main() {
       analysis: both.analysis!,
       fusions: {primary.id: fusion},
     );
-    await tester.binding.setSurfaceSize(const Size(400, 8000));
+    // Tall enough for the whole day page, the lap styles card included.
+    await tester.binding.setSurfaceSize(const Size(400, 9000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       TelemetryApp(home: DayResultsPage.controller(controller: controller)),
@@ -1380,7 +1390,8 @@ void main() {
         return day;
       }))!;
       DayResultsController? replaced;
-      await tester.binding.setSurfaceSize(const Size(400, 8000));
+      // Tall enough for the whole day page, the lap styles card included.
+      await tester.binding.setSurfaceSize(const Size(400, 9000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         TelemetryApp(
