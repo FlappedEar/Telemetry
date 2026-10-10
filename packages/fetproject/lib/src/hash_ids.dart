@@ -122,8 +122,9 @@ String? gatesV2Revision(
     if (centreLongitude < -180) centreLongitude += 360;
     var longitudeCell = (centreLongitude * _gateCentreCellDegrees).round();
     // -180° and 180° are one meridian.
-    if (longitudeCell == -180 * _gateCentreCellDegrees)
-      longitudeCell = 180 * _gateCentreCellDegrees.round();
+    if (longitudeCell == -180 * _gateCentreCellDegrees) {
+      longitudeCell = 180 * _gateCentreCellDegrees;
+    }
     basis.add([
       gate.type == TimingGateType.start ? 'start' : 'split',
       (latitude * _gateCentreCellDegrees).round(),
