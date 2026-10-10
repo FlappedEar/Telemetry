@@ -1,6 +1,6 @@
 <!-- title: Podręcznik FlappedEar Telemetry | nav: Przegląd -->
 <h1 id="overview">Podręcznik FlappedEar Telemetry</h1>
-<p class="lead">FlappedEar Telemetry analizuje nagrania RaceChrono z całego dnia na torze: wylicza czasy okrążeń, pokazuje Twoje najlepsze okrążenie na mapie i wskazuje miejsca, w których tracisz czas. Działa na Androidzie, iPhonie i iPadzie, macOS oraz Windows.</p>
+<p class="lead">FlappedEar Telemetry analizuje zapisy RaceChrono z całego dnia na torze: wylicza czasy okrążeń, pokazuje Twoje najlepsze okrążenie na mapie i wskazuje miejsca, w których tracisz czas. Działa na Androidzie, iPhonie i iPadzie, macOS oraz Windows.</p>
 
 <figure>
   <img src="assets/screens/day-wide.png" alt="Wyniki dnia: najlepsze okrążenie dnia na mapie, pokolorowane według prędkości, a po prawej lista sklasyfikowanych okrążeń dnia" width="1280" height="800" loading="lazy">
@@ -9,9 +9,9 @@
 
 <h2 id="what">Co potrafi</h2>
 <ul>
-  <li><strong>Importuj sesje.</strong> Wybieraj pliki VBO lub RCZ po każdej sesji albo wszystkie pliki z całego dnia. Na telefonie możesz też udostępniać je bezpośrednio z RaceChrono. Każde nagranie staje się sesją (Sesja 1, Sesja 2, …) z własnymi okrążeniami, a sesje z tej samej daty są łączone w jeden dzień.</li>
+  <li><strong>Importuj sesje.</strong> Wybieraj pliki VBO lub RCZ po każdej sesji albo wszystkie pliki z całego dnia. Na telefonie możesz też udostępniać je bezpośrednio z RaceChrono. Każdy zapis staje się sesją (Sesja 1, Sesja 2, …) z własnymi okrążeniami, a sesje z tej samej daty są łączone w jeden dzień.</li>
   <li><strong>Najpierw zobacz najlepsze okrążenie.</strong> Po otwarciu dnia od razu zobaczysz najszybsze okrążenie narysowane na mapie toru i pokolorowane według prędkości.</li>
-  <li><strong>Znajdź miejsca, w których możesz zyskać czas.</strong> Zobaczysz teoretyczny najlepszy czas, straty w poszczególnych zakrętach i na prostych oraz krótką listę miejsc, którym warto przyjrzeć się bliżej.</li>
+  <li><strong>Znajdź miejsca, w których możesz zyskać czas.</strong> Zobaczysz teoretyczny czas okrążenia, straty w poszczególnych zakrętach i na prostych oraz krótką listę miejsc, którym warto przyjrzeć się bliżej.</li>
   <li><strong>Porównaj dwa okrążenia</strong> w tych samych miejscach toru: deltę czasu, prędkość, pedały, Analizator zakrętów, wykres G-G, stany jazdy i jazdę bez gazu i hamulca.</li>
   <li><strong>Zapisz dzień</strong> jako plik <code>.fetproject</code>, który można też otworzyć w FlappedEar Overlays.</li>
 </ul>
@@ -28,7 +28,7 @@
 <h2 id="terms">Pojęcia używane w podręczniku</h2>
 <table>
   <tr><th>Pojęcie</th><th>Znaczenie</th></tr>
-  <tr><td>Sesja</td><td>Jedno nagranie z jednego wyjazdu na tor. Sesje są numerowane w kolejności nagrania.</td></tr>
+  <tr><td>Sesja</td><td>Jeden zapis z jednego wyjazdu na tor. Sesje są numerowane według czasu rozpoczęcia zapisu.</td></tr>
   <tr><td>OKR. n, OKR. WYJAZDOWE, OKR. ZJAZDOWE</td><td>Okrążenie między dwoma przejazdami przez linię startu/mety; okrążenie wyjazdowe przed pierwszym przejazdem przez linię oraz okrążenie zjazdowe po ostatnim.</td></tr>
   <tr><td>Sklasyfikowane</td><td>Pełne okrążenie z pomiarem czasu, przejechane na tej samej konfiguracji toru i w tym samym kierunku co pozostałe. Takie okrążenie liczy się do najlepszego czasu i analiz.</td></tr>
   <tr><td>Odcinek</td><td>Zakręt, prosta lub sektor toru. Aplikacja proponuje odcinki na podstawie Twojego najlepszego okrążenia; możesz je <a href="segments.html">edytować</a>.</td></tr>
@@ -38,7 +38,7 @@
 </table>
 
 <h2 id="about">O tym podręczniku</h2>
-<p class="note">Każdy zrzut ekranu pochodzi bezpośrednio z aplikacji i pokazuje prawdziwy dzień na torze: sześć sesji na Autodromie Jastrząb z 29 sierpnia 2026 r., nagranych w RaceChrono Pro (VBO i RCZ), z danymi samochodu z OBD oraz tętnem. Zrzuty powstały bez dostępu do sieci, dlatego pod śladem przejazdu widać jedynie szare tło; podczas normalnego używania aplikacja wyświetla mapę uliczną lub zdjęcia satelitarne toru.</p>
+<p class="note">Każdy zrzut ekranu pochodzi bezpośrednio z aplikacji i pokazuje prawdziwy dzień na torze: sześć sesji na Autodromie Jastrząb z 29 sierpnia 2026 r., zarejestrowanych w RaceChrono Pro (VBO i RCZ), z danymi samochodu z OBD oraz tętnem. Zrzuty powstały bez dostępu do sieci, dlatego pod śladem przejazdu widać jedynie szare tło; podczas normalnego używania aplikacja wyświetla mapę uliczną lub zdjęcia satelitarne toru.</p>
 <p>Podręcznik opisuje aplikację z gałęzi <code>main</code>. Jest aktualizowany przy każdej zmianie elementów widocznych dla użytkownika; jeśli coś tutaj nie zgadza się z Twoją aplikacją, prawdopodobnie korzystasz ze starszej wersji.</p>
-<p>Wyniki w aplikacji są obserwacjami z Twoich nagrań. Pokazują, czym różniły się okrążenia, ale nie wyjaśniają przyczyn tych różnic i nie stanowią instrukcji jazdy.</p>
+<p>Wyniki w aplikacji są obserwacjami z Twoich zapisów. Pokazują, czym różniły się okrążenia, ale nie wyjaśniają przyczyn tych różnic i nie stanowią instrukcji jazdy.</p>
 <p>Zrzuty ekranu pokazują angielski interfejs aplikacji (sama aplikacja używa języka urządzenia).</p>
