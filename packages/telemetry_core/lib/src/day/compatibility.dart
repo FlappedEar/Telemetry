@@ -24,7 +24,8 @@ final class TrackConfiguration {
   final String? layoutId;
   final TrackDirection? direction;
 
-  /// The `gates-v1:` revision of the recording's timing gates.
+  /// The `gates-v2:` revision of the recording's timing gates (`gates-v1:`
+  /// in a day saved before FET-250).
   final String? gateRevision;
 
   /// Whether [layoutId] is a route detected from GPS rather than a name.
@@ -95,7 +96,7 @@ bool _knownLayout(TrackConfiguration configuration) {
       !value.contains('\u0000');
 }
 
-final _gatesPattern = RegExp(r'^gates-v1:[0-9a-f]{64}$');
+final _gatesPattern = RegExp(r'^gates-v[12]:[0-9a-f]{64}$');
 
 bool _knownGates(TrackConfiguration configuration) =>
     _gatesPattern.hasMatch(configuration.gateRevision ?? '');
