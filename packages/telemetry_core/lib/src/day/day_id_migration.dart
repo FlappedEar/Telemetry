@@ -38,22 +38,28 @@ void migrateRunGates(Map<String, Object?> run, TelemetrySession session, Map<Str
   if (changed) keys['${run['id']}|$before'] = fet.lapDerivationV1Key(run);
 }
 
-/// Replaces the `derivationKey` of every lap reference in [event] (exclusions
-/// and the comparison pair) that [keys] (from [migrateRunGates]) names.
-void rekeyLapReferences(Object? event, Map<String, String> keys) {
+/// Replaces the `derivationKey` of the lap references in [event] (the
+/// exclusions and the comparison pair, and nothing else: other keys, even a
+/// lookalike, are the open object's own) that [keys] (from
+/// [migrateRunGates]) names.
+void rekeyLapReferences(Map<String, Object?> event, Map<String, String> keys) {
   if (keys.isEmpty) return;
-  void walk(Object? value) {
-    if (value is Map<String, Object?>) {
-      final key = value['derivationKey'];
-      final moved = key is String ? keys['${value['runId']}|$key'] : null;
-      if (moved != null) value['derivationKey'] = moved;
-      value.values.forEach(walk);
-    } else if (value is List) {
-      value.forEach(walk);
-    }
+  void rekey(Object? reference) {
+    if (reference is! Map<String, Object?>) return;
+    final key = reference['derivationKey'];
+    final moved = key is String ? keys['${reference['runId']}|$key'] : null;
+    if (moved != null) reference['derivationKey'] = moved;
   }
 
-  walk(event);
+  final exclusions = event['lapExclusions'];
+  if (exclusions is List) {
+    for (final entry in exclusions) {
+      if (entry is Map<String, Object?>) rekey(entry['reference']);
+    }
+  }
+  final decisions = event['analysisDecisions'];
+  final slots = decisions is Map<String, Object?> ? decisions['comparisonSlots'] : null;
+  if (slots is List) slots.forEach(rekey);
 }
 
 /// Old group id → current group id, for every loaded run of [analysis]

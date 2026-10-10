@@ -87,7 +87,7 @@ void main() {
       expect((stored['trackInference']! as Map)['gateRevision'], current);
       expect(keys, {'a|$oldKey': fet.lapDerivationV1Key(stored)});
       expect(fet.lapDerivationV1Key(stored), isNot(oldKey));
-      final event = {
+      final event = <String, Object?>{
         'lapExclusions': [
           {
             'reference': {'runId': 'a', 'derivationKey': oldKey},
@@ -102,10 +102,11 @@ void main() {
             null,
           ],
         },
+        'extension': {'runId': 'a', 'derivationKey': oldKey},
       };
       rekeyLapReferences(event, keys);
       final moved = fet.lapDerivationV1Key(stored);
-      expect(valuesOf(event, 'derivationKey'), [moved, oldKey, moved]);
+      expect(valuesOf(event, 'derivationKey'), [moved, oldKey, moved, oldKey]);
     });
 
     test('is left as saved for gates that are not the session\'s', () {
