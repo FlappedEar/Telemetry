@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:crypto/crypto.dart';
 
 import 'qt_json.dart';
@@ -28,8 +30,10 @@ typedef TimingGateEndpoints = ({
 /// Most gates a recording may declare for the revision to be resolved.
 const maximumRevisionGates = 128;
 
-// Strict: a trailing newline is not a known revision (KAN-181).
-final _gatesPattern = RegExp(r'^gates-v1:[0-9a-f]{64}$');
+// Strict: a trailing newline is not a known revision (KAN-181). `gates-v1` is
+// the revision earlier versions saved (see [gatesV1Revision]); `gates-v2` is
+// the one written now (see [gatesV2Revision]).
+final _gatesPattern = RegExp(r'^gates-v[12]:[0-9a-f]{64}$');
 
 String _sha256(Object? basis) =>
     sha256.convert(qtCompactJsonBytes(basis)).toString();
@@ -40,7 +44,7 @@ bool _validCoordinate(double latitude, double longitude) =>
     latitude.abs() <= 90.0 &&
     longitude.abs() <= 180.0;
 
-/// The `gates-v1` revision of a recording's ordered timing gates, or `null`
+/// The legacy `gates-v1` revision of a recording's ordered timing gates, or `null`
 /// when it is unresolved: more than [maximumRevisionGates] gates, an invalid
 /// coordinate, a gate of unknown type, or not exactly one start gate.
 ///
@@ -71,6 +75,64 @@ String? gatesV1Revision(
   }
   if (starts != 1) return null;
   return 'gates-v1:${_sha256(basis)}';
+}
+
+const _gateCentreCellDegrees = 100000;
+
+/// The `gates-v2` revision of a recording's ordered timing gates, or `null`
+/// when it is unresolved (the same cases as [gatesV1Revision]).
+///
+/// A gate is identified by what makes laps timed against it comparable: its
+/// type, its centre (to 1e-5°, about a metre) and the bearing of its line
+/// (to a degree, modulo 180°). The order of the endpoints and the width are
+/// not part of it, and the coordinates are not hashed as stored. One start
+/// line therefore gives one revision whichever recording format declared it
+/// (RaceChrono's VBO writes a centre and a direction, its RCZ a centre, a
+/// width and a bearing, and the two round differently and list the
+/// endpoints in opposite order; FET-250).
+String? gatesV2Revision(
+  List<TimingGateEndpoints> gates, {
+  required bool westPositive,
+}) {
+  if (gates.length > maximumRevisionGates) return null;
+  var starts = 0;
+  final basis = <Object?>[];
+  double longitude(double value) => westPositive ? -value : value;
+  for (final gate in gates) {
+    if (!_validCoordinate(gate.aLatitude, gate.aLongitude) ||
+        !_validCoordinate(gate.bLatitude, gate.bLongitude) ||
+        gate.type == TimingGateType.unknown) {
+      return null;
+    }
+    if (gate.type == TimingGateType.start) starts++;
+    final aLongitude = longitude(gate.aLongitude);
+    final bLongitude = longitude(gate.bLongitude);
+    final latitude = (gate.aLatitude + gate.bLatitude) / 2;
+    var spanLongitude = bLongitude - aLongitude;
+    if (spanLongitude > 180) spanLongitude -= 360;
+    if (spanLongitude < -180) spanLongitude += 360;
+    final north = gate.bLatitude - gate.aLatitude;
+    final east = spanLongitude * math.cos(latitude * math.pi / 180);
+    if (north == 0 && east == 0) return null;
+    final bearing =
+        (math.atan2(east, north) * 180 / math.pi).roundToDouble() % 180;
+    // The centre of a gate over the antimeridian is taken on the short side.
+    var centreLongitude = aLongitude + spanLongitude / 2;
+    if (centreLongitude > 180) centreLongitude -= 360;
+    if (centreLongitude < -180) centreLongitude += 360;
+    var longitudeCell = (centreLongitude * _gateCentreCellDegrees).round();
+    // -180° and 180° are one meridian.
+    if (longitudeCell == -180 * _gateCentreCellDegrees)
+      longitudeCell = 180 * _gateCentreCellDegrees.round();
+    basis.add([
+      gate.type == TimingGateType.start ? 'start' : 'split',
+      (latitude * _gateCentreCellDegrees).round(),
+      longitudeCell,
+      bearing.round(),
+    ]);
+  }
+  if (starts != 1) return null;
+  return 'gates-v2:${_sha256(basis)}';
 }
 
 bool _knownLayout(Map<String, Object?> configuration) {

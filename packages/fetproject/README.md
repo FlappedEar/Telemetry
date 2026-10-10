@@ -16,10 +16,13 @@ Overlays stores four SHA-256 ids in documents. Each is computed over Qt's
 
 | Id | Basis | Dart |
 | --- | --- | --- |
-| `gates-v1:<hex>` | the ordered gates as `["start"\|"split", latA, lonA, latB, lonB]`, east-positive | `gatesV1Revision` |
+| `gates-v2:<hex>` | the ordered gates as `["start"\|"split", centre latitude cell, centre longitude cell, line bearing]`: the centre in cells of 1e-5° (about a metre), the bearing of the line to a degree modulo 180°, east-positive; the endpoint order and the width are not part of it, so a VBO and an RCZ of one start line agree (FET-250) | `gatesV2Revision` |
+| `gates-v1:<hex>` | what days saved before FET-250 hold: the ordered gates as `["start"\|"split", latA, lonA, latB, lonB]`, east-positive, as stored. Read and migrated, no longer written | `gatesV1Revision` |
 | `compatibility-v1:<hex>` | `{version: 1, layoutId, direction, gateRevision}` | `compatibilityV1Id` |
 | `track-segments-v1:<hex>` | `{version: "track-segment-v2", segments}` | `trackSegmentsV1Revision` |
 | `<hex>` (lap derivation key) | `{version: "lap-derivation-v1", runId, sourceId, sourceFingerprint, trackConfiguration}` | `lapDerivationV1Key` |
+
+`gates-v2` rounds the gate centre and bearing to cells, so two declarations of one line that lie either side of a cell edge (about 2e-7° apart is enough, if the centre sits within that of an edge) still give two revisions; the owner's Jastrząb line, in both formats, does not. A gate with both endpoints equal is unresolved in `gates-v2` (it was not in `gates-v1`).
 
 A lap reference is matched by its compact JSON (`lapReferenceKey`).
 

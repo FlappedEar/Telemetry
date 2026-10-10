@@ -51,6 +51,7 @@ export 'src/day/day_comparison.dart';
 export 'src/day/day_corner_analyzer.dart';
 export 'src/day/day_corners.dart';
 export 'src/day/day_document.dart';
+export 'src/day/day_id_migration.dart';
 export 'src/day/day_fusion.dart';
 export 'src/day/day_gg_envelope.dart';
 export 'src/day/day_grip.dart';

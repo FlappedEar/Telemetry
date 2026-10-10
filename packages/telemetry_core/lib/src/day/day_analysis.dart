@@ -152,9 +152,18 @@ final class DayAnalysis {
   DayRanking? get ranking => chosenGroup?.ranking;
 }
 
-/// The `gates-v1` revision of [session]'s timing gates, or null when they
+/// The `gates-v2` revision of [session]'s timing gates, or null when they
 /// are unresolved (not exactly one start gate, an invalid coordinate...).
-String? sessionGateRevision(TelemetrySession session) => fet.gatesV1Revision([
+/// Recordings of one circuit in different formats share it (FET-250).
+String? sessionGateRevision(TelemetrySession session) =>
+    fet.gatesV2Revision(_gateEndpoints(session), westPositive: _westPositive(session));
+
+/// The `gates-v1` revision days saved before FET-250 hold for [session], only
+/// to recognise and migrate their ids (see `day_id_migration.dart`).
+String? legacySessionGateRevision(TelemetrySession session) =>
+    fet.gatesV1Revision(_gateEndpoints(session), westPositive: _westPositive(session));
+
+List<fet.TimingGateEndpoints> _gateEndpoints(TelemetrySession session) => [
   for (final gate in session.timingGates)
     (
       type: switch (gate.type) {
@@ -167,7 +176,7 @@ String? sessionGateRevision(TelemetrySession session) => fet.gatesV1Revision([
       bLatitude: gate.endpointB.latitudeDegrees,
       bLongitude: gate.endpointB.longitudeDegrees,
     ),
-], westPositive: _westPositive(session));
+];
 
 /// Whether [session] has GPS positions to time laps from: latitude and
 /// longitude channels, and its [laps] did not report

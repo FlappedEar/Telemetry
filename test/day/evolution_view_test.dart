@@ -7,7 +7,7 @@ import 'package:telemetry/l10n.dart';
 import 'package:telemetry_core/telemetry_core.dart';
 
 const _gates =
-    'gates-v1:0000000000000000000000000000000000000000000000000000000000000000';
+    'gates-v2:0000000000000000000000000000000000000000000000000000000000000000';
 const _revision =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const _track = TrackConfiguration(

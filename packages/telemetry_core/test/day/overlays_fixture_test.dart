@@ -19,6 +19,42 @@ Map<String, Object?> movedTo(Map<String, Object?> document, String folder) =>
     jsonDecode(jsonEncode(document).replaceAll('"$overlaysFixtureFolder/', '"$folder/'))
         as Map<String, Object?>;
 
+/// [value] with what FET-250 moved on opening a day saved with `gates-v1:`
+/// (the group ids, the gate revisions and the keys derived from them) set
+/// to one placeholder, so the rest of Overlays' day is compared as it was.
+Object? withoutMigratedIds(Object? value) {
+  if (value is Map) {
+    return <String, Object?>{
+      for (final entry in value.entries)
+        entry.key as String: switch (entry.key) {
+          'comparisonGroupId' ||
+          'groupId' ||
+          'trackConfigurationReference' ||
+          'gateRevision' ||
+          'derivationKey' ||
+          'revision' => entry.value is String ? 'migrated' : entry.value,
+          _ => withoutMigratedIds(entry.value),
+        },
+    };
+  }
+  if (value is List) return [for (final item in value) withoutMigratedIds(item)];
+  return value;
+}
+
+/// Every string of [value] under a key named [key].
+Iterable<String> valuesOf(Object? value, String key) sync* {
+  if (value is Map) {
+    for (final entry in value.entries) {
+      if (entry.key == key && entry.value is String) yield entry.value! as String;
+      yield* valuesOf(entry.value, key);
+    }
+  } else if (value is List) {
+    for (final item in value) {
+      yield* valuesOf(item, key);
+    }
+  }
+}
+
 void main() {
   late Directory directory;
   late String path;
@@ -60,12 +96,20 @@ void main() {
     final day = openDay(path);
     expect(day.missing, isEmpty);
     final differences = jsonDifferences(
-      telemetryView(day),
-      overlaysView(inspected),
+      withoutMigratedIds(telemetryView(day)) as Map<String, Object?>,
+      withoutMigratedIds(overlaysView(inspected)) as Map<String, Object?>,
       tolerance: 1e-9,
     );
     expect(differences, isEmpty);
-    expect(day.analysis!.chosenGroupId, startsWith('compatibility-v1:'));
+    final shown = day.analysis!.chosenGroupId!;
+    expect(shown, startsWith('compatibility-v1:'));
+    // The day was saved with the gate revision of before FET-250: the group
+    // shown, and the segments kept under its id, follow to the new id.
+    expect(overlaysView(inspected)['comparisonGroupId'], isNot(shown));
+    final event = day.document['event']! as Map<String, Object?>;
+    expect((event['analysisDecisions']! as Map)['comparisonGroupId'], shown);
+    final references = valuesOf(event['runs'], 'trackConfigurationReference').toSet();
+    expect(references, {shown});
   });
 
   test('Telemetry re-saves it keeping everything Overlays wrote', () async {
@@ -94,16 +138,54 @@ void main() {
     );
     expect(
       jsonDifferences(
-        {...saved, 'documentState': null},
-        {...movedTo(original, p.dirname(path)), 'documentState': null},
+        withoutMigratedIds({...saved, 'documentState': null}) as Map<String, Object?>,
+        withoutMigratedIds({...movedTo(original, p.dirname(path)), 'documentState': null})
+            as Map<String, Object?>,
         unordered: const {'event.lapExclusions'},
       ),
       isEmpty,
     );
-    // And it opens again the same.
+    // The ids that moved (FET-250) are the new ones all through, and the
+    // lap exclusion still applies on the next open.
+    expect(valuesOf(saved, 'gateRevision'), everyElement(startsWith('gates-v2:')));
+    expect(valuesOf(original, 'gateRevision'), everyElement(startsWith('gates-v1:')));
+    final shown = day.analysis!.chosenGroupId!;
+    expect(valuesOf(saved, 'comparisonGroupId'), [shown]);
+    expect(valuesOf(saved, 'trackConfigurationReference').toSet(), {shown});
+    // Every lap reference carries the key of its run as saved now.
+    final savedRuns = {
+      for (final run in (saved['event']! as Map)['runs']! as List)
+        (run as Map)['id']: run.cast<String, Object?>(),
+    };
+    final references = [
+      for (final entry in (saved['event']! as Map)['lapExclusions']! as List)
+        (entry as Map)['reference'],
+      ...(((saved['event']! as Map)['analysisDecisions']! as Map)['comparisonSlots']! as List),
+    ].whereType<Map<String, Object?>>();
+    expect(references, isNotEmpty);
+    for (final reference in references) {
+      expect(
+        reference['derivationKey'],
+        fet.lapDerivationV1Key(savedRuns[reference['runId']]!),
+        reason: 'the key of run ${reference['runId']}',
+      );
+    }
+    // And it opens again the same, with the comparison pair still applied.
+    expect(day.comparison.slots, everyElement(isNotNull));
     final reopened = openDay(path);
+    expect(reopened.comparison.slots, day.comparison.slots);
+    expect(reopened.analysis!.chosenGroupId, shown);
+    expect(reopened.exclusions, day.exclusions);
+    expect(day.exclusions, isNotEmpty);
     final view = telemetryView(reopened)..remove('documentState');
     final expected = overlaysView(inspected)..remove('documentState');
-    expect(jsonDifferences(view, expected, tolerance: 1e-9), isEmpty);
+    expect(
+      jsonDifferences(
+        withoutMigratedIds(view) as Map<String, Object?>,
+        withoutMigratedIds(expected) as Map<String, Object?>,
+        tolerance: 1e-9,
+      ),
+      isEmpty,
+    );
   });
 }

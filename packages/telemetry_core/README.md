@@ -63,7 +63,7 @@ a background isolate.
   RMS), complete-link, under a `gps-route-v1:` layout. A manual layout always
   wins.
 - `analyzeDay` derives a whole day from its runs: rows, configurations (with
-  the `gates-v1` revision of each recording's gates), groups labelled
+  the `gates-v2` revision of each recording's gates; a day saved with `gates-v1` is migrated when it opens, FET-250), groups labelled
   "Group 1 · Detected route · Clockwise", the ranking of every group, the
   group shown first (the one with the most eligible laps unless one is
   preferred), and messages. One failing run never stops the others.

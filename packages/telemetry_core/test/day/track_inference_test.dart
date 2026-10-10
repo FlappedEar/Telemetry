@@ -88,7 +88,7 @@ void main() {
       expect(day.rows.first.displayName, 'Session 1 · OUT');
       expect(day.rows.last.displayName, 'Session 2 · IN');
       expect(day.messages, isEmpty);
-      expect(day.configurations['run:1']!.gateRevision, startsWith('gates-v1:'));
+      expect(day.configurations['run:1']!.gateRevision, startsWith('gates-v2:'));
       expect(day.configurations['run:1']!.gateRevision, sessionGateRevision(circuitSession()));
     });
 

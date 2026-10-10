@@ -15,6 +15,7 @@ import '../source_fingerprint.dart';
 import 'compatibility.dart';
 import 'day_analysis.dart';
 import 'day_fusion.dart';
+import 'day_id_migration.dart';
 import 'day_laps.dart';
 import 'day_theoretical_best.dart' show otherEligibleLapTraces;
 import 'run_metadata.dart';
@@ -471,7 +472,11 @@ Map<String, Object?> dayDocument({
 /// [run] (a document run) as it is saved with [recording] as its primary,
 /// as far as its laps are named ([fet.lapDerivationV1Key]): the recording's
 /// source and the unknown track configuration, as "Make primary" leaves it.
-Map<String, Object?> _asPrimary(Map<String, Object?> run, TelemetryRunProposal recording) {
+Map<String, Object?> _asPrimary(
+  Map<String, Object?> run,
+  TelemetryRunProposal recording, {
+  bool legacyGates = false,
+}) {
   final fingerprint = telemetryFingerprint(recording.sourcePath, recording.telemetry);
   return {
     ...run,
@@ -487,7 +492,9 @@ Map<String, Object?> _asPrimary(Map<String, Object?> run, TelemetryRunProposal r
     'trackConfiguration': _unknownConfiguration(
       recording.sourceId,
       fingerprint,
-      sessionGateRevision(recording.telemetry),
+      legacyGates
+          ? legacySessionGateRevision(recording.telemetry)
+          : sessionGateRevision(recording.telemetry),
     ),
   };
 }
@@ -510,13 +517,14 @@ Map<DayLapReference, String> recordingExclusions(
   final stored = event?['lapExclusions'];
   if (run == null || stored is! List) return const {};
   final asPrimary = {runId: _asPrimary(run, recording)};
+  final legacy = {runId: _asPrimary(run, recording, legacyGates: true)};
   final loaded = {runId: recording.contentSha256};
   final result = <DayLapReference, String>{};
   for (final value in stored) {
     if (_object(value)
         case {'reference': final Map<String, Object?> reference, 'reason': final String reason}
         when reference['runId'] == runId && reference['type'] == LapSectionType.lap.label) {
-      final applied = _appliedLapReference(reference, asPrimary, loaded);
+      final applied = _appliedLapReference(reference, asPrimary, loaded, legacyRuns: legacy);
       if (applied != null) result[applied] = reason;
     }
   }
@@ -739,13 +747,17 @@ final class OpenedDay {
 DayLapReference? _appliedLapReference(
   Map<String, Object?> reference,
   Map<Object?, Map<String, Object?>> runs,
-  Map<String, String> loaded,
-) {
+  Map<String, String> loaded, {
+  Map<Object?, Map<String, Object?>> legacyRuns = const {},
+}) {
   final runId = reference['runId'];
   final run = runs[runId];
-  if (run == null ||
-      loaded[runId] != reference['sourceRevision'] ||
-      reference['derivationKey'] != fet.lapDerivationV1Key(run)) {
+  if (run == null || loaded[runId] != reference['sourceRevision']) return null;
+  // [legacyRuns]: the same runs with the gate revision days saved before
+  // FET-250 hold, for a recording that is not the run's primary.
+  final legacy = legacyRuns[runId];
+  if (reference['derivationKey'] != fet.lapDerivationV1Key(run) &&
+      (legacy == null || reference['derivationKey'] != fet.lapDerivationV1Key(legacy))) {
     return null;
   }
   return DayLapReference(
@@ -778,6 +790,12 @@ ComparisonDecisions documentComparison(Map<String, Object?> document, List<Named
         _ => run,
       },
   };
+  final legacy = <Object?, Map<String, Object?>>{
+    for (final run in ((event['runs'] as List?) ?? const []).whereType<Map<String, Object?>>())
+      if (current[run['id']] case final recording?
+          when recording.sourceId != run['primaryTelemetrySourceId'])
+        run['id']: _asPrimary(run, recording, legacyGates: true),
+  };
   final loaded = {for (final named in runs) named.run.id: named.run.contentSha256};
   final slots = decisions['comparisonSlots'];
   final range = _object(decisions['comparisonRange']);
@@ -786,7 +804,9 @@ ComparisonDecisions documentComparison(Map<String, Object?> document, List<Named
     slots: slots is List
         ? [
             for (final slot in slots)
-              slot is Map<String, Object?> ? _appliedLapReference(slot, byId, loaded) : null,
+              slot is Map<String, Object?>
+                  ? _appliedLapReference(slot, byId, loaded, legacyRuns: legacy)
+                  : null,
           ]
         : null,
     range: range != null && range['startMeters'] is num && range['endMeters'] is num
@@ -863,6 +883,8 @@ OpenedDay openDayDocument(
   Map<String, String> relinkedAlternatives = const {},
   CancellationCheck? cancelled,
 }) {
+  // Opening migrates ids of a day saved before FET-250 in place: on a copy.
+  document = _copy(document);
   final event = document['event'] as Map<String, Object?>;
   final runs = [for (final value in event['runs'] as List) value as Map<String, Object?>];
   final missing = <MissingRecording>[];
@@ -897,6 +919,7 @@ OpenedDay openDayDocument(
       : prepareTelemetryImport([for (final (_, _, file) in candidates) file], cancelled: cancelled);
   final named = <NamedRun>[];
   final inputs = <DayRunInput>[];
+  final rekeyed = <String, String>{};
   final manualTracks = <String, TrackConfiguration>{};
   for (var index = 0; index < candidates.length; ++index) {
     final (run, source, file) = candidates[index];
@@ -940,6 +963,8 @@ OpenedDay openDayDocument(
       laps: loaded.laps,
     );
     named.add((run: proposal, name: runName));
+    // A day saved before FET-250 holds the old gate revision (see migrateRunGates).
+    migrateRunGates(run, proposal.telemetry, rekeyed);
     final configuration = fet.runTrackConfiguration(run);
     final layout = configuration['layoutId'];
     final direction = switch (configuration['direction']) {
@@ -969,6 +994,7 @@ OpenedDay openDayDocument(
 
   final alternatives = _openAlternatives(runs, path, relinkedAlternatives);
 
+  rekeyLapReferences(event, rekeyed);
   final exclusions = <DayLapReference, String>{};
   final byId = {for (final run in runs) run['id']: run};
   final loadedIds = {for (final run in named) run.run.id: run.run.contentSha256};
@@ -983,7 +1009,7 @@ OpenedDay openDayDocument(
   final comparison = documentComparison(document, named);
   // The group saved as shown leads again when it is still one of the day's.
   final savedGroup = _object(event['analysisDecisions'])?['comparisonGroupId'];
-  final analysis = inputs.isEmpty
+  var analysis = inputs.isEmpty
       ? null
       : analyzeDay(
           inputs,
@@ -991,6 +1017,19 @@ OpenedDay openDayDocument(
           preferredGroupId: savedGroup is String ? savedGroup : null,
           cancelled: cancelled,
         );
+  // A day saved before FET-250 names its groups by the old gate revision:
+  // move the ids the driver's kept segments, goals and chosen group hang on.
+  if (analysis != null) {
+    final moved = legacyGroupIds(analysis, {
+      for (final run in named) run.run.id: run.run.telemetry,
+    });
+    if (moved.isNotEmpty) {
+      remapDocumentGroupIds(document, moved);
+      if (savedGroup is String && moved.containsKey(savedGroup)) {
+        analysis = rerankDay(analysis, exclusions: exclusions, preferredGroupId: moved[savedGroup]);
+      }
+    }
+  }
   return OpenedDay(
     path: path,
     document: document,

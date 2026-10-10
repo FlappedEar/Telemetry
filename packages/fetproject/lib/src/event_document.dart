@@ -52,7 +52,7 @@ final class FetprojectError implements Exception {
 }
 
 final _digest = RegExp(r'^[0-9a-f]{64}$');
-final _gates = RegExp(r'^gates-v1:[0-9a-f]{64}$');
+final _gates = RegExp(r'^gates-v[12]:[0-9a-f]{64}$');
 final _compatibility = RegExp(r'^compatibility-v1:[0-9a-f]{64}$');
 
 // Where Overlays checks only a regular expression, PCRE2's `$` also matches
